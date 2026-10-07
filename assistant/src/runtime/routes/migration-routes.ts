@@ -113,10 +113,10 @@ import { RouteResponse } from "./types.js";
  * imported bundle so they don't overwrite the target's own Django-provisioned
  * platform identity (most notably `assistant_api_key`).
  *
- * Derived from `credentialKey("vellum", "")` so the prefix automatically
- * tracks the real CES account format — the literal string `"credential/vellum/"`.
+ * Derived from `credentialKey("cadet", "")` so the prefix automatically
+ * tracks the real CES account format — the literal string `"credential/cadet/"`.
  */
-const PLATFORM_CREDENTIAL_PREFIX = credentialKey("vellum", "");
+const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
 
 /**
  * Platform-identity fields that the managed runtime expects to see in CES.
@@ -152,7 +152,7 @@ export async function reconcileVellumMetadataFromCes(warningSink: {
 }): Promise<void> {
   for (const field of VELLUM_PLATFORM_IDENTITY_FIELDS) {
     try {
-      const value = await getSecureKeyAsync(credentialKey("vellum", field));
+      const value = await getSecureKeyAsync(credentialKey("cadet", field));
       if (!value) {
         continue;
       }

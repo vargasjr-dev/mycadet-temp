@@ -103,7 +103,7 @@ function installedDetail(name: string): PluginsByNameGetResponse {
     homepage: null,
     license: "MIT",
     version: "0.1.0",
-    source: { kind: "github", repo: "vellum-ai/level-up", ref: "main" },
+    source: { kind: "github", repo: "cadet-ai/level-up", ref: "main" },
     readme: "# Level Up",
     ref: "main",
     artifact: null,
@@ -130,7 +130,7 @@ function inspectResponse(
       installedAt: "2026-06-01T00:00:00.000Z",
       source: {
         kind: "github",
-        owner: "vellum-ai",
+        owner: "cadet-ai",
         repo: "level-up",
         ref: LOCAL_COMMIT,
       },

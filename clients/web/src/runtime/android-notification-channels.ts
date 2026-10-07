@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 
 import { isNativeAndroid } from "@/runtime/platform-detection";
 
-export const ANDROID_ALERTS_CHANNEL_ID = "vellum-alerts";
+export const ANDROID_ALERTS_CHANNEL_ID = "cadet-alerts";
 const ANDROID_NOTIFICATION_CHANNELS_PLUGIN = "AndroidNotificationChannels";
 
 interface AndroidNotificationChannelsPlugin {

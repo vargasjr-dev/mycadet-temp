@@ -22,7 +22,7 @@
 //     surprise a developer mid-session.
 // Reloading guarantees a uniform world after the flag flips.
 //
-// Surface (exposed under `window._vellumDebug.flags`):
+// Surface (exposed under `window._cadetDebug.flags`):
 //
 //   impersonateVersion("0.8.6")  — set + reload
 //   impersonateVersion(null)     — clear + reload
@@ -75,7 +75,7 @@ export function setImpersonatedAssistantVersion(
   if (value === undefined) {
     const current = getImpersonatedAssistantVersion();
     console.info(
-      `[vellumDebug] impersonateAssistantVersion (current) = ${
+      `[cadetDebug] impersonateAssistantVersion (current) = ${
         current === null ? "null" : JSON.stringify(current)
       }`,
     );
@@ -86,23 +86,23 @@ export function setImpersonatedAssistantVersion(
     removeLocalSetting(STORAGE_KEY);
     if (getImpersonatedAssistantVersion() !== null) {
       console.warn(
-        "[vellumDebug] failed to clear impersonateAssistantVersion flag",
+        "[cadetDebug] failed to clear impersonateAssistantVersion flag",
       );
       return getImpersonatedAssistantVersion();
     }
     console.info(
-      "[vellumDebug] impersonateAssistantVersion = null (cleared) — reloading…",
+      "[cadetDebug] impersonateAssistantVersion = null (cleared) — reloading…",
     );
   } else {
     setLocalSetting(STORAGE_KEY, value);
     if (getImpersonatedAssistantVersion() !== value) {
       console.warn(
-        "[vellumDebug] failed to persist impersonateAssistantVersion flag",
+        "[cadetDebug] failed to persist impersonateAssistantVersion flag",
       );
       return getImpersonatedAssistantVersion();
     }
     console.info(
-      `[vellumDebug] impersonateAssistantVersion = ${JSON.stringify(
+      `[cadetDebug] impersonateAssistantVersion = ${JSON.stringify(
         value,
       )} — reloading…`,
     );

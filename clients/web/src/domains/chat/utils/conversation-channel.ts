@@ -5,7 +5,7 @@ import type { Conversation } from "@/types/conversation-types";
  * conversation that lives natively in the app.
  *
  * Excluded origins (treated as native):
- *   - `cadet`         → native Vellum-channel conversation.
+ *   - `cadet`         → native Cadet-channel conversation.
  *   - `notification:*` → outbound-only delivery (e.g. a Slack push for a
  *                       scheduled reminder); the conversation itself
  *                       still lives in the app.
@@ -20,7 +20,7 @@ export function isExternalChannelOrigin(
   if (!origin) {
     return false;
   }
-  if (origin === "vellum") {
+  if (origin === "cadet") {
     return false;
   }
   if (origin.startsWith("notification:")) {

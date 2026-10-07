@@ -6154,7 +6154,7 @@ paths:
                     - fireworks
                     - openrouter
                     - chatgpt
-                    - vellum
+                    - cadet
                     - together
                     - vercel-ai-gateway
                     - minimax
@@ -17118,7 +17118,7 @@ paths:
           description:
             "Filter by provider id. One of: anthropic, openai, gemini, ollama, fireworks, together, openrouter,
             vercel-ai-gateway, litellm, opencode, openai-compatible, minimax, atlascloud, baseten, ionet, poolside,
-            typesafe, vellum"
+            typesafe, cadet"
       responses:
         "200":
           description: Successful response
@@ -17391,7 +17391,7 @@ paths:
           description:
             "Filter by provider. One of: anthropic, openai, gemini, ollama, fireworks, together, openrouter,
             vercel-ai-gateway, litellm, opencode, openai-compatible, minimax, atlascloud, baseten, ionet, poolside,
-            typesafe, vellum, chatgpt"
+            typesafe, cadet, chatgpt"
       responses:
         "200":
           description: Successful response
@@ -17412,8 +17412,8 @@ paths:
       summary: Create a provider connection
       description:
         Create a new named provider connection. When auth is omitted it is derived from the provider (keyless
-        providers get none, vellum gets platform, everything else needs credential for api_key auth). An explicit auth
-        object must agree with the provider; platform auth belongs to vellum and only to vellum. Fails with 409 if a
+        providers get none, cadet gets platform, everything else needs credential for api_key auth). An explicit auth
+        object must agree with the provider; platform auth belongs to cadet and only to cadet. Fails with 409 if a
         connection with this name already exists.
       tags:
         - inference
@@ -17467,8 +17467,8 @@ paths:
       operationId: inference_providerconnections_by_name_delete
       summary: Delete a provider connection
       description:
-        Delete a provider connection. Fails with 400 for the Vellum-managed connection (vellum) which is re-seeded
-        on boot. Fails with 409 if any profile or call-site references the connection.
+        Delete a provider connection. Fails with 400 for the Cadet-managed connection (cadet) which is re-seeded on
+        boot. Fails with 409 if any profile or call-site references the connection.
       tags:
         - inference
       parameters:
@@ -17492,7 +17492,7 @@ paths:
                   - ok
                 additionalProperties: false
         "400":
-          description: Connection is a Vellum-managed connection and cannot be deleted
+          description: Connection is a Cadet-managed connection and cannot be deleted
         "404":
           description: Connection not found
         "409":
@@ -17524,8 +17524,8 @@ paths:
       description:
         Update an existing connection. Cannot rename or change the provider. Omitting auth keeps the stored auth;
         passing credential alone rotates the key via provider-derived api_key auth. An explicit auth object must agree
-        with the connection's provider; platform auth belongs to vellum and only to vellum. For the Vellum-managed
-        connection (vellum) the auth is locked to platform; label remains editable.
+        with the connection's provider; platform auth belongs to cadet and only to cadet. For the Cadet-managed
+        connection (cadet) the auth is locked to platform; label remains editable.
       tags:
         - inference
       parameters:
@@ -29954,7 +29954,7 @@ paths:
       summary: Update a roadmap item
       description:
         Updates the title or description of a roadmap item this assistant filed, while the item is still open.
-        Status and tags are set by Vellum staff.
+        Status and tags are set by Cadet staff.
       tags:
         - roadmap
       parameters:
@@ -32906,7 +32906,7 @@ paths:
           required: false
           schema:
             type: string
-          description: Filter by skill origin (e.g. 'vellum', 'clawhub', 'skillssh', 'custom', 'assistant-memory').
+          description: Filter by skill origin (e.g. 'cadet', 'clawhub', 'skillssh', 'custom', 'assistant-memory').
         - name: kind
           in: query
           required: false
@@ -32981,7 +32981,7 @@ paths:
                               additionalProperties: false
                             origin:
                               type: string
-                              const: vellum
+                              const: cadet
                           required:
                             - id
                             - name
@@ -33398,7 +33398,7 @@ paths:
                             additionalProperties: false
                           origin:
                             type: string
-                            const: vellum
+                            const: cadet
                         required:
                           - id
                           - name
@@ -33879,7 +33879,7 @@ paths:
                             additionalProperties: false
                           origin:
                             type: string
-                            const: vellum
+                            const: cadet
                         required:
                           - id
                           - name
@@ -34587,7 +34587,7 @@ paths:
                               additionalProperties: false
                             origin:
                               type: string
-                              const: vellum
+                              const: cadet
                           required:
                             - id
                             - name
@@ -39573,7 +39573,7 @@ components:
         - ionet
         - poolside
         - typesafe
-        - vellum
+        - cadet
         - chatgpt
     Auth:
       oneOf:
@@ -39829,7 +39829,7 @@ components:
                     - fireworks
                     - openrouter
                     - chatgpt
-                    - vellum
+                    - cadet
                     - together
                     - vercel-ai-gateway
                     - minimax
@@ -40218,7 +40218,7 @@ components:
                 - fireworks
                 - openrouter
                 - chatgpt
-                - vellum
+                - cadet
                 - together
                 - vercel-ai-gateway
                 - minimax
@@ -40245,7 +40245,7 @@ components:
                 - missing_credential
                 - provider_mismatch
                 - unsupported_auth
-                - vellum_unauthenticated
+                - cadet_unauthenticated
                 - unknown
                 - missing_default
             message:
@@ -40480,7 +40480,7 @@ components:
             - missing_credential
             - provider_mismatch
             - unsupported_auth
-            - vellum_unauthenticated
+            - cadet_unauthenticated
             - unknown
         message:
           type: string

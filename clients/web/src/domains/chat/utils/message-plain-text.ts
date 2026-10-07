@@ -4,7 +4,7 @@ import { isChannelDeleted } from "@/domains/chat/utils/is-channel-deleted";
 /**
  * Join ordered text parts into a flat plain-text body.
  *
- * Mirrors the daemon's `joinWithSpacing` (see vellum-assistant
+ * Mirrors the daemon's `joinWithSpacing` (see cadet-assistant
  * `daemon/handlers/shared.ts`): adjacent parts are concatenated, and a single
  * space is inserted between two parts only when neither the end of the left
  * part nor the start of the right part is already whitespace. Keeping the two

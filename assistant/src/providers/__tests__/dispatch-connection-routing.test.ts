@@ -287,7 +287,7 @@ describe("dispatch routes through provider_connection (Phase 1: connection-only)
 });
 
 // ---------------------------------------------------------------------------
-// Routing identities ("vellum"/"chatgpt") — resolution-unit coverage plus
+// Routing identities ("cadet"/"chatgpt") — resolution-unit coverage plus
 // config-driven dispatch through the real loader.
 // ---------------------------------------------------------------------------
 
@@ -302,12 +302,12 @@ describe("routing identities", () => {
 
   test("a stored cadet profile dispatches end-to-end through the real config loader", async () => {
     registerConnection(
-      { name: "vellum", provider: "vellum", auth: { type: "platform" } },
+      { name: "cadet", provider: "cadet", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-stub" },
     );
     setLlmConfig({
       profiles: {
-        managed: { provider: "vellum", model: "claude-opus-4-8" },
+        managed: { provider: "cadet", model: "claude-opus-4-8" },
       },
     });
 
@@ -317,18 +317,18 @@ describe("routing identities", () => {
 
     expect(result).not.toBeNull();
     expect(resolveProviderCalls.length).toBe(1);
-    expect(resolveProviderCalls[0]?.name).toBe("vellum");
+    expect(resolveProviderCalls[0]?.name).toBe("cadet");
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
 
   test("a stored cadet GPU profile dispatches through the cadet adapter", async () => {
     registerConnection(
-      { name: "vellum", provider: "vellum", auth: { type: "platform" } },
-      { name: "vellum", tag: "gpu-stub" },
+      { name: "cadet", provider: "cadet", auth: { type: "platform" } },
+      { name: "cadet", tag: "gpu-stub" },
     );
     setLlmConfig({
       profiles: {
-        gpu: { provider: "vellum", model: "qwen/qwen3-8b" },
+        gpu: { provider: "cadet", model: "qwen/qwen3-8b" },
       },
     });
 
@@ -337,8 +337,8 @@ describe("routing identities", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(resolveProviderCalls[0]?.name).toBe("vellum");
-    expect(resolveProviderOpts[0]?.providerOverride).toBe("vellum");
+    expect(resolveProviderCalls[0]?.name).toBe("cadet");
+    expect(resolveProviderOpts[0]?.providerOverride).toBe("cadet");
   });
 
   test("a stored chatgpt profile dispatches end-to-end through the real config loader", async () => {
@@ -369,25 +369,25 @@ describe("routing identities", () => {
   });
 
   test("resolveRoutingIdentity derives the cadet upstream from the model", () => {
-    expect(resolveRoutingIdentity("vellum", "claude-opus-4-8")).toEqual({
-      connectionName: "vellum",
+    expect(resolveRoutingIdentity("cadet", "claude-opus-4-8")).toEqual({
+      connectionName: "cadet",
       expectedProvider: "anthropic",
     });
     expect(
-      resolveRoutingIdentity("vellum", "accounts/fireworks/models/glm-5p3"),
-    ).toEqual({ connectionName: "vellum", expectedProvider: "fireworks" });
-    expect(resolveRoutingIdentity("vellum", "qwen/qwen3-8b")).toEqual({
-      connectionName: "vellum",
-      expectedProvider: "vellum",
+      resolveRoutingIdentity("cadet", "accounts/fireworks/models/glm-5p3"),
+    ).toEqual({ connectionName: "cadet", expectedProvider: "fireworks" });
+    expect(resolveRoutingIdentity("cadet", "qwen/qwen3-8b")).toEqual({
+      connectionName: "cadet",
+      expectedProvider: "cadet",
     });
   });
 
   test("resolveRoutingIdentity throws loudly for an unroutable cadet model", () => {
-    expect(() => resolveRoutingIdentity("vellum", "not-a-real-model")).toThrow(
+    expect(() => resolveRoutingIdentity("cadet", "not-a-real-model")).toThrow(
       ConnectionResolutionError,
     );
     try {
-      resolveRoutingIdentity("vellum", "not-a-real-model");
+      resolveRoutingIdentity("cadet", "not-a-real-model");
     } catch (err) {
       expect((err as ConnectionResolutionError).reason).toBe(
         "unroutable_managed_model",
@@ -421,17 +421,17 @@ describe("routing identities", () => {
   });
 
   test("cadet identity resolves through the canonical row with the derived upstream override", async () => {
-    fakeConnections.set("vellum", {
-      name: "vellum",
-      provider: "vellum",
+    fakeConnections.set("cadet", {
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:vellum", { name: "anthropic", tag: "managed" });
+    fakeProviders.set("conn:cadet", { name: "anthropic", tag: "managed" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
       { llm: {} } as never,
-      "vellum",
+      "cadet",
       "claude-opus-4-8",
     );
 
@@ -439,38 +439,38 @@ describe("routing identities", () => {
       name: "anthropic",
       tag: "managed",
       routeAttribution: {
-        connectionName: "vellum",
+        connectionName: "cadet",
         isManagedRoute: true,
       },
     } as never);
-    expect(resolveProviderCalls[0]?.name).toBe("vellum");
+    expect(resolveProviderCalls[0]?.name).toBe("cadet");
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
 
   test("cadet identity + GPU model threads cadet as the upstream override", async () => {
-    fakeConnections.set("vellum", {
-      name: "vellum",
-      provider: "vellum",
+    fakeConnections.set("cadet", {
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
-    fakeProviders.set("conn:vellum", { name: "vellum", tag: "gpu" });
+    fakeProviders.set("conn:cadet", { name: "cadet", tag: "gpu" });
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
       { llm: {} } as never,
-      "vellum",
+      "cadet",
       "qwen/qwen3-8b",
     );
 
     expect(provider).toEqual({
-      name: "vellum",
+      name: "cadet",
       tag: "gpu",
       routeAttribution: {
-        connectionName: "vellum",
+        connectionName: "cadet",
         isManagedRoute: true,
       },
     } as never);
-    expect(resolveProviderOpts[0]?.providerOverride).toBe("vellum");
+    expect(resolveProviderOpts[0]?.providerOverride).toBe("cadet");
   });
 
   test("chatgpt identity resolves the subscription row by name with an openai override", async () => {
@@ -541,12 +541,12 @@ describe("routing identities", () => {
   });
 
   // A second managed row is creatable under any non-reserved name: only the
-  // canonical name is refused at the create route, and `provider: "vellum"`
+  // canonical name is refused at the create route, and `provider: "cadet"`
   // derives platform auth. Managed-ness is the row, never its name.
   test("a managed row under a non-canonical name carries managed route attribution", async () => {
     fakeConnections.set("managed-openai", {
       name: "managed-openai",
-      provider: "vellum",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     fakeProviders.set("conn:managed-openai", {
@@ -625,9 +625,9 @@ describe("entry-name providers", () => {
     expect(resolveProviderOpts[0]?.providerOverride).toBeUndefined();
   });
 
-  test("a vellum-kind entry derives its upstream from the model", async () => {
+  test("a cadet-kind entry derives its upstream from the model", async () => {
     registerConnection(
-      { name: "work-managed", provider: "vellum", auth: { type: "platform" } },
+      { name: "work-managed", provider: "cadet", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-stub" },
     );
     setLlmConfig({
@@ -722,7 +722,7 @@ describe("entry-name providers", () => {
     // together, restoring the pre-open-schema self-healing. The anchor is
     // the managed default, so the heal lands on the cadet route.
     registerConnection(
-      { name: "vellum", provider: "vellum", auth: { type: "platform" } },
+      { name: "cadet", provider: "cadet", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-anchor" },
     );
     setLlmConfig({
@@ -736,7 +736,7 @@ describe("entry-name providers", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(resolveProviderCalls[0]?.name).toBe("vellum");
+    expect(resolveProviderCalls[0]?.name).toBe("cadet");
   });
 
   test("healing hands off to the anchor, whose own failures stay loud", async () => {
@@ -751,6 +751,6 @@ describe("entry-name providers", () => {
 
     await expect(
       getConfiguredProvider("mainAgent", { overrideProfile: "ghost" }),
-    ).rejects.toMatchObject({ reason: "not_found", connectionName: "vellum" });
+    ).rejects.toMatchObject({ reason: "not_found", connectionName: "cadet" });
   });
 });

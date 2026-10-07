@@ -19,10 +19,10 @@ import {
   QUICK_INPUT_DISMISS,
   QUICK_INPUT_SUBMIT,
   type DictationOverlayState,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-const module: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
+const module: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
   id: "auxiliary-windows",
   install: (registry) => {
     registry.contribute("quickInput", {

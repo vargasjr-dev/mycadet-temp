@@ -333,11 +333,11 @@ describe("AccessConsentSetting", () => {
     expiresAt = new Date(Date.now() + 3 * 60 * 60_000).toISOString();
     useResolvedAssistantsStore
       .getState()
-      .setActiveAssistantId("vellum-dark-cub");
+      .setActiveAssistantId("cadet-dark-cub");
     renderSetting();
 
     await screen.findByText("Staff access ends in 3 hours.");
-    expect(resolvedFor).toContain("vellum-dark-cub");
+    expect(resolvedFor).toContain("cadet-dark-cub");
     expect(getCalls[0]?.path?.id).toBe(ASSISTANT_ID);
     expect(screen.getByTestId("debug-bundle-export").textContent).toBe(
       ASSISTANT_ID,

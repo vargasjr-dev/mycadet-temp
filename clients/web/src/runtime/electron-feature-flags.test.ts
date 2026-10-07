@@ -43,13 +43,13 @@ const { useElectronFeatureFlagBridge } =
 afterEach(() => {
   cleanup();
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("useElectronFeatureFlagBridge", () => {
   test("no-ops off Electron", () => {
     const set = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { featureFlags: { set } };
+    (window as { cadet?: unknown }).cadet = { featureFlags: { set } };
 
     renderHook(() => useElectronFeatureFlagBridge());
 
@@ -59,7 +59,7 @@ describe("useElectronFeatureFlagBridge", () => {
   test("publishes the flag map over the bridge on Electron", () => {
     runningInElectron = true;
     const set = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { featureFlags: { set } };
+    (window as { cadet?: unknown }).cadet = { featureFlags: { set } };
 
     renderHook(() => useElectronFeatureFlagBridge());
 
@@ -71,7 +71,7 @@ describe("useElectronFeatureFlagBridge", () => {
   // The mount-time sync must no-op rather than throw before first render.
   test("no-ops when the older preload lacks the featureFlags channel", () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(() =>
       renderHook(() => useElectronFeatureFlagBridge()),

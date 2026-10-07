@@ -43,7 +43,7 @@ async function readPlatformCredential(
   field: "platform_base_url" | "assistant_api_key",
   envName: string,
 ): Promise<{ value: string; unreachable: boolean }> {
-  const stored = await readCredentialResult(credentialKey("vellum", field));
+  const stored = await readCredentialResult(credentialKey("cadet", field));
   const value = stored.value?.trim() || process.env[envName]?.trim() || "";
   return { value, unreachable: !value && stored.unreachable };
 }

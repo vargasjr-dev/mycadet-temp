@@ -63,7 +63,7 @@ features. Dependency-free Electron helpers remain in `@mycadet/electron-utils`.
   `ci-main-windows.yaml`.
 - **Linux workflow filenames** - `clients/linux/` uses `pr-linux.yaml` /
   `ci-main-linux.yaml`.
-- **Desktop parity** - the Electron shells expose the same `VellumBridge`
+- **Desktop parity** - the Electron shells expose the same `CadetBridge`
   contract from `packages/ipc-contract`; `clients/windows/docs/parity-matrix.md`
   maps each capability to its Windows module, macOS counterpart, and test, and
   names the macOS concepts with no Windows equivalent.

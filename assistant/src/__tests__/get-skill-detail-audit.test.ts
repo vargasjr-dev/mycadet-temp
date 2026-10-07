@@ -345,10 +345,10 @@ describe("getSkill — skillssh audit enrichment", () => {
     }
 
     const detail = result.skill;
-    expect(detail.origin).toBe("vellum");
+    expect(detail.origin).toBe("cadet");
     expect(detail.id).toBe("caveman");
     // AND the owner identifies the plugin so detail consumers can attribute it
-    if (detail.origin === "vellum") {
+    if (detail.origin === "cadet") {
       expect(detail.owner).toEqual({ kind: "plugin", id: "caveman" });
     }
   });

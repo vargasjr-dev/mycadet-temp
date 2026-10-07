@@ -25,7 +25,7 @@ import type { createIpcRegistrar } from "./ipc";
  *     `whenReady` misses the launching file — same pitfall as deep links.
  * Buffering: file paths arriving before the renderer subscribes are
  * queued in `pending[]`. The renderer drains via
- * `window.vellum.fileOpen.drain()` once mounted. Live file-open events
+ * `window.cadet.fileOpen.drain()` once mounted. Live file-open events
  * arriving after drain are broadcast to subscribers; unsubscribed
  * windows still receive broadcasts (same model as deep links).
  */

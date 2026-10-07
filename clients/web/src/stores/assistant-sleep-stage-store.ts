@@ -20,7 +20,7 @@ import { createSelectors } from "@/utils/create-selectors";
  *   session-scoped like the low-balance banner's; the stage resets it as soon
  *   as the assistant is neither sleeping nor waking.
  *
- * - `forcedScene`: a dev override (`_vellumDebug.flags.forceSleepStage(...)`)
+ * - `forcedScene`: a dev override (`_cadetDebug.flags.forceSleepStage(...)`)
  *   that pins the stage to one scene so the animation can be watched without
  *   an assistant that will actually go to sleep. Null in every normal session.
  *

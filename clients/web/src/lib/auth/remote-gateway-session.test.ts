@@ -25,7 +25,7 @@ function setLocation(path: string): void {
 
 afterEach(() => {
   globalThis.fetch = realFetch;
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   clearGatewayToken();
   setSelfHostedConnection(null);
   localStorage.clear();
@@ -201,7 +201,7 @@ describe("remote gateway token exchange", () => {
   });
 
   test("stores approved access tokens in memory and primes self-hosted routing", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     setLocation("/assistant-123/assistant/pair");
 
     activateRemoteGatewaySession({
@@ -219,7 +219,7 @@ describe("remote gateway token exchange", () => {
   });
 
   test("does not rotate the refresh cookie before refreshAfter", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     setLocation("/assistant-123/assistant/conversations/self");
     globalThis.fetch = mock(async () =>
       Response.json({}),
@@ -238,7 +238,7 @@ describe("remote gateway token exchange", () => {
   });
 
   test("refreshes from the HttpOnly cookie endpoint", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     setLocation("/assistant-123/assistant/conversations/self");
     const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
     globalThis.fetch = mock(async (input, init) => {
@@ -261,7 +261,7 @@ describe("remote gateway token exchange", () => {
   });
 
   test("shares concurrent same-tab refresh attempts", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     setLocation("/assistant-123/assistant/conversations/self");
     let releaseRefresh!: () => void;
     const refreshGate = new Promise<void>((resolve) => {

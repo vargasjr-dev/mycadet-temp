@@ -94,7 +94,7 @@ export function registerSkillsCommand(program: Command): void {
             if (s.owner) {
               return `${s.owner.kind}:${s.owner.id}`;
             }
-            if (s.origin === "vellum" && s.kind === "bundled") {
+            if (s.origin === "cadet" && s.kind === "bundled") {
               return "bundled";
             }
             return s.origin;
@@ -265,7 +265,7 @@ export function registerSkillsCommand(program: Command): void {
             }>;
           }>("listSkills", { queryParams: { include: "catalog", q: query } });
           const vellumSkills = catalogR.ok
-            ? catalogR.result!.skills.filter((s) => s.origin === "vellum")
+            ? catalogR.result!.skills.filter((s) => s.origin === "cadet")
             : [];
 
           // Step 2: community (skills.sh with audits + clawhub) + local bundled/installed
@@ -290,7 +290,7 @@ export function registerSkillsCommand(program: Command): void {
             queryParams: { q: query, limit: String(limit) },
           });
           const communitySkills = communityR.ok
-            ? communityR.result!.skills.filter((s) => s.origin !== "vellum")
+            ? communityR.result!.skills.filter((s) => s.origin !== "cadet")
             : [];
 
           // Deduplicate by id — cadet wins

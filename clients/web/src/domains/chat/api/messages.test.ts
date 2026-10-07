@@ -232,7 +232,7 @@ describe("queued message request context", () => {
 
     expect(capturedDeleteOptions?.query).toEqual({ conversationId: "conv-1" });
     expect(capturedDeleteOptions?.headers).toEqual({
-      "X-Vellum-Conversation-Id": "conv-1",
+      "X-Cadet-Conversation-Id": "conv-1",
     });
   });
 
@@ -243,7 +243,7 @@ describe("queued message request context", () => {
 
     expect(capturedPostOptions?.query).toEqual({ conversationId: "conv-1" });
     expect(capturedPostOptions?.headers).toEqual({
-      "X-Vellum-Conversation-Id": "conv-1",
+      "X-Cadet-Conversation-Id": "conv-1",
     });
   });
 

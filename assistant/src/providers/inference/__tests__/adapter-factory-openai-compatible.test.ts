@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { memorySecureKeyBackend } from "../../../__tests__/helpers/secure-keys.js";
+import { setSecureKeyBackendForTesting } from "../../../security/secure-keys.js";
 import {
   EMPTY_ASSISTANT_TURN_PLACEHOLDER,
   OpenAIChatCompletionsProvider,
@@ -59,6 +61,10 @@ function retryOptions(adapter: unknown): RetryOptions {
 }
 
 describe("adapter factory", () => {
+  // Hermetic credential store: without this, the managed-proxy tests read
+  // whatever ambient backend the host has, and a stray assistant API key
+  // flips the refresh-declines expectations.
+  setSecureKeyBackendForTesting(memorySecureKeyBackend({}));
   test("buildProviderAdapter returns an OpenAIChatCompletionsProvider", () => {
     const adapter = buildProviderAdapter("openai-compatible", {
       apiKey: "test-key",
@@ -256,8 +262,8 @@ describe("adapter factory", () => {
 
   test("wires managed connections to reload rotated assistant credentials", () => {
     const connection: ProviderConnection = {
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
       label: "Cadet",
       baseUrl: null,
@@ -280,16 +286,16 @@ describe("adapter factory", () => {
     expect(adapter).not.toBeNull();
     const options = retryOptions(adapter);
     expect(options).toMatchObject({
-      credentialSource: "vellum-managed",
-      connectionName: "vellum",
+      credentialSource: "cadet-managed",
+      connectionName: "cadet",
     });
     expect(typeof options.refreshCredentialProvider).toBe("function");
   });
 
   test("credential refresh declines when it cannot re-read a changed key", async () => {
     const connection: ProviderConnection = {
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
       label: "Cadet",
       baseUrl: null,

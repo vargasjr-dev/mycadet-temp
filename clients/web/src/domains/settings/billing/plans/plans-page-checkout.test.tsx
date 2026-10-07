@@ -376,7 +376,7 @@ describe("PlansPage checkout — base subscriber", () => {
         package: pkg,
         confirm: true,
         // Off Electron the web return URL is kept — a browser can't open
-        // the `vellum://` bounce the native return relies on.
+        // the `cadet://` bounce the native return relies on.
         return_target: "web",
       });
       await waitFor(() => expect(openedUrl).toBe(CHECKOUT_URL));

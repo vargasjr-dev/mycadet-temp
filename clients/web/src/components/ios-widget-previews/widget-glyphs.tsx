@@ -1,7 +1,7 @@
 /**
  * Stand-ins for the SF Symbols and the brand mark the widgets draw.
  *
- * The real cards use `Image(systemName:)` and the `VellumV` asset, neither of
+ * The real cards use `Image(systemName:)` and the `CadetV` asset, neither of
  * which exists in a browser. These are hand-drawn approximations at the same
  * nominal point size, close enough to judge layout and weight by and not close
  * enough to judge the symbols themselves; see the fidelity note in the stories.

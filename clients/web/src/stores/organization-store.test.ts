@@ -1,5 +1,5 @@
 /**
- * The organization behind `Vellum-Organization-Id` lives in the store, so the
+ * The organization behind `Cadet-Organization-Id` lives in the store, so the
  * store and sessionStorage never disagree about which organization a request
  * is scoped to.
  */
@@ -20,7 +20,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
 const { getActiveOrganizationIdForRequests, useOrganizationStore } =
   await import("./organization-store");
 
-const STORAGE_KEY = "vellum_active_organization_id";
+const STORAGE_KEY = "cadet_active_organization_id";
 const ORG_A: OrganizationRead = { id: "org-a", name: "Org A" };
 const ORG_B: OrganizationRead = { id: "org-b", name: "Org B" };
 
@@ -142,7 +142,7 @@ describe("fetch outcome classification", () => {
       .fetchOrganizations(() => false);
 
     // The stale fetch resolved an older session's org; committing it would
-    // stamp requests with the wrong Vellum-Organization-Id.
+    // stamp requests with the wrong Cadet-Organization-Id.
     expect(outcome).toEqual({ ok: true });
     const state = useOrganizationStore.getState();
     expect(state.currentOrganizationId).toBeNull();

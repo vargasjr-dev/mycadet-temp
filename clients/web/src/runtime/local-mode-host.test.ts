@@ -33,14 +33,14 @@ const {
 const realFetch = globalThis.fetch;
 
 type WindowWithConfig = {
-  vellum?: unknown;
-  __VELLUM_CONFIG__?: { mode?: string };
+  cadet?: unknown;
+  __CADET_CONFIG__?: { mode?: string };
 };
 
 beforeEach(() => {
   // Injected config marks the web/dev branch as an available local-mode host,
   // so the HTTP transport runs rather than short-circuiting.
-  (window as WindowWithConfig).__VELLUM_CONFIG__ = {};
+  (window as WindowWithConfig).__CADET_CONFIG__ = {};
 });
 
 /** bun aliases `import.meta.env` to `process.env`, so this is the Vite dev flag. */
@@ -52,8 +52,8 @@ afterEach(() => {
   runningInElectron = false;
   delete process.env.DEV;
   globalThis.fetch = realFetch;
-  delete (window as { vellum?: unknown }).vellum;
-  delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+  delete (window as { cadet?: unknown }).cadet;
+  delete (window as WindowWithConfig).__CADET_CONFIG__;
 });
 
 describe("hatchLocalAssistant", () => {
@@ -101,8 +101,8 @@ describe("hatchLocalAssistant", () => {
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     (
-      window as unknown as { vellum: { localMode: { hatch: typeof hatch } } }
-    ).vellum = { localMode: { hatch } };
+      window as unknown as { cadet: { localMode: { hatch: typeof hatch } } }
+    ).cadet = { localMode: { hatch } };
 
     const result = await hatchLocalAssistant();
 
@@ -122,8 +122,8 @@ describe("hatchLocalAssistant", () => {
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     (
-      window as unknown as { vellum: { localMode: { hatch: typeof hatch } } }
-    ).vellum = { localMode: { hatch } };
+      window as unknown as { cadet: { localMode: { hatch: typeof hatch } } }
+    ).cadet = { localMode: { hatch } };
 
     const result = await hatchLocalAssistant("docker");
 
@@ -136,8 +136,8 @@ describe("hatchLocalAssistant", () => {
 const setElectronBridge = (localMode: Record<string, unknown>): void => {
   runningInElectron = true;
   (
-    window as unknown as { vellum: { localMode: Record<string, unknown> } }
-  ).vellum = { localMode };
+    window as unknown as { cadet: { localMode: Record<string, unknown> } }
+  ).cadet = { localMode };
 };
 
 describe("loadLockfileHost", () => {
@@ -920,7 +920,7 @@ describe("canReadAvatarFromLocalHost", () => {
 
   test("is false when no local-mode host is available", () => {
     onViteDevHost();
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     expect(canReadAvatarFromLocalHost()).toBe(false);
   });
 });
@@ -1009,22 +1009,22 @@ describe("requiresGuardianReprovision", () => {
 describe("isLocalModeHostAvailable", () => {
   test("true on the Electron host regardless of injected config", () => {
     runningInElectron = true;
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     expect(isLocalModeHostAvailable()).toBe(true);
   });
 
   test("true on a web/dev host that injects runtime config", () => {
-    (window as WindowWithConfig).__VELLUM_CONFIG__ = {};
+    (window as WindowWithConfig).__CADET_CONFIG__ = {};
     expect(isLocalModeHostAvailable()).toBe(true);
   });
 
   test("false on the managed static build (no injected config)", () => {
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 
   test("false in remote-gateway mode — the ingress 404s /assistant/__local/*", () => {
-    (window as WindowWithConfig).__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    (window as WindowWithConfig).__CADET_CONFIG__ = { mode: "remote-gateway" };
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 });
@@ -1047,7 +1047,7 @@ describe("web/dev transport resilience", () => {
   });
 
   test("wake short-circuits without a request when no local-mode host is available", async () => {
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     const fetchMock = mock(async () => {
       throw new Error("fetch must not run when the host is unavailable");
     });
@@ -1081,7 +1081,7 @@ describe("web/dev transport resilience", () => {
   });
 
   test("avatar short-circuits without a request when no local-mode host is available", async () => {
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     const fetchMock = mock(async () => {
       throw new Error("fetch must not run when the host is unavailable");
     });
@@ -1093,7 +1093,7 @@ describe("web/dev transport resilience", () => {
   });
 
   test("status short-circuits without a request when no local-mode host is available", async () => {
-    delete (window as WindowWithConfig).__VELLUM_CONFIG__;
+    delete (window as WindowWithConfig).__CADET_CONFIG__;
     const fetchMock = mock(async () => {
       throw new Error("fetch must not run when the host is unavailable");
     });

@@ -24,7 +24,7 @@ function renderPicker(
       onOpenChange={(open) => openChanges.push(open)}
       title="Listening language"
       currentCode="multi"
-      configuredProviderId="vellum"
+      configuredProviderId="cadet"
       selectLanguage={(code) => picks.push(code)}
       selecting={false}
       {...props}

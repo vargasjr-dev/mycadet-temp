@@ -99,7 +99,7 @@ export async function applyPersonality({
     const body = buildSideConversationMessageBody({
       conversationId,
       content: buildPersonalityMessage(values, userName, assistantName),
-      transport: "vellum",
+      transport: "cadet",
     });
     const posted = await messagesPost({
       path: { assistant_id: assistantId },

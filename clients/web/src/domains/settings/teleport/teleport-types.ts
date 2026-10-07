@@ -55,8 +55,8 @@ export class TeleportError extends Error {
 const LOCAL_CLOUD = "local";
 const DOCKER_CLOUD = "docker";
 // `cloud` is the canonical managed spelling, `cadet` the brand spelling, and
-// `vellum` the legacy lockfile value; all three classify as managed.
-const MANAGED_CLOUDS = ["cloud", "cadet", "vellum"];
+// `cadet` the legacy lockfile value; all three classify as managed.
+const MANAGED_CLOUDS = ["cloud", "cadet", "cadet"];
 
 /** Classify an assistant's hosting from its lockfile `cloud` string. */
 export function classifyHosting(cloud: string | undefined): AssistantHosting {

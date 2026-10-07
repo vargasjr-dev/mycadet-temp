@@ -271,7 +271,7 @@ const CHAT_INFO_QUERY_DEFAULTS = {
 } as const;
 
 /**
- * Holds the `Vellum-Organization-Id` header unresolved: a platform session with
+ * Holds the `Cadet-Organization-Id` header unresolved: a platform session with
  * no organization id yet. That is the gate the panel's two daemon queries wait
  * on, so a source a caller leaves unseeded stays unresolved with nothing
  * requested. Returns the restore fn.

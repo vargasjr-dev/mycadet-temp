@@ -1,7 +1,7 @@
 import type { DisplayAttachment } from "@/types/attachment-types";
 
 // Single attachment summary line emitted by the runtime daemon when echoing
-// history (see vellum-assistant `daemon/handlers/shared.ts`
+// history (see cadet-assistant `daemon/handlers/shared.ts`
 // `renderFileBlockForHistory`):
 //
 //     [File attachment] <filename>, type=<mime>[, size=<human-readable>]

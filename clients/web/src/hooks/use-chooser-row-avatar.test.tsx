@@ -747,7 +747,7 @@ describe("useChooserRowAvatar", () => {
 
     test("a lockfile-managed platform row resolves through the lookup", async () => {
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { cloud: "vellum" })),
+        () => useChooserRowAvatar(platformRow("other", { cloud: "cadet" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -761,7 +761,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", { cloud: "vellum", avatarUrl: SYNCED }),
+            platformRow("other", { cloud: "cadet", avatarUrl: SYNCED }),
           ),
         { wrapper: createWrapper() },
       );
@@ -778,7 +778,7 @@ describe("useChooserRowAvatar", () => {
       async (_l, arrange) => {
         arrange();
         const { result } = renderHook(
-          () => useChooserRowAvatar(platformRow("other", { cloud: "vellum" })),
+          () => useChooserRowAvatar(platformRow("other", { cloud: "cadet" })),
           { wrapper: createWrapper() },
         );
         await settle();

@@ -8,7 +8,7 @@
  *
  * Three host paths:
  *
- *   1. **Electron** — routes through `window.vellum.notifications.show()`
+ *   1. **Electron** — routes through `window.cadet.notifications.show()`
  *      which IPC-invokes `electron.Notification` in the main process.
  *      Supports macOS action buttons (View, Approve/Reject, Open) that
  *      the Web Notification API cannot provide.
@@ -184,7 +184,7 @@ export function isNotificationsSupported(): boolean {
     return false;
   }
   if (isElectron()) {
-    return !!window.vellum?.notifications;
+    return !!window.cadet?.notifications;
   }
   if (isNativePlatform()) {
     return true;
@@ -389,9 +389,9 @@ async function registerTapListeners(): Promise<void> {
   // Converts the richer `NotificationActionEvent` into the common
   // `NotificationTapPayload` so the same `tapHandler` is invoked
   // regardless of platform. The listener is permanent (app lifetime).
-  if (isElectron() && window.vellum?.notifications) {
+  if (isElectron() && window.cadet?.notifications) {
     try {
-      await window.vellum.notifications.onAction((event) => {
+      await window.cadet.notifications.onAction((event) => {
         dispatchNotificationTap({
           conversationId: event.conversationId,
           sourceEventName: `electron:${event.category}:${event.kind}`,
@@ -518,7 +518,7 @@ function nativeDeliveryFailure(
  *
  * Daemon-side notification emitters set `deepLinkMetadata.conversationId`
  * explicitly in `broadcaster.ts` (the only production construction site
- * for vellum-channel deep links). The web client receives notifications
+ * for cadet-channel deep links). The web client receives notifications
  * only on the cadet channel, so `conversationId` is always present in
  * `deepLinkMetadata` for any notification that reaches this code path.
  */
@@ -790,11 +790,11 @@ export async function postLocalNotification(
   // `electron.Notification` (supports macOS action buttons). Permission
   // is handled by the main process — we skip the renderer permission
   // dance entirely.
-  if (electronHost && window.vellum?.notifications) {
+  if (electronHost && window.cadet?.notifications) {
     let success = true;
     let errorMessage: string | undefined;
     try {
-      const result = await window.vellum.notifications.show({
+      const result = await window.cadet.notifications.show({
         category: "notificationIntent",
         title: args.title,
         body: args.body,

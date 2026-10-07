@@ -25,7 +25,7 @@ let mockRelayConnection: {
 } | null = null;
 
 mock.module(
-  "../../providers/speech-to-text/vellum-speech-relay-connection.js",
+  "../../providers/speech-to-text/cadet-speech-relay-connection.js",
   () => ({
     resolveSpeechRelayConnection: async () => mockRelayConnection,
     mapTunnelError: (e: { code: string }) => ({
@@ -40,8 +40,8 @@ let mockProbeRejection: { code: string; detail?: string } | null = null;
 let socketCalls: Array<{ url: string; text: string }> = [];
 let mockSocketResult: () => Promise<Buffer> = async () => Buffer.from("pcm");
 
-mock.module("../providers/vellum-tts-socket.js", () => ({
-  synthesizeOverVellumTtsSocket: async (opts: {
+mock.module("../providers/cadet-tts-socket.js", () => ({
+  synthesizeOverCadetTtsSocket: async (opts: {
     url: string;
     text: string;
     onChunk?: (c: Uint8Array) => void;
@@ -55,8 +55,8 @@ mock.module("../providers/vellum-tts-socket.js", () => ({
 
 import {
   cadetTtsProviderDefinition,
-  createVellumProvider,
-} from "../providers/vellum-provider.js";
+  createCadetProvider,
+} from "../providers/cadet-provider.js";
 import type { TtsSynthesisRequest } from "../types.js";
 
 const MP3_BYTES = Buffer.from([0x49, 0x44, 0x33]);
@@ -89,7 +89,7 @@ describe("cadet TTS adapter", () => {
   });
 
   test("message playback synthesizes mp3 and round-trips audio", async () => {
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     const result = await provider.synthesize(request());
 
     expect(synthesizeCalls).toEqual([{ text: "hello", format: "mp3" }]);
@@ -98,7 +98,7 @@ describe("cadet TTS adapter", () => {
   });
 
   test("PCM hint maps to the platform's fixed 16 kHz PCM format", async () => {
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     await provider.synthesize(request({ outputFormat: "pcm" }));
 
     expect(synthesizeCalls[0].format).toBe("pcm_16000");
@@ -111,7 +111,7 @@ describe("cadet TTS adapter", () => {
 
   test("forwards the abort signal to the platform call", async () => {
     const controller = new AbortController();
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     await provider.synthesize(request({ signal: controller.signal }));
 
     expect(synthesizeCalls[0].signal).toBe(controller.signal);
@@ -125,7 +125,7 @@ describe("cadet TTS adapter", () => {
       code: "insufficient_balance",
       message: "balance",
     };
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(
       /Cadet credits/,
     );
@@ -137,7 +137,7 @@ describe("cadet TTS adapter", () => {
       kind: "unavailable",
       message: "No Cadet platform connection.",
     };
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(
       /platform connect/,
     );
@@ -162,7 +162,7 @@ describe("cadet TTS streaming", () => {
   });
 
   test("PCM streaming dials the gateway relay with token and audio params", async () => {
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     const chunks: Uint8Array[] = [];
 
     const result = await provider.synthesizeStream!(
@@ -187,7 +187,7 @@ describe("cadet TTS streaming", () => {
   });
 
   test("non-PCM streaming delegates to the batch path with one chunk", async () => {
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
     const chunks: Uint8Array[] = [];
 
     const result = await provider.synthesizeStream!(request(), (c) =>
@@ -205,7 +205,7 @@ describe("cadet TTS streaming", () => {
       throw new Error("socket closed before Flushed");
     };
     mockProbeRejection = { code: "insufficient_balance" };
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
 
     await expect(
       provider.synthesizeStream!(request({ outputFormat: "pcm" }), () => {}),
@@ -214,7 +214,7 @@ describe("cadet TTS streaming", () => {
 
   test("no relay connection throws a connect-your-account message", async () => {
     mockRelayConnection = null;
-    const provider = createVellumProvider();
+    const provider = createCadetProvider();
 
     await expect(
       provider.synthesizeStream!(request({ outputFormat: "pcm" }), () => {}),
@@ -222,7 +222,7 @@ describe("cadet TTS streaming", () => {
   });
 
   test("streaming capability is advertised", () => {
-    expect(createVellumProvider().capabilities.supportsStreaming).toBe(true);
+    expect(createCadetProvider().capabilities.supportsStreaming).toBe(true);
   });
 });
 
@@ -244,7 +244,7 @@ describe("cadet TTS definition", () => {
   test("requires only the platform connection credential", () => {
     expect(cadetTtsProviderDefinition.secretRequirements).toEqual([
       {
-        credentialStoreKey: "credential/vellum/assistant_api_key",
+        credentialStoreKey: "credential/cadet/assistant_api_key",
         displayName: "Cadet account connection",
         setCommand: "assistant platform connect",
       },

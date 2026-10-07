@@ -3,7 +3,7 @@
  *
  * The connection owner (`sse-service`) registers a handler while a
  * connection is attached; the dev-facing events debug API
- * (`window._vellumDebug.events.reconnectClient`) invokes it to force a
+ * (`window._cadetDebug.events.reconnectClient`) invokes it to force a
  * disconnect-and-reconnect cycle so QA can exercise the reconnection and
  * post-reconnect catch-up path on demand.
  *

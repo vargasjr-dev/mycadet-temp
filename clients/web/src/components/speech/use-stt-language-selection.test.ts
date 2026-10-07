@@ -132,7 +132,7 @@ describe("useSttLanguageSelection", () => {
   });
 
   test("available for a manually language-selectable provider", () => {
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     providerCatalogData = {
       providers: [
         { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
@@ -159,7 +159,7 @@ describe("useSttLanguageSelection", () => {
     };
 
     const { result } = renderSelection();
-    expect(result.current.configuredProviderId).toBe("vellum");
+    expect(result.current.configuredProviderId).toBe("cadet");
     expect(result.current.available).toBe(true);
   });
 
@@ -181,7 +181,7 @@ describe("useSttLanguageSelection", () => {
   });
 
   test("a pick issues one services.stt.language PATCH", async () => {
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     providerCatalogData = {
       providers: [
         { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
@@ -201,7 +201,7 @@ describe("useSttLanguageSelection", () => {
   });
 
   test("two rapid picks serialize in call order", async () => {
-    daemonConfigData = { services: { stt: { provider: "vellum" } } };
+    daemonConfigData = { services: { stt: { provider: "cadet" } } };
     providerCatalogData = {
       providers: [
         { id: "cadet", displayName: "Cadet", languageSelection: "manual" },
@@ -236,7 +236,7 @@ describe("useSttLanguageSelection", () => {
     // Multilingual is a row you select, not a default you fall back to, so
     // the code round-trips rather than collapsing into a sentinel.
     daemonConfigData = {
-      services: { stt: { provider: "vellum", language: "en" } },
+      services: { stt: { provider: "cadet", language: "en" } },
     };
     providerCatalogData = {
       providers: [
@@ -248,7 +248,7 @@ describe("useSttLanguageSelection", () => {
     expect(result.current.currentCode).toBe("en");
 
     daemonConfigData = {
-      services: { stt: { provider: "vellum", language: "multi" } },
+      services: { stt: { provider: "cadet", language: "multi" } },
     };
     act(() => result.current.selectLanguage("multi"));
 

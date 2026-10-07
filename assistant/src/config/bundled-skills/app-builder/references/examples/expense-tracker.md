@@ -10,7 +10,7 @@ of records fetched from a custom route.
   validation of the numeric `amount`.
 - Deriving totals and category groupings in the component from the fetched records, so the
   server stays a thin persistence layer.
-- The same `window.vellum.fetch` + `res.ok` + re-read-after-write discipline as the
+- The same `window.cadet.fetch` + `res.ok` + re-read-after-write discipline as the
   [Habit Tracker](./habit-tracker.md) example.
 
 ## File tree
@@ -161,7 +161,7 @@ export function ExpenseTracker() {
 
   const loadExpenses = useCallback(async () => {
     try {
-      const res = await window.vellum.fetch("/v1/x/expenses");
+      const res = await window.cadet.fetch("/v1/x/expenses");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const records = (await res.json()) as Expense[];
       records.sort(
@@ -185,7 +185,7 @@ export function ExpenseTracker() {
     const value = parseFloat(amount);
     if (!value || value <= 0) return;
     try {
-      const res = await window.vellum.fetch("/v1/x/expenses", {
+      const res = await window.cadet.fetch("/v1/x/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: value, category, description, date }),
@@ -202,7 +202,7 @@ export function ExpenseTracker() {
 
   const deleteExpense = async (id: string) => {
     try {
-      const res = await window.vellum.fetch(`/v1/x/expenses?id=${id}`, {
+      const res = await window.cadet.fetch(`/v1/x/expenses?id=${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

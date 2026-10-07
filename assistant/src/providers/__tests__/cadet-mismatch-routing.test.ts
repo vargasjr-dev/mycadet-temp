@@ -26,7 +26,7 @@ mock.module("../inference/connections.js", () => ({
     fakeConnections.get(name) ?? null,
   listConnections: (_db: unknown, _filter?: { provider?: string }) =>
     listResult,
-  canonicalVellumConnection: () => ({ ...vellumConn }),
+  canonicalCadetConnection: () => ({ ...cadetConn }),
 }));
 
 const resolveCalls: Array<{
@@ -61,9 +61,9 @@ import {
 import type { ProvidersConfig } from "../registry.js";
 
 const config = {} as unknown as ProvidersConfig;
-const vellumConn: Connection = {
-  name: "vellum",
-  provider: "vellum",
+const cadetConn: Connection = {
+  name: "cadet",
+  provider: "cadet",
   auth: { type: "platform" },
 };
 
@@ -78,30 +78,30 @@ describe("cadet connection mismatch handling", () => {
   beforeEach(reset);
 
   test("managed-routable provider routes with providerOverride", async () => {
-    fakeConnections.set("vellum", vellumConn);
+    fakeConnections.set("cadet", cadetConn);
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
       "fireworks",
       "accounts/fireworks/models/kimi-k2p5",
     );
     expect(provider).not.toBeNull();
     expect(provider?.routeAttribution).toEqual({
-      connectionName: "vellum",
+      connectionName: "cadet",
       isManagedRoute: true,
     });
     expect(resolveCalls).toHaveLength(1);
-    expect(resolveCalls[0].connection.name).toBe("vellum");
+    expect(resolveCalls[0].connection.name).toBe("cadet");
     expect(resolveCalls[0].opts.providerOverride).toBe("fireworks");
   });
 
   test("non-managed provider with no recovery throws provider_mismatch", async () => {
-    fakeConnections.set("vellum", vellumConn);
+    fakeConnections.set("cadet", cadetConn);
     listResult = []; // no openrouter connection to recover to
     let caught: unknown;
     try {
       await tryResolveProviderForConnectionName(
-        "vellum",
+        "cadet",
         config,
         "openrouter",
         "anthropic/claude-fable-5",
@@ -118,7 +118,7 @@ describe("cadet connection mismatch handling", () => {
   });
 
   test("non-managed provider auto-recovers to a real connection (no override)", async () => {
-    fakeConnections.set("vellum", vellumConn);
+    fakeConnections.set("cadet", cadetConn);
     listResult = [
       {
         name: "openrouter-personal",
@@ -127,7 +127,7 @@ describe("cadet connection mismatch handling", () => {
       },
     ];
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
       "openrouter",
       "anthropic/claude-fable-5",
@@ -153,7 +153,7 @@ describe("user-owned connection claiming the cadet name", () => {
   beforeEach(reset);
 
   const userOwnedOpenai: Connection = {
-    name: "vellum",
+    name: "cadet",
     provider: "openai",
     auth: { type: "api_key", credential: "credential/openai/api_key" },
   };
@@ -161,11 +161,11 @@ describe("user-owned connection claiming the cadet name", () => {
   test("routes through platform auth, not the claiming row", async () => {
     // The row's provider equals the model's upstream, so plain provider
     // equality would have accepted it and billed the user's own key.
-    fakeConnections.set("vellum", userOwnedOpenai);
+    fakeConnections.set("cadet", userOwnedOpenai);
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
-      "vellum",
+      "cadet",
       "gpt-5.6-luna",
     );
     expect(provider).not.toBeNull();
@@ -175,8 +175,8 @@ describe("user-owned connection claiming the cadet name", () => {
   });
 
   test("does not reroute onto another BYOK row for the upstream", async () => {
-    fakeConnections.set("vellum", {
-      name: "vellum",
+    fakeConnections.set("cadet", {
+      name: "cadet",
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
@@ -188,9 +188,9 @@ describe("user-owned connection claiming the cadet name", () => {
       },
     ];
     await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
-      "vellum",
+      "cadet",
       "gpt-5.6-luna",
     );
     expect(resolveCalls).toHaveLength(1);
@@ -198,12 +198,12 @@ describe("user-owned connection claiming the cadet name", () => {
   });
 
   test("an unavailable platform is a soft miss, not a fall-through", async () => {
-    fakeConnections.set("vellum", userOwnedOpenai);
+    fakeConnections.set("cadet", userOwnedOpenai);
     resolveResult = null; // not signed in to the platform
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
-      "vellum",
+      "cadet",
       "gpt-5.6-luna",
     );
     expect(provider).toBeNull();
@@ -216,9 +216,9 @@ describe("user-owned connection claiming the cadet name", () => {
     // concrete upstream over a managed profile: provider is the upstream, the
     // managed connection survives. The legacy config of the same shape (a BYOK
     // profile pointing at a row named `cadet`) resolves the same way.
-    fakeConnections.set("vellum", userOwnedOpenai);
+    fakeConnections.set("cadet", userOwnedOpenai);
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
       "openai",
       "gpt-5.6-luna",
@@ -230,11 +230,11 @@ describe("user-owned connection claiming the cadet name", () => {
   });
 
   test("the canonical row still routes", async () => {
-    fakeConnections.set("vellum", vellumConn);
+    fakeConnections.set("cadet", cadetConn);
     const provider = await tryResolveProviderForConnectionName(
-      "vellum",
+      "cadet",
       config,
-      "vellum",
+      "cadet",
       "gpt-5.6-luna",
     );
     expect(provider).not.toBeNull();

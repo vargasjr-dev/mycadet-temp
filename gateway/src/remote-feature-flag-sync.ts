@@ -340,8 +340,8 @@ export class RemoteFeatureFlagSync {
     let assistantApiKeyRaw: string | undefined;
     try {
       [platformUrlRaw, assistantApiKeyRaw] = await Promise.all([
-        this.credentials.get(credentialKey("vellum", "platform_base_url")),
-        this.credentials.get(credentialKey("vellum", "assistant_api_key")),
+        this.credentials.get(credentialKey("cadet", "platform_base_url")),
+        this.credentials.get(credentialKey("cadet", "assistant_api_key")),
       ]);
     } catch (err) {
       log.warn({ err }, "Failed to read credentials — will retry on next poll");

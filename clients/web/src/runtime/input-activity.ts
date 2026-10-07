@@ -6,7 +6,7 @@ import { isElectron } from "@/runtime/is-electron";
  * is refused, which callers read as "no evidence either way".
  */
 export async function setInputActivityWatch(enable: boolean): Promise<boolean> {
-  const set = window.vellum?.helper?.input?.setActivityWatch;
+  const set = window.cadet?.helper?.input?.setActivityWatch;
   if (!isElectron() || typeof set !== "function") {
     return false;
   }
@@ -18,6 +18,6 @@ export async function setInputActivityWatch(enable: boolean): Promise<boolean> {
 }
 
 export function subscribeToInputActivity(callback: () => void): () => void {
-  const subscribe = window.vellum?.helper?.input?.onActivity;
+  const subscribe = window.cadet?.helper?.input?.onActivity;
   return subscribe ? subscribe(callback) : () => undefined;
 }

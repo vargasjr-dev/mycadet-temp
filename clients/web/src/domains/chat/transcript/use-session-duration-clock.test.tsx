@@ -70,7 +70,7 @@ test("starts suspended when an Electron window is already minimized", () => {
   let sendWindowAttention:
     | ((payload: WindowAttentionPayload) => void)
     | undefined;
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     notifications: {
       onWindowAttention: (
@@ -82,7 +82,7 @@ test("starts suspended when an Electron window is already minimized", () => {
         };
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
   const unsubscribeWindowAttention = subscribeToWindowAttention(
     () => undefined,
   );
@@ -108,7 +108,7 @@ test("starts suspended when an Electron window is already minimized", () => {
     expect(interval).toHaveBeenCalledTimes(1);
   } finally {
     unsubscribeWindowAttention();
-    delete window.vellum;
+    delete window.cadet;
   }
 });
 
@@ -118,7 +118,7 @@ test.each([true, false])(
     let sendWindowAttention:
       | ((payload: WindowAttentionPayload) => void)
       | undefined;
-    window.vellum = {
+    window.cadet = {
       platform: "electron",
       notifications: {
         onWindowAttention: (
@@ -130,7 +130,7 @@ test.each([true, false])(
           };
         },
       },
-    } as unknown as Window["vellum"];
+    } as unknown as Window["cadet"];
     let tick: (() => void) | undefined;
     const interval = spyOn(globalThis, "setInterval").mockImplementation(((
       callback: TimerHandler,
@@ -227,7 +227,7 @@ test.each([true, false])(
     } finally {
       stopWindowAttention();
       unsubscribeHidden();
-      delete window.vellum;
+      delete window.cadet;
     }
   },
 );

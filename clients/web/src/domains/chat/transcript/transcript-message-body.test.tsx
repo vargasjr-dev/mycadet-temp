@@ -147,18 +147,18 @@ mock.module("@/utils/open-workspace-file", () => ({
   openWorkspaceFile: openWorkspaceFileMock,
 }));
 
-// Captures the latest `onVellumLinkClick` handler so tests can drive the
-// vellum:// link download path directly through the mocked markdown renderer.
-let lastVellumLinkClick: ((href: string, linkText: string) => void) | undefined;
+// Captures the latest `onCadetLinkClick` handler so tests can drive the
+// cadet:// link download path directly through the mocked markdown renderer.
+let lastCadetLinkClick: ((href: string, linkText: string) => void) | undefined;
 mock.module("@/domains/chat/components/chat-markdown-message", () => ({
   ChatMarkdownMessage: ({
     content,
     hardLineBreaks,
-    onVellumLinkClick,
+    onCadetLinkClick,
     redactedCredentialChips,
     fileLinkLabels,
   }: ChatMarkdownMessageProps) => {
-    lastVellumLinkClick = onVellumLinkClick;
+    lastCadetLinkClick = onCadetLinkClick;
     return (
       <div
         data-testid="markdown"
@@ -174,7 +174,7 @@ mock.module("@/domains/chat/components/chat-markdown-message", () => ({
   },
 }));
 
-// `handleVellumLinkClick` resolves the clicked link to an attachment and hands
+// `handleCadetLinkClick` resolves the clicked link to an attachment and hands
 // it to `downloadAttachment`; stub it to record which attachment matched.
 // The stub mirrors the real helper's `previewUrl` fallback branch (the only
 // one reachable without an assistantId) so the mid-turn tool-result image
@@ -371,13 +371,13 @@ async function waitForComputerUseScreenshot(
 }
 
 /**
- * Drives a `vellum://` link click through the mocked markdown renderer. The
+ * Drives a `cadet://` link click through the mocked markdown renderer. The
  * click stages the file in component state (opening the action modal), so it
  * must run inside `act`.
  */
-function clickVellumLink(href: string, linkText: string) {
+function clickCadetLink(href: string, linkText: string) {
   act(() => {
-    lastVellumLinkClick?.(href, linkText);
+    lastCadetLinkClick?.(href, linkText);
   });
 }
 
@@ -3326,7 +3326,7 @@ describe("TranscriptMessageBody", () => {
 
     // Bare label + percent-encoded path: the daemon stored the DECODED
     // basename ("qa shot.png"), so the click must decode before matching.
-    clickVellumLink("vellum://workspace/scratch/qa%20shot.png", "desktop");
+    clickCadetLink("cadet://workspace/scratch/qa%20shot.png", "desktop");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
     expect(
@@ -3363,7 +3363,7 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    clickVellumLink("vellum://workspace/b/result.png", "second");
+    clickCadetLink("cadet://workspace/b/result.png", "second");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
     expect(
@@ -3403,8 +3403,8 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    clickVellumLink(
-      "vellum://workspace/qa-delete-desktop-dialog.png",
+    clickCadetLink(
+      "cadet://workspace/qa-delete-desktop-dialog.png",
       "desktop",
     );
     clickModalAction("Download file");
@@ -3428,8 +3428,8 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    clickVellumLink(
-      "vellum://workspace/skills/foo/weekly%20plan.md",
+    clickCadetLink(
+      "cadet://workspace/skills/foo/weekly%20plan.md",
       "weekly plan.md",
     );
     // Both actions are offered for a workspace file.
@@ -3460,7 +3460,7 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    clickVellumLink("vellum://host/Users/user1/doc.pdf", "doc.pdf");
+    clickCadetLink("cadet://host/Users/user1/doc.pdf", "doc.pdf");
     // Host files cannot open in the workspace browser.
     expect(screen.queryByRole("button", { name: "Go to file" })).toBeNull();
     expect(
@@ -3498,7 +3498,7 @@ describe("TranscriptMessageBody", () => {
     );
 
     // Link text still wins when it names the attachment.
-    clickVellumLink("vellum://workspace/out/final.pdf", "report.pdf");
+    clickCadetLink("cadet://workspace/out/final.pdf", "report.pdf");
     clickModalAction("Download file");
     expect(
       (downloadAttachmentMock.mock.calls[0] as unknown[])[0],
@@ -3506,7 +3506,7 @@ describe("TranscriptMessageBody", () => {
 
     // Malformed percent-encoding: decodeURIComponent throws, raw basename
     // fallback still finds the attachment.
-    clickVellumLink("vellum://workspace/qa%ZZshot.png", "shot");
+    clickCadetLink("cadet://workspace/qa%ZZshot.png", "shot");
     clickModalAction("Download file");
     expect(
       (downloadAttachmentMock.mock.calls[1] as unknown[])[0],
@@ -3894,7 +3894,7 @@ describe("TranscriptMessageBody: file link captions", () => {
             id: "m-file-link",
             role,
             contentBlocks: [
-              textBlock("[my chart](vellum://workspace/chart.png)"),
+              textBlock("[my chart](cadet://workspace/chart.png)"),
             ],
             timestamp: 1_000,
           }}

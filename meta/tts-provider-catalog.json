@@ -4,11 +4,11 @@
     {
       "id": "cadet",
       "displayName": "Cadet",
-      "subtitle": "Text-to-speech through your Cadet account \u2014 billed to Cadet credits, no separate API key needed.",
+      "subtitle": "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
       "setupMode": "cli",
       "setupHint": "Connect your Cadet account to enable managed speech.",
       "credentialMode": "credential",
-      "credentialNamespace": "vellum",
+      "credentialNamespace": "cadet",
       "supportsVoiceSelection": true,
       "credentialsGuide": {
         "description": "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",

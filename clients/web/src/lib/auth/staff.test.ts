@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isVellumStaff } from "@/lib/auth/staff";
+import { isCadetStaff } from "@/lib/auth/staff";
 import type { AuthUser } from "@/stores/auth-store";
 
 function user(overrides: Partial<AuthUser>): AuthUser {
@@ -16,28 +16,28 @@ function user(overrides: Partial<AuthUser>): AuthUser {
   };
 }
 
-describe("isVellumStaff", () => {
+describe("isCadetStaff", () => {
   test("accepts the platform staff bit", () => {
-    expect(isVellumStaff(user({ isStaff: true }))).toBe(true);
+    expect(isCadetStaff(user({ isStaff: true }))).toBe(true);
   });
 
   test("accepts a Cadet address case-insensitively", () => {
-    expect(isVellumStaff(user({ email: "alice@" + "VELLUM.AI" }))).toBe(true);
+    expect(isCadetStaff(user({ email: "alice@" + "VELLUM.AI" }))).toBe(true);
   });
 
   test("rejects a lookalike domain", () => {
     // Suffix matching includes the "@", so a domain that merely ends in
-    // "vellum.ai" does not qualify.
-    expect(isVellumStaff(user({ email: "eve@notvellum.ai" }))).toBe(false);
+    // "cadet.ai" does not qualify.
+    expect(isCadetStaff(user({ email: "eve@notcadet.ai" }))).toBe(false);
   });
 
   test("rejects regular users", () => {
-    expect(isVellumStaff(user({ email: "user@example.com" }))).toBe(false);
+    expect(isCadetStaff(user({ email: "user@example.com" }))).toBe(false);
   });
 
   test("rejects sessions carrying neither signal", () => {
     // Local gateway sessions have no email and no staff bit.
-    expect(isVellumStaff(null)).toBe(false);
-    expect(isVellumStaff(user({ email: null }))).toBe(false);
+    expect(isCadetStaff(null)).toBe(false);
+    expect(isCadetStaff(user({ email: null }))).toBe(false);
   });
 });

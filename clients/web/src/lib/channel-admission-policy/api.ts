@@ -5,7 +5,7 @@
  * Naming follows the gateway's admission-policy contract
  * (`packages/gateway-client/src/admission-policy-contract.ts`) so the
  * surfaces stay in lockstep. Internal channels (platform/a2a) and
- * hidden channels (vellum/whatsapp) are filtered client-side — the gateway is
+ * hidden channels (cadet/whatsapp) are filtered client-side — the gateway is
  * already supposed to omit them from the list response, but we double-filter
  * so a future gateway regression can't leak them into the UI.
  */

@@ -112,13 +112,13 @@ mock.module("../config/env.js", () => ({
 
 mock.module("../security/secure-keys.js", () => ({
   getSecureKeyAsync: async (key: string) => {
-    if (key === credentialKey("vellum", "platform_base_url")) {
+    if (key === credentialKey("cadet", "platform_base_url")) {
       return mockPlatformBaseUrl;
     }
-    if (key === credentialKey("vellum", "assistant_api_key")) {
+    if (key === credentialKey("cadet", "assistant_api_key")) {
       return mockAssistantApiKey;
     }
-    if (key === credentialKey("vellum", "platform_assistant_id")) {
+    if (key === credentialKey("cadet", "platform_assistant_id")) {
       return mockPlatformAssistantId;
     }
     return mockProviderKeys[key] ?? null;
@@ -702,7 +702,7 @@ describe("managed proxy integration — constants integrity", () => {
       "gemini",
       "fireworks",
       "together",
-      "vellum",
+      "cadet",
     ]) {
       const meta = PLATFORM_PROVIDER_META[provider];
       expect(meta).toBeDefined();
@@ -742,8 +742,10 @@ describe("managed proxy integration — constants integrity", () => {
     );
   });
 
-  test("cadet routes through the cadet runtime-proxy path", () => {
-    expect(PLATFORM_PROVIDER_META.vellum.proxyPath).toBe(
+  test("cadet routes through the platform runtime-proxy path", () => {
+    // The proxy path is the platform's wire contract — renamed in
+    // coordination with the platform deploy, not here.
+    expect(PLATFORM_PROVIDER_META.cadet.proxyPath).toBe(
       "/v1/runtime-proxy/vellum",
     );
   });

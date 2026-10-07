@@ -11,7 +11,7 @@ import { isElectron } from "@/runtime/is-electron";
 
 /**
  * Syncs assistant feature flags from the renderer's Zustand store to the
- * Electron main process's `electron-store` (via `window.vellum.featureFlags`).
+ * Electron main process's `electron-store` (via `window.cadet.featureFlags`).
  *
  * The main process (tray menu, dock, global shortcuts) cannot directly
  * access the renderer's Zustand state. This bridge ensures that any flag
@@ -47,7 +47,7 @@ function writeToMainProcess(): void {
     }
   }
 
-  window.vellum?.featureFlags?.set(flags);
+  window.cadet?.featureFlags?.set(flags);
 }
 
 /**

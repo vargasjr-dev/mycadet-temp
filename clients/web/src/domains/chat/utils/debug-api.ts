@@ -1,8 +1,8 @@
 /**
- * Dev-facing chat debug API surfaced on `window._vellumDebug.chat`.
+ * Dev-facing chat debug API surfaced on `window._cadetDebug.chat`.
  *
  * Designed for in-the-moment inspection when a chat-streaming bug shows
- * up — open DevTools, call `window._vellumDebug.chat.getClientMessages()`
+ * up — open DevTools, call `window._cadetDebug.chat.getClientMessages()`
  * to see the message rows the chat page is rendering,
  * `.getTranscriptItems()` to see the full virtualized row list (messages
  * plus trailers like thinking / pending interactions), `.forceReconcile()`
@@ -16,7 +16,7 @@
  * ChatPage) — it adds no new background work and no
  * production-path overhead beyond a global property assignment.
  *
- * The namespace is intentionally nested under `_vellumDebug` so other
+ * The namespace is intentionally nested under `_cadetDebug` so other
  * areas of the app (sync, gateway, telemetry) can hang their own
  * sub-objects off the same root without colliding.
  */
@@ -255,7 +255,7 @@ export const RECONCILIATION_DIAGNOSTIC_KIND_PREFIXES: readonly string[] = [
   "sse_seq_gap_detected",
 ];
 
-/** The dev API surface attached to `window._vellumDebug.chat`. */
+/** The dev API surface attached to `window._cadetDebug.chat`. */
 export interface ChatDebugApi {
   /**
    * Return up to `limit` chat messages currently held in memory, in the
@@ -422,7 +422,7 @@ export interface ChatDebugApi {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_CLIENT_MESSAGES_LIMIT = 20;
-const ROOT_NS = "_vellumDebug";
+const ROOT_NS = "_cadetDebug";
 const CHAT_NS = "chat";
 const FLAGS_NS = "flags";
 
@@ -832,7 +832,7 @@ export function createChatDebugApi(refs: ChatDebugRefs): ChatDebugApi {
 
   function help(): void {
     const lines = [
-      "window._vellumDebug.chat — surgical chat debug API",
+      "window._cadetDebug.chat — surgical chat debug API",
       "",
       "  .getClientMessages(n?)     last N DisplayMessage[] the UI is rendering (post-sanitize)",
       "  .getTranscriptItems()      full virtualized row list — messages + thinking + pending prompts",
@@ -888,7 +888,7 @@ const API_NS = "api";
  * or module-load constants reload the page so the new value takes effect
  * cleanly; the rest apply in place.
  */
-export interface VellumDebugFlagsApi {
+export interface CadetDebugFlagsApi {
   /** Override the assistant's reported version for every version-gated
    *  code path in the web client (the wire-field cutover, the
    *  server-mint gate, `useAssistantSupports`, …). Persists to
@@ -927,22 +927,22 @@ export interface VellumDebugFlagsApi {
   toggleAppsSandboxDisabled(value?: boolean): boolean;
 }
 
-interface VellumDebugRoot extends Record<string, unknown> {
+interface CadetDebugRoot extends Record<string, unknown> {
   [EVENTS_NS]?: ChatDebugEventsApi;
   [CHAT_NS]?: ChatDebugApi;
   [API_NS]?: typeof assistantApi;
-  [FLAGS_NS]?: VellumDebugFlagsApi;
+  [FLAGS_NS]?: CadetDebugFlagsApi;
 }
 
 declare global {
   interface Window {
-    _vellumDebug?: VellumDebugRoot;
+    _cadetDebug?: CadetDebugRoot;
   }
 }
 
 /**
  * Single entry point that attaches every half of the debug API to
- * `window._vellumDebug` in one shot:
+ * `window._cadetDebug` in one shot:
  *
  *   - `events` — the SSE client + ring-buffer accessors from
  *     {@link eventsDebugApi}. Stable singleton; same surface every call.
@@ -964,17 +964,17 @@ declare global {
  * root object if it's empty afterwards. Safe to call on the server —
  * no-op when `window` is undefined.
  */
-export function installVellumDebugApi(
+export function installCadetDebugApi(
   chatApi: ChatDebugApi,
-  flagsApi: VellumDebugFlagsApi,
+  flagsApi: CadetDebugFlagsApi,
 ): () => void {
   if (typeof window === "undefined") {
     return () => {};
   }
   const win = window as Omit<Window, typeof ROOT_NS> & {
-    [ROOT_NS]?: VellumDebugRoot;
+    [ROOT_NS]?: CadetDebugRoot;
   };
-  const existing: VellumDebugRoot = (win[ROOT_NS] ?? {}) as VellumDebugRoot;
+  const existing: CadetDebugRoot = (win[ROOT_NS] ?? {}) as CadetDebugRoot;
   existing[EVENTS_NS] = eventsDebugApi;
   existing[CHAT_NS] = chatApi;
   existing[API_NS] = assistantApi;
@@ -1043,11 +1043,11 @@ export function useChatDebugApi(refs: ChatDebugRefs): void {
       historyFetcher: refs.historyFetcher,
     };
     const api = createChatDebugApi(stableRefs);
-    const flagsApi: VellumDebugFlagsApi = {
+    const flagsApi: CadetDebugFlagsApi = {
       impersonateVersion: setImpersonatedAssistantVersion,
       forceSleepStage,
       toggleAppsSandboxDisabled: toggleAppIframeSandboxDisabled,
     };
-    return installVellumDebugApi(api, flagsApi);
+    return installCadetDebugApi(api, flagsApi);
   }, []);
 }

@@ -43,7 +43,7 @@ import type { IpcHandle } from "./ipc";
 
 /**
  * Local-mode host bridge: provisions and retires local assistants and reads
- * and writes the lockfile, exposed to the renderer as `window.vellum.localMode.*`.
+ * and writes the lockfile, exposed to the renderer as `window.cadet.localMode.*`.
  *
  * Lifecycle ops delegate to `@mycadet/local-mode`, the shared host library
  * that also backs the web app's dev-server middleware

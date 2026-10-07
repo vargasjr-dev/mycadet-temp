@@ -54,7 +54,7 @@ function hashString(value: string): number {
  * relay lands as a real user message.
  *
  * The frame gets no popup tokens, so every outbound link arrives here as a
- * `vellum_open_link` relay the host opens after checking its scheme. A popup
+ * `cadet_open_link` relay the host opens after checking its scheme. A popup
  * is a top-level navigation that the embedder's `frame-src` cannot constrain,
  * so routing links through the host is what keeps the frame's only egress
  * under host control.
@@ -62,7 +62,7 @@ function hashString(value: string): number {
  * That relay is a known, accepted one-click egress path, and the activation
  * gate below does not close it. `navigator.userActivation` reports that the
  * user clicked *somewhere* in the frame, not that they clicked a link: widget
- * script can wait for any click, then post its own `vellum_open_link` with the
+ * script can wait for any click, then post its own `cadet_open_link` with the
  * frameId it already knows and a URL carrying conversation-derived data. The
  * host cannot tell that message apart from one the injected anchor
  * interceptor sent, because both originate in the same frame.
@@ -128,7 +128,7 @@ export function VisualSurface({ surface }: { surface: Surface }) {
       if (event.source !== iframeRef.current?.contentWindow) {
         return;
       }
-      if (msg.type === "vellum_widget_height") {
+      if (msg.type === "cadet_widget_height") {
         const reported = Number(msg.height);
         if (!Number.isFinite(reported)) {
           return;
@@ -139,10 +139,10 @@ export function VisualSurface({ surface }: { surface: Surface }) {
         );
         return;
       }
-      if (msg.type === "vellum_widget_prompt") {
+      if (msg.type === "cadet_widget_prompt") {
         // A sandboxed widget can read its own frameId and post without a
         // click, so the relay is gated on a transient user activation the
-        // same way `vellum_open_link` is.
+        // same way `cadet_open_link` is.
         if (!navigator.userActivation?.isActive) {
           return;
         }
@@ -157,7 +157,7 @@ export function VisualSurface({ surface }: { surface: Surface }) {
         );
         return;
       }
-      if (msg.type === "vellum_open_link") {
+      if (msg.type === "cadet_open_link") {
         // Stops markup that phones home on load or in a loop, and nothing
         // more: an activation says the user clicked somewhere in the frame,
         // not that they clicked this link. See the accepted one-click egress

@@ -94,7 +94,7 @@ function getInjectedConfig(): {
   return (
     (
       window as unknown as {
-        __VELLUM_CONFIG__?: {
+        __CADET_CONFIG__?: {
           disablePlatform?: boolean;
           mode?: string;
           platformUrl?: string;
@@ -102,7 +102,7 @@ function getInjectedConfig(): {
           hubUrl?: string;
         };
       }
-    ).__VELLUM_CONFIG__ ?? {}
+    ).__CADET_CONFIG__ ?? {}
   );
 }
 
@@ -291,7 +291,7 @@ export async function saveManagedLockfileAssistant(
   await saveLockfileAssistant({
     assistantId,
     name,
-    cloud: "vellum",
+    cloud: "cadet",
     runtimeUrl: getPlatformRuntimeUrl(),
     hatchedAt: new Date().toISOString(),
     organizationId,
@@ -411,7 +411,7 @@ export async function setActiveLockfileAssistant(
  *
  * `organizationId` is stamped onto every platform entry so the host proxy can
  * scope requests without guessing. The caller passes the active org: the API
- * list is org-scoped by the `Vellum-Organization-Id` header, so every assistant
+ * list is org-scoped by the `Cadet-Organization-Id` header, so every assistant
  * in `assistants` belongs to that org.
  */
 export async function syncPlatformAssistantsToLockfile(
@@ -440,7 +440,7 @@ export async function syncPlatformAssistantsToLockfile(
     .map((a) => ({
       assistantId: a.id,
       ...(a.name != null && { name: a.name }),
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: getPlatformRuntimeUrl(),
       hatchedAt: a.created,
       ...(organizationId != null && { organizationId }),
@@ -686,7 +686,7 @@ export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
 }
 
 export function isPlatformAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "vellum";
+  return a.cloud === "cadet";
 }
 
 /**

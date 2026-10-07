@@ -19,7 +19,7 @@ import {
  * `settings` store, which has `additionalProperties: false` at the root
  * and a strict per-key schema. Window state is a main-process concern
  * the renderer never reads or writes. It doesn't belong on the
- * `window.vellum.settings.*` bridge.
+ * `window.cadet.settings.*` bridge.
  *
  * `key` namespaces the stored shape, so future windows (thread pop-outs,
  * About, onboarding) can persist alongside the main window without

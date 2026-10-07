@@ -9,5 +9,5 @@ export function syncDiagnosticsToMain(enabled: boolean): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.diagnostics?.setShareDiagnostics(enabled);
+  window.cadet?.diagnostics?.setShareDiagnostics(enabled);
 }

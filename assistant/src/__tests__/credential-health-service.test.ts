@@ -772,8 +772,8 @@ describe("credential-health-service", () => {
   });
 
   describe("managed assistant credential", () => {
-    const KEY = "credential/vellum/assistant_api_key";
-    const BASE_URL = "credential/vellum/platform_base_url";
+    const KEY = "credential/cadet/assistant_api_key";
+    const BASE_URL = "credential/cadet/platform_base_url";
 
     // Checked directly rather than through `checkAllCredentials`: the managed
     // credential is not enrolled in the heartbeat pass yet, because the alert

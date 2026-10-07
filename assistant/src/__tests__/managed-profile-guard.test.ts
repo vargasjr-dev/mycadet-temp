@@ -105,7 +105,7 @@ mock.module("../providers/inference/connections.js", () => ({
   listConnections: () => [],
   createConnection: () => ({ ok: false, error: { code: "already_exists" } }),
   getConnection: () => null,
-  VELLUM_MANAGED_CONNECTION_NAME: "vellum",
+  CADET_MANAGED_CONNECTION_NAME: "cadet",
 }));
 
 import { ROUTES } from "../runtime/routes/conversation-query-routes.js";
@@ -198,14 +198,14 @@ describe("PUT /v1/config/llm/profiles/:name — managed profile guard", () => {
   test("accepts routing identities on the replace path without deriving a connection", async () => {
     const result = await replaceRoute.handler({
       pathParams: { name: "my-custom" },
-      body: { provider: "vellum", model: "claude-opus-4-8" },
+      body: { provider: "cadet", model: "claude-opus-4-8" },
     });
     expect(result).toEqual({ ok: true });
     const committed = committedRaw() as {
       llm?: { profiles?: Record<string, Record<string, unknown>> };
     } | null;
     expect(committed?.llm?.profiles?.["my-custom"]).toMatchObject({
-      provider: "vellum",
+      provider: "cadet",
       model: "claude-opus-4-8",
     });
     expect(
@@ -217,7 +217,7 @@ describe("PUT /v1/config/llm/profiles/:name — managed profile guard", () => {
     await expect(
       replaceRoute.handler({
         pathParams: { name: "my-custom" },
-        body: { provider: "vellum", model: "not-a-real-model" },
+        body: { provider: "cadet", model: "not-a-real-model" },
       }),
     ).rejects.toThrow(/not served by the Cadet managed route/);
     expect(committedRaw()).toBeNull();
@@ -1119,7 +1119,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
     const response = (await getRoute.handler({})) as Record<string, any>;
     const wireBalanced = response.llm.profiles.balanced;
     expect(wireBalanced.model).toBe("accounts/fireworks/models/glm-5p3-flash");
-    expect(wireBalanced.provider).toBe("vellum");
+    expect(wireBalanced.provider).toBe("cadet");
     expect(wireBalanced.provider_connection).toBeUndefined();
     expect(wireBalanced.status).toBe("disabled");
     expect(wireBalanced.invariant).toBe(true);
@@ -1415,8 +1415,8 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
     await patchRoute.handler({
       body: {
         services: {
-          "image-generation": { provider: "vellum", mode: "managed" },
-          "web-search": { provider: "vellum", mode: "managed" },
+          "image-generation": { provider: "cadet", mode: "managed" },
+          "web-search": { provider: "cadet", mode: "managed" },
         },
       },
     } as never);
@@ -1425,7 +1425,7 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
       string,
       Record<string, Record<string, unknown>>
     >;
-    expect(raw.services["image-generation"]).toEqual({ provider: "vellum" });
-    expect(raw.services["web-search"]).toEqual({ provider: "vellum" });
+    expect(raw.services["image-generation"]).toEqual({ provider: "cadet" });
+    expect(raw.services["web-search"]).toEqual({ provider: "cadet" });
   });
 });

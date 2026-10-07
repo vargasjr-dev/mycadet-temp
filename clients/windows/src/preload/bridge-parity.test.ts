@@ -8,7 +8,7 @@ import {
   installCapabilityModules,
   type CapabilityModuleExport,
 } from "@mycadet/electron-desktop/capability-registry";
-import { VELLUM_BRIDGE_KEYS, type VellumBridge } from "@mycadet/ipc-contract";
+import { VELLUM_BRIDGE_KEYS, type CadetBridge } from "@mycadet/ipc-contract";
 
 const exposed = new Map<string, unknown>();
 const ipcRenderer = {
@@ -33,11 +33,11 @@ const { createWindowsCoreBridge, WINDOWS_NOT_APPLICABLE_CAPABILITIES } =
 
 // Every real feature module, loaded from disk the way the production glob
 // does, so cross-module bridge-key collisions (which kill the whole
-// `window.vellum` bridge at preload time) surface here.
+// `window.cadet` bridge at preload time) surface here.
 const featuresDir = path.join(import.meta.dir, "features");
 const featureModules: Record<
   string,
-  CapabilityModuleExport<BridgeCapabilityRegistry<VellumBridge>>
+  CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>
 > = {};
 for (const file of readdirSync(featuresDir)) {
   if (!file.endsWith(".ts") || file.endsWith(".test.ts")) {
@@ -45,11 +45,11 @@ for (const file of readdirSync(featuresDir)) {
   }
   featureModules[`./features/${file}`] = (await import(
     path.join(featuresDir, file)
-  )) as CapabilityModuleExport<BridgeCapabilityRegistry<VellumBridge>>;
+  )) as CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>;
 }
 
-const composeWindowsBridge = (): Partial<VellumBridge> => {
-  const registry = new BridgeCapabilityRegistry<VellumBridge>(
+const composeWindowsBridge = (): Partial<CadetBridge> => {
+  const registry = new BridgeCapabilityRegistry<CadetBridge>(
     createWindowsCoreBridge(ipcRenderer as unknown as IpcRenderer),
   );
   installCapabilityModules(registry, featureModules);
@@ -58,7 +58,7 @@ const composeWindowsBridge = (): Partial<VellumBridge> => {
 
 // The macOS preload is the parity reference: it exposes its bridge on import.
 await import("../../../macos/src/preload/index");
-const macBridge = exposed.get("vellum") as VellumBridge;
+const macBridge = exposed.get("cadet") as CadetBridge;
 
 /** Dotted paths of every leaf (method or scalar) under a bridge value. */
 const surface = (value: unknown, prefix = ""): string[] => {
@@ -110,7 +110,7 @@ const MACOS_ONLY_SURFACE = [
   "text.undoInFrontApp",
 ];
 
-test("the composed Windows bridge satisfies every applicable VellumBridge key", () => {
+test("the composed Windows bridge satisfies every applicable CadetBridge key", () => {
   const bridge = composeWindowsBridge();
 
   for (const key of required) {

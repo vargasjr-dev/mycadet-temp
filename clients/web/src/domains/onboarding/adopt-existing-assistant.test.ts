@@ -12,7 +12,7 @@ import { shouldAdoptExistingAssistant } from "./adopt-existing-assistant";
 
 describe("shouldAdoptExistingAssistant", () => {
   test("platform (non-local) builds always run the managed hatch", () => {
-    for (const hostingParam of [null, "local", "docker", "vellum-cloud"]) {
+    for (const hostingParam of [null, "local", "docker", "cadet-cloud"]) {
       expect(
         shouldAdoptExistingAssistant({
           hostingParam,
@@ -35,12 +35,12 @@ describe("shouldAdoptExistingAssistant", () => {
     }
   });
 
-  test("explicit vellum-cloud hosting runs the managed hatch even over a live local session", () => {
+  test("explicit cadet-cloud hosting runs the managed hatch even over a live local session", () => {
     // The desktop app can onboard a managed assistant while still holding a
     // gateway session from a previous local one — the explicit choice wins.
     expect(
       shouldAdoptExistingAssistant({
-        hostingParam: "vellum-cloud",
+        hostingParam: "cadet-cloud",
         localMode: true,
         gatewayAuthSession: true,
       }),
@@ -60,7 +60,7 @@ describe("shouldAdoptExistingAssistant", () => {
   });
 
   test("no hosting param and no local session runs the managed hatch", () => {
-    // Desktop app connected to a Vellum-Cloud assistant (platform session):
+    // Desktop app connected to a Cadet-Cloud assistant (platform session):
     // the managed hatch resolves that existing assistant.
     expect(
       shouldAdoptExistingAssistant({

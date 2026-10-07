@@ -3,7 +3,7 @@ import type {
   PlatformVerifycredentialPostResponses,
 } from "@/generated/daemon/types.gen";
 import { PlatformIdentityInjectionError } from "@/lib/platform-identity-errors";
-import { buildVellumMutatingHeaders } from "@/lib/auth/request-headers";
+import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
 import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/credential-verification";
 import {
   getActiveAssistant,
@@ -32,7 +32,7 @@ import {
 } from "@/stores/organization-store";
 import { isUuid } from "@/utils/uuid";
 
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
+const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 export { isUuid } from "@/utils/uuid";
 
@@ -731,7 +731,7 @@ async function platformPost<T>(
   clientInstallationId: string,
 ): Promise<T> {
   const headers = new Headers({
-    ...(await buildVellumMutatingHeaders(
+    ...(await buildCadetMutatingHeaders(
       {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -798,8 +798,8 @@ async function injectPlatformCredentials(
   },
 ): Promise<void> {
   const entries: Array<[string, string | null]> = [
-    ["vellum:platform_base_url", params.platformBaseUrl],
-    ["vellum:webhook_secret", params.webhookSecret],
+    ["cadet:platform_base_url", params.platformBaseUrl],
+    ["cadet:webhook_secret", params.webhookSecret],
   ];
 
   await Promise.all(
@@ -816,7 +816,7 @@ async function injectPlatformCredentials(
   if (params.assistantApiKey) {
     await injectCredential(
       gateway,
-      "vellum:assistant_api_key",
+      "cadet:assistant_api_key",
       params.assistantApiKey,
     );
   }

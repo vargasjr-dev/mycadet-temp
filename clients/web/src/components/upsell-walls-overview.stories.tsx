@@ -339,7 +339,7 @@ export const ResourceAndEntitlementWalls: Story = {
           <EmailManagedContent
             assistantId="story-assistant"
             assistantHandle="ada"
-            emailRootDomain="vellum.ai"
+            emailRootDomain="cadet.ai"
           />
         </WallCase>
       </Group>

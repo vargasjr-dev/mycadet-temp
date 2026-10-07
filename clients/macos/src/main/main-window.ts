@@ -11,7 +11,7 @@ import {
 import { getRendererRootUrl } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
-import { type VellumCommand } from "@mycadet/electron-desktop/commands";
+import { type CadetCommand } from "@mycadet/electron-desktop/commands";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 import { handle } from "./ipc";
 import { createWindow } from "./windows";
@@ -312,7 +312,7 @@ const createMainWindow = (): BrowserWindow => {
  * handler, `second-instance`) can `void` the return.
  *
  * Residual race: `did-finish-load` fires after the bundle parses but
- * before React's effect for `useVellumCommands` mounts. In practice
+ * before React's effect for `useCadetCommands` mounts. In practice
  * the gap is small (~ms) — a proper renderer→main "ready for
  * commands" IPC handshake is a separate ticket; for the tray's click
  * rate this is good enough.
@@ -374,7 +374,7 @@ export const current = (): BrowserWindow | null => mainWindow;
  * No-op if the main window doesn't currently exist; the caller is
  * expected to have run `ensureVisible()` first.
  */
-export const dispatchToMain = (command: VellumCommand): void => {
+export const dispatchToMain = (command: CadetCommand): void => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send("cadet:command", command);
 };

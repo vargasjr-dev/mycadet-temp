@@ -301,7 +301,7 @@ describe("PluginDetailMobile", () => {
 
   test("renders the external 📦 glyph once a github-sourced plugin has loaded", () => {
     hookState.plugin = makePlugin({
-      source: { kind: "github", repo: "vellum-ai/level-up", ref: "main" },
+      source: { kind: "github", repo: "cadet-ai/level-up", ref: "main" },
     });
 
     renderMobile(
@@ -319,7 +319,7 @@ describe("PluginDetailMobile", () => {
   test("renders the author emoji when the plugin declares one, overriding the origin glyph", () => {
     hookState.plugin = makePlugin({
       icon: "\u{1F3A8}", // 🎨
-      source: { kind: "github", repo: "vellum-ai/level-up", ref: "main" },
+      source: { kind: "github", repo: "cadet-ai/level-up", ref: "main" },
     });
 
     renderMobile(

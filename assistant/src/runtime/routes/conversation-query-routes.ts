@@ -120,18 +120,18 @@ import { type LogRow } from "../../persistence/llm-request-log-store.js";
 import { getMemoryRecallLogByMessageIds } from "../../plugins/defaults/memory/memory-recall-log-store.js";
 import { getMemoryV2ActivationLogByMessageIds } from "../../plugins/defaults/memory/v2/activation-log-store.js";
 import { getMemoryV3SelectionForInspectorByMessageIds } from "../../plugins/defaults/memory/v3/selection-log-store.js";
+import { MANAGED_ROUTABLE_PROVIDERS } from "../../providers/cadet-model-routing.js";
 import { writableProfileProviderIssue } from "../../providers/connection-resolution.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../../providers/inference/auth.js";
 import {
+  CADET_MANAGED_CONNECTION_NAME,
   createConnection,
   getConnection,
   LEGACY_MANAGED_CONNECTION_NAMES,
   listConnections,
-  VELLUM_MANAGED_CONNECTION_NAME,
 } from "../../providers/inference/connections.js";
 import { initializeProviders } from "../../providers/registry.js";
-import { MANAGED_ROUTABLE_PROVIDERS } from "../../providers/vellum-model-routing.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { validateAllowlistFile } from "../../security/secret-allowlist.js";
 import {
@@ -532,7 +532,7 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
  * persisted an explicit choice yet. For example, on a freshly-hatched
  * platform-managed assistant, `services.image-generation.provider` may be
  * absent from disk (only `llm.profiles` was written by
- * `seedInferenceProfiles`); the fill pass ensures clients receive `"vellum"`
+ * `seedInferenceProfiles`); the fill pass ensures clients receive `"cadet"`
  * rather than falling back to their own defaults.
  *
  * Guards against `loadRawConfig()` handing us a value that is technically
@@ -1268,7 +1268,7 @@ export function rejectManagedProfileDeletion(
     if (profiles[name] !== null || !MANAGED_PROFILE_NAMES.has(name)) {
       continue;
     }
-    // Only block deletion when the on-disk entry is Vellum-managed. A
+    // Only block deletion when the on-disk entry is Cadet-managed. A
     // user-owned profile sharing a managed name carries a non-managed `source`
     // and is freely deletable.
     const existing = asMutablePlainObject(existingProfiles[name]);
@@ -2025,8 +2025,8 @@ async function handleReplaceInferenceProfile({
   // derivation like any other custom profile.
   const fragment = parsed.data as Record<string, unknown>;
   // Routing identities resolve their connection per-request from the
-  // provider value; deriving one here would stamp the canonical vellum row
-  // ("vellum" is its stored provider) or create a junk "<identity>-personal"
+  // provider value; deriving one here would stamp the canonical cadet row
+  // ("cadet" is its stored provider) or create a junk "<identity>-personal"
   // connection for chatgpt.
   if (
     !isManaged &&
@@ -2047,11 +2047,11 @@ async function handleReplaceInferenceProfile({
       fragment.provider_connection = active.name;
     } else if (
       MANAGED_ROUTABLE_PROVIDERS.has(provider) &&
-      getConnection(db, VELLUM_MANAGED_CONNECTION_NAME)
+      getConnection(db, CADET_MANAGED_CONNECTION_NAME)
     ) {
-      // Managed-routable providers are served by the single Vellum-managed
+      // Managed-routable providers are served by the single Cadet-managed
       // connection; prefer it over lazily creating a personal connection.
-      fragment.provider_connection = VELLUM_MANAGED_CONNECTION_NAME;
+      fragment.provider_connection = CADET_MANAGED_CONNECTION_NAME;
     } else if (!PROVIDERS_REQUIRING_BASE_URL_AND_MODELS.has(provider)) {
       const connectionName = `${provider}-personal`;
       const isKeyless = provider === "ollama";
@@ -2337,7 +2337,7 @@ function resolveQueuedMessageConversationId({
   const conversationId =
     queryParams.conversationId ??
     (typeof bodyConversationId === "string" ? bodyConversationId : undefined) ??
-    headers["x-vellum-conversation-id"];
+    headers["x-cadet-conversation-id"];
   return typeof conversationId === "string" && conversationId.length > 0
     ? conversationId
     : undefined;
@@ -2357,7 +2357,7 @@ async function handleDeleteQueuedMessage(args: RouteHandlerArgs) {
   // guardian under `DISABLE_HTTP_AUTH=true` (a no-op for real JWT
   // principals), and every sibling handler in this layer trims first.
   const actorPrincipalId = await resolveActorPrincipalIdForLocalGuardian(
-    headers["x-vellum-actor-principal-id"]?.trim() || undefined,
+    headers["x-cadet-actor-principal-id"]?.trim() || undefined,
   );
   const result = deleteQueuedMessage(conversationId, pathParams.id ?? "", {
     actorPrincipalId,
@@ -2385,7 +2385,7 @@ async function handleSteerToMessage(args: RouteHandlerArgs) {
   // Verified caller identity, normalized exactly as the delete path above
   // (see the comment in `handleDeleteQueuedMessage`).
   const actorPrincipalId = await resolveActorPrincipalIdForLocalGuardian(
-    headers["x-vellum-actor-principal-id"]?.trim() || undefined,
+    headers["x-cadet-actor-principal-id"]?.trim() || undefined,
   );
   const result = steerToMessage(conversationId, pathParams.id ?? "", {
     actorPrincipalId,

@@ -1,6 +1,6 @@
 import { ipcRenderer } from "electron";
 
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 import type {
   BridgeCapabilityRegistry,
   CapabilityModule,
@@ -11,7 +11,7 @@ import { createNotificationsBridge } from "@mycadet/electron-desktop/preload";
 // macOS preload surface channel-for-channel so the renderer's runtime
 // wrappers work unchanged.
 const notificationsShare: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "notifications-share",
   install: (bridge) => {

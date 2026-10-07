@@ -72,7 +72,7 @@ export function useOnboardingLogin(
     setLoading(false);
     setError(null);
     if (isElectron()) {
-      void window.vellum?.auth?.cancelOAuth();
+      void window.cadet?.auth?.cancelOAuth();
     }
   };
 

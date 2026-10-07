@@ -3,7 +3,7 @@ import { ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   ConnectivityState,
   PowerEvent,
-  VellumBridge,
+  CadetBridge,
 } from "@mycadet/ipc-contract";
 import {
   CONNECTIVITY_GET,
@@ -23,7 +23,7 @@ import type {
   CapabilityModule,
 } from "@mycadet/electron-desktop/capability-registry";
 
-const presence: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
+const presence: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
   id: "presence",
   install: (bridge) => {
     bridge.contribute("featureFlags", {

@@ -1,5 +1,5 @@
 /**
- * Export an app as a downloadable `.vellum` bundle.
+ * Export an app as a downloadable `.cadet` bundle.
  *
  * 1. Calls the share-cloud endpoint to package the app server-side.
  * 2. Downloads the binary bundle using the returned share token.
@@ -37,5 +37,5 @@ export async function shareApp(
   }
 
   const safeName = appName.replace(/[/\\:*?"<>|]/g, "_").trim() || "App";
-  await shareFile(blob, `${safeName}.vellum`);
+  await shareFile(blob, `${safeName}.cadet`);
 }

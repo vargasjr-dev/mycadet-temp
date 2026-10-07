@@ -712,7 +712,7 @@ describe("groupConversations · surfaced promotion to recents", () => {
 
   test("excludes native and notification origins from channel sections", () => {
     const result = groupConversations([
-      makeConversation({ conversationId: "web", originChannel: "vellum" }),
+      makeConversation({ conversationId: "web", originChannel: "cadet" }),
       makeConversation({
         conversationId: "notif",
         originChannel: "notification:slack",

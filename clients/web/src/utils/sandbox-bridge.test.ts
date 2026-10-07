@@ -142,7 +142,7 @@ describe("injectBridge", () => {
       "<!doctype html><html><head></head><body><div>hi</div></body></html>";
     const out = injectBridge(html, FRAME_ID);
     expect(out).toContain("<div>hi</div>");
-    expect(out).toContain("window.vellum");
+    expect(out).toContain("window.cadet");
     expect(out).toContain("storageShim");
 
     const headOpen = out.indexOf("<head>");
@@ -150,7 +150,7 @@ describe("injectBridge", () => {
     const bodyClose = out.lastIndexOf("</body>");
 
     const polyfillIdx = out.indexOf("storageShim");
-    const bridgeIdx = out.indexOf("window.vellum");
+    const bridgeIdx = out.indexOf("window.cadet");
 
     expect(polyfillIdx).toBeGreaterThan(headOpen);
     expect(polyfillIdx).toBeLessThan(headClose);
@@ -162,7 +162,7 @@ describe("injectBridge", () => {
     const html = "just some fragment";
     const out = injectBridge(html, FRAME_ID);
     expect(out).toContain("storageShim");
-    expect(out).toContain("window.vellum");
+    expect(out).toContain("window.cadet");
     expect(out.endsWith("just some fragment")).toBe(true);
   });
 
@@ -180,8 +180,8 @@ describe("injectBridge", () => {
     const out = injectBridge(html, FRAME_ID);
 
     const realBodyClose = out.lastIndexOf("</body>");
-    const vellumIdx = out.indexOf("window.vellum");
-    expect(vellumIdx).toBeLessThan(realBodyClose);
+    const cadetIdx = out.indexOf("window.cadet");
+    expect(cadetIdx).toBeLessThan(realBodyClose);
 
     const appCode = out.indexOf("console.log('app loaded');");
     expect(appCode).toBeGreaterThan(0);
@@ -213,22 +213,22 @@ describe("injectBridge", () => {
   it("includes fetch proxy when fetch option is true", () => {
     const html = "<html><body></body></html>";
     const out = injectBridge(html, FRAME_ID, { fetch: true });
-    expect(out).toContain("vellum_fetch_request");
-    expect(out).toContain("vellum_fetch_response");
-    expect(out).toContain("window.vellum.fetch");
+    expect(out).toContain("cadet_fetch_request");
+    expect(out).toContain("cadet_fetch_response");
+    expect(out).toContain("window.cadet.fetch");
   });
 
   it("omits fetch proxy by default", () => {
     const html = "<html><body></body></html>";
     const out = injectBridge(html, FRAME_ID);
-    expect(out).not.toContain("vellum_fetch_request");
-    expect(out).not.toContain("window.vellum.fetch");
+    expect(out).not.toContain("cadet_fetch_request");
+    expect(out).not.toContain("window.cadet.fetch");
   });
 
   it("opts full app HTML into host-routed standard URLs", () => {
     const html = "<html><body></body></html>";
     const out = injectBridge(html, FRAME_ID, { relayAppRoutes: true });
-    expect(out).toContain("vellum_navigate");
+    expect(out).toContain("cadet_navigate");
   });
 
   it("normalizes a missing /v1 prefix on custom-route fetch paths", () => {
@@ -276,7 +276,7 @@ describe("injectBridge", () => {
   });
 
   it("allows blob: subresources but no direct network in the app CSP", () => {
-    // window.vellum.asset() resolves bundled assets into blob URLs, so blob:
+    // window.cadet.asset() resolves bundled assets into blob URLs, so blob:
     // must load as script, image, font, and media. Direct network access
     // stays denied: connect-src has no entry of its own and falls back to
     // default-src 'none'.
@@ -336,7 +336,7 @@ describe("getRelayableAppRoute", () => {
     expect(getRelayableAppRoute("https://example.com/assistant")).toBeNull();
     expect(getRelayableAppRoute("//example.com/assistant")).toBeNull();
     expect(
-      getRelayableAppRoute("vellum-assistant://thread/conversation-1"),
+      getRelayableAppRoute("cadet-assistant://thread/conversation-1"),
     ).toBeNull();
     expect(getRelayableAppRoute("/account/login")).toBeNull();
     expect(getRelayableAppRoute("javascript:alert(1)")).toBeNull();
@@ -362,7 +362,7 @@ describe("isRelayableExternalHref", () => {
     );
     expect(isRelayableExternalHref("blob:https://example.com/abc")).toBe(false);
     expect(isRelayableExternalHref("file:///etc/passwd")).toBe(false);
-    expect(isRelayableExternalHref("vellum://host/app")).toBe(false);
+    expect(isRelayableExternalHref("cadet://host/app")).toBe(false);
     expect(isRelayableExternalHref("/relative/path")).toBe(false);
     expect(isRelayableExternalHref("")).toBe(false);
     expect(isRelayableExternalHref(undefined)).toBe(false);
@@ -389,20 +389,20 @@ describe("buildLinkInterceptorScript", () => {
     const out = buildLinkInterceptorScript(FRAME_ID, {
       relayAppRoutes: true,
     });
-    expect(out).toContain("vellum_navigate");
+    expect(out).toContain("cadet_navigate");
     expect(out).toContain("/assistant/");
     expect(out).toContain(JSON.stringify(FRAME_ID));
   });
 
   it("leaves standard app routes alone by default", () => {
     const out = buildLinkInterceptorScript(FRAME_ID);
-    expect(out).not.toContain("vellum_navigate");
+    expect(out).not.toContain("cadet_navigate");
   });
 
   it("relays external links to the parent when asked", () => {
     const out = buildLinkInterceptorScript(FRAME_ID, { relayExternal: true });
     expect(out).not.toContain("window.open(rawHref");
-    expect(out).toContain("vellum_open_link");
+    expect(out).toContain("cadet_open_link");
     expect(out).toContain(JSON.stringify(FRAME_ID));
   });
 
@@ -444,28 +444,28 @@ describe("buildLinkInterceptorScript", () => {
     expect(out).not.toMatch(/var\s+href\s*=\s*el\.href/);
   });
 
-  it("forwards vellum:// deep links to parent via postMessage", () => {
+  it("forwards cadet:// deep links to parent via postMessage", () => {
     const out = buildLinkInterceptorScript(FRAME_ID);
-    expect(out).toContain("vellum_open_link");
+    expect(out).toContain("cadet_open_link");
     expect(out).toContain("postMessage");
-    expect(out).toContain("vellum://");
+    expect(out).toContain("cadet://");
     // frameId should be embedded in the generated script
     expect(out).toContain(FRAME_ID);
   });
 
-  it("intercepts only the workspace and host vellum:// authorities", () => {
+  it("intercepts only the workspace and host cadet:// authorities", () => {
     const out = buildLinkInterceptorScript(FRAME_ID);
     expect(out).toContain("(workspace|host)");
   });
 
-  it("checks vellum:// scheme before external http(s) schemes", () => {
+  it("checks cadet:// scheme before external http(s) schemes", () => {
     const out = buildLinkInterceptorScript(FRAME_ID);
-    const vellumIdx = out.indexOf("vellum:");
+    const cadetIdx = out.indexOf("cadet:");
     const httpIdx = out.indexOf("https?");
-    expect(vellumIdx).toBeGreaterThan(0);
+    expect(cadetIdx).toBeGreaterThan(0);
     expect(httpIdx).toBeGreaterThan(0);
-    // vellum:// must be checked before the external scheme regex
-    expect(vellumIdx).toBeLessThan(httpIdx);
+    // cadet:// must be checked before the external scheme regex
+    expect(cadetIdx).toBeLessThan(httpIdx);
   });
 });
 
@@ -518,10 +518,10 @@ describe("preparePreviewHtml", () => {
 });
 
 describe("buildWidgetHeightReporterScript", () => {
-  it("posts vellum_widget_height bound to the frame id", () => {
+  it("posts cadet_widget_height bound to the frame id", () => {
     const out = buildWidgetHeightReporterScript(FRAME_ID);
     expect(out).toContain("<script>");
-    expect(out).toContain("vellum_widget_height");
+    expect(out).toContain("cadet_widget_height");
     expect(out).toContain(`frameId: "${FRAME_ID}"`);
     expect(out).toContain("window.parent.postMessage");
   });
@@ -600,18 +600,18 @@ describe("buildWidgetWidthFitScript", () => {
   });
 
   it("publishes the applied zoom for the height reporter to read", () => {
-    expect(buildWidgetWidthFitScript()).toContain("window.__vellumWidgetZoom");
+    expect(buildWidgetWidthFitScript()).toContain("window.__cadetWidgetZoom");
     expect(buildWidgetHeightReporterScript(FRAME_ID)).toContain(
-      "window.__vellumWidgetZoom",
+      "window.__cadetWidgetZoom",
     );
   });
 });
 
 describe("buildWidgetPromptScript", () => {
-  it("exposes sendPrompt and posts vellum_widget_prompt with the frame id", () => {
+  it("exposes sendPrompt and posts cadet_widget_prompt with the frame id", () => {
     const out = buildWidgetPromptScript(FRAME_ID);
     expect(out).toContain("window.sendPrompt");
-    expect(out).toContain("vellum_widget_prompt");
+    expect(out).toContain("cadet_widget_prompt");
     expect(out).toContain(`frameId: "${FRAME_ID}"`);
   });
 
@@ -639,9 +639,9 @@ describe("injectWidgetBridge", () => {
 
     expect(out).toContain("storageShim");
     expect(out).toContain("<style>:root{--a:1}</style>");
-    expect(out).toContain("vellum_widget_height");
+    expect(out).toContain("cadet_widget_height");
     expect(out).toContain("window.sendPrompt");
-    expect(out).toContain("vellum_open_link");
+    expect(out).toContain("cadet_open_link");
     expect(out).toContain("<div>widget</div>");
 
     const headOpen = out.indexOf("<head>");
@@ -649,7 +649,7 @@ describe("injectWidgetBridge", () => {
     const bodyClose = out.lastIndexOf("</body>");
     expect(stylesIdx).toBeGreaterThan(headOpen);
     expect(stylesIdx).toBeLessThan(out.indexOf("<div>widget</div>"));
-    expect(out.indexOf("vellum_widget_height")).toBeLessThan(bodyClose);
+    expect(out.indexOf("cadet_widget_height")).toBeLessThan(bodyClose);
   });
 
   it("puts the network-blocking CSP ahead of every script and the content", () => {
@@ -680,21 +680,21 @@ describe("injectWidgetBridge", () => {
     // embedder's `frame-src` cannot constrain, which is why the host opens
     // the link and the frame only asks.
     const out = injectWidgetBridge("<div>widget</div>", FRAME_ID);
-    expect(out).toContain("vellum_open_link");
+    expect(out).toContain("cadet_open_link");
     expect(out).not.toContain("window.open(rawHref");
   });
 
   it("runs the shrink-to-fit pass ahead of the height reporter", () => {
     const out = injectWidgetBridge("<svg></svg>", FRAME_ID);
-    const fitIdx = out.indexOf("window.__vellumWidgetZoom = 1");
+    const fitIdx = out.indexOf("window.__cadetWidgetZoom = 1");
     expect(fitIdx).toBeGreaterThan(-1);
-    expect(fitIdx).toBeLessThan(out.indexOf("vellum_widget_height"));
+    expect(fitIdx).toBeLessThan(out.indexOf("cadet_widget_height"));
   });
 
   it("omits the fetch proxy — a visual is not an app", () => {
     const out = injectWidgetBridge("<div>widget</div>", FRAME_ID);
-    expect(out).not.toContain("vellum_fetch_request");
-    expect(out).not.toContain("window.vellum");
+    expect(out).not.toContain("cadet_fetch_request");
+    expect(out).not.toContain("window.cadet");
   });
 
   it("handles fragments without head/body tags", () => {
@@ -704,7 +704,7 @@ describe("injectWidgetBridge", () => {
     expect(out.indexOf("<style>x</style>")).toBeLessThan(
       out.indexOf("<svg></svg>"),
     );
-    expect(out.indexOf("vellum_widget_height")).toBeGreaterThan(
+    expect(out.indexOf("cadet_widget_height")).toBeGreaterThan(
       out.indexOf("<svg></svg>"),
     );
   });

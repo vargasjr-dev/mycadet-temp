@@ -110,8 +110,8 @@ function fakeCredentialCache(
 
 function defaultCredentials(): Record<string, string> {
   return {
-    "credential/vellum/platform_base_url": "https://platform.vellum.ai",
-    "credential/vellum/assistant_api_key": "test-api-key",
+    "credential/cadet/platform_base_url": "https://platform.vellum.ai",
+    "credential/cadet/assistant_api_key": "test-api-key",
   };
 }
 
@@ -183,7 +183,7 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
 
     const creds = defaultCredentials();
-    delete creds["credential/vellum/platform_base_url"];
+    delete creds["credential/cadet/platform_base_url"];
     delete process.env.VELLUM_PLATFORM_URL;
 
     const sync = new RemoteFeatureFlagSync({
@@ -201,7 +201,7 @@ describe("RemoteFeatureFlagSync", () => {
     process.env.VELLUM_PLATFORM_URL = "https://env-platform.example.com";
 
     const creds = defaultCredentials();
-    delete creds["credential/vellum/platform_base_url"];
+    delete creds["credential/cadet/platform_base_url"];
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -220,7 +220,7 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
 
     const creds = defaultCredentials();
-    delete creds["credential/vellum/assistant_api_key"];
+    delete creds["credential/cadet/assistant_api_key"];
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -239,8 +239,8 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
 
     const creds = {
-      "credential/vellum/platform_base_url": "https://platform.example.com",
-      "credential/vellum/assistant_api_key": "test-api-key",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
+      "credential/cadet/assistant_api_key": "test-api-key",
     };
 
     const sync = new RemoteFeatureFlagSync({
@@ -257,7 +257,7 @@ describe("RemoteFeatureFlagSync", () => {
     process.env.ASSISTANT_API_KEY = "env-key";
 
     const creds = {
-      "credential/vellum/platform_base_url": "https://platform.example.com",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
     };
 
     const sync = new RemoteFeatureFlagSync({
@@ -300,8 +300,8 @@ describe("RemoteFeatureFlagSync", () => {
     // immediately, rather than serving the previous identity's (or registry
     // default) values until the next ~5-min poll.
     const cache = fakeCredentialCache({
-      "credential/vellum/platform_base_url": "https://platform.example.com",
-      "credential/vellum/assistant_api_key": "old-assistant-key",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
+      "credential/cadet/assistant_api_key": "old-assistant-key",
     });
 
     // Previous identity: self-intro-greeting OFF.
@@ -318,8 +318,8 @@ describe("RemoteFeatureFlagSync", () => {
     // Warm-pool claim: credentials now belong to the newly-assigned assistant,
     // whose flag evaluation returns self-intro-greeting ON.
     cache._setValues({
-      "credential/vellum/platform_base_url": "https://platform.example.com",
-      "credential/vellum/assistant_api_key": "new-assistant-key",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
+      "credential/cadet/assistant_api_key": "new-assistant-key",
     });
     fetchMock = mock(async () =>
       Response.json({ flags: { "self-intro-greeting": true } }),
@@ -347,8 +347,8 @@ describe("RemoteFeatureFlagSync", () => {
     // the re-entrancy guard — it must trigger one more fetch so the final
     // identity's flags are cached, not the stale ones.
     const cache = fakeCredentialCache({
-      "credential/vellum/platform_base_url": "https://platform.example.com",
-      "credential/vellum/assistant_api_key": "old-assistant-key",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
+      "credential/cadet/assistant_api_key": "old-assistant-key",
     });
 
     let fetchCount = 0;
@@ -376,8 +376,8 @@ describe("RemoteFeatureFlagSync", () => {
     // Warm-pool claim: identity changes, then a second syncNow arrives while
     // the first fetch is still in flight.
     cache._setValues({
-      "credential/vellum/platform_base_url": "https://platform.example.com",
-      "credential/vellum/assistant_api_key": "new-assistant-key",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
+      "credential/cadet/assistant_api_key": "new-assistant-key",
     });
     await sync.syncNow(); // returns immediately, records pendingResync
     await first; // first loop settles, then runs the coalesced follow-up
@@ -474,7 +474,7 @@ describe("RemoteFeatureFlagSync", () => {
     const apiKey = "my-secret-key-42";
     const creds = {
       ...defaultCredentials(),
-      "credential/vellum/assistant_api_key": apiKey,
+      "credential/cadet/assistant_api_key": apiKey,
     };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -493,7 +493,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     const creds = {
       ...defaultCredentials(),
-      "credential/vellum/platform_base_url": "https://platform.example.com",
+      "credential/cadet/platform_base_url": "https://platform.example.com",
     };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -574,7 +574,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     const creds = {
       ...defaultCredentials(),
-      "credential/vellum/platform_base_url": "https://platform.example.com///",
+      "credential/cadet/platform_base_url": "https://platform.example.com///",
     };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -726,8 +726,8 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
 
     const creds = {
-      "credential/vellum/platform_base_url": "  https://platform.example.com  ",
-      "credential/vellum/assistant_api_key": "  trimmed-key  ",
+      "credential/cadet/platform_base_url": "  https://platform.example.com  ",
+      "credential/cadet/assistant_api_key": "  trimmed-key  ",
     };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -898,7 +898,7 @@ describe("RemoteFeatureFlagSync", () => {
     );
 
     const creds = fakeCredentialCache({
-      "credential/vellum/assistant_api_key": "test-api-key",
+      "credential/cadet/assistant_api_key": "test-api-key",
     });
 
     const sync = new RemoteFeatureFlagSync({
@@ -950,7 +950,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     // Simulate transient API key loss (CES hiccup) — platform URL still present
     cache._setValues({
-      "credential/vellum/platform_base_url": "https://platform.vellum.ai",
+      "credential/cadet/platform_base_url": "https://platform.vellum.ai",
     });
     fetchMock = mock(async () =>
       Response.json({ flags: { "per-assistant-flag": false } }),

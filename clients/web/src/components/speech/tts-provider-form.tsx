@@ -130,7 +130,7 @@ export function TtsProviderForm({
     | {
         provider?: string;
         mode?: string;
-        providers?: { vellum?: { model?: string } };
+        providers?: { cadet?: { model?: string } };
       }
     | undefined;
   // A config written by the legacy mode toggle marks managed via `mode` while
@@ -169,7 +169,7 @@ export function TtsProviderForm({
   // Managed voice selection. Server value comes from daemon config; absent
   // means the platform default voice.
   const serverManagedVoice =
-    daemonTts?.providers?.vellum?.model ?? defaultManagedVoice ?? "";
+    daemonTts?.providers?.cadet?.model ?? defaultManagedVoice ?? "";
   const [draftManagedVoice, setDraftManagedVoice] =
     useDraftOverride(serverManagedVoice);
   const selectedManagedVoice =
@@ -307,7 +307,7 @@ export function TtsProviderForm({
             }
           : {}),
         ...(managedVoiceChanged
-          ? { providers: { vellum: { model: draftManagedVoice.trim() } } }
+          ? { providers: { cadet: { model: draftManagedVoice.trim() } } }
           : {}),
       };
       if (Object.keys(ttsBody).length > 0) {
@@ -420,7 +420,7 @@ export function TtsProviderForm({
   // and nothing for the client-side Test path (a direct provider call) to use.
   const isManaged = draftProvider === "cadet";
   // Managed voice selection needs a daemon that persists
-  // `services.tts.providers.vellum.model`. Old daemons (and the static
+  // `services.tts.providers.cadet.model`. Old daemons (and the static
   // fallback catalog used before the live catalog loads) report
   // supportsVoiceSelection: false for cadet, hiding the selector so the UI
   // never claims to save a voice the daemon would ignore.

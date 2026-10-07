@@ -53,7 +53,7 @@ const meta = {
     onOpenChange: fn(),
     assistantId: ASSISTANT_ID,
     assistantName: "Mel",
-    rootDomain: "vellum.me",
+    rootDomain: "cadet.me",
     locked: true,
     onUpgrade: fn(),
     onSeePlans: fn(),

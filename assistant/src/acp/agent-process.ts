@@ -215,7 +215,7 @@ export class AcpAgentProcess {
 
     const response = await connection.initialize({
       protocolVersion: acp.PROTOCOL_VERSION,
-      clientInfo: { name: "vellum", version: "1.0.0" },
+      clientInfo: { name: "cadet", version: "1.0.0" },
       clientCapabilities: {
         fs: { readTextFile: true, writeTextFile: true },
         terminal: true,

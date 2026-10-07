@@ -189,7 +189,7 @@ mock.module("@/runtime/platform-detection", () => ({
 mock.module("@/runtime/self-hosted-servers", () => ({
   installNativeRememberedOrigins: installNativeRememberedOriginsMock,
   nativeSwitchToOrigin: nativeSwitchToOriginMock,
-  nativeVellumCloudOrigin: async () => nativeCloudOriginValue,
+  nativeCadetCloudOrigin: async () => nativeCloudOriginValue,
 }));
 
 mock.module("@/domains/onboarding/components/connect-recovery-dialog", () => ({
@@ -457,7 +457,7 @@ function render(ui: ReactNode) {
 
 const PAIRED_ID = "paired-1";
 const PLATFORM_ID = "platform-1";
-const LOCAL_ID = "vellum-deep-hare-ww1iw1";
+const LOCAL_ID = "cadet-deep-hare-ww1iw1";
 
 function makePairedAssistant(
   overrides: Partial<ResolvedAssistant> = {},
@@ -479,7 +479,7 @@ function makePlatformAssistant(
   return {
     id: PLATFORM_ID,
     name: "Cloud Helper",
-    cloud: "vellum",
+    cloud: "cadet",
     isLocal: false,
     isPlatformHosted: true,
     isPaired: false,
@@ -509,7 +509,7 @@ const REPAIR_COPY =
  * What a shell reports as its baked Cadet Cloud origin. It is the Capacitor
  * `server.url`, which is the hub's `/assistant` root rather than a bare base.
  */
-const BAKED_CLOUD_URL = "https://www.vellum.ai/assistant";
+const BAKED_CLOUD_URL = "https://www.cadet.ai/assistant";
 
 function makeOrigin(
   overrides: Partial<RememberedOrigin> = {},
@@ -1716,7 +1716,7 @@ describe("SelectAssistantScreen assistant avatars", () => {
 describe("SelectAssistantScreen assistant labels", () => {
   // Two entries per case: a sole accessible local entry auto-connects
   // instead of rendering the chooser.
-  const SECOND_LOCAL_ID = "vellum-calm-otter-ab2cd3";
+  const SECOND_LOCAL_ID = "cadet-calm-otter-ab2cd3";
 
   test("a named local entry shows its persona name", () => {
     assistantsValue = [

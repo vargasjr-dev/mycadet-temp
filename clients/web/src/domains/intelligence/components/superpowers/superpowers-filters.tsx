@@ -55,7 +55,7 @@ type TranslateFilterLabel = (
 /** `cadet`, `clawhub`, and `skills.sh` are brand/product names, never translated. */
 function filterLabel(value: SuperpowerFilter, t: TranslateFilterLabel): string {
   switch (value) {
-    case "vellum":
+    case "cadet":
       return "Cadet";
     case "clawhub":
       return "Clawhub";
@@ -103,7 +103,7 @@ function useFilterOptions(): {
       { value: "plugins", label: filterLabel("plugins", t), icon: Puzzle },
     ],
     originFilters: [
-      { value: "vellum", label: filterLabel("vellum", t), icon: Box },
+      { value: "cadet", label: filterLabel("cadet", t), icon: Box },
       { value: "clawhub", label: filterLabel("clawhub", t), icon: Globe },
       { value: "skillssh", label: filterLabel("skillssh", t), icon: Terminal },
       { value: "custom", label: filterLabel("custom", t), icon: User },

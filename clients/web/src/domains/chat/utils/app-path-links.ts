@@ -1,7 +1,7 @@
 /**
  * In-app destinations a markdown href can name: client routes under
  * `/assistant/` and `/account/`, written as a same-origin relative path or as
- * an http(s) URL on this origin / a vellum.ai host.
+ * an http(s) URL on this origin / a cadet.ai host.
  *
  * Workspace file paths (`/workspace/...`) are not in-app routes; they stay
  * file links. Protocol-relative and other origin-escaping shapes are rejected
@@ -35,9 +35,9 @@ export function isClientAppPath(href: string): boolean {
   return isClientAppPathname(pathnameOf(href));
 }
 
-function isVellumAppHost(hostname: string): boolean {
+function isCadetAppHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return host === "vellum.ai" || host.endsWith(".vellum.ai");
+  return host === "cadet.ai" || host.endsWith(".cadet.ai");
 }
 
 /**
@@ -63,7 +63,7 @@ export function toAppPathFromHref(href: string): string | null {
     }
     const sameOrigin =
       typeof window !== "undefined" && url.origin === window.location.origin;
-    if (!sameOrigin && !isVellumAppHost(url.hostname)) {
+    if (!sameOrigin && !isCadetAppHost(url.hostname)) {
       return null;
     }
     return `${url.pathname}${url.search}${url.hash}`;

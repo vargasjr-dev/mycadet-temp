@@ -2,28 +2,28 @@ import { contextBridge, ipcRenderer } from "electron";
 
 import type {
   AppVersionInfo,
-  VellumBridge,
-  VellumCommand,
+  CadetBridge,
+  CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import { createWindowsCoreBridge } from "./core-capabilities";
 import { composePreloadFeatures } from "./features";
 
-export type { AppVersionInfo, VellumBridge, VellumCommand };
+export type { AppVersionInfo, CadetBridge, CadetCommand };
 
 // The always-present core plus every `./features/` module;
 // `bridge-parity.test.ts` holds the composed bridge to the full contract.
 const bridge = composePreloadFeatures(createWindowsCoreBridge(ipcRenderer));
-contextBridge.exposeInMainWorld("vellum", bridge);
+contextBridge.exposeInMainWorld("cadet", bridge);
 
-const vellumConfig = ipcRenderer.sendSync("cadet:config:get") as {
+const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
   platformUrl: string;
   disablePlatform?: boolean;
   deviceId: string | null;
 } | null;
-if (vellumConfig) {
-  contextBridge.exposeInMainWorld("__VELLUM_CONFIG__", vellumConfig);
+if (cadetConfig) {
+  contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);
 }
 
 const flagOverrides: Record<string, boolean | string> = {};
@@ -45,5 +45,5 @@ for (const [key, value] of Object.entries(process.env)) {
   }
 }
 if (Object.keys(flagOverrides).length > 0) {
-  contextBridge.exposeInMainWorld("__VELLUM_FLAG_OVERRIDES__", flagOverrides);
+  contextBridge.exposeInMainWorld("__CADET_FLAG_OVERRIDES__", flagOverrides);
 }

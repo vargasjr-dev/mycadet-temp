@@ -652,7 +652,7 @@ export const InCallPicking: Story = {
               kind: "tab",
               chromeWindowId: 101,
               tabIndex: 2,
-              title: "vellum-ai/vellum-assistant: Pull request #42002",
+              title: "cadet-ai/cadet-assistant: Pull request #42002",
             },
           ],
           windows: [

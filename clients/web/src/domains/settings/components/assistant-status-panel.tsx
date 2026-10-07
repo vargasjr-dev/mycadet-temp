@@ -115,7 +115,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     },
     retry: false,
   });
-  /* A platform-mode read needs `Vellum-Organization-Id`, which the org store
+  /* A platform-mode read needs `Cadet-Organization-Id`, which the org store
      hydrates after auth. Without this gate the request can go out headerless
      and be rejected. Ready immediately when there is no platform session, so
      self-hosted and gateway-only sessions are not held up by it. */

@@ -7,7 +7,7 @@
  * reload: the override lives in the same store the stage reads, so flipping it
  * is a render.
  *
- * Surface (exposed under `window._vellumDebug.flags`):
+ * Surface (exposed under `window._cadetDebug.flags`):
  *
  *   forceSleepStage("sleeping")  - lids down, drifting
  *   forceSleepStage("waking")    - lids further open

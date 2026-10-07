@@ -29,8 +29,8 @@ import { SidebarTree, type SidebarItem } from "@/components/sidebar-tree";
 export function SettingsLayout() {
   const settingsDeveloperNav =
     useAssistantFeatureFlagStore.use.settingsDeveloperNav();
-  const vellumHostedInference =
-    useAssistantFeatureFlagStore.use.vellumHostedInference();
+  const cadetHostedInference =
+    useAssistantFeatureFlagStore.use.cadetHostedInference();
   // Settings brings its own full-screen chrome; the Windows in-title-bar
   // menu bar yields while it's up (inert off the Windows shell, where the
   // menu bar doesn't render anyway).
@@ -140,7 +140,7 @@ export function SettingsLayout() {
 
   const bottomItems = useMemo<SidebarItem[]>(() => {
     const items: SidebarItem[] = [];
-    if (vellumHostedInference) {
+    if (cadetHostedInference) {
       items.push(
         ...SETTINGS_SIDEBAR.filter((item) => item.id === "personality").map(
           (item) => ({
@@ -179,7 +179,7 @@ export function SettingsLayout() {
     return items;
   }, [
     settingsDeveloperNav,
-    vellumHostedInference,
+    cadetHostedInference,
     hasPlatformSession,
     navigate,
     login,

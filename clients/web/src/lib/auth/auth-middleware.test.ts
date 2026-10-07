@@ -21,8 +21,8 @@ mock.module("@/lib/local-mode", () => ({
   isLocalAssistant: (a: {
     cloud?: string;
     resources?: { gatewayPort?: number };
-  }) => a.cloud !== "vellum" && a.resources?.gatewayPort != null,
-  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "vellum",
+  }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
+  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isRemoteGatewayMode: () => false,
 }));
 
@@ -113,7 +113,7 @@ const postCheckoutBilling = `${routes.settings.root}/billing?session_id=cs_test_
 // provisions on the platform rather than letting its own gateway answer for
 // the assistant. Every client lands on the headless research onboarding, which
 // runs the purchased-provisioning wait behind the form.
-const managedFunnel = `${routes.onboarding.research}?hosting=vellum-cloud&post_checkout=1`;
+const managedFunnel = `${routes.onboarding.research}?hosting=cadet-cloud&post_checkout=1`;
 
 /**
  * A checkout return on a local-mode client whose lockfile already holds a

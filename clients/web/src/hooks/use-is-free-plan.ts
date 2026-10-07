@@ -10,7 +10,7 @@ import { useIsOrgReady } from "@/hooks/use-is-org-ready";
  * fetch so surfaces only fetch the subscription when the value is needed, and
  * is folded together with `useIsOrgReady()` so the request never fires before
  * the org store hydrates — the subscription endpoint requires the
- * `Vellum-Organization-Id` header the interceptor only attaches once the active
+ * `Cadet-Organization-Id` header the interceptor only attaches once the active
  * org id is known, so a headerless request on first load would be rejected.
  */
 export function useIsFreePlan(enabled = true): boolean | undefined {

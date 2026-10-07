@@ -38,7 +38,7 @@ export const TTS_PROVIDERS: readonly TTSProvider[] = [
       "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
     // Deliberately false in the static fallback: this entry stands in for
     // daemons whose live catalog is unavailable or predates managed voice
-    // selection, and those daemons ignore `providers.vellum.model` writes.
+    // selection, and those daemons ignore `providers.cadet.model` writes.
     // New daemons advertise true via the live catalog fetch.
     supportsVoiceSelection: false,
     apiKeyPlaceholder: "Connected via your Cadet account",

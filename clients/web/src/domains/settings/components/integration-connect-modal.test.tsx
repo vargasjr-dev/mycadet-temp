@@ -46,7 +46,7 @@ const manualPlan = planFor({
 /** Cadet's hosted sign-in and nothing else, the shape a host is asked for. */
 const hostedOnlyPlan = planFor({ providers: [NOTION_PROVIDER] });
 
-/** Notion over both its MCP server and a Vellum-hosted account. */
+/** Notion over both its MCP server and a Cadet-hosted account. */
 const connectedPlan = planFor({
   providers: [NOTION_PROVIDER],
   connections: [oauthConnection("notion", { connected: false })],

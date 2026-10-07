@@ -33,7 +33,7 @@ function assistantWithToolCalls(
 }
 
 afterEach(() => {
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
 });
 
 describe("chat utilities", () => {
@@ -41,9 +41,9 @@ describe("chat utilities", () => {
     test("names the Windows client in native dictation errors", () => {
       (
         window as unknown as {
-          vellum?: { platform: "electron"; hostOS: "windows" };
+          cadet?: { platform: "electron"; hostOS: "windows" };
         }
-      ).vellum = { platform: "electron", hostOS: "windows" };
+      ).cadet = { platform: "electron", hostOS: "windows" };
 
       expect(formatVoiceError("native-stt-no-transcript")).toBe(
         "Windows Native Dictation didn’t return a transcript. Check native speech recognition in system settings, then try again.",
@@ -53,9 +53,9 @@ describe("chat utilities", () => {
     test("names the macOS client in native dictation errors", () => {
       (
         window as unknown as {
-          vellum?: { platform: "electron"; hostOS: "macos" };
+          cadet?: { platform: "electron"; hostOS: "macos" };
         }
-      ).vellum = { platform: "electron", hostOS: "macos" };
+      ).cadet = { platform: "electron", hostOS: "macos" };
 
       expect(formatVoiceError("native-stt-no-transcript")).toBe(
         "macOS Native Dictation didn’t return a transcript. Check native speech recognition in system settings, then try again.",

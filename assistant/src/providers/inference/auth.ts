@@ -1,7 +1,7 @@
 import { z } from "zod";
 
+import { CADET_MANAGED_PROVIDER } from "../cadet-model-routing.js";
 import { PROVIDER_CATALOG } from "../model-catalog.js";
-import { VELLUM_MANAGED_PROVIDER } from "../vellum-model-routing.js";
 
 // ---------------------------------------------------------------------------
 // Auth discriminated union (stored in provider_connections.auth as JSON)
@@ -12,7 +12,7 @@ import { VELLUM_MANAGED_PROVIDER } from "../vellum-model-routing.js";
  *
  * Runtime-supported variants:
  *   - api_key: look up `credential` in vault, inject as bearer/provider header.
- *   - platform: route via Vellum managed proxy; no client-side credential.
+ *   - platform: route via Cadet managed proxy; no client-side credential.
  *   - none: no auth (e.g. Ollama running locally).
  *   - oauth_subscription: OAuth-based subscription auth (e.g. ChatGPT Codex).
  *   - service_account: Google service-account JSON key (Vertex AI); signs a
@@ -46,7 +46,7 @@ export type Auth = z.infer<typeof AuthSchema>;
 /**
  * Derive the auth configuration a provider implies when a client omits an
  * explicit `auth` object: keyless catalog providers (`setupMode: "keyless"`,
- * e.g. ollama) need none, the Vellum-managed sentinel routes via the
+ * e.g. ollama) need none, the Cadet-managed sentinel routes via the
  * platform proxy, and every other provider authenticates by API key. Returns
  * null when an API key is required but no credential was supplied, so route
  * handlers can reject with a 400. `oauth_subscription` is never derived —
@@ -56,7 +56,7 @@ export function deriveAuthForProvider(
   provider: string,
   credential?: string,
 ): Auth | null {
-  if (provider === VELLUM_MANAGED_PROVIDER) {
+  if (provider === CADET_MANAGED_PROVIDER) {
     return { type: "platform" };
   }
   const entry = PROVIDER_CATALOG.find((p) => p.id === provider);
@@ -75,14 +75,14 @@ export function deriveAuthForProvider(
  * The auth a connection dispatches with. The stored auth object is
  * authoritative only where it carries a payload (an api_key credential ref,
  * the oauth_subscription marker, a deliberately keyed keyless provider);
- * the vellum provider IS the managed route, so its auth derives from the
+ * the cadet provider IS the managed route, so its auth derives from the
  * provider and the stored value can never mislead dispatch.
  */
 export function effectiveConnectionAuth(connection: {
   provider: string;
   auth: Auth;
 }): Auth {
-  return connection.provider === VELLUM_MANAGED_PROVIDER
+  return connection.provider === CADET_MANAGED_PROVIDER
     ? { type: "platform" }
     : connection.auth;
 }
@@ -119,11 +119,11 @@ export type ResolvedAuth =
 export const VALID_CONNECTION_PROVIDERS: readonly string[] = [
   ...new Set([
     ...PROVIDER_CATALOG.map((p) => p.id),
-    // The provider-agnostic Vellum-managed connection stores this sentinel in
-    // its `provider` column. The same id owns Vellum-hosted GPU models in the
+    // The provider-agnostic Cadet-managed connection stores this sentinel in
+    // its `provider` column. The same id owns Cadet-hosted GPU models in the
     // catalog. Keep it allowlisted explicitly so a future catalog rename
-    // cannot drop persisted `vellum` rows from the DB loaders.
-    VELLUM_MANAGED_PROVIDER,
+    // cannot drop persisted `cadet` rows from the DB loaders.
+    CADET_MANAGED_PROVIDER,
     // The ChatGPT-subscription row stores the "chatgpt" routing identity in
     // its `provider` column: the row IS the subscription route (auth
     // modality = provider identity), and dispatch derives the openai
@@ -146,12 +146,12 @@ export const CHATGPT_SUBSCRIPTION_CONNECTION_NAME = "chatgpt-subscription";
  * Provider values that name a routing identity. Dispatch translates them
  * to a connection row and an upstream factory id via
  * `resolveRoutingIdentity`. `chatgpt` has no adapter factory (upstream is
- * always openai). `vellum` is also a catalog factory id when the derived
- * upstream is vellum. Identity profiles carry no provider_connection;
+ * always openai). `cadet` is also a catalog factory id when the derived
+ * upstream is cadet. Identity profiles carry no provider_connection;
  * backfill and materialization must not stamp one.
  */
 export const ROUTING_IDENTITY_PROVIDERS: ReadonlySet<string> = new Set([
-  "vellum",
+  "cadet",
   "chatgpt",
 ]);
 
@@ -232,10 +232,10 @@ export const ProviderConnectionSchema = z
     createdAt: z.number().int(),
     updatedAt: z.number().int(),
     /**
-     * Whether this row is the Vellum-managed connection (`vellum`). Derived from
+     * Whether this row is the Cadet-managed connection (`cadet`). Derived from
      * `MANAGED_CONNECTION_NAMES` in `connections.ts` at serialize time; the
      * DB column does not exist. Clients use this to render the read-only
-     * "Vellum" badge + view-only editor and to disable the delete affordance
+     * "Cadet" badge + view-only editor and to disable the delete affordance
      * without mirroring the canonical name list locally.
      */
     isManaged: z.boolean(),

@@ -3,7 +3,7 @@
  * can restore the session optimistically instead of bouncing a
  * still-logged-in user to the login screen (LUM-2412).
  *
- * The key uses the `vellum:` user-scoped prefix, so logout's
+ * The key uses the `cadet:` user-scoped prefix, so logout's
  * `clearUserScopedStorage` sweep (and the cross-tab logout broadcast)
  * removes it automatically; the auth store also clears it explicitly
  * whenever a session check comes back with a settled "no session"

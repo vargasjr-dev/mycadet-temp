@@ -6,7 +6,7 @@ import { mintRandomId } from "@/lib/telemetry/random-id";
 
 const STORAGE_KEY = "cadet:browser-notification-deliveries:v1";
 const SOUND_STORAGE_KEY = "cadet:browser-notification-sounds:v1";
-const DATABASE_NAME = "vellum-browser-notifications";
+const DATABASE_NAME = "cadet-browser-notifications";
 const RECEIPTS_STORE = "receipts";
 const MAX_DELIVERIES = 128;
 const RETENTION_MS = 10 * 60_000;

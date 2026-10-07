@@ -8,7 +8,7 @@ import {
   installCapabilityModules,
   type CapabilityModuleExport,
 } from "@mycadet/electron-desktop/capability-registry";
-import { VELLUM_BRIDGE_KEYS, type VellumBridge } from "@mycadet/ipc-contract";
+import { VELLUM_BRIDGE_KEYS, type CadetBridge } from "@mycadet/ipc-contract";
 
 const exposed = new Map<string, unknown>();
 const ipcRenderer = {
@@ -34,7 +34,7 @@ const { createLinuxCoreBridge, LINUX_NOT_APPLICABLE_CAPABILITIES } =
 const featuresDir = path.join(import.meta.dir, "features");
 const featureModules: Record<
   string,
-  CapabilityModuleExport<BridgeCapabilityRegistry<VellumBridge>>
+  CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>
 > = {};
 for (const file of readdirSync(featuresDir)) {
   if (!file.endsWith(".ts") || file.endsWith(".test.ts")) {
@@ -42,11 +42,11 @@ for (const file of readdirSync(featuresDir)) {
   }
   featureModules[`./features/${file}`] = (await import(
     path.join(featuresDir, file)
-  )) as CapabilityModuleExport<BridgeCapabilityRegistry<VellumBridge>>;
+  )) as CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>;
 }
 
-const composeLinuxBridge = (): Partial<VellumBridge> => {
-  const registry = new BridgeCapabilityRegistry<VellumBridge>(
+const composeLinuxBridge = (): Partial<CadetBridge> => {
+  const registry = new BridgeCapabilityRegistry<CadetBridge>(
     createLinuxCoreBridge(ipcRenderer as unknown as IpcRenderer),
   );
   installCapabilityModules(registry, featureModules);
@@ -54,7 +54,7 @@ const composeLinuxBridge = (): Partial<VellumBridge> => {
 };
 
 await import("../../../macos/src/preload/index");
-const macBridge = exposed.get("vellum") as VellumBridge;
+const macBridge = exposed.get("cadet") as CadetBridge;
 
 const surface = (value: unknown, prefix = ""): string[] => {
   if (typeof value !== "object" || value === null) {
@@ -102,7 +102,7 @@ const MACOS_ONLY_SURFACE = [
   "text.undoInFrontApp",
 ];
 
-test("the composed Linux bridge satisfies every applicable VellumBridge key", () => {
+test("the composed Linux bridge satisfies every applicable CadetBridge key", () => {
   const bridge = composeLinuxBridge();
 
   for (const key of required) {

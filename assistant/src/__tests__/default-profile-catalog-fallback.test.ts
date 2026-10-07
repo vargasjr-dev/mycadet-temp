@@ -42,19 +42,19 @@ import {
   LLMSchema,
   type ProfileEntry,
 } from "../config/schemas/llm.js";
+import { getManagedUpstream } from "../providers/cadet-model-routing.js";
 import { isModelInCatalog } from "../providers/model-catalog.js";
-import { getManagedUpstream } from "../providers/vellum-model-routing.js";
 
-const vellum: DefaultProviderConfig = { provider: "vellum" };
+const cadet: DefaultProviderConfig = { provider: "cadet" };
 
 describe("fallbackProfile pointers on the cadet column", () => {
   test("every default profile's cadet impl points at an existing backup", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
-      const impl = PROFILE_IMPLS[key].vellum;
+      const impl = PROFILE_IMPLS[key].cadet;
       expect(impl.fallbackProfile).toBe(FALLBACK_PROFILE_BY_KEY[key]);
       const backup = CODE_DEFAULT_PROFILE_ENTRIES[FALLBACK_PROFILE_BY_KEY[key]];
       expect(backup).toBeDefined();
-      expect(backup.provider).toBe("vellum");
+      expect(backup.provider).toBe("cadet");
       expect(backup.source).toBe("managed");
       // Single hop: a backup never declares a fallback of its own.
       expect(backup.fallbackProfile).toBeUndefined();
@@ -64,7 +64,7 @@ describe("fallbackProfile pointers on the cadet column", () => {
   test("no BYOK or chatgpt column impl carries fallbackProfile", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       for (const provider of DEFAULT_PROFILE_PROVIDERS) {
-        if (provider === "vellum") {
+        if (provider === "cadet") {
           continue;
         }
         expect(PROFILE_IMPLS[key][provider].fallbackProfile).toBeUndefined();
@@ -104,10 +104,10 @@ describe("cross-provider rule", () => {
 
 describe("managed-column-only scoping", () => {
   test("the managed column materializes the backups after the primaries", () => {
-    const effective = getEffectiveProfilesForProvider(undefined, vellum);
+    const effective = getEffectiveProfilesForProvider(undefined, cadet);
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeDefined();
-      expect(effective[key]?.provider).toBe("vellum");
+      expect(effective[key]?.provider).toBe("cadet");
       expect(effective[key]?.source).toBe("managed");
     }
     // The seeder inserts missing managed keys in MANAGED_PROFILE_TEMPLATES
@@ -180,7 +180,7 @@ describe("managed-column-only scoping", () => {
     }
     // The managed column still has a body for the stub to stand for.
     expect(
-      getEffectiveProfilesForProvider(workspace, vellum)["balanced-backup"]
+      getEffectiveProfilesForProvider(workspace, cadet)["balanced-backup"]
         ?.model,
     ).toBe(CODE_DEFAULT_PROFILE_ENTRIES["balanced-backup"]?.model);
   });
@@ -208,7 +208,7 @@ describe("effective-profile machinery", () => {
     // reference, no mix target, single hop) against the real entries.
     for (const profiles of [
       getEffectiveProfiles(undefined),
-      getEffectiveProfilesForProvider(undefined, vellum),
+      getEffectiveProfilesForProvider(undefined, cadet),
     ]) {
       const parsed = LLMSchema.parse({
         profiles,
@@ -248,7 +248,7 @@ describe("effective-profile machinery", () => {
       expect(entry?.topP).toBe(body.topP);
       expect(entry?.model).toBe(body.model);
       expect(entry?.maxTokens).toBe(body.maxTokens);
-      expect(String(entry?.provider)).toBe("vellum");
+      expect(String(entry?.provider)).toBe("cadet");
     }
   });
 

@@ -46,17 +46,17 @@ describe("getEffectiveProfiles", () => {
       const body = CODE_DEFAULT_PROFILE_ENTRIES[key];
       expect(body).toBeDefined();
       expect(typeof body.model).toBe("string");
-      expect(body.provider).toBe("vellum");
+      expect(body.provider).toBe("cadet");
       expect(body.provider_connection).toBeUndefined();
       expect(body.source).toBe("managed");
     }
   });
 
-  test("every vellum-column body translates to a managed dispatch target", () => {
+  test("every cadet-column body translates to a managed dispatch target", () => {
     for (const key of [...DEFAULT_PROFILE_KEYS, OS_BETA_PROFILE_KEY]) {
       const body = CODE_DEFAULT_PROFILE_ENTRIES[key];
       const identity = resolveRoutingIdentity(body.provider, body.model);
-      expect(identity?.connectionName).toBe("vellum");
+      expect(identity?.connectionName).toBe("cadet");
       expect(typeof identity?.expectedProvider).toBe("string");
     }
   });
@@ -66,7 +66,7 @@ describe("getEffectiveProfiles", () => {
     expect(jev.model).toBe("jev-latest");
     expect(jev.provider_connection).toBeUndefined();
     expect(resolveRoutingIdentity(jev.provider, jev.model)).toEqual({
-      connectionName: "vellum",
+      connectionName: "cadet",
       expectedProvider: "typesafe",
     });
     expect(
@@ -123,7 +123,7 @@ describe("getEffectiveProfiles", () => {
     const balanced = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
     expect(balanced.model).toBe("accounts/fireworks/models/glm-5p3-flash");
     expect(resolveRoutingIdentity(balanced.provider, balanced.model)).toEqual({
-      connectionName: "vellum",
+      connectionName: "cadet",
       expectedProvider: "fireworks",
     });
   });
@@ -132,7 +132,7 @@ describe("getEffectiveProfiles", () => {
     const quality = CODE_DEFAULT_PROFILE_ENTRIES["quality-optimized"];
     expect(quality.model).toBe("gpt-5.6-sol");
     expect(resolveRoutingIdentity(quality.provider, quality.model)).toEqual({
-      connectionName: "vellum",
+      connectionName: "cadet",
       expectedProvider: "openai",
     });
   });
@@ -220,10 +220,10 @@ describe("getEffectiveProfiles", () => {
 describe("user-selectable profile view", () => {
   test("hides managed backups while retaining them in the fallback catalog", () => {
     const effective = getEffectiveProfilesForProvider(undefined, {
-      provider: "vellum",
+      provider: "cadet",
     });
     const selectable = getUserSelectableProfilesForProvider(undefined, {
-      provider: "vellum",
+      provider: "cadet",
     });
 
     for (const key of DEFAULT_PROFILE_KEYS) {
@@ -250,7 +250,7 @@ describe("resolver integration", () => {
     expect(resolved.model).toBe(
       CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
     );
-    expect(String(resolved.provider)).toBe("vellum");
+    expect(String(resolved.provider)).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
   });
 
@@ -335,7 +335,7 @@ describe("resolver integration", () => {
       const resolved = resolveCallSiteConfig(callSite, llm);
       expect(resolved.model).toBe(body.model as string);
       expect(resolved.model).not.toBe("claude-opus-4-6");
-      expect(String(resolved.provider)).toBe("vellum");
+      expect(String(resolved.provider)).toBe("cadet");
     }
     // Listing follows resolution: the catalog body is what surfaces.
     expect(getEffectiveProfiles(llm.profiles)["latency-optimized"]?.model).toBe(
@@ -373,11 +373,11 @@ describe("resolver integration", () => {
       const effective = getEffectiveProfiles(llm.profiles)[key];
       expect(effective?.model).toBe(body.model);
       expect(effective?.model).not.toBe("claude-opus-4-6");
-      expect(String(effective?.provider)).toBe("vellum");
+      expect(String(effective?.provider)).toBe("cadet");
       expect(effective?.provider_connection).toBeUndefined();
       // Resolution through the managed column agrees with the listing.
       const resolved = resolveDefaultProfileForProvider(llm.profiles, key, {
-        provider: "vellum",
+        provider: "cadet",
       });
       expect(resolved?.model).toBe(body.model);
     }
@@ -475,7 +475,7 @@ describe("resolveDefaultProfileForProvider", () => {
         expect(typeof entry?.model).toBe("string");
         expect(entry?.provider).toBeDefined();
         // Identity columns stamp no connection; BYOK columns always do.
-        if (entry?.provider === "vellum" || entry?.provider === "chatgpt") {
+        if (entry?.provider === "cadet" || entry?.provider === "chatgpt") {
           expect(entry?.provider_connection).toBeUndefined();
         } else {
           expect(entry?.provider_connection).toBeDefined();
@@ -564,7 +564,7 @@ describe("resolveDefaultProfileForProvider", () => {
     const entry = resolveDefaultProfileForProvider(
       undefined,
       "balanced",
-      dp("vellum"),
+      dp("cadet"),
     );
     // `cadet` is a routing identity: balanced dispatches through fireworks.
     expect(entry?.provider).toBe(
@@ -694,7 +694,7 @@ describe("resolveDefaultProfileForProvider", () => {
   test("agrees with getEffectiveProfile for the cadet default provider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(
-        resolveDefaultProfileForProvider(undefined, key, dp("vellum")),
+        resolveDefaultProfileForProvider(undefined, key, dp("cadet")),
       ).toEqual(getEffectiveProfile(undefined, key) as ProfileEntry);
     }
   });

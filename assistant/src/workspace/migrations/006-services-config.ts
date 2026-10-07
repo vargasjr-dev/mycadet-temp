@@ -84,10 +84,10 @@ export const servicesConfigMigration: WorkspaceMigration = {
       }
       if (!hasAnyUserKey) {
         const apiKey = await getSecureKeyAsync(
-          credentialKey("vellum", "assistant_api_key"),
+          credentialKey("cadet", "assistant_api_key"),
         );
         const baseUrl = await getSecureKeyAsync(
-          credentialKey("vellum", "platform_base_url"),
+          credentialKey("cadet", "platform_base_url"),
         );
         if (apiKey && baseUrl) {
           inferenceMode = "managed";

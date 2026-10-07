@@ -2,7 +2,7 @@
 
 Complete, copyable reference apps that demonstrate the recommended patterns from this skill:
 multi-file TSX (`formatVersion: 2`), web-compatible persistence via **custom route handlers**
-(`window.vellum.fetch("/v1/x/…")`), and disciplined error handling. Use them as starting
+(`window.cadet.fetch("/v1/x/…")`), and disciplined error handling. Use them as starting
 points — match the structure, not the styling (give every new app its own visual identity per
 the `frontend-design` skill).
 

@@ -22,18 +22,18 @@ import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
+import { MANAGED_ROUTABLE_PROVIDERS } from "../cadet-model-routing.js";
 import { isConnectionCompatibleWithModel } from "../connection-model-compat.js";
-import { MANAGED_ROUTABLE_PROVIDERS } from "../vellum-model-routing.js";
 import {
   PROVIDERS_REQUIRING_BASE_URL_AND_MODELS,
   ROUTING_IDENTITY_PROVIDERS,
 } from "./auth.js";
 import {
+  CADET_MANAGED_CONNECTION_NAME,
   createConnection,
   getConnection,
   listConnections,
   seedCanonicalConnections,
-  VELLUM_MANAGED_CONNECTION_NAME,
 } from "./connections.js";
 
 const log = getLogger("provider-connections-backfill");
@@ -188,7 +188,7 @@ function ensureProviderConnection(
   }
 
   // Routing identities carry their target in the provider value itself —
-  // dispatch resolves the row per-request (vellum via the model's managed
+  // dispatch resolves the row per-request (cadet via the model's managed
   // upstream, chatgpt via the subscription row). Stamping a provider-keyed
   // row here would misroute them.
   if (ROUTING_IDENTITY_PROVIDERS.has(provider)) {
@@ -199,7 +199,7 @@ function ensureProviderConnection(
 
   // For user-owned entries, an existing connection for the entry's provider
   // wins over the mode-derived default. Only user-brought connections can
-  // match — the canonical `vellum` row carries the `vellum` sentinel
+  // match — the canonical `cadet` row carries the `cadet` sentinel
   // provider, never a concrete upstream. Without this, the managed branch
   // would silently switch a connection-less BYOK-intent profile onto the
   // billed managed connection, and the your-own branch would create a
@@ -231,9 +231,9 @@ function ensureProviderConnection(
     MANAGED_ROUTABLE_PROVIDERS.has(provider)
   ) {
     // All managed-routable providers share the single provider-agnostic
-    // `vellum` connection; the upstream is recovered per-request from the
+    // `cadet` connection; the upstream is recovered per-request from the
     // profile's `provider` field.
-    connectionName = VELLUM_MANAGED_CONNECTION_NAME;
+    connectionName = CADET_MANAGED_CONNECTION_NAME;
   } else {
     // "your-own" path (or provider not managed-supported): ensure a
     // personal connection exists. Ollama is keyless, so it gets

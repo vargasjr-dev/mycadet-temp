@@ -33,7 +33,7 @@ describe("isExpectedDaemonTransientError", () => {
   test("returns true for 400 org-header missing", () => {
     expect(
       isExpectedDaemonTransientError(
-        new ApiError(400, "Vellum-Organization-Id header is required."),
+        new ApiError(400, "Cadet-Organization-Id header is required."),
       ),
     ).toBe(true);
   });
@@ -109,7 +109,7 @@ describe("shouldRetryDaemonError", () => {
     expect(
       shouldRetryDaemonError(
         0,
-        new ApiError(400, "Vellum-Organization-Id header is required."),
+        new ApiError(400, "Cadet-Organization-Id header is required."),
       ),
     ).toBe(true);
   });

@@ -67,7 +67,7 @@ function creditTier(
     label,
     credits_usd: creditsUsd,
     price_cents: creditsUsd * 100,
-    lookup_key: `vellum_credits_${creditsUsd}`,
+    lookup_key: `cadet_credits_${creditsUsd}`,
     legacy,
   };
 }
@@ -86,7 +86,7 @@ const STORY_PLANS: PlanListResponse = {
     {
       id: "pro",
       name: "Pro",
-      base_lookup_key: "vellum_pro_base",
+      base_lookup_key: "cadet_pro_base",
       base_price_cents: 1000,
       billing_interval: "month",
       included_features: [],

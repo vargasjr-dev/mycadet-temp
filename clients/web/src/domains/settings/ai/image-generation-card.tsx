@@ -186,12 +186,12 @@ export function ImageGenerationCard() {
           trimmed,
         );
       }
-      const vellumUnsupported =
+      const cadetUnsupported =
         provider === "cadet" && !supportsImageGenCadetProvider();
       const imageGenServiceBody: {
         provider?: string;
         mode: "managed" | "your-own";
-      } = vellumUnsupported
+      } = cadetUnsupported
         ? { mode: "managed" }
         : {
             provider,

@@ -108,7 +108,7 @@ const INERT_STATUS: Omit<BillingBalanceStatus, "enabled" | "settled"> = {
 /**
  * Whether the org-scoped billing summary query may fire: the active assistant
  * must be positively resolved as platform-hosted with a live platform session,
- * and the org store must be ready to supply the `Vellum-Organization-Id`
+ * and the org store must be ready to supply the `Cadet-Organization-Id`
  * header. Shared by {@link useBillingBalanceStatus} and the turn-end billing
  * invalidation in `use-conversation-history` so the two gates never drift.
  */

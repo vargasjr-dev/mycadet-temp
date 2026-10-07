@@ -1,4 +1,4 @@
-import type { VellumCommand } from "./types";
+import type { CadetCommand } from "./types";
 
 /**
  * Default accelerator per command, as the desktop shell registers them.
@@ -12,7 +12,7 @@ import type { VellumCommand } from "./types";
  * The shell merges user overrides over this at menu-build time, so this is
  * the default rather than the effective binding.
  */
-export const DEFAULT_ACCELERATORS: Record<VellumCommand["kind"], string> = {
+export const DEFAULT_ACCELERATORS: Record<CadetCommand["kind"], string> = {
   newConversation: "CmdOrCtrl+N",
   currentConversation: "CmdOrCtrl+Shift+N",
   markCurrentUnread: "CmdOrCtrl+Shift+U",

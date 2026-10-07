@@ -14,7 +14,7 @@ import {
 import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   DEFAULT_COMPANION_SIZE,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import {
@@ -52,7 +52,7 @@ export const getTrayIcon = (): NativeImage => {
   return cachedIcon;
 };
 
-const dispatch = (command: VellumCommand): void => {
+const dispatch = (command: CadetCommand): void => {
   ensureVisible();
   const win = current();
   if (!win || win.isDestroyed()) {

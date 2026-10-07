@@ -140,9 +140,9 @@ function parseEnvValue(
 function computeEnvFlagOverrides(): Record<string, boolean | string> {
   if (
     typeof window !== "undefined" &&
-    window.__VELLUM_FLAG_OVERRIDES__ != null
+    window.__CADET_FLAG_OVERRIDES__ != null
   ) {
-    return { ...window.__VELLUM_FLAG_OVERRIDES__ };
+    return { ...window.__CADET_FLAG_OVERRIDES__ };
   }
 
   const overrides: Record<string, boolean | string> = {};

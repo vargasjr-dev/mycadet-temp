@@ -62,7 +62,7 @@ function freshQueryClient(): QueryClient {
 }
 
 beforeEach(() => {
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   fetchMock.mockClear();
   fetchMock.mockImplementation(async () => jsonResponse({}));
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -72,7 +72,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   orgReadinessValue = "ready";
   globalThis.fetch = originalFetch;
 });
@@ -131,7 +131,7 @@ describe("useClientFeatureFlagSync", () => {
   });
 
   test("does not fetch platform client flags in remote-gateway mode", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     const queryClient = freshQueryClient();
     renderHook(() => useClientFeatureFlagSync(true), {
       wrapper: createWrapper(queryClient),
@@ -144,7 +144,7 @@ describe("useClientFeatureFlagSync", () => {
   test("settles the store when no server values are coming", async () => {
     // Surfaces that wait for `hydrated` before acting on a default-off flag
     // would hang forever otherwise.
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     const queryClient = freshQueryClient();
     renderHook(() => useClientFeatureFlagSync(true), {
       wrapper: createWrapper(queryClient),

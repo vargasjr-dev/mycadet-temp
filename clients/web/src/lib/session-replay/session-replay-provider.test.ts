@@ -35,12 +35,12 @@ beforeEach(() => {
 // tests run as an ordered sequence: the first `init` loads + primes it.
 describe("sessionReplayRootHostname", () => {
   test("omits cookie scope on the packaged Electron origin", () => {
-    expect(sessionReplayRootHostname("app://vellum.ai")).toBeUndefined();
+    expect(sessionReplayRootHostname("app://cadet.ai")).toBeUndefined();
   });
 
   test("shares https recordings across Cadet subdomains", () => {
-    expect(sessionReplayRootHostname("https://app.vellum.ai")).toBe(
-      ".vellum.ai",
+    expect(sessionReplayRootHostname("https://app.cadet.ai")).toBe(
+      ".cadet.ai",
     );
   });
 });
@@ -81,7 +81,7 @@ describe("replay provider (first-party proxy, lazy load)", () => {
     expect(appId).toBe("app-123");
     expect(options.serverURL).toBe(`${BASE}/_sr/ingest/i`);
     expect(options.release).toBe("1.2.3");
-    expect(options.rootHostname).toBe(".vellum.ai");
+    expect(options.rootHostname).toBe(".cadet.ai");
     expect(options.network).toBe(NETWORK);
 
     // The stats beacon (no init option) is routed through the proxy via the

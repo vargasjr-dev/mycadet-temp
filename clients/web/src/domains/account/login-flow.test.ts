@@ -120,7 +120,7 @@ describe("login flow routing", () => {
       ),
     ).toBe(true);
     expect(requiresFullPageNavigation("/v1/some-api")).toBe(true);
-    expect(requiresFullPageNavigation("https://www.vellum.ai/assistant")).toBe(
+    expect(requiresFullPageNavigation("https://www.cadet.ai/assistant")).toBe(
       true,
     );
     expect(requiresFullPageNavigation("/assistant")).toBe(false);
@@ -137,7 +137,7 @@ describe("login flow routing", () => {
 describe("requiresPlatformSession", () => {
   const BILLING_LANDING = `${routes.settings.root}/billing`;
   const STRIPE_RETURN = "session_id=cs_test_123";
-  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=vellum-cloud&post_checkout=1`;
+  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
 
   test.each([
     [routes.checkout],
@@ -154,7 +154,7 @@ describe("requiresPlatformSession", () => {
     [routes.account.root],
     ["/import?foo=1"],
     ["/accounts/cli/callback?port=1"],
-    ["https://app.vellum.ai/x"],
+    ["https://app.cadet.ai/x"],
   ])("%s needs a platform session", (destination) => {
     expect(requiresPlatformSession(destination)).toBe(true);
   });
@@ -169,7 +169,7 @@ describe("requiresPlatformSession", () => {
     [routes.settings.usageBilling],
     // A managed hatch a free user chose carries no purchase to lose.
     [routes.onboarding.hatching],
-    [`${routes.onboarding.hatching}?hosting=vellum-cloud`],
+    [`${routes.onboarding.hatching}?hosting=cadet-cloud`],
   ])("%s works on a local gateway identity", (destination) => {
     expect(requiresPlatformSession(destination)).toBe(false);
   });

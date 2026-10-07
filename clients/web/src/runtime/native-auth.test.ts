@@ -212,19 +212,19 @@ describe("resolveNativePostAuthDestination", () => {
 });
 
 describe("startAuthFlow on Electron", () => {
-  const windowWithBridge = window as { vellum?: unknown };
+  const windowWithBridge = window as { cadet?: unknown };
   const originalLocation = Object.getOwnPropertyDescriptor(window, "location");
 
   beforeEach(() => {
     Object.defineProperty(window, "location", {
       configurable: true,
       writable: true,
-      value: { href: "app://vellum.ai/assistant/welcome" },
+      value: { href: "app://cadet.ai/assistant/welcome" },
     });
   });
 
   afterEach(() => {
-    delete windowWithBridge.vellum;
+    delete windowWithBridge.cadet;
     useResolvedAssistantsStore.setState({ assistants: [] });
     if (originalLocation) {
       Object.defineProperty(window, "location", originalLocation);
@@ -232,7 +232,7 @@ describe("startAuthFlow on Electron", () => {
   });
 
   test("a bridge without auth.startOAuth rejects instead of falling into the loopback flow", async () => {
-    windowWithBridge.vellum = { platform: "electron" };
+    windowWithBridge.cadet = { platform: "electron" };
 
     const error = await startAuthFlow("workos", "/account/provider/callback", {
       returnTo: "/assistant/identity",
@@ -247,7 +247,7 @@ describe("startAuthFlow on Electron", () => {
 
   test("a bridge with auth.startOAuth drives the in-app OAuth flow", async () => {
     const startOAuth = mock(() => Promise.resolve({ sessionToken: "" }));
-    windowWithBridge.vellum = { platform: "electron", auth: { startOAuth } };
+    windowWithBridge.cadet = { platform: "electron", auth: { startOAuth } };
 
     await startAuthFlow("workos", "/account/provider/callback", {
       returnTo: "/assistant/identity",
@@ -262,7 +262,7 @@ describe("startAuthFlow on Electron", () => {
     const startOAuth = mock(() =>
       Promise.resolve({ sessionToken: "session-token" }),
     );
-    windowWithBridge.vellum = {
+    windowWithBridge.cadet = {
       platform: "electron",
       auth: { startOAuth },
       menu: { setPlatformSession: async () => {} },
@@ -352,9 +352,9 @@ describe("startAuthFlow attribution on native", () => {
       writable: true,
       value: {
         protocol: "https:",
-        host: "app.vellum.ai",
+        host: "app.cadet.ai",
         search,
-        href: "https://app.vellum.ai/account/signup",
+        href: "https://app.cadet.ai/account/signup",
       },
     });
   }
@@ -440,7 +440,7 @@ describe("startAuthFlow attribution on native", () => {
       "postAuthDestination",
     ]);
     expect(options).toEqual({
-      baseURL: "https://app.vellum.ai",
+      baseURL: "https://app.cadet.ai",
       intent: "signup",
       postAuthDestination: "/assistant/onboarding/privacy",
     });

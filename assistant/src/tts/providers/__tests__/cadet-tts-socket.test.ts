@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { VellumTtsSocketOptions } from "../vellum-tts-socket.js";
-import { synthesizeOverVellumTtsSocket } from "../vellum-tts-socket.js";
+import type { CadetTtsSocketOptions } from "../cadet-tts-socket.js";
+import { synthesizeOverCadetTtsSocket } from "../cadet-tts-socket.js";
 
 const TEST_URL =
   "ws://gateway.test/v1/speech/tts/stream?key=tok&encoding=linear16&sample_rate=16000";
@@ -74,7 +74,7 @@ function sentJson(ws: MockWebSocket): Array<Record<string, unknown>> {
     .map((d) => JSON.parse(d) as Record<string, unknown>);
 }
 
-describe("synthesizeOverVellumTtsSocket", () => {
+describe("synthesizeOverCadetTtsSocket", () => {
   let mockWs: MockWebSocket;
   let originalWebSocket: unknown;
 
@@ -93,9 +93,9 @@ describe("synthesizeOverVellumTtsSocket", () => {
   });
 
   function startSession(
-    overrides: Partial<VellumTtsSocketOptions> = {},
+    overrides: Partial<CadetTtsSocketOptions> = {},
   ): Promise<Buffer> {
-    return synthesizeOverVellumTtsSocket({
+    return synthesizeOverCadetTtsSocket({
       url: TEST_URL,
       text: "hello world",
       makeTimeoutError: (ms) => new Error(`timeout:${ms}`),

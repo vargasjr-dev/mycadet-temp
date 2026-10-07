@@ -204,7 +204,7 @@ export function useTeleport(): TeleportController {
         } else {
           await auth.connectLocalAssistant(target.id);
         }
-        // The platform→local import strips `vellum:*` platform-identity
+        // The platform→local import strips `cadet:*` platform-identity
         // credentials, so the freshly-imported local has no platform identity.
         // Now that it's the active assistant, register it with the platform and
         // inject those credentials (the web equivalent of the CLI's post-import
@@ -363,7 +363,7 @@ async function teleportToPlatform(
   await saveLockfileAssistant({
     assistantId: managedId,
     name: hatch.data.name,
-    cloud: "vellum",
+    cloud: "cadet",
     runtimeUrl: getPlatformRuntimeUrl(),
     hatchedAt: hatch.data.created ?? new Date().toISOString(),
     organizationId,

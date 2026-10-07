@@ -42,7 +42,7 @@ let cachedMetadataHeaders: Record<string, string> | null = null;
  * build version) are constant for the lifetime of the page, so the result
  * is computed once and cached in module memory.
  *
- * These are analytics-only: unlike `X-Vellum-Interface-Id`, none of them
+ * These are analytics-only: unlike `X-Cadet-Interface-Id`, none of them
  * feed subscriber capability resolution.
  */
 function getClientMetadataHeaders(): Record<string, string> {
@@ -86,7 +86,7 @@ function getClientMetadataHeaders(): Record<string, string> {
  */
 export function getClientRegistrationHeaders(): Record<string, string> {
   return {
-    "X-Vellum-Client-Id": getClientId(),
+    "X-Cadet-Client-Id": getClientId(),
     // Always "web" — do NOT derive this from the runtime platform.
     //
     // The daemon derives an SSE subscriber's host-proxy capabilities purely
@@ -102,7 +102,7 @@ export function getClientRegistrationHeaders(): Record<string, string> {
     // (see `detectClientOs` in `domains/chat/api/messages.ts`), which only
     // feeds the per-turn `client_os` context and has no bearing on subscriber
     // capabilities.
-    "X-Vellum-Interface-Id": "web",
+    "X-Cadet-Interface-Id": "web",
     // Analytics-only client metadata (browser family/version, OS surface,
     // build version), persisted under `metadata.client` on user messages.
     // Values are sanitized and bounded; none affect capability resolution.

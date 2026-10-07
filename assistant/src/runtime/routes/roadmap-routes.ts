@@ -1,5 +1,5 @@
 /**
- * Public Vellum roadmap, acted on as the assistant itself.
+ * Public Cadet roadmap, acted on as the assistant itself.
  *
  * Mirrors the surface of the user-facing `vellum roadmap` CLI
  * (`cli/src/commands/roadmap.ts`), but authenticates with the assistant's own
@@ -129,7 +129,7 @@ function resolveEndpoints(): RoadmapEndpoints {
 
   if (!apiOverride && deployment?.name !== "production") {
     throw new UnprocessableEntityError(
-      `The Vellum roadmap has no deployment for a ${getPlatformBaseUrl()} assistant. Set VELLUM_MARKETING_URL to the roadmap service for this environment.`,
+      `The Cadet roadmap has no deployment for a ${getPlatformBaseUrl()} assistant. Set VELLUM_MARKETING_URL to the roadmap service for this environment.`,
     );
   }
 
@@ -160,7 +160,7 @@ function itemUrl(web: string, slug: string): string {
  */
 async function assistantApiKey(): Promise<string | undefined> {
   const key = await getSecureKeyAsync(
-    credentialKey("vellum", "assistant_api_key"),
+    credentialKey("cadet", "assistant_api_key"),
   );
   return key?.trim() || undefined;
 }
@@ -170,7 +170,7 @@ async function requireAssistantApiKey(): Promise<string> {
   const key = await assistantApiKey();
   if (!key) {
     throw new UnprocessableEntityError(
-      "Not connected to the Vellum Platform, so there is no assistant identity to post as. " +
+      "Not connected to the Cadet Platform, so there is no assistant identity to post as. " +
         "Run `assistant platform connect` first.",
     );
   }
@@ -225,11 +225,11 @@ async function roadmapFetch(
   } catch (err) {
     if (deadline.aborted) {
       throw new GatewayTimeoutError(
-        `The Vellum roadmap service did not answer within ${ROADMAP_REQUEST_TIMEOUT_MS / 1000}s.`,
+        `The Cadet roadmap service did not answer within ${ROADMAP_REQUEST_TIMEOUT_MS / 1000}s.`,
       );
     }
     throw new BadGatewayError(
-      `Could not reach the Vellum roadmap service: ${err instanceof Error ? err.message : String(err)}`,
+      `Could not reach the Cadet roadmap service: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }
@@ -396,7 +396,7 @@ function unsupportedUpdateFieldsMessage(keys: string[]): string {
   const unknown = keys.filter((k) => !STAFF_ONLY_UPDATE_FIELDS.has(k));
   const reasons = [
     ...(staffOnly.length > 0
-      ? [`${listFields(staffOnly)} set by Vellum staff`]
+      ? [`${listFields(staffOnly)} set by Cadet staff`]
       : []),
     ...(unknown.length > 0
       ? [`${listFields(unknown)} not a roadmap update field`]
@@ -723,7 +723,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Update a roadmap item",
     description:
-      "Updates the title or description of a roadmap item this assistant filed, while the item is still open. Status and tags are set by Vellum staff.",
+      "Updates the title or description of a roadmap item this assistant filed, while the item is still open. Status and tags are set by Cadet staff.",
     tags: ["roadmap"],
     pathParams: SLUG_PARAM,
     requestBody: updateRequestSchema,

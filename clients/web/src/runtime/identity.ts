@@ -3,7 +3,7 @@ import { isElectron } from "@/runtime/is-electron";
 /**
  * Per-capability wrapper for publishing the active assistant's display name
  * (e.g. "Aria") to the Electron host. Matches the `runtime/status.ts`
- * pattern: the renderer never touches `window.vellum.*` directly — feature
+ * pattern: the renderer never touches `window.cadet.*` directly — feature
  * code calls this named function and the cross-platform branch lives here.
  *
  * The renderer holds the identity (`useAssistantIdentityStore`, fed by the
@@ -19,5 +19,5 @@ export function setAssistantName(name: string): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.identity?.setName(name);
+  window.cadet?.identity?.setName(name);
 }

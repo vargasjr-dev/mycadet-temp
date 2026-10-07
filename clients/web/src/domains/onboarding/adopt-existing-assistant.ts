@@ -4,7 +4,7 @@
  *
  * The explicit `?hosting` choice wins when present: local/docker hosting means
  * the hatching screen provisioned the assistant in the foreground, and
- * "vellum-cloud" means a managed hatch is wanted even though the desktop
+ * "cadet-cloud" means a managed hatch is wanted even though the desktop
  * build reports local mode. When the param is absent (a refresh that lost the
  * query string, a back-navigation from the check-in overlay, a direct visit),
  * fall back to the app's own state: a live gateway-auth session in a
@@ -28,7 +28,7 @@ export function shouldAdoptExistingAssistant({
     return false;
   }
   if (hostingParam !== null) {
-    return hostingParam !== "vellum-cloud";
+    return hostingParam !== "cadet-cloud";
   }
   return gatewayAuthSession;
 }

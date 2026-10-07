@@ -526,7 +526,7 @@
       "prompt": "Show me what you can do with computer use on my machine. Start by taking a screenshot and describing what is on my screen, then suggest two things you could do for me.",
       "link": {
         "label": "Download the desktop app",
-        "url": "https://www.cadet.ai/downloads"
+        "url": "https://www.mycadet.ai/downloads"
       }
     }
   }

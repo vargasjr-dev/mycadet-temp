@@ -64,10 +64,10 @@ function renderMessage(
   queryClient: QueryClient,
   {
     workspacePathLinks = true,
-    onVellumLinkClick = mock(() => {}),
+    onCadetLinkClick = mock(() => {}),
   }: {
     workspacePathLinks?: boolean;
-    onVellumLinkClick?: (href: string, linkText: string) => void;
+    onCadetLinkClick?: (href: string, linkText: string) => void;
   } = {},
 ) {
   const wrapper = ({ children }: { children: ReactNode }) =>
@@ -77,11 +77,11 @@ function renderMessage(
       content,
       assistantId: ASSISTANT_ID,
       workspacePathLinks,
-      onVellumLinkClick,
+      onCadetLinkClick,
     }),
     { wrapper },
   );
-  return { onVellumLinkClick };
+  return { onCadetLinkClick };
 }
 
 afterEach(() => {
@@ -110,7 +110,7 @@ describe("workspace path spans", () => {
 
   test("clicking opens the file in the drawer, like an explicit link", () => {
     const queryClient = clientWithListing("drafts", [entry("drafts/deck.pdf")]);
-    const { onVellumLinkClick } = renderMessage(
+    const { onCadetLinkClick } = renderMessage(
       "See `/workspace/drafts/deck.pdf`.",
       queryClient,
     );
@@ -123,7 +123,7 @@ describe("workspace path spans", () => {
       documentName: "deck.pdf",
       previewKind: "pdf",
     });
-    expect(onVellumLinkClick).not.toHaveBeenCalled();
+    expect(onCadetLinkClick).not.toHaveBeenCalled();
   });
 
   test("a path whose file does not exist stays plain code", () => {

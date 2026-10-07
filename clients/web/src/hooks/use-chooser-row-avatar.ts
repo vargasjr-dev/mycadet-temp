@@ -349,7 +349,7 @@ async function readCachedRowAvatar(assistantId: string): Promise<AvatarRead> {
  *    below 1 because the live read keeps a character avatar's SVG fidelity.
  * 3. Other platform rows fetch per id through the platform proxy, only when
  *    {@link canFetchRowAvatarViaPlatformProxy} says the id is honored and the
- *    org store can supply the `Vellum-Organization-Id` header.
+ *    org store can supply the `Cadet-Organization-Id` header.
  * 4. Local rows (the connected one when unreachable, siblings even asleep)
  *    read their workspace through the host when one can serve it.
  * 5. Every row without `avatarUrl` in a lockfile-driven mode looks its

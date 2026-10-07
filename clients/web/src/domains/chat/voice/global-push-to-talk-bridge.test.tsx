@@ -6,7 +6,7 @@ import type {
   CompanionIntroBeat,
   UnplacedDictationOffer,
 } from "@mycadet/ipc-contract";
-import type { CommandHandlers } from "@/runtime/vellum-commands";
+import type { CommandHandlers } from "@/runtime/cadet-commands";
 
 import type * as VoiceShortcutConfirmation from "@/domains/chat/voice/voice-shortcut-confirmation";
 
@@ -29,15 +29,15 @@ let commandHandlers: CommandHandlers = {};
 mock.module("@/runtime/popout-window", () => ({
   isPopoutWindowLifetime: () => popout,
 }));
-mock.module("@/runtime/vellum-commands", () => ({
-  useVellumCommands: (handlers: CommandHandlers) => {
+mock.module("@/runtime/cadet-commands", () => ({
+  useCadetCommands: (handlers: CommandHandlers) => {
     commandHandlers = handlers;
   },
 }));
 
 type TextInsertionStatus =
   | "inserted"
-  | "vellum-focused"
+  | "cadet-focused"
   | "no-text-field"
   | "automation-denied"
   | "blocked"

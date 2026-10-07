@@ -48,8 +48,8 @@ export async function registerEmailCallbackRoute(caches?: {
 
   const [platformBaseUrlRaw, assistantApiKeyRaw] = caches?.credentials
     ? await Promise.all([
-        caches.credentials.get(credentialKey("vellum", "platform_base_url")),
-        caches.credentials.get(credentialKey("vellum", "assistant_api_key")),
+        caches.credentials.get(credentialKey("cadet", "platform_base_url")),
+        caches.credentials.get(credentialKey("cadet", "assistant_api_key")),
       ])
     : [undefined, undefined];
 

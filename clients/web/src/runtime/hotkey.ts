@@ -14,8 +14,8 @@ export type { HotkeyEvent };
 export function supportsVoiceModeChord(): boolean {
   return (
     isElectron() &&
-    typeof window.vellum?.helper?.hotkey?.setVoiceModeChord === "function" &&
-    typeof window.vellum?.helper?.hotkey?.onEvent === "function"
+    typeof window.cadet?.helper?.hotkey?.setVoiceModeChord === "function" &&
+    typeof window.cadet?.helper?.hotkey?.onEvent === "function"
   );
 }
 
@@ -27,7 +27,7 @@ export async function setNativeVoiceModeChord(
   }
   try {
     const result =
-      await window.vellum!.helper!.hotkey!.setVoiceModeChord!(activator);
+      await window.cadet!.helper!.hotkey!.setVoiceModeChord!(activator);
     return result.ok;
   } catch {
     return false;
@@ -44,7 +44,7 @@ export async function setNativeVoiceModeChord(
 export function supportsModifierHold(): boolean {
   return (
     isElectron() &&
-    typeof window.vellum?.helper?.hotkey?.setModifierHold === "function"
+    typeof window.cadet?.helper?.hotkey?.setModifierHold === "function"
   );
 }
 
@@ -57,7 +57,7 @@ export function supportsModifierHold(): boolean {
 export async function setModifierHold(
   hold: ModifierHold,
 ): Promise<ModifierHoldRegistrationResult> {
-  const set = window.vellum?.helper?.hotkey?.setModifierHold;
+  const set = window.cadet?.helper?.hotkey?.setModifierHold;
   if (!isElectron() || typeof set !== "function") {
     return { ok: false, reason: "host cannot watch a held modifier set" };
   }
@@ -71,7 +71,7 @@ export async function setModifierHold(
  * selection lands its words at the cursor, which is the right answer there.
  */
 export async function readFrontSelection(): Promise<HotkeySelectionResult> {
-  const read = window.vellum?.helper?.hotkey?.readFrontSelection;
+  const read = window.cadet?.helper?.hotkey?.readFrontSelection;
   if (!isElectron() || typeof read !== "function") {
     return null;
   }
@@ -92,7 +92,7 @@ export async function readFrontSelection(): Promise<HotkeySelectionResult> {
 export function supportsChords(): boolean {
   return (
     isElectron() &&
-    typeof window.vellum?.helper?.hotkey?.setChords === "function"
+    typeof window.cadet?.helper?.hotkey?.setChords === "function"
   );
 }
 
@@ -105,7 +105,7 @@ export function supportsChords(): boolean {
 export async function setChordBinding(
   binding: ChordBinding,
 ): Promise<ChordRegistrationResult> {
-  const set = window.vellum?.helper?.hotkey?.setChords;
+  const set = window.cadet?.helper?.hotkey?.setChords;
   if (!isElectron() || typeof set !== "function") {
     return { ok: false, reason: "host cannot watch a chord" };
   }
@@ -115,13 +115,13 @@ export async function setChordBinding(
 export function subscribeToHotkeyEvents(
   callback: (event: HotkeyEvent) => void,
 ): () => void {
-  const subscribe = window.vellum?.helper?.hotkey?.onEvent;
+  const subscribe = window.cadet?.helper?.hotkey?.onEvent;
   return subscribe ? subscribe(callback) : () => undefined;
 }
 
 export function subscribeToVoiceModeChordRegistration(
   callback: (active: boolean) => void,
 ): () => void {
-  const subscribe = window.vellum?.helper?.hotkey?.onRegistrationChange;
+  const subscribe = window.cadet?.helper?.hotkey?.onRegistrationChange;
   return subscribe ? subscribe(callback) : () => undefined;
 }

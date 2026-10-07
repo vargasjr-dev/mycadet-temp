@@ -22,7 +22,7 @@ afterEach(() => {
   window.matchMedia = originalMatchMedia;
 });
 
-function setup(archivedAt?: number, originChannel = "vellum") {
+function setup(archivedAt?: number, originChannel = "cadet") {
   const onSelect = mock(() => {});
   const onArchive = mock(() => {});
   const onUnarchive = mock(() => {});

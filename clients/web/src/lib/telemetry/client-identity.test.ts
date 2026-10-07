@@ -148,14 +148,14 @@ describe("client-identity", () => {
       expect(typeof first).toBe("string");
       expect(first).not.toBe("");
       expect(mod.getClientId()).toBe(first);
-      expect(mod.getClientRegistrationHeaders()["X-Vellum-Client-Id"]).toBe(
+      expect(mod.getClientRegistrationHeaders()["X-Cadet-Client-Id"]).toBe(
         first,
       );
     });
   });
 
   test("does not read from sessionStorage", async () => {
-    sessionStorage.setItem("vellum_client_id", "stale-session-value");
+    sessionStorage.setItem("cadet_client_id", "stale-session-value");
     const mod = await freshImport();
 
     expect(mod.getClientId()).not.toBe("stale-session-value");
@@ -163,7 +163,7 @@ describe("client-identity", () => {
   });
 
   test("does not read from localStorage", async () => {
-    localStorage.setItem("vellum_client_id", "stale-local-value");
+    localStorage.setItem("cadet_client_id", "stale-local-value");
     const mod = await freshImport();
 
     expect(mod.getClientId()).not.toBe("stale-local-value");
@@ -177,8 +177,8 @@ describe("client-identity", () => {
 
     mod.getClientId();
 
-    expect(sessionStorage.getItem("vellum_client_id")).toBeNull();
-    expect(localStorage.getItem("vellum_client_id")).toBeNull();
+    expect(sessionStorage.getItem("cadet_client_id")).toBeNull();
+    expect(localStorage.getItem("cadet_client_id")).toBeNull();
   });
 
   test("getClientRegistrationHeaders returns exactly the identity + metadata header set", async () => {
@@ -198,25 +198,25 @@ describe("client-identity", () => {
       // Exact key-set assertion: any header beyond this allowlist (e.g. a
       // future change leaking raw UA or locale data) must fail this test.
       expect(Object.keys(headers).sort()).toEqual([
-        "X-Vellum-Client-Id",
-        "X-Vellum-Interface-Id",
-        "x-vellum-browser-family",
-        "x-vellum-browser-version",
-        "x-vellum-client-os",
-        "x-vellum-interface-version",
+        "X-Cadet-Client-Id",
+        "X-Cadet-Interface-Id",
+        "x-cadet-browser-family",
+        "x-cadet-browser-version",
+        "x-cadet-client-os",
+        "x-cadet-interface-version",
       ]);
-      expect(headers["X-Vellum-Client-Id"]).toBe(mod.getClientId());
+      expect(headers["X-Cadet-Client-Id"]).toBe(mod.getClientId());
       // The registration interface is intentionally a constant "web" on every
       // platform — it must NOT reflect the real OS, since the daemon derives
       // host-proxy capabilities from this id and the web renderer is never a
       // host provider (see the comment in `client-identity.ts`). Platform
       // awareness flows through the message body and the analytics-only
       // metadata headers instead.
-      expect(headers["X-Vellum-Interface-Id"]).toBe("web");
-      expect(headers["x-vellum-browser-family"]).toBe("safari");
-      expect(headers["x-vellum-browser-version"]).toBe("17");
-      expect(headers["x-vellum-client-os"]).toBe("ios");
-      expect(headers["x-vellum-interface-version"]).toBe("1.2.3");
+      expect(headers["X-Cadet-Interface-Id"]).toBe("web");
+      expect(headers["x-cadet-browser-family"]).toBe("safari");
+      expect(headers["x-cadet-browser-version"]).toBe("17");
+      expect(headers["x-cadet-client-os"]).toBe("ios");
+      expect(headers["x-cadet-interface-version"]).toBe("1.2.3");
       // Never the raw user-agent string, in any header.
       expect(JSON.stringify(headers)).not.toContain("Mozilla");
     } finally {
@@ -241,11 +241,11 @@ describe("client-identity", () => {
     // entirely (never sent empty). The OS surface always resolves — an
     // unrecognizable browser environment reports the "web" fallback.
     expect(Object.keys(headers).sort()).toEqual([
-      "X-Vellum-Client-Id",
-      "X-Vellum-Interface-Id",
-      "x-vellum-client-os",
+      "X-Cadet-Client-Id",
+      "X-Cadet-Interface-Id",
+      "x-cadet-client-os",
     ]);
-    expect(headers["x-vellum-client-os"]).toBe("web");
+    expect(headers["x-cadet-client-os"]).toBe("web");
   });
 
   test("WKWebView-style shell UA degrades to OS-only metadata", async () => {
@@ -267,11 +267,11 @@ describe("client-identity", () => {
     );
 
     expect(Object.keys(headers).sort()).toEqual([
-      "X-Vellum-Client-Id",
-      "X-Vellum-Interface-Id",
-      "x-vellum-client-os",
+      "X-Cadet-Client-Id",
+      "X-Cadet-Interface-Id",
+      "x-cadet-client-os",
     ]);
-    expect(headers["x-vellum-client-os"]).toBe("ios");
+    expect(headers["x-cadet-client-os"]).toBe("ios");
   });
 
   test("browser detection prefers userAgentData brands over the UA string", async () => {
@@ -296,7 +296,7 @@ describe("client-identity", () => {
       () => mod.getClientRegistrationHeaders(),
     );
 
-    expect(headers["x-vellum-browser-family"]).toBe("chrome");
-    expect(headers["x-vellum-browser-version"]).toBe("126");
+    expect(headers["x-cadet-browser-family"]).toBe("chrome");
+    expect(headers["x-cadet-browser-version"]).toBe("126");
   });
 });

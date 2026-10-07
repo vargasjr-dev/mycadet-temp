@@ -5,7 +5,7 @@
  * Load-bearing behavior:
  *   - lists the fetched voices, sorted by character traits, labelled
  *     traits-first with the accent as a quiet suffix (no proper name, no source),
- *   - selecting a voice PATCHes `services.tts.providers.vellum.model`,
+ *   - selecting a voice PATCHes `services.tts.providers.cadet.model`,
  *   - each row previews its own voice via the hosted sample,
  *   - renders nothing for a non-managed assistant.
  *
@@ -44,11 +44,11 @@ mock.module("@mycadet/design-library/components/toast", () => ({
 }));
 
 let daemonConfigData: { services: Record<string, unknown> } = {
-  services: { tts: { provider: "vellum" } },
+  services: { tts: { provider: "cadet" } },
 };
 let providersData: { providers: unknown[] } = {
   providers: [
-    { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
+    { id: "cadet", displayName: "Cadet", supportsVoiceSelection: true },
   ],
 };
 let managedVoicesData: { voices: unknown[]; defaultModel: string | null } = {
@@ -131,10 +131,10 @@ beforeEach(() => {
   orgReady = true;
   configPatchCalls.length = 0;
   patchGate = null;
-  daemonConfigData = { services: { tts: { provider: "vellum" } } };
+  daemonConfigData = { services: { tts: { provider: "cadet" } } };
   providersData = {
     providers: [
-      { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
+      { id: "cadet", displayName: "Cadet", supportsVoiceSelection: true },
     ],
   };
   managedVoicesData = {
@@ -182,7 +182,7 @@ describe("VoiceList", () => {
     expect(all).not.toContain("Deepgram");
   });
 
-  test("selecting a voice PATCHes services.tts.providers.vellum.model", async () => {
+  test("selecting a voice PATCHes services.tts.providers.cadet.model", async () => {
     renderList();
     // Default (Sarah) is current; pick Zeus.
     const zeus = screen
@@ -196,7 +196,7 @@ describe("VoiceList", () => {
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     expect(configPatchCalls[0]!.path).toEqual({ assistant_id: ASSISTANT_ID });
     expect(configPatchCalls[0]!.body).toEqual({
-      services: { tts: { providers: { vellum: { model: "aura-2-zeus-en" } } } },
+      services: { tts: { providers: { cadet: { model: "aura-2-zeus-en" } } } },
     });
   });
 
@@ -245,12 +245,12 @@ describe("VoiceList", () => {
     expect(configPatchCalls.map((c) => c.body)).toEqual([
       {
         services: {
-          tts: { providers: { vellum: { model: "aura-2-zeus-en" } } },
+          tts: { providers: { cadet: { model: "aura-2-zeus-en" } } },
         },
       },
       {
         services: {
-          tts: { providers: { vellum: { model: "EXAVITQu4vr4xnSDxMaL" } } },
+          tts: { providers: { cadet: { model: "EXAVITQu4vr4xnSDxMaL" } } },
         },
       },
     ]);

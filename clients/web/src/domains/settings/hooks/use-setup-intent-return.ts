@@ -64,7 +64,7 @@ async function resolveSetupIntentReturn({
 }): Promise<void> {
   // A full-page 3DS return remounts the app, so the org store can still be
   // hydrating when the params are read. The confirm below needs
-  // `Vellum-Organization-Id`, and a headerless one is rejected and falls back
+  // `Cadet-Organization-Id`, and a headerless one is rejected and falls back
   // to the 20-second webhook poll. Past the ceiling, and for `"unavailable"`,
   // the request fires and fails into the error outcome instead.
   await awaitOrgHeaderSettled({ alsoReady: requestScopeSettled });
@@ -75,7 +75,7 @@ async function resolveSetupIntentReturn({
   const initiatingScopeKey = currentRequestScopeKey();
 
   // The confirm can spend 20 seconds in its webhook poll, long enough for a
-  // user or organization switch to land, and it reads `Vellum-Organization-Id`
+  // user or organization switch to land, and it reads `Cadet-Organization-Id`
   // live: past the first switch the rest of the resolution answers for an
   // identity that is no longer on screen. So the resolution is abandoned the
   // moment the scope moves rather than judged when it finishes, which also

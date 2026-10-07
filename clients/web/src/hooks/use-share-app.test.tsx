@@ -98,7 +98,7 @@ describe("useShareApp", () => {
 
     expect(shareCalls).toEqual([[ASSISTANT_ID, "app-1", "Trip Planner"]]);
     expect(successes).toEqual([
-      { title: "Exported", description: "Trip Planner.vellum" },
+      { title: "Exported", description: "Trip Planner.cadet" },
     ]);
     expect(errors).toHaveLength(0);
   });

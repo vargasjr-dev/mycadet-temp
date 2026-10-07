@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import {
+  getManagedUpstream,
+  parseCadetModel,
+} from "../../providers/cadet-model-routing.js";
+import {
   PROVIDERS_REQUIRING_BASE_URL_AND_MODELS,
   ROUTING_IDENTITY_PROVIDERS,
 } from "../../providers/inference/auth.js";
@@ -9,10 +13,6 @@ import {
   PROVIDER_CATALOG,
 } from "../../providers/model-catalog.js";
 import { isCodexSubscriptionModel } from "../../providers/openai/codex-models.js";
-import {
-  getManagedUpstream,
-  parseVellumModel,
-} from "../../providers/vellum-model-routing.js";
 import {
   AUTO_PROFILE_KEY,
   DEFAULT_PROFILE_KEYS,
@@ -77,11 +77,11 @@ export const KNOWN_LLM_PROVIDERS = [
   "ionet",
   "poolside",
   "typesafe",
-  // Routing identities: "vellum" = the platform-managed route (upstream
+  // Routing identities: "cadet" = the platform-managed route (upstream
   // derived from the model at dispatch) and the catalog owner of
-  // Vellum-hosted GPU models; "chatgpt" = the subscription route to OpenAI.
+  // Cadet-hosted GPU models; "chatgpt" = the subscription route to OpenAI.
   // Dispatch substitutes a concrete upstream before adapter lookup.
-  "vellum",
+  "cadet",
   "chatgpt",
 ] as const;
 
@@ -135,7 +135,7 @@ export function isDefaultProviderChoice(value: string): value is LLMProvider {
 
 /**
  * Default-provider choices whose profiles materialize from the shared BYOK
- * templates: every choice except the routing identities (`vellum`,
+ * templates: every choice except the routing identities (`cadet`,
  * `chatgpt`), whose defaults are pinned models on code-owned columns.
  */
 export function isByokDefaultProviderChoice(
@@ -166,15 +166,15 @@ export function routingIdentityModelIssue(
   provider: string,
   model: string | undefined,
 ): string | null {
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     if (!model) {
-      return 'Provider "vellum" requires an explicit model.';
+      return 'Provider "cadet" requires an explicit model.';
     }
     // Stored config holds the bare native model id only. The encoded
     // `<provider>/<model>` routing string is a telemetry/display codec —
     // dispatch passes the stored model to the upstream adapter verbatim, so
     // an encoded value would name a nonexistent upstream model.
-    const routed = parseVellumModel(model);
+    const routed = parseCadetModel(model);
     if (routed) {
       return `Model "${model}" is an encoded routing string; store the native model id "${routed.model}".`;
     }
@@ -282,7 +282,7 @@ export function dropUnknownCallSiteKeys(value: unknown): unknown {
 // ---------------------------------------------------------------------------
 
 /**
- * Reasoning/thinking effort tier. `"none"` is a Vellum-specific value meaning
+ * Reasoning/thinking effort tier. `"none"` is a Cadet-specific value meaning
  * "the user has opted out of provider-side reasoning". Each provider
  * translates it however actually disables reasoning on that wire format:
  * OpenAI Responses sends `reasoning.effort: "none"` and Chat Completions
@@ -690,7 +690,7 @@ export const ProfileEntry = LLMConfigFragment.extend({
    */
   mix: MixSchema.optional(),
   /**
-   * Code-owned backup profile for a Vellum-managed default profile. This is
+   * Code-owned backup profile for a Cadet-managed default profile. This is
    * read-only metadata from the default-profile catalog. Config write paths
    * reject user-authored values because custom and BYOK fallback routes are
    * not supported.
@@ -745,7 +745,7 @@ const DefaultProviderField = DefaultProviderSchema.optional().catch(undefined);
  * Whether the managed backup profiles (`BACKUP_PROFILE_KEYS`) resolve under a
  * given `llm.defaultProvider`.
  *
- * Backups are companions of the managed (`vellum`) column only: on a BYOK or
+ * Backups are companions of the managed (`cadet`) column only: on a BYOK or
  * ChatGPT default provider `defaultProfileBodyForProvider` returns `undefined`
  * for them, because the install may hold no credential for the backup's
  * upstream. So a reference to one is a target that can never resolve there,
@@ -767,7 +767,7 @@ export function backupProfilesResolveUnderDefaultProvider(
     !Array.isArray(defaultProvider)
       ? (defaultProvider as Record<string, unknown>).provider
       : undefined;
-  return typeof provider !== "string" || provider === "vellum";
+  return typeof provider !== "string" || provider === "cadet";
 }
 
 /**
@@ -904,7 +904,7 @@ export function collectFallbackProfileIssues(
     if (entry?.source !== "managed" || fallback !== expectedFallback) {
       issues.push({
         profileName: name,
-        message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Vellum-managed default profiles.`,
+        message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Cadet-managed default profiles.`,
       });
       continue;
     }

@@ -267,7 +267,7 @@ export function restoreConsentForUser(userId: string | null): {
     }
 
     // One-time migration: users who accepted before the per-user device
-    // key change still have consent in the legacy vellum: active keys.
+    // key change still have consent in the legacy cadet: active keys.
     // Promote ToS at the frozen constant — the version the legacy acceptance
     // actually attests — so a later required-version bump correctly reads it
     // stale instead of assuming currency. The legacy privacy key is

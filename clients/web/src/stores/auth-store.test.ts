@@ -227,7 +227,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => mockIsLocalClient,
   isRemoteGatewayMode: () => mockIsRemoteGatewayMode,
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
-  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "vellum",
+  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   getPlatformAssistants: () => mockPlatformAssistants,
   getLocalAssistants: () => [],
@@ -651,7 +651,7 @@ describe("auth store onboarding flag reconciliation", () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = false;
     mockGatewayToken = null;
-    mockPlatformAssistants = [{ assistantId: "managed-1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
     sessionUser = null;
     useAuthStore.setState({
       sessionStatus: "authenticated",
@@ -1561,7 +1561,7 @@ describe("auth store onboarding flag reconciliation", () => {
   test("initSession fetches server consent for local-mode platform sessions", async () => {
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
-    mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     mockFetchConsentResult = {
       tos_accepted_version: "2026-06-08",
       tos_accepted_at: "2026-06-08T00:00:00Z",
@@ -2311,7 +2311,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     expect(bootstrapLocalAssistantPlatformIdentityMock).not.toHaveBeenCalled();
     expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // The org fetch succeeded, so the rejected account's org state must be
-    // cleared here or its Vellum-Organization-Id keeps stamping requests.
+    // cleared here or its Cadet-Organization-Id keeps stamping requests.
     expect(clearOrganizationMock).toHaveBeenCalled();
   });
 
@@ -2481,7 +2481,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     // assistant is unreachable without a platform session, so login wins.
     mockIsLocalClient = true;
     mockIsGatewayAuth = false;
-    mockPlatformAssistants = [{ assistantId: "managed-1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
     useAuthStore.setState({
@@ -2538,7 +2538,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
   test("initSession with platform assistants routes a rejected session to login", async () => {
     mockIsLocalClient = true;
-    mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     localStorage.setItem(
       "cadet:auth:userSnapshot",
@@ -2559,7 +2559,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
   test("initSession with platform assistants routes an assistants-list rejection to login", async () => {
     mockIsLocalClient = true;
-    mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockListAssistantsResult = { ok: false, status: 410, error: {} };
 
@@ -2571,7 +2571,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
   test("initSession with platform assistants keeps the session on a transport-failed sync", async () => {
     mockIsLocalClient = true;
-    mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchError = new TypeError("Failed to fetch");
 
@@ -3043,7 +3043,7 @@ describe("offline session restore (LUM-2412)", () => {
 
   test("local-mode platform-assistants boot also restores from cache on transport failure", async () => {
     mockIsLocalClient = true;
-    mockPlatformAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    mockPlatformAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     getSessionThrows = true;
     mockElectronSessionToken = "tok-1";
     seedSnapshot();

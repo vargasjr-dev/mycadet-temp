@@ -53,7 +53,7 @@ export function rawConversation(
     updatedAt: 0,
     lastMessageAt: 0,
     conversationType: "standard",
-    source: "vellum",
+    source: "cadet",
     groupId: null,
     isProcessing: false,
     ...overrides,

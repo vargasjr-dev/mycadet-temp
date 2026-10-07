@@ -39,7 +39,7 @@ function supportsPictureInPicture(): boolean {
 }
 
 export interface LocalFileEmbedProps {
-  /** Raw markdown destination: `vellum://workspace/...`, `/abs/path`, `./rel`. */
+  /** Raw markdown destination: `cadet://workspace/...`, `/abs/path`, `./rel`. */
   href: string;
   alt: string;
   assistantId?: string;

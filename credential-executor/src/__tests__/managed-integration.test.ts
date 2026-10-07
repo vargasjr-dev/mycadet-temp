@@ -89,8 +89,8 @@ function restoreEnv(saved: SavedEnv): void {
  *
  * Mirrors the handler registration in main.ts.
  */
-function buildCredentialHandlers(vellumRoot: string): RpcHandlerRegistry {
-  const secureKeyBackend = createLocalSecureKeyBackend(vellumRoot);
+function buildCredentialHandlers(cadetRoot: string): RpcHandlerRegistry {
+  const secureKeyBackend = createLocalSecureKeyBackend(cadetRoot);
   const handlers: RpcHandlerRegistry = {};
 
   handlers[CesRpcMethod.GetCredential] = (async (req: { account: string }) => {
@@ -724,7 +724,7 @@ describe("credential CRUD RPC", () => {
     clientSocket = await connectToSocket(socketPath);
     const conn = await connectionPromise;
 
-    // vellumRoot is unused when CREDENTIAL_SECURITY_DIR is set,
+    // cadetRoot is unused when CREDENTIAL_SECURITY_DIR is set,
     // but we pass dataDir for consistency with the backend API.
     const handlers = buildCredentialHandlers(dataDir);
 

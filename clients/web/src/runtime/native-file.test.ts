@@ -189,27 +189,27 @@ describe("saveFile, the Download intent", () => {
 
 describe("shareFile, the Share intent", () => {
   test("presents the macOS Share Sheet on Electron", async () => {
-    await shareFile(blob, "App.vellum");
+    await shareFile(blob, "App.cadet");
 
     expect(shareFileViaMacSheet).toHaveBeenCalledTimes(1);
-    expect(shareFileViaMacSheet.mock.calls[0]![1]).toBe("App.vellum");
+    expect(shareFileViaMacSheet.mock.calls[0]![1]).toBe("App.cadet");
     expect(clicks).toHaveLength(0);
   });
 
   test("falls back to a download when the desktop bridge is unavailable", async () => {
     macSheetAvailable = false;
 
-    await shareFile(blob, "App.vellum");
+    await shareFile(blob, "App.cadet");
 
     expect(clicks).toHaveLength(1);
-    expect(clicks[0]!.download).toBe("App.vellum");
+    expect(clicks[0]!.download).toBe("App.cadet");
   });
 
   test("presents the Capacitor sheet on native", async () => {
     macSheetAvailable = false;
     isNative = true;
 
-    await shareFile(blob, "App.vellum");
+    await shareFile(blob, "App.cadet");
 
     expect(share).toHaveBeenCalledTimes(1);
   });
@@ -219,7 +219,7 @@ describe("shareFile, the Share intent", () => {
     isNative = true;
     share.mockRejectedValueOnce(new Error("Share canceled"));
 
-    await shareFile(blob, "App.vellum");
+    await shareFile(blob, "App.cadet");
 
     expect(deleteFile).toHaveBeenCalledTimes(1);
   });

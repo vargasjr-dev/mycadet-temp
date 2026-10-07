@@ -116,10 +116,10 @@ export function resolveResearchCompletionStatus({
  * marketplace repos — so a new user is never offered (or silently handed)
  * community code during onboarding.
  */
-const VELLUM_PLUGIN_OWNER = "vellum-ai";
+const VELLUM_PLUGIN_OWNER = "cadet-ai";
 
 /**
- * Vellum-hosted plugins that are still infrastructure/meta rather than a
+ * Cadet-hosted plugins that are still infrastructure/meta rather than a
  * capability worth offering a new user (a reference memory sample, the
  * self-edit diff card). Dropped on top of the owner filter. Anything else owned
  * by Cadet — including future persona plugins like a developer/PM kit — flows
@@ -159,7 +159,7 @@ function repoOwner(repo: string | undefined): string {
 
 /**
  * Narrow the marketplace catalog to the capabilities onboarding will surface:
- * Vellum-hosted (first-party, reviewed) plugins only, minus the meta/infra
+ * Cadet-hosted (first-party, reviewed) plugins only, minus the meta/infra
  * ones, each compacted to one short line. Pure so it's unit-testable without
  * mocking the catalog fetch.
  */
@@ -575,7 +575,7 @@ export function useResearchRunner(): UseResearchRunner {
             return;
           }
 
-          // Advertise the Vellum-owned marketplace capabilities to the research
+          // Advertise the Cadet-owned marketplace capabilities to the research
           // turn so it can pick the ones that best fit the person (returned as a
           // top-level `plugins` list) for us to install. The catalog filter keeps
           // onboarding scoped to first-party plugins; third-party plugin

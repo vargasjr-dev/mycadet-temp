@@ -16,7 +16,7 @@ import {
   type SystemPermissionStateItem,
   type SystemPermissionsState,
   type TextInsertionResult,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 const invokeItem = (
@@ -26,7 +26,7 @@ const invokeItem = (
   ipcRenderer.invoke(channel, kind) as Promise<SystemPermissionStateItem>;
 
 const permissionsFeature: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "permissions",
   install: (bridge) => {

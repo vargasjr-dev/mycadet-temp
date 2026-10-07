@@ -33,6 +33,13 @@ import { getLogger } from "../../util/logger.js";
 import { AnthropicProvider } from "../anthropic/client.js";
 import { AtlasCloudProvider } from "../atlascloud/client.js";
 import { BasetenProvider } from "../baseten/client.js";
+import { CadetProvider } from "../cadet/client.js";
+import {
+  CADET_MANAGED_PROVIDER,
+  getManagedUpstream,
+  isCadetManagedConnection,
+  MANAGED_ROUTABLE_PROVIDERS,
+} from "../cadet-model-routing.js";
 import { FireworksProvider } from "../fireworks/client.js";
 import { GeminiProvider } from "../gemini/client.js";
 import { IonetProvider } from "../ionet/client.js";
@@ -50,13 +57,6 @@ import { RetryProvider } from "../retry.js";
 import { TogetherProvider } from "../together/client.js";
 import type { Provider, SendMessageOptions } from "../types.js";
 import { UsageTrackingProvider } from "../usage-tracking.js";
-import { VellumProvider } from "../vellum/client.js";
-import {
-  getManagedUpstream,
-  isVellumManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
-  VELLUM_MANAGED_PROVIDER,
-} from "../vellum-model-routing.js";
 import { VercelAIGatewayProvider } from "../vercel-ai-gateway/client.js";
 import type { ResolvedAuth } from "./auth.js";
 import type { ProviderConnection } from "./auth.js";
@@ -217,8 +217,8 @@ const ADAPTER_FACTORIES: Record<string, AdapterFactory> = {
       streamTimeoutMs,
       ...(baseURL ? { baseURL } : {}),
     }),
-  vellum: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
-    new VellumProvider(apiKey, model, {
+  cadet: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
+    new CadetProvider(apiKey, model, {
       streamTimeoutMs,
       ...(baseURL ? { baseURL } : {}),
     }),
@@ -284,9 +284,9 @@ export function createAdapterFromConnection(
     useNativeWebSearch?: boolean;
     /**
      * Effective upstream provider to build the adapter for. Defaults to
-     * `connection.provider`. The provider-agnostic Vellum-managed connection
+     * `connection.provider`. The provider-agnostic Cadet-managed connection
      * passes the resolved profile's provider here, since its own row carries
-     * only the `vellum` sentinel.
+     * only the `cadet` sentinel.
      */
     provider?: string;
   },
@@ -334,7 +334,7 @@ export function createAdapterFromConnection(
    * inputs `normalizeSendMessageOptions` uses (call site plus the request's
    * own override/seed fields), and its `fallbackProfile` pointer names the
    * backup. The upstream comes from the backup's resolved provider; only the
-   * `vellum` routing identity carries no upstream of its own, and there the
+   * `cadet` routing identity carries no upstream of its own, and there the
    * backup's model determines it.
    *
    * Returns a RAW adapter, exactly like `makeCredentialRefresher` above:
@@ -430,7 +430,7 @@ export function createAdapterFromConnection(
         const backupConnection = resolvedBackup.provider_connection;
         const routesThroughThisConnection =
           backupConnection === undefined
-            ? resolvedBackup.provider === VELLUM_MANAGED_PROVIDER
+            ? resolvedBackup.provider === CADET_MANAGED_PROVIDER
             : backupConnection === connection.name;
         if (!routesThroughThisConnection) {
           log.warn(
@@ -446,10 +446,10 @@ export function createAdapterFromConnection(
         }
         // The upstream is the resolved provider, the same way normal dispatch
         // picks it for this connection: `connection-resolution.ts` threads the
-        // resolved provider through as `providerOverride` for a `vellum`
+        // resolved provider through as `providerOverride` for a `cadet`
         // connection and derives the upstream from the model only when the
         // provider is the routing-identity sentinel (`resolveRoutingIdentity`,
-        // and the `isVellum && !expectedProvider` branch). Deriving it from the
+        // and the `isCadet && !expectedProvider` branch). Deriving it from the
         // model here regardless would send a provider-pinned call-site fragment
         // to a different upstream than a primary send of the same resolution,
         // and would refuse a managed model the catalog does not list yet even
@@ -458,7 +458,7 @@ export function createAdapterFromConnection(
         // `chatgpt`) is refused rather than routed.
         const declaredProvider = resolvedBackup.provider;
         const upstream =
-          declaredProvider === VELLUM_MANAGED_PROVIDER
+          declaredProvider === CADET_MANAGED_PROVIDER
             ? getManagedUpstream(resolvedBackup.model)
             : MANAGED_ROUTABLE_PROVIDERS.has(declaredProvider)
               ? declaredProvider
@@ -500,7 +500,7 @@ export function createAdapterFromConnection(
           provider: backupAdapter,
           overrideProfile,
           // Always true: this callback is wired only on the managed proxy, so
-          // the backup route runs through it too and its `X-Vellum-*` billing
+          // the backup route runs through it too and its `X-Cadet-*` billing
           // metadata reaches our own backend, never a third party.
           forwardUsageAttributionHeaders: true,
         };
@@ -514,18 +514,18 @@ export function createAdapterFromConnection(
     };
   }
 
-  // Usage-attribution headers (`X-Vellum-*`) are only meaningful when the
-  // request is routed through the Vellum-managed proxy. They carry billing
+  // Usage-attribution headers (`X-Cadet-*`) are only meaningful when the
+  // request is routed through the Cadet-managed proxy. They carry billing
   // metadata for our own backend. Forwarding them to a third-party endpoint
-  // would leak internal Vellum metadata, so gate on the managed connection
+  // would leak internal Cadet metadata, so gate on the managed connection
   // identity, the only route that flows through our proxy.
-  const isManagedProxy = isVellumManagedConnection(connection);
+  const isManagedProxy = isCadetManagedConnection(connection);
   const effectiveAuth = effectiveConnectionAuth(connection);
   const tracked = new UsageTrackingProvider(
     new RetryProvider(adapter, {
       forwardUsageAttributionHeaders: isManagedProxy,
       credentialSource: isManagedProxy
-        ? "vellum-managed"
+        ? "cadet-managed"
         : effectiveAuth.type === "api_key"
           ? "byok"
           : effectiveAuth.type === "oauth_subscription"
@@ -569,11 +569,11 @@ function buildConnectionAdapter(
   },
 ): Provider | null {
   const provider = opts.provider ?? connection.provider;
-  // The connection's own `vellum` column is a routing sentinel. Dispatch
-  // only when the caller names an upstream, including Vellum-hosted GPU
-  // models whose catalog id is also `vellum`.
+  // The connection's own `cadet` column is a routing sentinel. Dispatch
+  // only when the caller names an upstream, including Cadet-hosted GPU
+  // models whose catalog id is also `cadet`.
   if (
-    connection.provider === VELLUM_MANAGED_PROVIDER &&
+    connection.provider === CADET_MANAGED_PROVIDER &&
     opts.provider === undefined
   ) {
     return null;

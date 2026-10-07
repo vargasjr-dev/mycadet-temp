@@ -178,7 +178,7 @@ export function isPostCheckoutReturn(destination: string): boolean {
  * completed Stripe Checkout. Only {@link managedProvisioningDestination} sets
  * it, and only for a billing landing carrying Stripe's `session_id`.
  *
- * Deliberately separate from `hosting=vellum-cloud`, which says only that the
+ * Deliberately separate from `hosting=cadet-cloud`, which says only that the
  * hatch is managed — a hosting choice a free user can make too. The purchased-
  * provisioning wait holds for a lagging subscription webhook on this param
  * alone, so conflating the two would park every free managed hatch on a
@@ -190,7 +190,7 @@ export const POST_CHECKOUT_HATCH_PARAM = "post_checkout";
  * The provisioning funnel entry for a purchase with no managed assistant to
  * apply to.
  *
- * `hosting=vellum-cloud` is the onboarding flow's managed-hatch marker (see
+ * `hosting=cadet-cloud` is the onboarding flow's managed-hatch marker (see
  * `adopt-existing-assistant`): it names a managed hatch even in a local-mode
  * build, where the client would otherwise let the local gateway answer for the
  * assistant and skip the purchased-provisioning wait. Carrying it onto the
@@ -205,11 +205,11 @@ export const POST_CHECKOUT_HATCH_PARAM = "post_checkout";
 function managedProvisioningDestination(): string {
   // The headless research entry runs the purchased-provisioning wait behind
   // the onboarding form. `isLocalHatch` is false by construction —
-  // `hosting=vellum-cloud` forces the managed hatch on every client.
+  // `hosting=cadet-cloud` forces the managed hatch on every client.
   const route = onboardingDestinationAfterConsent({
     isLocalHatch: false,
   });
-  return `${route}?hosting=vellum-cloud&${POST_CHECKOUT_HATCH_PARAM}=1`;
+  return `${route}?hosting=cadet-cloud&${POST_CHECKOUT_HATCH_PARAM}=1`;
 }
 
 /**

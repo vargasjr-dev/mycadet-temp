@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
 
 /**
- * Guards the app-side ambient global (`window.vellum`) that
+ * Guards the app-side ambient global (`window.cadet`) that
  * `@mycadet/plugin-api` ships so plugin apps don't hand-declare it.
  *
  * Two things must hold: the declaration augments `Window` with the bridge's
@@ -18,7 +18,7 @@ const BUILD_SCRIPT = new URL(
 );
 
 describe("plugin-api app-side globals", () => {
-  test("augments Window with the window.vellum bridge fetch", () => {
+  test("augments Window with the window.cadet bridge fetch", () => {
     const src = readFileSync(APP_GLOBALS, "utf8");
 
     // Augments the DOM `Window` with the bridge.

@@ -14,7 +14,7 @@ describe("sttRoleOverrideEntries", () => {
     // An assistant that does not serve the field at all reports no entries,
     // so the section does not render. That absence IS the compatibility
     // story: there is no version gate behind it.
-    expect(sttRoleOverrideEntries({ provider: "vellum" })).toEqual([]);
+    expect(sttRoleOverrideEntries({ provider: "cadet" })).toEqual([]);
     expect(sttRoleOverrideEntries(undefined)).toEqual([]);
   });
 
@@ -42,29 +42,29 @@ describe("sttRoleOverrideEntries", () => {
     // this identical and hide the one divergence that matters.
     expect(
       sttRoleOverrideEntries({
-        provider: "vellum",
-        providers: { vellum: { model: "nova-3" } },
-        roles: { liveVoice: { provider: "vellum", model: "flux" } },
+        provider: "cadet",
+        providers: { cadet: { model: "nova-3" } },
+        roles: { liveVoice: { provider: "cadet", model: "flux" } },
       }),
-    ).toEqual([{ role: "liveVoice", provider: "vellum", model: "flux" }]);
+    ).toEqual([{ role: "liveVoice", provider: "cadet", model: "flux" }]);
   });
 
   test("a role repeating the global's own family is not an override", () => {
     expect(
       sttRoleOverrideEntries({
-        provider: "vellum",
-        providers: { vellum: { model: "flux" } },
-        roles: { liveVoice: { provider: "vellum", model: "flux" } },
+        provider: "cadet",
+        providers: { cadet: { model: "flux" } },
+        roles: { liveVoice: { provider: "cadet", model: "flux" } },
       }),
     ).toEqual([]);
   });
 
   test("reports every diverging role", () => {
     const entries = sttRoleOverrideEntries({
-      provider: "vellum",
+      provider: "cadet",
       roles: {
-        liveVoice: { provider: "vellum", model: "flux" },
-        batch: { provider: "vellum" },
+        liveVoice: { provider: "cadet", model: "flux" },
+        batch: { provider: "cadet" },
         telephony: { provider: "deepgram" },
       },
     });
@@ -78,7 +78,7 @@ describe("sttRoleOverrideEntries", () => {
   test("a malformed role entry is skipped rather than rendered blank", () => {
     expect(
       sttRoleOverrideEntries({
-        provider: "vellum",
+        provider: "cadet",
         roles: { liveVoice: {}, batch: undefined },
       }),
     ).toEqual([]);

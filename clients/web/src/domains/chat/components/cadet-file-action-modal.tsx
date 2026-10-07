@@ -12,13 +12,13 @@ import { Modal } from "@mycadet/design-library/components/modal";
 
 import { useTranslation } from "@/i18n";
 
-/** A `vellum://` file link the user clicked, pending an action choice. */
-export interface VellumFileActionTarget {
+/** A `cadet://` file link the user clicked, pending an action choice. */
+export interface CadetFileActionTarget {
   /** Decoded display filename (resolved via the shared attachment-naming rule). */
   filename: string;
   /**
    * Workspace-relative path when the file lives in the assistant workspace.
-   * Absent for `vellum://host/` links, which cannot open in the workspace
+   * Absent for `cadet://host/` links, which cannot open in the workspace
    * browser — the modal then offers download only.
    */
   workspacePath?: string;
@@ -49,17 +49,17 @@ function iconForFilename(filename: string): LucideIcon {
 }
 
 /**
- * Action chooser shown when a `vellum://` file link is clicked in chat:
+ * Action chooser shown when a `cadet://` file link is clicked in chat:
  * "Go to file" opens the file in the workspace browser (workspace files
  * only), "Download file" saves it locally.
  */
-export function VellumFileActionModal({
+export function CadetFileActionModal({
   target,
   onGoToFile,
   onDownload,
   onClose,
 }: {
-  target: VellumFileActionTarget | null;
+  target: CadetFileActionTarget | null;
   onGoToFile: () => void;
   onDownload: () => void;
   onClose: () => void;

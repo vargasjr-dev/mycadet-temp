@@ -86,8 +86,8 @@ mock.module("@/runtime/platform-detection", () => ({
   // bridge without hostOS is a macOS host.
   detectElectronHostOS: () => {
     const bridge = (
-      window as { vellum?: { platform?: string; hostOS?: string } }
-    ).vellum;
+      window as { cadet?: { platform?: string; hostOS?: string } }
+    ).cadet;
     if (bridge?.platform !== "electron") {
       return null;
     }
@@ -131,7 +131,7 @@ afterEach(() => {
   nativeAndroid = false;
   nativePlatform = false;
   openedUrl = null;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
   checkoutCalls.length = 0;
   cleanup();
   __resetForTesting();
@@ -229,7 +229,7 @@ describe("AddCreditsModal checkout return_target", () => {
   });
 
   test('sends return_target "native" inside the Electron shell', async () => {
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     const call = await submitCheckout();
 
@@ -237,7 +237,7 @@ describe("AddCreditsModal checkout return_target", () => {
   });
 
   test('sends return_target "native" on the Windows Electron shell', async () => {
-    (window as { vellum?: unknown }).vellum = {
+    (window as { cadet?: unknown }).cadet = {
       platform: "electron",
       hostOS: "windows",
     };

@@ -88,7 +88,7 @@ export interface BusEventMap {
    * The bus-owned SSE connection just opened (or reopened). Carries the
    * `cause` of the (re)open so consumers can distinguish a fresh
    * connection from a transport-error reconnect, a watchdog-driven
-   * recovery, or a manual `_vellumDebug.events.reconnectClient()`
+   * recovery, or a manual `_cadetDebug.events.reconnectClient()`
    * trigger. Conversation-scoped consumers use this to schedule a
    * post-reconnect reconciliation pass.
    *
@@ -190,7 +190,7 @@ export interface BusEventMap {
     state: "completed" | "interrupted";
   };
   /**
-   * Inbound deep links — `vellum://` / `vellum-assistant://` URLs
+   * Inbound deep links — `cadet://` / `cadet-assistant://` URLs
    * the OS routed to us, plus notification taps that resolve to a
    * conversation. Domain consumers (chat composer, conversation
    * router) subscribe here to take action.

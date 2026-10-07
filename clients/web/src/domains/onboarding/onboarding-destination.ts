@@ -87,7 +87,7 @@ export function withSkipResearch(
  * The research/personality flow is now THE onboarding, but HOW the assistant is
  * provisioned differs by hosting:
  *
- * - **Platform / Vellum-Cloud** → straight to `/assistant/onboarding/research`,
+ * - **Platform / Cadet-Cloud** → straight to `/assistant/onboarding/research`,
  *   which runs its own managed background hatch and walks the user to chat.
  * - **Local hosting** (`hosting=local`/`docker` in a local-mode build) → the
  *   `hatching` screen first, so the FOREGROUND local hatch (daemon spawn →

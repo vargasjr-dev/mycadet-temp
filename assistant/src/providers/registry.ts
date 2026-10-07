@@ -272,7 +272,7 @@ export async function initializeProviders(
         // so don't let its rejections render as "update your personal key".
         credentialSource:
           source === "managed-proxy"
-            ? "vellum-managed"
+            ? "cadet-managed"
             : isKeyless && !apiKey
               ? "no-auth"
               : "byok",

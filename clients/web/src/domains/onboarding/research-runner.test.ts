@@ -2,9 +2,9 @@
  * Tests for the catalog filter that decides which plugins onboarding surfaces,
  * plus the runner's subject-key dedupe and the `reset` that releases it.
  *
- * The hard rule: only Vellum-hosted (first-party, reviewed) plugins are ever
+ * The hard rule: only Cadet-hosted (first-party, reviewed) plugins are ever
  * offered or installed during onboarding — never third-party/external
- * marketplace repos — minus a couple of Vellum-owned infra/meta plugins.
+ * marketplace repos — minus a couple of Cadet-owned infra/meta plugins.
  */
 
 import { createElement, type ReactNode } from "react";
@@ -35,14 +35,14 @@ function match(name: string, repo: string, description?: string): Match {
 }
 
 describe("selectRecommendableCapabilities", () => {
-  test("keeps vellum-hosted plugins and drops external-owner ones", () => {
+  test("keeps cadet-hosted plugins and drops external-owner ones", () => {
     const { capabilities, validNames } = selectRecommendableCapabilities([
       match(
         "marketing-expert",
-        "vellum-ai/marketing-expert",
+        "cadet-ai/marketing-expert",
         "Full-stack marketing.",
       ),
-      match("admin-copilot", "vellum-ai/admin-copilot", "Chief-of-staff."),
+      match("admin-copilot", "cadet-ai/admin-copilot", "Chief-of-staff."),
       match("caveman", "JuliusBrussee/caveman", "Compression mode."),
       match("dynamic-notch", "AnitaKirkovska/dynamic-notch", "Notch UI."),
       match(
@@ -62,11 +62,11 @@ describe("selectRecommendableCapabilities", () => {
     ]);
   });
 
-  test("drops vellum-hosted infra/meta plugins (simple-memory, level-up)", () => {
+  test("drops cadet-hosted infra/meta plugins (simple-memory, level-up)", () => {
     const { validNames } = selectRecommendableCapabilities([
-      match("simple-memory", "vellum-ai/simple-memory", "Reference memory."),
-      match("level-up", "vellum-ai/level-up", "Self-edit diff card."),
-      match("git-workflow", "vellum-ai/git-workflow", "Git tools."),
+      match("simple-memory", "cadet-ai/simple-memory", "Reference memory."),
+      match("level-up", "cadet-ai/level-up", "Self-edit diff card."),
+      match("git-workflow", "cadet-ai/git-workflow", "Git tools."),
     ]);
 
     expect([...validNames]).toEqual(["git-workflow"]);
@@ -74,7 +74,7 @@ describe("selectRecommendableCapabilities", () => {
 
   test("drops entries missing a description", () => {
     const { validNames } = selectRecommendableCapabilities([
-      match("marketing-expert", "vellum-ai/marketing-expert"),
+      match("marketing-expert", "cadet-ai/marketing-expert"),
     ]);
 
     expect(validNames.size).toBe(0);
@@ -85,7 +85,7 @@ describe("selectRecommendableCapabilities", () => {
       "Acts as a full-stack marketing expert for any business. " +
       "Includes positioning, demand planning, launches, content, brand voice, SEO, and competitive teardown playbooks.";
     const { capabilities } = selectRecommendableCapabilities([
-      match("marketing-expert", "vellum-ai/marketing-expert", long),
+      match("marketing-expert", "cadet-ai/marketing-expert", long),
     ]);
 
     expect(capabilities[0]?.description).toBe(
@@ -97,10 +97,10 @@ describe("selectRecommendableCapabilities", () => {
 describe("resolveOnboardingPluginInstalls", () => {
   test("includes admin-copilot from the first-party catalog for every role", () => {
     const { validNames } = selectRecommendableCapabilities([
-      match("admin-copilot", "vellum-ai/admin-copilot", "Chief-of-staff."),
+      match("admin-copilot", "cadet-ai/admin-copilot", "Chief-of-staff."),
       match(
         "marketing-expert",
-        "vellum-ai/marketing-expert",
+        "cadet-ai/marketing-expert",
         "Full-stack marketing.",
       ),
     ]);
@@ -116,10 +116,10 @@ describe("resolveOnboardingPluginInstalls", () => {
 
   test("dedupes deterministic and model picks while rejecting non-catalog names", () => {
     const { validNames } = selectRecommendableCapabilities([
-      match("admin-copilot", "vellum-ai/admin-copilot", "Chief-of-staff."),
+      match("admin-copilot", "cadet-ai/admin-copilot", "Chief-of-staff."),
       match(
         "marketing-expert",
-        "vellum-ai/marketing-expert",
+        "cadet-ai/marketing-expert",
         "Full-stack marketing.",
       ),
       match("caveman", "JuliusBrussee/caveman", "Compression mode."),

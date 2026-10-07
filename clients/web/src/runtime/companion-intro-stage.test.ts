@@ -24,7 +24,7 @@ const pushes: ((staged: boolean) => void)[] = [];
  */
 const stagedOnLoad = true;
 
-window.vellum = {
+window.cadet = {
   companion: {
     getState: async () => null,
     onState: () => () => undefined,
@@ -36,7 +36,7 @@ window.vellum = {
       };
     },
   },
-} as unknown as Window["vellum"];
+} as unknown as Window["cadet"];
 
 const { companionIntroStaged } =
   await import("@/runtime/companion-intro-stage");

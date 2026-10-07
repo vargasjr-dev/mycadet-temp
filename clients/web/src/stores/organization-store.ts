@@ -28,7 +28,7 @@ import {
   isSettledSessionRejection,
 } from "@/stores/session-status";
 
-const ACTIVE_ORGANIZATION_STORAGE_KEY = "vellum_active_organization_id";
+const ACTIVE_ORGANIZATION_STORAGE_KEY = "cadet_active_organization_id";
 
 export type OrganizationStatus = "idle" | "loading" | "ready" | "error";
 
@@ -286,7 +286,7 @@ export function getActiveOrganizationIdForRequests(): string | null {
 /**
  * Subscribe to the organization requests are scoped to.
  *
- * Same derivation `Vellum-Organization-Id` is built from, so anything a
+ * Same derivation `Cadet-Organization-Id` is built from, so anything a
  * component keys on it — a query cache scope, a readiness gate — moves with
  * the header rather than trailing it.
  */

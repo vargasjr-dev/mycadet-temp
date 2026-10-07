@@ -35,7 +35,7 @@ falls back to `index.html` for client-side routes.
 - **Startup speed** — local file reads are ~instant; no DNS / TLS / CDN
   roundtrip.
 - **Version coherence** — the web UI and Electron main process are
-  tightly coupled via IPC (`window.vellum.*`). Bundling them together
+  tightly coupled via IPC (`window.cadet.*`). Bundling them together
   guarantees they are always compatible.
 
 ## Auto-update
@@ -138,8 +138,8 @@ whichever Swift channel you have around.
   Most items are role-based so they work without renderer IPC; the `File`
   items dispatch through the typed command bus in `src/main/commands.ts`,
   which broadcasts to the focused window's renderer via a single
-  `cadet:command` IPC channel (subscribed to by `useVellumCommands` in
-  `clients/web/src/runtime/vellum-commands.ts`). Accelerators are read from
+  `cadet:command` IPC channel (subscribed to by `useCadetCommands` in
+  `clients/web/src/runtime/cadet-commands.ts`). Accelerators are read from
   `settings.hotkeys.<kind>` with defaults from `DEFAULT_ACCELERATORS`.
   `View > Toggle Developer Tools` is gated to dev builds only so the
   packaged build doesn't expose devtools to end users.
@@ -366,13 +366,13 @@ clients/macos/
 │   ├── main/commands.ts      # typed command bus + accelerator resolver
 │   ├── main/settings.ts      # electron-store schema + IPC-backed accessors
 │   ├── main/menu.ts          # macOS application menu
-│   └── preload/index.ts      # contextBridge: window.vellum.*
+│   └── preload/index.ts      # contextBridge: window.cadet.*
 └── tsconfig.json
 ```
 
 ## Renderer bridge
 
-The preload script exposes a typed `window.vellum` API to the renderer:
+The preload script exposes a typed `window.cadet` API to the renderer:
 
 - `platform: "electron"` — host discriminator.
 - `settings.get<T>(key)` / `settings.set<T>(key, value)` — persisted preferences,
@@ -382,8 +382,8 @@ The preload script exposes a typed `window.vellum` API to the renderer:
 - `commands.on(callback)` — subscribe to main-process commands dispatched
   by the application menu (and, eventually, global hotkeys). Returns an
   unsubscribe function. The renderer-side wrapper is
-  [`clients/web/src/runtime/vellum-commands.ts`](../web/src/runtime/vellum-commands.ts);
-  feature code mounts the `useVellumCommands` hook with a partial handler
+  [`clients/web/src/runtime/cadet-commands.ts`](../web/src/runtime/cadet-commands.ts);
+  feature code mounts the `useCadetCommands` hook with a partial handler
   map at whichever component owns the relevant state.
 - `dock.setBadge(count)` / `dock.setSignedIn(signedIn)` — publish the
   inputs that drive the Dock unread badge and visibility state machine
@@ -431,9 +431,9 @@ it logs to stderr and keeps stdout reserved for RPC frames and notifications.
 Verify the bridge from the renderer:
 
 ```js
-console.log(window.vellum.platform); // "electron"
-await window.vellum.settings.set("theme", "dark");
-console.log(await window.vellum.settings.get("theme")); // "dark"
+console.log(window.cadet.platform); // "electron"
+await window.cadet.settings.set("theme", "dark");
+console.log(await window.cadet.settings.get("theme")); // "dark"
 ```
 
 ### When to extend the bridge with new methods
@@ -443,14 +443,14 @@ where the renderer is the source of truth and the value is non-sensitive
 (theme, layout, feature-flag overrides, etc.). For higher-sensitivity
 capabilities — auth tokens, biometric keys, file paths, anything where the
 renderer should not be free to read or write arbitrary keys — add a
-dedicated bridge method (`window.vellum.<capability>.<verb>()`) with its
+dedicated bridge method (`window.cadet.<capability>.<verb>()`) with its
 own IPC channel. This follows Electron's "one method per IPC message"
 guidance from the [security tutorial](https://www.electronjs.org/docs/latest/tutorial/security#17-validate-the-sender-of-all-ipc-messages),
 which keeps the renderer-exposed surface narrow and auditable.
 
 Renderer-side consumers in `clients/web/` should wrap bridge access in a
 per-capability module (see `clients/web/src/runtime/native-biometric.ts` for
-the established shape) rather than reaching into `window.vellum.*`
+the established shape) rather than reaching into `window.cadet.*`
 directly from feature code. That keeps the platform-branching logic in
 one place and makes the cross-platform contract (web / iOS / Electron)
 live in TypeScript types.

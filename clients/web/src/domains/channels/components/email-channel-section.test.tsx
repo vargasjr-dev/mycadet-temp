@@ -209,7 +209,7 @@ describe("EmailChannelSection header", () => {
     // One heading: the section's. The body brings no title of its own.
     expect(screen.getAllByRole("heading")).toHaveLength(1);
     // The pitch's perks stand in for the address itself.
-    expect(screen.getByText("A real address on local.vellum.me")).toBeTruthy();
+    expect(screen.getByText("A real address on local.cadet.me")).toBeTruthy();
     expect(
       screen.getByRole("button", { name: /Upgrade to Super/ }),
     ).toBeTruthy();

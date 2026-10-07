@@ -13,14 +13,14 @@
  * That trade is why the flag is off unless a developer types it, in
  * DevTools, on the session they want it:
  *
- *   window._vellumDebug.flags.toggleAppsSandboxDisabled()
+ *   window._cadetDebug.flags.toggleAppsSandboxDisabled()
  *
  * The value lives in memory (a page reload restores the sandbox) and
  * flipping it logs a console warning that stays in the transcript for
  * the rest of the session.
  *
  * This module owns the flag's state and semantics. The console binding
- * lives with the other flags in the `_vellumDebug.flags` namespace,
+ * lives with the other flags in the `_cadetDebug.flags` namespace,
  * installed by {@link @/domains/chat/utils/debug-api}.
  *
  * The flag ships in production builds. It exists to demo screen-capture
@@ -58,20 +58,20 @@ export function isAppIframeSandboxDisabled(): boolean {
 export function toggleAppIframeSandboxDisabled(value?: boolean): boolean {
   const next = value === undefined ? !sandboxDisabled : value === true;
   if (next === sandboxDisabled) {
-    console.info(`[vellumDebug] ${FLAG_LABEL}: already ${String(next)}.`);
+    console.info(`[cadetDebug] ${FLAG_LABEL}: already ${String(next)}.`);
     return sandboxDisabled;
   }
   sandboxDisabled = next;
   if (next) {
     console.warn(
-      `[vellumDebug] ${FLAG_LABEL} = true: app iframes render without ` +
+      `[cadetDebug] ${FLAG_LABEL} = true: app iframes render without ` +
         "the sandbox attribute. App HTML runs same-origin with the host and can " +
         "reach its DOM, storage, and cookies. Open apps reload to pick this up. " +
         "Call it again, or reload the page, to restore the sandbox.",
     );
   } else {
     console.info(
-      `[vellumDebug] ${FLAG_LABEL} = false: app iframes are sandboxed again.`,
+      `[cadetDebug] ${FLAG_LABEL} = false: app iframes are sandboxed again.`,
     );
   }
   for (const listener of listeners) {
@@ -89,7 +89,7 @@ function subscribe(onStoreChange: () => void): () => void {
 
 /**
  * Subscribe a component to the flag. Returns `false` until someone calls
- * `window._vellumDebug.flags.toggleAppsSandboxDisabled()`, and re-renders
+ * `window._cadetDebug.flags.toggleAppsSandboxDisabled()`, and re-renders
  * the caller on every change.
  */
 export function useAppIframeSandboxDisabled(): boolean {

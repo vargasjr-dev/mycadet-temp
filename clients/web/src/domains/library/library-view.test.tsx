@@ -1,10 +1,10 @@
 /**
  * Tests for LibraryView's import affordance.
  *
- * Import is the only way someone who was sent a `.vellum` bundle gets their
+ * Import is the only way someone who was sent a `.cadet` bundle gets their
  * first app, and their library is empty by definition, so the header control
  * has to survive the empty/populated split. The `accept` filter is asserted
- * here too: on desktop the picker is constrained to `.vellum`, while touch
+ * here too: on desktop the picker is constrained to `.cadet`, while touch
  * devices (where iOS ignores extension filters) get an unrestricted picker so
  * the bundle is actually selectable.
  */
@@ -173,12 +173,12 @@ describe("LibraryView import affordance", () => {
     expect(importButton.className).toContain("rounded-full");
   });
 
-  test("constrains the picker to .vellum on a fine-pointer device", () => {
+  test("constrains the picker to .cadet on a fine-pointer device", () => {
     const { container } = renderView();
 
     expect(
       container.querySelector('input[type="file"]')?.getAttribute("accept"),
-    ).toBe(".vellum");
+    ).toBe(".cadet");
   });
 
   test("the import button opens the view's own file input", () => {

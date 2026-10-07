@@ -1233,7 +1233,7 @@ async function spawnBackgroundWebInterface(
 }
 
 /**
- * Config the local web host injects as `window.__VELLUM_CONFIG__` and serves at
+ * Config the local web host injects as `window.__CADET_CONFIG__` and serves at
  * `/assistant/__config`, the document a caller probes to learn which assistant
  * an origin fronts.
  *
@@ -1297,11 +1297,11 @@ async function runWebInterface(
   );
   const hasOverrides = Object.keys(parsedFlagOverrides).length > 0;
   const flagOverridesSnippet = hasOverrides
-    ? `;window.__VELLUM_FLAG_OVERRIDES__=${safeJson(parsedFlagOverrides)}`
+    ? `;window.__CADET_FLAG_OVERRIDES__=${safeJson(parsedFlagOverrides)}`
     : "";
   const indexHtml = rawIndexHtml.replace(
     "</head>",
-    `<script>window.__VELLUM_CONFIG__=${configJson}${flagOverridesSnippet}</script></head>`,
+    `<script>window.__CADET_CONFIG__=${configJson}${flagOverridesSnippet}</script></head>`,
   );
 
   // The shell names this build's hashed chunks and carries the host's injected

@@ -64,8 +64,8 @@ const { createInviteNative, createContactsControlPlaneProxyHandler } =
   await import("../http/routes/contacts-control-plane-proxy.js");
 const { seedContact } = await import("./helpers/contact-fixtures.js");
 
-const BASE_URL_KEY = credentialKey("vellum", "platform_base_url");
-const API_KEY_KEY = credentialKey("vellum", "assistant_api_key");
+const BASE_URL_KEY = credentialKey("cadet", "platform_base_url");
+const API_KEY_KEY = credentialKey("cadet", "assistant_api_key");
 const PLATFORM_URL = "https://platform.example.com";
 const API_KEY = "vak_test_key";
 const CONTACT_ID = "contact-alice";

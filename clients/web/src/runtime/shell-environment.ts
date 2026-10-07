@@ -24,8 +24,8 @@ export type ShellEnvironment = "production" | "staging" | "dev";
 
 /** Unsuffixed application ids: iOS first, then Android. */
 const SHELL_APP_ID_BASES = [
-  "ai.vocify-inc.vellum-assistant-ios",
-  "ai.vellum.assistant",
+  "ai.vocify-inc.cadet-assistant-ios",
+  "ai.cadet.assistant",
 ];
 
 /** Suffix each build appends to its base id, production appending none. */

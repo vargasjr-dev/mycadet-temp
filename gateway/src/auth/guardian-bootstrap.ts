@@ -1052,8 +1052,8 @@ async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
   if (!isPlatform) return null;
 
   const [platformBaseUrl, assistantApiKey] = await Promise.all([
-    readCredential(credentialKey("vellum", "platform_base_url")),
-    readCredential(credentialKey("vellum", "assistant_api_key")),
+    readCredential(credentialKey("cadet", "platform_base_url")),
+    readCredential(credentialKey("cadet", "assistant_api_key")),
   ]);
 
   if (!platformBaseUrl || !assistantApiKey) {

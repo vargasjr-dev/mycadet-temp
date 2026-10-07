@@ -21,13 +21,13 @@ beforeEach(() => {
 
 afterEach(() => {
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("subscribeToPowerEvents", () => {
   test("never calls back off Electron, even with a host bridge present", () => {
     const onEvent = mock(() => () => undefined);
-    (window as { vellum?: unknown }).vellum = { power: { onEvent } };
+    (window as { cadet?: unknown }).cadet = { power: { onEvent } };
 
     const unsubscribe = subscribeToPowerEvents(() => {
       throw new Error("no power event may reach a browser tab");
@@ -43,7 +43,7 @@ describe("subscribeToPowerEvents", () => {
     runningInElectron = true;
     const hostUnsubscribe = mock(() => undefined);
     const onEvent = mock(() => hostUnsubscribe);
-    (window as { vellum?: unknown }).vellum = { power: { onEvent } };
+    (window as { cadet?: unknown }).cadet = { power: { onEvent } };
 
     const unsubscribe = subscribeToPowerEvents(() => undefined);
 

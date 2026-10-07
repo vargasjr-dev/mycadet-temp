@@ -174,7 +174,7 @@ export function pluginsForRole(role: string): string[] {
  * preceded onboarding — see `plugin-attribution`), and the role's affinity
  * matches, narrowed to capabilities actually present in the fetched catalog
  * (`validNames`) so a name the marketplace doesn't carry — or that's filtered
- * out (non-Vellum, infra) — never hits the install route. Baseline first, then
+ * out (non-Cadet, infra) — never hits the install route. Baseline first, then
  * attribution, then role matches; deduped, order-stable.
  *
  * Attribution rides the same `validNames` gate as everything else: onboarding

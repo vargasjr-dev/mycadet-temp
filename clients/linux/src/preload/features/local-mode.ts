@@ -5,10 +5,10 @@ import type {
   CapabilityModule,
 } from "@mycadet/electron-desktop/capability-registry";
 import { createLocalModeBridge } from "@mycadet/electron-desktop/local-mode-bridge";
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 const localModeFeature: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "local-mode",
   install: (registry) => {

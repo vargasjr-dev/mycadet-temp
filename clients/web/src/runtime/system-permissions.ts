@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 import {
   isElectron,
@@ -56,7 +56,7 @@ const SYSTEM_PERMISSION_SETTINGS_URLS: Readonly<
 
 export function supportsSystemPermissions(): boolean {
   return (
-    isElectron() && typeof window.vellum?.permissions?.getState === "function"
+    isElectron() && typeof window.cadet?.permissions?.getState === "function"
   );
 }
 
@@ -64,18 +64,18 @@ export async function getSystemPermissionsState(): Promise<SystemPermissionsStat
   if (!supportsSystemPermissions()) {
     return null;
   }
-  return await window.vellum!.permissions!.getState();
+  return await window.cadet!.permissions!.getState();
 }
 
 export async function requestSystemPermission(
   kind: SystemPermissionKind,
-  presentation?: Parameters<VellumBridge["permissions"]["request"]>[1],
+  presentation?: Parameters<CadetBridge["permissions"]["request"]>[1],
 ): Promise<SystemPermissionStateItem | null> {
   if (!supportsSystemPermissions()) {
     return null;
   }
-  const request = window.vellum!.permissions!
-    .request as VellumBridge["permissions"]["request"];
+  const request = window.cadet!.permissions!
+    .request as CadetBridge["permissions"]["request"];
   if (presentation && detectElectronHostOS() === "macos") {
     return await request(kind, presentation);
   }
@@ -88,7 +88,7 @@ export async function openSystemPermissionSettings(
   if (!supportsSystemPermissions()) {
     return null;
   }
-  return await window.vellum!.permissions!.openSettings(kind);
+  return await window.cadet!.permissions!.openSettings(kind);
 }
 
 export type SystemPermissionSettingsUrlOutcome =
@@ -117,7 +117,7 @@ export async function quitAndReopenForPermissions(): Promise<void> {
   if (!supportsSystemPermissions()) {
     return;
   }
-  await window.vellum!.permissions!.quitAndReopen();
+  await window.cadet!.permissions!.quitAndReopen();
 }
 
 export function subscribeToSystemPermissions(
@@ -126,7 +126,7 @@ export function subscribeToSystemPermissions(
   if (!supportsSystemPermissions()) {
     return () => undefined;
   }
-  return window.vellum!.permissions!.onState(callback);
+  return window.cadet!.permissions!.onState(callback);
 }
 
 /** Re-arm keyboard bindings when a Settings grant reaches this renderer. */

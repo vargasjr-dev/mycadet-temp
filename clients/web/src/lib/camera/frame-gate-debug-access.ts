@@ -26,7 +26,7 @@
  * sessions that have no panel on screen.
  */
 
-import { isVellumStaff } from "@/lib/auth/staff";
+import { isCadetStaff } from "@/lib/auth/staff";
 import { syncFrameGateDebugOptions } from "@/lib/camera/frame-gate-debug";
 import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import {
@@ -48,7 +48,7 @@ export function cameraGateHudAvailable(
   user: AuthUser | null,
   flagged: boolean,
 ): boolean {
-  return isVellumStaff(user) || flagged;
+  return isCadetStaff(user) || flagged;
 }
 
 /** The same answer read outside React, for the subscriptions below. */

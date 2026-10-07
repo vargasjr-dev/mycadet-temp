@@ -23,7 +23,7 @@ export function SuggestionIcon({
       return <GoogleCalendarLogo size={size} />;
     case "google-drive":
       return <GoogleDriveLogo size={size} />;
-    case "vellum":
+    case "cadet":
       return (
         <Sparkles
           size={size}

@@ -436,7 +436,7 @@ describe("buildIngressNginxConfig", () => {
 describe("buildRemoteWebIndexHtml", () => {
   test("injects the remote gateway config after any bundled local config", () => {
     const html =
-      '<html><head><script>window.__VELLUM_CONFIG__={"webUrl":"https://www.vellum.ai"}</script></head><body></body></html>';
+      '<html><head><script>window.__CADET_CONFIG__={"webUrl":"https://www.vellum.ai"}</script></head><body></body></html>';
     const result = buildRemoteWebIndexHtml(html, {
       mode: "remote-gateway",
       apiBaseUrl: "/v1",
@@ -444,10 +444,10 @@ describe("buildRemoteWebIndexHtml", () => {
     });
 
     expect(result).toContain(
-      'window.__VELLUM_CONFIG__={"webUrl":"https://www.vellum.ai"}',
+      'window.__CADET_CONFIG__={"webUrl":"https://www.vellum.ai"}',
     );
     expect(result).toContain(
-      'window.__VELLUM_CONFIG__={"mode":"remote-gateway","apiBaseUrl":"/v1","disablePlatform":true}',
+      'window.__CADET_CONFIG__={"mode":"remote-gateway","apiBaseUrl":"/v1","disablePlatform":true}',
     );
     expect(result.indexOf('"webUrl"')).toBeLessThan(
       result.indexOf('"remote-gateway"'),

@@ -82,7 +82,7 @@ function formatDate(unixSeconds: number): string {
 }
 
 // Stripe hosts the invoice PDF, so this is an external open rather than a
-// Vellum-owned save: a cross-origin fetch would be CORS-blocked, and the
+// Cadet-owned save: a cross-origin fetch would be CORS-blocked, and the
 // browser view is Stripe's own hosted invoice page. `openExternalUrl` covers
 // every shell (a hand-rolled target="_blank" anchor is a no-op in the
 // Capacitor WKWebView).

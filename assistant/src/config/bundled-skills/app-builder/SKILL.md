@@ -258,11 +258,11 @@ Then compile ONCE (`assistant apps refresh <name>` or `app_refresh(app_id)`) unl
 
 The point of these apps is to put **the user's own data and the assistant's capabilities** behind a real interface. Apps reach the assistant backend through custom routes.
 
-**Call routes with `window.vellum.fetch("/v1/x/...")` — never raw `fetch()`.** Raw fetch fails in the sandboxed origin. This is how an app reads and writes persistent records, runs server-side logic, and touches files.
+**Call routes with `window.cadet.fetch("/v1/x/...")` — never raw `fetch()`.** Raw fetch fails in the sandboxed origin. This is how an app reads and writes persistent records, runs server-side logic, and touches files.
 
 ```tsx
 async function loadRecords() {
-  const res = await window.vellum.fetch("/v1/x/my-route");
+  const res = await window.cadet.fetch("/v1/x/my-route");
   if (!res.ok) {
     notifyError("Couldn't load");
     return [];
@@ -275,7 +275,7 @@ Always wrap calls in `try/catch`, check `res.ok` before parsing, and surface fai
 
 ```tsx
 useEffect(() => {
-  window.vellum
+  window.cadet
     .fetch("/v1/x/items")
     .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
     .then(setItems)
@@ -283,12 +283,12 @@ useEffect(() => {
 }, []);
 ```
 
-**Bundled media — `window.vellum.asset(path)`.** For binary assets too big to inline (images, audio, short video, custom fonts), bundle the file under the app directory with `file_write` and load it at runtime via `window.vellum.asset("assets/intro.mp4")`, which resolves to a `blob:` URL the sandbox can use directly. Don't reach for giant base64 data-URIs.
+**Bundled media — `window.cadet.asset(path)`.** For binary assets too big to inline (images, audio, short video, custom fonts), bundle the file under the app directory with `file_write` and load it at runtime via `window.cadet.asset("assets/intro.mp4")`, which resolves to a `blob:` URL the sandbox can use directly. Don't reach for giant base64 data-URIs.
 
 ```tsx
 const [src, setSrc] = useState("");
 useEffect(() => {
-  window.vellum
+  window.cadet
     .asset("assets/intro.mp4")
     .then(setSrc)
     .catch(() => notifyError("Couldn't load media"));
@@ -298,11 +298,11 @@ return src ? <video src={src} controls /> : null;
 
 Paths are validated server-side (no traversal, no `records/`); the file is served only from this app's own directory.
 
-**Live updates — `window.vellum.subscribe({ tags }, cb)`.** Instead of polling on a timer, subscribe to your own invalidation tags and refresh when the data actually changes. After a route mutates data it publishes a `sync_changed` event (`import { publishEvent } from "@mycadet/plugin-api"`, then `publishEvent({ …, message: { type: "sync_changed", tags: ["my-app:items"] } })`); the app subscribes to that tag and re-fetches when it fires. Returns an unsubscribe function — call it on cleanup. Only your own custom tags are delivered (host namespaces like `conversation:`/`assistant:` are never forwarded), and the payload is just the changed tags — re-fetch through `window.vellum.fetch` for the data.
+**Live updates — `window.cadet.subscribe({ tags }, cb)`.** Instead of polling on a timer, subscribe to your own invalidation tags and refresh when the data actually changes. After a route mutates data it publishes a `sync_changed` event (`import { publishEvent } from "@mycadet/plugin-api"`, then `publishEvent({ …, message: { type: "sync_changed", tags: ["my-app:items"] } })`); the app subscribes to that tag and re-fetches when it fires. Returns an unsubscribe function — call it on cleanup. Only your own custom tags are delivered (host namespaces like `conversation:`/`assistant:` are never forwarded), and the payload is just the changed tags — re-fetch through `window.cadet.fetch` for the data.
 
 ```tsx
 useEffect(() => {
-  const off = window.vellum.subscribe({ tags: ["my-app:items"] }, () => {
+  const off = window.cadet.subscribe({ tags: ["my-app:items"] }, () => {
     void loadItems(); // re-fetch on change — no polling
   });
   return off;
@@ -358,11 +358,11 @@ To reach daemon capabilities, import from `@mycadet/plugin-api` — `publishEven
 
 ### Keep the assistant aware
 
-Wire `window.vellum.sendAction()` during the build so the app can pull the assistant in. The host handles two actions: **`relay_prompt`** (`{ prompt, conversation }`) sends a message to the assistant as if the user typed it — the way to get an explanation, summary, or follow-up from inside the app (`conversation: "new"` starts a fresh chat instead of the open one); **`set_view`** (`{ view }`) arranges the app and chat (`"split"` / `"full"` / `"chat"`). These two are the whole app→host surface — relay anything you want the assistant to act on as a self-contained prompt. Patterns in `{baseDir}/references/INTERACTION_HOOKS.md`.
+Wire `window.cadet.sendAction()` during the build so the app can pull the assistant in. The host handles two actions: **`relay_prompt`** (`{ prompt, conversation }`) sends a message to the assistant as if the user typed it — the way to get an explanation, summary, or follow-up from inside the app (`conversation: "new"` starts a fresh chat instead of the open one); **`set_view`** (`{ view }`) arranges the app and chat (`"split"` / `"full"` / `"chat"`). These two are the whole app→host surface — relay anything you want the assistant to act on as a self-contained prompt. Patterns in `{baseDir}/references/INTERACTION_HOOKS.md`.
 
 ### Actionable UI
 
-For triage/bulk-action UIs: render selectable items + action buttons → the user selects and clicks → relay the choice as a prompt with `window.vellum.sendAction("relay_prompt", { prompt: ... })`, listing the selected items in the text, so the assistant can run the tools and report back. Render your own confirmation for destructive actions.
+For triage/bulk-action UIs: render selectable items + action buttons → the user selects and clicks → relay the choice as a prompt with `window.cadet.sendAction("relay_prompt", { prompt: ... })`, listing the selected items in the text, so the assistant can run the tools and report back. Render your own confirmation for destructive actions.
 
 ---
 

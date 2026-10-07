@@ -43,11 +43,11 @@ export function isInferenceProvider(
 }
 
 /**
- * `provider` value stored on the single Vellum-managed connection. It is a
+ * `provider` value stored on the single Cadet-managed connection. It is a
  * routing sentinel, not a real LLM provider, so it never appears in the profile
  * provider picker.
  */
-export const VELLUM_CONNECTION_PROVIDER = "vellum";
+export const VELLUM_CONNECTION_PROVIDER = "cadet";
 
 /**
  * `provider` value stored on the canonical ChatGPT-subscription connection
@@ -58,7 +58,7 @@ export const VELLUM_CONNECTION_PROVIDER = "vellum";
 export const CHATGPT_CONNECTION_PROVIDER = "chatgpt";
 
 /**
- * Providers the single Vellum-managed (`cadet`) connection can serve. Mirrors
+ * Providers the single Cadet-managed (`cadet`) connection can serve. Mirrors
  * the daemon's managed-routable set. A managed profile keeps its real provider
  * (e.g. `fireworks`) while binding to the provider-agnostic `cadet`
  * connection, so the editor must treat that connection as available for these

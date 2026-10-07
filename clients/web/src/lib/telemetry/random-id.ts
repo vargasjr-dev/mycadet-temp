@@ -8,7 +8,7 @@
  * drops every sample.
  *
  * Every field the id lands in is free-form, so a non-UUID is safe:
- * client-identity's `X-Vellum-Client-Id` header and `device_id`, client-perf's
+ * client-identity's `X-Cadet-Client-Id` header and `device_id`, client-perf's
  * `page_load_id` and `daemon_event_id`. The `fallback-` prefix keeps ids minted
  * without `crypto` distinguishable from real UUIDs.
  */

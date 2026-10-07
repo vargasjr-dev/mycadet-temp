@@ -183,8 +183,8 @@ export function detectElectronHostOS(): ElectronHostOS | null {
   if (!isElectron()) {
     return null;
   }
-  if (window.vellum?.hostOS) {
-    return window.vellum.hostOS;
+  if (window.cadet?.hostOS) {
+    return window.cadet.hostOS;
   }
   const platform = navigator.platform.toLowerCase();
   if (platform.includes("win")) {
@@ -210,7 +210,7 @@ export function resolveDesktopHostOS(): ElectronHostOS {
  * (`assistant/src/daemon/conversation-runtime-assembly.ts`).
  *
  * It must NOT drive the message body's `interface` field or the
- * `X-Vellum-Interface-Id` registration header — those are the *transport*
+ * `X-Cadet-Interface-Id` registration header — those are the *transport*
  * surface and are intentionally hardcoded to `"web"` (the web/native/macOS
  * apps all run this one renderer = one transport). The daemon keys host-proxy
  * and transport capabilities off that transport interface, so reporting the OS

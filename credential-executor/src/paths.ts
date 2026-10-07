@@ -8,7 +8,7 @@
  *
  * Two modes:
  *
- * - **Local**: CES private state lives under the Vellum root's `protected/`
+ * - **Local**: CES private state lives under the Cadet root's `protected/`
  *   directory at `<rootDir>/protected/credential-executor/`.
  *
  * - **Managed**: CES private state lives at `/ces-data` by default
@@ -50,13 +50,13 @@ export function getCesMode(): CesMode {
  * Priority:
  * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the platform template for the
  *    CES container — `/ces-security` in managed mode)
- * 2. Default: `~/.vellum/protected` (local mode shares the filesystem with
+ * 2. Default: `~/.cadet/protected` (local mode shares the filesystem with
  *    the gateway)
  */
 export function getSecurityDir(): string {
   return (
     process.env["CREDENTIAL_SECURITY_DIR"]?.trim() ||
-    join(homedir(), ".vellum", "protected")
+    join(homedir(), ".cadet", "protected")
   );
 }
 

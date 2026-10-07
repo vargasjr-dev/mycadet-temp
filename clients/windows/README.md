@@ -17,8 +17,8 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
   `.ts` file in those directories is picked up automatically; a new capability
   is a new file, never an edit to `index.ts`.
 - `src/preload/core-capabilities.ts` is the always-present core of
-  `window.vellum`; `src/preload/bridge-parity.test.ts` holds the composed
-  bridge to the full `VellumBridge` contract against the macOS preload.
+  `window.cadet`; `src/preload/bridge-parity.test.ts` holds the composed
+  bridge to the full `CadetBridge` contract against the macOS preload.
 - `native/Vellum.WindowsHelper` is the same-user, non-elevated JSON-RPC helper
   behind UI Automation observation, verified input, dictation, toasts, and
   text insertion (security model in `native/README.md`).
@@ -89,7 +89,7 @@ Packaged builds poll the channel-, platform-, and architecture-isolated feed
 through `electron-updater`, download in the background, and install on quit
 (`src/main/auto-update.ts`). Main-process logs land in `vellum.log` under
 `%APPDATA%\<product name>\logs`; the helper's state and restart action are on
-`window.vellum.helper`, and the tray menu offers a restart.
+`window.cadet.helper`, and the tray menu offers a restart.
 
 ## Development
 

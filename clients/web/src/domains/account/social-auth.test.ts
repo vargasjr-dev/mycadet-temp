@@ -6,7 +6,7 @@ import {
   withPreservedAttribution,
 } from "@/domains/account/social-auth";
 
-const ORIGIN = "https://www.vellum.ai";
+const ORIGIN = "https://www.cadet.ai";
 const CALLBACK = "/account/provider/callback";
 
 function fields(attribution?: Record<string, string>) {

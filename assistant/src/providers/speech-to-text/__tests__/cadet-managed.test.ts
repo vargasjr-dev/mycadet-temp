@@ -17,26 +17,26 @@ mock.module("../../../platform/client.js", () => ({
 }));
 
 import {
+  cadetManagedSpeechAvailable,
+  cadetManagedTranscribe,
   sttErrorFromManagedSpeech,
-  vellumManagedSpeechAvailable,
-  vellumManagedTranscribe,
-} from "../vellum-managed.js";
+} from "../cadet-managed.js";
 
-describe("vellumManagedSpeechAvailable", () => {
+describe("cadetManagedSpeechAvailable", () => {
   test("true with a connected platform client", async () => {
     mockClient = { platformAssistantId: "asst-1" };
-    expect(await vellumManagedSpeechAvailable()).toBe(true);
+    expect(await cadetManagedSpeechAvailable()).toBe(true);
   });
 
   test("false without a client or without an assistant ID", async () => {
     mockClient = null;
-    expect(await vellumManagedSpeechAvailable()).toBe(false);
+    expect(await cadetManagedSpeechAvailable()).toBe(false);
     mockClient = { platformAssistantId: "" };
-    expect(await vellumManagedSpeechAvailable()).toBe(false);
+    expect(await cadetManagedSpeechAvailable()).toBe(false);
   });
 });
 
-describe("vellumManagedTranscribe", () => {
+describe("cadetManagedTranscribe", () => {
   beforeEach(() => {
     mockClient = { platformAssistantId: "asst-1" };
   });
@@ -47,7 +47,7 @@ describe("vellumManagedTranscribe", () => {
       value: { text: "hello", durationSeconds: 2 },
     };
     expect(
-      await vellumManagedTranscribe(Buffer.from([1]), "audio/wav"),
+      await cadetManagedTranscribe(Buffer.from([1]), "audio/wav"),
     ).toEqual({ text: "hello" });
   });
 
@@ -59,7 +59,7 @@ describe("vellumManagedTranscribe", () => {
       message: "slow down",
     };
     await expect(
-      vellumManagedTranscribe(Buffer.from([1]), "audio/wav"),
+      cadetManagedTranscribe(Buffer.from([1]), "audio/wav"),
     ).rejects.toMatchObject({ name: "SttError", category: "rate-limit" });
   });
 });

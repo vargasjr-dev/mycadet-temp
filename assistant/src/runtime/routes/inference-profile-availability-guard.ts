@@ -13,10 +13,10 @@
  * identically.
  */
 
+import { getManagedUpstream } from "../../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import type { ConnectionAvailability } from "../../providers/inference/connection-availability.js";
-import { vellumConnectionAvailability } from "../../providers/inference/connection-availability.js";
-import { getManagedUpstream } from "../../providers/vellum-model-routing.js";
+import { cadetConnectionAvailability } from "../../providers/inference/connection-availability.js";
 
 /**
  * How the caller should repair the selection. `create`/`update` describe an
@@ -58,11 +58,11 @@ function managedAlternative(model: string, repair: ProfileRepairHint): string {
   const quotedModel = shellQuote(model);
   switch (repair.kind) {
     case "create":
-      return `Recreate with --provider vellum --model ${quotedModel} — ${served}.`;
+      return `Recreate with --provider cadet --model ${quotedModel} — ${served}.`;
     case "update":
-      return `Update it with --provider vellum --model ${quotedModel} — ${served}.`;
+      return `Update it with --provider cadet --model ${quotedModel} — ${served}.`;
     case "repoint":
-      return `Repoint it first with "assistant inference profiles update ${shellQuote(repair.profileName)} --provider vellum --model ${quotedModel}" — ${served}.`;
+      return `Repoint it first with "assistant inference profiles update ${shellQuote(repair.profileName)} --provider cadet --model ${quotedModel}" — ${served}.`;
   }
 }
 
@@ -89,7 +89,7 @@ function byoSequence(provider: string): string {
 
 /**
  * Build the repair guidance for an unavailable selection: the exact
- * Vellum-managed alternative when the model is managed-routable and the
+ * Cadet-managed alternative when the model is managed-routable and the
  * managed route is usable; otherwise key collection alone when a connection
  * already exists and only its credential is missing, or the full
  * bring-your-own-key sequence when there is no connection at all.
@@ -110,7 +110,7 @@ async function repairGuidance(
     return `Sign in to the "${provider}" route in Settings → Models & Services, or pick a profile backed by a provider API key, then retry.`;
   }
   if (model && getManagedUpstream(model) !== null) {
-    const managed = await vellumConnectionAvailability();
+    const managed = await cadetConnectionAvailability();
     if (managed.status === "ok") {
       return managedAlternative(model, repair);
     }

@@ -47,25 +47,25 @@ describe("sessionReplayProxyBase", () => {
   test("uses the app origin on packaged Electron", () => {
     expect(
       sessionReplayProxyBase(
-        { protocol: "app:", origin: "app://vellum.ai" },
-        "https://app.vellum.ai",
+        { protocol: "app:", origin: "app://cadet.ai" },
+        "https://app.cadet.ai",
       ),
-    ).toBe("app://vellum.ai");
+    ).toBe("app://cadet.ai");
   });
 
   test("uses the platform URL on hosted and Electron-dev surfaces", () => {
     expect(
       sessionReplayProxyBase(
-        { protocol: "https:", origin: "https://app.vellum.ai" },
-        "https://app.vellum.ai",
+        { protocol: "https:", origin: "https://app.cadet.ai" },
+        "https://app.cadet.ai",
       ),
-    ).toBe("https://app.vellum.ai");
+    ).toBe("https://app.cadet.ai");
     expect(
       sessionReplayProxyBase(
         { protocol: "http:", origin: "http://localhost:5173" },
-        "https://app.vellum.ai",
+        "https://app.cadet.ai",
       ),
-    ).toBe("https://app.vellum.ai");
+    ).toBe("https://app.cadet.ai");
   });
 });
 

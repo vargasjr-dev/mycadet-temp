@@ -7,7 +7,7 @@
  * - `zod` is imported at module scope by `@mycadet/ipc-contract`, which the
  *   preload bundles pull in. The sandboxed preload can only require
  *   `electron`, so one bare external require kills the whole preload script
- *   and `window.vellum` is never exposed (see `preload-externals.ts`).
+ *   and `window.cadet` is never exposed (see `preload-externals.ts`).
  * - The `@mycadet/*` workspace packages ship raw TypeScript with no build
  *   step; inlining lets Rollup compile their source into the bundle.
  *

@@ -3,8 +3,8 @@ import type { IpcRenderer, IpcRendererEvent } from "electron";
 import type {
   AppVersionInfo,
   TitleBarOverlayTheme,
-  VellumBridge,
-  VellumCommand,
+  CadetBridge,
+  CadetCommand,
 } from "@mycadet/ipc-contract";
 
 export const WINDOWS_CORE_CAPABILITIES = [
@@ -13,10 +13,10 @@ export const WINDOWS_CORE_CAPABILITIES = [
   "app",
   "commands",
   "mainWindow",
-] as const satisfies readonly (keyof VellumBridge)[];
+] as const satisfies readonly (keyof CadetBridge)[];
 
 export type WindowsCoreBridge = Pick<
-  VellumBridge,
+  CadetBridge,
   (typeof WINDOWS_CORE_CAPABILITIES)[number]
 >;
 
@@ -29,7 +29,7 @@ export type WindowsCoreBridge = Pick<
 export const WINDOWS_NOT_APPLICABLE_CAPABILITIES = [
   "companion",
   "voiceActivity",
-] as const satisfies readonly (keyof VellumBridge)[];
+] as const satisfies readonly (keyof CadetBridge)[];
 
 /** The always-present core every `./features/` module builds on. */
 export const createWindowsCoreBridge = (
@@ -45,7 +45,7 @@ export const createWindowsCoreBridge = (
   },
   commands: {
     on: (callback) => {
-      const handler = (_event: IpcRendererEvent, command: VellumCommand) => {
+      const handler = (_event: IpcRendererEvent, command: CadetCommand) => {
         callback(command);
       };
       ipcRenderer.on("cadet:command", handler);

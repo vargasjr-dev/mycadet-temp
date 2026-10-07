@@ -487,7 +487,7 @@ describe("SurfaceRouter", () => {
       <SurfaceRouter
         surface={makeSurface({
           data: {
-            description: "See [the report](vellum://workspace/report.pdf).",
+            description: "See [the report](cadet://workspace/report.pdf).",
             options: [{ id: "inbox", title: "Clean up my inbox" }],
           },
         })}

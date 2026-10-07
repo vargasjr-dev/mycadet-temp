@@ -15,12 +15,12 @@ mock.module("@capacitor/core", () => ({
 const { checkoutReturnTarget } = await import("./checkout-return-target");
 
 afterEach(() => {
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
   isNativePlatform = false;
 });
 
 describe("checkoutReturnTarget", () => {
-  test("web on a plain browser: a browser can't open the vellum:// bounce", () => {
+  test("web on a plain browser: a browser can't open the cadet:// bounce", () => {
     expect(checkoutReturnTarget()).toBe("web");
   });
 
@@ -33,7 +33,7 @@ describe("checkoutReturnTarget", () => {
   });
 
   test("native inside the macOS Electron shell: Checkout opens in the system browser", () => {
-    (window as { vellum?: unknown }).vellum = {
+    (window as { cadet?: unknown }).cadet = {
       platform: "electron",
       hostOS: "macos",
     };
@@ -42,13 +42,13 @@ describe("checkoutReturnTarget", () => {
   });
 
   test("native on a legacy Electron bridge without hostOS: that shape is macOS-only", () => {
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(checkoutReturnTarget()).toBe("native");
   });
 
   test("native inside the Windows Electron shell: argv deep links route the bounce back", () => {
-    (window as { vellum?: unknown }).vellum = {
+    (window as { cadet?: unknown }).cadet = {
       platform: "electron",
       hostOS: "windows",
     };

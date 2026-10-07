@@ -246,7 +246,7 @@ function extractMessage(data: unknown): string | undefined {
  * again", `rate-limited` → "wait and retry", etc.) instead of a single
  * opaque failure code.
  *
- * Uses the same session auth (cookies + Vellum-Organization-Id header) as all
+ * Uses the same session auth (cookies + Cadet-Organization-Id header) as all
  * other /v1/ routes — no special JWT required.
  *
  * TODO(atlas): Once the Tunnel WebSocket service supports browser WS upgrades

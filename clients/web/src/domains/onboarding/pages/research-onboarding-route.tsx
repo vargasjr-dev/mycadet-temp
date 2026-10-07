@@ -298,7 +298,7 @@ export function ResearchOnboardingRoute() {
   // assistant in the hatching screen, so the background hatch ADOPTS it rather
   // than running a managed hatch; when the query string is missing, a live
   // gateway-auth session is the same evidence (see
-  // `shouldAdoptExistingAssistant`). Vellum-Cloud onboarding runs the managed
+  // `shouldAdoptExistingAssistant`). Cadet-Cloud onboarding runs the managed
   // hatch.
   const [searchParams] = useSearchParams();
   const hostingParam = searchParams.get("hosting");
@@ -319,7 +319,7 @@ export function ResearchOnboardingRoute() {
   // platform's managed Google Calendar OAuth. A local-hosting onboarding can
   // run with no platform session at all (the assistant itself is fully
   // local), where that connect can only fail — skip the calendar steps
-  // entirely and go straight to the research reveal. Vellum-cloud onboarding
+  // entirely and go straight to the research reveal. Cadet-cloud onboarding
   // keeps them: a managed hatch implies a platform session.
   const skipCheckinSteps = adoptExistingAssistant;
   // The claim-credits step ("integration") promises managed free credits,

@@ -28,7 +28,7 @@ function renderModal(overrides: Partial<AssistantEmailIntroModalProps> = {}) {
     onOpenChange: () => {},
     assistantId: ASSISTANT_ID,
     assistantName: "Mel",
-    rootDomain: "vellum.me",
+    rootDomain: "cadet.me",
     locked: true,
     onUpgrade: () => {},
     onSeePlans: () => {},
@@ -56,7 +56,7 @@ describe("AssistantEmailIntroModal", () => {
       onSeePlans: () => pressed.push("plans"),
     });
     expect(screen.getByText("Give Mel an inbox")).toBeTruthy();
-    expect(screen.getByText("A real address on vellum.me")).toBeTruthy();
+    expect(screen.getByText("A real address on cadet.me")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade to Super" }));
     fireEvent.click(screen.getByRole("button", { name: "Plans" }));
     expect(pressed).toEqual(["upgrade", "plans"]);

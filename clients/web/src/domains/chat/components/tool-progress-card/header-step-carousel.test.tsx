@@ -105,7 +105,7 @@ describe("HeaderStepCarousel — with title", () => {
 
   test("truncates a title-only label so a long one can't overflow the row", () => {
     const longCommand =
-      "cd /Users/me/.local/share/vellum-local/assistants/vellum-faint-asp/workspace &&";
+      "cd /Users/me/.local/share/cadet-local/assistants/cadet-faint-asp/workspace &&";
     const { getByText } = render(
       <HeaderStepCarousel currentStepTitle={longCommand} currentStepInfo="" />,
     );

@@ -85,7 +85,7 @@ export function CallSiteOverrideRow({
 }: CallSiteOverrideRowProps) {
   const { t } = useTranslation("settings");
   const catalogFlags = catalogEnabledFlags({
-    hostedInference: useAssistantFeatureFlagStore.use.vellumHostedInference(),
+    hostedInference: useAssistantFeatureFlagStore.use.cadetHostedInference(),
   });
   const overrideOn = isDraftActive(draft);
 

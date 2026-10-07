@@ -142,16 +142,16 @@ function clearDeviceCodeFromUrl(): void {
 
 /**
  * Custom URL scheme registered by the shipped mobile apps. Dev and staging app
- * builds register suffixed schemes (e.g. `vellum-assistant-dev`), so this
+ * builds register suffixed schemes (e.g. `cadet-assistant-dev`), so this
  * handoff link intentionally targets the production app — the common case for
  * a phone that scanned a pairing QR with its camera.
  */
-const VELLUM_APP_SCHEME = "vellum-assistant";
-const VELLUM_ANDROID_PACKAGE = "ai.vellum.assistant";
+const VELLUM_APP_SCHEME = "cadet-assistant";
+const VELLUM_ANDROID_PACKAGE = "ai.cadet.assistant";
 type AppHandoffPlatform = "ios" | "android";
 
 /**
- * Build the `vellum-assistant://connect?url=<base>&code=<device-code>` deep
+ * Build the `cadet-assistant://connect?url=<base>&code=<device-code>` deep
  * link the mobile app consumes to persist this server and finish pairing inside
  * the app. `url` is the page's own public base (origin + served path prefix)
  * so the app reconnects to the same self-hosted assistant this browser is

@@ -848,7 +848,7 @@ describe("catalogSkillToSlim", () => {
     expect(slim.description).toBe("A test skill");
     expect(slim.emoji).toBe("🧪");
     expect(slim.kind).toBe("catalog");
-    expect(slim.origin).toBe("vellum");
+    expect(slim.origin).toBe("cadet");
     expect(slim.status).toBe("available");
   });
 
@@ -953,7 +953,7 @@ describe("createVellumCatalogProvider", () => {
     expect(slim!.name).toBe("My Skill");
     expect(slim!.description).toBe("A skill");
     expect(slim!.kind).toBe("catalog");
-    expect(slim!.origin).toBe("vellum");
+    expect(slim!.origin).toBe("cadet");
     expect(slim!.status).toBe("available");
     expect(slim!.category).toBe("system");
   });

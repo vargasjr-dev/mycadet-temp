@@ -210,7 +210,7 @@ describe("RetryProvider fallback-route escalation", () => {
     const route = makeRoute(backup.provider);
     let refreshCalls = 0;
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => {
         refreshCalls += 1;
         return null;
@@ -233,7 +233,7 @@ describe("RetryProvider fallback-route escalation", () => {
   test.each(["byok", "oauth-subscription", "no-auth", undefined] as const)(
     "401 invalid_credentials on a %s route → callback never invoked, auth error surfaces",
     async (credentialSource) => {
-      // The credential eligibility case is restricted to `vellum-managed`
+      // The credential eligibility case is restricted to `cadet-managed`
       // routes. A broken personal credential must surface so the user can
       // fix it, not silently reroute to a differently billed backup.
       const authError = new ProviderError("Unauthorized", "openai", 401, {

@@ -107,10 +107,10 @@ describe("VisualSurface", () => {
   test("injects the widget bridge but not the app fetch proxy", () => {
     const rendered = renderSurface(surface({ html: "<div>widget</div>" }));
 
-    expect(rendered).toContain("vellum_widget_height");
+    expect(rendered).toContain("cadet_widget_height");
     expect(rendered).toContain("window.sendPrompt");
     expect(rendered).toContain("storageShim");
-    expect(rendered).not.toContain("vellum_fetch_request");
+    expect(rendered).not.toContain("cadet_fetch_request");
   });
 
   test("uses the surface height, clamped to the widget bounds", () => {
@@ -220,7 +220,7 @@ describe("VisualSurface link relay", () => {
 
   function relayLink(frame: HTMLIFrameElement, href: unknown): void {
     const event = new MessageEvent("message", {
-      data: { type: "vellum_open_link", frameId: "surface-visual-1", href },
+      data: { type: "cadet_open_link", frameId: "surface-visual-1", href },
     });
     // `source` is readonly on the constructed event, and happy-dom does not
     // honour it from the init dict.
@@ -299,7 +299,7 @@ describe("VisualSurface link relay", () => {
 
     const event = new MessageEvent("message", {
       data: {
-        type: "vellum_widget_prompt",
+        type: "cadet_widget_prompt",
         frameId: "surface-visual-1",
         prompt: "explain this",
       },
@@ -320,7 +320,7 @@ describe("VisualSurface link relay", () => {
     const frame = mountFrame();
     const event = new MessageEvent("message", {
       data: {
-        type: "vellum_open_link",
+        type: "cadet_open_link",
         frameId: "surface-visual-1",
         href: "https://attacker.example/leak",
       },

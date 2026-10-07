@@ -17,8 +17,8 @@ let avatarSyncCalls = 0;
 let failSecureKeyWrites = false;
 
 const PLATFORM_BASE_URL = "https://platform.example.com";
-const ASSISTANT_API_KEY_PATH = credentialKey("vellum", "assistant_api_key");
-const PLATFORM_BASE_URL_PATH = credentialKey("vellum", "platform_base_url");
+const ASSISTANT_API_KEY_PATH = credentialKey("cadet", "assistant_api_key");
+const PLATFORM_BASE_URL_PATH = credentialKey("cadet", "platform_base_url");
 const MANAGED_PROVIDERS = [
   "anthropic",
   "openai",
@@ -221,7 +221,7 @@ describe("secret routes managed proxy registry sync", () => {
     expect(result).toEqual(expect.objectContaining({ success: true }));
     expect(secureKeyStore[ASSISTANT_API_KEY_PATH]).toBe("ast-managed-key");
     expect(metadataUpserts).toEqual([
-      { service: "vellum", field: "assistant_api_key" },
+      { service: "cadet", field: "assistant_api_key" },
     ]);
 
     const providers = listProviders();
@@ -393,13 +393,13 @@ describe("secret routes managed proxy registry sync", () => {
     ).rejects.toThrow("Unknown vellum credential: platform_user_id");
 
     expect(
-      secureKeyStore[credentialKey("vellum", "platform_assistant_id")],
+      secureKeyStore[credentialKey("cadet", "platform_assistant_id")],
     ).toBeUndefined();
     expect(
-      secureKeyStore[credentialKey("vellum", "platform_organization_id")],
+      secureKeyStore[credentialKey("cadet", "platform_organization_id")],
     ).toBeUndefined();
     expect(
-      secureKeyStore[credentialKey("vellum", "platform_user_id")],
+      secureKeyStore[credentialKey("cadet", "platform_user_id")],
     ).toBeUndefined();
     expect(metadataUpserts).toEqual([]);
     expect(platformAssistantIdOverride).toBe("existing-asst");
@@ -410,7 +410,7 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("an unknown cadet credential does not delete leftover vault copies", async () => {
-    const key = credentialKey("vellum", "platform_assistant_id");
+    const key = credentialKey("cadet", "platform_assistant_id");
     secureKeyStore[key] = "leftover-asst";
     platformAssistantIdOverride = "asst-1";
 
@@ -436,7 +436,7 @@ describe("secret routes managed proxy registry sync", () => {
     );
     expect(platformBaseUrlOverride).toBe("https://managed.example.com");
     expect(metadataUpserts).toEqual([
-      { service: "vellum", field: "platform_base_url" },
+      { service: "cadet", field: "platform_base_url" },
     ]);
   });
 

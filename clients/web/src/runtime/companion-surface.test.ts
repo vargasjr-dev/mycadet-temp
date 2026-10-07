@@ -17,7 +17,7 @@ const sent: CompanionContext[] = [];
 
 beforeEach(() => {
   sent.length = 0;
-  window.vellum = {
+  window.cadet = {
     companion: {
       getState: async () => null,
       onState: () => () => undefined,
@@ -25,14 +25,14 @@ beforeEach(() => {
         sent.push(context);
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
   // Whatever an earlier case left behind, so each starts from a known context.
   setCompanionContext({ assistantName: "Ziggy", working: false });
   sent.length = 0;
 });
 
 afterEach(() => {
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 const WORKING: CompanionContext = {
@@ -43,7 +43,7 @@ const WORKING: CompanionContext = {
 describe("forwardUnplacedDictationOffer", () => {
   test("forwards offers and clears to the host", () => {
     const send = mock((_offer: unknown) => undefined);
-    window.vellum!.companion!.setUnplacedDictationOffer = send;
+    window.cadet!.companion!.setUnplacedDictationOffer = send;
     const offer = { text: "words", reason: "paste-failed" as const };
     expect(forwardUnplacedDictationOffer(offer)).toBe(true);
     expect(forwardUnplacedDictationOffer(null)).toBe(true);
@@ -52,12 +52,12 @@ describe("forwardUnplacedDictationOffer", () => {
 
   test("reports unavailable on older shells and web", () => {
     expect(forwardUnplacedDictationOffer(null)).toBe(false);
-    delete window.vellum;
+    delete window.cadet;
     expect(forwardUnplacedDictationOffer(null)).toBe(false);
   });
 
   test("keeps transport failures recoverable", () => {
-    window.vellum!.companion!.setUnplacedDictationOffer = () => {
+    window.cadet!.companion!.setUnplacedDictationOffer = () => {
       throw new Error("bridge closed");
     };
     expect(forwardUnplacedDictationOffer(null)).toBe(false);
@@ -175,10 +175,10 @@ describe("setCompanionDictation", () => {
    * no assistant beside it is not a card the surface draws.
    */
   test("stays silent before any context has been published", async () => {
-    delete (window as { vellum?: unknown }).vellum;
+    delete (window as { cadet?: unknown }).cadet;
     const fresh = await import(`./companion-surface?fresh=${Date.now()}`);
     const seen: CompanionContext[] = [];
-    window.vellum = {
+    window.cadet = {
       companion: {
         getState: async () => null,
         onState: () => () => undefined,
@@ -186,7 +186,7 @@ describe("setCompanionDictation", () => {
           seen.push(context);
         },
       },
-    } as unknown as Window["vellum"];
+    } as unknown as Window["cadet"];
 
     fresh.setCompanionDictation("listening", "hello");
 

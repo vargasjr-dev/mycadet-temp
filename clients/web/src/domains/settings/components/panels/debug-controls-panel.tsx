@@ -9,7 +9,7 @@ import { RecoveryModeControls } from "@/domains/settings/components/recovery-mod
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
 import { usePlatformGate } from "@/hooks/use-platform-gate";
 import { useTranslation } from "@/i18n";
-import { isVellumStaff } from "@/lib/auth/staff";
+import { isCadetStaff } from "@/lib/auth/staff";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { clearConsentForUser } from "@/lib/consent/consent-persistence";
@@ -22,7 +22,7 @@ export function DebugControlsPanel() {
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
   const platformGate = usePlatformGate();
-  const showInternalControls = isVellumStaff(user);
+  const showInternalControls = isCadetStaff(user);
 
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [loading, setLoading] = useState(true);

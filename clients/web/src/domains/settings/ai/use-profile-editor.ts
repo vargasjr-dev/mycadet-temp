@@ -15,7 +15,7 @@ import { t } from "@/i18n";
 import {
   getManagedUpstreamForModel,
   getModelsForProvider,
-  parseVellumRoutedModel,
+  parseCadetRoutedModel,
   type LlmCatalogModel,
 } from "@/assistant/llm-model-catalog";
 import {
@@ -59,7 +59,7 @@ import type {
 } from "@/generated/daemon/types.gen";
 import { assistantSupportsEntryProviderBinding } from "@/lib/backwards-compat/entry-provider-binding";
 import { resolveSupportsProfileInputModalities } from "@/lib/backwards-compat/profile-input-modalities";
-import { assistantSupportsVellumProviderProfiles } from "@/lib/backwards-compat/vellum-profile-provider";
+import { assistantSupportsCadetProviderProfiles } from "@/lib/backwards-compat/cadet-profile-provider";
 import { badRequestMessage } from "@/utils/api-errors";
 
 /**
@@ -237,7 +237,7 @@ export function useProfileEditor({
     initialValues?.description ?? "",
   );
   const [key, setKey] = useState(mode === "create" ? "" : (profileName ?? ""));
-  // "vellum" is a picker-level value: profiles bound to the Vellum-managed
+  // "cadet" is a picker-level value: profiles bound to the Cadet-managed
   // connection present (and edit) as provider "Cadet"; the wire-shape
   // upstream is derived from the model at save time. The form opens on the
   // stored upstream and only promotes to Cadet once the loaded connections
@@ -339,7 +339,7 @@ export function useProfileEditor({
   const routedModel = useMemo(
     () =>
       provider === VELLUM_CONNECTION_PROVIDER
-        ? parseVellumRoutedModel(model)
+        ? parseCadetRoutedModel(model)
         : null,
     [provider, model],
   );
@@ -446,7 +446,7 @@ export function useProfileEditor({
   // One-time helper note shown after an inline provider create succeeds.
   const [newProviderNote, setNewProviderNote] = useState(false);
 
-  // Promote a vellum-bound profile into Cadet picker mode once the loaded
+  // Promote a cadet-bound profile into Cadet picker mode once the loaded
   // connections prove the bound row is the managed sentinel. Skipped once the
   // user changes the provider themselves.
   useEffect(() => {
@@ -630,7 +630,7 @@ export function useProfileEditor({
     // The create form can't produce a cadet connection; bail before touching
     // any state so the sub-form can't get stuck.
     const newProvider = connection.provider;
-    if (newProvider === "vellum") {
+    if (newProvider === "cadet") {
       return;
     }
     setLocallyCreatedConnections((prev) =>
@@ -748,7 +748,7 @@ export function useProfileEditor({
       const effectiveBinding = connectionNotFound ? "" : resolvedBinding;
       // The Cadet picker entry's wire shape is version-gated. Daemons at the
       // gate's MIN_VERSION store the routing identity directly
-      // (`provider: "vellum"` + native model, no binding); older daemons get
+      // (`provider: "cadet"` + native model, no binding); older daemons get
       // the legacy shape: the model's managed upstream as `provider`, bound
       // to the provider-agnostic cadet connection.
       // The chatgpt identity needs no version gate: the picker offers it
@@ -757,7 +757,7 @@ export function useProfileEditor({
       const writesIdentityPayload =
         provider === CHATGPT_CONNECTION_PROVIDER ||
         (provider === VELLUM_CONNECTION_PROVIDER &&
-          (await assistantSupportsVellumProviderProfiles(assistantId)));
+          (await assistantSupportsCadetProviderProfiles(assistantId)));
       const wireProvider =
         provider === VELLUM_CONNECTION_PROVIDER
           ? writesIdentityPayload
@@ -776,7 +776,7 @@ export function useProfileEditor({
       // row among siblings and always for openai-compatible endpoints, the
       // bare vendor id meaning the kind's default entry otherwise) and
       // never a provider_connection. Identity-bound rows keep their
-      // existing payloads: rewriting a vellum/chatgpt binding as an entry
+      // existing payloads: rewriting a cadet/chatgpt binding as an entry
       // name would change what the daemon bills the request to.
       const boundRow =
         effectiveBinding !== ""

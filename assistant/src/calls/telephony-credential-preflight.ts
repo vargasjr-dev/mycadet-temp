@@ -110,7 +110,7 @@ function sttGapClause(
     case "missing-credentials": {
       // Connection-based providers are fixed by connecting the account,
       // not by entering an API key.
-      if (capability.credentialProvider === "vellum") {
+      if (capability.credentialProvider === "cadet") {
         return `a Vellum platform connection for managed speech (run 'assistant platform connect')`;
       }
       return `an API key for the speech-to-text provider "${providerId}"`;

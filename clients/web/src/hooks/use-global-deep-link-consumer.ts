@@ -29,7 +29,7 @@ import { conversationIdForPath, routes } from "@/utils/routes";
 /**
  * Global deep-link consumer — mounted at `RootLayout` so it's alive
  * for every authenticated assistant route, not just `/assistant`
- * (`ChatPage`). Without it, a `vellum://thread/...` click while the
+ * (`ChatPage`). Without it, a `cadet://thread/...` click while the
  * user is on `/assistant/settings` would be dropped.
  *
  * Responsibilities:

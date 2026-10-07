@@ -8,11 +8,11 @@ import {
   DIAGNOSTICS_SET_SHARE,
   FEEDBACK_DIAGNOSTICS,
   FEEDBACK_LOGS,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 const diagnosticsFeature: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "diagnostics",
   install: (registry) => {

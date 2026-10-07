@@ -101,7 +101,7 @@ export function buildPreChatInitialMessage(
 /**
  * Map of known tool IDs from the PreChat UI to the display names the daemon
  * writes into the persona file. Kept in sync with
- * `vellum-assistant/assistant/src/prompts/normalize-onboarding.ts`.
+ * `cadet-assistant/assistant/src/prompts/normalize-onboarding.ts`.
  */
 export const TOOL_DISPLAY_NAMES: Record<string, string> = {
   gmail: "Gmail",
@@ -121,7 +121,7 @@ export const TOOL_DISPLAY_NAMES: Record<string, string> = {
 /**
  * Map of known task IDs to the plain-language labels the daemon persists.
  * Kept in sync with
- * `vellum-assistant/assistant/src/prompts/normalize-onboarding.ts`.
+ * `cadet-assistant/assistant/src/prompts/normalize-onboarding.ts`.
  */
 export const TASK_DISPLAY_LABELS: Record<string, string> = {
   "code-building": "builds code, apps, or tools",

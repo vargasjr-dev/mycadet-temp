@@ -725,7 +725,7 @@ async function reconcilePlatformAssistants(
     if (isSettledSessionRejection(apiAssistants)) {
       // The org fetch self-clears on its own rejection; an assistants-only
       // rejection must clear the org state too, or the request interceptor
-      // keeps stamping the rejected account's Vellum-Organization-Id. The
+      // keeps stamping the rejected account's Cadet-Organization-Id. The
       // currency guard matches the sync below: a timed-out or superseded
       // probe settled "present" from cached data, and its dangling call must
       // not strip the org header out from under that session.
@@ -1394,7 +1394,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     } finally {
       // Clean up session token in the main process.
       if (isElectron()) {
-        await window.vellum?.auth?.signOut?.();
+        await window.cadet?.auth?.signOut?.();
       }
       // Web loopback: drop the token the local server's proxy authenticates with.
       if (isLocalClient() && !isElectron()) {

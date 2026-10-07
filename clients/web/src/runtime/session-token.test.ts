@@ -7,7 +7,7 @@ import {
 } from "@/runtime/session-token";
 
 function setBridge(token: string | null, calls?: { count: number }): void {
-  (window as unknown as { vellum?: unknown }).vellum = {
+  (window as unknown as { cadet?: unknown }).cadet = {
     platform: "electron",
     auth: {
       getSessionToken: () => {
@@ -21,7 +21,7 @@ function setBridge(token: string | null, calls?: { count: number }): void {
 }
 
 afterEach(() => {
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   __resetForTesting();
 });
 

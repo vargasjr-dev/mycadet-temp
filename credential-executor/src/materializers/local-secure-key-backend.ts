@@ -3,7 +3,7 @@
  *
  * In local mode, CES runs as a child process of the assistant on the same
  * machine as the same user and can read/write the assistant's encrypted key
- * store file at `<vellumRoot>/protected/keys.enc`.
+ * store file at `<cadetRoot>/protected/keys.enc`.
  *
  * This implementation replicates the encryption/decryption logic from the
  * assistant's `encrypted-store.ts` without importing assistant-internal
@@ -15,7 +15,7 @@
  * Two store formats are supported:
  *
  * - **v2 (primary):** AES-256-GCM with a random 32-byte key stored at
- *   `<vellumRoot>/protected/store.key`. The key is machine-independent —
+ *   `<cadetRoot>/protected/store.key`. The key is machine-independent —
  *   any process that can read the key file can decrypt the store.
  *
  * - **v1 (legacy):** AES-256-GCM with a key derived from machine-specific
@@ -108,11 +108,11 @@ const KEYS_ENC_FILENAME = "keys.enc";
  * that directory directly. This allows Docker deployments to mount a separate
  * CES-only security volume.
  *
- * When the env var is unset, falls back to `<vellumRoot>/protected/` for
+ * When the env var is unset, falls back to `<cadetRoot>/protected/` for
  * backwards compatibility.
  */
-function resolveSecurityDir(vellumRoot: string): string {
-  return process.env.CREDENTIAL_SECURITY_DIR || join(vellumRoot, "protected");
+function resolveSecurityDir(cadetRoot: string): string {
+  return process.env.CREDENTIAL_SECURITY_DIR || join(cadetRoot, "protected");
 }
 
 /**
@@ -120,9 +120,9 @@ function resolveSecurityDir(vellumRoot: string): string {
  * Returns the raw 32-byte key buffer, or null if the file is missing,
  * wrong size, or unreadable.
  */
-function readStoreKey(vellumRoot: string): Buffer | null {
+function readStoreKey(cadetRoot: string): Buffer | null {
   try {
-    const keyPath = join(resolveSecurityDir(vellumRoot), STORE_KEY_FILENAME);
+    const keyPath = join(resolveSecurityDir(cadetRoot), STORE_KEY_FILENAME);
     if (!existsSync(keyPath)) return null;
     const buf = readFileSync(keyPath);
     if (buf.length !== KEY_LENGTH) return null;
@@ -140,11 +140,11 @@ function readStoreKey(vellumRoot: string): Buffer | null {
  * Read or generate the v2 store key. If the key file does not exist,
  * creates a new 32-byte random key and writes it atomically.
  */
-function getOrReadStoreKey(vellumRoot: string): Buffer {
-  const existing = readStoreKey(vellumRoot);
+function getOrReadStoreKey(cadetRoot: string): Buffer {
+  const existing = readStoreKey(cadetRoot);
   if (existing) return existing;
 
-  const securityDir = resolveSecurityDir(vellumRoot);
+  const securityDir = resolveSecurityDir(cadetRoot);
   mkdirSync(securityDir, { recursive: true });
 
   const key = randomBytes(KEY_LENGTH);
@@ -166,14 +166,14 @@ function getOrReadStoreKey(vellumRoot: string): Buffer {
  */
 function getOrCreateStore(
   storePath: string,
-  vellumRoot: string,
+  cadetRoot: string,
 ): { store: StoreFile; aesKey: Buffer } {
   const existing = readStore(storePath);
   if (existing) {
     if (existing.version === 1) {
       throw new Error("v1 store cannot be auto-initialized");
     }
-    const storeKey = readStoreKey(vellumRoot);
+    const storeKey = readStoreKey(cadetRoot);
     if (!storeKey) {
       throw new Error("v2 store exists but store.key is missing or corrupt");
     }
@@ -181,7 +181,7 @@ function getOrCreateStore(
   }
 
   // No store exists — create a new empty v2 store
-  const aesKey = getOrReadStoreKey(vellumRoot);
+  const aesKey = getOrReadStoreKey(cadetRoot);
   const store: StoreFileV2 = { version: 2, entries: {} };
   writeStore(store, storePath);
   return { store, aesKey };
@@ -346,7 +346,7 @@ export class StoreUnavailableError extends Error {
  * persisting refreshed OAuth tokens. `delete` removes a key from the
  * encrypted store.
  *
- * @param vellumRoot - The Vellum root directory (e.g. `~/.vellum`).
+ * @param cadetRoot - The Cadet root directory (e.g. `~/.cadet`).
  * @param options.entropyOverride - If provided, used instead of local
  *   machine entropy for key derivation. In managed mode the CES sidecar
  *   runs in a different container with a different hostname/user, so it
@@ -358,13 +358,13 @@ export class StoreUnavailableError extends Error {
  *   Takes precedence over `entropyOverride`.
  */
 export function createLocalSecureKeyBackend(
-  vellumRoot: string,
+  cadetRoot: string,
   options?: {
     entropyOverride?: string;
     entropyGetter?: () => string | undefined;
   },
 ): SecureKeyBackend {
-  const storePath = join(resolveSecurityDir(vellumRoot), KEYS_ENC_FILENAME);
+  const storePath = join(resolveSecurityDir(cadetRoot), KEYS_ENC_FILENAME);
   const staticEntropy = options?.entropyOverride;
   const entropyGetter = options?.entropyGetter;
 
@@ -389,7 +389,7 @@ export function createLocalSecureKeyBackend(
 
       let aesKey: Buffer;
       if (store.version === 2) {
-        const storeKey = readStoreKey(vellumRoot);
+        const storeKey = readStoreKey(cadetRoot);
         if (!storeKey) {
           // The entry exists but the key material to decrypt it is unavailable
           // (the cold-start race). Unavailable, NOT not-found.
@@ -427,7 +427,7 @@ export function createLocalSecureKeyBackend(
         let aesKey: Buffer;
 
         try {
-          const result = getOrCreateStore(storePath, vellumRoot);
+          const result = getOrCreateStore(storePath, cadetRoot);
           store = result.store;
           aesKey = result.aesKey;
         } catch {

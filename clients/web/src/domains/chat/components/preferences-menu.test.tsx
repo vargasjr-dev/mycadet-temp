@@ -72,7 +72,7 @@ stubModule(
   },
 );
 
-// Whether the org store can supply the `Vellum-Organization-Id` header, which
+// Whether the org store can supply the `Cadet-Organization-Id` header, which
 // is the half of the billing gate a test can switch off from here.
 const orgReadyRef = { value: true };
 stubModule(

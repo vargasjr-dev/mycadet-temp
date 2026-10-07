@@ -13,7 +13,7 @@ describe("mapEmailMessage", () => {
       id: "m1",
       direction: "inbound",
       from_address: "maya@northwind.co",
-      to_addresses: ["hi@velly.vellum.me", "cc@example.com"],
+      to_addresses: ["hi@velly.cadet.me", "cc@example.com"],
       subject: "Q4 vendor contract",
       created_at: "2026-09-16T09:52:00Z",
     });
@@ -21,7 +21,7 @@ describe("mapEmailMessage", () => {
       id: "m1",
       direction: "inbound",
       from: { address: "maya@northwind.co" },
-      to: [{ address: "hi@velly.vellum.me" }, { address: "cc@example.com" }],
+      to: [{ address: "hi@velly.cadet.me" }, { address: "cc@example.com" }],
       subject: "Q4 vendor contract",
       createdAt: "2026-09-16T09:52:00Z",
     });

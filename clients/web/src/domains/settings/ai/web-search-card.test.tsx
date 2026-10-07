@@ -76,7 +76,7 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => false,
 }));
 
-// Version gate for `provider: "vellum"` — supported by default; the
+// Version gate for `provider: "cadet"` — supported by default; the
 // old-daemon test flips it off.
 let daemonSupportsCadetProvider = true;
 mock.module(
@@ -193,7 +193,7 @@ describe("WebSearchCard — provider-only configuration", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples provider "vellum" to mode "managed".
+    // still couples provider "cadet" to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: {
         "web-search": { provider: "cadet", mode: "managed" },
@@ -348,7 +348,7 @@ describe("WebSearchCard — provider-only configuration", () => {
   });
 
   test("a daemon predating the cadet provider gets the legacy managed write", async () => {
-    // Old daemon schemas reject provider "vellum" outright; the Cadet
+    // Old daemon schemas reject provider "cadet" outright; the Cadet
     // selection must degrade to the legacy Managed representation — mode
     // only, letting the deep-merge keep the stored provider so the read
     // bridge renders the pair as Cadet again.
@@ -397,7 +397,7 @@ describe("WebSearchCard — provider-only configuration", () => {
 
   test("escaping a legacy managed-mode daemon resets mode alongside the provider", async () => {
     // Without the mode reset, the stale `mode: "managed"` would win over the
-    // BYOK provider choice and the user would silently stay on Vellum.
+    // BYOK provider choice and the user would silently stay on Cadet.
     daemonConfigData = {
       services: { "web-search": { mode: "managed", provider: "brave" } },
     };

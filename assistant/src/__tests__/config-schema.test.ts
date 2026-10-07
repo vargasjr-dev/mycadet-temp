@@ -456,14 +456,14 @@ describe("AssistantConfigSchema", () => {
     ).toBe(false);
     expect(
       AssistantConfigSchema.safeParse({
-        llm: { profiles: { custom: { provider: "vellum" } } },
+        llm: { profiles: { custom: { provider: "cadet" } } },
       }).success,
     ).toBe(false);
     expect(
       AssistantConfigSchema.safeParse({
         llm: {
           profiles: {
-            custom: { provider: "vellum", model: "not-a-real-model" },
+            custom: { provider: "cadet", model: "not-a-real-model" },
           },
         },
       }).success,
@@ -482,7 +482,7 @@ describe("AssistantConfigSchema", () => {
         llm: {
           profiles: {
             custom: {
-              provider: "vellum",
+              provider: "cadet",
               model: "fireworks/accounts/fireworks/models/glm-5p2",
             },
           },
@@ -1636,7 +1636,7 @@ describe("AssistantConfigSchema", () => {
 
   // Legacy config objects on disk may carry a `mode` key. Parsing must strip
   // it rather than reject the config — and must not treat it as a managed
-  // selection, which is what migration 130 rewrites to `provider: "vellum"`.
+  // selection, which is what migration 130 rewrites to `provider: "cadet"`.
   test("ignores a legacy tts mode key", () => {
     const result = AssistantConfigSchema.parse({
       services: { tts: { mode: "managed" } },
@@ -1798,7 +1798,7 @@ describe("AssistantConfigSchema", () => {
 
   // Legacy config objects on disk may carry a `mode` key. Parsing must strip
   // it rather than reject the config — and must not treat it as a managed
-  // selection, which is what migration 130 rewrites to `provider: "vellum"`.
+  // selection, which is what migration 130 rewrites to `provider: "cadet"`.
   test("ignores a legacy stt mode key", () => {
     const result = AssistantConfigSchema.parse({
       services: { stt: { mode: "managed", provider: "deepgram" } },

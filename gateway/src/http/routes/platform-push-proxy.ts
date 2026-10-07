@@ -35,7 +35,7 @@ export function createPlatformPushProxyHandler(credentials: CredentialCache) {
     const [platformBaseUrl, assistantApiKeyRaw, assistantId] =
       await Promise.all([
         getPlatformBaseUrl(credentials),
-        credentials.get(credentialKey("vellum", "assistant_api_key")),
+        credentials.get(credentialKey("cadet", "assistant_api_key")),
         resolvePlatformAssistantIdOrUndefined(),
       ]);
 

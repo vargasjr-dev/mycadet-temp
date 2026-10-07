@@ -610,11 +610,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
   });
 
-  test("the Vellum-managed connection leads, with the unconnected providers behind it", () => {
+  test("the Cadet-managed connection leads, with the unconnected providers behind it", () => {
     // A platform-hosted user's only connection is the single provider-agnostic
     // `cadet` connection. It leads the list as one entry (never the managed
     // upstreams it routes to); BYOK providers follow as connect-me entries.
-    renderCreate([makeConnection("vellum-managed", "vellum")]);
+    renderCreate([makeConnection("cadet-managed", "cadet")]);
     fireEvent.click(providerTrigger());
     expect(optionRows()[0]).toEqual({ label: "Cadet", meta: "Managed" });
     expect(optionLabels()).toEqual([
@@ -630,7 +630,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
       return Promise.resolve();
     };
-    renderCreate([makeConnection("vellum-managed", "vellum")], onSave);
+    renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
 
     selectProvider("Cadet");
     selectModel("Claude Opus 4.8");
@@ -645,7 +645,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
     // Legacy wire shape: upstream derived from the model, cadet binding.
     expect(saveCalls[0].entry.provider).toBe("anthropic");
-    expect(saveCalls[0].entry.provider_connection).toBe("vellum-managed");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
   });
 
   test("a Cadet fireworks-hosted model derives the fireworks upstream", async () => {
@@ -654,7 +654,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
       return Promise.resolve();
     };
-    renderCreate([makeConnection("vellum-managed", "vellum")], onSave);
+    renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
 
     selectProvider("Cadet");
     selectModel("GLM 5.3");
@@ -668,7 +668,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       expect(saveCalls.length).toBe(1);
     });
     expect(saveCalls[0].entry.provider).toBe("fireworks");
-    expect(saveCalls[0].entry.provider_connection).toBe("vellum-managed");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
   });
 
   test("catalog providers show no connection field, even with multiple keys", async () => {
@@ -746,7 +746,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         saveCalls.push({ name, entry: entry as Record<string, unknown> });
         return Promise.resolve();
       };
-      renderCreate([makeConnection("vellum-managed", "vellum")], onSave);
+      renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
 
       selectProvider("Cadet");
       selectModel("Claude Opus 4.8");
@@ -759,7 +759,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       await waitFor(() => {
         expect(saveCalls.length).toBe(1);
       });
-      expect(saveCalls[0].entry.provider).toBe("vellum");
+      expect(saveCalls[0].entry.provider).toBe("cadet");
       expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
       expect(saveCalls[0].entry.provider_connection).toBeUndefined();
     } finally {
@@ -777,7 +777,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         saveCalls.push({ name, entry: entry as Record<string, unknown> });
         return Promise.resolve();
       };
-      renderCreate([makeConnection("vellum-managed", "vellum")], onSave);
+      renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
 
       selectProvider("Cadet");
       selectModel("Claude Opus 4.8");
@@ -792,7 +792,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       });
       expect(saveCalls[0].entry.provider).toBe("anthropic");
       expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
-      expect(saveCalls[0].entry.provider_connection).toBe("vellum-managed");
+      expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
     } finally {
       useAssistantIdentityStore.getState().clearIdentity();
     }
@@ -851,11 +851,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
               name: "my-managed",
               provider: "anthropic",
               model: "claude-opus-4-8",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             } as never
           }
           existingNames={["my-managed"]}
-          connections={[makeConnection("vellum", "vellum")]}
+          connections={[makeConnection("cadet", "cadet")]}
           assistantId={ASSISTANT_ID}
           onSave={() => Promise.resolve()}
           onCancel={() => {}}
@@ -886,11 +886,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
               name: "my-managed",
               provider: "fireworks",
               model: "accounts/fireworks/models/some-future-model",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             } as never
           }
           existingNames={["my-managed"]}
-          connections={[makeConnection("vellum", "vellum")]}
+          connections={[makeConnection("cadet", "cadet")]}
           assistantId={ASSISTANT_ID}
           onSave={onSave}
           onCancel={() => {}}
@@ -908,11 +908,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
     // A harmless save must not clear the stored upstream.
     expect(saveCalls[0].entry.provider).toBe("fireworks");
-    expect(saveCalls[0].entry.provider_connection).toBe("vellum");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
   });
 
-  test("a user-owned connection merely named 'vellum' does not trigger Cadet mode", async () => {
-    // The daemon's seeder preserves a user row named "vellum" whose provider
+  test("a user-owned connection merely named 'cadet' does not trigger Cadet mode", async () => {
+    // The daemon's seeder preserves a user row named "cadet" whose provider
     // is not the sentinel; editing a profile bound to it must keep the real
     // provider and not corrupt the binding.
     const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
@@ -931,13 +931,13 @@ describe("ProfileEditorModal create mode — provider-first", () => {
               name: "my-local",
               provider: "openai-compatible",
               model: "my-model",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             } as never
           }
           existingNames={["my-local"]}
           connections={[
             {
-              ...makeConnection("vellum", "openai-compatible"),
+              ...makeConnection("cadet", "openai-compatible"),
               models: [{ id: "my-model" }],
             },
           ]}
@@ -951,7 +951,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     // The trigger renders the ENDPOINT entry (labeled by the row name) —
     // not Cadet picker mode; the wire payload proves the distinction.
     await waitFor(() => {
-      expect(optionLabel(providerTrigger())).toBe("vellum");
+      expect(optionLabel(providerTrigger())).toBe("cadet");
     });
 
     await waitFor(() => {
@@ -962,7 +962,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       expect(saveCalls.length).toBe(1);
     });
     expect(saveCalls[0].entry.provider).toBe("openai-compatible");
-    expect(saveCalls[0].entry.provider_connection).toBe("vellum");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
   });
 
   test("a routed model string is stripped to the upstream's native id on save", async () => {
@@ -982,11 +982,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
               name: "my-managed",
               provider: "fireworks",
               model: "fireworks/accounts/fireworks/models/kimi-k2p5",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             } as never
           }
           existingNames={["my-managed"]}
-          connections={[makeConnection("vellum", "vellum")]}
+          connections={[makeConnection("cadet", "cadet")]}
           assistantId={ASSISTANT_ID}
           onSave={onSave}
           onCancel={() => {}}
@@ -1005,7 +1005,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     expect(saveCalls[0].entry.model).toBe(
       "accounts/fireworks/models/kimi-k2p5",
     );
-    expect(saveCalls[0].entry.provider_connection).toBe("vellum");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
   });
 
   test("a routed model resolves advanced controls from its native id", async () => {
@@ -1022,12 +1022,12 @@ describe("ProfileEditorModal create mode — provider-first", () => {
               name: "my-managed",
               provider: "openai",
               model: "openai/gpt-5.5",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
               effort: "high",
             } as never
           }
           existingNames={["my-managed"]}
-          connections={[makeConnection("vellum", "vellum")]}
+          connections={[makeConnection("cadet", "cadet")]}
           assistantId={ASSISTANT_ID}
           onSave={() => Promise.resolve()}
           onCancel={() => {}}
@@ -1043,7 +1043,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
   });
 
   test("Cadet hides the Connection sub-dropdown", () => {
-    renderCreate([makeConnection("vellum-managed", "vellum")]);
+    renderCreate([makeConnection("cadet-managed", "cadet")]);
     selectProvider("Cadet");
     expect(document.body.textContent).not.toContain("Connection (optional)");
     expect(
@@ -1485,10 +1485,10 @@ describe("ProfileEditorModal edit mode — catalog-absent bound model", () => {
         label: "Balanced",
         provider: "fireworks",
         model: "accounts/fireworks/models/kimi-k2p5",
-        provider_connection: "vellum",
+        provider_connection: "cadet",
         status: "active",
       },
-      makeConnection("vellum", "vellum"),
+      makeConnection("cadet", "cadet"),
     );
 
     // The binding resolves — the stale "(not found)" marker is absent.
@@ -2311,12 +2311,12 @@ describe("entries wire shape", () => {
   test("a user row merely named cadet keeps the legacy shape under the gate", async () => {
     const store = await gateOn();
     try {
-      const userVellum = {
-        ...makeConnection("vellum"),
+      const userCadet = {
+        ...makeConnection("cadet"),
         provider: "anthropic",
       } as unknown as ProviderConnection;
       const { saveCalls, onSave } = collectSaves();
-      renderCreate([userVellum], onSave);
+      renderCreate([userCadet], onSave);
 
       selectProvider("Anthropic");
       selectModel("Claude Opus 4.8");
@@ -2329,10 +2329,10 @@ describe("entries wire shape", () => {
       await waitFor(() => {
         expect(saveCalls.length).toBe(1);
       });
-      // "vellum" as a provider value would flip the profile to the managed
+      // "cadet" as a provider value would flip the profile to the managed
       // identity, so the binding stays in the legacy field.
       expect(saveCalls[0].entry.provider).toBe("anthropic");
-      expect(saveCalls[0].entry.provider_connection).toBe("vellum");
+      expect(saveCalls[0].entry.provider_connection).toBe("cadet");
     } finally {
       store.getState().clearIdentity();
     }

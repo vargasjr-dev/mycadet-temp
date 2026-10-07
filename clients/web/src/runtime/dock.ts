@@ -4,7 +4,7 @@ import { detectElectronHostOS } from "@/runtime/platform-detection";
 /**
  * Per-capability wrapper for the Electron host's Dock integration. Matches
  * the pattern in `native-biometric.ts`: the renderer never touches
- * `window.vellum.*` directly — feature code calls these named functions
+ * `window.cadet.*` directly — feature code calls these named functions
  * and the cross-platform branch lives here.
  *
  * On non-Electron hosts (web, Capacitor iOS) the function is a no-op,
@@ -27,7 +27,7 @@ export function setDockBadge(count: number): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.dock.setBadge(count);
+  window.cadet?.dock.setBadge(count);
 }
 
 export function getUnreadBadgeSurface(): string {
@@ -35,5 +35,5 @@ export function getUnreadBadgeSurface(): string {
 }
 
 export function supportsUnreadBadges(): boolean {
-  return typeof window.vellum?.dock?.setBadge === "function";
+  return typeof window.cadet?.dock?.setBadge === "function";
 }

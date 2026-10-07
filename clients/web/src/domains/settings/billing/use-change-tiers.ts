@@ -170,7 +170,7 @@ export function useChangeTiers({
   const [inFlight, setInFlight] = useState(false);
   // These are org-scoped reads, so hold them until the caller is ready (its own
   // platform-hosted gate) and the org header source has hydrated — otherwise a
-  // request can fire without `Vellum-Organization-Id` and 4xx.
+  // request can fire without `Cadet-Organization-Id` and 4xx.
   const orgReady = useIsOrgReady();
   const ready = enabled && orgReady;
   const subscriptionQuery = useQuery({

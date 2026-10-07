@@ -4,7 +4,7 @@ import { CatchUpWidgetPreview } from "./catch-up-widget-preview";
 import { ReplicaNotice } from "./replica-notice";
 import { QuickActionsWidgetPreview } from "./quick-actions-widget-preview";
 import { StatusWidgetPreview } from "./status-widget-preview";
-import { VellumAppIconMark } from "./vellum-app-icon-mark";
+import { CadetAppIconMark } from "./cadet-app-icon-mark";
 import type { WidgetAppearance } from "./widget-tokens";
 
 /**
@@ -23,7 +23,7 @@ import type { WidgetAppearance } from "./widget-tokens";
  * current. Three specific gaps to keep in mind:
  *
  * - **The symbols are stand-ins.** The cards draw SF Symbols
- *   (`camera.fill`, `waveform`, `bubble.left`, `ellipsis`) and the `VellumV`
+ *   (`camera.fill`, `waveform`, `bubble.left`, `ellipsis`) and the `CadetV`
  *   asset, none of which exist in a browser. Everything else is an
  *   approximation at the same nominal point size. The eyes are the exception:
  *   they carry the same Bezier control points, and were checked against a
@@ -275,11 +275,11 @@ export const AppIconMark: Story = {
   name: "App icon mark / per build",
   render: () => (
     <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-      <VellumAppIconMark size={72} environment="production" />
-      <VellumAppIconMark size={72} environment="staging" />
-      <VellumAppIconMark size={72} environment="dev" />
+      <CadetAppIconMark size={72} environment="production" />
+      <CadetAppIconMark size={72} environment="staging" />
+      <CadetAppIconMark size={72} environment="dev" />
       <span style={{ background: "#141416", padding: 12, borderRadius: 14 }}>
-        <VellumAppIconMark size={72} flattened />
+        <CadetAppIconMark size={72} flattened />
       </span>
     </div>
   ),

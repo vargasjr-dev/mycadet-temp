@@ -6,7 +6,7 @@ import {
   FILE_OPEN_EVENT,
   FILE_OPEN_SUBSCRIBE,
   FILE_OPEN_UNSUBSCRIBE,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 type Listener = (...args: unknown[]) => void;
@@ -30,7 +30,7 @@ mock.module("electron", () => ({
 }));
 
 const { default: pathsModule } = await import("./features/paths");
-const registry = new BridgeCapabilityRegistry<VellumBridge>({});
+const registry = new BridgeCapabilityRegistry<CadetBridge>({});
 pathsModule.install(registry);
 const bridge = registry.build();
 

@@ -765,7 +765,7 @@ export function ContactsPage({
     guardian: guardian
       ? {
           id: guardian.id,
-          displayName: guardian.displayName.startsWith("vellum-principal-")
+          displayName: guardian.displayName.startsWith("cadet-principal-")
             ? ""
             : guardian.displayName,
           role: guardian.role,

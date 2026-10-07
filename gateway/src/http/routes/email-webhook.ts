@@ -65,7 +65,7 @@ export function createEmailWebhookHandler(
     // rather than silently accepting unauthenticated payloads (fail-closed).
     const webhookSecret = await resolveCredentialWithRefresh(
       caches?.credentials,
-      credentialKey("vellum", "webhook_secret"),
+      credentialKey("cadet", "webhook_secret"),
     );
     if (!webhookSecret) {
       tlog.warn("Email webhook secret is not configured — rejecting request");
@@ -77,7 +77,7 @@ export function createEmailWebhookHandler(
 
     const signatureValid = await verifySecretWithRefresh({
       credentials: caches?.credentials,
-      key: credentialKey("vellum", "webhook_secret"),
+      key: credentialKey("cadet", "webhook_secret"),
       verify: (secret) =>
         verifyEmailWebhookSignature(req.headers, rawBody, secret),
       log: tlog,

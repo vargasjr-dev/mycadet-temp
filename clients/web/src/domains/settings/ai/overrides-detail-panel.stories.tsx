@@ -48,27 +48,27 @@ const CATALOG: ConfigLlmCallsitesGetResponse = {
 };
 
 // The three managed defaults a stock install ships with, hence
-// `provider: "vellum"` on each.
+// `provider: "cadet"` on each.
 const CONFIG: ConfigGetResponse = {
   llm: {
     profiles: {
       "quality-optimized": {
         label: "Quality",
-        provider: "vellum",
+        provider: "cadet",
         model: "gpt-5.6-sol",
         source: "managed",
         status: "active",
       },
       balanced: {
         label: "Balanced",
-        provider: "vellum",
+        provider: "cadet",
         model: "glm-5.2",
         source: "managed",
         status: "active",
       },
       "speed-tier": {
         label: "Speed",
-        provider: "vellum",
+        provider: "cadet",
         model: "deepseek-v4-flash",
         source: "managed",
         status: "active",
@@ -153,14 +153,14 @@ const MIXED_HEALTH_CONFIG: ConfigGetResponse = {
     profiles: {
       balanced: {
         label: "Balanced",
-        provider: "vellum",
+        provider: "cadet",
         model: "glm-5.2",
         source: "managed",
         status: "active",
       },
       "quality-optimized": {
         label: "Quality",
-        provider: "vellum",
+        provider: "cadet",
         model: "gpt-5.6-sol",
         source: "managed",
         status: "active",
@@ -170,7 +170,7 @@ const MIXED_HEALTH_CONFIG: ConfigGetResponse = {
       "half-made": { label: "Half Made", provider: "anthropic" },
       retired: {
         label: "Retired",
-        provider: "vellum",
+        provider: "cadet",
         model: "glm-5.2",
         status: "disabled",
       },

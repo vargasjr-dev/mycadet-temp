@@ -216,7 +216,7 @@ function tunnelSpeechUrls(
 async function readAssistantApiKey(
   deps: SpeechRelayDeps,
 ): Promise<string | undefined> {
-  return deps.credentials.get(credentialKey("vellum", "assistant_api_key"));
+  return deps.credentials.get(credentialKey("cadet", "assistant_api_key"));
 }
 
 /**

@@ -548,7 +548,7 @@ export async function postChatMessage(
   // and need the legacy create-or-lookup path either way.
   const body: MessagesPostData["body"] = {
     content,
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     // `interface` is the transport surface, not the OS: the web, mobile, and
     // desktop apps run this renderer, so the transport is always "web". The
     // daemon keys host-proxy/transport capability off this value, so it must
@@ -817,7 +817,7 @@ export async function postChatMessage(
 }
 
 function queuedMessageHeaders(conversationId: string) {
-  return { "X-Vellum-Conversation-Id": conversationId };
+  return { "X-Cadet-Conversation-Id": conversationId };
 }
 
 /**

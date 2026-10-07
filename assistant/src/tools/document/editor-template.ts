@@ -183,8 +183,8 @@ export function generateEditorHTML(
         const content = editor.getMarkdown();
         const title = titleInput.value.trim() || 'Untitled Document';
 
-        if (typeof window.vellum !== 'undefined' && typeof window.vellum.sendAction === 'function') {
-          window.vellum.sendAction('content_changed', {
+        if (typeof window.cadet !== 'undefined' && typeof window.cadet.sendAction === 'function') {
+          window.cadet.sendAction('content_changed', {
             title,
             content,
             wordCount
@@ -200,8 +200,8 @@ export function generateEditorHTML(
     titleInput.addEventListener('input', notifyContentChanged);
 
     // Vellum bridge: handle content updates from daemon
-    if (typeof window.vellum !== 'undefined') {
-      window.vellum.onContentUpdate = function(data) {
+    if (typeof window.cadet !== 'undefined') {
+      window.cadet.onContentUpdate = function(data) {
         if (data.markdown) {
           const mode = data.updateMode || 'append';
           const currentContent = editor.getMarkdown();

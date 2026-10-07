@@ -25,7 +25,7 @@ describe("canSkipOnboardingResearch", () => {
 });
 
 describe("onboardingDestinationAfterConsent", () => {
-  test("platform/Vellum-Cloud routes straight to the research flow", () => {
+  test("platform/Cadet-Cloud routes straight to the research flow", () => {
     expect(
       onboardingDestinationAfterConsent({
         isLocalHatch: false,
@@ -145,11 +145,11 @@ describe("withSkipResearch", () => {
   test("adds skip_research to a paid hatch return without dropping post_checkout", () => {
     expect(
       withSkipResearch(
-        `${routes.onboarding.hatching}?hosting=vellum-cloud&post_checkout=1`,
+        `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`,
         "staging",
       ),
     ).toBe(
-      `${routes.onboarding.hatching}?hosting=vellum-cloud&post_checkout=1&${SKIP_RESEARCH_PARAM}=1`,
+      `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1&${SKIP_RESEARCH_PARAM}=1`,
     );
   });
 

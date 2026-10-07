@@ -59,7 +59,7 @@ const STAFF_USER: AuthUser = {
   kind: "platform",
   id: "user-1",
   username: "staffer",
-  email: "staffer@vellum.ai",
+  email: "staffer@cadet.ai",
   isStaff: true,
   firstName: "Staff",
   lastName: "Member",

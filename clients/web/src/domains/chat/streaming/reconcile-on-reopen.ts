@@ -14,7 +14,7 @@
  *                  to the consumer's seq-gap reconcile.
  *   - `"resume"` — visibility-driven reopen; standalone reconcile +
  *                  start the reconciliation loop on the new epoch.
- *   - `"debug"`  — manual `_vellumDebug.events.reconnectClient()`
+ *   - `"debug"`  — manual `_cadetDebug.events.reconnectClient()`
  *                  trigger; takes the same standalone-reconcile path as
  *                  `"resume"` so QA can exercise post-reconnect catch-up.
  *   - `"watchdog"` / `"error"` — transport-level recovery; runs

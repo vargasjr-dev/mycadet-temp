@@ -91,7 +91,7 @@ describe("sttLanguageOptionsFor", () => {
   test("includes the extended roster for deepgram and cadet", () => {
     // Both run Deepgram nova-3 (cadet relays with the model pinned
     // server-side), the roster the extended entries were verified against.
-    for (const providerId of ["deepgram", "vellum"]) {
+    for (const providerId of ["deepgram", "cadet"]) {
       const codes = sttLanguageOptionsFor("", providerId).map((o) => o.code);
       expect(codes).toContain("ta");
       expect(codes).toContain("ko");
@@ -100,7 +100,7 @@ describe("sttLanguageOptionsFor", () => {
   });
 
   test("deepgram and cadet options are identical", () => {
-    expect(sttLanguageOptionsFor("", "vellum")).toEqual(
+    expect(sttLanguageOptionsFor("", "cadet")).toEqual(
       sttLanguageOptionsFor("", "deepgram"),
     );
   });
@@ -146,7 +146,7 @@ describe("sttLanguageOptionsFor", () => {
     // Config always carries a real language now, so there is no "default"
     // state for a sentinel row to stand in for, and Multilingual is a thing
     // you pick rather than a thing you fall back to.
-    for (const providerId of ["deepgram", "vellum"]) {
+    for (const providerId of ["deepgram", "cadet"]) {
       const options = sttLanguageOptionsFor("multi", providerId);
       const codes = options.map((o) => o.code);
       expect(codes).not.toContain("");
@@ -319,7 +319,7 @@ describe("sttLanguageLabelForCode", () => {
     expect(sttLanguageLabelForCode(STT_MULTI_CODE, "deepgram")).toBe(
       "Multilingual",
     );
-    expect(sttLanguageLabelForCode(STT_MULTI_CODE, "vellum")).toBe(
+    expect(sttLanguageLabelForCode(STT_MULTI_CODE, "cadet")).toBe(
       "Multilingual",
     );
   });
@@ -368,7 +368,7 @@ describe("sttCatalogEntryForLocale", () => {
 
 describe("suggestedLanguageForLocale", () => {
   test("returns null for English locales under every provider", () => {
-    for (const providerId of ["deepgram", "vellum", "xai"]) {
+    for (const providerId of ["deepgram", "cadet", "xai"]) {
       expect(suggestedLanguageForLocale("en-US", providerId)).toBeNull();
     }
   });
@@ -393,7 +393,7 @@ describe("suggestedLanguageForLocale", () => {
       suggestedLanguageForLocale("hi-IN", "deepgram", STT_MULTI_CODE),
     ).toBeNull();
     expect(
-      suggestedLanguageForLocale("hi-IN", "vellum", STT_MULTI_CODE),
+      suggestedLanguageForLocale("hi-IN", "cadet", STT_MULTI_CODE),
     ).toBeNull();
   });
 
@@ -413,7 +413,7 @@ describe("suggestedLanguageForLocale", () => {
     // Tamil is outside what "multi" can follow, so the suggestion is the
     // monolingual pin itself.
     expect(suggestedLanguageForLocale("ta-IN", "deepgram")).toBe("ta");
-    expect(suggestedLanguageForLocale("ta-IN", "vellum")).toBe("ta");
+    expect(suggestedLanguageForLocale("ta-IN", "cadet")).toBe("ta");
     expect(suggestedLanguageForLocale("ko-KR", "deepgram")).toBe("ko");
   });
 

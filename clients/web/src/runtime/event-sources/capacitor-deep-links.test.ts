@@ -84,7 +84,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       },
     );
     launchUrl =
-      "vellum-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
+      "cadet-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
     capacitorPlatform = "android";
 
     try {
@@ -108,7 +108,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       },
     );
     launchUrl =
-      "vellum-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
+      "cadet-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2";
 
     try {
       publishCapacitorDeepLinksSource();
@@ -141,7 +141,7 @@ describe("publishCapacitorDeepLinksSource", () => {
         oauthCode: "code-abc",
       };
       urlOpenHandler!({
-        url: buildOAuthCompleteDeepLink("vellum-assistant", payload),
+        url: buildOAuthCompleteDeepLink("cadet-assistant", payload),
       });
 
       expect(received).toEqual([payload]);
@@ -167,7 +167,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
+        url: "cadet-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
       });
 
       // No `flow` param: released clients and current Pro links omit it, so
@@ -194,7 +194,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=cancel",
+        url: "cadet-assistant://billing/checkout-complete?status=cancel",
       });
 
       expect(received).toEqual([
@@ -219,10 +219,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
+        url: "cadet-assistant://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
       });
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=cancel&flow=top_up",
+        url: "cadet-assistant://billing/checkout-complete?status=cancel&flow=top_up",
       });
 
       expect(received).toEqual([
@@ -248,7 +248,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=cancel&flow=bogus",
+        url: "cadet-assistant://billing/checkout-complete?status=cancel&flow=bogus",
       });
 
       expect(received).toEqual([
@@ -274,14 +274,14 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://billing/checkout-complete?status=success&session_id=not-a-session",
+        url: "cadet-assistant://billing/checkout-complete?status=success&session_id=not-a-session",
       });
 
       expect(checkouts).toEqual([]);
       // The query is stripped on the fallback, so the bad id can't reach
       // telemetry.
       expect(unknowns).toEqual([
-        { url: "vellum-assistant://billing/checkout-complete" },
+        { url: "cadet-assistant://billing/checkout-complete" },
       ]);
     } finally {
       unsubCheckout();
@@ -303,7 +303,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant://voice?mode=resume" });
+      urlOpenHandler!({ url: "cadet-assistant://voice?mode=resume" });
 
       expect(starts).toEqual([
         { mode: "resume", prompt: null, provenance: null },
@@ -329,10 +329,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant-evil://voice?mode=new" });
+      urlOpenHandler!({ url: "cadet-assistant-evil://voice?mode=new" });
 
       expect(starts).toEqual([]);
-      expect(unknowns).toEqual([{ url: "vellum-assistant-evil://voice" }]);
+      expect(unknowns).toEqual([{ url: "cadet-assistant-evil://voice" }]);
     } finally {
       unsubStart();
       unsubUnknown();
@@ -358,7 +358,7 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://thread/abc-123?message=gym%20done",
+        url: "cadet-assistant://thread/abc-123?message=gym%20done",
       });
 
       expect(sends).toEqual([
@@ -387,10 +387,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant://thread/abc-123" });
+      urlOpenHandler!({ url: "cadet-assistant://thread/abc-123" });
       // Whitespace-only fails sanitization; opening the chat still wins.
       urlOpenHandler!({
-        url: "vellum-assistant://thread/abc-123?message=%20%20",
+        url: "cadet-assistant://thread/abc-123?message=%20%20",
       });
 
       expect(sends).toEqual([]);
@@ -417,10 +417,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://thread/abc-123?message=gym%20done&src=intent",
+        url: "cadet-assistant://thread/abc-123?message=gym%20done&src=intent",
       });
       urlOpenHandler!({
-        url: "vellum-assistant://voice?mode=new&prompt=hi&src=intent",
+        url: "cadet-assistant://voice?mode=new&prompt=hi&src=intent",
       });
 
       expect(sends).toEqual([
@@ -451,10 +451,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://thread/abc-123?message=gym%20done&src=intent",
+        url: "cadet-assistant://thread/abc-123?message=gym%20done&src=intent",
       });
       urlOpenHandler!({
-        url: "vellum-assistant://voice?mode=new&prompt=hi&src=intent",
+        url: "cadet-assistant://voice?mode=new&prompt=hi&src=intent",
       });
 
       // Same commands, same text, but a forged marker buys nothing.
@@ -486,8 +486,8 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant://camera?src=intent" });
-      urlOpenHandler!({ url: "vellum-assistant://new-chat" });
+      urlOpenHandler!({ url: "cadet-assistant://camera?src=intent" });
+      urlOpenHandler!({ url: "cadet-assistant://new-chat" });
 
       // The marker is honored here because the mocked platform is iOS.
       expect(cameras).toEqual([{ provenance: "intent" }]);
@@ -514,13 +514,13 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant://conversations" });
+      urlOpenHandler!({ url: "cadet-assistant://conversations" });
       // A path makes it a different link that merely shares the host.
-      urlOpenHandler!({ url: "vellum-assistant://conversations/abc-123" });
+      urlOpenHandler!({ url: "cadet-assistant://conversations/abc-123" });
 
       expect(lists).toEqual([{ provenance: null }]);
       expect(unknowns).toEqual([
-        { url: "vellum-assistant://conversations/abc-123" },
+        { url: "cadet-assistant://conversations/abc-123" },
       ]);
     } finally {
       unsubList();
@@ -542,10 +542,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant-evil://camera" });
+      urlOpenHandler!({ url: "cadet-assistant-evil://camera" });
 
       expect(cameras).toEqual([]);
-      expect(unknowns).toEqual([{ url: "vellum-assistant-evil://camera" }]);
+      expect(unknowns).toEqual([{ url: "cadet-assistant-evil://camera" }]);
     } finally {
       unsubCamera();
       unsubUnknown();
@@ -567,14 +567,14 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+        url: "cadet-assistant://share/A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
       });
-      urlOpenHandler!({ url: "vellum-assistant://share/../x" });
+      urlOpenHandler!({ url: "cadet-assistant://share/../x" });
 
       expect(shares).toEqual([
         { inboxId: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890" },
       ]);
-      expect(unknowns).toEqual([{ url: "vellum-assistant://share/../x" }]);
+      expect(unknowns).toEqual([{ url: "cadet-assistant://share/../x" }]);
     } finally {
       unsubShare();
       unsubUnknown();
@@ -591,10 +591,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       publishCapacitorDeepLinksSource();
       await flushAsyncWork();
 
-      urlOpenHandler!({ url: "vellum-assistant://some-future-link" });
+      urlOpenHandler!({ url: "cadet-assistant://some-future-link" });
 
       expect(received).toEqual([
-        { url: "vellum-assistant://some-future-link" },
+        { url: "cadet-assistant://some-future-link" },
       ]);
     } finally {
       unsubscribeBus();
@@ -612,10 +612,10 @@ describe("publishCapacitorDeepLinksSource", () => {
       await flushAsyncWork();
 
       urlOpenHandler!({
-        url: "vellum-assistant://oauth-done/path?oauth_code=secret-code&x=1#frag-token",
+        url: "cadet-assistant://oauth-done/path?oauth_code=secret-code&x=1#frag-token",
       });
 
-      expect(received).toEqual([{ url: "vellum-assistant://oauth-done/path" }]);
+      expect(received).toEqual([{ url: "cadet-assistant://oauth-done/path" }]);
     } finally {
       unsubscribeBus();
     }

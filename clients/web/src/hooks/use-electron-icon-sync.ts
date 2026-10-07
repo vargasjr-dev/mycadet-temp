@@ -23,7 +23,7 @@ const ICON_SIZE = 512;
  * browser favicon via `resolveAvatarRender`, so the two surfaces never drift.
  * The renderer rasterizes because Electron's `nativeImage` only decodes
  * PNG/JPEG, not the trait-composited SVG; main owns per-surface masking and
- * the bundled-Vellum-mark fallback. Publishing `null` (no avatar, or a
+ * the bundled-Cadet-mark fallback. Publishing `null` (no avatar, or a
  * rasterization failure) tells main to restore that fallback.
  *
  * It also publishes the character's *traits*, for surfaces that compose the

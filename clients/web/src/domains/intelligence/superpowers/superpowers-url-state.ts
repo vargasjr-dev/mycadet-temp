@@ -23,7 +23,7 @@ const SUPERPOWER_FILTERS = new Set<SuperpowerFilter>([
   "available",
   "skills",
   "plugins",
-  "vellum",
+  "cadet",
   "clawhub",
   "skillssh",
   "custom",

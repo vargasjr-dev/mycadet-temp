@@ -10,13 +10,13 @@ const { setAssistantStatus } = await import("./status");
 
 afterEach(() => {
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("setAssistantStatus", () => {
   test("no-ops off Electron", () => {
     const setConnection = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { status: { setConnection } };
+    (window as { cadet?: unknown }).cadet = { status: { setConnection } };
 
     setAssistantStatus("thinking");
 
@@ -26,7 +26,7 @@ describe("setAssistantStatus", () => {
   test("publishes the status over the bridge on Electron", () => {
     runningInElectron = true;
     const setConnection = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { status: { setConnection } };
+    (window as { cadet?: unknown }).cadet = { status: { setConnection } };
 
     setAssistantStatus("thinking");
 
@@ -39,7 +39,7 @@ describe("setAssistantStatus", () => {
   // call must no-op rather than throw on RootLayout mount.
   test("no-ops when the older preload lacks the status channel", () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(() => setAssistantStatus("thinking")).not.toThrow();
   });

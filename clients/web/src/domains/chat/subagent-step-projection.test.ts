@@ -396,7 +396,7 @@ describe("createIncrementalStepProjection — per-diff-class", () => {
         type: "tool_call",
         toolName: "web_search",
         toolUseId: "ws-1",
-        input: { query: "vellum" },
+        input: { query: "cadet" },
         timestamp: NOW,
       }),
     ];
@@ -407,7 +407,7 @@ describe("createIncrementalStepProjection — per-diff-class", () => {
         type: "tool_result",
         toolName: "web_search",
         toolUseId: "ws-1",
-        result: "Cadet\nhttps://vellum.ai",
+        result: "Cadet\nhttps://cadet.ai",
         timestamp: NOW + 900,
       }),
     );

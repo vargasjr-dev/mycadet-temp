@@ -59,16 +59,16 @@ export async function POST(request: Request): Promise<Response> {
 
 ## Calling routes from the app frontend
 
-Apps call custom routes via `window.vellum.fetch()` using the `/v1/x/` prefix. This authenticated wrapper automatically injects the gateway URL and auth headers so requests reach the assistant runtime. **Never use raw `fetch()` for `/v1/x/` routes** — it will fail because the app runs in a sandboxed origin.
+Apps call custom routes via `window.cadet.fetch()` using the `/v1/x/` prefix. This authenticated wrapper automatically injects the gateway URL and auth headers so requests reach the assistant runtime. **Never use raw `fetch()` for `/v1/x/` routes** — it will fail because the app runs in a sandboxed origin.
 
 ```typescript
 // In a TSX component or HTML script
-const res = await window.vellum.fetch("/v1/x/items");
+const res = await window.cadet.fetch("/v1/x/items");
 if (!res.ok) throw new Error(`HTTP ${res.status}`);
 const items = await res.json();
 
 // Create a new item
-const createRes = await window.vellum.fetch("/v1/x/items", {
+const createRes = await window.cadet.fetch("/v1/x/items", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ name: "New item", status: "active" }),
@@ -76,9 +76,9 @@ const createRes = await window.vellum.fetch("/v1/x/items", {
 if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
 ```
 
-### Typing `window.vellum`
+### Typing `window.cadet`
 
-Don't hand-declare `window.vellum` in a local `vellum.d.ts`. If the app depends on `@mycadet/plugin-api`, the `window.vellum` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
+Don't hand-declare `window.cadet` in a local `vellum.d.ts`. If the app depends on `@mycadet/plugin-api`, the `window.cadet` global is typed for you — add a one-line reference in a `.d.ts` (or entry file):
 
 ```typescript
 /// <reference types="@mycadet/plugin-api/app" />
@@ -157,7 +157,7 @@ Older routes were written with a second `context` argument (`context.assistantEv
 const [items, setItems] = useState<Item[]>([]);
 
 useEffect(() => {
-  window.vellum
+  window.cadet
     .fetch("/v1/x/items")
     .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
     .then(setItems)
@@ -167,4 +167,4 @@ useEffect(() => {
 
 ## Error handling
 
-All `window.vellum.fetch()` calls to custom routes must be wrapped in `try/catch` with user-friendly feedback. Always check `res.ok` before parsing the response body. Never let a failed operation silently pass — always show a toast or inline error.
+All `window.cadet.fetch()` calls to custom routes must be wrapped in `try/catch` with user-friendly feedback. Always check `res.ok` before parsing the response body. Never let a failed operation silently pass — always show a toast or inline error.

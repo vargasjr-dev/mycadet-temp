@@ -18,9 +18,11 @@
  * writable while hiding the key would hand back the same key by another
  * route, pointed at a host of the writer's choosing.
  */
+// The platform pushes the pre-rebrand display name ("vellum:*"); the
+// canonical storage service is "cadet".
 const MANAGED_PROXY_CREDENTIALS = [
-  { service: "vellum", field: "assistant_api_key" },
-  { service: "vellum", field: "platform_base_url" },
+  { service: "cadet", field: "assistant_api_key" },
+  { service: "cadet", field: "platform_base_url" },
 ] as const;
 
 export function isPlatformManagedCredential(

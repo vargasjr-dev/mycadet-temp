@@ -31,7 +31,7 @@ import { getChannelBrandMark } from "@/utils/channel-presentation";
 const KNOWN_CHANNEL_IDS: ReadonlySet<string> = new Set<ChannelInfo["id"]>([
   "telegram",
   "phone",
-  "vellum",
+  "cadet",
   "whatsapp",
   "slack",
   "email",

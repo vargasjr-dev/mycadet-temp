@@ -61,16 +61,15 @@ bun run typecheck
 
 ## Project Structure
 
-| Directory | What it is |
-|---|---|
-| `assistant/` | Core assistant runtime — memory, tools, skills, scheduling, integrations |
-| `gateway/` | Public ingress — webhooks, API routes, OAuth callbacks |
-| `cli/` | The `cadet` CLI |
-| `clients/` | End-user app surfaces (web, iOS, macOS/Electron) and the public docs site (`clients/docs/`) |
-| `credential-executor/` | Isolated credential execution service |
-| `packages/` | Shared internal packages |
-| `skills/` | Skill definitions |
-
+| Directory              | What it is                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `assistant/`           | Core assistant runtime — memory, tools, skills, scheduling, integrations                    |
+| `gateway/`             | Public ingress — webhooks, API routes, OAuth callbacks                                      |
+| `cli/`                 | The `cadet` CLI                                                                             |
+| `clients/`             | End-user app surfaces (web, iOS, macOS/Electron) and the public docs site (`clients/docs/`) |
+| `credential-executor/` | Isolated credential execution service                                                       |
+| `packages/`            | Shared internal packages                                                                    |
+| `skills/`              | Skill definitions                                                                           |
 
 ## Personalizing Your Assistant vs. Changing the Core
 

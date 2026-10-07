@@ -19,7 +19,7 @@ import { mintToken } from "../../runtime/auth/token-service.js";
 import type { SttErrorCategory } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
 
-const log = getLogger("vellum-speech-relay");
+const log = getLogger("cadet-speech-relay");
 
 /**
  * The principal the gateway's speech-relay route accepts. Must match
@@ -122,7 +122,7 @@ export function mapTunnelError(error: TunnelErrorInfo): {
       return {
         category: "provider-error",
         message:
-          "Managed speech is paused: your Vellum organization is out of credits. Top up credits to continue.",
+          "Managed speech is paused: your Cadet organization is out of credits. Top up credits to continue.",
       };
     case "provider_unreachable":
     case "upstream_error":

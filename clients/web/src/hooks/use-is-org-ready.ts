@@ -8,7 +8,7 @@ import {
 import { hasLivePlatformSession } from "@/stores/session-status";
 
 /**
- * How close the `Vellum-Organization-Id` header source is to producing an id.
+ * How close the `Cadet-Organization-Id` header source is to producing an id.
  *
  * - `"ready"` — a request can carry the header now: the hydrated store, its
  *   persisted organization id, or no platform session at all (self-hosted /
@@ -72,7 +72,7 @@ export function getOrgHeaderReadiness(): OrgHeaderReadiness {
 }
 
 /**
- * Gate for queries that need the `Vellum-Organization-Id` header.
+ * Gate for queries that need the `Cadet-Organization-Id` header.
  *
  * Ready when the header source can produce an id — the hydrated store or its
  * persisted organization id — or when no platform session exists (self-hosted

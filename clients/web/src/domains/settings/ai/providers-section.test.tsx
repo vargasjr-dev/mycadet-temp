@@ -175,8 +175,8 @@ function seedConnections() {
       provider: "anthropic",
     }),
     connection({
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       isManaged: true,
       auth: { type: "platform" } as ProviderConnection["auth"],
     }),
@@ -259,8 +259,8 @@ describe("ProvidersSection - rows and chips", () => {
 describe("ProvidersSection - kebab actions", () => {
   test("Set as default PUTs the explicit provider + connectionName", async () => {
     defaultProviderState = {
-      provider: "vellum",
-      resolvedConnectionName: "vellum",
+      provider: "cadet",
+      resolvedConnectionName: "cadet",
       availability: { status: "ok" },
     };
     renderSection();

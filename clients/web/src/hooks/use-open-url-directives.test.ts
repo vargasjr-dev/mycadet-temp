@@ -45,22 +45,22 @@ const originalWindow = globalThis.window;
 let attention: ReturnType<typeof stubBrowserAttention>;
 
 function setMockWindow({
-  origin = "https://app.vellum.ai",
+  origin = "https://app.cadet.ai",
   open,
-  vellum,
+  cadet,
 }: {
   origin?: string;
   open?:
     | ((url?: string, target?: string, features?: string) => Window | null)
     | null;
-  vellum?: unknown;
+  cadet?: unknown;
 } = {}): void {
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
       location: { origin },
       open,
-      vellum,
+      cadet,
     },
   });
 }
@@ -164,7 +164,7 @@ describe("handleOpenUrlDirectiveEnvelope", () => {
       { visible: true, focused: false },
     ]) {
       attention.set(state);
-      for (const url of [oauthUrl, "https://app.vellum.ai/settings"]) {
+      for (const url of [oauthUrl, "https://app.cadet.ai/settings"]) {
         handleOpenUrlDirectiveEnvelope(
           makeEnvelope({ type: "open_url", url }),
           { isNative: false, push },
@@ -231,7 +231,7 @@ describe("handleOpenUrlDirectiveEnvelope", () => {
   it("preserves Electron handoff without browser focus", () => {
     const popup = { focus: mock(() => {}) } as unknown as Window;
     const open = mock(() => popup);
-    setMockWindow({ open, vellum: { platform: "electron" } });
+    setMockWindow({ open, cadet: { platform: "electron" } });
     attention.set({ visible: false, focused: false });
 
     handleOpenUrlDirectiveEnvelope(

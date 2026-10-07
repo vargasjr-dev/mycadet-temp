@@ -96,7 +96,7 @@ export function useSelectableConnectionProviders(): ConnectionProvider[] {
 /**
  * Profile providers a set of connections can dispatch through, in
  * canonical picker order. A connection backs its own `provider`; the
- * Vellum-managed connection surfaces as a single "Cadet" entry (listed
+ * Cadet-managed connection surfaces as a single "Cadet" entry (listed
  * first) rather than expanding into the upstreams it routes to — which
  * provider actually serves a Cadet model is an implementation detail users
  * never see. A BYOK provider (e.g. Anthropic) still surfaces for a user who
@@ -200,7 +200,7 @@ const ROUTING_IDENTITY_KINDS = new Set<string>([
 /**
  * Catalog kinds with two or more connections of that same kind. These expand
  * into per-entry picker rows so a profile can name WHICH key it uses. The
- * identity rows (vellum/chatgpt) never expand, being canonical singletons,
+ * identity rows (cadet/chatgpt) never expand, being canonical singletons,
  * and openai-compatible always expands regardless of count.
  */
 export function multiEntryProviderKinds(

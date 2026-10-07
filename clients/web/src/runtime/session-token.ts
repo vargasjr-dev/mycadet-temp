@@ -13,7 +13,7 @@ export function getElectronSessionToken(): string | null {
     return null;
   }
   if (cached === undefined) {
-    cached = window.vellum?.auth?.getSessionToken?.() ?? null;
+    cached = window.cadet?.auth?.getSessionToken?.() ?? null;
   }
   return cached;
 }

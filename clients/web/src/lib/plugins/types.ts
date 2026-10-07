@@ -39,7 +39,7 @@ export interface PluginListItem {
    */
   enabled?: boolean;
   /**
-   * Emoji shown in the row: the author-declared `package.json` `vellum.icon`
+   * Emoji shown in the row: the author-declared `package.json` `cadet.icon`
    * on installed rows, the curated marketplace emoji on catalog rows.
    * `undefined` when none is declared; the row falls back to 📦/🧩. Never a
    * URL: an installed plugin's icon is untrusted text and must not trigger a

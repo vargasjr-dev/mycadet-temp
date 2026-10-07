@@ -1,5 +1,5 @@
 /**
- * The `VellumBridge` interface — the shape of `window.vellum` as
+ * The `CadetBridge` interface — the shape of `window.cadet` as
  * implemented by the Electron preload script.
  *
  * Capability surfaces are required: the preload implements every method, so
@@ -82,7 +82,7 @@ import type {
   TextInsertionResult,
   TitleBarOverlayTheme,
   UpdateState,
-  VellumCommand,
+  CadetCommand,
   VoiceActivityContent,
   VoiceActivityControl,
   VoiceActivityStart,
@@ -204,7 +204,7 @@ export type LocalReadAssistantAvatarResult =
   | { ok: true; avatar: LocalAssistantAvatar | null }
   | { ok: false; error: string };
 
-export interface VellumBridge {
+export interface CadetBridge {
   platform: "electron";
   hostOS?: ElectronHostOS;
   app: {
@@ -375,7 +375,7 @@ export interface VellumBridge {
     onState(callback: (state: SystemPermissionsState) => void): () => void;
   };
   commands: {
-    on(callback: (command: VellumCommand) => void): () => void;
+    on(callback: (command: CadetCommand) => void): () => void;
   };
   status: {
     setConnection(status: AssistantStatus): void;
@@ -601,7 +601,7 @@ export interface VellumBridge {
   commandPalette: {
     open(): Promise<void>;
     dismiss(): Promise<void>;
-    select(command: VellumCommand): Promise<void>;
+    select(command: CadetCommand): Promise<void>;
   };
   dictationOverlay: {
     setState(state: DictationOverlayMessage): void;
@@ -988,7 +988,7 @@ export interface VellumBridge {
 }
 
 /**
- * Every top-level `VellumBridge` capability, for runtime parity checks. The
+ * Every top-level `CadetBridge` capability, for runtime parity checks. The
  * `satisfies` below fails to compile when the interface gains a key this list
  * lacks.
  */
@@ -1029,9 +1029,9 @@ export const VELLUM_BRIDGE_KEYS = [
   "companion",
   "popout",
   "update",
-] as const satisfies readonly (keyof VellumBridge)[];
+] as const satisfies readonly (keyof CadetBridge)[];
 
 ({}) satisfies Record<
-  Exclude<keyof VellumBridge, (typeof VELLUM_BRIDGE_KEYS)[number]>,
+  Exclude<keyof CadetBridge, (typeof VELLUM_BRIDGE_KEYS)[number]>,
   never
 >;

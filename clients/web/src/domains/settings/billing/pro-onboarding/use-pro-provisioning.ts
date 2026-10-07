@@ -206,7 +206,7 @@ export function useProProvisioning({
   verdictRecheckMs = PROVISION_VERDICT_RECHECK_MS,
 }: UseProProvisioningOptions): ProProvisioningResult {
   const queryClient = useQueryClient();
-  // Every query here is org-scoped (needs the Vellum-Organization-Id header).
+  // Every query here is org-scoped (needs the Cadet-Organization-Id header).
   // On the cold return from Stripe the org store may not be hydrated yet, so
   // hold the fetches until it is. The confirm timeout deliberately runs
   // regardless: if org readiness never arrives, the user still lands on the

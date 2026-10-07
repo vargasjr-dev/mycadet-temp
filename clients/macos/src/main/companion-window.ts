@@ -71,7 +71,7 @@ import {
   type CompanionSize,
   type CompanionSizeAxis,
   type CompanionSurfaceState,
-  type VellumCommand,
+  type CadetCommand,
   type VoiceActivityState,
   type WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
@@ -3493,7 +3493,7 @@ const syncFrontmost = (): void => {
  * `advanceIntro` handler).
  */
 export const dispatchWithoutRaising = (
-  command: VellumCommand,
+  command: CadetCommand,
 ): Promise<boolean> => {
   if (currentMainWindow() !== null) {
     dispatchToMain(command);
@@ -4119,7 +4119,7 @@ export const installCompanionWindow = (): void => {
       if (!answersThePopover(shown, popoverId, answer)) {
         return;
       }
-      const command: VellumCommand = {
+      const command: CadetCommand = {
         kind: "answerCompanionPopover",
         popoverId,
         answer,

@@ -32,7 +32,7 @@ import {
  *
  * `assistant/sse-service.ts` is the one consumer that reads the label:
  * it keeps the stream through a `"window_attention"` hide, because the
- * desktop has no push fallback and `VellumAdapter.send` is a fire-and-forget
+ * desktop has no push fallback and `CadetAdapter.send` is a fire-and-forget
  * broadcast with no queue or redelivery, so a torn-down stream is a
  * notification lost outright rather than one delivered late.
  */

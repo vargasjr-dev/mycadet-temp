@@ -26,7 +26,7 @@ import {
  *
  * @deprecated Prefer a design-library primitive that resolves the presentation
  * itself (`ActionMenu`), or `isPointerCoarse()` for a question about input.
- * Tracked in [LUM-3177](https://linear.app/vellum/issue/LUM-3177).
+ * Tracked in [LUM-3177](https://linear.app/cadet/issue/LUM-3177).
  */
 export const TOUCH_MOBILE_MEDIA_QUERY = TOUCH_SURFACE_MEDIA_QUERY;
 

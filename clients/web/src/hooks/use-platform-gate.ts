@@ -55,7 +55,7 @@ export interface PlatformGateOptions {
    * When `true`, the feature is platform-hosted only — gate it whenever
    * the **active assistant** is self-hosted, regardless of platform
    * session or feature-flag value. Use for UI surfaces that manage
-   * Vellum-hosted infrastructure (plan/billing tier, devices, machine
+   * Cadet-hosted infrastructure (plan/billing tier, devices, machine
    * sizing, release channels, sleep policy, system events) which have
    * no meaningful behavior on a self-hosted assistant.
    *
@@ -63,7 +63,7 @@ export interface PlatformGateOptions {
    * the app running in local mode?" Two cases this matters for:
    *
    *   1. A **local-mode app** can be acting on a platform-hosted
-   *      assistant (lockfile entry with `cloud === "vellum"`). The
+   *      assistant (lockfile entry with `cloud === "cadet"`). The
    *      platform billing/plan UI for that assistant IS meaningful.
    *   2. A **platform-mode app** can be acting on a self-hosted
    *      assistant — when the platform API returns `is_local: true`,
@@ -231,7 +231,7 @@ export function useActiveAssistantLifecycleIsLoading(): boolean {
  *     | otherwise                         | yes              | `"full"`     |
  *
  *   - **`platformHostedOnly: true`**: for surfaces that only make sense
- *     against a Vellum-hosted assistant (billing, devices, sleep policy,
+ *     against a Cadet-hosted assistant (billing, devices, sleep policy,
  *     …). Gates on the active assistant's hosting instead of the app
  *     mode. See {@link PlatformGateOptions.platformHostedOnly} for its
  *     truth table and rationale.

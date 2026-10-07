@@ -1,6 +1,6 @@
 /**
  * Tests for the app-sandbox flag surfaced as
- * `window._vellumDebug.flags.toggleAppsSandboxDisabled`: the default-off
+ * `window._cadetDebug.flags.toggleAppsSandboxDisabled`: the default-off
  * contract, flip vs. explicit set, the warning it logs, and the return
  * value the console reads back.
  *

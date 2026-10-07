@@ -56,9 +56,9 @@ describe("migrateCreateProviderConnections", () => {
   test("seedCanonicalConnections seeds the provider-agnostic cadet connection", () => {
     const { db } = setupDb();
     seedCanonicalConnections(db);
-    const cadet = getConnection(db, "vellum");
+    const cadet = getConnection(db, "cadet");
     expect(cadet).not.toBeNull();
-    expect(cadet?.provider).toBe("vellum");
+    expect(cadet?.provider).toBe("cadet");
     expect(cadet?.auth.type).toBe("platform");
     // Derived from MANAGED_CONNECTION_NAMES → write-protected at the route layer.
     expect(cadet?.isManaged).toBe(true);
@@ -69,8 +69,8 @@ describe("migrateCreateProviderConnections", () => {
     // Run twice — should not throw or create duplicate cadet rows.
     seedCanonicalConnections(db);
     seedCanonicalConnections(db);
-    const managed = listConnections(db, { provider: "vellum" });
-    expect(managed.filter((c) => c.name === "vellum").length).toBe(1);
+    const managed = listConnections(db, { provider: "cadet" });
+    expect(managed.filter((c) => c.name === "cadet").length).toBe(1);
   });
 
   test("seedCanonicalConnections does not clobber a user connection named cadet", () => {
@@ -79,14 +79,14 @@ describe("migrateCreateProviderConnections", () => {
     // have a BYOK connection keyed `cadet`. Seeding must not rewrite it to the
     // platform-auth sentinel.
     createConnection(db, {
-      name: "vellum",
+      name: "cadet",
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
 
     seedCanonicalConnections(db);
 
-    const conn = getConnection(db, "vellum");
+    const conn = getConnection(db, "cadet");
     expect(conn?.provider).toBe("anthropic");
     expect(conn?.auth.type).toBe("api_key");
   });
@@ -188,7 +188,7 @@ describe("Connection CRUD", () => {
     const { db } = setupDb();
     createConnection(db, {
       name: "chatgpt-subscription",
-      provider: "vellum",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     const result = updateConnection(db, "chatgpt-subscription", {

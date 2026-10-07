@@ -29,7 +29,7 @@ interface MobileAppOverlayProps {
   /** Optional one-click deploy handler; omitted when org has not opted in. */
   onDeploy?: () => void;
   isDeploying: boolean;
-  /** Deep-link route to forward to the iframe (`window.vellum.route`). */
+  /** Deep-link route to forward to the iframe (`window.cadet.route`). */
   route?: string;
   /** Forwarded to `AppViewerContainer` for sandboxed app actions. */
   onAction?: (actionId: string, data?: Record<string, unknown>) => void;

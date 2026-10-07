@@ -155,7 +155,7 @@ const localB: LockfileAssistant = {
 
 const platform: LockfileAssistant = {
   assistantId: "platform-a",
-  cloud: "vellum",
+  cloud: "cadet",
 } as LockfileAssistant;
 
 const pairedEntry: LockfileAssistant = {
@@ -176,7 +176,7 @@ function enableLocalMode(): void {
 
 afterEach(() => {
   globalThis.fetch = realFetch;
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   process.env.VITE_PLATFORM_MODE = "true";
   useLockfileStore.setState({ lockfile: null, committed: false });
   localStorage.removeItem(LOCKFILE_STORAGE_KEY);
@@ -197,7 +197,7 @@ afterEach(() => {
 
 describe("remote gateway mode", () => {
   test("loads a synthetic active assistant without calling the local host", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
 
     const lockfile = await loadLockfile();
 
@@ -218,9 +218,9 @@ describe("remote gateway mode", () => {
   });
 
   test("names the synthetic assistant from the injected config when present", async () => {
-    window.__VELLUM_CONFIG__ = {
+    window.__CADET_CONFIG__ = {
       mode: "remote-gateway",
-      assistantName: "vellum-deep-hare-ww1iw1",
+      assistantName: "cadet-deep-hare-ww1iw1",
     };
 
     const lockfile = await loadLockfile();
@@ -228,7 +228,7 @@ describe("remote gateway mode", () => {
     expect(lockfile.assistants).toEqual([
       expect.objectContaining({
         assistantId: "self",
-        name: "vellum-deep-hare-ww1iw1",
+        name: "cadet-deep-hare-ww1iw1",
       }),
     ]);
   });
@@ -236,9 +236,9 @@ describe("remote gateway mode", () => {
 
 describe("getRemoteAssistantDisplayName", () => {
   test("prefers the live identity-store name over the injected config", () => {
-    window.__VELLUM_CONFIG__ = {
+    window.__CADET_CONFIG__ = {
       mode: "remote-gateway",
-      assistantName: "vellum-deep-hare-ww1iw1",
+      assistantName: "cadet-deep-hare-ww1iw1",
     };
     useAssistantIdentityStore.getState().setIdentity("Credence", "1.0.0");
 
@@ -246,17 +246,17 @@ describe("getRemoteAssistantDisplayName", () => {
   });
 
   test("falls back to the injected config for a whitespace-only live name", () => {
-    window.__VELLUM_CONFIG__ = {
+    window.__CADET_CONFIG__ = {
       mode: "remote-gateway",
-      assistantName: "vellum-deep-hare-ww1iw1",
+      assistantName: "cadet-deep-hare-ww1iw1",
     };
     useAssistantIdentityStore.getState().setIdentity("   ", "1.0.0");
 
-    expect(getRemoteAssistantDisplayName()).toBe("vellum-deep-hare-ww1iw1");
+    expect(getRemoteAssistantDisplayName()).toBe("cadet-deep-hare-ww1iw1");
   });
 
   test("is undefined when neither source carries a name", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
 
     expect(getRemoteAssistantDisplayName()).toBeUndefined();
   });
@@ -318,19 +318,19 @@ describe("syncPlatformAssistantsToLockfile", () => {
 describe("removePlatformAssistantFromLockfile", () => {
   const platformA: LockfileAssistant = {
     assistantId: "platform-a",
-    cloud: "vellum",
+    cloud: "cadet",
     organizationId: "org-1",
   } as LockfileAssistant;
 
   const platformB: LockfileAssistant = {
     assistantId: "platform-b",
-    cloud: "vellum",
+    cloud: "cadet",
     organizationId: "org-1",
   } as LockfileAssistant;
 
   const platformOtherOrg: LockfileAssistant = {
     assistantId: "platform-c",
-    cloud: "vellum",
+    cloud: "cadet",
     organizationId: "org-2",
   } as LockfileAssistant;
 
@@ -730,7 +730,7 @@ describe("saveManagedLockfileAssistant", () => {
     expect(entry).toMatchObject({
       assistantId: "ast-1",
       name: "Research",
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: getPlatformRuntimeUrl(),
       organizationId: "org-1",
     });
@@ -756,7 +756,7 @@ describe("renameLockfileAssistant", () => {
 
   // A non-remote injected config marks the local-mode host as available.
   function enableLocalHost(): void {
-    window.__VELLUM_CONFIG__ = {};
+    window.__CADET_CONFIG__ = {};
   }
 
   test("routes the trimmed rename through the host rename op and commits", async () => {
@@ -830,7 +830,7 @@ describe("renameLockfileAssistant", () => {
   });
 
   test("no-op (true) in remote-gateway mode", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
 
     await expect(renameLockfileAssistant("self", "Credence")).resolves.toBe(
       true,
@@ -890,7 +890,7 @@ describe("loadLockfile host-failure fallback", () => {
 });
 
 describe("assistant classification", () => {
-  test("a vellum-cloud entry is a platform assistant, not local", () => {
+  test("a cadet-cloud entry is a platform assistant, not local", () => {
     expect(isPlatformAssistant(platform)).toBe(true);
     expect(isLocalAssistant(platform)).toBe(false);
   });
@@ -924,7 +924,7 @@ describe("assistant classification", () => {
     const docker = { assistantId: "d", cloud: "docker" } as LockfileAssistant;
     expect(isLocalGatewayAssistant(localA)).toBe(true);
     expect(isLocalGatewayAssistant(docker)).toBe(true);
-    for (const cloud of ["apple-container", "vellum", "paired", "gcp"]) {
+    for (const cloud of ["apple-container", "cadet", "paired", "gcp"]) {
       const other = { assistantId: `o-${cloud}`, cloud } as LockfileAssistant;
       expect(isLocalGatewayAssistant(other)).toBe(false);
     }
@@ -951,7 +951,7 @@ describe("assistant classification", () => {
 
   test("only paired-cloud entries are paired assistants", () => {
     expect(isPairedAssistant({ cloud: "paired" })).toBe(true);
-    for (const cloud of ["local", "docker", "vellum", undefined]) {
+    for (const cloud of ["local", "docker", "cadet", undefined]) {
       expect(isPairedAssistant({ cloud })).toBe(false);
     }
   });
@@ -1112,7 +1112,7 @@ describe("getPairedGatewayUrl", () => {
 
   test("is undefined in remote-gateway mode", () => {
     enableLocalMode();
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     expect(getPairedGatewayUrl(pairedEntry)).toBeUndefined();
   });
 });

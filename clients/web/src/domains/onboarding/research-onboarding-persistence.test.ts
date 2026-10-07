@@ -109,14 +109,14 @@ describe("Electron host", () => {
   // The desktop app must start onboarding fresh on every launch: reads and
   // writes are no-ops, but clear stays live so completion/retire can still
   // remove a snapshot written by an older build (or the web host).
-  const vellumBridge = { platform: "electron" } as unknown as Window["vellum"];
+  const cadetBridge = { platform: "electron" } as unknown as Window["cadet"];
 
   beforeEach(() => {
-    window.vellum = vellumBridge;
+    window.cadet = cadetBridge;
   });
 
   afterEach(() => {
-    delete window.vellum;
+    delete window.cadet;
   });
 
   test("never writes a snapshot", () => {

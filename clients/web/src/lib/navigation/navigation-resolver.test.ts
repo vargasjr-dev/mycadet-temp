@@ -58,9 +58,9 @@ function redirectPath(decision: NavigationDecision): string | null {
 // purchased-provisioning wait, plus the post-checkout marker that tells that
 // wait a still-base subscription read is a lagging webhook, not a free org.
 const RESEARCH_FUNNEL_URL =
-  "/assistant/onboarding/research?hosting=vellum-cloud&post_checkout=1";
+  "/assistant/onboarding/research?hosting=cadet-cloud&post_checkout=1";
 const HATCHING_FUNNEL_URL =
-  "/assistant/onboarding/hatching?hosting=vellum-cloud&post_checkout=1";
+  "/assistant/onboarding/hatching?hosting=cadet-cloud&post_checkout=1";
 
 const CHOOSER = "/assistant/select-assistant";
 /** A platform account with nothing resolved: the chooser's empty state. */
@@ -1151,7 +1151,7 @@ describe("resolveNavigation", () => {
     test("an unpaid hatching bounce keeps the bare entrypoint", () => {
       for (const url of [
         "/assistant/onboarding/hatching",
-        "/assistant/onboarding/hatching?hosting=vellum-cloud",
+        "/assistant/onboarding/hatching?hosting=cadet-cloud",
         "/assistant/onboarding/hatching?post_checkout=0",
       ]) {
         expect(guard(s(UNCONSENTED), url)).toEqual({
@@ -1408,7 +1408,7 @@ describe("resolveNavigation", () => {
     test("keeps the gateway-auth bypass on an unmarked funnel entry", () => {
       for (const url of [
         "/assistant/onboarding/research",
-        "/assistant/onboarding/research?hosting=vellum-cloud",
+        "/assistant/onboarding/research?hosting=cadet-cloud",
         "/assistant/onboarding/hatching",
         "/assistant/onboarding/hatching?post_checkout=0",
       ]) {
@@ -1567,7 +1567,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "https://assistant.vellum.ai/assistant",
+          "https://assistant.cadet.ai/assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
     });
@@ -1576,7 +1576,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "//assistant.vellum.ai/assistant",
+          "//assistant.cadet.ai/assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
     });
@@ -1585,7 +1585,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "https://vellum.ai/account",
+          "https://cadet.ai/account",
         ),
       ).toEqual(ALLOW);
     });
@@ -1903,7 +1903,7 @@ describe("resolveNavigation", () => {
         resolveNavigation(s({ userHasOnboardedAssistant: true }), {
           kind: "post-auth",
           authIntent: "login",
-          returnTo: "/assistant/onboarding/research?hosting=vellum-cloud",
+          returnTo: "/assistant/onboarding/research?hosting=cadet-cloud",
           fallback: "/assistant",
         }),
       ).toEqual({ action: "redirect", to: "/assistant" });
@@ -2018,10 +2018,10 @@ describe("resolveNavigation", () => {
     test("rejects a funnel path without the paid marker", () => {
       for (const url of [
         "/assistant/onboarding/research",
-        "/assistant/onboarding/research?hosting=vellum-cloud",
+        "/assistant/onboarding/research?hosting=cadet-cloud",
         "/assistant/onboarding/research?post_checkout=0",
         "/assistant/onboarding/hatching",
-        "/assistant/onboarding/hatching?hosting=vellum-cloud",
+        "/assistant/onboarding/hatching?hosting=cadet-cloud",
       ]) {
         expect(postCheckoutHatchReturnTo(url)).toBeNull();
       }

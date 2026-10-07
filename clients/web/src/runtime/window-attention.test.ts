@@ -41,7 +41,7 @@ function setVisibilityState(state: "visible" | "hidden"): void {
 
 /** Stand in for the preload bridge's window-attention subscriber. */
 function installBridge(): void {
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     notifications: {
       onWindowAttention: (
@@ -53,12 +53,12 @@ function installBridge(): void {
         };
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
 }
 
 /** An Electron host whose preload predates the attention channel. */
 function installBridgeWithoutAttention(): void {
-  window.vellum = { platform: "electron" } as unknown as Window["vellum"];
+  window.cadet = { platform: "electron" } as unknown as Window["cadet"];
 }
 
 /** Push a payload the way main broadcasts one, shape unchecked. */
@@ -76,7 +76,7 @@ afterEach(() => {
   document.hasFocus = originalHasFocus;
   unsubscribe?.();
   unsubscribe = null;
-  delete window.vellum;
+  delete window.cadet;
   if (realVisibilityState) {
     Object.defineProperty(document, "visibilityState", realVisibilityState);
   } else {
@@ -135,7 +135,7 @@ describe("isWindowAttended", () => {
 
     unsubscribe();
     unsubscribe = null;
-    delete window.vellum;
+    delete window.cadet;
 
     expect(isWindowAttended()).toBe(true);
   });

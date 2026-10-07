@@ -15,7 +15,7 @@ import {
   mapTunnelError,
   probeTunnelRejection,
   resolveSpeechRelayConnection,
-} from "../vellum-speech-relay-connection.js";
+} from "../cadet-speech-relay-connection.js";
 
 describe("resolveSpeechRelayConnection", () => {
   const originalEnv = process.env.GATEWAY_INTERNAL_URL;

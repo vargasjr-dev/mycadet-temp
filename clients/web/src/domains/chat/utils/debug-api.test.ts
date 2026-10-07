@@ -9,13 +9,13 @@ import type { ReconcileActiveConversationResult } from "@/domains/chat/hooks/use
 import type {
   ChatDebugRefs,
   PendingInteractionsSnapshot,
-  VellumDebugFlagsApi,
+  CadetDebugFlagsApi,
 } from "@/domains/chat/utils/debug-api";
 import type { SleepStageScene } from "@/stores/assistant-sleep-stage-store";
 import {
   RECONCILIATION_DIAGNOSTIC_KIND_PREFIXES,
   createChatDebugApi,
-  installVellumDebugApi,
+  installCadetDebugApi,
 } from "@/domains/chat/utils/debug-api";
 import { recordDiagnostic, recordLifecycleDiagnostic } from "@/lib/diagnostics";
 import { INITIAL_TURN_STATE, type TurnState } from "@/domains/chat/turn-store";
@@ -893,11 +893,11 @@ describe("createChatDebugApi.listPendingInteractions", () => {
 });
 
 // ---------------------------------------------------------------------------
-//  installVellumDebugApi
+//  installCadetDebugApi
 // ---------------------------------------------------------------------------
 
 type DebugWindow = Window & {
-  _vellumDebug?: {
+  _cadetDebug?: {
     chat?: unknown;
     events?: { getClients: unknown; getEvents: unknown };
     flags?: {
@@ -909,19 +909,19 @@ type DebugWindow = Window & {
   };
 };
 
-const makeFlagsApi = (): VellumDebugFlagsApi => ({
+const makeFlagsApi = (): CadetDebugFlagsApi => ({
   impersonateVersion: (_value?: string | null): string | null => null,
   toggleAppsSandboxDisabled: (_value?: boolean): boolean => false,
   forceSleepStage: (_value?: SleepStageScene | null): SleepStageScene | null =>
     null,
 });
 
-describe("installVellumDebugApi", () => {
+describe("installCadetDebugApi", () => {
   test("attaches .events, .chat, and .flags in one call", () => {
     const api = createChatDebugApi(makeRefs());
     const flags = makeFlagsApi();
-    const uninstall = installVellumDebugApi(api, flags);
-    const root = (globalThis as unknown as DebugWindow)._vellumDebug;
+    const uninstall = installCadetDebugApi(api, flags);
+    const root = (globalThis as unknown as DebugWindow)._cadetDebug;
     expect(root?.chat).toBe(api);
     expect(root?.events).toBeDefined();
     expect(typeof root?.events?.getClients).toBe("function");
@@ -933,41 +933,41 @@ describe("installVellumDebugApi", () => {
 
   test("removes .events, .chat, and .flags on uninstall", () => {
     const api = createChatDebugApi(makeRefs());
-    const uninstall = installVellumDebugApi(api, makeFlagsApi());
+    const uninstall = installCadetDebugApi(api, makeFlagsApi());
     uninstall();
-    const root = (globalThis as unknown as DebugWindow)._vellumDebug;
+    const root = (globalThis as unknown as DebugWindow)._cadetDebug;
     // Root should be gone entirely since nothing else was attached.
     expect(root).toBeUndefined();
   });
 
   test("preserves sibling debug namespaces when uninstalling", () => {
     const win = globalThis as unknown as { window: DebugWindow };
-    win.window._vellumDebug = { other: "keep" };
+    win.window._cadetDebug = { other: "keep" };
 
     const api = createChatDebugApi(makeRefs());
-    const uninstall = installVellumDebugApi(api, makeFlagsApi());
+    const uninstall = installCadetDebugApi(api, makeFlagsApi());
     uninstall();
-    expect(win.window._vellumDebug?.chat).toBeUndefined();
-    expect(win.window._vellumDebug?.events).toBeUndefined();
-    expect(win.window._vellumDebug?.flags).toBeUndefined();
-    expect(win.window._vellumDebug?.other).toBe("keep");
+    expect(win.window._cadetDebug?.chat).toBeUndefined();
+    expect(win.window._cadetDebug?.events).toBeUndefined();
+    expect(win.window._cadetDebug?.flags).toBeUndefined();
+    expect(win.window._cadetDebug?.other).toBe("keep");
 
     // Cleanup so we don't leak state into other tests.
-    delete win.window._vellumDebug;
+    delete win.window._cadetDebug;
   });
 
   test("identity-checks chat on teardown so a newer mount isn't clobbered", () => {
     const first = createChatDebugApi(makeRefs());
-    const uninstallFirst = installVellumDebugApi(first, makeFlagsApi());
+    const uninstallFirst = installCadetDebugApi(first, makeFlagsApi());
 
     const second = createChatDebugApi(makeRefs());
-    installVellumDebugApi(second, makeFlagsApi());
+    installCadetDebugApi(second, makeFlagsApi());
 
     // First mount's teardown runs after second mount installed —
     // simulates strict-mode double-mount or hot-reload races.
     uninstallFirst();
 
-    const root = (globalThis as unknown as DebugWindow)._vellumDebug;
+    const root = (globalThis as unknown as DebugWindow)._cadetDebug;
     expect(root?.chat).toBe(second);
     expect(root?.events).toBeDefined();
     expect(root?.flags).toBeDefined();

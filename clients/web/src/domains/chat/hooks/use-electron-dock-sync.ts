@@ -8,7 +8,7 @@ import { getDeviceBool, watchDeviceSetting } from "@/utils/device-settings";
 
 /**
  * Publish the unread conversation count to the Electron Dock badge via the
- * `window.vellum.dock.*` bridge, which no-ops on non-Electron hosts so this
+ * `window.cadet.dock.*` bridge, which no-ops on non-Electron hosts so this
  * hook is safe to mount unconditionally inside `ChatLayout`.
  *
  * Mount it once at a layout that already holds the conversation list

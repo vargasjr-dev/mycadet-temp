@@ -10,7 +10,7 @@
  * These helpers exist only for the cases that genuinely need raw `fetch`
  * (streaming SSE, blob downloads with manual progress, etc.).
  *
- * Anything that handles `Vellum-Organization-Id` or `X-CSRFToken` outside
+ * Anything that handles `Cadet-Organization-Id` or `X-CSRFToken` outside
  * `lib/auth/` and `lib/api-interceptors.ts` should be routed through here.
  * Drift between sites is the failure mode where a request that skips the
  * header is silently rejected upstream, the wrapper returns null, and the
@@ -27,19 +27,19 @@ import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
-interface BuildVellumHeadersOptions {
+interface BuildCadetHeadersOptions {
   includeSelfHostedActorToken?: boolean;
   organizationId?: string;
 }
 
 /**
  * Headers for a safe (GET/HEAD) request against an assistant-scoped
- * daemon route. Adds `Vellum-Organization-Id` when an active
+ * daemon route. Adds `Cadet-Organization-Id` when an active
  * organization is set.
  */
-export function buildVellumHeaders(
+export function buildCadetHeaders(
   extra?: Record<string, string>,
-  options: BuildVellumHeadersOptions = {},
+  options: BuildCadetHeadersOptions = {},
 ): Record<string, string> {
   const headers: Record<string, string> = { ...(extra ?? {}) };
   const selfHostedToken =
@@ -53,7 +53,7 @@ export function buildVellumHeaders(
   const organizationId =
     options.organizationId ?? getActiveOrganizationIdForRequests();
   if (organizationId) {
-    headers["Vellum-Organization-Id"] = organizationId;
+    headers["Cadet-Organization-Id"] = organizationId;
   }
   // Electron app provides a session token header. This is no-ops on web.
   const sessionToken = getElectronSessionToken();
@@ -68,11 +68,11 @@ export function buildVellumHeaders(
  * header and, after bootstrapping the CSRF cookie, the `X-CSRFToken`
  * header that Django's `SessionAuthentication` requires.
  */
-export async function buildVellumMutatingHeaders(
+export async function buildCadetMutatingHeaders(
   extra?: Record<string, string>,
-  options: BuildVellumHeadersOptions = {},
+  options: BuildCadetHeadersOptions = {},
 ): Promise<Record<string, string>> {
-  const headers = buildVellumHeaders(extra, options);
+  const headers = buildCadetHeaders(extra, options);
   if (headers["Authorization"]) {
     return headers;
   }

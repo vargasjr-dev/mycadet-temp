@@ -50,12 +50,12 @@ export interface SessionReplayTraits {
   surface: SessionReplaySurface;
 }
 
-/** Cookie scope for the recorder. `app://` cannot set `.vellum.ai` cookies. */
+/** Cookie scope for the recorder. `app://` cannot set `.cadet.ai` cookies. */
 export function sessionReplayRootHostname(base: string): string | undefined {
   if (base.startsWith("app:")) {
     return undefined;
   }
-  return import.meta.env.VITE_ROOT_HOSTNAME ?? ".vellum.ai";
+  return import.meta.env.VITE_ROOT_HOSTNAME ?? ".cadet.ai";
 }
 
 export interface SessionReplayProvider {

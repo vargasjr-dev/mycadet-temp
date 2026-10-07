@@ -6,8 +6,8 @@
  * conveniences (`getDefaultProvider()` without an argument,
  * `setDefaultProvider`) live in `default-provider.ts`.
  */
+import { CADET_MANAGED_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
 import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "../providers/inference/auth.js";
-import { VELLUM_MANAGED_CONNECTION_NAME } from "../providers/vellum-model-routing.js";
 import type { DefaultProviderConfig } from "./schemas/llm.js";
 import type { AssistantConfig } from "./types.js";
 
@@ -27,8 +27,8 @@ export function resolveDefaultConnectionName(
   if (dp.connectionName) {
     return dp.connectionName;
   }
-  if (dp.provider === "vellum") {
-    return VELLUM_MANAGED_CONNECTION_NAME;
+  if (dp.provider === "cadet") {
+    return CADET_MANAGED_CONNECTION_NAME;
   }
   if (dp.provider === "chatgpt") {
     return CHATGPT_SUBSCRIPTION_CONNECTION_NAME;

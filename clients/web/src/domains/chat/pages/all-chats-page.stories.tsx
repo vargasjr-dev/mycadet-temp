@@ -88,7 +88,7 @@ const DAY_OFFSETS = [
   380, 400, 420, 445,
 ];
 
-const CHANNELS = ["vellum", "slack", "telegram", "email"];
+const CHANNELS = ["cadet", "slack", "telegram", "email"];
 
 const DAILY_HISTORY: Conversation[] = DAY_OFFSETS.map((offset, index) => {
   const channel = CHANNELS[index % CHANNELS.length];
@@ -117,7 +117,7 @@ const HISTORY: Conversation[] = [
     title: "Passport renewal checklist",
     lastMessageAt: daysAgo(40, 9),
     createdAt: daysAgo(41),
-    originChannel: "vellum",
+    originChannel: "cadet",
     archivedAt: daysAgo(0, 14),
   },
 ];

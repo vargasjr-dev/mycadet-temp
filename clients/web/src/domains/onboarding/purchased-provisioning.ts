@@ -48,7 +48,7 @@ export interface AwaitPurchasedProvisioningOptions {
   assistantId: string;
   /** This hatch is the return leg of a completed checkout (`post_checkout=1`). */
   postCheckoutReturn: boolean;
-  /** `hosting=vellum-cloud` — a managed hatch even in a local-mode build. */
+  /** `hosting=cadet-cloud` — a managed hatch even in a local-mode build. */
   managedHatch: boolean;
   /** Epoch ms the overall hatch poll started; bounds the post-resize health wait. */
   hatchStartMs: number;

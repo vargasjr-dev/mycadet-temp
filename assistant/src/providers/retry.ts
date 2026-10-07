@@ -448,8 +448,10 @@ function retryErrorType(error: unknown): string {
  * (a route problem, not a request problem), so it is fallback-eligible even
  * though 400s are otherwise final.
  */
+// Matches the platform preflight's copy in both its pre- and post-rebrand
+// spellings, so detection survives the platform-side rename.
 const MANAGED_PROXY_UNSUPPORTED_MODEL_PATTERN =
-  /is not yet supported on the Cadet hosted service/;
+  /is not yet supported on the (?:Vellum|Cadet) hosted service/;
 
 /**
  * Whether the failure indicts one model rather than the upstream serving it: a
@@ -509,7 +511,7 @@ function isFallbackEligibleError(
     return false;
   }
   // (b) Invalid managed credential (the invalid-key incident). Applies only
-  // to `vellum-managed` routes, where the platform owns the credential and a
+  // to `cadet-managed` routes, where the platform owns the credential and a
   // broken key is a platform incident. A BYOK or OAuth-subscription route
   // with a broken personal credential must surface the auth error so the
   // user can fix it, not silently reroute to a differently billed backup.
@@ -517,7 +519,7 @@ function isFallbackEligibleError(
   // been attempted for managed routes: same status/reason gate as
   // `shouldRefreshManagedCredential`.
   if (
-    opts.credentialSource === "vellum-managed" &&
+    opts.credentialSource === "cadet-managed" &&
     (error.statusCode === 401 || error.statusCode === 403) &&
     (error.reason === undefined ||
       error.reason === "unknown" ||
@@ -1279,7 +1281,7 @@ export class RetryProvider implements Provider {
 
   private shouldRefreshManagedCredential(error: unknown): boolean {
     return (
-      this.options.credentialSource === "vellum-managed" &&
+      this.options.credentialSource === "cadet-managed" &&
       this.options.refreshCredentialProvider !== undefined &&
       error instanceof ProviderError &&
       (error.statusCode === 401 || error.statusCode === 403) &&

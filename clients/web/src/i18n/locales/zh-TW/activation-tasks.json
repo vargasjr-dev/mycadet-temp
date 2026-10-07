@@ -526,7 +526,7 @@
       "prompt": "向我展示你在我電腦上能實現的電腦操作功能。首先擷取一張螢幕截圖並描述目前畫面，然後提議兩件你可以幫我完成的事情。",
       "link": {
         "label": "下載桌面端應用程式",
-        "url": "https://www.cadet.ai/downloads"
+        "url": "https://www.mycadet.ai/downloads"
       }
     }
   }

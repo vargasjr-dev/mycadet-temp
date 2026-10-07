@@ -6,7 +6,7 @@ import { useTranslation } from "@/i18n";
 import { Tag } from "@mycadet/design-library";
 
 const ORIGIN_ICON: Record<SkillOrigin, typeof Globe> = {
-  vellum: Box,
+  cadet: Box,
   clawhub: Globe,
   skillssh: Terminal,
   custom: User,
@@ -21,7 +21,7 @@ function brandOrCatalogLabel(
   ) => string,
 ): string {
   switch (origin) {
-    case "vellum":
+    case "cadet":
       return "Cadet";
     case "clawhub":
       return "Clawhub";

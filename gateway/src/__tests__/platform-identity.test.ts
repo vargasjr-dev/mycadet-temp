@@ -50,11 +50,11 @@ const BASE_URL = "https://platform.example.com";
 const ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
 const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";
-const API_KEY_ACCOUNT = credentialKey("vellum", "assistant_api_key");
-const BASE_URL_ACCOUNT = credentialKey("vellum", "platform_base_url");
-const USER_ID_ACCOUNT = credentialKey("vellum", "platform_user_id");
-const ASSISTANT_ID_ACCOUNT = credentialKey("vellum", "platform_assistant_id");
-const ORG_ID_ACCOUNT = credentialKey("vellum", "platform_organization_id");
+const API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
+const BASE_URL_ACCOUNT = credentialKey("cadet", "platform_base_url");
+const USER_ID_ACCOUNT = credentialKey("cadet", "platform_user_id");
+const ASSISTANT_ID_ACCOUNT = credentialKey("cadet", "platform_assistant_id");
+const ORG_ID_ACCOUNT = credentialKey("cadet", "platform_organization_id");
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
 const originalPlatformUrl = process.env.VELLUM_PLATFORM_URL;

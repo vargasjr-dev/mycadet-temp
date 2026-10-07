@@ -79,7 +79,7 @@ describe("migration 361: normalize managed connection rows", () => {
     expect(readRow(sqlite, "vellum").provider).toBe("vellum");
   });
 
-  test("rewrites a vellum-provider row with non-platform auth to platform auth", () => {
+  test("rewrites a cadet-provider row with non-platform auth to platform auth", () => {
     const { sqlite, db } = createTestDb();
     insertRow(
       sqlite,

@@ -328,7 +328,7 @@ export async function nativeSwitchToOriginPath(
  * when the shell is already serving the baked origin (no configured
  * self-hosted slot).
  */
-export async function nativeVellumCloudOrigin(): Promise<string | null> {
+export async function nativeCadetCloudOrigin(): Promise<string | null> {
   if (!isNativeMobile()) {
     return null;
   }

@@ -51,7 +51,7 @@ describe("eventsDebugApi", () => {
       // THEN the envelope is logged once
       expect(logSpy).toHaveBeenCalledTimes(1);
       expect(logSpy).toHaveBeenLastCalledWith(
-        "[_vellumDebug.events]",
+        "[_cadetDebug.events]",
         envelope,
       );
 

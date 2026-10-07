@@ -53,7 +53,7 @@ export const IsDefault: Story = {
     profile: summary({
       name: "balanced",
       label: "Balanced",
-      provider: "vellum",
+      provider: "cadet",
       model: "glm-5.2",
       source: "managed",
     }),

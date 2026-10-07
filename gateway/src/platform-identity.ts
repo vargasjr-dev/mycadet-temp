@@ -29,8 +29,8 @@ export const PLATFORM_IDENTITY_VALIDATE_PATH =
 const VALIDATE_TIMEOUT_MS = 5_000;
 const ENSURE_COOLDOWN_MS = 10_000;
 
-const ASSISTANT_API_KEY_ACCOUNT = credentialKey("vellum", "assistant_api_key");
-const PLATFORM_BASE_URL_ACCOUNT = credentialKey("vellum", "platform_base_url");
+const ASSISTANT_API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
+const PLATFORM_BASE_URL_ACCOUNT = credentialKey("cadet", "platform_base_url");
 
 export type PlatformIdentityIds = {
   assistantId: string;

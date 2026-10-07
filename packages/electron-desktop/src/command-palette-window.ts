@@ -5,7 +5,7 @@ import {
   COMMAND_PALETTE_DISMISS,
   COMMAND_PALETTE_OPEN,
   COMMAND_PALETTE_SELECT,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import {
@@ -24,7 +24,7 @@ const PANEL_HEIGHT = 444;
 
 export interface CommandPaletteWindowDependencies {
   currentMainWindow: () => BrowserWindow | null;
-  dispatchToMain: (command: VellumCommand) => void;
+  dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
   handle: IpcHandle;
 }
@@ -36,22 +36,22 @@ const configuration =
 export const configureCommandPaletteWindow = configuration.configure;
 
 type PayloadCommandKind = Extract<
-  VellumCommand,
+  CadetCommand,
   { kind: "selectAssistant" | "retireAssistant" | "quickInputSubmit" }
 >["kind"];
 
 // Kinds the palette never dispatches. This list and the zod schema below
-// grow together: a new VellumCommand kind either gets a schema member or
+// grow together: a new CadetCommand kind either gets a schema member or
 // joins this exclusion, otherwise palette code can type-check a dispatch
 // that main rejects at runtime.
 type ExcludedCommandKind = "commandPalette" | "removePairedAssistant";
 
 type CommandPaletteDispatchCommand =
   | Exclude<
-      VellumCommand,
+      CadetCommand,
       { kind: ExcludedCommandKind } | { kind: PayloadCommandKind }
     >
-  | Extract<VellumCommand, { kind: PayloadCommandKind }>;
+  | Extract<CadetCommand, { kind: PayloadCommandKind }>;
 
 const payloadlessCommandKindSchema = z.enum([
   "newConversation",

@@ -1,7 +1,7 @@
 /**
  * Parent-side postMessage handler for sandboxed app iframes.
  *
- * Listens for `vellum_surface_action` and `vellum_fetch_request` messages
+ * Listens for `cadet_surface_action` and `cadet_fetch_request` messages
  * from a sandboxed iframe and either forwards them to the provided callback
  * or proxies fetch requests through the parent's authenticated API client.
  *
@@ -30,7 +30,7 @@ export interface SandboxFetchProxyOptions {
   /** Assistant ID for constructing proxy URLs. */
   assistantId: string;
   /**
-   * The app whose bundled assets `window.vellum.asset()` may read. Scopes
+   * The app whose bundled assets `window.cadet.asset()` may read. Scopes
    * asset requests to this app so a sandboxed frame can only reach its own
    * files. Omit for non-app sandboxes — asset requests then fail gracefully.
    */
@@ -40,11 +40,11 @@ export interface SandboxFetchProxyOptions {
   /** Handler for surface action messages from the sandboxed app. */
   onAction?: (actionId: string, data?: Record<string, unknown>) => void;
   /**
-   * Handler for `vellum://` file link clicks forwarded from the sandboxed app.
+   * Handler for `cadet://` file link clicks forwarded from the sandboxed app.
    * Always invoked regardless of the `enabled` flag (like surface actions),
    * since the parent — not the sandbox — must resolve and download the file.
    */
-  onOpenVellumLink?: (href: string, linkText: string) => void;
+  onOpenCadetLink?: (href: string, linkText: string) => void;
   /** Handler for validated root-relative Cadet app routes. */
   onNavigateAppRoute?: (href: string) => void;
 }
@@ -67,14 +67,14 @@ export function useSandboxFetchProxy(
     appId,
     enabled = true,
     onAction,
-    onOpenVellumLink,
+    onOpenCadetLink,
     onNavigateAppRoute,
   } = options;
 
   // subId → the sync tags the sandboxed app asked to hear about. Held in a ref,
   // not effect-local state, so it survives effect restarts: a dependency change
   // (e.g. assistantId resolving, or a new callback identity) re-runs the effect
-  // while the iframe stays mounted and never re-sends vellum_subscribe — a local
+  // while the iframe stays mounted and never re-sends cadet_subscribe — a local
   // map would be wiped and later matching events silently dropped. The ref is
   // discarded with the component on unmount.
   const subscriptionsRef = useRef<Map<string, Set<string>>>(new Map());
@@ -91,7 +91,7 @@ export function useSandboxFetchProxy(
         return;
       }
 
-      if (msg.type === "vellum_subscribe") {
+      if (msg.type === "cadet_subscribe") {
         if (!enabled) {
           return;
         }
@@ -105,7 +105,7 @@ export function useSandboxFetchProxy(
         return;
       }
 
-      if (msg.type === "vellum_unsubscribe") {
+      if (msg.type === "cadet_unsubscribe") {
         const { subId } = msg as { subId: string };
         if (typeof subId === "string") {
           subscriptions.delete(subId);
@@ -113,12 +113,12 @@ export function useSandboxFetchProxy(
         return;
       }
 
-      if (msg.type === "vellum_surface_action") {
+      if (msg.type === "cadet_surface_action") {
         onAction?.(msg.actionId, msg.data);
         return;
       }
 
-      if (msg.type === "vellum_navigate") {
+      if (msg.type === "cadet_navigate") {
         if (!navigator.userActivation?.isActive) {
           return;
         }
@@ -129,9 +129,9 @@ export function useSandboxFetchProxy(
         return;
       }
 
-      if (msg.type === "vellum_open_link") {
+      if (msg.type === "cadet_open_link") {
         // Guard against untrusted iframe abuse: the sandboxed component
-        // can read its embedded frameId and send vellum_open_link without
+        // can read its embedded frameId and send cadet_open_link without
         // a user click. Only honor the message when there is an active
         // user activation (transient — typically ~5s after a user
         // gesture), so programmatic spam on load or in a loop can't
@@ -139,11 +139,11 @@ export function useSandboxFetchProxy(
         if (!navigator.userActivation?.isActive) {
           return;
         }
-        onOpenVellumLink?.(msg.href, msg.linkText);
+        onOpenCadetLink?.(msg.href, msg.linkText);
         return;
       }
 
-      if (msg.type === "vellum_asset_request") {
+      if (msg.type === "cadet_asset_request") {
         const { callId, path } = msg as { callId: string; path: string };
         const iframe = iframeRef.current;
         const sendAsset = (
@@ -154,7 +154,7 @@ export function useSandboxFetchProxy(
         };
         if (!enabled) {
           sendAsset({
-            type: "vellum_asset_response",
+            type: "cadet_asset_response",
             callId,
             error: "Asset proxy disabled",
           });
@@ -162,7 +162,7 @@ export function useSandboxFetchProxy(
         }
         if (!appId) {
           sendAsset({
-            type: "vellum_asset_response",
+            type: "cadet_asset_response",
             callId,
             error: "No app context for assets",
           });
@@ -170,7 +170,7 @@ export function useSandboxFetchProxy(
         }
         if (typeof path !== "string" || path === "" || path.includes("..")) {
           sendAsset({
-            type: "vellum_asset_response",
+            type: "cadet_asset_response",
             callId,
             error: "Invalid asset path",
           });
@@ -186,7 +186,7 @@ export function useSandboxFetchProxy(
           });
           if (!response?.ok || !(blob instanceof Blob)) {
             sendAsset({
-              type: "vellum_asset_response",
+              type: "cadet_asset_response",
               callId,
               error: `Asset fetch failed (${response?.status ?? 0})`,
             });
@@ -195,7 +195,7 @@ export function useSandboxFetchProxy(
           const buffer = await blob.arrayBuffer();
           sendAsset(
             {
-              type: "vellum_asset_response",
+              type: "cadet_asset_response",
               callId,
               buffer,
               contentType: blob.type || "application/octet-stream",
@@ -204,7 +204,7 @@ export function useSandboxFetchProxy(
           );
         } catch (err) {
           sendAsset({
-            type: "vellum_asset_response",
+            type: "cadet_asset_response",
             callId,
             error: err instanceof Error ? err.message : "Asset proxy error",
           });
@@ -212,7 +212,7 @@ export function useSandboxFetchProxy(
         return;
       }
 
-      if (!enabled || msg.type !== "vellum_fetch_request") {
+      if (!enabled || msg.type !== "cadet_fetch_request") {
         return;
       }
 
@@ -231,7 +231,7 @@ export function useSandboxFetchProxy(
 
       if (isBlockedRelayPath(path)) {
         sendResponse({
-          type: "vellum_fetch_response",
+          type: "cadet_fetch_response",
           callId,
           error: "Request blocked: only /v1/x/ custom routes are allowed",
         });
@@ -240,7 +240,7 @@ export function useSandboxFetchProxy(
 
       if (!FETCH_PROXY_PATH_RE.test(path)) {
         sendResponse({
-          type: "vellum_fetch_response",
+          type: "cadet_fetch_response",
           callId,
           error: "Request blocked: only /v1/x/ custom routes are allowed",
         });
@@ -251,7 +251,7 @@ export function useSandboxFetchProxy(
         const canonical = new URL(path, "https://placeholder").pathname;
         if (!FETCH_PROXY_PATH_RE.test(canonical)) {
           sendResponse({
-            type: "vellum_fetch_response",
+            type: "cadet_fetch_response",
             callId,
             error: "Request blocked: path traversal detected",
           });
@@ -259,7 +259,7 @@ export function useSandboxFetchProxy(
         }
       } catch {
         sendResponse({
-          type: "vellum_fetch_response",
+          type: "cadet_fetch_response",
           callId,
           error: "Request blocked: invalid path",
         });
@@ -298,7 +298,7 @@ export function useSandboxFetchProxy(
               : JSON.stringify(responseBody);
 
         sendResponse({
-          type: "vellum_fetch_response",
+          type: "cadet_fetch_response",
           callId,
           status: httpResponse?.status ?? 0,
           statusText: httpResponse?.statusText ?? "",
@@ -306,7 +306,7 @@ export function useSandboxFetchProxy(
         });
       } catch (err) {
         sendResponse({
-          type: "vellum_fetch_response",
+          type: "cadet_fetch_response",
           callId,
           error: err instanceof Error ? err.message : "Fetch proxy error",
         });
@@ -342,7 +342,7 @@ export function useSandboxFetchProxy(
         if (tags.length > 0) {
           contentWindow.postMessage(
             {
-              type: "vellum_event",
+              type: "cadet_event",
               frameId,
               subId,
               event: { type: "sync_changed", tags },
@@ -366,7 +366,7 @@ export function useSandboxFetchProxy(
     appId,
     enabled,
     onAction,
-    onOpenVellumLink,
+    onOpenCadetLink,
     onNavigateAppRoute,
     iframeRef,
   ]);

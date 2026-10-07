@@ -27,7 +27,7 @@ function withSightStreamAssistant(): void {
 /** The macOS app's bridge, as far as the share needs it. */
 function withShareBridge() {
   const setScreenShare = mock((_pick?: unknown) => {});
-  (window as unknown as { vellum?: unknown }).vellum = {
+  (window as unknown as { cadet?: unknown }).cadet = {
     platform: "electron",
     companion: { setScreenShare },
   };
@@ -76,7 +76,7 @@ afterEach(() => {
   // Ending cancels any timer a case left behind.
   applyLiveVoiceSessionControl({ action: "end" });
   useLiveVoiceStore.getState().setControls(null);
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   withVisionMode("off");
 });
 

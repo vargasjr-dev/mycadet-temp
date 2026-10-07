@@ -3,7 +3,7 @@ import type { CompanionIntroAnnouncementAction } from "@mycadet/ipc-contract";
 import { createBooleanBridgeStore } from "@/runtime/boolean-bridge-store";
 import { isElectron } from "@/runtime/is-electron";
 
-const bridge = () => (isElectron() ? window.vellum?.companion : undefined);
+const bridge = () => (isElectron() ? window.cadet?.companion : undefined);
 
 let announcement: ReturnType<typeof createBooleanBridgeStore> | undefined;
 

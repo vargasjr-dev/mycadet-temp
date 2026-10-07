@@ -1,6 +1,6 @@
 # Windows parity matrix
 
-Parity is defined by the `VellumBridge` contract in
+Parity is defined by the `CadetBridge` contract in
 `packages/ipc-contract/src/bridge.ts`: the Windows preload must expose every
 key the macOS preload exposes, except the surfaces listed under
 [Not applicable](#not-applicable-on-windows). `src/preload/bridge-parity.test.ts`

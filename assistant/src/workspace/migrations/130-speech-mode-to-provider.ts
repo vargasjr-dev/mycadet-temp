@@ -49,7 +49,6 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
       }
 
       if (service.mode === "managed") {
-        // Canonical managed id; legacy "vellum" configs normalize on parse.
         service.provider = "cadet";
       }
       delete service.mode;
@@ -89,14 +88,10 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
         continue;
       }
 
-      // The pre-migration schema accepts provider "vellum" alongside mode
-      // "managed", so the managed pair round-trips exactly. What a managed
-      // service had chosen for BYOK before is not recoverable — it was
-      // overwritten on the way up.
+      // What a managed service had chosen for BYOK before is not
+      // recoverable — it was overwritten on the way up.
       service.mode =
-        service.provider === "cadet" || service.provider === "vellum"
-          ? "managed"
-          : "your-own";
+        service.provider === "cadet" ? "managed" : "your-own";
       changed = true;
     }
 

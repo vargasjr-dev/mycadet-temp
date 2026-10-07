@@ -6,19 +6,19 @@
  *
  * 1. **Storage polyfill** — in-memory shim for `localStorage` / `sessionStorage`,
  *    which throw `SecurityError` in sandboxed contexts without `allow-same-origin`.
- * The app-side type of the `window.vellum` object injected here is declared in
+ * The app-side type of the `window.cadet` object injected here is declared in
  * `@mycadet/plugin-api`'s `app-globals.d.ts` (shipped as the package's
  * `/app` subpath). It currently types only `fetch`; keep it in sync if that
  * member's signature changes or another member is added to the declaration.
  *
- * 2. **Action bridge** — `window.vellum.sendAction()` forwards surface actions to
+ * 2. **Action bridge** — `window.cadet.sendAction()` forwards surface actions to
  *    the parent via `postMessage`.
- * 3. **Fetch proxy** — `window.vellum.fetch()` proxies authenticated requests
+ * 3. **Fetch proxy** — `window.cadet.fetch()` proxies authenticated requests
  *    through the parent, keeping auth tokens out of the sandbox.
- *    `window.vellum.asset(path)` is the binary sibling: it fetches a bundled
+ *    `window.cadet.asset(path)` is the binary sibling: it fetches a bundled
  *    app file through the parent and resolves to a `blob:` object URL the
  *    sandbox can load in `<img>` / `<video>` / `<audio>`.
- *    `window.vellum.subscribe(filter, cb)` completes the trio with server→app
+ *    `window.cadet.subscribe(filter, cb)` completes the trio with server→app
  *    push: the parent forwards scoped `sync_changed` invalidations so an app
  *    refreshes on demand instead of polling.
  * 4. **Link interceptor** — catches clicks on `<a>` elements and opens them in
@@ -31,7 +31,7 @@
  *    sequences.
  * 6. **Widget bridge** — the reduced surface for inline visuals: an auto-height
  *    reporter, a shrink-to-fit pass and a `sendPrompt(text)` global, composed
- *    by `injectWidgetBridge()`. No fetch proxy, no `window.vellum` namespace.
+ *    by `injectWidgetBridge()`. No fetch proxy, no `window.cadet` namespace.
  *
  * All sandboxed iframes that render untrusted HTML must use these utilities.
  * The storage polyfill is required even for non-interactive preview iframes.
@@ -84,7 +84,7 @@ const RELAYABLE_LINK_SCHEME_RE = /^(https?|mailto|tel):/i;
 /**
  * Whether a sandboxed frame's link may be opened by the host.
  *
- * The host is the authority on this: a frame that relays `vellum_open_link`
+ * The host is the authority on this: a frame that relays `cadet_open_link`
  * controls the `href` string entirely, so the in-frame scheme check is a
  * routing decision and this one is the security check. Anything outside the
  * allowlist (`javascript:`, `data:`, `blob:`, `file:`, custom schemes) is
@@ -209,12 +209,12 @@ export function buildStoragePolyfill(): string {
  *
  * Two categories of links are intercepted:
  *
- * 1. **`vellum://` deep links** (`vellum://workspace/...`,
- *    `vellum://host/...`) — forwarded to the parent window via
- *    `postMessage({ type: 'vellum_open_link', ... })` so the host app can
+ * 1. **`cadet://` deep links** (`cadet://workspace/...`,
+ *    `cadet://host/...`) — forwarded to the parent window via
+ *    `postMessage({ type: 'cadet_open_link', ... })` so the host app can
  *    perform in-app navigation (open a workspace file, launch a host app,
  *    etc.). These are checked **before** external schemes because
- *    `window.open()` cannot handle custom schemes — a `vellum://` URL passed
+ *    `window.open()` cannot handle custom schemes — a `cadet://` URL passed
  *    to `window.open()` would be silently dropped or open a broken tab.
  *
  * 2. **External links** (http:, https:, mailto:, tel:) — opened in a new tab
@@ -222,7 +222,7 @@ export function buildStoragePolyfill(): string {
  *
  * Anchor links (`#foo`) and `javascript:` URIs are left alone. Root-relative
  * `/assistant/...` routes are also left alone unless `relayAppRoutes` is set,
- * in which case the host router receives them through `vellum_navigate`.
+ * in which case the host router receives them through `cadet_navigate`.
  *
  * Which of the two paths a frame takes follows from its sandbox tokens, and
  * they differ by surface. The `visual` frame carries no popup tokens and
@@ -234,13 +234,13 @@ export function buildStoragePolyfill(): string {
  * tier from model-authored illustration markup. Keep the two in step if that
  * ever stops being true.
  *
- * @param frameId The iframe identifier, included in `vellum_open_link`
+ * @param frameId The iframe identifier, included in `cadet_open_link`
  *   messages so the parent knows which surface sent the request.
  * @param options.relayExternal Relay external links to the parent as
- *   `vellum_open_link` instead of calling `window.open()`. Required for frames
+ *   `cadet_open_link` instead of calling `window.open()`. Required for frames
  *   sandboxed without `allow-popups`, where `window.open()` is a silent no-op.
  * @param options.relayAppRoutes Relay root-relative `/assistant/...` routes to
- *   the parent as `vellum_navigate` instead of loading them in the iframe.
+ *   the parent as `cadet_navigate` instead of loading them in the iframe.
  */
 export function buildLinkInterceptorScript(
   frameId: string,
@@ -248,7 +248,7 @@ export function buildLinkInterceptorScript(
 ): string {
   const externalHandler = options?.relayExternal
     ? `window.parent.postMessage({
-              type: 'vellum_open_link',
+              type: 'cadet_open_link',
               frameId: ${jsonForScript(frameId)},
               href: rawHref,
               linkText: (el.textContent || '').trim()
@@ -258,7 +258,7 @@ export function buildLinkInterceptorScript(
     ? `if (rawHref === '/assistant' || rawHref.indexOf('/assistant/') === 0 || rawHref.indexOf('/assistant?') === 0 || rawHref.indexOf('/assistant#') === 0) {
             e.preventDefault();
             window.parent.postMessage({
-              type: 'vellum_navigate',
+              type: 'cadet_navigate',
               frameId: ${jsonForScript(frameId)},
               href: rawHref
             }, '*');
@@ -285,14 +285,14 @@ export function buildLinkInterceptorScript(
           // be wrongly intercepted. The raw attribute preserves the scheme.
           var rawHref = el.getAttribute('href');
           ${appRouteHandler}
-          // vellum:// deep links — forward to the parent for in-app
+          // cadet:// deep links — forward to the parent for in-app
           // navigation. Checked before external schemes because
-          // window.open() cannot handle custom schemes (a vellum:// URL
+          // window.open() cannot handle custom schemes (a cadet:// URL
           // would be silently dropped or open a broken tab).
-          if (/^vellum:\\/\\/(workspace|host)\\//i.test(rawHref)) {
+          if (/^cadet:\\/\\/(workspace|host)\\//i.test(rawHref)) {
             e.preventDefault();
             window.parent.postMessage({
-              type: 'vellum_open_link',
+              type: 'cadet_open_link',
               frameId: ${jsonForScript(frameId)},
               href: rawHref,
               linkText: (el.textContent || '').trim()
@@ -332,7 +332,7 @@ export function buildLinkInterceptorScript(
  * of oscillating.
  *
  * The shrink-to-fit pass (see {@link buildWidgetWidthFitScript}) publishes the
- * zoom it applied as `window.__vellumWidgetZoom`. Engines disagree on whether the
+ * zoom it applied as `window.__cadetWidgetZoom`. Engines disagree on whether the
  * box-metric properties of a zoomed element report layout or visual pixels, so
  * the scaled metrics are compared against the bounding rect, which is always
  * visual: whichever reading is the zoom-adjusted one wins the `Math.max` and
@@ -349,7 +349,7 @@ export function buildWidgetHeightReporterScript(frameId: string): string {
   function measure() {
     var body = document.body;
     if (!body) return;
-    var zoom = window.__vellumWidgetZoom || 1;
+    var zoom = window.__cadetWidgetZoom || 1;
     var height = Math.max(
       Math.ceil(body.scrollHeight * zoom),
       Math.ceil(body.offsetHeight * zoom),
@@ -358,7 +358,7 @@ export function buildWidgetHeightReporterScript(frameId: string): string {
     if (!height || Math.abs(height - lastHeight) < 2) return;
     lastHeight = height;
     window.parent.postMessage({
-      type: 'vellum_widget_height',
+      type: 'cadet_widget_height',
       frameId: ${jsonForScript(frameId)},
       height: height
     }, '*');
@@ -400,7 +400,7 @@ const WIDGET_FIT_TOLERANCE_PX = 2;
  * `zoom` rather than `transform: scale()` because zoom reflows: the body's box
  * shrinks with its content, so the height reporter measures the scaled result
  * instead of the pre-scale layout with a band of empty space under it. The
- * applied factor is published on `window.__vellumWidgetZoom` for the reporter to
+ * applied factor is published on `window.__cadetWidgetZoom` for the reporter to
  * read (see {@link buildWidgetHeightReporterScript}).
  *
  * Measurement resets any previous zoom first, so the natural width is read at
@@ -414,13 +414,13 @@ export function buildWidgetWidthFitScript(): string {
   var MIN_SCALE = ${WIDGET_MIN_FIT_SCALE};
   var TOLERANCE = ${WIDGET_FIT_TOLERANCE_PX};
   var scheduled = false;
-  window.__vellumWidgetZoom = 1;
+  window.__cadetWidgetZoom = 1;
   function fit() {
     var body = document.body;
     if (!body) return;
-    if (window.__vellumWidgetZoom !== 1) {
+    if (window.__cadetWidgetZoom !== 1) {
       body.style.zoom = '';
-      window.__vellumWidgetZoom = 1;
+      window.__cadetWidgetZoom = 1;
     }
     var available = document.documentElement.clientWidth;
     var natural = body.scrollWidth;
@@ -428,7 +428,7 @@ export function buildWidgetWidthFitScript(): string {
     if (natural - available <= TOLERANCE) return;
     var scale = available / natural;
     if (scale < MIN_SCALE) return;
-    window.__vellumWidgetZoom = scale;
+    window.__cadetWidgetZoom = scale;
     body.style.zoom = String(scale);
   }
   function schedule() {
@@ -466,7 +466,7 @@ export function buildWidgetPromptScript(frameId: string): string {
     var prompt = String(text).trim();
     if (!prompt) return;
     window.parent.postMessage({
-      type: 'vellum_widget_prompt',
+      type: 'cadet_widget_prompt',
       frameId: ${jsonForScript(frameId)},
       prompt: prompt
     }, '*');
@@ -506,7 +506,7 @@ export const WIDGET_CSP_META =
  * network directly, so `connect-src` falls back to `default-src 'none'` and
  * every direct exfiltration channel (fetch, XHR, WebSocket, form post,
  * pixel beacon) is refused. `blob:` joins the subresource allowlists because
- * `window.vellum.asset()` resolves bundled assets into blob URLs that the
+ * `window.cadet.asset()` resolves bundled assets into blob URLs that the
  * frame loads as script, image, font, or media subresources.
  *
  * `base-uri` and `form-action` are listed explicitly for the same reason as
@@ -522,7 +522,7 @@ export const APP_FRAME_CSP_META =
 /**
  * Inject the widget bridge into an inline visual's HTML.
  *
- * Unlike {@link injectBridge} there is no fetch proxy and no `window.vellum`
+ * Unlike {@link injectBridge} there is no fetch proxy and no `window.cadet`
  * namespace — a visual is a self-contained illustration, not an app. It gets
  * a network-blocking CSP (first, so it governs every script and subresource
  * that follows), the storage polyfill, the shared link interceptor, the
@@ -563,14 +563,14 @@ export function injectWidgetBridge(
 export interface BridgeOptions {
   /** Include the authenticated fetch proxy bridge. Default: false. */
   fetch?: boolean;
-  /** Deep-link route exposed as `window.vellum.route`. */
+  /** Deep-link route exposed as `window.cadet.route`. */
   route?: string;
   /** Relay root-relative `/assistant/...` links to the host router. */
   relayAppRoutes?: boolean;
 }
 
 /**
- * Build the bridge logic script (action sender, fetch proxy, `window.vellum`
+ * Build the bridge logic script (action sender, fetch proxy, `window.cadet`
  * namespace) WITHOUT the storage polyfill.
  *
  * This is injected at the end of the document via `injectScript`. The
@@ -586,12 +586,12 @@ function buildBridgeLogicScript(
 
   const fetchBridge = enableFetch
     ? `
-  window.vellum._pendingFetches = {};
-  window.vellum._fetchNextId = 1;
-  window.vellum._resolveFetch = function(callId, status, statusText, body, headers) {
-    var p = window.vellum._pendingFetches[callId];
+  window.cadet._pendingFetches = {};
+  window.cadet._fetchNextId = 1;
+  window.cadet._resolveFetch = function(callId, status, statusText, body, headers) {
+    var p = window.cadet._pendingFetches[callId];
     if (!p) return;
-    delete window.vellum._pendingFetches[callId];
+    delete window.cadet._pendingFetches[callId];
     p.resolve({
       ok: status >= 200 && status < 300,
       status: status,
@@ -602,47 +602,47 @@ function buildBridgeLogicScript(
       text: function() { return Promise.resolve(body); }
     });
   };
-  window.vellum._rejectFetch = function(callId, errorMessage) {
-    var p = window.vellum._pendingFetches[callId];
+  window.cadet._rejectFetch = function(callId, errorMessage) {
+    var p = window.cadet._pendingFetches[callId];
     if (!p) return;
-    delete window.vellum._pendingFetches[callId];
+    delete window.cadet._pendingFetches[callId];
     p.reject(new Error(errorMessage));
   };
-  window.vellum._pendingAssets = {};
-  window.vellum._assetNextId = 1;
-  window.vellum._assetCache = {};
-  window.vellum._subs = {};
-  window.vellum._subNextId = 1;
+  window.cadet._pendingAssets = {};
+  window.cadet._assetNextId = 1;
+  window.cadet._assetCache = {};
+  window.cadet._subs = {};
+  window.cadet._subNextId = 1;
   window.addEventListener('message', function(event) {
     var d = event.data;
     if (!d) return;
-    if (d.type === 'vellum_fetch_response' && d.callId) {
+    if (d.type === 'cadet_fetch_response' && d.callId) {
       if (d.error) {
-        window.vellum._rejectFetch(d.callId, d.error);
+        window.cadet._rejectFetch(d.callId, d.error);
       } else {
-        window.vellum._resolveFetch(d.callId, d.status, d.statusText, d.body, d.headers);
+        window.cadet._resolveFetch(d.callId, d.status, d.statusText, d.body, d.headers);
       }
     }
-    if (d.type === 'vellum_asset_response' && d.callId) {
-      var pa = window.vellum._pendingAssets[d.callId];
+    if (d.type === 'cadet_asset_response' && d.callId) {
+      var pa = window.cadet._pendingAssets[d.callId];
       if (!pa) return;
-      delete window.vellum._pendingAssets[d.callId];
+      delete window.cadet._pendingAssets[d.callId];
       if (d.error) { pa.reject(new Error(d.error)); return; }
       try {
         var blob = new Blob([d.buffer], { type: d.contentType || 'application/octet-stream' });
         var url = URL.createObjectURL(blob);
-        window.vellum._assetCache[pa.path] = url;
+        window.cadet._assetCache[pa.path] = url;
         pa.resolve(url);
       } catch (e) { pa.reject(e); }
     }
-    if (d.type === 'vellum_event' && d.subId) {
-      var s = window.vellum._subs[d.subId];
+    if (d.type === 'cadet_event' && d.subId) {
+      var s = window.cadet._subs[d.subId];
       if (s && typeof s.cb === 'function') {
         try { s.cb(d.event); } catch (e) { /* a subscriber throwing is not the host's problem */ }
       }
     }
   });
-  window.vellum.fetch = function(path, options) {
+  window.cadet.fetch = function(path, options) {
     options = options || {};
     // Custom routes are served under "/v1/x/". Tolerate callers that omit the
     // "/v1" prefix ("/x/foo" -> "/v1/x/foo") so the host's strict "/v1/x/"
@@ -651,10 +651,10 @@ function buildBridgeLogicScript(
       path = '/v1' + path;
     }
     return new Promise(function(resolve, reject) {
-      var callId = 'f' + (window.vellum._fetchNextId++);
-      window.vellum._pendingFetches[callId] = { resolve: resolve, reject: reject };
+      var callId = 'f' + (window.cadet._fetchNextId++);
+      window.cadet._pendingFetches[callId] = { resolve: resolve, reject: reject };
       window.parent.postMessage({
-        type: 'vellum_fetch_request',
+        type: 'cadet_fetch_request',
         frameId: ${jsonForScript(frameId)},
         callId: callId,
         path: path,
@@ -664,36 +664,36 @@ function buildBridgeLogicScript(
       }, '*');
     });
   };
-  window.vellum.asset = function(path) {
-    if (window.vellum._assetCache[path]) {
-      return Promise.resolve(window.vellum._assetCache[path]);
+  window.cadet.asset = function(path) {
+    if (window.cadet._assetCache[path]) {
+      return Promise.resolve(window.cadet._assetCache[path]);
     }
     return new Promise(function(resolve, reject) {
-      var callId = 'a' + (window.vellum._assetNextId++);
-      window.vellum._pendingAssets[callId] = { resolve: resolve, reject: reject, path: path };
+      var callId = 'a' + (window.cadet._assetNextId++);
+      window.cadet._pendingAssets[callId] = { resolve: resolve, reject: reject, path: path };
       window.parent.postMessage({
-        type: 'vellum_asset_request',
+        type: 'cadet_asset_request',
         frameId: ${jsonForScript(frameId)},
         callId: callId,
         path: path
       }, '*');
     });
   };
-  window.vellum.subscribe = function(filter, cb) {
-    var subId = 's' + (window.vellum._subNextId++);
+  window.cadet.subscribe = function(filter, cb) {
+    var subId = 's' + (window.cadet._subNextId++);
     var tags = (filter && Array.isArray(filter.tags)) ? filter.tags : [];
-    window.vellum._subs[subId] = { cb: cb, tags: tags };
+    window.cadet._subs[subId] = { cb: cb, tags: tags };
     window.parent.postMessage({
-      type: 'vellum_subscribe',
+      type: 'cadet_subscribe',
       frameId: ${jsonForScript(frameId)},
       subId: subId,
       tags: tags
     }, '*');
     return function() {
-      if (!window.vellum._subs[subId]) return;
-      delete window.vellum._subs[subId];
+      if (!window.cadet._subs[subId]) return;
+      delete window.cadet._subs[subId];
       window.parent.postMessage({
-        type: 'vellum_unsubscribe',
+        type: 'cadet_unsubscribe',
         frameId: ${jsonForScript(frameId)},
         subId: subId
       }, '*');
@@ -703,11 +703,11 @@ function buildBridgeLogicScript(
 
   return `<script>
 (function() {
-  window.vellum = {
+  window.cadet = {
     route: ${jsonForScript(route)},
     sendAction: function(actionId, data) {
       window.parent.postMessage({
-        type: 'vellum_surface_action',
+        type: 'cadet_surface_action',
         frameId: ${jsonForScript(frameId)},
         actionId: actionId,
         data: data || {}
@@ -833,7 +833,7 @@ export function prependDocumentStart(html: string, markup: string): string {
  *
  * The storage polyfill is prepended (runs before any app scripts) while
  * the bridge logic is appended before `</body>` (app code calls
- * `window.vellum` APIs asynchronously after mount, not during parsing).
+ * `window.cadet` APIs asynchronously after mount, not during parsing).
  */
 export function injectBridge(
   html: string,

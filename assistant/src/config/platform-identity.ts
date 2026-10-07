@@ -110,7 +110,7 @@ export async function fetchPlatformIdentityIds(
 async function readAssistantApiKey(): Promise<string> {
   try {
     const stored = (
-      await getSecureKeyAsync(credentialKey("vellum", "assistant_api_key"))
+      await getSecureKeyAsync(credentialKey("cadet", "assistant_api_key"))
     )?.trim();
     if (stored) {
       return stored;

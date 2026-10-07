@@ -67,7 +67,7 @@ export async function runIdentityRewrite({
     const body = buildSideConversationMessageBody({
       conversationId,
       content,
-      transport: "vellum",
+      transport: "cadet",
     });
     const posted = await messagesPost({
       path: { assistant_id: assistantId },

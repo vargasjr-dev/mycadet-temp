@@ -549,7 +549,7 @@ describe("PrivacyScreen — Start navigation", () => {
   // along as `returnTo`. Start has to resume it — the standard onboarding step
   // carries neither the managed-hatch nor the paid-return marker, so the
   // paying user would finish the hatch at the baseline plan.
-  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=vellum-cloud&post_checkout=1`;
+  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
 
   test("resumes the paid hatch carried through the consent bounce", () => {
     searchParamsValue = new URLSearchParams({ returnTo: PAID_HATCH });
@@ -668,7 +668,7 @@ describe("PrivacyScreen — Skip to chat", () => {
   });
 
   test("carries skip_research onto a paid hatch return", () => {
-    const paidHatch = `${routes.onboarding.hatching}?hosting=vellum-cloud&post_checkout=1`;
+    const paidHatch = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
     searchParamsValue = new URLSearchParams({ returnTo: paidHatch });
     render(<PrivacyScreen />);
 

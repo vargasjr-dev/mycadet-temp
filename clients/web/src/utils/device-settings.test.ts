@@ -36,8 +36,8 @@ describe("getDeviceSetting / setDeviceSetting", () => {
     expect(getDeviceSetting("theme", "system")).toBe("system");
   });
 
-  test("ignores the pre-migration vellum_ key", () => {
-    localStorage.setItem("vellum_theme", "dark");
+  test("ignores the pre-migration cadet_ key", () => {
+    localStorage.setItem("cadet_theme", "dark");
     expect(getDeviceSetting("theme", "system")).toBe("system");
   });
 });
@@ -53,8 +53,8 @@ describe("getDeviceBool", () => {
     expect(getDeviceBool("shareAnalytics", false)).toBe(false);
   });
 
-  test("ignores the pre-migration vellum_ key", () => {
-    localStorage.setItem("vellum_share_analytics", "false");
+  test("ignores the pre-migration cadet_ key", () => {
+    localStorage.setItem("cadet_share_analytics", "false");
     expect(getDeviceBool("shareAnalytics", true)).toBe(true);
   });
 });

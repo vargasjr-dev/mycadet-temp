@@ -133,14 +133,14 @@ export function PrivacyScreen() {
       const qs = params.toString();
       // A local-hosting onboarding (hosting=local/docker in a local-mode build)
       // must run the foreground local hatch first, so it goes to `hatching`, which
-      // then redirects into the research flow. Vellum-Cloud goes straight to
+      // then redirects into the research flow. Cadet-Cloud goes straight to
       // research (managed background hatch). Skip-to-chat also uses hatching:
       // there is no research form, so the hatch screen provisions then hands off
       // to chat.
       const isLocalHatch =
         isLocalClient() &&
         hostingParam !== null &&
-        hostingParam !== "vellum-cloud";
+        hostingParam !== "cadet-cloud";
       const selectedAssistantOnboarded = isSelectedAssistantOnboarded(
         useResolvedAssistantsStore.getState().assistants,
         readSelectedAssistantId(),
@@ -289,7 +289,7 @@ export function PrivacyScreen() {
            * which trips a non-onboarding hatch) — so Back lands on the onboarding
            * `start` welcome screen instead. It must NOT leave the SPA for the
            * marketing host (`/`): on a Capacitor staging/dev shell that host's CTA
-           * points at production `www.vellum.ai/assistant`, so a full-document nav
+           * points at production `www.cadet.ai/assistant`, so a full-document nav
            * would switch the native app off its own environment. `start` keeps the
            * running environment intact on web and native alike.
            */}

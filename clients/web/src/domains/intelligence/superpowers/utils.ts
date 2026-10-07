@@ -18,7 +18,7 @@ export function skillParamsForFilter(
       return { kind: "installed" };
     case "available":
       return { kind: "available" };
-    case "vellum":
+    case "cadet":
     case "clawhub":
     case "skillssh":
     case "custom":

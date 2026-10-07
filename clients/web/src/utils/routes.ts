@@ -601,8 +601,8 @@ export function docsUrl(path: string): string {
 export function adminUrl(): string {
   if (isElectron()) {
     const config = (
-      window as unknown as { __VELLUM_CONFIG__?: { webUrl?: string } }
-    ).__VELLUM_CONFIG__;
+      window as unknown as { __CADET_CONFIG__?: { webUrl?: string } }
+    ).__CADET_CONFIG__;
     return `${config?.webUrl ?? window.location.origin}${routes.admin.root}`;
   }
   if (import.meta.env.DEV) {

@@ -378,7 +378,7 @@ function withCesEnv(url: string, token: string, run: () => Promise<void>) {
 }
 
 describe("readCredentialResult", () => {
-  const account = credentialKey("vellum", "platform_user_id");
+  const account = credentialKey("cadet", "platform_user_id");
 
   test("CES 5xx does not fall through to keys.enc", async () => {
     writeEncryptedStore({ [account]: "stale-keys-enc-value" });

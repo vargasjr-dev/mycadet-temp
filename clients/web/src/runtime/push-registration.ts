@@ -113,7 +113,7 @@ function parseRegisteredToken(raw: string): RegisteredToken | null {
  * reload (dropping `lastRegistered`) before `usePushRegistration` re-runs, and
  * `/logout` is a standalone route outside `RootLayout` — so logout could fire
  * with empty module state and skip the platform DELETE, leaving a signed-out
- * device still receiving remote pushes. The `vellum:` (user) scope is cleared
+ * device still receiving remote pushes. The `cadet:` (user) scope is cleared
  * by the logout storage sweep, and we also remove it explicitly after delete.
  *
  * The stored value is a device push-routing registration (native destination

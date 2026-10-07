@@ -51,7 +51,7 @@ export type IngressStatus =
 export interface IngressPath {
   path: string;
   /**
-   * False for a `signer: "vellum"` route, which the gateway serves without an
+   * False for a `signer: "cadet"` route, which the gateway serves without an
    * approval and keeps serving after a revocation. Saying otherwise would tell
    * a guardian that public ingress is closed when it is open.
    */
@@ -182,7 +182,7 @@ export function useChannelIngress(
     paths:
       entry?.routes?.map((route) => ({
         path: route.publicPath,
-        approvalGoverned: route.signer !== "vellum",
+        approvalGoverned: route.signer !== "cadet",
         deliversInbound: route.deliversInbound === true,
       })) ?? [],
     deciding: approval.isPending || revocation.isPending,

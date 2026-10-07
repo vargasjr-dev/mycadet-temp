@@ -356,13 +356,18 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
           'For credential type, name must be in "service:field" format (e.g. "github:api_token")',
         );
       }
-      const service = name.slice(0, colonIdx);
+      let service = name.slice(0, colonIdx);
       const field = name.slice(colonIdx + 1);
 
+      // The platform still pushes the pre-rebrand display name; storage is
+      // the canonical cadet key.
       if (service === "vellum") {
+        service = "cadet";
+      }
+      if (service === "cadet") {
         if (!isWritableVellumCredentialField(field)) {
           throw new BadRequestError(
-            `Unknown vellum credential: ${field}. Allowed fields: ${WRITABLE_VELLUM_CREDENTIAL_FIELDS.join(", ")}`,
+            `Unknown cadet credential: ${field}. Allowed fields: ${WRITABLE_VELLUM_CREDENTIAL_FIELDS.join(", ")}`,
           );
         }
         assertMetadataWritable();
@@ -600,9 +605,14 @@ async function handleDeleteSecret({ body }: RouteHandlerArgs) {
           'For credential type, name must be in "service:field" format (e.g. "github:api_token")',
         );
       }
-      const service = name.slice(0, colonIdx);
+      let service = name.slice(0, colonIdx);
+      // The platform still pushes the pre-rebrand display name; storage is
+      // the canonical cadet key.
       if (service === "vellum") {
-        throw new BadRequestError("Vellum credentials cannot be deleted");
+        service = "cadet";
+      }
+      if (service === "cadet") {
+        throw new BadRequestError("Cadet credentials cannot be deleted");
       }
       const field = name.slice(colonIdx + 1);
       assertMetadataWritable();

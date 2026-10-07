@@ -3,7 +3,7 @@
  * modal, the voice-room settings popover, and the Voice settings page — hence
  * `components/speech/` rather than either domain). Reads the current voice from
  * daemon config and writes the
- * chosen one back — the source of truth is `services.tts.providers.vellum.model`,
+ * chosen one back — the source of truth is `services.tts.providers.cadet.model`,
  * never a client store (server data has one owner).
  *
  * **Hot-apply:** live-voice resolves its TTS provider from `getConfig()` fresh on
@@ -36,7 +36,7 @@ import { useSerializedConfigSelection } from "@/components/speech/use-serialized
 // Module-level so `select` identity only tracks real state (see
 // `useSerializedConfigSelection`).
 const buildVoicePatchBody = (model: string) => ({
-  services: { tts: { providers: { vellum: { model } } } },
+  services: { tts: { providers: { cadet: { model } } } },
 });
 
 export interface UseManagedVoiceSelection {
@@ -99,17 +99,17 @@ export function useManagedVoiceSelection(
     | {
         provider?: string;
         mode?: string;
-        providers?: { vellum?: { model?: string } };
+        providers?: { cadet?: { model?: string } };
       }
     | undefined;
   const isManaged =
-    daemonTts?.mode === "managed" || daemonTts?.provider === "vellum";
+    daemonTts?.mode === "managed" || daemonTts?.provider === "cadet";
 
   // Only new daemons report cadet as voice-selectable; an old daemon (or an
   // unfetched catalog) reports false, hiding the picker so we never claim to
   // save a voice the daemon would ignore.
-  const vellumSupportsVoiceSelection =
-    providerCatalog?.providers?.find((p) => p.id === "vellum")
+  const cadetSupportsVoiceSelection =
+    providerCatalog?.providers?.find((p) => p.id === "cadet")
       ?.supportsVoiceSelection === true;
 
   const {
@@ -121,7 +121,7 @@ export function useManagedVoiceSelection(
   });
 
   const available =
-    enabled && isManaged && vellumSupportsVoiceSelection && voices.length > 0;
+    enabled && isManaged && cadetSupportsVoiceSelection && voices.length > 0;
   // Gated on config having actually arrived — an unfetched config reads as
   // "not managed", which would flash the BYO state on every mount.
   const isByok = enabled && !!daemonConfig && !isManaged;
@@ -138,7 +138,7 @@ export function useManagedVoiceSelection(
     !voicesLoading;
 
   const configuredModel =
-    daemonTts?.providers?.vellum?.model ??
+    daemonTts?.providers?.cadet?.model ??
     defaultModel ??
     voices[0]?.model ??
     "";

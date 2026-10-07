@@ -5,7 +5,7 @@ export type { AssistantStatus };
 /**
  * Per-capability wrapper for the Electron host's menu-bar (Tray) status
  * indicator. Matches the `runtime/dock.ts` pattern: the renderer never
- * touches `window.vellum.*` directly — feature code calls this named
+ * touches `window.cadet.*` directly — feature code calls this named
  * function and the cross-platform branch lives here.
  *
  * Publishes the assistant's connection status so the main process can drive
@@ -19,5 +19,5 @@ export function setAssistantStatus(status: AssistantStatus): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.status?.setConnection(status);
+  window.cadet?.status?.setConnection(status);
 }

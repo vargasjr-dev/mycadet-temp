@@ -4,17 +4,17 @@ import type { HotkeySelectionResult } from "@mycadet/ipc-contract";
 
 import { readFrontSelection } from "./hotkey";
 
-const originalBridge = window.vellum;
+const originalBridge = window.cadet;
 
 afterEach(() => {
-  window.vellum = originalBridge;
+  window.cadet = originalBridge;
 });
 
 function installReader(read: () => Promise<HotkeySelectionResult>): void {
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     helper: { hotkey: { readFrontSelection: read } },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
 }
 
 test("preserves a confirmed empty selection", async () => {
@@ -45,6 +45,6 @@ test("does not turn an IPC failure into an empty selection", async () => {
 });
 
 test("keeps dictation available on hosts without selection capture", async () => {
-  window.vellum = undefined;
+  window.cadet = undefined;
   expect(await readFrontSelection()).toBeNull();
 });

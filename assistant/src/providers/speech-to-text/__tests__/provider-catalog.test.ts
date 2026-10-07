@@ -348,9 +348,9 @@ describe("model families", () => {
   });
 });
 
-describe("vellum-flux (managed Flux)", () => {
+describe("cadet-flux (managed Flux)", () => {
   test("shares the cadet connection rather than a second credential", () => {
-    expect(getProviderEntry("cadet-flux")?.credentialProvider).toBe("vellum");
+    expect(getProviderEntry("cadet-flux")?.credentialProvider).toBe("cadet");
     expect(listCredentialProviderNames()).not.toContain("cadet-flux");
   });
 

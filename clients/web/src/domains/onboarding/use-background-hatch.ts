@@ -69,7 +69,7 @@ export interface UseBackgroundHatchOptions {
    * discover that live assistant via `getAssistant()`.
    *
    * This must NOT be conflated with `isLocalClient()` (a build-time value): the
-   * desktop app runs in local mode but can still onboard a Vellum-Cloud
+   * desktop app runs in local mode but can still onboard a Cadet-Cloud
    * (managed) assistant, which needs the managed hatch. Derive this from the
    * chosen HOSTING, not the build (see the research route's `?hosting` read).
    */
@@ -205,7 +205,7 @@ export function useBackgroundHatch({
         }, ms);
       });
 
-    // Every platform request below is scoped by `Vellum-Organization-Id`, which
+    // Every platform request below is scoped by `Cadet-Organization-Id`, which
     // the interceptor reads from the org store — and that store hydrates after
     // auth. A checkout deep link can relaunch the app straight into this hook
     // before hydration lands (no list yet, no persisted id either), where a
@@ -282,7 +282,7 @@ export function useBackgroundHatch({
       // BEFORE the research flow mounts, so there's nothing to hatch here. We
       // fall straight through to step 2, which discovers that already-active
       // assistant via getAssistant(). Running the managed `hatchAssistant()`
-      // there would provision a SECOND (managed) assistant. Vellum-Cloud
+      // there would provision a SECOND (managed) assistant. Cadet-Cloud
       // onboarding (adoptExisting=false) still runs the managed hatch, even
       // though the desktop build reports `isLocalClient()` — that's why this keys
       // on the chosen hosting, not the build.
@@ -446,7 +446,7 @@ export function useBackgroundHatch({
       // 4. On a paid return, hold `ready` until the purchased resize converges.
       //
       // `managedHatch` is true by construction: the checkout destination always
-      // carries `hosting=vellum-cloud`, and `adoptExisting` already excludes the
+      // carries `hosting=cadet-cloud`, and `adoptExisting` already excludes the
       // local foreground hatch.
       if (!adoptExisting && postCheckoutReturn) {
         const outcome = await awaitPurchasedProvisioning({

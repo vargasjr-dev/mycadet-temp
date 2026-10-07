@@ -124,9 +124,9 @@ function setElectronHost(hostOS?: ElectronHostOS): void {
   electron = true;
   (
     window as unknown as {
-      vellum?: { platform: "electron"; hostOS?: ElectronHostOS };
+      cadet?: { platform: "electron"; hostOS?: ElectronHostOS };
     }
-  ).vellum = {
+  ).cadet = {
     platform: "electron",
     ...(hostOS ? { hostOS } : {}),
   };
@@ -137,7 +137,7 @@ afterEach(() => {
   electron = false;
   nativePlatform = false;
   nativeOsPlatform = "web";
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   setUserAgent(ORIGINAL_UA);
   setPlatform(ORIGINAL_PLATFORM);
   setUserAgentData(undefined);

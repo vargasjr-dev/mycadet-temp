@@ -67,7 +67,7 @@ const STT_LANGUAGE_SELECTION_DEFAULTS = {
   // New assistants carry an explicit "multi": the schema defaults it, so
   // there is no unset state to stand in for.
   currentCode: "multi",
-  configuredProviderId: "vellum",
+  configuredProviderId: "cadet",
   selectLanguage: (_code: string) => {},
   selecting: false,
 };

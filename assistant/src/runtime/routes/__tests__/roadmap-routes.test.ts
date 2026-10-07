@@ -24,7 +24,7 @@ const actualSecureKeys = await import("../../../security/secure-keys.js");
 mock.module("../../../security/secure-keys.js", () => ({
   ...actualSecureKeys,
   getSecureKeyAsync: async (account: string) =>
-    account === "credential/vellum/assistant_api_key"
+    account === "credential/cadet/assistant_api_key"
       ? storedApiKey
       : undefined,
 }));

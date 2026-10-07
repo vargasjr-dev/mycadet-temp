@@ -2,7 +2,7 @@ import { isElectron, type ResolvedHotkey } from "@/runtime/is-electron";
 
 /**
  * Runtime wrapper for the Electron Keyboard Shortcuts bridge
- * (`window.vellum.hotkeys`). This is the only place in the web app that
+ * (`window.cadet.hotkeys`). This is the only place in the web app that
  * touches that bridge surface; the settings UI calls these functions so it
  * stays platform-agnostic.
  *
@@ -23,7 +23,7 @@ export async function getHotkeys(): Promise<ResolvedHotkey[]> {
   if (!isElectron()) {
     return [];
   }
-  const bridge = window.vellum;
+  const bridge = window.cadet;
   if (!bridge?.hotkeys) {
     return [];
   }
@@ -43,7 +43,7 @@ export async function setHotkey(
   if (!isElectron()) {
     return;
   }
-  const bridge = window.vellum;
+  const bridge = window.cadet;
   if (!bridge?.hotkeys) {
     return;
   }
@@ -61,7 +61,7 @@ export function onHotkeysChange(
   if (!isElectron()) {
     return () => {};
   }
-  const bridge = window.vellum;
+  const bridge = window.cadet;
   if (!bridge?.hotkeys) {
     return () => {};
   }

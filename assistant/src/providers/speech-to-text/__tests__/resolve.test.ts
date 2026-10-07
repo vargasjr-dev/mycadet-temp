@@ -57,33 +57,33 @@ mock.module("../../../security/credential-key.js", () => ({
 
 // -- Cadet managed availability mock --------------------------------------
 
-let mockVellumAvailable = false;
+let mockCadetAvailable = false;
 
 /**
  * Arguments the managed batch adapter was called with. The managed path has
  * no constructor to spy on (the platform connection is the credential), so
  * the language it forwards is observable only at the transcribe call.
  */
-const vellumManagedTranscribeCalls: Array<{
+const cadetManagedTranscribeCalls: Array<{
   mimeType: string;
   language: string | undefined;
 }> = [];
 
-mock.module("../vellum-managed.js", () => ({
-  vellumManagedSpeechAvailable: async () => mockVellumAvailable,
-  vellumManagedTranscribe: async (
+mock.module("../cadet-managed.js", () => ({
+  cadetManagedSpeechAvailable: async () => mockCadetAvailable,
+  cadetManagedTranscribe: async (
     _audio: Buffer,
     mimeType: string,
     _signal?: AbortSignal,
     language?: string,
   ) => {
-    vellumManagedTranscribeCalls.push({ mimeType, language });
+    cadetManagedTranscribeCalls.push({ mimeType, language });
     return { text: "" };
   },
   sttErrorFromManagedSpeech: (failure: unknown) => new Error(String(failure)),
 }));
 
-const vellumStreamCtorCalls: Array<{ connection: unknown; options: unknown }> =
+const cadetStreamCtorCalls: Array<{ connection: unknown; options: unknown }> =
   [];
 let mockTunnelConnection: {
   wsBaseUrl: string;
@@ -91,32 +91,32 @@ let mockTunnelConnection: {
   mintServiceToken: () => string;
 } | null = null;
 
-mock.module("../vellum-speech-relay-connection.js", () => ({
+mock.module("../cadet-speech-relay-connection.js", () => ({
   resolveSpeechRelayConnection: async () => mockTunnelConnection,
 }));
 
-mock.module("../vellum-managed-realtime.js", () => ({
-  VellumManagedRealtimeTranscriber: class {
+mock.module("../cadet-managed-realtime.js", () => ({
+  CadetManagedRealtimeTranscriber: class {
     readonly providerId = "cadet";
     readonly boundaryId = "daemon-streaming";
     constructor(connection: unknown, options: unknown) {
-      vellumStreamCtorCalls.push({ connection, options });
+      cadetStreamCtorCalls.push({ connection, options });
     }
   },
 }));
 
-/** Constructor calls for the managed Flux transcriber (`vellum-flux`). */
-const vellumFluxStreamCtorCalls: Array<{
+/** Constructor calls for the managed Flux transcriber (`cadet-flux`). */
+const cadetFluxStreamCtorCalls: Array<{
   connection: unknown;
   options: unknown;
 }> = [];
 
-mock.module("../vellum-managed-flux-realtime.js", () => ({
-  VellumManagedFluxRealtimeTranscriber: class {
+mock.module("../cadet-managed-flux-realtime.js", () => ({
+  CadetManagedFluxRealtimeTranscriber: class {
     readonly providerId = "cadet-flux";
     readonly boundaryId = "daemon-streaming";
     constructor(connection: unknown, options: unknown) {
-      vellumFluxStreamCtorCalls.push({ connection, options });
+      cadetFluxStreamCtorCalls.push({ connection, options });
     }
   },
 }));
@@ -587,7 +587,7 @@ describe("telephony capability catalog alignment", () => {
   /**
    * Providers that deliberately sit out telephony (`telephonyMode: "none"`).
    * `deepgram-flux` is a streaming-only spike, and telephony is out of its
-   * scope. `vellum-flux` sits out for a concrete reason: the relay maps
+   * scope. `cadet-flux` sits out for a concrete reason: the relay maps
    * `Finalize` onto Flux's `CloseStream`, and utterance-boundary finals are a
    * nova-3 concept. Nothing reroutes a call to another provider, so opting
    * out here means a Flux-configured assistant does not transcribe calls.
@@ -649,7 +649,7 @@ describe("telephony capability catalog alignment", () => {
   test("telephony opt-out providers resolve as unsupported", async () => {
     for (const id of TELEPHONY_OPT_OUT) {
       const entry = getProviderEntry(id);
-      mockVellumAvailable = false;
+      mockCadetAvailable = false;
       mockProviderKeys = { [entry!.credentialProvider]: `test-key-${id}` };
       applyConfig({ provider: id });
 
@@ -681,7 +681,7 @@ describe("telephony capability catalog alignment", () => {
       "google-gemini": "gemini",
       xai: "xai",
       // cadet's credential is the platform connection, mocked below.
-      cadet: "vellum",
+      cadet: "cadet",
     };
 
     for (const id of listProviderIds()) {
@@ -691,7 +691,7 @@ describe("telephony capability catalog alignment", () => {
       const credKey = credentialMap[id];
       expect(credKey).toBeDefined();
 
-      mockVellumAvailable = id === "cadet";
+      mockCadetAvailable = id === "cadet";
       mockProviderKeys = id === "cadet" ? {} : { [credKey]: `test-key-${id}` };
       applyConfig({ provider: id });
 
@@ -1125,20 +1125,20 @@ describe("resolveStreamingTranscriber diarize preference", () => {
   });
 });
 
-describe("vellum-flux managed resolution", () => {
+describe("cadet-flux managed resolution", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockProviderKeys = {};
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
       mintServiceToken: () => "vk-test",
     };
-    vellumFluxStreamCtorCalls.length = 0;
+    cadetFluxStreamCtorCalls.length = 0;
   });
 
   test("streaming resolver constructs the managed Flux adapter over the same relay connection", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet-flux", language: "es" });
 
     const transcriber = await resolveStreamingTranscriber({
@@ -1146,7 +1146,7 @@ describe("vellum-flux managed resolution", () => {
     });
 
     expect(transcriber?.providerId).toBe("cadet-flux");
-    expect(vellumFluxStreamCtorCalls).toEqual([
+    expect(cadetFluxStreamCtorCalls).toEqual([
       {
         connection: mockTunnelConnection,
         // The relay picks flux-general-en vs flux-general-multi from the
@@ -1159,28 +1159,28 @@ describe("vellum-flux managed resolution", () => {
   test("an unset language reaches the relay as code-switching, not English", async () => {
     // The relay resolves an absent language to flux-general-en, so unset
     // would be a silent English pin on non-English speech.
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet-flux" });
 
     await resolveStreamingTranscriber({ sampleRate: 16000 });
 
     expect(
-      (vellumFluxStreamCtorCalls[0]?.options as { language?: string })
+      (cadetFluxStreamCtorCalls[0]?.options as { language?: string })
         ?.language,
     ).toBe("multi");
   });
 
   test("resolves null without a platform connection", async () => {
     // The credential is the platform connection, not a stored API key.
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     applyConfig({ provider: "cadet-flux" });
 
     expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(vellumFluxStreamCtorCalls).toHaveLength(0);
+    expect(cadetFluxStreamCtorCalls).toHaveLength(0);
   });
 
   test("has no batch boundary, like BYOK Flux", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet-flux" });
 
     await expect(resolveBatchTranscriber()).rejects.toThrow(SttError);
@@ -1190,15 +1190,15 @@ describe("vellum-flux managed resolution", () => {
     // The relay rejects the dial for a language outside Flux's roster, which
     // reaches the caller as an unexplained param error. Refusing here names
     // the reason where it can be read.
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet-flux", language: "ko" });
 
     expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(vellumFluxStreamCtorCalls).toHaveLength(0);
+    expect(cadetFluxStreamCtorCalls).toHaveLength(0);
   });
 
   test("serves a language that is on the Flux roster", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet-flux", language: "hi" });
 
     const transcriber = await resolveStreamingTranscriber({
@@ -1211,14 +1211,14 @@ describe("vellum-flux managed resolution", () => {
 
 describe("cadet managed resolution", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockProviderKeys = {};
     mockTunnelConnection = null;
-    vellumStreamCtorCalls.length = 0;
+    cadetStreamCtorCalls.length = 0;
   });
 
   test("the cadet provider resolves the batch transcriber when the platform connection exists", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet" });
 
     const transcriber = await resolveBatchTranscriber();
@@ -1226,14 +1226,14 @@ describe("cadet managed resolution", () => {
   });
 
   test("the cadet provider resolves null without a platform connection", async () => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     applyConfig({ provider: "cadet" });
 
     expect(await resolveBatchTranscriber()).toBeNull();
   });
 
   test("the cadet provider wins over a stored BYOK key", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     mockProviderKeys = { deepgram: "dg-key" };
     applyConfig({ provider: "cadet" });
 
@@ -1246,7 +1246,7 @@ describe("cadet managed resolution", () => {
   });
 
   test("streaming resolver constructs the cadet adapter with the tunnel connection and sample rate", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
@@ -1258,7 +1258,7 @@ describe("cadet managed resolution", () => {
       sampleRate: 24000,
     });
     expect(transcriber?.providerId).toBe("cadet");
-    expect(vellumStreamCtorCalls).toEqual([
+    expect(cadetStreamCtorCalls).toEqual([
       {
         connection: mockTunnelConnection,
         // No language is configured here, so the managed default rides along
@@ -1269,7 +1269,7 @@ describe("cadet managed resolution", () => {
   });
 
   test("streaming resolver returns null when the platform connection is unavailable", async () => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
@@ -1278,20 +1278,20 @@ describe("cadet managed resolution", () => {
     applyConfig({ provider: "cadet" });
 
     expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(vellumStreamCtorCalls).toHaveLength(0);
+    expect(cadetStreamCtorCalls).toHaveLength(0);
   });
 
   test("streaming resolver returns null when the tunnel connection is missing", async () => {
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     mockTunnelConnection = null;
     applyConfig({ provider: "cadet" });
 
     expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(vellumStreamCtorCalls).toHaveLength(0);
+    expect(cadetStreamCtorCalls).toHaveLength(0);
   });
 
   test("conversation streaming capability reports missing credentials without a connection", async () => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     applyConfig({ provider: "cadet" });
 
     const capability = await resolveConversationStreamingSttCapability();
@@ -1307,21 +1307,21 @@ describe("cadet managed resolution", () => {
 
 describe("resolveStreamingTranscriber language plumbing", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = null;
     mockProviderKeys = {};
     deepgramCtorCalls.length = 0;
     geminiCtorCalls.length = 0;
     whisperCtorCalls.length = 0;
     xaiCtorCalls.length = 0;
-    vellumStreamCtorCalls.length = 0;
+    cadetStreamCtorCalls.length = 0;
   });
 
   test("managed sessions forward services.stt.language to the relay adapter", async () => {
     // The managed path is why this plumbing exists: tunnel allowlists
     // `language` and pins nova-3, so "multi" reaches Deepgram's
     // code-switching mode without any platform-side change.
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
@@ -1331,7 +1331,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
 
     await resolveStreamingTranscriber({ sampleRate: 24000 });
 
-    expect(vellumStreamCtorCalls).toEqual([
+    expect(cadetStreamCtorCalls).toEqual([
       {
         connection: mockTunnelConnection,
         options: { sampleRate: 24000, language: "multi" },
@@ -1417,7 +1417,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
   test("no configured language falls to multilingual on the managed relay", async () => {
     // The relay dials Deepgram server-side, so it inherits the same English
     // default and needs the same fill-in.
-    mockVellumAvailable = true;
+    mockCadetAvailable = true;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
       httpBaseUrl: "http://gateway.test",
@@ -1427,7 +1427,7 @@ describe("resolveStreamingTranscriber language plumbing", () => {
 
     await resolveStreamingTranscriber({ sampleRate: 24000 });
 
-    expect(vellumStreamCtorCalls).toEqual([
+    expect(cadetStreamCtorCalls).toEqual([
       {
         connection: mockTunnelConnection,
         options: { sampleRate: 24000, language: "multi" },
@@ -1528,8 +1528,8 @@ describe("resolveStreamingTranscriber language plumbing", () => {
   test("managed batch forwards the configured language to the platform", async () => {
     // The platform proxy passes it to Deepgram server-side, so a managed
     // voice note decodes in the same language the live session does.
-    vellumManagedTranscribeCalls.length = 0;
-    mockVellumAvailable = true;
+    cadetManagedTranscribeCalls.length = 0;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet", language: "ta" });
 
     const transcriber = await resolveBatchTranscriber();
@@ -1538,15 +1538,15 @@ describe("resolveStreamingTranscriber language plumbing", () => {
       mimeType: "audio/ogg",
     });
 
-    expect(vellumManagedTranscribeCalls).toHaveLength(1);
-    expect(vellumManagedTranscribeCalls[0]?.language).toBe("ta");
+    expect(cadetManagedTranscribeCalls).toHaveLength(1);
+    expect(cadetManagedTranscribeCalls[0]?.language).toBe("ta");
   });
 
   test("managed batch falls to multilingual when no language is configured", async () => {
     // The gap this closes: managed voice notes used to decode as English no
     // matter what the user had chosen, because nothing was forwarded.
-    vellumManagedTranscribeCalls.length = 0;
-    mockVellumAvailable = true;
+    cadetManagedTranscribeCalls.length = 0;
+    mockCadetAvailable = true;
     applyConfig({ provider: "cadet" });
 
     const transcriber = await resolveBatchTranscriber();
@@ -1555,8 +1555,8 @@ describe("resolveStreamingTranscriber language plumbing", () => {
       mimeType: "audio/ogg",
     });
 
-    expect(vellumManagedTranscribeCalls).toHaveLength(1);
-    expect(vellumManagedTranscribeCalls[0]?.language).toBe("multi");
+    expect(cadetManagedTranscribeCalls).toHaveLength(1);
+    expect(cadetManagedTranscribeCalls[0]?.language).toBe("multi");
   });
 
   test("batch resolution falls to multilingual when no language is configured", async () => {
@@ -1614,9 +1614,9 @@ describe("streaming capability matches the streaming factory", () => {
     "openai-whisper": "openai",
     xai: "xai",
     // cadet's credential is the platform connection, mocked below.
-    cadet: "vellum",
+    cadet: "cadet",
     // Managed Flux rides the same platform connection.
-    "cadet-flux": "vellum",
+    "cadet-flux": "cadet",
   };
 
   /** The exact list both user-facing error strings advertise. */
@@ -1632,7 +1632,7 @@ describe("streaming capability matches the streaming factory", () => {
     // Both managed entries authenticate with the platform connection rather
     // than a stored API key, and both dial through the same relay.
     const managed = id === "cadet" || id === "cadet-flux";
-    mockVellumAvailable = managed;
+    mockCadetAvailable = managed;
     mockTunnelConnection = managed
       ? {
           wsBaseUrl: "ws://gateway.test",
@@ -1645,7 +1645,7 @@ describe("streaming capability matches the streaming factory", () => {
   }
 
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
@@ -1672,7 +1672,7 @@ describe("streaming capability matches the streaming factory", () => {
 
   test("every advertised provider reports missing credentials AND builds nothing without them", async () => {
     for (const id of advertisedStreamingProviders()) {
-      mockVellumAvailable = false;
+      mockCadetAvailable = false;
       mockTunnelConnection = null;
       mockProviderKeys = {};
       applyConfig({ provider: id });
@@ -1690,7 +1690,7 @@ describe("streaming capability matches the streaming factory", () => {
 
 describe("deepgram-flux streaming resolution", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
@@ -1776,7 +1776,7 @@ describe("deepgram-flux streaming resolution", () => {
 
 describe("deepgram-flux batch resolution", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = null;
     mockProviderKeys = {};
     loggerWarnings.length = 0;
@@ -1888,7 +1888,7 @@ describe("the multilingual default reaches configs with no stt block", () => {
 
 describe("services.stt.roles selection", () => {
   beforeEach(() => {
-    mockVellumAvailable = false;
+    mockCadetAvailable = false;
     mockTunnelConnection = null;
     mockProviderKeys = { deepgram: "dg-key", openai: "oai-key" };
     deepgramCtorCalls.length = 0;

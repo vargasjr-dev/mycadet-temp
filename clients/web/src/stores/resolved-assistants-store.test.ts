@@ -21,12 +21,12 @@ import {
 import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
-// A platform entry is identified by `cloud === "vellum"` and carries an
-// `organizationId`; a local entry has a non-vellum cloud + gateway port and no org.
+// A platform entry is identified by `cloud === "cadet"` and carries an
+// `organizationId`; a local entry has a non-cadet cloud + gateway port and no org.
 const platformAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
-  cloud: "vellum",
+  cloud: "cadet",
   organizationId: "org-1",
 };
 
@@ -79,7 +79,7 @@ describe("setFromLockfile", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("vellum");
+    expect(entry.cloud).toBe("cadet");
     expect(entry.isPlatformHosted).toBe(true);
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(true);
@@ -349,7 +349,7 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("vellum");
+    expect(entry.cloud).toBe("cadet");
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(false);
 

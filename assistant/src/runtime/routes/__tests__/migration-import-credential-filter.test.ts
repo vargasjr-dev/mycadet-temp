@@ -16,12 +16,12 @@
  * regression is explicit at the bottom of this file.
  *
  * Covered:
- * - Platform (vellum:*) credentials stored under the real `credential/vellum/...`
+ * - Platform (vellum:*) credentials stored under the real `credential/cadet/...`
  *   key format are excluded.
  * - User credentials (any other prefix) pass through unchanged.
  * - Mixed bundles correctly split platform vs user credentials.
  * - skippedPlatform count matches the number of excluded entries.
- * - Regression: the prefix constant matches `credentialKey("vellum", "")`.
+ * - Regression: the prefix constant matches `credentialKey("cadet", "")`.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -38,7 +38,7 @@ import type {
 // regression assertion at the bottom of this file.
 // ---------------------------------------------------------------------------
 
-const PLATFORM_CREDENTIAL_PREFIX = credentialKey("vellum", "");
+const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
 
 // ---------------------------------------------------------------------------
 // Helpers (same pattern as vbundle-import-credentials.test.ts)
@@ -117,7 +117,7 @@ describe("migration import credential filtering", () => {
       "webhook_secret",
     ] as const;
     const vellumPaths = vellumFields.map((f) =>
-      bundlePathFor(credentialKey("vellum", f)),
+      bundlePathFor(credentialKey("cadet", f)),
     );
 
     const entries = new Map<string, VBundleTarEntry>();
@@ -165,8 +165,8 @@ describe("migration import credential filtering", () => {
   });
 
   test("mixed bundle with both platform and user credentials correctly splits", () => {
-    const vellumApiKey = credentialKey("vellum", "assistant_api_key");
-    const vellumUserId = credentialKey("vellum", "platform_user_id");
+    const vellumApiKey = credentialKey("cadet", "assistant_api_key");
+    const vellumUserId = credentialKey("cadet", "platform_user_id");
     const openaiKey = credentialKey("openai", "api_key");
     const anthropicKey = credentialKey("anthropic", "api_key");
     const githubToken = credentialKey("github", "api_token");
@@ -205,9 +205,9 @@ describe("migration import credential filtering", () => {
   });
 
   test("skippedPlatform count is accurate with mixed credentials", () => {
-    const vellumApiKey = credentialKey("vellum", "assistant_api_key");
-    const vellumBaseUrl = credentialKey("vellum", "platform_base_url");
-    const vellumWebhook = credentialKey("vellum", "webhook_secret");
+    const vellumApiKey = credentialKey("cadet", "assistant_api_key");
+    const vellumBaseUrl = credentialKey("cadet", "platform_base_url");
+    const vellumWebhook = credentialKey("cadet", "webhook_secret");
     const userKey = credentialKey("github", "api_token");
 
     const entries = new Map<string, VBundleTarEntry>();
@@ -244,17 +244,17 @@ describe("migration import credential filtering", () => {
     // If credentialKey()'s format ever changes (e.g. slash → something else),
     // this assertion will fail and the duplicated constant in
     // migration-routes.ts must be updated to stay in sync.
-    expect(PLATFORM_CREDENTIAL_PREFIX).toBe("credential/vellum/");
+    expect(PLATFORM_CREDENTIAL_PREFIX).toBe("credential/cadet/");
     expect(
-      credentialKey("vellum", "assistant_api_key").startsWith(
+      credentialKey("cadet", "assistant_api_key").startsWith(
         PLATFORM_CREDENTIAL_PREFIX,
       ),
     ).toBe(true);
 
     // The raw "vellum:" string is not a valid CES account prefix — only
-    // the full "credential/vellum/" format from credentialKey() is correct.
+    // the full "credential/cadet/" format from credentialKey() is correct.
     expect(
-      credentialKey("vellum", "assistant_api_key").startsWith("vellum:"),
+      credentialKey("cadet", "assistant_api_key").startsWith("vellum:"),
     ).toBe(false);
   });
 });

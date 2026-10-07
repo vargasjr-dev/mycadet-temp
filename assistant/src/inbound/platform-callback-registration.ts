@@ -57,8 +57,8 @@ export async function resolvePlatformCallbackRegistrationContext(): Promise<Plat
   const platform = getIsPlatform();
   const [storedBaseUrlRaw, storedAssistantApiKey, assistantId] =
     await Promise.all([
-      getSecureKeyAsync(credentialKey("vellum", "platform_base_url")),
-      getSecureKeyResultAsync(credentialKey("vellum", "assistant_api_key")),
+      getSecureKeyAsync(credentialKey("cadet", "platform_base_url")),
+      getSecureKeyResultAsync(credentialKey("cadet", "assistant_api_key")),
       resolvePlatformAssistantId(),
     ]);
 

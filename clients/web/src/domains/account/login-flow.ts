@@ -72,7 +72,7 @@ const PLATFORM_ONLY_PATHS: readonly string[] = [
  *
  * Three families need one. Anything the platform serves rather than this SPA:
  * the Django account routes, the API, the marketing import funnel and any
- * vellum.ai URL. The platform-only in-app surfaces above. And the returns that
+ * cadet.ai URL. The platform-only in-app surfaces above. And the returns that
  * carry a finished purchase — a billing landing holding Stripe's `session_id`,
  * and the managed hatch, which reads the purchased ceiling server-side and
  * hatches at the baseline plan without a session.

@@ -91,8 +91,8 @@ const commandHandlers: Record<
   string,
   ((command: unknown) => void) | undefined
 > = {};
-mock.module("@/runtime/vellum-commands", () => ({
-  useVellumCommands: (handlers: Record<string, (command: unknown) => void>) => {
+mock.module("@/runtime/cadet-commands", () => ({
+  useCadetCommands: (handlers: Record<string, (command: unknown) => void>) => {
     Object.assign(commandHandlers, handlers);
   },
 }));

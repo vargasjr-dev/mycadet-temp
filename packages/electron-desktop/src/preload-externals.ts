@@ -4,7 +4,7 @@ import path from "node:path";
 /**
  * Modules a sandboxed preload is allowed to `require(...)` at runtime.
  * Electron's sandbox polyfills only a tiny set; anything else throws at load
- * and kills the whole preload script, so `window.vellum` is never exposed
+ * and kills the whole preload script, so `window.cadet` is never exposed
  * (the renderer then loses window dragging, traffic-light clearance, and
  * every other bridge-gated feature). Keep this to `electron` unless a new
  * sandbox-safe module is deliberately added.

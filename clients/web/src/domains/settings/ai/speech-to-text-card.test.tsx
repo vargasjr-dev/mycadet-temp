@@ -14,7 +14,7 @@
  * providers and old daemons that omit the capability field.
  *
  * The native-dictation runtime module is mocked (its real implementation
- * imports a Vite `?worker&url` asset and probes `window.vellum`); the
+ * imports a Vite `?worker&url` asset and probes `window.cadet`); the
  * design-library Select is real, driven via its combobox trigger like
  * `provider-create-form.test.tsx`.
  */
@@ -375,7 +375,7 @@ describe("SpeechToTextCard — Cadet provider", () => {
 
   test("escaping a legacy managed-mode daemon resets mode alongside the provider", async () => {
     // Without the mode reset, the stale `mode: "managed"` would win over the
-    // BYOK provider choice and the user would silently stay on Vellum.
+    // BYOK provider choice and the user would silently stay on Cadet.
     daemonConfigData = {
       services: { stt: { mode: "managed", provider: "deepgram" } },
     };

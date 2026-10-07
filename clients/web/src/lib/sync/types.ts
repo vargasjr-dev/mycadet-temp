@@ -42,7 +42,7 @@ export interface SyncChangedEvent {
   /**
    * Opaque per-tab/client identifier of the HTTP request whose mutation
    * caused this sync_changed emission, when known. Populated by the daemon
-   * route handler from the `x-vellum-client-id` request header.
+   * route handler from the `x-cadet-client-id` request header.
    *
    * Consumers MAY use this to suppress self-echoes: if their own client id
    * matches, the local UI has already applied the optimistic update via the

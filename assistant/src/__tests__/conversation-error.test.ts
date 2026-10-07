@@ -879,7 +879,7 @@ describe("classifyConversationError", () => {
         "anthropic",
         400,
       );
-      err.attachRouteAttribution({ credentialSource: "vellum-managed" });
+      err.attachRouteAttribution({ credentialSource: "cadet-managed" });
 
       const result = classifyConversationError(err, baseCtx);
 
@@ -947,7 +947,7 @@ describe("classifyConversationError", () => {
       providerRoutingSources.anthropic = "user-key";
       const err = new ProviderError("Unauthorized", "anthropic", 401);
       err.attachRouteAttribution({
-        credentialSource: "vellum-managed",
+        credentialSource: "cadet-managed",
         connectionName: "vellum",
       });
 

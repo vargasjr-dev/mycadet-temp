@@ -56,7 +56,7 @@ async function saveAvatarVoice(
   }
   const { response } = await configPatch({
     path: { assistant_id: assistantId },
-    body: { services: { tts: { providers: { vellum: { model } } } } },
+    body: { services: { tts: { providers: { cadet: { model } } } } },
     throwOnError: false,
   });
   if (!response?.ok) {

@@ -31,7 +31,7 @@ export interface TunnelStatusController {
  * `enabled` is the caller's own condition (the card only probes when it is
  * rendering at all). It is ANDed with the version gate, so an assistant that
  * predates the route is never asked for it, and with org readiness, so the
- * request cannot go out before the `Vellum-Organization-Id` header exists.
+ * request cannot go out before the `Cadet-Organization-Id` header exists.
  * Those three live in one `canProbe` boolean that drives both the query's
  * `enabled` option and `refresh`: TanStack's imperative `refetch()` ignores
  * `enabled`, so an unguarded `refresh` would let the `app.resume` handler

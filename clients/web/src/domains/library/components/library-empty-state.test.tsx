@@ -2,7 +2,7 @@
  * Tests for LibraryEmptyState.
  *
  * The empty state is a single entry point: start a conversation. Importing a
- * `.vellum` bundle is offered by the library header instead, so the component
+ * `.cadet` bundle is offered by the library header instead, so the component
  * must not carry an import button or a file picker of its own.
  */
 

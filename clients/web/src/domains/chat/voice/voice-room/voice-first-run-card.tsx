@@ -428,7 +428,7 @@ function VoiceSettingsView({
   // in-flight state can gate Start: the picker reports a pick via `onChange`, and
   // `selecting` stays true until the config patch and refetch settle. Managed
   // assistants also get the credits subtitle; BYO ones see no catalog (the footer
-  // note is their path), so the Vellum-credits line wouldn't apply.
+  // note is their path), so the Cadet-credits line wouldn't apply.
   const { available, currentModel, selectModel, selecting } =
     useManagedVoiceSelection(assistantId);
 

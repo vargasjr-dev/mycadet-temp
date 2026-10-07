@@ -6,7 +6,7 @@ import { useComposerStore } from "@/domains/chat/composer-store";
 
 type TextInsertionStatus =
   | "inserted"
-  | "vellum-focused"
+  | "cadet-focused"
   | "automation-denied"
   | "blocked"
   | "unavailable";

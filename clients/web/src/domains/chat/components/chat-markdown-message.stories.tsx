@@ -29,7 +29,7 @@ const meta: Meta<typeof ChatMarkdownMessage> = {
     assistantId: "asst-1",
     content: [
       "Here are the files:",
-      "- [Download the edited picture](vellum://workspace/media/generated/chart.png)",
+      "- [Download the edited picture](cadet://workspace/media/generated/chart.png)",
       "- [Download the notes](/workspace/reports/notes.pdf)",
       "- [Download the image](/workspace/media/generated/landscape_with_mountains_and_a_river_at_sunset_version_123456789.png)",
     ].join("\n"),
@@ -48,6 +48,6 @@ export const MobileFileActions: Story = {
 export const UserAuthoredLinks: Story = {
   args: {
     fileLinkLabels: "markdown",
-    content: "Please edit [**my chart**](vellum://workspace/chart.png).",
+    content: "Please edit [**my chart**](cadet://workspace/chart.png).",
   },
 };

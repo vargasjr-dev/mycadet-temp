@@ -8,7 +8,7 @@ import { Trans } from "@/i18n";
 function ManagedServicesPricingLink({ children }: PropsWithChildren) {
   return (
     <ExternalAnchor
-      href="https://www.vellum.ai/docs/pricing"
+      href="https://www.cadet.ai/docs/pricing"
       tone="default"
       className="inline-flex items-center gap-1"
       glyph={false}

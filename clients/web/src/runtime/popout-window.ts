@@ -40,5 +40,5 @@ export async function openPopoutWindow(conversationId: string): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.popout?.open(conversationId);
+  await window.cadet?.popout?.open(conversationId);
 }

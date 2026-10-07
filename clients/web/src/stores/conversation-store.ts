@@ -110,7 +110,7 @@ function deleteFromMap<K, V>(prev: Map<K, V>, key: K): Map<K, V> {
 // ---------------------------------------------------------------------------
 
 /** The one `sessionStorage` key, exported so tests need not redeclare it. */
-export const DRAFT_REPLACEMENTS_KEY = "vellum.draftReplacements";
+export const DRAFT_REPLACEMENTS_KEY = "cadet.draftReplacements";
 
 /** Cap on recorded replacements, oldest dropped first. */
 const MAX_DRAFT_REPLACEMENTS = 50;

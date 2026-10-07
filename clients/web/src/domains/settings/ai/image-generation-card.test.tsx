@@ -319,7 +319,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
   });
 
   test("a daemon predating the cadet enum still gets explicit BYOK provider writes", async () => {
-    // Only "vellum" is unrepresentable on old daemons; gemini/openai are in
+    // Only "cadet" is unrepresentable on old daemons; gemini/openai are in
     // the old enum, so a provider switch must not be dropped.
     daemonSupportsCadetProvider = false;
     renderCard();
@@ -483,7 +483,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
   });
 
   test("a daemon predating the cadet provider gets the legacy managed write", async () => {
-    // Old daemon schemas reject provider "vellum" outright; the Cadet
+    // Old daemon schemas reject provider "cadet" outright; the Cadet
     // selection degrades to the legacy mode-only representation the read
     // bridge renders as Cadet again.
     daemonSupportsCadetProvider = false;

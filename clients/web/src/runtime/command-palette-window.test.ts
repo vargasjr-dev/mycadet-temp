@@ -13,13 +13,13 @@ const {
 
 afterEach(() => {
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("openCommandPaletteWindow", () => {
   test("returns false off Electron so callers can use the in-page fallback", async () => {
     const open = mock(() => Promise.resolve());
-    (window as { vellum?: unknown }).vellum = { commandPalette: { open } };
+    (window as { cadet?: unknown }).cadet = { commandPalette: { open } };
 
     expect(await openCommandPaletteWindow()).toBe(false);
     expect(open).not.toHaveBeenCalled();
@@ -27,7 +27,7 @@ describe("openCommandPaletteWindow", () => {
 
   test("returns false for older Electron shells without the palette bridge", async () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(await openCommandPaletteWindow()).toBe(false);
   });
@@ -35,7 +35,7 @@ describe("openCommandPaletteWindow", () => {
   test("opens through the bridge on newer Electron shells", async () => {
     runningInElectron = true;
     const open = mock(() => Promise.resolve());
-    (window as { vellum?: unknown }).vellum = {
+    (window as { cadet?: unknown }).cadet = {
       platform: "electron",
       commandPalette: { open },
     };
@@ -48,7 +48,7 @@ describe("openCommandPaletteWindow", () => {
 describe("command palette bridge actions", () => {
   test("dismiss and select no-op when the bridge is absent", async () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     await expect(dismissCommandPaletteWindow()).resolves.toBeUndefined();
     await expect(
@@ -60,7 +60,7 @@ describe("command palette bridge actions", () => {
     runningInElectron = true;
     const dismiss = mock(() => Promise.resolve());
     const select = mock(() => Promise.resolve());
-    (window as { vellum?: unknown }).vellum = {
+    (window as { cadet?: unknown }).cadet = {
       platform: "electron",
       commandPalette: { dismiss, select },
     };

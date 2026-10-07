@@ -33,7 +33,7 @@ afterAll(() => {
   mock.restore();
 });
 
-import { VELLUM_MANAGED_CONNECTION_NAME } from "../../providers/vellum-model-routing.js";
+import { CADET_MANAGED_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import {
   getDefaultProvider,
   resolveDefaultConnectionName,
@@ -56,10 +56,10 @@ describe("LLMSchema.defaultProvider", () => {
 
   test("accepts a provider pinned to a connection", () => {
     const parsed = LLMSchema.parse({
-      defaultProvider: { provider: "vellum", connectionName: "x" },
+      defaultProvider: { provider: "cadet", connectionName: "x" },
     });
     expect(parsed.defaultProvider).toEqual({
-      provider: "vellum",
+      provider: "cadet",
       connectionName: "x",
     });
   });
@@ -158,8 +158,8 @@ describe("resolveDefaultConnectionName", () => {
   });
 
   test("cadet resolves to the managed connection name", () => {
-    expect(resolveDefaultConnectionName({ provider: "vellum" })).toBe(
-      VELLUM_MANAGED_CONNECTION_NAME,
+    expect(resolveDefaultConnectionName({ provider: "cadet" })).toBe(
+      CADET_MANAGED_CONNECTION_NAME,
     );
   });
 
@@ -190,7 +190,7 @@ describe("resolveDefaultConnectionName", () => {
   test("an explicit pin wins even for cadet", () => {
     expect(
       resolveDefaultConnectionName({
-        provider: "vellum",
+        provider: "cadet",
         connectionName: "pinned",
       }),
     ).toBe("pinned");

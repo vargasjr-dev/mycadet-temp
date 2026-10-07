@@ -50,8 +50,8 @@ function nameTag(name: string): string | null {
   );
 }
 
-const EXPECTED_TITLE = "Vellum: Your Personal Intelligence";
-const EXPECTED_IMAGE = "https://www.vellum.ai/og-cover-v2.jpg";
+const EXPECTED_TITLE = "Cadet: Your Personal Intelligence";
+const EXPECTED_IMAGE = "https://www.cadet.ai/og-cover-v2.jpg";
 
 describe("SPA shell: Open Graph metadata", () => {
   test("declares the tags an unfurler needs for a large image card", () => {
@@ -70,7 +70,7 @@ describe("SPA shell: Open Graph metadata", () => {
 
   test("declares a matching Twitter card", () => {
     expect(nameTag("twitter:card")).toBe("summary_large_image");
-    expect(nameTag("twitter:site")).toBe("@vellum_ai");
+    expect(nameTag("twitter:site")).toBe("@cadet_ai");
     expect(nameTag("twitter:title")).toBe(EXPECTED_TITLE);
     expect(nameTag("twitter:description")).toBeTruthy();
     expect(nameTag("twitter:image")).toBe(EXPECTED_IMAGE);
@@ -85,11 +85,11 @@ describe("SPA shell: Open Graph metadata", () => {
 
   // This file is also served from assistant.* hosts and loaded inside the
   // Capacitor WKWebView, where a relative path resolves against a host with no
-  // such asset. The apex vellum.ai 308-redirects and some unfurlers drop a
+  // such asset. The apex cadet.ai 308-redirects and some unfurlers drop a
   // redirecting image.
   test("image URLs are absolute and on the canonical www host", () => {
     for (const url of [ogTag("og:image"), nameTag("twitter:image")]) {
-      expect(url).toMatch(/^https:\/\/www\.vellum\.ai\//);
+      expect(url).toMatch(/^https:\/\/www\.cadet\.ai\//);
     }
   });
 

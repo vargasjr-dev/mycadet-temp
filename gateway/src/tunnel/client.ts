@@ -308,7 +308,7 @@ export class TunnelClient {
     let apiKeyRaw: string | undefined;
     try {
       apiKeyRaw = await this.options.credentials.get(
-        credentialKey("vellum", "assistant_api_key"),
+        credentialKey("cadet", "assistant_api_key"),
       );
     } catch (err) {
       this.connecting = false;

@@ -27,7 +27,7 @@ function makeRaw(
     updatedAt: 0,
     lastMessageAt: 0,
     conversationType: "standard",
-    source: "vellum",
+    source: "cadet",
     groupId: "",
     isProcessing: false,
     ...overrides,
@@ -309,7 +309,7 @@ describe("drainConversationList (foreground) pagination", () => {
       updatedAt: 0,
       lastMessageAt: 0,
       conversationType: "standard",
-      source: "vellum",
+      source: "cadet",
       groupId: "",
     };
   }
@@ -446,7 +446,7 @@ describe("drainConversationList (background) pagination", () => {
       updatedAt: 0,
       lastMessageAt: 0,
       conversationType: "background",
-      source: "vellum",
+      source: "cadet",
       groupId: "",
     };
   }
@@ -520,7 +520,7 @@ describe("hasAnyActiveConversation", () => {
               updatedAt: 0,
               lastMessageAt: 0,
               conversationType: "standard",
-              source: "vellum",
+              source: "cadet",
               groupId: "",
             })),
             // Existence needs one page — hasMore must never trigger a walk.

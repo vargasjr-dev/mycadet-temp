@@ -21,7 +21,7 @@ import * as orgReadyMod from "@/hooks/use-is-org-ready";
 import * as takeoverMod from "@/hooks/use-marketing-pricing-takeover";
 
 const CHECKOUT_URL = "https://stripe.test/checkout/session";
-const INTENT_KEY = "vellum.pro-checkout-intent";
+const INTENT_KEY = "cadet.pro-checkout-intent";
 const ENTRY = "/assistant/checkout?package=super";
 
 type Captured = { body?: unknown };

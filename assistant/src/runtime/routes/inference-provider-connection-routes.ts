@@ -19,6 +19,10 @@ import { getIsPlatform } from "../../config/env-registry.js";
 import { getConfigReadOnly } from "../../config/loader.js";
 import { getDb } from "../../persistence/db-connection.js";
 import {
+  CADET_MANAGED_PROVIDER,
+  isCadetManagedConnection,
+} from "../../providers/cadet-model-routing.js";
+import {
   type Auth,
   AuthSchema,
   CHATGPT_SUBSCRIPTION_CONNECTION_NAME,
@@ -46,10 +50,6 @@ import {
   testInferenceConnection,
 } from "../../providers/inference/endpoint-probe.js";
 import { PROVIDER_CATALOG } from "../../providers/model-catalog.js";
-import {
-  isVellumManagedConnection,
-  VELLUM_MANAGED_PROVIDER,
-} from "../../providers/vellum-model-routing.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { deleteSecureKeyAsync } from "../../security/secure-keys.js";
 import {
@@ -145,7 +145,7 @@ async function parseCustomProviderFields(
 
       // SSRF protection: reject private IPs, localhost, cloud metadata
       // endpoints — but only for platform-hosted daemons where the container
-      // runs on Vellum infrastructure. Self-hosted daemons run on the user's
+      // runs on Cadet infrastructure. Self-hosted daemons run on the user's
       // own machine, so localhost/private addresses are the expected target
       // (e.g. LM Studio, vLLM, text-generation-webui).
       if (getIsPlatform()) {
@@ -215,7 +215,7 @@ function deriveConnectionAuth(provider: string, credential: unknown): Auth {
 }
 
 /**
- * Platform auth and `provider: "vellum"` record the same fact (the managed
+ * Platform auth and `provider: "cadet"` record the same fact (the managed
  * route) in two columns, and derivation always sets them together. Only an
  * explicit `auth` object can split them, producing a row dispatch bills to
  * the platform while every provider-keyed check reads it as BYOK, or the
@@ -223,12 +223,12 @@ function deriveConnectionAuth(provider: string, credential: unknown): Auth {
  */
 function assertAuthMatchesProvider(provider: string, auth: Auth): void {
   const managedAuth = auth.type === "platform";
-  const managedProvider = provider === VELLUM_MANAGED_PROVIDER;
+  const managedProvider = provider === CADET_MANAGED_PROVIDER;
   if (managedAuth !== managedProvider) {
     throw new BadRequestError(
       managedAuth
-        ? `Auth type "platform" is only valid for provider "${VELLUM_MANAGED_PROVIDER}", not "${provider}". Vellum-managed routing is selected by the provider, so omit "auth" to derive it.`
-        : `Provider "${VELLUM_MANAGED_PROVIDER}" is always platform-authenticated; "${auth.type}" auth is not valid for it. Omit "auth" to derive it, or name a real provider for key-based auth.`,
+        ? `Auth type "platform" is only valid for provider "${CADET_MANAGED_PROVIDER}", not "${provider}". Cadet-managed routing is selected by the provider, so omit "auth" to derive it.`
+        : `Provider "${CADET_MANAGED_PROVIDER}" is always platform-authenticated; "${auth.type}" auth is not valid for it. Omit "auth" to derive it, or name a real provider for key-based auth.`,
     );
   }
   // Same rule for the subscription identity: provider "chatgpt" and
@@ -332,7 +332,7 @@ const RESERVED_PROVIDER_IDENTITIES = new Set<string>([
     p.id.toLowerCase(),
     p.displayName.toLowerCase(),
   ]),
-  "vellum",
+  "cadet",
   "chatgpt",
   "chatgpt subscription",
 ]);
@@ -351,7 +351,7 @@ async function handleCreateConnection({ body = {} }: RouteHandlerArgs) {
   // BYOK row that managed routing then ignores. Refuse the name up front.
   if (MANAGED_CONNECTION_NAMES.has(name)) {
     throw new BadRequestError(
-      `Connection name "${name}" is reserved for the Vellum-managed connection. Pick another name.`,
+      `Connection name "${name}" is reserved for the Cadet-managed connection. Pick another name.`,
     );
   }
   // Provider ids and routing identities are labels in profile config, so an
@@ -611,10 +611,10 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // managed routing ignores. That row must stay deletable, since deleting it
   // is what lets boot seeding restore the real managed connection.
   const claimsManagedName =
-    MANAGED_CONNECTION_NAMES.has(name) && !isVellumManagedConnection(existing);
+    MANAGED_CONNECTION_NAMES.has(name) && !isCadetManagedConnection(existing);
   if (MANAGED_CONNECTION_NAMES.has(name) && !claimsManagedName) {
     throw new BadRequestError(
-      `Cannot delete managed connection "${name}". This is a Vellum-managed connection that is re-seeded on every startup.`,
+      `Cannot delete managed connection "${name}". This is a Cadet-managed connection that is re-seeded on every startup.`,
     );
   }
 
@@ -631,7 +631,7 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // managed rows are excluded from the count for the same reason the list
   // route hides them — they aren't user-manageable connections.
   const dp = getDefaultProviderFromConfig(config);
-  // A `vellum` default resolves to the canonical name, so this guard would
+  // A `cadet` default resolves to the canonical name, so this guard would
   // otherwise block deleting a row that merely claims that name. Deleting it
   // does not orphan the default: boot seeding writes the real managed
   // connection under the same name on the next restart.
@@ -668,7 +668,7 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // or in the legacy `provider_connection` field; both count, or deleting a
   // bound entry would dangle the profile behind selection's silent healing.
   // Provider values count only for non-vendor names: a profile saying
-  // "vellum" references the routing identity, never a row that happens to
+  // "cadet" references the routing identity, never a row that happens to
   // claim that name, and the claiming-row delete is the recovery path.
   const nameIsEntryName = !VALID_CONNECTION_PROVIDERS.includes(name);
   const referencingProfiles = Object.entries(profiles)
@@ -777,7 +777,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Create a provider connection",
     description:
-      "Create a new named provider connection. When auth is omitted it is derived from the provider (keyless providers get none, vellum gets platform, everything else needs credential for api_key auth). An explicit auth object must agree with the provider; platform auth belongs to vellum and only to vellum. Fails with 409 if a connection with this name already exists.",
+      "Create a new named provider connection. When auth is omitted it is derived from the provider (keyless providers get none, cadet gets platform, everything else needs credential for api_key auth). An explicit auth object must agree with the provider; platform auth belongs to cadet and only to cadet. Fails with 409 if a connection with this name already exists.",
     tags: ["inference"],
     requestBody: z.object({
       name: z.string().min(1),
@@ -806,7 +806,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Update a provider connection",
     description:
-      "Update an existing connection. Cannot rename or change the provider. Omitting auth keeps the stored auth; passing credential alone rotates the key via provider-derived api_key auth. An explicit auth object must agree with the connection's provider; platform auth belongs to vellum and only to vellum. For the Vellum-managed connection (vellum) the auth is locked to platform; label remains editable.",
+      "Update an existing connection. Cannot rename or change the provider. Omitting auth keeps the stored auth; passing credential alone rotates the key via provider-derived api_key auth. An explicit auth object must agree with the connection's provider; platform auth belongs to cadet and only to cadet. For the Cadet-managed connection (cadet) the auth is locked to platform; label remains editable.",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Connection name" }],
     requestBody: z.object({
@@ -836,14 +836,14 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Delete a provider connection",
     description:
-      "Delete a provider connection. Fails with 400 for the Vellum-managed connection (vellum) which is re-seeded on boot. Fails with 409 if any profile or call-site references the connection.",
+      "Delete a provider connection. Fails with 400 for the Cadet-managed connection (cadet) which is re-seeded on boot. Fails with 409 if any profile or call-site references the connection.",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Connection name" }],
     responseBody: z.object({ ok: z.literal(true) }),
     additionalResponses: {
       "400": {
         description:
-          "Connection is a Vellum-managed connection and cannot be deleted",
+          "Connection is a Cadet-managed connection and cannot be deleted",
       },
       "404": { description: "Connection not found" },
       "409": {

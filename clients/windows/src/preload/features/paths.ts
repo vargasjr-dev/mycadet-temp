@@ -5,9 +5,9 @@ import type {
   CapabilityModule,
 } from "@mycadet/electron-desktop/capability-registry";
 import { createFileOpenPreloadBridge } from "@mycadet/electron-desktop/file-open-preload";
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
-const module: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
+const module: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
   id: "paths",
   install: (registry) => {
     const bridge = createFileOpenPreloadBridge({ ipcRenderer, webUtils });

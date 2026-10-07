@@ -89,7 +89,7 @@ const WS_CLOSED = WebSocket.CLOSED;
 
 function makeCredentials(values: Record<string, string | undefined>) {
   const assistantId =
-    values[credentialKey("vellum", "platform_assistant_id")]?.trim();
+    values[credentialKey("cadet", "platform_assistant_id")]?.trim();
   if (assistantId) {
     applyPlatformIdentityIds({
       assistantId,
@@ -224,8 +224,8 @@ function makeClient(
     credentials:
       overrides.credentials ??
       makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
     configFile: overrides.configFile ?? makeConfigFileCache({ count: 0 }),
     webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -356,7 +356,7 @@ describe("TunnelClient", () => {
       sockets,
       reconnectDelays,
       credentials: makeCredentials({
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
     });
 
@@ -378,7 +378,7 @@ describe("TunnelClient", () => {
       sockets,
       reconnectDelays,
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
       }),
     });
 
@@ -645,7 +645,7 @@ describe("TunnelClient", () => {
     const client = makeClient({
       sockets,
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
       }),
     });
 
@@ -681,8 +681,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -752,9 +752,9 @@ describe("TunnelClient", () => {
     expect(sockets).toHaveLength(0);
     expect(reconnectDelays).toEqual([10]);
 
-    credentialValues[credentialKey("vellum", "assistant_api_key")] =
+    credentialValues[credentialKey("cadet", "assistant_api_key")] =
       "api-key-123";
-    credentialValues[credentialKey("vellum", "platform_assistant_id")] =
+    credentialValues[credentialKey("cadet", "platform_assistant_id")] =
       "asst-123";
 
     client.refreshCredentials("cadet credentials changed");
@@ -775,7 +775,7 @@ describe("TunnelClient", () => {
   test("refreshCredentials retries immediately when credentials change during active connect", async () => {
     const sockets: FakeWebSocket[] = [];
     const reconnectDelays: number[] = [];
-    const apiKeyCredential = credentialKey("vellum", "assistant_api_key");
+    const apiKeyCredential = credentialKey("cadet", "assistant_api_key");
     const assistantIdCredential = credentialKey(
       "vellum",
       "platform_assistant_id",
@@ -1288,8 +1288,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -1326,8 +1326,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -1363,8 +1363,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -1404,8 +1404,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),
@@ -1447,8 +1447,8 @@ describe("TunnelClient", () => {
       tunnelBaseUrl: "http://tunnel.example.test",
       gatewayLoopbackBaseUrl: "http://127.0.0.1:7830",
       credentials: makeCredentials({
-        [credentialKey("vellum", "assistant_api_key")]: "api-key-123",
-        [credentialKey("vellum", "platform_assistant_id")]: "asst-123",
+        [credentialKey("cadet", "assistant_api_key")]: "api-key-123",
+        [credentialKey("cadet", "platform_assistant_id")]: "asst-123",
       }),
       configFile: makeConfigFileCache({ count: 0 }),
       webSocketConstructor: makeFakeWebSocketConstructor(sockets),

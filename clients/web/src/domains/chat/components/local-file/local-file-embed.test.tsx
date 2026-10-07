@@ -152,7 +152,7 @@ async function openFileActions() {
 describe("LocalFileEmbed media", () => {
   test("image bytes render an inline image from an object URL", async () => {
     const { container } = renderEmbed(
-      "vellum://workspace/scratch/chart.png",
+      "cadet://workspace/scratch/chart.png",
       "the chart",
     );
 
@@ -173,7 +173,7 @@ describe("LocalFileEmbed media", () => {
     });
 
     const { container } = renderEmbed(
-      `vellum://workspace/media/${filename}`,
+      `cadet://workspace/media/${filename}`,
       "a recording",
     );
 
@@ -195,7 +195,7 @@ describe("LocalFileEmbed media", () => {
       });
 
       const { container } = renderEmbed(
-        `vellum://workspace/media/${filename}`,
+        `cadet://workspace/media/${filename}`,
         "a clip",
       );
 
@@ -216,7 +216,7 @@ describe("LocalFileEmbed media", () => {
       size: 4096,
     });
 
-    renderEmbed("vellum://workspace/reports/q3.pdf", "Q3 report");
+    renderEmbed("cadet://workspace/reports/q3.pdf", "Q3 report");
 
     // A page preview inside the transcript reads as an attempt to be the
     // document, so a pdf embeds as the card and its link opens the drawer.
@@ -237,7 +237,7 @@ describe("LocalFileEmbed media", () => {
     });
 
     const { container } = renderEmbed(
-      "vellum://workspace/media/clip.mp4",
+      "cadet://workspace/media/clip.mp4",
       "a clip",
     );
 
@@ -259,7 +259,7 @@ describe("LocalFileEmbed media", () => {
     });
 
     const { container } = renderEmbed(
-      "vellum://workspace/media/clip.mp3",
+      "cadet://workspace/media/clip.mp3",
       "a recording",
     );
 
@@ -274,7 +274,7 @@ describe("LocalFileEmbed media", () => {
   });
 
   test("every media variant carries the file actions menu", async () => {
-    const { container } = renderEmbed("vellum://workspace/scratch/chart.png");
+    const { container } = renderEmbed("cadet://workspace/scratch/chart.png");
 
     await waitFor(() => expect(container.querySelector("img")).not.toBeNull());
     expect(screen.getByRole("button", { name: "File actions" })).toBeTruthy();
@@ -290,7 +290,7 @@ describe("LocalFileEmbed cards", () => {
     });
 
     const { container } = renderEmbed(
-      "vellum://workspace/notes.md",
+      "cadet://workspace/notes.md",
       "my notes",
     );
 
@@ -312,7 +312,7 @@ describe("LocalFileEmbed cards", () => {
       size: 4096,
     });
 
-    const { container } = renderEmbed(`vellum://workspace/files/${filename}`);
+    const { container } = renderEmbed(`cadet://workspace/files/${filename}`);
 
     await waitFor(() => expect(screen.getByText(filename)).toBeTruthy());
     expect(screen.getByText("4.0 KB")).toBeTruthy();
@@ -326,7 +326,7 @@ describe("LocalFileEmbed cards", () => {
       size: 2048,
     });
 
-    renderEmbed("vellum://workspace/files/bundle.zip");
+    renderEmbed("cadet://workspace/files/bundle.zip");
 
     await waitFor(() => expect(screen.getByText("bundle.zip")).toBeTruthy());
     expect(screen.getByText("2.0 KB")).toBeTruthy();
@@ -336,7 +336,7 @@ describe("LocalFileEmbed cards", () => {
     serve = notFound;
 
     const { container } = renderEmbed(
-      "vellum://workspace/scratch/gone.png",
+      "cadet://workspace/scratch/gone.png",
       "gone",
     );
 
@@ -348,7 +348,7 @@ describe("LocalFileEmbed cards", () => {
 
   test("no assistant id renders a card instead of probing", async () => {
     const { container } = render(
-      <LocalFileEmbed href="vellum://workspace/scratch/chart.png" alt="chart" />,
+      <LocalFileEmbed href="cadet://workspace/scratch/chart.png" alt="chart" />,
       { wrapper },
     );
 
@@ -370,7 +370,7 @@ describe("LocalFileEmbed cards", () => {
     serve = serveFile({ bytes: ZIP_BYTES, contentType: "image/png" });
 
     const { container } = renderEmbed(
-      "vellum://workspace/scratch/chart.png",
+      "cadet://workspace/scratch/chart.png",
       "chart",
     );
 
@@ -387,7 +387,7 @@ describe("LocalFileEmbed cards", () => {
     });
 
     const { container } = renderEmbed(
-      "vellum://workspace/scratch/huge.png",
+      "cadet://workspace/scratch/huge.png",
       "huge",
     );
 
@@ -401,7 +401,7 @@ describe("LocalFileEmbed cards", () => {
 describe("LocalFileEmbed href resolution", () => {
   test("percent-encoded segments decode to the workspace path", async () => {
     const { container } = renderEmbed(
-      "vellum://workspace/notes/my%20file%20%C3%A9.png",
+      "cadet://workspace/notes/my%20file%20%C3%A9.png",
       "unicode chart",
     );
 
@@ -419,7 +419,7 @@ describe("LocalFileEmbed href resolution", () => {
     });
 
     const { container } = renderEmbed(
-      "vellum://workspace/notes/%3Cb%3Ereport%3Cb%3E%20final.txt",
+      "cadet://workspace/notes/%3Cb%3Ereport%3Cb%3E%20final.txt",
     );
 
     await waitFor(() =>

@@ -27,7 +27,7 @@ afterAll(() => {
 });
 
 afterEach(() => {
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   window.history.pushState(null, "", "/");
 });
 
@@ -103,7 +103,7 @@ describe("remote web pairing route", () => {
   });
 
   test("uses the remote-gateway public path prefix as the router basename", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     window.history.pushState(
       null,
       "",
@@ -135,7 +135,7 @@ describe("credential entry route", () => {
   });
 
   test("matches under the remote-gateway public path prefix basename", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     window.history.pushState(
       null,
       "",
@@ -323,7 +323,7 @@ describe("onboarding funnel middleware order", () => {
   // hatch at the baseline plan.
   test("runs the auth guard before the onboarding guard on the hatching route", () => {
     const order = middlewareExecutionOrder(
-      "/assistant/onboarding/hatching?hosting=vellum-cloud&post_checkout=1",
+      "/assistant/onboarding/hatching?hosting=cadet-cloud&post_checkout=1",
     );
     const authIndex = order.indexOf(authMiddleware);
     const onboardingIndex = order.indexOf(onboardingCompletedMiddleware);
@@ -340,7 +340,7 @@ describe("onboarding funnel middleware order", () => {
   // the hatch at the baseline plan.
   test("guards the research funnel route with the auth middleware alone", () => {
     const order = middlewareExecutionOrder(
-      "/assistant/onboarding/research?hosting=vellum-cloud&post_checkout=1",
+      "/assistant/onboarding/research?hosting=cadet-cloud&post_checkout=1",
     );
 
     expect(order).toContain(authMiddleware);

@@ -18,7 +18,7 @@ import { textLinkVariants } from "@mycadet/design-library/components/text-link";
  * the layout assumes that frame and centers content vertically.
  *
  * Version + commit SHA + copyright come from the Electron host via the
- * `window.vellum.app.versionInfo()` bridge. Off-Electron (e.g. someone
+ * `window.cadet.app.versionInfo()` bridge. Off-Electron (e.g. someone
  * navigates to /assistant/about on the web build), the host wrapper
  * returns `null` and the page renders a generic web fallback rather
  * than crashing.
@@ -87,5 +87,5 @@ const FALLBACK: AppVersionInfo = {
   version: "—",
   commitSha: "—",
   copyright: `© ${new Date().getFullYear()} Cadet`,
-  website: "https://vellum.ai",
+  website: "https://cadet.ai",
 };

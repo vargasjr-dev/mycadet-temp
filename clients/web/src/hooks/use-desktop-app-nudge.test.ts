@@ -35,11 +35,11 @@ describe("desktop app download link", () => {
     openDesktopAppDownload();
 
     expect(open).toHaveBeenCalledWith(
-      "https://www.vellum.ai/downloads",
+      "https://www.cadet.ai/downloads",
       "_blank",
       "noopener,noreferrer",
     );
-    expect(VELLUM_DOWNLOADS_URL).toBe("https://www.vellum.ai/downloads");
+    expect(VELLUM_DOWNLOADS_URL).toBe("https://www.cadet.ai/downloads");
   });
 
   test("tags Windows clicks and dismissals with the Windows target", () => {

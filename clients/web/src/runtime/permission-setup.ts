@@ -9,7 +9,7 @@ import type {
 import { isElectron } from "@/runtime/is-electron";
 
 const setup = () =>
-  isElectron() ? window.vellum?.permissions?.setup : undefined;
+  isElectron() ? window.cadet?.permissions?.setup : undefined;
 
 export const supportsPermissionSetup = (): boolean => setup() !== undefined;
 export const cancelPermissionGuide = (): void => {

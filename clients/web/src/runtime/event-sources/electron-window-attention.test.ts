@@ -28,7 +28,7 @@ let teardown: (() => void) | null = null;
 
 /** Stand in for the preload bridge's window-attention subscriber. */
 function installBridge(): void {
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     notifications: {
       onWindowAttention: (
@@ -41,7 +41,7 @@ function installBridge(): void {
         };
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
 }
 
 function start(): void {
@@ -66,7 +66,7 @@ beforeEach(() => {
 afterEach(() => {
   teardown?.();
   teardown = null;
-  delete window.vellum;
+  delete window.cadet;
   publishSpy.mockClear();
 });
 

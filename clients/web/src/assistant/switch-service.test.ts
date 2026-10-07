@@ -125,7 +125,7 @@ describe("switchToAssistant", () => {
   });
 
   test("a managed entry goes through the platform selection path", async () => {
-    lockfileAssistants = [{ assistantId: "m1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "m1", cloud: "cadet" }];
 
     const outcome = await switchToAssistant("m1");
 
@@ -274,7 +274,7 @@ describe("removePairedAssistant", () => {
   test("removing a non-selected pairing stays put and leaves the active id alone", async () => {
     lockfileAssistants = [
       { assistantId: "pr1", cloud: "paired" },
-      { assistantId: "m1", cloud: "vellum" },
+      { assistantId: "m1", cloud: "cadet" },
     ];
     selectedAssistant = { assistantId: "m1" };
     activeAssistantId = "m1";

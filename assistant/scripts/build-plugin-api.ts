@@ -263,10 +263,10 @@ function main(): void {
   // 5. Assemble the publishable package directory.
   mkdirSync(pkgDir, { recursive: true });
 
-  // Ship the app-side ambient global (`window.vellum`) as `app.d.ts`, exposed
+  // Ship the app-side ambient global (`window.cadet`) as `app.d.ts`, exposed
   // via the `@mycadet/plugin-api/app` subpath. Plugin *apps* reference it
   // (`/// <reference types="@mycadet/plugin-api/app" />` or a tsconfig
-  // `types` entry) instead of hand-declaring `window.vellum`. The main rollup
+  // `types` entry) instead of hand-declaring `window.cadet`. The main rollup
   // triple-slash-references it too, so importing anything from the package
   // also pulls the global in.
   cpSync(
@@ -296,7 +296,7 @@ function main(): void {
             import: "./index.js",
             default: "./index.js",
           },
-          // App-side ambient globals (`window.vellum`). Types-only — the
+          // App-side ambient globals (`window.cadet`). Types-only — the
           // runtime is injected by the host into the app's sandboxed iframe,
           // so there is nothing to import at runtime.
           "./app": {

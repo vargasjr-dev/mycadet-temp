@@ -6,15 +6,15 @@ import {
 } from "./mock-suggestions";
 
 describe("MOCK_SUGGESTION_GROUPS", () => {
-  it("includes at least one plugin and one vellum-curated group", () => {
+  it("includes at least one plugin and one cadet-curated group", () => {
     const sources = new Set(MOCK_SUGGESTION_GROUPS.map((g) => g.source));
     expect(sources.has("plugin")).toBe(true);
-    expect(sources.has("vellum-curated")).toBe(true);
+    expect(sources.has("cadet-curated")).toBe(true);
   });
 
   it("has a curated group with at least 5 suggestions", () => {
     const curated = MOCK_SUGGESTION_GROUPS.find(
-      (g) => g.source === "vellum-curated",
+      (g) => g.source === "cadet-curated",
     );
     expect(curated).toBeDefined();
     expect(curated!.suggestions.length).toBeGreaterThanOrEqual(5);

@@ -30,7 +30,7 @@ mock.module("@/runtime/push-registration", () => ({
   extractScopedPushTapPayload: () => null,
 }));
 mock.module("@/runtime/android-notification-channels", () => ({
-  ANDROID_ALERTS_CHANNEL_ID: "vellum-alerts",
+  ANDROID_ALERTS_CHANNEL_ID: "cadet-alerts",
   ensureAndroidAlertsChannel: async () => {},
 }));
 

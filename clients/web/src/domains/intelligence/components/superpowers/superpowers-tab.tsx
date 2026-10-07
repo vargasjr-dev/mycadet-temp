@@ -1048,7 +1048,7 @@ function getEmptyStateCopy(
         subtitle: t("superpowersTab.emptyState.pluginsSubtitle"),
         Icon: Puzzle,
       };
-    case "vellum":
+    case "cadet":
       return {
         title: t("superpowersTab.emptyState.cadetTitle"),
         subtitle: t("superpowersTab.emptyState.cadetSubtitle"),

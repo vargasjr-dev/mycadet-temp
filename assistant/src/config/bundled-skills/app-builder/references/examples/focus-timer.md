@@ -140,7 +140,7 @@ export function Timer({ workMinutes, breakMinutes }: TimerProps) {
 
   // Load persisted cumulative stats once on mount.
   useEffect(() => {
-    window.vellum
+    window.cadet
       .fetch("/v1/x/focus-sessions")
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then(setStats)
@@ -150,7 +150,7 @@ export function Timer({ workMinutes, breakMinutes }: TimerProps) {
   // Record a completed work session and refresh stats from the server response.
   const recordSession = useCallback(async () => {
     try {
-      const res = await window.vellum.fetch("/v1/x/focus-sessions", {
+      const res = await window.cadet.fetch("/v1/x/focus-sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ minutes: workMinutes }),

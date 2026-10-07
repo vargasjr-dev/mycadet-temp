@@ -267,7 +267,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
   test("escaping a legacy managed-mode daemon resets mode alongside the provider", async () => {
     // Without the mode reset, the stale `mode: "managed"` would win over the
-    // BYOK provider choice and the user would silently stay on Vellum.
+    // BYOK provider choice and the user would silently stay on Cadet.
     daemonConfigData = {
       services: { tts: { mode: "managed", provider: "fish-audio" } },
     };
@@ -426,7 +426,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
   });
 
   test("grafts the Cadet option onto a fetched catalog that lacks it", () => {
-    // A daemon serving the pre-vellum catalog omits the managed option; the
+    // A daemon serving the pre-cadet catalog omits the managed option; the
     // card must still offer it, or a legacy managed config has no selectable
     // representation and managed TTS becomes unreachable from this UI.
     orgReady = true;

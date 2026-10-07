@@ -306,21 +306,7 @@ const TtsProvidersObjectSchema = z.object({
     TtsCadetProviderConfigSchema.parse({}),
   ),
 });
-const TtsProvidersSchema = z.preprocess((raw) => {
-  // Legacy provider key from before the rebrand: normalize
-  // `providers.vellum` to `providers.cadet` so existing configs keep
-  // round-tripping under the canonical id.
-  if (
-    raw != null &&
-    typeof raw === "object" &&
-    "vellum" in (raw as Record<string, unknown>) &&
-    !("cadet" in (raw as Record<string, unknown>))
-  ) {
-    const { vellum, ...rest } = raw as Record<string, unknown>;
-    return { ...rest, cadet: vellum };
-  }
-  return raw;
-}, TtsProvidersObjectSchema);
+const TtsProvidersSchema = TtsProvidersObjectSchema;
 export type TtsProviders = z.infer<typeof TtsProvidersObjectSchema>;
 
 // ---------------------------------------------------------------------------
@@ -355,17 +341,14 @@ for (const id of schemaKeys) {
  * Canonical TTS service configuration.
  *
  * `provider` is the only axis: `"cadet"` synthesizes through the platform,
- * billed to Vellum credits; any other provider uses the user's own API key.
+ * billed to Cadet credits; any other provider uses the user's own API key.
  */
 export const TtsServiceSchema = z
   .object({
     provider: z
-      .preprocess(
-        (v) => (v === "vellum" ? "cadet" : v),
-        z.enum(TTS_PROVIDER_IDS, {
-          error: `services.tts.provider must be one of: ${TTS_PROVIDER_IDS.join(", ")}`,
-        }),
-      )
+      .enum(TTS_PROVIDER_IDS, {
+        error: `services.tts.provider must be one of: ${TTS_PROVIDER_IDS.join(", ")}`,
+      })
       .default("elevenlabs")
       .describe("Active TTS provider used for speech synthesis"),
     providers: TtsProvidersSchema.default(TtsProvidersSchema.parse({})),

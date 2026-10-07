@@ -4,12 +4,12 @@
  *
  * The native shell (`MyViewController.swift`) inserts a "Reply" item into the
  * WKWebView selection edit menu and, when tapped, calls
- * `window.__vellumQuoteReplyFromSelection()`. This hook:
+ * `window.__cadetQuoteReplyFromSelection()`. This hook:
  *
  * 1. Registers that global, which resolves the current selection to an
  *    assistant message and opens the reply bubble — reusing the same
  *    resolution logic as the web floating chip (`resolveAssistantSelection`).
- * 2. Posts `{ canReply }` to the `vellumTextSelection` script-message handler
+ * 2. Posts `{ canReply }` to the `cadetTextSelection` script-message handler
  *    so native can gate the menu item to assistant-message selections only.
  *    It primes the flag on `pointerdown` (from the touched node, before the
  *    long-press builds the edit menu) and keeps it in sync on `selectionchange`.
@@ -29,18 +29,18 @@ import {
 } from "@/domains/chat/resolve-assistant-selection";
 import { isNativePlatform } from "@/runtime/native-auth";
 
-const NATIVE_SELECTION_HANDLER = "vellumTextSelection";
+const NATIVE_SELECTION_HANDLER = "cadetTextSelection";
 
 declare global {
   interface Window {
-    __vellumQuoteReplyFromSelection?: () => void;
+    __cadetQuoteReplyFromSelection?: () => void;
     /**
      * Set to `true` by the native iOS shell (only on OS versions that can
      * render the native edit-menu "Reply" item) to advertise that it hosts
      * quote-and-reply natively. Absent on older App Store installs and on OS
      * versions where the native menu is unavailable.
      */
-    __vellumNativeQuoteReplyMenu?: boolean;
+    __cadetNativeQuoteReplyMenu?: boolean;
     webkit?: {
       messageHandlers?: Record<
         string,
@@ -59,7 +59,7 @@ declare global {
 export function hasNativeQuoteReplyMenu(): boolean {
   return (
     typeof window !== "undefined" &&
-    window.__vellumNativeQuoteReplyMenu === true
+    window.__cadetNativeQuoteReplyMenu === true
   );
 }
 
@@ -114,14 +114,14 @@ export function useNativeQuoteReply(
       postCanReply(resolveAssistantSelection(containerRef.current) !== null);
     };
 
-    window.__vellumQuoteReplyFromSelection = openFromSelection;
+    window.__cadetQuoteReplyFromSelection = openFromSelection;
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("selectionchange", handleSelectionChange);
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("selectionchange", handleSelectionChange);
-      if (window.__vellumQuoteReplyFromSelection === openFromSelection) {
-        delete window.__vellumQuoteReplyFromSelection;
+      if (window.__cadetQuoteReplyFromSelection === openFromSelection) {
+        delete window.__cadetQuoteReplyFromSelection;
       }
     };
   }, [containerRef]);

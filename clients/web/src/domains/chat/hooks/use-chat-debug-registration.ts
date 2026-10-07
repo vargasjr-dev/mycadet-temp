@@ -1,5 +1,5 @@
 /**
- * useChatDebugRegistration — wires up the dev-facing `window._vellumDebug.chat`
+ * useChatDebugRegistration — wires up the dev-facing `window._cadetDebug.chat`
  * API so DevTools consumers can inspect chat state at any time.
  *
  * Getters read the same state the render path uses: turn state from the

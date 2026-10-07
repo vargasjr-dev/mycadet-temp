@@ -1,20 +1,20 @@
 /**
- * Events surface exposed under `window._vellumDebug.events`.
+ * Events surface exposed under `window._cadetDebug.events`.
  *
  * Provides live introspection of SSE stream state: active clients, abort
  * signals, and a rolling buffer of the last 1 000 parsed events.
  *
  * Usage (browser console):
  *
- *   window._vellumDebug.events.getClients()
- *   window._vellumDebug.events.getEvents()
- *   const stop = window._vellumDebug.events.subscribe()
+ *   window._cadetDebug.events.getClients()
+ *   window._cadetDebug.events.getEvents()
+ *   const stop = window._cadetDebug.events.subscribe()
  *   // ...events log to the console as they stream in...
  *   stop()
  *
  * The accessors here read directly from the module-state registry in
  * `stream-debug.ts`. Installation onto `window` is performed by
- * `installVellumDebugApi` in `utils/debug-api.ts`, alongside the chat
+ * `installCadetDebugApi` in `utils/debug-api.ts`, alongside the chat
  * namespace, so both halves of the debug API mount/unmount together.
  */
 
@@ -64,6 +64,6 @@ export const eventsDebugApi: ChatDebugEventsApi = {
   reconnectClient: (timeoutMs) => requestSseReconnect(timeoutMs),
   subscribe: () =>
     subscribeToBus("sse.event", (envelope) => {
-      console.log("[_vellumDebug.events]", envelope);
+      console.log("[_cadetDebug.events]", envelope);
     }),
 };

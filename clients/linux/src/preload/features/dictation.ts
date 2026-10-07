@@ -21,7 +21,7 @@ import {
   type HelperState,
   type HotkeyEvent,
   type VoiceModeChordRegistrationResult,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 const subscribe =
@@ -43,7 +43,7 @@ const subscribe =
  * `setVoiceModeChord` registers the voice mode shortcut's bare-modifier
  * chord with the helper when a sidecar exists.
  */
-const dictation: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
+const dictation: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
   id: "dictation",
   install: (registry) => {
     registry.contribute("helper", {

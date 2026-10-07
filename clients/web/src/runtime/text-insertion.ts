@@ -10,12 +10,12 @@ export type TextInsertionResult =
 export async function insertTextIntoFrontApp(
   text: string,
 ): Promise<TextInsertionResult> {
-  if (!isElectron() || !window.vellum?.text?.insertIntoFrontApp) {
+  if (!isElectron() || !window.cadet?.text?.insertIntoFrontApp) {
     return { status: "unavailable" };
   }
 
   try {
-    return await window.vellum.text.insertIntoFrontApp(text);
+    return await window.cadet.text.insertIntoFrontApp(text);
   } catch (err) {
     console.warn("insertTextIntoFrontApp failed", err);
     return { status: "blocked" };
@@ -27,7 +27,7 @@ export async function insertTextIntoFrontApp(
  * dictation in the place of one another app pasted. Unavailable off Electron.
  */
 export async function undoInFrontApp(): Promise<TextInsertionResult> {
-  const undo = window.vellum?.text?.undoInFrontApp;
+  const undo = window.cadet?.text?.undoInFrontApp;
   if (!isElectron() || typeof undo !== "function") {
     return { status: "unavailable" };
   }
@@ -42,11 +42,11 @@ export async function openTextInsertionSettings(): Promise<void> {
   } catch {
     // Fall through to the legacy bridge below.
   }
-  if (!isElectron() || !window.vellum?.text?.openAutomationSettings) {
+  if (!isElectron() || !window.cadet?.text?.openAutomationSettings) {
     return;
   }
   try {
-    await window.vellum.text.openAutomationSettings();
+    await window.cadet.text.openAutomationSettings();
   } catch (err) {
     console.warn("openTextInsertionSettings failed", err);
   }

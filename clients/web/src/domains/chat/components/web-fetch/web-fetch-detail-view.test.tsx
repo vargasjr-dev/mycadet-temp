@@ -157,7 +157,7 @@ describe("WebFetchDetailView", () => {
   test("never gives the fetched page an assistant id to resolve local files with", () => {
     const { getByTestId } = renderView(payload({}));
     // Remote page text is the least-trusted content in the app: without an
-    // assistant id a `vellum://workspace/…` reference it smuggles in stays an
+    // assistant id a `cadet://workspace/…` reference it smuggles in stays an
     // inert card instead of pulling local workspace bytes into the panel.
     expect(getByTestId("markdown").getAttribute("data-has-assistant-id")).toBe(
       "false",

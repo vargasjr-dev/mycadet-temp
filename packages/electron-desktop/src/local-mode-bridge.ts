@@ -1,12 +1,12 @@
 import type { IpcRenderer } from "electron";
 
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 type RendererIpc = Pick<IpcRenderer, "invoke">;
 
 export const createLocalModeBridge = (
   ipc: RendererIpc,
-): VellumBridge["localMode"] => ({
+): CadetBridge["localMode"] => ({
   guardianToken: (assistantId) =>
     ipc.invoke("cadet:localMode:guardianToken", assistantId),
   hatch: (remote) => ipc.invoke("cadet:localMode:hatch", remote),

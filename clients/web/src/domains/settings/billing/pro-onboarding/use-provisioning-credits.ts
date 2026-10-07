@@ -31,7 +31,7 @@ export interface CreditTierChange {
  * `plans-page.tsx` uses, so React Query dedupes when the takeover follows a page
  * that already fetched it.
  *
- * Without a ready org the request carries no `Vellum-Organization-Id` and fails,
+ * Without a ready org the request carries no `Cadet-Organization-Id` and fails,
  * caching a rejection that would leave the chip unresolved once the org does
  * hydrate. The sibling provisioning queries gate the same way.
  */

@@ -18,7 +18,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalAssistant: (a: { cloud?: string }) =>
     a.cloud === "local" || a.cloud === "docker",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
-  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "vellum",
+  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
 }));
 
 let organizationId: string | null = "org-1";

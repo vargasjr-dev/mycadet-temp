@@ -126,7 +126,7 @@ export function ProfileEditorProviderSection({
   const { t } = useTranslation("settings");
   const [isEnteringCustomModel, setIsEnteringCustomModel] = useState(false);
   const hostedInference =
-    useAssistantFeatureFlagStore.use.vellumHostedInference();
+    useAssistantFeatureFlagStore.use.cadetHostedInference();
   const catalogFlags = catalogEnabledFlags({
     hostedInference,
   });
@@ -164,7 +164,7 @@ export function ProfileEditorProviderSection({
 
   // Providers backed by at least one connection — picking a provider with zero
   // connections binds a profile to a route the daemon can't dispatch through.
-  // The Vellum-managed connection expands into every managed-routable provider
+  // The Cadet-managed connection expands into every managed-routable provider
   // (see `providersServedByConnections`). The currently-bound `provider` is
   // always kept so editing a stale profile still renders a sensible trigger.
   const visibleProviders = useMemo(() => {

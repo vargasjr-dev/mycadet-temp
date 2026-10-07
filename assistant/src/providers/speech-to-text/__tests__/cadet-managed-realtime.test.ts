@@ -8,9 +8,9 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { SttError, type SttStreamServerEvent } from "../../../stt/types.js";
-import { VellumManagedFluxRealtimeTranscriber } from "../vellum-managed-flux-realtime.js";
-import { VellumManagedRealtimeTranscriber } from "../vellum-managed-realtime.js";
-import type { SpeechRelayConnection } from "../vellum-speech-relay-connection.js";
+import { CadetManagedFluxRealtimeTranscriber } from "../cadet-managed-flux-realtime.js";
+import { CadetManagedRealtimeTranscriber } from "../cadet-managed-realtime.js";
+import type { SpeechRelayConnection } from "../cadet-speech-relay-connection.js";
 
 type WsListener = (...args: unknown[]) => void;
 
@@ -133,10 +133,10 @@ describe("Cadet managed realtime transcribers", () => {
 
   async function startAdapter(
     options: ConstructorParameters<
-      typeof VellumManagedRealtimeTranscriber
+      typeof CadetManagedRealtimeTranscriber
     >[1] = {},
   ) {
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION, options);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION, options);
     const { events, onEvent } = collector();
     const startPromise = adapter.start(onEvent);
     sockets[0]!.simulateOpen();
@@ -264,7 +264,7 @@ describe("Cadet managed realtime transcribers", () => {
   });
 
   test("Flux turn indices stay in one sequence across relay reconnects", async () => {
-    const adapter = new VellumManagedFluxRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedFluxRealtimeTranscriber(CONNECTION);
     const { events, onEvent } = collector();
     const started = adapter.start(onEvent);
     sockets[0]!.simulateOpen();
@@ -349,7 +349,7 @@ describe("Cadet managed realtime transcribers", () => {
   });
 
   test("stop during the initial dial tears down the session it raced", async () => {
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION);
     const { events, onEvent } = collector();
     const startPromise = adapter.start(onEvent);
 
@@ -394,7 +394,7 @@ describe("Cadet managed realtime transcribers", () => {
         { status: 402 },
       )) as unknown as typeof fetch;
 
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION);
     const startPromise = adapter.start(() => {});
     sockets[0]!.simulateClose(1006, "");
 
@@ -407,7 +407,7 @@ describe("Cadet managed realtime transcribers", () => {
         status: 401,
       })) as unknown as typeof fetch;
 
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION);
     const startPromise = adapter.start(() => {});
     sockets[0]!.simulateClose(1006, "");
 
@@ -426,7 +426,7 @@ describe("Cadet managed realtime transcribers", () => {
       throw new Error("refused");
     }) as unknown as typeof fetch;
 
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION);
     const startPromise = adapter.start(() => {});
     // Bun embeds the dialed URL (which carries ?key= under query auth) in
     // connection-failure details; the adapter must redact it everywhere.
@@ -448,7 +448,7 @@ describe("Cadet managed realtime transcribers", () => {
       throw new Error("connection refused");
     }) as unknown as typeof fetch;
 
-    const adapter = new VellumManagedRealtimeTranscriber(CONNECTION);
+    const adapter = new CadetManagedRealtimeTranscriber(CONNECTION);
     const startPromise = adapter.start(() => {});
     sockets[0]!.simulateClose(1006, "");
 

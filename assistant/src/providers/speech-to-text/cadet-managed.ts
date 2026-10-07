@@ -23,7 +23,7 @@ type ManagedSpeechFailure = Extract<ManagedSpeechResult<never>, { ok: false }>;
  * platform assistant ID. The credential-store lookup used for API-key
  * providers does not apply to `vellum`.
  */
-export async function vellumManagedSpeechAvailable(): Promise<boolean> {
+export async function cadetManagedSpeechAvailable(): Promise<boolean> {
   return managedSpeechAvailable();
 }
 
@@ -91,7 +91,7 @@ export function sttErrorFromManagedSpeech(
  * Transcribe a complete audio buffer via the platform. Throws {@link SttError}
  * on failure (already normalized — `normalizeSttError` passes it through).
  */
-export async function vellumManagedTranscribe(
+export async function cadetManagedTranscribe(
   audio: Buffer,
   mimeType: string,
   signal?: AbortSignal,

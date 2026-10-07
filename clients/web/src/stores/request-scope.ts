@@ -21,7 +21,7 @@ import { requestScopeKey } from "@/utils/request-scope-key";
  * The scope a request made right now would carry.
  *
  * The organization comes from `getActiveOrganizationIdForRequests()`, the same
- * derivation that builds `Vellum-Organization-Id`, so the key names whoever
+ * derivation that builds `Cadet-Organization-Id`, so the key names whoever
  * the server actually answered for. The store's resolved id alone would not:
  * it is null while the persisted id is carrying requests, which stamps an
  * organization's response as belonging to no organization at all.

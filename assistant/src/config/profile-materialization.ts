@@ -1,4 +1,9 @@
 import { getDb } from "../persistence/db-connection.js";
+import {
+  CADET_MANAGED_CONNECTION_NAME,
+  getManagedUpstream,
+  MANAGED_ROUTABLE_PROVIDERS,
+} from "../providers/cadet-model-routing.js";
 import { catalogProviderForProfile } from "../providers/connection-resolution.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import { getConnection } from "../providers/inference/connections.js";
@@ -7,11 +12,6 @@ import {
   getCatalogProviderForModel,
   isModelInCatalog,
 } from "../providers/model-catalog.js";
-import {
-  getManagedUpstream,
-  MANAGED_ROUTABLE_PROVIDERS,
-  VELLUM_MANAGED_CONNECTION_NAME,
-} from "../providers/vellum-model-routing.js";
 import {
   type LLMConfigBase,
   type ProfileEntry,
@@ -132,7 +132,7 @@ export function completeCustomProfile(
   // Completion never stamps a `provider_connection`; an inherited binding
   // would only re-introduce the collapsed field on disk. The default's
   // explicit binding is instead inherited IN the provider value, the
-  // entries-model representation: the vellum binding becomes the routing
+  // entries-model representation: the cadet binding becomes the routing
   // identity (only when it can serve the model, or the read-path schema
   // would strip the profile), and a same-vendor binding becomes the entry
   // name, so a completed profile keeps signing with the credential the
@@ -144,7 +144,7 @@ export function completeCustomProfile(
     profile.provider_connection === undefined &&
     dflt.provider_connection !== undefined
   ) {
-    if (dflt.provider_connection === VELLUM_MANAGED_CONNECTION_NAME) {
+    if (dflt.provider_connection === CADET_MANAGED_CONNECTION_NAME) {
       // Only managed-servable pairs inherit the managed binding; anything
       // else inherits nothing and lets dispatch auto-resolve by vendor,
       // matching the pre-entries inheritance contract.
@@ -153,7 +153,7 @@ export function completeCustomProfile(
         completed.model !== undefined &&
         getManagedUpstream(completed.model) !== null
       ) {
-        completed.provider = "vellum";
+        completed.provider = "cadet";
       }
     } else if (completed.provider === dflt.provider) {
       // Folding to the entry name is only safe against a verified row; a

@@ -45,7 +45,7 @@ const REMOVED_MODE_PATHS: Record<string, string> = {
     "services.image-generation.mode does not exist; image generation is configured by provider alone. For managed image generation run `config set services.image-generation.provider cadet`.",
 };
 
-/** Provider paths whose "vellum" value requires a platform connection. */
+/** Provider paths whose "cadet" value requires a platform connection. */
 const VELLUM_PROVIDER_PATHS = new Set([
   "services.web-search.provider",
   "services.image-generation.provider",
@@ -96,11 +96,11 @@ export function registerConfigCommand(program: Command): void {
           }
 
           // Managed services authenticate via the platform connection:
-          // mode "managed" for mode-based services, provider "vellum" for
+          // mode "managed" for mode-based services, provider "cadet" for
           // web search.
           const requiresPlatform =
             (SERVICE_MODE_PATH_RE.test(key) && parsed === "managed") ||
-            (VELLUM_PROVIDER_PATHS.has(key) && parsed === "vellum");
+            (VELLUM_PROVIDER_PATHS.has(key) && parsed === "cadet");
           if (requiresPlatform) {
             const { requirePlatformConnection } =
               await import("./oauth/shared.js");

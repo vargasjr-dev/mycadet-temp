@@ -19,7 +19,7 @@ import { useTranslation } from "@/i18n";
 import { docsUrl, routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 
-type HostingMode = "vellum-cloud" | "local" | "docker";
+type HostingMode = "cadet-cloud" | "local" | "docker";
 
 interface HostingOption {
   mode: HostingMode;
@@ -44,7 +44,7 @@ function useHostingOptions(): HostingOption[] {
 
   return [
     {
-      mode: "vellum-cloud",
+      mode: "cadet-cloud",
       label: "Cadet Cloud",
       subtitle:
         "Always on, 24/7, even when your computer is off. Runs on Cadet's secure infrastructure.",
@@ -75,14 +75,14 @@ export function HostingScreen() {
   const electron = isElectron();
   const options = useHostingOptions();
   const cloudDisabled = options.find(
-    (o) => o.mode === "vellum-cloud",
+    (o) => o.mode === "cadet-cloud",
   )?.disabled;
   const [selected, setSelected] = useState<HostingMode>(
-    hasPlatformSession && !cloudDisabled ? "vellum-cloud" : "local",
+    hasPlatformSession && !cloudDisabled ? "cadet-cloud" : "local",
   );
 
   useEffect(() => {
-    if (cloudDisabled && selected === "vellum-cloud") {
+    if (cloudDisabled && selected === "cadet-cloud") {
       setSelected("local");
     }
   }, [cloudDisabled, selected]);
@@ -99,7 +99,7 @@ export function HostingScreen() {
   const showLogin = fromSelectAssistant && !hasPlatformSession && !electron;
 
   const onContinue = () => {
-    if (selected === "vellum-cloud") {
+    if (selected === "cadet-cloud") {
       clearGatewayToken();
       setSelfHostedConnection(null);
       // Cloud is managed: drop any provider key staged from a prior
@@ -188,7 +188,7 @@ export function HostingScreen() {
                   loginLoading ? t("actions.cancel") : t("actions.loginToUse")
                 }
                 onLogin={
-                  opt.disabled && opt.mode === "vellum-cloud" && showLogin
+                  opt.disabled && opt.mode === "cadet-cloud" && showLogin
                     ? loginLoading
                       ? cancelLogin
                       : () => void login()

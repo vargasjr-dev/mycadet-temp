@@ -42,17 +42,17 @@ function makeCaches(opts: {
   const store = new Map<string, string>();
   if (opts.platformBaseUrl)
     store.set(
-      credentialKey("vellum", "platform_base_url"),
+      credentialKey("cadet", "platform_base_url"),
       opts.platformBaseUrl,
     );
   if (opts.assistantApiKey)
     store.set(
-      credentialKey("vellum", "assistant_api_key"),
+      credentialKey("cadet", "assistant_api_key"),
       opts.assistantApiKey,
     );
   if (opts.platformAssistantId) {
     store.set(
-      credentialKey("vellum", "platform_assistant_id"),
+      credentialKey("cadet", "platform_assistant_id"),
       opts.platformAssistantId,
     );
     applyPlatformIdentityIds({

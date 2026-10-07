@@ -9,18 +9,18 @@
  * its platform proxy can authenticate — no browser session cookie is used.
  */
 
-const FALLBACK_WEB_URL = "https://www.vellum.ai";
+const FALLBACK_WEB_URL = "https://www.cadet.ai";
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
-interface VellumConfig {
+interface CadetConfig {
   webUrl?: string;
   platformUrl?: string;
 }
 
 function getLocalConfig(): { webUrl: string } {
-  const injected = (window as unknown as { __VELLUM_CONFIG__?: VellumConfig })
-    .__VELLUM_CONFIG__;
+  const injected = (window as unknown as { __CADET_CONFIG__?: CadetConfig })
+    .__CADET_CONFIG__;
   if (injected?.webUrl) {
     return { webUrl: injected.webUrl };
   }

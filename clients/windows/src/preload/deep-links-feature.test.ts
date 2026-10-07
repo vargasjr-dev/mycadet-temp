@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 const invoke = mock(() => Promise.resolve());
 const on = mock(() => undefined);
@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 test("contributes deep-link delivery and launch-at-login IPC", async () => {
-  const registry = new BridgeCapabilityRegistry<VellumBridge>({});
+  const registry = new BridgeCapabilityRegistry<CadetBridge>({});
   deepLinksFeature.install(registry);
   const bridge = registry.build();
   const callback = mock(() => undefined);

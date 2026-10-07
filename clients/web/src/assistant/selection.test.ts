@@ -67,7 +67,7 @@ function platformAssistant(
 function lockfileAssistant(assistantId: string): LockfileAssistant {
   return {
     assistantId,
-    cloud: "vellum",
+    cloud: "cadet",
     runtimeUrl: "http://x",
     hatchedAt: "2026-01-01",
   } as LockfileAssistant;

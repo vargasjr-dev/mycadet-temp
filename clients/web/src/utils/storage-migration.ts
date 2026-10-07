@@ -2,12 +2,12 @@
  * One-time localStorage key migrations.
  *
  * All app-owned localStorage keys must start with either:
- * - `vellum:` — user-scoped, cleared on logout
+ * - `cadet:` — user-scoped, cleared on logout
  * - `device:` — device-scoped, preserved across sessions
  *
  * This module renames legacy keys (unprefixed, `onboarding.`, `voice:`,
- * `ff:client:`, `gw:`, `local:`, `integrations.`, `vellum_`) to the
- * canonical `vellum:` namespace so that session-cleanup.ts can use a
+ * `ff:client:`, `gw:`, `local:`, `integrations.`, `cadet_`) to the
+ * canonical `cadet:` namespace so that session-cleanup.ts can use a
  * single prefix check instead of a brittle allowlist.
  *
  * Migrations are idempotent — safe to re-run on every app startup.
@@ -155,7 +155,7 @@ function removeAllWithPrefix(prefix: string): void {
  * `cadet:selectedAssistantId` key.
  *
  * Among per-org entries, prefer the persisted active org's selection (the org
- * store records it in sessionStorage as `vellum_active_organization_id`) so a
+ * store records it in sessionStorage as `cadet_active_organization_id`) so a
  * multi-org user keeps their current org's pick. Only when that's absent does
  * the lexicographically-smallest org suffix win — deterministic and idempotent.
  * A non-ideal pick self-heals on read: `resolveSelectedAssistantId` validates
@@ -204,7 +204,7 @@ export function collapseSelectedAssistantKeys(): void {
 function activeOrgSelection(perOrgPrefix: string): string | null {
   let activeOrg: string | null = null;
   try {
-    activeOrg = sessionStorage.getItem("vellum_active_organization_id");
+    activeOrg = sessionStorage.getItem("cadet_active_organization_id");
   } catch {
     return null;
   }
@@ -230,7 +230,7 @@ export function runStorageMigrations(): void {
 
   // -- Static key renames ------------------------------------------------
 
-  // Unprefixed → vellum: (these escaped cleanup entirely before)
+  // Unprefixed → cadet: (these escaped cleanup entirely before)
   migrateKey("assistantSidebarCollapsed", "cadet:sidebar:collapsed");
   migrateKey("assistantSidebarWidth", "cadet:sidebar:width");
 
@@ -259,9 +259,9 @@ export function runStorageMigrations(): void {
   // cadet:skillsTabTipDismissed → cadet:skills:tipDismissed (consistent naming)
   migrateKey("cadet:skillsTabTipDismissed", "cadet:skills:tipDismissed");
 
-  // vellum_ → cadet:ai: (AI settings page)
-  migrateKey("vellum_image_gen_mode", "cadet:ai:imageGenMode");
-  migrateKey("vellum_image_gen_model", "cadet:ai:imageGenModel");
+  // cadet_ → cadet:ai: (AI settings page)
+  migrateKey("cadet_image_gen_mode", "cadet:ai:imageGenMode");
+  migrateKey("cadet_image_gen_model", "cadet:ai:imageGenModel");
   // Image generation is configured by provider alone; convert a stored
   // legacy mode into the equivalent provider so a previously-managed
   // browser does not fall back to the BYOK default before the daemon
@@ -270,7 +270,7 @@ export function runStorageMigrations(): void {
     if (localStorage.getItem("cadet:ai:imageGenProvider") === null) {
       const legacyImageGenMode = localStorage.getItem("cadet:ai:imageGenMode");
       if (legacyImageGenMode === "managed") {
-        localStorage.setItem("cadet:ai:imageGenProvider", "vellum");
+        localStorage.setItem("cadet:ai:imageGenProvider", "cadet");
       } else if (legacyImageGenMode === "your-own") {
         localStorage.setItem("cadet:ai:imageGenProvider", "gemini");
       }
@@ -278,18 +278,18 @@ export function runStorageMigrations(): void {
   } catch {
     // Storage unavailable. Retry on next load.
   }
-  migrateKey("vellum_web_search_mode", "cadet:ai:webSearchMode");
-  migrateKey("vellum_web_search_provider", "cadet:ai:webSearchProvider");
-  migrateKey("vellum_email_mode", "cadet:ai:emailMode");
-  migrateKey("vellum_email_byo_provider", "cadet:ai:emailByoProvider");
-  migrateKey("vellum_gemini_key", "cadet:ai:geminiKey");
-  migrateKey("vellum_perplexity_key", "cadet:ai:perplexityKey");
-  migrateKey("vellum_brave_key", "cadet:ai:braveKey");
-  migrateKey("vellum_tavily_key", "cadet:ai:tavilyKey");
+  migrateKey("cadet_web_search_mode", "cadet:ai:webSearchMode");
+  migrateKey("cadet_web_search_provider", "cadet:ai:webSearchProvider");
+  migrateKey("cadet_email_mode", "cadet:ai:emailMode");
+  migrateKey("cadet_email_byo_provider", "cadet:ai:emailByoProvider");
+  migrateKey("cadet_gemini_key", "cadet:ai:geminiKey");
+  migrateKey("cadet_perplexity_key", "cadet:ai:perplexityKey");
+  migrateKey("cadet_brave_key", "cadet:ai:braveKey");
+  migrateKey("cadet_tavily_key", "cadet:ai:tavilyKey");
 
-  // vellumDebug. → cadet:debug:
+  // cadetDebug. → cadet:debug:
   migrateKey(
-    "vellumDebug.flags.impersonateAssistantVersion",
+    "cadetDebug.flags.impersonateAssistantVersion",
     "cadet:debug:impersonateAssistantVersion",
   );
 
@@ -318,14 +318,14 @@ export function runStorageMigrations(): void {
   // ff:client: → cadet:ff:
   migratePrefix("ff:client:", "cadet:ff:");
 
-  // Unprefixed per-entity → vellum:
+  // Unprefixed per-entity → cadet:
   migratePrefix(
     "disk-pressure-warning-dismissed-",
     "cadet:diskPressureDismissed:",
   );
 
-  // vellum_ per-org → vellum:
-  migratePrefix("vellum_current_assistant_id__", "cadet:currentAssistantId:");
+  // cadet_ per-org → cadet:
+  migratePrefix("cadet_current_assistant_id__", "cadet:currentAssistantId:");
 
   // Collapse the canonicalized legacy selection keys (tab-local + per-org map)
   // into the single `cadet:selectedAssistantId`. Must run AFTER the renames

@@ -31,14 +31,14 @@ import {
 } from "@/runtime/is-electron";
 
 type VoiceActivityBridge = NonNullable<
-  NonNullable<Window["vellum"]>["voiceActivity"]
+  NonNullable<Window["cadet"]>["voiceActivity"]
 >;
 
 const bridge = (): VoiceActivityBridge | undefined => {
   if (!isElectron()) {
     return undefined;
   }
-  return window.vellum?.voiceActivity;
+  return window.cadet?.voiceActivity;
 };
 
 /**

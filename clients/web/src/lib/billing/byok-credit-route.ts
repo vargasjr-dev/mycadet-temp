@@ -68,22 +68,22 @@ function entryBurnsManagedCredits(
   entry: CreditRouteEntry,
   connections: readonly ProviderConnection[],
 ): boolean | null {
-  if (entry.provider === "vellum") {
+  if (entry.provider === "cadet") {
     return true;
   }
   if (entry.provider_connection) {
     // The canonical connection name is managed regardless of the stored row:
-    // the daemon ignores a user-owned row claiming "vellum" and resolves the
+    // the daemon ignores a user-owned row claiming "cadet" and resolves the
     // route through platform auth anyway (`isManagedConnectionRoute` in
     // assistant/src/providers/connection-resolution.ts).
-    if (entry.provider_connection === "vellum") {
+    if (entry.provider_connection === "cadet") {
       return true;
     }
     const bound = connections.find((c) => c.name === entry.provider_connection);
     if (!bound) {
       return null;
     }
-    return bound.provider === "vellum" || bound.auth.type === "platform";
+    return bound.provider === "cadet" || bound.auth.type === "platform";
   }
   if (!entry.provider) {
     return null;
@@ -183,12 +183,12 @@ function composedMainAgentRoute(
       const implied = catalogProviderForModel(tweakModel);
       if (implied && implied !== entry.provider) {
         const managedConnectionSurvives =
-          entry.provider_connection === "vellum" &&
+          entry.provider_connection === "cadet" &&
           MANAGED_ROUTABLE.has(implied);
         route = {
           provider: implied,
           ...(managedConnectionSurvives
-            ? { provider_connection: "vellum" }
+            ? { provider_connection: "cadet" }
             : {}),
         };
         altered = true;
@@ -196,13 +196,13 @@ function composedMainAgentRoute(
     }
   }
   if (
-    entry.provider === "vellum" &&
+    entry.provider === "cadet" &&
     route.provider &&
-    route.provider !== "vellum" &&
+    route.provider !== "cadet" &&
     !route.provider_connection &&
     MANAGED_ROUTABLE.has(route.provider)
   ) {
-    route = { ...route, provider_connection: "vellum" };
+    route = { ...route, provider_connection: "cadet" };
     altered = true;
   }
   return { route, altered };

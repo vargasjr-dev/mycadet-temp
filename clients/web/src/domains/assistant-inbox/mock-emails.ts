@@ -13,7 +13,7 @@ export const MOCK_NOW = new Date("2026-09-16T15:40:00");
 
 export const MOCK_ASSISTANT_NAME = "Velly";
 export const MOCK_ASSISTANT_HANDLE = "velly";
-export const MOCK_ROOT_DOMAIN = "vellum.me";
+export const MOCK_ROOT_DOMAIN = "cadet.me";
 export const MOCK_ADDRESS = `hi@${MOCK_ASSISTANT_HANDLE}.${MOCK_ROOT_DOMAIN}`;
 
 const VELLY = { name: MOCK_ASSISTANT_NAME, address: MOCK_ADDRESS };

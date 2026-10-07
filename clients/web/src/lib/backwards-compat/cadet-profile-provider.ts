@@ -1,8 +1,8 @@
 /**
- * Backwards-compat gate: the wire payload for Vellum-picker profiles.
+ * Backwards-compat gate: the wire payload for Cadet-picker profiles.
  *
  * Daemons at `MIN_VERSION` and later store and dispatch
- * `provider: "vellum"` profiles (the routing identity: the managed
+ * `provider: "cadet"` profiles (the routing identity: the managed
  * upstream derives from the model per-request, no connection binding).
  * Older daemons reject the value at the profile write route, so the
  * editor writes the legacy wire shape instead — the model's managed
@@ -29,7 +29,7 @@ import { assistantSupports, whenAssistantVersionKnown } from "./utils";
 
 const MIN_VERSION = "0.10.12";
 
-export async function assistantSupportsVellumProviderProfiles(
+export async function assistantSupportsCadetProviderProfiles(
   ownerAssistantId?: string | null,
   versionWaitTimeoutMs?: number,
 ): Promise<boolean> {

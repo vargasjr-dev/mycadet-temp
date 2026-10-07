@@ -104,7 +104,7 @@ const {
   nativeRememberedOriginsProvider,
   nativeSwitchToOrigin,
   nativeSwitchToOriginPath,
-  nativeVellumCloudOrigin,
+  nativeCadetCloudOrigin,
 } = await import("@/runtime/self-hosted-servers");
 
 const {
@@ -143,7 +143,7 @@ describe("nativeRememberedOriginsProvider load", () => {
         { url: "HTTPS://Other.Example/" },
       ],
       activeUrl: "https://host.example/assistant-1",
-      bakedUrl: "https://app.vellum.ai",
+      bakedUrl: "https://app.cadet.ai",
     };
 
     expect(await nativeRememberedOriginsProvider().load()).toEqual([
@@ -432,25 +432,25 @@ describe("nativeSwitchToOrigin", () => {
   });
 });
 
-describe("nativeVellumCloudOrigin", () => {
+describe("nativeCadetCloudOrigin", () => {
   test("reports the baked origin while a self-hosted origin is active", async () => {
     listResult = {
       servers: [],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.vellum.ai/",
+      bakedUrl: "https://app.cadet.ai/",
     };
 
-    expect(await nativeVellumCloudOrigin()).toBe("https://app.vellum.ai");
+    expect(await nativeCadetCloudOrigin()).toBe("https://app.cadet.ai");
   });
 
   test("reports nothing when the shell already serves the baked origin", async () => {
     listResult = {
       servers: [],
       activeUrl: null,
-      bakedUrl: "https://app.vellum.ai",
+      bakedUrl: "https://app.cadet.ai",
     };
 
-    expect(await nativeVellumCloudOrigin()).toBeNull();
+    expect(await nativeCadetCloudOrigin()).toBeNull();
   });
 
   test("reports nothing when the baked origin is unreadable", async () => {
@@ -460,21 +460,21 @@ describe("nativeVellumCloudOrigin", () => {
       bakedUrl: null,
     };
 
-    expect(await nativeVellumCloudOrigin()).toBeNull();
+    expect(await nativeCadetCloudOrigin()).toBeNull();
   });
 
   test("reports nothing on an older shell or off native mobile", async () => {
     bridgeRejects = true;
-    expect(await nativeVellumCloudOrigin()).toBeNull();
+    expect(await nativeCadetCloudOrigin()).toBeNull();
 
     bridgeRejects = false;
     isNativeMobileValue = false;
     listResult = {
       servers: [],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.vellum.ai",
+      bakedUrl: "https://app.cadet.ai",
     };
-    expect(await nativeVellumCloudOrigin()).toBeNull();
+    expect(await nativeCadetCloudOrigin()).toBeNull();
     expect(listMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -500,7 +500,7 @@ describe("installNativeRememberedOrigins", () => {
     listResult = {
       servers: [{ url: "https://host.example", name: "Homelab" }],
       activeUrl: "https://host.example",
-      bakedUrl: "https://app.vellum.ai",
+      bakedUrl: "https://app.cadet.ai",
     };
 
     installNativeRememberedOrigins();

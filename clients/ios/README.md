@@ -55,7 +55,7 @@ which URL is baked into the build.
   must still have a working missing-plugin fallback because a new web
   bundle always ships ahead of the shell that hosts it. Contrast
   with the Electron app, where the
-  `window.vellum.*` IPC surface is broad and tightly coupled.
+  `window.cadet.*` IPC surface is broad and tightly coupled.
 - **WKWebView security model** — unlike Electron's renderer, `WKWebView`
   runs in a full iOS process sandbox with no access to native APIs
   outside the Capacitor bridge. Loading remote content is the standard

@@ -24,7 +24,7 @@ export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
 /** Served by the platform's Next.js app — a `<Navigate>` here dead-ends. */
 const IMPORT_FUNNEL = "/import?foo=1";
-const VELLUM_URL = "https://app.vellum.ai/x";
+const VELLUM_URL = "https://app.cadet.ai/x";
 
 interface AuthFlowCall {
   callbackUrl: string;
@@ -197,7 +197,7 @@ export function describeAuthEntryContract(
       expect(currentLocation()).toBe(entry);
     });
 
-    test("a vellum.ai returnTo gets a real page load, not a router navigation", () => {
+    test("a cadet.ai returnTo gets a real page load, not a router navigation", () => {
       authEntry.authenticated = true;
       const entry = entryUrl(route, VELLUM_URL);
       renderEntry(entry);

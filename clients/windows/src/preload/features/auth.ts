@@ -9,10 +9,10 @@ import {
   AUTH_GET_SESSION_TOKEN,
   AUTH_SIGN_OUT,
   AUTH_START_OAUTH,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-const authFeature: CapabilityModule<BridgeCapabilityRegistry<VellumBridge>> = {
+const authFeature: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
   id: "native-auth",
   install: (registry) => {
     registry.contribute("auth", {

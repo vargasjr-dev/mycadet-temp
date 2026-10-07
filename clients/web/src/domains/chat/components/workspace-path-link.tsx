@@ -33,7 +33,7 @@ import { MARKDOWN_INLINE_CODE_CLASS } from "@mycadet/design-library";
 import { workspaceTreeQueryOptions } from "@/lib/workspace-tree-query";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
-  toVellumWorkspaceHref,
+  toCadetWorkspaceHref,
   workspaceBasenameOf,
   workspaceDirOf,
 } from "@/utils/workspace-path-links";
@@ -64,7 +64,7 @@ export interface WorkspacePathLinkProps {
   /** Active assistant whose workspace the path is resolved against. */
   assistantId?: string | null;
   /**
-   * Where a click on a resolved path goes, given the file's `vellum://` href
+   * Where a click on a resolved path goes, given the file's `cadet://` href
    * and its basename. The caller points this at the same destination an
    * explicitly linked file reaches, so the two affordances behave alike.
    * Without it there is no affordance to offer and the span stays plain code.
@@ -80,7 +80,7 @@ export function WorkspacePathLink({
 }: WorkspacePathLinkProps) {
   const { t } = useTranslation("chat");
   const label = raw ?? path ?? "";
-  // Platform-hosted requests carry a `Vellum-Organization-Id` header sourced
+  // Platform-hosted requests carry a `Cadet-Organization-Id` header sourced
   // from the org store, which hydrates after auth. Firing before then is
   // rejected, and `retry: false` would leave the path plain until something
   // unrelated refetched it.
@@ -133,7 +133,7 @@ export function WorkspacePathLink({
     <button
       type="button"
       onClick={() =>
-        onOpen(toVellumWorkspaceHref(path), workspaceBasenameOf(path))
+        onOpen(toCadetWorkspaceHref(path), workspaceBasenameOf(path))
       }
       className={`${MARKDOWN_INLINE_CODE_CLASS} cursor-pointer text-[var(--system-positive-strong)] underline decoration-dotted underline-offset-2 hover:opacity-80`}
       title={t("workspacePathLink.openTitle", { path })}

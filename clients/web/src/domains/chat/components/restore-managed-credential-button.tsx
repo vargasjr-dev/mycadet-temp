@@ -1,5 +1,5 @@
 /**
- * The repair for a rejected Vellum-managed credential, offered on the chat
+ * The repair for a rejected Cadet-managed credential, offered on the chat
  * error banner.
  *
  * The assistant cannot mint this credential: the platform issues it and a

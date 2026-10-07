@@ -4,7 +4,7 @@
  * Doctor settings panel.
  *
  * Body + eye paths are lifted from the shared character-components source
- * in the companion `vellum-assistant` repo (flower body shape + quirky
+ * in the companion `cadet-assistant` repo (flower body shape + quirky
  * eye style, pink color) so the Doctor icon matches the avatar aesthetic
  * without needing a live assistant to compose it at runtime.
  */

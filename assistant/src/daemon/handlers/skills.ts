@@ -357,10 +357,10 @@ function deriveOrigin(
   installMeta?: SkillInstallMeta | null,
 ): SlimSkillResponse["origin"] {
   if (kind === "bundled") {
-    return "vellum";
+    return "cadet";
   }
   if (kind === "catalog") {
-    return "vellum";
+    return "cadet";
   }
   // For installed skills, use provided install-meta or read from disk.
   // null means "already read, nothing found" — don't re-read.
@@ -403,7 +403,7 @@ function toSlimSkillResponse(
   } as const;
 
   switch (origin) {
-    case "vellum":
+    case "cadet":
       return { ...base, origin };
     case "clawhub": {
       const meta =
@@ -508,7 +508,7 @@ interface SkillListFilter {
 /** Human-readable labels matching Swift's `sourceLabel`. */
 function originDisplayLabel(origin: string): string {
   switch (origin) {
-    case "vellum":
+    case "cadet":
       return "Vellum";
     case "clawhub":
       return "Clawhub";
@@ -619,7 +619,7 @@ export async function listSkillsFiltered(filter: SkillListFilter): Promise<{
       return aInstalled - bInstalled;
     }
 
-    // Within installed, community origins (clawhub, skillssh) before core (vellum)
+    // Within installed, community origins (clawhub, skillssh) before core (cadet)
     if (aInstalled === 0 && bInstalled === 0) {
       const aCommunity =
         a.origin === "clawhub" || a.origin === "skillssh" ? 0 : 1;
@@ -1520,7 +1520,7 @@ export async function searchSkills(
         icon: s.icon,
         emoji: s.emoji,
         kind: "catalog" as const,
-        origin: "vellum" as const,
+        origin: "cadet" as const,
         status: "available" as const,
         category: getCatalogCategoryMap().get(s.id) ?? "system",
       };

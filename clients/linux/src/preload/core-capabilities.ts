@@ -2,8 +2,8 @@ import type { IpcRenderer, IpcRendererEvent } from "electron";
 
 import type {
   AppVersionInfo,
-  VellumBridge,
-  VellumCommand,
+  CadetBridge,
+  CadetCommand,
 } from "@mycadet/ipc-contract";
 
 export const LINUX_CORE_CAPABILITIES = [
@@ -12,10 +12,10 @@ export const LINUX_CORE_CAPABILITIES = [
   "app",
   "commands",
   "mainWindow",
-] as const satisfies readonly (keyof VellumBridge)[];
+] as const satisfies readonly (keyof CadetBridge)[];
 
 export type LinuxCoreBridge = Pick<
-  VellumBridge,
+  CadetBridge,
   (typeof LINUX_CORE_CAPABILITIES)[number]
 >;
 
@@ -26,7 +26,7 @@ export type LinuxCoreBridge = Pick<
 export const LINUX_NOT_APPLICABLE_CAPABILITIES = [
   "companion",
   "voiceActivity",
-] as const satisfies readonly (keyof VellumBridge)[];
+] as const satisfies readonly (keyof CadetBridge)[];
 
 /** The always-present core every `./features/` module builds on. */
 export const createLinuxCoreBridge = (
@@ -42,7 +42,7 @@ export const createLinuxCoreBridge = (
   },
   commands: {
     on: (callback) => {
-      const handler = (_event: IpcRendererEvent, command: VellumCommand) => {
+      const handler = (_event: IpcRendererEvent, command: CadetCommand) => {
         callback(command);
       };
       ipcRenderer.on("cadet:command", handler);

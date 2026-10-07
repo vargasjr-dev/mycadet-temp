@@ -87,7 +87,7 @@ describe("NativeAppCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
     expect(open).toHaveBeenCalledWith(
-      "https://apps.apple.com/us/app/vellum-assistant/id6759934423",
+      "https://apps.apple.com/us/app/cadet-assistant/id6759934423",
       "_blank",
       "noopener,noreferrer",
     );
@@ -108,7 +108,7 @@ describe("NativeAppCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
     expect(open).toHaveBeenCalledWith(
-      "https://apps.apple.com/us/app/vellum-assistant/id6759934423",
+      "https://apps.apple.com/us/app/cadet-assistant/id6759934423",
       "_blank",
       "noopener,noreferrer",
     );
@@ -117,7 +117,7 @@ describe("NativeAppCard", () => {
   test("opens a configured Android listing and records the action", () => {
     setUserAgent(ANDROID_UA);
     env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://play.google.com/store/apps/details?id=ai.vellum.assistant";
+      "https://play.google.com/store/apps/details?id=ai.cadet.assistant";
     const open = mock(() => null);
     window.open = open as typeof window.open;
     render(<NativeAppCard />);
@@ -150,7 +150,7 @@ describe("NativeAppCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
     expect(open).toHaveBeenCalledWith(
-      "https://www.vellum.ai/downloads",
+      "https://www.cadet.ai/downloads",
       "_blank",
       "noopener,noreferrer",
     );

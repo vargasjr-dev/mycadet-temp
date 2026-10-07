@@ -24,7 +24,7 @@ describe("postChatMessage onboarding payload", () => {
     // `conversationKey` path. Individual tests that exercise the new
     // `conversationId` path opt in explicitly via `setIdentity(...)`.
     useAssistantIdentityStore.getState().clearIdentity();
-    // The vellum-api client request interceptor calls ensureCsrfCookie() on
+    // The cadet-api client request interceptor calls ensureCsrfCookie() on
     // mutating requests, which reads `document.cookie`. Stub a minimal
     // `document` so the bun test (Node) environment doesn't throw.
     originalDocument = (globalThis as { document?: unknown }).document;
@@ -408,7 +408,7 @@ describe("postChatMessage server-minted conversation flow", () => {
     expect(body).not.toHaveProperty("conversationId");
     expect(body).not.toHaveProperty("conversationKey");
     expect(body.content).toBe("hello");
-    expect(body.sourceChannel).toBe("vellum");
+    expect(body.sourceChannel).toBe("cadet");
     expect(result.ok).toBe(true);
   });
 

@@ -115,7 +115,7 @@ function updateAvailableInspect(name: string): PluginsByNameInspectGetResponse {
       installedAt: "2026-06-01T00:00:00.000Z",
       source: {
         kind: "github",
-        owner: "vellum-ai",
+        owner: "cadet-ai",
         repo: "level-up",
         ref: LOCAL_COMMIT,
       },
@@ -128,7 +128,7 @@ function updateAvailableInspect(name: string): PluginsByNameInspectGetResponse {
       issues: [],
     },
     remote: {
-      repo: "vellum-ai/level-up",
+      repo: "cadet-ai/level-up",
       path: "",
       commit: REMOTE_COMMIT,
       committedAt: null,
@@ -263,7 +263,7 @@ describe("PluginDetail", () => {
         homepage: null,
         license: "MIT",
         version: "0.1.0",
-        source: { kind: "github", repo: "vellum-ai/level-up", ref: "main" },
+        source: { kind: "github", repo: "cadet-ai/level-up", ref: "main" },
         readme: "# Level Up",
         ref: "main",
         artifact: null,

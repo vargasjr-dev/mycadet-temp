@@ -39,7 +39,7 @@ const AGGREGATOR_PROVIDERS = new Set([
   "litellm",
   "opencode",
   "baseten",
-  "vellum",
+  "cadet",
   "openai-compatible",
   "ionet",
 ]);

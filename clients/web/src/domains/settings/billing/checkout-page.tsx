@@ -114,7 +114,7 @@ function CheckoutPageContent() {
   // moment before it becomes valid. `"pending"` is bounded — it decides on
   // `"disabled"` if the probe never lands.
   const gate = usePlatformGateWithPending();
-  // The request interceptor reads `Vellum-Organization-Id` from the org store,
+  // The request interceptor reads `Cadet-Organization-Id` from the org store,
   // which hydrates asynchronously after auth. On a cold deep link the platform
   // session can settle before the org id lands, so gate the fire on this too.
   // The tri-state, not the boolean: an id that hasn't arrived yet is worth

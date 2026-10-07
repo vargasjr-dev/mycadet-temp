@@ -13,7 +13,7 @@ export async function getPlatformBaseUrl(
   credentials: CredentialCache,
 ): Promise<string | undefined> {
   const raw = await credentials.get(
-    credentialKey("vellum", "platform_base_url"),
+    credentialKey("cadet", "platform_base_url"),
   );
   const url = (
     raw?.trim() ||

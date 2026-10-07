@@ -338,7 +338,7 @@ describe("PairDeviceCard", () => {
     await waitFor(() =>
       expect(screen.getByText("loopback required")).toBeTruthy(),
     );
-    expect(screen.getByText(/vellum tunnel/)).toBeTruthy();
+    expect(screen.getByText(/cadet tunnel/)).toBeTruthy();
   });
 
   test("blocks a loopback URL client-side without a network call", () => {
@@ -967,7 +967,7 @@ describe("PairDeviceCard: tunnel status", () => {
     expect(urlField().value).toBe("");
     expect(screen.queryByText("Open a tunnel first")).toBeNull();
     // No provider on record, so nothing claims to know the restart command.
-    expect(screen.queryByText(/vellum tunnel --provider/)).toBeNull();
+    expect(screen.queryByText(/cadet tunnel --provider/)).toBeNull();
   });
 
   test("keeps the URL field leading when the verdict carries no address", async () => {

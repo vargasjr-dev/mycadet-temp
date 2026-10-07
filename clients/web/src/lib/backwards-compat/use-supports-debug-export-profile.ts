@@ -10,7 +10,7 @@
  * New behavior (>= MIN_VERSION): the daemon honors the profile, collects
  * no credentials, and adds the gateway's database and logs.
  *
- * MIN_VERSION is the release that shipped the profile (vellum-assistant
+ * MIN_VERSION is the release that shipped the profile (cadet-assistant
  * #43048 landed in v0.12.3).
  */
 import { useAssistantSupports } from "./utils";

@@ -86,7 +86,7 @@ export interface LifecycleServiceInputs {
   selectedPlatformAssistantId?: string | null;
   /**
    * Whether the org store has hydrated (or no platform session exists).
-   * Platform API calls require the Vellum-Organization-Id header;
+   * Platform API calls require the Cadet-Organization-Id header;
    * `respondToInputs` defers `checkAssistant` until this is true.
    * Mirrors `useIsOrgReady()` from the React layer.
    */

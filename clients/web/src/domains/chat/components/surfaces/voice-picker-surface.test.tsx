@@ -53,13 +53,13 @@ mock.module("@mycadet/design-library/components/toast", () => ({
 }));
 
 let daemonConfigData: { services: Record<string, unknown> } = {
-  services: { tts: { provider: "vellum" } },
+  services: { tts: { provider: "cadet" } },
 };
 // Holds the config query in flight, for the "still loading" state.
 let configPending = false;
 let providersData: { providers: unknown[] } = {
   providers: [
-    { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
+    { id: "cadet", displayName: "Cadet", supportsVoiceSelection: true },
   ],
 };
 let managedVoicesData: { voices: unknown[]; defaultModel: string | null } = {
@@ -180,10 +180,10 @@ beforeEach(() => {
   configPending = false;
   configPatchCalls.length = 0;
   onActionCalls.length = 0;
-  daemonConfigData = { services: { tts: { provider: "vellum" } } };
+  daemonConfigData = { services: { tts: { provider: "cadet" } } };
   providersData = {
     providers: [
-      { id: "vellum", displayName: "Cadet", supportsVoiceSelection: true },
+      { id: "cadet", displayName: "Cadet", supportsVoiceSelection: true },
     ],
   };
   managedVoicesData = {
@@ -275,7 +275,7 @@ describe("VoicePickerSurface", () => {
   test("a daemon too old to select voices gets a pointer, not an empty card", () => {
     providersData = {
       providers: [
-        { id: "vellum", displayName: "Cadet", supportsVoiceSelection: false },
+        { id: "cadet", displayName: "Cadet", supportsVoiceSelection: false },
       ],
     };
     renderSurface();

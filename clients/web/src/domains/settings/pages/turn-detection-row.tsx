@@ -38,7 +38,7 @@ const TURN_DETECTING_FAMILY = "flux";
  * turn-detecting family, so it is the one whose unset state reads as on.
  */
 function isManagedProvider(provider: string): boolean {
-  return provider === "vellum";
+  return provider === "cadet";
 }
 
 /**

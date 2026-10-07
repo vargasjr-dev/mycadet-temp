@@ -30,7 +30,7 @@ import {
   preventPressFocusTransfer,
 } from "@/domains/chat/components/chat-composer/composer-mobile-chrome";
 import { useIsNativePlatform } from "@/runtime/native-auth";
-import { useVellumCommands } from "@/runtime/vellum-commands";
+import { useCadetCommands } from "@/runtime/cadet-commands";
 import { getVoiceInputMediaStream } from "@/utils/voice-input-device";
 import { isHoldDictation } from "@/utils/voice-key";
 import { Button, cn } from "@mycadet/design-library";
@@ -573,7 +573,7 @@ export const VoiceInputButton = forwardRef<
   // focus. During system-wide push-to-talk dictation into another app the
   // Electron escape monitor owns Escape and relays it as a command; the
   // same recorder-ownership guard applies.
-  useVellumCommands({
+  useCadetCommands({
     cancelDictation: () => {
       if (!mediaRecorderRef.current) {
         return;

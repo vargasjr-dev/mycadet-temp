@@ -110,7 +110,7 @@ function isInvalidMessage(message: DisplayMessage): boolean {
 // server id or a client-synthesized optimistic id). Dedupe-by-id misses this
 // case because the ids differ between the rows. Without this filter the UI
 // renders the final assistant message twice (and
-// `window._vellumDebug.chat.getClientMessages()` returns it twice).
+// `window._cadetDebug.chat.getClientMessages()` returns it twice).
 //
 // Predicate (must ALL hold to filter):
 //   - the last two messages are both `role: "assistant"`,

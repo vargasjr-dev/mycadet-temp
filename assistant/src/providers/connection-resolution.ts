@@ -38,6 +38,12 @@ import { credentialKey } from "../security/credential-key.js";
 import { ProviderNotConfiguredError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import {
+  CADET_MANAGED_CONNECTION_NAME,
+  getManagedUpstream,
+  isCadetManagedConnection,
+  MANAGED_ROUTABLE_PROVIDERS,
+} from "./cadet-model-routing.js";
+import {
   describeSubscriptionModelIncompatibility,
   isConnectionCompatibleWithModel,
 } from "./connection-model-compat.js";
@@ -46,7 +52,7 @@ import {
   VALID_CONNECTION_PROVIDERS,
 } from "./inference/auth.js";
 import {
-  canonicalVellumConnection,
+  canonicalCadetConnection,
   getConnection,
   listConnections,
 } from "./inference/connections.js";
@@ -60,12 +66,6 @@ import {
   resolveRoutingIdentity,
 } from "./routing-identity.js";
 import type { Provider } from "./types.js";
-import {
-  getManagedUpstream,
-  isVellumManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
-  VELLUM_MANAGED_CONNECTION_NAME,
-} from "./vellum-model-routing.js";
 
 export { ConnectionResolutionError, resolveRoutingIdentity };
 export { dispatchProviderResolvable } from "./provider-resolvability.js";
@@ -157,7 +157,7 @@ export function connectionProviderKind(
     if (!row) {
       return null;
     }
-    if (isVellumManagedConnection(row)) {
+    if (isCadetManagedConnection(row)) {
       return model ? getManagedUpstream(model) : null;
     }
     if (row.provider === "chatgpt") {
@@ -184,7 +184,7 @@ export function resolveEntryProviderKind(
 /**
  * The catalog provider whose model limits judge a profile's (provider,
  * model) pair: routing identities translate to their concrete upstream
- * (chatgpt serves the OpenAI catalog; a vellum profile's bare native model
+ * (chatgpt serves the OpenAI catalog; a cadet profile's bare native model
  * names its managed owner), and an entry-name label resolves to its row's
  * dispatchable kind. Null when no upstream is derivable (the pair stays
  * unjudged). Shared by the profile-route budget validation and profile
@@ -266,31 +266,31 @@ export async function tryResolveProviderForConnectionName(
   // profile keeps the managed connection while replacing the provider
   // (`llm-resolver.ts`), and that route is platform-billed just the same.
   if (
-    connectionName === VELLUM_MANAGED_CONNECTION_NAME &&
-    !isVellumManagedConnection(connection)
+    connectionName === CADET_MANAGED_CONNECTION_NAME &&
+    !isCadetManagedConnection(connection)
   ) {
     const provider = await resolveThroughPlatform(
       config,
       expectedProvider ?? declaredProvider,
       model,
     );
-    return attachProviderRoute(provider, canonicalVellumConnection());
+    return attachProviderRoute(provider, canonicalCadetConnection());
   }
-  // The provider-agnostic Vellum-managed connection carries only the `vellum`
+  // The provider-agnostic Cadet-managed connection carries only the `cadet`
   // sentinel, so the usual `connection.provider === expectedProvider` equality
   // never holds. It routes by the resolving profile's declared provider
   // instead (threaded as `providerOverride` below), which must be present AND
   // one of the managed-routable upstreams — the platform proxy can only serve
-  // those. A `vellum` connection paired with a non-managed provider
+  // those. A `cadet` connection paired with a non-managed provider
   // (openrouter/ollama/openai-compatible/…) is a genuine misconfiguration: it
   // falls through to the mismatch recovery/error path below rather than routing
   // as platform auth, which would otherwise fail as a soft miss and silently
   // fall back to the default provider.
-  const isVellum = isVellumManagedConnection(connection);
-  if (isVellum && !expectedProvider) {
+  const isCadet = isCadetManagedConnection(connection);
+  if (isCadet && !expectedProvider) {
     // An entry-name route carries no declared provider (the label is the
-    // row's name, not a vendor); a vellum-kind row derives its upstream
-    // from the model, same as the vellum identity itself.
+    // row's name, not a vendor); a cadet-kind row derives its upstream
+    // from the model, same as the cadet identity itself.
     expectedProvider = model
       ? (getManagedUpstream(model) ?? undefined)
       : undefined;
@@ -298,25 +298,25 @@ export async function tryResolveProviderForConnectionName(
       throw new ConnectionResolutionError(
         connectionName,
         "provider_mismatch",
-        `provider_connection "${connectionName}" is the provider-agnostic Vellum-managed connection but the resolving profile declared no provider — set the profile's provider so the upstream can be selected`,
+        `provider_connection "${connectionName}" is the provider-agnostic Cadet-managed connection but the resolving profile declared no provider — set the profile's provider so the upstream can be selected`,
       );
     }
   }
-  const isVellumRoute =
-    isVellum &&
+  const isCadetRoute =
+    isCadet &&
     !!expectedProvider &&
     MANAGED_ROUTABLE_PROVIDERS.has(expectedProvider);
   // The ChatGPT-subscription row stores the "chatgpt" routing identity in
   // its provider column, so the equality never holds for its openai
   // upstream. The identity dispatches with the upstream threaded as
-  // `providerOverride`, mirroring the vellum sentinel; the upstream is
+  // `providerOverride`, mirroring the cadet sentinel; the upstream is
   // always openai (`resolveRoutingIdentity`). Any other declared provider
   // on a chatgpt row is a genuine mismatch and falls through below.
   const isChatgptRoute =
     connection.provider === "chatgpt" &&
     (expectedProvider === undefined || expectedProvider === "openai");
   if (
-    !isVellumRoute &&
+    !isCadetRoute &&
     !isChatgptRoute &&
     expectedProvider &&
     connection.provider !== expectedProvider
@@ -379,7 +379,7 @@ export async function tryResolveProviderForConnectionName(
   try {
     const provider = await resolveProviderFromConnection(connection, config, {
       model,
-      providerOverride: isVellumRoute
+      providerOverride: isCadetRoute
         ? expectedProvider
         : isChatgptRoute
           ? "openai"
@@ -416,14 +416,14 @@ function attachProviderRoute(
   if (provider) {
     provider.routeAttribution = {
       connectionName: connection.name,
-      isManagedRoute: isVellumManagedConnection(connection),
+      isManagedRoute: isCadetManagedConnection(connection),
     };
   }
   return provider;
 }
 
 /**
- * Whether a route through this connection name is Vellum-managed
+ * Whether a route through this connection name is Cadet-managed
  * (platform-billed), for callers that hold only the name. Returns undefined
  * when the row can't be read, so the caller can fall back rather than assert
  * a BYOK route it never confirmed.
@@ -435,7 +435,7 @@ function attachProviderRoute(
 export function isManagedConnectionRoute(
   connectionName: string,
 ): boolean | undefined {
-  if (connectionName === VELLUM_MANAGED_CONNECTION_NAME) {
+  if (connectionName === CADET_MANAGED_CONNECTION_NAME) {
     return true;
   }
   let connection;
@@ -444,12 +444,12 @@ export function isManagedConnectionRoute(
   } catch {
     return undefined;
   }
-  return connection ? isVellumManagedConnection(connection) : undefined;
+  return connection ? isCadetManagedConnection(connection) : undefined;
 }
 
 /**
  * Resolve a managed route through platform auth without reading a connection
- * row. Used when the canonical `vellum` row is claimed by a user-owned
+ * row. Used when the canonical `cadet` row is claimed by a user-owned
  * connection, so the row boot seeding would have written does not exist.
  */
 async function resolveThroughPlatform(
@@ -462,11 +462,11 @@ async function resolveThroughPlatform(
   }
   log.info(
     { upstream, model },
-    "Vellum-managed route resolved through platform auth: a user-owned connection claims the canonical connection name",
+    "Cadet-managed route resolved through platform auth: a user-owned connection claims the canonical connection name",
   );
   try {
     return await resolveProviderFromConnection(
-      canonicalVellumConnection(),
+      canonicalCadetConnection(),
       config,
       { model, providerOverride: upstream },
     );
@@ -479,7 +479,7 @@ async function resolveThroughPlatform(
       /unresolved routing identity/.test(err.message)
     ) {
       throw new ConnectionResolutionError(
-        VELLUM_MANAGED_CONNECTION_NAME,
+        CADET_MANAGED_CONNECTION_NAME,
         "adapter_unavailable",
         err.message,
         { cause: err, model },
@@ -600,7 +600,7 @@ export async function resolveDefaultProvider(
  *
  *   - connection row missing (`not_found`)
  *   - connection bound to a different provider (`provider_mismatch`), with
- *     the provider-agnostic Vellum-managed exception for managed-routable
+ *     the provider-agnostic Cadet-managed exception for managed-routable
  *     providers
  *   - API-key/subscription credential absent from the vault
  *     (`missing_credential`)
@@ -621,7 +621,7 @@ export async function preflightResolvedConfig(
   attribution: { profileName?: string } = {},
 ): Promise<void> {
   // Routing identities preflight through their canonical row and derived
-  // upstream; an unroutable vellum model throws here — it is statically
+  // upstream; an unroutable cadet model throws here — it is statically
   // detectable, exactly what preflight exists to surface.
   const identity = resolveRoutingIdentity(resolved.provider, resolved.model);
   // An entry-name provider IS the connection name, and the row's kind is
@@ -667,18 +667,18 @@ export async function preflightResolvedConfig(
   // Dispatch routes anything through the canonical name on platform auth, so
   // preflight judges the platform rather than a claiming row's credentials.
   if (
-    connectionName === VELLUM_MANAGED_CONNECTION_NAME &&
-    !isVellumManagedConnection(connection)
+    connectionName === CADET_MANAGED_CONNECTION_NAME &&
+    !isCadetManagedConnection(connection)
   ) {
-    connection = canonicalVellumConnection();
+    connection = canonicalCadetConnection();
   }
 
-  if (isVellumManagedConnection(connection)) {
+  if (isCadetManagedConnection(connection)) {
     if (!MANAGED_ROUTABLE_PROVIDERS.has(provider)) {
       throw new ConnectionResolutionError(
         connectionName,
         "provider_mismatch",
-        `provider_connection "${connectionName}" is the Vellum-managed connection, which cannot serve provider "${provider}"`,
+        `provider_connection "${connectionName}" is the Cadet-managed connection, which cannot serve provider "${provider}"`,
         errorOptions,
       );
     }
@@ -711,7 +711,7 @@ export async function preflightResolvedConfig(
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        "This assistant's platform credential is missing and must be re-provisioned on the Vellum platform.",
+        "This assistant's platform credential is missing and must be re-provisioned on the Cadet platform.",
         errorOptions,
       );
     }
@@ -719,7 +719,7 @@ export async function preflightResolvedConfig(
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        `provider_connection "${connectionName}" routes through the Vellum platform, but no platform login is available — log in or pick a different provider`,
+        `provider_connection "${connectionName}" routes through the Cadet platform, but no platform login is available — log in or pick a different provider`,
         errorOptions,
       );
     }
@@ -791,7 +791,7 @@ async function platformLoginPresence(): Promise<
     return "unauthenticated";
   }
   const presence = await checkCredentialPresence(
-    credentialKey("vellum", "assistant_api_key"),
+    credentialKey("cadet", "assistant_api_key"),
   );
   if (presence === "present") {
     return "ok";

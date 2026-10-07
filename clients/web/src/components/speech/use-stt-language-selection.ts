@@ -92,7 +92,7 @@ export interface UseSttLanguageSelection {
   currentCode: string;
   /**
    * The daemon provider id a language pick steers: the configured STT
-   * provider, with the legacy managed-mode config reading as `"vellum"` and
+   * provider, with the legacy managed-mode config reading as `"cadet"` and
    * an unset provider as the daemon schema default (`"deepgram"`). Surfaces
    * that build their option list with `sttLanguageOptionsFor` pass this so
    * the config narrowing lives here once.
@@ -135,7 +135,7 @@ export function useSttLanguageSelection(
   // default (deepgram).
   const configuredProvider =
     daemonStt?.mode === "managed"
-      ? "vellum"
+      ? "cadet"
       : (daemonStt?.provider ?? "deepgram");
 
   // Unknown ids and old daemons that omit the capability field read as

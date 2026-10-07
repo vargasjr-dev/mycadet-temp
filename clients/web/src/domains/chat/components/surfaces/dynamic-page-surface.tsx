@@ -55,11 +55,11 @@ interface DynamicPageSurfaceProps {
   /** Tool calls of the message this surface belongs to. The preview unlocks
    *  once the surface's originating tool call has completed. */
   toolCalls?: ChatMessageToolCall[];
-  /** Handler for `vellum://` file links clicked inside the sandboxed iframe.
+  /** Handler for `cadet://` file links clicked inside the sandboxed iframe.
    *  The sandbox can't navigate or `window.open()` these, so the click is
    *  forwarded here to resolve the linked attachment and download it — the
-   *  same behavior as chat's `onVellumLinkClick`. */
-  onVellumLinkClick?: (href: string, linkText: string) => void;
+   *  same behavior as chat's `onCadetLinkClick`. */
+  onCadetLinkClick?: (href: string, linkText: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export function DynamicPageSurface({
   assistantId,
   onOpenApp,
   toolCalls,
-  onVellumLinkClick,
+  onCadetLinkClick,
 }: DynamicPageSurfaceProps) {
   const { t } = useTranslation("chat");
   const { pinnedAppIds, togglePin } = usePinnedApps(assistantId);
@@ -153,7 +153,7 @@ export function DynamicPageSurface({
     assistantId: assistantId ?? "",
     enabled: enableFetch,
     onAction: handleSurfaceAction,
-    onOpenVellumLink: onVellumLinkClick,
+    onOpenCadetLink: onCadetLinkClick,
   });
 
   const handleCollapse = useCallback(() => setExpanded(false), []);

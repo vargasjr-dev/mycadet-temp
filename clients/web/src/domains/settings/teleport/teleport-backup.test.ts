@@ -35,7 +35,7 @@ const { TeleportError } = await import("./teleport-types");
 
 const MANAGED = {
   assistantId: "ast-managed",
-  cloud: "vellum",
+  cloud: "cadet",
 } as unknown as LockfileAssistant;
 const LOCAL = {
   assistantId: "ast-local",

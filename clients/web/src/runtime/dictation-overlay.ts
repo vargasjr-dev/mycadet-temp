@@ -7,7 +7,7 @@
  * native Swift client's `DictationOverlayWindow`).
  *
  * Feature code imports these functions instead of touching
- * `window.vellum.dictationOverlay` directly. Off-Electron (web, Capacitor
+ * `window.cadet.dictationOverlay` directly. Off-Electron (web, Capacitor
  * iOS) and on older shells that predate the channel they are no-ops, so the
  * dictation flow degrades gracefully.
  */
@@ -27,7 +27,7 @@ export function setDictationOverlayState(state: DictationOverlayMessage): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.dictationOverlay?.setState(state);
+  window.cadet?.dictationOverlay?.setState(state);
 }
 
 /**
@@ -37,10 +37,10 @@ export function setDictationOverlayState(state: DictationOverlayMessage): void {
 export function subscribeToDictationOverlayState(
   callback: (state: DictationOverlayState) => void,
 ): () => void {
-  if (!isElectron() || !window.vellum?.dictationOverlay) {
+  if (!isElectron() || !window.cadet?.dictationOverlay) {
     return () => undefined;
   }
-  return window.vellum.dictationOverlay.onState(callback);
+  return window.cadet.dictationOverlay.onState(callback);
 }
 
 /**
@@ -50,33 +50,33 @@ export function subscribeToDictationOverlayState(
  * dropped — pull this once subscribed to catch up.
  */
 export async function getDictationOverlayState(): Promise<DictationOverlayState | null> {
-  if (!isElectron() || !window.vellum?.dictationOverlay?.getState) {
+  if (!isElectron() || !window.cadet?.dictationOverlay?.getState) {
     return null;
   }
-  return window.vellum.dictationOverlay.getState();
+  return window.cadet.dictationOverlay.getState();
 }
 
 export function requestDictationOverlayStop(): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.dictationOverlay?.requestStop?.();
+  window.cadet?.dictationOverlay?.requestStop?.();
 }
 
 export function subscribeToDictationOverlayStop(
   callback: () => void,
 ): () => void {
-  if (!isElectron() || !window.vellum?.dictationOverlay?.onStopRequested) {
+  if (!isElectron() || !window.cadet?.dictationOverlay?.onStopRequested) {
     return () => undefined;
   }
-  return window.vellum.dictationOverlay.onStopRequested(callback);
+  return window.cadet.dictationOverlay.onStopRequested(callback);
 }
 
 export function setDictationOverlayInteractive(interactive: boolean): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.dictationOverlay?.setInteractive?.(interactive);
+  window.cadet?.dictationOverlay?.setInteractive?.(interactive);
 }
 
 /**
@@ -91,5 +91,5 @@ export function setDictationOverlayHitRegion(
   if (!isElectron()) {
     return;
   }
-  window.vellum?.dictationOverlay?.setHitRegion?.(region);
+  window.cadet?.dictationOverlay?.setHitRegion?.(region);
 }

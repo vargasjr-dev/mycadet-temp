@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
-import { isElectron, type VellumCommand } from "@/runtime/is-electron";
+import { isElectron, type CadetCommand } from "@/runtime/is-electron";
 
 /**
  * Renderer-side dispatcher for commands sent by the Electron host's
@@ -23,10 +23,10 @@ import { isElectron, type VellumCommand } from "@/runtime/is-electron";
  * allow functions with fewer parameters to satisfy a wider signature.
  */
 export type CommandHandlers = Partial<
-  Record<VellumCommand["kind"], (command: VellumCommand) => void>
+  Record<CadetCommand["kind"], (command: CadetCommand) => void>
 >;
 
-export function useVellumCommands(handlers: CommandHandlers): void {
+export function useCadetCommands(handlers: CommandHandlers): void {
   const handlersRef = useRef<CommandHandlers>(handlers);
   useLayoutEffect(() => {
     handlersRef.current = handlers;
@@ -36,7 +36,7 @@ export function useVellumCommands(handlers: CommandHandlers): void {
     if (!isElectron()) {
       return;
     }
-    const bridge = window.vellum;
+    const bridge = window.cadet;
     if (!bridge) {
       return;
     }

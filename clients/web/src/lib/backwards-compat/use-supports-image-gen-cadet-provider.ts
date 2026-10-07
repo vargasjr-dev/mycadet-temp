@@ -13,14 +13,12 @@
  * legacy read bridge renders that config as Cadet again, so the choice
  * round-trips.
  *
- * MIN_VERSION targets 0.13.0: the first release carrying the Cadet
- * provider-id rename, whose image-generation config enum includes `cadet`.
- * Older daemons keep accepting the pre-rebrand `vellum` id through the
- * config-schema legacy alias.
+ * MIN_VERSION targets 0.11.0: the first release whose image-generation
+ * config enum includes `cadet` (#39109 merged after the 0.10.12 cut).
  */
 import { assistantSupports } from "./utils";
 
-export const MIN_VERSION = "0.13.0";
+export const MIN_VERSION = "0.11.0";
 
 /**
  * Snapshot gate for the save path: whether the active assistant accepts

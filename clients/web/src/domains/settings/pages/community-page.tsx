@@ -300,14 +300,14 @@ export function CommunityPage() {
             iconColor="var(--surface-base)"
             title={t("communityPage.followOnXTitle")}
             description={t("communityPage.followOnXDescription")}
-            href="https://x.com/vellum_ai"
+            href="https://x.com/cadet_ai"
           />
           <ResourceCard
             icon={<YouTubeLogo size={20} />}
             iconBg="#ef4444"
             title={t("communityPage.youtubeChannelTitle")}
             description={t("communityPage.youtubeChannelDescription")}
-            href="https://www.youtube.com/@Vellum_AI"
+            href="https://www.youtube.com/@Cadet_AI"
           />
         </div>
       </div>

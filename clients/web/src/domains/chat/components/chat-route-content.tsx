@@ -300,7 +300,7 @@ function useActiveProcessSlots(isPopout: boolean) {
 // ---------------------------------------------------------------------------
 
 const REPROVISION_ASSISTANT_KEY_COMMAND =
-  "assistant keys set credential/vellum/assistant_api_key <key>";
+  "assistant keys set credential/cadet/assistant_api_key <key>";
 
 export function ChatMainPanel({
   sendMessage,
@@ -399,9 +399,9 @@ export function ChatMainPanel({
   // in the read-only drawer instead of here, so the Cadet lane shows each row
   // exactly once. Everything downstream in this panel (transcript projection,
   // scroll, empty state, counts) reads the lane, because the lane IS the chat
-  // in that arrangement. `vellumMessages` is the same array by reference
+  // in that arrangement. `cadetMessages` is the same array by reference
   // whenever nothing moved, so ordinary conversations see no change at all.
-  const { vellumMessages: messages } = useChannelSidecar({
+  const { cadetMessages: messages } = useChannelSidecar({
     conversationId: activeConversationId,
     conversation: activeConversation,
     messages: transcriptMessages,

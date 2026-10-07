@@ -1,5 +1,5 @@
 /**
- * Export one app as a `.vellum` bundle and raise a toast either way.
+ * Export one app as a `.cadet` bundle and raise a toast either way.
  *
  * Every surface that offers Share does the same two things: hand the app to
  * {@link shareApp}, then report the outcome. The copy is the caller's, because
@@ -31,7 +31,7 @@ export async function shareAppWithToast(
 ): Promise<void> {
   try {
     await shareApp(assistantId, app.id, app.name);
-    toast.success(exported, { description: `${app.name}.vellum` });
+    toast.success(exported, { description: `${app.name}.cadet` });
   } catch (err) {
     captureError(err, { context: "shareAppWithToast" });
     toast.error(failed, {

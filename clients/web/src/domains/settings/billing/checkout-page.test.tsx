@@ -25,7 +25,7 @@ import * as takeoverMod from "@/hooks/use-marketing-pricing-takeover";
 import type { MarketingPricingTakeoverState } from "@/hooks/use-marketing-pricing-takeover";
 
 const CHECKOUT_URL = "https://stripe.test/checkout/session";
-const INTENT_KEY = "vellum.pro-checkout-intent";
+const INTENT_KEY = "cadet.pro-checkout-intent";
 // An onboarding hand-off: the package plus the onboarding step Start would
 // otherwise have taken, so a checkout that doesn't happen resumes the funnel.
 const ONBOARDING_NEXT = "/assistant/onboarding/research?hosting=managed";
@@ -183,7 +183,7 @@ beforeEach(() => {
   takeoverValue = "enabled";
   nativePlatform = false;
   nativeAndroid = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
   fetchOrganizationsCalls = 0;
   useOrganizationStore.setState({
     fetchOrganizations: async () => {
@@ -305,7 +305,7 @@ describe("CheckoutPage", () => {
     await findByRole("link", { name: "View plans" });
     expect(queryByLabelText("Preparing checkout")).toBeNull();
     // Deciding must not mean sending the request anyway: without
-    // `Vellum-Organization-Id` the upgrade fails.
+    // `Cadet-Organization-Id` the upgrade fails.
     expect(upgradeCalls.length).toBe(0);
     expect(getByTestId("loc").textContent).toBe(
       "/assistant/checkout?package=super",
@@ -586,7 +586,7 @@ describe("CheckoutPage", () => {
   test("the Electron hand-off gets the same escape, having no dismissal signal", async () => {
     // `openUrlFinishedListener` is Capacitor-only, so closing the system browser
     // tells the shell nothing at all. The page behind it is the whole affordance.
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
     const { findByRole } = renderCheckout("/assistant/checkout?package=super");
 
     await waitFor(() => expect(openedUrl).toBe(CHECKOUT_URL));

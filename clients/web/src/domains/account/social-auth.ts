@@ -59,7 +59,7 @@ const ATTRIBUTION_VALUE_MAX_LENGTH = 512;
  * Attribution params present on the current URL, carried here from the
  * campaign landing page.
  *
- * Attribution normally rides the `vellum_utm` cookie, but that cookie is set
+ * Attribution normally rides the `cadet_utm` cookie, but that cookie is set
  * by the marketing site's middleware and does not survive a social in-app
  * browser (Instagram, Facebook) handing off to the system browser — the new
  * cookie jar never saw it, so paid-social signups arrive unattributed.

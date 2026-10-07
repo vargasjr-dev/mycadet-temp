@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   QUICK_INPUT_DISMISS,
   QUICK_INPUT_SUBMIT,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import type { IpcHandle } from "./ipc";
@@ -35,7 +35,7 @@ const PANEL_HEIGHT = 72;
 
 export interface QuickInputWindowDependencies {
   createWindow: (options: CreateWindowOptions) => BrowserWindow;
-  dispatchToMain: (command: VellumCommand) => void;
+  dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
   handle: IpcHandle;
   platform: "darwin" | "win32" | "linux";
@@ -142,7 +142,7 @@ export const installQuickInput = (): void => {
 
     await ensureMainWindowVisible();
 
-    const command: VellumCommand = { kind: "quickInputSubmit", message };
+    const command: CadetCommand = { kind: "quickInputSubmit", message };
     dispatchToMain(command);
   });
 

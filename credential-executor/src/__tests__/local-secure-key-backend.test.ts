@@ -63,20 +63,20 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
     savedSecurityDir = undefined;
   });
 
-  function setup(): { securityDir: string; vellumRoot: string } {
+  function setup(): { securityDir: string; cadetRoot: string } {
     tmpDir = makeTmpDir();
     const securityDir = join(tmpDir, "security");
     mkdirSync(securityDir, { recursive: true });
     savedSecurityDir = process.env.CREDENTIAL_SECURITY_DIR;
     process.env.CREDENTIAL_SECURITY_DIR = securityDir;
-    // vellumRoot is unused when CREDENTIAL_SECURITY_DIR is set,
+    // cadetRoot is unused when CREDENTIAL_SECURITY_DIR is set,
     // but we pass tmpDir for consistency
-    return { securityDir, vellumRoot: tmpDir };
+    return { securityDir, cadetRoot: tmpDir };
   }
 
   test("set() on a fresh security directory creates store.key and keys.enc", async () => {
-    const { securityDir, vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { securityDir, cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
 
     const result = await backend.set("test/key", "secret-value");
     expect(result).toBe(true);
@@ -102,8 +102,8 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   });
 
   test("subsequent set() calls append to the existing store without recreating files", async () => {
-    const { securityDir, vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { securityDir, cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
 
     await backend.set("key1", "val1");
     const keyAfterFirst = readFileSync(join(securityDir, "store.key"));
@@ -126,7 +126,7 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   });
 
   test("set() against a pre-existing v1 store preserves format and round-trips", async () => {
-    const { securityDir, vellumRoot } = setup();
+    const { securityDir, cadetRoot } = setup();
 
     // Manually write a v1 store
     const salt = randomBytes(32).toString("hex");
@@ -139,7 +139,7 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
       },
     );
 
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     const result = await backend.set("v1-key", "v1-value");
     expect(result).toBe(true);
 
@@ -160,22 +160,22 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   });
 
   test("get() returns undefined when no store exists", async () => {
-    const { vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     const value = await backend.get("anything");
     expect(value).toBeUndefined();
   });
 
   test("list() returns empty array when no store exists", async () => {
-    const { vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     const keys = await backend.list();
     expect(keys).toEqual([]);
   });
 
   test("delete() returns error when no store exists", async () => {
-    const { vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     const result = await backend.delete("anything");
     expect(result).toBe("error");
   });
@@ -189,29 +189,29 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   // -------------------------------------------------------------------------
 
   test("get() THROWS (not undefined) when the store file exists but is unreadable", async () => {
-    const { securityDir, vellumRoot } = setup();
+    const { securityDir, cadetRoot } = setup();
     // A store file that exists but cannot be parsed (e.g. a partial/corrupt
     // read) — distinct from no store at all.
     writeFileSync(join(securityDir, "keys.enc"), "{ not valid json", {
       mode: 0o600,
     });
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     await expect(backend.get("anything")).rejects.toThrow(
       StoreUnavailableError,
     );
   });
 
   test("get() returns undefined when the store reads cleanly but the key is absent", async () => {
-    const { vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     await backend.set("present/key", "v"); // valid store with one entry
     // A genuinely missing key in a readable store is ABSENT, not unavailable.
     expect(await backend.get("absent/key")).toBeUndefined();
   });
 
   test("get() THROWS when a v2 entry exists but store.key is missing (cold-start key-material race)", async () => {
-    const { securityDir, vellumRoot } = setup();
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const { securityDir, cadetRoot } = setup();
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     await backend.set("k", "v"); // creates the v2 store + store.key
     expect(await backend.get("k")).toBe("v"); // sanity: warm read works
     // Simulate the cold-start window where the key material is transiently
@@ -221,9 +221,9 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   });
 
   test("list() THROWS (not []) when the store file exists but is unreadable", async () => {
-    const { securityDir, vellumRoot } = setup();
+    const { securityDir, cadetRoot } = setup();
     writeFileSync(join(securityDir, "keys.enc"), "{ corrupt", { mode: 0o600 });
-    const backend = createLocalSecureKeyBackend(vellumRoot);
+    const backend = createLocalSecureKeyBackend(cadetRoot);
     await expect(backend.list()).rejects.toThrow(StoreUnavailableError);
   });
 
@@ -233,10 +233,10 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   // -------------------------------------------------------------------------
 
   test("writeStore fsyncs the temp file (flush: true) so the ack follows a durable write", async () => {
-    const { securityDir, vellumRoot } = setup();
+    const { securityDir, cadetRoot } = setup();
     const spy = spyOn(fs, "writeFileSync");
     try {
-      const backend = createLocalSecureKeyBackend(vellumRoot);
+      const backend = createLocalSecureKeyBackend(cadetRoot);
       await backend.set("durable/key", "v");
 
       const keysEncTmpPrefix = join(securityDir, "keys.enc") + ".tmp.";
@@ -261,10 +261,10 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
   });
 
   test("writeStore fsyncs the parent directory so the rename is durable", async () => {
-    const { vellumRoot } = setup();
+    const { cadetRoot } = setup();
     const fsyncSpy = spyOn(fs, "fsyncSync");
     try {
-      const backend = createLocalSecureKeyBackend(vellumRoot);
+      const backend = createLocalSecureKeyBackend(cadetRoot);
       await backend.set("durable/key", "v");
       // The directory fsync runs after the rename; at least one fsyncSync call
       // must have happened for the store write.
@@ -305,13 +305,13 @@ describe("buildCrudHandlers audit logging", () => {
     );
 
     const res = await handlers[CesRpcMethod.SetCredential]!(
-      { account: "vellum:assistant_api_key", value: "super-secret-value" },
+      { account: "cadet:assistant_api_key", value: "super-secret-value" },
       ctx,
     );
 
     expect(res).toEqual({ ok: true });
     expect(calls).toContainEqual({
-      obj: { account: "vellum:assistant_api_key", ok: true },
+      obj: { account: "cadet:assistant_api_key", ok: true },
       msg: "CES credential set",
     });
     // The audit line must never carry the credential value.

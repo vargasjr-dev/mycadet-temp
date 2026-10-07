@@ -3,7 +3,7 @@ import { isElectron } from "@/runtime/is-electron";
 /**
  * Per-capability wrapper for the Electron host's native Share Sheet. Matches
  * the pattern in `dock.ts` / `native-biometric.ts`: the renderer never touches
- * `window.vellum.*` directly. The cross-platform `shareFile` (native-file.ts)
+ * `window.cadet.*` directly. The cross-platform `shareFile` (native-file.ts)
  * calls this, and the platform branch lives here.
  *
  * Only the *share* intent routes here. A "Download" action goes through
@@ -27,11 +27,11 @@ export async function shareFileViaMacSheet(
   resolveBlob: () => Promise<Blob>,
   filename: string,
 ): Promise<boolean> {
-  if (!isElectron() || !window.vellum?.share) {
+  if (!isElectron() || !window.cadet?.share) {
     return false;
   }
   const blob = await resolveBlob();
   const bytes = new Uint8Array(await blob.arrayBuffer());
-  await window.vellum.share.shareFile(bytes, filename);
+  await window.cadet.share.shareFile(bytes, filename);
   return true;
 }

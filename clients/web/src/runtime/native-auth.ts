@@ -282,7 +282,7 @@ export function installSessionCookies(sessionToken: string): void {
   // expires at the end of the session, and users will be required to
   // login again.
   const cookieAttrs =
-    "path=/; domain=.vellum.ai; secure; samesite=lax; max-age=1209600";
+    "path=/; domain=.cadet.ai; secure; samesite=lax; max-age=1209600";
   document.cookie = `sessionid=${sessionToken}; ${cookieAttrs}`;
   document.cookie = `__Secure-sessionid=${sessionToken}; ${cookieAttrs}`;
 }
@@ -461,12 +461,12 @@ export async function startAuthFlow(
   // Electron requires the native OAuth bridge. The web and CLI callback
   // fallbacks have no receiver inside the desktop shell.
   if (isElectron()) {
-    if (!window.vellum?.auth?.startOAuth) {
+    if (!window.cadet?.auth?.startOAuth) {
       throw desktopUpdateRequiredAuthError();
     }
     oauthFlowInFlight = true;
     try {
-      const result = await window.vellum.auth.startOAuth({
+      const result = await window.cadet.auth.startOAuth({
         loginHint: options.loginHint,
         intent: options.intent,
       });

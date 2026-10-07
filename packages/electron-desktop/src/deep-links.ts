@@ -41,7 +41,7 @@ import type { IpcHandle, IpcOn } from "./ipc";
  * Buffering: deep links arriving before the renderer is ready (or
  * before the first `cadet:deepLinks:drain` IPC call) are queued in
  * a module-scope `pending[]`. The renderer drains via
- * `window.vellum.deepLinks.drain()` once mounted. Live links arriving
+ * `window.cadet.deepLinks.drain()` once mounted. Live links arriving
  * after drain are pushed to the buffer too AND broadcast to every
  * BrowserWindow's `cadet:deepLinks:event` channel; consumers
  * subscribe-then-drain to avoid races.

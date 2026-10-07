@@ -12,8 +12,8 @@ describe("isChannelConversation", () => {
     expect(isChannelConversation({ originChannel: undefined })).toBe(false);
   });
 
-  test("returns false for the native 'vellum' channel", () => {
-    expect(isChannelConversation({ originChannel: "vellum" })).toBe(false);
+  test("returns false for the native 'cadet' channel", () => {
+    expect(isChannelConversation({ originChannel: "cadet" })).toBe(false);
   });
 
   test("returns false for notification:* outbound-only channels", () => {

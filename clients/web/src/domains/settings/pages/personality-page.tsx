@@ -1,5 +1,5 @@
 /**
- * Settings → Personality. Gated by `vellum-hosted-inference`. Writes
+ * Settings → Personality. Gated by `cadet-hosted-inference`. Writes
  * `data/personality-sliders.json` and nothing else: no IDENTITY.md / SOUL.md
  * rewrite. Onboarding and About Assistant keep their own rewrite paths.
  */
@@ -59,8 +59,8 @@ export function SettingsPersonalityPage() {
   const { t } = useTranslation("settings");
   const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
-  const vellumHostedInference =
-    useAssistantFeatureFlagStore.use.vellumHostedInference();
+  const cadetHostedInference =
+    useAssistantFeatureFlagStore.use.cadetHostedInference();
   const hasHydrated = useAssistantFeatureFlagStore.use.hasHydrated();
 
   const slidersQuery = useQuery({
@@ -72,7 +72,7 @@ export function SettingsPersonalityPage() {
   const [saving, setSaving] = useState(false);
   const values = edits ?? slidersQuery.data ?? {};
 
-  if (hasHydrated && !vellumHostedInference) {
+  if (hasHydrated && !cadetHostedInference) {
     return <Navigate replace to={routes.settings.general} />;
   }
 

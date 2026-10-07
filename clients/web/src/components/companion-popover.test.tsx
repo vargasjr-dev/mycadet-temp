@@ -50,7 +50,7 @@ const CARD: CompanionPopoverContent = {
   id: "surf-1",
   title: "The Eiffel Tower",
   subtitle: "Paris",
-  body: "![tower](https://example.com/tower.jpg)\n\n![inline](data:image/png;base64,AAAA)\n\n![local](vellum://workspace/a.png)\n\n[Tickets](https://example.com/tickets)",
+  body: "![tower](https://example.com/tower.jpg)\n\n![inline](data:image/png;base64,AAAA)\n\n![local](cadet://workspace/a.png)\n\n[Tickets](https://example.com/tickets)",
   actions: [{ id: "book", label: "Book", style: "primary" }],
 };
 
@@ -257,7 +257,7 @@ describe("drawsImageSource", () => {
   });
 
   test("refuses anything that needs the app's session or the disk", () => {
-    expect(drawsImageSource("vellum://workspace/a.png")).toBe(false);
+    expect(drawsImageSource("cadet://workspace/a.png")).toBe(false);
     expect(drawsImageSource("/Users/example/a.png")).toBe(false);
     expect(drawsImageSource("data:text/html,<b>")).toBe(false);
     expect(drawsImageSource("")).toBe(false);

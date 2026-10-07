@@ -28,7 +28,7 @@ const pushes: ((control: CompanionIntroCallControl | null) => void)[] = [];
 /** What the pull answers, which is the beat main is holding when it is asked. */
 let onLoad: CompanionIntroCallControl | null = null;
 
-window.vellum = {
+window.cadet = {
   companion: {
     getState: async () => null,
     onState: () => () => undefined,
@@ -42,7 +42,7 @@ window.vellum = {
       };
     },
   },
-} as unknown as Window["vellum"];
+} as unknown as Window["cadet"];
 
 const { useCompanionIntroChord } =
   await import("@/runtime/companion-intro-chord");

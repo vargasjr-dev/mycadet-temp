@@ -71,7 +71,7 @@ beforeEach(() => {
   document.documentElement.removeAttribute("data-theme");
   document.documentElement.removeAttribute("style");
   document.documentElement.removeAttribute("class");
-  window.vellum = {
+  window.cadet = {
     mainWindow: {
       ensureVisible: async () => undefined,
       setOnboarding: async () => undefined,
@@ -79,13 +79,13 @@ beforeEach(() => {
         published.push(colors);
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
 });
 
 afterEach(() => {
   stopSync?.();
   stopSync = null;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("initWindowsTitleBarOverlay", () => {
@@ -219,12 +219,12 @@ describe("initWindowsTitleBarOverlay", () => {
      * installed shell whose preload has no overlay method.
      */
     // GIVEN a preload exposing only the older main-window methods
-    window.vellum = {
+    window.cadet = {
       mainWindow: {
         ensureVisible: async () => undefined,
         setOnboarding: async () => undefined,
       },
-    } as unknown as Window["vellum"];
+    } as unknown as Window["cadet"];
     applyTheme("dark");
 
     // WHEN the overlay sync starts

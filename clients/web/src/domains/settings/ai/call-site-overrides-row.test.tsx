@@ -176,8 +176,8 @@ const SUBSCRIPTION_CONNECTION_366 = {
 };
 
 const VELLUM_CONNECTION = {
-  name: "vellum",
-  provider: "vellum",
+  name: "cadet",
+  provider: "cadet",
   auth: { type: "platform" },
 };
 
@@ -262,7 +262,7 @@ describe("CallSiteOverrideRow model picker under a ChatGPT subscription", () => 
     ).toBe(true);
   });
 
-  test("a vellum-managed connection lifts the restriction (openai routes through the managed proxy)", () => {
+  test("a cadet-managed connection lifts the restriction (openai routes through the managed proxy)", () => {
     renderRow({ provider: "openai", model: "gpt-5.6-luna" }, [
       SUBSCRIPTION_CONNECTION_366,
       VELLUM_CONNECTION,

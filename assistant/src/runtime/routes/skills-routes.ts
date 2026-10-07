@@ -64,7 +64,7 @@ const skillOwnerSchema = z
 const slimSkillBaseWithOwner = { ...slimSkillBase, owner: skillOwnerSchema };
 
 const slimSkillSchema = z.discriminatedUnion("origin", [
-  z.object({ ...slimSkillBaseWithOwner, origin: z.literal("vellum") }),
+  z.object({ ...slimSkillBaseWithOwner, origin: z.literal("cadet") }),
   z.object({
     ...slimSkillBaseWithOwner,
     origin: z.literal("clawhub"),
@@ -94,7 +94,7 @@ const slimSkillSchema = z.discriminatedUnion("origin", [
 ]);
 
 const skillDetailSchema = z.discriminatedUnion("origin", [
-  z.object({ ...slimSkillBaseWithOwner, origin: z.literal("vellum") }),
+  z.object({ ...slimSkillBaseWithOwner, origin: z.literal("cadet") }),
   z.object({
     ...slimSkillBase,
     origin: z.literal("clawhub"),
@@ -181,7 +181,7 @@ export const ROUTES: RouteDefinition[] = [
         name: "origin",
         schema: { type: "string" },
         description:
-          "Filter by skill origin (e.g. 'vellum', 'clawhub', 'skillssh', 'custom', 'assistant-memory').",
+          "Filter by skill origin (e.g. 'cadet', 'clawhub', 'skillssh', 'custom', 'assistant-memory').",
       },
       {
         name: "kind",

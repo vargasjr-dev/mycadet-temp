@@ -45,7 +45,7 @@
  * line of copy alone on the stage.
  *
  * To see it without an assistant that will actually sleep, drive it from the
- * console: `_vellumDebug.flags.forceSleepStage("sleeping" | "waking" | "woke")`,
+ * console: `_cadetDebug.flags.forceSleepStage("sleeping" | "waking" | "woke")`,
  * and `forceSleepStage(null)` to hand the page back.
  */
 

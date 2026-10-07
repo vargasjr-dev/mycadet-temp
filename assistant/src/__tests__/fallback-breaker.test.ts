@@ -624,7 +624,7 @@ describe("RetryProvider under an open breaker", () => {
     const route = makeRoute(backup.provider);
     let refreshCalls = 0;
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => {
         refreshCalls += 1;
         return refreshed.provider;
@@ -879,7 +879,7 @@ describe("RetryProvider under an open breaker", () => {
     const backup = backupProvider();
     const route = makeRoute(backup.provider);
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => null,
       resolveFallbackRoute: route.resolveFallbackRoute,
     });
@@ -1245,7 +1245,7 @@ describe("retry exhaustion accounting", () => {
     const backup = backupProvider();
     const route = makeRoute(backup.provider);
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => refreshed.provider,
       resolveFallbackRoute: route.resolveFallbackRoute,
     });
@@ -1271,7 +1271,7 @@ describe("retry exhaustion accounting", () => {
       corruptedStream(),
     );
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => refreshed.provider,
       resolveFallbackRoute: async () => null,
     });

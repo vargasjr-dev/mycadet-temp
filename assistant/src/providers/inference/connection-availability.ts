@@ -20,6 +20,12 @@ import { getDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyResultAsync } from "../../security/secure-keys.js";
 import {
+  CADET_MANAGED_CONNECTION_NAME,
+  CADET_MANAGED_PROVIDER,
+  isCadetManagedConnection,
+  MANAGED_ROUTABLE_PROVIDERS,
+} from "../cadet-model-routing.js";
+import {
   describeSubscriptionModelIncompatibility,
   isConnectionCompatibleWithModel,
 } from "../connection-model-compat.js";
@@ -33,12 +39,6 @@ import {
   ConnectionResolutionError,
   resolveRoutingIdentity,
 } from "../routing-identity.js";
-import {
-  isVellumManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
-  VELLUM_MANAGED_CONNECTION_NAME,
-  VELLUM_MANAGED_PROVIDER,
-} from "../vellum-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "./auth.js";
 import { getConnection, listConnections } from "./connections.js";
 
@@ -54,7 +54,7 @@ export const CONNECTION_AVAILABILITY_STATUSES = [
   "missing_credential",
   "provider_mismatch",
   "unsupported_auth",
-  "vellum_unauthenticated",
+  "cadet_unauthenticated",
   "unknown",
 ] as const;
 
@@ -70,23 +70,23 @@ export interface ConnectionAvailability {
 const SETTINGS_HINT = "in Settings → Models & Services";
 
 /**
- * Availability of the Vellum-managed platform proxy: signed in and reachable.
+ * Availability of the Cadet-managed platform proxy: signed in and reachable.
  */
-export async function vellumConnectionAvailability(): Promise<ConnectionAvailability> {
+export async function cadetConnectionAvailability(): Promise<ConnectionAvailability> {
   const ctx = await resolveManagedProxyContext();
   if (ctx.enabled) {
     return { status: "ok" };
   }
   if (!ctx.platformBaseUrl) {
     return {
-      status: "vellum_unauthenticated",
-      message: "Not signed in to Vellum — the platform URL is not configured.",
+      status: "cadet_unauthenticated",
+      message: "Not signed in to Cadet — the platform URL is not configured.",
     };
   }
   // The context collapses an unreachable credential read into "no key";
   // re-read reachability-aware so a CES outage isn't reported as logged out.
   const key = await getSecureKeyResultAsync(
-    credentialKey("vellum", "assistant_api_key"),
+    credentialKey("cadet", "assistant_api_key"),
   );
   if (key.value != null) {
     return { status: "ok" };
@@ -95,23 +95,23 @@ export async function vellumConnectionAvailability(): Promise<ConnectionAvailabi
     return {
       status: "unknown",
       message:
-        "The credential store is unreachable, so Vellum sign-in could not be verified. Try again shortly.",
+        "The credential store is unreachable, so Cadet sign-in could not be verified. Try again shortly.",
     };
   }
   return {
-    status: "vellum_unauthenticated",
+    status: "cadet_unauthenticated",
     message:
-      "Not signed in to Vellum — no assistant API key is stored. Log in to use Vellum-managed inference.",
+      "Not signed in to Cadet — no assistant API key is stored. Log in to use Cadet-managed inference.",
   };
 }
 
-function vellumManagedMismatch(
+function cadetManagedMismatch(
   resolvedConnectionName: string,
   provider: string,
 ): ConnectionAvailability {
   return {
     status: "provider_mismatch",
-    message: `Connection "${resolvedConnectionName}" is the Vellum-managed connection, which cannot serve provider "${provider}". Pick a connection for "${provider}" ${SETTINGS_HINT}.`,
+    message: `Connection "${resolvedConnectionName}" is the Cadet-managed connection, which cannot serve provider "${provider}". Pick a connection for "${provider}" ${SETTINGS_HINT}.`,
   };
 }
 
@@ -125,7 +125,7 @@ export async function computeConnectionAvailability(
   provider: string,
   resolvedConnectionName: string,
 ): Promise<ConnectionAvailability> {
-  // Every path loads the row — even the canonical `vellum` name. Boot seeding
+  // Every path loads the row — even the canonical `cadet` name. Boot seeding
   // (`seedCanonicalConnections`) deliberately leaves a user-owned connection
   // that claims that name in place, and dispatch reads whatever row is
   // stored, so availability must judge the actual row, not the name.
@@ -146,24 +146,24 @@ export async function computeConnectionAvailability(
   }
 
   // Mirror the dispatch-time provider check (`tryResolveProviderForConnectionName`):
-  // the provider-agnostic Vellum-managed connection routes managed-routable
+  // the provider-agnostic Cadet-managed connection routes managed-routable
   // providers via platform auth; any other provider mismatch fails there, so
   // usable credentials must not read as ok.
-  if (isVellumManagedConnection(connection)) {
+  if (isCadetManagedConnection(connection)) {
     if (
-      provider === VELLUM_MANAGED_PROVIDER ||
+      provider === CADET_MANAGED_PROVIDER ||
       MANAGED_ROUTABLE_PROVIDERS.has(provider)
     ) {
-      return vellumConnectionAvailability();
+      return cadetConnectionAvailability();
     }
-    return vellumManagedMismatch(resolvedConnectionName, provider);
+    return cadetManagedMismatch(resolvedConnectionName, provider);
   }
   // Everything routed through the canonical name dispatches on platform auth,
   // never on a claiming row's credentials, so the platform's own status is the
   // answer. Scoped to that name: a managed default explicitly pinned to some
   // other row is a real misconfiguration and still reads as a mismatch below.
-  if (resolvedConnectionName === VELLUM_MANAGED_CONNECTION_NAME) {
-    return vellumConnectionAvailability();
+  if (resolvedConnectionName === CADET_MANAGED_CONNECTION_NAME) {
+    return cadetConnectionAvailability();
   }
   // The ChatGPT-subscription row stores the "chatgpt" identity while its
   // upstream is openai; the credential switch below is the right check for
@@ -232,11 +232,11 @@ export async function computeConnectionAvailability(
       // (`resolveAuth` → `buildManagedBaseUrl` has no proxy path for the
       // rest), so platform auth on e.g. openrouter can never dispatch.
       if (MANAGED_ROUTABLE_PROVIDERS.has(provider)) {
-        return vellumConnectionAvailability();
+        return cadetConnectionAvailability();
       }
       return {
         status: "unsupported_auth",
-        message: `Connection "${resolvedConnectionName}" uses Vellum platform auth, which cannot serve provider "${provider}". Add an API-key connection for "${provider}" ${SETTINGS_HINT}.`,
+        message: `Connection "${resolvedConnectionName}" uses Cadet platform auth, which cannot serve provider "${provider}". Add an API-key connection for "${provider}" ${SETTINGS_HINT}.`,
       };
     case "none": {
       // Keyless providers (catalog setupMode "keyless", e.g. ollama) and
@@ -275,7 +275,7 @@ const UNAVAILABLE_STATUSES: ReadonlySet<ConnectionAvailabilityStatus> = new Set(
     "missing_credential",
     "provider_mismatch",
     "unsupported_auth",
-    "vellum_unauthenticated",
+    "cadet_unauthenticated",
   ],
 );
 
@@ -290,7 +290,7 @@ export function isUnavailable(
  * Availability of a whole effective profile entry, judged the way dispatch
  * judges it:
  *
- *   - routing identities (`vellum`, `chatgpt`) resolve to their canonical row
+ *   - routing identities (`cadet`, `chatgpt`) resolve to their canonical row
  *     and derived upstream;
  *   - a pinned `provider_connection` is judged directly;
  *   - a provider with no pinned connection is judged against the connection

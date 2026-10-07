@@ -1,5 +1,5 @@
 /**
- * Import a `.vellum` bundle file into the assistant daemon.
+ * Import a `.cadet` bundle file into the assistant daemon.
  *
  * Sends the raw file bytes as `application/octet-stream`. We use
  * octet-stream (not multipart) because the Django wildcard proxy only

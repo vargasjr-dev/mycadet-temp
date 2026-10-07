@@ -468,12 +468,12 @@ describe("secure-keys", () => {
       const fresh = makeMockCesClient(true);
       setReconnectResult(fresh);
 
-      const ok = await setSecureKeyAsync("credential/vellum/api_key", "sk-1");
+      const ok = await setSecureKeyAsync("credential/cadet/api_key", "sk-1");
 
       expect(ok).toBe(true);
       expect(counter.runs).toBe(2);
       expect(fresh.sets).toEqual([
-        { account: "credential/vellum/api_key", value: "sk-1" },
+        { account: "credential/cadet/api_key", value: "sk-1" },
       ]);
     });
 
@@ -507,16 +507,16 @@ describe("secure-keys", () => {
       await getSecureKeyAsync("prime-key");
       expect(counter.runs).toBe(1);
 
-      const ok = await setSecureKeyAsync("credential/vellum/api_key", "sk-2");
+      const ok = await setSecureKeyAsync("credential/cadet/api_key", "sk-2");
 
       expect(ok).toBe(true);
       expect(counter.runs).toBe(2);
       expect(fresh.sets).toEqual([
-        { account: "credential/vellum/api_key", value: "sk-2" },
+        { account: "credential/cadet/api_key", value: "sk-2" },
       ]);
       // The write went to CES, not the local fallback store.
       expect(
-        encryptedStore.getKey("credential/vellum/api_key"),
+        encryptedStore.getKey("credential/cadet/api_key"),
       ).toBeUndefined();
     });
   });

@@ -166,7 +166,7 @@ export const DEFAULT_PROFILE_PROVIDERS = [
   "fireworks",
   "openrouter",
   "chatgpt",
-  "vellum",
+  "cadet",
 ] as const;
 export type DefaultProfileProvider = (typeof DEFAULT_PROFILE_PROVIDERS)[number];
 

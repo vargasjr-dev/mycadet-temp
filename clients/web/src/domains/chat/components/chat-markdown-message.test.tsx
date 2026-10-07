@@ -103,7 +103,7 @@ const openWorkspaceFile = mock(async (_path: string) => {});
 
 mock.module("@/utils/open-workspace-file", () => ({ openWorkspaceFile }));
 
-const { ChatMarkdownMessage, isVellumLink } =
+const { ChatMarkdownMessage, isCadetLink } =
   await import("@/domains/chat/components/chat-markdown-message");
 const { useViewerStore } = await import("@/stores/viewer-store");
 const { attachmentContentQueryKey } =
@@ -186,7 +186,7 @@ describe("ChatMarkdownMessage (OAuth link handling)", () => {
     const html = renderToStaticMarkup(
       createElement(ChatMarkdownMessage, {
         content: "[Docs](https://example.com)",
-        onVellumLinkClick: () => {},
+        onCadetLinkClick: () => {},
       }),
     );
 
@@ -195,42 +195,42 @@ describe("ChatMarkdownMessage (OAuth link handling)", () => {
   });
 });
 
-describe("isVellumLink", () => {
-  test("returns true for vellum://workspace/ links", () => {
-    expect(isVellumLink("vellum://workspace/scratch/report.pdf")).toBe(true);
+describe("isCadetLink", () => {
+  test("returns true for cadet://workspace/ links", () => {
+    expect(isCadetLink("cadet://workspace/scratch/report.pdf")).toBe(true);
   });
 
-  test("returns true for vellum://host/ links", () => {
-    expect(isVellumLink("vellum://host/Users/me/doc.pdf")).toBe(true);
+  test("returns true for cadet://host/ links", () => {
+    expect(isCadetLink("cadet://host/Users/me/doc.pdf")).toBe(true);
   });
 
-  test("returns false for unknown vellum:// authority", () => {
-    expect(isVellumLink("vellum://evil/payload")).toBe(false);
+  test("returns false for unknown cadet:// authority", () => {
+    expect(isCadetLink("cadet://evil/payload")).toBe(false);
   });
 
   test("returns false for https links", () => {
-    expect(isVellumLink("https://example.com")).toBe(false);
+    expect(isCadetLink("https://example.com")).toBe(false);
   });
 
   test("returns false for undefined", () => {
-    expect(isVellumLink(undefined)).toBe(false);
+    expect(isCadetLink(undefined)).toBe(false);
   });
 });
 
 describe("ChatMarkdownMessage (file link dispatch)", () => {
   test.each([
     [
-      "vellum://workspace/media/generated/chart.png",
+      "cadet://workspace/media/generated/chart.png",
       "Download the edited picture",
     ],
     ["/workspace/media/generated/chart.png", "**Download** the image"],
     ["media/generated/chart.png", "Descargar la imagen"],
   ])("%s uses the preview action for caption %s", (href, caption) => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     renderMarkdown({
       content: `[${caption}](${href})`,
       assistantId: "asst-1",
-      onVellumLinkClick,
+      onCadetLinkClick,
     });
 
     const link = screen.getByRole("link", { name: "View image: chart.png" });
@@ -250,19 +250,19 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
     expect(
       screen.getByRole("link", { name: "View image: chart.png" }),
     ).toBeTruthy();
-    expect(onVellumLinkClick).not.toHaveBeenCalled();
+    expect(onCadetLinkClick).not.toHaveBeenCalled();
     expect(openWorkspaceFile).not.toHaveBeenCalled();
   });
 
   test.each([undefined, "revealing", "caughtUp"] as const)(
     "file options keep the original attachment label with reveal state %s",
     (streamWordFade) => {
-      const onVellumLinkClick = mock((_href: string, _text: string) => {});
-      const href = "vellum://host/tmp/original.png";
+      const onCadetLinkClick = mock((_href: string, _text: string) => {});
+      const href = "cadet://host/tmp/original.png";
       renderMarkdown({
         content: `[**export**.png](${href})`,
         assistantId: "asst-1",
-        onVellumLinkClick,
+        onCadetLinkClick,
         streamWordFade,
       });
 
@@ -270,7 +270,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
         name: "File options: original.png",
       });
       fireEvent.click(link);
-      expect(onVellumLinkClick).toHaveBeenCalledWith(href, "export.png");
+      expect(onCadetLinkClick).toHaveBeenCalledWith(href, "export.png");
       expect(useViewerStore.getState().openedDocumentState).toBeNull();
     },
   );
@@ -302,16 +302,16 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
   });
 
   test("with an assistant a file link opens the drawer, not the modal", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     const { container } = renderMarkdown({
-      content: "[Open](vellum://workspace/scratch/report.pdf)",
-      onVellumLinkClick,
+      content: "[Open](cadet://workspace/scratch/report.pdf)",
+      onCadetLinkClick,
       assistantId: "asst-1",
     });
 
     fireEvent.click(container.querySelector("a")!);
 
-    expect(onVellumLinkClick).not.toHaveBeenCalled();
+    expect(onCadetLinkClick).not.toHaveBeenCalled();
     expect(openWorkspaceFile).not.toHaveBeenCalled();
     const opened = useViewerStore.getState().openedDocumentState;
     expect(opened).toEqual({
@@ -323,16 +323,16 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
   });
 
   test("a workspace path link opens the drawer the same way", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     const { container } = renderMarkdown({
       content: "[Open](/workspace/archives/bundle.zip)",
-      onVellumLinkClick,
+      onCadetLinkClick,
       assistantId: "asst-1",
     });
 
     fireEvent.click(container.querySelector("a")!);
 
-    expect(onVellumLinkClick).not.toHaveBeenCalled();
+    expect(onCadetLinkClick).not.toHaveBeenCalled();
     expect(useViewerStore.getState().openedDocumentState).toEqual({
       source: "workspace-file-preview",
       workspacePath: "archives/bundle.zip",
@@ -342,63 +342,63 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
   });
 
   test("a host link keeps the modal: the drawer has no route to its bytes", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     const { container } = renderMarkdown({
-      content: "[Open](vellum://host/Users/me/report.pdf)",
-      onVellumLinkClick,
+      content: "[Open](cadet://host/Users/me/report.pdf)",
+      onCadetLinkClick,
       assistantId: "asst-1",
     });
 
     fireEvent.click(container.querySelector("a")!);
 
-    expect(onVellumLinkClick.mock.calls[0]).toEqual([
-      "vellum://host/Users/me/report.pdf",
+    expect(onCadetLinkClick.mock.calls[0]).toEqual([
+      "cadet://host/Users/me/report.pdf",
       "Open",
     ]);
     expect(useViewerStore.getState().openedDocumentState).toBeNull();
   });
 
-  test("without an assistant a vellum:// link falls back to the modal", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+  test("without an assistant a cadet:// link falls back to the modal", () => {
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     const { container } = renderMarkdown({
-      content: "[Open](vellum://workspace/scratch/report.pdf)",
-      onVellumLinkClick,
+      content: "[Open](cadet://workspace/scratch/report.pdf)",
+      onCadetLinkClick,
     });
 
     const anchor = container.querySelector("a")!;
     expect(anchor.textContent).toBe("File options: report.pdf");
     expect(anchor.getAttribute("href")).toBe(
-      "vellum://workspace/scratch/report.pdf",
+      "cadet://workspace/scratch/report.pdf",
     );
     expect(anchor.getAttribute("target")).toBeNull();
     expect(anchor.querySelector("svg")).not.toBeNull();
 
     fireEvent.click(anchor);
-    expect(onVellumLinkClick).toHaveBeenCalledTimes(1);
-    expect(onVellumLinkClick.mock.calls[0]).toEqual([
-      "vellum://workspace/scratch/report.pdf",
+    expect(onCadetLinkClick).toHaveBeenCalledTimes(1);
+    expect(onCadetLinkClick.mock.calls[0]).toEqual([
+      "cadet://workspace/scratch/report.pdf",
       "Open",
     ]);
   });
 
-  test("a workspace path link falls back to the same modal as vellum://", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+  test("a workspace path link falls back to the same modal as cadet://", () => {
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     renderMarkdown({
       content: "[Open](/workspace/scratch/report.pdf)",
-      onVellumLinkClick,
+      onCadetLinkClick,
     });
 
     const link = screen.getByRole("link", { name: "File options: report.pdf" });
     fireEvent.click(link);
-    expect(onVellumLinkClick.mock.calls[0]).toEqual([
-      "vellum://workspace/scratch/report.pdf",
+    expect(onCadetLinkClick.mock.calls[0]).toEqual([
+      "cadet://workspace/scratch/report.pdf",
       "Open",
     ]);
   });
 
   test("without a handler a file link opens the workspace file viewer", () => {
     const { container } = renderMarkdown({
-      content: "[report.pdf](vellum://workspace/scratch/report.pdf)",
+      content: "[report.pdf](cadet://workspace/scratch/report.pdf)",
     });
 
     const anchor = container.querySelector("a")!;
@@ -426,7 +426,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
   test("file links inside a list keep the list structure", () => {
     const { container } = renderMarkdown({
       content: "- [a](/workspace/a.md)\n- [b](/workspace/b.md)",
-      onVellumLinkClick: () => {},
+      onCadetLinkClick: () => {},
     });
 
     const items = container.querySelectorAll("li");
@@ -437,7 +437,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
   });
 
   test("a backticked path opens the drawer, like an explicit link", () => {
-    const onVellumLinkClick = mock((_href: string, _text: string) => {});
+    const onCadetLinkClick = mock((_href: string, _text: string) => {});
     // The span becomes a link only once a listing confirms the file, so the
     // listing is seeded rather than fetched.
     const queryClient = new QueryClient({
@@ -465,7 +465,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
         content="See `/workspace/scratch/report.pdf`."
         assistantId="asst-1"
         workspacePathLinks
-        onVellumLinkClick={onVellumLinkClick}
+        onCadetLinkClick={onCadetLinkClick}
       />,
       {
         wrapper: ({ children }: { children: ReactNode }) => (
@@ -481,7 +481,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
     });
     fireEvent.click(span);
 
-    expect(onVellumLinkClick).not.toHaveBeenCalled();
+    expect(onCadetLinkClick).not.toHaveBeenCalled();
     expect(useViewerStore.getState().openedDocumentState).toEqual({
       source: "workspace-file-preview",
       workspacePath: "scratch/report.pdf",
@@ -498,7 +498,7 @@ describe("ChatMarkdownMessage (file link dispatch)", () => {
 describe("ChatMarkdownMessage (image dispatch)", () => {
   test("a matching image attachment renders its own blob with the zoom button", async () => {
     const { container } = renderMarkdown({
-      content: "![alt](vellum://workspace/scratch/chart.png)",
+      content: "![alt](cadet://workspace/scratch/chart.png)",
       attachments: [
         makeAttachment({ filename: "chart.png", mimeType: "image/png" }),
       ],
@@ -520,7 +520,7 @@ describe("ChatMarkdownMessage (image dispatch)", () => {
     // A synthetic `rehydrated:` id has no bytes behind it and never will, so
     // the inline image settles on the fallback instead of a loading chip.
     const { container } = renderMarkdown({
-      content: "![alt](vellum://workspace/scratch/chart.png)",
+      content: "![alt](cadet://workspace/scratch/chart.png)",
       attachments: [
         makeAttachment({
           id: "rehydrated:0",
@@ -539,7 +539,7 @@ describe("ChatMarkdownMessage (image dispatch)", () => {
   test("an image draws bytes another reader already cached, with no fetch of its own", async () => {
     const { container } = renderMarkdown(
       {
-        content: "![alt](vellum://workspace/scratch/chart.png)",
+        content: "![alt](cadet://workspace/scratch/chart.png)",
         attachments: [
           makeAttachment({ filename: "chart.png", mimeType: "image/png" }),
         ],
@@ -557,14 +557,14 @@ describe("ChatMarkdownMessage (image dispatch)", () => {
     expect(attachmentsByIdContentGet).not.toHaveBeenCalled();
   });
 
-  test("a vellum:// image with no matching attachment renders the workspace embed", async () => {
+  test("a cadet:// image with no matching attachment renders the workspace embed", async () => {
     serve = serveFile({
       bytes: new TextEncoder().encode("# Notes\n"),
       contentType: "text/markdown",
     });
 
     const { container } = renderMarkdown({
-      content: "![alt](vellum://workspace/scratch/notes.md)",
+      content: "![alt](cadet://workspace/scratch/notes.md)",
       attachments: [],
       assistantId: "asst-1",
     });
@@ -583,7 +583,7 @@ describe("ChatMarkdownMessage (image dispatch)", () => {
     });
 
     renderMarkdown({
-      content: "![alt](vellum://workspace/report.pdf)",
+      content: "![alt](cadet://workspace/report.pdf)",
       attachments: [
         makeAttachment({
           filename: "report.pdf",

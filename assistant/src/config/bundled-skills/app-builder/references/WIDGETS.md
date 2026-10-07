@@ -58,7 +58,7 @@ The `.v-*` classes are styling only. Wire behavior with standard web tools:
 - **Formatting** → `Intl.NumberFormat` / `Intl.DateTimeFormat`.
 - **Theme** → `@media (prefers-color-scheme: dark)` in CSS.
 
-The complete in-app JS API is `window.vellum.sendAction`, `window.vellum.fetch`, and `window.vellum.route` (see [`INTERACTION_HOOKS.md`](./INTERACTION_HOOKS.md)).
+The complete in-app JS API is `window.cadet.sendAction`, `window.cadet.fetch`, and `window.cadet.route` (see [`INTERACTION_HOOKS.md`](./INTERACTION_HOOKS.md)).
 
 ## When to use the CSS widgets vs custom HTML
 

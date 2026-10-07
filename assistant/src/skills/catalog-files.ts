@@ -565,7 +565,7 @@ export function catalogSkillToSlim(cs: CatalogSkill): SlimSkillResponse {
     icon: cs.icon ?? cs.metadata?.icon,
     emoji: cs.emoji ?? cs.metadata?.emoji,
     kind: "catalog",
-    origin: "vellum",
+    origin: "cadet",
     status: "available",
     category: cs.metadata?.cadet?.category ?? "system",
   };

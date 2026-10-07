@@ -317,7 +317,7 @@ describe("AppNavBar share + deploy", () => {
       />,
     );
     expect(html).toContain("Share");
-    expect(html).toContain("Export as .vellum file");
+    expect(html).toContain("Export as .cadet file");
     expect(html).toContain("Deploy to Vercel");
     expect(html).toContain("Publish as a static page");
   });

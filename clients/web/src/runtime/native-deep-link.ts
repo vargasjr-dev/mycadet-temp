@@ -36,10 +36,10 @@ declare global {
  * sets an `ASSOCIATED_DOMAIN` and `BUNDLE_URL_SCHEME` pair in its xcconfig.
  */
 const NATIVE_URL_SCHEME_BY_HOST: Record<string, string> = {
-  "www.vellum.ai": "vellum-assistant",
-  "vellum.ai": "vellum-assistant",
-  "staging-assistant.vellum.ai": "vellum-assistant-staging",
-  "dev-assistant.vellum.ai": "vellum-assistant-dev",
+  "www.cadet.ai": "cadet-assistant",
+  "cadet.ai": "cadet-assistant",
+  "staging-assistant.cadet.ai": "cadet-assistant-staging",
+  "dev-assistant.cadet.ai": "cadet-assistant-dev",
 };
 
 const ALLOWED_NATIVE_URL_PROTOCOLS = new Set(
@@ -65,7 +65,7 @@ export type BillingCheckoutCompleteDeepLinkPayload =
   | { status: "cancel"; sessionId: null; flow: BillingCheckoutFlow };
 
 /**
- * Parse a `vellum-assistant://billing/checkout-complete?status=…&session_id=…`
+ * Parse a `cadet-assistant://billing/checkout-complete?status=…&session_id=…`
  * deep link, the hand-off the platform bounces a `return_target=native`
  * Checkout to (`checkout_native_return.py`). An optional `flow=top_up` marks
  * a credit top-up checkout; anything else is a subscription checkout.
@@ -175,7 +175,7 @@ const START_VOICE_DEEP_LINK_HOST = "voice";
  * - `mode: "resume"` — bring an already-running session back on screen; falls
  *   back to `new` when nothing is running.
  * - `prompt` — free-form text the user already spoke before the app was up
- *   (Siri's `AskVellumIntent`). `null` whenever the link carries no usable
+ *   (Siri's `AskCadetIntent`). `null` whenever the link carries no usable
  *   prompt, which includes every prompt this parser rejects.
  */
 interface StartVoiceDeepLinkPayload {
@@ -245,7 +245,7 @@ function sanitizeDeepLinkText(
 }
 
 /**
- * Parse a `vellum-assistant://voice?mode=new|resume&prompt=...` deep link — the
+ * Parse a `cadet-assistant://voice?mode=new|resume&prompt=...` deep link — the
  * single native→SPA channel for "start talking".
  *
  * Every native producer targets this one URL shape: App Intents (Siri and the
@@ -255,7 +255,7 @@ function sanitizeDeepLinkText(
  *
  * Strict like the sibling parsers: the scheme must be an exact match against
  * {@link NATIVE_URL_SCHEME_BY_HOST}'s values — a `startsWith` check would let
- * `vellum-assistant-evil://voice` through — and the host must be exactly
+ * `cadet-assistant-evil://voice` through — and the host must be exactly
  * `voice`. A missing or unrecognized `mode` degrades to `"new"`, the safe
  * interpretation of "the user asked for voice".
  *
@@ -332,9 +332,9 @@ export const MAX_OPEN_THREAD_MESSAGE_LENGTH = 2000;
 const OPEN_THREAD_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
 
 /**
- * Parse a `vellum-assistant://thread/<id>?message=...` deep link, produced by
+ * Parse a `cadet-assistant://thread/<id>?message=...` deep link, produced by
  * the iOS `SendMessageToChatIntent` (LUM-3230) and shaped after the macOS
- * shell's `vellum://thread/<id>` link so the two schemes stay mirror images.
+ * shell's `cadet://thread/<id>` link so the two schemes stay mirror images.
  *
  * Strict like the sibling parsers: exact scheme allowlist, exact host, and a
  * single well-formed path segment for the id. `message` gets the same
@@ -407,7 +407,7 @@ interface CommandDeepLinkPayload {
  * The shared body of the parameterless command parsers: exact scheme
  * allowlist, exact host, empty path, provenance. Strict like the sibling
  * parsers, and for the same reason: a `startsWith` scheme check would let
- * `vellum-assistant-evil://camera` through.
+ * `cadet-assistant-evil://camera` through.
  *
  * The host is the whole request, so a path makes the URL a different link that
  * merely shares the host: `<scheme>://camera/unrelated` must reach
@@ -445,7 +445,7 @@ function parseCommandDeepLink(
 }
 
 /**
- * Parse a `vellum-assistant://camera` deep link, produced by the Home Screen
+ * Parse a `cadet-assistant://camera` deep link, produced by the Home Screen
  * widget's camera button (`CameraDeepLink.swift`). The consumer parks the
  * request and the composer's attachment layer opens the camera once it is on
  * screen, so a cold launch works the same as a tap into a running app.
@@ -458,7 +458,7 @@ export function parseOpenCameraDeepLink(
 }
 
 /**
- * Parse a `vellum-assistant://new-chat` deep link, produced by the Home Screen
+ * Parse a `cadet-assistant://new-chat` deep link, produced by the Home Screen
  * widgets' New Chat buttons (`NewChatDeepLink.swift`). The consumer navigates
  * to a fresh draft conversation.
  */
@@ -470,7 +470,7 @@ export function parseNewChatDeepLink(
 }
 
 /**
- * Parse a `vellum-assistant://conversations` deep link, produced by the Home
+ * Parse a `cadet-assistant://conversations` deep link, produced by the Home
  * Screen widgets' unread affordances (`ConversationsDeepLink.swift`). The
  * consumer brings up the conversation list.
  */
@@ -501,7 +501,7 @@ export interface ShareDeepLinkPayload {
 }
 
 /**
- * Parse a `vellum-assistant://share/<id>` deep link, produced by the iOS
+ * Parse a `cadet-assistant://share/<id>` deep link, produced by the iOS
  * share extension after it writes the App Group inbox. Strict like the
  * sibling parsers: exact scheme allowlist, exact host, and a single
  * well-formed path segment for the id.
@@ -557,7 +557,7 @@ export function buildOAuthCompleteDeepLink(
 }
 
 /**
- * Parse a `vellum-assistant://oauth-complete?…` deep link payload.
+ * Parse a `cadet-assistant://oauth-complete?…` deep link payload.
  * Returns `null` for any URL that is not an OAuth-complete deep link.
  */
 export function parseOAuthCompleteDeepLink(

@@ -92,7 +92,7 @@ export function initWindowsTitleBarOverlay(): () => void {
       return;
     }
     published = theme;
-    void window.vellum?.mainWindow.setTitleBarOverlay?.(theme);
+    void window.cadet?.mainWindow.setTitleBarOverlay?.(theme);
   };
 
   publish();

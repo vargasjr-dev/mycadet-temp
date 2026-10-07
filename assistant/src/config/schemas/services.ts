@@ -22,7 +22,6 @@ export const VALID_INFERENCE_PROVIDERS = [
 
 // `cadet` generates through the platform runtime proxy; the backend
 // (gemini/openai) derives from the selected model's prefix at request time.
-// Legacy configs carrying the pre-rebrand id `vellum` are normalized on parse.
 const VALID_IMAGE_GEN_PROVIDERS = [
   "cadet",
   "gemini",
@@ -67,12 +66,7 @@ const InferenceServiceSchema = z.object({});
  * parse.
  */
 const ImageGenerationServiceSchema = z.object({
-  provider: z
-    .preprocess(
-      (v) => (v === "vellum" ? "cadet" : v),
-      z.enum(VALID_IMAGE_GEN_PROVIDERS),
-    )
-    .default("gemini"),
+  provider: z.enum(VALID_IMAGE_GEN_PROVIDERS).default("gemini"),
   model: z.string().default(DEFAULT_IMAGE_MODEL),
 });
 
@@ -85,12 +79,7 @@ const ImageGenerationServiceSchema = z.object({
  * by an older client is stripped at parse.
  */
 const WebSearchServiceSchema = z.object({
-  provider: z
-    .preprocess(
-      (v) => (v === "vellum" ? "cadet" : v),
-      z.enum(VALID_WEB_SEARCH_PROVIDERS),
-    )
-    .default("inference-provider-native"),
+  provider: z.enum(VALID_WEB_SEARCH_PROVIDERS).default("inference-provider-native"),
   // Origin for providers that support a custom API base (e.g. fastCRW,
   // SearXNG, TinyFish). Empty / omitted uses the provider's cloud default
   // when one exists. SearXNG has no cloud default and requires a user-supplied

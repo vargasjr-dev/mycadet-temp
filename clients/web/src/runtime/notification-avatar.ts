@@ -680,10 +680,10 @@ function nativeNotificationIdentityAdapter(): NotificationIdentityNativeAdapter 
   const notifications = (
     globalThis as typeof globalThis & {
       window?: {
-        vellum?: { notifications?: NotificationIdentityNativeAdapter };
+        cadet?: { notifications?: NotificationIdentityNativeAdapter };
       };
     }
-  ).window?.vellum?.notifications;
+  ).window?.cadet?.notifications;
   return notifications ?? null;
 }
 

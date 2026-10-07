@@ -29,11 +29,11 @@ const { getAuthConfig, getSession, logout } =
   await import("@/lib/auth/allauth-client");
 
 function setElectron(): void {
-  (window as unknown as { vellum?: unknown }).vellum = { platform: "electron" };
+  (window as unknown as { cadet?: unknown }).cadet = { platform: "electron" };
 }
 
 afterEach(() => {
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   calls.length = 0;
   stubBody.value = {};
 });

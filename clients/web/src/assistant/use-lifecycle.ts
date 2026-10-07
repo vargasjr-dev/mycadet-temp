@@ -40,7 +40,7 @@ export function useAssistantLifecycle({
   // Whether to query the server-side status at all. Gateway-auth
   // mode and "local mode without platform session" short-circuit
   // to local states without ever calling /assistant/.
-  // Platform API calls require the Vellum-Organization-Id header;
+  // Platform API calls require the Cadet-Organization-Id header;
   // wait for the org store to resolve before firing them.
   const shouldQueryServer =
     isAuthenticated(sessionStatus) &&

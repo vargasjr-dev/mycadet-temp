@@ -49,7 +49,7 @@ const cancelGuide = mock(() => undefined);
 const beginGuide = mock(async (kind: SystemPermissionKind) => current[kind]);
 const foreground = mock(async () => undefined);
 const frontmost = mock(
-  async (): Promise<string | null> => "com.example.vellum",
+  async (): Promise<string | null> => "com.example.cadet",
 );
 mock.module("@/runtime/running-apps", () => ({
   frontmostApp: frontmost,
@@ -87,7 +87,7 @@ beforeEach(() => {
   foreground.mockReset();
   foreground.mockImplementation(async () => undefined);
   frontmost.mockReset();
-  frontmost.mockImplementation(async () => "com.example.vellum");
+  frontmost.mockImplementation(async () => "com.example.cadet");
   current = permissions("not-determined");
   read.mockReset();
   read.mockImplementation(async () => current);
@@ -377,7 +377,7 @@ describe("companion tour permission setup", () => {
       await act(async () => jest.advanceTimersByTime(60_000));
       expect(companionIntroNeedsPermission(view.result.current)).toBe(false);
       expect(foreground).not.toHaveBeenCalled();
-      frontmost.mockResolvedValue("com.example.vellum");
+      frontmost.mockResolvedValue("com.example.cadet");
       await act(async () => jest.advanceTimersByTime(2_000));
       expect(foreground).toHaveBeenCalledTimes(1);
       await act(async () => jest.advanceTimersByTime(2_000));
@@ -405,7 +405,7 @@ describe("companion tour permission setup", () => {
     frontmost.mockReturnValueOnce(checked.promise);
     act(() => listener?.(permissions("granted")));
     view.rerender({ beat: null });
-    await act(async () => checked.resolve("com.example.vellum"));
+    await act(async () => checked.resolve("com.example.cadet"));
     expect(foreground).not.toHaveBeenCalled();
   });
   test("does not return if access is revoked during a foreground check", async () => {
@@ -418,7 +418,7 @@ describe("companion tour permission setup", () => {
     act(() => listener?.(permissions("granted")));
     act(() => listener?.(permissions("denied")));
     expect(frontmost).toHaveBeenCalledTimes(1);
-    await act(async () => checked.resolve("com.example.vellum"));
+    await act(async () => checked.resolve("com.example.cadet"));
     expect(foreground).not.toHaveBeenCalled();
   });
   test("waits for the requested permission rather than an unrelated grant", async () => {

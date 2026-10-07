@@ -3,7 +3,7 @@ import {
   FILE_OPEN_EVENT,
   FILE_OPEN_SUBSCRIBE,
   FILE_OPEN_UNSUBSCRIBE,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 export interface FileOpenPreloadDependencies {
@@ -17,7 +17,7 @@ export interface FileOpenPreloadDependencies {
 export const createFileOpenPreloadBridge = ({
   ipcRenderer,
   webUtils,
-}: FileOpenPreloadDependencies): Pick<VellumBridge, "fileOpen" | "paths"> => ({
+}: FileOpenPreloadDependencies): Pick<CadetBridge, "fileOpen" | "paths"> => ({
   fileOpen: {
     drain: () => ipcRenderer.invoke(FILE_OPEN_DRAIN) as Promise<string[]>,
     onFile: (callback) => {

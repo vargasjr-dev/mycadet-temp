@@ -405,7 +405,7 @@ function classifyCore(
   // predate per-request stamping collapse to the managed/personal split.
   const credentialSource: ProviderCredentialSource =
     attribution.credentialSource ??
-    (isManagedRoute ? "vellum-managed" : "byok");
+    (isManagedRoute ? "cadet-managed" : "byok");
 
   // Prefer the semantic reason stamped by the provider layer, regardless of
   // HTTP status — statusless errors (e.g. SDK streaming failures) still carry a
@@ -1020,7 +1020,7 @@ function rejectedCredentialClassification(
   attribution?: ConversationErrorAttribution,
 ): Omit<ClassifiedConversationError, "debugDetails"> {
   switch (credentialSource) {
-    case "vellum-managed":
+    case "cadet-managed":
       return managedKeyInvalidClassification();
     case "oauth-subscription":
       return subscriptionLoginRejectedClassification(providerName, attribution);

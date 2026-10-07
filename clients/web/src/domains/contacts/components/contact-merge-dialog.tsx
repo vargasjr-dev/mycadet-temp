@@ -305,7 +305,7 @@ export function formatSurvivorName(contact: ContactPayload): string {
   if (contact.role === "guardian") {
     if (
       !contact.displayName ||
-      contact.displayName.startsWith("vellum-principal-")
+      contact.displayName.startsWith("cadet-principal-")
     ) {
       return translate("survivorName.you", { ns: "contacts" });
     }

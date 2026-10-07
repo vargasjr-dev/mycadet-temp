@@ -1,6 +1,6 @@
 /**
  * Handles actions a sandboxed app viewer dispatches through
- * `window.vellum.sendAction(actionId, data)`. Three independent actions:
+ * `window.cadet.sendAction(actionId, data)`. Three independent actions:
  *
  * - `relay_prompt` ({ prompt, conversation }) — sends `prompt` to a conversation
  *   via the `?prompt=` auto-send pathway (see `use-auto-send-effects.ts`),

@@ -26,7 +26,7 @@ import {
 import {
   acceleratorOption,
   dispatchToFocused,
-  type VellumCommand,
+  type CadetCommand,
 } from "./commands.client";
 import {
   closeCommandPaletteWindow,
@@ -113,7 +113,7 @@ const isDeveloperMenuEnabled = (): boolean => {
   return flags?.["developer-menu-items"] === true;
 };
 
-export const dispatchMenuCommand = (command: VellumCommand): void => {
+export const dispatchMenuCommand = (command: CadetCommand): void => {
   if (command.kind === "commandPalette") {
     if (isCommandPaletteWindowFocused()) {
       closeCommandPaletteWindow();
@@ -137,7 +137,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
 
   const fileItem = (
     label: string,
-    command: VellumCommand,
+    command: CadetCommand,
   ): MenuItemConstructorOptions => ({
     label,
     ...acceleratorOption(command.kind),

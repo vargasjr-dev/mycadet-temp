@@ -249,7 +249,7 @@ describe("getSkillFiles — provider chain fallback", () => {
   beforeEach(() => {
     mockResolvedStates = [];
     providerCalls.length = 0;
-    mockVellumProvider = makeNoopProvider("vellum");
+    mockVellumProvider = makeNoopProvider("cadet");
     mockSkillsshProvider = makeNoopProvider("skillssh");
     mockClawhubProvider = makeNoopProvider("clawhub");
     // Force provider chain re-creation from the (mocked) factory functions
@@ -286,7 +286,7 @@ describe("getSkillFiles — provider chain fallback", () => {
         description: "SEO helper",
         emoji: "\u{1F50D}",
         kind: "catalog",
-        origin: "vellum",
+        origin: "cadet",
         status: "available",
         category: "knowledge",
       }),
@@ -305,7 +305,7 @@ describe("getSkillFiles — provider chain fallback", () => {
       description: "SEO helper",
       emoji: "\u{1F50D}",
       kind: "catalog",
-      origin: "vellum",
+      origin: "cadet",
       status: "available",
       category: "knowledge",
     });
@@ -445,7 +445,7 @@ describe("getSkillFiles — provider chain fallback", () => {
         name: "Ghost",
         description: "",
         kind: "catalog",
-        origin: "vellum",
+        origin: "cadet",
         status: "available",
         category: "knowledge",
       }),
@@ -472,7 +472,7 @@ describe("getSkillFiles — provider chain fallback", () => {
         name: "plain-skill",
         description: "Minimal",
         kind: "catalog",
-        origin: "vellum",
+        origin: "cadet",
         status: "available",
         category: "knowledge",
       }),
@@ -486,7 +486,7 @@ describe("getSkillFiles — provider chain fallback", () => {
     }
     expect(result.skill.name).toBe("plain-skill");
     expect(result.skill.kind).toBe("catalog");
-    expect(result.skill.origin).toBe("vellum");
+    expect(result.skill.origin).toBe("cadet");
     expect(result.skill.status).toBe("available");
   });
 
@@ -500,7 +500,7 @@ describe("getSkillFiles — provider chain fallback", () => {
         name: "Pretty Fancy Name",
         description: "",
         kind: "catalog",
-        origin: "vellum",
+        origin: "cadet",
         status: "available",
         category: "knowledge",
       }),
@@ -629,7 +629,7 @@ describe("getSkillFiles — provider chain fallback", () => {
 
   test("ID that no provider handles returns 404", async () => {
     // All providers return canHandle=false
-    mockVellumProvider = makeNoopProvider("vellum");
+    mockVellumProvider = makeNoopProvider("cadet");
     mockSkillsshProvider = makeNoopProvider("skillssh");
     mockClawhubProvider = makeNoopProvider("clawhub");
 
@@ -669,7 +669,7 @@ describe("getSkillFiles — provider chain fallback", () => {
         name: "Cadet Contested",
         description: "",
         kind: "catalog",
-        origin: "vellum",
+        origin: "cadet",
         status: "available",
         category: "knowledge",
       }),
@@ -725,7 +725,7 @@ describe("getSkillFiles — provider chain fallback", () => {
       return;
     }
     // Cadet provider should have been used
-    expect(result.skill.origin).toBe("vellum");
+    expect(result.skill.origin).toBe("cadet");
     expect(result.skill.name).toBe("Cadet Contested");
     // Cadet was called, but skills.sh and clawhub were NOT called
     expect(vellumListFilesCalls).toEqual(["contested-skill"]);

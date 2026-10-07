@@ -12,7 +12,7 @@ import { isElectron } from "@/runtime/is-electron";
  * Used by feature consumers that react to inbound signals (deep
  * links, future notification action clicks) and need to accompany
  * the state update with making the window user-visible. Without
- * this, a click on `vellum://send?message=hi` on a backgrounded
+ * this, a click on `cadet://send?message=hi` on a backgrounded
  * Cadet would update composer state with no visible response.
  *
  * Same wrapper shape as `dock.ts` / `app-info.ts`: no-op off
@@ -25,7 +25,7 @@ export async function ensureMainWindowVisible(): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.mainWindow.ensureVisible();
+  await window.cadet?.mainWindow.ensureVisible();
 }
 
 /**
@@ -43,5 +43,5 @@ export async function setOnboardingWindow(active: boolean): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.mainWindow.setOnboarding(active);
+  await window.cadet?.mainWindow.setOnboarding(active);
 }

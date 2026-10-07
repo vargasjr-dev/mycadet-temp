@@ -56,7 +56,7 @@ enum WidgetFlattenedFill {
 /// Both go away once the system flattens the widget. A solid ground survives
 /// flattening as a solid block, which would swallow the eyes on it, and the
 /// control underneath already supplies a ground of its own.
-struct VellumAppIconMark: View {
+struct CadetAppIconMark: View {
     let size: CGFloat
 
     /// The artwork's canvas is mostly empty: the pair occupies the middle
@@ -121,7 +121,7 @@ struct WidgetActionTile<ActionIntent: AppIntent>: View {
     let intent: ActionIntent
 
     /// The symbol a tile standing for an action draws. Absent on the tile that
-    /// stands for the app itself, which draws ``VellumAppIconMark``.
+    /// stands for the app itself, which draws ``CadetAppIconMark``.
     var icon: Image? = nil
 
     let title: String
@@ -200,7 +200,7 @@ struct WidgetActionTile<ActionIntent: AppIntent>: View {
         if let avatarImage {
             WidgetAvatarImageView(image: avatarImage, size: Self.iconSize * scale)
         } else if showsAppIcon {
-            VellumAppIconMark(size: Self.iconSize * scale)
+            CadetAppIconMark(size: Self.iconSize * scale)
         } else if let icon {
             icon
                 .font(.system(size: Self.iconSize * scale))
@@ -351,7 +351,7 @@ struct PillActionButton<ActionIntent: AppIntent>: View {
         if let avatarImage {
             WidgetAvatarImageView(image: avatarImage, size: iconSize)
         } else if showsAppIcon {
-            VellumAppIconMark(size: iconSize)
+            CadetAppIconMark(size: iconSize)
         } else if let icon {
             icon
                 .font(.system(size: iconSize))

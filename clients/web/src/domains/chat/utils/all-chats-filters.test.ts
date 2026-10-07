@@ -26,7 +26,7 @@ const GROUPS: ConversationGroup[] = [
 ];
 
 const ROWS: Conversation[] = [
-  conversation("conv-native", { originChannel: "vellum" }),
+  conversation("conv-native", { originChannel: "cadet" }),
   conversation("conv-slack", { originChannel: "slack" }),
   conversation("conv-grouped", { groupId: "group-a" }),
   conversation("conv-done", { archivedAt: 5 }),

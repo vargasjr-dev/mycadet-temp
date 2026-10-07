@@ -122,7 +122,7 @@ describe("useIsFreePlan", () => {
 
   test("does not fetch and returns undefined when the org is not ready", () => {
     // Even with `enabled` true, a not-ready org must keep the query from firing
-    // — the request would omit `Vellum-Organization-Id` and be rejected.
+    // — the request would omit `Cadet-Organization-Id` and be rejected.
     orgReady = false;
     const { result } = setup({ enabled: true });
     expect(subscriptionFetches).toBe(0);

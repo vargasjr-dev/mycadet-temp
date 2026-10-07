@@ -2858,14 +2858,14 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     apiKeyPlaceholder: "Your TypeSafe API key",
   },
   {
-    id: "vellum",
-    displayName: "Vellum",
+    id: "cadet",
+    displayName: "Cadet",
     subtitle:
-      "Models served on Vellum GPU nodes through the managed connection.",
+      "Models served on Cadet GPU nodes through the managed connection.",
     setupMode: "api-key",
     setupHint:
-      "Uses the assistant API key through the Vellum managed connection. These models cannot use a bring-your-own key.",
-    featureFlag: "vellum-hosted-inference",
+      "Uses the assistant API key through the Cadet managed connection. These models cannot use a bring-your-own key.",
+    featureFlag: "cadet-hosted-inference",
     models: [
       {
         id: "qwen/qwen3-8b",
@@ -2877,7 +2877,7 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
         supportsVision: false,
         supportsToolUse: true,
         pricing: { inputPer1mTokens: 0.3, outputPer1mTokens: 0.3 },
-        featureFlag: "vellum-hosted-inference",
+        featureFlag: "cadet-hosted-inference",
       },
     ],
     defaultModel: "qwen/qwen3-8b",
@@ -2901,7 +2901,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] =
  * imported here without a cycle.
  */
 const ROUTING_IDENTITY_PROVIDER_IDS: ReadonlySet<string> = new Set([
-  "vellum",
+  "cadet",
   "chatgpt",
 ]);
 
@@ -2917,9 +2917,9 @@ export function catalogModelSupportsText(
   if (typeof provider !== "string" || typeof modelId !== "string") {
     return true;
   }
-  // A routing identity ("vellum", "chatgpt") owns no catalog models of the
+  // A routing identity ("cadet", "chatgpt") owns no catalog models of the
   // upstream it dispatches to, so judge the model by its catalog owner: a
-  // managed Jev profile is `vellum` + `jev-latest`, and `jev-latest` opts out
+  // managed Jev profile is `cadet` + `jev-latest`, and `jev-latest` opts out
   // of text under `typesafe`.
   const catalogProvider = ROUTING_IDENTITY_PROVIDER_IDS.has(provider)
     ? (getCatalogProviderForModel(modelId) ?? provider)

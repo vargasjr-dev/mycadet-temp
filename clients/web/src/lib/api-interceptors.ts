@@ -2,10 +2,10 @@
  * Request/response interceptors for the generated HeyAPI clients.
  *
  * For platform-bound requests, attaches:
- *   - `Vellum-Organization-Id` — selects the active org server-side.
+ *   - `Cadet-Organization-Id` — selects the active org server-side.
  *   - `X-CSRFToken` (mutations only) — required by Django's
  *     SessionAuthentication.
- *   - `X-Vellum-Client-Id` + `X-Vellum-Interface-Id` — identify the
+ *   - `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` — identify the
  *     originating tab/interface to the daemon. Required by self-echo
  *     suppression: the daemon echoes the client id back on the resulting
  *     `sync_changed` so the originator's SSE subscriber can be skipped.
@@ -78,7 +78,7 @@ import {
 import { routes } from "@/utils/routes";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
+const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 const NGROK_SKIP_BROWSER_WARNING_HEADER = "ngrok-skip-browser-warning";
 
 function getRendererTupleOrigin(): string {
@@ -323,7 +323,7 @@ export async function rewriteForSelfHostedIngress(
   // suppression once the SSE wiring lands on the same path.
   const headers = new Headers(request.headers);
   headers.delete("X-CSRFToken");
-  headers.delete("Vellum-Organization-Id");
+  headers.delete("Cadet-Organization-Id");
   if (isRemoteGatewayMode()) {
     // Ngrok free tunnels return an HTML interstitial to browser-shaped API
     // requests unless this bypass header is present.
@@ -398,7 +398,7 @@ export function authorizeRemoteGatewayRequest(
 
   const headers = new Headers(request.headers);
   headers.delete("X-CSRFToken");
-  headers.delete("Vellum-Organization-Id");
+  headers.delete("Cadet-Organization-Id");
   headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, "true");
   applySelfHostedBearer(headers);
 
@@ -556,12 +556,12 @@ function createInterceptor({
 
     const organizationId = getActiveOrganizationIdForRequests();
     if (organizationId) {
-      newRequest.headers.set("Vellum-Organization-Id", organizationId);
+      newRequest.headers.set("Cadet-Organization-Id", organizationId);
     }
 
     const deviceId = getDeviceId();
     if (deviceId) {
-      newRequest.headers.set("Vellum-Device-Id", deviceId);
+      newRequest.headers.set("Cadet-Device-Id", deviceId);
     }
 
     // Electron app provides a session token header. This is no-ops on web.

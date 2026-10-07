@@ -2,7 +2,7 @@
  * Zustand store for the app share/deploy lifecycle.
  *
  * Owns the in-flight UI state for two operations:
- * - **Share** — export an app to a `.vellum` bundle.
+ * - **Share** — export an app to a `.cadet` bundle.
  * - **Deploy** — publish an app to Vercel (with an intermediate token
  *   dialog when the org doesn't yet have a Vercel token stored).
  *
@@ -134,8 +134,8 @@ const useDeployStoreBase = create<DeployStore>()((set, get) => ({
       return;
     }
     if (
-      appHtml.includes("vellum.fetch") ||
-      appHtml.includes("vellum.sendAction") ||
+      appHtml.includes("cadet.fetch") ||
+      appHtml.includes("cadet.sendAction") ||
       appHtml.includes("/v1/x/") ||
       appHtml.includes("/v1/apps/")
     ) {

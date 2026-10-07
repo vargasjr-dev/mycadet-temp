@@ -12,7 +12,7 @@ describe("classifyHosting", () => {
   it("maps known cloud values, case-insensitively", () => {
     expect(classifyHosting("local")).toBe("local");
     expect(classifyHosting("docker")).toBe("docker");
-    expect(classifyHosting("vellum")).toBe("managed");
+    expect(classifyHosting("cadet")).toBe("managed");
     expect(classifyHosting("Cadet")).toBe("managed");
   });
 
@@ -25,7 +25,7 @@ describe("classifyHosting", () => {
 
 describe("resolveDestination", () => {
   it("offers local for managed assistants", () => {
-    expect(resolveDestination("vellum")).toBe("local");
+    expect(resolveDestination("cadet")).toBe("local");
   });
 
   it("offers platform for local assistants", () => {

@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
   globalThis.fetch = realFetch;
   clearGatewayToken();
   setSelfHostedConnection(null);
@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe("remote gateway mode", () => {
   test("is enabled but not active until an in-memory token exists", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
 
     expect(isGatewayAuthEnabled()).toBe(true);
     expect(isGatewayAuthMode()).toBe(false);

@@ -50,7 +50,7 @@ export interface ChannelSidecar {
    * for attributable rows, so they do not also sit in the lane waiting for
    * someone to open it.
    */
-  vellumMessages: DisplayMessage[];
+  cadetMessages: DisplayMessage[];
 }
 
 /**
@@ -85,9 +85,9 @@ export function useChannelSidecar({
 
   const derived = useMemo(() => {
     if (!flagEnabled) {
-      return { target: null, entries: [], vellumMessages: messages };
+      return { target: null, entries: [], cadetMessages: messages };
     }
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
       conversation,
     });
@@ -100,7 +100,7 @@ export function useChannelSidecar({
     return {
       target: hasChannelSidecarContent(target, entries) ? target : null,
       entries,
-      vellumMessages,
+      cadetMessages,
     };
   }, [flagEnabled, messages, conversation, conversationId, sourceHref]);
 
@@ -137,7 +137,7 @@ export function useChannelSidecar({
     () => ({
       target,
       entries: derived.entries,
-      vellumMessages: derived.vellumMessages,
+      cadetMessages: derived.cadetMessages,
     }),
     [target, derived],
   );

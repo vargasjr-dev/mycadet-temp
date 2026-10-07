@@ -4,7 +4,7 @@ import { isElectron } from "@/runtime/is-electron";
  * Per-capability wrapper for the Electron host's system power-state
  * bridge — sleep, wake, screen lock/unlock, idle-recover. Matches the
  * shape in `dock.ts` and `app-info.ts`: feature code never touches
- * `window.vellum.*` directly, and the cross-platform branch lives here.
+ * `window.cadet.*` directly, and the cross-platform branch lives here.
  *
  * Off Electron (web build, Capacitor iOS): `subscribeToPowerEvents`
  * is a no-op that returns an unsubscribe-noop. Web has its own
@@ -34,5 +34,5 @@ export function subscribeToPowerEvents(
   if (!isElectron()) {
     return () => undefined;
   }
-  return window.vellum?.power.onEvent(callback) ?? (() => undefined);
+  return window.cadet?.power.onEvent(callback) ?? (() => undefined);
 }

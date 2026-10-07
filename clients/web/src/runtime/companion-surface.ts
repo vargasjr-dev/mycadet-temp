@@ -29,13 +29,13 @@ import type {
   WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
 
-type CompanionBridge = NonNullable<NonNullable<Window["vellum"]>["companion"]>;
+type CompanionBridge = NonNullable<NonNullable<Window["cadet"]>["companion"]>;
 
 const bridge = (): CompanionBridge | undefined => {
   if (!isElectron()) {
     return undefined;
   }
-  return window.vellum?.companion;
+  return window.cadet?.companion;
 };
 
 /** The anchor main computed from where the window sits. */

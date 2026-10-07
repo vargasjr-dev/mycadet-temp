@@ -3,7 +3,7 @@
  *
  * Old behavior (< MIN_VERSION): the daemon compiles `originChannel` to a
  * strict equality, so `cadet` matches only rows explicitly stamped
- * `'vellum'`. `origin_channel` is deliberately NULL at insert (an inbound
+ * `'cadet'`. `origin_channel` is deliberately NULL at insert (an inbound
  * message claims the conversation for its own channel, and migration 288
  * settles the unclaimed ones at daemon startup), so between one boot and the
  * next most rows carry NULL and the request answers 200 with a fraction of

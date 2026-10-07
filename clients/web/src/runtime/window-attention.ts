@@ -62,7 +62,7 @@ export function subscribeToWindowAttention(
     return () => undefined;
   }
   const unsubscribe =
-    window.vellum?.notifications?.onWindowAttention?.((payload) => {
+    window.cadet?.notifications?.onWindowAttention?.((payload) => {
       const parsed = windowAttentionPayloadSchema.safeParse(payload);
       const next = parsed.success ? parsed.data : null;
       attended = isAttendedPayload(next);
@@ -79,7 +79,7 @@ export function subscribeToWindowAttention(
 }
 
 export function supportsWindowAttention(): boolean {
-  return isElectron() && !!window.vellum?.notifications?.onWindowAttention;
+  return isElectron() && !!window.cadet?.notifications?.onWindowAttention;
 }
 
 /**

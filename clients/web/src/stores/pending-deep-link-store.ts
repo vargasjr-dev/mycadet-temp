@@ -2,7 +2,7 @@
  * Pending deep-link state — a one-shot inbox the global deep-link
  * consumer writes to and the chat composer reads from.
  *
- * Why a store: a `vellum://send?message=…` deep link can arrive
+ * Why a store: a `cadet://send?message=…` deep link can arrive
  * while the user is on a non-chat route (`/assistant/settings`,
  * `/assistant/logs`, etc.). The global consumer (mounted at
  * `RootLayout`) navigates to the chat AND parks the message here;

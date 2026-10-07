@@ -1,7 +1,7 @@
 import type { SkillsGetResponses } from "@/generated/daemon/types.gen";
 
 export type SkillOrigin =
-  "vellum" | "clawhub" | "skillssh" | "custom" | "assistant-memory";
+  "cadet" | "clawhub" | "skillssh" | "custom" | "assistant-memory";
 
 export type SkillKind = "bundled" | "installed" | "catalog";
 

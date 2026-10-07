@@ -39,7 +39,7 @@ export const configureAboutRuntime = (next: AboutRuntime): void => {
  * this module is the working example.
  *
  * Version + commit SHA + copyright still flow from the host: the
- * renderer asks for them via `window.vellum.app.versionInfo()`, and
+ * renderer asks for them via `window.cadet.app.versionInfo()`, and
  * the IPC handler installed here returns them. `app.setAboutPanelOptions`
  * is also seeded so the native panel — which AppleScript and other
  * tooling can still invoke independently of our menu — carries the
@@ -102,9 +102,9 @@ export const openAboutWindow = (): void => {
 
   // `deny-all` navigation: the About window has no legitimate top-level
   // navigation — its only outbound link routes through
-  // `window.vellum.app.openWebsite()` → `shell.openExternal` in main — so the
+  // `window.cadet.app.openWebsite()` → `shell.openExternal` in main — so the
   // seam blocks every other path and every popup, keeping the
-  // preload-exposed `window.vellum` surface from being carried somewhere we
+  // preload-exposed `window.cadet` surface from being carried somewhere we
   // don't control.
   aboutWindow = createWindow({
     browserWindow: {

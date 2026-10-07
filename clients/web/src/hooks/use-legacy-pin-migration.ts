@@ -82,7 +82,7 @@ export function useLegacyPinMigration(
 ): void {
   const queryClient = useQueryClient();
   const daemonOwnsPins = useSupportsDaemonAppPins();
-  /* Platform-mode daemon requests carry `Vellum-Organization-Id` from the org
+  /* Platform-mode daemon requests carry `Cadet-Organization-Id` from the org
      store, which hydrates after auth. This hook mounts at the root, so without
      the gate its first request goes out headerless and is rejected, and nothing
      about org hydration would re-run it. */

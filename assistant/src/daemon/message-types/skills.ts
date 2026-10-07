@@ -34,8 +34,8 @@ interface SlimSkillBase {
   owner?: OwnerInfo;
 }
 
-interface VellumSlimSkill extends SlimSkillBase {
-  origin: "vellum";
+interface CadetSlimSkill extends SlimSkillBase {
+  origin: "cadet";
 }
 
 interface ClawhubSlimSkill extends SlimSkillBase {
@@ -71,7 +71,7 @@ interface AssistantMemorySlimSkill extends SlimSkillBase {
 }
 
 export type SlimSkillResponse =
-  | VellumSlimSkill
+  | CadetSlimSkill
   | ClawhubSlimSkill
   | SkillsshSlimSkill
   | CustomSlimSkill
@@ -98,7 +98,7 @@ interface SkillDetailBase {
 }
 
 interface VellumSkillDetail extends SkillDetailBase {
-  origin: "vellum";
+  origin: "cadet";
   /**
    * Extension that ships this skill, reusing the tool registry's
    * {@link OwnerInfo} model. Set for plugin-resident skills as

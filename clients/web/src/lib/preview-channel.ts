@@ -1,10 +1,10 @@
 /**
- * The `vellum_preview` cookie is what this browser asked the origin to serve.
+ * The `cadet_preview` cookie is what this browser asked the origin to serve.
  * `VITE_CHANNEL` is what the running bundle was built as. They can disagree.
  */
 
 /** Set to `1` to opt into the preview build. */
-export const PREVIEW_COOKIE = "vellum_preview";
+export const PREVIEW_COOKIE = "cadet_preview";
 
 const PREVIEW_COOKIE_ATTRS = "path=/; Secure; SameSite=Lax";
 const ONE_YEAR_SECONDS = 31536000;

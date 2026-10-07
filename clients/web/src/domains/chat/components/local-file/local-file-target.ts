@@ -1,8 +1,8 @@
 /**
  * Resolve a markdown image/link destination to the workspace file it names.
  *
- * `vellum://workspace/` hrefs are percent-encoded per segment by
- * `toVellumWorkspaceHref`, so they decode back segment by segment. Everything
+ * `cadet://workspace/` hrefs are percent-encoded per segment by
+ * `toCadetWorkspaceHref`, so they decode back segment by segment. Everything
  * else goes through `classifyMarkdownHref`, which recognizes absolute
  * `/workspace/` paths and relative ones. A `workspacePath` of `null` means the
  * reference is still a file reference the daemon has no route to.
@@ -14,7 +14,7 @@ import {
   workspaceBasenameOf,
 } from "@/utils/workspace-path-links";
 
-const VELLUM_WORKSPACE_PREFIX = "vellum://workspace/";
+const VELLUM_WORKSPACE_PREFIX = "cadet://workspace/";
 
 export interface LocalFileTarget {
   workspacePath: string | null;

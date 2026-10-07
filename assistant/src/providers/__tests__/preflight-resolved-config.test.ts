@@ -126,29 +126,29 @@ describe("preflightResolvedConfig", () => {
   });
 
   test("a cadet identity preflights through the sentinel row with the derived upstream", async () => {
-    connectionsByName["vellum"] = {
-      name: "vellum",
-      provider: "vellum",
+    connectionsByName["cadet"] = {
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     };
     platformLoggedIn = true;
     await expect(
       preflightResolvedConfig(
-        resolved({ provider: "vellum", provider_connection: "" }),
+        resolved({ provider: "cadet", provider_connection: "" }),
         {},
       ),
     ).resolves.toBeUndefined();
   });
 
   test("a cadet identity without a platform login throws platform_unauthenticated", async () => {
-    connectionsByName["vellum"] = {
-      name: "vellum",
-      provider: "vellum",
+    connectionsByName["cadet"] = {
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     };
     platformLoggedIn = false;
     const err = await preflightError(
-      resolved({ provider: "vellum", provider_connection: "" }),
+      resolved({ provider: "cadet", provider_connection: "" }),
     );
     expect(err?.reason).toBe("platform_unauthenticated");
   });
@@ -156,14 +156,14 @@ describe("preflightResolvedConfig", () => {
   test("a user-owned row claiming the cadet name preflights the platform", async () => {
     // Dispatch ignores that row, so its credential is irrelevant to the
     // verdict: signed in passes, signed out is the platform's own failure.
-    connectionsByName["vellum"] = {
-      name: "vellum",
+    connectionsByName["cadet"] = {
+      name: "cadet",
       provider: "openai",
       auth: { type: "api_key", credential: "credential/openai/api_key" },
     };
     secureKeys["credential/openai/api_key"] = "sk-openai";
     const collided = resolved({
-      provider: "vellum",
+      provider: "cadet",
       provider_connection: "",
       model: "gpt-5.6-luna",
     });
@@ -181,7 +181,7 @@ describe("preflightResolvedConfig", () => {
   test("an unroutable cadet model throws unroutable_managed_model", async () => {
     const err = await preflightError(
       resolved({
-        provider: "vellum",
+        provider: "cadet",
         provider_connection: "",
         model: "not-a-real-model",
       }),
@@ -297,35 +297,35 @@ describe("preflightResolvedConfig", () => {
 
   test("the cadet managed connection serves managed-routable providers when logged in", async () => {
     connectionsByName = {
-      vellum: {
-        name: "vellum",
-        provider: "vellum",
+      cadet: {
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       },
     };
     platformLoggedIn = true;
     expect(
-      await preflightError(resolved({ provider_connection: "vellum" })),
+      await preflightError(resolved({ provider_connection: "cadet" })),
     ).toBeUndefined();
 
     platformLoggedIn = false;
     const err = await preflightError(
-      resolved({ provider_connection: "vellum" }),
+      resolved({ provider_connection: "cadet" }),
     );
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
   test("the cadet managed connection rejects non-managed-routable providers", async () => {
     connectionsByName = {
-      vellum: {
-        name: "vellum",
-        provider: "vellum",
+      cadet: {
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       },
     };
     platformLoggedIn = true;
     const err = await preflightError(
-      resolved({ provider: "openrouter", provider_connection: "vellum" }),
+      resolved({ provider: "openrouter", provider_connection: "cadet" }),
     );
     expect(err?.reason).toBe("provider_mismatch");
   });
@@ -366,15 +366,15 @@ describe("preflightResolvedConfig", () => {
 describe("preflightResolvedConfig platform-managed credential messaging", () => {
   const platformManaged = () => {
     connectionsByName = {
-      vellum: {
-        name: "vellum",
-        provider: "vellum",
+      cadet: {
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       },
     };
     process.env.IS_PLATFORM = "true";
   };
-  const managedRoute = () => resolved({ provider_connection: "vellum" });
+  const managedRoute = () => resolved({ provider_connection: "cadet" });
 
   test("store unreachable surfaces a retriable message with no login text", async () => {
     platformManaged();
@@ -402,9 +402,9 @@ describe("preflightResolvedConfig platform-managed credential messaging", () => 
 
   test("non-platform install keeps the log-in-or-switch wording", async () => {
     connectionsByName = {
-      vellum: {
-        name: "vellum",
-        provider: "vellum",
+      cadet: {
+        name: "cadet",
+        provider: "cadet",
         auth: { type: "platform" },
       },
     };

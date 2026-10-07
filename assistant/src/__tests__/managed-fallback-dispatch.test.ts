@@ -16,6 +16,7 @@ import {
   test,
 } from "bun:test";
 
+import { getManagedUpstream } from "../providers/cadet-model-routing.js";
 import { CallSiteRoutingProvider } from "../providers/call-site-routing.js";
 import {
   resetFallbackBreaker,
@@ -31,7 +32,6 @@ import type {
   Provider,
   ProviderResponse,
 } from "../providers/types.js";
-import { getManagedUpstream } from "../providers/vellum-model-routing.js";
 import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -125,12 +125,12 @@ const MESSAGES: Message[] = [
   { role: "user", content: [{ type: "text", text: "hi" }] },
 ];
 
-const ASSISTANT_API_KEY = credentialKey("vellum", "assistant_api_key");
+const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 const BYOK_CREDENTIAL = credentialKey("anthropic", "api_key");
 
-const vellumConnection = {
-  name: "vellum",
-  provider: "vellum",
+const cadetConnection = {
+  name: "cadet",
+  provider: "cadet",
   auth: { type: "platform" },
   label: "Cadet",
   baseUrl: null,
@@ -172,7 +172,7 @@ function createManagedAdapter(upstream: string, model: string): Provider {
     throw new Error(`unsupported test upstream: ${upstream}`);
   }
   const provider = createAdapterFromConnection(
-    vellumConnection,
+    cadetConnection,
     managedAuth(proxyPath),
     {
       model,
@@ -197,11 +197,11 @@ function createRoutedManagedProvider(): Provider {
   return new CallSiteRoutingProvider(
     defaultProvider,
     async (connectionName, expectedProvider, model) => {
-      if (connectionName !== "vellum" || model === undefined) {
+      if (connectionName !== "cadet" || model === undefined) {
         return null;
       }
       const upstream =
-        expectedProvider === "vellum"
+        expectedProvider === "cadet"
           ? getManagedUpstream(model)
           : expectedProvider;
       return upstream === undefined || upstream === null
@@ -351,7 +351,7 @@ describe("managed fallback dispatch", () => {
       profiles: {
         custom: {
           source: "user",
-          provider: "vellum",
+          provider: "cadet",
           model: "claude-opus-5",
           maxTokens: 1024,
         },

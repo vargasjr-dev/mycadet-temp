@@ -21,10 +21,10 @@ import type {
   TtsProviderCatalogEntry,
   TtsProviderDefinition,
 } from "./provider-definition.js";
+import { cadetTtsProviderDefinition } from "./providers/cadet-provider.js";
 import { deepgramTtsProviderDefinition } from "./providers/deepgram-provider.js";
 import { elevenLabsTtsProviderDefinition } from "./providers/elevenlabs-provider.js";
 import { fishAudioTtsProviderDefinition } from "./providers/fish-audio-provider.js";
-import { cadetTtsProviderDefinition } from "./providers/vellum-provider.js";
 import { xaiTtsProviderDefinition } from "./providers/xai-provider.js";
 import type { TtsProvider, TtsProviderId } from "./types.js";
 

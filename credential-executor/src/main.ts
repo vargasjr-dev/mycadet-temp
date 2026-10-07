@@ -346,15 +346,15 @@ async function main(): Promise<void> {
 
   // -- Secure key backend + migrations --------------------------------------
   // The secure key backend path differs by mode:
-  // - Local: dirname(getSecurityDir()) — the parent of ~/.vellum/protected
+  // - Local: dirname(getSecurityDir()) — the parent of ~/.cadet/protected
   //   (or CREDENTIAL_SECURITY_DIR when set by the CLI).
-  // - Managed: join(assistantDataMount, ".vellum") — the assistant data mount.
+  // - Managed: join(assistantDataMount, ".cadet") — the assistant data mount.
   const secureKeyBackend =
     mode === "managed"
       ? createLocalSecureKeyBackend(
           join(
             process.env["CES_ASSISTANT_DATA_MOUNT"] ?? "/assistant-data-ro",
-            ".vellum",
+            ".cadet",
           ),
         )
       : createLocalSecureKeyBackend(dirname(getSecurityDir()));

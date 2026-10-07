@@ -223,7 +223,7 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
       // "no picker", not native detection: this entry pins the English Flux
       // model and sends no language parameter, so audio in another language
       // transcribes as English. Flux itself has a multilingual model; the
-      // managed `vellum-flux` entry reaches it, and a BYOK picker would need
+      // managed `cadet-flux` entry reaches it, and a BYOK picker would need
       // the model to follow the selection.
       languageSelection: "auto",
       credentialsGuide: DEEPGRAM_CREDENTIALS_GUIDE,
@@ -295,7 +295,7 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
       setupMode: "connection",
       setupHint: "Connect your Cadet account to enable managed transcription.",
       // Legacy credential-service key (persisted identity rows).
-      credentialProvider: "vellum",
+      credentialProvider: "cadet",
       supportedBoundaries: new Set<SttBoundaryId>([
         "daemon-batch",
         "daemon-streaming",
@@ -320,15 +320,15 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
         "Conversational speech-to-text with model-native turn detection, through your Cadet account. No separate API key needed.",
       setupMode: "connection",
       setupHint: "Connect your Cadet account to enable managed transcription.",
-      // Shared with `vellum`: the platform connection is the credential, and
+      // Shared with `cadet`: the platform connection is the credential, and
       // Flux is a different endpoint on the same relay, not a second account.
-      credentialProvider: "vellum",
+      credentialProvider: "cadet",
       // Streaming only, same as the BYOK Flux entry: Flux has no batch
       // endpoint, and the relay exposes none.
       supportedBoundaries: new Set<SttBoundaryId>(["daemon-streaming"]),
       // The relay maps `Finalize` onto Flux's `CloseStream`, which ends the
       // session rather than flushing it, and telephony's utterance-boundary
-      // finals are a nova-3 concept. Calls stay on `vellum`.
+      // finals are a nova-3 concept. Calls stay on `cadet`.
       telephonyMode: "none",
       conversationStreamingMode: "realtime-ws",
       // The relay is dialed with `contract=flux`, so Flux's turn lifecycle
@@ -500,7 +500,7 @@ export function supportsDiarization(id: SttProviderId): boolean {
  * session change.
  */
 /**
- * Whether a provider authenticates with the Vellum platform connection rather
+ * Whether a provider authenticates with the Cadet platform connection rather
  * than a stored API key.
  *
  * Derived from the catalog rather than a hand-kept id list: every check that
@@ -508,7 +508,7 @@ export function supportsDiarization(id: SttProviderId): boolean {
  * one of them behind on a stale literal.
  */
 export function isManagedSttProvider(id: SttProviderId): boolean {
-  return CATALOG.get(id)?.credentialProvider === "vellum";
+  return CATALOG.get(id)?.credentialProvider === "cadet";
 }
 
 /**
@@ -653,7 +653,7 @@ export function listCredentialProviderNames(): readonly string[] {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const entry of CATALOG.values()) {
-    // Connection-based providers (vellum) authenticate via the platform
+    // Connection-based providers (cadet) authenticate via the platform
     // connection, not a stored API key — offering them on the generic
     // key routes would accept a key that never enables anything.
     if (entry.setupMode !== "api-key") {

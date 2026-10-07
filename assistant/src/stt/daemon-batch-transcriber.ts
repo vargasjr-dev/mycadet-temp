@@ -206,12 +206,12 @@ export function normalizeSttError(err: unknown): SttError {
 }
 
 // ---------------------------------------------------------------------------
-// Vellum managed adapter — implements BatchTranscriber on top of the
+// Cadet managed adapter — implements BatchTranscriber on top of the
 // platform's managed speech endpoint. No API key: the platform connection
 // is the credential.
 // ---------------------------------------------------------------------------
 
-class VellumManagedBatchTranscriber implements BatchTranscriber {
+class CadetManagedBatchTranscriber implements BatchTranscriber {
   readonly providerId = "cadet" as const;
   readonly boundaryId = "daemon-batch" as const;
 
@@ -220,9 +220,9 @@ class VellumManagedBatchTranscriber implements BatchTranscriber {
   async transcribe(
     request: SttTranscribeRequest,
   ): Promise<SttTranscribeResult> {
-    const { vellumManagedTranscribe } =
-      await import("../providers/speech-to-text/vellum-managed.js");
-    return vellumManagedTranscribe(
+    const { cadetManagedTranscribe } =
+      await import("../providers/speech-to-text/cadet-managed.js");
+    return cadetManagedTranscribe(
       request.audio,
       request.mimeType,
       request.signal,
@@ -243,7 +243,7 @@ class VellumManagedBatchTranscriber implements BatchTranscriber {
  * `language` is the spoken language, forwarded to providers whose batch API
  * accepts one: Deepgram (where `"multi"` also pins nova-3), xAI (where
  * `"multi"` is dropped because it is a Deepgram-specific value, not a
- * language code), and the vellum managed path, whose platform proxy passes
+ * language code), and the Cadet managed path, whose platform proxy passes
  * it to Deepgram server-side. Whisper and Gemini auto-detect natively and
  * take no language parameter, so it is silently ignored for them.
  *
@@ -258,7 +258,7 @@ export function createDaemonBatchTranscriber(
   // Managed speech authenticates via the platform connection, not an API
   // key. Callers pass canonical ids; the resolver maps legacy ones first.
   if (providerId === "cadet") {
-    return new VellumManagedBatchTranscriber(language);
+    return new CadetManagedBatchTranscriber(language);
   }
   if (!apiKey) {
     return null;

@@ -1,18 +1,18 @@
 # Electron Conventions
 
-The web app ships as both a browser SPA and the renderer of an Electron desktop shell (see [`clients/macos/`](../../../clients/macos/)). The shell exposes a typed bridge to the renderer as `window.vellum`, defined in [`clients/macos/src/preload/index.ts`](../../../clients/macos/src/preload/index.ts) and mirrored as an ambient declaration in [`clients/web/src/runtime/is-electron.ts`](../src/runtime/is-electron.ts).
+The web app ships as both a browser SPA and the renderer of an Electron desktop shell (see [`clients/macos/`](../../../clients/macos/)). The shell exposes a typed bridge to the renderer as `window.cadet`, defined in [`clients/macos/src/preload/index.ts`](../../../clients/macos/src/preload/index.ts) and mirrored as an ambient declaration in [`clients/web/src/runtime/is-electron.ts`](../src/runtime/is-electron.ts).
 
 > **Read this only if your change touches Electron code paths.** For browser-only and iOS-only contributions you can skip this document. Building the Electron app itself additionally requires running `clients/macos/`'s dev scripts; the main-process source lives in [`clients/macos/src/main/`](../../../clients/macos/src/main/).
 
-If you're touching anything in [`clients/web/src/runtime/`](../src/runtime/) that calls `window.vellum.*`, or adding a new bridge surface — start here.
+If you're touching anything in [`clients/web/src/runtime/`](../src/runtime/) that calls `window.cadet.*`, or adding a new bridge surface — start here.
 
 ---
 
-## Wrap `window.vellum.*` access in a per-capability `runtime/` module
+## Wrap `window.cadet.*` access in a per-capability `runtime/` module
 
-`window.vellum` is `undefined` on web and Capacitor iOS — the bridge only exists when the renderer is loaded inside the Electron shell. Feature code that reaches into `window.vellum.*` directly crashes off-Electron and forces every call site to repeat an `isElectron()` check.
+`window.cadet` is `undefined` on web and Capacitor iOS — the bridge only exists when the renderer is loaded inside the Electron shell. Feature code that reaches into `window.cadet.*` directly crashes off-Electron and forces every call site to repeat an `isElectron()` check.
 
-**The wrappers in [`clients/web/src/runtime/`](../src/runtime/) are the only files in `clients/web/` that touch `window.vellum.*` directly.** Feature code imports the wrapper functions, not the bridge. Pattern, copied from [`native-biometric.ts`](../src/runtime/native-biometric.ts):
+**The wrappers in [`clients/web/src/runtime/`](../src/runtime/) are the only files in `clients/web/` that touch `window.cadet.*` directly.** Feature code imports the wrapper functions, not the bridge. Pattern, copied from [`native-biometric.ts`](../src/runtime/native-biometric.ts):
 
 ```ts
 // clients/web/src/runtime/<capability>.ts
@@ -20,7 +20,7 @@ import { isElectron } from "@/runtime/is-electron";
 
 export async function setDockBadge(count: number): Promise<void> {
   if (!isElectron()) return;
-  await window.vellum?.dock.setBadge(count);
+  await window.cadet?.dock.setBadge(count);
 }
 ```
 
@@ -31,7 +31,7 @@ Two things this buys:
 
 This parallels the [Capacitor plugin lazy-import rule](./CAPACITOR.md#capacitor-plugins-must-be-destructured-inline-lazy-import-rule): both keep host-specific globals out of feature modules so the same React tree mounts on every platform.
 
-See [`clients/web/src/runtime/dock.ts`](../src/runtime/dock.ts) and [`clients/web/src/runtime/vellum-commands.ts`](../src/runtime/vellum-commands.ts) for the established shape.
+See [`clients/web/src/runtime/dock.ts`](../src/runtime/dock.ts) and [`clients/web/src/runtime/cadet-commands.ts`](../src/runtime/cadet-commands.ts) for the established shape.
 
 ---
 
@@ -44,7 +44,7 @@ Most bridges are desktop-only niceties (Dock badge, biometrics) and so the off-E
 ```ts
 // clients/web/src/runtime/local-mode-host.ts
 export async function hatchLocalAssistant(species = "vellum") {
-  if (isElectron()) return window.vellum!.localMode.hatch(species);
+  if (isElectron()) return window.cadet!.localMode.hatch(species);
   // web/dev: the Vite middleware spawns the CLI binary
   const res = await fetch("/assistant/__local/hatch", {
     method: "POST" /* … */,
@@ -53,13 +53,13 @@ export async function hatchLocalAssistant(species = "vellum") {
 }
 ```
 
-The rules are otherwise identical to the no-op wrappers: feature code imports the named function and never sees the branch, and the wrapper is the only renderer file that touches `window.vellum.localMode`. The only difference is that the non-Electron path returns a real result rather than `undefined`/no-op, so both hosts honor the same contract.
+The rules are otherwise identical to the no-op wrappers: feature code imports the named function and never sees the branch, and the wrapper is the only renderer file that touches `window.cadet.localMode`. The only difference is that the non-Electron path returns a real result rather than `undefined`/no-op, so both hosts honor the same contract.
 
 ---
 
 ## Hooks that bridge feature state to the Electron host live in the domain, not in `runtime/`
 
-The `runtime/` wrappers expose **imperative functions** (`setDockBadge(count)`, `useVellumCommands(handlers)`). When a feature needs to publish state changes to the host on every tick (e.g. unread count → Dock badge), the React hook that does that **lives in the domain that owns the source data**, not in the runtime layer.
+The `runtime/` wrappers expose **imperative functions** (`setDockBadge(count)`, `useCadetCommands(handlers)`). When a feature needs to publish state changes to the host on every tick (e.g. unread count → Dock badge), the React hook that does that **lives in the domain that owns the source data**, not in the runtime layer.
 
 ```
 clients/web/src/runtime/dock.ts                              ← imperative bridge
@@ -74,9 +74,9 @@ See [`clients/web/src/domains/chat/hooks/use-electron-dock-sync.ts`](../src/doma
 
 ## Adding a new bridge surface
 
-When extending `window.vellum.*`, three files change together because the three TypeScript projects (main, preload, renderer) don't share a workspace symbol table:
+When extending `window.cadet.*`, three files change together because the three TypeScript projects (main, preload, renderer) don't share a workspace symbol table:
 
-1. **[`clients/macos/src/preload/index.ts`](../../../clients/macos/src/preload/index.ts)**: adds the IPC plumbing + the typed `VellumBridge` field. Write the plumbing once as a `create<Surface>Bridge` factory in [`packages/electron-desktop/src/preload.ts`](../../../packages/electron-desktop/src/preload.ts) and consume it here and in the Windows shell's `preload/features/` module, so the bridge-parity test verifies one implementation instead of two hand-copies (see `createDownloadsBridge` for the shape).
+1. **[`clients/macos/src/preload/index.ts`](../../../clients/macos/src/preload/index.ts)**: adds the IPC plumbing + the typed `CadetBridge` field. Write the plumbing once as a `create<Surface>Bridge` factory in [`packages/electron-desktop/src/preload.ts`](../../../packages/electron-desktop/src/preload.ts) and consume it here and in the Windows shell's `preload/features/` module, so the bridge-parity test verifies one implementation instead of two hand-copies (see `createDownloadsBridge` for the shape).
 2. **[`clients/web/src/runtime/is-electron.ts`](../src/runtime/is-electron.ts)** — mirrors the new field on the renderer-side ambient `Window.vellum?` declaration.
 3. **`clients/web/src/runtime/<capability>.ts`** — per-capability wrapper module exposing the no-op-off-Electron functions feature code calls.
 
@@ -91,7 +91,7 @@ The runtime wrapper is the surface for **imperative** access (`setDockBadge(coun
 Example (`runtime/power-events.ts` + `BusEventMap`): the system's `powerMonitor` fires `suspend` / `resume` / `lock` / `unlock` / `active`. Multiple renderer subsystems care (SSE reconnect, future auth-refresh on wake, future reachability probe). The right shape is:
 
 1. `packages/electron-desktop/src/power-events.ts` subscribes to `powerMonitor`, broadcasts to all renderers via `webContents.send`.
-2. `clients/macos/src/preload/index.ts` — `window.vellum.power.onEvent(callback) → unsubscribe`.
+2. `clients/macos/src/preload/index.ts` — `window.cadet.power.onEvent(callback) → unsubscribe`.
 3. `clients/web/src/runtime/power-events.ts` — `subscribeToPowerEvents(callback)` (the no-op-off-Electron wrapper).
 4. `clients/web/src/hooks/use-event-bus-init.ts` — calls the wrapper once at mount, fans events in as `power.suspend` / `power.resume` / etc. on the bus.
 5. Domain consumers subscribe to `bus.subscribe("power.resume", ...)` — never to the wrapper directly.

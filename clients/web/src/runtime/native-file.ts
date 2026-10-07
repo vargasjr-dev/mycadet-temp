@@ -26,7 +26,7 @@ import { shareFileViaMacSheet } from "@/runtime/native-share";
  *   download into the host's Downloads folder and pushes the outcome back
  *   (`packages/electron-desktop/src/downloads.ts` → the `download.done` bus
  *   event). `shareFile` presents the native Share Sheet over the
- *   `window.vellum.share` bridge, falling through to a download when the
+ *   `window.cadet.share` bridge, falling through to a download when the
  *   desktop bridge is unavailable (older preload).
  * - **Capacitor iOS/Android:** the one host where a *download* also goes
  *   through the share sheet. WKWebView does not support the `download`

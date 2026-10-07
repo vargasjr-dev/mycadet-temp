@@ -27,7 +27,7 @@ const { useAuthStore } = await import("@/stores/auth-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
 
 const ORGANIZATION_ID = "org-abc";
-const STORAGE_KEY = "vellum_active_organization_id";
+const STORAGE_KEY = "cadet_active_organization_id";
 const PROBE_KEY = ["org-scoped-probe"];
 const ASSET_FAILURE_OPTIONS = {
   queryKey: appsGetQueryKey({

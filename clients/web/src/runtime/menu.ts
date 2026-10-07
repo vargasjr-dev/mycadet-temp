@@ -4,7 +4,7 @@ export async function setMenuPlatformSession(has: boolean): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.menu.setPlatformSession(has);
+  await window.cadet?.menu.setPlatformSession(has);
 }
 
 /** One top-level native menu: a stable id plus the shell's own label. */
@@ -22,7 +22,7 @@ export async function getMenuBarEntries(): Promise<MenuBarEntry[]> {
   if (!isElectron()) {
     return [];
   }
-  return (await window.vellum?.menu.titles?.()) ?? [];
+  return (await window.cadet?.menu.titles?.()) ?? [];
 }
 
 /**
@@ -37,5 +37,5 @@ export async function popupMenuBarMenu(
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.menu.popup?.(id, x, y);
+  await window.cadet?.menu.popup?.(id, x, y);
 }

@@ -142,7 +142,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
     addresses = [
       {
         id: "address-1",
-        address: "hi@bright-vole-02a64h.vellum.me",
+        address: "hi@bright-vole-02a64h.cadet.me",
         created_at: "2026-09-22T00:00:00Z",
       },
     ];
@@ -152,7 +152,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
   assistantsEmailAddressesStatusRetrieve: () =>
     Promise.resolve({
       data: {
-        address: "hi@bright-vole-02a64h.vellum.me",
+        address: "hi@bright-vole-02a64h.cadet.me",
         status: "active",
         usage: {
           sent_today: 0,
@@ -284,7 +284,7 @@ describe("AssistantInboxPageRoute after an upgrade", () => {
     addresses = [
       {
         id: "address-1",
-        address: "hi@bright-vole-02a64h.vellum.me",
+        address: "hi@bright-vole-02a64h.cadet.me",
         created_at: "2026-09-22T00:00:00Z",
       },
     ];

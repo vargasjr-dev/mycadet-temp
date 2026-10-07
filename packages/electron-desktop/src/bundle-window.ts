@@ -4,7 +4,7 @@
  * Each bundle gets its own `BrowserWindow` backed by a dedicated
  * `persist:bundle-{uuid}` session partition. Cookies, localStorage, and
  * cache are isolated per bundle. The window intentionally omits the main
- * preload script so there is no `window.vellum` bridge; the renderer runs
+ * preload script so there is no `window.cadet` bridge; the renderer runs
  * in full sandbox mode with only the web-platform APIs available.
  *
  * Navigation is restricted to the bundle's own `vellumapp://{uuid}/`

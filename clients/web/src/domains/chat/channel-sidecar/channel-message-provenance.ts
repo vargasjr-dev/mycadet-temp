@@ -4,7 +4,7 @@
  * A conversation bound to an external channel carries two kinds of row: the
  * ones that exist in that channel (someone typed them in Slack, Telegram,
  * Discord, a phone thread, an email chain) and the ones that exist only in
- * Vellum. The sidecar draws each row exactly once, so it needs one question
+ * Cadet. The sidecar draws each row exactly once, so it needs one question
  * answered per row: does this row exist in the external channel, and if so,
  * what does the channel call it?
  *
@@ -195,7 +195,7 @@ export function getBoundChannelId(
  * cannot attribute the row to the conversation's channel.
  *
  * `null` is the conservative answer and the common one. It never means "this
- * row is definitely Vellum-only", only "nothing observable says otherwise",
+ * row is definitely Cadet-only", only "nothing observable says otherwise",
  * which is why callers use it to *keep* a row in the Cadet lane rather than
  * to move it out of one.
  */

@@ -117,7 +117,7 @@ describe("mergePlugins", () => {
   });
 
   test("never promotes an installed plugin's URL-shaped icon to iconUrl", () => {
-    // `package.json` `vellum.icon` is author-controlled text; rendering it as
+    // `package.json` `cadet.icon` is author-controlled text; rendering it as
     // an image source would fire a GET at whatever host it names.
     const [row] = mergePlugins(
       [installed({ name: "alpha", icon: "http://127.0.0.1" })],

@@ -97,7 +97,7 @@ mock.module("@/runtime/push-registration", () => ({
 const ensureAndroidAlertsChannelMock = mock(async () => {});
 mock.module("@/runtime/android-notification-channels", () => ({
   ...androidNotificationChannels,
-  ANDROID_ALERTS_CHANNEL_ID: "vellum-alerts",
+  ANDROID_ALERTS_CHANNEL_ID: "cadet-alerts",
   ensureAndroidAlertsChannel: ensureAndroidAlertsChannelMock,
 }));
 mock.module("@/i18n", () => ({
@@ -332,7 +332,7 @@ beforeEach(() => {
     localNotificationAvatar: false,
   });
   __resetNotificationsStateForTests();
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   setVisibility("visible");
   useConversationStore.getState().reset();
 });
@@ -496,7 +496,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
     });
     expect(scheduleMock).toHaveBeenCalledTimes(1);
     expect(scheduleMock.mock.calls[0]?.[0].notifications[0]?.channelId).toBe(
-      "vellum-alerts",
+      "cadet-alerts",
     );
   });
 
@@ -702,14 +702,14 @@ describe("postLocalNotification scoped presentation policy", () => {
   beforeEach(() => {
     showMock.mockClear();
     useClientFeatureFlagStore.setState({ pushAvatarSender: true });
-    (window as unknown as { vellum?: unknown }).vellum = {
+    (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
       notifications: { show: showMock },
     };
   });
 
   afterEach(() => {
-    delete (window as unknown as { vellum?: unknown }).vellum;
+    delete (window as unknown as { cadet?: unknown }).cadet;
   });
 
   test("uses the event name before exact identity store and verified RAM", async () => {
@@ -1060,7 +1060,7 @@ describe("postLocalNotification Android coordinator owner", () => {
       correlationId: "correlation-1",
       deliveryId: "delivery-1",
       requestKey: "correlation-1",
-      channelId: "vellum-alerts",
+      channelId: "cadet-alerts",
       category: NOTIFICATION_INTENT_ACTION_TYPE_ID,
       conversationId: "conv-1",
       deepLinkMetadata: { conversationId: "conv-1", route: "thread" },
@@ -1782,7 +1782,7 @@ describe("notification tap listener adapters", () => {
     const show = mock(async (_payload: ShowNotificationPayload) => ({
       success: true,
     }));
-    (window as unknown as { vellum?: unknown }).vellum = {
+    (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
       notifications: {
         show,
@@ -1844,7 +1844,7 @@ describe("notification tap listener adapters", () => {
       actionListener = listener;
       return () => {};
     });
-    (window as unknown as { vellum?: unknown }).vellum = {
+    (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
       notifications: { show, onAction },
     };

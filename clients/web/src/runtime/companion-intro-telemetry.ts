@@ -25,7 +25,7 @@ import { isElectron } from "@/runtime/is-electron";
 export function subscribeToCompanionIntroReports(
   callback: (report: CompanionIntroReport) => void,
 ): () => void {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   // A shell that predates the channel never publishes one, and a shell without
   // a surface has no `companion` at all.
   if (companion?.onIntroReport === undefined) {
@@ -58,7 +58,7 @@ export function subscribeToCompanionIntroReports(
 export async function takeCompanionIntroReports(): Promise<
   CompanionIntroReport[]
 > {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   if (companion?.takeIntroReports === undefined) {
     return [];
   }

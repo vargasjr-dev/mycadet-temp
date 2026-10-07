@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 
 import { useTranslation } from "@/i18n";
-import { isVellumStaff } from "@/lib/auth/staff";
+import { isCadetStaff } from "@/lib/auth/staff";
 import {
   getRunningChannel,
   isPreviewRequested,
@@ -24,7 +24,7 @@ export function PreviewUiChannel() {
     window.location.reload();
   }, []);
 
-  if (!isVellumStaff(user)) {
+  if (!isCadetStaff(user)) {
     return null;
   }
 

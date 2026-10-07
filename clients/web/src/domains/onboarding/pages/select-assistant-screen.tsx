@@ -52,7 +52,7 @@ import { useIsNativeMobile } from "@/runtime/platform-detection";
 import {
   installNativeRememberedOrigins,
   nativeSwitchToOrigin,
-  nativeVellumCloudOrigin,
+  nativeCadetCloudOrigin,
 } from "@/runtime/self-hosted-servers";
 import { useHasPlatformSession } from "@/stores/auth-store";
 import { useConnectDialogStore } from "@/stores/connect-dialog-store";
@@ -151,7 +151,7 @@ function originSelectionKey(origin: OriginCardEntry): string {
 }
 
 /** Selection key for the native shell's baked Cadet Cloud card. */
-const CLOUD_SELECTION_KEY = "origin:vellum-cloud";
+const CLOUD_SELECTION_KEY = "origin:cadet-cloud";
 
 /**
  * The consumed `register`/`name` handoff params dropped from `params`,
@@ -288,7 +288,7 @@ export function SelectAssistantScreen() {
       return;
     }
     let cancelled = false;
-    void nativeVellumCloudOrigin().then((url) => {
+    void nativeCadetCloudOrigin().then((url) => {
       if (!cancelled) {
         setCloudOriginUrl(url);
       }

@@ -13,7 +13,7 @@
 import { useState } from "react";
 
 import { AppIconPreview } from "@/components/avatar/app-icon-preview";
-import { APP_ICON_GROUNDS } from "@/components/ios-widget-previews/vellum-app-icon-mark";
+import { APP_ICON_GROUNDS } from "@/components/ios-widget-previews/cadet-app-icon-mark";
 import { AppIconModal } from "@/domains/settings/components/app-icon-modal";
 import { useAppIconSync, type AppIconSync } from "@/hooks/use-app-icon-sync";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";

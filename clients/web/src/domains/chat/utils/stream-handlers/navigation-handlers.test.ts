@@ -92,22 +92,22 @@ const originalWindow = globalThis.window;
 let attention: ReturnType<typeof stubBrowserAttention>;
 
 function setMockWindow({
-  origin = "https://app.vellum.ai",
+  origin = "https://app.cadet.ai",
   open,
-  vellum,
+  cadet,
 }: {
   origin?: string;
   open?:
     | ((url?: string, target?: string, features?: string) => Window | null)
     | null;
-  vellum?: unknown;
+  cadet?: unknown;
 } = {}): void {
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
       location: { origin },
       open,
-      vellum,
+      cadet,
     },
   });
 }
@@ -238,7 +238,7 @@ describe("handleOpenUrl", () => {
     const { ctx, push } = makeOpenUrlCtx();
 
     handleOpenUrl(
-      makeOpenUrlEvent("https://app.vellum.ai/settings?tab=x"),
+      makeOpenUrlEvent("https://app.cadet.ai/settings?tab=x"),
       ctx,
     );
 
@@ -330,7 +330,7 @@ describe("handleOpenUrl", () => {
     ]) {
       attention.set(state);
       handleOpenUrl(makeOpenUrlEvent(oauthUrl), ctx);
-      handleOpenUrl(makeOpenUrlEvent("https://app.vellum.ai/settings"), ctx);
+      handleOpenUrl(makeOpenUrlEvent("https://app.cadet.ai/settings"), ctx);
     }
 
     expect(open).not.toHaveBeenCalled();
@@ -355,7 +355,7 @@ describe("handleOpenUrl", () => {
   it("ignores settings URLs for another Electron host OS", () => {
     setMockWindow({
       open: null,
-      vellum: { platform: "electron", hostOS: "macos" },
+      cadet: { platform: "electron", hostOS: "macos" },
     });
     const { ctx, setError, setNotice } = makeOpenUrlCtx();
 

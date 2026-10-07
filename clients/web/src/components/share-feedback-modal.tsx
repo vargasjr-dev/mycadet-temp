@@ -532,8 +532,8 @@ async function buildClientLogsFile(
   try {
     const debugApi =
       typeof window !== "undefined"
-        ? (window as unknown as { _vellumDebug?: { chat?: ChatDebugApi } })
-            ._vellumDebug?.chat
+        ? (window as unknown as { _cadetDebug?: { chat?: ChatDebugApi } })
+            ._cadetDebug?.chat
         : null;
     if (debugApi) {
       const clientMessages = debugApi.getClientMessages?.() ?? null;
@@ -586,9 +586,9 @@ async function buildClientLogsFile(
       typeof window !== "undefined"
         ? (
             window as unknown as {
-              _vellumDebug?: { events?: ChatDebugEventsApi };
+              _cadetDebug?: { events?: ChatDebugEventsApi };
             }
-          )._vellumDebug?.events
+          )._cadetDebug?.events
         : null;
     if (eventsApi) {
       const triagePayload = {
@@ -623,9 +623,9 @@ async function buildClientLogsFile(
     // chat page hasn't mounted the API yet.
   }
 
-  if (isElectron() && window.vellum?.feedback) {
+  if (isElectron() && window.cadet?.feedback) {
     try {
-      const electronDiagnostics = await window.vellum.feedback.diagnostics();
+      const electronDiagnostics = await window.cadet.feedback.diagnostics();
       const diagBytes = new TextEncoder().encode(
         JSON.stringify(electronDiagnostics, null, 2),
       );
@@ -635,7 +635,7 @@ async function buildClientLogsFile(
     }
 
     try {
-      const redactedLogs = await window.vellum.feedback.logs();
+      const redactedLogs = await window.cadet.feedback.logs();
       if (redactedLogs) {
         const logBytes = new TextEncoder().encode(redactedLogs);
         tarParts.push(buildTarEntry("electron-main-logs.txt", logBytes));
@@ -914,7 +914,7 @@ export function ShareFeedbackModal({
       if (feedbackClient === "electron") {
         try {
           clientVersion =
-            (await window.vellum?.app.versionInfo())?.version ?? clientVersion;
+            (await window.cadet?.app.versionInfo())?.version ?? clientVersion;
         } catch {
           // The web bundle version remains a safe fallback for older shells.
         }
@@ -1157,7 +1157,7 @@ export function ShareFeedbackModal({
                     components={{
                       roadmapLink: (
                         <ExternalAnchor
-                          href="https://vellum.ai/roadmap"
+                          href="https://cadet.ai/roadmap"
                           tone="quiet"
                           className="text-[var(--content-default)]"
                           glyph={false}

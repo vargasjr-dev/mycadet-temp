@@ -34,18 +34,18 @@ const installBridge = (
   hostOS: "macos" | "windows",
   request: (...args: unknown[]) => Promise<unknown>,
 ): void => {
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     hostOS,
     permissions: {
       getState: async () => ({}),
       request,
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
 };
 
 afterEach(() => {
-  delete window.vellum;
+  delete window.cadet;
 });
 
 describe("Input Monitoring grants", () => {
@@ -56,7 +56,7 @@ describe("Input Monitoring grants", () => {
       "macos",
       mock(async () => permissionItem),
     );
-    window.vellum!.permissions!.onState = (callback) => {
+    window.cadet!.permissions!.onState = (callback) => {
       listener = callback;
       return unsubscribe;
     };

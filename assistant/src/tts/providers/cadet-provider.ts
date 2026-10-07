@@ -1,5 +1,5 @@
 /**
- * Vellum-managed TTS: synthesis through the platform's managed speech
+ * Cadet-managed TTS: synthesis through the platform's managed speech
  * surfaces (Cadet-held Deepgram key, billed to Cadet credits). No provider
  * API key exists on this machine — the platform connection is the credential.
  *
@@ -25,7 +25,7 @@ import {
   mapTunnelError,
   probeTunnelRejection,
   resolveSpeechRelayConnection,
-} from "../../providers/speech-to-text/vellum-speech-relay-connection.js";
+} from "../../providers/speech-to-text/cadet-speech-relay-connection.js";
 import { getLogger } from "../../util/logger.js";
 import type { TtsProviderDefinition } from "../provider-definition.js";
 import type {
@@ -34,7 +34,7 @@ import type {
   TtsSynthesisRequest,
   TtsSynthesisResult,
 } from "../types.js";
-import { synthesizeOverVellumTtsSocket } from "./vellum-tts-socket.js";
+import { synthesizeOverCadetTtsSocket } from "./cadet-tts-socket.js";
 
 const log = getLogger("cadet-tts");
 
@@ -143,7 +143,7 @@ async function performStreamingSynthesis(
   );
 
   try {
-    const audio = await synthesizeOverVellumTtsSocket({
+    const audio = await synthesizeOverCadetTtsSocket({
       url,
       text: request.text,
       onChunk,
@@ -186,7 +186,7 @@ async function performStreamingSynthesis(
   }
 }
 
-export function createVellumProvider(): TtsProvider {
+export function createCadetProvider(): TtsProvider {
   const capabilities: TtsProviderCapabilities = {
     supportsStreaming: true,
     supportedFormats: ["mp3", "pcm"],
@@ -235,10 +235,10 @@ export const cadetTtsProviderDefinition: TtsProviderDefinition = {
   mediaStreamPlayback: { outputFormat: "pcm" },
   secretRequirements: [
     {
-      credentialStoreKey: "credential/vellum/assistant_api_key",
+      credentialStoreKey: "credential/cadet/assistant_api_key",
       displayName: "Cadet account connection",
       setCommand: "assistant platform connect",
     },
   ],
-  adapter: createVellumProvider(),
+  adapter: createCadetProvider(),
 };

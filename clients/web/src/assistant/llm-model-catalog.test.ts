@@ -130,28 +130,28 @@ describe("parity with meta/llm-provider-catalog.json", () => {
   );
   const webProviderIds = (
     Object.keys(MODELS_BY_PROVIDER) as LlmProviderId[]
-  ).filter((id) => id !== "openai-compatible" && id !== "vellum");
+  ).filter((id) => id !== "openai-compatible" && id !== "cadet");
   const pickerProviderIds = webProviderIds;
 
   test("cadet picker is the union of served catalogs, including GPU models", () => {
-    // MODELS_BY_PROVIDER.vellum lists only Vellum-hosted GPU models. The
+    // MODELS_BY_PROVIDER.cadet lists only Cadet-hosted GPU models. The
     // picker still exposes the union of every served catalog through
-    // getModelsForProvider("vellum").
-    expect(MODELS_BY_PROVIDER.vellum.map((model) => model.id)).toEqual([
+    // getModelsForProvider("cadet").
+    expect(MODELS_BY_PROVIDER.cadet.map((model) => model.id)).toEqual([
       "qwen/qwen3-8b",
     ]);
-    expect(metaProvidersById.get("vellum")?.id).toBe("vellum");
+    expect(metaProvidersById.get("cadet")?.id).toBe("cadet");
 
-    const vellumModels = getModelsForProvider("vellum");
+    const cadetModels = getModelsForProvider("cadet");
     const servedIds = new Set<string>(
       VELLUM_SERVED_PROVIDERS.flatMap((p) =>
         MODELS_BY_PROVIDER[p].map((m) => m.id),
       ),
     );
-    for (const model of vellumModels) {
+    for (const model of cadetModels) {
       expect(servedIds.has(model.id)).toBe(true);
     }
-    const labels = vellumModels.map((m) => m.displayName);
+    const labels = cadetModels.map((m) => m.displayName);
     expect(new Set(labels).size).toBe(labels.length);
     const servedLabels = new Set(
       VELLUM_SERVED_PROVIDERS.flatMap((p) =>
@@ -166,23 +166,23 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     expect(
       getManagedUpstreamForModel("accounts/fireworks/models/glm-5p3"),
     ).toBe("fireworks");
-    expect(getManagedUpstreamForModel("qwen/qwen3-8b")).toBe("vellum");
+    expect(getManagedUpstreamForModel("qwen/qwen3-8b")).toBe("cadet");
     expect(getManagedUpstreamForModel("not-a-real-model")).toBeUndefined();
   });
 
   test("cadet GPU models stay out of pickers and hide without hosted inference", () => {
-    expect(Object.keys(MODELS_BY_PROVIDER)).toContain("vellum");
-    expect(INFERENCE_PROVIDERS).not.toContain("vellum");
-    expect(CONNECTION_PROVIDERS).not.toContain("vellum");
+    expect(Object.keys(MODELS_BY_PROVIDER)).toContain("cadet");
+    expect(INFERENCE_PROVIDERS).not.toContain("cadet");
+    expect(CONNECTION_PROVIDERS).not.toContain("cadet");
     expect(
       getVisibleModelsForProvider(
-        "vellum",
+        "cadet",
         catalogEnabledFlags({ hostedInference: false }),
       ).some((model) => model.id === "qwen/qwen3-8b"),
     ).toBe(false);
     expect(
       getVisibleModelsForProvider(
-        "vellum",
+        "cadet",
         catalogEnabledFlags({ hostedInference: true }),
       ).some((model) => model.id === "qwen/qwen3-8b"),
     ).toBe(true);
@@ -270,7 +270,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     expect(connectionProviderIds.sort()).toEqual(
       metaCatalog.providers
         .map((provider) => provider.id)
-        .filter((id) => id !== "vellum")
+        .filter((id) => id !== "cadet")
         .sort(),
     );
   });

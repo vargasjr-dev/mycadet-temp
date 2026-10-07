@@ -307,7 +307,7 @@ async function handlePlatformStatus(
   const [organizationId, userId, webhookSecretRaw] = await Promise.all([
     resolvePlatformOrganizationId(),
     resolvePlatformUserId(),
-    getSecureKeyAsync(credentialKey("vellum", "webhook_secret")),
+    getSecureKeyAsync(credentialKey("cadet", "webhook_secret")),
   ]);
 
   const hasWebhookSecret = !!webhookSecretRaw;

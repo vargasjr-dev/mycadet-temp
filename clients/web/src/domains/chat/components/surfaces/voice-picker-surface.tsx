@@ -8,7 +8,7 @@ import { useTranslation } from "@/i18n";
  * **Carries no surface action.** `handleSurfaceAction` requests a send on every
  * non-guardian action, so a per-selection action would cost an assistant turn
  * on every audition click. It needs none: `VoiceList` writes
- * `services.tts.providers.vellum.model` to daemon config itself, and that
+ * `services.tts.providers.cadet.model` to daemon config itself, and that
  * hot-applies on the assistant's next spoken turn. `onAction` is accepted to
  * satisfy {@link SurfaceContainer}'s required prop and to keep the router's
  * call shape uniform; `SurfaceContainer` only invokes it for actions the

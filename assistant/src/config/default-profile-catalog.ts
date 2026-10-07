@@ -1,3 +1,4 @@
+import { getManagedUpstream } from "../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import {
   catalogMaxOutputTokens,
@@ -6,7 +7,6 @@ import {
 import { resolveModelIntent } from "../providers/model-intents.js";
 import { isCodexSubscriptionModel } from "../providers/openai/codex-models.js";
 import type { ModelIntent } from "../providers/types.js";
-import { getManagedUpstream } from "../providers/vellum-model-routing.js";
 import {
   AUTO_PROFILE_KEY,
   BACKUP_PROFILE_KEYS,
@@ -42,7 +42,7 @@ import {
  * structured as an intent × provider matrix: each default profile is an
  * intent, and each provider that can serve default profiles has a concrete
  * implementation of that intent (model, token budget, effort, thinking).
- * The `vellum` column is the platform-managed implementation and the
+ * The `cadet` column is the platform-managed implementation and the
  * `chatgpt` column is the ChatGPT-subscription implementation; the other
  * columns are the BYOK implementations resolved through `llm.defaultProvider`
  * on off-platform installs.
@@ -73,24 +73,24 @@ export type DefaultProfileTemplate = Omit<
 type ProfileImpls = Record<DefaultProfileKey, DefaultProfileTemplate>;
 
 /**
- * The `vellum` column: platform-managed implementations, stamped
- * `provider: "vellum"` — dispatch derives the upstream from the model.
+ * The `cadet` column: platform-managed implementations, stamped
+ * `provider: "cadet"` — dispatch derives the upstream from the model.
  * Models are pinned (never intents): the intent tables are keyed by
  * concrete dispatch providers, and the model is what selects the upstream.
- * Overwritten in workspace config on every daemon boot so Vellum can push
+ * Overwritten in workspace config on every daemon boot so Cadet can push
  * model/config updates to customers in new releases.
  *
  * Each implementation points at its managed backup profile via
  * `fallbackProfile` (`BACKUP_PROFILE_IMPLS` below): a backup pins a model at
  * a different upstream provider, so an outage-type failure at the primary's
- * provider can be served by re-sending on the backup. Vellum column only:
+ * provider can be served by re-sending on the backup. Cadet column only:
  * the BYOK and chatgpt columns carry no pointers, since those installs may
  * hold no credential for the backup's provider.
  */
-const VELLUM_PROFILE_IMPLS: ProfileImpls = {
+const CADET_PROFILE_IMPLS: ProfileImpls = {
   balanced: {
     model: "accounts/fireworks/models/glm-5p3-flash",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
@@ -104,7 +104,7 @@ const VELLUM_PROFILE_IMPLS: ProfileImpls = {
   },
   "quality-optimized": {
     model: "gpt-5.6-sol",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Quality",
     description: "High-quality results with the most capable model",
@@ -118,7 +118,7 @@ const VELLUM_PROFILE_IMPLS: ProfileImpls = {
   },
   "cost-optimized": {
     model: "accounts/fireworks/models/deepseek-v4p1-flash",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Budget",
     // Tier intent only - never name the concrete model here. Clients
@@ -151,7 +151,7 @@ const VELLUM_PROFILE_IMPLS: ProfileImpls = {
     // `getManagedUpstream` resolves the real upstream from the model's catalog
     // owner. This model is the one live-voice TTFT drives validated.
     model: "gpt-5.6-luna",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
@@ -171,9 +171,9 @@ const VELLUM_PROFILE_IMPLS: ProfileImpls = {
 
 /**
  * The managed backup profiles, one per default profile: the route a primary's
- * `fallbackProfile` pointer names. Vellum column only: backups never
+ * `fallbackProfile` pointer names. Cadet column only: backups never
  * materialize for BYOK or chatgpt installs. Like the primaries, models are
- * pinned (never intents) and stamped `provider: "vellum"`, so dispatch
+ * pinned (never intents) and stamped `provider: "cadet"`, so dispatch
  * derives the upstream from the model. Every backup pins its model at a
  * DIFFERENT upstream provider than its primary (that cross-provider split is
  * the entire point), and the module-load validation below enforces
@@ -186,7 +186,7 @@ const VELLUM_PROFILE_IMPLS: ProfileImpls = {
 const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "balanced-backup": {
     model: "claude-sonnet-5",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Balanced Backup",
     description: "Automatic backup for the Balanced profile",
@@ -199,7 +199,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   },
   "quality-optimized-backup": {
     model: "claude-opus-5",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Quality Backup",
     description: "Automatic backup for the Quality profile",
@@ -212,7 +212,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   },
   "cost-optimized-backup": {
     model: "gemini-3.1-flash-lite",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Budget Backup",
     description: "Automatic backup for the Budget profile",
@@ -230,7 +230,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   },
   "latency-optimized-backup": {
     model: "claude-haiku-4-5-20251001",
-    provider: "vellum",
+    provider: "cadet",
     source: "managed",
     label: "Fast Backup",
     description: "Automatic backup for the Fast profile",
@@ -260,7 +260,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
     source: "managed",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
-    // Matches the vellum column's Balanced token budget: the Codex path
+    // Matches the cadet column's Balanced token budget: the Codex path
     // sends no max_output_tokens, so this only sizes internal budgeting.
     maxTokens: 32000,
     effort: "high",
@@ -308,7 +308,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
 
 /**
  * The BYOK implementation of each default profile intent, shared by every
- * non-vellum provider. The concrete model resolves per provider from the
+ * non-cadet provider. The concrete model resolves per provider from the
  * `intent` via `resolveModelIntent` at materialization time (falling back to
  * the provider's catalog `defaultModel` when it has no intent table).
  * `provider` is stamped per column for the named matrix columns, and
@@ -376,8 +376,8 @@ export const PROFILE_IMPLS: Record<
     Object.fromEntries(
       DEFAULT_PROFILE_PROVIDERS.map((provider) => [
         provider,
-        provider === "vellum"
-          ? VELLUM_PROFILE_IMPLS[key]
+        provider === "cadet"
+          ? CADET_PROFILE_IMPLS[key]
           : provider === "chatgpt"
             ? CHATGPT_PROFILE_IMPLS[key]
             : { ...BYOK_PROFILE_IMPLS[key], provider },
@@ -399,7 +399,7 @@ export const PROFILE_IMPLS: Record<
  */
 export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "jev-latest",
-  provider: "vellum",
+  provider: "cadet",
   source: "managed",
   label: "Jev",
   description:
@@ -422,7 +422,7 @@ export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
  */
 export const AUTO_PROFILE_TEMPLATE: DefaultProfileTemplate = (() => {
   const { fallbackProfile: _fallbackProfile, ...balanced } =
-    VELLUM_PROFILE_IMPLS.balanced;
+    CADET_PROFILE_IMPLS.balanced;
   return {
     ...balanced,
     label: "Auto",
@@ -431,7 +431,7 @@ export const AUTO_PROFILE_TEMPLATE: DefaultProfileTemplate = (() => {
 })();
 
 /**
- * Managed profiles, i.e. the `vellum` column keyed by profile name, plus the
+ * Managed profiles, i.e. the `cadet` column keyed by profile name, plus the
  * managed backup profiles and the managed Jev profile. Backups come after the
  * primaries, which is what places them after the primaries in the seeded
  * `profileOrder`: the seeder inserts missing managed keys in this record's
@@ -440,7 +440,7 @@ export const AUTO_PROFILE_TEMPLATE: DefaultProfileTemplate = (() => {
  */
 export const MANAGED_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
   Object.fromEntries([
-    ...DEFAULT_PROFILE_KEYS.map((key) => [key, PROFILE_IMPLS[key].vellum]),
+    ...DEFAULT_PROFILE_KEYS.map((key) => [key, PROFILE_IMPLS[key].cadet]),
     ...BACKUP_PROFILE_KEYS.map((key) => [key, BACKUP_PROFILE_IMPLS[key]]),
     [JEV_MANAGED_PROFILE_KEY, JEV_MANAGED_PROFILE_TEMPLATE],
   ]);
@@ -495,7 +495,7 @@ export const USER_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
  */
 export const OS_BETA_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "MiniMaxAI/MiniMax-M3",
-  provider: "vellum",
+  provider: "cadet",
   source: "managed",
   label: "OS Beta",
   description: "Good balance of quality, cost, and speed, in beta",
@@ -566,7 +566,7 @@ export const MANAGED_PROFILE_NAMES = new Set<string>([
 /**
  * Materialize a template into a concrete `ProfileEntry`: resolve `intent` to
  * a model id for the given provider and stamp the provider connection.
- * Routing-identity providers ("vellum") never receive a connection stamp —
+ * Routing-identity providers ("cadet") never receive a connection stamp —
  * dispatch resolves their row per-request from the provider value.
  */
 export function materializeProfile(
@@ -611,7 +611,7 @@ for (const key of DEFAULT_PROFILE_KEYS) {
     }
     if (impl.model != null) {
       const routable =
-        impl.provider === "vellum"
+        impl.provider === "cadet"
           ? getManagedUpstream(impl.model) !== null
           : impl.provider === "chatgpt"
             ? isCodexSubscriptionModel(impl.model)
@@ -619,7 +619,7 @@ for (const key of DEFAULT_PROFILE_KEYS) {
       if (!routable) {
         throw new Error(
           `PROFILE_IMPLS[${key}][${provider}] references model "${impl.model}" ` +
-            `which is not ${impl.provider === "vellum" ? "served by any managed upstream" : impl.provider === "chatgpt" ? "in CODEX_SUBSCRIPTION_MODEL_IDS" : `in PROVIDER_CATALOG for provider "${impl.provider}"`}. ` +
+            `which is not ${impl.provider === "cadet" ? "served by any managed upstream" : impl.provider === "chatgpt" ? "in CODEX_SUBSCRIPTION_MODEL_IDS" : `in PROVIDER_CATALOG for provider "${impl.provider}"`}. ` +
             `Update model-catalog.ts or default-profile-catalog.ts.`,
         );
       }
@@ -627,7 +627,7 @@ for (const key of DEFAULT_PROFILE_KEYS) {
   }
 }
 
-// Backup profiles get the same eager verification as the vellum column: a
+// Backup profiles get the same eager verification as the cadet column: a
 // pinned model that no managed upstream serves would make the fallback route
 // undispatchable exactly when it is needed. The cross-provider rule (backup
 // upstream differs from the primary's) is asserted in
@@ -680,7 +680,7 @@ for (const provider of DEFAULT_PROVIDER_CHOICES) {
 function buildDefaultProfileEntries(): Record<string, ProfileEntry> {
   const entries: Record<string, ProfileEntry> = {};
   for (const key of DEFAULT_PROFILE_KEYS) {
-    const impl = PROFILE_IMPLS[key].vellum;
+    const impl = PROFILE_IMPLS[key].cadet;
     entries[key] = materializeProfile(impl, impl.provider);
   }
   for (const key of BACKUP_PROFILE_KEYS) {
@@ -705,7 +705,7 @@ function buildDefaultProfileEntries(): Record<string, ProfileEntry> {
 /**
  * The materialized code-default bodies keyed by profile name — the
  * code-owned content a managed-source workspace entry resolves to. These are
- * the `vellum` column (the managed implementations).
+ * the `cadet` column (the managed implementations).
  *
  * Materialized once at module load, so this is the shipped catalog. The
  * provider-aware resolvers (`resolveDefaultProfileForProvider`,
@@ -803,12 +803,12 @@ function resolveAgainstBody(
 /**
  * Like `getEffectiveProfile`, but a default profile key's code-owned body
  * comes from the default provider's implementation of the intent × provider
- * matrix instead of always the `vellum` column. A `null` defaultProvider and
+ * matrix instead of always the `cadet` column. A `null` defaultProvider and
  * every non-matrix name fall back to `getEffectiveProfile`'s behavior.
  *
  * Non-obvious rules:
  *
- * - The `vellum` column stamps `provider: "vellum"` with no connection —
+ * - The `cadet` column stamps `provider: "cadet"` with no connection —
  *   dispatch derives the upstream from the model per-request. The `chatgpt`
  *   column likewise stamps its routing identity with no connection;
  *   dispatch resolves the canonical subscription row per-request.
@@ -863,7 +863,7 @@ function defaultProfileBodyForProvider(
 ): ProfileEntry | undefined {
   if (!isDefaultProfileKey(name)) {
     // Backup profiles and the managed Jev profile exist on the managed
-    // (`vellum`) column only: under a BYOK or chatgpt default provider the
+    // (`cadet`) column only: under a BYOK or chatgpt default provider the
     // primaries carry no `fallbackProfile` pointers, and neither may
     // materialize, since the install may hold no credential for their
     // provider. A null defaultProvider predates `llm.defaultProvider` and
@@ -898,8 +898,8 @@ function defaultProfileBodyForProvider(
  * catalog `maxOutputTokens`. The shared BYOK templates request one token
  * budget per intent, but the model a provider resolves can allow less
  * (e.g. atlascloud caps output at 8192 while the balanced template asks for
- * 16000), and an over-cap request is rejected upstream. The `vellum` column
- * is exempt by construction: "vellum" is not a catalog provider, so the
+ * 16000), and an over-cap request is rejected upstream. The `cadet` column
+ * is exempt by construction: "cadet" is not a catalog provider, so the
  * lookup misses and the hand-validated managed pins pass through untouched.
  * User-authored profiles never reach this path.
  */
@@ -949,7 +949,7 @@ export function getEffectiveProfiles(
 /**
  * Like `getEffectiveProfiles`, but resolves each default profile key through
  * the same `llm.defaultProvider`-aware path the runtime resolver uses
- * (`resolveDefaultProfileForProvider`) rather than always the `vellum` column.
+ * (`resolveDefaultProfileForProvider`) rather than always the `cadet` column.
  * On BYOK installs this is what makes the reported provider/model/availability
  * for `balanced`/`quality-optimized`/`cost-optimized` match what actually runs.
  * A `null` defaultProvider reduces to `getEffectiveProfiles`.

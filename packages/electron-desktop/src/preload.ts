@@ -7,7 +7,7 @@ import type {
   NotificationActionEvent,
   ResolvedHotkey,
   UpdateState,
-  VellumBridge,
+  CadetBridge,
   WindowAttentionPayload,
 } from "@mycadet/ipc-contract";
 import {
@@ -35,7 +35,7 @@ type RendererIpc = Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
 export const createDictationOfferBridge = (
   ipc: RendererIpc,
 ): Pick<
-  NonNullable<VellumBridge["companion"]>,
+  NonNullable<CadetBridge["companion"]>,
   "setUnplacedDictationOffer"
 > => ({
   setUnplacedDictationOffer: (offer) => {
@@ -99,7 +99,7 @@ const subscribeWithReplay = <Payload>(
 
 export const createDeepLinksBridge = (
   ipc: RendererIpc,
-): VellumBridge["deepLinks"] => ({
+): CadetBridge["deepLinks"] => ({
   drain: () => ipc.invoke("cadet:deepLinks:drain") as Promise<DeepLink[]>,
   onLink: (callback) => {
     const handler = (_event: IpcRendererEvent, link: DeepLink): void => {
@@ -116,7 +116,7 @@ export const createDeepLinksBridge = (
 
 export const createLaunchAtLoginBridge = (
   ipc: RendererIpc,
-): VellumBridge["launchAtLogin"] => ({
+): CadetBridge["launchAtLogin"] => ({
   get: () => ipc.invoke("cadet:launchAtLogin:get") as Promise<boolean>,
   set: (enabled) =>
     ipc.invoke("cadet:launchAtLogin:set", enabled) as Promise<void>,
@@ -125,7 +125,7 @@ export const createLaunchAtLoginBridge = (
 /** Renderer side of `installHotkeysIpc`. */
 export const createHotkeysBridge = (
   ipc: RendererIpc,
-): VellumBridge["hotkeys"] => ({
+): CadetBridge["hotkeys"] => ({
   get: () => ipc.invoke("cadet:hotkeys:get") as Promise<ResolvedHotkey[]>,
   set: (key, accelerator) =>
     ipc.invoke("cadet:hotkeys:set", key, accelerator) as Promise<void>,
@@ -135,7 +135,7 @@ export const createHotkeysBridge = (
 /** Renderer side of `installBundleConfirmation`. */
 export const createBundleConfirmBridge = (
   ipc: RendererIpc,
-): VellumBridge["bundleConfirm"] => ({
+): CadetBridge["bundleConfirm"] => ({
   getData: () =>
     ipc.invoke("cadet:bundleConfirm:getData") as Promise<BundleScanData | null>,
   respond: (accepted) => {
@@ -146,7 +146,7 @@ export const createBundleConfirmBridge = (
 /** Renderer side of `installDownloads`. */
 export const createDownloadsBridge = (
   ipc: RendererIpc,
-): VellumBridge["downloads"] => ({
+): CadetBridge["downloads"] => ({
   onDone: subscribe<DownloadDoneEvent>(ipc, DOWNLOADS_DONE_EVENT),
   reveal: (id) => ipc.invoke(DOWNLOADS_REVEAL, id),
 });
@@ -154,7 +154,7 @@ export const createDownloadsBridge = (
 /** Renderer side of `installAutoUpdate`. */
 export const createUpdateBridge = (
   ipc: RendererIpc,
-): VellumBridge["update"] => ({
+): CadetBridge["update"] => ({
   getState: () => ipc.invoke("cadet:update:getState") as Promise<UpdateState>,
   check: () => ipc.invoke("cadet:update:check") as Promise<void>,
   install: () => ipc.invoke("cadet:update:install") as Promise<void>,
@@ -164,7 +164,7 @@ export const createUpdateBridge = (
 /** Renderer side of the notification presenter and identity-memory IPC. */
 export const createNotificationsBridge = (
   ipc: RendererIpc,
-): VellumBridge["notifications"] => {
+): CadetBridge["notifications"] => {
   const publisherSessionId = globalThis.crypto.randomUUID();
   const publisherRegistration = Promise.resolve(
     ipc.invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
@@ -203,14 +203,14 @@ export const createNotificationsBridge = (
 /** Renderer side of `installWindowAttention`. */
 export function createWindowAttentionSubscriber(
   ipc: RendererIpc,
-): VellumBridge["notifications"]["onWindowAttention"] {
+): CadetBridge["notifications"]["onWindowAttention"] {
   return subscribeWithReplay<WindowAttentionPayload>(ipc, WINDOW_ATTENTION);
 }
 
 /** Optional macOS permission setup and native app drag bridge. */
 export const createPermissionSetupBridge = (
   ipc: RendererIpc,
-): NonNullable<VellumBridge["permissions"]["setup"]> => ({
+): NonNullable<CadetBridge["permissions"]["setup"]> => ({
   cancel: () => ipc.send(PERMISSION_GUIDE_CANCEL),
   begin: (kind, source) => ipc.invoke(PERMISSION_SETUP_BEGIN, kind, source),
   getGuide: () => ipc.invoke(PERMISSION_GUIDE_GET),

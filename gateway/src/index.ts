@@ -2250,7 +2250,7 @@ async function main() {
     // ── CORS: webview preflight & origin tracking ──
     // The macOS WKWebView loads pages from https://{appId}.vellum.local/
     // which is cross-origin to the gateway at http://127.0.0.1:{port}.
-    // Reflect the origin back on matched requests so window.vellum.fetch
+    // Reflect the origin back on matched requests so window.cadet.fetch
     // calls succeed.
     const extensionOrigin = resolveExtensionOrigin(req);
     if (extensionOrigin && req.method === "OPTIONS") {
@@ -2512,7 +2512,7 @@ async function main() {
       const [platformBaseUrl, assistantApiKey, assistantId] = await Promise.all(
         [
           getPlatformBaseUrl(credentialCache),
-          credentialCache.get(credentialKey("vellum", "assistant_api_key")),
+          credentialCache.get(credentialKey("cadet", "assistant_api_key")),
           resolvePlatformAssistantIdOrUndefined(),
         ],
       );

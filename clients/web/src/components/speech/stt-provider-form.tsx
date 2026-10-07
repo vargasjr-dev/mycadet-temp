@@ -295,12 +295,12 @@ export function SttProviderForm({
       // Leaving Cadet for the client-only native choice still has to write:
       // that choice has no daemon mapping, so without it the daemon would stay
       // on Cadet and a refetch would snap the dropdown back.
-      const leavingVellum =
+      const leavingCadet =
         daemonSttProvider === "cadet" && draftProvider !== "cadet";
       const writeProvider =
         (!!daemon &&
           (draftProvider !== serverProvider || !daemonHasProvider)) ||
-        leavingVellum;
+        leavingCadet;
       if (writeProvider) {
         const providerValue = daemon?.provider ?? DEFAULT_PROVIDER_ID;
         const { response: cfgRes } = await configPatch({

@@ -89,13 +89,13 @@ export function LibraryView({
 
   // --- Import state ---
   // iOS Safari/WKWebView (including iOS Chrome) doesn't implement `accept`
-  // with filename extensions, so a `.vellum` filter makes the custom-extension
+  // with filename extensions, so a `.cadet` filter makes the custom-extension
   // bundle non-selectable in the file picker there. Constrain the picker to
-  // `.vellum` only on fine-pointer (desktop) devices; touch devices get an
+  // `.cadet` only on fine-pointer (desktop) devices; touch devices get an
   // unrestricted picker and rely on the server's bundle validation.
   // https://github.com/mdn/browser-compat-data/issues/26043
   const [bundleAccept] = useState<string | undefined>(() =>
-    isPointerCoarse() ? undefined : ".vellum",
+    isPointerCoarse() ? undefined : ".cadet",
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -157,7 +157,7 @@ export function LibraryView({
 
   // --- Header actions ---
   // New Document sits right of Import as the primary action. Import is the
-  // only way a `.vellum` recipient gets their first app, so it stays
+  // only way a `.cadet` recipient gets their first app, so it stays
   // reachable on the empty library as well as the populated one. It
   // sits on the layout's heading row, to the right of the "Library" title,
   // rather than on a row of its own above the search field; the file input

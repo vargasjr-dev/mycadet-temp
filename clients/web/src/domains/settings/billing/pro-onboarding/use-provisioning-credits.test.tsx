@@ -23,7 +23,7 @@ import type {
 } from "./use-provisioning-credits";
 
 // Drives the org-readiness gate — the plans lookup must stay idle until the
-// organization store hydrates, or it fires without a `Vellum-Organization-Id`.
+// organization store hydrates, or it fires without a `Cadet-Organization-Id`.
 let orgReady = true;
 mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,

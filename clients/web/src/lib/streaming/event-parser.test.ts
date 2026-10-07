@@ -2564,11 +2564,11 @@ describe("parseAssistantEvent", () => {
   test("parses avatar_updated with avatarPath", () => {
     const event = parseEvent({
       type: "avatar_updated",
-      avatarPath: "/home/.vellum/avatar.png",
+      avatarPath: "/home/.cadet/avatar.png",
     });
     expect(event).toEqual({
       type: "avatar_updated",
-      avatarPath: "/home/.vellum/avatar.png",
+      avatarPath: "/home/.cadet/avatar.png",
     });
   });
 

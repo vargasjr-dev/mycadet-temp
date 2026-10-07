@@ -42,18 +42,18 @@ const CORNER_RADIUS_RATIO = 0.28;
 const ARTWORK_SCALE = 1.94;
 const ARTWORK_OFFSET_X_RATIO = 0.074;
 
-interface VellumAppIconMarkProps {
+interface CadetAppIconMarkProps {
   size: number;
   /** Which build's icon to draw. Defaults to the one users install. */
   environment?: AppIconEnvironment;
   flattened?: boolean;
 }
 
-export function VellumAppIconMark({
+export function CadetAppIconMark({
   size,
   environment = "production",
   flattened = false,
-}: VellumAppIconMarkProps) {
+}: CadetAppIconMarkProps) {
   if (QUIRKY === undefined) {
     return null;
   }

@@ -37,7 +37,7 @@ plugins~<plugin-name>~<app-dir>
 
 which maps to `<workspaceDir>/plugins/<plugin-name>/apps/<app-dir>`. The delimiter is `~` (not `/`) so the id stays a single URL path segment. Workspace apps — the ones a user builds with the app-builder skill — instead use an opaque UUID and live under `<workspaceDir>/data/apps/`; a plugin app is resolved by building its path directly from the id.
 
-Once resolved, a plugin app is opened and served exactly like a workspace app: opening it reports an origin of `plugin:<plugin-name>`, its HTML is rendered into the workspace panel, and its compiled JS/CSS is inlined so the page is self-contained. Files bundled next to the app (images, fonts, media) are served from the app's own directory with path traversal rejected, and are addressed at runtime through the same `window.vellum.asset(...)` bridge workspace apps use.
+Once resolved, a plugin app is opened and served exactly like a workspace app: opening it reports an origin of `plugin:<plugin-name>`, its HTML is rendered into the workspace panel, and its compiled JS/CSS is inlined so the page is self-contained. Files bundled next to the app (images, fonts, media) are served from the app's own directory with path traversal rejected, and are addressed at runtime through the same `window.cadet.asset(...)` bridge workspace apps use.
 
 ## Discovery and lifecycle
 
@@ -49,7 +49,7 @@ App discovery mirrors the plugin loader's own scan, so an app is visible on exac
 
 ## The frontend contract
 
-This reference covers how an app is packaged, compiled, and served as a plugin surface. The _authoring_ contract for the app itself — the design system and `--v-*` tokens, the widget library, responsive rules, the `window.vellum` bridge (`fetch`, `asset`, `subscribe`, `sendAction`), and how an app reaches backend data through routes — is owned by the **app-builder** skill, with design quality delegated to **frontend-design**. Build the app's UI by those skills, then drop the resulting `src/` under your plugin's `apps/`. A plugin that also ships `routes/` can back its app's data with its own namespaced HTTP routes (see [routes.md](routes.md)) — the app reaches them through `window.vellum.fetch` at `/x/plugins/<name>/…` (the wrapper prepends the `/v1` API prefix), **never the global `fetch`**, which fails from the app's sandboxed origin.
+This reference covers how an app is packaged, compiled, and served as a plugin surface. The _authoring_ contract for the app itself — the design system and `--v-*` tokens, the widget library, responsive rules, the `window.cadet` bridge (`fetch`, `asset`, `subscribe`, `sendAction`), and how an app reaches backend data through routes — is owned by the **app-builder** skill, with design quality delegated to **frontend-design**. Build the app's UI by those skills, then drop the resulting `src/` under your plugin's `apps/`. A plugin that also ships `routes/` can back its app's data with its own namespaced HTTP routes (see [routes.md](routes.md)) — the app reaches them through `window.cadet.fetch` at `/x/plugins/<name>/…` (the wrapper prepends the `/v1` API prefix), **never the global `fetch`**, which fails from the app's sandboxed origin.
 
 ## Anatomy of an app
 

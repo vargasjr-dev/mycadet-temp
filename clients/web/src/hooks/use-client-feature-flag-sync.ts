@@ -65,7 +65,7 @@ export function useClientFeatureFlagSync(
 ) {
   const freshness = useClientFlagQueryFreshness(hasSyncTransport);
   // The client-flag endpoint evaluates against the signed-in user + org, so an
-  // authenticated request without `Vellum-Organization-Id` is rejected. The org
+  // authenticated request without `Cadet-Organization-Id` is rejected. The org
   // store hydrates asynchronously after auth, so an authenticated cold load can
   // reach here before the header source can answer.
   const orgReadiness = useOrgHeaderReadiness();

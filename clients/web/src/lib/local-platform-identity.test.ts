@@ -42,7 +42,7 @@ let electronHostOS: "macos" | "windows" | undefined;
 let electronSessionToken: string | null = null;
 let navigatorPlatform = "MacIntel";
 
-const buildVellumMutatingHeadersMock = mock(
+const buildCadetMutatingHeadersMock = mock(
   async (
     headers: Record<string, string>,
     options: { organizationId?: string },
@@ -56,7 +56,7 @@ const fetchOrganizationsMock = mock(async () => {});
 const updateLockfileAssistantMock = mock(async (_assistant: unknown) => {});
 
 mock.module("@/lib/auth/request-headers", () => ({
-  buildVellumMutatingHeaders: buildVellumMutatingHeadersMock,
+  buildCadetMutatingHeaders: buildCadetMutatingHeadersMock,
 }));
 
 mock.module("@/lib/local-mode", () => ({
@@ -93,7 +93,7 @@ mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => false,
 }));
 
-Object.defineProperty(window, "vellum", {
+Object.defineProperty(window, "cadet", {
   configurable: true,
   get: () =>
     electronHostOS
@@ -200,7 +200,7 @@ beforeEach(() => {
   electronHostOS = undefined;
   electronSessionToken = null;
   navigatorPlatform = "MacIntel";
-  buildVellumMutatingHeadersMock.mockClear();
+  buildCadetMutatingHeadersMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
   fetchOrganizationsMock.mockClear();
   updateLockfileAssistantMock.mockClear();
@@ -361,7 +361,7 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
       .map((request) => request.body);
     expect(injectedSecrets).toContainEqual({
       type: "credential",
-      name: "vellum:assistant_api_key",
+      name: "cadet:assistant_api_key",
       value: "reprovisioned-key",
     });
   });
@@ -453,7 +453,7 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
       .map((request) => request.body);
     expect(injectedSecrets).toContainEqual({
       type: "credential",
-      name: "vellum:assistant_api_key",
+      name: "cadet:assistant_api_key",
       value: "reprovisioned-key",
     });
   });
@@ -617,12 +617,12 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
       .map((request) => request.body);
     expect(injectedSecrets).toContainEqual({
       type: "credential",
-      name: "vellum:assistant_api_key",
+      name: "cadet:assistant_api_key",
       value: "reprovisioned-key",
     });
     expect(injectedSecrets).toContainEqual({
       type: "credential",
-      name: "vellum:platform_base_url",
+      name: "cadet:platform_base_url",
       value: STATUS_PLATFORM_BASE_URL,
     });
     expect(updateLockfileAssistantMock).toHaveBeenCalledWith({
@@ -771,10 +771,10 @@ describe("bootstrapLocalAssistantPlatformIdentity", () => {
     // The status probe reports has_assistant_api_key based on the API key
     // alone, and the bootstrap early-returns on it — so a partial write
     // must never leave the key stored without the rest.
-    expect(storedSecrets.at(-1)).toBe("vellum:assistant_api_key");
-    expect(storedSecrets).toContain("vellum:platform_base_url");
-    expect(storedSecrets).not.toContain("vellum:platform_assistant_id");
-    expect(storedSecrets).not.toContain("vellum:platform_organization_id");
+    expect(storedSecrets.at(-1)).toBe("cadet:assistant_api_key");
+    expect(storedSecrets).toContain("cadet:platform_base_url");
+    expect(storedSecrets).not.toContain("cadet:platform_assistant_id");
+    expect(storedSecrets).not.toContain("cadet:platform_organization_id");
   });
 
   test("retries after the daemon-unreachable window and stores the credentials", async () => {
@@ -794,7 +794,7 @@ describe("bootstrapLocalAssistantPlatformIdentity", () => {
 
     expect(onError).not.toHaveBeenCalled();
     expect(requestNames().filter((name) => name === "status")).toHaveLength(2);
-    expect(storedSecrets).toContain("vellum:assistant_api_key");
+    expect(storedSecrets).toContain("cadet:assistant_api_key");
   });
 
   test("a retry stores the key it already provisioned instead of asking for another", async () => {
@@ -825,7 +825,7 @@ describe("bootstrapLocalAssistantPlatformIdentity", () => {
         .map((request) => request.body),
     ).toContainEqual({
       type: "credential",
-      name: "vellum:assistant_api_key",
+      name: "cadet:assistant_api_key",
       value: "reprovisioned-key",
     });
   });
@@ -852,7 +852,7 @@ describe("bootstrapLocalAssistantPlatformIdentity", () => {
     };
     secretsUnavailable = false;
     await new Promise((resolve) => setTimeout(resolve, 30));
-    expect(storedSecrets).not.toContain("vellum:assistant_api_key");
+    expect(storedSecrets).not.toContain("cadet:assistant_api_key");
 
     // Then it can, and still holds no key.
     statusBody = {
@@ -865,7 +865,7 @@ describe("bootstrapLocalAssistantPlatformIdentity", () => {
     expect(
       requestNames().filter((name) => name === "reprovision-api-key"),
     ).toHaveLength(1);
-    expect(storedSecrets).toContain("vellum:assistant_api_key");
+    expect(storedSecrets).toContain("cadet:assistant_api_key");
   });
 
   test("invokes onError only after the retry schedule is exhausted", async () => {

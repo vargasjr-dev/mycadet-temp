@@ -5,14 +5,14 @@ import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { providerConnections } from "../../persistence/schema/inference.js";
 import { normalizeCredentialRef } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
-import { clearConnectionProviderCache } from "../registry.js";
 import {
-  isVellumManagedConnection,
-  VELLUM_MANAGED_CONNECTION_NAME,
-  VELLUM_MANAGED_PROVIDER,
-} from "../vellum-model-routing.js";
+  CADET_MANAGED_CONNECTION_NAME,
+  CADET_MANAGED_PROVIDER,
+  isCadetManagedConnection,
+} from "../cadet-model-routing.js";
+import { clearConnectionProviderCache } from "../registry.js";
 
-export { VELLUM_MANAGED_CONNECTION_NAME };
+export { CADET_MANAGED_CONNECTION_NAME };
 import {
   type Auth,
   AuthSchema,
@@ -40,7 +40,7 @@ function isManagedRow(row: {
   auth: { type: string };
 }): boolean {
   return (
-    MANAGED_CONNECTION_NAMES.has(row.name) && isVellumManagedConnection(row)
+    MANAGED_CONNECTION_NAMES.has(row.name) && isCadetManagedConnection(row)
   );
 }
 
@@ -407,7 +407,7 @@ export function deleteConnection(
 
 /**
  * The former per-provider `*-managed` connection names, now collapsed into the
- * single `vellum` connection. They are no longer seeded, but existing installs
+ * single `cadet` connection. They are no longer seeded, but existing installs
  * (and fresh installs seeded by migration 243) may still carry these rows until
  * a follow-up migration deletes them. They are filtered out of the connection
  * list so the UI never shows the pre-consolidation duplicates.
@@ -427,21 +427,21 @@ const CANONICAL_CONNECTIONS: Array<{
   label: string;
 }> = [
   {
-    name: VELLUM_MANAGED_CONNECTION_NAME,
-    provider: VELLUM_MANAGED_PROVIDER,
+    name: CADET_MANAGED_CONNECTION_NAME,
+    provider: CADET_MANAGED_PROVIDER,
     auth: { type: "platform" },
-    label: "Vellum",
+    label: "Cadet",
   },
 ];
 
 /**
- * The Vellum-managed connection as boot seeding defines it, built without a DB
- * read. Dispatch uses this when the `vellum` name is occupied by a user-owned
+ * The Cadet-managed connection as boot seeding defines it, built without a DB
+ * read. Dispatch uses this when the `cadet` name is occupied by a user-owned
  * row: seeding refuses to overwrite such a row, so the canonical row can be
  * absent from the DB while managed routing still has to work. Platform auth
  * needs no row of its own, only this shape.
  */
-export function canonicalVellumConnection(): ProviderConnection {
+export function canonicalCadetConnection(): ProviderConnection {
   const now = Date.now();
   const canonical = CANONICAL_CONNECTIONS[0];
   return {
@@ -458,7 +458,7 @@ export function canonicalVellumConnection(): ProviderConnection {
 }
 
 /**
- * Names of the canonical Vellum-managed connections. Seeded on every daemon
+ * Names of the canonical Cadet-managed connections. Seeded on every daemon
  * boot via `seedCanonicalConnections` and representing the platform-managed
  * inference route. They are write-protected at the route layer:
  *   - DELETE is blocked outright (would resurrect on next boot anyway, but
@@ -478,7 +478,7 @@ export const MANAGED_CONNECTION_NAMES: ReadonlySet<string> = new Set(
 
 /**
  * Upsert the canonical connections on every boot. Existing rows are
- * updated to the latest provider/auth values so Vellum can push connection
+ * updated to the latest provider/auth values so Cadet can push connection
  * changes to customers in new releases.
  *
  * Label handling: the default label is seeded on initial INSERT so new
@@ -492,8 +492,8 @@ export function seedCanonicalConnections(db: DrizzleDb): void {
   const now = Date.now();
   for (const { name, provider, auth, label } of CANONICAL_CONNECTIONS) {
     // Never clobber a pre-existing user connection that happens to share this
-    // canonical name. `vellum` was not a reserved name before consolidation, so
-    // an install may already have a BYOK connection keyed `vellum` (with a real
+    // canonical name. `cadet` was not a reserved name before consolidation, so
+    // an install may already have a BYOK connection keyed `cadet` (with a real
     // provider + api_key auth). Upserting it here would silently rewrite it to
     // the platform-auth sentinel and make it managed/write-protected, breaking
     // any profile that references the user's connection. Only seed/refresh when

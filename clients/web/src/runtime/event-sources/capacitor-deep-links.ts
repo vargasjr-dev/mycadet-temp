@@ -17,20 +17,20 @@ import {
 /**
  * Capacitor shell deep-link routing.
  *
- * OAuth-complete URLs (`vellum-assistant://oauth-complete?…`) dispatch
+ * OAuth-complete URLs (`cadet-assistant://oauth-complete?…`) dispatch
  * the `OAUTH_COMPLETE_DEEP_LINK_EVENT` window CustomEvent that
  * `useOAuthCompleteDeepLinkListener` already consumes;
- * `vellum-assistant://billing/checkout-complete?…` publishes
+ * `cadet-assistant://billing/checkout-complete?…` publishes
  * `deeplink.billingCheckoutComplete` (the same event the Electron shell
  * emits, consumed by `useGlobalDeepLinkConsumer`);
- * `vellum-assistant://voice?mode=…` publishes `deeplink.startVoice`;
- * `vellum-assistant://thread/<id>?message=…` publishes
+ * `cadet-assistant://voice?mode=…` publishes `deeplink.startVoice`;
+ * `cadet-assistant://thread/<id>?message=…` publishes
  * `deeplink.sendToThread` (or `deeplink.openThread` when it carries no
- * usable message); the Home Screen widgets' `vellum-assistant://camera`
- * and `vellum-assistant://new-chat` publish `deeplink.openCamera` /
+ * usable message); the Home Screen widgets' `cadet-assistant://camera`
+ * and `cadet-assistant://new-chat` publish `deeplink.openCamera` /
  * `deeplink.newChat`, the unread chip and unread line send
- * `vellum-assistant://conversations` (`deeplink.openConversations`),
- * and the share extension's `vellum-assistant://share/<id>` publishes
+ * `cadet-assistant://conversations` (`deeplink.openConversations`),
+ * and the share extension's `cadet-assistant://share/<id>` publishes
  * `deeplink.share`; any other URL publishes `deeplink.unknown { url }`
  * on the bus (query/fragment stripped).
  *

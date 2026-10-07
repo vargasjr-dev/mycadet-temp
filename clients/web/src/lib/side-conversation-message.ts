@@ -35,7 +35,7 @@ export interface SideConversationMessageOptions {
    * affecting transport/host-proxy gating (mirrors
    * `domains/chat/api/messages.ts`).
    */
-  transport: "vellum" | "web";
+  transport: "cadet" | "web";
 }
 
 export function buildSideConversationMessageBody({
@@ -46,7 +46,7 @@ export function buildSideConversationMessageBody({
   const body: MessagesPostData["body"] = {
     conversationId,
     content,
-    sourceChannel: "vellum",
+    sourceChannel: "cadet",
     interface: transport,
     hidden: true,
     // Auto-sent on the user's behalf, never typed. See the header. Excluded

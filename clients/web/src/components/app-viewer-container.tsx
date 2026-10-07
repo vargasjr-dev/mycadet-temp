@@ -37,13 +37,13 @@ export interface AppViewerContainerProps {
   isSharing?: boolean;
   onDeploy?: () => void;
   isDeploying?: boolean;
-  /** Deep-link route passed to the app as `window.vellum.route`. */
+  /** Deep-link route passed to the app as `window.cadet.route`. */
   route?: string;
   /** Enables the fullscreen toggle (nav-bar button + fullscreen rendering). Default false. */
   enableFullscreen?: boolean;
   /**
    * Handler for actions the sandboxed app dispatches via
-   * `window.vellum.sendAction(actionId, data)` (e.g. `relay_prompt`). The
+   * `window.cadet.sendAction(actionId, data)` (e.g. `relay_prompt`). The
    * viewer is presentational — the consumer owns what an action does. Omit it
    * (e.g. the standalone library viewer) to ignore app actions.
    */

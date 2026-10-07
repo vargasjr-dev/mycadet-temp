@@ -372,7 +372,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       connectionName: "vellum",
       refreshCredentialProvider: async () => {
         refreshCalls++;
@@ -404,7 +404,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       connectionName: "vellum",
       refreshCredentialProvider: async () => {
         refreshCalls++;
@@ -420,7 +420,7 @@ describe("RetryProvider managed credential refresh", () => {
       const providerError = error as ProviderError;
       expect(providerError.message).toBe("new key rejected");
       expect(providerError.routeAttribution).toMatchObject({
-        credentialSource: "vellum-managed",
+        credentialSource: "cadet-managed",
         connectionName: "vellum",
       });
     }
@@ -459,7 +459,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "vellum-managed",
+      credentialSource: "cadet-managed",
       refreshCredentialProvider: async () => {
         refreshCalls++;
         return null;

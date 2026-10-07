@@ -48,9 +48,9 @@ function registeredCredentials(): CredentialCache {
     userId: "",
   });
   return makeKeyedCredentials({
-    [credentialKey("vellum", "platform_base_url")]: PLATFORM_BASE_URL,
-    [credentialKey("vellum", "assistant_api_key")]: ASSISTANT_API_KEY,
-    [credentialKey("vellum", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
+    [credentialKey("cadet", "platform_base_url")]: PLATFORM_BASE_URL,
+    [credentialKey("cadet", "assistant_api_key")]: ASSISTANT_API_KEY,
+    [credentialKey("cadet", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
   });
 }
 

@@ -4,7 +4,7 @@ import type { DownloadDoneEvent } from "@/runtime/is-electron";
 /**
  * Per-capability wrapper for the Electron host's download-outcome bridge.
  * Matches the shape in `power-events.ts`: feature code never touches
- * `window.vellum.*` directly, and the cross-platform branch lives here.
+ * `window.cadet.*` directly, and the cross-platform branch lives here.
  *
  * Off Electron (web build, Capacitor iOS/Android) both functions are no-ops:
  * a browser download is handed to the browser's own download UI, and a
@@ -26,7 +26,7 @@ export function subscribeToDownloadEvents(
   if (!isElectron()) {
     return () => undefined;
   }
-  return window.vellum?.downloads?.onDone(callback) ?? (() => undefined);
+  return window.cadet?.downloads?.onDone(callback) ?? (() => undefined);
 }
 
 /**
@@ -38,5 +38,5 @@ export async function revealDownload(id: string): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.downloads?.reveal(id);
+  await window.cadet?.downloads?.reveal(id);
 }

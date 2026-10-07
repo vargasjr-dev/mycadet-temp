@@ -325,7 +325,7 @@ mock.module("@/lib/local-mode", () => ({
     await saveLockfileAssistantMock({
       assistantId,
       name,
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: "https://runtime.example",
       hatchedAt: new Date().toISOString(),
       organizationId,
@@ -942,13 +942,13 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   // -- managed hatch in a local-mode build --------------------------------
   //
   // The post-checkout funnel sends a local-mode client here with
-  // `hosting=vellum-cloud`: the plan was bought for a managed assistant the
+  // `hosting=cadet-cloud`: the plan was bought for a managed assistant the
   // org does not have yet, so the assistant is provisioned on the platform and
   // the purchased machine and storage must land before the screen completes.
 
   test("a managed hatch in local mode waits for the purchased provisioning", async () => {
     isLocalClientValue = true;
-    searchParams = new URLSearchParams("hosting=vellum-cloud");
+    searchParams = new URLSearchParams("hosting=cadet-cloud");
     subscriptionPlanId = "pro";
     onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
 
@@ -973,7 +973,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     // managed assistant being hatched: the hatch still runs, and the only
     // lockfile write names the managed id.
     isLocalClientValue = true;
-    searchParams = new URLSearchParams("hosting=vellum-cloud");
+    searchParams = new URLSearchParams("hosting=cadet-cloud");
     preflightGatewaySelectedLocal = true;
     subscriptionPlanId = "base";
 
@@ -1106,10 +1106,10 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   // webhook that flips the org to Pro. On the return leg of a completed
   // checkout — marked by `post_checkout=1`, set only by the funnel — a
   // still-base plan read means the webhook is lagging, not that the org is
-  // free. `hosting=vellum-cloud` alone never carries that meaning: it is a
+  // free. `hosting=cadet-cloud` alone never carries that meaning: it is a
   // hosting choice a free user can make.
 
-  const POST_CHECKOUT_PARAMS = "hosting=vellum-cloud&post_checkout=1";
+  const POST_CHECKOUT_PARAMS = "hosting=cadet-cloud&post_checkout=1";
 
   test("a post-checkout return whose plan still reads base waits, then applies the purchased targets", async () => {
     searchParams = new URLSearchParams(POST_CHECKOUT_PARAMS);
@@ -1184,7 +1184,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     // Picking Cadet Cloud is not a purchase: a free managed hatch must never
     // be parked on the post-checkout wait.
     isLocalClientValue = true;
-    searchParams = new URLSearchParams("hosting=vellum-cloud");
+    searchParams = new URLSearchParams("hosting=cadet-cloud");
     subscriptionPlanId = "base";
     onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
 

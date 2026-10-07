@@ -38,7 +38,7 @@ function hostPublishesIntroChord(): boolean {
   if (isPopoutWindowLifetime()) {
     return false;
   }
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   return (
     companion?.onIntroChord !== undefined ||
     companion?.getIntroChord !== undefined
@@ -49,7 +49,7 @@ function hostPublishesIntroChord(): boolean {
 function subscribeToBridge(
   callback: (control: CompanionIntroCallControl | null) => void,
 ): () => void {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   // A shell that predates the channel never publishes one, and a shell without
   // a surface has no `companion` at all.
   if (companion?.onIntroChord === undefined) {
@@ -67,7 +67,7 @@ function subscribeToBridge(
  * asked. The same reason `companion-intro-stage` asks.
  */
 async function askBridge(): Promise<CompanionIntroCallControl | null> {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   if (companion?.getIntroChord === undefined) {
     return null;
   }

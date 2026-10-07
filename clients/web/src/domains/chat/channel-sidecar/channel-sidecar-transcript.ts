@@ -97,20 +97,20 @@ export function partitionChannelTranscript({
   messages: DisplayMessage[];
   conversation: ProvenanceConversation | null | undefined;
 }): {
-  vellumMessages: DisplayMessage[];
+  cadetMessages: DisplayMessage[];
   entries: ChannelTranscriptEntry[];
 } {
   const channelId = getBoundChannelId(conversation);
   if (!channelId) {
-    return { vellumMessages: messages, entries: [] };
+    return { cadetMessages: messages, entries: [] };
   }
 
-  const vellumMessages: DisplayMessage[] = [];
+  const cadetMessages: DisplayMessage[] = [];
   const entries: ChannelTranscriptEntry[] = [];
   for (const message of messages) {
     const provenance = readChannelMessageProvenance(message, conversation);
     if (!provenance || !isLosslessAsPlainText(message)) {
-      vellumMessages.push(message);
+      cadetMessages.push(message);
       continue;
     }
     entries.push({
@@ -123,7 +123,7 @@ export function partitionChannelTranscript({
   }
 
   return {
-    vellumMessages: entries.length === 0 ? messages : vellumMessages,
+    cadetMessages: entries.length === 0 ? messages : cadetMessages,
     entries,
   };
 }

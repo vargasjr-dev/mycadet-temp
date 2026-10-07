@@ -38,7 +38,7 @@ interface AwaitOrgHeaderSettledOptions {
 }
 
 /**
- * Wait for the `Vellum-Organization-Id` header source to be able to answer.
+ * Wait for the `Cadet-Organization-Id` header source to be able to answer.
  *
  * Every platform request is scoped by that header, which the interceptor reads
  * from the org store, and that store hydrates after auth: a request fired

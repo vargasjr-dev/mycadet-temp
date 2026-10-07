@@ -9,7 +9,7 @@ export type { UpdateState, UpdateStatus };
 /**
  * Per-capability wrapper for the Electron host's auto-update bridge.
  * Matches the established shape (`app-info.ts`, `power-events.ts`,
- * `connectivity.ts`): feature code never touches `window.vellum.*`
+ * `connectivity.ts`): feature code never touches `window.cadet.*`
  * directly, and the cross-platform branch lives here.
  *
  * Off Electron (web build, Capacitor iOS): all functions are safe
@@ -22,7 +22,7 @@ export async function getUpdateState(): Promise<UpdateState> {
   if (!isElectron()) {
     return { status: "idle" };
   }
-  return (await window.vellum?.update?.getState()) ?? { status: "idle" };
+  return (await window.cadet?.update?.getState()) ?? { status: "idle" };
 }
 
 /** Trigger a manual check for updates. No-op off Electron. */
@@ -30,7 +30,7 @@ export async function checkForUpdates(): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.update?.check();
+  await window.cadet?.update?.check();
 }
 
 /** Quit and install the downloaded update. No-op off Electron. */
@@ -38,7 +38,7 @@ export async function installUpdate(): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.vellum?.update?.install();
+  await window.cadet?.update?.install();
 }
 
 /** Subscribe to update state changes. Returns an unsubscribe function. */
@@ -48,5 +48,5 @@ export function onUpdateState(
   if (!isElectron()) {
     return () => undefined;
   }
-  return window.vellum?.update?.onState(callback) ?? (() => undefined);
+  return window.cadet?.update?.onState(callback) ?? (() => undefined);
 }

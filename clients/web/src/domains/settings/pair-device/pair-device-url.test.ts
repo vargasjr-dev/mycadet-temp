@@ -18,8 +18,8 @@ describe("normalizePairingBaseUrl", () => {
 
   test("preserves a deployment path prefix before /assistant", () => {
     expect(
-      normalizePairingBaseUrl("https://foo.example.com/vellum/assistant/"),
-    ).toBe("https://foo.example.com/vellum");
+      normalizePairingBaseUrl("https://foo.example.com/cadet/assistant/"),
+    ).toBe("https://foo.example.com/cadet");
   });
 
   test("trims trailing slashes", () => {

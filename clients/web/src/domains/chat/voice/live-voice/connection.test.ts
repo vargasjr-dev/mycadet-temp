@@ -61,7 +61,7 @@ beforeEach(() => {
 afterEach(() => {
   client.post = originalPost;
   setSelfHostedConnection(null);
-  window.__VELLUM_CONFIG__ = undefined;
+  window.__CADET_CONFIG__ = undefined;
 });
 
 describe("mintTunnelWsToken", () => {
@@ -131,8 +131,8 @@ describe("buildTunnelWsUrl", () => {
   });
 
   test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
-    window.__VELLUM_CONFIG__ = {
-      platformUrl: "https://staging-platform.vellum.ai",
+    window.__CADET_CONFIG__ = {
+      platformUrl: "https://staging-platform.cadet.ai",
     };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
@@ -140,7 +140,7 @@ describe("buildTunnelWsUrl", () => {
   });
 
   test("falls back to the prod tunnel host for an off-convention platform URL", () => {
-    window.__VELLUM_CONFIG__ = { platformUrl: "http://localhost:8000" };
+    window.__CADET_CONFIG__ = { platformUrl: "http://localhost:8000" };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.host).toBe("tunnel.mycadet.ai");
   });
@@ -162,7 +162,7 @@ describe("getTunnelWsScheme", () => {
   });
 
   test("uses wss for a non-loopback host without a scheme", () => {
-    expect(getTunnelWsScheme("tunnel.staging.vellum.ai")).toBe("wss");
+    expect(getTunnelWsScheme("tunnel.staging.cadet.ai")).toBe("wss");
   });
 });
 
@@ -199,7 +199,7 @@ describe("buildSelfHostedGatewayWsUrl", () => {
     // dial would otherwise throw an opaque WebSocket construction error.
     for (const ingressUrl of [
       "http://localhost:3000/assistant/__gateway-paired/asst-1",
-      "app://vellum/assistant/__gateway-paired/asst-1",
+      "app://cadet/assistant/__gateway-paired/asst-1",
     ]) {
       expect(() =>
         buildSelfHostedGatewayWsUrl({ ...args, ingressUrl }),
@@ -367,7 +367,7 @@ describe("resolveLiveVoiceWsUrl", () => {
 
   test("paired ingress rejects even before the actor token is provisioned", async () => {
     setSelfHostedConnection({
-      url: "app://vellum/assistant/__gateway-paired/asst-1",
+      url: "app://cadet/assistant/__gateway-paired/asst-1",
       token: null,
     });
 
@@ -390,7 +390,7 @@ describe("isPairedGatewayIngress", () => {
       ),
     ).toBe(true);
     expect(
-      isPairedGatewayIngress("app://vellum/assistant/__gateway-paired/asst-1"),
+      isPairedGatewayIngress("app://cadet/assistant/__gateway-paired/asst-1"),
     ).toBe(true);
   });
 

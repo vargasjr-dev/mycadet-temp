@@ -38,8 +38,8 @@ function conn(overrides: Partial<ProviderConnection>): ProviderConnection {
 
 const BYOK_ANTHROPIC = conn({ name: "my-anthropic" });
 const MANAGED_SENTINEL = conn({
-  name: "vellum",
-  provider: "vellum",
+  name: "cadet",
+  provider: "cadet",
   auth: { type: "platform" },
   isManaged: true,
 });
@@ -75,12 +75,12 @@ function classify(
 }
 
 describe("route classification through the active profile", () => {
-  test("vellum-provider profile burns credits regardless of connections", () => {
+  test("cadet-provider profile burns credits regardless of connections", () => {
     expect(
       classify({
         llm: {
           activeProfile: "p",
-          profiles: { p: { provider: "vellum", model: "claude" } },
+          profiles: { p: { provider: "cadet", model: "claude" } },
         },
       }),
     ).toBe(true);
@@ -95,7 +95,7 @@ describe("route classification through the active profile", () => {
             p: {
               provider: "anthropic",
               model: "claude",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             },
           },
         },
@@ -105,7 +105,7 @@ describe("route classification through the active profile", () => {
   });
 
   test("a binding to the canonical cadet name is managed even when a user-owned row claims it", () => {
-    // The daemon ignores a user-owned row named "vellum" and routes through
+    // The daemon ignores a user-owned row named "cadet" and routes through
     // platform auth regardless, so the row's BYOK auth must not win here.
     expect(
       classify({
@@ -115,11 +115,11 @@ describe("route classification through the active profile", () => {
             p: {
               provider: "anthropic",
               model: "claude",
-              provider_connection: "vellum",
+              provider_connection: "cadet",
             },
           },
         },
-        connections: [conn({ name: "vellum" })],
+        connections: [conn({ name: "cadet" })],
       }),
     ).toBe(true);
   });
@@ -191,7 +191,7 @@ describe("route classification through the active profile", () => {
   });
 
   test("unbound profile is BYOK when its provider only has key connections", () => {
-    // The managed sentinel carries provider "vellum", so it never matches an
+    // The managed sentinel carries provider "cadet", so it never matches an
     // unbound anthropic profile's provider-scoped fallback dispatch.
     expect(
       classify({
@@ -251,7 +251,7 @@ describe("the BYOK proof standard (connection availability)", () => {
       classify({
         llm: {
           activeProfile: "p",
-          profiles: { p: { provider: "vellum", model: "claude" } },
+          profiles: { p: { provider: "cadet", model: "claude" } },
         },
         profileAvailability: new Map(),
       }),
@@ -273,7 +273,7 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
               status: "disabled",
             },
-            pinned: { provider: "vellum", model: "claude" },
+            pinned: { provider: "cadet", model: "claude" },
           },
         },
         connections: [BYOK_ANTHROPIC],
@@ -293,7 +293,7 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "vellum" },
+          defaultProvider: { provider: "cadet" },
         },
         connections: [BYOK_ANTHROPIC],
       }),
@@ -314,7 +314,7 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "vellum" },
+          defaultProvider: { provider: "cadet" },
         },
         connections: [BYOK_ANTHROPIC],
       }),
@@ -332,7 +332,7 @@ describe("resolver-chain fallthrough", () => {
               model: "claude",
               provider_connection: "my-anthropic",
             },
-            pinned: { provider: "vellum", model: "claude" },
+            pinned: { provider: "cadet", model: "claude" },
           },
         },
         connections: [BYOK_ANTHROPIC],
@@ -379,7 +379,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
               model: "claude",
               provider_connection: "my-anthropic",
             },
-            managed: { provider: "vellum", model: "claude" },
+            managed: { provider: "cadet", model: "claude" },
           },
         },
         connections: [BYOK_ANTHROPIC],
@@ -433,7 +433,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
               provider_connection: "my-anthropic",
               status: "disabled",
             },
-            pinned: { provider: "vellum", model: "claude" },
+            pinned: { provider: "cadet", model: "claude" },
           },
         },
         connections: [BYOK_ANTHROPIC],
@@ -556,7 +556,7 @@ describe("mainAgent call-site tweak composition", () => {
         llm: {
           activeProfile: "p",
           callSites: { mainAgent: { provider: "anthropic" } },
-          profiles: { p: { provider: "vellum", model: ANTHROPIC_MODEL } },
+          profiles: { p: { provider: "cadet", model: ANTHROPIC_MODEL } },
         },
       }),
     ).toBe(true);
@@ -588,7 +588,7 @@ describe("stale managed default stubs", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "vellum" },
+          defaultProvider: { provider: "cadet" },
         },
         connections: [BYOK_ANTHROPIC],
       }),
@@ -635,7 +635,7 @@ describe("stale managed default stubs", () => {
               status: "disabled",
               source: "user",
             },
-            pinned: { provider: "vellum", model: "claude" },
+            pinned: { provider: "cadet", model: "claude" },
           },
         },
       }),
@@ -651,7 +651,7 @@ describe("stale managed default stubs", () => {
             mixed: { mix: [{ profile: "balanced", weight: 1 }] },
             balanced: STALE_BALANCED,
           },
-          defaultProvider: { provider: "vellum" },
+          defaultProvider: { provider: "cadet" },
         },
       }),
     ).toBe(true);
@@ -665,7 +665,7 @@ describe("anchor fallbacks", () => {
     expect(
       classify({
         llm: {
-          default: { provider: "vellum", model: "claude" },
+          default: { provider: "cadet", model: "claude" },
           defaultProvider: {
             provider: "anthropic",
             connectionName: "my-anthropic",
@@ -676,7 +676,7 @@ describe("anchor fallbacks", () => {
       }),
     ).toBe(false);
     expect(
-      classify({ llm: { default: { provider: "vellum", model: "claude" } } }),
+      classify({ llm: { default: { provider: "cadet", model: "claude" } } }),
     ).toBeNull();
   });
 

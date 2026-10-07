@@ -62,7 +62,7 @@ function providersOf(candidates: readonly ProviderCandidate[]): string[] {
   return candidates.map((candidate) => candidate.provider);
 }
 
-const VELLUM_CONNECTION = connection("vellum", "vellum", {
+const VELLUM_CONNECTION = connection("cadet", "cadet", {
   auth: { type: "platform" },
 });
 
@@ -214,8 +214,8 @@ describe("resolveModelFirstOptions", () => {
   test("surfaces the managed route as one entry rather than its upstreams", () => {
     const option = optionFor([VELLUM_CONNECTION], "Claude Opus 4.8");
     expect(option.candidates[0]).toMatchObject({
-      provider: "vellum",
-      value: "vellum",
+      provider: "cadet",
+      value: "cadet",
       meta: "Managed",
       connected: true,
       modelId: "claude-opus-4-8",

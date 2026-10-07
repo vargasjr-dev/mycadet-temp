@@ -10,7 +10,7 @@ import {
   onHotkeyOverridesChange,
   readHotkeyOverride,
   readHotkeyOverrides,
-  type VellumCommandKind,
+  type CadetCommandKind,
   writeHotkeyOverrides,
 } from "./commands";
 import type { IpcHandle } from "./ipc";
@@ -91,7 +91,7 @@ const RESERVED_COMMANDS: readonly HotkeyCommand[] = [
 const defaultAcceleratorFor = (command: HotkeyCommand): string =>
   command.scope === "global"
     ? (GLOBAL_SHORTCUT_DEFAULTS[command.key] ?? "")
-    : (DEFAULT_ACCELERATORS[command.key as VellumCommandKind] ?? "");
+    : (DEFAULT_ACCELERATORS[command.key as CadetCommandKind] ?? "");
 
 const resolveCommand = (
   command: HotkeyCommand,

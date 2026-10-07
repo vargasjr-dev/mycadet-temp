@@ -272,7 +272,7 @@ mock.module("../providers/registry.js", () => ({
   resolveProviderFromConnection: async () => anthropicStub,
 }));
 
-import { VELLUM_MANAGED_CONNECTION_NAME } from "../providers/vellum-model-routing.js";
+import { CADET_MANAGED_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
 
 // Connection-aware resolver path: satisfy
 // `tryResolveProviderForConnectionName` lookups so resolveDefaultProvider
@@ -282,11 +282,11 @@ import { VELLUM_MANAGED_CONNECTION_NAME } from "../providers/vellum-model-routin
 // instead. Other names behave as personal anthropic connections.
 mock.module("../providers/inference/connections.js", () => ({
   getConnection: (_db: unknown, name: string) =>
-    name === VELLUM_MANAGED_CONNECTION_NAME
+    name === CADET_MANAGED_CONNECTION_NAME
       ? {
           id: 1,
           name,
-          provider: "vellum",
+          provider: "cadet",
           auth: { type: "platform" },
         }
       : {

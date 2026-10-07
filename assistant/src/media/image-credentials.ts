@@ -17,7 +17,7 @@ import { providerForImageModelPrefix, providerForModel } from "./types.js";
 /**
  * Resolve which backend serves an image request and whether it runs managed.
  *
- * `vellum` is unconditionally managed and carries no backend of its own: the
+ * `cadet` is unconditionally managed and carries no backend of its own: the
  * backend derives from the model prefix (`gpt-*`/`dall-e-*` proxy OpenAI,
  * anything else proxies Gemini), so one managed provider spans both runtime
  * proxies. Managed routing never falls back to a stored BYOK key, and a BYOK
@@ -29,10 +29,7 @@ export function resolveImageGenRouting(
   svc: { provider: string; model: string },
   modelOverride?: unknown,
 ): { backendProvider: ImageGenProvider; managed: boolean } {
-  // Legacy configs may still carry the pre-rebrand id; the schema normalizes
-  // it on parse, but a raw reader can see either spelling.
-  const legacyManaged = (svc.provider as string) === "vellum";
-  const managed = svc.provider === "cadet" || legacyManaged;
+  const managed = svc.provider === "cadet";
   if (managed) {
     const model =
       typeof modelOverride === "string" && modelOverride
@@ -82,7 +79,7 @@ export async function resolveImageGenCredentials(opts: {
     ) {
       return {
         errorHint:
-          "Managed proxy is not available. Please log in to Vellum or switch to Your Own mode.",
+          "Managed proxy is not available. Please log in to Cadet or switch to Your Own mode.",
       };
     }
     return {

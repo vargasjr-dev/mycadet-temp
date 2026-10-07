@@ -38,7 +38,7 @@ const PUSH_BATCH_SAMPLES = 1600;
 const PUSH_SAMPLE_RATE = 16000;
 
 function dictationBridge() {
-  return isElectron() ? window.vellum?.helper?.dictation : undefined;
+  return isElectron() ? window.cadet?.helper?.dictation : undefined;
 }
 
 /**
@@ -154,7 +154,7 @@ const MIN_TRANSCRIBED_TIMEOUT_MS = 8000;
 const TRANSCRIBED_TIMEOUT_GRACE_MS = 5000;
 
 function transcribedTimeoutMs(pcmByteLength: number): number {
-  if (window.vellum?.hostOS !== "windows") {
+  if (window.cadet?.hostOS !== "windows") {
     return MIN_TRANSCRIBED_TIMEOUT_MS;
   }
   const pcmDurationMs =

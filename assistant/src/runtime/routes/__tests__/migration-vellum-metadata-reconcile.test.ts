@@ -133,7 +133,7 @@ afterEach(() => {
 
 function seedAllInCes(): void {
   for (const field of VELLUM_FIELDS) {
-    cesValues.set(credentialKey("vellum", field), `value-for-${field}`);
+    cesValues.set(credentialKey("cadet", field), `value-for-${field}`);
   }
 }
 

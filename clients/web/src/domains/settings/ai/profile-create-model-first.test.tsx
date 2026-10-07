@@ -962,7 +962,7 @@ function providerFirstTrigger(): HTMLButtonElement {
 describe("the managed route's annotation", () => {
   test("reads Recommended here, and stays Managed in the provider-first picker", () => {
     renderCreate([
-      makeConnection("vellum-managed", "vellum"),
+      makeConnection("cadet-managed", "cadet"),
       makeConnection("anthropic-personal"),
     ]);
 
@@ -973,7 +973,7 @@ describe("the managed route's annotation", () => {
       target: { value: "someone/new-model" },
     });
 
-    const card = candidateCard("vellum");
+    const card = candidateCard("cadet");
     expect(card.textContent).toContain("Recommended");
     expect(card.textContent).not.toContain("Managed");
 
@@ -981,7 +981,7 @@ describe("the managed route's annotation", () => {
     // question, so the two flows cannot be quietly unified.
     cleanup();
     setModelFirstFlag(false);
-    renderCreate([makeConnection("vellum-managed", "vellum")]);
+    renderCreate([makeConnection("cadet-managed", "cadet")]);
     fireEvent.click(providerFirstTrigger());
 
     const managed = Array.from(

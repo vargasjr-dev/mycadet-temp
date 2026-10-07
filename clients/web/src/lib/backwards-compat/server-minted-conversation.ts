@@ -9,8 +9,8 @@
  * `/assistant/conversations/{id}` and continues normally.
  *
  * On older assistants that don't know about this flow, an empty-handed
- * `sourceChannel: "vellum"` send falls through to the shared
- * `default:vellum:<interface>` thread, which would dump every "new"
+ * `sourceChannel: "cadet"` send falls through to the shared
+ * `default:cadet:<interface>` thread, which would dump every "new"
  * chat into the same conversation. To stay safe there, the legacy
  * path (mint a UUID locally, send it as `conversationKey`) is kept
  * behind this gate until every supported assistant understands the new
@@ -22,7 +22,7 @@ export const MIN_VERSION = "0.8.6";
 
 /**
  * Returns `true` when the active assistant mints a conversation on
- * any `sourceChannel: "vellum"` send that arrives without a
+ * any `sourceChannel: "cadet"` send that arrives without a
  * `conversationId` or `conversationKey`.
  *
  * Reads the identity-store snapshot rather than subscribing via a hook

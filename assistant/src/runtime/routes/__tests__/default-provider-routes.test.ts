@@ -97,10 +97,10 @@ function seedConnection(opts: {
     .run();
 }
 
-function seedCanonicalVellumConnection(): void {
+function seedCanonicalCadetConnection(): void {
   seedConnection({
-    name: "vellum",
-    provider: "vellum",
+    name: "cadet",
+    provider: "cadet",
     auth: { type: "platform" },
   });
 }
@@ -127,34 +127,34 @@ describe("GET config/llm/default-provider", () => {
   });
 
   test("cadet + authenticated → ok", async () => {
-    seedCanonicalVellumConnection();
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+    seedCanonicalCadetConnection();
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
     managedProxyEnabled = true;
     const result = await get();
-    expect(result.provider).toBe("vellum");
+    expect(result.provider).toBe("cadet");
     expect(availability(result)).toEqual({ status: "ok" });
   });
 
-  test("cadet + unauthenticated → vellum_unauthenticated naming the fix", async () => {
-    seedCanonicalVellumConnection();
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+  test("cadet + unauthenticated → cadet_unauthenticated naming the fix", async () => {
+    seedCanonicalCadetConnection();
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
     const result = await get();
-    expect(availability(result).status).toBe("vellum_unauthenticated");
+    expect(availability(result).status).toBe("cadet_unauthenticated");
     expect(availability(result).message).toContain("Log in");
   });
 
-  test("cadet + no platform URL → vellum_unauthenticated naming the URL", async () => {
-    seedCanonicalVellumConnection();
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+  test("cadet + no platform URL → cadet_unauthenticated naming the URL", async () => {
+    seedCanonicalCadetConnection();
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
     managedProxyBaseUrl = "";
     const result = await get();
-    expect(availability(result).status).toBe("vellum_unauthenticated");
+    expect(availability(result).status).toBe("cadet_unauthenticated");
     expect(availability(result).message).toContain("platform URL");
   });
 
   test("cadet default with no canonical row → missing_connection", async () => {
     managedProxyEnabled = true;
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
   });
@@ -164,7 +164,7 @@ describe("GET config/llm/default-provider", () => {
     // name. Dispatch ignores that row and routes through platform auth, so a
     // signed-in platform is genuinely usable and reads as ok.
     seedConnection({
-      name: "vellum",
+      name: "cadet",
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
@@ -173,7 +173,7 @@ describe("GET config/llm/default-provider", () => {
       unreachable: false,
     };
     managedProxyEnabled = true;
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
 
     const result = await get();
     expect(availability(result).status).toBe("ok");
@@ -271,9 +271,9 @@ describe("GET config/llm/default-provider", () => {
   });
 
   test("cadet + credential store unreachable → unknown, not logged-out", async () => {
-    seedCanonicalVellumConnection();
-    setConfig("llm", { defaultProvider: { provider: "vellum" } });
-    secureKeyResults["credential/vellum/assistant_api_key"] = {
+    seedCanonicalCadetConnection();
+    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    secureKeyResults["credential/cadet/assistant_api_key"] = {
       value: undefined,
       unreachable: true,
     };
@@ -284,7 +284,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet with a dangling explicit connectionName → missing_connection", async () => {
     setConfig("llm", {
-      defaultProvider: { provider: "vellum", connectionName: "ghost" },
+      defaultProvider: { provider: "cadet", connectionName: "ghost" },
     });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
@@ -302,7 +302,7 @@ describe("GET config/llm/default-provider", () => {
     };
     setConfig("llm", {
       defaultProvider: {
-        provider: "vellum",
+        provider: "cadet",
         connectionName: "anthropic-personal",
       },
     });
@@ -346,35 +346,35 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain('"openai"');
   });
 
-  test("vellum-managed connection pinned for a managed-routable provider follows platform auth", async () => {
+  test("cadet-managed connection pinned for a managed-routable provider follows platform auth", async () => {
     seedConnection({
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     setConfig("llm", {
-      defaultProvider: { provider: "anthropic", connectionName: "vellum" },
+      defaultProvider: { provider: "anthropic", connectionName: "cadet" },
     });
 
-    expect(availability(await get()).status).toBe("vellum_unauthenticated");
+    expect(availability(await get()).status).toBe("cadet_unauthenticated");
     managedProxyEnabled = true;
     expect(availability(await get()).status).toBe("ok");
   });
 
-  test("vellum-managed connection pinned for a non-managed provider → provider_mismatch", async () => {
+  test("cadet-managed connection pinned for a non-managed provider → provider_mismatch", async () => {
     seedConnection({
-      name: "vellum",
-      provider: "vellum",
+      name: "cadet",
+      provider: "cadet",
       auth: { type: "platform" },
     });
     managedProxyEnabled = true;
     setConfig("llm", {
-      defaultProvider: { provider: "openrouter", connectionName: "vellum" },
+      defaultProvider: { provider: "openrouter", connectionName: "cadet" },
     });
 
     const result = await get();
     expect(availability(result).status).toBe("provider_mismatch");
-    expect(availability(result).message).toContain("Vellum-managed");
+    expect(availability(result).message).toContain("Cadet-managed");
   });
 
   test("service_account connection with invalid credential → missing_credential", async () => {
@@ -402,7 +402,7 @@ describe("GET config/llm/default-provider", () => {
     });
     setConfig("llm", { defaultProvider: { provider: "anthropic" } });
 
-    expect(availability(await get()).status).toBe("vellum_unauthenticated");
+    expect(availability(await get()).status).toBe("cadet_unauthenticated");
     managedProxyEnabled = true;
     expect(availability(await get()).status).toBe("ok");
   });
@@ -477,7 +477,7 @@ describe("PUT config/llm/default-provider", () => {
   test("a noncanonical pin on a routing identity → 400 naming the canonical row", async () => {
     for (const [provider, canonical] of [
       ["chatgpt", "chatgpt-subscription"],
-      ["vellum", "vellum"],
+      ["cadet", "cadet"],
     ] as const) {
       const err = await put({
         provider,
@@ -516,7 +516,7 @@ describe("PUT config/llm/default-provider", () => {
     );
     expect(err).toBeInstanceOf(BadRequestError);
     expect((err as BadRequestError).message).toContain("anthropic");
-    expect((err as BadRequestError).message).toContain("vellum");
+    expect((err as BadRequestError).message).toContain("cadet");
     expect(persistedDefaultProvider()).toBeUndefined();
   });
 

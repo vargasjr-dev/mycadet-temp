@@ -28,7 +28,7 @@ import { isElectron } from "@/runtime/is-electron";
  * Local mode provisions an assistant on the user's own machine by driving the
  * Cadet CLI and reading/writing its lockfile. That work runs in a trusted
  * host process, never the renderer: in the Electron desktop shell it runs in
- * the main process behind `window.vellum.localMode.*`; on the web/dev host it
+ * the main process behind `window.cadet.localMode.*`; on the web/dev host it
  * runs in the Vite dev server behind `/assistant/__local/*` middleware. This
  * module is the single place that branch lives — feature code imports these
  * named functions and stays host-agnostic, mirroring the per-capability
@@ -148,8 +148,8 @@ function readInjectedConfig(): { mode?: string } | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
-  return (window as unknown as { __VELLUM_CONFIG__?: { mode?: string } })
-    .__VELLUM_CONFIG__;
+  return (window as unknown as { __CADET_CONFIG__?: { mode?: string } })
+    .__CADET_CONFIG__;
 }
 
 /**
@@ -161,7 +161,7 @@ function readInjectedConfig(): { mode?: string } | undefined {
  * action (wake / hatch / retire).
  *
  * Detected from the runtime config the capable hosts inject
- * (`window.__VELLUM_CONFIG__`), excluding remote-gateway mode.
+ * (`window.__CADET_CONFIG__`), excluding remote-gateway mode.
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
@@ -180,7 +180,7 @@ export function isLocalModeHostAvailable(): boolean {
 /**
  * Whether this host serves `/assistant/__local/avatar/{id}`: the Electron main
  * process and the Vite dev server do; the packaged `cadet client` web host
- * deliberately does not (its `.vellum` boundary), and its SPA fallback would
+ * deliberately does not (its `.cadet` boundary), and its SPA fallback would
  * answer the request with HTML. `import.meta.env.DEV` is what separates the
  * dev server from a served build.
  */
@@ -234,7 +234,7 @@ async function requestLocalCommand<T extends { ok: boolean }>(
  *
  * Both hosts spawn the Cadet CLI in a trusted process and return the same
  * `{ ok, assistantId }` contract: the Electron main process behind
- * `window.vellum.localMode.hatch`, the Vite dev server behind the
+ * `window.cadet.localMode.hatch`, the Vite dev server behind the
  * `/assistant/__local/hatch` middleware. Callers reload the lockfile to
  * discover the new assistant regardless of host.
  */
@@ -242,7 +242,7 @@ export async function hatchLocalAssistant(
   remote?: string,
 ): Promise<LocalHatchResult> {
   if (isElectron()) {
-    return window.vellum!.localMode.hatch(remote);
+    return window.cadet!.localMode.hatch(remote);
   }
 
   return postLocalCommand<LocalHatchResult>(
@@ -260,7 +260,7 @@ export async function hatchLocalAssistant(
  */
 export async function loadLockfileHost(): Promise<Lockfile> {
   if (isElectron()) {
-    return window.vellum!.localMode.readLockfile();
+    return window.cadet!.localMode.readLockfile();
   }
 
   const res = await fetch("/assistant/__local/lockfile");
@@ -280,7 +280,7 @@ export async function saveLockfileAssistantHost(
   activeAssistant: string | undefined,
 ): Promise<LockfileWriteResult> {
   if (isElectron()) {
-    return window.vellum!.localMode.saveLockfileAssistant(
+    return window.cadet!.localMode.saveLockfileAssistant(
       assistant,
       activeAssistant,
     );
@@ -308,7 +308,7 @@ export async function renameLockfileAssistantHost(
   name: string,
 ): Promise<LockfileWriteResult> {
   if (isElectron()) {
-    const rename = window.vellum!.localMode.renameLockfileAssistant;
+    const rename = window.cadet!.localMode.renameLockfileAssistant;
     if (!rename) {
       return {
         ok: false,
@@ -338,7 +338,7 @@ export async function stampLockfileAssistantOnboardedHost(
   onboardedAt: string,
 ): Promise<LockfileWriteResult> {
   if (isElectron()) {
-    const stamp = window.vellum!.localMode.stampLockfileAssistantOnboarded;
+    const stamp = window.cadet!.localMode.stampLockfileAssistantOnboarded;
     if (!stamp) {
       return {
         ok: false,
@@ -356,7 +356,7 @@ export async function stampLockfileAssistantOnboardedHost(
 }
 
 /**
- * Replace the platform (`cloud === "vellum"`) assistants in the lockfile with
+ * Replace the platform (`cloud === "cadet"`) assistants in the lockfile with
  * the provided set, preserving local assistants. When `organizationId` is
  * given, only that org's platform entries are replaced — other orgs' entries
  * are preserved; omitting it does the legacy full replace. Same never-throw
@@ -367,7 +367,7 @@ export async function replacePlatformAssistantsHost(
   organizationId?: string,
 ): Promise<LockfileWriteResult> {
   if (isElectron()) {
-    return window.vellum!.localMode.replacePlatformAssistants(
+    return window.cadet!.localMode.replacePlatformAssistants(
       platformAssistants,
       organizationId,
     );
@@ -388,7 +388,7 @@ export async function retireLocalAssistantHost(
   assistantId: string,
 ): Promise<LocalRetireResult> {
   if (isElectron()) {
-    return window.vellum!.localMode.retire(assistantId);
+    return window.cadet!.localMode.retire(assistantId);
   }
 
   return postLocalCommand<LocalRetireResult>(
@@ -412,7 +412,7 @@ export async function unpairAssistantHost(
   assistantId: string,
 ): Promise<LockfileWriteResult> {
   if (isElectron()) {
-    const unpair = window.vellum!.localMode.unpair;
+    const unpair = window.cadet!.localMode.unpair;
     if (!unpair) {
       return {
         ok: false,
@@ -446,7 +446,7 @@ export async function pairingStartHost(
   address: string,
 ): Promise<LocalPairingStartResult> {
   if (isElectron()) {
-    const pairingStart = window.vellum!.localMode.pairingStart;
+    const pairingStart = window.cadet!.localMode.pairingStart;
     if (!pairingStart) {
       return { ok: false, error: PAIRING_UNSUPPORTED_ERROR };
     }
@@ -471,7 +471,7 @@ export async function pairingPollHost(
   name?: string,
 ): Promise<LocalPairingPollResult> {
   if (isElectron()) {
-    const pairingPoll = window.vellum!.localMode.pairingPoll;
+    const pairingPoll = window.cadet!.localMode.pairingPoll;
     if (!pairingPoll) {
       return { ok: false, error: PAIRING_UNSUPPORTED_ERROR };
     }
@@ -491,7 +491,7 @@ export async function pairingPollHost(
  */
 export async function pairingCancelHost(handle: string): Promise<void> {
   if (isElectron()) {
-    await window.vellum!.localMode.pairingCancel?.(handle);
+    await window.cadet!.localMode.pairingCancel?.(handle);
     return;
   }
 
@@ -519,7 +519,7 @@ export async function listPairedDevicesHost(
   assistantId: string,
 ): Promise<LocalListDevicesResult> {
   if (isElectron()) {
-    const listDevices = window.vellum!.localMode.listDevices;
+    const listDevices = window.cadet!.localMode.listDevices;
     if (!listDevices) {
       return { ok: false, error: DEVICE_MANAGEMENT_UNSUPPORTED_ERROR };
     }
@@ -542,7 +542,7 @@ export async function revokePairedDeviceHost(
   hashedDeviceId: string,
 ): Promise<LocalRevokeDeviceResult> {
   if (isElectron()) {
-    const revokeDevice = window.vellum!.localMode.revokeDevice;
+    const revokeDevice = window.cadet!.localMode.revokeDevice;
     if (!revokeDevice) {
       return { ok: false, error: DEVICE_MANAGEMENT_UNSUPPORTED_ERROR };
     }
@@ -565,7 +565,7 @@ export async function sleepLocalAssistantHost(
   assistantId: string,
 ): Promise<LocalSleepResult> {
   if (isElectron()) {
-    const sleep = window.vellum!.localMode.sleep;
+    const sleep = window.cadet!.localMode.sleep;
     if (!sleep) {
       return { ok: false, error: "Sleep is not supported by this app version" };
     }
@@ -605,7 +605,7 @@ export async function wakeLocalAssistantHost(
   options?: LocalWakeOptions,
 ): Promise<LocalWakeResult> {
   if (isElectron()) {
-    const wake = window.vellum!.localMode.wake;
+    const wake = window.cadet!.localMode.wake;
     if (!wake) {
       return { ok: false, error: "Wake is not supported by this app version" };
     }
@@ -624,7 +624,7 @@ export async function upgradeLocalAssistantHost(
   options?: LocalUpgradeOptions,
 ): Promise<LocalUpgradeResult> {
   if (isElectron()) {
-    const upgrade = window.vellum!.localMode.upgrade;
+    const upgrade = window.cadet!.localMode.upgrade;
     if (!upgrade) {
       return {
         ok: false,
@@ -653,7 +653,7 @@ export async function getLocalAssistantStatusHost(
   assistantId: string,
 ): Promise<LocalAssistantStatusResult> {
   if (isElectron()) {
-    const status = window.vellum!.localMode.status;
+    const status = window.cadet!.localMode.status;
     if (!status) {
       return {
         ok: false,
@@ -690,7 +690,7 @@ export async function getLocalAssistantStatusHost(
 /**
  * Read a local assistant's avatar straight off its workspace on disk, so a
  * sleeping sibling still has an avatar in the chooser. The Electron main
- * process serves it behind `window.vellum.localMode.readAssistantAvatar`, the
+ * process serves it behind `window.cadet.localMode.readAssistantAvatar`, the
  * Vite dev server behind `/assistant/__local/avatar/{id}`; both return the
  * ipc-contract shape. Never throws: an older Electron shell without the
  * channel, a rejected bridge call, and a host that cannot serve the read
@@ -700,7 +700,7 @@ export async function readAssistantAvatarHost(
   assistantId: string,
 ): Promise<LocalReadAssistantAvatarResult> {
   if (isElectron()) {
-    const readAssistantAvatar = window.vellum!.localMode.readAssistantAvatar;
+    const readAssistantAvatar = window.cadet!.localMode.readAssistantAvatar;
     if (!readAssistantAvatar) {
       return {
         ok: false,
@@ -728,7 +728,7 @@ export async function readAssistantAvatarHost(
  * Acquire a fresh guardian access token for a local assistant, used to
  * authorize the gateway token exchange. Reading the token file and refreshing
  * it via the CLI is a trusted disk/CLI operation, so it runs in the host:
- * the Electron main process behind `window.vellum.localMode.guardianToken`,
+ * the Electron main process behind `window.cadet.localMode.guardianToken`,
  * the Vite dev server behind `/assistant/__local/guardian-token/{id}`. Throws
  * a {@link GuardianTokenError} carrying the host's status on failure, so
  * callers surface the same connect error — and can branch on the failure
@@ -738,7 +738,7 @@ export async function fetchGuardianTokenHost(
   assistantId: string,
 ): Promise<string> {
   if (isElectron()) {
-    const result = await window.vellum!.localMode.guardianToken(assistantId);
+    const result = await window.cadet!.localMode.guardianToken(assistantId);
     if (!result.ok) {
       throw new GuardianTokenError(result.status, result.error);
     }

@@ -32,7 +32,7 @@ export interface CheckoutBonusOffer {
  * `eligible: false` and shows nothing.
  *
  * Gated on org readiness exactly like the other billing queries: a request
- * fired before the org store settles omits `Vellum-Organization-Id` and the
+ * fired before the org store settles omits `Cadet-Organization-Id` and the
  * platform rejects it.
  *
  * Every trigger asks the server again, at a cost of exactly one request:

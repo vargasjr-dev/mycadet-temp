@@ -78,7 +78,7 @@ const shouldSuppressFocusedNotificationDeliveryMock = mock(
 );
 mock.module("@/runtime/notifications", () => ({
   postLocalNotification: postLocalNotificationMock,
-  isBrowserNotificationHost: () => !window.vellum,
+  isBrowserNotificationHost: () => !window.cadet,
   sendNotificationIntentAck: sendAckMock,
   extractConversationId: (metadata?: Record<string, unknown>) =>
     typeof metadata?.conversationId === "string"
@@ -127,7 +127,7 @@ let stopAttention: (() => void) | null = null;
  * background throttling disabled reports it whatever the window is doing.
  */
 function runInElectron(attended: boolean): void {
-  window.vellum = {
+  window.cadet = {
     platform: "electron",
     notifications: {
       onWindowAttention: (callback: (payload: unknown) => void) => {
@@ -137,7 +137,7 @@ function runInElectron(attended: boolean): void {
         };
       },
     },
-  } as unknown as Window["vellum"];
+  } as unknown as Window["cadet"];
   stopAttention = subscribeToWindowAttention(() => undefined);
   attentionListener?.({
     visible: attended,
@@ -284,7 +284,7 @@ afterEach(() => {
   stopAttention?.();
   stopAttention = null;
   attentionListener = null;
-  delete window.vellum;
+  delete window.cadet;
   if (realVisibilityState) {
     Object.defineProperty(document, "visibilityState", realVisibilityState);
   }

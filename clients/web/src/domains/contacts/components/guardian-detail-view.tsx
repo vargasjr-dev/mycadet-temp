@@ -48,7 +48,7 @@ function GuardianDetailViewInner({
   onGenerateInviteLink,
 }: GuardianDetailViewProps) {
   const { t } = useTranslation("contacts");
-  const principalId = contact.displayName.startsWith("vellum-principal-");
+  const principalId = contact.displayName.startsWith("cadet-principal-");
   const initialName = principalId ? "" : contact.displayName;
   const [name, setName] = useState(initialName);
   const [notes, setNotes] = useState(contact.notes ?? "");

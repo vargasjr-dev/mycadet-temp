@@ -49,7 +49,7 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
 /** A `CheckoutIntent` before `saveCheckoutIntent` stamps `savedAt`. */
 type UnsavedCheckoutIntent = DistributiveOmit<CheckoutIntent, "savedAt">;
 
-const STORAGE_KEY = "vellum.pro-checkout-intent";
+const STORAGE_KEY = "cadet.pro-checkout-intent";
 const MAX_AGE_MS = 30 * 60 * 1000;
 
 /**

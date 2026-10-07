@@ -1,5 +1,5 @@
 /**
- * Export one app as a `.vellum` bundle from a menu, refusing a second export
+ * Export one app as a `.cadet` bundle from a menu, refusing a second export
  * while one is running.
  *
  * The sequence itself is {@link shareAppWithToast}; this adds the guard the

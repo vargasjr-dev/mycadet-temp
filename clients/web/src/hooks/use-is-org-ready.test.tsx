@@ -21,7 +21,7 @@ const { useIsOrgReady, useOrgHeaderReadiness } =
   await import("./use-is-org-ready");
 const { useOrganizationStore } = await import("@/stores/organization-store");
 
-const STORAGE_KEY = "vellum_active_organization_id";
+const STORAGE_KEY = "cadet_active_organization_id";
 
 /**
  * The persisted organization selection: sessionStorage is where it survives a

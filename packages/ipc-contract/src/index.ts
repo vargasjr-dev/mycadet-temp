@@ -1,6 +1,6 @@
 /**
  * @mycadet/ipc-contract — Single source of truth for the Electron bridge
- * IPC surface: payload types, Zod validation schemas, the VellumBridge
+ * IPC surface: payload types, Zod validation schemas, the CadetBridge
  * interface, and channel name constants.
  *
  * This is a package entry point, not an app-code barrel file. The
@@ -25,7 +25,7 @@ export {
   type LocalRevokeDeviceResult,
   type LocalUpgradeOptions,
   type LocalWakeOptions,
-  type VellumBridge,
+  type CadetBridge,
   VELLUM_BRIDGE_KEYS,
 } from "./bridge";
 export * from "./channels";

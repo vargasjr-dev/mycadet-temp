@@ -15,7 +15,7 @@ import {
 } from "@/domains/onboarding/onboarding-plugin-affinity";
 import { ATTRIBUTED_PLUGIN_PARAM } from "@/domains/onboarding/plugin-attribution";
 
-/** Stand-in for the full Vellum-owned onboarding catalog. */
+/** Stand-in for the full Cadet-owned onboarding catalog. */
 const FULL_CATALOG = new Set([
   "admin-copilot",
   "marketing-expert",

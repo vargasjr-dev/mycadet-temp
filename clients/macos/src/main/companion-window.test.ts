@@ -29,7 +29,7 @@ import {
   type CompanionSize,
   type CompanionSizeAxis,
   type CompanionSurfaceState,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
 
@@ -57,7 +57,7 @@ mock.module("electron-store", () => ({
 const pushes: CompanionSurfaceState[] = [];
 
 /** Every command main has handed to the app's renderer, most recent last. */
-const dispatched: VellumCommand[] = [];
+const dispatched: CadetCommand[] = [];
 
 /**
  * Commands and pushes to the app's window in one list, because the order
@@ -511,7 +511,7 @@ mock.module("./main-window", () => ({
   // activation, whether the surface is on the screen.
   current: () => (mainWindowOpen ? mainWindow : null),
   // Lands nowhere with no window to land in, exactly as the real one does.
-  dispatchToMain: (command: VellumCommand) => {
+  dispatchToMain: (command: CadetCommand) => {
     if (!mainWindowOpen) {
       return;
     }

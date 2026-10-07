@@ -416,7 +416,7 @@ describe("SuperpowersTab", () => {
   test("a skill-origin filter narrows skills and hides plugins", async () => {
     skills = [
       skill({ id: "mine", name: "mine", origin: "custom" }),
-      skill({ id: "shipped", name: "shipped", origin: "vellum" }),
+      skill({ id: "shipped", name: "shipped", origin: "cadet" }),
     ];
     installedPlugins = [installed()];
 

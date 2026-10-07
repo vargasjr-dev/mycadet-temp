@@ -85,7 +85,7 @@ function ConversationRow({
   const dateText = formatConversationDate(
     conversation.lastMessageAt ?? conversation.createdAt,
   );
-  const source = conversation.source ?? "vellum-assistant";
+  const source = conversation.source ?? "cadet-assistant";
   const meta = [dateText, source].filter(Boolean).join(" · ");
   const title = displayTitle(conversation.title);
 

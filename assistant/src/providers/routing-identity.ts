@@ -10,13 +10,13 @@
  */
 
 import { ConfigError } from "../util/errors.js";
+import {
+  CADET_MANAGED_CONNECTION_NAME,
+  CADET_MANAGED_PROVIDER,
+  getManagedUpstream,
+} from "./cadet-model-routing.js";
 import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "./inference/auth.js";
 import { isCodexSubscriptionModel } from "./openai/codex-models.js";
-import {
-  getManagedUpstream,
-  VELLUM_MANAGED_CONNECTION_NAME,
-  VELLUM_MANAGED_PROVIDER,
-} from "./vellum-model-routing.js";
 
 /**
  * Error raised when a `provider_connection` reference cannot be resolved
@@ -52,11 +52,11 @@ export class ConnectionResolutionError extends ConfigError {
 }
 
 /**
- * Translate a routing-identity provider into its dispatch target. "vellum"
+ * Translate a routing-identity provider into its dispatch target. "cadet"
  * derives the managed upstream from the model and routes through the
- * canonical vellum connection; "chatgpt" routes through the
+ * canonical cadet connection; "chatgpt" routes through the
  * chatgpt-subscription connection with an openai upstream. Returns null for
- * real providers. Throws `unroutable_managed_model` when a vellum model has
+ * real providers. Throws `unroutable_managed_model` when a cadet model has
  * no managed upstream, and `model_incompatible` when a chatgpt model is
  * outside the Codex subscription set — loud and explainable, never a soft
  * fall-through to the (possibly platform-billed) default transport.
@@ -65,18 +65,18 @@ export function resolveRoutingIdentity(
   provider: string | undefined,
   model: string | undefined,
 ): { connectionName: string; expectedProvider: string } | null {
-  if (provider === VELLUM_MANAGED_PROVIDER) {
+  if (provider === CADET_MANAGED_PROVIDER) {
     const upstream = model ? getManagedUpstream(model) : null;
     if (!upstream) {
       throw new ConnectionResolutionError(
-        VELLUM_MANAGED_CONNECTION_NAME,
+        CADET_MANAGED_CONNECTION_NAME,
         "unroutable_managed_model",
-        `provider "vellum" cannot route model "${model ?? "<unset>"}" — no managed upstream serves it. Pick a model from the Vellum catalog or set a concrete provider.`,
+        `provider "cadet" cannot route model "${model ?? "<unset>"}" — no managed upstream serves it. Pick a model from the Cadet catalog or set a concrete provider.`,
         { model },
       );
     }
     return {
-      connectionName: VELLUM_MANAGED_CONNECTION_NAME,
+      connectionName: CADET_MANAGED_CONNECTION_NAME,
       expectedProvider: upstream,
     };
   }

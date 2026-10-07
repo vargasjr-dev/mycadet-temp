@@ -37,7 +37,7 @@ const SKILL_MD_FILENAME = "SKILL.md";
 // ---------------------------------------------------------------------------
 
 interface SkillInstallMeta {
-  origin: "vellum" | "clawhub" | "skillssh" | "custom";
+  origin: "cadet" | "clawhub" | "skillssh" | "custom";
   installedAt: string;
   installedBy?: string;
   backfilledBy?: string;
@@ -206,7 +206,7 @@ function inferInstallMeta(
     // Case 2: has version but no origin field
     if (typeof raw.version === "string" && !("origin" in raw)) {
       return {
-        origin: hasIntegrityEntry ? "clawhub" : "vellum",
+        origin: hasIntegrityEntry ? "clawhub" : "cadet",
         installedAt:
           typeof raw.installedAt === "string"
             ? raw.installedAt

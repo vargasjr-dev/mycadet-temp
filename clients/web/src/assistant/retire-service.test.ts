@@ -150,7 +150,7 @@ afterEach(() => {
 describe("retireAssistant", () => {
   test("platform assistant hands its OAuth connections to the successor", async () => {
     // GIVEN a platform-hosted source and a teleport target to inherit from it
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
     // WHEN retiring it with a successor
@@ -184,7 +184,7 @@ describe("retireAssistant", () => {
 
   test("platform assistant routes through the platform delete by id", async () => {
     // GIVEN a platform-hosted target in web mode
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
     // WHEN retiring it
@@ -202,7 +202,7 @@ describe("retireAssistant", () => {
 
   test("a successful retire drops the research-onboarding resume snapshot", async () => {
     // GIVEN a platform-hosted target
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
     // WHEN retiring it
@@ -217,7 +217,7 @@ describe("retireAssistant", () => {
 
   test("a failed retire keeps the research-onboarding resume snapshot", async () => {
     // GIVEN the platform delete fails terminally
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
     retireByIdResult = { ok: false, status: 500, error: { detail: "boom" } };
 
@@ -270,7 +270,7 @@ describe("retireAssistant", () => {
   test("routes by the TARGET assistant, not local-mode alone", async () => {
     // GIVEN local mode but the *target* is a platform assistant
     isLocalClientValue = true;
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
     // WHEN retiring the platform target
@@ -287,7 +287,7 @@ describe("retireAssistant", () => {
   });
 
   test("a 404 from the platform delete is treated as success", async () => {
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
     retireByIdResult = { ok: false, status: 404, error: {} };
 
@@ -297,7 +297,7 @@ describe("retireAssistant", () => {
   });
 
   test("a non-404 platform failure surfaces the error detail", async () => {
-    lockfileAssistants = [{ assistantId: "p1", cloud: "vellum" }];
+    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
     retireByIdResult = { ok: false, status: 500, error: { detail: "boom" } };
 
@@ -313,7 +313,7 @@ describe("retireAssistant", () => {
     isLocalClientValue = true;
     lockfileAssistants = [
       { assistantId: "l1", cloud: "local" },
-      { assistantId: "p1", cloud: "vellum" },
+      { assistantId: "p1", cloud: "cadet" },
     ];
     storeAssistants = [{ id: "l1" }, { id: "p1" }];
 

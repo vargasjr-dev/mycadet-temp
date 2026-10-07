@@ -24,7 +24,7 @@ import {
   WidgetCircleAction,
   WIDGET_TILE_ICON_SIZE,
 } from "./widget-action-controls";
-import { VellumAppIconMark } from "./vellum-app-icon-mark";
+import { CadetAppIconMark } from "./cadet-app-icon-mark";
 import { WidgetCard } from "./widget-card";
 import { WidgetUnreadMark } from "./widget-unread-mark";
 import {
@@ -203,7 +203,7 @@ export function StatusWidgetPreview({
                     }}
                   />
                 ) : (
-                  <VellumAppIconMark
+                  <CadetAppIconMark
                     size={WIDGET_TILE_ICON_SIZE * scale}
                     flattened={flattened}
                   />
@@ -333,7 +333,7 @@ function ChatPill({
           }}
         />
       ) : (
-        <VellumAppIconMark size={iconSize} flattened={flattened} />
+        <CadetAppIconMark size={iconSize} flattened={flattened} />
       )}
       <span style={{ fontSize: 15 * scale, fontWeight: 600 }}>Chat</span>
     </div>

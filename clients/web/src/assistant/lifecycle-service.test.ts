@@ -1638,7 +1638,7 @@ describe("lifecycleService — transport-shaped failures", () => {
     status: 502,
     error: {
       detail:
-        "Couldn't reach Vellum. Check your internet connection and try again.",
+        "Couldn't reach Cadet. Check your internet connection and try again.",
       code: "proxy_network_error",
     },
   };

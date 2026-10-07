@@ -2,14 +2,14 @@ import { BrowserWindow } from "electron";
 
 import {
   DEFAULT_ACCELERATORS,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import { capabilityToken } from "./capability-registry";
 
-export type { VellumCommand };
+export type { CadetCommand };
 
-export type VellumCommandKind = VellumCommand["kind"];
+export type CadetCommandKind = CadetCommand["kind"];
 
 export { DEFAULT_ACCELERATORS };
 
@@ -87,7 +87,7 @@ export const GLOBAL_SHORTCUT_DEFAULTS: Record<string, string> = {
  * (the user removed the binding via the Keyboard Shortcuts settings) — callers
  * that build menu items must treat an empty result as "no accelerator".
  */
-export const resolveAccelerator = (kind: VellumCommandKind): string => {
+export const resolveAccelerator = (kind: CadetCommandKind): string => {
   return readHotkeyOverride(kind) ?? DEFAULT_ACCELERATORS[kind];
 };
 
@@ -101,7 +101,7 @@ export const resolveAccelerator = (kind: VellumCommandKind): string => {
  * case is handled in exactly one place.
  */
 export const acceleratorOption = (
-  kind: VellumCommandKind,
+  kind: CadetCommandKind,
 ): { accelerator?: string } => {
   const accelerator = resolveAccelerator(kind);
   return accelerator ? { accelerator } : {};
@@ -115,7 +115,7 @@ export const acceleratorOption = (
  * menu-construction time would break future thread pop-outs, where the
  * user expects Cmd+N to operate on the popped-out window they're in.
  */
-export const dispatchToFocused = (command: VellumCommand): void => {
+export const dispatchToFocused = (command: CadetCommand): void => {
   const target =
     BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
   target?.webContents.send("cadet:command", command);

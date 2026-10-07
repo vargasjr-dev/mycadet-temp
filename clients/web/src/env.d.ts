@@ -20,8 +20,8 @@ interface ImportMetaEnv {
   readonly VITE_SESSION_REPLAY_APP_ID?: string;
   /**
    * Root hostname shared across Cadet subdomains, with a leading dot (e.g.
-   * `.vellum.ai`). Used as the session-replay cookie scope (`rootHostname`).
-   * Defaults to `.vellum.ai` when unset. The Electron main process reads the
+   * `.cadet.ai`). Used as the session-replay cookie scope (`rootHostname`).
+   * Defaults to `.cadet.ai` when unset. The Electron main process reads the
    * same var via `process.env` at build time (see `electron.vite.config.ts`).
    */
   readonly VITE_ROOT_HOSTNAME?: string;
@@ -36,14 +36,14 @@ interface ImportMetaEnv {
   /** When truthy ("1", "true", "yes"), disables platform connectivity in local mode. */
   readonly VITE_VELLUM_DISABLE_PLATFORM?: string;
   /**
-   * Live Google Play listing for ai.vellum.assistant. Android install
+   * Live Google Play listing for ai.cadet.assistant. Android install
    * promotion remains hidden when this is unset or invalid.
    */
   readonly VITE_ANDROID_PLAY_STORE_URL?: string;
   /**
    * Override for the live-voice tunnel host (no scheme), e.g. `localhost:8501`
    * for a local `vel up` tunnel. When unset the host is derived at runtime from
-   * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.vellum.ai`). See
+   * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.cadet.ai`). See
    * `domains/chat/voice/live-voice/connection.ts`.
    */
   readonly VITE_TUNNEL_HOST?: string;
@@ -58,9 +58,9 @@ interface ImportMeta {
 
 interface Window {
   /** Feature flag overrides injected by Electron preload or CLI script. */
-  __VELLUM_FLAG_OVERRIDES__?: Record<string, boolean | string>;
+  __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
   /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
-  __VELLUM_CONFIG__?: {
+  __CADET_CONFIG__?: {
     disablePlatform?: boolean;
     mode?: string;
     platformUrl?: string;

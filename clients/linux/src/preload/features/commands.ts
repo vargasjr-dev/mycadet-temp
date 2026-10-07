@@ -9,11 +9,11 @@ import {
   MENU_POPUP,
   MENU_SET_PLATFORM_SESSION,
   MENU_TITLES,
-  type VellumBridge,
+  type CadetBridge,
 } from "@mycadet/ipc-contract";
 
 const commandsFeature: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "commands",
   install: (registry) => {

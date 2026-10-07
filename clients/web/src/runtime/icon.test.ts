@@ -10,13 +10,13 @@ const { setAssistantIcon } = await import("./icon");
 
 afterEach(() => {
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("setAssistantIcon", () => {
   test("no-ops off Electron", () => {
     const setAvatar = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { icon: { setAvatar } };
+    (window as { cadet?: unknown }).cadet = { icon: { setAvatar } };
 
     setAssistantIcon(new Uint8Array([1]));
 
@@ -26,7 +26,7 @@ describe("setAssistantIcon", () => {
   test("publishes the avatar bytes over the bridge on Electron", () => {
     runningInElectron = true;
     const setAvatar = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { icon: { setAvatar } };
+    (window as { cadet?: unknown }).cadet = { icon: { setAvatar } };
 
     const png = new Uint8Array([1, 2, 3]);
     setAssistantIcon(png);
@@ -35,10 +35,10 @@ describe("setAssistantIcon", () => {
     expect(setAvatar).toHaveBeenCalledWith(png);
   });
 
-  test("forwards null to clear the avatar (Vellum-mark fallback)", () => {
+  test("forwards null to clear the avatar (Cadet-mark fallback)", () => {
     runningInElectron = true;
     const setAvatar = mock(() => {});
-    (window as { vellum?: unknown }).vellum = { icon: { setAvatar } };
+    (window as { cadet?: unknown }).cadet = { icon: { setAvatar } };
 
     setAssistantIcon(null);
 
@@ -50,7 +50,7 @@ describe("setAssistantIcon", () => {
   // call must no-op rather than throw on RootLayout mount.
   test("no-ops when the older preload lacks the icon channel", () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(() => setAssistantIcon(new Uint8Array([1]))).not.toThrow();
   });

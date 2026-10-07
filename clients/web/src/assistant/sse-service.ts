@@ -451,7 +451,7 @@ export const sseService: SseService = {
     };
 
     // Manual reconnect for QA of the disconnect/reconnect path, driven
-    // by `_vellumDebug.events.reconnectClient(timeout?)`. Tears the
+    // by `_cadetDebug.events.reconnectClient(timeout?)`. Tears the
     // connection down now and reopens after `delayMs` so a tester can
     // observe the offline window and the post-reconnect catch-up. The
     // reopen is labeled `cause: "debug"` so reconcile consumers still

@@ -253,7 +253,7 @@ export function buildRemoteWebIndexHtml(
   config: Record<string, unknown>,
 ): string {
   const html = stripExcessModulePreloads(rawHtml);
-  const script = `<script>window.__VELLUM_CONFIG__=${safeScriptJson(config)}</script>`;
+  const script = `<script>window.__CADET_CONFIG__=${safeScriptJson(config)}</script>`;
   if (html.includes("</head>")) {
     return html.replace("</head>", `${script}</head>`);
   }
@@ -824,13 +824,13 @@ export async function startRemoteWebIngress(opts: {
   includeWebApp?: boolean;
   /**
    * Serving assistant's display name, stamped into the served remote-web
-   * config (`__VELLUM_CONFIG__.assistantName`) so remote clients can label
+   * config (`__CADET_CONFIG__.assistantName`) so remote clients can label
    * this origin. Omitted when unknown; consumers tolerate its absence.
    */
   assistantName?: string;
   /**
    * Serving assistant's id, stamped into the served remote-web config
-   * (`__VELLUM_CONFIG__.assistantId`) so a caller probing this origin can
+   * (`__CADET_CONFIG__.assistantId`) so a caller probing this origin can
    * confirm which assistant the edge fronts. Omitted when unknown.
    */
   assistantId?: string;

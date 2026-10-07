@@ -11,7 +11,7 @@ const log = getLogger("cors");
  * The macOS app loads webview content from `https://{appId}.vellum.local/`,
  * which is cross-origin relative to the local gateway at
  * `http://127.0.0.1:{port}`. Without CORS headers, the browser blocks
- * `window.vellum.fetch` requests from the webview to the gateway.
+ * `window.cadet.fetch` requests from the webview to the gateway.
  */
 const WEBVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.vellum\.local$/;
 

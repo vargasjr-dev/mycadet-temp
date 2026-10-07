@@ -400,7 +400,7 @@ GET /v1/events?conversationId=<id>
 
 | Parameter         | Required | Description                                                                                                                                                                                                                                                        |
 | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for vellum-managed conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
+| `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for cadet-managed conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
 | `conversationKey` | No       | The external key used by non-vellum channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.     |
 
 **Response**: `200 OK` with `Content-Type: text/event-stream`. Each frame is a standard SSE event:

@@ -225,7 +225,7 @@ describe("secrets_add credential transcript scrub", () => {
     expect(result).toEqual(expect.objectContaining({ success: true }));
 
     expect(secureStore.size).toBe(1);
-    expect(secureStore.get(credentialKey("vellum", "platform_base_url"))).toBe(
+    expect(secureStore.get(credentialKey("cadet", "platform_base_url"))).toBe(
       "0198f4c2-1111-2222-3333-444455556666",
     );
     expect(scrubbedValues).toEqual([]);

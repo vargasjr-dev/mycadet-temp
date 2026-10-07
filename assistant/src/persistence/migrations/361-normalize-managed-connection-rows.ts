@@ -9,7 +9,7 @@ const PLATFORM_AUTH_JSON = JSON.stringify({ type: "platform" });
  * platform-billed route); auth derivation sets them together and the
  * connection routes reject writes that split them, but rows written before
  * that guard can disagree. The provider column is the authoritative managed
- * signal (`isVellumManagedConnection`), so mismatched rows must converge:
+ * signal (`isCadetManagedConnection`), so mismatched rows must converge:
  *
  * - Platform auth with any other provider: the provider becomes "vellum".
  *   These rows dispatch through the managed proxy (transport selection keys

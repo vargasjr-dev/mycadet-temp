@@ -141,7 +141,7 @@ function imageFileNamesInResult(result: string | undefined): string[] {
  * The image filenames a message's own prose embeds with markdown image syntax.
  *
  * A media skill asks the model to present its result by embedding the saved
- * path in the reply (`![alt](vellum://workspace/...)`), which the markdown
+ * path in the reply (`![alt](cadet://workspace/...)`), which the markdown
  * renderer draws at full width where the text refers to it. That embed is the
  * presentation, so the mid-turn strip owes nothing for the same file.
  */

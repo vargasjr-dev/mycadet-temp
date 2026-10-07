@@ -40,7 +40,7 @@ describe("profileUsesFreeTextModel", () => {
 
   test("is false for a Cadet routed catalog model", () => {
     expect(
-      profileUsesFreeTextModel("vellum", "anthropic/claude-opus-4-8"),
+      profileUsesFreeTextModel("cadet", "anthropic/claude-opus-4-8"),
     ).toBe(false);
   });
 });

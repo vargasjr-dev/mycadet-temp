@@ -106,12 +106,12 @@ describe("rehydratePlatformCredentials", () => {
   });
 
   test("rehydrates the platform base URL from the credential store", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] = PROD_URL;
-    mockSecureKeys[credentialKey("vellum", "platform_assistant_id")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] = PROD_URL;
+    mockSecureKeys[credentialKey("cadet", "platform_assistant_id")] =
       ASSISTANT_ID;
-    mockSecureKeys[credentialKey("vellum", "platform_organization_id")] =
+    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] =
       ORG_ID;
-    mockSecureKeys[credentialKey("vellum", "platform_user_id")] = USER_ID;
+    mockSecureKeys[credentialKey("cadet", "platform_user_id")] = USER_ID;
 
     await rehydratePlatformCredentials();
 
@@ -122,7 +122,7 @@ describe("rehydratePlatformCredentials", () => {
   });
 
   test("trims stored values before applying them", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       `  ${PROD_URL}  `;
 
     await rehydratePlatformCredentials();
@@ -139,15 +139,15 @@ describe("rehydratePlatformCredentials", () => {
   });
 
   test("a credential-store read failure does not throw", async () => {
-    throwForKey = credentialKey("vellum", "platform_base_url");
+    throwForKey = credentialKey("cadet", "platform_base_url");
 
     await expect(rehydratePlatformCredentials()).resolves.toBeUndefined();
     expect(getPlatformAssistantId()).toBe("");
   });
 
   test("trades the assistant API key for ids via platform validate", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] = PROD_URL;
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] = PROD_URL;
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "assistant-key";
     fetchImpl = async () =>
       new Response(
@@ -173,10 +173,10 @@ describe("rehydratePlatformCredentials", () => {
   });
 
   test("validate ids are used when the vault also has a copy", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] = PROD_URL;
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] = PROD_URL;
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "assistant-key";
-    mockSecureKeys[credentialKey("vellum", "platform_assistant_id")] =
+    mockSecureKeys[credentialKey("cadet", "platform_assistant_id")] =
       "asst-from-vault";
     fetchImpl = async () =>
       new Response(
@@ -194,14 +194,14 @@ describe("rehydratePlatformCredentials", () => {
   });
 
   test("does not populate ids from the vault when validate is unreachable", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] = PROD_URL;
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] = PROD_URL;
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "assistant-key";
-    mockSecureKeys[credentialKey("vellum", "platform_assistant_id")] =
+    mockSecureKeys[credentialKey("cadet", "platform_assistant_id")] =
       ASSISTANT_ID;
-    mockSecureKeys[credentialKey("vellum", "platform_organization_id")] =
+    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] =
       ORG_ID;
-    mockSecureKeys[credentialKey("vellum", "platform_user_id")] = USER_ID;
+    mockSecureKeys[credentialKey("cadet", "platform_user_id")] = USER_ID;
     fetchImpl = async () => {
       throw new Error("network down");
     };

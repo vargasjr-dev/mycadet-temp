@@ -130,7 +130,7 @@ export function ProfileCreateModelFirst({
   const { t } = useTranslation("settings");
   const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
   const hostedInference =
-    useAssistantFeatureFlagStore.use.vellumHostedInference();
+    useAssistantFeatureFlagStore.use.cadetHostedInference();
   const defaultEntryMetaLabel = t("aiProviderPicker.defaultEntryMeta");
 
   const resolverInput = useMemo<ModelFirstInput>(

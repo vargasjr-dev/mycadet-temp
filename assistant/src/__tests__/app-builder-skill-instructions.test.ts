@@ -32,7 +32,7 @@ describe("app-builder skill instructions", () => {
     );
   });
 
-  test("does not reference window.vellum.* APIs the sandbox no longer injects", async () => {
+  test("does not reference window.cadet.* APIs the sandbox no longer injects", async () => {
     const skillText = await readAllSkillMarkdown();
     // These were provided by the retired Swift macOS runtime; the current
     // web/Electron/Capacitor sandbox never injects them, so the skill must not
@@ -49,12 +49,12 @@ describe("app-builder skill instructions", () => {
     }
   });
 
-  test("documents the window.vellum.* APIs the sandbox actually provides", async () => {
+  test("documents the window.cadet.* APIs the sandbox actually provides", async () => {
     const skillText = await readAllSkillMarkdown();
     for (const realApi of [
-      "window.vellum.sendAction",
-      "window.vellum.fetch",
-      "window.vellum.route",
+      "window.cadet.sendAction",
+      "window.cadet.fetch",
+      "window.cadet.route",
       "relay_prompt",
       "set_view",
     ]) {

@@ -4,9 +4,9 @@
  *
  * A voice change (the `voice_config_update` tool's `tts_voice_id` setting and
  * the `assistant tts voice` CLI command) must write to the entry for the
- * *active* provider — a managed (vellum) assistant's voice is a Deepgram Aura
+ * *active* provider — a managed (cadet) assistant's voice is a Deepgram Aura
  * model id (or an ElevenLabs voice id, since managed speech serves both) at
- * `.vellum.model`, not an ElevenLabs voice id at `.elevenlabs.voiceId`.
+ * `.cadet.model`, not an ElevenLabs voice id at `.elevenlabs.voiceId`.
  * Writing the wrong field is a silent no-op: the write "succeeds" but the
  * active provider keeps its old voice.
  *

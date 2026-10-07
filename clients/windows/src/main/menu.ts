@@ -11,7 +11,7 @@ import {
   acceleratorOption,
   dispatchToFocused,
   onHotkeyOverridesChange,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/electron-desktop/commands";
 import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
@@ -43,7 +43,7 @@ const isDeveloperMenuEnabled = (): boolean =>
 
 const commandItem = (
   label: string,
-  command: VellumCommand,
+  command: CadetCommand,
   enabled?: boolean,
 ): MenuItemConstructorOptions => ({
   label,

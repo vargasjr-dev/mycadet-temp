@@ -17,7 +17,7 @@ mock.module("@/stores/assistant-feature-flag-store", () => {
   const store = () => null;
   store.use = {
     settingsDeveloperNav: () => assistantFlags.settingsDeveloperNav ?? false,
-    vellumHostedInference: () => assistantFlags.vellumHostedInference ?? false,
+    cadetHostedInference: () => assistantFlags.cadetHostedInference ?? false,
   };
   return { useAssistantFeatureFlagStore: store };
 });
@@ -195,7 +195,7 @@ describe("SettingsLayout", () => {
     expect(screen.queryByRole("link", { name: "Personality" })).toBeNull();
     cleanup();
 
-    assistantFlags.vellumHostedInference = true;
+    assistantFlags.cadetHostedInference = true;
     render(
       <MemoryRouter initialEntries={["/assistant/settings"]}>
         <SettingsLayout />

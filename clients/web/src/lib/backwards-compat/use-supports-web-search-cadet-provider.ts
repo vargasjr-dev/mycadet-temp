@@ -17,14 +17,12 @@
  * cosmetic snap that only affects old daemons and disappears once they
  * upgrade.)
  *
- * MIN_VERSION targets 0.13.0 — the first release carrying the Cadet
- * provider-id rename, whose search-provider catalog (and config-schema
- * enum) includes `cadet`. Older daemons keep accepting the pre-rebrand
- * `vellum` id through the config-schema legacy alias.
+ * MIN_VERSION targets 0.10.12 — the first release whose search-provider
+ * catalog (and config-schema enum) includes `cadet` (#38677).
  */
 import { assistantSupports } from "./utils";
 
-export const MIN_VERSION = "0.13.0";
+export const MIN_VERSION = "0.10.12";
 
 /**
  * Snapshot gate for the save path: whether the active assistant accepts

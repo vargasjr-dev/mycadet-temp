@@ -30,7 +30,7 @@ import { routes } from "@/utils/routes";
  * name for its nav/CTA. Same-origin on the assistant host, so retire clears it
  * here — the two sides must agree on this string.
  */
-const MARKETING_ASSISTANT_NAME_CACHE_KEY = "vellum_assistant_name";
+const MARKETING_ASSISTANT_NAME_CACHE_KEY = "cadet_assistant_name";
 
 /**
  * Outcome of a retire attempt. On success carries the route the caller should

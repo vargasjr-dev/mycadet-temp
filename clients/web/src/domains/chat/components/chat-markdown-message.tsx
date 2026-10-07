@@ -1,6 +1,6 @@
 /**
  * Chat-domain MarkdownMessage that composes the design-library primitive
- * with OAuth-aware link handling, vellum:// file link support, and inline
+ * with OAuth-aware link handling, cadet:// file link support, and inline
  * media for external URLs, message attachments, and workspace files.
  */
 
@@ -43,7 +43,7 @@ import { rehypeStreamWordFade } from "@/domains/chat/utils/rehype-stream-word-fa
 import { rehypeWorkspacePath } from "@/domains/chat/utils/rehype-workspace-path";
 import { classifyMarkdownHref } from "@/domains/chat/utils/local-file-links";
 import {
-  toVellumWorkspaceHref,
+  toCadetWorkspaceHref,
   WORKSPACE_PATH_TAG,
 } from "@/utils/workspace-path-links";
 import { AppPathLink } from "@/domains/chat/components/app-path-link";
@@ -54,22 +54,22 @@ import { resolveLocalFileTarget } from "@/domains/chat/components/local-file/loc
 import { toggleLocalFile } from "@/components/local-file/open-local-file";
 import { useTranslation } from "@/i18n";
 
-/** Returns true when `href` is a known `vellum://` attachment link. */
-export function isVellumLink(href: string | undefined): boolean {
+/** Returns true when `href` is a known `cadet://` attachment link. */
+export function isCadetLink(href: string | undefined): boolean {
   return (
     href != null &&
-    (href.startsWith("vellum://workspace/") ||
-      href.startsWith("vellum://host/"))
+    (href.startsWith("cadet://workspace/") ||
+      href.startsWith("cadet://host/"))
   );
 }
 
 /**
  * Extends react-markdown's default URL sanitization to allow known
- * `vellum://workspace/` and `vellum://host/` attachment URIs. Other
- * `vellum://` shapes are rejected to limit protocol-handler attack surface.
+ * `cadet://workspace/` and `cadet://host/` attachment URIs. Other
+ * `cadet://` shapes are rejected to limit protocol-handler attack surface.
  */
-function vellumUrlTransform(url: string): string {
-  if (isVellumLink(url)) {
+function cadetUrlTransform(url: string): string {
+  if (isCadetLink(url)) {
     return url;
   }
   return defaultUrlTransform(url);
@@ -171,7 +171,7 @@ function decodeBasename(raw: string): string {
 }
 
 /**
- * The message attachment a `vellum://` image src names, when that attachment
+ * The message attachment a `cadet://` image src names, when that attachment
  * holds image bytes. The attachment's own blob is the closest copy of what the
  * assistant produced, and it carries the transcript's zoom-to-preview modal.
  *
@@ -254,18 +254,18 @@ export interface ChatMarkdownMessageProps extends Omit<
 > {
   /**
    * Fallback for file links the document drawer cannot open: a reference with
-   * no assistant to read it through, or a `vellum://host/` link with no
+   * no assistant to read it through, or a `cadet://host/` link with no
    * workspace route to its bytes. Everything else opens in the drawer, so this
-   * is not called for it. Receives the full `vellum://` href (e.g.
-   * `vellum://workspace/scratch/report.pdf`, converted from an absolute or
+   * is not called for it. Receives the full `cadet://` href (e.g.
+   * `cadet://workspace/scratch/report.pdf`, converted from an absolute or
    * relative workspace path when the markdown used one) and the visible link
    * text (e.g. `report.pdf`).
    *
    * Pass a stable reference (useCallback) to avoid rebuilding the markdown
    * component tree on every render.
    */
-  onVellumLinkClick?: (href: string, linkText: string) => void;
-  /** Message attachments used to resolve `vellum://` image URLs. */
+  onCadetLinkClick?: (href: string, linkText: string) => void;
+  /** Message attachments used to resolve `cadet://` image URLs. */
   attachments?: DisplayAttachment[];
   /** Active assistant ID for fetching attachment content from the daemon. */
   assistantId?: string | null;
@@ -294,10 +294,10 @@ export interface ChatMarkdownMessageProps extends Omit<
   /**
    * Resolve inline code spans that hold a workspace file path into file links
    * (see `rehypeWorkspacePath`). The resolved link behaves exactly like an
-   * explicit `vellum://` link: a click opens the file in the document drawer,
-   * and falls back to `onVellumLinkClick` for the references the drawer cannot
+   * explicit `cadet://` link: a click opens the file in the document drawer,
+   * and falls back to `onCadetLinkClick` for the references the drawer cannot
    * reach. That fallback is also what enables the affordance, so this needs
-   * `onVellumLinkClick` to have any effect.
+   * `onCadetLinkClick` to have any effect.
    *
    * Enable only for assistant-authored content. The affordance is a claim
    * that the assistant is referring to a file it worked with; a path the user
@@ -311,7 +311,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
   className,
   hardLineBreaks,
   incremental,
-  onVellumLinkClick,
+  onCadetLinkClick,
   attachments,
   assistantId,
   fileLinkLabels = "action",
@@ -337,9 +337,9 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
         toggleLocalFile(workspacePath, filename, assistantId);
         return;
       }
-      onVellumLinkClick?.(href, linkText);
+      onCadetLinkClick?.(href, linkText);
     },
-    [assistantId, onVellumLinkClick],
+    [assistantId, onCadetLinkClick],
   );
 
   const linkComponent = useCallback(
@@ -347,8 +347,8 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
       href,
       children,
     }: Pick<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children">) => {
-      if (href != null && isVellumLink(href)) {
-        // A `vellum://host/` link has no workspace route to its bytes, so it
+      if (href != null && isCadetLink(href)) {
+        // A `cadet://host/` link has no workspace route to its bytes, so it
         // resolves to a null path and only the modal can act on it.
         const { workspacePath } = resolveLocalFileTarget(href);
         // The drawer opens every file type now, so it is where a click on a
@@ -363,8 +363,8 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
             assistantId={assistantId ?? undefined}
             labelMode={fileLinkLabels}
             onOpenFileOptions={
-              onVellumLinkClick && !drawerCanOpen
-                ? () => onVellumLinkClick(href, markdownChildrenText(children))
+              onCadetLinkClick && !drawerCanOpen
+                ? () => onCadetLinkClick(href, markdownChildrenText(children))
                 : undefined
             }
           >
@@ -386,10 +386,10 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
             assistantId={assistantId ?? undefined}
             labelMode={fileLinkLabels}
             onOpenFileOptions={
-              onVellumLinkClick && workspacePath !== null && !assistantId
+              onCadetLinkClick && workspacePath !== null && !assistantId
                 ? () =>
-                    onVellumLinkClick(
-                      toVellumWorkspaceHref(workspacePath),
+                    onCadetLinkClick(
+                      toCadetWorkspaceHref(workspacePath),
                       markdownChildrenText(children),
                     )
                 : undefined
@@ -402,7 +402,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
 
       return <OAuthAwareLink href={href}>{children}</OAuthAwareLink>;
     },
-    [onVellumLinkClick, assistantId, fileLinkLabels],
+    [onCadetLinkClick, assistantId, fileLinkLabels],
   );
 
   const extraRehypePlugins = useMemo(
@@ -418,7 +418,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
       // Only worth running when a click handler exists to receive the
       // resolved path — without one the upgraded span renders as plain code
       // anyway.
-      ...(workspacePathLinks && onVellumLinkClick
+      ...(workspacePathLinks && onCadetLinkClick
         ? [rehypeWorkspacePath as import("unified").Pluggable]
         : []),
       ...(streamWordFade
@@ -434,7 +434,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
       redactedCredentialChips,
       streamWordFade,
       workspacePathLinks,
-      onVellumLinkClick,
+      onCadetLinkClick,
     ],
   );
 
@@ -451,7 +451,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
           />
         );
 
-        if (isVellumLink(src)) {
+        if (isCadetLink(src)) {
           const attachment = matchingImageAttachment(src, attachments);
           if (attachment) {
             return (
@@ -507,17 +507,17 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
         <WorkspacePathLink
           {...props}
           assistantId={assistantId}
-          onOpen={onVellumLinkClick ? handleWorkspacePathOpen : undefined}
+          onOpen={onCadetLinkClick ? handleWorkspacePathOpen : undefined}
         />
       ),
     }),
-    [assistantId, onVellumLinkClick, handleWorkspacePathOpen],
+    [assistantId, onCadetLinkClick, handleWorkspacePathOpen],
   );
 
   // Tags are registered together: each is only ever emitted by its own
   // rehype plugin, so a tag whose plugin didn't run never appears in the tree.
   const hasExtraComponents =
-    redactedCredentialChips || (workspacePathLinks && onVellumLinkClick);
+    redactedCredentialChips || (workspacePathLinks && onCadetLinkClick);
 
   return (
     <>
@@ -528,7 +528,7 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
         incremental={incremental}
         linkComponent={linkComponent}
         imageComponent={imageComponent}
-        urlTransform={vellumUrlTransform}
+        urlTransform={cadetUrlTransform}
         extraRehypePlugins={extraRehypePlugins}
         extraComponents={hasExtraComponents ? extraComponents : undefined}
       />

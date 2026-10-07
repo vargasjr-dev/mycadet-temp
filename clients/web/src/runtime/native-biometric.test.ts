@@ -34,7 +34,7 @@ function nativeError(code: string): Error & { code: string } {
 
 beforeEach(() => {
   native = true;
-  setOrigin("https://www.vellum.ai");
+  setOrigin("https://www.cadet.ai");
   mock.clearAllMocks();
   isAvailable.mockResolvedValue({ available: true, biometryType: "biometric" });
   storeToken.mockResolvedValue(undefined);
@@ -86,7 +86,7 @@ test("isolates storage by normalized effective server origin", async () => {
   setOrigin("https://assistant.example.com:8443");
   await biometric.storeBiometricToken("self-hosted-token");
 
-  expect(storeToken.mock.calls[0]?.[0].server).toBe("https://www.vellum.ai");
+  expect(storeToken.mock.calls[0]?.[0].server).toBe("https://www.cadet.ai");
   expect(storeToken.mock.calls[1]?.[0].server).toBe(
     "https://assistant.example.com:8443",
   );
@@ -97,11 +97,11 @@ test("reads the legacy iOS cloud key without crossing self-hosted origins", asyn
   retrieveToken.mockResolvedValueOnce({ token: "legacy-token" });
   expect(await biometric.retrieveBiometricToken()).toBe("legacy-token");
   expect(retrieveToken.mock.calls.map(([options]) => options.server)).toEqual([
-    "https://www.vellum.ai",
-    "vellum.ai",
+    "https://www.cadet.ai",
+    "cadet.ai",
   ]);
 
-  setOrigin("https://preview.vellum.ai");
+  setOrigin("https://preview.cadet.ai");
   retrieveToken.mockClear();
   retrieveToken.mockRejectedValueOnce(nativeError("TOKEN_NOT_FOUND"));
   expect(await biometric.retrieveBiometricToken()).toBeNull();
@@ -109,8 +109,8 @@ test("reads the legacy iOS cloud key without crossing self-hosted origins", asyn
 
   await biometric.deleteBiometricToken();
   expect(deleteToken.mock.calls.map(([options]) => options.server)).toEqual([
-    "https://preview.vellum.ai",
-    "vellum.ai",
+    "https://preview.cadet.ai",
+    "cadet.ai",
   ]);
 });
 

@@ -237,7 +237,7 @@ describe("TunnelStatusRow", () => {
       ),
     ).toBeDefined();
     // No provider to name, so no restart command and no address.
-    expect(screen.queryByText(/vellum tunnel/)).toBeNull();
+    expect(screen.queryByText(/cadet tunnel/)).toBeNull();
     expect(screen.queryByText(PUBLIC_URL)).toBeNull();
     expect(refreshButton().disabled).toBe(false);
   });

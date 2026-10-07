@@ -1,23 +1,28 @@
 /**
- * Managed realtime STT through the gateway's speech relay
- * (gateway → tunnel → Deepgram; tunnel contact is gateway-only).
+ * Managed Flux STT through the gateway's speech relay
+ * (gateway -> tunnel -> Deepgram Flux; tunnel contact is gateway-only).
  *
- * Composes {@link DeepgramRealtimeTranscriber} — both relay legs speak
- * Deepgram's live wire protocol verbatim, so all frame handling (Results
- * parsing, backpressure, finalize/flush serialization) is inherited, not
- * duplicated. This wrapper owns what is relay-specific:
+ * Composes {@link DeepgramFluxRealtimeTranscriber} against the relay's
+ * managed STT v2 endpoint with `contract=flux`, so Flux's own turn events
+ * arrive verbatim. Without that opt-in tunnel translates them into the
+ * released v1 Deepgram dialect, which drops `EagerEndOfTurn` and
+ * `TurnResumed` entirely and leaves live voice with no provider turn end to
+ * act on.
  *
- * - Dialing the gateway (`/v1/speech/stt/stream`, `?key=` carries a
- *   daemon-minted service token, no `model` param — the model is pinned
- *   server-side).
- * - Surfacing `tunnel_error` control frames (tunnel's own, or synthesized
- *   by the gateway for upstream failures) as categorized SttErrors
- *   instead of generic socket failures.
- * - Transparent re-dial on tunnel's 30-minute session cap: live-voice
- *   reuses ONE streaming transcriber across utterance cycles (#37662), so
- *   a normal conversation can outlive the cap. Tunnel settles the in-flight
- *   utterance (trailing finals arrive before the close), then this wrapper
- *   opens a fresh relay session and continues without surfacing an error.
+ * This wrapper owns what is relay-specific, mirroring
+ * `CadetManagedRealtimeTranscriber` on the v1 path:
+ *
+ * - Dialing the gateway (`/v2/speech/stt/stream`, `?key=` carries a
+ *   daemon-minted service token, no `model` param since tunnel derives and
+ *   prices the Flux model from `language`).
+ * - Surfacing `tunnel_error` control frames as categorized SttErrors instead
+ *   of generic socket failures.
+ * - Transparent re-dial on tunnel's 30-minute session cap, so one live-voice
+ *   session can outlive it.
+ *
+ * There is deliberately no `finalizeUtterance`: Flux commits turns itself,
+ * and the interface makes the method optional so live voice feature-detects
+ * its absence and never asks for a flush.
  */
 
 import {
@@ -26,41 +31,40 @@ import {
   type SttStreamServerEvent,
 } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
-import { DeepgramRealtimeTranscriber } from "./deepgram-realtime.js";
 import {
   mapTunnelError,
   probeTunnelRejection,
   type SpeechRelayConnection,
   type TunnelErrorInfo,
-} from "./vellum-speech-relay-connection.js";
+} from "./cadet-speech-relay-connection.js";
+import { DeepgramFluxRealtimeTranscriber } from "./deepgram-flux-realtime.js";
 
-const log = getLogger("vellum-managed-realtime");
+const log = getLogger("cadet-managed-flux-realtime");
 
-const STT_STREAM_PATH = "/v1/speech/stt/stream";
+/** Managed STT v2: tunnel resolves this to Deepgram's Flux `/v2/listen`. */
+const STT_STREAM_PATH = "/v2/speech/stt/stream";
 
-export interface VellumManagedRealtimeOptions {
+export interface CadetManagedFluxRealtimeOptions {
   /** Audio sample rate in Hz (default: 16000). */
   sampleRate?: number;
-  /** BCP-47 language code, forwarded to the relay. */
-  language?: string;
   /**
-   * Emit `final` events only at utterance boundaries (telephony mode).
-   * Note: tunnel's param allowlist has no `utterance_end_ms`, so boundaries
-   * come from Deepgram's endpointing (`speech_final`) alone.
+   * BCP-47 language code (or `"multi"`), forwarded to the relay. This is
+   * how tunnel picks between `flux-general-en` and `flux-general-multi`, so
+   * it is the only lever over the Flux model from this side.
    */
-  utteranceBoundaryFinals?: boolean;
+  language?: string;
 }
 
-export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
-  readonly providerId = "cadet" as const;
+export class CadetManagedFluxRealtimeTranscriber implements StreamingTranscriber {
+  readonly providerId = "cadet-flux" as const;
   readonly boundaryId = "daemon-streaming" as const;
 
   private readonly connection: SpeechRelayConnection;
-  private readonly options: VellumManagedRealtimeOptions;
+  private readonly options: CadetManagedFluxRealtimeOptions;
 
   private onEvent: ((event: SttStreamServerEvent) => void) | null = null;
   /** The current relay session; null while re-dialing after a session cap. */
-  private inner: DeepgramRealtimeTranscriber | null = null;
+  private inner: DeepgramFluxRealtimeTranscriber | null = null;
   /**
    * The most recent `tunnel_error` frame from the current session. Set just
    * before tunnel closes the socket; consumed when the inner adapter turns
@@ -69,17 +73,19 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
   private pendingRelayError: TunnelErrorInfo | null = null;
   /**
    * Set when the current session hit tunnel's duration cap: the swap to a
-   * fresh session is deferred to the capped session's `closed` event so
-   * its close cleanup (withheld finals, outstanding finalizes) drains
-   * through first.
+   * fresh session is deferred to the capped session's `closed` event so its
+   * close cleanup drains through first.
    */
   private redialOnClose = false;
   private stopping = false;
   private closedEmitted = false;
+  // Consumers see one stream across relay reconnects, with one turn sequence.
+  private turnIndexOffset = 0;
+  private latestTurnIndex = -1;
 
   constructor(
     connection: SpeechRelayConnection,
-    options: VellumManagedRealtimeOptions = {},
+    options: CadetManagedFluxRealtimeOptions = {},
   ) {
     this.connection = connection;
     this.options = options;
@@ -87,7 +93,9 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
 
   async start(onEvent: (event: SttStreamServerEvent) => void): Promise<void> {
     if (this.onEvent) {
-      throw new Error("VellumManagedRealtimeTranscriber: start() called twice");
+      throw new Error(
+        "CadetManagedFluxRealtimeTranscriber: start() called twice",
+      );
     }
     this.onEvent = onEvent;
     try {
@@ -103,14 +111,9 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     } catch (err) {
       // A failed WebSocket upgrade exposes no HTTP details; replay the
       // request as a plain GET to recover the relay's {code, detail}
-      // rejection (the gateway replays its whole gate on non-upgrade
-      // requests, including tunnel's own).
+      // rejection.
       const rejection = await probeTunnelRejection(this.probeUrl());
       if (rejection) {
-        // Typed so the stream session preserves the mapped category —
-        // an auth/setup failure must not surface as a provider outage.
-        // `userFacing` keeps the mapped remediation (reconnect, top up
-        // credits) from being rewritten to BYOK "check your API key" copy.
         const mapped = mapTunnelError(rejection);
         throw new SttError(mapped.category, mapped.message, {
           userFacing: true,
@@ -121,20 +124,9 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
   }
 
   sendAudio(audio: Buffer, mimeType: string): void {
-    // ponytail: audio arriving during a session-cap re-dial (sub-second) is
-    // dropped, mirroring the inner adapter's backpressure-drop semantics;
-    // buffer-and-replay if the gap ever proves audible.
+    // Audio arriving during a session-cap re-dial (sub-second) is dropped,
+    // mirroring the inner adapter's backpressure-drop semantics.
     this.inner?.sendAudio(audio, mimeType);
-  }
-
-  finalizeUtterance(): void {
-    if (this.inner) {
-      this.inner.finalizeUtterance();
-      return;
-    }
-    // No live session (re-dialing or closed) — nothing is buffered
-    // provider-side, so the flush is trivially complete.
-    this.emit({ type: "finalized" });
   }
 
   stop(): void {
@@ -150,24 +142,24 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     this.emitClosedOnce();
   }
 
-  // ── Relay session management ─────────────────────────────────────────
+  // -- Relay session management ------------------------------------------
 
-  private async dial(): Promise<DeepgramRealtimeTranscriber> {
+  private async dial(): Promise<DeepgramFluxRealtimeTranscriber> {
     this.pendingRelayError = null;
-    // Fresh per dial — a session-cap re-dial happens ~30 minutes in, long
+    // Fresh per dial: a session-cap re-dial happens ~30 minutes in, long
     // after any previously minted token expired.
-    const inner = new DeepgramRealtimeTranscriber(
+    const inner = new DeepgramFluxRealtimeTranscriber(
       this.connection.mintServiceToken(),
       {
         baseUrl: this.connection.wsBaseUrl,
         path: STT_STREAM_PATH,
         queryAuth: true,
         omitModelParam: true,
-        sampleRate: this.options.sampleRate,
-        ...(this.options.language ? { language: this.options.language } : {}),
-        ...(this.options.utteranceBoundaryFinals
-          ? { utteranceBoundaryFinals: true }
+        nativeContract: true,
+        ...(this.options.sampleRate !== undefined
+          ? { sampleRate: this.options.sampleRate }
           : {}),
+        ...(this.options.language ? { language: this.options.language } : {}),
         onUnhandledFrame: (frame) => this.handleRelayFrame(frame),
       },
     );
@@ -190,16 +182,16 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     };
     log.info(
       { code: frame.code, detail: frame.detail },
-      "Received tunnel_error frame on managed STT relay",
+      "Received tunnel_error frame on managed Flux relay",
     );
   }
 
   private handleInnerEvent(
-    source: DeepgramRealtimeTranscriber,
+    source: DeepgramFluxRealtimeTranscriber,
     event: SttStreamServerEvent,
   ): void {
-    // Events from a superseded session (the one replaced by a re-dial)
-    // must not leak through — its close/error was already accounted for.
+    // Events from a superseded session (the one replaced by a re-dial) must
+    // not leak through: its close/error was already accounted for.
     if (source !== this.inner) {
       return;
     }
@@ -208,10 +200,8 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
       const relayError = this.pendingRelayError;
       if (relayError?.code === "session_duration_exceeded") {
         // Tunnel's 30-minute cap, not a failure. Swallow the error but keep
-        // the capped session current: its close cleanup still flushes
-        // withheld boundary finals and settles outstanding finalizes, and
-        // those events must drain before the swap. The re-dial happens on
-        // its `closed` event.
+        // the capped session current so its close cleanup drains first; the
+        // re-dial happens on its `closed` event.
         this.redialOnClose = !this.stopping;
         return;
       }
@@ -238,19 +228,29 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
       return;
     }
 
+    if (
+      (event.type === "turn-start" || event.type === "turn-end") &&
+      event.turnIndex !== undefined
+    ) {
+      const turnIndex = this.turnIndexOffset + event.turnIndex;
+      this.latestTurnIndex = Math.max(this.latestTurnIndex, turnIndex);
+      this.emit({ ...event, turnIndex });
+      return;
+    }
     this.emit(event);
   }
 
   /**
-   * Replace the capped session with a fresh one. Detached — audio sent
-   * during the swap is dropped (see {@link sendAudio}); a dial failure is
-   * a real error and ends the stream.
+   * Replace the capped session with a fresh one. Detached: audio sent during
+   * the swap is dropped (see {@link sendAudio}); a dial failure is a real
+   * error and ends the stream.
    */
   private beginRedial(): void {
     log.info(
-      "Managed STT relay session hit tunnel's duration cap — re-dialing",
+      "Managed Flux relay session hit tunnel's duration cap, re-dialing",
     );
     this.inner = null;
+    this.turnIndexOffset = this.latestTurnIndex + 1;
     void (async () => {
       try {
         const inner = await this.dial();
@@ -259,15 +259,11 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
           return;
         }
         this.inner = inner;
-        log.info("Managed STT relay re-dial complete — session continues");
+        log.info("Managed Flux relay re-dial complete; session continues");
       } catch (err) {
         if (this.stopping) {
           return;
         }
-        // Same diagnosis as start(): a rejected upgrade hides the relay's
-        // {code, detail} — mid-call credit exhaustion or a revoked
-        // connection must surface with its mapped message, not a generic
-        // transport error.
         const rejection = await probeTunnelRejection(this.probeUrl());
         if (rejection) {
           const mapped = mapTunnelError(rejection);
@@ -280,7 +276,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
           this.emit({
             type: "error",
             category: "provider-error",
-            message: `Managed speech relay re-dial failed after the session cap: ${
+            message: `Managed Flux relay re-dial failed after the session cap: ${
               err instanceof Error ? err.message : String(err)
             }`,
           });
@@ -290,7 +286,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     })();
   }
 
-  // ── Event emission ───────────────────────────────────────────────────
+  // -- Event emission -----------------------------------------------------
 
   private emit(event: SttStreamServerEvent): void {
     if (!this.onEvent || this.closedEmitted) {
@@ -304,7 +300,7 @@ export class VellumManagedRealtimeTranscriber implements StreamingTranscriber {
     } catch (err) {
       log.warn(
         { error: err },
-        "Listener error in vellum managed realtime adapter",
+        "Listener error in Cadet managed Flux realtime adapter",
       );
     }
   }

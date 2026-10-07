@@ -14,7 +14,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 
-const ORGANIZATION_STORAGE_KEY = "vellum_active_organization_id";
+const ORGANIZATION_STORAGE_KEY = "cadet_active_organization_id";
 
 /**
  * The persisted organization selection: sessionStorage is where it survives a
@@ -74,7 +74,7 @@ describe("currentClientFlagScopeKey", () => {
   test("names the org the request header carries, not the resolved slice", () => {
     // Before the org list lands the store's resolved id is null while the
     // persisted id still answers, and that persisted id is what
-    // `Vellum-Organization-Id` is built from — so the evaluation the server
+    // `Cadet-Organization-Id` is built from — so the evaluation the server
     // returns is org-abc's.
     signIn("user-123");
     seedPersistedOrganization("org-abc");

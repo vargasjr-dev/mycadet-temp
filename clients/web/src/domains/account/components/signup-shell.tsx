@@ -27,7 +27,7 @@ export function SignupShell({ children }: { children?: ReactNode }) {
       <div className="signup__left">
         <div className="signup__logo">
           <img
-            src={publicAsset("/vellum-logo-white.svg")}
+            src={publicAsset("/cadet-logo-white.svg")}
             // eslint-disable-next-line local/no-untranslated-strings -- brand name
             alt="Cadet"
             width={82}
@@ -46,7 +46,7 @@ export function SignupShell({ children }: { children?: ReactNode }) {
       >
         <video
           className="signup__video"
-          src={publicAsset("/vellum-scene-cut.mp4")}
+          src={publicAsset("/cadet-scene-cut.mp4")}
           autoPlay
           loop
           muted

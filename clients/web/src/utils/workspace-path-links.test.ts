@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  toVellumWorkspaceHref,
+  toCadetWorkspaceHref,
   toWorkspaceRelativePath,
   workspaceBasenameOf,
   workspaceDirOf,
@@ -14,11 +14,11 @@ describe("toWorkspaceRelativePath — accepted shapes", () => {
     ).toBe("drafts/v0.10.12-release-notes.md");
   });
 
-  test("absolute path under a desktop ~/.vellum/workspace mount", () => {
+  test("absolute path under a desktop ~/.cadet/workspace mount", () => {
     // The mount point is deployment-specific, so recognition anchors on the
     // last `/workspace/` segment rather than a fixed prefix.
     expect(
-      toWorkspaceRelativePath("/Users/alice/.vellum/workspace/drafts/notes.md"),
+      toWorkspaceRelativePath("/Users/alice/.cadet/workspace/drafts/notes.md"),
     ).toBe("drafts/notes.md");
   });
 
@@ -125,13 +125,13 @@ describe("path helpers", () => {
     expect(workspaceBasenameOf("SOUL.md")).toBe("SOUL.md");
   });
 
-  test("toVellumWorkspaceHref encodes per segment so slashes survive", () => {
-    expect(toVellumWorkspaceHref("drafts/notes.md")).toBe(
-      "vellum://workspace/drafts/notes.md",
+  test("toCadetWorkspaceHref encodes per segment so slashes survive", () => {
+    expect(toCadetWorkspaceHref("drafts/notes.md")).toBe(
+      "cadet://workspace/drafts/notes.md",
     );
     // Non-ASCII names round-trip through the click handler's decodeURIComponent.
-    expect(toVellumWorkspaceHref("drafts/notés.md")).toBe(
-      "vellum://workspace/drafts/not%C3%A9s.md",
+    expect(toCadetWorkspaceHref("drafts/notés.md")).toBe(
+      "cadet://workspace/drafts/not%C3%A9s.md",
     );
   });
 });

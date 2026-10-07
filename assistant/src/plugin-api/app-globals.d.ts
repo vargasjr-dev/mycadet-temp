@@ -1,11 +1,11 @@
 /**
- * Ambient global types for the **app-side** Vellum bridge — `window.vellum`.
+ * Ambient global types for the **app-side** Vellum bridge — `window.cadet`.
  *
  * A Vellum plugin app runs inside a sandboxed iframe, and the host injects a
- * `window.vellum` object into it at load time (see the assistant's
+ * `window.cadet` object into it at load time (see the assistant's
  * `sandbox-bridge` runtime). This file is the type-only counterpart to that
- * injection: it teaches TypeScript the shape of `window.vellum` so an app can
- * call `window.vellum.fetch(...)` without hand-declaring the global in every
+ * injection: it teaches TypeScript the shape of `window.cadet` so an app can
+ * call `window.cadet.fetch(...)` without hand-declaring the global in every
  * project.
  *
  * Only `fetch` is typed for now — the surface the vast majority of apps
@@ -61,7 +61,7 @@ export interface VellumAppFetchResponse {
 }
 
 /**
- * The `window.vellum` bridge the host injects into a plugin app's sandboxed
+ * The `window.cadet` bridge the host injects into a plugin app's sandboxed
  * iframe. Mirrors the runtime built by the assistant's `sandbox-bridge`.
  */
 export interface VellumAppBridge {

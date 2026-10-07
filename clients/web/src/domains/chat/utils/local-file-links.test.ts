@@ -15,7 +15,7 @@ describe("toWorkspacePathFromHref: accepted shapes", () => {
   test("absolute path under a desktop instance mount", () => {
     expect(
       toWorkspacePathFromHref(
-        "/Users/alice/.vellum/instances/x/workspace/a.png",
+        "/Users/alice/.cadet/instances/x/workspace/a.png",
       ),
     ).toBe("a.png");
   });
@@ -138,11 +138,11 @@ describe("classifyMarkdownHref", () => {
   });
 
   test("cadet attachment links", () => {
-    expect(classifyMarkdownHref("vellum://workspace/scratch/a.png")).toEqual({
-      kind: "vellum",
+    expect(classifyMarkdownHref("cadet://workspace/scratch/a.png")).toEqual({
+      kind: "cadet",
     });
-    expect(classifyMarkdownHref("vellum://host/tmp/a.png")).toEqual({
-      kind: "vellum",
+    expect(classifyMarkdownHref("cadet://host/tmp/a.png")).toEqual({
+      kind: "cadet",
     });
   });
 
@@ -211,7 +211,7 @@ describe("classifyMarkdownHref", () => {
     });
     expect(
       classifyMarkdownHref(
-        "https://www.vellum.ai/assistant/conversations/conv-xyz",
+        "https://www.cadet.ai/assistant/conversations/conv-xyz",
       ),
     ).toEqual({
       kind: "app",

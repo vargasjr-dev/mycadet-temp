@@ -1,5 +1,5 @@
 /**
- * Vellum managed TTS WebSocket streaming session.
+ * Cadet managed TTS WebSocket streaming session.
  *
  * Runs a single-utterance synthesis session against the gateway's managed
  * speech relay (`/v1/speech/tts/stream`, gateway → tunnel → Deepgram; tunnel
@@ -21,7 +21,7 @@ import {
   DEFAULT_IDLE_TIMEOUT_MS,
 } from "../stream-read.js";
 
-const log = getLogger("vellum-tts-socket");
+const log = getLogger("cadet-tts-socket");
 
 /** Default timeout (ms) for the WebSocket connection handshake. */
 const DEFAULT_CONNECT_TIMEOUT_MS = 10_000;
@@ -83,7 +83,7 @@ function createWebSocket(url: string): WsLike {
   return ws;
 }
 
-export interface VellumTtsSocketOptions extends StreamReadTimeouts {
+export interface CadetTtsSocketOptions extends StreamReadTimeouts {
   /** Full ws(s):// relay URL including `?key=` and audio params. */
   url: string;
   /** Full utterance text; split into ≤2,000-char Speak frames. */
@@ -105,8 +105,8 @@ export interface VellumTtsSocketOptions extends StreamReadTimeouts {
  * arrive. Abort sends `Clear` (barge-in: discard buffered synthesis)
  * before closing the socket.
  */
-export function synthesizeOverVellumTtsSocket(
-  options: VellumTtsSocketOptions,
+export function synthesizeOverCadetTtsSocket(
+  options: CadetTtsSocketOptions,
 ): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     const {

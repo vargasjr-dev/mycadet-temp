@@ -203,7 +203,7 @@ const MAX_APP_ASSET_BYTES = 25 * 1024 * 1024;
  * data-URI. `readAppFileBytesFromDir` runs the app-store path validation
  * (rejects `..`, absolute paths, symlink escapes, and the protected
  * `records/` directory), so authors bundle assets under the app dir and load
- * them via `window.vellum.asset(path)`.
+ * them via `window.cadet.asset(path)`.
  */
 function handleServeAppAsset({ pathParams }: RouteHandlerArgs): Uint8Array {
   const appId = pathParams?.appId as string;

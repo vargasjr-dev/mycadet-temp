@@ -32,9 +32,6 @@ const STT_PROVIDER_ALIASES: Record<
 > = {
   openai: "openai-whisper",
   whisper: "openai-whisper",
-  // Legacy id from before the rebrand; normalized so existing configs and
-  // automation keep resolving to the managed provider.
-  vellum: "cadet",
 };
 
 /**

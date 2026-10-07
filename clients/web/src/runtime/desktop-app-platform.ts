@@ -21,8 +21,8 @@ export function detectDesktopAppPlatform(): DesktopAppPlatform {
   if (typeof navigator === "undefined") {
     return "macos";
   }
-  if (isElectron() && window.vellum?.hostOS) {
-    return window.vellum.hostOS === "windows" ? "windows" : "macos";
+  if (isElectron() && window.cadet?.hostOS) {
+    return window.cadet.hostOS === "windows" ? "windows" : "macos";
   }
 
   return isWindowsBrowser() ? "windows" : "macos";

@@ -650,7 +650,7 @@ describe("installPlugin — marketplace resolution", () => {
     const meta = JSON.parse(
       readFileSync(join(target, "install-meta.json"), "utf-8"),
     );
-    expect(meta.origin).toBe("vellum");
+    expect(meta.origin).toBe("cadet");
     expect(meta.sourceRepo).toBe("JuliusBrussee/caveman");
     expect(meta.source.kind).toBe("github");
     expect(meta.source.owner).toBe("JuliusBrussee");

@@ -115,10 +115,10 @@ describe("platform callback registration", () => {
   });
 
   test("resolves managed callback context from stored credentials", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-managed-key";
 
     const context = await resolvePlatformCallbackRegistrationContext();
@@ -133,10 +133,10 @@ describe("platform callback registration", () => {
 
   test("self-hosted assistant with stored credentials is enabled without IS_PLATFORM", async () => {
     mockIsPlatform = false;
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-self-hosted-key";
 
     const context = await resolvePlatformCallbackRegistrationContext();
@@ -201,10 +201,10 @@ describe("platform callback registration", () => {
   });
 
   test("registerCallbackRoute falls back to assistant API key auth", async () => {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-managed-key";
 
     globalThis.fetch = mock(
@@ -248,10 +248,10 @@ describe("platform callback registration", () => {
     mockConfig = {
       ingress: { publicBaseUrl: "https://my-assistant.example.com" },
     };
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-self-hosted-key";
 
     globalThis.fetch = mock(
@@ -289,10 +289,10 @@ describe("platform callback registration", () => {
     mockIsPlatform = false;
     mockConfig = {};
     setIngressPublicBaseUrl("https://detected.example.com/");
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-self-hosted-key";
 
     globalThis.fetch = mock(
@@ -329,10 +329,10 @@ describe("platform callback registration", () => {
   test("self-hosted registerCallbackRoute omits callback_base_url when no ingress is available", async () => {
     mockIsPlatform = false;
     mockConfig = {};
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-self-hosted-key";
 
     globalThis.fetch = mock(
@@ -370,10 +370,10 @@ describe("platform callback registration", () => {
   test("platform-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
     mockIsPlatform = true;
     mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-managed-key";
 
     globalThis.fetch = mock(
@@ -431,10 +431,10 @@ describe("resolveCallbackUrl resolution order", () => {
   }
 
   function seedPlatformCredentials(): void {
-    mockSecureKeys[credentialKey("vellum", "platform_base_url")] =
+    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
       "https://platform.example.com";
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("vellum", "assistant_api_key")] =
+    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "ast-managed-key";
   }
 

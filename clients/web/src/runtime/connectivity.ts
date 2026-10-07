@@ -12,7 +12,7 @@ export function subscribeToConnectivity(
   if (!isElectron()) {
     return () => undefined;
   }
-  return window.vellum?.connectivity?.onState(callback) ?? (() => undefined);
+  return window.cadet?.connectivity?.onState(callback) ?? (() => undefined);
 }
 
 /**
@@ -23,7 +23,7 @@ export function reportDeviceOnline(online: boolean): void {
   if (!isElectron()) {
     return;
   }
-  window.vellum?.connectivity?.setDevice(online);
+  window.cadet?.connectivity?.setDevice(online);
 }
 
 /** Resolves null off Electron, when the bridge is unavailable, or when the
@@ -47,7 +47,7 @@ async function pullConnectivityState(
  * focus).
  */
 export function getConnectivityState(): Promise<ConnectivityState | null> {
-  return pullConnectivityState(() => window.vellum?.connectivity?.get());
+  return pullConnectivityState(() => window.cadet?.connectivity?.get());
 }
 
 /**
@@ -56,5 +56,5 @@ export function getConnectivityState(): Promise<ConnectivityState | null> {
  * banner state desynced from main.
  */
 export function retryConnectivity(): Promise<ConnectivityState | null> {
-  return pullConnectivityState(() => window.vellum?.connectivity?.retry());
+  return pullConnectivityState(() => window.cadet?.connectivity?.retry());
 }

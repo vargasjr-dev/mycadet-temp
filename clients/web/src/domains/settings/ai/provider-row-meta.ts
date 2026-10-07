@@ -20,7 +20,7 @@ const DEFAULT_PROVIDER_ELIGIBLE: Record<DefaultProviderId, true> = {
   fireworks: true,
   openrouter: true,
   chatgpt: true,
-  vellum: true,
+  cadet: true,
   together: true,
   "vercel-ai-gateway": true,
   minimax: true,

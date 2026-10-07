@@ -59,8 +59,8 @@ import type {
   SystemPermissionsState,
   TextInsertionResult,
   UpdateState,
-  VellumBridge,
-  VellumCommand,
+  CadetBridge,
+  CadetCommand,
   VoiceActivityContent,
   VoiceActivityControl,
   VoiceActivityStart,
@@ -118,12 +118,12 @@ export type {
   SystemPermissionsState,
   TextInsertionResult,
   UpdateState,
-  VellumBridge,
-  VellumCommand,
+  CadetBridge,
+  CadetCommand,
 };
 
 const notImplemented = (name: string) => (): Promise<never> =>
-  Promise.reject(new Error(`window.vellum.${name} is not implemented yet`));
+  Promise.reject(new Error(`window.cadet.${name} is not implemented yet`));
 
 const subscribeDictationEvent =
   (channel: string) =>
@@ -142,7 +142,7 @@ const subscribeDictationEvent =
 
 const fileOpenBridge = createFileOpenPreloadBridge({ ipcRenderer, webUtils });
 
-const bridge: VellumBridge = {
+const bridge: CadetBridge = {
   platform: "electron",
   hostOS: "macos",
   app: {
@@ -296,7 +296,7 @@ const bridge: VellumBridge = {
       ) as Promise<SystemPermissionsState>,
     request: (
       kind: SystemPermissionKind,
-      presentation?: Parameters<VellumBridge["permissions"]["request"]>[1],
+      presentation?: Parameters<CadetBridge["permissions"]["request"]>[1],
     ): Promise<SystemPermissionStateItem> =>
       (presentation
         ? ipcRenderer.invoke("cadet:permissions:request", kind, presentation)
@@ -328,7 +328,7 @@ const bridge: VellumBridge = {
   },
   commands: {
     on: (callback) => {
-      const handler = (_event: IpcRendererEvent, command: VellumCommand) => {
+      const handler = (_event: IpcRendererEvent, command: CadetCommand) => {
         callback(command);
       };
       ipcRenderer.on("cadet:command", handler);
@@ -449,7 +449,7 @@ const bridge: VellumBridge = {
       ipcRenderer.invoke("cadet:commandPalette:open") as Promise<void>,
     dismiss: (): Promise<void> =>
       ipcRenderer.invoke("cadet:commandPalette:dismiss") as Promise<void>,
-    select: (command: VellumCommand): Promise<void> =>
+    select: (command: CadetCommand): Promise<void> =>
       ipcRenderer.invoke(
         "cadet:commandPalette:select",
         command,
@@ -754,16 +754,16 @@ const bridge: VellumBridge = {
   update: createUpdateBridge(ipcRenderer),
 };
 
-contextBridge.exposeInMainWorld("vellum", bridge);
+contextBridge.exposeInMainWorld("cadet", bridge);
 
-const vellumConfig = ipcRenderer.sendSync("cadet:config:get") as {
+const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
   platformUrl: string;
   disablePlatform?: boolean;
   deviceId: string | null;
 } | null;
-if (vellumConfig) {
-  contextBridge.exposeInMainWorld("__VELLUM_CONFIG__", vellumConfig);
+if (cadetConfig) {
+  contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);
 }
 
 const flagOverrides: Record<string, boolean | string> = {};
@@ -780,12 +780,12 @@ for (const [key, value] of Object.entries(process.env)) {
   else flagOverrides[flagKey] = value.trim();
 }
 if (Object.keys(flagOverrides).length > 0) {
-  contextBridge.exposeInMainWorld("__VELLUM_FLAG_OVERRIDES__", flagOverrides);
+  contextBridge.exposeInMainWorld("__CADET_FLAG_OVERRIDES__", flagOverrides);
 }
 
 declare global {
   interface Window {
-    vellum: VellumBridge;
-    __VELLUM_FLAG_OVERRIDES__?: Record<string, boolean | string>;
+    cadet: CadetBridge;
+    __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
   }
 }

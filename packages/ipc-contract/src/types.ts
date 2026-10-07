@@ -40,7 +40,7 @@ import { NOTIFICATION_AVATAR_MAX_LOCAL_BYTES } from "@mycadet/avatar-manifest/no
  */
 export const VOICE_START_REQUEST_TTL_MS = 60_000;
 
-export type VellumCommand =
+export type CadetCommand =
   | { kind: "newConversation" }
   | { kind: "currentConversation" }
   | { kind: "markCurrentUnread" }

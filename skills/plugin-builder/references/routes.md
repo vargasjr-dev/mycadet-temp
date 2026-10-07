@@ -63,18 +63,18 @@ A handler may also reach other Assistant capabilities through its `@mycadet/plug
 
 ## Calling a route from an app frontend
 
-A plugin [app](apps.md) that backs its data with the plugin's own routes must reach them through the `window.vellum.fetch` bridge — **never the global `fetch`**. An app runs in a sandboxed origin, so a raw `fetch` carries no gateway URL and no auth headers and the request fails; `window.vellum.fetch` injects both and routes the call to the Assistant runtime.
+A plugin [app](apps.md) that backs its data with the plugin's own routes must reach them through the `window.cadet.fetch` bridge — **never the global `fetch`**. An app runs in a sandboxed origin, so a raw `fetch` carries no gateway URL and no auth headers and the request fails; `window.cadet.fetch` injects both and routes the call to the Assistant runtime.
 
 Call the route at the same path it is served — `/x/plugins/<name>/<path>`. The wrapper prepends the `/v1` API prefix for you, so you never write it:
 
 ```ts
 // inside apps/<app>/src — calling this plugin's own status route
-const res = await window.vellum.fetch("/x/plugins/my-plugin/status");
+const res = await window.cadet.fetch("/x/plugins/my-plugin/status");
 if (!res.ok) throw new Error(`HTTP ${res.status}`);
 const data = await res.json();
 ```
 
-Authenticated callers (the plugin's own app, local tools) reach the same route over HTTP. Third-party vendors on the public internet must go through [plugin ingress](channels.md) instead; the `window.vellum.fetch` rule is specific to an app frontend's sandboxed origin. The bridge itself (`fetch`, `asset`, `subscribe`, `sendAction`) is owned by the **app-builder** skill.
+Authenticated callers (the plugin's own app, local tools) reach the same route over HTTP. Third-party vendors on the public internet must go through [plugin ingress](channels.md) instead; the `window.cadet.fetch` rule is specific to an app frontend's sandboxed origin. The bridge itself (`fetch`, `asset`, `subscribe`, `sendAction`) is owned by the **app-builder** skill.
 
 ## Loading and lifecycle
 

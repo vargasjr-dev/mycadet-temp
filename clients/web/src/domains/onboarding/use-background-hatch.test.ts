@@ -95,7 +95,7 @@ mock.module("@/lib/local-mode", () => ({
     await saveLockfileAssistantMock({
       assistantId,
       name,
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: "https://runtime.example",
       hatchedAt: new Date().toISOString(),
       organizationId,
@@ -109,7 +109,7 @@ mock.module("@/stores/organization-store", () => ({
     getState: () => ({ fetchOrganizations: fetchOrganizationsMock }),
   },
 }));
-// Whether the `Vellum-Organization-Id` source can answer yet. The managed hatch
+// Whether the `Cadet-Organization-Id` source can answer yet. The managed hatch
 // holds its platform sequence on this; a warm store (the default) is ready on
 // the first synchronous check and adds no delay.
 let orgReadiness: OrgHeaderReadiness = "ready";
@@ -366,7 +366,7 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    // Vellum-Cloud / managed path still provisions via hatchAssistant.
+    // Cadet-Cloud / managed path still provisions via hatchAssistant.
     expect(hatchAssistantMock).toHaveBeenCalledTimes(1);
   });
 
@@ -678,7 +678,7 @@ describe("useBackgroundHatch", () => {
     expect(saveLockfileAssistantMock.mock.calls[0][0]).toMatchObject({
       assistantId: "ast-research",
       name: "Research",
-      cloud: "vellum",
+      cloud: "cadet",
       runtimeUrl: "https://runtime.example",
       organizationId: "org-1",
     });
@@ -710,7 +710,7 @@ describe("useBackgroundHatch", () => {
   // -- local gateway routing ------------------------------------------------
   //
   // The paid funnel routes an org whose only assistants are local/self-hosted
-  // to the managed hatch (`hosting=vellum-cloud`), so `adoptExisting` is false
+  // to the managed hatch (`hosting=cadet-cloud`), so `adoptExisting` is false
   // while the desktop build still holds a live gateway token and a primed
   // self-hosted connection. Both would rewrite discovery, healthz and the
   // onboarding writes to the old local gateway.
@@ -796,7 +796,7 @@ describe("useBackgroundHatch", () => {
 
   // -- org header readiness -------------------------------------------------
   //
-  // Every platform call here is scoped by `Vellum-Organization-Id`, sourced
+  // Every platform call here is scoped by `Cadet-Organization-Id`, sourced
   // from a store that hydrates after auth. A checkout deep link can relaunch
   // the app straight into this hook before that lands, so the managed sequence
   // holds until the header source can answer.

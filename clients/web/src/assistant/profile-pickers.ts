@@ -219,7 +219,7 @@ export function undispatchableProfileReason(p: ProfilePickerEntry): string {
 }
 
 /**
- * The model a Vellum-managed profile currently runs on, as a display name.
+ * The model a Cadet-managed profile currently runs on, as a display name.
  *
  * Managed profiles are named for the tier they serve ("Balanced", "Speed"),
  * and the model behind a tier moves whenever Cadet repoints the pin, so the

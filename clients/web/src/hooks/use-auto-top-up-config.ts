@@ -6,7 +6,7 @@ import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 /**
  * The shared auto-top-up config query (saved payment method + auto-reload
  * state). Every rendered observer of this query key must come through here:
- * the endpoint needs the `Vellum-Organization-Id` header, which the
+ * the endpoint needs the `Cadet-Organization-Id` header, which the
  * interceptor only attaches once the active org id is known, and TanStack
  * Query shares one fetch per key across observers, so a single ungated
  * consumer firing before the org store hydrates would land the headerless

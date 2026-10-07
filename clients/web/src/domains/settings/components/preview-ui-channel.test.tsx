@@ -6,7 +6,7 @@ import { isPreviewRequested, setPreviewRequested } from "@/lib/preview-channel";
 let staff = true;
 
 mock.module("@/lib/auth/staff", () => ({
-  isVellumStaff: () => staff,
+  isCadetStaff: () => staff,
 }));
 
 mock.module("@/stores/auth-store", () => ({
@@ -58,7 +58,7 @@ describe("PreviewUiChannel", () => {
     expect(screen.getByText("Running: stable build unknown")).toBeDefined();
     expect(
       screen.getByText(
-        "No preview build is being served, so this browser is still on stable. Delete the vellum_preview cookie in devtools to reset.",
+        "No preview build is being served, so this browser is still on stable. Delete the cadet_preview cookie in devtools to reset.",
       ),
     ).toBeDefined();
   });

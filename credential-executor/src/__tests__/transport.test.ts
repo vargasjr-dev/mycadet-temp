@@ -384,10 +384,10 @@ describe("CES data paths", () => {
     }
   });
 
-  test("local data root is under the Vellum root, not the workspace", () => {
+  test("local data root is under the Cadet root, not the workspace", () => {
     const root = getCesDataRoot("local");
-    // Must be under .vellum/protected/, NOT .vellum/workspace/
-    expect(root).toMatch(/\.vellum[/\\]protected[/\\]/);
+    // Must be under .cadet/protected/, NOT .cadet/workspace/
+    expect(root).toMatch(/\.cadet[/\\]protected[/\\]/);
     expect(root).not.toMatch(/workspace/);
   });
 

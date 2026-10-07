@@ -407,7 +407,7 @@ describe("managedProfileModelName", () => {
         name: "balanced",
         label: "Balanced",
         source: "managed",
-        provider: "vellum",
+        provider: "cadet",
         model: "accounts/fireworks/models/glm-5p3",
       }),
     ).toBe("GLM 5.3");
@@ -459,7 +459,7 @@ describe("managedProfileModelName", () => {
       managedProfileModelName({
         name: "balanced",
         source: "managed",
-        provider: "vellum",
+        provider: "cadet",
         model: "accounts/fireworks/models/not-in-the-catalog",
       }),
     ).toBe("not-in-the-catalog");

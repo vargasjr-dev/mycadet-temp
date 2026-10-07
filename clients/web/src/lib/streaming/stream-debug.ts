@@ -11,7 +11,7 @@
  * (both `0`).
  *
  * Data is stored outside React state so it survives component unmounts and
- * can be inspected from the console via `window._vellumDebug.chat.events`.
+ * can be inspected from the console via `window._cadetDebug.chat.events`.
  *
  * The event ring is also load-bearing: it retains each event's envelope
  * metadata (`seq`, `conversationId`, `emittedAt`) so a resync can replay the

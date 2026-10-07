@@ -71,7 +71,7 @@ export function resolveSelectedAssistantId(
  * honored on every surface.
  * Gateway-auth mode and a missing org id return null: callers apply their own
  * fallback. The org id comes from the same derivation the
- * `Vellum-Organization-Id` header uses (the resolved selection, or the
+ * `Cadet-Organization-Id` header uses (the resolved selection, or the
  * persisted id standing in for it), so a failed organization fetch cannot
  * drop the user's choice. Subscribes to the org, the selection, the resolved
  * list, and its hydration marker so consumers re-render when any resolution

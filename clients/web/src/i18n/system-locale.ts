@@ -14,7 +14,7 @@
  *   (macOS "Region" set to Spain while the UI stays English), and it is
  *   sampled once at launch, so a locale change mid-session is not observed.
  *   Closing that means reading `app.getPreferredSystemLanguages()` in the main
- *   process and exposing it over the `window.vellum` bridge. See
+ *   process and exposing it over the `window.cadet` bridge. See
  *   `docs/ELECTRON.md` for the three-file bridge pattern. Deferred: it needs
  *   preload + main + contract changes, and the launch-time value is correct
  *   for the overwhelming majority of users.

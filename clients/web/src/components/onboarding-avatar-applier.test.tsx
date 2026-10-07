@@ -97,7 +97,7 @@ describe("OnboardingAvatarApplier", () => {
       path: { assistant_id: "asst-1" },
       body: {
         services: {
-          tts: { providers: { vellum: { model: "aura-2-luna-en" } } },
+          tts: { providers: { cadet: { model: "aura-2-luna-en" } } },
         },
       },
       throwOnError: false,

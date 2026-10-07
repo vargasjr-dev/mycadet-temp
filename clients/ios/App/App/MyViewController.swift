@@ -40,7 +40,7 @@ import WebKit
 ///    Eligibility is pushed by the web layer as a `{ canReply }` flag through
 ///    the `vellumTextSelection` script-message handler (primed on
 ///    `pointerdown`, kept in sync on `selectionchange`); tapping the item
-///    calls back into the web bridge (`window.__vellumQuoteReplyFromSelection`)
+///    calls back into the web bridge (`window.__cadetQuoteReplyFromSelection`)
 ///    which opens the reply bubble.
 ///    See `clients/web/src/domains/chat/hooks/use-native-quote-reply.ts`.
 ///
@@ -771,7 +771,7 @@ final class QuoteReplyWebView: WKWebView {
         guard #available(iOS 16.0, *), canQuoteReply else { return }
         let replyAction = UIAction(title: "Reply") { [weak self] _ in
             self?.evaluateJavaScript(
-                "window.__vellumQuoteReplyFromSelection && window.__vellumQuoteReplyFromSelection()"
+                "window.__cadetQuoteReplyFromSelection && window.__cadetQuoteReplyFromSelection()"
             )
         }
         let replyMenu = UIMenu(

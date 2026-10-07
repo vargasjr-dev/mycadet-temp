@@ -46,13 +46,13 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "asst-test",
 }));
 
-let vellumHostedInference = true;
+let cadetHostedInference = true;
 let hasHydrated = true;
 
 mock.module("@/stores/assistant-feature-flag-store", () => {
   const store = () => null;
   store.use = {
-    vellumHostedInference: () => vellumHostedInference,
+    cadetHostedInference: () => cadetHostedInference,
     hasHydrated: () => hasHydrated,
   };
   return { useAssistantFeatureFlagStore: store };
@@ -85,7 +85,7 @@ function renderPage() {
 describe("SettingsPersonalityPage", () => {
   beforeEach(() => {
     mock.clearAllMocks();
-    vellumHostedInference = true;
+    cadetHostedInference = true;
     hasHydrated = true;
     fetchPersonalitySliders.mockImplementation(async () => {
       return Object.fromEntries(
@@ -149,7 +149,7 @@ describe("SettingsPersonalityPage", () => {
   });
 
   test("redirects to General when hosted inference is off", () => {
-    vellumHostedInference = false;
+    cadetHostedInference = false;
     renderPage();
     expect(screen.getByText("General settings")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Save" })).toBeNull();

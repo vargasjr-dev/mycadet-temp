@@ -68,12 +68,12 @@ async function resolvePlatformClientConfig(): Promise<PlatformClientConfig | nul
   // Fall back to credential store for values not yet rehydrated (standalone CLI).
   if (!baseUrl) {
     baseUrl =
-      (await getSecureKeyAsync(credentialKey("vellum", "platform_base_url"))) ??
+      (await getSecureKeyAsync(credentialKey("cadet", "platform_base_url"))) ??
       "";
   }
   if (!apiKey) {
     apiKey =
-      (await getSecureKeyAsync(credentialKey("vellum", "assistant_api_key"))) ??
+      (await getSecureKeyAsync(credentialKey("cadet", "assistant_api_key"))) ??
       "";
   }
 

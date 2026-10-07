@@ -32,9 +32,9 @@ import {
 import { deriveTranscriptImagePresentation } from "@/domains/chat/transcript/computer-use-image-presentation";
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import {
-  VellumFileActionModal,
-  type VellumFileActionTarget,
-} from "@/domains/chat/components/vellum-file-action-modal";
+  CadetFileActionModal,
+  type CadetFileActionTarget,
+} from "@/domains/chat/components/cadet-file-action-modal";
 import { toast } from "@mycadet/design-library";
 import { MessageHoverActions } from "@/domains/chat/components/message-hover-actions/message-hover-actions";
 import { MessageLongPressActions } from "@/domains/chat/components/message-hover-actions/message-long-press-actions";
@@ -546,20 +546,20 @@ export function TranscriptMessageBody({
     useViewerStore.getState().openBackgroundTaskDetail(id);
   }, []);
 
-  // The `vellum://` file link awaiting an action choice in the modal, plus
+  // The `cadet://` file link awaiting an action choice in the modal, plus
   // the context needed to execute either action.
-  const [pendingVellumFile, setPendingVellumFile] = useState<
-    | (VellumFileActionTarget & {
+  const [pendingCadetFile, setPendingCadetFile] = useState<
+    | (CadetFileActionTarget & {
         attachment?: NonNullable<DisplayMessage["attachments"]>[number];
         isHost: boolean;
       })
     | null
   >(null);
 
-  const handleVellumLinkClick = useCallback(
+  const handleCadetLinkClick = useCallback(
     (href: string, linkText: string) => {
       const rawBasename = href.split("/").pop() ?? "";
-      // The daemon percent-decodes vellum:// paths before storing attachment
+      // The daemon percent-decodes cadet:// paths before storing attachment
       // filenames, so match on the decoded basename. Keep the raw form as a
       // defensive fallback for malformed encodings.
       const pathBasename = safeDecodeURIComponent(rawBasename);
@@ -580,30 +580,30 @@ export function TranscriptMessageBody({
         message.attachments?.find((a) => a.filename === linkText) ??
         message.attachments?.find((a) => a.filename === pathBasename) ??
         message.attachments?.find((a) => a.filename === rawBasename);
-      const WORKSPACE_PREFIX = "vellum://workspace/";
-      setPendingVellumFile({
+      const WORKSPACE_PREFIX = "cadet://workspace/";
+      setPendingCadetFile({
         filename: attachment?.filename ?? expectedFilename,
         workspacePath: href.startsWith(WORKSPACE_PREFIX)
           ? safeDecodeURIComponent(href.slice(WORKSPACE_PREFIX.length))
           : undefined,
         attachment,
-        isHost: href.startsWith("vellum://host/"),
+        isHost: href.startsWith("cadet://host/"),
       });
     },
     [message.attachments],
   );
 
   const handleGoToPendingFile = useCallback(() => {
-    const workspacePath = pendingVellumFile?.workspacePath;
-    setPendingVellumFile(null);
+    const workspacePath = pendingCadetFile?.workspacePath;
+    setPendingCadetFile(null);
     if (workspacePath) {
       void openWorkspaceFile(workspacePath);
     }
-  }, [pendingVellumFile]);
+  }, [pendingCadetFile]);
 
   const handleDownloadPendingFile = useCallback(() => {
-    const pending = pendingVellumFile;
-    setPendingVellumFile(null);
+    const pending = pendingCadetFile;
+    setPendingCadetFile(null);
     if (!pending) {
       return;
     }
@@ -612,7 +612,7 @@ export function TranscriptMessageBody({
     } else if (pending.workspacePath) {
       // Fallback for files not registered as message attachments — e.g.
       // files linked only inside component/surface HTML. The daemon's
-      // cleanAssistantContent only extracts vellum:// links from assistant
+      // cleanAssistantContent only extracts cadet:// links from assistant
       // TEXT blocks, not from dynamic_page surface HTML, so a file cited
       // only in a component never becomes an attachment. Fetch it by path
       // from the workspace file content endpoint instead — the same route
@@ -643,14 +643,14 @@ export function TranscriptMessageBody({
         { description: pending.filename },
       );
     }
-  }, [pendingVellumFile, assistantId, t]);
+  }, [pendingCadetFile, assistantId, t]);
 
-  const vellumFileModal = (
-    <VellumFileActionModal
-      target={pendingVellumFile}
+  const cadetFileModal = (
+    <CadetFileActionModal
+      target={pendingCadetFile}
       onGoToFile={handleGoToPendingFile}
       onDownload={handleDownloadPendingFile}
-      onClose={() => setPendingVellumFile(null)}
+      onClose={() => setPendingCadetFile(null)}
     />
   );
 
@@ -704,7 +704,7 @@ export function TranscriptMessageBody({
                     assistantId={assistantId}
                     assistantDisplayName={assistantDisplayName}
                     toolCalls={message.toolCalls}
-                    onVellumLinkClick={handleVellumLinkClick}
+                    onCadetLinkClick={handleCadetLinkClick}
                   />
                 </div>
               );
@@ -719,7 +719,7 @@ export function TranscriptMessageBody({
                   content={seg.content}
                   className={markdownClass}
                   hardLineBreaks
-                  onVellumLinkClick={handleVellumLinkClick}
+                  onCadetLinkClick={handleCadetLinkClick}
                   attachments={message.attachments}
                   assistantId={assistantId}
                   streamWordFade={streamWordFade}
@@ -741,7 +741,7 @@ export function TranscriptMessageBody({
           content={text}
           className={markdownClass}
           hardLineBreaks
-          onVellumLinkClick={handleVellumLinkClick}
+          onCadetLinkClick={handleCadetLinkClick}
           attachments={message.attachments}
           assistantId={assistantId}
           streamWordFade={streamWordFade}
@@ -945,7 +945,7 @@ export function TranscriptMessageBody({
           onOpenDocument={onOpenDocument}
           assistantId={assistantId}
           toolCalls={message.toolCalls}
-          onVellumLinkClick={handleVellumLinkClick}
+          onCadetLinkClick={handleCadetLinkClick}
         />
       </div>
     );
@@ -1338,7 +1338,7 @@ export function TranscriptMessageBody({
           {renderUserContent(userItems)}
           {trailer}
         </div>
-        {vellumFileModal}
+        {cadetFileModal}
         {isTouch && (
           <div onClick={(e) => e.stopPropagation()}>
             <MessageLongPressActions
@@ -1567,7 +1567,7 @@ export function TranscriptMessageBody({
         {responseArtifactCards}
         {trailer}
       </div>
-      {vellumFileModal}
+      {cadetFileModal}
       {screenshotTransition.previewModal}
       {isTouch && !isAssistant && (
         <div onClick={(e) => e.stopPropagation()}>

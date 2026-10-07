@@ -52,9 +52,9 @@ If found, the app depends on the Vellum bridge and needs a shim to work standalo
 
 ### 2. Create Vellum Bridge Shim
 
-The app uses `window.vellum.*` APIs that are normally injected by the Vellum viewer. For standalone deployment, create a `vellum-shim.js` file in the app's `dist/` directory that provides browser-native replacements.
+The app uses `window.cadet.*` APIs that are normally injected by the Vellum viewer. For standalone deployment, create a `vellum-shim.js` file in the app's `dist/` directory that provides browser-native replacements.
 
-**Before writing the shim, read the app's compiled JavaScript** (`dist/main.js` or equivalent) to understand exactly which `window.vellum.*` APIs the app calls and what data shapes it expects. The shim must match the app's actual usage — don't guess at signatures.
+**Before writing the shim, read the app's compiled JavaScript** (`dist/main.js` or equivalent) to understand exactly which `window.cadet.*` APIs the app calls and what data shapes it expects. The shim must match the app's actual usage — don't guess at signatures.
 
 **Common APIs to shim (implement only what the app actually uses):**
 
@@ -70,7 +70,7 @@ The app uses `window.vellum.*` APIs that are normally injected by the Vellum vie
 | `vellum.widgets.toast(msg)`   | Create a temporary styled `<div>` that auto-dismisses |                                                                                                                          |
 | `vellum.route`                | `null`                                                | Deep-link routes aren't available standalone                                                                             |
 
-**Structure:** Wrap everything in an IIFE that guards against the real bridge: `(function() { if (window.vellum) return; ... })();`
+**Structure:** Wrap everything in an IIFE that guards against the real bridge: `(function() { if (window.cadet) return; ... })();`
 
 ### 3. Inject the Shim into index.html
 

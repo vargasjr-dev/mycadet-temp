@@ -19,13 +19,13 @@ function getDefaultEnvironment(): EnvironmentConfig {
 
   let emailRootDomain: string;
   if (!env || env === "local") {
-    emailRootDomain = "local.vellum.me";
+    emailRootDomain = "local.cadet.me";
   } else if (env === "dev") {
-    emailRootDomain = "dev.vellum.me";
+    emailRootDomain = "dev.cadet.me";
   } else if (env === "staging") {
-    emailRootDomain = "staging.vellum.me";
+    emailRootDomain = "staging.cadet.me";
   } else {
-    emailRootDomain = "vellum.me";
+    emailRootDomain = "cadet.me";
   }
 
   return { emailRootDomain, isNonProduction };

@@ -18,7 +18,7 @@
  * floor to a predicted release number").
  *
  * Async and owner-scoped for the same reasons as
- * `vellum-profile-provider.ts` (the PR 14 precedent): this gates a WRITE
+ * `cadet-profile-provider.ts` (the PR 14 precedent): this gates a WRITE
  * path whose legacy fallback newer daemons merely tolerate, so the check
  * awaits a hydrated version, and a supplied `ownerAssistantId` must match
  * the hydrated identity exactly; an un-owned or mismatched identity gates

@@ -60,8 +60,8 @@ afterEach(() => {
   rejectAndroidFeedbackClient = false;
   staffUser = false;
   downloadedFiles.length = 0;
-  delete (window as unknown as { _vellumDebug?: unknown })._vellumDebug;
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { _cadetDebug?: unknown })._cadetDebug;
+  delete (window as unknown as { cadet?: unknown }).cadet;
 });
 
 /** Decompress a logs_file and return the raw tar text. */
@@ -240,7 +240,7 @@ describe("ShareFeedbackModal", () => {
   });
 
   test("reports the desktop release version from the Electron host", async () => {
-    (window as unknown as { vellum: unknown }).vellum = {
+    (window as unknown as { cadet: unknown }).cadet = {
       platform: "electron",
       app: {
         versionInfo: async () => ({ version: "1.2.3" }),
@@ -368,7 +368,7 @@ describe("diagnostics capture base64 stripping", () => {
         },
       ],
     };
-    (window as unknown as { _vellumDebug?: unknown })._vellumDebug = {
+    (window as unknown as { _cadetDebug?: unknown })._cadetDebug = {
       chat: {
         getClientMessages: () => [message],
         getTranscriptItems: () => [{ kind: "message", key: "m1", message }],
@@ -407,7 +407,7 @@ describe("diagnostics capture base64 stripping", () => {
       textSegments: [prose],
       contentBlocks: [{ type: "text", text: prose }],
     };
-    (window as unknown as { _vellumDebug?: unknown })._vellumDebug = {
+    (window as unknown as { _cadetDebug?: unknown })._cadetDebug = {
       chat: {
         getClientMessages: () => [message],
         getTranscriptItems: () => [{ kind: "message", key: "m1", message }],

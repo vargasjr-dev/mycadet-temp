@@ -58,7 +58,7 @@ function makeRaw(id: string, lastMessageAt = 0): RawConversationSummary {
     updatedAt: 0,
     lastMessageAt,
     conversationType: "standard",
-    source: "vellum",
+    source: "cadet",
     groupId: "",
     isProcessing: false,
   } as RawConversationSummary;

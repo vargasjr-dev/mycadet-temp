@@ -117,7 +117,7 @@ export async function scrubStoredCredentialFromTranscripts(
 }
 
 /**
- * The vellum platform identity ids and base URL are stored through the
+ * The Cadet platform identity ids and base URL are stored through the
  * credential routes but are not secrets — they are UUIDs/URLs that
  * legitimately appear in conversation text, so scrubbing them would redact
  * benign transcript content. Both credential write paths
@@ -129,7 +129,7 @@ export function isNonSecretPlatformField(
   field: string,
 ): boolean {
   return (
-    service === "vellum" &&
+    service === "cadet" &&
     (field === "platform_assistant_id" ||
       field === "platform_organization_id" ||
       field === "platform_user_id" ||

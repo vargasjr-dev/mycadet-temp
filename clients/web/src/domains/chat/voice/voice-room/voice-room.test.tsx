@@ -245,7 +245,7 @@ mock.module("@/components/speech/use-stt-language-selection", () => ({
   useSttLanguageSelection: () => ({
     available: false,
     currentCode: "",
-    configuredProviderId: "vellum",
+    configuredProviderId: "cadet",
     selectLanguage: () => {},
     selecting: false,
   }),

@@ -1,15 +1,15 @@
 /**
- * Ambient declaration of the `window.vellum` bridge exposed by the Electron
+ * Ambient declaration of the `window.cadet` bridge exposed by the Electron
  * preload script (see `clients/macos/src/preload/index.ts`). Types are imported
  * from `@mycadet/ipc-contract` — the single source of truth for IPC payload
  * shapes shared by main, preload, and renderer.
  *
- * Feature code in `clients/web/` should NOT call `window.vellum.*` directly.
+ * Feature code in `clients/web/` should NOT call `window.cadet.*` directly.
  * Instead, wrap each persisted capability in a per-feature module under
  * `clients/web/src/runtime/` with named functions (see `native-biometric.ts`
  * for the established shape: `isBiometricEnabled()` / `setBiometricEnabled()`).
  * The module owns the cross-platform branch — `isElectron()` calls into
- * `window.vellum`, `isNativePlatform()` calls Capacitor, and the web branch
+ * `window.cadet`, `isNativePlatform()` calls Capacitor, and the web branch
  * uses `localStorage` — so consumers stay platform-agnostic.
  */
 import type {
@@ -84,8 +84,8 @@ import type {
   TitleBarOverlayTheme,
   UpdateState,
   UpdateStatus,
-  VellumCommand,
-  VellumBridge,
+  CadetCommand,
+  CadetBridge,
   VoiceActivityContent,
   VoiceActivityControl,
   VoiceActivityControlAction,
@@ -130,7 +130,7 @@ export type {
   SystemPermissionsState,
   UpdateState,
   UpdateStatus,
-  VellumCommand,
+  CadetCommand,
   VoiceActivityContent,
   VoiceActivityControl,
   VoiceActivityControlAction,
@@ -140,16 +140,16 @@ export type {
 };
 
 // ─── Window augmentation ────────────────────────────────────────────────
-// The renderer's `window.vellum` declaration intentionally marks many
+// The renderer's `window.cadet` declaration intentionally marks many
 // capability groups optional for version-skew tolerance: a newer renderer
 // can run against an older Electron preload that predates a channel.
-// The `VellumBridge` interface in the contract represents the canonical
+// The `CadetBridge` interface in the contract represents the canonical
 // (fully-wired) shape; the global declaration below is the renderer's
 // defensive view that guards on presence.
 
 declare global {
   interface Window {
-    vellum?: {
+    cadet?: {
       platform: "electron";
       hostOS?: ElectronHostOS;
       app: {
@@ -223,9 +223,9 @@ declare global {
           ): () => void;
         };
       };
-      permissions?: VellumBridge["permissions"];
+      permissions?: CadetBridge["permissions"];
       commands: {
-        on(callback: (command: VellumCommand) => void): () => void;
+        on(callback: (command: CadetCommand) => void): () => void;
       };
       status?: {
         setConnection(status: AssistantStatus): void;
@@ -356,7 +356,7 @@ declare global {
       commandPalette?: {
         open(): Promise<void>;
         dismiss(): Promise<void>;
-        select(command: VellumCommand): Promise<void>;
+        select(command: CadetCommand): Promise<void>;
       };
       dictationOverlay?: {
         setState(state: DictationOverlayMessage): void;
@@ -491,6 +491,6 @@ declare global {
  */
 export function isElectron(): boolean {
   return (
-    typeof window !== "undefined" && window.vellum?.platform === "electron"
+    typeof window !== "undefined" && window.cadet?.platform === "electron"
   );
 }

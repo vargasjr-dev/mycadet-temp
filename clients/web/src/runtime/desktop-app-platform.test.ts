@@ -38,14 +38,14 @@ function setElectronHost(hostOS: "macos" | "windows"): void {
   electron = true;
   (
     window as unknown as {
-      vellum?: { platform: "electron"; hostOS: "macos" | "windows" };
+      cadet?: { platform: "electron"; hostOS: "macos" | "windows" };
     }
-  ).vellum = { platform: "electron", hostOS };
+  ).cadet = { platform: "electron", hostOS };
 }
 
 afterEach(() => {
   electron = false;
-  delete (window as unknown as { vellum?: unknown }).vellum;
+  delete (window as unknown as { cadet?: unknown }).cadet;
   setUserAgent(ORIGINAL_UA);
   setPlatform(ORIGINAL_PLATFORM);
   setUserAgentPlatform();

@@ -29,7 +29,7 @@ async function rehydrateField(
   label: string,
 ): Promise<void> {
   try {
-    const key = credentialKey("vellum", name);
+    const key = credentialKey("cadet", name);
     const persisted = (await getSecureKeyAsync(key))?.trim();
     if (persisted) {
       apply(persisted);

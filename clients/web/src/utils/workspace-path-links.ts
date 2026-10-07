@@ -15,7 +15,7 @@ export const WORKSPACE_PATH_TAG = "workspace-path";
 /**
  * Absolute paths are only recognized below a `/workspace/` root. The mount
  * point differs by deployment — hosted assistants run with the workspace at
- * `/workspace`, desktop installs use `~/.vellum/workspace` — so we anchor on
+ * `/workspace`, desktop installs use `~/.cadet/workspace` — so we anchor on
  * the last `/workspace/` segment instead of a fixed prefix. An absolute path
  * with no such segment is a host path and is left alone.
  */
@@ -107,11 +107,11 @@ export function workspaceBasenameOf(relativePath: string): string {
 }
 
 /**
- * Build the `vellum://workspace/` href for a confirmed path. Segments are
+ * Build the `cadet://workspace/` href for a confirmed path. Segments are
  * percent-encoded individually so the click handler's `decodeURIComponent`
  * round-trips back to the stored path.
  */
-export function toVellumWorkspaceHref(relativePath: string): string {
+export function toCadetWorkspaceHref(relativePath: string): string {
   const encoded = relativePath.split("/").map(encodeURIComponent).join("/");
-  return `vellum://workspace/${encoded}`;
+  return `cadet://workspace/${encoded}`;
 }

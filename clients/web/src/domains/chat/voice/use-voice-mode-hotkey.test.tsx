@@ -211,11 +211,11 @@ describe("useVoiceModeHotkey", () => {
 
   describe("bare-modifier taps on the Windows desktop host", () => {
     const setHostOS = (hostOS: string | undefined) => {
-      const w = window as unknown as { vellum?: { hostOS?: string } };
+      const w = window as unknown as { cadet?: { hostOS?: string } };
       if (hostOS === undefined) {
-        delete w.vellum;
+        delete w.cadet;
       } else {
-        w.vellum = { hostOS };
+        w.cadet = { hostOS };
       }
     };
 

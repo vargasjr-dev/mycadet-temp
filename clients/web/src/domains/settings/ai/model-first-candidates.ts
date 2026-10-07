@@ -91,7 +91,7 @@ export interface ModelFirstOption {
 
 export interface ModelFirstInput {
   readonly connections: readonly ProviderConnection[];
-  /** Whether Vellum-hosted GPU catalog entries are visible. */
+  /** Whether Cadet-hosted GPU catalog entries are visible. */
   readonly hostedInference: boolean;
   readonly activeAssistantIsSelfHosted: boolean;
   /** Provider id to display name. */

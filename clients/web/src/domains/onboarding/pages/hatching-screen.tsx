@@ -177,11 +177,11 @@ export function HatchingScreen() {
   const pluginParam = searchParams.get(ATTRIBUTED_PLUGIN_PARAM);
   const electron = isElectron();
   const useLocalHatch =
-    isLocalClient() && hostingParam !== null && hostingParam !== "vellum-cloud";
-  // `hosting=vellum-cloud` names a managed hatch even in a local-mode build
+    isLocalClient() && hostingParam !== null && hostingParam !== "cadet-cloud";
+  // `hosting=cadet-cloud` names a managed hatch even in a local-mode build
   // (see `adopt-existing-assistant`): the assistant is provisioned on the
   // platform, so its purchased machine and storage are waited for.
-  const managedHatch = hostingParam === "vellum-cloud";
+  const managedHatch = hostingParam === "cadet-cloud";
   // This hatch is the return leg of a completed checkout — only the
   // post-checkout funnel sets the param, and only for a billing landing
   // carrying Stripe's `session_id`. `managedHatch` is NOT a substitute: it

@@ -24,7 +24,7 @@
  *
  *   POST /v1/auth/live-voice-token/
  *     Auth:     Django SessionAuthentication — session cookie + CSRF
- *               (`X-CSRFToken`) + `Vellum-Organization-Id`, all attached
+ *               (`X-CSRFToken`) + `Cadet-Organization-Id`, all attached
  *               automatically by the platform HeyAPI client interceptor.
  *               Do NOT hand-roll an `Authorization` header.
  *     Request:  { assistantId: string }
@@ -35,7 +35,7 @@
  *
  * We call the generated platform SDK function `authLiveVoiceTokenCreate`, which
  * routes through the platform `client` — that interceptor attaches the session
- * cookie + CSRF + `Vellum-Organization-Id`.
+ * cookie + CSRF + `Cadet-Organization-Id`.
  *
  * This module is the route-agnostic gateway WS transport shared by live voice,
  * watch (`domains/chat/watch`), and the assistant desktop (`domains/chat/desktop`).
@@ -87,7 +87,7 @@ function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
  * Mint a short-lived, user+org+assistant-scoped tunnel WS token.
  *
  * POSTs `/v1/auth/live-voice-token/` through the credentialed platform client
- * so the session cookie, CSRF token, and `Vellum-Organization-Id` ride along
+ * so the session cookie, CSRF token, and `Cadet-Organization-Id` ride along
  * automatically (see the module doc comment for the contract).
  *
  * Named for tunnel rather than for live voice because the token is not a

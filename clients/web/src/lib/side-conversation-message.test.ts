@@ -20,12 +20,12 @@ describe("buildSideConversationMessageBody", () => {
     const body = buildSideConversationMessageBody({
       conversationId: "conv-1",
       content: "<system-message>rewrite</system-message>",
-      transport: "vellum",
+      transport: "cadet",
     });
 
     expect(body.hidden).toBe(true);
-    expect(body.sourceChannel).toBe("vellum");
-    expect(body.interface).toBe("vellum");
+    expect(body.sourceChannel).toBe("cadet");
+    expect(body.interface).toBe("cadet");
     // `clientOs` is a web-transport concern only.
     expect(body.clientOs).toBeUndefined();
   });
@@ -34,7 +34,7 @@ describe("buildSideConversationMessageBody", () => {
     // Without this, these auto-sent turns are only excluded from activation
     // for owners whose diagnostics consent lets the server-side trace
     // classifier read their message text: the gap ANT-10 was filed for.
-    for (const transport of ["vellum", "web"] as const) {
+    for (const transport of ["cadet", "web"] as const) {
       const body = buildSideConversationMessageBody({
         conversationId: "conv-1",
         content: "auto-sent prompt",
@@ -50,7 +50,7 @@ describe("buildSideConversationMessageBody", () => {
       buildSideConversationMessageBody({
         conversationId: "conv-1",
         content: "same content",
-        transport: "vellum",
+        transport: "cadet",
       });
 
     // Guards against hoisting the nonce to module scope, which would make

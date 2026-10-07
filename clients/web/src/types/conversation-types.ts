@@ -44,7 +44,7 @@ export interface Conversation {
   channelBinding?: ConversationChannelBinding;
   /**
    * Channel of origin for this conversation, e.g. `"slack"`, `"telegram"`,
-   * `"phone"`, `"vellum"`, or `"notification:*"`. Sourced from the daemon's
+   * `"phone"`, `"cadet"`, or `"notification:*"`. Sourced from the daemon's
    * `channelBinding.sourceChannel` (when present) and falling back to
    * `conversationOriginChannel`. Used by `isChannelConversation` to gate
    * the native-only edit/undo/recall path on web (and read-only rendering

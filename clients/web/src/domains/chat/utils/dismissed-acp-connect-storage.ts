@@ -6,7 +6,7 @@
 // in-memory dismissed set is enough for the current page; this list is what a
 // cold load consults before re-raising that same failed spawn. Scoped to the
 // tool-use id, so a later spawn (fresh id) still raises a card. Cleared on
-// logout with the rest of the `vellum:` user-scoped keys.
+// logout with the rest of the `cadet:` user-scoped keys.
 
 import { parseStringArray } from "@/domains/chat/utils/storage-validators";
 import { createStorageAccessor } from "@/utils/typed-storage";

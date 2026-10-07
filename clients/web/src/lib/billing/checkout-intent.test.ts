@@ -7,7 +7,7 @@ import {
   saveCheckoutIntent,
 } from "@/lib/billing/checkout-intent";
 
-const STORAGE_KEY = "vellum.pro-checkout-intent";
+const STORAGE_KEY = "cadet.pro-checkout-intent";
 
 beforeEach(() => {
   sessionStorage.clear();

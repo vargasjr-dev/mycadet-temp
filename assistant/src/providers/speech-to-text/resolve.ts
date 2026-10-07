@@ -21,20 +21,6 @@ import {
 
 const log = getLogger("stt-resolver");
 
-/**
- * Legacy pre-rebrand managed provider ids, mapped to their canonical catalog
- * ids so configs and call sites persisted before the rename keep resolving.
- */
-function canonicalSttProviderId(id: SttProviderId): SttProviderId {
-  if (id === ("vellum" as SttProviderId)) {
-    return "cadet";
-  }
-  if (id === ("vellum-flux" as SttProviderId)) {
-    return "cadet-flux";
-  }
-  return id;
-}
-
 // ---------------------------------------------------------------------------
 // Default spoken language
 // ---------------------------------------------------------------------------
@@ -148,9 +134,7 @@ export async function resolveBatchTranscriber(
   // Snapshot the stt config once, before any await, so a concurrent config
   // change cannot pair one setting's old value with another's new value.
   const stt = getConfig().services.stt;
-  const provider = canonicalSttProviderId(
-    sttCatalogKeyForRole(stt, options.role),
-  );
+  const provider = sttCatalogKeyForRole(stt, options.role);
   logRoleSelection(options.role, provider, resolveSttCatalogKey(stt));
   const language = effectiveSttLanguage(
     provider as SttProviderId,
@@ -177,7 +161,7 @@ export async function resolveBatchTranscriber(
     // language to Deepgram server-side. A platform build predating that
     // field ignores it rather than failing, so the daemon can send one
     // before the platform side deploys.
-    return (await sttProviderKeyResolves("vellum"))
+    return (await sttProviderKeyResolves("cadet"))
       ? createDaemonBatchTranscriber(null, "cadet", language)
       : null;
   }
@@ -470,9 +454,7 @@ export async function resolveStreamingTranscriber(
   // change cannot pair one setting's old value with another's new value
   // (e.g. the old provider with the new language).
   const stt = getConfig().services.stt;
-  const provider = canonicalSttProviderId(
-    options.providerId ?? sttCatalogKeyForRole(stt, options.role),
-  );
+  const provider = options.providerId ?? sttCatalogKeyForRole(stt, options.role);
   if (options.providerId === undefined) {
     logRoleSelection(options.role, provider, resolveSttCatalogKey(stt));
   }
@@ -540,7 +522,7 @@ export async function resolveStreamingTranscriber(
     ? null
     : await getProviderKeyAsync(credentialProviderName);
   if (managed) {
-    if (!(await sttProviderKeyResolves("vellum"))) {
+    if (!(await sttProviderKeyResolves("cadet"))) {
       return null;
     }
   } else if (!apiKey) {
@@ -684,25 +666,25 @@ async function createStreamingTranscriber(
       // connection (API key + assistant ID) is checkable locally — gate
       // here so preflight reports "connect your account" instead of
       // resolving a transcriber whose dial is doomed.
-      const { vellumManagedSpeechAvailable } =
-        await import("./vellum-managed.js");
-      if (!(await vellumManagedSpeechAvailable())) {
+      const { cadetManagedSpeechAvailable } =
+        await import("./cadet-managed.js");
+      if (!(await cadetManagedSpeechAvailable())) {
         return null;
       }
       const { resolveSpeechRelayConnection } =
-        await import("./vellum-speech-relay-connection.js");
+        await import("./cadet-speech-relay-connection.js");
       const connection = await resolveSpeechRelayConnection();
       if (!connection) {
         return null;
       }
-      const { VellumManagedRealtimeTranscriber } =
-        await import("./vellum-managed-realtime.js");
-      return new VellumManagedRealtimeTranscriber(connection, {
+      const { CadetManagedRealtimeTranscriber } =
+        await import("./cadet-managed-realtime.js");
+      return new CadetManagedRealtimeTranscriber(connection, {
         sampleRate: options.sampleRate,
         // `language` IS in the relay's param allowlist, and the relay pins
         // the STT model to nova-3 server-side, so "multi" code-switching
         // needs nothing from the platform, only this forward. Source:
-        // vellum-assistant-platform: tunnel/internal/tunnel/deepgram.go
+        // cadet-assistant-platform: tunnel/internal/tunnel/deepgram.go
         // (deepgramSTTParams allowlist; deepgramSTTModel pin).
         ...(options.language ? { language: options.language } : {}),
         ...(options.utteranceBoundaryFinals
@@ -714,10 +696,10 @@ async function createStreamingTranscriber(
       // Managed Flux: same relay as `cadet`, but the STT v2 endpoint with
       // `contract=flux` so the turn events arrive intact instead of being
       // translated into the released v1 Deepgram dialect. Gated on the local
-      // platform connection for the same reason as `vellum` above.
-      const { vellumManagedSpeechAvailable } =
-        await import("./vellum-managed.js");
-      if (!(await vellumManagedSpeechAvailable())) {
+      // platform connection for the same reason as `cadet` above.
+      const { cadetManagedSpeechAvailable } =
+        await import("./cadet-managed.js");
+      if (!(await cadetManagedSpeechAvailable())) {
         return null;
       }
       // The relay maps the language onto a Flux model and refuses the dial
@@ -735,14 +717,14 @@ async function createStreamingTranscriber(
         return null;
       }
       const { resolveSpeechRelayConnection } =
-        await import("./vellum-speech-relay-connection.js");
+        await import("./cadet-speech-relay-connection.js");
       const connection = await resolveSpeechRelayConnection();
       if (!connection) {
         return null;
       }
-      const { VellumManagedFluxRealtimeTranscriber } =
-        await import("./vellum-managed-flux-realtime.js");
-      return new VellumManagedFluxRealtimeTranscriber(connection, {
+      const { CadetManagedFluxRealtimeTranscriber } =
+        await import("./cadet-managed-flux-realtime.js");
+      return new CadetManagedFluxRealtimeTranscriber(connection, {
         sampleRate: options.sampleRate,
         // The relay picks `flux-general-en` or `flux-general-multi` from
         // this, so it is the only lever over the Flux model from here.
@@ -795,15 +777,15 @@ async function createStreamingTranscriber(
  */
 /**
  * Human-readable reason for a credential gap, aware that connection-based
- * providers (vellum) are fixed by connecting the platform account, not by
+ * providers (cadet) are fixed by connecting the platform account, not by
  * entering an API key.
  */
 export function sttCredentialGapReason(credentialProviderName: string): string {
   // Called with either the catalog id ("cadet") or its credential-service
-  // key ("vellum", the persisted identity family) — both mean managed speech.
+  // key ("cadet", the persisted identity family) — both mean managed speech.
   if (
     credentialProviderName === "cadet" ||
-    credentialProviderName === "vellum"
+    credentialProviderName === "cadet"
   ) {
     return "No Cadet platform connection for managed speech — run 'assistant platform connect'";
   }
@@ -813,11 +795,11 @@ export function sttCredentialGapReason(credentialProviderName: string): string {
 export async function sttProviderKeyResolves(
   credentialProviderName: string,
 ): Promise<boolean> {
-  // vellum has no stored API key — the platform connection is the credential.
-  if (credentialProviderName === "vellum") {
-    const { vellumManagedSpeechAvailable } =
-      await import("./vellum-managed.js");
-    return vellumManagedSpeechAvailable();
+  // cadet has no stored API key — the platform connection is the credential.
+  if (credentialProviderName === "cadet") {
+    const { cadetManagedSpeechAvailable } =
+      await import("./cadet-managed.js");
+    return cadetManagedSpeechAvailable();
   }
   return (await getProviderKeyAsync(credentialProviderName)) !== undefined;
 }

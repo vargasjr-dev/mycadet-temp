@@ -25,7 +25,7 @@ const LOCAL_ASSISTANT_ID = "local-story-assistant";
 const DOMAIN_ID = "domain-1";
 const ADDRESS_ID = "address-1";
 const SUBDOMAIN = "velly";
-const ROOT_DOMAIN = "vellum.me";
+const ROOT_DOMAIN = "cadet.me";
 const ADDRESS = `hi@${SUBDOMAIN}.${ROOT_DOMAIN}`;
 
 /** Gateways from this version on serve the trust-floor routes. */

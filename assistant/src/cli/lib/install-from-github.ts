@@ -754,10 +754,10 @@ export const INSTALL_META_FILENAME = "install-meta.json";
 /**
  * Which catalog manages an installed plugin. Mirrors the skill origin values
  * (`SkillInstallMeta.origin` in `src/skills/install-meta.ts`) so the two
- * systems keep a consistent vocabulary. `"vellum"` denotes the first-party
+ * systems keep a consistent vocabulary. `"cadet"` denotes the first-party
  * `marketplace.json`; the union widens as new sources are supported.
  */
-export type InstallOrigin = "vellum";
+export type InstallOrigin = "cadet";
 
 /** Resolved source coordinates recorded in the provenance sidecar. */
 export type InstallMetaSource =
@@ -1639,7 +1639,7 @@ function writeInstallMeta(
 ): void {
   const local = isLocalPluginSource(source);
   const meta: InstallMeta = {
-    origin: "vellum",
+    origin: "cadet",
     installedAt: new Date().toISOString(),
     version: readStagedManifestVersion(stagingDir),
     sourceRepo: local ? undefined : `${source.owner}/${source.repo}`,
@@ -1733,7 +1733,7 @@ export function readInstallMeta(pluginDir: string): InstallMeta | null {
     typeof value === "string" ? value : undefined;
 
   return {
-    origin: "vellum",
+    origin: "cadet",
     installedAt: typeof obj.installedAt === "string" ? obj.installedAt : "",
     installedBy: optionalString(obj.installedBy),
     backfilledBy: optionalString(obj.backfilledBy),

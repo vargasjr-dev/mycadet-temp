@@ -15,5 +15,5 @@ export function getNativePathForFile(file: File): string | null {
   if (!isElectron()) {
     return null;
   }
-  return window.vellum?.paths?.getPathForFile(file) ?? null;
+  return window.cadet?.paths?.getPathForFile(file) ?? null;
 }

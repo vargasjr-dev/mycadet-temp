@@ -1,7 +1,7 @@
 /**
  * Guard tests for `readAppFileBytes` — the byte-reading helper behind the app
  * asset endpoint (`GET /v1/apps/:appId/asset/:path*`, served to sandboxed apps
- * via `window.vellum.asset`).
+ * via `window.cadet.asset`).
  *
  *   - Bytes round-trip intact (the point of the helper: utf-8 decoding would
  *     corrupt binary media).

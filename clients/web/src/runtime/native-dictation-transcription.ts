@@ -1,7 +1,7 @@
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 type NativeTranscriptionBridge = Required<
-  Pick<VellumBridge["helper"]["dictation"], "transcribe" | "onTranscribed">
+  Pick<CadetBridge["helper"]["dictation"], "transcribe" | "onTranscribed">
 >;
 
 type NativeTranscriptionResult =

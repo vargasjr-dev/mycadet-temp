@@ -22,8 +22,8 @@ describe("feature flag catalog", () => {
   });
 
   test("exposes cadet hosted inference as an assistant flag defaulting off", () => {
-    expect(ASSISTANT_FLAG_DEFAULTS.vellumHostedInference).toBe(false);
-    expect("vellumHostedInference" in CLIENT_FLAG_DEFAULTS).toBe(false);
+    expect(ASSISTANT_FLAG_DEFAULTS.cadetHostedInference).toBe(false);
+    expect("cadetHostedInference" in CLIENT_FLAG_DEFAULTS).toBe(false);
   });
 
   test("exposes the send-user-message tool gate to both flag stores", () => {
@@ -184,7 +184,7 @@ describe("getEnvFlagOverridesForScope", () => {
 
   test("filters client-scoped flags and separates bool/str", () => {
     (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: {
+      __CADET_FLAG_OVERRIDES__: {
         // client-only flag (boolean)
         "velvet": true,
         // assistant-only flag (boolean) — should be excluded from client scope
@@ -258,19 +258,19 @@ describe("getEnvFlagOverridesForScope", () => {
 
   test("maps boolean-coerced window overrides back onto on/off string flags", () => {
     (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: { "vision-mode": true },
+      __CADET_FLAG_OVERRIDES__: { "vision-mode": true },
     };
     expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("on");
 
     (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: { "vision-mode": false },
+      __CADET_FLAG_OVERRIDES__: { "vision-mode": false },
     };
     expect(getEnvFlagOverridesForScope("client").str.visionMode).toBe("off");
   });
 
   test("drops boolean-coerced window overrides for string flags without on/off arms", () => {
     (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: {
+      __CADET_FLAG_OVERRIDES__: {
         "pre-chat-onboarding-experiment-2026-06-06": true,
       },
     };
@@ -286,7 +286,7 @@ describe("getEnvFlagOverridesForScope", () => {
 
   test("flags with scope 'both' appear for both client and assistant scopes", () => {
     (globalThis as Record<string, unknown>).window = {
-      __VELLUM_FLAG_OVERRIDES__: {
+      __CADET_FLAG_OVERRIDES__: {
         "self-intro-greeting": true,
       },
     };

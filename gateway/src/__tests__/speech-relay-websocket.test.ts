@@ -111,8 +111,8 @@ describe("tunnel origin derivation", () => {
       "stt",
       {
         credentials: makeKeyedCredentials({
-          "credential/vellum/assistant_api_key": "vk-1",
-          "credential/vellum/platform_base_url":
+          "credential/cadet/assistant_api_key": "vk-1",
+          "credential/cadet/platform_base_url":
             "https://staging-cloud.mycadet.ai",
         }),
       },
@@ -144,8 +144,8 @@ describe("tunnel origin derivation", () => {
         "stt",
         {
           credentials: makeKeyedCredentials({
-            "credential/vellum/assistant_api_key": "vk-1",
-            "credential/vellum/platform_base_url": platformBaseUrl,
+            "credential/cadet/assistant_api_key": "vk-1",
+            "credential/cadet/platform_base_url": platformBaseUrl,
           }),
         },
       );
@@ -166,8 +166,8 @@ describe("tunnel origin derivation", () => {
     const server = makeFakeServer();
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "stt", {
       credentials: makeKeyedCredentials({
-        "credential/vellum/assistant_api_key": "vk-1",
-        "credential/vellum/platform_base_url":
+        "credential/cadet/assistant_api_key": "vk-1",
+        "credential/cadet/platform_base_url":
           "https://staging-platform.vellum.ai",
       }),
     });

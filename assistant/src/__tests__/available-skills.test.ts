@@ -163,7 +163,7 @@ describe("listInstalledSkills", () => {
 
   test("folds install-meta for user-installed sources only", async () => {
     const meta: SkillInstallMeta = {
-      origin: "vellum",
+      origin: "cadet",
       installedAt: "2026-01-01T00:00:00Z",
       author: "assistant",
       lastUsedAt: "2026-02-01",

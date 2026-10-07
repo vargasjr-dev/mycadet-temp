@@ -17,7 +17,7 @@ const log = getLogger("install-meta");
 // ─── SkillInstallMeta type ──────────────────────────────────────────────────
 
 export interface SkillInstallMeta {
-  origin: "vellum" | "clawhub" | "skillssh" | "custom";
+  origin: "cadet" | "clawhub" | "skillssh" | "custom";
   installedAt: string; // ISO 8601
   installedBy?: string; // actorPrincipalId from auth context (identifies who initiated the install)
   backfilledBy?: string; // set by migration that backfilled this file (e.g. "migration-026")
@@ -77,7 +77,7 @@ export function writeInstallMeta(
  *
  * - Has `origin: "skills.sh"` -> `origin: "skillssh"`, copies `source` as
  *   `sourceRepo` and `skillSlug` as `slug`.
- * - Has `version` but no `origin` field -> `origin: "vellum"`.
+ * - Has `version` but no `origin` field -> `origin: "cadet"`.
  * - Otherwise -> `origin: "custom"`.
  *
  * Legacy files never have `installedBy`, so it will be `undefined` for
@@ -137,7 +137,7 @@ function inferFromLegacyVersionJson(
   // Vellum (first-party catalog) origin: has `version` but no `origin` field
   if (typeof raw.version === "string" && !("origin" in raw)) {
     return {
-      origin: "vellum",
+      origin: "cadet",
       installedAt:
         typeof raw.installedAt === "string"
           ? raw.installedAt

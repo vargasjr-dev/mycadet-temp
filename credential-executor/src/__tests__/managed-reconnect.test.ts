@@ -182,7 +182,7 @@ describe("managed CES reconnection (real entrypoint)", () => {
     const assistantDataMount = join(tmpDir, "assistant-data-ro");
     mkdirSync(dataDir, { recursive: true });
     mkdirSync(socketDir, { recursive: true });
-    mkdirSync(join(assistantDataMount, ".vellum"), { recursive: true });
+    mkdirSync(join(assistantDataMount, ".cadet"), { recursive: true });
 
     const healthPort = await pickFreePort();
     const managedMain = resolve(__dirname, "..", "main.ts");

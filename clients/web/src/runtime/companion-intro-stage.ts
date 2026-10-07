@@ -25,7 +25,7 @@ import { isElectron } from "@/runtime/is-electron";
 
 /** Main's push, which lands on every change while a shell is there to send it. */
 function subscribeToBridge(callback: (staged: boolean) => void): () => void {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   // A shell that predates the channel never publishes one, and a shell without
   // a surface has no `companion` at all.
   if (companion?.onIntroStage === undefined) {
@@ -43,7 +43,7 @@ function subscribeToBridge(callback: (staged: boolean) => void): () => void {
  * reason `companion.getState` exists for the surface's own route.
  */
 async function askBridge(): Promise<boolean> {
-  const companion = isElectron() ? window.vellum?.companion : undefined;
+  const companion = isElectron() ? window.cadet?.companion : undefined;
   if (companion?.getIntroStage === undefined) {
     return false;
   }

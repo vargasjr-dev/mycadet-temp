@@ -198,7 +198,7 @@ describe("buildNavigationState — hasPlatformHostedAssistant", () => {
 
   test("falls back to the persisted org id when the store has not hydrated", () => {
     useResolvedAssistantsStore.setState({ assistants: [managedInOrgA] });
-    globalThis.sessionStorage.setItem("vellum_active_organization_id", ORG_B);
+    globalThis.sessionStorage.setItem("cadet_active_organization_id", ORG_B);
     useOrganizationStore.setState({ persistedOrganizationId: ORG_B });
 
     expect(buildNavigationState().hasPlatformHostedAssistant).toBe(false);

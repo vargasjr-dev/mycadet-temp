@@ -657,7 +657,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
   };
 
   const stored = await getSecureKeyResultAsync(
-    credentialKey("vellum", "assistant_api_key"),
+    credentialKey("cadet", "assistant_api_key"),
   );
 
   if (stored.unreachable) {
@@ -675,7 +675,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
     // credential and is not unhealthy. Only an install that already carries
     // the rest of a platform identity is missing something.
     const baseUrl = await getSecureKeyAsync(
-      credentialKey("vellum", "platform_base_url"),
+      credentialKey("cadet", "platform_base_url"),
     );
     if (!baseUrl) {
       return null;

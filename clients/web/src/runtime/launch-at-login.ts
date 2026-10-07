@@ -4,7 +4,7 @@ export async function getLaunchAtLogin(): Promise<boolean> {
   if (!isElectron()) {
     return false;
   }
-  const bridge = window.vellum;
+  const bridge = window.cadet;
   if (!bridge?.launchAtLogin) {
     return false;
   }
@@ -15,7 +15,7 @@ export async function setLaunchAtLogin(enabled: boolean): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  const bridge = window.vellum;
+  const bridge = window.cadet;
   if (!bridge?.launchAtLogin) {
     return;
   }

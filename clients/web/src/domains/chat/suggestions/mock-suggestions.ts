@@ -2,7 +2,7 @@
  * Mocked thread-suggestion data for the new-thread suggestions library.
  *
  * Pure data, typed against {@link SuggestionGroup}. Plugin groups model the
- * "your connected plugins" sections; the vellum-curated group holds
+ * "your connected plugins" sections; the cadet-curated group holds
  * editorially-authored picks. The detail drawer, suggestion cards, and the
  * always-visible featured row all read from here.
  */
@@ -153,17 +153,17 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
       },
     ],
   },
-  // Vellum-curated picks: placeholder/mock suggestions rendered behind the
+  // Cadet-curated picks: placeholder/mock suggestions rendered behind the
   // new-thread-suggestions feature flag.
   {
-    id: "vellum-picks",
+    id: "cadet-picks",
     title: "Cadet picks",
-    source: "vellum-curated",
+    source: "cadet-curated",
     suggestions: [
       {
-        id: "vellum-picks:build-website",
+        id: "cadet-picks:build-website",
         title: "Build a website",
-        iconKey: "vellum",
+        iconKey: "cadet",
         prompt:
           "Help me build a simple personal website — gather the pages and " +
           "content I need and scaffold it out.",
@@ -174,7 +174,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "copy, and scaffold a clean starting point you can refine.",
           requirements: [
             {
-              id: "vellum-picks:build-website:cadet",
+              id: "cadet-picks:build-website:cadet",
               label: "Cadet assistant",
               status: "ready",
             },
@@ -189,9 +189,9 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
         },
       },
       {
-        id: "vellum-picks:summarize-week",
+        id: "cadet-picks:summarize-week",
         title: "Summarize my week",
-        iconKey: "vellum",
+        iconKey: "cadet",
         prompt:
           "Pull together a summary of what I worked on this week and what's " +
           "still open.",
@@ -203,7 +203,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "still in flight.",
           requirements: [
             {
-              id: "vellum-picks:summarize-week:cadet",
+              id: "cadet-picks:summarize-week:cadet",
               label: "Cadet assistant",
               status: "ready",
             },
@@ -218,9 +218,9 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
         },
       },
       {
-        id: "vellum-picks:draft-email",
+        id: "cadet-picks:draft-email",
         title: "Draft an email",
-        iconKey: "vellum",
+        iconKey: "cadet",
         prompt: "Help me draft an email — I'll tell you who it's to and why.",
         detail: {
           heading: "Email Drafting",
@@ -229,7 +229,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "the right tone that you can tweak and send.",
           requirements: [
             {
-              id: "vellum-picks:draft-email:cadet",
+              id: "cadet-picks:draft-email:cadet",
               label: "Cadet assistant",
               status: "ready",
             },
@@ -244,9 +244,9 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
         },
       },
       {
-        id: "vellum-picks:plan-trip",
+        id: "cadet-picks:plan-trip",
         title: "Plan a trip",
-        iconKey: "vellum",
+        iconKey: "cadet",
         prompt:
           "Help me plan a trip — gather options for where to go, where to " +
           "stay, and what to do.",
@@ -257,7 +257,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "itinerary with places to stay, things to do, and a rough budget.",
           requirements: [
             {
-              id: "vellum-picks:plan-trip:cadet",
+              id: "cadet-picks:plan-trip:cadet",
               label: "Cadet assistant",
               status: "ready",
             },
@@ -272,9 +272,9 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
         },
       },
       {
-        id: "vellum-picks:research-topic",
+        id: "cadet-picks:research-topic",
         title: "Research a topic",
-        iconKey: "vellum",
+        iconKey: "cadet",
         prompt:
           "Help me research a topic and pull together the key findings with " +
           "sources.",
@@ -285,7 +285,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
             "findings, and cite where each one came from so you can trust it.",
           requirements: [
             {
-              id: "vellum-picks:research-topic:cadet",
+              id: "cadet-picks:research-topic:cadet",
               label: "Cadet assistant",
               status: "ready",
             },

@@ -1,14 +1,14 @@
 import { z } from "zod";
 
+import {
+  CADET_MANAGED_CONNECTION_NAME,
+  MANAGED_ROUTABLE_PROVIDERS,
+} from "../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import {
   getCatalogProviderForModel,
   isModelInCatalog,
 } from "../providers/model-catalog.js";
-import {
-  MANAGED_ROUTABLE_PROVIDERS,
-  VELLUM_MANAGED_CONNECTION_NAME,
-} from "../providers/vellum-model-routing.js";
 import { CALL_SITE_DEFAULTS } from "./call-site-defaults.js";
 import {
   isDefaultProfileKey,
@@ -249,7 +249,7 @@ export function selectWinningProfile(
 /**
  * Dereference a profile name for the override-or-default rungs. A
  * default-profile key must yield the same body the call-site intent rung
- * would — the default provider's column, never unconditionally the vellum
+ * would — the default provider's column, never unconditionally the cadet
  * column.
  *
  * A persisted managed stub carries no user intent (defaults cannot be
@@ -349,7 +349,7 @@ function usableEntry(
  * the pure catalog body stands — the fallback anchor is code-owned and must
  * always resolve. A legacy disabled stub on a default is likewise reported
  * and overridden: defaults cannot be disabled through any write path, so a
- * persisted disabled stub is stale hatch-era state whose meaning ("no vellum
+ * persisted disabled stub is stale hatch-era state whose meaning ("no cadet
  * connection") `llm.defaultProvider` expresses properly.
  */
 function usableDefaultIntent(
@@ -437,13 +437,13 @@ function resolveOverrideOrDefault(
     if (implied !== undefined) {
       tweak.provider = implied;
       // A provider-specific connection must not pin a mismatch onto the
-      // implied provider — but the provider-agnostic Vellum managed
+      // implied provider — but the provider-agnostic Cadet managed
       // connection routes any managed-routable upstream and must survive,
       // or platform installs lose their only connection.
       if (
         !(
           winnerFragment.provider_connection ===
-            VELLUM_MANAGED_CONNECTION_NAME &&
+            CADET_MANAGED_CONNECTION_NAME &&
           MANAGED_ROUTABLE_PROVIDERS.has(implied)
         )
       ) {
@@ -457,7 +457,7 @@ function resolveOverrideOrDefault(
     winnerFragment,
     tweak,
   );
-  // A vellum winner's managed routing survives a concrete-provider tweak:
+  // A cadet winner's managed routing survives a concrete-provider tweak:
   // call-site fragments carry no connection, so a tweak pinning e.g.
   // anthropic over a managed default would otherwise resolve to a
   // connection-less concrete provider — stranded on platform installs with
@@ -465,13 +465,13 @@ function resolveOverrideOrDefault(
   // its routing via the provider-agnostic managed connection, which serves
   // any managed-routable upstream.
   if (
-    winnerFragment.provider === "vellum" &&
+    winnerFragment.provider === "cadet" &&
     typeof merged.provider === "string" &&
-    merged.provider !== "vellum" &&
+    merged.provider !== "cadet" &&
     merged.provider_connection == null &&
     MANAGED_ROUTABLE_PROVIDERS.has(merged.provider)
   ) {
-    merged.provider_connection = VELLUM_MANAGED_CONNECTION_NAME;
+    merged.provider_connection = CADET_MANAGED_CONNECTION_NAME;
   }
   return finalize(merged);
 }

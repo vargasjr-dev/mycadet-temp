@@ -130,7 +130,7 @@ describe("voice_config_update — tts_provider", () => {
     // The daemon ignores a legacy `mode` key, but the settings cards read
     // `mode: "managed"` as the Cadet marker — left behind, they would render
     // Cadet while the daemon routes the newly chosen provider.
-    writeConfig({ services: { tts: { mode: "managed", provider: "vellum" } } });
+    writeConfig({ services: { tts: { mode: "managed", provider: "cadet" } } });
     invalidateConfigCache();
 
     const result = await run(
@@ -148,7 +148,7 @@ describe("voice_config_update — tts_provider", () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
-      { setting: "tts_provider", value: "vellum" },
+      { setting: "tts_provider", value: "cadet" },
       makeContext(),
     );
 
@@ -220,14 +220,14 @@ describe("voice_config_update — tts_voice_id", () => {
 // Tests: tts_voice_id targets the active provider's voice field
 // ---------------------------------------------------------------------------
 
-describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
-  function makeVellumActive(): void {
-    writeConfig({ services: { tts: { provider: "vellum" } } });
+describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
+  function makeCadetActive(): void {
+    writeConfig({ services: { tts: { provider: "cadet" } } });
     invalidateConfigCache();
   }
 
   test("writes a Deepgram Aura model id to services.tts.providers.cadet.model", async () => {
-    makeVellumActive();
+    makeCadetActive();
 
     const result = await run(
       { setting: "tts_voice_id", value: "aura-2-zeus-en" },
@@ -246,7 +246,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
   });
 
   test("accepts an ElevenLabs voice id as a managed model (managed serves ElevenLabs voices)", async () => {
-    makeVellumActive();
+    makeCadetActive();
 
     const result = await run(
       { setting: "tts_voice_id", value: "EXAVITQu4vr4xnSDxMaL" },
@@ -260,7 +260,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
   });
 
   test("does not broadcast the ElevenLabs ttsVoiceId key for a managed voice", async () => {
-    makeVellumActive();
+    makeCadetActive();
     const messages: any[] = [];
     const ctx = makeContext({
       sendToClient: (msg: any) => messages.push(msg),
@@ -277,7 +277,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
   });
 
   test("hints the inline picker for the next managed voice change", async () => {
-    makeVellumActive();
+    makeCadetActive();
 
     const result = await run(
       { setting: "tts_voice_id", value: "aura-2-zeus-en" },
@@ -305,7 +305,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
   });
 
   test("does not hint the picker for a non-voice setting", async () => {
-    makeVellumActive();
+    makeCadetActive();
 
     const result = await run(
       { setting: "conversation_timeout", value: 30 },
@@ -317,7 +317,7 @@ describe("voice_config_update — tts_voice_id (managed/vellum active)", () => {
   });
 
   test("rejects a value with characters invalid for any voice id", async () => {
-    makeVellumActive();
+    makeCadetActive();
 
     const result = await run(
       { setting: "tts_voice_id", value: "a british man" },
@@ -540,7 +540,7 @@ describe("voice_config_update — stt_provider", () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
-      { setting: "stt_provider", value: "vellum" },
+      { setting: "stt_provider", value: "cadet" },
       makeContext(),
     );
 
@@ -552,7 +552,7 @@ describe("voice_config_update — stt_provider", () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
-      { setting: "stt_provider", value: "vellum" },
+      { setting: "stt_provider", value: "cadet" },
       makeContext(),
     );
 
@@ -605,7 +605,7 @@ describe("voice_config_update — stt_provider", () => {
   });
 
   test("switching away from cadet takes effect", async () => {
-    writeConfig({ services: { stt: { provider: "vellum" } } });
+    writeConfig({ services: { stt: { provider: "cadet" } } });
     invalidateConfigCache();
 
     const result = await run(
@@ -618,7 +618,7 @@ describe("voice_config_update — stt_provider", () => {
   });
 
   test("a provider switch scrubs a legacy mode key from the raw config", async () => {
-    writeConfig({ services: { stt: { mode: "managed", provider: "vellum" } } });
+    writeConfig({ services: { stt: { mode: "managed", provider: "cadet" } } });
     invalidateConfigCache();
 
     const result = await run(
@@ -920,7 +920,7 @@ describe("voice_config_update — catalog-driven provider validation", () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
-      { setting: "tts_provider", value: "vellum" },
+      { setting: "tts_provider", value: "cadet" },
       makeContext(),
     );
 

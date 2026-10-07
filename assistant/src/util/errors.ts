@@ -129,7 +129,7 @@ export type ProviderCredentialSource =
   | "byok"
   | "no-auth"
   | "oauth-subscription"
-  | "vellum-managed";
+  | "cadet-managed";
 
 export interface ProviderRouteAttribution {
   connectionName?: string;

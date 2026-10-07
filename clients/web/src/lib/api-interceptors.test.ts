@@ -2,7 +2,7 @@
  * Unit tests for the HeyAPI client request interceptor.
  *
  * Pins the ATL-703 header contract: every outbound request — regardless of
- * method — must carry `X-Vellum-Client-Id` + `X-Vellum-Interface-Id` so the
+ * method — must carry `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` so the
  * daemon can echo the originator id back on `sync_changed` and the hub can
  * suppress the SSE echo to that subscriber.
  *
@@ -31,7 +31,7 @@ import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
 const isPlatformDisabledMock = mock(() => false);
 const isRemoteGatewayModeMock = mock(
-  () => window.__VELLUM_CONFIG__?.mode === "remote-gateway",
+  () => window.__CADET_CONFIG__?.mode === "remote-gateway",
 );
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
@@ -182,7 +182,7 @@ import { __resetForTesting as resetSessionToken } from "@/runtime/session-token"
 import { useOrganizationStore } from "@/stores/organization-store";
 
 const TEST_ORG_ID = "org-test-1234";
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Vellum-Electron-Renderer-Origin";
+const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 function setCsrfCookie(token: string): void {
   document.cookie = `csrftoken=${token}; path=/`;
@@ -211,30 +211,30 @@ describe("api-interceptors / requestInterceptor", () => {
     clearCsrfCookie();
   });
 
-  test("attaches X-Vellum-Client-Id and X-Vellum-Interface-Id on GET", async () => {
+  test("attaches X-Cadet-Client-Id and X-Cadet-Interface-Id on GET", async () => {
     const headers = await intercept("GET");
-    expect(headers.get("X-Vellum-Client-Id")).toBe(getClientId());
-    expect(headers.get("X-Vellum-Interface-Id")).toBe("web");
+    expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
+    expect(headers.get("X-Cadet-Interface-Id")).toBe("web");
     expect(headers.get("Accept-Language")).toBe("en");
   });
 
-  test("attaches X-Vellum-Client-Id and X-Vellum-Interface-Id on POST", async () => {
+  test("attaches X-Cadet-Client-Id and X-Cadet-Interface-Id on POST", async () => {
     const headers = await intercept("POST");
-    expect(headers.get("X-Vellum-Client-Id")).toBe(getClientId());
-    expect(headers.get("X-Vellum-Interface-Id")).toBe("web");
+    expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
+    expect(headers.get("X-Cadet-Interface-Id")).toBe("web");
   });
 
   test("attaches client + interface headers on PUT, PATCH, DELETE", async () => {
     for (const method of ["PUT", "PATCH", "DELETE"]) {
       const headers = await intercept(method);
-      expect(headers.get("X-Vellum-Client-Id")).toBe(getClientId());
-      expect(headers.get("X-Vellum-Interface-Id")).toBe("web");
+      expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
+      expect(headers.get("X-Cadet-Interface-Id")).toBe("web");
     }
   });
 
-  test("attaches Vellum-Organization-Id when an active org is set", async () => {
+  test("attaches Cadet-Organization-Id when an active org is set", async () => {
     const headers = await intercept("GET");
-    expect(headers.get("Vellum-Organization-Id")).toBe(TEST_ORG_ID);
+    expect(headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
   });
 
   test("attaches X-CSRFToken on mutating requests", async () => {
@@ -261,12 +261,12 @@ describe("api-interceptors / requestInterceptor", () => {
     const input = new Request("https://example.test/v1/probe", {
       method: "POST",
     });
-    expect(input.headers.get("X-Vellum-Client-Id")).toBeNull();
+    expect(input.headers.get("X-Cadet-Client-Id")).toBeNull();
 
     const output = await requestInterceptor(input);
     expect(output).not.toBe(input);
-    expect(input.headers.get("X-Vellum-Client-Id")).toBeNull();
-    expect(output.headers.get("X-Vellum-Client-Id")).toBe(getClientId());
+    expect(input.headers.get("X-Cadet-Client-Id")).toBeNull();
+    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
   });
 });
 
@@ -277,14 +277,14 @@ describe("api-interceptors / Electron session-token header", () => {
   });
 
   beforeEach(() => {
-    (window as unknown as { vellum?: unknown }).vellum = {
+    (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
       auth: { getSessionToken: () => "electron-sess-tok" },
     };
   });
 
   afterEach(() => {
-    delete (window as unknown as { vellum?: unknown }).vellum;
+    delete (window as unknown as { cadet?: unknown }).cadet;
     resetSessionToken();
   });
 
@@ -333,7 +333,7 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // These tests pin the invariants that make that handoff safe:
 //   - URL origin gets swapped to the registered ingress.
-//   - Platform-only headers (Vellum-Organization-Id, X-CSRFToken) are
+//   - Platform-only headers (Cadet-Organization-Id, X-CSRFToken) are
 //     stripped so the user's gateway never sees our session/CSRF state.
 //   - `Authorization: Bearer <token>` is attached when the connection
 //     has a token, and omitted when the token slot is `null` (the
@@ -455,7 +455,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       method: "POST",
     });
     const output = await requestInterceptor(input);
-    expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -483,8 +483,8 @@ describe("api-interceptors / self-hosted rewriting", () => {
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const input = new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`);
     const output = await requestInterceptor(input);
-    expect(output.headers.get("X-Vellum-Client-Id")).toBe(getClientId());
-    expect(output.headers.get("X-Vellum-Interface-Id")).toBe("web");
+    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
+    expect(output.headers.get("X-Cadet-Interface-Id")).toBe("web");
   });
 
   test("rewrites assistant event routes to the self-hosted gateway", async () => {
@@ -495,7 +495,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe(INGRESS);
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -510,7 +510,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const input = new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`);
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Vellum-Organization-Id")).toBe(TEST_ORG_ID);
+    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("Authorization")).toBeNull();
   });
 
@@ -566,7 +566,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       const output = await requestInterceptor(input);
       expect(new URL(output.url).origin).toBe("https://platform.test");
       // Platform path keeps stamping org + CSRF as before.
-      expect(output.headers.get("Vellum-Organization-Id")).toBe(TEST_ORG_ID);
+      expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
       expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
       // And never leaks the gateway token onto a platform-bound
       // request, even when the connection slot is populated.
@@ -630,7 +630,7 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
       expect(outUrl.origin).toBe(INGRESS);
       expect(outUrl.pathname).toBe(path);
       expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-      expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+      expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
       expect(output.headers.get("X-CSRFToken")).toBeNull();
     }
   });
@@ -648,7 +648,7 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
     });
     const output = await daemonRequestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Vellum-Organization-Id")).toBe(TEST_ORG_ID);
+    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
   });
 
@@ -666,8 +666,8 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const input = new Request(`https://platform.test${DAEMON_SKILLS_PATH}`);
     const output = await daemonRequestInterceptor(input);
-    expect(output.headers.get("X-Vellum-Client-Id")).toBe(getClientId());
-    expect(output.headers.get("X-Vellum-Interface-Id")).toBe("web");
+    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
+    expect(output.headers.get("X-Cadet-Interface-Id")).toBe("web");
   });
 });
 
@@ -752,7 +752,7 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
         expect(output.headers.get("Authorization")).toBe(
           `Bearer ${ACTOR_TOKEN}`,
         );
-        expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+        expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
         expect(output.headers.get("X-CSRFToken")).toBeNull();
       }
     });
@@ -858,13 +858,13 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
 
 describe("api-interceptors / remote gateway direct requests", () => {
   beforeEach(() => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
   afterEach(() => {
-    window.__VELLUM_CONFIG__ = undefined;
+    window.__CADET_CONFIG__ = undefined;
     setSelfHostedConnection(null);
     clearCsrfCookie();
   });
@@ -875,7 +875,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
       token: ACTOR_TOKEN,
     });
     const input = new Request(`${window.location.origin}/v1/feature-flags`, {
-      headers: { "Vellum-Organization-Id": TEST_ORG_ID },
+      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
     });
 
     const output = await daemonRequestInterceptor(input);
@@ -883,10 +883,10 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(output.headers.get("ngrok-skip-browser-warning")).toBe("true");
-    expect(output.headers.get("X-Vellum-Client-Id")).toBe(getClientId());
+    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
   });
 
   test("adds the ngrok browser-warning bypass header to rewritten assistant routes", async () => {
@@ -938,7 +938,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
     const path = `/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
-      headers: { "Vellum-Organization-Id": TEST_ORG_ID },
+      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
     });
 
     const output = await requestInterceptor(input);
@@ -946,7 +946,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Vellum-Organization-Id")).toBeNull();
+    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
@@ -1029,7 +1029,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   afterEach(() => {
-    window.__VELLUM_CONFIG__ = undefined;
+    window.__CADET_CONFIG__ = undefined;
     setSelfHostedConnection(null);
     isPlatformDisabledMock.mockImplementation(() => false);
   });
@@ -1062,7 +1062,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("aborts platform requests in remote-gateway mode", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     const input = new Request(
       `${window.location.origin}/v1/feature-flags/client-flag-values/`,
     );
@@ -1074,7 +1074,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("passes bearer-authenticated gateway requests in remote-gateway mode", () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     const input = new Request(
       `${window.location.origin}/v1/assistants/self/events/`,
       { headers: { Authorization: `Bearer ${ACTOR_TOKEN}` } },
@@ -1366,7 +1366,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     });
     isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
     isRemoteGatewayModeMock.mockImplementation(
-      () => window.__VELLUM_CONFIG__?.mode === "remote-gateway",
+      () => window.__CADET_CONFIG__?.mode === "remote-gateway",
     );
     setSelfHostedConnection(null);
     sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
@@ -1775,7 +1775,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     primeGatewayWithRepairImpl = async () => {
       selectedAssistantImpl = () => ({
         assistantId: "asst-platform",
-        cloud: "vellum",
+        cloud: "cadet",
       });
       setSelfHostedConnection(null);
       throw new Error("readyz failed");
@@ -1880,7 +1880,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     // GIVEN the response URL does not match the gateway ingress
     const platformResponse = makeResponse(
       401,
-      "https://api.vellum.ai/v1/some-platform-endpoint",
+      "https://api.cadet.ai/v1/some-platform-endpoint",
     );
 
     // WHEN the interceptor processes the 401
@@ -2079,7 +2079,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
 
     await localGatewayAuthRecoveryInterceptor(
-      makeResponse(200, "https://api.vellum.ai/v1/whatever"),
+      makeResponse(200, "https://api.cadet.ai/v1/whatever"),
     );
 
     expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBe(
@@ -2687,7 +2687,7 @@ describe("api-interceptors / post-resume request counting", () => {
     noteDaemonApiRequestImpl = () => {};
     resumeWindowOpen = true;
     setSelfHostedConnection(null);
-    window.__VELLUM_CONFIG__ = undefined;
+    window.__CADET_CONFIG__ = undefined;
     isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
     isPlatformDisabledMock.mockImplementation(() => false);
   });
@@ -2762,7 +2762,7 @@ describe("api-interceptors / post-resume request counting", () => {
   });
 
   test("does not count a platform request aborted in remote-gateway mode", async () => {
-    window.__VELLUM_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
     const input = new Request(
       `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/conversations/`,
     );
@@ -2797,7 +2797,7 @@ describe("api-interceptors / post-resume request counting", () => {
     const output = await daemonRequestInterceptor(input);
 
     expect(output.url).toBe(input.url);
-    expect(output.headers.get("X-Vellum-Client-Id")).toBe(getClientId());
+    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
   });
 });
 

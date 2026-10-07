@@ -163,7 +163,7 @@ function loadManifestForSkill(skill: SkillSummary): SkillToolManifest | null {
 /**
  * Whether a skill is Vellum-produced for `skill_loaded` telemetry purposes:
  * bundled skills always are; managed skills only when their install metadata
- * records a `vellum` origin (legacy version.json installs are inferred as
+ * records a `cadet` origin (legacy version.json installs are inferred as
  * vellum by `readInstallMeta`). All other sources (workspace, extra, plugin)
  * never emit.
  */
@@ -172,7 +172,7 @@ function isVellumProducedSkill(skill: SkillSummary): boolean {
     return true;
   }
   if (skill.source === "managed") {
-    return readInstallMeta(skill.directoryPath)?.origin === "vellum";
+    return readInstallMeta(skill.directoryPath)?.origin === "cadet";
   }
   return false;
 }

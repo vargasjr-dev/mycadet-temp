@@ -32,8 +32,8 @@ export const INTERNAL_CHANNELS = new Set<string>(["platform", "a2a"]);
  * `packages/gateway-client/src/admission-policy-contract.ts`.
  */
 export const HIDDEN_CHANNELS = new Set<string>([
-  "vellum",
-  "vellum-shared",
+  "cadet",
+  "cadet-shared",
   "whatsapp",
 ]);
 

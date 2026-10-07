@@ -100,9 +100,9 @@ function makeCaches(
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: botToken,
     [credentialKey("telegram", "webhook_secret")]: webhookSecret,
-    [credentialKey("vellum", "platform_base_url")]: platformBaseUrl,
-    [credentialKey("vellum", "assistant_api_key")]: assistantApiKey,
-    [credentialKey("vellum", "platform_assistant_id")]: platformAssistantId,
+    [credentialKey("cadet", "platform_base_url")]: platformBaseUrl,
+    [credentialKey("cadet", "assistant_api_key")]: assistantApiKey,
+    [credentialKey("cadet", "platform_assistant_id")]: platformAssistantId,
   };
   const credentials = {
     get: async (key: string) => credentialMap[key],
@@ -1020,10 +1020,10 @@ function makeLivePlatformCaches(readIngressUrl: () => string | undefined) {
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: "test-bot-token",
     [credentialKey("telegram", "webhook_secret")]: "test-webhook-secret",
-    [credentialKey("vellum", "platform_base_url")]:
+    [credentialKey("cadet", "platform_base_url")]:
       "https://platform.example.com",
-    [credentialKey("vellum", "assistant_api_key")]: "ast-managed-key",
-    [credentialKey("vellum", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
+    [credentialKey("cadet", "assistant_api_key")]: "ast-managed-key",
+    [credentialKey("cadet", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
   };
   applyPlatformIdentityIds({
     assistantId: PLATFORM_ASSISTANT_ID,

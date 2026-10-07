@@ -1,6 +1,6 @@
 import {
   getModelsForProvider,
-  parseVellumRoutedModel,
+  parseCadetRoutedModel,
 } from "@/assistant/llm-model-catalog";
 
 /**
@@ -35,8 +35,8 @@ export function profileUsesFreeTextModel(
     return true;
   }
   const catalogId =
-    provider === "vellum"
-      ? (parseVellumRoutedModel(model)?.model ?? model)
+    provider === "cadet"
+      ? (parseCadetRoutedModel(model)?.model ?? model)
       : model;
   return !catalog.some((entry) => entry.id === catalogId);
 }

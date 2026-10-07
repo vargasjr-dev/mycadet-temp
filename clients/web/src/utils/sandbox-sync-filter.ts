@@ -1,5 +1,5 @@
 /**
- * Scoping for `window.vellum.subscribe` (see `sandbox-bridge.ts` /
+ * Scoping for `window.cadet.subscribe` (see `sandbox-bridge.ts` /
  * `use-sandbox-fetch-proxy.ts`).
  *
  * A sandboxed app may only receive `sync_changed` invalidations for the tags

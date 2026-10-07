@@ -146,7 +146,7 @@ describe("clearUserScopedStorage", () => {
     expect(useConversationStore.getState().pendingDraftPlugins.size).toBe(0);
   });
 
-  test("removes all vellum: prefixed keys from localStorage", () => {
+  test("removes all cadet: prefixed keys from localStorage", () => {
     localStorage.setItem("cadet:pinnedApps", "[]");
     localStorage.setItem("cadet:lastViewedConversation:asst-1", "conv-1");
     localStorage.setItem("cadet:sidebar-open-categories:asst-1", "{}");
@@ -208,7 +208,7 @@ describe("clearUserScopedStorage", () => {
     expect(localStorage.getItem("device:last_user_id")).toBe("user-123");
   });
 
-  test("automatically clears future vellum: keys without needing explicit registration", () => {
+  test("automatically clears future cadet: keys without needing explicit registration", () => {
     localStorage.setItem("cadet:some-future-feature:asst-1", "data");
     localStorage.setItem("cadet:another-feature", "value");
 
@@ -239,7 +239,7 @@ describe("clearUserScopedStorage", () => {
     expect(localStorage.getItem("some-other-sdk")).toBe("data");
   });
 
-  test("removes vellum: keys while preserving device: and third-party keys", () => {
+  test("removes cadet: keys while preserving device: and third-party keys", () => {
     localStorage.setItem("device:theme", "dark");
     localStorage.setItem("device:share_analytics", "true");
     localStorage.setItem("cadet:pinnedApps", "[]");
@@ -284,10 +284,10 @@ describe("clearUserScopedStorage", () => {
     localStorage.setItem("local:lockfile", "{}");
     localStorage.setItem("integrations.bannerDismissed", "true");
     localStorage.setItem(
-      "vellumDebug.flags.impersonateAssistantVersion",
+      "cadetDebug.flags.impersonateAssistantVersion",
       "0.8.6",
     );
-    localStorage.setItem("vellum_image_gen_mode", "enabled");
+    localStorage.setItem("cadet_image_gen_mode", "enabled");
 
     clearUserScopedStorage();
 
@@ -299,32 +299,32 @@ describe("clearUserScopedStorage", () => {
     expect(localStorage.getItem("local:lockfile")).toBeNull();
     expect(localStorage.getItem("integrations.bannerDismissed")).toBeNull();
     expect(
-      localStorage.getItem("vellumDebug.flags.impersonateAssistantVersion"),
+      localStorage.getItem("cadetDebug.flags.impersonateAssistantVersion"),
     ).toBeNull();
-    expect(localStorage.getItem("vellum_image_gen_mode")).toBeNull();
+    expect(localStorage.getItem("cadet_image_gen_mode")).toBeNull();
   });
 
   test("preserves legacy device-level keys from cleanup", () => {
-    localStorage.setItem("vellum_theme", "dark");
-    localStorage.setItem("vellum_share_analytics", "true");
-    localStorage.setItem("vellum_share_diagnostics", "false");
-    localStorage.setItem("vellum_biometric_enabled", "false");
-    localStorage.setItem("vellum_llm_log_retention", "dontRetain");
-    localStorage.setItem("vellum_timezone", "America/New_York");
-    localStorage.setItem("vellum_media_embeds_enabled", "false");
-    localStorage.setItem("vellum_media_embed_domains", '["youtube.com"]');
+    localStorage.setItem("cadet_theme", "dark");
+    localStorage.setItem("cadet_share_analytics", "true");
+    localStorage.setItem("cadet_share_diagnostics", "false");
+    localStorage.setItem("cadet_biometric_enabled", "false");
+    localStorage.setItem("cadet_llm_log_retention", "dontRetain");
+    localStorage.setItem("cadet_timezone", "America/New_York");
+    localStorage.setItem("cadet_media_embeds_enabled", "false");
+    localStorage.setItem("cadet_media_embed_domains", '["youtube.com"]');
     localStorage.setItem("onboarding.lastUserId", "user-123");
 
     clearUserScopedStorage();
 
-    expect(localStorage.getItem("vellum_theme")).toBe("dark");
-    expect(localStorage.getItem("vellum_share_analytics")).toBe("true");
-    expect(localStorage.getItem("vellum_share_diagnostics")).toBe("false");
-    expect(localStorage.getItem("vellum_biometric_enabled")).toBe("false");
-    expect(localStorage.getItem("vellum_llm_log_retention")).toBe("dontRetain");
-    expect(localStorage.getItem("vellum_timezone")).toBe("America/New_York");
-    expect(localStorage.getItem("vellum_media_embeds_enabled")).toBe("false");
-    expect(localStorage.getItem("vellum_media_embed_domains")).toBe(
+    expect(localStorage.getItem("cadet_theme")).toBe("dark");
+    expect(localStorage.getItem("cadet_share_analytics")).toBe("true");
+    expect(localStorage.getItem("cadet_share_diagnostics")).toBe("false");
+    expect(localStorage.getItem("cadet_biometric_enabled")).toBe("false");
+    expect(localStorage.getItem("cadet_llm_log_retention")).toBe("dontRetain");
+    expect(localStorage.getItem("cadet_timezone")).toBe("America/New_York");
+    expect(localStorage.getItem("cadet_media_embeds_enabled")).toBe("false");
+    expect(localStorage.getItem("cadet_media_embed_domains")).toBe(
       '["youtube.com"]',
     );
     expect(localStorage.getItem("onboarding.lastUserId")).toBe("user-123");

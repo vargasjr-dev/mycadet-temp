@@ -255,13 +255,13 @@ describe("runStorageMigrations", () => {
     expect(localStorage.getItem("onboarding.tosAccepted")).toBeNull();
   });
 
-  test("migrates vellum_ AI settings keys", () => {
-    localStorage.setItem("vellum_image_gen_mode", "enabled");
-    localStorage.setItem("vellum_web_search_provider", "perplexity");
-    localStorage.setItem("vellum_gemini_key", "gk-789");
-    localStorage.setItem("vellum_perplexity_key", "pplx-abc");
-    localStorage.setItem("vellum_brave_key", "BSA-def");
-    localStorage.setItem("vellum_tavily_key", "tvly-ghi");
+  test("migrates cadet_ AI settings keys", () => {
+    localStorage.setItem("cadet_image_gen_mode", "enabled");
+    localStorage.setItem("cadet_web_search_provider", "perplexity");
+    localStorage.setItem("cadet_gemini_key", "gk-789");
+    localStorage.setItem("cadet_perplexity_key", "pplx-abc");
+    localStorage.setItem("cadet_brave_key", "BSA-def");
+    localStorage.setItem("cadet_tavily_key", "tvly-ghi");
 
     runStorageMigrations();
 
@@ -273,7 +273,7 @@ describe("runStorageMigrations", () => {
     expect(localStorage.getItem("cadet:ai:perplexityKey")).toBe("pplx-abc");
     expect(localStorage.getItem("cadet:ai:braveKey")).toBe("BSA-def");
     expect(localStorage.getItem("cadet:ai:tavilyKey")).toBe("tvly-ghi");
-    expect(localStorage.getItem("vellum_image_gen_mode")).toBeNull();
+    expect(localStorage.getItem("cadet_image_gen_mode")).toBeNull();
   });
 
   test("migrates ff:client: prefix", () => {
@@ -357,11 +357,11 @@ describe("runStorageMigrations", () => {
   });
 
   test("collapses the legacy per-org assistant map into one key", () => {
-    // Canonicalized first (vellum_current_assistant_id__ → cadet:currentAssistantId:),
+    // Canonicalized first (cadet_current_assistant_id__ → cadet:currentAssistantId:),
     // then collapsed into the single cadet:selectedAssistantId. With no current
     // org at migration time, the lexicographically-smallest org suffix wins.
-    localStorage.setItem("vellum_current_assistant_id__org-2", "asst-b");
-    localStorage.setItem("vellum_current_assistant_id__org-1", "asst-a");
+    localStorage.setItem("cadet_current_assistant_id__org-2", "asst-b");
+    localStorage.setItem("cadet_current_assistant_id__org-1", "asst-a");
 
     runStorageMigrations();
 
@@ -369,14 +369,14 @@ describe("runStorageMigrations", () => {
     expect(localStorage.getItem("cadet:currentAssistantId:org-1")).toBeNull();
     expect(localStorage.getItem("cadet:currentAssistantId:org-2")).toBeNull();
     expect(
-      localStorage.getItem("vellum_current_assistant_id__org-1"),
+      localStorage.getItem("cadet_current_assistant_id__org-1"),
     ).toBeNull();
   });
 
   test("collapse prefers the persisted active org's per-org selection", () => {
     // Active org is org-2 even though org-1 sorts first; the active org's pick
     // must win so a multi-org user keeps their current selection on upgrade.
-    sessionStorage.setItem("vellum_active_organization_id", "org-2");
+    sessionStorage.setItem("cadet_active_organization_id", "org-2");
     localStorage.setItem("cadet:currentAssistantId:org-1", "asst-1");
     localStorage.setItem("cadet:currentAssistantId:org-2", "asst-2");
 
@@ -405,9 +405,9 @@ describe("runStorageMigrations", () => {
     );
   });
 
-  test("migrates vellumDebug key", () => {
+  test("migrates cadetDebug key", () => {
     localStorage.setItem(
-      "vellumDebug.flags.impersonateAssistantVersion",
+      "cadetDebug.flags.impersonateAssistantVersion",
       "0.8.6",
     );
 
@@ -417,7 +417,7 @@ describe("runStorageMigrations", () => {
       localStorage.getItem("cadet:debug:impersonateAssistantVersion"),
     ).toBe("0.8.6");
     expect(
-      localStorage.getItem("vellumDebug.flags.impersonateAssistantVersion"),
+      localStorage.getItem("cadetDebug.flags.impersonateAssistantVersion"),
     ).toBeNull();
   });
 
@@ -487,7 +487,7 @@ describe("runStorageMigrations", () => {
   test("converts a legacy imageGenMode into the equivalent provider", () => {
     localStorage.setItem("cadet:ai:imageGenMode", "managed");
     runStorageMigrations();
-    expect(localStorage.getItem("cadet:ai:imageGenProvider")).toBe("vellum");
+    expect(localStorage.getItem("cadet:ai:imageGenProvider")).toBe("cadet");
 
     localStorage.clear();
     localStorage.setItem("cadet:ai:imageGenMode", "your-own");

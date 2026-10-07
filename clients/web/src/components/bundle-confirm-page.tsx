@@ -35,7 +35,7 @@ export function BundleConfirmPage() {
   const [warningsOpen, setWarningsOpen] = useState(false);
 
   useEffect(() => {
-    void window.vellum?.bundleConfirm?.getData().then((d) => {
+    void window.cadet?.bundleConfirm?.getData().then((d) => {
       if (d) {
         setData(d);
       }
@@ -145,7 +145,7 @@ export function BundleConfirmPage() {
         <button
           type="button"
           className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-          onClick={() => window.vellum?.bundleConfirm?.respond(false)}
+          onClick={() => window.cadet?.bundleConfirm?.respond(false)}
         >
           {t("bundleConfirmPage.cancel")}
         </button>
@@ -157,7 +157,7 @@ export function BundleConfirmPage() {
               ? "bg-red-600 hover:bg-red-700"
               : "bg-primary hover:bg-primary/90",
           )}
-          onClick={() => window.vellum?.bundleConfirm?.respond(true)}
+          onClick={() => window.cadet?.bundleConfirm?.respond(true)}
         >
           {isTampered
             ? t("bundleConfirmPage.installAnyway")

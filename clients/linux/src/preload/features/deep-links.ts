@@ -8,10 +8,10 @@ import {
   createDeepLinksBridge,
   createLaunchAtLoginBridge,
 } from "@mycadet/electron-desktop/preload";
-import type { VellumBridge } from "@mycadet/ipc-contract";
+import type { CadetBridge } from "@mycadet/ipc-contract";
 
 const deepLinksFeature: CapabilityModule<
-  BridgeCapabilityRegistry<VellumBridge>
+  BridgeCapabilityRegistry<CadetBridge>
 > = {
   id: "deep-links",
   install: (registry) => {

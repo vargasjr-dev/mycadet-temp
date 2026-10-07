@@ -4,7 +4,7 @@
  * `![chart](/workspace/reports/q3.png)` and `[the deck](/workspace/deck.pdf)`
  * point at files the assistant just worked with, so the renderer needs to tell
  * those apart from web URLs, in-app client routes (`/assistant/...`),
- * `vellum://` attachment links, and anchors.
+ * `cadet://` attachment links, and anchors.
  *
  * A link destination is explicit author intent, unlike the heuristic code-span
  * recognition in `workspace-path-links.ts`: spaces, unicode, and parentheses in
@@ -22,7 +22,7 @@ import {
 
 export type MarkdownHrefTarget =
   | { kind: "web" }
-  | { kind: "vellum" }
+  | { kind: "cadet" }
   | { kind: "app"; appPath: string }
   | { kind: "local-file"; workspacePath: string | null; filename: string }
   | { kind: "other" };
@@ -71,7 +71,7 @@ export function toWorkspacePathFromHref(href: string): string | null {
   if (text.startsWith("/")) {
     // The mount point is deployment-specific (hosted assistants run with the
     // workspace at `/workspace`, desktop installs under
-    // `~/.vellum/.../workspace`), so anchor on the last `/workspace/` segment.
+    // `~/.cadet/.../workspace`), so anchor on the last `/workspace/` segment.
     // An absolute path with no such segment lives outside the workspace and
     // the daemon cannot serve it.
     const markerIndex = text.lastIndexOf(WORKSPACE_ROOT_MARKER);
@@ -117,8 +117,8 @@ export function classifyMarkdownHref(
   const scheme = SCHEME_PREFIX.exec(text)?.[0];
   if (scheme) {
     const name = scheme.slice(0, -1).toLowerCase();
-    if (name === "vellum") {
-      return { kind: "vellum" };
+    if (name === "cadet") {
+      return { kind: "cadet" };
     }
     if (name === "http" || name === "https") {
       const appPath = toAppPathFromHref(text);

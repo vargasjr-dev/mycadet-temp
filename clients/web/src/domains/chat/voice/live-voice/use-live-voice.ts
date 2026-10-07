@@ -1005,13 +1005,13 @@ export function useLiveVoice(
       // Dev-only handle for driving a typed turn from the console while no UI
       // sends one yet:
       //
-      //   __vellumVoice.sendText("what is on my calendar")
+      //   __cadetVoice.sendText("what is on my calendar")
       //
       // Returns false if the session is not active or the assistant predates
       // typed turns, which is also what a handle left over from an ended
       // session returns. Stripped from production builds.
       if (import.meta.env.DEV) {
-        (window as unknown as Record<string, unknown>).__vellumVoice = {
+        (window as unknown as Record<string, unknown>).__cadetVoice = {
           sendText: (text: string) => sendTextTurn(session, text),
           supportsTextInput: () => client.supportsTextInput,
         };

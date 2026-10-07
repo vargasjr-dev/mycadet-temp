@@ -35,20 +35,20 @@ interface MockWindowOptions {
   open?:
     | ((url?: string, target?: string, features?: string) => Window | null)
     | null;
-  vellum?: unknown;
+  cadet?: unknown;
 }
 
 function setMockWindow({
-  origin = "https://app.vellum.ai",
+  origin = "https://app.cadet.ai",
   open,
-  vellum,
+  cadet,
 }: MockWindowOptions = {}): void {
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
       location: { origin },
       open,
-      vellum,
+      cadet,
     },
   });
 }
@@ -59,7 +59,7 @@ function setElectronPermissionsWindow(
 ): void {
   setMockWindow({
     open: null,
-    vellum: {
+    cadet: {
       platform: "electron",
       hostOS,
       permissions: {
@@ -100,7 +100,7 @@ describe("oauth popup links", () => {
   });
 
   test("resolves same-origin app routes for client-side navigation", () => {
-    const origin = "https://app.vellum.ai";
+    const origin = "https://app.cadet.ai";
     setMockWindow({ origin });
 
     expect(
@@ -115,7 +115,7 @@ describe("oauth popup links", () => {
   });
 
   test("normalizes relative HTTP URLs and rejects unsupported schemes", () => {
-    const origin = "https://app.vellum.ai";
+    const origin = "https://app.cadet.ai";
     setMockWindow({ origin });
 
     expect(getHttpUrl(routes.settings.integrations)).toBe(

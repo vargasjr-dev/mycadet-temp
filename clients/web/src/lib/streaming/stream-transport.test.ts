@@ -27,7 +27,7 @@ describe("subscribeEvents idle watchdog", () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    // The vellum-api request interceptor reads document.cookie via
+    // The cadet-api request interceptor reads document.cookie via
     // ensureCsrfCookie() on mutating requests; harmless for this GET
     // path but keeps the bun (Node) test env consistent.
     originalDocument = (globalThis as { document?: unknown }).document;

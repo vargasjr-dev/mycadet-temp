@@ -19,7 +19,7 @@ import { useNudgeStore } from "@/stores/nudge-store";
 // ---------------------------------------------------------------------------
 
 /** Public GitHub repository for Cadet. */
-export const GITHUB_REPO_URL = "https://github.com/vellum-ai/vellum-assistant";
+export const GITHUB_REPO_URL = "https://github.com/cadet-ai/cadet-assistant";
 
 /** Minimum account age (ms since first observation) before the nudge is eligible. */
 export const GITHUB_MIN_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours

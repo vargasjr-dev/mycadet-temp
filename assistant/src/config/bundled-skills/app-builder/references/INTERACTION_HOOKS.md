@@ -1,7 +1,7 @@
 # App Interaction Hooks
 
 A sandboxed app drives the assistant and its own on-screen layout through
-`window.vellum.sendAction(actionId, data)`. When the app is open inside a
+`window.cadet.sendAction(actionId, data)`. When the app is open inside a
 conversation — the chat panel, split view, or mobile app overlay, the surface
 this skill builds for — the host acts on exactly two actions: `relay_prompt`
 and `set_view`. Wire them during the build so the app can pull the assistant in
@@ -20,12 +20,12 @@ app, so phrase the intent as natural language.
 
 ```javascript
 // A button in a dashboard: "Explain this anomaly"
-window.vellum.sendAction("relay_prompt", {
+window.cadet.sendAction("relay_prompt", {
   prompt: "Revenue dropped 40% on the 14th — what happened?",
 });
 
 // Start a fresh conversation instead of using the open one
-window.vellum.sendAction("relay_prompt", {
+window.cadet.sendAction("relay_prompt", {
   prompt: "Draft a follow-up email to this customer.",
   conversation: "new", // "active" (default) | "new"
 });
@@ -55,7 +55,7 @@ prompt the assistant can act on:
 ```javascript
 function runBulkAction(selected) {
   const list = selected.map((s) => `- ${s.title} (${s.id})`).join("\n");
-  window.vellum.sendAction("relay_prompt", {
+  window.cadet.sendAction("relay_prompt", {
     prompt: `Archive these ${selected.length} items:\n${list}`,
   });
 }
@@ -67,9 +67,9 @@ Moves the app panel. Independent of `relay_prompt`; use it only when the app
 itself should change the layout.
 
 ```javascript
-window.vellum.sendAction("set_view", { view: "split" }); // app + chat side by side
-window.vellum.sendAction("set_view", { view: "full" }); // app full-width
-window.vellum.sendAction("set_view", { view: "chat" }); // close app, back to chat
+window.cadet.sendAction("set_view", { view: "split" }); // app + chat side by side
+window.cadet.sendAction("set_view", { view: "full" }); // app full-width
+window.cadet.sendAction("set_view", { view: "chat" }); // close app, back to chat
 ```
 
 - **`"split"`** — side by side with the conversation. Desktop only; ignored on

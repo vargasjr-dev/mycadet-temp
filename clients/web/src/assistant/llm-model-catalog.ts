@@ -1276,7 +1276,7 @@ export const MODELS_BY_PROVIDER = {
       supportsText: false,
     },
   ],
-  vellum: [
+  cadet: [
     {
       id: "qwen/qwen3-8b",
       displayName: "Qwen3 8B",
@@ -1284,7 +1284,7 @@ export const MODELS_BY_PROVIDER = {
       contextWindowTokens: 32_768,
       defaultContextWindowTokens: 32_768,
       maxOutputTokens: 32_768,
-      featureFlag: "vellum-hosted-inference",
+      featureFlag: "cadet-hosted-inference",
     },
   ],
   "openai-compatible": [],
@@ -1309,7 +1309,7 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
   ionet: "meta-llama/Llama-3.3-70B-Instruct",
   poolside: "poolside/laguna-s-2.1",
   typesafe: "jev-latest",
-  vellum: "qwen/qwen3-8b",
+  cadet: "qwen/qwen3-8b",
   "openai-compatible": "",
 };
 
@@ -1320,8 +1320,8 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
  */
 export const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   // Routing identities that cards and pickers render as providers.
-  // `cadet` is also the catalog owner of Vellum-hosted GPU models.
-  vellum: "Cadet",
+  // `cadet` is also the catalog owner of Cadet-hosted GPU models.
+  cadet: "Cadet",
   chatgpt: "ChatGPT Subscription",
   anthropic: "Anthropic",
   openai: "OpenAI",
@@ -1373,7 +1373,7 @@ export function vendorDisplayName(vendor: string): string {
 }
 
 /**
- * Whether each provider supports Vellum-managed (`platform`) auth.
+ * Whether each provider supports Cadet-managed (`platform`) auth.
  * Covers every provider in the daemon catalog so the connection
  * editor can filter the auth-type dropdown for providers like
  * Fireworks and OpenRouter that have no managed proxy route.
@@ -1397,13 +1397,13 @@ export const PROVIDER_SUPPORTS_PLATFORM_AUTH: Record<string, boolean> = {
   ionet: false,
   poolside: false,
   typesafe: true,
-  vellum: true,
+  cadet: true,
 };
 
 export const MANAGED_MODELS = MODELS_BY_PROVIDER.anthropic;
 
 /**
- * Providers the Vellum-managed entry can route to. Single source of truth for
+ * Providers the Cadet-managed entry can route to. Single source of truth for
  * the web (the settings-domain MANAGED_ROUTABLE_PROVIDERS set derives from
  * it); mirrors the daemon's managed-routable set in
  * assistant/src/providers/platform-proxy/constants.ts.
@@ -1415,7 +1415,7 @@ export const VELLUM_SERVED_PROVIDERS = [
   "fireworks",
   "together",
   "typesafe",
-  "vellum",
+  "cadet",
 ] as const;
 
 /**
@@ -1449,14 +1449,14 @@ const VELLUM_MODELS: readonly LlmCatalogModel[] = (() => {
  * The managed upstream that serves a model picked under the Cadet entry —
  * the first VELLUM_SERVED_PROVIDERS member whose catalog lists the id. Used
  * at profile-save time to derive the wire-shape provider for
- * provider_connection: "vellum" profiles.
+ * provider_connection: "cadet" profiles.
  */
 /**
  * Decode a `<provider>/<model>` Cadet routing string (mirrors the daemon's
- * parseVellumModel): the prefix names the upstream, the remainder is the
+ * parseCadetModel): the prefix names the upstream, the remainder is the
  * upstream's native model id. Null for anything else.
  */
-export function parseVellumRoutedModel(modelId: string): {
+export function parseCadetRoutedModel(modelId: string): {
   provider: (typeof VELLUM_SERVED_PROVIDERS)[number];
   model: string;
 } | null {
@@ -1473,7 +1473,7 @@ export function parseVellumRoutedModel(modelId: string): {
 export function getManagedUpstreamForModel(
   modelId: string,
 ): (typeof VELLUM_SERVED_PROVIDERS)[number] | undefined {
-  const routed = parseVellumRoutedModel(modelId);
+  const routed = parseCadetRoutedModel(modelId);
   if (routed) {
     return routed.provider;
   }
@@ -1496,7 +1496,7 @@ export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-5.5",
 ]);
 
-export const HOSTED_INFERENCE_CATALOG_FLAG = "vellum-hosted-inference";
+export const HOSTED_INFERENCE_CATALOG_FLAG = "cadet-hosted-inference";
 
 export function catalogEnabledFlags(args: {
   hostedInference?: boolean;
@@ -1566,7 +1566,7 @@ export function providerOffersTextGeneration(provider: string): boolean {
 export function getModelsForProvider(
   provider: string,
 ): readonly LlmCatalogModel[] {
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     return VELLUM_MODELS;
   }
   // The "chatgpt" routing identity has no catalog of its own: it serves the
@@ -1590,7 +1590,7 @@ export function getDefaultModelForProvider(
   }
   // The Cadet picker serves the union of managed catalogs. The GPU
   // catalog's defaultModel is not the Cadet connection default.
-  if (provider === "vellum") {
+  if (provider === "cadet") {
     return undefined;
   }
   return DEFAULT_MODEL_BY_PROVIDER[provider as LlmProviderId];

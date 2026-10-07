@@ -43,7 +43,7 @@ import {
 } from "@/lib/local-mode";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuPlatformSession } from "@/runtime/menu";
-import { useVellumCommands } from "@/runtime/vellum-commands";
+import { useCadetCommands } from "@/runtime/cadet-commands";
 import { handleToggleWatchCommand } from "@/runtime/watch-command";
 
 import { autoSendPromptState } from "@/utils/auto-send-prompt";
@@ -373,7 +373,7 @@ export function RootLayout() {
     [navigate],
   );
   // Inbound deep-link navigation + window activation. Mounted here
-  // (not in `ChatPage`) so a `vellum://thread/...` arriving while
+  // (not in `ChatPage`) so a `cadet://thread/...` arriving while
   // the user is on `/assistant/settings`, `/logs`, etc. still
   // navigates. The composer-pre-fill half lives in `ChatPage`'s
   // `useDeepLinkConsumer` because it owns `setInput`; the two
@@ -405,7 +405,7 @@ export function RootLayout() {
   const [createOpen, setCreateOpen] = useState(false);
   const { login } = useOnboardingLogin();
 
-  useVellumCommands({
+  useCadetCommands({
     openSettings: () => {
       void navigate(routes.settings.root);
     },

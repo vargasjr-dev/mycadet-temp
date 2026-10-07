@@ -7,7 +7,7 @@ import {
   titleBarOverlayThemeSchema,
   type ColorScheme,
   type TitleBarOverlayTheme,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 import {
   readOnboardingActive,
@@ -132,7 +132,7 @@ export const ensureVisible = (): Promise<void> => {
 
 export const current = (): BrowserWindow | null => mainWindow;
 
-export const dispatchToMain = (command: VellumCommand): void => {
+export const dispatchToMain = (command: CadetCommand): void => {
   const win = current();
   if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
     win.webContents.send("cadet:command", command);

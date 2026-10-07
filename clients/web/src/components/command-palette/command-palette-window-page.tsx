@@ -14,7 +14,7 @@ import {
   dismissCommandPaletteWindow,
   selectCommandPaletteCommand,
 } from "@/runtime/command-palette-window";
-import type { VellumCommand } from "@/runtime/is-electron";
+import type { CadetCommand } from "@/runtime/is-electron";
 import {
   useAuthStore,
   useHasPlatformSession,
@@ -25,7 +25,7 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 const noop = (): void => undefined;
 const noopNavigate = (_to: string | number): void => undefined;
 
-const commandForItem = (item: CommandPaletteItemData): VellumCommand | null => {
+const commandForItem = (item: CommandPaletteItemData): CadetCommand | null => {
   switch (item.id) {
     case "action-new-conversation":
       return { kind: "newConversation" };

@@ -93,7 +93,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `<script>window.__VELLUM_CONFIG__=${configJson}</script></head>`,
+        `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
       );
     },
     configureServer(server) {

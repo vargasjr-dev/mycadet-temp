@@ -193,7 +193,7 @@ function resolveCurrentTapAssistant(
  * `RootLayout` so a tap arriving on any authenticated route navigates.
  *
  * Publishes `deeplink.openThread` rather than navigating directly so
- * taps share the `vellum://thread/...` deep-link path; one wiring
+ * taps share the `cadet://thread/...` deep-link path; one wiring
  * covers all three tap paths in `runtime/notifications.ts`.
  *
  * No effect cleanup: `setNotificationTapHandler` swaps the handler

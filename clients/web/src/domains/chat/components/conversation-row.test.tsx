@@ -25,7 +25,7 @@ describe("buildMenuProps", () => {
     );
     expect(channel.isReadonly).toBe(true);
 
-    const native = buildMenuProps(makeCtx(), conv({ originChannel: "vellum" }));
+    const native = buildMenuProps(makeCtx(), conv({ originChannel: "cadet" }));
     expect(native.isReadonly).toBe(false);
   });
 

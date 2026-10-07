@@ -28,7 +28,7 @@ const githubPlugin: PluginsByNameGetResponse = {
   homepage: "https://example.com/level-up",
   license: "MIT",
   version: "0.1.0",
-  source: { kind: "github", repo: "vellum-ai/level-up", ref: "main" },
+  source: { kind: "github", repo: "cadet-ai/level-up", ref: "main" },
   readme: "# Level Up",
   ref: "main",
   artifact: null,
@@ -44,8 +44,8 @@ describe("PluginDetailMetadata", () => {
     );
     const html = container.innerHTML;
 
-    expect(html).toContain("vellum-ai/level-up");
-    expect(html).toContain('href="https://github.com/vellum-ai/level-up"');
+    expect(html).toContain("cadet-ai/level-up");
+    expect(html).toContain('href="https://github.com/cadet-ai/level-up"');
     expect(html).toContain("https://example.com/level-up");
     expect(html).toContain("MIT");
     // Without surfaces, no contributed-surface counts appear.

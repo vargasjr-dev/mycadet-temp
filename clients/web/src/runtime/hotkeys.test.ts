@@ -10,13 +10,13 @@ const { getHotkeys, setHotkey, onHotkeysChange } = await import("./hotkeys");
 
 afterEach(() => {
   runningInElectron = false;
-  delete (window as { vellum?: unknown }).vellum;
+  delete (window as { cadet?: unknown }).cadet;
 });
 
 describe("getHotkeys", () => {
   test("resolves to an empty catalog off Electron", async () => {
     const get = mock(() => Promise.resolve([]));
-    (window as { vellum?: unknown }).vellum = { hotkeys: { get } };
+    (window as { cadet?: unknown }).cadet = { hotkeys: { get } };
 
     expect(await getHotkeys()).toEqual([]);
     expect(get).not.toHaveBeenCalled();
@@ -25,7 +25,7 @@ describe("getHotkeys", () => {
   test("reads the catalog over the bridge on Electron", async () => {
     runningInElectron = true;
     const get = mock(() => Promise.resolve([]));
-    (window as { vellum?: unknown }).vellum = { hotkeys: { get } };
+    (window as { cadet?: unknown }).cadet = { hotkeys: { get } };
 
     await getHotkeys();
 
@@ -37,7 +37,7 @@ describe("setHotkey", () => {
   test("persists the override over the bridge on Electron", async () => {
     runningInElectron = true;
     const set = mock(() => Promise.resolve());
-    (window as { vellum?: unknown }).vellum = { hotkeys: { set } };
+    (window as { cadet?: unknown }).cadet = { hotkeys: { set } };
 
     await setHotkey("newConversation", "CmdOrCtrl+N");
 
@@ -48,7 +48,7 @@ describe("setHotkey", () => {
 describe("onHotkeysChange", () => {
   test("returns a no-op unsubscribe off Electron", () => {
     const onChange = mock(() => () => {});
-    (window as { vellum?: unknown }).vellum = { hotkeys: { onChange } };
+    (window as { cadet?: unknown }).cadet = { hotkeys: { onChange } };
 
     expect(() => onHotkeysChange(() => {})()).not.toThrow();
     expect(onChange).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe("onHotkeysChange", () => {
 describe("older preload lacking the hotkeys channel", () => {
   test("getHotkeys resolves empty, setHotkey no-ops, onChange returns no-op", async () => {
     runningInElectron = true;
-    (window as { vellum?: unknown }).vellum = { platform: "electron" };
+    (window as { cadet?: unknown }).cadet = { platform: "electron" };
 
     expect(await getHotkeys()).toEqual([]);
     await expect(setHotkey("newConversation", null)).resolves.toBeUndefined();

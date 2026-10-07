@@ -34,7 +34,7 @@ const PROFILES: InferenceProfileSummary[] = [
   summary({
     name: "balanced",
     label: "Balanced",
-    provider: "vellum",
+    provider: "cadet",
     model: "glm-5.2",
     source: "managed",
   }),
@@ -66,7 +66,7 @@ const PROFILES: InferenceProfileSummary[] = [
 const CONFIG: ConfigGetResponse = {
   llm: {
     profiles: {
-      balanced: { label: "Balanced", provider: "vellum", model: "glm-5.2" },
+      balanced: { label: "Balanced", provider: "cadet", model: "glm-5.2" },
       "my-custom": {
         label: "My Custom",
         provider: "anthropic",

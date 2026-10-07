@@ -882,7 +882,7 @@ describe("skill_loaded telemetry recording", () => {
     mockCatalog = [makeSkill("deploy")];
     mockManifests = { deploy: makeManifest(["deploy_run"]) };
     mockInstallMetas = {
-      deploy: { origin: "vellum", installedAt: "2026-01-01T00:00:00Z" },
+      deploy: { origin: "cadet", installedAt: "2026-01-01T00:00:00Z" },
     };
 
     const history: Message[] = [
@@ -1144,7 +1144,7 @@ describe("skill_loaded telemetry recording", () => {
     // No manifest — mirrors installSkillLocally output for catalog skills.
     mockInstallMetas = {
       "catalog-skill": {
-        origin: "vellum",
+        origin: "cadet",
         installedAt: "2026-01-01T00:00:00Z",
       },
     };
@@ -1298,7 +1298,7 @@ describe("lastUsedAt stamping on managed-skill load", () => {
     // No manifest — instruction-only managed skill.
     mockInstallMetas = {
       "catalog-skill": {
-        origin: "vellum",
+        origin: "cadet",
         installedAt: "2026-01-01T00:00:00Z",
       },
     };

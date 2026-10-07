@@ -3,7 +3,7 @@
 A 7-day habit grid: add habits, toggle a checkmark per day, delete habits. This is the
 canonical **CRUD over a custom route** example — full create / read / update / delete
 backed by a JSON file on disk, called from a multi-file TSX (`formatVersion: 2`) app via
-`window.vellum.fetch`.
+`window.cadet.fetch`.
 
 **What it demonstrates**
 
@@ -174,7 +174,7 @@ export function HabitTracker() {
 
   const loadHabits = useCallback(async () => {
     try {
-      const res = await window.vellum.fetch("/v1/x/habits");
+      const res = await window.cadet.fetch("/v1/x/habits");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setHabits(await res.json());
       setError(null);
@@ -193,7 +193,7 @@ export function HabitTracker() {
     if (!name) return;
     setInput("");
     try {
-      const res = await window.vellum.fetch("/v1/x/habits", {
+      const res = await window.cadet.fetch("/v1/x/habits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -213,7 +213,7 @@ export function HabitTracker() {
       ? habit.completedDates.filter((d) => d !== date)
       : [...habit.completedDates, date];
     try {
-      const res = await window.vellum.fetch(`/v1/x/habits?id=${id}`, {
+      const res = await window.cadet.fetch(`/v1/x/habits?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completedDates: completed }),
@@ -228,7 +228,7 @@ export function HabitTracker() {
 
   const deleteHabit = async (id: string) => {
     try {
-      const res = await window.vellum.fetch(`/v1/x/habits?id=${id}`, {
+      const res = await window.cadet.fetch(`/v1/x/habits?id=${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

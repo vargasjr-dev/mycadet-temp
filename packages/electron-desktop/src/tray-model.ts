@@ -16,7 +16,7 @@ import {
 import {
   type CompanionSize,
   type CompanionSizeAxis,
-  type VellumCommand,
+  type CadetCommand,
 } from "@mycadet/ipc-contract";
 
 import { onAvatarChange } from "./avatar";
@@ -46,7 +46,7 @@ export type TrayMenuIcon =
 
 export interface TrayModelRuntime {
   accelerator: (
-    command: VellumCommand["kind"],
+    command: CadetCommand["kind"],
   ) => Pick<MenuItemConstructorOptions, "accelerator">;
   /**
    * Whether this platform has a companion surface at all.
@@ -60,7 +60,7 @@ export interface TrayModelRuntime {
   companionHidden: () => boolean;
   /** Which named size one axis of the companion surface is drawn at. */
   companionSize: (axis: CompanionSizeAxis) => CompanionSize;
-  dispatch: (command: VellumCommand) => void;
+  dispatch: (command: CadetCommand) => void;
   featureEnabled: (flag: string) => boolean;
   getLockfile: () => Lockfile;
   icon: (icon: TrayMenuIcon) => NativeImage | undefined;

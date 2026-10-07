@@ -77,7 +77,7 @@ import { openCommandPaletteWindow } from "@/runtime/command-palette-window";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativePlatform } from "@/runtime/native-auth";
 import { isPopoutWindow, openPopoutWindow } from "@/runtime/popout-window";
-import { useVellumCommands } from "@/runtime/vellum-commands";
+import { useCadetCommands } from "@/runtime/cadet-commands";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -860,7 +860,7 @@ export function ChatLayout({
   // works whether ChatPage is already mounted (event listener) or the
   // command comes from another `/assistant/*` route (pending flag drained
   // on the next ChatPage mount).
-  useVellumCommands({
+  useCadetCommands({
     newConversation: () => {
       startNewConversation();
     },

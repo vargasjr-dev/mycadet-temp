@@ -11,7 +11,7 @@ export type SuggestionIconKey =
   | "gmail"
   | "google-calendar"
   | "google-drive"
-  | "vellum"
+  | "cadet"
   | "generic";
 
 /** A single requirement shown in the detail drawer "Here's what we'll need". */
@@ -51,6 +51,6 @@ export interface SuggestionGroup {
   /** Section heading, e.g. "Your plugins" or "Cadet picks". */
   title: string;
   /** Provenance — drives future real-data sourcing; informational for now. */
-  source: "plugin" | "vellum-curated";
+  source: "plugin" | "cadet-curated";
   suggestions: ThreadSuggestion[];
 }

@@ -960,14 +960,14 @@ describe("computeSubagentCardData — web tools match main-chat group labels", (
             toolName: "web_fetch",
             toolUseId: "tu-wf",
             content: "truncated summ…",
-            input: { url: "https://docs.vellum.ai/guide" },
+            input: { url: "https://docs.cadet.ai/guide" },
           }),
         ],
       }),
     );
     const step = data.steps[0]!;
     if (step.kind === "thinking") {
-      expect(step.text).toBe("Reading docs.vellum.ai");
+      expect(step.text).toBe("Reading docs.cadet.ai");
     }
   });
 
@@ -1813,7 +1813,7 @@ describe("computeSubagentSteps / applyTimelineEvent reproduce computeSubagentCar
             type: "tool_result",
             toolName: "web_search",
             toolUseId: "ws-1",
-            result: "Cadet\nhttps://vellum.ai",
+            result: "Cadet\nhttps://cadet.ai",
             timestamp: NOW + 1000,
           },
           1,
@@ -1823,7 +1823,7 @@ describe("computeSubagentSteps / applyTimelineEvent reproduce computeSubagentCar
             type: "tool_call",
             toolName: "web_fetch",
             toolUseId: "wf-1",
-            input: { url: "https://vellum.ai/docs" },
+            input: { url: "https://cadet.ai/docs" },
             timestamp: NOW + 1100,
           },
           2,

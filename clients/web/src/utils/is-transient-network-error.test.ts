@@ -11,7 +11,7 @@ describe("isTransientNetworkError", () => {
 
   test("matches 'Failed to fetch' with hostname suffix (Sentry enrichment)", () => {
     expect(
-      isTransientNetworkError(new TypeError("Failed to fetch (www.vellum.ai)")),
+      isTransientNetworkError(new TypeError("Failed to fetch (www.cadet.ai)")),
     ).toBe(true);
     expect(
       isTransientNetworkError(new TypeError("Failed to fetch (example.com)")),

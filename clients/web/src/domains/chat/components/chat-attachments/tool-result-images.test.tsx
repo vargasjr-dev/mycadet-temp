@@ -552,7 +552,7 @@ describe("resolveToolResultImages embed dedupe", () => {
       result:
         `Generated ${savedPaths.length} image using gpt-image.${saved}` +
         `\n\nShow the user an image by embedding it in your reply: ` +
-        `![description](vellum://workspace/${savedPaths[0]}).`,
+        `![description](cadet://workspace/${savedPaths[0]}).`,
       imageDataList: savedPaths.map(() => "aGVsbG8="),
       completedAt: 1,
     };
@@ -565,7 +565,7 @@ describe("resolveToolResultImages embed dedupe", () => {
     const embedded = embeddedImageFileNames([
       {
         type: "text",
-        text: "here it is:\n\n![UI](vellum://workspace/media/generated/dashboard-ui.png)",
+        text: "here it is:\n\n![UI](cadet://workspace/media/generated/dashboard-ui.png)",
       },
     ]);
 
@@ -588,7 +588,7 @@ describe("resolveToolResultImages embed dedupe", () => {
   test("keeps the image when the reply embeds a different file", () => {
     const toolCall = generateCall(["media/generated/dashboard-ui.png"]);
     const embedded = embeddedImageFileNames([
-      { type: "text", text: "![other](vellum://workspace/media/other.png)" },
+      { type: "text", text: "![other](cadet://workspace/media/other.png)" },
     ]);
 
     expect(
@@ -606,7 +606,7 @@ describe("resolveToolResultImages embed dedupe", () => {
     const embedded = embeddedImageFileNames([
       {
         type: "text",
-        text: "![a](vellum://workspace/media/generated/logo-a.png)",
+        text: "![a](cadet://workspace/media/generated/logo-a.png)",
       },
     ]);
 
@@ -625,7 +625,7 @@ describe("resolveToolResultImages embed dedupe", () => {
     const embedded = embeddedImageFileNames([
       {
         type: "text",
-        text: "![UI](vellum://workspace/media/generated/dashboard-ui.png)",
+        text: "![UI](cadet://workspace/media/generated/dashboard-ui.png)",
       },
     ]);
 

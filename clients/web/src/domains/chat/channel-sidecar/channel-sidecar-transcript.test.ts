@@ -9,7 +9,7 @@ import {
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { Conversation } from "@/types/conversation-types";
 
-function vellumRow(id: string, text: string): DisplayMessage {
+function cadetRow(id: string, text: string): DisplayMessage {
   return {
     id,
     role: "user",
@@ -64,17 +64,17 @@ const telegramConversation: Pick<
 describe("partitionChannelTranscript", () => {
   test("moves attributable rows out of the Cadet lane", () => {
     const messages = [
-      vellumRow("v1", "typed in Cadet"),
+      cadetRow("v1", "typed in Cadet"),
       slackRow("s1", "typed in Slack"),
-      vellumRow("v2", "also Cadet"),
+      cadetRow("v2", "also Cadet"),
     ];
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
       conversation: slackConversation,
     });
 
-    expect(vellumMessages.map((m) => m.id)).toEqual(["v1", "v2"]);
+    expect(cadetMessages.map((m) => m.id)).toEqual(["v1", "v2"]);
     expect(entries.map((e) => e.id)).toEqual(["s1"]);
     expect(entries[0]!.text).toBe("typed in Slack");
     expect(entries[0]!.provenance.channelId).toBe("slack");
@@ -82,26 +82,26 @@ describe("partitionChannelTranscript", () => {
   });
 
   test("leaves an ordinary Cadet conversation untouched, by reference", () => {
-    const messages = [vellumRow("v1", "hello")];
+    const messages = [cadetRow("v1", "hello")];
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
-      conversation: { originChannel: "vellum" },
+      conversation: { originChannel: "cadet" },
     });
 
-    expect(vellumMessages).toBe(messages);
+    expect(cadetMessages).toBe(messages);
     expect(entries).toEqual([]);
   });
 
   test("treats notification origins as native, not as a bound channel", () => {
-    const messages = [vellumRow("v1", "reminder fired")];
+    const messages = [cadetRow("v1", "reminder fired")];
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
       conversation: { originChannel: "notification:slack" },
     });
 
-    expect(vellumMessages).toBe(messages);
+    expect(cadetMessages).toBe(messages);
     expect(entries).toEqual([]);
   });
 
@@ -109,14 +109,14 @@ describe("partitionChannelTranscript", () => {
     // Telegram is bound and eligible for the drawer, but the wire carries no
     // per-message envelope for it, so no row is attributable and the lane is
     // the unpartitioned transcript. Nothing is guessed out of it.
-    const messages = [vellumRow("v1", "hi"), vellumRow("v2", "there")];
+    const messages = [cadetRow("v1", "hi"), cadetRow("v2", "there")];
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
       conversation: telegramConversation,
     });
 
-    expect(vellumMessages).toBe(messages);
+    expect(cadetMessages).toBe(messages);
     expect(entries).toEqual([]);
   });
 
@@ -126,12 +126,12 @@ describe("partitionChannelTranscript", () => {
     // conversation's own binding.
     const messages = [slackRow("s1", "stray envelope")];
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages,
       conversation: telegramConversation,
     });
 
-    expect(vellumMessages).toBe(messages);
+    expect(cadetMessages).toBe(messages);
     expect(entries).toEqual([]);
   });
 
@@ -174,12 +174,12 @@ describe("partitionChannelTranscript", () => {
     };
     const plain = slackRow("s3", "plain text row");
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages: [withThinking, withAttachment, plain],
       conversation: slackConversation,
     });
 
-    expect(vellumMessages.map((m) => m.id)).toEqual(["s1", "s2"]);
+    expect(cadetMessages.map((m) => m.id)).toEqual(["s1", "s2"]);
     expect(entries.map((e) => e.id)).toEqual(["s3"]);
   });
 
@@ -204,19 +204,19 @@ describe("partitionChannelTranscript", () => {
       ],
     };
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages: [toolTurn, reply],
       conversation: slackConversation,
     });
 
-    expect(vellumMessages.map((m) => m.id)).toEqual(["a2"]);
+    expect(cadetMessages.map((m) => m.id)).toEqual(["a2"]);
     expect(entries.map((e) => e.id)).toEqual(["a1"]);
     expect(entries[0]!.provenance.externalMessageId).toBe("a1.000100");
   });
 
   test("keeps an unattributed assistant reply in the Cadet lane", () => {
     // A row whose envelope never arrived (reconciliation lost, backfill not
-    // run) is indistinguishable to the client from a Vellum-only row. The
+    // run) is indistinguishable to the client from a Cadet-only row. The
     // classifier must not fill that gap from the conversation's binding or
     // from the row being an assistant reply: `null` provenance keeps the row
     // where it is, which is the conservative failure the partition relies on.
@@ -226,12 +226,12 @@ describe("partitionChannelTranscript", () => {
       contentBlocks: [{ type: "text", text: "posted, but unattributed" }],
     };
 
-    const { vellumMessages, entries } = partitionChannelTranscript({
+    const { cadetMessages, entries } = partitionChannelTranscript({
       messages: [unstamped],
       conversation: slackConversation,
     });
 
-    expect(vellumMessages.map((m) => m.id)).toEqual(["a3"]);
+    expect(cadetMessages.map((m) => m.id)).toEqual(["a3"]);
     expect(entries).toEqual([]);
   });
 
@@ -264,7 +264,7 @@ describe("resolveChannelSidecarTarget", () => {
     expect(
       resolveChannelSidecarTarget({
         conversationId: "conv-1",
-        conversation: { originChannel: "vellum" },
+        conversation: { originChannel: "cadet" },
         entries: [],
       }),
     ).toBeNull();
