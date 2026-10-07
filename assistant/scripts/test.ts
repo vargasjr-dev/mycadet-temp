@@ -57,10 +57,8 @@ const BUN_TEST_TIMEOUT_MS = Number.parseInt(
 // tests to the front, improving parallel utilization.
 const TEST_DURATIONS_FILE = Bun.env.TEST_DURATIONS_FILE ?? "";
 const TEST_DURATIONS_OUTPUT = Bun.env.TEST_DURATIONS_OUTPUT ?? "";
-// Diff-scoped runs: when set (PR CI), run only the test files that changed
-// vs the base ref. The full suite needs 13-20 min on 2-core CI runners; a
-// PR's changed files run in seconds. Fails open to the full suite when the
-// diff cannot be computed (shallow checkout, missing base ref).
+// Run only test files changed vs TEST_DIFF_BASE; fails open when the diff
+// cannot be computed.
 const TEST_DIFF_ONLY = Bun.env.TEST_DIFF_ONLY === "true";
 const TEST_DIFF_BASE = Bun.env.TEST_DIFF_BASE ?? "origin/main";
 
@@ -171,10 +169,7 @@ function sortLongestFirst(files: string[]): string[] {
   return [...known, ...unknown];
 }
 
-// Diff-scoped selection: intersect the collected test files with the test
-// files changed between the base ref and HEAD. Returns null when the diff
-// cannot be computed (shallow checkout without the base ref) so the caller
-// can fail open to the full suite.
+// Intersect collected test files with those changed vs the base ref.
 function diffTestFiles(files: string[]): string[] | null {
   const repoRoot = join(import.meta.dir, "..", "..");
   const proc = Bun.spawnSync(
@@ -196,7 +191,6 @@ function diffTestFiles(files: string[]): string[] | null {
       .toString()
       .split("\n")
       .filter(Boolean)
-      // Diff paths are repo-relative; the collected set is assistant-relative.
       .map((p) => p.replace(/^assistant\//, "")),
   );
   return files.filter((f) => changed.has(f));

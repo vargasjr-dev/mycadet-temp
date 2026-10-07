@@ -1,5 +1,22 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+// A browser falls back between loopback address families; bun's fetch does
+// not. Connect to the IPv6 form when the IPv4 form is refused.
+async function browserFetch(
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const alt = url.replace("//localhost:", "//[::1]:");
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    if (alt === url) {
+      throw error;
+    }
+    return await fetch(alt, init);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing the module under test
 // ---------------------------------------------------------------------------
@@ -226,7 +243,7 @@ describe("OAuth2 gateway transport", () => {
 
       // Make a request to the loopback server with the auth code
       const callbackUrl = `${redirectUri}?code=loopback-auth-code&state=${state}`;
-      await fetch(callbackUrl);
+      await browserFetch(callbackUrl);
 
       const result = await flowPromise;
       expect(result.tokens.accessToken).toBe("test-access-token");
@@ -291,7 +308,9 @@ describe("OAuth2 gateway transport", () => {
       const authorizeUrl = new URL(capturedAuthUrl);
       const redirectUri = authorizeUrl.searchParams.get("redirect_uri")!;
       const state = authorizeUrl.searchParams.get("state")!;
-      await fetch(`${redirectUri}?code=explicit-loopback-code&state=${state}`);
+      await browserFetch(
+        `${redirectUri}?code=explicit-loopback-code&state=${state}`,
+      );
 
       const result = await flowPromise;
       expect(result.tokens.accessToken).toBe("test-access-token");
@@ -415,7 +434,7 @@ describe("OAuth2 gateway transport", () => {
       const redirectUri = authorizeUrl.searchParams.get("redirect_uri")!;
       const state = authorizeUrl.searchParams.get("state")!;
 
-      const resp = await fetch(
+      const resp = await browserFetch(
         `${redirectUri}?code=loopback-code&state=${state}`,
       );
       expect(resp.status).toBe(200);
@@ -451,7 +470,7 @@ describe("OAuth2 gateway transport", () => {
       const state = authorizeUrl.searchParams.get("state")!;
 
       // Fire callback without awaiting — immediately check flowPromise rejection
-      fetch(`${redirectUri}?error=access_denied&state=${state}`).catch(
+      browserFetch(`${redirectUri}?error=access_denied&state=${state}`).catch(
         () => {},
       );
 
@@ -483,7 +502,7 @@ describe("OAuth2 gateway transport", () => {
       const redirectUri = authorizeUrl.searchParams.get("redirect_uri")!;
 
       // Send callback with wrong state
-      const resp = await fetch(
+      const resp = await browserFetch(
         `${redirectUri}?code=bad-code&state=wrong-state`,
       );
       expect(resp.status).toBe(400);
@@ -491,7 +510,7 @@ describe("OAuth2 gateway transport", () => {
       // The flow should still be waiting (not resolved)
       // Send the correct callback to clean up
       const state = authorizeUrl.searchParams.get("state")!;
-      await fetch(`${redirectUri}?code=correct-code&state=${state}`);
+      await browserFetch(`${redirectUri}?code=correct-code&state=${state}`);
 
       const result = await flowPromise;
       expect(result.tokens.accessToken).toBe("test-access-token");
@@ -527,7 +546,7 @@ describe("OAuth2 gateway transport", () => {
       const state = authorizeUrl.searchParams.get("state")!;
 
       // Fire callback without awaiting — immediately check flowPromise rejection
-      fetch(`${redirectUri}?code=code-that-fails&state=${state}`).catch(
+      browserFetch(`${redirectUri}?code=code-that-fails&state=${state}`).catch(
         () => {},
       );
 

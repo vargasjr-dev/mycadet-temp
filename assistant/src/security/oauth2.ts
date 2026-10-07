@@ -464,14 +464,7 @@ function startLoopbackServerAndWaitForCode(
       "oauth2 loopback: binding server",
     );
 
-    // Bind the loopback SOCKET to 127.0.0.1 explicitly. "localhost" resolves
-    // through the ambient resolver — on bun 1.3.11 listen("localhost") binds
-    // ::1-only while bun's own fetch resolves localhost to 127.0.0.1, so the
-    // callback request can never connect (tests saw ConnectionRefused and the
-    // process hung until the 5-minute timeout). The redirect_uri host stays
-    // "localhost" per RFC 8252 loopback convention; browsers fall back from
-    // ::1 to 127.0.0.1 when connecting, so this is transparent in production.
-    server.listen(loopbackPort ?? 0, "127.0.0.1", () => {
+    server.listen(loopbackPort ?? 0, "localhost", () => {
       const addr = server.address() as { port: number };
       boundRedirectUri = `http://localhost:${addr.port}${effectiveCallbackPath}`;
 
@@ -742,8 +735,7 @@ function startLoopbackServerForPreparedFlow(
       server.close();
     }
 
-    // Same 127.0.0.1 bind rationale as the prepared-flow server above.
-    server.listen(loopbackPort ?? 0, "127.0.0.1", () => {
+    server.listen(loopbackPort ?? 0, "localhost", () => {
       const addr = server.address() as { port: number };
       const redirectUri = `http://localhost:${addr.port}${effectiveCallbackPath}`;
       listening = true;

@@ -24,10 +24,7 @@ import type { ChannelReplyPayload } from "@mycadet/gateway-client";
 
 import { installFastTimers } from "../../__tests__/fast-timers.js";
 
-// Push notifications fire fire-and-forget with retry backoff; the tests wait
-// out those timers before asserting on the recorded pushes. Accelerated
-// clocks fire the retry timers in call order as microtasks, so "wait for the
-// pushes to settle" converges immediately without changing what is observed.
+// Accelerated clocks: retry timers fire as microtasks.
 let restoreTimers: () => void;
 beforeAll(() => {
   restoreTimers = installFastTimers();
