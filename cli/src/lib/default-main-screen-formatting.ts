@@ -1,3 +1,8 @@
+import {
+  type ConversationContentBlock,
+  type ConversationMessageToolCall,
+} from "@mycadet/assistant-api";
+
 import { HATCH_ART } from "./constants.js";
 
 export const LEFT_PANEL_WIDTH = 36;
@@ -50,34 +55,22 @@ export const RIGHT_PANEL_LINE_COUNT =
   RIGHT_PANEL_INFO_SECTIONS * 2;
 const HELP_DISPLAY_HEIGHT = HELP_COMMANDS.length + 1;
 
-export interface ToolCallInfo {
-  name: string;
-  input: Record<string, unknown>;
-  result?: string;
-  isError?: boolean;
-  toolUseId?: string;
-}
-
 export interface RuntimeMessage {
   id: string;
   role: "user" | "assistant";
-  content: string;
   /**
-   * Ordered text segments from the daemon's history payload, split at
-   * tool_use/surface boundaries. The flat `content` body is derived from
-   * these (see `segmentsToPlainText`); the daemon no longer sends a
-   * redundant flattened `content` field on the wire.
+   * Flat body for rows the CLI built locally (optimistic user sends). Rows
+   * from the daemon carry their content in `contentBlocks` instead and leave
+   * this unset.
    */
-  textSegments?: string[];
+  content?: string;
   /**
-   * Ordered entry refs (`text:N`, `tool:N`, plus `surface:`/`thinking:`/
-   * `attachment:` entries the TUI doesn't render) describing how segments and
-   * tool calls interleave in the original turn. `buildMessageParts` walks it
-   * to rebuild that order; absent on legacy payloads.
+   * Unified ordered content from the daemon (`ConversationContentBlock[]`):
+   * text runs and tool invocations (with their paired results) in display
+   * order — the same single list the web client maps.
    */
-  contentOrder?: string[];
+  contentBlocks?: ConversationContentBlock[];
   timestamp: string;
-  toolCalls?: ToolCallInfo[];
   label?: string;
 }
 
@@ -149,7 +142,9 @@ export function formatConfirmationPreview(
   }
 }
 
-export function formatToolCallPreview(toolCall: ToolCallInfo): string {
+export function formatToolCallPreview(
+  toolCall: ConversationMessageToolCall,
+): string {
   switch (toolCall.name) {
     case "bash":
       return String(toolCall.input.command ?? "").slice(0, 80);
@@ -209,47 +204,35 @@ export function stripAnsi(value: string): string {
   return value.replace(/\x1b\[[0-9;]*m/g, "");
 }
 
-/** A chunk of an assistant turn in display order: text or a tool call. */
+/** A chunk of a turn in display order: text or a tool invocation. */
 export type MessagePart =
   | { kind: "text"; text: string }
-  | { kind: "tool"; toolCall: ToolCallInfo };
+  | { kind: "tool"; toolCall: ConversationMessageToolCall };
 
 /**
- * Rebuild a message's display order. The daemon records how segments and tool
- * calls interleaved in the original turn (`contentOrder`); walk it so text
- * that streamed before and after a tool call renders on either side of the
- * tool's box instead of being flattened ahead of every tool call. Falls back
- * to the legacy shape (flat text body, tool calls after) when the payload
- * carries no ordering.
+ * Flatten a message into display-ordered parts by walking its
+ * `contentBlocks` — the same unified list the web client maps, already
+ * ordered and with tool results pre-paired by the daemon. Thinking, surface,
+ * and attachment blocks have no TUI rendering yet and are skipped. Rows the
+ * CLI built locally (optimistic user sends) carry only the flat `content`
+ * body, so that becomes the single text part.
  */
 export function buildMessageParts(msg: RuntimeMessage): MessagePart[] {
   const parts: MessagePart[] = [];
-  if (msg.contentOrder && msg.contentOrder.length > 0) {
-    for (const entry of msg.contentOrder) {
-      if (entry.startsWith("text:")) {
-        const segment = msg.textSegments?.[Number(entry.slice(5))];
-        if (segment && segment.trim().length > 0) {
-          parts.push({ kind: "text", text: segment });
-        }
-      } else if (entry.startsWith("tool:")) {
-        const toolCall = msg.toolCalls?.[Number(entry.slice(5))];
-        if (toolCall) {
-          parts.push({ kind: "tool", toolCall });
-        }
+  for (const block of msg.contentBlocks ?? []) {
+    if (block.type === "text") {
+      if (block.text.trim().length > 0) {
+        parts.push({ kind: "text", text: block.text });
       }
-      // surface:/thinking:/attachment: entries have no TUI rendering yet.
-    }
-    if (parts.length > 0) {
-      return parts;
+    } else if (block.type === "tool_use") {
+      parts.push({ kind: "tool", toolCall: block.toolCall });
     }
   }
-  if (msg.content.trim().length > 0) {
+  if (parts.length > 0) {
+    return parts;
+  }
+  if (msg.content?.trim()) {
     parts.push({ kind: "text", text: msg.content });
-  }
-  if (msg.role === "assistant" && msg.toolCalls) {
-    for (const toolCall of msg.toolCalls) {
-      parts.push({ kind: "tool", toolCall });
-    }
   }
   return parts;
 }
@@ -268,20 +251,26 @@ export function estimateItemHeight(
     const label = item.label ?? defaultLabel;
     const prefixLength = 10 + label.length + 1;
     let lines = 0;
-    const contentLines = item.content.split("\n");
-    for (let index = 0; index < contentLines.length; index++) {
-      const lineLength =
-        index === 0
-          ? contentLines[index].length + prefixLength
-          : contentLines[index].length;
-      lines += Math.max(1, Math.ceil(lineLength / columns));
-    }
-    if (item.role === "assistant" && item.toolCalls) {
-      for (const toolCall of item.toolCalls) {
-        // Each tool renders as an opening line, a closing line, and (once the
-        // result lands) a single finish line — no per-parameter dump.
+    let seenText = false;
+    for (const part of buildMessageParts(item)) {
+      if (part.kind === "text") {
+        // The first text part renders inline after the label (its first line
+        // carries the prefix); later parts render flush-left on their own.
+        const contentLines = part.text.split("\n");
+        for (let index = 0; index < contentLines.length; index++) {
+          const lineLength =
+            index === 0 && !seenText
+              ? contentLines[index].length + prefixLength
+              : contentLines[index].length;
+          lines += Math.max(1, Math.ceil(lineLength / columns));
+        }
+        seenText = true;
+      } else {
+        // Each tool renders as an opening line, a closing line, and (once
+        // the result lands) a single finish line — no per-parameter dump.
         lines +=
-          TOOL_CALL_CHROME_LINES + (toolCall.result !== undefined ? 1 : 0);
+          TOOL_CALL_CHROME_LINES +
+          (part.toolCall.result !== undefined ? 1 : 0);
       }
     }
     return lines + MESSAGE_SPACING;

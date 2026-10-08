@@ -105,6 +105,7 @@
         "cadet": "./src/index.ts",
       },
       "dependencies": {
+        "@mycadet/assistant-api": "workspace:*",
         "@mycadet/avatar-manifest": "workspace:*",
         "@mycadet/environments": "workspace:*",
         "@mycadet/ipc-server-utils": "workspace:*",

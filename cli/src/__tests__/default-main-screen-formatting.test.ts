@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { ConversationMessageToolCall } from "@mycadet/assistant-api";
 import {
   calculateHeaderHeight,
   estimateItemHeight,
@@ -20,6 +21,34 @@ function message(overrides: Partial<RuntimeMessage> = {}): RuntimeMessage {
     content: "Hello",
     timestamp: "2026-09-29T16:00:00.000Z",
     ...overrides,
+  };
+}
+
+function toolCall(
+  overrides: Partial<ConversationMessageToolCall> = {},
+): ConversationMessageToolCall {
+  return {
+    name: "file_read",
+    input: { path: "/a" },
+    ...overrides,
+  };
+}
+
+function surfaceStub() {
+  return {
+    surfaceId: "surface-1",
+    surfaceType: "card",
+    data: {},
+  };
+}
+
+function attachmentStub() {
+  return {
+    id: "attachment-1",
+    filename: "notes.txt",
+    mimeType: "text/plain",
+    sizeBytes: 12,
+    kind: "file",
   };
 }
 
@@ -124,22 +153,19 @@ describe("estimateItemHeight", () => {
     expect(estimateItemHeight(message({ content: "a\nb" }), 80)).toBe(3);
   });
 
-  test("accounts for tool-call chrome, parameters, and results", () => {
+  test("accounts for tool-call chrome and results", () => {
     expect(
       estimateItemHeight(
         message({
           role: "assistant",
-          toolCalls: [
-            {
-              name: "file_read",
-              input: { path: "/workspace/a", max_chars: 100 },
-              result: "done",
-            },
+          content: "",
+          contentBlocks: [
+            { type: "tool_use", toolCall: toolCall({ result: "done" }) },
           ],
         }),
         80,
       ),
-    ).toBe(5);
+    ).toBe(4);
   });
 
   test("estimates non-message feed items", () => {
@@ -168,63 +194,44 @@ describe("calculateHeaderHeight", () => {
 });
 
 describe("buildMessageParts", () => {
-  test("interweaves text segments and tool calls by contentOrder", () => {
+  test("walks content blocks in wire order", () => {
     const msg = message({
       role: "assistant",
-      content: "Hello there. Back again.",
-      textSegments: ["Hello there.", "Back again."],
-      toolCalls: [{ name: "file_read", input: { path: "/a" } }],
-      contentOrder: ["text:0", "tool:0", "text:1"],
+      contentBlocks: [
+        { type: "text", text: "Hello there." },
+        { type: "tool_use", toolCall: toolCall() },
+        { type: "text", text: "Back again." },
+      ],
     });
 
     expect(buildMessageParts(msg)).toEqual([
       { kind: "text", text: "Hello there." },
-      { kind: "tool", toolCall: { name: "file_read", input: { path: "/a" } } },
+      { kind: "tool", toolCall: toolCall() },
       { kind: "text", text: "Back again." },
     ]);
   });
 
-  test("falls back to flat content with trailing tool calls", () => {
-    const msg = message({
-      role: "assistant",
-      content: "plain body",
-      toolCalls: [{ name: "bash", input: { command: "ls" } }],
-    });
-
-    expect(buildMessageParts(msg)).toEqual([
+  test("falls back to the flat body for CLI-local rows", () => {
+    const user = message({ content: "plain body" });
+    expect(buildMessageParts(user)).toEqual([
       { kind: "text", text: "plain body" },
-      { kind: "tool", toolCall: { name: "bash", input: { command: "ls" } } },
     ]);
   });
 
-  test("skips blank segments and entries the TUI does not render", () => {
+  test("skips blank text and blocks the TUI does not render", () => {
     const msg = message({
       role: "assistant",
-      content: "",
-      textSegments: ["", "visible"],
-      toolCalls: [],
-      contentOrder: ["text:0", "surface:0", "thinking:0", "text:1"],
+      contentBlocks: [
+        { type: "text", text: "  " },
+        { type: "thinking", thinking: "hmm" },
+        { type: "surface", surface: surfaceStub() },
+        { type: "attachment", attachment: attachmentStub() },
+        { type: "text", text: "visible" },
+      ],
     });
 
     expect(buildMessageParts(msg)).toEqual([
       { kind: "text", text: "visible" },
-    ]);
-  });
-
-  test("tolerates out-of-range references and user messages", () => {
-    const user = message({ role: "user", content: "hi" });
-    expect(buildMessageParts(user)).toEqual([
-      { kind: "text", text: "hi" },
-    ]);
-
-    const dangling = message({
-      role: "assistant",
-      content: "body",
-      toolCalls: [],
-      contentOrder: ["tool:5", "text:0"],
-    });
-    expect(buildMessageParts(dangling)).toEqual([
-      { kind: "text", text: "body" },
     ]);
   });
 });

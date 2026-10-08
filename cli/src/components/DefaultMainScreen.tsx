@@ -19,7 +19,6 @@ import {
 import { trustedRefreshUrl } from "../lib/runtime-url";
 import { appendHistory, loadHistory } from "../lib/input-history";
 import { tuiLog } from "../lib/tui-log";
-import { segmentsToPlainText } from "../lib/segments-to-plain-text";
 import {
   calculateHeaderHeight,
   COMPACT_THRESHOLD,
@@ -43,13 +42,9 @@ import {
   type HelpLine,
   type RuntimeMessage,
   type StatusLine,
-  type ToolCallInfo,
 } from "../lib/default-main-screen-formatting.js";
-export {
-  formatTimestamp,
-  type RuntimeMessage,
-  type ToolCallInfo,
-} from "../lib/default-main-screen-formatting.js";
+export { formatTimestamp, type RuntimeMessage } from "../lib/default-main-screen-formatting.js";
+import type { ConversationMessageToolCall } from "@mycadet/assistant-api";
 import { statusEmoji, withStatusEmoji } from "../lib/status-emoji";
 import {
   getTerminalCapabilities,
@@ -301,7 +296,7 @@ async function pollMessages(
     ...response,
     messages: response.messages.map((msg) => ({
       ...msg,
-      content: segmentsToPlainText(msg.textSegments),
+      contentBlocks: msg.contentBlocks,
     })),
   };
 }
@@ -400,7 +395,7 @@ interface SseEvent {
 /** One chunk of an in-flight turn: streamed text or a tool invocation. */
 type StreamingPart =
   | { kind: "text"; text: string }
-  | { kind: "tool"; tc: ToolCallInfo };
+  | { kind: "tool"; toolCall: ConversationMessageToolCall };
 
 /**
  * Open an SSE stream to the assistant's /events endpoint.
@@ -524,7 +519,7 @@ export const TYPING_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "
 const CONNECTION_SPINNER_FRAMES = ["|", "/", "-", "\\"];
 
 interface ToolCallDisplayProps {
-  tc: ToolCallInfo;
+  tc: ConversationMessageToolCall;
 }
 
 function ToolCallDisplay({ tc }: ToolCallDisplayProps): ReactElement {
@@ -1518,44 +1513,44 @@ function ChatApp({
                 if (event.toolName) {
                   streamingPartsRef.current.push({
                     kind: "tool",
-                    tc: {
+                    toolCall: {
+                      id: event.toolUseId,
                       name: event.toolName,
                       input: event.input ?? {},
-                      toolUseId: event.toolUseId,
                     },
                   });
                 }
                 break;
 
               case "tool_result": {
-                // Match by toolUseId first (robust for parallel/same-name calls),
+                // Match by id first (robust for parallel/same-name calls),
                 // fall back to name + missing result for backwards compat.
                 const isTarget = (p: StreamingPart): p is {
                   kind: "tool";
-                  tc: ToolCallInfo;
+                  toolCall: ConversationMessageToolCall;
                 } =>
                   p.kind === "tool" &&
                   (event.toolUseId
-                    ? p.tc.toolUseId === event.toolUseId
-                    : p.tc.name === event.toolName &&
-                      p.tc.result === undefined);
+                    ? p.toolCall.id === event.toolUseId
+                    : p.toolCall.name === event.toolName &&
+                      p.toolCall.result === undefined);
                 const parts = streamingPartsRef.current;
                 const index = parts.findIndex(isTarget);
                 if (index >= 0) {
                   const part = parts[index];
                   if (part.kind === "tool") {
-                    part.tc.result = event.result;
-                    part.tc.isError = event.isError;
+                    part.toolCall.result = event.result;
+                    part.toolCall.isError = event.isError;
                   }
                 } else if (event.toolName) {
                   parts.push({
                     kind: "tool",
-                    tc: {
+                    toolCall: {
+                      id: event.toolUseId,
                       name: event.toolName,
                       input: event.input ?? {},
                       result: event.result,
                       isError: event.isError,
-                      toolUseId: event.toolUseId,
                     },
                   });
                 }
@@ -1625,38 +1620,31 @@ function ChatApp({
                 // Only finalize main turns (ignore aux events like call transcripts)
                 if (event.source === "aux") break;
 
-                // Rebuild the same shape the daemon's history payload uses
-                // (textSegments + toolCalls + contentOrder) from the ordered
-                // parts the SSE stream produced, so a live turn renders
-                // identically to the same turn reloaded from history.
+                // Fold the ordered parts the SSE stream produced into the
+                // same `contentBlocks` shape the daemon's history payload
+                // uses, so a live turn renders identically to the same turn
+                // reloaded from history.
                 const parts = streamingPartsRef.current;
                 streamingPartsRef.current = [];
-                const segments: string[] = [];
-                const toolCalls: ToolCallInfo[] = [];
-                const contentOrder: string[] = [];
+                const contentBlocks: RuntimeMessage["contentBlocks"] = [];
                 for (const part of parts) {
                   if (part.kind === "text") {
                     if (part.text.length === 0) continue;
-                    contentOrder.push(`text:${segments.length}`);
-                    segments.push(part.text);
+                    contentBlocks.push({ type: "text", text: part.text });
                   } else {
-                    contentOrder.push(`tool:${toolCalls.length}`);
-                    toolCalls.push(part.tc);
+                    contentBlocks.push({
+                      type: "tool_use",
+                      toolCall: part.toolCall,
+                    });
                   }
                 }
 
-                if (segments.length > 0 || toolCalls.length > 0) {
+                if (contentBlocks.length > 0) {
                   const msg: RuntimeMessage = {
                     id: event.messageId ?? `sse-${Date.now()}`,
                     role: "assistant",
-                    content: segmentsToPlainText(segments),
                     timestamp: new Date().toISOString(),
-                    textSegments:
-                      segments.length > 0 ? segments : undefined,
-                    toolCalls:
-                      toolCalls.length > 0 ? toolCalls : undefined,
-                    contentOrder:
-                      contentOrder.length > 0 ? contentOrder : undefined,
+                    contentBlocks,
                   };
                   seenMessageIdsRef.current.add(msg.id);
                   hRef.addMessage(msg);

@@ -29,6 +29,7 @@
   "author": "Cadet AI",
   "license": "MIT",
   "dependencies": {
+    "@mycadet/assistant-api": "workspace:*",
     "@mycadet/avatar-manifest": "workspace:*",
     "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-server-utils": "workspace:*",
