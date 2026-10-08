@@ -63,7 +63,7 @@ import {
 } from "../lib/upgrade-lifecycle.js";
 import {
   compareVersions,
-  parseVersion,
+  isLocalVersion,
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";
@@ -779,18 +779,13 @@ async function upgradeDocker(
   }
 }
 
-function isLocalBuildVersion(version: string): boolean {
-  const parsed = parseVersion(version);
-  return parsed?.pre?.split(".")[0] === "local";
-}
-
 export async function targetVersionFromCli(
   version: string | null,
   cliVersion = cliPkg.version,
   resolveLatestStable: () => Promise<string> = resolveLatestStableTag,
 ): Promise<string> {
   const targetVersion = version ?? (cliVersion ? `v${cliVersion}` : "latest");
-  if (!isLocalBuildVersion(targetVersion)) return targetVersion;
+  if (!isLocalVersion(targetVersion)) return targetVersion;
 
   const latestTag = await resolveLatestStable();
   console.log(

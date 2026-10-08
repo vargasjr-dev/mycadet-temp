@@ -92,7 +92,6 @@ describe("cross-environment assistant detection", () => {
     expect(hint).toContain("'dev'");
     expect(hint).toContain("This CLI targets 'production'");
     expect(hint).toContain("Install cadet Command");
-    expect(hint).toContain("cannot be switched");
   });
 
   test("hint is null when no other env has assistants", () => {

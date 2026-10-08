@@ -109,6 +109,14 @@ export function isStagingVersion(version: string): boolean {
 }
 
 /**
+ * Whether a version string denotes a local build, e.g. `0.12.6-local.42`.
+ * Local builds are never published.
+ */
+export function isLocalVersion(version: string): boolean {
+  return /-local\./i.test(version);
+}
+
+/**
  * Check whether two version strings refer to the same version.
  * Compares via semver when both parse; falls back to prefix-stripped
  * string equality when either is unparseable.

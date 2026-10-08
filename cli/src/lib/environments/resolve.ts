@@ -2,7 +2,7 @@ import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
-import { isDevVersion, isStagingVersion } from "../version-compat.js";
+import { isDevVersion, isLocalVersion, isStagingVersion } from "../version-compat.js";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
 
@@ -20,17 +20,11 @@ export function getSeed(name: string): EnvironmentDefinition | undefined {
 }
 
 /**
- * Derive the environment from a CLI version string. Each client is tied to
- * exactly one environment — the one its version denotes — and cannot switch:
- *
- *   - `0.12.6-dev.<ts>.<sha>` (dev-release pipeline) → `dev`
- *   - `0.12.6-staging.N` (staging release pipeline)  → `staging`
- *   - `0.12.6` (stable release)                      → `production`
- *
- * The `local` seed stays reachable only via the `CADET_ENVIRONMENT` escape
- * hatch below, for source-tree development where no released version exists.
+ * Each CLI is tied to the environment denoted by its version:
+ * `-local.` → local, `-dev.` → dev, `-staging.` → staging, stable → production.
  */
 export function environmentFromVersion(version: string): string {
+  if (isLocalVersion(version)) return "local";
   if (isDevVersion(version)) return "dev";
   if (isStagingVersion(version)) return "staging";
   return DEFAULT_ENVIRONMENT_NAME;

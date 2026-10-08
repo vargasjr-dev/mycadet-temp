@@ -73,7 +73,6 @@ export function crossEnvironmentAssistantHint(): string | null {
   return (
     `\n\nFound assistants in the ${quoted} ${noun} (managed by a dev/staging ` +
     `desktop app). This CLI targets '${currentEnv.name}'. Use the desktop ` +
-    `app's 'Install cadet Command…' menu item to get a matching CLI ` +
-    `(a CLI's environment is tied to its version and cannot be switched).`
+    `app's 'Install cadet Command…' menu item to get a matching CLI.`
   );
 }

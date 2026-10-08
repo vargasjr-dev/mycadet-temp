@@ -213,6 +213,10 @@ describe("environmentFromVersion", () => {
     expect(environmentFromVersion("0.6.0-staging.3")).toBe("staging");
   });
 
+  test("local build versions map to local", () => {
+    expect(environmentFromVersion("0.12.6-local.42")).toBe("local");
+  });
+
   test("stable versions map to production", () => {
     expect(environmentFromVersion("0.12.6")).toBe("production");
     expect(environmentFromVersion("v0.12.6")).toBe("production");

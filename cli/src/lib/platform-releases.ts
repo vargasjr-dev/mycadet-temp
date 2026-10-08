@@ -85,14 +85,8 @@ export async function fetchLatestStableVersion(): Promise<string | null> {
 }
 
 /**
- * Resolve the Docker image refs for a target version.
- *
- * Deterministic by design — no release lookup, no fallback. The tag is the
- * target version; the repo follows the *CLI's* own version shape: a dev CLI
- * (version like `0.12.6-dev.<ts>.<sha>`) pulls the `-dev`-suffixed repos
- * the dev-release pipeline pushes, a released CLI pulls the un-suffixed
- * repos. A CLI version is tied to exactly one environment, so it always
- * manages assistants whose images live in the matching repos.
+ * Image refs for a target version: the tag is the target version, the repo
+ * follows the CLI's own version shape (dev CLI → `-dev` repos).
  */
 export function resolveImageRefs(
   targetVersion: string,

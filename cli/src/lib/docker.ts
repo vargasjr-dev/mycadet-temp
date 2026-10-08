@@ -61,14 +61,6 @@ export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
 const DOCKERHUB_ORG = "mycadet";
 
-/**
- * DockerHub image repos for the services, keyed by whether the CLI is a dev
- * build. Dev builds (version like `0.12.6-dev.<ts>.<sha>`) pull the
- * `-dev`-suffixed repos the dev-release pipeline pushes; released builds
- * pull the un-suffixed repos. Each CLI version is tied to exactly one
- * environment, so the image names are derived purely from the CLI's own
- * version — never from a release lookup.
- */
 export function dockerhubImages(
   cliVersion: string,
 ): Record<ServiceName, string> {
@@ -1295,11 +1287,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         imageSource = "env override";
         log("Using image overrides from environment variables");
       } else {
-        // Image refs are derived purely from the CLI's own version — a dev
-        // CLI pulls the -dev repos the dev-release pipeline pushes, a
-        // released CLI pulls the un-suffixed repos. No release lookup: the
-        // CLI's version is tied to exactly one environment and always
-        // matches the images that were built for it.
         log(`🔍 Resolving image references from CLI version...`);
         const resolved = resolveOwnImageRefs(cliPkg.version);
         imageTags.assistant = resolved.assistant;

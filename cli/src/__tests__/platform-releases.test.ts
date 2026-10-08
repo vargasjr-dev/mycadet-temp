@@ -7,7 +7,7 @@ import {
   resolveOwnImageRefs,
 } from "../lib/platform-releases.js";
 import { dockerhubImages } from "../lib/docker.js";
-import { isDevVersion, isStagingVersion } from "../lib/version-compat.js";
+import { isDevVersion, isLocalVersion, isStagingVersion } from "../lib/version-compat.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -163,6 +163,13 @@ describe("version-shape helpers", () => {
     expect(isStagingVersion("0.6.0-staging.3")).toBe(true);
     expect(isStagingVersion("0.6.0")).toBe(false);
     expect(isStagingVersion("0.12.6-dev.202610081023.3a27b77")).toBe(false);
+  });
+
+  test("isLocalVersion matches local builds only", () => {
+    expect(isLocalVersion("0.12.6-local.42")).toBe(true);
+    expect(isLocalVersion("v0.12.6-local.42")).toBe(true);
+    expect(isLocalVersion("0.12.6")).toBe(false);
+    expect(isLocalVersion("0.12.6-dev.202610081023.3a27b77")).toBe(false);
   });
 });
 

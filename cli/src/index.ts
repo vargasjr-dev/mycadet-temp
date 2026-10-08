@@ -12,7 +12,6 @@ import { client } from "./commands/client";
 import { confirm } from "./commands/confirm";
 import { connect } from "./commands/connect";
 import { devices } from "./commands/devices";
-import { env } from "./commands/env";
 import { events } from "./commands/events";
 import { exec } from "./commands/exec";
 import { flags } from "./commands/flags";
@@ -53,7 +52,6 @@ const commands = {
   connect,
   debug: debugBundle,
   devices,
-  env,
   events,
   exec,
   flags,
@@ -104,7 +102,6 @@ function printHelp(): void {
   console.log(
     "  devices  List or revoke devices paired to a local assistant [beta]",
   );
-  console.log("  env      Show the CLI environment (tied to the CLI version)");
   console.log("  events   Stream events from a running assistant");
   console.log("  exec     Execute a command inside an assistant's container");
   console.log("  flags    Show and toggle feature flags");

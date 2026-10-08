@@ -817,7 +817,6 @@ describe("cross-environment hint on resolution failure", () => {
     const msg = formatAssistantLookupError("ghost", { status: "not_found" });
     expect(msg).toContain("No assistant found with name or ID 'ghost'.");
     expect(msg).toContain("Install cadet Command");
-    expect(msg).toContain("cannot be switched");
   });
 
   test("formatAssistantLookupError stays bare when no other env has assistants", () => {
