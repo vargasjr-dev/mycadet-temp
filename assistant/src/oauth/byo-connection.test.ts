@@ -176,7 +176,6 @@ afterAll(() => {
 beforeEach(() => {
   _setMetadataPath(join(TEST_DIR, "metadata.json"));
   _resetBackend();
-  // CES is the only credential store now — pin the memory backend so
   // seeded tokens land somewhere real instead of reporting unreachable.
   useMemorySecureKeys();
   _resetRefreshBreakers();

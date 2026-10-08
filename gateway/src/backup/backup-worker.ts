@@ -39,7 +39,7 @@ import {
   pruneOffsiteSnapshotsInAll,
   writeOffsiteSnapshotToAll,
 } from "./offsite-writer.js";
-import { getBackupKeyPath, getLocalBackupsDir } from "./paths.js";
+import { getBackupKeyPath, getBackupRootDir } from "./paths.js";
 
 const log = getLogger("backup-worker");
 
@@ -188,7 +188,7 @@ async function performBackup(
   deps: BackupDeps,
 ): Promise<BackupRunResult> {
   const startTimestamp = Date.now();
-  const localDir = getLocalBackupsDir(config.localDirectory);
+  const localDir = config.localDirectory ?? join(getBackupRootDir(), "local");
 
   // Resolve offsite destinations
   const destinations = config.offsite.enabled

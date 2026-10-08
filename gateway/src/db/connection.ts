@@ -4,7 +4,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, sep } from "node:path";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 
-import { getGatewaySecurityDir } from "../paths.js";
+import { defaultGatewaySecurityDir, getGatewaySecurityDir } from "../paths.js";
 import * as schema from "./schema.js";
 import { AdmissionPolicyStore } from "./admission-policy-store.js";
 import { seedAdmissionPolicyDefaults } from "./seed-admission-policy.js";
@@ -98,7 +98,7 @@ function assertTestDbIsIsolated(): void {
     canonicalizePathThroughExistingParent(securityDir);
   const realSecurityDir = canonicalizePathThroughExistingParent(
     process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR?.trim() ||
-      join(process.cwd(), "gateway-security"),
+      defaultGatewaySecurityDir(),
   );
   if (
     resolvedSecurityDir === realSecurityDir ||

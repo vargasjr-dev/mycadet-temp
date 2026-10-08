@@ -83,7 +83,6 @@ const TEST_DIR = join(
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
   _resetBackend();
-  // Pin a memory vault so tests never touch this machine's real CES store.
   useMemorySecureKeys();
   _setMetadataPath(join(TEST_DIR, "metadata.json"));
   mockLogWarn.mockClear();

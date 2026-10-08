@@ -121,7 +121,6 @@ describe("withValidToken refresh deduplication", () => {
 
   beforeEach(() => {
     _resetBackend();
-    // CES is the only credential store now — pin the memory backend so
     // seeded tokens land somewhere real instead of reporting unreachable.
     useMemorySecureKeys();
     for (const entry of readdirSync(TEST_DIR)) {

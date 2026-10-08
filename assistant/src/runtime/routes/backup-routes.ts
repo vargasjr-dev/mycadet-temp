@@ -22,7 +22,7 @@
  */
 
 import { promises as fs } from "node:fs";
-import { dirname, sep } from "node:path";
+import { dirname, join, sep } from "node:path";
 
 import { z } from "zod";
 
@@ -30,11 +30,9 @@ import {
   listSnapshotsInDir,
   type SnapshotEntry,
 } from "../../backup/list-snapshots.js";
-import {
-  getLocalBackupsDir,
-  resolveOffsiteDestinations,
-} from "../../backup/paths.js";
+import { resolveOffsiteDestinations } from "../../backup/paths.js";
 import { restoreFromSnapshot, verifySnapshot } from "../../backup/restore.js";
+import { getBackupDirOverride } from "../../config/env-registry.js";
 import {
   getConfig,
   invalidateConfigCache,
@@ -77,7 +75,13 @@ function isInside(candidate: string, root: string): boolean {
 
 function computeAllowedRoots(): string[] {
   const config = getConfig();
-  const roots: string[] = [getLocalBackupsDir(config.backup.localDirectory)];
+  const roots: string[] = [
+    config.backup.localDirectory ??
+      join(
+        getBackupDirOverride() ?? join(dirname(getWorkspaceDir()), "backups"),
+        "local",
+      ),
+  ];
   for (const dest of resolveOffsiteDestinations(
     config.backup.offsite.destinations,
   )) {
@@ -149,7 +153,12 @@ export interface BackupListResponse {
 
 export async function handleBackupList(): Promise<BackupListResponse> {
   const config = getConfig();
-  const localDir = getLocalBackupsDir(config.backup.localDirectory);
+  const localDir =
+    config.backup.localDirectory ??
+    join(
+      getBackupDirOverride() ?? join(dirname(getWorkspaceDir()), "backups"),
+      "local",
+    );
   const local = await listSnapshotsInDir(localDir);
 
   const offsiteEnabled = config.backup.offsite.enabled;
@@ -442,7 +451,12 @@ export async function handleBackupStatus(): Promise<{
     nextRunAt = new Date(lastRunMs + intervalMs).toISOString();
   }
 
-  const localDir = getLocalBackupsDir(backup.localDirectory);
+  const localDir =
+    backup.localDirectory ??
+    join(
+      getBackupDirOverride() ?? join(dirname(getWorkspaceDir()), "backups"),
+      "local",
+    );
   const localSnapshots = await listSnapshotsInDir(localDir);
   const localSnapshotCount = localSnapshots.length;
 

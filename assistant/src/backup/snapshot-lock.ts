@@ -9,7 +9,7 @@
  * silently clobbering the first), and two retention-pruner passes racing.
  *
  * This module provides a small cross-process lock backed by an atomic
- * `O_CREAT | O_EXCL` file create under `~/.cadet/backups/.snapshot.lock`.
+ * `O_CREAT | O_EXCL` file create under the backup root (`.snapshot.lock` next to `local/`).
  * The in-process flag is kept as a fast path; this lock is the source of
  * truth whenever two processes could collide.
  *
@@ -34,9 +34,10 @@ import {
 import { dirname, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
+import { getBackupDirOverride } from "../config/env-registry.js";
 import { getLogger } from "../util/logger.js";
+import { getWorkspaceDir } from "../util/platform.js";
 import { isProcessAlive } from "../util/process-liveness.js";
-import { getLocalBackupsDir } from "./paths.js";
 
 const log = getLogger("snapshot-lock");
 
@@ -77,7 +78,7 @@ const EMPTY_FILE_MAX_RETRIES = 3;
 /**
  * Returns the canonical path to the snapshot lock file. The lock lives one
  * level above the local backups directory so it stays in place even when the
- * backup pool is wiped or rotated — e.g. at `~/.cadet/backups/.snapshot.lock`.
+ * backup pool is wiped or rotated — e.g. at `<backupRoot>/.snapshot.lock`.
  *
  * Placing it one level up (rather than inside the `local/` subdir) also
  * guarantees that pruning never touches the lock file and that the lock
@@ -85,7 +86,10 @@ const EMPTY_FILE_MAX_RETRIES = 3;
  * parent directory for cross-process coordination.
  */
 export function getSnapshotLockPath(): string {
-  return join(dirname(getLocalBackupsDir()), ".snapshot.lock");
+  return join(
+    getBackupDirOverride() ?? join(dirname(getWorkspaceDir()), "backups"),
+    ".snapshot.lock",
+  );
 }
 
 /**
@@ -258,7 +262,7 @@ function readLockHolder(lockPath: string): LockReadResult {
  * After the bound is exhausted we surface a conflict so callers retry.
  *
  * The lock directory is created on demand so first-run scenarios (no
- * `~/.cadet/backups` yet) work without a separate bootstrap step.
+ * the backup root yet) work without a separate bootstrap step.
  */
 export async function acquireSnapshotLock(
   lockPath: string,

@@ -53,7 +53,7 @@ describe("live-path guard: workspace", () => {
     expect(() => getWorkspaceDir()).toThrow(/Refusing to use/);
   });
 
-  test("refuses the <cwd>/workspace fallback when the env var is unset", () => {
+  test("refuses the XDG data-home fallback when the env var is unset", () => {
     delete process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
     delete process.env.CADET_WORKSPACE_DIR;
     expect(() => getWorkspaceDir()).toThrow(/Refusing to use/);
@@ -78,7 +78,7 @@ describe("live-path guard: gateway security dir", () => {
     expect(() => getGatewaySecurityDir()).toThrow(/Refusing to use/);
   });
 
-  test("refuses the <cwd>/gateway-security fallback when the env var is unset", () => {
+  test("refuses the XDG data-home fallback when the env var is unset", () => {
     delete process.env.CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS;
     delete process.env.GATEWAY_SECURITY_DIR;
     expect(() => getGatewaySecurityDir()).toThrow(/Refusing to use/);

@@ -410,7 +410,6 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
     _resetBackend();
-    // CES is the only credential store now — pin the memory backend so
     // reads/writes land somewhere real instead of reporting unreachable.
     useMemorySecureKeys();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
@@ -498,7 +497,6 @@ describe("Invariant 6: oauth2ClientSecret not in metadata, only in secure store"
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
     _resetBackend();
-    // CES is the only credential store now — pin the memory backend so
     // reads/writes land somewhere real instead of reporting unreachable.
     useMemorySecureKeys();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));

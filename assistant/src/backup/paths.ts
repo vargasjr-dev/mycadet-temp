@@ -1,27 +1,7 @@
 import { homedir, userInfo } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 
-import { getBackupDirOverride } from "../config/env-registry.js";
 import type { BackupDestination } from "../config/schema.js";
-import { getWorkspaceDir } from "../util/platform.js";
-
-/**
- * Returns the directory for local (on-device) backups. Respects the
- * `CADET_BACKUP_DIR` environment variable override (used in containerized
- * deployments where backups must be on a persistent volume); falls back to
- * the cadet root's backups directory (`<cadetRoot>/backups`, i.e.
- * `<cwd>/backups` under the cwd workspace fallback). Callers can pass an
- * explicit override from config to place backups elsewhere on disk.
- */
-export function getLocalBackupsDir(override?: string | null): string {
-  return (
-    override ??
-    join(
-      getBackupDirOverride() ?? join(dirname(getWorkspaceDir()), "backups"),
-      "local",
-    )
-  );
-}
 
 function safeUserInfoHomedir(): string {
   try {

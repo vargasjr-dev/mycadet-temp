@@ -11,10 +11,12 @@
  *   POST /v1/backups/create — manual snapshot trigger
  */
 
+import { join } from "node:path";
+
 import { readConfigFileOrEmpty } from "../config-file-utils.js";
 import { getLogger } from "../logger.js";
 import { listSnapshotsInDir, type SnapshotEntry } from "./list-snapshots.js";
-import { getLocalBackupsDir } from "./paths.js";
+import { getBackupRootDir } from "./paths.js";
 import { createSnapshotNow } from "./backup-worker.js";
 
 const log = getLogger("backup-routes");
@@ -37,7 +39,7 @@ function readBackupDestinations(): {
 
   const localDirectory =
     typeof backup.localDirectory === "string" ? backup.localDirectory : null;
-  const localDir = getLocalBackupsDir(localDirectory);
+  const localDir = localDirectory ?? join(getBackupRootDir(), "local");
 
   const offsiteRaw = (backup.offsite ?? {}) as Record<string, unknown>;
   const offsiteEnabled = offsiteRaw.enabled !== false;

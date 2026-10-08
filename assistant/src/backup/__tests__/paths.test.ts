@@ -7,27 +7,10 @@ import {
   formatBackupFilename,
   getDefaultOffsiteBackupsDir,
   getICloudDriveRoot,
-  getLocalBackupsDir,
   parseBackupTimestamp,
   resolveOffsiteDestinations,
 } from "../paths.js";
 import { getSnapshotLockPath } from "../snapshot-lock.js";
-
-describe("getLocalBackupsDir", () => {
-  test("returns a path containing /backups/local when no override is given", () => {
-    const dir = getLocalBackupsDir();
-    expect(dir).toContain("/backups/local");
-  });
-
-  test("returns the override unchanged when provided", () => {
-    expect(getLocalBackupsDir("/tmp/x")).toBe("/tmp/x");
-  });
-
-  test("treats null override as absent", () => {
-    const dir = getLocalBackupsDir(null);
-    expect(dir).toContain("/backups/local");
-  });
-});
 
 // ---------------------------------------------------------------------------
 // CADET_BACKUP_DIR env var override
@@ -42,21 +25,6 @@ describe("CADET_BACKUP_DIR override", () => {
     } else {
       process.env.CADET_BACKUP_DIR = ORIGINAL;
     }
-  });
-
-  test("getLocalBackupsDir() resolves under CADET_BACKUP_DIR", () => {
-    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
-    expect(getLocalBackupsDir()).toBe("/workspace/.backups/local");
-  });
-
-  test("getLocalBackupsDir() falls back to default when env var is unset", () => {
-    delete process.env.CADET_BACKUP_DIR;
-    expect(getLocalBackupsDir()).toMatch(/backups\/local$/);
-  });
-
-  test("config override still takes precedence over CADET_BACKUP_DIR", () => {
-    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
-    expect(getLocalBackupsDir("/custom/dir")).toBe("/custom/dir");
   });
 
   test("getSnapshotLockPath() resolves under CADET_BACKUP_DIR", () => {
