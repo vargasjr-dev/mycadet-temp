@@ -17,6 +17,7 @@ on:
       - "packages/gateway-client/**"
       - "packages/ipc-server-utils/**"
       - "packages/service-contracts/**"
+      - "packages/shared/**"
       - "packages/slack-text/**"
       - "packages/twilio-client/**"
       - "meta/feature-flags/**"

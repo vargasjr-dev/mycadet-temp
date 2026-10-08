@@ -4,15 +4,20 @@
     "src/**/__tests__/**/*.ts",
     "src/lib/version-compat.ts",
     "src/lib/platform-releases.ts",
-    "src/lib/cli-error.ts"
+    "src/lib/cli-error.ts",
+    "scripts/**/*.ts"
   ],
-  "project": ["src/**/*.ts", "src/**/*.tsx"],
+  "project": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "ignoreDependencies": [
     "@mycadet/avatar-manifest",
     "@mycadet/environments",
     "@mycadet/ipc-server-utils",
     "@mycadet/local-mode",
     "@mycadet/service-contracts",
+    "@mycadet/shared",
     "@mycadet/web"
   ]
 }

@@ -11,6 +11,7 @@ on:
       - "packages/local-mode/**"
       - "packages/environments/**"
       - "packages/avatar-manifest/**"
+      - "packages/shared/**"
       - ".github/workflows/pr-cli.yaml"
   workflow_dispatch:
 concurrency:
