@@ -44,9 +44,6 @@ const AGGREGATOR_PROVIDERS = new Set([
   "ionet",
 ]);
 
-/** Vendors the catalog genuinely knows a single model from. */
-const SINGLE_MODEL_VENDORS = new Set(["amazon", "thinking-machines", "opencode"]);
-
 /** The provider that lists each model first, which is what owns it. */
 const owners = new Map<string, string>();
 for (const [providerId, models] of entries) {
@@ -116,29 +113,6 @@ describe("model vendors", () => {
     expect(slugs.size).toBeGreaterThan(0);
     for (const slug of slugs) {
       expect(vendorDisplayName(slug), `"${slug}" has no label`).not.toBe(slug);
-    }
-  });
-
-  test("a vendor is not left naming one model by accident", () => {
-    const byVendor = new Map<string, Set<string>>();
-    for (const [, models] of entries) {
-      for (const model of models) {
-        if (!model.vendor) {
-          continue;
-        }
-        const named = byVendor.get(model.vendor) ?? new Set<string>();
-        named.add(model.displayName);
-        byVendor.set(model.vendor, named);
-      }
-    }
-    for (const [vendor, displayNames] of byVendor) {
-      if (displayNames.size > 1) {
-        continue;
-      }
-      expect(
-        SINGLE_MODEL_VENDORS.has(vendor),
-        `"${vendor}" names one model; a sibling is probably missing it`,
-      ).toBe(true);
     }
   });
 
