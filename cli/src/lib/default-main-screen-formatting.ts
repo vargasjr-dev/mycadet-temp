@@ -5,14 +5,14 @@ export const DEFAULT_TERMINAL_COLUMNS = 80;
 export const COMPACT_THRESHOLD = 60;
 
 const LEFT_HEADER_LINES = 4;
-const LEFT_FOOTER_LINES = 3;
+const LEFT_FOOTER_LINES = 1;
 const HEADER_TOP_BORDER_LINES = 1;
 const HEADER_BOTTOM_BORDER_LINES = 2;
 const HEADER_CHROME_LINES =
   HEADER_TOP_BORDER_LINES + HEADER_BOTTOM_BORDER_LINES;
 const COMPACT_HEADER_HEIGHT = 1;
 
-const RIGHT_PANEL_INFO_SECTIONS = 3;
+const RIGHT_PANEL_INFO_SECTIONS = 5;
 const RIGHT_PANEL_SPACERS = 2;
 const RIGHT_PANEL_TIPS_HEADING = 1;
 
@@ -69,6 +69,13 @@ export interface RuntimeMessage {
    * redundant flattened `content` field on the wire.
    */
   textSegments?: string[];
+  /**
+   * Ordered entry refs (`text:N`, `tool:N`, plus `surface:`/`thinking:`/
+   * `attachment:` entries the TUI doesn't render) describing how segments and
+   * tool calls interleave in the original turn. `buildMessageParts` walks it
+   * to rebuild that order; absent on legacy payloads.
+   */
+  contentOrder?: string[];
   timestamp: string;
   toolCalls?: ToolCallInfo[];
   label?: string;
@@ -163,7 +170,9 @@ export function formatToolCallPreview(toolCall: ToolCallInfo): string {
     case "browser_type":
       return `type into ${String(toolCall.input.element_id ?? toolCall.input.selector ?? "").slice(0, 60)}`;
     default:
-      return JSON.stringify(toolCall.input).slice(0, 80);
+      // Unknown tools render name-only ("what was invoked"), not a JSON dump
+      // of their input — the caller omits the preview when this is empty.
+      return "";
   }
 }
 
@@ -200,6 +209,51 @@ export function stripAnsi(value: string): string {
   return value.replace(/\x1b\[[0-9;]*m/g, "");
 }
 
+/** A chunk of an assistant turn in display order: text or a tool call. */
+export type MessagePart =
+  | { kind: "text"; text: string }
+  | { kind: "tool"; toolCall: ToolCallInfo };
+
+/**
+ * Rebuild a message's display order. The daemon records how segments and tool
+ * calls interleaved in the original turn (`contentOrder`); walk it so text
+ * that streamed before and after a tool call renders on either side of the
+ * tool's box instead of being flattened ahead of every tool call. Falls back
+ * to the legacy shape (flat text body, tool calls after) when the payload
+ * carries no ordering.
+ */
+export function buildMessageParts(msg: RuntimeMessage): MessagePart[] {
+  const parts: MessagePart[] = [];
+  if (msg.contentOrder && msg.contentOrder.length > 0) {
+    for (const entry of msg.contentOrder) {
+      if (entry.startsWith("text:")) {
+        const segment = msg.textSegments?.[Number(entry.slice(5))];
+        if (segment && segment.trim().length > 0) {
+          parts.push({ kind: "text", text: segment });
+        }
+      } else if (entry.startsWith("tool:")) {
+        const toolCall = msg.toolCalls?.[Number(entry.slice(5))];
+        if (toolCall) {
+          parts.push({ kind: "tool", toolCall });
+        }
+      }
+      // surface:/thinking:/attachment: entries have no TUI rendering yet.
+    }
+    if (parts.length > 0) {
+      return parts;
+    }
+  }
+  if (msg.content.trim().length > 0) {
+    parts.push({ kind: "text", text: msg.content });
+  }
+  if (msg.role === "assistant" && msg.toolCalls) {
+    for (const toolCall of msg.toolCalls) {
+      parts.push({ kind: "tool", toolCall });
+    }
+  }
+  return parts;
+}
+
 export function isRuntimeMessage(item: FeedItem): item is RuntimeMessage {
   return "role" in item;
 }
@@ -224,14 +278,10 @@ export function estimateItemHeight(
     }
     if (item.role === "assistant" && item.toolCalls) {
       for (const toolCall of item.toolCalls) {
-        const parameterCount =
-          typeof toolCall.input === "object" && toolCall.input
-            ? Object.keys(toolCall.input).length
-            : 0;
+        // Each tool renders as an opening line, a closing line, and (once the
+        // result lands) a single finish line — no per-parameter dump.
         lines +=
-          TOOL_CALL_CHROME_LINES +
-          parameterCount +
-          (toolCall.result !== undefined ? 1 : 0);
+          TOOL_CALL_CHROME_LINES + (toolCall.result !== undefined ? 1 : 0);
       }
     }
     return lines + MESSAGE_SPACING;

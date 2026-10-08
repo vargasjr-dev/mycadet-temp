@@ -1,4 +1,3 @@
-import { basename } from "path";
 import {
   useCallback,
   useEffect,
@@ -31,6 +30,7 @@ import {
   formatHeaderTitle,
   formatTimestamp,
   isRuntimeMessage,
+  buildMessageParts,
   formatToolCallPreview,
   stripAnsi,
   truncateValue,
@@ -355,6 +355,8 @@ interface SseEvent {
   type: string;
   text?: string;
   thinking?: string;
+  /** identity_changed: the name the assistant adopted in IDENTITY.md. */
+  name?: string;
   toolName?: string;
   toolUseId?: string;
   input?: Record<string, unknown>;
@@ -394,6 +396,11 @@ interface SseEvent {
   tags?: string[];
   [key: string]: unknown;
 }
+
+/** One chunk of an in-flight turn: streamed text or a tool invocation. */
+type StreamingPart =
+  | { kind: "text"; text: string }
+  | { kind: "tool"; tc: ToolCallInfo };
 
 /**
  * Open an SSE stream to the assistant's /events endpoint.
@@ -528,15 +535,9 @@ function ToolCallDisplay({ tc }: ToolCallDisplayProps): ReactElement {
   return (
     <Box flexDirection="column" paddingLeft={2}>
       <Text dimColor>
-        {"\u250C"} {tc.name}: {preview}
+        {"\u250C"} {tc.name}
+        {preview ? `: ${preview}` : ""}
       </Text>
-      {typeof tc.input === "object" && tc.input
-        ? Object.entries(tc.input).map(([key, value]) => (
-            <Text key={key} dimColor>
-              {"\u2502"} {key}: {truncateValue(value, 70)}
-            </Text>
-          ))
-        : null}
       {tc.result !== undefined ? (
         <Text dimColor>
           {"\u2502"} <Text color={statusColor}>{statusIcon}</Text>{" "}
@@ -550,13 +551,23 @@ function ToolCallDisplay({ tc }: ToolCallDisplayProps): ReactElement {
 
 interface MessageDisplayProps {
   msg: RuntimeMessage;
+  /** Live assistant name — replaces the "Assistant:" default label. */
+  assistantName?: string;
 }
 
-function MessageDisplay({ msg }: MessageDisplayProps): ReactElement {
+function MessageDisplay({ msg, assistantName }: MessageDisplayProps): ReactElement {
   const time = formatTimestamp(msg.timestamp);
-  const defaultLabel = msg.role === "user" ? "You:" : "Assistant:";
+  const defaultLabel = msg.role === "user"
+    ? "You:"
+    : assistantName?.trim()
+      ? `${assistantName.trim()}:`
+      : "Assistant:";
   const label = msg.label ?? defaultLabel;
   const labelColor = msg.role === "user" ? "green" : "cyan";
+  const parts = buildMessageParts(msg);
+  const head =
+    parts[0] && parts[0].kind === "text" ? parts[0] : undefined;
+  const rest = head ? parts.slice(1) : parts;
 
   return (
     <Box flexDirection="column">
@@ -565,11 +576,15 @@ function MessageDisplay({ msg }: MessageDisplayProps): ReactElement {
         <Text color={labelColor} bold>
           {label}{" "}
         </Text>
-        <Text>{msg.content}</Text>
+        {head ? <Text>{head.text}</Text> : null}
       </Text>
-      {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0
-        ? msg.toolCalls.map((tc, i) => <ToolCallDisplay key={i} tc={tc} />)
-        : null}
+      {rest.map((part, i) =>
+        part.kind === "tool" ? (
+          <ToolCallDisplay key={i} tc={part.toolCall} />
+        ) : (
+          <Text key={i}>{part.text}</Text>
+        ),
+      )}
     </Box>
   );
 }
@@ -685,6 +700,8 @@ interface DefaultMainScreenProps {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
+  /** Absolute path of the assistant's data root, home-collapsed for display. */
+  workspaceRoot?: string;
   healthStatus?: string;
 }
 
@@ -730,10 +747,9 @@ function DefaultMainScreen({
   runtimeUrl,
   assistantId,
   assistantName,
+  workspaceRoot,
   healthStatus,
 }: DefaultMainScreenProps): ReactElement {
-  const cwd = process.cwd();
-  const dirName = basename(cwd);
   const accentColor = "magenta";
   const caps = getTerminalCapabilities();
   const headerPrefix = caps.unicodeSupported
@@ -768,9 +784,6 @@ function DefaultMainScreen({
       text: `  ${stripAnsi(line)}`,
       style: "art" as const,
     })),
-    { text: " ", style: "normal" },
-    { text: `  ${runtimeUrl}`, style: "dim" },
-    { text: `  ~/${dirName}`, style: "dim" },
   ];
 
   const rightLines: StyledLine[] = [
@@ -780,6 +793,10 @@ function DefaultMainScreen({
     { text: " ", style: "normal" },
     { text: "Assistant ID", style: "heading" },
     { text: assistantId, style: "dim" },
+    { text: "Runtime", style: "heading" },
+    { text: runtimeUrl, style: "dim" },
+    { text: "Workspace", style: "heading" },
+    { text: workspaceRoot ?? "—", style: "dim" },
     { text: "Status", style: "heading" },
     { text: withStatusEmoji(healthStatus ?? "checking..."), style: "dim" },
   ];
@@ -1090,12 +1107,16 @@ export interface ChatAppHandle {
   clearFeed: () => void;
   setBusy: (busy: boolean) => void;
   updateHealthStatus: (status: string) => void;
+  /** Adopt a name the assistant chose for itself (IDENTITY.md) mid-session. */
+  updateAssistantName: (name: string) => void;
 }
 
 interface ChatAppProps {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
+  /** Assistant data root for the header details panel (home-collapsed). */
+  workspaceRoot?: string;
   /** Pre-built auth headers (e.g. { Authorization: "Bearer ..." } for local,
    *  { "X-Session-Token": "...", "Cadet-Organization-Id": "..." } for platform). */
   auth?: Record<string, string>;
@@ -1107,6 +1128,7 @@ function ChatApp({
   runtimeUrl,
   assistantId,
   assistantName,
+  workspaceRoot,
   auth,
   onExit,
   handleRef,
@@ -1126,6 +1148,9 @@ function ChatApp({
   const [healthStatus, setHealthStatus] = useState<string | undefined>(
     undefined,
   );
+  const [liveAssistantName, setLiveAssistantName] = useState<string | undefined>(
+    assistantName,
+  );
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("connecting");
   const [connectionError, setConnectionError] = useState<string | undefined>(
@@ -1137,8 +1162,13 @@ function ChatApp({
   const connectingRef = useRef(false);
   const seenMessageIdsRef = useRef(new Set<string>());
   const sseAbortRef = useRef<AbortController | null>(null);
-  const streamingTextRef = useRef("");
-  const streamingToolCallsRef = useRef<ToolCallInfo[]>([]);
+  /**
+   * The turn so far, in event order. Text deltas append to the trailing text
+   * part; a tool_use_start closes the segment (its boundary) and opens the
+   * tool part — so text that streams after a tool call renders after it,
+   * instead of being flattened into one body.
+   */
+  const streamingPartsRef = useRef<StreamingPart[]>([]);
   const handleRef_ = useRef<ChatAppHandle | null>(null);
 
   const { stdout } = useStdout();
@@ -1364,6 +1394,10 @@ function ChatApp({
     setHealthStatus(status);
   }, []);
 
+  const updateAssistantName = useCallback((name: string) => {
+    setLiveAssistantName(name.trim() || undefined);
+  }, []);
+
   const cleanup = useCallback(() => {
     if (sseAbortRef.current) {
       sseAbortRef.current.abort();
@@ -1412,6 +1446,24 @@ function ChatApp({
 
       h.showSpinner("Loading conversation history...");
 
+      // Adopt the assistant's chosen name (if it already has one) so the
+      // header title and message labels open as "Ferry:" instead of
+      // "Assistant:". Fresh runtimes have no IDENTITY.md yet → 404 → skip.
+      try {
+        const identity = await runtimeRequest<{ name?: string }>(
+          runtimeUrl,
+          assistantId,
+          "/identity",
+          undefined,
+          auth,
+        );
+        if (identity?.name && identity.name.trim()) {
+          h.updateAssistantName(identity.name.trim());
+        }
+      } catch {
+        // No IDENTITY.md yet — the identity_changed event will fire later.
+      }
+
       try {
         const historyResponse = await pollMessages(
           runtimeUrl,
@@ -1447,9 +1499,16 @@ function ChatApp({
             if (!hRef) continue;
 
             switch (event.type) {
-              case "assistant_text_delta":
-                streamingTextRef.current += event.text ?? "";
+              case "assistant_text_delta": {
+                const parts = streamingPartsRef.current;
+                const last = parts[parts.length - 1];
+                if (last && last.kind === "text") {
+                  last.text += event.text ?? "";
+                } else {
+                  parts.push({ kind: "text", text: event.text ?? "" });
+                }
                 break;
+              }
 
               case "assistant_thinking_delta":
                 // Thinking deltas are suppressed in the TUI for now
@@ -1457,10 +1516,13 @@ function ChatApp({
 
               case "tool_use_start":
                 if (event.toolName) {
-                  streamingToolCallsRef.current.push({
-                    name: event.toolName,
-                    input: event.input ?? {},
-                    toolUseId: event.toolUseId,
+                  streamingPartsRef.current.push({
+                    kind: "tool",
+                    tc: {
+                      name: event.toolName,
+                      input: event.input ?? {},
+                      toolUseId: event.toolUseId,
+                    },
                   });
                 }
                 break;
@@ -1468,24 +1530,33 @@ function ChatApp({
               case "tool_result": {
                 // Match by toolUseId first (robust for parallel/same-name calls),
                 // fall back to name + missing result for backwards compat.
-                const tc = event.toolUseId
-                  ? streamingToolCallsRef.current.find(
-                      (t) => t.toolUseId === event.toolUseId,
-                    )
-                  : streamingToolCallsRef.current.find(
-                      (t) =>
-                        t.name === event.toolName && t.result === undefined,
-                    );
-                if (tc) {
-                  tc.result = event.result;
-                  tc.isError = event.isError;
+                const isTarget = (p: StreamingPart): p is {
+                  kind: "tool";
+                  tc: ToolCallInfo;
+                } =>
+                  p.kind === "tool" &&
+                  (event.toolUseId
+                    ? p.tc.toolUseId === event.toolUseId
+                    : p.tc.name === event.toolName &&
+                      p.tc.result === undefined);
+                const parts = streamingPartsRef.current;
+                const index = parts.findIndex(isTarget);
+                if (index >= 0) {
+                  const part = parts[index];
+                  if (part.kind === "tool") {
+                    part.tc.result = event.result;
+                    part.tc.isError = event.isError;
+                  }
                 } else if (event.toolName) {
-                  streamingToolCallsRef.current.push({
-                    name: event.toolName,
-                    input: event.input ?? {},
-                    result: event.result,
-                    isError: event.isError,
-                    toolUseId: event.toolUseId,
+                  parts.push({
+                    kind: "tool",
+                    tc: {
+                      name: event.toolName,
+                      input: event.input ?? {},
+                      result: event.result,
+                      isError: event.isError,
+                      toolUseId: event.toolUseId,
+                    },
                   });
                 }
                 break;
@@ -1554,18 +1625,38 @@ function ChatApp({
                 // Only finalize main turns (ignore aux events like call transcripts)
                 if (event.source === "aux") break;
 
-                const text = streamingTextRef.current;
-                const toolCalls = [...streamingToolCallsRef.current];
-                streamingTextRef.current = "";
-                streamingToolCallsRef.current = [];
+                // Rebuild the same shape the daemon's history payload uses
+                // (textSegments + toolCalls + contentOrder) from the ordered
+                // parts the SSE stream produced, so a live turn renders
+                // identically to the same turn reloaded from history.
+                const parts = streamingPartsRef.current;
+                streamingPartsRef.current = [];
+                const segments: string[] = [];
+                const toolCalls: ToolCallInfo[] = [];
+                const contentOrder: string[] = [];
+                for (const part of parts) {
+                  if (part.kind === "text") {
+                    if (part.text.length === 0) continue;
+                    contentOrder.push(`text:${segments.length}`);
+                    segments.push(part.text);
+                  } else {
+                    contentOrder.push(`tool:${toolCalls.length}`);
+                    toolCalls.push(part.tc);
+                  }
+                }
 
-                if (text || toolCalls.length > 0) {
+                if (segments.length > 0 || toolCalls.length > 0) {
                   const msg: RuntimeMessage = {
                     id: event.messageId ?? `sse-${Date.now()}`,
                     role: "assistant",
-                    content: text,
+                    content: segmentsToPlainText(segments),
                     timestamp: new Date().toISOString(),
-                    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+                    textSegments:
+                      segments.length > 0 ? segments : undefined,
+                    toolCalls:
+                      toolCalls.length > 0 ? toolCalls : undefined,
+                    contentOrder:
+                      contentOrder.length > 0 ? contentOrder : undefined,
                   };
                   seenMessageIdsRef.current.add(msg.id);
                   hRef.addMessage(msg);
@@ -1576,6 +1667,14 @@ function ChatApp({
                 hRef.hideSpinner();
                 break;
               }
+
+              case "identity_changed":
+                // The assistant adopted (or renamed) itself in IDENTITY.md —
+                // swap the "Assistant:" label and header title right away.
+                if (event.name && event.name.trim()) {
+                  hRef.updateAssistantName(event.name.trim());
+                }
+                break;
 
               case "error":
                 hRef.hideSpinner();
@@ -1905,6 +2004,7 @@ function ChatApp({
       clearFeed,
       setBusy,
       updateHealthStatus,
+      updateAssistantName,
     };
     handleRef_.current = handle;
     handleRef(handle);
@@ -1922,6 +2022,7 @@ function ChatApp({
     clearFeed,
     setBusy,
     updateHealthStatus,
+    updateAssistantName,
   ]);
 
   const retryConnection = useCallback(() => {
@@ -2037,7 +2138,8 @@ function ChatApp({
       <DefaultMainScreen
         runtimeUrl={runtimeUrl}
         assistantId={assistantId}
-        assistantName={assistantName}
+        assistantName={liveAssistantName}
+        workspaceRoot={workspaceRoot}
         healthStatus={healthStatus}
       />
 
@@ -2055,7 +2157,7 @@ function ChatApp({
           if (isRuntimeMessage(item)) {
             return (
               <Box key={feedIndex} flexDirection="column" marginBottom={1}>
-                <MessageDisplay msg={item} />
+                <MessageDisplay msg={item} assistantName={liveAssistantName} />
               </Box>
             );
           }
@@ -2158,6 +2260,7 @@ export function renderChatApp(
   options?: {
     auth?: Record<string, string>;
     assistantName?: string;
+    workspaceRoot?: string;
   },
 ): ChatAppInstance {
   let chatHandle: ChatAppHandle | null = null;
@@ -2167,6 +2270,7 @@ export function renderChatApp(
       runtimeUrl={runtimeUrl}
       assistantId={assistantId}
       assistantName={options?.assistantName}
+      workspaceRoot={options?.workspaceRoot}
       auth={options?.auth}
       onExit={onExit}
       handleRef={(h) => {
@@ -2192,6 +2296,7 @@ export function renderChatApp(
     clearFeed: () => chatHandle?.clearFeed(),
     setBusy: (busy) => chatHandle?.setBusy(busy),
     updateHealthStatus: (status) => chatHandle?.updateHealthStatus(status),
+    updateAssistantName: (name) => chatHandle?.updateAssistantName(name),
   };
 
   return {

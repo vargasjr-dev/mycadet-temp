@@ -9,6 +9,7 @@ import {
   formatToolCallPreview,
   stripAnsi,
   truncateValue,
+  buildMessageParts,
   type RuntimeMessage,
 } from "../lib/default-main-screen-formatting.js";
 
@@ -70,9 +71,11 @@ describe("tool-call previews", () => {
   });
 
   test("serializes unknown tool inputs", () => {
+    // Tool boxes render name-only (the feed shows what ran, not its payload);
+    // the approval dialog keeps the JSON detail.
     expect(
       formatToolCallPreview({ name: "custom_tool", input: { value: 7 } }),
-    ).toBe('{"value":7}');
+    ).toBe("");
     expect(formatConfirmationPreview("custom_tool", { value: 7 })).toBe(
       'custom_tool: {"value":7}',
     );
@@ -136,7 +139,7 @@ describe("estimateItemHeight", () => {
         }),
         80,
       ),
-    ).toBe(7);
+    ).toBe(5);
   });
 
   test("estimates non-message feed items", () => {
@@ -156,10 +159,72 @@ describe("calculateHeaderHeight", () => {
   });
 
   test("uses the larger of the art and right-panel layouts", () => {
-    expect(calculateHeaderHeight(80)).toBe(16);
+    expect(calculateHeaderHeight(80)).toBe(18);
   });
 
   test("defaults to the standard terminal width", () => {
-    expect(calculateHeaderHeight()).toBe(16);
+    expect(calculateHeaderHeight()).toBe(18);
+  });
+});
+
+describe("buildMessageParts", () => {
+  test("interweaves text segments and tool calls by contentOrder", () => {
+    const msg = message({
+      role: "assistant",
+      content: "Hello there. Back again.",
+      textSegments: ["Hello there.", "Back again."],
+      toolCalls: [{ name: "file_read", input: { path: "/a" } }],
+      contentOrder: ["text:0", "tool:0", "text:1"],
+    });
+
+    expect(buildMessageParts(msg)).toEqual([
+      { kind: "text", text: "Hello there." },
+      { kind: "tool", toolCall: { name: "file_read", input: { path: "/a" } } },
+      { kind: "text", text: "Back again." },
+    ]);
+  });
+
+  test("falls back to flat content with trailing tool calls", () => {
+    const msg = message({
+      role: "assistant",
+      content: "plain body",
+      toolCalls: [{ name: "bash", input: { command: "ls" } }],
+    });
+
+    expect(buildMessageParts(msg)).toEqual([
+      { kind: "text", text: "plain body" },
+      { kind: "tool", toolCall: { name: "bash", input: { command: "ls" } } },
+    ]);
+  });
+
+  test("skips blank segments and entries the TUI does not render", () => {
+    const msg = message({
+      role: "assistant",
+      content: "",
+      textSegments: ["", "visible"],
+      toolCalls: [],
+      contentOrder: ["text:0", "surface:0", "thinking:0", "text:1"],
+    });
+
+    expect(buildMessageParts(msg)).toEqual([
+      { kind: "text", text: "visible" },
+    ]);
+  });
+
+  test("tolerates out-of-range references and user messages", () => {
+    const user = message({ role: "user", content: "hi" });
+    expect(buildMessageParts(user)).toEqual([
+      { kind: "text", text: "hi" },
+    ]);
+
+    const dangling = message({
+      role: "assistant",
+      content: "body",
+      toolCalls: [],
+      contentOrder: ["tool:5", "text:0"],
+    });
+    expect(buildMessageParts(dangling)).toEqual([
+      { kind: "text", text: "body" },
+    ]);
   });
 });

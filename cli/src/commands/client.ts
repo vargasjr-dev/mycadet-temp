@@ -1,6 +1,7 @@
 import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
 
 import {
@@ -91,6 +92,8 @@ interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
   assistantName?: string;
+  /** Assistant data root (home-collapsed) for the TUI details panel. */
+  workspaceRoot?: string;
   /** "cadet" for platform-hosted assistants, undefined for local. */
   cloud?: string;
   /** Platform session token (X-Session-Token), set when isManagedCloud(cloud). */
@@ -117,6 +120,19 @@ function readAssistantName(entry: AssistantEntry | null): string | undefined {
   return typeof rawName === "string" && rawName.trim()
     ? rawName.trim()
     : undefined;
+}
+
+/** Collapse the home prefix so panel paths read `~/...` instead of absolute. */
+function collapseHomeForDisplay(dir: string): string {
+  const home = homedir();
+  if (dir === home) return "~";
+  return dir.startsWith(`${home}/`) ? `~${dir.slice(home.length)}` : dir;
+}
+
+/** The assistant's data root (from the lockfile), for the TUI details panel. */
+function readWorkspaceRoot(entry: AssistantEntry | null): string | undefined {
+  const instanceDir = entry?.resources?.instanceDir;
+  return instanceDir ? collapseHomeForDisplay(instanceDir) : undefined;
 }
 
 // Exported for unit testing the arg/auth resolution without launching the TUI.
@@ -238,6 +254,7 @@ export function parseArgs(): ParsedArgs {
   let assistantId = entry?.assistantId || DAEMON_INTERNAL_ASSISTANT_ID;
   let assistantName = readAssistantName(entry);
   const cloud = entry?.cloud;
+  const workspaceRoot = readWorkspaceRoot(entry);
 
   // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this
   // session only. Resolve it BEFORE the credential lookup below so an ephemeral
@@ -306,6 +323,7 @@ export function parseArgs(): ParsedArgs {
     runtimeUrl: normalizeRuntimeUrl(runtimeUrl),
     assistantId,
     assistantName,
+    workspaceRoot,
     cloud,
     platformToken,
     bearerToken,
@@ -1577,6 +1595,7 @@ export async function client(): Promise<void> {
     runtimeUrl,
     assistantId,
     assistantName: parsedAssistantName,
+    workspaceRoot,
     cloud,
     platformToken,
     bearerToken,
@@ -1669,6 +1688,6 @@ export async function client(): Promise<void> {
       console.log(`${ANSI.dim}Disconnected.${ANSI.reset}`);
       process.exit(0);
     },
-    { auth, assistantName },
+    { auth, assistantName, workspaceRoot },
   );
 }
