@@ -18,7 +18,7 @@
  * still holds.
  *
  * Most tests no longer need these overrides: the test preload places
- * `CADET_WORKSPACE_DIR` at `<tmpRoot>/workspace`, so `getProtectedDir()`
+ * `CADET_WORKSPACE_DIR` at `<tmpRoot>/workspace`, so the security dir
  * resolves to `<tmpRoot>/protected` per process. The setters here exist
  * for the small set of tests that exercise specific path scenarios
  * (env-var fallbacks, migration corner cases, etc.).

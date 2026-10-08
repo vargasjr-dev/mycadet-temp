@@ -179,10 +179,8 @@ describe("managed CES reconnection (real entrypoint)", () => {
     const socketPath = resolveIpcEndpoint("ces", {
       workspaceDir: socketDir,
     }).path;
-    const assistantDataMount = join(tmpDir, "assistant-data-ro");
     mkdirSync(dataDir, { recursive: true });
     mkdirSync(socketDir, { recursive: true });
-    mkdirSync(join(assistantDataMount, ".cadet"), { recursive: true });
 
     const healthPort = await pickFreePort();
     const managedMain = resolve(__dirname, "..", "main.ts");
@@ -195,7 +193,6 @@ describe("managed CES reconnection (real entrypoint)", () => {
         CES_DATA_DIR: dataDir,
         CES_BOOTSTRAP_SOCKET_DIR: socketDir,
         CES_HEALTH_PORT: String(healthPort),
-        CES_ASSISTANT_DATA_MOUNT: assistantDataMount,
       },
       stdout: "ignore",
       stderr: "ignore",

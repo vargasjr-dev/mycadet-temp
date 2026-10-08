@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, sep } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { getBundledSkillsDir } from "../config/skills.js";
@@ -352,13 +352,7 @@ describe("sandboxPolicyWithHostFallback", () => {
     const boundary = makeTempDir();
 
     const result = sandboxPolicyWithHostFallback(
-      join(
-        process.env.XDG_DATA_HOME?.trim() ||
-          join(process.env.HOME!, ".local", "share"),
-        "cadet",
-        "protected",
-        "actor-token-signing-key",
-      ),
+      join(dirname(process.env.CADET_WORKSPACE_DIR!), "gateway-security", "actor-token-signing-key"),
       boundary,
       { mustExist: false },
     );

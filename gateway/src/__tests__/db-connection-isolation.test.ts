@@ -8,7 +8,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
@@ -61,13 +61,7 @@ test("initGatewayDb refuses test runs without an isolated security dir", async (
 
 test("initGatewayDb refuses the real security dir during tests even when explicitly set", async () => {
   resetGatewayDb();
-  process.env.GATEWAY_SECURITY_DIR = join(
-    homedir(),
-    ".local",
-    "share",
-    "cadet",
-    "protected",
-  );
+  process.env.GATEWAY_SECURITY_DIR = join(process.cwd(), "gateway-security");
   delete process.env.CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS;
 
   await expect(initGatewayDb()).rejects.toThrow(
@@ -82,14 +76,7 @@ test("initGatewayDb refuses symlink aliases to the real security dir during test
   );
 
   try {
-    const fakeHome = join(testRoot, "home");
-    const realSecurityDir = join(
-      fakeHome,
-      ".local",
-      "share",
-      "cadet",
-      "protected",
-    );
+    const realSecurityDir = join(testRoot, "gateway-security");
     const aliasParent = join(testRoot, "aliases");
     const securityAlias = join(aliasParent, "gateway-security-link");
 
@@ -97,7 +84,6 @@ test("initGatewayDb refuses symlink aliases to the real security dir during test
     mkdirSync(aliasParent, { recursive: true });
     symlinkSync(realSecurityDir, securityAlias, "dir");
 
-    process.env.HOME = fakeHome;
     process.env.GATEWAY_SECURITY_DIR = securityAlias;
     process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR = realSecurityDir;
     delete process.env.CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS;

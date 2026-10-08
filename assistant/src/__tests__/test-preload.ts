@@ -3,7 +3,7 @@
  *
  * Creates a per-process temporary directory and sets CADET_WORKSPACE_DIR so
  * that all workspace-derived helpers (getDataDir, getDbPath,
- * getConversationsDir, getProtectedDir, …) resolve under the temp dir
+ * getConversationsDir, getDotEnvPath, …) resolve under the temp dir
  * instead of the real $CADET_WORKSPACE_DIR.
  *
  * Cleanup: the temp dir is removed after all tests in the file complete.
@@ -28,7 +28,7 @@ import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
 
 // Layout: <tmpRoot>/workspace as CADET_WORKSPACE_DIR. The parent of
 // CADET_WORKSPACE_DIR is what `cadetRoot()` resolves to, so a separate
-// tmpRoot per process gives `getProtectedDir()` and friends per-process
+// tmpRoot per process gives the workspace-derived paths per-process
 // isolation without needing an explicit `setStorePathForTesting()`.
 const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "cadet-test-")));
 const testDir = join(tmpRoot, "workspace");

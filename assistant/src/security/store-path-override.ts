@@ -17,8 +17,8 @@
  * `__tests__/encrypted-store-test-helpers.ts` for the test-side writer.
  *
  * Note: the new test preload places `CADET_WORKSPACE_DIR` at
- * `<tmpRoot>/workspace`, so `getProtectedDir()` resolves to
- * `<tmpRoot>/protected` naturally — most tests no longer need an explicit
+ * `<tmpRoot>/workspace`, so the security dir resolves to
+ * `<tmpRoot>/ces-security` naturally — most tests no longer need an explicit
  * override. The setters here exist for the small set of tests that
  * exercise specific path scenarios (env-var fallbacks, migration, etc.).
  *

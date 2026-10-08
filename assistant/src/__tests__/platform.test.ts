@@ -1,10 +1,9 @@
 import { existsSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
-import { join, win32 } from "node:path";
+import { tmpdir } from "node:os";
+import { dirname, join, win32 } from "node:path";
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 
 import {
-  cadetRoot,
   ensureDataDir,
   formatHomeRelativePath,
   getDataDir,
@@ -20,12 +19,11 @@ import {
   getWorkspacePluginsDir,
   getWorkspacePromptPath,
   getWorkspaceSkillsDir,
-  getXdgCadetConfigDirName,
 } from "../util/platform.js";
 
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
-// This file characterizes path resolution itself (including the ~/.cadet
+// This file characterizes path resolution itself (including the cwd
 // fallback and literal override paths) without reading or writing those
 // locations, so the live-workspace guard is deliberately bypassed.
 const originalAllowRealWorkspace =
@@ -61,10 +59,8 @@ afterEach(() => {
 });
 
 // Path characterization: documents the current path layout.
-// Root-level helpers resolve under the XDG data root
-// ($XDG_DATA_HOME/cadet, i.e. ~/.local/share/cadet).
 // Workspace helpers resolve under CADET_WORKSPACE_DIR when set,
-// otherwise under the XDG data root's workspace.
+// otherwise under <cwd>/workspace.
 describe("path characterization", () => {
   test("formats Windows workspace paths relative to the home directory", () => {
     expect(
@@ -80,9 +76,9 @@ describe("path characterization", () => {
   });
 
   test("all path helpers resolve to expected locations", () => {
-    // Without CADET_WORKSPACE_DIR override, workspace is under the XDG data root
+    // Without CADET_WORKSPACE_DIR override, workspace is <cwd>/workspace
     delete process.env.CADET_WORKSPACE_DIR;
-    const root = join(homedir(), ".local", "share", "cadet");
+    const root = process.cwd();
     const ws = getWorkspaceDir();
     const data = getDataDir();
 
@@ -121,15 +117,15 @@ describe("path characterization", () => {
 
   test("ensureDataDir creates all expected directories", () => {
     // Use a temp CADET_WORKSPACE_DIR so ensureDataDir writes to a temp dir
-    // rather than the real ~/.cadet. Root-level dirs still go to ~/.cadet
-    // but we only verify workspace dirs here to avoid side effects.
+    // rather than the real cwd. Root-level dirs resolve from the workspace
+    // parent; we only verify workspace dirs here to avoid side effects.
     const wsDir = join(tmpdir(), `platform-test-ws-${Date.now()}`);
     process.env.CADET_WORKSPACE_DIR = wsDir;
 
     ensureDataDir();
 
     // Root-level dirs (ensureDataDir always creates these)
-    const root = cadetRoot();
+    const root = dirname(wsDir);
     expect(existsSync(root)).toBe(true);
 
     // Workspace dirs (in our temp location)
@@ -147,37 +143,6 @@ describe("path characterization", () => {
     expect(existsSync(join(data, "apps"))).toBe(true);
 
     rmSync(wsDir, { recursive: true, force: true });
-  });
-});
-
-describe("XDG config dir name env-awareness", () => {
-  test("production returns cadet", () => {
-    delete process.env.CADET_ENVIRONMENT;
-    delete process.env.XDG_CONFIG_HOME;
-    expect(getXdgCadetConfigDirName()).toBe("cadet");
-  });
-
-  test("production (explicit) returns cadet", () => {
-    process.env.CADET_ENVIRONMENT = "production";
-    expect(getXdgCadetConfigDirName()).toBe("cadet");
-  });
-
-  test("dev environment returns cadet-dev", () => {
-    process.env.CADET_ENVIRONMENT = "dev";
-    expect(getXdgCadetConfigDirName()).toBe("cadet-dev");
-  });
-
-  test.each(["staging", "test", "local"])(
-    "%s environment returns cadet-%s",
-    (env) => {
-      process.env.CADET_ENVIRONMENT = env;
-      expect(getXdgCadetConfigDirName()).toBe(`cadet-${env}`);
-    },
-  );
-
-  test("unknown environment falls back to production", () => {
-    process.env.CADET_ENVIRONMENT = "no-such-env";
-    expect(getXdgCadetConfigDirName()).toBe("cadet");
   });
 });
 

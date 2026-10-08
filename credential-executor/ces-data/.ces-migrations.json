@@ -1,0 +1,16 @@
+{
+  "applied": {
+    "001-no-op": {
+      "appliedAt": "2026-10-08T17:06:42.417Z",
+      "status": "completed"
+    },
+    "002-api-keys-to-credentials": {
+      "appliedAt": "2026-10-08T17:06:42.417Z",
+      "status": "completed"
+    },
+    "003-import-workspace-metadata": {
+      "appliedAt": "2026-10-08T17:06:42.418Z",
+      "status": "completed"
+    }
+  }
+}

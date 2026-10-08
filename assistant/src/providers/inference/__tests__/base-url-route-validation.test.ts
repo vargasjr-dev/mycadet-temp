@@ -42,8 +42,8 @@ mock.module("../../../config/assistant-feature-flags.js", () => ({
 
 // Mock platform detection: tests default to platform mode (SSRF enforced).
 // Individual tests can override via `mockIsPlatform = false`. Spread the real
-// module so the (now real) config loader's transitive `util/platform` import of
-// `getWorkspaceDirOverride` still resolves — only `getIsPlatform` is overridden.
+// module so the config loader's transitive `util/platform` imports still
+// resolve — only `getIsPlatform` is overridden.
 let mockIsPlatform = true;
 
 const realEnvRegistry = {

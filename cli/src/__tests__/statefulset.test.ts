@@ -149,4 +149,10 @@ describe("buildServiceRunArgs extra env routing", () => {
     expect(cesArgs).not.toContain("CADET_DISABLE_PLATFORM=1");
     expect(cesArgs).not.toContain("FOO=bar");
   });
+
+  test("credential-executor args carry the /ces-security and /ces-data wiring", () => {
+    const cesArgs = runArgs["credential-executor"]();
+    expect(cesArgs).toContain("CREDENTIAL_SECURITY_DIR=/ces-security");
+    expect(cesArgs).toContain("CES_DATA_DIR=/ces-data");
+  });
 });

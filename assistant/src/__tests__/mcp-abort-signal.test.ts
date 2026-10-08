@@ -12,7 +12,6 @@ mock.module("../config/env-registry.js", () => ({
   getIsContainerized: () => false,
   getIsPlatform: () => false,
   isPlatformRemote: () => false,
-  getWorkspaceDirOverride: () => process.env.CADET_WORKSPACE_DIR,
   getBackupDirOverride: () => undefined,
   getBackupKeyPathOverride: () => undefined,
   getCpuLimit: () => undefined,

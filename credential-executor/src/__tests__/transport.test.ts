@@ -14,7 +14,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
@@ -355,25 +355,11 @@ describe("CesRpcServer", () => {
 // ---------------------------------------------------------------------------
 
 describe("CES data paths", () => {
-  test("local mode data root includes 'protected/credential-executor'", () => {
-    const root = getCesDataRoot("local");
-    expect(root).toMatch(/protected[/\\]credential-executor$/);
-  });
-
-  test("managed mode data root defaults to /ces-data", () => {
-    const savedDir = process.env["CES_DATA_DIR"];
-    delete process.env["CES_DATA_DIR"];
-    try {
-      expect(getCesDataRoot("managed")).toBe("/ces-data");
-    } finally {
-      if (savedDir !== undefined) process.env["CES_DATA_DIR"] = savedDir;
-    }
-  });
-
-  test("managed mode data root respects CES_DATA_DIR env var", () => {
+  test("data root resolves CES_DATA_DIR in any mode", () => {
     const savedDir = process.env["CES_DATA_DIR"];
     process.env["CES_DATA_DIR"] = "/custom/ces-data";
     try {
+      expect(getCesDataRoot("local")).toBe("/custom/ces-data");
       expect(getCesDataRoot("managed")).toBe("/custom/ces-data");
     } finally {
       if (savedDir !== undefined) {
@@ -384,11 +370,17 @@ describe("CES data paths", () => {
     }
   });
 
-  test("local data root is under the Cadet root, not the workspace", () => {
-    const root = getCesDataRoot("local");
-    // Must be under cadet/protected/ (the XDG data root), NOT the workspace
-    expect(root).toMatch(/cadet[/\\]protected[/\\]/);
-    expect(root).not.toMatch(/workspace/);
+  test("data root falls back to ./ces-data (cwd convention)", () => {
+    const savedDir = process.env["CES_DATA_DIR"];
+    delete process.env["CES_DATA_DIR"];
+    try {
+      expect(getCesDataRoot("managed")).toBe(
+        join(process.cwd(), "ces-data"),
+      );
+      expect(getCesDataRoot("local")).toBe(join(process.cwd(), "ces-data"));
+    } finally {
+      if (savedDir !== undefined) process.env["CES_DATA_DIR"] = savedDir;
+    }
   });
 
   test("getBootstrapSocketPath defaults to /run/ces-bootstrap", () => {
