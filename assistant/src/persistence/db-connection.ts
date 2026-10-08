@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { join, sep } from "node:path";
+import { sep } from "node:path";
 import { Database } from "bun:sqlite";
 
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
@@ -7,11 +7,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { getLogsDbPath } from "../util/logs-db-path.js";
 import { getMemoryDbPath } from "../util/memory-db-path.js";
-import {
-  ensureDataDir,
-  getDbPath,
-  getXdgCadetDataDir,
-} from "../util/platform.js";
+import { ensureDataDir, getDbPath } from "../util/platform.js";
 import { getTelemetryDbPath } from "../util/telemetry-db-path.js";
 import { clearStoredDb, getStoredDb, setStoredDb } from "./db-singleton.js";
 import * as schema from "./schema/index.js";
@@ -46,8 +42,7 @@ export function assertTestDbIsIsolated(): void {
   const resolvedWorkspaceDir =
     canonicalizePathThroughExistingParent(workspaceDir);
   const realWorkspaceDir = canonicalizePathThroughExistingParent(
-    process.env.CADET_TEST_REAL_WORKSPACE_DIR?.trim() ||
-      join(getXdgCadetDataDir(), "workspace"),
+    process.env.CADET_TEST_REAL_WORKSPACE_DIR?.trim() ?? "",
   );
   if (
     resolvedWorkspaceDir === realWorkspaceDir ||

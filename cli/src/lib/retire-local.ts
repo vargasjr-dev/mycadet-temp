@@ -1,5 +1,4 @@
 import { spawn } from "child_process";
-import { homedir } from "os";
 import { existsSync, mkdirSync, renameSync, writeFileSync } from "fs";
 import { basename, dirname, join, win32 } from "path";
 
@@ -100,17 +99,6 @@ export async function retireLocal(
     );
   }
   const resources = entry.resources;
-
-  // Refuse the legacy "first local" layout (instanceDir === home). State
-  // lives exclusively in the instance dir now — archiving it would mean
-  // archiving the entire home directory. Such entries must re-hatch.
-  if (resources.instanceDir === homedir()) {
-    throw new Error(
-      `Local assistant '${name}' still uses the legacy home-directory ` +
-        `instance layout, which is no longer supported. Re-hatch to fix.`,
-    );
-  }
-
   const cadetDir = resources.instanceDir;
 
   // Check whether another local assistant shares the same data directory.

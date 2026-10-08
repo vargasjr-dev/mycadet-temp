@@ -1,22 +1,17 @@
 /**
  * Device ID resolver.
  *
- * Reads or creates a stable per-device UUID stored in device.json under the
- * Cadet config directory. The file is a JSON object (`{ "deviceId": "<uuid>" }`)
- * extensible for future per-device metadata.
+ * Reads or creates a stable per-workspace UUID stored in device.json at the
+ * root of the workspace directory. The file is a JSON object
+ * (`{ "deviceId": "<uuid>" }`) extensible for future per-device metadata.
  *
- * Path resolution:
- *   - All modes: the `CADET_DEVICE_ID` env var takes precedence when set
- *     and is never written to device.json (see getDeviceIdOverride in
- *     config/env-registry.ts).
- *   - Containerized (IS_CONTAINERIZED=true): `/home/assistant/.cadet/device.json`
- *     — the assistant user's persistent home dir, kept off the shared data
- *     volume. Not affected by CADET_ENVIRONMENT because the container fs
- *     has no cross-process contract with the Swift client.
- *   - Non-containerized production: `~/.cadet/device.json` (legacy, shared
- *     across all local instances on the same machine).
- *   - Non-containerized non-production: `$XDG_CONFIG_HOME/cadet-<env>/device.json`,
- *     matching Swift's `CadetPaths.deviceIdFile`.
+ * Resolution order for the ID itself:
+ *   1. The `CADET_DEVICE_ID` env var takes precedence when set and is never
+ *      written to device.json (see getDeviceIdOverride in
+ *      config/env-registry.ts). The CLI injects it when spawning the
+ *      daemon/gateway so a machine's instances share one identity.
+ *   2. `deviceId` from device.json in the workspace.
+ *   3. A generated UUID, persisted to device.json.
  *
  * The value is cached in memory after the first successful read/write.
  * Falls back to a generated UUID if the file cannot be read or written.
@@ -24,38 +19,23 @@
 
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
-import {
-  getDeviceIdOverride,
-  getIsContainerized,
-} from "../config/env-registry.js";
+import { getDeviceIdOverride } from "../config/env-registry.js";
 import { getLogger } from "./logger.js";
-import { getXdgCadetConfigDirName } from "./platform.js";
+import { getWorkspaceDir } from "./platform.js";
 
 const log = getLogger("device-id");
 
 let cached: string | undefined;
 
 /**
- * Resolve the directory and file path for `device.json` based on the
- * runtime environment. See the module docblock for the resolution table.
- *
- * Containerized deployments use the mounted `/home/assistant/.cadet`
- * volume. Everything else routes through the env-scoped XDG config
- * directory (`$XDG_CONFIG_HOME/cadet[-<env>]`), shared across all local
- * instances on the same machine.
+ * Resolve the directory and file path for `device.json` — always the root
+ * of the workspace directory. The device ID is a per-workspace identity;
+ * machine-wide identity is the CLI's concern (it injects CADET_DEVICE_ID).
  */
 export function resolveDeviceIdPaths(): { dir: string; file: string } {
-  if (getIsContainerized()) {
-    const dir = join("/home/assistant", ".cadet");
-    return { dir, file: join(dir, "device.json") };
-  }
-
-  const configHome =
-    process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
-  const dir = join(configHome, getXdgCadetConfigDirName());
+  const dir = getWorkspaceDir();
   return { dir, file: join(dir, "device.json") };
 }
 
@@ -107,7 +87,7 @@ export function getExistingDeviceId(): string | null {
 }
 
 /**
- * Get the stable device ID for this machine.
+ * Get the stable device ID for this workspace.
  *
  * Resolution order:
  *   1. Cached in-memory value (populated on first call)

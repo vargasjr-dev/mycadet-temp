@@ -35,11 +35,11 @@ import { seedDeviceIdMigration } from "../workspace/migrations/003-seed-device-i
 // ---------------------------------------------------------------------------
 
 const BASE = "/mock-home";
-const CADET_DIR = `${BASE}/.config/cadet`;
+const CADET_DIR = `${BASE}/.cadet`;
 const DEVICE_PATH = `${CADET_DIR}/device.json`;
 const LOCK_PATH = `${BASE}/.cadet.lock.json`;
 const LEGACY_LOCK_PATH = `${BASE}/.cadet.lockfile.json`;
-const WORKSPACE_DIR = `${BASE}/.local/share/cadet/workspace`;
+const WORKSPACE_DIR = `${CADET_DIR}/workspace`;
 
 function makeLockfile(assistants: Array<Record<string, unknown>>): string {
   return JSON.stringify({ assistants });

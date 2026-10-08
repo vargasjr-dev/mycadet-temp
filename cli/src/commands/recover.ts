@@ -5,7 +5,6 @@ import {
   renameSync,
   unlinkSync,
 } from "fs";
-import { homedir } from "node:os";
 import { basename, dirname, join } from "path";
 
 import { saveAssistantEntry } from "../lib/assistant-config";
@@ -72,18 +71,7 @@ export async function recover(): Promise<void> {
     );
   }
 
-  // 3. Refuse the legacy "first local" layout (instanceDir === home).
-  // State lives exclusively in the instance dir now — a home-dir
-  // instanceDir predates the XDG layout and must re-hatch.
-  if (entry.resources.instanceDir === homedir()) {
-    console.error(
-      `Error: '${name}' uses the legacy home-directory instance layout, ` +
-        `which is no longer supported. Run 'cadet hatch' to re-provision.`,
-    );
-    process.exit(1);
-  }
-
-  // 4. Check that the recovering entry's own target directory is free.
+  // 3. Check that the recovering entry's own target directory is free.
   const target = entry.resources.instanceDir;
   if (existsSync(target)) {
     console.error(
@@ -93,7 +81,7 @@ export async function recover(): Promise<void> {
     process.exit(1);
   }
 
-  // 5. Determine the original target directory, then extract and rename.
+  // 4. Determine the original target directory, then extract and rename.
   //
   // retireLocal archives the full instanceDir. The directory is staged under
   // `<archive>.staging` inside the retired dir before being packed with
@@ -111,21 +99,21 @@ export async function recover(): Promise<void> {
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
 
-  // 6. Restore lockfile entry
+  // 5. Restore lockfile entry
   saveAssistantEntry(entry);
 
-  // 7. Clean up archive
+  // 6. Clean up archive
   unlinkSync(archivePath);
   unlinkSync(metadataPath);
 
-  // 8. Persist signing key and bootstrap secret so they survive daemon/gateway restarts
+  // 7. Persist signing key and bootstrap secret so they survive daemon/gateway restarts
   const signingKey = generateLocalSigningKey();
   const bootstrapSecret = generateLocalSigningKey();
   entry.resources = { ...entry.resources, signingKey };
   entry.guardianBootstrapSecret = bootstrapSecret;
   saveAssistantEntry(entry);
 
-  // 9. Start CES sibling + daemon + gateway in parallel, the way the
+  // 8. Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([

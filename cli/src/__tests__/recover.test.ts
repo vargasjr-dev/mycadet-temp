@@ -16,7 +16,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
 import type { AssistantEntry } from "../lib/assistant-config.js";
@@ -218,25 +218,6 @@ describe("recover error cases", () => {
     process.argv = ["bun", "cadet", "recover", name];
     await expect(recover()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain("already exists");
-  });
-});
-
-describe("recover legacy layout (instanceDir === homedir())", () => {
-  test("exits 1 — legacy home-directory entries must re-hatch", async () => {
-    const name = "default-instance";
-    const entry = makeEntry(name, homedir());
-    const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
-
-    process.argv = ["bun", "cadet", "recover", name];
-    await expect(recover()).rejects.toThrow("process.exit(1)");
-    expect(consoleErrorSpy.mock.calls[0][0]).toContain("legacy home-directory");
-
-    // Nothing was extracted, renamed, or started
-    expect(execMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(existsSync(extractedPath)).toBe(true);
-    expect(existsSync(archivePath)).toBe(true);
   });
 });
 

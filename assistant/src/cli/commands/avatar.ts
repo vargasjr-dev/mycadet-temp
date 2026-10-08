@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
-import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { getWorkspaceDir } from "../../util/platform.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -48,16 +48,7 @@ export function registerAvatarCommand(program: Command): void {
         async (opts: { image: string }, cmd: Command) => {
           const resolvedSource = isAbsolute(opts.image)
             ? opts.image
-            : join(
-                process.env.CADET_WORKSPACE_DIR ||
-                  join(
-                    process.env.XDG_DATA_HOME?.trim() ||
-                      join(homedir(), ".local", "share"),
-                    "cadet",
-                    "workspace",
-                  ),
-                opts.image,
-              );
+            : join(getWorkspaceDir(), opts.image);
 
           if (!existsSync(resolvedSource)) {
             log.error(`Image file not found: ${resolvedSource}`);

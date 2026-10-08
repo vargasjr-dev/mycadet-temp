@@ -195,16 +195,21 @@ describe("avatar set", () => {
   test("resolves relative path to absolute before calling avatar_set", async () => {
     mockIpcResult = { ok: true, result: { ok: true } };
 
-    // avatar.ts resolves relative paths against CADET_WORKSPACE_DIR.
-    // Point the workspace root at cwd so a real file (./package.json) is reachable.
+    // avatar.ts resolves relative paths against getWorkspaceDir(). Point the
+    // workspace at an ephemeral tempdir (required in test processes) holding
+    // a real file.
     const originalWsDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = process.cwd();
+    const { mkdtempSync, rmSync, writeFileSync, existsSync } = await import(
+      "node:fs"
+    );
+    const { resolve, join: joinPath } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const wsRoot = mkdtempSync(joinPath(tmpdir(), "avatar-set-test-"));
+    process.env.CADET_WORKSPACE_DIR = wsRoot;
     try {
-      const { existsSync } = await import("node:fs");
-      const { resolve } = await import("node:path");
-
-      const relPath = "./package.json";
-      const resolved = resolve(process.cwd(), relPath);
+      const relPath = "./sample.png";
+      const resolved = resolve(wsRoot, relPath);
+      writeFileSync(resolved, "png");
 
       if (existsSync(resolved)) {
         await runCommand(["avatar", "set", "--image", relPath]);
@@ -225,6 +230,11 @@ describe("avatar set", () => {
         delete process.env.CADET_WORKSPACE_DIR;
       } else {
         process.env.CADET_WORKSPACE_DIR = originalWsDir;
+      }
+      try {
+        rmSync(wsRoot, { recursive: true, force: true });
+      } catch {
+        /* best-effort */
       }
     }
   });
