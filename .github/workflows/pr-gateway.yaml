@@ -8,7 +8,6 @@ on:
       # dep closure — kept in lockstep with gateway/package.json), plus the
       # shared inputs its checks read.
       - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "gateway/**"
       - "packages/assistant-client/**"

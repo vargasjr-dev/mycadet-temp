@@ -5,7 +5,6 @@ on:
     types: [labeled, synchronize, opened, reopened]
     paths:
       - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "assistant/**"
       - "packages/app-icons/**"
