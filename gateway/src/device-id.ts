@@ -1,14 +1,9 @@
-import { readFileSync } from "node:fs";
-
-import { getDeviceIdPath } from "./paths.js";
-
 let cached: string | null = null;
 
 /**
- * Read the persistent device ID from device.json or the CADET_DEVICE_ID
- * env var. In containerized deployments, the gateway sidecar cannot access
- * the assistant's home directory — the orchestration layer can set
- * CADET_DEVICE_ID to thread the value through instead.
+ * Read the device ID from the CADET_DEVICE_ID env var. The CLI always
+ * injects it when spawning the gateway (local and containerized alike);
+ * without it there is no device identity.
  */
 export function getDeviceId(): string | null {
   if (cached !== null) return cached;
@@ -19,13 +14,5 @@ export function getDeviceId(): string | null {
     return cached;
   }
 
-  try {
-    const raw = readFileSync(getDeviceIdPath(), "utf-8");
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.deviceId === "string" && parsed.deviceId) {
-      cached = parsed.deviceId;
-      return cached;
-    }
-  } catch {}
   return null;
 }

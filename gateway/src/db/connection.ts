@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { existsSync, mkdirSync, renameSync } from "node:fs";
-import { homedir } from "node:os";
 import { join, sep } from "node:path";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 
@@ -99,7 +98,7 @@ function assertTestDbIsIsolated(): void {
     canonicalizePathThroughExistingParent(securityDir);
   const realSecurityDir = canonicalizePathThroughExistingParent(
     process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR?.trim() ||
-      join(homedir(), ".local", "share", "cadet", "protected"),
+      join(process.cwd(), "gateway-security"),
   );
   if (
     resolvedSecurityDir === realSecurityDir ||

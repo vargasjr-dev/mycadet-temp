@@ -56,12 +56,10 @@
  * before calling the classifier.
  */
 
-// NOTE: homedir() is a legacy fallback for actor-token-signing-key path
-// detection and allowlist option directory traversal. In Docker mode the
-// gateway's HOME may differ from the assistant's, so the explicit context
-// paths (protectedDir, deprecatedDir) are the reliable escalation check.
-// homedir() is only used as a best-effort additional check and for allowlist
-// option cosmetics (trimming ~/… prefixes).
+// NOTE: homedir() is only used for allowlist option directory traversal
+// cosmetics (trimming ~/… prefixes); escalation checks use the explicit
+// context paths (protectedDir, deprecatedDir), which are reliable in Docker
+// mode where the gateway's HOME may differ from the assistant's.
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -266,17 +264,6 @@ function isActorTokenSigningKeyPath(
 ): boolean {
   const signingKeyPaths = Array.from(
     new Set([
-      // Bare-metal defaults: the current XDG data root and the retired
-      // `~/.cadet` root (existing installs still have the key there).
-      join(
-        homedir(),
-        ".local",
-        "share",
-        "cadet",
-        "protected",
-        "actor-token-signing-key",
-      ),
-      join(homedir(), ".cadet", "protected", "actor-token-signing-key"),
       join(context.protectedDir, "actor-token-signing-key"),
       join(context.deprecatedDir, "actor-token-signing-key"),
       resolve(workingDir, "deprecated", "actor-token-signing-key"),

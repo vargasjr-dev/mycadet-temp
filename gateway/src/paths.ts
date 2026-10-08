@@ -34,42 +34,28 @@ function safeUserInfoHomedir(): string {
  * `--user <uid>` without a matching `/etc/passwd` line); catching keeps the
  * `homedir()` fallback reachable.
  */
+/**
+ * The retired `~/.cadet` home root, and a log warning for hatch
+ * entrypoints that still rely on the old path.
+ *
+ * Home fallback chain: `$HOME` → `userInfo().homedir` → `homedir()`.
+ * `homedir()` alone is insufficient because libuv's `uv_os_homedir` returns
+ * `$HOME` as-is when set (even to `""`) and only consults `getpwuid_r` when
+ * `HOME` is unset entirely. `userInfo()` calls `getpwuid_r` directly, so it
+ * returns the passwd-table home regardless of `HOME`. The `userInfo()` call
+ * is guarded via `safeUserInfoHomedir()` because it throws `SystemError`
+ * when the current UID has no passwd entry (common in containers run with
+ * `--user <uid>` without a matching `/etc/passwd` line); catching keeps the
+ * `homedir()` fallback reachable.
+ *
+ * Only consumed by the legacy-recovery data migrations and the legacy DB
+ * relocation in db/connection.ts.
+ */
 export function getLegacyRootDir(): string {
   return join(
     process.env.HOME || safeUserInfoHomedir() || homedir(),
     ".cadet",
   );
-}
-
-/**
- * Bare-metal fallback root for machine-scoped gateway state: the XDG data
- * home (`$XDG_DATA_HOME/cadet`, i.e. `~/.local/share/cadet`).
- */
-function getXdgCadetDataDir(): string {
-  return join(
-    process.env.XDG_DATA_HOME?.trim() ||
-      join(
-        process.env.HOME || safeUserInfoHomedir() || homedir(),
-        ".local",
-        "share",
-      ),
-    "cadet",
-  );
-}
-
-/**
- * Path to the machine's shared `device.json` in the env-scoped XDG config
- * directory (`$XDG_CONFIG_HOME/cadet[-<env>]`) — the same file the CLI and
- * daemon write.
- */
-export function getDeviceIdPath(): string {
-  const configHome =
-    process.env.XDG_CONFIG_HOME?.trim() ||
-    join(process.env.HOME || safeUserInfoHomedir() || homedir(), ".config");
-  const rawEnv = process.env.CADET_ENVIRONMENT?.trim();
-  const dirName =
-    !rawEnv || rawEnv === "production" ? "cadet" : `cadet-${rawEnv}`;
-  return join(configHome, dirName, "device.json");
 }
 
 let warnedWorkspaceDir = false;
@@ -96,9 +82,8 @@ const SECURITY_GUARD = {
  * Returns the workspace root for user-facing state.
  *
  * When CADET_WORKSPACE_DIR is set, returns that value (used in containerized
- * deployments where the workspace is a separate volume). Otherwise falls back
- * to the XDG data root's workspace (getXdgCadetDataDir()/workspace) and logs
- * a warning (once).
+ * deployments where the workspace is a separate volume). Otherwise falls
+ * back to `<cwd>/workspace` and logs a warning (once).
  */
 export function getWorkspaceDir(): string {
   const override = process.env.CADET_WORKSPACE_DIR?.trim();
@@ -109,11 +94,11 @@ export function getWorkspaceDir(): string {
   if (!warnedWorkspaceDir) {
     warnedWorkspaceDir = true;
     console.warn(
-      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to the XDG data root. " +
+      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to ./workspace. " +
         "Set CADET_WORKSPACE_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(getXdgCadetDataDir(), "workspace");
+  const dir = join(process.cwd(), "workspace");
   assertTestPathIsEphemeral(dir, WORKSPACE_GUARD);
   return dir;
 }
@@ -122,9 +107,8 @@ export function getWorkspaceDir(): string {
  * Directory containing files private to the gateway container.
  *
  * In Docker, this is a dedicated volume mounted at /gateway-security via the
- * GATEWAY_SECURITY_DIR env var. In local (non-Docker) mode, falls back to
- * the XDG data root's protected dir (getXdgCadetDataDir()/protected) and
- * logs a warning (once).
+ * GATEWAY_SECURITY_DIR env var. Otherwise falls back to
+ * `<cwd>/gateway-security` and logs a warning (once).
  */
 export function getGatewaySecurityDir(): string {
   const override = process.env.GATEWAY_SECURITY_DIR?.trim();
@@ -135,11 +119,11 @@ export function getGatewaySecurityDir(): string {
   if (!warnedSecurityDir) {
     warnedSecurityDir = true;
     console.warn(
-      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to the XDG data root. " +
+      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to ./gateway-security. " +
         "Set GATEWAY_SECURITY_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(getXdgCadetDataDir(), "protected");
+  const dir = join(process.cwd(), "gateway-security");
   assertTestPathIsEphemeral(dir, SECURITY_GUARD);
   return dir;
 }

@@ -6,7 +6,6 @@
  * has access to this file.
  */
 
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { getGatewaySecurityDir } from "../paths.js";
@@ -39,19 +38,10 @@ export function getBackupKeyPath(): string {
 /**
  * Returns the backup root directory. Respects the `CADET_BACKUP_DIR`
  * environment variable override (used in containerized deployments where
- * backups must be on a persistent volume); falls back to the XDG data
- * root's backups directory (`$XDG_DATA_HOME/cadet/backups`).
+ * backups must be on a persistent volume); falls back to `<cwd>/backups`.
  */
 export function getBackupRootDir(): string {
-  const override = process.env.CADET_BACKUP_DIR?.trim();
-  return (
-    override ||
-    join(
-      process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
-      "cadet",
-      "backups",
-    )
-  );
+  return process.env.CADET_BACKUP_DIR?.trim() || join(process.cwd(), "backups");
 }
 
 /**
