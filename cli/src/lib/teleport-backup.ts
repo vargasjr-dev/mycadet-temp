@@ -69,7 +69,7 @@ async function fetchPlatformBackups(
   const response = await platformBackupRequest(entry, token, "GET");
   if (!response.ok) {
     throw new Error(
-      `Platform backup list failed ${await errorSuffix(response)}`,
+      `Cadet Cloud backup list failed ${await errorSuffix(response)}`,
     );
   }
   const body = (await response.json()) as { backups?: ManagedBackupEntry[] };
@@ -110,7 +110,7 @@ export async function createPlatformBackup(
   const response = await platformBackupRequest(entry, token, "POST");
   if (!response.ok) {
     throw new Error(
-      `Platform backup create failed ${await errorSuffix(response)}`,
+      `Cadet Cloud backup create failed ${await errorSuffix(response)}`,
     );
   }
   const created = (await response.json().catch(() => null)) as {
@@ -119,7 +119,7 @@ export async function createPlatformBackup(
   } | null;
   const snapshotName = created?.snapshot_name;
   if (!snapshotName) {
-    throw new Error("Platform backup create returned no snapshot name");
+    throw new Error("Cadet Cloud backup create returned no snapshot name");
   }
   if (created?.ready_to_use === true) {
     return;
@@ -134,6 +134,6 @@ export async function createPlatformBackup(
     }
   }
   throw new Error(
-    `Platform backup ${snapshotName} was not ready after ${Math.round(timeoutMs / 1000)}s`,
+    `Cadet Cloud backup ${snapshotName} was not ready after ${Math.round(timeoutMs / 1000)}s`,
   );
 }

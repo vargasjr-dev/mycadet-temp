@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
   fetchLatestVersion,
   fetchReleases,
-  resolveImageRefsDetailed,
+  resolveImageRefs,
+  resolveOwnImageRefs,
 } from "../lib/platform-releases.js";
+import { dockerhubImages } from "../lib/docker.js";
+import { isDevVersion, isStagingVersion } from "../lib/version-compat.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -75,61 +78,91 @@ describe("fetchReleases", () => {
   });
 });
 
-describe("resolveImageRefsDetailed", () => {
-  test("returns platform refs when the version is found", async () => {
-    mockFetchJson([RELEASE]);
-    const result = await resolveImageRefsDetailed("v0.7.0");
-    expect(result.status).toBe("platform");
-    if (result.status === "platform") {
-      expect(result.imageTags.assistant).toBe(RELEASE.assistant_image_ref);
-      expect(result.imageTags.gateway).toBe(RELEASE.gateway_image_ref);
-    }
+describe("resolveImageRefs", () => {
+  test("released CLI resolves un-suffixed repos tagged with the target version", () => {
+    const tags = resolveImageRefs("v0.12.6", "0.12.6");
+    expect(tags.assistant).toBe("mycadet/mycadet-assistant:v0.12.6");
+    expect(tags.gateway).toBe("mycadet/mycadet-gateway:v0.12.6");
+    expect(tags["credential-executor"]).toBe(
+      "mycadet/mycadet-credential-executor:v0.12.6",
+    );
   });
 
-  test("falls back to DockerHub for a null credential-executor ref", async () => {
-    mockFetchJson([{ ...RELEASE, credential_executor_image_ref: null }]);
-    const result = await resolveImageRefsDetailed("0.7.0");
-    expect(result.status).toBe("platform");
-    if (result.status === "platform") {
-      expect(result.imageTags["credential-executor"]).toContain(":0.7.0");
-    }
+  test("dev CLI resolves -dev-suffixed repos", () => {
+    const tags = resolveImageRefs(
+      "v0.12.6-dev.202610081023.3a27b77",
+      "0.12.6-dev.202610081023.3a27b77",
+    );
+    expect(tags.assistant).toBe(
+      "mycadet/mycadet-assistant-dev:v0.12.6-dev.202610081023.3a27b77",
+    );
+    expect(tags.gateway).toBe(
+      "mycadet/mycadet-gateway-dev:v0.12.6-dev.202610081023.3a27b77",
+    );
+    expect(tags["credential-executor"]).toBe(
+      "mycadet/mycadet-credential-executor-dev:v0.12.6-dev.202610081023.3a27b77",
+    );
   });
 
-  test("returns version-not-found when the platform list lacks the version", async () => {
-    mockFetchJson([RELEASE]);
-    const result = await resolveImageRefsDetailed("v9.9.9");
-    expect(result.status).toBe("version-not-found");
+  test("repo suffix follows the CLI version, tag follows the target", () => {
+    const tags = resolveImageRefs("v0.12.5", "0.12.6-dev.202610081023.3a27b77");
+    expect(tags.assistant).toBe("mycadet/mycadet-assistant-dev:v0.12.5");
   });
 
-  test("returns dockerhub-fallback when the platform is unreachable", async () => {
+  test("does not consult the network", async () => {
     mockFetchError();
-    const result = await resolveImageRefsDetailed("v0.7.0");
-    expect(result.status).toBe("dockerhub-fallback");
-    if (result.status === "dockerhub-fallback") {
-      expect(result.imageTags.assistant).toContain(":v0.7.0");
-    }
+    const tags = resolveImageRefs("v0.12.6", "0.12.6");
+    expect(tags.assistant).toContain(":v0.12.6");
   });
 
-  test("returns dockerhub-fallback when required refs are missing", async () => {
-    mockFetchJson([{ ...RELEASE, assistant_image_ref: null }]);
-    const result = await resolveImageRefsDetailed("0.7.0");
-    expect(result.status).toBe("dockerhub-fallback");
+  test("normalizes the v-prefix on the tag", () => {
+    const withoutPrefix = resolveImageRefs("0.12.6", "0.12.6");
+    const withPrefix = resolveImageRefs("v0.12.6", "0.12.6");
+    expect(withoutPrefix.assistant).toBe(withPrefix.assistant);
+  });
+});
+
+describe("resolveOwnImageRefs", () => {
+  test("uses the CLI's own version for both tag and repo suffix", () => {
+    const tags = resolveOwnImageRefs("0.12.6-dev.202610081023.3a27b77");
+    expect(tags.assistant).toBe(
+      "mycadet/mycadet-assistant-dev:v0.12.6-dev.202610081023.3a27b77",
+    );
+  });
+});
+
+describe("dockerhubImages", () => {
+  test("dev versions get -dev repos", () => {
+    const images = dockerhubImages("0.12.6-dev.202610081023.3a27b77");
+    expect(images.assistant).toBe("mycadet/mycadet-assistant-dev");
+    expect(images.gateway).toBe("mycadet/mycadet-gateway-dev");
+    expect(images["credential-executor"]).toBe(
+      "mycadet/mycadet-credential-executor-dev",
+    );
   });
 
-  test("requests the preview channel when channel=preview", async () => {
-    const fetchMock = mockFetchJson([RELEASE]);
-    await resolveImageRefsDetailed("v0.7.0", undefined, "preview");
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("channel=preview");
-    expect(url).not.toContain("stable=true");
+  test("stable versions get un-suffixed repos", () => {
+    const images = dockerhubImages("0.12.6");
+    expect(images.assistant).toBe("mycadet/mycadet-assistant");
+    expect(images.gateway).toBe("mycadet/mycadet-gateway");
+    expect(images["credential-executor"]).toBe(
+      "mycadet/mycadet-credential-executor",
+    );
+  });
+});
+
+describe("version-shape helpers", () => {
+  test("isDevVersion matches dev-release versions only", () => {
+    expect(isDevVersion("0.12.6-dev.202610081023.3a27b77")).toBe(true);
+    expect(isDevVersion("v0.12.6-dev.202610081023.3a27b77")).toBe(true);
+    expect(isDevVersion("0.12.6")).toBe(false);
+    expect(isDevVersion("0.12.6-staging.3")).toBe(false);
   });
 
-  test("keeps the stable filter when channel=stable (default)", async () => {
-    const fetchMock = mockFetchJson([RELEASE]);
-    await resolveImageRefsDetailed("v0.7.0", undefined, "stable");
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("stable=true");
-    expect(url).not.toContain("channel=");
+  test("isStagingVersion matches staging versions only", () => {
+    expect(isStagingVersion("0.6.0-staging.3")).toBe(true);
+    expect(isStagingVersion("0.6.0")).toBe(false);
+    expect(isStagingVersion("0.12.6-dev.202610081023.3a27b77")).toBe(false);
   });
 });
 

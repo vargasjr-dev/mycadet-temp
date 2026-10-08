@@ -1,51 +1,17 @@
-import { mkdirSync, unlinkSync, writeFileSync } from "fs";
-import { dirname } from "path";
-
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-import {
-  defaultEnvironmentFilePath,
-  defaultEnvironmentFilePaths,
-  readDefaultEnvironment as readPersistedDefaultEnvironment,
-} from "@mycadet/local-mode";
+
+// Direct import — bun embeds this at compile time so it works in compiled binaries.
+import cliPkg from "../../../package.json";
+import { isDevVersion, isStagingVersion } from "../version-compat.js";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
 
 /**
- * Read the persisted default environment name, if any.
- * Returns `undefined` if no file exists or the file is empty.
- */
-export function readDefaultEnvironment(): string | undefined {
-  return readPersistedDefaultEnvironment(process.env);
-}
-
-/**
- * Persist a default environment name to the user config file.
- */
-export function writeDefaultEnvironment(name: string): void {
-  const filePath = defaultEnvironmentFilePath(process.env);
-  mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, name + "\n", "utf-8");
-}
-
-/**
- * Remove the persisted default environment file, falling back to production.
- */
-export function clearDefaultEnvironment(): void {
-  for (const filePath of defaultEnvironmentFilePaths(process.env)) {
-    try {
-      unlinkSync(filePath);
-    } catch {
-      // Already absent.
-    }
-  }
-}
-
-/**
  * Look up a seed entry by name. Returns `undefined` if no seed matches.
- * Callers that need the full resolution stack (env-var overrides, default
- * fallback, error on unknown) should use {@link getCurrentEnvironment}
- * instead. The returned definition is a shallow copy so mutations by the
- * caller don't leak back into the seed table.
+ * Callers that need the full resolution stack should use
+ * {@link getCurrentEnvironment} instead. The returned definition is a
+ * shallow copy so mutations by the caller don't leak back into the seed
+ * table.
  */
 export function getSeed(name: string): EnvironmentDefinition | undefined {
   const seed = SEEDS[name];
@@ -54,13 +20,32 @@ export function getSeed(name: string): EnvironmentDefinition | undefined {
 }
 
 /**
+ * Derive the environment from a CLI version string. Each client is tied to
+ * exactly one environment — the one its version denotes — and cannot switch:
+ *
+ *   - `0.12.6-dev.<ts>.<sha>` (dev-release pipeline) → `dev`
+ *   - `0.12.6-staging.N` (staging release pipeline)  → `staging`
+ *   - `0.12.6` (stable release)                      → `production`
+ *
+ * The `local` seed stays reachable only via the `CADET_ENVIRONMENT` escape
+ * hatch below, for source-tree development where no released version exists.
+ */
+export function environmentFromVersion(version: string): string {
+  if (isDevVersion(version)) return "dev";
+  if (isStagingVersion(version)) return "staging";
+  return DEFAULT_ENVIRONMENT_NAME;
+}
+
+/**
  * Resolve the current environment definition.
  *
  * Priority:
- *   1. `override` argument (from a `--environment` CLI flag, when wired)
- *   2. `CADET_ENVIRONMENT` env var
- *   3. User config file (`~/.config/cadet/environment`, set via `cadet env set`)
- *   4. Default: `production`
+ *   1. `CADET_ENVIRONMENT` env var — internal escape hatch for source-tree
+ *      development and tests (e.g. `CADET_ENVIRONMENT=local bun cli`). Not
+ *      a user-facing switching mechanism: released CLIs always resolve
+ *      their environment from their own version.
+ *   2. The environment denoted by the CLI's version (see
+ *      {@link environmentFromVersion}).
  *
  * Per-field env-var overrides are honored on the resolved definition as
  * ad-hoc escape hatches (they do not materialize new environments):
@@ -78,10 +63,10 @@ export function getCurrentEnvironment(
 ): EnvironmentDefinition {
   const { name, source } = resolveEnvironmentSource(override);
 
-  // When the environment was resolved from the config file, propagate it
-  // into process.env so child processes (daemon, gateway) inherit the same
-  // environment without needing to read the config file themselves.
-  if (source === "config" && !process.env.CADET_ENVIRONMENT) {
+  // Propagate the resolved environment into process.env so child processes
+  // (daemon, gateway) inherit the same environment without needing to
+  // re-derive it.
+  if (source === "version" && !process.env.CADET_ENVIRONMENT) {
     process.env.CADET_ENVIRONMENT = name;
   }
 
@@ -137,19 +122,15 @@ export function getCurrentEnvironment(
  */
 export function resolveEnvironmentSource(override?: string): {
   name: string;
-  source: "flag" | "env" | "config" | "default";
+  source: "env" | "version";
 } {
   const trimmedOverride = override?.trim();
-  if (trimmedOverride && trimmedOverride.length > 0) {
-    return { name: trimmedOverride, source: "flag" };
-  }
-  const envVar = process.env.CADET_ENVIRONMENT?.trim();
+  const envVar = trimmedOverride || process.env.CADET_ENVIRONMENT?.trim();
   if (envVar && envVar.length > 0) {
     return { name: envVar, source: "env" };
   }
-  const configDefault = readDefaultEnvironment();
-  if (configDefault) {
-    return { name: configDefault, source: "config" };
-  }
-  return { name: DEFAULT_ENVIRONMENT_NAME, source: "default" };
+  return {
+    name: environmentFromVersion(cliPkg.version ?? ""),
+    source: "version",
+  };
 }

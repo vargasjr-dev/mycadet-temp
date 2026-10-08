@@ -25,7 +25,7 @@ import {
 import {
   fetchLatestStableVersion,
   fetchReleases,
-  resolveImageRefsDetailed,
+  resolveImageRefs,
 } from "../lib/platform-releases";
 import {
   authHeaders,
@@ -320,19 +320,7 @@ async function upgradeDocker(
   }
 
   console.log("🔍 Resolving image references...");
-  const resolution = await resolveImageRefsDetailed(versionTag);
-  if (resolution.status === "version-not-found") {
-    const msg = `Version ${versionTag} not found in platform releases.`;
-    console.error(msg);
-    emitCliError("MISSING_VERSION", msg);
-    process.exit(1);
-  }
-  if (resolution.status === "dockerhub-fallback") {
-    console.warn(
-      `⚠️  Platform unreachable — falling back to DockerHub tags for ${versionTag}.`,
-    );
-  }
-  const { imageTags } = resolution;
+  const imageTags = resolveImageRefs(versionTag, cliPkg.version ?? "");
 
   console.log(
     `🔄 Upgrading Docker assistant '${instanceName}' to ${versionTag}...\n`,
@@ -1050,10 +1038,7 @@ async function upgradeLocal(
   );
   console.log("✅ Local assistant processes started\n");
 
-  const workspaceDir = join(
-    entry.resources.instanceDir,
-    "workspace",
-  );
+  const workspaceDir = join(entry.resources.instanceDir, "workspace");
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     entry.resources.gatewayPort,
@@ -1254,7 +1239,7 @@ async function upgradePlatform(
   });
 
   if (resolution.kind === "version-not-found") {
-    const msg = `Version ${version} not found in platform releases (channel: ${releaseChannel}).`;
+    const msg = `Version ${version} not found in Cadet Cloud releases (channel: ${releaseChannel}).`;
     console.error(msg);
     emitCliError("MISSING_VERSION", msg);
     process.exit(1);
@@ -1274,7 +1259,7 @@ async function upgradePlatform(
 
   if (resolution.kind === "no-releases") {
     console.warn(
-      "⚠️  Platform releases unavailable — requesting latest from server.",
+      "⚠️  Cadet Cloud releases unavailable — requesting latest from server.",
     );
   }
 
@@ -1498,7 +1483,7 @@ async function resolveLatestStableTag(): Promise<string> {
   const latestVersion = await fetchLatestStableVersion();
   if (!latestVersion) {
     console.error(
-      "Error: Could not determine the latest stable release from the platform API.",
+      "Error: Could not determine the latest stable release from the Cadet Cloud API.",
     );
     emitCliError(
       "UNKNOWN",

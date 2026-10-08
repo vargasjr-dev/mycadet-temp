@@ -252,7 +252,7 @@ async function restorePlatform(
 
     if (preflightResult.statusCode === 409) {
       console.error(
-        "Multiple assistants found. This is a platform configuration issue.",
+        "Multiple assistants found. This is a Cadet Cloud configuration issue.",
       );
       process.exit(1);
     }
@@ -388,7 +388,7 @@ async function restorePlatform(
 
   if (importResult.statusCode === 409) {
     console.error(
-      "Multiple assistants found. This is a platform configuration issue.",
+      "Multiple assistants found. This is a Cadet Cloud configuration issue.",
     );
     process.exit(1);
   }

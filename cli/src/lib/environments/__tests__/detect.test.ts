@@ -85,14 +85,14 @@ describe("cross-environment assistant detection", () => {
     expect(crossEnvironmentAssistantHint()).toBeNull();
   });
 
-  test("hint names the env, the current env, and both fixes", () => {
+  test("hint names the env, the current env, and the fix", () => {
     seedAssistantDir(dataHome, "dev", "dev-bot");
     const hint = crossEnvironmentAssistantHint();
     expect(hint).not.toBeNull();
     expect(hint).toContain("'dev'");
     expect(hint).toContain("This CLI targets 'production'");
     expect(hint).toContain("Install cadet Command");
-    expect(hint).toContain("CADET_ENVIRONMENT=dev");
+    expect(hint).toContain("cannot be switched");
   });
 
   test("hint is null when no other env has assistants", () => {

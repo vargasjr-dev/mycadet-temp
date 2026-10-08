@@ -264,7 +264,7 @@ async function retireCadet(
   assistantId: string,
   runtimeUrl?: string,
 ): Promise<void> {
-  console.log("\u{1F5D1}\ufe0f  Retiring platform-hosted instance...\n");
+  console.log("\u{1F5D1}\ufe0f  Retiring Cadet Cloud-hosted instance...\n");
 
   const token = readPlatformRetireToken();
   if (!token) {

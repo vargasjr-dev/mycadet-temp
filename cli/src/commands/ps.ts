@@ -449,7 +449,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
   }
 
   if (isManagedCloud(cloud)) {
-    console.log(`  Platform ID: ${entry.assistantId}\n`);
+    console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
 
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
 
@@ -458,7 +458,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
         {
           name: "assistant",
           status: withStatusEmoji("unreachable"),
-          info: "could not reach platform API — run `cadet login`",
+          info: "could not reach Cadet Cloud API — run `cadet login`",
         },
       ];
       printTable(rows);

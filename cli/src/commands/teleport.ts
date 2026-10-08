@@ -127,7 +127,7 @@ function printHelp(): void {
   console.log("Environment flags:");
   console.log("  --local [name]      Target a local bare-metal assistant");
   console.log("  --docker [name]     Target a docker assistant");
-  console.log("  --platform [name]   Target a platform-hosted assistant");
+  console.log("  --platform [name]   Target a Cadet Cloud-hosted assistant");
   console.log("");
   console.log("Options:");
   console.log(
@@ -1089,7 +1089,7 @@ export async function resolveOrHatchTarget(
     };
     saveAssistantEntry(entry);
     setActiveAssistant(result.id);
-    console.log(`Hatched new platform assistant: ${result.id}`);
+    console.log(`Hatched new Cadet Cloud assistant: ${result.id}`);
     return entry;
   }
 
@@ -1174,7 +1174,7 @@ function printImportSummary(result: ImportResponse): void {
   if (creds) {
     console.log(`  Credentials imported: ${creds.succeeded}/${creds.total}`);
     if (creds.skippedPlatform) {
-      console.log(`  Platform credentials skipped: ${creds.skippedPlatform}`);
+      console.log(`  Cadet Cloud credentials skipped: ${creds.skippedPlatform}`);
     }
     if (creds.failed > 0) {
       console.log(`  Credentials failed:  ${creds.failed}`);
@@ -1260,13 +1260,13 @@ async function tryInjectPlatformCredentials(
     });
 
     if (allInjected) {
-      console.log("  Platform credentials injected.");
+      console.log("  Cadet Cloud credentials injected.");
     } else {
       console.warn("  Some cloud credentials could not be injected.");
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`  Platform credential injection skipped: ${msg}`);
+    console.warn(`  Cadet Cloud credential injection skipped: ${msg}`);
   }
 }
 

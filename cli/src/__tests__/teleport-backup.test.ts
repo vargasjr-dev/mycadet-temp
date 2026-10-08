@@ -110,7 +110,7 @@ describe("listPlatformBackups", () => {
     responses.push(() => new Response("Bad gateway", { status: 502 }));
 
     await expect(listPlatformBackups(ENTRY, "platform-token")).rejects.toThrow(
-      "Platform backup list failed (502): Bad gateway",
+      "Cadet Cloud backup list failed (502): Bad gateway",
     );
   });
 });
@@ -175,7 +175,7 @@ describe("createPlatformBackup", () => {
         pollIntervalMs: 1,
         timeoutMs: 30,
       }),
-    ).rejects.toThrow("Platform backup snap-1 was not ready after 0s");
+    ).rejects.toThrow("Cadet Cloud backup snap-1 was not ready after 0s");
   });
 
   test("throws when the POST fails", async () => {
@@ -185,7 +185,7 @@ describe("createPlatformBackup", () => {
 
     await expect(
       createPlatformBackup(ENTRY, "platform-token", FAST_POLL),
-    ).rejects.toThrow("Platform backup create failed (502)");
+    ).rejects.toThrow("Cadet Cloud backup create failed (502)");
     expect(fetchCalls).toHaveLength(1);
   });
 
@@ -203,6 +203,6 @@ describe("createPlatformBackup", () => {
 
     await expect(
       createPlatformBackup(ENTRY, "platform-token", FAST_POLL),
-    ).rejects.toThrow("Platform backup list failed (502)");
+    ).rejects.toThrow("Cadet Cloud backup list failed (502)");
   });
 });

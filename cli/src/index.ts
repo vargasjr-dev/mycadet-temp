@@ -104,7 +104,7 @@ function printHelp(): void {
   console.log(
     "  devices  List or revoke devices paired to a local assistant [beta]",
   );
-  console.log("  env      Manage the default CLI environment");
+  console.log("  env      Show the CLI environment (tied to the CLI version)");
   console.log("  events   Stream events from a running assistant");
   console.log("  exec     Execute a command inside an assistant's container");
   console.log("  flags    Show and toggle feature flags");

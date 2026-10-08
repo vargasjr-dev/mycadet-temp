@@ -2284,7 +2284,7 @@ describe("pre-export source backup", () => {
       return null;
     });
     createPlatformBackupMock.mockRejectedValue(
-      new Error("Platform backup snap-1 was not ready after 600s"),
+      new Error("Cadet Cloud backup snap-1 was not ready after 600s"),
     );
 
     const restoreFetch = installTrackingFetch();

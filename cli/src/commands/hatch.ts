@@ -27,7 +27,6 @@ interface HatchArgs {
   remote: RemoteHost;
   watch: boolean;
   sourcePath: string | null;
-  preview: boolean;
   configValues: Record<string, string>;
   flagEnvVars: Record<string, string>;
   analyze: boolean;
@@ -52,7 +51,6 @@ function parseArgs(): HatchArgs {
   let remote: RemoteHost = DEFAULT_REMOTE;
   let watch = false;
   let sourcePath: string | null = null;
-  let preview = false;
   const configValues: Record<string, string> = {};
   let analyze = false;
   let netnsContainer: string | null = null;
@@ -79,7 +77,6 @@ function parseArgs(): HatchArgs {
       );
       console.log(
         "  --source <path>           Build images from a local source tree at <path> (no watcher). Useful for callers (e.g. evals) that want each run to pick up local CLI changes.",
-        "  --preview                 When pulling published images (no local source), resolve from the preview channel (latest preview release) instead of latest-stable. Also settable via CADET_HATCH_CHANNEL=preview.",
       );
       console.log(
         "  --keep-alive              Stay alive after hatch, exit when gateway stops",
@@ -112,8 +109,6 @@ function parseArgs(): HatchArgs {
       watch = true;
     } else if (arg === "--analyze") {
       analyze = true;
-    } else if (arg === "--preview") {
-      preview = true;
     } else if (arg === "--source") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
@@ -198,7 +193,7 @@ function parseArgs(): HatchArgs {
       i++;
     } else {
       console.error(
-        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --preview, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
+        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
       );
       process.exit(1);
     }
@@ -211,7 +206,6 @@ function parseArgs(): HatchArgs {
     remote,
     watch,
     sourcePath,
-    preview,
     configValues,
     flagEnvVars,
     analyze,
@@ -239,7 +233,6 @@ export async function hatch(): Promise<void> {
     remote,
     watch,
     sourcePath,
-    preview,
     configValues,
     flagEnvVars,
     analyze,
@@ -288,7 +281,14 @@ export async function hatch(): Promise<void> {
   }
 
   if (remote === "local") {
-    await hatchLocal({ name, watch, keepAlive, configValues, flagEnvVars, verbose });
+    await hatchLocal({
+      name,
+      watch,
+      keepAlive,
+      configValues,
+      flagEnvVars,
+      verbose,
+    });
     return;
   }
 
@@ -300,7 +300,6 @@ export async function hatch(): Promise<void> {
       flagEnvVars,
       sourcePath,
       analyze,
-      channel: preview ? "preview" : undefined,
       netnsContainer: netnsContainer ?? undefined,
       gatewayPort: gatewayPort ?? undefined,
       assistantCaCertPath: assistantCaCert ?? undefined,

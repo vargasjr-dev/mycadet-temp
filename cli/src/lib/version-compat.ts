@@ -94,6 +94,21 @@ export function stripVersionPrefix(version: string): string {
 }
 
 /**
+ * Whether a version string denotes a dev build from the dev-release
+ * pipeline, e.g. `0.12.6-dev.202610081023.3a27b77`.
+ */
+export function isDevVersion(version: string): boolean {
+  return /-dev\./i.test(version);
+}
+
+/**
+ * Whether a version string denotes a staging build, e.g. `0.6.0-staging.3`.
+ */
+export function isStagingVersion(version: string): boolean {
+  return /-staging\./i.test(version);
+}
+
+/**
  * Check whether two version strings refer to the same version.
  * Compares via semver when both parse; falls back to prefix-stripped
  * string equality when either is unparseable.

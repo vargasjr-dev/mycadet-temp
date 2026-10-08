@@ -187,13 +187,13 @@ async function rollbackPlatformViaEndpoint(
       detail.includes("ECONNREFUSED")
     ) {
       console.error(
-        `Connection error: ${detail}\nIs the platform reachable? Try 'cadet wake' if the assistant is asleep.`,
+        `Connection error: ${detail}\nIs Cadet Cloud reachable? Try 'cadet wake' if the assistant is asleep.`,
       );
     } else {
       console.error(`Error: ${detail}`);
     }
 
-    emitCliError("PLATFORM_API_ERROR", "Platform rollback failed", detail);
+    emitCliError("PLATFORM_API_ERROR", "Cadet Cloud rollback failed", detail);
     await broadcastUpgradeEvent(
       entry.runtimeUrl,
       entry.assistantId,

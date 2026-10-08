@@ -158,7 +158,7 @@ export class AssistantClient {
     const token = readPlatformToken();
     if (!token) {
       throw new Error(
-        "Not logged in. Run `cadet login` first to authenticate with the platform.",
+        "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
       );
     }
     return token;

@@ -212,7 +212,7 @@ export async function exec(): Promise<void> {
     const token = readPlatformToken();
     if (!token) {
       console.error(
-        "Not logged in. Run `cadet login` first to authenticate with the platform.",
+        "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
       );
       process.exit(1);
     }

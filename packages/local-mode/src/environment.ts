@@ -9,10 +9,12 @@ import {
 const PRODUCTION_ENVIRONMENT_NAME = "production";
 
 /**
- * Location of the persisted default-environment file, written by
- * `cadet env set`. It lives at a fixed, environment-agnostic path so it can
- * be read before the environment is known. Uses AppData on Windows and the
- * XDG config home on macOS and Linux.
+ * Location of the persisted default-environment file, historically written
+ * by `cadet env set` (removed — a CLI's environment is now tied to its
+ * version). The file is still read to honor defaults persisted by older
+ * CLIs. It lives at a fixed, environment-agnostic path so it can be read
+ * before the environment is known. Uses AppData on Windows and the XDG
+ * config home on macOS and Linux.
  */
 export function defaultEnvironmentFilePaths(
   env: Record<string, string | undefined>,
@@ -60,10 +62,12 @@ export function readDefaultEnvironment(
  * middleware, and the Electron main process — reads and writes the same
  * lockfile and config directory.
  *
- * Resolution order matches the CLI's `resolveEnvironmentSource`:
+ * Resolution order:
  *   1. `CADET_ENVIRONMENT` (explicit override, also inherited by the
  *      hatch/retire child processes the CLI spawns)
- *   2. the persisted default written by `cadet env set`
+ *   2. the persisted default written by pre-version-tied CLIs'
+ *      `cadet env set` (the command has been removed — CLI environments
+ *      are now tied to the CLI version — but old files are still honored)
  *   3. `production`
  *
  * Resolving the persisted default here — rather than only inspecting

@@ -635,13 +635,17 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     ).toBe(true);
   });
 
-  test("persisted default env file (no CADET_ENVIRONMENT): resolvers agree", () => {
-    // Mirror `cadet env set dev`: the default-env file lives at the fixed,
-    // env-agnostic path $XDG_CONFIG_HOME/cadet/environment.
+  test("stale persisted default env file is ignored — version wins", () => {
+    // `cadet env set` was removed: a CLI's environment is tied to its
+    // version. A leftover default-env file from an older CLI must not
+    // switch this CLI — with a stable-shaped version the CLI stays on
+    // production even though the file says dev. (local-mode's shared
+    // resolver still honors the file for desktop-app flows that seed
+    // CADET_ENVIRONMENT themselves.)
     mkdirSync(join(tempHome, "cadet"), { recursive: true });
     writeFileSync(join(tempHome, "cadet", "environment"), "dev\n");
-    expectResolversAgree();
-    saveGuardianToken("alpha", makeTokenData("default-dev"));
+    expect(getCurrentEnvironment().name).toBe("production");
+    saveGuardianToken("alpha", makeTokenData("prod"));
     expect(
       existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
     ).toBe(true);

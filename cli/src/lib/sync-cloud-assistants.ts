@@ -78,24 +78,24 @@ export async function syncCloudAssistants(
     log?.(`Failed to fetch current user: ${msg}`);
     if (isTimeoutError(err)) {
       console.warn(
-        "Warning: platform user lookup timed out — skipping cloud sync",
+        "Warning: Cadet Cloud user lookup timed out — skipping cloud sync",
       );
     }
   }
 
   let platformAssistants: { id: string; name: string; status: string }[];
   try {
-    log?.("Fetching platform assistants…");
+    log?.("Fetching Cadet Cloud assistants…");
     platformAssistants = await fetchPlatformAssistants(token);
     log?.(
-      `Platform returned ${platformAssistants.length} assistant(s): ${platformAssistants.map((a) => a.name || a.id).join(", ") || "(none)"}`,
+      `Cadet Cloud returned ${platformAssistants.length} assistant(s): ${platformAssistants.map((a) => a.name || a.id).join(", ") || "(none)"}`,
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    log?.(`fetchPlatformAssistants failed: ${msg}`);
+    log?.(`Cadet Cloud assistant lookup failed: ${msg}`);
     if (isTimeoutError(err)) {
       console.warn(
-        "Warning: platform assistant fetch timed out — using cached data",
+        "Warning: Cadet Cloud assistant fetch timed out — using cached data",
       );
     }
     return null;
@@ -103,7 +103,7 @@ export async function syncCloudAssistants(
 
   if (platformAssistants.length === 0) {
     log?.(
-      "Platform returned 0 assistants — this may mean the API returned a non-ok status (check token validity)",
+      "Cadet Cloud returned 0 assistants — this may mean the API returned a non-ok status (check token validity)",
     );
   }
 

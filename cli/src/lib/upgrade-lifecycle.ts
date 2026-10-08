@@ -3,6 +3,9 @@ import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
+// Direct import — bun embeds this at compile time so it works in compiled binaries.
+import cliPkg from "../../package.json";
+
 import type { AssistantEntry } from "./assistant-config.js";
 import { saveAssistantEntry } from "./assistant-config.js";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
@@ -636,9 +639,10 @@ export async function performDockerRollback(
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
-  // Resolve Docker image refs for the target version
+  // Resolve Docker image refs for the target version. The repo follows the
+  // CLI's own version shape (dev CLI → -dev repos); the tag is the target.
   console.log("🔍 Resolving image references...");
-  const { imageTags: targetImageTags } = await resolveImageRefs(targetVersion);
+  const targetImageTags = resolveImageRefs(targetVersion, cliPkg.version ?? "");
 
   // Capture current image digests for auto-rollback on failure
   console.log("📸 Capturing current image references for rollback...");

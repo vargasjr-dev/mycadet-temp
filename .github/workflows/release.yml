@@ -1019,19 +1019,19 @@ jobs:
         include:
           - service: assistant
             runs_on: ubuntu-latest-8-cores
-            dockerhub_image_name: mycadet
+            dockerhub_image_name: mycadet-assistant
             context: .
             dockerfile: assistant/Dockerfile
             feature_flag_path: assistant/src/config/feature-flag-registry.json
           - service: gateway
             runs_on: ubuntu-latest
-            dockerhub_image_name: cadet-gateway
+            dockerhub_image_name: mycadet-gateway
             context: .
             dockerfile: gateway/Dockerfile
             feature_flag_path: gateway/src/feature-flag-registry.json
           - service: credential-executor
             runs_on: ubuntu-latest
-            dockerhub_image_name: cadet-credential-executor
+            dockerhub_image_name: mycadet-credential-executor
             context: .
             dockerfile: credential-executor/Dockerfile
             feature_flag_path: ""

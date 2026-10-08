@@ -37,11 +37,8 @@ import {
   isLocalBuildRef,
   loadImageViaHost,
 } from "./host-image-loader.js";
-import {
-  fetchLatestVersion,
-  resolveImageRefs,
-  type ReleaseChannel,
-} from "./platform-releases.js";
+import { resolveOwnImageRefs } from "./platform-releases.js";
+import { isDevVersion } from "./version-compat.js";
 import {
   configureHatchProviderApiKey,
   formatProviderName,
@@ -63,11 +60,25 @@ import { emitProgress } from "./desktop-progress.js";
 export type ServiceName = "assistant" | "credential-executor" | "gateway";
 
 const DOCKERHUB_ORG = "mycadet";
-export const DOCKERHUB_IMAGES: Record<ServiceName, string> = {
-  assistant: `${DOCKERHUB_ORG}/mycadet`,
-  "credential-executor": `${DOCKERHUB_ORG}/cadet-credential-executor`,
-  gateway: `${DOCKERHUB_ORG}/cadet-gateway`,
-};
+
+/**
+ * DockerHub image repos for the services, keyed by whether the CLI is a dev
+ * build. Dev builds (version like `0.12.6-dev.<ts>.<sha>`) pull the
+ * `-dev`-suffixed repos the dev-release pipeline pushes; released builds
+ * pull the un-suffixed repos. Each CLI version is tied to exactly one
+ * environment, so the image names are derived purely from the CLI's own
+ * version — never from a release lookup.
+ */
+export function dockerhubImages(
+  cliVersion: string,
+): Record<ServiceName, string> {
+  const suffix = isDevVersion(cliVersion) ? "-dev" : "";
+  return {
+    assistant: `${DOCKERHUB_ORG}/mycadet-assistant${suffix}`,
+    "credential-executor": `${DOCKERHUB_ORG}/mycadet-credential-executor${suffix}`,
+    gateway: `${DOCKERHUB_ORG}/mycadet-gateway${suffix}`,
+  };
+}
 
 /** Internal ports exposed by each service's Dockerfile. Re-exported from environments/paths.ts. */
 export {
@@ -325,15 +336,6 @@ export interface HatchDockerParams {
    * connection.
    */
   assistantCaCertPath?: string;
-  /**
-   * Release channel to resolve published images from when hatching without a
-   * local source tree (the image-pull fallback). `stable` (default) keeps the
-   * latest-stable behavior; `preview` pulls the latest preview release. Only
-   * affects the pull path — a local source build ignores it. Falls back to
-   * the `CADET_HATCH_CHANNEL` env var when unset, so callers that hatch via
-   * env (e.g. evals) can opt in without changing the invocation.
-   */
-  channel?: ReleaseChannel;
 }
 
 export type DockerProviderCredentialSetupAction =
@@ -1125,20 +1127,8 @@ function startFileWatcher(opts: {
 }
 
 export async function hatchDocker(params: HatchDockerParams): Promise<void> {
-  const {
-    name = null,
-    configValues = {},
-    flagEnvVars = {},
-  } = params;
+  const { name = null, configValues = {}, flagEnvVars = {} } = params;
   let watch = params.watch ?? false;
-  // Resolve the release channel for the image-pull fallback: explicit param
-  // wins, then the CADET_HATCH_CHANNEL env var, else stable. Any value other
-  // than "preview" (case-insensitive) is treated as stable.
-  const channel: ReleaseChannel =
-    params.channel ??
-    (process.env.CADET_HATCH_CHANNEL?.trim().toLowerCase() === "preview"
-      ? "preview"
-      : "stable");
 
   resetLogFile("hatch.log");
   const setupProviderCredentials = params.setupProviderCredentials !== false;
@@ -1294,8 +1284,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       // When all three are set, skip version-based resolution entirely.
       const envAssistant = process.env.CADET_ASSISTANT_IMAGE;
       const envGateway = process.env.CADET_GATEWAY_IMAGE;
-      const envCredentialExecutor =
-        process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
+      const envCredentialExecutor = process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
 
       let imageSource: string;
 
@@ -1306,30 +1295,17 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         imageSource = "env override";
         log("Using image overrides from environment variables");
       } else {
-        // Resolve image refs from a remote source that may have dev/local
-        // builds. If resolution is unavailable, fall back to the CLI's own
-        // version so a default tag can still be resolved.
-        log(`🔍 Fetching latest ${channel} release...`);
-        const latestVersion = await fetchLatestVersion(channel);
-        let versionTag: string;
-        if (latestVersion) {
-          versionTag = latestVersion.startsWith("v")
-            ? latestVersion
-            : `v${latestVersion}`;
-        } else {
-          const fallback = cliPkg.version;
-          versionTag = fallback ? `v${fallback}` : "latest";
-          log(
-            `⚠️  Platform releases unavailable; falling back to CLI version ${versionTag}`,
-          );
-        }
-        log("🔍 Resolving image references...");
-        const resolved = await resolveImageRefs(versionTag, log, channel);
-        imageTags.assistant = resolved.imageTags.assistant;
-        imageTags.gateway = resolved.imageTags.gateway;
-        imageTags["credential-executor"] =
-          resolved.imageTags["credential-executor"];
-        imageSource = resolved.source;
+        // Image refs are derived purely from the CLI's own version — a dev
+        // CLI pulls the -dev repos the dev-release pipeline pushes, a
+        // released CLI pulls the un-suffixed repos. No release lookup: the
+        // CLI's version is tied to exactly one environment and always
+        // matches the images that were built for it.
+        log(`🔍 Resolving image references from CLI version...`);
+        const resolved = resolveOwnImageRefs(cliPkg.version);
+        imageTags.assistant = resolved.assistant;
+        imageTags.gateway = resolved.gateway;
+        imageTags["credential-executor"] = resolved["credential-executor"];
+        imageSource = "dockerhub";
       }
 
       log(`🥚 Hatching Docker assistant: ${instanceName}`);

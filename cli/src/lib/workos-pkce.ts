@@ -91,7 +91,7 @@ export async function fetchWorkosClientId(
   );
   if (!clientId) {
     throw new Error(
-      "Platform does not advertise a token-auth WorkOS provider; cannot start PKCE login.",
+      "Cadet Cloud does not advertise a token-auth WorkOS provider; cannot start PKCE login.",
     );
   }
   return clientId;

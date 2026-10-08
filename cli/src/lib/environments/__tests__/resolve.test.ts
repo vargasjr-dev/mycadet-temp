@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import { getCurrentEnvironment, getSeed } from "../resolve.js";
+import {
+  environmentFromVersion,
+  getCurrentEnvironment,
+  getSeed,
+} from "../resolve.js";
 
 const ENV_VARS_TO_SAVE = [
   "CADET_ENVIRONMENT",
@@ -192,6 +196,30 @@ describe("getCurrentEnvironment", () => {
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
     expect(env.lockfileDirOverride).toBe("/tmp/test-lockfile-dir");
+  });
+});
+
+describe("environmentFromVersion", () => {
+  test("dev-release versions map to dev", () => {
+    expect(environmentFromVersion("0.12.6-dev.202610081023.3a27b77")).toBe(
+      "dev",
+    );
+    expect(environmentFromVersion("v0.12.6-dev.202610081023.3a27b77")).toBe(
+      "dev",
+    );
+  });
+
+  test("staging versions map to staging", () => {
+    expect(environmentFromVersion("0.6.0-staging.3")).toBe("staging");
+  });
+
+  test("stable versions map to production", () => {
+    expect(environmentFromVersion("0.12.6")).toBe("production");
+    expect(environmentFromVersion("v0.12.6")).toBe("production");
+  });
+
+  test("an empty version string maps to production", () => {
+    expect(environmentFromVersion("")).toBe("production");
   });
 });
 

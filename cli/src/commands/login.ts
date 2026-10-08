@@ -503,7 +503,7 @@ export async function logout(): Promise<void> {
   }
 
   clearPlatformToken();
-  console.log("Logged out. Platform token removed.");
+  console.log("Logged out. Cadet Cloud token removed.");
 }
 
 export async function whoami(): Promise<void> {
