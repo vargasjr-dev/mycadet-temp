@@ -19,7 +19,7 @@
 
 import { mkdirSync } from "node:fs";
 import { createServer as createNetServer, type Socket } from "node:net";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { Readable, Writable } from "node:stream";
 
 import {

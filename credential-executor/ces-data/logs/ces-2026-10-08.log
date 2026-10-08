@@ -49,3 +49,14 @@
 {"level":30,"time":1791479236649,"pid":224236,"hostname":"75d1504a4eb2","name":"ces","module":"main","connections":0,"msg":"CES client disconnected"}
 {"level":30,"time":1791479236649,"pid":224236,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"Shutting down..."}
 {"level":30,"time":1791479236649,"pid":224236,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"Server stopped."}
+{"level":30,"time":1791479993438,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"Starting CES v0.1.0 (local mode, socket transport)"}
+{"level":30,"time":1791479993441,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"CES local startup: migrations complete"}
+{"level":30,"time":1791479993445,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"CES socket listening at /tmp/ces-standalone-7HhZcc/protected/credential-executor/ces.sock"}
+{"level":30,"time":1791479993485,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","connections":1,"msg":"CES client connected"}
+{"level":30,"time":1791479993486,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"rpc","args":[],"msg":"[ces-server] Handshake accepted for session sibling-1"}
+{"level":30,"time":1791479993488,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","connections":0,"msg":"CES client disconnected"}
+{"level":30,"time":1791479993693,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","connections":1,"msg":"CES client connected"}
+{"level":30,"time":1791479993695,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"rpc","args":[],"msg":"[ces-server] Handshake accepted for session sibling-2"}
+{"level":30,"time":1791479993696,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","connections":0,"msg":"CES client disconnected"}
+{"level":30,"time":1791479993696,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"Shutting down..."}
+{"level":30,"time":1791479993697,"pid":232809,"hostname":"75d1504a4eb2","name":"ces","module":"main","msg":"Server stopped."}
