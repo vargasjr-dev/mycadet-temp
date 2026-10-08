@@ -288,16 +288,12 @@ export async function hatch(): Promise<void> {
   }
 
   if (remote === "local") {
-    await hatchLocal(name, watch, keepAlive, configValues, flagEnvVars, {
-      verbose,
-    });
+    await hatchLocal({ name, watch, keepAlive, configValues, flagEnvVars, verbose });
     return;
   }
 
   if (remote === "docker") {
     await hatchDocker({
-      // Docker hatch always detaches — the CLI arg was vestigial.
-      detached: true,
       name,
       watch,
       configValues,

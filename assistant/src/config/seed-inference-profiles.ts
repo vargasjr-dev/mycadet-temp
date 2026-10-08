@@ -99,8 +99,9 @@ export function seedInferenceProfiles(
       // Same predicate `resolveHatchDefaultProvider` applies below: a
       // provider can pass the connection gate (key stored, personal
       // connection created) yet not qualify as a default-provider choice
-      // (e.g. litellm, whose catalog defaultModel is empty). Surface that
-      // divergence here, at the point the connection is still created.
+      // (e.g. openai-compatible, whose catalog defaultModel is empty).
+      // Surface that divergence here, at the point the connection is still
+      // created.
       if (!isDefaultProviderChoice(hatchProvider)) {
         log.warn(
           { provider: hatchProvider },

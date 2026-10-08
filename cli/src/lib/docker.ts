@@ -20,6 +20,7 @@ import {
 } from "./assistant-config";
 import type { AssistantEntry } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
+import { printInstanceDetails } from "./instance-details";
 import { buildServiceRunArgs } from "./statefulset.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
 import {
@@ -282,8 +283,6 @@ function ensureLocalBinOnPath(): void {
 }
 
 export interface HatchDockerParams {
-  /** Run detached without attaching to logs or interactive setup. */
-  detached?: boolean;
   /** Instance display name. Defaults to an auto-generated name. */
   name?: string | null;
   /** Build from a local source tree and hot-reload on change. */
@@ -1127,7 +1126,6 @@ function startFileWatcher(opts: {
 
 export async function hatchDocker(params: HatchDockerParams): Promise<void> {
   const {
-    detached = false,
     name = null,
     configValues = {},
     flagEnvVars = {},
@@ -1542,7 +1540,8 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     setActiveAssistant(instanceName);
 
     emitProgress(6, 6, "Waiting for services...");
-    const waitDetached = watch ? false : detached;
+    // Hatch always detaches; only watch mode keeps the log stream attached.
+    const waitDetached = !watch;
     const { ready, guardianAccessToken, notReadyReason } =
       await waitForGatewayAndLease({
         bootstrapSecret: ownSecret,
@@ -1688,9 +1687,14 @@ async function waitForGatewayAndLease(opts: {
   if (detached) {
     log("\n✅ Docker assistant hatched!\n");
     log("Instance details:");
-    log(`  Name: ${instanceName}`);
-    log(`  Runtime: ${runtimeUrl}`);
-    log(`  Container: ${containerName}`);
+    printInstanceDetails(
+      {
+        name: instanceName,
+        runtime: runtimeUrl,
+        container: containerName,
+      },
+      log,
+    );
     log("");
     log(`Stop with: cadet retire ${instanceName}`);
 

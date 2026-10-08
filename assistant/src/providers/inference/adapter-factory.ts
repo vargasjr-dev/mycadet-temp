@@ -44,6 +44,7 @@ import { FireworksProvider } from "../fireworks/client.js";
 import { GeminiProvider } from "../gemini/client.js";
 import { IonetProvider } from "../ionet/client.js";
 import { JevProvider } from "../jev/client.js";
+import { LiteLLMProvider } from "../litellm/client.js";
 import { MinimaxProvider } from "../minimax/client.js";
 import { PROVIDER_CATALOG } from "../model-catalog.js";
 import { OllamaProvider } from "../ollama/client.js";
@@ -159,13 +160,8 @@ const ADAPTER_FACTORIES: Record<string, AdapterFactory> = {
       ...(baseURL ? { baseURL } : {}),
     }),
   litellm: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
-    new OpenAIChatCompletionsProvider(apiKey, model, {
-      providerName: "litellm",
-      providerLabel: "LiteLLM",
+    new LiteLLMProvider(apiKey, model, {
       streamTimeoutMs,
-      // Replay thinking as `reasoning_content` so DeepSeek-compatible
-      // thinking-mode upstreams accept follow-up requests that include tools.
-      assistantReasoningField: "reasoning_content",
       ...(baseURL ? { baseURL } : {}),
     }),
   opencode: ({ apiKey, model, streamTimeoutMs, baseURL }) =>

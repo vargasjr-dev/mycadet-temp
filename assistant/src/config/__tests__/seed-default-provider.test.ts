@@ -116,12 +116,20 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     expect(llm.defaultProvider).toEqual({ provider: "together" });
   });
 
-  test("BYOK hatch with an endpoint-supplied provider falls back to anthropic", () => {
+  test("BYOK hatch with a user-endpoint provider falls back to anthropic", () => {
+    const llm = seed(
+      { llm: { default: { provider: "openai-compatible" } } },
+      { isHatch: true },
+    );
+    expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
+  });
+
+  test("BYOK hatch with a router provider (litellm) writes that provider", () => {
     const llm = seed(
       { llm: { default: { provider: "litellm" } } },
       { isHatch: true },
     );
-    expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
+    expect(llm.defaultProvider).toEqual({ provider: "litellm" });
   });
 
   test("BYOK hatch with provider ollama falls back to anthropic", () => {

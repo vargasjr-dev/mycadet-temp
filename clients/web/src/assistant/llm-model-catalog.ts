@@ -1216,8 +1216,27 @@ export const MODELS_BY_PROVIDER = {
       supportsThinking: true,
     },
   ],
-  litellm: [],
-  opencode: [],
+  litellm: [
+    {
+      id: "anthropic/claude-sonnet-4.6",
+      displayName: "Claude Sonnet 4.6",
+      family: "claude-sonnet",
+      contextWindowTokens: 1_000_000,
+      defaultContextWindowTokens: 200_000,
+      maxOutputTokens: 64_000,
+      supportsThinking: true,
+      longContextPricingThresholdTokens: 200_000,
+    },
+  ],
+  opencode: [
+    {
+      id: "muse-spark-1.3-contributor-free",
+      displayName: "Muse Spark 1.3 (Contributor Free)",
+      contextWindowTokens: 128_000,
+      defaultContextWindowTokens: 128_000,
+      maxOutputTokens: 16_384,
+    },
+  ],
   baseten: [
     {
       id: "thinkingmachines/inkling",
@@ -1303,8 +1322,8 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
   "vercel-ai-gateway": "anthropic/claude-sonnet-4.6",
   minimax: "MiniMax-M2.7",
   atlascloud: "deepseek-ai/deepseek-v4-pro",
-  litellm: "",
-  opencode: "",
+  litellm: "anthropic/claude-sonnet-4.6",
+  opencode: "muse-spark-1.3-contributor-free",
   baseten: "thinkingmachines/inkling",
   ionet: "meta-llama/Llama-3.3-70B-Instruct",
   poolside: "poolside/laguna-s-2.1",

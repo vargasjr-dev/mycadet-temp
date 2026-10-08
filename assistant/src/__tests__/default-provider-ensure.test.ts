@@ -170,7 +170,7 @@ describe("ensureDefaultProvider", () => {
 
   test("a signal naming a provider that cannot back the defaults falls through", async () => {
     proxyState.prereqs = false;
-    writeConfig({ llm: { default: { provider: "litellm" } } });
+    writeConfig({ llm: { default: { provider: "openai-compatible" } } });
 
     await ensureDefaultProvider(workspaceDir);
 

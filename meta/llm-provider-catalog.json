@@ -2484,8 +2484,28 @@
         "linkLabel": "LiteLLM Proxy Quick Start"
       },
       "supportsPlatformAuth": false,
-      "defaultModel": "",
-      "models": []
+      "defaultModel": "anthropic/claude-sonnet-4.6",
+      "models": [
+        {
+          "id": "anthropic/claude-sonnet-4.6",
+          "displayName": "Claude Sonnet 4.6",
+          "contextWindowTokens": 1000000,
+          "maxOutputTokens": 64000,
+          "defaultContextWindowTokens": 200000,
+          "longContextPricingThresholdTokens": 200000,
+          "longContextMode": "native-model",
+          "supportsThinking": true,
+          "supportsCaching": true,
+          "supportsVision": true,
+          "supportsToolUse": true,
+          "pricing": {
+            "inputPer1mTokens": 3,
+            "outputPer1mTokens": 15,
+            "cacheWritePer1mTokens": 3.75,
+            "cacheReadPer1mTokens": 0.3
+          }
+        }
+      ]
     },
     {
       "id": "opencode",
@@ -2501,8 +2521,24 @@
         "linkLabel": "OpenCode"
       },
       "supportsPlatformAuth": false,
-      "defaultModel": "",
-      "models": []
+      "defaultModel": "muse-spark-1.3-contributor-free",
+      "models": [
+        {
+          "id": "muse-spark-1.3-contributor-free",
+          "displayName": "Muse Spark 1.3 (Contributor Free)",
+          "contextWindowTokens": 128000,
+          "maxOutputTokens": 16384,
+          "defaultContextWindowTokens": 128000,
+          "longContextMode": "unsupported",
+          "supportsThinking": false,
+          "supportsVision": false,
+          "supportsToolUse": true,
+          "pricing": {
+            "inputPer1mTokens": 0,
+            "outputPer1mTokens": 0
+          }
+        }
+      ]
     },
     {
       "id": "openai-compatible",

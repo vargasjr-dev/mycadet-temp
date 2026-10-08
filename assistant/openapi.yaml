@@ -6157,6 +6157,8 @@ paths:
                     - cadet
                     - together
                     - vercel-ai-gateway
+                    - litellm
+                    - opencode
                     - minimax
                     - atlascloud
                     - baseten
@@ -39830,6 +39832,8 @@ components:
                     - cadet
                     - together
                     - vercel-ai-gateway
+                    - litellm
+                    - opencode
                     - minimax
                     - atlascloud
                     - baseten
@@ -40219,6 +40223,8 @@ components:
                 - cadet
                 - together
                 - vercel-ai-gateway
+                - litellm
+                - opencode
                 - minimax
                 - atlascloud
                 - baseten

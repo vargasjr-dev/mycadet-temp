@@ -106,9 +106,8 @@ export function unknownLlmProviderIssue(provider: string): string | null {
  * connection can serve the shared BYOK templates (fixed base URL, and a
  * non-empty catalog `defaultModel` for the intent fallback in
  * `resolveModelIntent`). Deliberately narrower than `LLMProvider`: keyless
- * (ollama) and endpoint-supplied (openai-compatible, litellm, opencode)
- * providers have
- * no code-resolvable default profile implementation.
+ * (ollama) and user-endpoint (openai-compatible) providers have no
+ * code-resolvable default profile implementation.
  */
 export const DEFAULT_PROVIDER_CHOICES: readonly LLMProvider[] = [
   ...new Set<LLMProvider>([

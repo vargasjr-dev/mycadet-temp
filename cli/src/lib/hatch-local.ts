@@ -46,6 +46,7 @@ import {
   shouldPromptForHatchProvider,
 } from "./provider-secrets.js";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
+import { printInstanceDetails } from "./instance-details.js";
 import { checkProviderApiKey } from "./api-key-check.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { withLocalHatchLock } from "./local-hatch-lock.js";
@@ -140,7 +141,17 @@ function installCLISymlink(): void {
   );
 }
 
-export interface HatchLocalOptions {
+export interface HatchLocalParams {
+  /** Instance display name. Defaults to an auto-generated name. */
+  name?: string | null;
+  /** Build from a local source tree and hot-reload on change. */
+  watch?: boolean;
+  /** Stay attached after hatch and poll the gateway until it stops. */
+  keepAlive?: boolean;
+  /** Hatch-time config values (key → value). */
+  configValues?: Record<string, string>;
+  /** Extra env vars forwarded into the assistant process. */
+  flagEnvVars?: Record<string, string>;
   setupProviderCredentials?: boolean;
   /**
    * Show the per-service startup logs (assistant, credential executor,
@@ -169,17 +180,20 @@ export interface HatchLocalResult {
 }
 
 export async function hatchLocal(
-  name: string | null,
-  watch: boolean = false,
-  keepAlive: boolean = false,
-  configValues: Record<string, string> = {},
-  flagEnvVars: Record<string, string> = {},
-  options: HatchLocalOptions = {},
+  params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
-  const reporter = options.reporter ?? consoleLifecycleReporter;
-  const verbose = options.verbose ?? false;
+  const {
+    name,
+    watch = false,
+    keepAlive = false,
+    configValues = {},
+    flagEnvVars = {},
+  } = params;
+  const reporter = params.reporter ?? consoleLifecycleReporter;
+  const verbose = params.verbose ?? false;
+  const setupProviderCredentials =
+    params.setupProviderCredentials !== false;
   setStartupLogging(verbose);
-  const setupProviderCredentials = options.setupProviderCredentials !== false;
   let provider = setupProviderCredentials
     ? resolveHatchProvider(configValues)
     : undefined;
@@ -369,9 +383,14 @@ export async function hatchLocal(
 
   reporter.log("");
   reporter.log(`✅ Local assistant hatched!`);
-  reporter.log(`  Name: ${instanceName}`);
-  reporter.log(`  Runtime: ${runtimeUrl}`);
-  reporter.log(`  Root: ${resources.instanceDir}`);
+  printInstanceDetails(
+    {
+      name: instanceName,
+      runtime: runtimeUrl,
+      root: resources.instanceDir,
+    },
+    (message) => reporter.log(message),
+  );
   logHatchNextSteps((message) => reporter.log(message), verbose);
 
   const result: HatchLocalResult = {

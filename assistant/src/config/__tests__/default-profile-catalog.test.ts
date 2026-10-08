@@ -442,14 +442,9 @@ describe("schema validation", () => {
       LLMSchema.parse({ defaultProvider: { provider: "together" } })
         .defaultProvider,
     ).toEqual({ provider: "together" });
-    // Endpoint-supplied and keyless providers have no code-resolvable
+    // User-endpoint and keyless providers have no code-resolvable
     // default profile implementation; the catch drops them atomically.
-    for (const provider of [
-      "litellm",
-      "opencode",
-      "openai-compatible",
-      "ollama",
-    ]) {
+    for (const provider of ["openai-compatible", "ollama"]) {
       expect(
         LLMSchema.parse({ defaultProvider: { provider } }).defaultProvider,
       ).toBeUndefined();

@@ -2605,8 +2605,29 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
       linkLabel: "LiteLLM Proxy Quick Start",
     },
     apiKeyPlaceholder: "sk-...",
-    models: [],
-    defaultModel: "",
+    // LiteLLM proxies any upstream; this entry is the reasonable default the
+    // other routers carry (same model, same direct-Anthropic rates). Real
+    // model availability is auto-discovered from the user's proxy.
+    models: [
+      {
+        id: "anthropic/claude-sonnet-4.6",
+        displayName: "Claude Sonnet 4.6",
+        contextWindowTokens: 1000000,
+        maxOutputTokens: 64000,
+        longContextPricingThresholdTokens: 200000,
+        supportsThinking: true,
+        supportsCaching: true,
+        supportsVision: true,
+        supportsToolUse: true,
+        pricing: {
+          inputPer1mTokens: 3,
+          outputPer1mTokens: 15,
+          cacheWritePer1mTokens: 3.75,
+          cacheReadPer1mTokens: 0.3,
+        },
+      },
+    ],
+    defaultModel: "anthropic/claude-sonnet-4.6",
   },
   {
     id: "opencode",
@@ -2624,8 +2645,21 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
       linkLabel: "OpenCode",
     },
     apiKeyPlaceholder: "sk-...",
-    models: [],
-    defaultModel: "",
+    // OpenCode Zen serves the muse-spark family; the free contributor model
+    // is the reasonable default (models otherwise come from the endpoint).
+    models: [
+      {
+        id: "muse-spark-1.3-contributor-free",
+        displayName: "Muse Spark 1.3 (Contributor Free)",
+        contextWindowTokens: 128000,
+        maxOutputTokens: 16384,
+        supportsThinking: false,
+        supportsVision: false,
+        supportsToolUse: true,
+        pricing: { inputPer1mTokens: 0, outputPer1mTokens: 0 },
+      },
+    ],
+    defaultModel: "muse-spark-1.3-contributor-free",
   },
   {
     id: "openai-compatible",

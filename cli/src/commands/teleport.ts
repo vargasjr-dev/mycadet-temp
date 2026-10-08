@@ -1016,16 +1016,10 @@ export async function resolveOrHatchTarget(
   // Hatch a new assistant in the target environment
   if (targetEnv === "local") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
-    await hatchLocal(
-      targetName ?? null,
-      false,
-      false,
-      {},
-      {},
-      {
-        setupProviderCredentials: false,
-      },
-    );
+    await hatchLocal({
+      name: targetName ?? null,
+      setupProviderCredentials: false,
+    });
     const entry = targetName
       ? findAssistantByName(targetName)
       : (loadAllAssistants().find((e) => !beforeIds.has(e.assistantId)) ??
@@ -1041,7 +1035,6 @@ export async function resolveOrHatchTarget(
   if (targetEnv === "docker") {
     const beforeIds = new Set(loadAllAssistants().map((e) => e.assistantId));
     await hatchDocker({
-      detached: false,
       name: targetName ?? null,
       setupProviderCredentials: false,
     });

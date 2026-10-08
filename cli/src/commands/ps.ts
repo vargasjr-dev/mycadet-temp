@@ -19,6 +19,7 @@ import { loadGuardianToken } from "../lib/guardian-token";
 import {
   checkHealth,
   checkManagedHealth,
+  fetchGatewayPs,
   fetchManagedPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
@@ -276,7 +277,46 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   }
   const resources = entry.resources;
   const cadetDir = resources.instanceDir;
+  const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
+  const token = loadGuardianToken(entry.assistantId)?.accessToken;
 
+  // Preferred path: the gateway's /v1/ps returns the daemon's REAL process
+  // tree (assistant + every child it owns, built from the OS process table)
+  // with the gateway's own entry appended — no hard-coded subsystem list to
+  // drift out of sync with what the assistant actually spawns.
+  const tree = gatewayUrl
+    ? await fetchGatewayPs(gatewayUrl, token)
+    : null;
+
+  const rows: TableRow[] =
+    tree && tree.length > 0
+      ? flattenProcessTree(tree)
+      : await detectLocalProcessesFallback(resources, cadetDir);
+
+  // The credential-executor is a CLI-spawned SIBLING (not a daemon child),
+  // so the daemon's process tree can never report it — detect it here.
+  const ces = await detectProcess({
+    name: "credential-executor",
+    pgrepName: "credential-executor",
+    port: 0,
+    pidFile: join(cadetDir, "ces.pid"),
+  });
+  rows.push({
+    name: "credential-executor",
+    status: withStatusEmoji(ces.running ? "running" : "not running"),
+    info: ces.running ? formatDetectionInfo(ces) : "not detected",
+  });
+
+  return rows;
+}
+
+// Fallback for when the gateway can't answer /v1/ps (assistant down, or a
+// gateway version that predates the route): probe each known process
+// directly.
+async function detectLocalProcessesFallback(
+  resources: NonNullable<AssistantEntry["resources"]>,
+  cadetDir: string,
+): Promise<TableRow[]> {
   const assistantSpec: ProcessSpec = {
     name: "assistant",
     pgrepName: "cadet-daemon",

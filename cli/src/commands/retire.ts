@@ -6,6 +6,7 @@ import {
   extractHostFromUrl,
   formatAssistantLookupError,
   formatAssistantReference,
+  getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
   lookupAssistantByIdentifier,
@@ -19,6 +20,7 @@ import {
 } from "../lib/confirm-action.js";
 import { getConfigDir } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { printInstanceDetails } from "../lib/instance-details.js";
 import {
   authHeaders,
   authHeadersForKnownOrganization,
@@ -26,8 +28,8 @@ import {
   readGatewayCredential,
   readPlatformToken,
 } from "../lib/platform-client.js";
+import { retireDocker, dockerResourceNames } from "../lib/docker.js";
 import { retireInstance as retireAwsInstance } from "../lib/aws.js";
-import { retireDocker } from "../lib/docker.js";
 import { retireInstance as retireGcpInstance } from "../lib/gcp.js";
 import { stopContainerTunnelEdge } from "../lib/nginx-ingress.js";
 import { retireLocal } from "../lib/retire-local.js";
@@ -310,15 +312,25 @@ function formatRuntimeUrl(entry: AssistantEntry): string {
 }
 
 function printRetireTarget(entry: AssistantEntry, cloud: string): void {
-  const displayName = getAssistantDisplayName(entry);
-
   console.log("Assistant to retire:");
-  if (displayName !== entry.assistantId) {
-    console.log(`  Name: ${displayName}`);
-  }
-  console.log(`  ID: ${entry.assistantId}`);
-  console.log(`  Cloud: ${cloud}`);
-  console.log(`  Runtime: ${formatRuntimeUrl(entry)}`);
+  printInstanceDetails(
+    {
+      name: getAssistantDisplayName(entry),
+      id: entry.assistantId,
+      cloud,
+      runtime: formatRuntimeUrl(entry),
+      ...(entry.cloud === "local" && entry.resources?.instanceDir
+        ? { root: entry.resources.instanceDir }
+        : {}),
+      ...(entry.cloud === "docker"
+        ? {
+            container:
+              dockerResourceNames(entry.assistantId).assistantContainer,
+          }
+        : {}),
+    },
+    console.log,
+  );
   console.log("");
 }
 
@@ -371,16 +383,16 @@ export async function retire(): Promise<void> {
 async function retireInner(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet retire <name-or-id> [--source <source>] [--yes]");
+    console.log("Usage: cadet retire [<name-or-id>] [--source <source>] [--yes]");
     console.log("");
     console.log("Delete an assistant instance and archive its data.");
     console.log(
-      "By default, retire prints the assistant name, ID, cloud, and runtime before asking for confirmation.",
+      "With no name or ID, retires the active assistant (see `cadet use`). By default, retire prints the assistant name, ID, cloud, and runtime before asking for confirmation.",
     );
     console.log("");
     console.log("Arguments:");
     console.log(
-      "  <name-or-id>         Assistant display name or ID to retire",
+      "  <name-or-id>         Assistant display name or ID to retire (defaults to the active assistant)",
     );
     console.log("");
     console.log("Options:");
@@ -392,13 +404,14 @@ async function retireInner(): Promise<void> {
   }
 
   const parsed = parseRetireArgs(args);
-  const name = parsed.name;
+  // No name given: retire whichever assistant is currently in use.
+  const name = parsed.name ?? getActiveAssistant() ?? undefined;
 
   if (!name) {
-    console.error("Error: Assistant name or ID is required.");
     console.error(
-      "Usage: cadet retire <name-or-id> [--source <source>] [--yes]",
+      "Error: No assistant specified and no active assistant. Pass a name or ID, or pick one with `cadet use <name>`.",
     );
+    console.error("Usage: cadet retire <name-or-id> [--source <source>] [--yes]");
     process.exit(1);
   }
 

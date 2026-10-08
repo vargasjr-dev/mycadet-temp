@@ -84,6 +84,45 @@ export interface ManagedPsResponse {
   processes: ManagedProcessEntry[];
 }
 
+/**
+ * Fetch the gateway's `/v1/ps` process tree — the daemon's real process
+ * table (assistant + every child it owns) with the gateway's own entry
+ * appended. Returns null when the gateway is unreachable or the route is
+ * missing (older gateway versions), so callers can fall back to local
+ * process detection.
+ */
+export async function fetchGatewayPs(
+  gatewayUrl: string,
+  bearerToken?: string,
+): Promise<ManagedProcessEntry[] | null> {
+  try {
+    const url = `${gatewayUrl.replace(/\/+$/, "")}/v1/ps`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (bearerToken) {
+      headers["Authorization"] = `Bearer ${bearerToken}`;
+    }
+
+    const response = await loopbackSafeFetch(url, {
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as ManagedPsResponse;
+    return Array.isArray(data.processes) ? data.processes : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchManagedPs(
   runtimeUrl: string,
   assistantId: string,
