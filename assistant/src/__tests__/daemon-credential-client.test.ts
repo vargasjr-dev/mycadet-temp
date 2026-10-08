@@ -1,4 +1,10 @@
-import { describe, expect, mock, test } from "bun:test";
+import {
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 /**
  * Mock the IPC client and logger. The IPC mock returns configurable
@@ -28,8 +34,16 @@ import {
 } from "../cli/lib/daemon-credential-client.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 describe("daemon credential client", () => {
+  beforeEach(() => {
+    // The daemon-unreachable fallback writes through secure-keys.js, which
+    // reports unreachable in CI (no live CES sibling) — pin the memory
+    // backend so the fallback has a real store.
+    useMemorySecureKeys();
+  });
+
   describe("set — daemon unreachable", () => {
     test("falls back to direct write when daemon is not running", async () => {
       _ipcResponse = {

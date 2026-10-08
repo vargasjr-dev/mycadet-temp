@@ -1,20 +1,13 @@
 name: Deploy Web SPA (reusable)
 
-# Reusable workflow: build + publish the SPA for ONE GitHub environment.
+# Reusable workflow: build + package the SPA for ONE GitHub environment.
 #
-# Split into two jobs so the privileged publish never shares a runner with
-# repository/dependency-controlled build code. `build-and-package` runs the
-# untrusted build (bun install/postinstall, openapi-ts, vite build) with NO
-# cloud credentials and uploads the resulting `dist/` as an artifact. `deploy`
-# then downloads that artifact into a fresh runner that holds the `id-token`
-# OIDC permission and authenticates to GCP — so build code can no longer plant
-# a $GITHUB_ENV/$GITHUB_PATH/BASH_ENV hook (or a fake `gcloud`) that would fire
-# in the post-auth publish step and exfiltrate the short-lived GCP credentials.
+# The bundle is built per environment so it bakes in that environment's
+# public config, then uploaded as a workflow artifact. Publishing used to
+# happen here too (GCS via WIF) — removed; nothing publishes to GCP today.
 #
-# The `stable` channel overwrites the root index.html. Any other channel writes
-# `<channel>/index.html` and uploads assets with --no-clobber, leaving the stable
-# release untouched. `environment:` only resolves secrets and vars; none gate on
-# required reviewers.
+# `environment:` only resolves secrets and vars; none gate on required
+# reviewers.
 on:
   workflow_call:
     inputs:
@@ -103,69 +96,3 @@ jobs:
           name: web-dist-${{ inputs.environment }}-${{ inputs.channel }}
           path: clients/web/dist
           if-no-files-found: error
-
-  deploy:
-    name: Deploy SPA (${{ inputs.environment }})
-    needs: [build-and-package]
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      # Download into workspace-root `dist/` (this job sets no working-directory
-      # default), matching the `dist/...` paths the publish step references.
-      - name: Download SPA artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: web-dist-${{ inputs.environment }}-${{ inputs.channel }}
-          path: dist
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Publish SPA to GCS
-        env:
-          PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          TARGET_ENV: ${{ inputs.environment }}
-          CHANNEL: ${{ inputs.channel }}
-        run: |
-          set -euo pipefail
-          BUCKET="${PROJECT_ID}-assistant-spa"
-
-          if [ ! -f dist/index.html ]; then
-            echo "::error::dist/index.html not found — the build produced no output."
-            exit 1
-          fi
-
-          # A non-stable channel gets its own entrypoint and never overwrites
-          # objects the stable release put in the bucket.
-          INDEX_DEST="index.html"
-          RSYNC_EXTRA=""
-          if [ "${CHANNEL}" != "stable" ]; then
-            INDEX_DEST="${CHANNEL}/index.html"
-            RSYNC_EXTRA="--no-clobber"
-          fi
-
-          # 1. Upload everything EXCEPT index.html with a long immutable cache,
-          #    additive (no deletion) so clients that loaded the previous shell can
-          #    still fetch their lazy-loaded hashed chunks during the rollout.
-          #    index.html is excluded here so that a run cancelled before step 2
-          #    (e.g. superseded by concurrency.cancel-in-progress) can never leave
-          #    the entrypoint pinned with a year-long immutable cache.
-          gcloud storage rsync -r \
-            --exclude="^index\.html$" \
-            --cache-control="public, max-age=31536000, immutable" \
-            ${RSYNC_EXTRA} \
-            dist "gs://${BUCKET}"
-
-          # 2. Upload the HTML entrypoint last, with no-cache, so the new release
-          #    only goes live once its assets exist and is always revalidated.
-          gcloud storage cp \
-            --cache-control="no-cache, max-age=0, must-revalidate" \
-            dist/index.html "gs://${BUCKET}/${INDEX_DEST}"
-
-          echo "Published SPA to gs://${BUCKET}/${INDEX_DEST} (environment=${TARGET_ENV}, channel=${CHANNEL})"

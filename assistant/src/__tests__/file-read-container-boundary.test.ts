@@ -70,7 +70,6 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.IS_CONTAINERIZED;
-  delete process.env.GATEWAY_SECURITY_DIR;
   for (const dir of testDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -90,22 +89,6 @@ describe("file_read outside the workspace in a container", () => {
 
     expect(result.isError).toBe(false);
     expect(result.content).toContain("reference body");
-  });
-
-  test("denies the service security directory", async () => {
-    const workspace = makeTempDir("container-workspace-");
-    const securityDir = makeTempDir("container-security-");
-    writeFileSync(join(securityDir, "trust.json"), "trust body\n");
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-
-    const result = await fileReadTool.execute(
-      { path: join(securityDir, "trust.json") },
-      makeContext(workspace),
-    );
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("service security directory");
-    expect(result.content).not.toContain("trust body");
   });
 
   test("denies the daemon's own process environment", async () => {

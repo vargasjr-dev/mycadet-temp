@@ -4,8 +4,9 @@
  * `200` and empty content otherwise reach the user as a blank assistant turn.
  */
 
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 import { classifyConversationError } from "../../../daemon/conversation-error.js";
 import { credentialKey } from "../../../security/credential-key.js";
 import {
@@ -45,6 +46,12 @@ function guard(inner: Provider): Provider {
 }
 
 describe("missing credential guard", () => {
+  beforeEach(() => {
+    // CES is the only credential store now — pin the memory backend so the
+    // seed/delete below work in CI where no CES sibling is running.
+    useMemorySecureKeys();
+  });
+
   test("turns an empty upstream turn into an actionable error once the credential is gone", async () => {
     // GIVEN a connection whose credential has been force-deleted
     await deleteSecureKeyAsync(ACCOUNT);

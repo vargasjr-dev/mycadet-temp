@@ -34,6 +34,7 @@ import type {
 } from "../providers/types.js";
 import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
 interface UpstreamRequest {
@@ -222,6 +223,10 @@ async function captureError(promise: Promise<unknown>): Promise<unknown> {
 }
 
 beforeAll(async () => {
+  // CES is the only credential store now — pin the memory backend FIRST so
+  // the seeded credentials below land somewhere real instead of reporting
+  // unreachable in CI (no live CES sibling).
+  useMemorySecureKeys();
   server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,

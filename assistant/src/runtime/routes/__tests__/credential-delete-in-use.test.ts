@@ -7,6 +7,7 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import { providerConnections } from "../../../persistence/schema/inference.js";
@@ -67,6 +68,9 @@ function createConnectionUsing(name: string, credential: string): void {
 }
 
 beforeEach(async () => {
+  // CES is the only credential store now — pin the memory backend so
+  // seeded credentials land somewhere real instead of reporting unreachable.
+  useMemorySecureKeys();
   getDb().delete(providerConnections).run();
   await deleteSecureKeyAsync(ACCOUNT);
 });
