@@ -205,19 +205,25 @@ describe("AcpConnectAffordance", () => {
     // The card vanishing is invisible in a feedback bundle without this
     // breadcrumb, so it must carry who/which-call/why, and it lands in the
     // durable ring that streaming volume cannot evict.
-    await waitFor(() => {
-      expect(screen.queryByTestId("acp-connect-affordance")).toBeNull();
-      expect(recordedLifecycleDiagnostics).toEqual([
-        {
-          kind: "acp_connect_self_heal_dismiss",
-          details: {
-            assistantId: "assistant-123",
-            toolUseId: "toolu-acp-1",
-            reason: "missing",
+    // Failed in pass 19 AND pass 20 CI at the default 1s waitFor budget —
+    // the follow-up-effect diagnostic races shard load. Same headroom
+    // treatment as the conversation-retry cursor stamp (PR #83).
+    await waitFor(
+      () => {
+        expect(screen.queryByTestId("acp-connect-affordance")).toBeNull();
+        expect(recordedLifecycleDiagnostics).toEqual([
+          {
+            kind: "acp_connect_self_heal_dismiss",
+            details: {
+              assistantId: "assistant-123",
+              toolUseId: "toolu-acp-1",
+              reason: "missing",
+            },
           },
-        },
-      ]);
-    });
+        ]);
+      },
+      { timeout: 10_000 },
+    );
   });
 
   test("records nothing for an auth_required prompt, which skips the connected check", async () => {

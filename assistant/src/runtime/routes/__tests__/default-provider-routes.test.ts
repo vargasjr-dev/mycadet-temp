@@ -161,7 +161,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("user-owned connection claiming the cadet name → the platform's own status", async () => {
     // seedCanonicalConnections skips reseeding when a user row claims the
-    // name. Dispatch ignores that row and routes through platform auth, so a
+    // name. Dispatch ignores that row and routes through cloud auth, so a
     // signed-in platform is genuinely usable and reads as ok.
     seedConnection({
       name: "cadet",
@@ -179,7 +179,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).status).toBe("ok");
   });
 
-  test("platform-auth connection for a non-managed provider → unsupported_auth even when signed in", async () => {
+  test("cloud-auth connection for a non-managed provider → unsupported_auth even when signed in", async () => {
     seedConnection({
       name: "openrouter-personal",
       provider: "openrouter",
@@ -190,7 +190,7 @@ describe("GET config/llm/default-provider", () => {
 
     const result = await get();
     expect(availability(result).status).toBe("unsupported_auth");
-    expect(availability(result).message).toContain("platform auth");
+    expect(availability(result).message).toContain("Cadet Cloud auth");
   });
 
   test("BYOK with stored key → ok, convention-resolved connection", async () => {
@@ -346,7 +346,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain('"openai"');
   });
 
-  test("cadet-managed connection pinned for a managed-routable provider follows platform auth", async () => {
+  test("cadet-managed connection pinned for a managed-routable provider follows cloud auth", async () => {
     seedConnection({
       name: "cadet",
       provider: "cadet",

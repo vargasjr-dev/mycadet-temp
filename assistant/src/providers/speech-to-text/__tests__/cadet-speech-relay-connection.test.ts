@@ -62,7 +62,7 @@ describe("mapTunnelError", () => {
       mapTunnelError({ code: "missing_platform_connection" }),
     ).toMatchObject({
       category: "auth",
-      message: expect.stringContaining("platform connect"),
+      message: expect.stringContaining("cloud connect"),
     });
     expect(mapTunnelError({ code: "invalid_token" })).toMatchObject({
       category: "auth",

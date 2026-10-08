@@ -61,7 +61,7 @@ let mockCadetAvailable = false;
 
 /**
  * Arguments the managed batch adapter was called with. The managed path has
- * no constructor to spy on (the platform connection is the credential), so
+ * no constructor to spy on (the cloud connection is the credential), so
  * the language it forwards is observable only at the transcribe call.
  */
 const cadetManagedTranscribeCalls: Array<{
@@ -680,7 +680,7 @@ describe("telephony capability catalog alignment", () => {
       deepgram: "deepgram",
       "google-gemini": "gemini",
       xai: "xai",
-      // cadet's credential is the platform connection, mocked below.
+      // cadet's credential is the cloud connection, mocked below.
       cadet: "cadet",
     };
 
@@ -1170,8 +1170,8 @@ describe("cadet-flux managed resolution", () => {
     ).toBe("multi");
   });
 
-  test("resolves null without a platform connection", async () => {
-    // The credential is the platform connection, not a stored API key.
+  test("resolves null without a cloud connection", async () => {
+    // The credential is the cloud connection, not a stored API key.
     mockCadetAvailable = false;
     applyConfig({ provider: "cadet-flux" });
 
@@ -1217,7 +1217,7 @@ describe("cadet managed resolution", () => {
     cadetStreamCtorCalls.length = 0;
   });
 
-  test("the cadet provider resolves the batch transcriber when the platform connection exists", async () => {
+  test("the cadet provider resolves the batch transcriber when the cloud connection exists", async () => {
     mockCadetAvailable = true;
     applyConfig({ provider: "cadet" });
 
@@ -1225,7 +1225,7 @@ describe("cadet managed resolution", () => {
     expect(transcriber?.providerId).toBe("cadet");
   });
 
-  test("the cadet provider resolves null without a platform connection", async () => {
+  test("the cadet provider resolves null without a cloud connection", async () => {
     mockCadetAvailable = false;
     applyConfig({ provider: "cadet" });
 
@@ -1268,7 +1268,7 @@ describe("cadet managed resolution", () => {
     ]);
   });
 
-  test("streaming resolver returns null when the platform connection is unavailable", async () => {
+  test("streaming resolver returns null when the cloud connection is unavailable", async () => {
     mockCadetAvailable = false;
     mockTunnelConnection = {
       wsBaseUrl: "ws://gateway.test",
@@ -1299,7 +1299,7 @@ describe("cadet managed resolution", () => {
     if (capability.status === "missing-credentials") {
       // Connection-based gap copy: the fix is connecting the account,
       // not entering an API key.
-      expect(capability.reason).toContain("platform connect");
+      expect(capability.reason).toContain("cloud connect");
       expect(capability.reason).not.toContain("API key");
     }
   });
@@ -1613,7 +1613,7 @@ describe("streaming capability matches the streaming factory", () => {
     "google-gemini": "gemini",
     "openai-whisper": "openai",
     xai: "xai",
-    // cadet's credential is the platform connection, mocked below.
+    // cadet's credential is the cloud connection, mocked below.
     cadet: "cadet",
     // Managed Flux rides the same platform connection.
     "cadet-flux": "cadet",
@@ -1831,7 +1831,7 @@ describe("deepgram-flux batch resolution", () => {
 
 describe("sttCredentialGapReason", () => {
   test("cadet gets connection copy; API-key providers keep key copy", () => {
-    expect(sttCredentialGapReason("cadet")).toContain("platform connect");
+    expect(sttCredentialGapReason("cadet")).toContain("cloud connect");
     expect(sttCredentialGapReason("cadet")).not.toContain("API key");
     expect(sttCredentialGapReason("deepgram")).toContain("API key");
   });
