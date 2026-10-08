@@ -567,14 +567,12 @@ function formatAssistantListRow(
 }
 
 export async function listAllAssistants(verbose: boolean): Promise<void> {
-  const { name: envName, source: envSource } = resolveEnvironmentSource();
-  const sourceLabels: Record<typeof envSource, string> = {
-    flag: "--environment flag",
-    env: "CADET_ENVIRONMENT",
-    config: "~/.config/cadet/environment",
-    default: "default",
-  };
-  console.log(`Environment: ${envName} (${sourceLabels[envSource]})`);
+  const { name: envName } = resolveEnvironmentSource();
+  // Production is what everyone gets by default — saying so is noise. Only
+  // surface the line when the environment differs from the default.
+  if (envName !== "production") {
+    console.log(`Environment: ${envName}`);
+  }
 
   const log: SyncLogger | undefined = verbose
     ? (msg) => console.log(`  [verbose] ${msg}`)
@@ -583,15 +581,15 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
   // Decide cloud login status FIRST, before touching the network. With no
   // local token we never enter the platform fetch path — so unreachable-host
   // errors from the org-ID/user lookups can't leak onto stderr ahead of the
-  // "Platform: not logged in" line.
+  // "Cloud: not logged in" line.
   const platformToken = readPlatformToken();
   if (!platformToken) {
     log?.("No platform token found — skipping cloud sync");
-    console.log("Platform: not logged in");
+    console.log("Cloud: not logged in");
   } else {
     const syncResult = await syncCloudAssistants(platformToken, { log });
     if (syncResult) {
-      const parts = [`Platform: logged in`];
+      const parts = [`Cloud: logged in`];
       if (syncResult.email) parts[0] += ` as ${syncResult.email}`;
       if (syncResult.added > 0 || syncResult.removed > 0) {
         const changes: string[] = [];
@@ -605,7 +603,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
       // We had a token but the platform fetch failed (offline, expired, etc.).
       // Treat it the same as "not logged in" from a UX perspective — the user
       // can't reach cloud-managed assistants right now either way.
-      console.log("Platform: not logged in");
+      console.log("Cloud: not logged in");
     }
   }
   console.log("");

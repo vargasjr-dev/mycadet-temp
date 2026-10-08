@@ -141,14 +141,14 @@ import { listAllAssistants } from "../commands/ps.js";
 // ---------------------------------------------------------------------------
 
 describe("cadet ps — platform status line", () => {
-  test("no local token: prints 'Platform: not logged in' and skips ALL network fetches", async () => {
+  test("no local token: prints 'Cloud: not logged in' and skips ALL network fetches", async () => {
     readPlatformTokenMock.mockReturnValue(null);
 
     await listAllAssistants(false);
 
     // The status line is present, exactly once, with no redundant error log.
-    expect(stdout.filter((l) => l.startsWith("Platform:"))).toEqual([
-      "Platform: not logged in",
+    expect(stdout.filter((l) => l.startsWith("Cloud:"))).toEqual([
+      "Cloud: not logged in",
     ]);
     expect(stderr.some((l) => l.includes("Failed to fetch organization"))).toBe(
       false,
@@ -162,7 +162,7 @@ describe("cadet ps — platform status line", () => {
     expect(fetchPlatformAssistantsMock).not.toHaveBeenCalled();
   });
 
-  test("local token present but platform is unreachable: still shows 'Platform: not logged in' with no leaked org-fetch error", async () => {
+  test("local token present but platform is unreachable: still shows 'Cloud: not logged in' with no leaked org-fetch error", async () => {
     readPlatformTokenMock.mockReturnValue("session_abc123");
     // Simulate the exact Bun connect failure the user reported:
     //   "Unable to connect. Is the computer able to access the url?"
@@ -174,8 +174,8 @@ describe("cadet ps — platform status line", () => {
 
     await listAllAssistants(false);
 
-    expect(stdout.filter((l) => l.startsWith("Platform:"))).toEqual([
-      "Platform: not logged in",
+    expect(stdout.filter((l) => l.startsWith("Cloud:"))).toEqual([
+      "Cloud: not logged in",
     ]);
     expect(stderr.some((l) => l.includes("Failed to fetch organization"))).toBe(
       false,
@@ -186,7 +186,7 @@ describe("cadet ps — platform status line", () => {
     expect(stderr.some((l) => l.includes("Unable to connect"))).toBe(false);
   });
 
-  test("local token present and platform reachable: prints 'Platform: logged in as <email>'", async () => {
+  test("local token present and platform reachable: prints 'Cloud: logged in as <email>'", async () => {
     readPlatformTokenMock.mockReturnValue("session_abc123");
     fetchCurrentUserMock.mockResolvedValue({
       id: "u1",
@@ -197,10 +197,28 @@ describe("cadet ps — platform status line", () => {
 
     await listAllAssistants(false);
 
-    expect(stdout).toContain("Platform: logged in as user@example.com");
+    expect(stdout).toContain("Cloud: logged in as user@example.com");
     expect(stderr.some((l) => l.includes("Failed to fetch organization"))).toBe(
       false,
     );
+  });
+
+  test("default production environment: no Environment line; explicit staging prints 'Environment: staging'", async () => {
+    delete process.env.CADET_ENVIRONMENT;
+
+    await listAllAssistants(false);
+    expect(stdout.some((l) => l.startsWith("Environment:"))).toBe(false);
+
+    stdout = [];
+    process.env.CADET_ENVIRONMENT = "staging";
+    try {
+      await listAllAssistants(false);
+      expect(stdout.filter((l) => l.startsWith("Environment:"))).toEqual([
+        "Environment: staging",
+      ]);
+    } finally {
+      delete process.env.CADET_ENVIRONMENT;
+    }
   });
 
   test("assistant rows use display name as primary label and keep id visible", async () => {
