@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       exclude:
-        description: 'Comma-separated clients to skip for this dispatch (e.g. web,electron,windows,ios,android,chrome-extension)'
+        description: 'Comma-separated clients to skip for this dispatch (e.g. electron,windows,ios,android,chrome-extension)'
         required: false
         type: string
         default: ''
@@ -236,7 +236,7 @@ jobs:
 
   ci-web:
     needs: [parse-exclude]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -725,7 +725,7 @@ jobs:
   deploy-web-spa:
     name: Deploy Web SPA (dev)
     needs: [parse-exclude, ci-web, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
-    if: ${{ !cancelled() && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
+    if: ${{ !cancelled() && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
@@ -743,7 +743,7 @@ jobs:
   deploy-web-spa-preview:
     name: Deploy Web SPA (production /preview)
     needs: [parse-exclude, ci-web, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
-    if: ${{ !cancelled() && github.ref_name == 'main' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'web') && needs.ci-web.result == 'success' }}
+    if: ${{ !cancelled() && github.ref_name == 'main' && needs.ci-web.result == 'success' }}
     permissions:
       contents: read
       id-token: write
