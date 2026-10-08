@@ -40,9 +40,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Full history so the test runner can diff the PR's files vs the
-          # base (TEST_DIFF_ONLY) — without it the diff fails open and every
-          # PR runs the full suite.
           fetch-depth: 0
 
       - name: Setup Bun

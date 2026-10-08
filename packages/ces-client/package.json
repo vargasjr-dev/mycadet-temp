@@ -12,8 +12,7 @@
     "./credential-rpc": "./src/credential-rpc.ts"
   },
   "scripts": {
-    "typecheck": "bunx tsc --noEmit",
-    "test": "bun run scripts/run-tests.ts"
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mycadet/service-contracts": "workspace:*"

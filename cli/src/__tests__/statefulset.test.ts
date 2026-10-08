@@ -59,8 +59,6 @@ describe("getBuilderManagedEnvKeys", () => {
     const sorted = [...hostForwarded].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
-    // The test sorts before comparing, so the expected rows must be in
-    // localeCompare order (CADET_* before TUNNEL_*).
     expect(sorted).toEqual([
       { name: "CADET_ENVIRONMENT", hostVar: "CADET_ENVIRONMENT" },
       { name: "CADET_PLATFORM_URL", hostVar: "CADET_PLATFORM_URL" },

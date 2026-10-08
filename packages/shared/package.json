@@ -1,0 +1,8 @@
+{
+  "name": "@mycadet/shared",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts"
+  }
+}

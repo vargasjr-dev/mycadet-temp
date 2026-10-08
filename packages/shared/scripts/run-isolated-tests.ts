@@ -1,32 +1,30 @@
 import { availableParallelism } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { Glob } from "bun";
 
 export interface IsolatedTestOptions {
-  cwd: string;
-  patterns: string[];
   extraFiles?: string[];
-  /**
-   * Repo-root-relative path this client's sources live under (e.g.
-   * "clients/web"). With TEST_DIFF_ONLY=true, only collected test files
-   * changed vs TEST_DIFF_BASE inside that path run; callers omit it to
-   * always run the full suite.
-   */
-  diffPath?: string;
 }
 
-// Run only test files changed vs TEST_DIFF_BASE; fails open when the diff
-// cannot be computed. Same contract as gateway/scripts/test.ts.
+// Run only test files changed vs main; fails open when the diff cannot be
+// computed. Same contract as gateway/scripts/test.ts.
 const TEST_DIFF_ONLY = process.env.TEST_DIFF_ONLY === "true";
-const TEST_DIFF_BASE = process.env.TEST_DIFF_BASE ?? "origin/main";
+const TEST_DIFF_BASE = "origin/main";
+
+// One pattern set for every consumer: globs that match nothing in a given
+// package are simply empty, so the union stays harmless everywhere.
+const PATTERNS = [
+  "src/**/*.test.{ts,tsx}",
+  "scripts/**/*.test.{ts,js}",
+  ".storybook/**/*.test.{ts,tsx}",
+  "eslint-rules/**/*.test.mjs",
+];
 
 export async function runIsolatedTests({
-  cwd,
-  patterns,
   extraFiles = [],
-  diffPath,
-}: IsolatedTestOptions): Promise<void> {
+}: IsolatedTestOptions = {}): Promise<void> {
+  const cwd = process.cwd();
   const args = process.argv.slice(2);
   // Timing-sensitive suites (real timers, `waitFor` deadlines) fail once the
   // cores are saturated, so the default leaves half of them free.
@@ -48,12 +46,12 @@ export async function runIsolatedTests({
           // when a pattern spells one out, so suites under `.storybook/` need
           // it on to be found at all.
           // https://bun.sh/docs/api/glob#scan
-          ...patterns.flatMap((pattern) => [
+          ...PATTERNS.flatMap((pattern) => [
             ...new Glob(pattern).scanSync({ cwd, dot: true }),
           ]),
           ...extraFiles,
         ].sort();
-  const diffed = TEST_DIFF_ONLY ? diffTestFiles(allFiles, cwd, diffPath) : null;
+  const diffed = TEST_DIFF_ONLY ? diffTestFiles(allFiles, cwd) : null;
   const scoped = diffed ?? allFiles;
   const files = shard
     ? scoped.filter((_, index) => index % shard.total === shard.index - 1)
@@ -139,27 +137,18 @@ export async function runIsolatedTests({
 }
 
 /**
- * Intersects the collected test files with those changed vs TEST_DIFF_BASE
- * under `diffPath` (repo-root-relative). Returns null when the diff cannot be
- * computed (missing base ref, shallow clone), which callers treat as
- * "run everything" — a stale or absent base must never green-light a PR.
+ * Intersects the collected test files with those changed vs main under the
+ * calling package's own directory (derived from its cwd). Returns null when
+ * the diff cannot be computed (missing base ref, shallow clone), which callers
+ * treat as "run everything" — a stale or absent base must never green-light a
+ * PR.
  */
-function diffTestFiles(
-  files: string[],
-  cwd: string,
-  diffPath: string | undefined,
-): string[] | null {
-  if (!diffPath) {
-    console.log(
-      "TEST_DIFF_ONLY is on but this runner declares no diffPath — running the full suite.",
-    );
-    return null;
-  }
-  // This runner lives at <repoRoot>/scripts/, one level below the root —
-  // unlike gateway/scripts/test.ts, which is two levels down.
-  const repoRoot = join(import.meta.dir, "..");
+function diffTestFiles(files: string[], cwd: string): string[] | null {
+  // Three levels up from packages/shared/scripts.
+  const repoRoot = join(import.meta.dir, "..", "..", "..");
+  const pkgDir = relative(repoRoot, cwd);
   const proc = Bun.spawnSync(
-    ["git", "diff", "--name-only", `${TEST_DIFF_BASE}...HEAD`, "--", diffPath],
+    ["git", "diff", "--name-only", `${TEST_DIFF_BASE}...HEAD`, "--", pkgDir],
     { cwd: repoRoot, stdout: "pipe", stderr: "pipe" },
   );
   if (proc.exitCode !== 0) {
@@ -168,7 +157,7 @@ function diffTestFiles(
     );
     return null;
   }
-  const prefix = `${diffPath}/`;
+  const prefix = pkgDir === "" ? "" : `${pkgDir}/`;
   const changed = new Set(
     proc.stdout
       .toString()

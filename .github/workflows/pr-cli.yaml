@@ -32,8 +32,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Full history so the test runner can diff the PR's files vs the
-          # base and run only what changed (TEST_DIFF_ONLY below).
           fetch-depth: 0
 
       - name: Setup Bun
@@ -58,7 +56,5 @@ jobs:
 
       - name: Test
         env:
-          # Diff-scoped like pr-assistant: a PR only re-runs the test files it
-          # touched; fail-open to the full suite when the diff can't compute.
           TEST_DIFF_ONLY: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
         run: bun run test

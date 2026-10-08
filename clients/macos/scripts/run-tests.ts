@@ -1,12 +1,6 @@
-import { runIsolatedTests } from "../../../scripts/run-isolated-tests";
+import { runIsolatedTests } from "@mycadet/shared/scripts/run-isolated-tests";
 
 await runIsolatedTests({
-  cwd: import.meta.dir + "/..",
-  patterns: [
-    "src/**/*.test.ts",
-    "scripts/**/*.test.js",
-    "scripts/**/*.test.ts",
-  ],
   extraFiles: [
     "../../packages/electron-desktop/src/capability-registry.test.ts",
     "../../packages/electron-desktop/src/device-id.test.ts",
