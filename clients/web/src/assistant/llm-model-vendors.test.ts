@@ -45,7 +45,7 @@ const AGGREGATOR_PROVIDERS = new Set([
 ]);
 
 /** Vendors the catalog genuinely knows a single model from. */
-const SINGLE_MODEL_VENDORS = new Set(["amazon", "thinking-machines"]);
+const SINGLE_MODEL_VENDORS = new Set(["amazon", "thinking-machines", "opencode"]);
 
 /** The provider that lists each model first, which is what owns it. */
 const owners = new Map<string, string>();

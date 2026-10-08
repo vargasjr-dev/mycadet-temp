@@ -938,17 +938,19 @@ describe("loadConfig startup behavior", () => {
   });
 
   test("off-platform hatch with a connection-eligible provider that is not a default-provider choice falls back to anthropic", () => {
-    // `litellm` passes the connection gate (API-key catalog provider with a
-    // fixed base URL requirement absent) but its catalog defaultModel is
-    // empty, so it is not a DEFAULT_PROVIDER_CHOICES member. The key and
-    // `litellm-personal` connection are still stored for manually-created
-    // profiles, but the defaults anchor on anthropic. The pre-code-defined
-    // rail was no better: materializing `custom-*` copies threw on the empty
-    // defaultModel and aborted seeding entirely.
+    // `typesafe` passes the connection gate (API-key catalog provider, and
+    // not in PROVIDERS_REQUIRING_BASE_URL_AND_MODELS) but it is not a known
+    // LLM provider, so no profile can reference it and it is not a
+    // DEFAULT_PROVIDER_CHOICES member. The key and `typesafe-personal`
+    // connection are still stored for manually-created profiles, but the
+    // defaults anchor on anthropic. litellm and opencode used to be the
+    // subjects here — both are first-class default-provider choices now, so
+    // a hatch anchored on either writes that provider directly (see the
+    // litellm hatch test above).
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
-      JSON.stringify({ llm: { default: { provider: "litellm" } } }, null, 2) +
+      JSON.stringify({ llm: { default: { provider: "typesafe" } } }, null, 2) +
         "\n",
     );
     process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
@@ -964,7 +966,7 @@ describe("loadConfig startup behavior", () => {
     for (const name of LEGACY_HATCH_PROFILE_NAMES) {
       expect(raw.llm.profiles[name]).toBeUndefined();
     }
-    expect(getConnection(db, "litellm-personal")).not.toBeNull();
+    expect(getConnection(db, "typesafe-personal")).not.toBeNull();
 
     const effective = getEffectiveProfilesForProvider(
       raw.llm.profiles,

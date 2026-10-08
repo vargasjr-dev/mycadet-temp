@@ -2,13 +2,7 @@ name: Dev Release
 
 on:
   # The platform drives releases by dispatching this workflow.
-  workflow_dispatch:
-    inputs:
-      exclude:
-        description: 'Comma-separated clients to skip for this dispatch (e.g. electron,windows,ios,android,chrome-extension)'
-        required: false
-        type: string
-        default: ''
+  workflow_dispatch: {}
 
 concurrency:
   group: dev-release
@@ -20,22 +14,6 @@ env:
   CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
 jobs:
-  # ── Exclude-list parser ────────────────────────────────────────────────
-  # Splits the comma-separated `exclude` dispatch input into a JSON array
-  # other jobs can probe with contains(fromJSON(...)). Instant and cheap so
-  # the gated jobs can decide before spending any real minutes. Empty input
-  # → empty array → nothing is excluded (default behavior unchanged).
-  parse-exclude:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      excluded: ${{ steps.parse.outputs.excluded }}
-    steps:
-      - id: parse
-        run: |
-          EXCLUDED="$(printf '%s' "${{ inputs.exclude }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d' | jq -R . | jq -s -c .)"
-          echo "excluded=$EXCLUDED" >> "$GITHUB_OUTPUT"
-          echo "exclude list: $EXCLUDED"
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
   compute-version:
     runs-on: ubuntu-latest
@@ -230,7 +208,7 @@ jobs:
         working-directory: cli
 
   ci-web-lint:
-    needs: [parse-exclude]
+    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -254,7 +232,7 @@ jobs:
         working-directory: clients/web
 
   ci-web-types:
-    needs: [parse-exclude]
+    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -280,7 +258,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-web-tests:
-    needs: [parse-exclude]
+    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -766,7 +744,7 @@ jobs:
   # superseded by the next release via concurrency.cancel-in-progress.
   deploy-web-spa:
     name: Deploy Web SPA (dev)
-    needs: [parse-exclude, ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs: [ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
     if: ${{ !cancelled() && needs.ci-web-lint.result == 'success' && needs.ci-web-types.result == 'success' && needs.ci-web-tests.result == 'success' }}
     permissions:
       contents: read
@@ -784,7 +762,7 @@ jobs:
   # production-preview jobs so a release-branch dispatch cannot publish here.
   deploy-web-spa-preview:
     name: Deploy Web SPA (production /preview)
-    needs: [parse-exclude, ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs: [ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
     if: ${{ !cancelled() && github.ref_name == 'main' && needs.ci-web-lint.result == 'success' && needs.ci-web-types.result == 'success' && needs.ci-web-tests.result == 'success' }}
     permissions:
       contents: read
@@ -1165,8 +1143,8 @@ jobs:
   # ── Chrome Extension ────────────────────────────────────────────────────
 
   build-chrome-extension:
-    needs: [parse-exclude, compute-version]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'chrome-extension') }}
+    needs: [compute-version]
+    if: ${{ false }} # chrome-extension offline on the dev channel; bring back online by deleting this marker
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1199,8 +1177,8 @@ jobs:
 
   build-electron:
     # No publish dep: the bundled CLI floats to the `dev` dist-tag at runtime.
-    needs: [parse-exclude, compute-version]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'electron') }}
+    needs: [compute-version]
+    if: ${{ false }} # electron offline on the dev channel; bring back online by deleting this marker
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -1837,8 +1815,8 @@ jobs:
   # ── iOS release (same-repo reusable workflow) ────────────────────────
 
   release-ios:
-    needs: [parse-exclude, compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'ios') }}
+    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
+    if: ${{ false }} # ios offline on the dev channel; bring back online by deleting this marker
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: dev
@@ -1846,8 +1824,8 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs: [parse-exclude, compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
-    if: ${{ vars.ANDROID_DEV_RELEASE_ENABLED == 'true' && !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'android') }}
+    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
+    if: ${{ false }} # android offline on the dev channel; re-enable as vars.ANDROID_DEV_RELEASE_ENABLED == 'true' && delete this marker
     permissions:
       contents: read
       id-token: write
@@ -1858,8 +1836,8 @@ jobs:
     secrets: inherit
 
   build-windows:
-    needs: [parse-exclude, compute-version]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
+    needs: [compute-version]
+    if: ${{ false }} # windows offline on the dev channel; bring back online by deleting this marker
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml
@@ -1870,8 +1848,8 @@ jobs:
 
   release-windows:
     needs:
-      [parse-exclude, build-windows, compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
-    if: ${{ !contains(fromJSON(needs.parse-exclude.outputs.excluded), 'windows') }}
+      [build-windows, compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
+    if: ${{ false }} # windows offline on the dev channel; bring back online by deleting this marker
     permissions:
       contents: read
       id-token: write

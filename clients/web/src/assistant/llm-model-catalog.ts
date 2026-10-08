@@ -1232,6 +1232,7 @@ export const MODELS_BY_PROVIDER = {
     {
       id: "muse-spark-1.3-contributor-free",
       displayName: "Muse Spark 1.3 (Contributor Free)",
+      vendor: "opencode",
       contextWindowTokens: 128_000,
       defaultContextWindowTokens: 128_000,
       maxOutputTokens: 16_384,

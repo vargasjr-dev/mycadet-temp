@@ -72,11 +72,18 @@ test("a long run of envelopes reaches React as one commit and never trips the ne
     );
   }
 
+  const rendered = () => container?.textContent ?? "";
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
   root.render(<View />);
-  await sleep(20);
+  // Wait for the mount's two commits instead of trusting a fixed sleep:
+  // under CI's 2-core contention a 20ms budget can expire before the first
+  // commit lands, which would pollute the batched-commit count below.
+  for (let deadline = Date.now() + 10_000; rendered() !== "0:0"; ) {
+    if (Date.now() > deadline) {throw new Error("View never mounted");}
+    await sleep(25);
+  }
 
   eventBus.subscribe("sse.event", (envelope) => {
     useSeqStore.setState({ seq: envelope.seq ?? 0 });
@@ -88,10 +95,14 @@ test("a long run of envelopes reaches React as one commit and never trips the ne
     activeOnEvent!(makeEnvelope(seq));
     await Promise.resolve();
   }
-  await sleep(50);
+  // Same headroom for the final commit + its effect follow-up.
+  for (let deadline = Date.now() + 10_000; rendered() !== "300:300"; ) {
+    if (Date.now() > deadline) {break;}
+    await sleep(25);
+  }
 
   expect(captureErrorMock).not.toHaveBeenCalled();
-  expect(container.textContent).toBe("300:300");
+  expect(rendered()).toBe("300:300");
   // One commit for the run and one for the effect's follow-up.
   expect(renders - rendersBefore).toBeLessThanOrEqual(3);
 });
