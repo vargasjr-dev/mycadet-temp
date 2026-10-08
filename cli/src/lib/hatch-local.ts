@@ -10,6 +10,7 @@ import {
 } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
@@ -193,8 +194,7 @@ export async function hatchLocal(
       const resources = await allocateLocalResources(instanceName);
 
       const logsDir = join(
-        resources.instanceDir,
-        ".cadet",
+        instanceStateDir(resources.instanceDir),
         "workspace",
         "data",
         "logs",

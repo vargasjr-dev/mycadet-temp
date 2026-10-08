@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { SEEDS } from "@mycadet/environments";
 
-import { resolveInstanceDir } from "./config";
+import { instanceStateDir, resolveInstanceDir } from "./config";
 import { resolveEnvironmentName } from "./environment";
 import type { LockfileAssistant } from "./lockfile-contract";
 import { getLockfileData } from "./lockfile";
@@ -51,11 +51,11 @@ interface StatusResources {
 }
 
 function getDaemonPidPath(instanceDir: string): string {
-  return path.join(instanceDir, ".cadet", "workspace", "cadet.pid");
+  return path.join(instanceStateDir(instanceDir), "workspace", "cadet.pid");
 }
 
 function getGatewayPidPath(instanceDir: string): string {
-  return path.join(instanceDir, ".cadet", "gateway.pid");
+  return path.join(instanceStateDir(instanceDir), "gateway.pid");
 }
 
 function readPidState(pidFile: string): PidState {

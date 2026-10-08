@@ -35,7 +35,7 @@ function writeLocalLockfile(overrides: Record<string, unknown> = {}): void {
 }
 
 function writeAssistantPid(value: string): string {
-  const pidDir = path.join(instanceDir, ".cadet", "workspace");
+  const pidDir = path.join(instanceDir, "workspace");
   mkdirSync(pidDir, { recursive: true });
   const pidPath = path.join(pidDir, "cadet.pid");
   writeFileSync(pidPath, value);

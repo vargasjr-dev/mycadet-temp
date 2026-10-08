@@ -8,7 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -110,7 +110,7 @@ const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
   (resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, ".cadet", "runtime", version),
+    installDir: join(resources.instanceDir, "runtime", version),
   }),
 );
 const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
@@ -191,7 +191,6 @@ let exitSpy: ReturnType<typeof spyOn>;
 
 function makeLocalEntry(): AssistantEntry {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-upgrade-local-test-"));
-  mkdirSync(join(tempDir, ".cadet"), { recursive: true });
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://lan.local:7830",
@@ -255,7 +254,7 @@ beforeEach(() => {
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, ".cadet", "runtime", version),
+    installDir: join(resources.instanceDir, "runtime", version),
   }));
   startLocalDaemonMock.mockReset();
   startLocalDaemonMock.mockResolvedValue(undefined);
@@ -422,7 +421,7 @@ describe("cadet upgrade local", () => {
     );
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,
-      join(tempDir, ".cadet", "workspace"),
+      join(tempDir, "workspace"),
       "local-assistant",
     );
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");

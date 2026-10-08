@@ -51,7 +51,6 @@ describe("readLockfileAssistantAvatar", () => {
     instanceDir = path.join(tempDir, "instance");
     avatarDir = path.join(
       instanceDir,
-      ".cadet",
       "workspace",
       "data",
       "avatar",
@@ -145,7 +144,6 @@ describe("readLockfileAssistantAvatar", () => {
       "cadet",
       "assistants",
       "asst-1",
-      ".cadet",
       "workspace",
       "data",
       "avatar",

@@ -27,7 +27,7 @@ import {
   removeIpcEndpointFile,
   resolveIpcEndpoint,
 } from "@mycadet/ipc-server-utils";
-import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { instanceStateDir, isValidReleaseVersion } from "@mycadet/local-mode";
 
 import {
   getDaemonPidPath,
@@ -86,8 +86,7 @@ export function getLocalRuntimeInstallDir(
   version: string,
 ): string {
   return join(
-    resources.instanceDir,
-    ".cadet",
+    instanceStateDir(resources.instanceDir),
     "runtime",
     normalizeRuntimeVersion(version),
   );
@@ -305,7 +304,7 @@ export function ensureLocalRuntime(
 function warnIfLegacyWorkspaceFallbackDetected(
   resources: LocalInstanceResources,
 ): void {
-  const instanceWorkspace = join(resources.instanceDir, ".cadet", "workspace");
+  const instanceWorkspace = join(instanceStateDir(resources.instanceDir), "workspace");
   const instanceDbPath = join(instanceWorkspace, "data", "db", "assistant.db");
 
   const legacyWorkspace = join(homedir(), ".cadet", "workspace");
@@ -612,7 +611,7 @@ function resolveCesBootstrapSocketDir(
   env?: Record<string, string | undefined>,
 ): string {
   const securityDir = resources
-    ? join(resources.instanceDir, ".cadet", "protected")
+    ? join(instanceStateDir(resources.instanceDir), "protected")
     : env?.CREDENTIAL_SECURITY_DIR?.trim() ||
       join(homedir(), ".cadet", "protected");
   return join(securityDir, "credential-executor");
@@ -630,18 +629,15 @@ function applyDaemonEnvOverrides(
 ): void {
   if (resources) {
     env.CADET_WORKSPACE_DIR = join(
-      resources.instanceDir,
-      ".cadet",
+      instanceStateDir(resources.instanceDir),
       "workspace",
     );
     env.GATEWAY_SECURITY_DIR = join(
-      resources.instanceDir,
-      ".cadet",
+      instanceStateDir(resources.instanceDir),
       "protected",
     );
     env.CREDENTIAL_SECURITY_DIR = join(
-      resources.instanceDir,
-      ".cadet",
+      instanceStateDir(resources.instanceDir),
       "protected",
     );
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
@@ -1083,7 +1079,7 @@ export async function startCes(
   resources?: LocalInstanceResources,
 ): Promise<void> {
   const cadetDir = resources
-    ? join(resources.instanceDir, ".cadet")
+    ? instanceStateDir(resources.instanceDir)
     : join(homedir(), ".cadet");
   const cesPidFile = join(cadetDir, "ces.pid");
 
@@ -1099,10 +1095,10 @@ export async function startCes(
   removeIpcEndpointFile(socketPath);
 
   const securityDir = resources
-    ? join(resources.instanceDir, ".cadet", "protected")
+    ? join(instanceStateDir(resources.instanceDir), "protected")
     : join(homedir(), ".cadet", "protected");
   const workspaceDir = resources
-    ? join(resources.instanceDir, ".cadet", "workspace")
+    ? join(instanceStateDir(resources.instanceDir), "workspace")
     : join(homedir(), ".cadet", "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
@@ -1482,8 +1478,8 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
   const assistantBinary = compiledSibling("assistant");
   if (!isCompiledCli() || !existsSync(assistantBinary)) return;
 
-  const workspaceDir = join(resources.instanceDir, ".cadet", "workspace");
-  const protectedDir = join(resources.instanceDir, ".cadet", "protected");
+  const workspaceDir = join(instanceStateDir(resources.instanceDir), "workspace");
+  const protectedDir = join(instanceStateDir(resources.instanceDir), "protected");
   const binDir = join(workspaceDir, "bin");
 
   mkdirSync(binDir, { recursive: true });
@@ -1825,7 +1821,7 @@ export async function startGateway(
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
   const gwPidDir = resources
-    ? join(resources.instanceDir, ".cadet")
+    ? instanceStateDir(resources.instanceDir)
     : join(homedir(), ".cadet");
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
@@ -1866,18 +1862,15 @@ export async function startGateway(
     ...(resources
       ? {
           CADET_WORKSPACE_DIR: join(
-            resources.instanceDir,
-            ".cadet",
+            instanceStateDir(resources.instanceDir),
             "workspace",
           ),
           GATEWAY_SECURITY_DIR: join(
-            resources.instanceDir,
-            ".cadet",
+            instanceStateDir(resources.instanceDir),
             "protected",
           ),
           CREDENTIAL_SECURITY_DIR: join(
-            resources.instanceDir,
-            ".cadet",
+            instanceStateDir(resources.instanceDir),
             "protected",
           ),
         }
@@ -1933,7 +1926,7 @@ export async function startGateway(
 
   if (gateway.pid) {
     const gwPidDir = resources
-      ? join(resources.instanceDir, ".cadet")
+      ? instanceStateDir(resources.instanceDir)
       : join(homedir(), ".cadet");
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
@@ -1981,7 +1974,7 @@ export async function stopLocalProcesses(
   resources?: LocalInstanceResources,
 ): Promise<void> {
   const cadetDir = resources
-    ? join(resources.instanceDir, ".cadet")
+    ? instanceStateDir(resources.instanceDir)
     : join(homedir(), ".cadet");
   const daemonPidFile = getDaemonPidPath(resources);
   await stopProcessByPidFile(

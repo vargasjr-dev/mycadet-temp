@@ -34,24 +34,23 @@ function makeLocalEntry(
     embed?: string;
   } = {},
 ): AssistantEntry {
-  const cadetDir = join(instanceDir, ".cadet");
-  mkdirSync(join(cadetDir, "workspace", "data", "qdrant"), {
+  mkdirSync(join(instanceDir, "workspace", "data", "qdrant"), {
     recursive: true,
   });
   if (pids.daemon !== undefined) {
-    writeFileSync(join(cadetDir, "workspace", "cadet.pid"), pids.daemon);
+    writeFileSync(join(instanceDir, "workspace", "cadet.pid"), pids.daemon);
   }
   if (pids.gateway !== undefined) {
-    writeFileSync(join(cadetDir, "gateway.pid"), pids.gateway);
+    writeFileSync(join(instanceDir, "gateway.pid"), pids.gateway);
   }
   if (pids.qdrant !== undefined) {
     writeFileSync(
-      join(cadetDir, "workspace", "data", "qdrant", "qdrant.pid"),
+      join(instanceDir, "workspace", "data", "qdrant", "qdrant.pid"),
       pids.qdrant,
     );
   }
   if (pids.embed !== undefined) {
-    writeFileSync(join(cadetDir, "workspace", "embed-worker.pid"), pids.embed);
+    writeFileSync(join(instanceDir, "workspace", "embed-worker.pid"), pids.embed);
   }
   return {
     assistantId: id,

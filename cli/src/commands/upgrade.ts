@@ -2,6 +2,7 @@ import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 import cliPkg from "../../package.json";
 
@@ -1051,8 +1052,7 @@ async function upgradeLocal(
   console.log("✅ Local assistant processes started\n");
 
   const workspaceDir = join(
-    entry.resources.instanceDir,
-    ".cadet",
+    instanceStateDir(entry.resources.instanceDir),
     "workspace",
   );
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
@@ -1062,7 +1062,7 @@ async function upgradeLocal(
   );
   if (ngrokChild?.pid) {
     writeFileSync(
-      join(entry.resources.instanceDir, ".cadet", "ngrok.pid"),
+      join(instanceStateDir(entry.resources.instanceDir), "ngrok.pid"),
       String(ngrokChild.pid),
     );
   }

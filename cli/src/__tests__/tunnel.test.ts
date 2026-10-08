@@ -128,7 +128,6 @@ function writeEntryWorkspaceConfig(
 ): string {
   const workspaceDir = join(
     entry.resources!.instanceDir,
-    ".cadet",
     "workspace",
   );
   mkdirSync(workspaceDir, { recursive: true });
@@ -270,7 +269,6 @@ describe("tunnel edge targeting", () => {
 
     const workspaceDir = join(
       entry.resources!.instanceDir,
-      ".cadet",
       "workspace",
     );
     expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
@@ -298,7 +296,6 @@ describe("tunnel edge targeting", () => {
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".cadet",
       "workspace",
     );
     expect(logs).toContain(
@@ -454,7 +451,6 @@ describe("tunnel edge targeting", () => {
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".cadet",
       "workspace",
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -482,7 +478,6 @@ describe("tunnel edge targeting", () => {
 
     const workspaceDir = join(
       local.resources!.instanceDir,
-      ".cadet",
       "workspace",
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -623,7 +618,7 @@ describe("tunnel edge targeting", () => {
     expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
     });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
@@ -643,7 +638,7 @@ describe("tunnel edge targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
     expect(logs).toContain("serves webhooks only");
@@ -823,7 +818,7 @@ describe("tunnel edge targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, ".cadet", "workspace"),
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
       domain: "foo.ngrok.app",
     });
   });
@@ -854,7 +849,6 @@ describe("tunnel edge targeting", () => {
     writeLockfile(entry);
     const workspaceDir = join(
       entry.resources!.instanceDir,
-      ".cadet",
       "workspace",
     );
     mkdirSync(workspaceDir, { recursive: true });

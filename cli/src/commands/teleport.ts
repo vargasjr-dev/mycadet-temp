@@ -1,4 +1,5 @@
 import { isManagedCloud } from "../lib/managed-cloud.js";
+import { instanceStateDir } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "../lib/assistant-api-key-resolution";
 import {
   findAssistantByName,
@@ -1574,7 +1575,7 @@ export async function teleport(): Promise<void> {
       const res = dockerResourceNames(fromEntry.assistantId);
       await sleepContainers(res);
     } else if (fromEntry.resources) {
-      const cadetDir = join(fromEntry.resources.instanceDir, ".cadet");
+      const cadetDir = instanceStateDir(fromEntry.resources.instanceDir);
       const gatewayPidFile = join(cadetDir, "gateway.pid");
       await stopProcessByPidFile(
         getDaemonPidPath(fromEntry.resources),

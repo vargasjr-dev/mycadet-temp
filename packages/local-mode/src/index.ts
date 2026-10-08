@@ -31,6 +31,7 @@ export {
   resolveLogDir,
   resolveAssistantsDir,
   resolveInstanceDir,
+  instanceStateDir,
   guardianTokenPath,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";

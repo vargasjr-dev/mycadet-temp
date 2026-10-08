@@ -8,7 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -42,7 +42,7 @@ const saveAssistantEntryMock = mock<typeof assistantConfig.saveAssistantEntry>(
   () => {},
 );
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
-  (resources) => join(resources!.instanceDir, ".cadet", "daemon.pid"),
+  (resources) => join(resources!.instanceDir, "daemon.pid"),
 );
 
 mock.module("../lib/assistant-config.js", () => ({
@@ -206,7 +206,6 @@ let localEntry: AssistantEntry;
 
 function makeLocalEntry(): AssistantEntry {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-wake-test-"));
-  mkdirSync(join(tempDir, ".cadet"), { recursive: true });
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://127.0.0.1:7830",
@@ -240,7 +239,7 @@ beforeEach(() => {
   saveAssistantEntryMock.mockReset();
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
-    join(resources!.instanceDir, ".cadet", "daemon.pid"),
+    join(resources!.instanceDir, "daemon.pid"),
   );
   resolveProcessStateMock.mockReset();
   resolveProcessStateMock.mockImplementation(
@@ -332,7 +331,7 @@ describe("cadet wake", () => {
       }),
     );
     expect(stopProcessByPidFileMock).toHaveBeenCalledWith(
-      join(tempDir, ".cadet", "gateway.pid"),
+      join(tempDir, "gateway.pid"),
       "gateway",
     );
     expect(startGatewayMock).toHaveBeenCalledWith(
@@ -500,7 +499,7 @@ describe("cadet wake", () => {
 });
 
 describe("cadet wake: daemon startup failure", () => {
-  const daemonPidOf = (dir: string) => join(dir, ".cadet", "daemon.pid");
+  const daemonPidOf = (dir: string) => join(dir, "daemon.pid");
 
   beforeEach(() => {
     process.argv = ["bun", "cadet", "wake", "local-assistant"];
@@ -600,7 +599,7 @@ describe("cadet wake — tunnel edge restore", () => {
   const enabledConfig = {
     ingress: { enabled: true, publicBaseUrl: "https://assistant.example.com" },
   };
-  const workspaceDirOf = (dir: string) => join(dir, ".cadet", "workspace");
+  const workspaceDirOf = (dir: string) => join(dir, "workspace");
 
   beforeEach(() => {
     process.argv = ["bun", "cadet", "wake", "local-assistant"];

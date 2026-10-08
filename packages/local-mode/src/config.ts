@@ -164,6 +164,22 @@ export function resolveInstanceDir(
 }
 
 /**
+ * The on-disk state root for a local assistant instance. Modern instances
+ * flatten state directly into the instance dir (`.../assistants/<name>/
+ * workspace`, `.../protected`, pid files, …). Legacy "first local" instances
+ * whose instanceDir is the home directory itself keep their `~/.cadet` root.
+ */
+export function instanceStateDir(
+  instanceDir: string,
+  homeDir?: string,
+): string {
+  const home = homeDir ?? os.homedir();
+  return instanceDir === home
+    ? joinLocalPath({}, home, ".cadet")
+    : instanceDir;
+}
+
+/**
  * The on-disk location of an assistant's guardian token, given an already
  * resolved config dir. The single source of truth for this path so the CLI
  * writer and every host-seam reader agree — a divergence here is what leaves a

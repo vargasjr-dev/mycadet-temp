@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 import {
   getDaemonPidPath,
@@ -124,12 +125,12 @@ export function getKnownPidsFromAssistants(
   const pids = new Set<string>();
   for (const entry of entries) {
     if (entry.cloud === "local" && entry.resources) {
-      const legacyDir = join(entry.resources.instanceDir, ".cadet");
+      const stateDir = instanceStateDir(entry.resources.instanceDir);
       const candidates = [
         getDaemonPidPath(entry.resources),
-        join(legacyDir, "gateway.pid"),
-        join(legacyDir, "workspace", "data", "qdrant", "qdrant.pid"),
-        join(legacyDir, "workspace", "embed-worker.pid"),
+        join(stateDir, "gateway.pid"),
+        join(stateDir, "workspace", "data", "qdrant", "qdrant.pid"),
+        join(stateDir, "workspace", "embed-worker.pid"),
       ];
       for (const file of candidates) {
         const pid = readPidFile(file);

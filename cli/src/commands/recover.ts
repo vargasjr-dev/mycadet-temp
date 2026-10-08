@@ -5,8 +5,8 @@ import {
   renameSync,
   unlinkSync,
 } from "fs";
-import { homedir } from "os";
 import { basename, dirname, join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 import { saveAssistantEntry } from "../lib/assistant-config";
 import type { AssistantEntry } from "../lib/assistant-config";
@@ -73,7 +73,7 @@ export async function recover(): Promise<void> {
   }
 
   // 3. Check that the recovering entry's own target directory is free.
-  const target = join(entry.resources.instanceDir, ".cadet");
+  const target = instanceStateDir(entry.resources.instanceDir);
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -93,10 +93,7 @@ export async function recover(): Promise<void> {
   // Correct restoration: extract to retiredDir, then rename the staging entry
   // back to the original target path.  Using homedir() as the -C target was
   // wrong for any instance stored outside the home directory.
-  const isNamedInstance = entry.resources.instanceDir !== homedir();
-  const targetDir = isNamedInstance
-    ? entry.resources.instanceDir
-    : join(entry.resources.instanceDir, ".cadet");
+  const targetDir = instanceStateDir(entry.resources.instanceDir);
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 

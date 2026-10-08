@@ -101,7 +101,7 @@ describe("startCes", () => {
 
     // Create the socket file asynchronously after startCes unlinks it.
     // We use a small setTimeout to create it during the wait loop.
-    const cadetDir = join(tempDir, ".cadet");
+    const cadetDir = tempDir;
     mkdirSync(cadetDir, { recursive: true });
 
     // Pre-create the socket so it exists when startCes checks after unlinking.
@@ -129,7 +129,7 @@ describe("startCes", () => {
     // Verify env vars
     const env = lastSpawnCall!.options.env!;
     expect(env["CES_BOOTSTRAP_SOCKET_DIR"]).toBe(
-      join(tempDir, ".cadet", "protected", "credential-executor"),
+      join(tempDir, "protected", "credential-executor"),
     );
     expect(env["CREDENTIAL_SECURITY_DIR"]).toBeDefined();
     expect(env["CADET_WORKSPACE_DIR"]).toBeDefined();
@@ -158,7 +158,6 @@ describe("startCes", () => {
       resolveIpcEndpoint("ces", {
         workspaceDir: join(
           "/tmp/assistant-123",
-          ".cadet",
           "protected",
           "credential-executor",
         ),

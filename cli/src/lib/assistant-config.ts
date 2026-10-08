@@ -11,7 +11,7 @@ import { homedir } from "os";
 import { dirname, join } from "path";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-import { withLockfileLock } from "@mycadet/local-mode";
+import { instanceStateDir, withLockfileLock } from "@mycadet/local-mode";
 import {
   resolveCloud,
   type LocalAssistantResources,
@@ -43,10 +43,10 @@ export type LocalInstanceResources = Omit<
 > & {
   /**
    * Instance-specific data root. New local assistants are placed under
-   * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/`. Legacy entries
-   * (pre env-data-layout) may still point at `~` — the read path honors
-   * whatever `instanceDir` is stored. The daemon's `.cadet/` directory
-   * lives inside it.
+   * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/` with state flattened
+   * directly into it. Legacy entries (pre env-data-layout) may still point
+   * at `~` — the read path honors whatever `instanceDir` is stored, with
+   * state in `~/.cadet` for those.
    */
   instanceDir: string;
   /** HTTP port for the Qdrant vector store */
@@ -166,7 +166,7 @@ interface LockfileData {
  */
 export function getDaemonPidPath(resources?: LocalInstanceResources): string {
   const cadetDir = resources
-    ? join(resources.instanceDir, ".cadet")
+    ? instanceStateDir(resources.instanceDir)
     : join(homedir(), ".cadet");
   return join(cadetDir, "workspace", "cadet.pid");
 }

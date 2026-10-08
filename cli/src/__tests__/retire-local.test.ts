@@ -76,7 +76,7 @@ afterAll(() => {
 import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
-const cadetDir = join(instanceDir, ".cadet");
+const cadetDir = instanceDir;
 
 function makeEntry(assistantId: string): AssistantEntry {
   return {
@@ -217,7 +217,7 @@ describe("retireLocal — CES sibling stop", () => {
     otherEntry.resources!.instanceDir = otherInstanceDir;
     const otherPid = "4242";
     const otherPidFile = getDaemonPidPath(otherEntry.resources);
-    mkdirSync(join(otherInstanceDir, ".cadet", "workspace"), {
+    mkdirSync(join(otherInstanceDir, "workspace"), {
       recursive: true,
     });
     writeFileSync(otherPidFile, otherPid);

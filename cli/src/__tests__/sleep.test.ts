@@ -14,7 +14,7 @@ import { join } from "node:path";
 // Create a temp directory and set CADET_LOCKFILE_DIR so the real
 // assistant-config module reads/writes the lockfile here instead of ~/.
 const testDir = mkdtempSync(join(tmpdir(), "sleep-command-test-"));
-const assistantRootDir = join(testDir, ".cadet");
+const assistantRootDir = testDir;
 process.env.CADET_LOCKFILE_DIR = testDir;
 
 const stopProcessByPidFileMock = mock(async () => true);
@@ -158,7 +158,11 @@ describe("sleep command", () => {
     resolveFreshBearerTokenMock.mockImplementation(
       async (_url, _id, bearerToken, _cloud) => bearerToken,
     );
-    rmSync(assistantRootDir, { recursive: true, force: true });
+    // Reset per-test state: drop the lockfile and any lease file left behind.
+    // assistantRootDir IS testDir now (state is flattened into the instance
+    // dir), so wipe files rather than the directory itself.
+    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    rmSync(join(assistantRootDir, "active-call-leases.json"), { force: true });
     writeLockfile();
   });
 

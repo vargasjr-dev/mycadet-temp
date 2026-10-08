@@ -1,6 +1,7 @@
 import { isManagedCloud } from "../lib/managed-cloud.js";
 import { readFileSync } from "node:fs";
 import { join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 import {
   TUNNEL_PROVIDERS,
@@ -270,7 +271,7 @@ function toLocalTunnelTarget(entry: AssistantEntry): LocalTunnelTarget | null {
     return {
       entry,
       gatewayPort: entry.resources.gatewayPort,
-      workspaceDir: join(entry.resources.instanceDir, ".cadet", "workspace"),
+      workspaceDir: join(instanceStateDir(entry.resources.instanceDir), "workspace"),
     };
   }
   if (isLocalContainerEntry(entry)) {

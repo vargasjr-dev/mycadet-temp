@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { instanceStateDir } from "@mycadet/local-mode";
 
 import {
   getDaemonPidPath,
@@ -36,7 +37,7 @@ function getAssistantRootDir(entry: AssistantEntry): string {
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  return join(entry.resources.instanceDir, ".cadet");
+  return instanceStateDir(entry.resources.instanceDir);
 }
 
 function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
