@@ -659,13 +659,28 @@ function applyDaemonEnvOverrides(
   applyIpcSocketDirOverride(env);
 }
 
+let startupLogging = true;
+
+/**
+ * Gates the chatty "Starting X... / ✅ X started" service lines. Hatch keeps
+ * them silent unless the caller passed -v; other starters (wake, recover,
+ * upgrade) leave the default on.
+ */
+export function setStartupLogging(enabled: boolean): void {
+  startupLogging = enabled;
+}
+
+function startupLog(message = ""): void {
+  if (startupLogging) console.log(message);
+}
+
 function logDaemonReadiness(
   readiness: DaemonReadiness,
   requireReady = false,
 ): void {
   switch (readiness) {
     case "ready":
-      console.log("   Assistant ready\n");
+      startupLog("   Assistant ready\n");
       break;
     case "migrating":
       console.log(
@@ -1087,7 +1102,7 @@ export async function startCes(
   // corrupt the shared credential store if a second copy also bound it.
   await stopProcessByPidFile(cesPidFile, "credential-executor");
 
-  console.log("🔐 Starting credential-executor sibling...");
+  startupLog("🔐 Starting credential-executor sibling...");
 
   const socketPath = resolveCesSocketPath(resources);
   // A stale socket file from an unclean shutdown blocks re-bind; CES unlinks it
@@ -1140,7 +1155,7 @@ export async function startCes(
     });
     pipeToLogFile(ces, cesLogFd, "credential-executor");
     if (watch) {
-      console.log("   credential-executor started in watch mode (bun --watch)");
+      startupLog("   credential-executor started in watch mode (bun --watch)");
     }
   }
 
@@ -1167,7 +1182,7 @@ export async function startCes(
       "⚠ credential-executor started but its socket did not appear within 10s",
     );
   } else {
-    console.log("✅ credential-executor started\n");
+    startupLog("✅ credential-executor started\n");
   }
 }
 
@@ -1514,7 +1529,7 @@ export async function startLocalDaemon(
     ? localRuntimeAssistantIndex(resources)
     : undefined;
   if (runtimeAssistantIndex) {
-    console.log("🔨 Starting local assistant runtime...");
+    startupLog("🔨 Starting local assistant runtime...");
     // Wait for readiness only after an actual spawn — an attach to an
     // already-running daemon was classified and logged inside
     // startDaemonFromSource, and re-waiting would just block on a migration
@@ -1776,7 +1791,7 @@ export async function startLocalDaemon(
       }
     }
   } else {
-    console.log("🔨 Starting local assistant...");
+    startupLog("🔨 Starting local assistant...");
 
     const assistantIndex = resolveAssistantIndexPath(resources);
     if (!assistantIndex) {
@@ -1827,11 +1842,8 @@ export async function startGateway(
   await stopProcessByPidFile(gwPidFile, "gateway");
 
   const publicUrl = await discoverPublicUrl(effectiveGatewayPort);
-  if (publicUrl) {
-    console.log(`   HTTP URL: ${publicUrl}`);
-  }
 
-  console.log("🌐 Starting gateway...");
+  startupLog("🌐 Starting gateway...");
 
   const effectiveDaemonPort =
     resources?.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
@@ -1918,7 +1930,7 @@ export async function startGateway(
     });
     pipeToLogFile(gateway, gwLogFd, "gateway");
     if (watch) {
-      console.log("   Gateway started in watch mode (bun --watch)");
+      startupLog("   Gateway started in watch mode (bun --watch)");
     }
   }
 
@@ -1948,7 +1960,7 @@ export async function startGateway(
     );
   }
 
-  console.log("✅ Gateway started\n");
+  startupLog("✅ Gateway started\n");
   return gatewayUrl;
 }
 

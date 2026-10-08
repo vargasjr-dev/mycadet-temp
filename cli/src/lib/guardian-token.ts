@@ -529,11 +529,57 @@ function readClientHostname(): string | undefined {
  * credential pair. The returned tokens are persisted locally under
  * `$XDG_CONFIG_HOME/cadet{-env}/assistants/<assistantId>/guardian-token.json`.
  */
+function isLoopbackGateway(gatewayUrl: string): boolean {
+  try {
+    const hostname = new URL(gatewayUrl).hostname;
+    return (
+      hostname === "127.0.0.1" ||
+      hostname === "localhost" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
+const READY_POLL_INTERVAL_MS = 500;
+const READY_POLL_BUDGET_MS = 60_000;
+
+async function waitForGatewayReady(gatewayUrl: string): Promise<void> {
+  const deadline = Date.now() + READY_POLL_BUDGET_MS;
+  while (Date.now() < deadline) {
+    try {
+      const res = await loopbackSafeFetch(`${gatewayUrl}/readyz`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) return;
+      // Only the documented "starting" gate is worth waiting out. Anything
+      // else (404, connection refused) means there is no gate here — e.g.
+      // test doubles that serve only the leased routes — so proceed and let
+      // the caller's own retry budget handle it.
+      if (res.status !== 503) return;
+    } catch {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, READY_POLL_INTERVAL_MS));
+  }
+}
+
 export async function leaseGuardianToken(
   gatewayUrl: string,
   assistantId: string,
   bootstrapSecret?: string,
 ): Promise<GuardianTokenData> {
+  // The gateway 503s every non-probe route ({status: "starting"}) while its
+  // post-assistant-ready backfills run — exactly the window that burned the
+  // caller's lease-retry budget. When leasing against a loopback gateway,
+  // poll /readyz (body-aware: it is the probe the gateway docs point CLI
+  // waits at) until the gate opens before the first init attempt.
+  if (isLoopbackGateway(gatewayUrl)) {
+    await waitForGatewayReady(gatewayUrl);
+  }
+
   const deviceId = computeDeviceId();
   const clientReportedName = readClientHostname();
   const headers: Record<string, string> = {

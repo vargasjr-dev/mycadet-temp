@@ -177,9 +177,8 @@ describe("hatch provider secrets", () => {
       name: "anthropic",
       value: "test-anthropic-key",
     });
-    expect(logs.join("\n")).toContain(
-      "Configured Anthropic credentials from ANTHROPIC_API_KEY.",
-    );
+    // Successes are silent now — the final hatch summary is the receipt.
+    expect(logs.join("\n")).toBe("");
     expect(logs.join("\n")).not.toContain("test-anthropic-key");
   });
 
@@ -208,9 +207,7 @@ describe("hatch provider secrets", () => {
       name: "openai",
       reveal: false,
     });
-    expect(logs.join("\n")).toContain(
-      "Provider credentials already configured for OpenAI.",
-    );
+    expect(logs.join("\n")).toBe("");
   });
 
   test("uses active profile provider when selecting environment credential", async () => {
@@ -292,11 +289,45 @@ describe("hatch provider secrets", () => {
     expect(formatProviderName("opencode")).toBe("OpenCode");
   });
 
-  test("HATCH_PROVIDER_CHOICES only lists supported providers with a label", () => {
+  test("HATCH_PROVIDER_CHOICES only lists labeled providers", () => {
     for (const provider of HATCH_PROVIDER_CHOICES) {
-      expect(isSupportedLlmProvider(provider)).toBe(true);
       expect(formatProviderName(provider)).toBeTruthy();
+      // Cadet Cloud is the managed-connection exception: no env var, no
+      // key collection — everything else must have a supported setup flow.
+      if (provider !== "cadet") {
+        expect(isSupportedLlmProvider(provider)).toBe(true);
+      }
     }
+  });
+
+  test("HATCH_PROVIDER_CHOICES ranks Cadet Cloud first", () => {
+    expect(HATCH_PROVIDER_CHOICES.slice(0, 8)).toEqual([
+      "cadet",
+      "fireworks",
+      "baseten",
+      "openrouter",
+      "vercel-ai-gateway",
+      "openai",
+      "anthropic",
+      "gemini",
+    ]);
+  });
+
+  test("Cadet Cloud configures silently through the managed connection", async () => {
+    const { calls, fetchImpl } = makeFetch([]);
+    const logs: string[] = [];
+
+    await configureHatchProviderApiKey({
+      gatewayUrl: "http://127.0.0.1:7830",
+      provider: "cadet",
+      bearerToken: "guardian-token",
+      env: {},
+      fetchImpl,
+      log: (message) => logs.push(message),
+    });
+
+    expect(calls).toHaveLength(0);
+    expect(logs.join("\n")).toBe("");
   });
 
   test("HATCH_PROVIDER_CHOICES excludes endpoint-supplied providers that cannot back llm.defaultProvider", () => {

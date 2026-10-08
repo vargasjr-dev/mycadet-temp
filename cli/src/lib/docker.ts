@@ -1597,7 +1597,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log,
         });
       }
-      logHatchNextSteps(log, instanceName);
+      logHatchNextSteps(log);
     }
 
     if (watch && repoRoot) {

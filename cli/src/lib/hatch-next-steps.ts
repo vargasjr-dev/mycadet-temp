@@ -1,12 +1,12 @@
 export function logHatchNextSteps(
   log: (message: string) => void,
-  instanceName: string,
+  verbose = false,
 ): void {
   log("Next steps:");
   log("  cadet client");
-  log('  cadet message "hello"');
-  log("  cadet events");
-  log("  cadet ps");
-  log(`  cadet use ${instanceName}`);
+  if (verbose) {
+    log('  cadet message "hello"');
+    log("  cadet events");
+  }
   log("");
 }

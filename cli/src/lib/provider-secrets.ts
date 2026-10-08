@@ -43,6 +43,8 @@ export interface EnsureProviderApiKeyOptions {
   stdinIsTTY?: boolean;
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
+  /** Key collected before startup, right after the provider choice. */
+  precollectedKey?: string;
 }
 
 export interface GatewayApiKeyReadResult {
@@ -61,9 +63,12 @@ export interface HatchProviderApiKeyOptions {
   stdinIsTTY?: boolean;
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
+  /** Key collected before startup, right after the provider choice. */
+  precollectedKey?: string;
 }
 
 const PROVIDER_LABELS: Record<LlmProviderId, string> = {
+  cadet: "Cadet Cloud",
   anthropic: "Anthropic",
   openai: "OpenAI",
   gemini: "Gemini",
@@ -81,22 +86,26 @@ const PROVIDER_LABELS: Record<LlmProviderId, string> = {
   typesafe: "TypeSafe",
 };
 
+// Ranked for the hatch prompt: Cadet Cloud first (the managed connection —
+// no key to collect), then the hosted-inference gateways, then the BYO-key
+// incumbents, then the rest in their former relative order.
 // litellm and opencode are deliberately excluded: they have no fixed default
 // model (endpoint-supplied catalogs), so they cannot back llm.defaultProvider
 // (see DEFAULT_PROVIDER_CHOICES in assistant/src/config/schemas/llm.ts).
 // Picking them here would collect a key the assistant then never uses, since
 // resolveHatchDefaultProvider falls back to anthropic instead.
 export const HATCH_PROVIDER_CHOICES: readonly LlmProviderId[] = [
-  "anthropic",
-  "openai",
-  "gemini",
+  "cadet",
+  "fireworks",
+  "baseten",
   "openrouter",
   "vercel-ai-gateway",
-  "fireworks",
+  "openai",
+  "anthropic",
+  "gemini",
   "together",
   "minimax",
   "atlascloud",
-  "baseten",
   "ionet",
   "poolside",
 ];
@@ -587,6 +596,8 @@ export interface PromptProviderChoiceOptions {
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
   choices?: readonly LlmProviderId[];
+  /** The provider Enter keeps (marked in the list); defaults to choices[0]. */
+  defaultProvider?: LlmProviderId;
 }
 
 // Resolves null on blank input: the caller's signal to keep whatever
@@ -598,17 +609,15 @@ export async function promptProviderChoice(
   const output = options.output ?? process.stdout;
   const choices = options.choices ?? HATCH_PROVIDER_CHOICES;
 
-  output.write(
-    "No LLM provider API key was found in your environment.\n" +
-      "Choose a provider to use for this assistant:\n\n",
-  );
+  output.write("No LLM provider detected. Choose:\n\n");
+  const defaultProvider = options.defaultProvider ?? choices[0];
   choices.forEach((provider, index) => {
-    const suffix = index === 0 ? " (default)" : "";
+    const suffix = provider === defaultProvider ? " (default)" : "";
     output.write(`  ${index + 1}) ${formatProviderName(provider)}${suffix}\n`);
   });
   output.write("\n");
 
-  const defaultLabel = formatProviderName(choices[0]);
+  const defaultLabel = formatProviderName(defaultProvider);
   const reader = createLineReader(input);
   try {
     for (;;) {
@@ -637,6 +646,30 @@ export async function promptProviderChoice(
   }
 }
 
+/**
+ * Collects the provider's API key from the user immediately after they pick
+ * the provider, so the two prompts sit back-to-back instead of straddling
+ * the (now quiet) startup logs. Returns undefined when there is nothing to
+ * collect (keyless managed-connection providers, keys already in the
+ * environment, non-interactive terminals); returns the trimmed answer —
+ * possibly "" for an empty one — when the user was asked, so an empty
+ * answer warns once instead of re-prompting after startup.
+ */
+export async function collectProviderApiKey(
+  provider: LlmProviderId,
+): Promise<string | undefined> {
+  const envVarName = LLM_PROVIDER_ENV_VAR_NAMES[provider];
+  if (!envVarName) return undefined;
+  const envValue = process.env[envVarName]?.trim();
+  if (envValue) return undefined;
+  if (!process.stdin.isTTY) return undefined;
+  return (
+    await promptSecret(
+      `Enter your ${formatProviderName(provider)} API key (${envVarName}): `,
+    )
+  ).trim();
+}
+
 export async function ensureProviderApiKey(
   options: EnsureProviderApiKeyOptions,
 ): Promise<EnsureProviderApiKeyResult> {
@@ -648,14 +681,27 @@ export async function ensureProviderApiKey(
   }
 
   const normalizedProvider = options.provider.trim().toLowerCase();
+  const providerName = isSupportedLlmProvider(normalizedProvider)
+    ? formatProviderName(normalizedProvider)
+    : options.provider;
+  const envVarName = LLM_PROVIDER_ENV_VAR_NAMES[normalizedProvider];
+
+  if (!envVarName) {
+    // Managed-connection provider (e.g. Cadet Cloud): authenticated through
+    // the platform, not a user-supplied API key. Checked before the
+    // supported-provider guard so the keyless flow stays reachable.
+    return {
+      status: "skipped",
+      message: `${providerName} authenticates through the managed connection; no API key needed.`,
+    };
+  }
+
   if (!isSupportedLlmProvider(normalizedProvider)) {
     throw new Error(
       `Provider '${options.provider}' does not have a supported API-key setup flow.`,
     );
   }
   const provider = normalizedProvider;
-  const providerName = formatProviderName(provider);
-  const envVarName = LLM_PROVIDER_ENV_VAR_NAMES[provider];
   const fetchImpl = options.fetchImpl ?? fetch;
 
   const existing = await readGatewayApiKey(
@@ -680,8 +726,21 @@ export async function ensureProviderApiKey(
   }
 
   const envValue = options.env?.[envVarName]?.trim();
-  let apiKey = envValue;
-  let source: ProviderApiKeySource = "env";
+  const precollected = options.precollectedKey?.trim();
+
+  // An empty pre-collected answer means the user already chose to skip the
+  // key — do not re-prompt after startup.
+  if (options.precollectedKey !== undefined && !precollected) {
+    return {
+      status: "missing",
+      provider,
+      message: "API key cannot be empty.",
+    };
+  }
+
+  let apiKey = precollected || envValue;
+  let source: ProviderApiKeySource =
+    precollected && precollected !== envValue ? "prompt" : "env";
 
   if (!apiKey) {
     source = "prompt";
@@ -757,28 +816,16 @@ export async function configureHatchProviderApiKey(
       stdinIsTTY: options.stdinIsTTY,
       input: options.input,
       output: options.output,
+      precollectedKey: options.precollectedKey,
     });
 
-    if (result.status === "already_configured") {
-      log(
-        `Provider credentials already configured for ${formatProviderName(result.provider)}.`,
-      );
-      return;
-    }
-
-    if (result.status === "configured") {
-      if (result.source === "env") {
-        log(
-          `Configured ${formatProviderName(result.provider)} credentials from ${LLM_PROVIDER_ENV_VAR_NAMES[result.provider]}.`,
-        );
-      } else {
-        log(`Configured ${formatProviderName(result.provider)} credentials.`);
-      }
-      return;
-    }
-
-    if (result.status === "skipped") {
-      log(result.message);
+    if (
+      result.status === "already_configured" ||
+      result.status === "configured" ||
+      result.status === "skipped"
+    ) {
+      // Success is the expected outcome — stay quiet and let the final
+      // summary speak.
       return;
     }
 

@@ -25,6 +25,7 @@ import type { AssistantEntry } from "./assistant-config.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
   generateLocalSigningKey,
+  setStartupLogging,
   startCes,
   startLocalDaemon,
   startGateway,
@@ -39,8 +40,8 @@ import {
   type LifecycleReporter,
 } from "./lifecycle-reporter.js";
 import {
+  collectProviderApiKey,
   configureHatchProviderApiKey,
-  formatProviderName,
   promptProviderChoice,
   resolveHatchProvider,
   shouldPromptForHatchProvider,
@@ -143,6 +144,12 @@ function installCLISymlink(): void {
 export interface HatchLocalOptions {
   setupProviderCredentials?: boolean;
   /**
+   * Show the per-service startup logs (assistant, credential executor,
+   * gateway) and the extended next steps. Off by default — the happy path
+   * ends at the hatched summary.
+   */
+  verbose?: boolean;
+  /**
    * Sink for progress and log output. Defaults to the console reporter so CLI
    * callers keep their existing terminal output; in-process callers can inject
    * their own reporter to consume progress without writing to stdout.
@@ -171,6 +178,8 @@ export async function hatchLocal(
   options: HatchLocalOptions = {},
 ): Promise<HatchLocalResult> {
   const reporter = options.reporter ?? consoleLifecycleReporter;
+  const verbose = options.verbose ?? false;
+  setStartupLogging(verbose);
   const setupProviderCredentials = options.setupProviderCredentials !== false;
   let provider = setupProviderCredentials
     ? resolveHatchProvider(configValues)
@@ -178,6 +187,9 @@ export async function hatchLocal(
   const instanceName = generateInstanceName(
     name ?? process.env.CADET_ASSISTANT_NAME,
   );
+  // Collected inside the lock (right after the provider choice, so the two
+  // prompts sit back-to-back), consumed after the guardian token leases.
+  let precollectedApiKey: string | undefined;
 
   const { resources, runtimeUrl, loopbackUrl, bootstrapSecret } =
     await withLocalHatchLock(async () => {
@@ -215,10 +227,15 @@ export async function hatchLocal(
           stdinIsTTY: process.stdin.isTTY,
         })
       ) {
-        const picked = await promptProviderChoice();
+        const picked = await promptProviderChoice({
+          defaultProvider: provider ?? undefined,
+        });
         if (picked) {
           provider = picked;
           pickedProvider = true;
+          // Collect the key immediately, while the choice is fresh — the
+          // startup logs are quiet now, so nothing separates the two prompts.
+          precollectedApiKey = await collectProviderApiKey(picked);
         }
       }
 
@@ -344,28 +361,21 @@ export async function hatchLocal(
         `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
     );
   } else if (provider !== undefined) {
-    reporter.log("");
-    reporter.log(
-      provider === null
-        ? "Checking provider credentials..."
-        : `Checking ${formatProviderName(provider)} credentials...`,
-    );
     await configureHatchProviderApiKey({
       gatewayUrl: loopbackUrl,
       provider,
       bearerToken: guardianAccessToken,
       env: process.env,
+      precollectedKey: precollectedApiKey,
     });
   }
 
   reporter.log("");
   reporter.log(`✅ Local assistant hatched!`);
-  reporter.log("");
-  reporter.log("Instance details:");
   reporter.log(`  Name: ${instanceName}`);
   reporter.log(`  Runtime: ${runtimeUrl}`);
-  reporter.log("");
-  logHatchNextSteps((message) => reporter.log(message), instanceName);
+  reporter.log(`  Root: ${resources.instanceDir}`);
+  logHatchNextSteps((message) => reporter.log(message), verbose);
 
   const result: HatchLocalResult = {
     assistantId: instanceName,

@@ -22,6 +22,7 @@ const DEFAULT_REMOTE: RemoteHost = "local";
 
 interface HatchArgs {
   detached: boolean;
+  verbose: boolean;
   keepAlive: boolean;
   name: string | null;
   remote: RemoteHost;
@@ -47,6 +48,7 @@ function parseArgs(): HatchArgs {
   let disablePlatform =
     disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
   let detached = false;
+  let verbose = false;
   let keepAlive = false;
   let name: string | null = null;
   let remote: RemoteHost = DEFAULT_REMOTE;
@@ -68,6 +70,9 @@ function parseArgs(): HatchArgs {
       console.log("");
       console.log("Options:");
       console.log("  -d                        Run in detached mode");
+      console.log(
+        "  -v, --verbose             Show service startup logs and extended next steps",
+      );
       console.log("  --name <name>             Custom instance name");
       console.log(
         "  --remote <host>           Remote host (local, docker, custom, cloud)",
@@ -106,6 +111,8 @@ function parseArgs(): HatchArgs {
       process.exit(0);
     } else if (arg === "-d") {
       detached = true;
+    } else if (arg === "-v" || arg === "--verbose") {
+      verbose = true;
     } else if (arg === "--watch") {
       watch = true;
     } else if (arg === "--analyze") {
@@ -196,7 +203,7 @@ function parseArgs(): HatchArgs {
       i++;
     } else {
       console.error(
-        `Error: Unknown argument '${arg}'. Valid options: -d, --watch, --source <path>, --preview, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
+        `Error: Unknown argument '${arg}'. Valid options: -d, -v, --verbose, --watch, --source <path>, --preview, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
       );
       process.exit(1);
     }
@@ -204,6 +211,7 @@ function parseArgs(): HatchArgs {
 
   return {
     detached,
+    verbose,
     keepAlive,
     name,
     remote,
@@ -232,6 +240,7 @@ export async function hatch(): Promise<void> {
 
   const {
     detached,
+    verbose,
     keepAlive,
     name,
     remote,
@@ -286,7 +295,9 @@ export async function hatch(): Promise<void> {
   }
 
   if (remote === "local") {
-    await hatchLocal(name, watch, keepAlive, configValues, flagEnvVars);
+    await hatchLocal(name, watch, keepAlive, configValues, flagEnvVars, {
+      verbose,
+    });
     return;
   }
 

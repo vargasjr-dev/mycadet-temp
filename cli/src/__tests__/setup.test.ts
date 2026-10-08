@@ -241,9 +241,12 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/v1/guardian/init");
-    expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/secrets/read");
-    expect(fetchCalls[1].headers.get("Authorization")).toBe(
+    // The lease probes /readyz first to wait out the gateway's "starting"
+    // gate instead of burning retry attempts against it.
+    expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/readyz");
+    expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/guardian/init");
+    expect(fetchCalls[2].url).toBe("http://127.0.0.1:3000/v1/secrets/read");
+    expect(fetchCalls[2].headers.get("Authorization")).toBe(
       "Bearer leased-guardian-token",
     );
   });
@@ -264,11 +267,12 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://localhost:7831/v1/guardian/init");
-    expect(fetchCalls[0].headers.get("x-bootstrap-secret")).toBe(
+    expect(fetchCalls[0].url).toBe("http://localhost:7831/readyz");
+    expect(fetchCalls[1].url).toBe("http://localhost:7831/v1/guardian/init");
+    expect(fetchCalls[1].headers.get("x-bootstrap-secret")).toBe(
       "test-bootstrap-secret",
     );
-    expect(fetchCalls[1].headers.get("Authorization")).toBe(
+    expect(fetchCalls[2].headers.get("Authorization")).toBe(
       "Bearer leased-docker-token",
     );
   });
