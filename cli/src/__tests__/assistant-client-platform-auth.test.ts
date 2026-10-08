@@ -74,7 +74,7 @@ function orgResponse(): Response {
   });
 }
 
-describe("AssistantClient platform-managed auth", () => {
+describe("AssistantClient cloud-managed auth", () => {
   beforeEach(() => {
     process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
@@ -166,7 +166,7 @@ describe("AssistantClient platform-managed auth", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("refuses to send platform credentials to a runtimeUrl override", async () => {
+  test("refuses to send cloud credentials to a runtimeUrl override", async () => {
     seedCloud("sess-tok-4");
     const calls = stubFetch(() => new Response("", { status: 200 }));
 
@@ -176,7 +176,7 @@ describe("AssistantClient platform-managed auth", () => {
           assistantId: ASSISTANT_ID,
           runtimeUrl: "https://attacker.example.com",
         }),
-    ).toThrow("Refusing to send platform credentials");
+    ).toThrow("Refusing to send cloud credentials");
     expect(calls).toHaveLength(0);
   });
 

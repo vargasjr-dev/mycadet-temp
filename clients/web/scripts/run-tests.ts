@@ -12,4 +12,7 @@ await runIsolatedTests({
     // belong in CI alongside the app's own tests.
     "eslint-rules/**/*.test.mjs",
   ],
+  // PR test runs scope to the files a PR actually touched (diff vs
+  // TEST_DIFF_BASE under the client dir), matching pr-assistant/pr-gateway.
+  diffPath: "clients/web",
 });

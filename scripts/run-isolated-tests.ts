@@ -1,4 +1,5 @@
 import { availableParallelism } from "node:os";
+import { join } from "node:path";
 
 import { Glob } from "bun";
 
@@ -6,12 +7,25 @@ export interface IsolatedTestOptions {
   cwd: string;
   patterns: string[];
   extraFiles?: string[];
+  /**
+   * Repo-root-relative path this client's sources live under (e.g.
+   * "clients/web"). With TEST_DIFF_ONLY=true, only collected test files
+   * changed vs TEST_DIFF_BASE inside that path run; callers omit it to
+   * always run the full suite.
+   */
+  diffPath?: string;
 }
+
+// Run only test files changed vs TEST_DIFF_BASE; fails open when the diff
+// cannot be computed. Same contract as gateway/scripts/test.ts.
+const TEST_DIFF_ONLY = process.env.TEST_DIFF_ONLY === "true";
+const TEST_DIFF_BASE = process.env.TEST_DIFF_BASE ?? "origin/main";
 
 export async function runIsolatedTests({
   cwd,
   patterns,
   extraFiles = [],
+  diffPath,
 }: IsolatedTestOptions): Promise<void> {
   const args = process.argv.slice(2);
   // Timing-sensitive suites (real timers, `waitFor` deadlines) fail once the
@@ -39,9 +53,11 @@ export async function runIsolatedTests({
           ]),
           ...extraFiles,
         ].sort();
+  const diffed = TEST_DIFF_ONLY ? diffTestFiles(allFiles, cwd, diffPath) : null;
+  const scoped = diffed ?? allFiles;
   const files = shard
-    ? allFiles.filter((_, index) => index % shard.total === shard.index - 1)
-    : allFiles;
+    ? scoped.filter((_, index) => index % shard.total === shard.index - 1)
+    : scoped;
 
   let passed = 0;
   let failed = 0;
@@ -100,6 +116,13 @@ export async function runIsolatedTests({
     Array.from({ length: Math.min(concurrency, files.length) }, worker),
   );
 
+  if (files.length === 0) {
+    console.log(
+      `No test files to run (diff vs ${TEST_DIFF_BASE} touched none of the collected files).`,
+    );
+    return;
+  }
+
   console.log(
     `\n${passed} passed, ${failed} failed (${files.length} test files${
       shard ? `, shard ${shard.index}/${shard.total}` : ""
@@ -113,6 +136,52 @@ export async function runIsolatedTests({
     }
     process.exit(1);
   }
+}
+
+/**
+ * Intersects the collected test files with those changed vs TEST_DIFF_BASE
+ * under `diffPath` (repo-root-relative). Returns null when the diff cannot be
+ * computed (missing base ref, shallow clone), which callers treat as
+ * "run everything" — a stale or absent base must never green-light a PR.
+ */
+function diffTestFiles(
+  files: string[],
+  cwd: string,
+  diffPath: string | undefined,
+): string[] | null {
+  if (!diffPath) {
+    console.log(
+      "TEST_DIFF_ONLY is on but this runner declares no diffPath — running the full suite.",
+    );
+    return null;
+  }
+  // This runner lives at <repoRoot>/scripts/, one level below the root —
+  // unlike gateway/scripts/test.ts, which is two levels down.
+  const repoRoot = join(import.meta.dir, "..");
+  const proc = Bun.spawnSync(
+    ["git", "diff", "--name-only", `${TEST_DIFF_BASE}...HEAD`, "--", diffPath],
+    { cwd: repoRoot, stdout: "pipe", stderr: "pipe" },
+  );
+  if (proc.exitCode !== 0) {
+    console.log(
+      `Could not diff vs ${TEST_DIFF_BASE} (exit ${proc.exitCode}: ${proc.stderr.toString().trim()}) — running the full suite.`,
+    );
+    return null;
+  }
+  const prefix = `${diffPath}/`;
+  const changed = new Set(
+    proc.stdout
+      .toString()
+      .split("\n")
+      .filter(Boolean)
+      .filter((p) => p.startsWith(prefix))
+      .map((p) => p.slice(prefix.length)),
+  );
+  const scoped = files.filter((f) => changed.has(f));
+  console.log(
+    `Diff vs ${TEST_DIFF_BASE} touched ${changed.size} file(s); ${scoped.length} of ${files.length} collected test files match.`,
+  );
+  return scoped;
 }
 
 /**

@@ -23,7 +23,7 @@
     "lint": "eslint",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
-    "test": "bun test",
+    "test": "bun run scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"
   },
   "author": "Cadet AI",
