@@ -89,7 +89,7 @@ describe("SPA shell: Open Graph metadata", () => {
   // redirecting image.
   test("image URLs are absolute and on the canonical www host", () => {
     for (const url of [ogTag("og:image"), nameTag("twitter:image")]) {
-      expect(url).toMatch(/^https:\/\/www\.cadet\.ai\//);
+      expect(url).toMatch(/^https:\/\/www\.mycadet\.ai\//);
     }
   });
 

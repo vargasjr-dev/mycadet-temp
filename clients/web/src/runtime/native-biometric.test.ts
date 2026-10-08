@@ -81,7 +81,7 @@ test("fails open in browsers and older shells", async () => {
 });
 
 test("isolates storage by normalized effective server origin", async () => {
-  setOrigin("HTTPS://WWW.CADET.AI:443");
+  setOrigin("HTTPS://WWW.MYCADET.AI:443");
   await biometric.storeBiometricToken("cloud-token");
   setOrigin("https://assistant.example.com:8443");
   await biometric.storeBiometricToken("self-hosted-token");
