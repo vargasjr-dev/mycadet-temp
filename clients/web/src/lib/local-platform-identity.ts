@@ -386,13 +386,13 @@ export function bootstrapLocalAssistantPlatformIdentity(
             (
               options.onError ??
               ((e: unknown) => {
-                console.warn("local assistant platform bootstrap failed", e);
+                console.warn("local assistant cloud bootstrap failed", e);
               })
             )(error);
             return;
           }
           console.warn(
-            `local assistant platform bootstrap attempt ${attempt + 1} failed, retrying in ${delayMs}ms`,
+            `local assistant cloud bootstrap attempt ${attempt + 1} failed, retrying in ${delayMs}ms`,
             error,
           );
           await new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -598,7 +598,7 @@ async function persistPlatformRegistrationMetadata(
     platformBaseUrl: params.platformBaseUrl,
     platformOrganizationId: params.organizationId,
   }).catch((error: unknown) => {
-    console.warn("local assistant platform lockfile update failed", error);
+    console.warn("local assistant cloud lockfile update failed", error);
   });
 }
 

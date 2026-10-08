@@ -53,7 +53,7 @@ describe("describeSttFailure", () => {
   describe("managed speech (userFacing marker)", () => {
     test("auth failure surfaces the reconnect remediation verbatim", () => {
       const message =
-        "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant platform connect'.";
+        "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
       const copy = describeSttFailure(
         new SttError("auth", message, { userFacing: true }),
         "cadet",

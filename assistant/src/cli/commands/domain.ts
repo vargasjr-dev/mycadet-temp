@@ -55,7 +55,7 @@ export function registerDomainCommand(program: Command): void {
         "after",
         () => `
 Each assistant can register its own subdomain (e.g. velly.${envDomains().baseDomain})
-for email and web presence. DNS managed by the Cadet Cloud.
+for email and web presence. DNS managed by Cadet Cloud.
 
 Examples:
   $ assistant domain register velly

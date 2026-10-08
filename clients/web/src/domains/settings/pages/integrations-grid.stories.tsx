@@ -284,7 +284,7 @@ export const EveryConnectState: Story = {
 };
 
 /**
- * Signed out of the Cadet Cloud. The tiles are the ones above, glyph for
+ * Signed out of Cadet Cloud. The tiles are the ones above, glyph for
  * glyph: the click goes to the login flow instead of to the provider, and no
  * tile spends a line saying so.
  */

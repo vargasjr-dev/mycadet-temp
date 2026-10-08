@@ -13657,7 +13657,7 @@ paths:
     post:
       operationId: email_register_post
       summary: Register an email address
-      description: Register a new email address on the Cadet Cloud for the current assistant.
+      description: Register a new email address on Cadet Cloud for the current assistant.
       tags:
         - email
       requestBody:
@@ -26056,7 +26056,7 @@ paths:
     get:
       operationId: oauth_managedconnect_poll_get
       summary: Poll managed OAuth connections
-      description: Fetch active platform connections for a provider (used to detect new connections after managed connect).
+      description: Fetch active cloud connections for a provider (used to detect new connections after managed connect).
       tags:
         - oauth
       parameters:
@@ -26995,9 +26995,9 @@ paths:
   /v1/platform/connect:
     post:
       operationId: platform_connect_post
-      summary: Connect to the Cadet Cloud
+      summary: Connect to Cadet Cloud
       description:
-        Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as
+        Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as
         credentialRejected, so the caller can direct the user to sign in again and replace it.
       tags:
         - platform
@@ -27152,8 +27152,8 @@ paths:
   /v1/platform/disconnect:
     post:
       operationId: platform_disconnect_post
-      summary: Disconnect from the Cadet Cloud
-      description: Deletes stored platform credentials and emits platform_disconnected signal to connected clients.
+      summary: Disconnect from Cadet Cloud
+      description: Deletes stored cloud credentials and emits platform_disconnected signal to connected clients.
       tags:
         - platform
       responses:
@@ -28719,7 +28719,7 @@ paths:
           schema:
             type: string
           description:
-            Accepted for backward compatibility. The catalog is resolved from the Cadet Cloud (or the bundled
+            Accepted for backward compatibility. The catalog is resolved from Cadet Cloud (or the bundled
             manifest when platform features are disabled); this ref does not select a git revision — it is echoed back
             and used as the cache key. Defaults to the CLI's `DEFAULT_PLUGIN_REF` (typically `main`).
       responses:

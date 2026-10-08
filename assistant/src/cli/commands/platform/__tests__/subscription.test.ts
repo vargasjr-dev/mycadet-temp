@@ -4,7 +4,7 @@ import { runPlatform, setupPlatformIpcMock } from "./helpers.js";
 
 const ipc = setupPlatformIpcMock();
 
-describe("assistant platform subscription", () => {
+describe("assistant cloud subscription", () => {
   beforeEach(() => {
     ipc.calls = [];
     ipc.response = {

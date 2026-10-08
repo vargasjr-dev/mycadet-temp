@@ -14,7 +14,7 @@
  * The auth scheme follows the assistant's topology, so callers never pick it.
  * Platform-managed entries in particular have no local guardian token: they
  * authenticate against the wildcard runtime proxy at
- * `{platformUrl}/v1/assistants/<id>/<rest>` with the stored platform credential.
+ * `{platformUrl}/v1/assistants/<id>/<rest>` with the stored cloud credential.
  */
 
 import { isManagedCloud } from "./managed-cloud.js";
@@ -106,7 +106,7 @@ export class AssistantClient {
     const platformManaged = !opts?.sessionToken && isManagedCloud(entry.cloud);
     const platformHost = stripTrailingSlashes(entry.runtimeUrl);
 
-    // SECURITY: a platform credential is account-scoped, far broader than the
+    // SECURITY: a cloud credential is account-scoped, far broader than the
     // per-assistant guardian JWT, so its origin is pinned to the host recorded in
     // the lockfile. Honoring a URL override here would hand the caller's session
     // token or `vak_` key to whatever host they named.
@@ -116,7 +116,7 @@ export class AssistantClient {
       stripTrailingSlashes(opts.runtimeUrl) !== platformHost
     ) {
       throw new Error(
-        `Refusing to send platform credentials to '${opts.runtimeUrl}': ` +
+        `Refusing to send cloud credentials to '${opts.runtimeUrl}': ` +
           `assistant '${entry.assistantId}' is hosted at ${platformHost}.`,
       );
     }
@@ -137,7 +137,7 @@ export class AssistantClient {
       this.orgId = opts.orgId;
     } else if (platformManaged) {
       // Platform-managed: no guardian token exists locally, so authenticate with
-      // the stored platform credential. Resolved on first use because the org id
+      // the stored cloud credential. Resolved on first use because the org id
       // behind it needs a network lookup.
       this.token = undefined;
       this.authMode = "platform";
@@ -166,7 +166,7 @@ export class AssistantClient {
 
   /**
    * Auth headers for the current mode. `authHeaders` picks the right scheme for
-   * the platform credential (`Authorization: Bearer` for `vak_` API keys,
+   * the cloud credential (`Authorization: Bearer` for `vak_` API keys,
    * `X-Session-Token` + `Cadet-Organization-Id` for session tokens) and caches
    * the org-id lookup, so the result is memoized per client and a failure is
    * never cached.
@@ -343,8 +343,8 @@ export class AssistantClient {
 
     // Reactive auto-refresh on a 401 for the guardian path only. Ephemeral
     // (`--token`) and access-only sessions have no stored refresh credential and
-    // just see the original 401; session and platform credentials are managed by
-    // the Cadet Cloud and are never refreshed here.
+    // just see the original 401; session and cloud credentials are managed by
+    // Cadet Cloud and are never refreshed here.
     if (response.status === 401 && this.authMode === "guardian") {
       const stored = loadGuardianToken(this._assistantId);
 

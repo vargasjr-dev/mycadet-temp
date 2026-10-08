@@ -454,7 +454,7 @@ export function ConstitutionContent() {
             <li>
               Self-hosting is the ultimate expression of data sovereignty. We
               actively build toward a world where anyone can be a creator of a
-              Cadet assistant without being a user of the Cadet Cloud. You
+              Cadet assistant without being a user of Cadet Cloud. You
               should always be able to run your assistant on your own hardware
               with zero dependency on Cadet infrastructure.
             </li>

@@ -44,7 +44,7 @@ export function createPlatformPushProxyHandler(credentials: CredentialCache) {
     if (!platformBaseUrl || !assistantApiKey || !assistantId) {
       return errorResponse(
         "PLATFORM_UNAVAILABLE",
-        "This assistant is not registered with the Cadet Cloud, so push notifications are unavailable.",
+        "This assistant is not registered with Cadet Cloud, so push notifications are unavailable.",
         503,
       );
     }
@@ -112,7 +112,7 @@ export function createPlatformPushProxyHandler(credentials: CredentialCache) {
       );
       return errorResponse(
         "PLATFORM_UNAVAILABLE",
-        "Could not reach the Cadet Cloud to register this device.",
+        "Could not reach Cadet Cloud to register this device.",
         502,
       );
     }

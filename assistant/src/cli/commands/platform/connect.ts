@@ -26,7 +26,7 @@ export function registerPlatformConnectCommand(platform: Command): void {
         if (r.result?.alreadyConnected) {
           log.info(
             `Already connected to platform at ${r.result.baseUrl}. ` +
-              `Run 'assistant platform disconnect' first to reconnect.`,
+              `Run 'assistant cloud disconnect' first to reconnect.`,
           );
         } else if (r.result?.credentialRejected) {
           // No client shows a login screen for the daemon's signal, so this
@@ -34,12 +34,12 @@ export function registerPlatformConnectCommand(platform: Command): void {
           // stops at "already logged in" before the credential pass runs;
           // --force runs it.
           log.info(
-            "The stored platform credential was rejected by the platform. " +
+            "The stored cloud credential was rejected by the platform. " +
               "Run 'cadet login --force' to sign in again and replace it.",
           );
         } else {
           log.info(
-            "Showing the platform login screen on connected clients. " +
+            "Showing the cloud login screen on connected clients. " +
               "Please complete the sign-in flow in the app.",
           );
         }

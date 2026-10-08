@@ -25,7 +25,7 @@ run 'assistant plugins search <name>' first before searching the web.`,
       name: "install",
       args: "<name-or-url>",
       description:
-        "Install a plugin by name from the Cadet Cloud (content is served as a verified tarball from the plugin's pinned commit), or directly from a GitHub URL (untrusted)",
+        "Install a plugin by name from Cadet Cloud (content is served as a verified tarball from the plugin's pinned commit), or directly from a GitHub URL (untrusted)",
       options: [
         {
           flags: "--force",
@@ -208,7 +208,7 @@ git commit SHA and GitHub remote, and submits the entry to the Cadet
 platform API. The platform creates a pull request against
 vargasjr-dev/mycadet adding the plugin to the marketplace catalog.
 
-Requires a connected Cadet Cloud account (run \`assistant platform connect\`).
+Requires a connected Cadet Cloud account (run \`assistant cloud connect\`).
 Use --print to validate and print the entry without submitting.
 
 Examples:

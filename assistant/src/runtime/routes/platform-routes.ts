@@ -441,11 +441,11 @@ async function handlePlatformDisconnect(
   if (!baseUrl && !apiKey) {
     throw new UnprocessableEntityError(
       "Not connected to a platform. Nothing to disconnect.\n\n" +
-        "Run 'assistant platform status' to check connection state.",
+        "Run 'assistant cloud status' to check connection state.",
     );
   }
 
-  // Delete all platform credentials
+  // Delete all cloud credentials
   const keysToDelete = [
     CREDENTIAL_KEYS.baseUrl,
     CREDENTIAL_KEYS.apiKey,
@@ -502,7 +502,7 @@ async function handleCallbackRoutesRegister(
   const context = await resolvePlatformCallbackRegistrationContext();
   if (!context.enabled) {
     throw new UnprocessableEntityError(
-      "Platform callbacks not available — missing platform base URL, assistant ID, or API key. Run 'assistant platform connect' or ensure credentials are configured.",
+      "Platform callbacks not available — missing platform base URL, assistant ID, or API key. Run 'assistant cloud connect' or ensure credentials are configured.",
     );
   }
 
@@ -678,7 +678,7 @@ async function fetchPlatformJson(
 
   if (!context.platformBaseUrl || !context.authHeader) {
     throw new UnprocessableEntityError(
-      "Platform credentials not available — run 'assistant platform connect' or set CADET_PLATFORM_URL",
+      "Platform credentials not available — run 'assistant cloud connect' or set CADET_PLATFORM_URL",
     );
   }
 
@@ -898,7 +898,7 @@ async function handlePlatformInvoiceGet(
     }
     if (!page.has_more || page.invoices.length === 0) {
       throw new NotFoundError(
-        `Invoice "${id}" not found. Run 'assistant platform invoices list' to see available invoices.`,
+        `Invoice "${id}" not found. Run 'assistant cloud invoices list' to see available invoices.`,
       );
     }
     cursor = page.invoices.at(-1)!.id;
@@ -937,9 +937,9 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Connect to the Cadet Cloud",
+    summary: "Connect to Cadet Cloud",
     description:
-      "Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
+      "Checks whether the stored cloud credentials still connect. Reports a stored key the platform rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
     tags: ["platform"],
     handler: handlePlatformConnect,
     responseBody: PlatformConnectResponseSchema,
@@ -972,9 +972,9 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Disconnect from the Cadet Cloud",
+    summary: "Disconnect from Cadet Cloud",
     description:
-      "Deletes stored platform credentials and emits platform_disconnected signal to connected clients.",
+      "Deletes stored cloud credentials and emits platform_disconnected signal to connected clients.",
     tags: ["platform"],
     handler: handlePlatformDisconnect,
     responseBody: PlatformDisconnectResponseSchema,

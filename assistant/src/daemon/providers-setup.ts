@@ -34,7 +34,7 @@ export async function initializeProvidersAndTools(
   // overrides are normally only set by the secret-routes handlers at runtime.
   await rehydratePlatformCredentials();
 
-  // Speech defaulting normally fires when the platform credentials land
+  // Speech defaulting normally fires when the cloud credentials land
   // (secret-routes); evaluating it once per boot also covers assistants whose
   // connection predates that trigger, so voice works for every connected
   // assistant with no configured speech credentials. Idempotent, and detached

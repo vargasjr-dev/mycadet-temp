@@ -159,7 +159,7 @@ export async function mintTunnelWsToken(args: {
   } catch (err) {
     throw new TunnelWsTokenError(
       0,
-      `Could not reach the Cadet Cloud to authorize the voice session: ${
+      `Could not reach Cadet Cloud to authorize the voice session: ${
         err instanceof Error ? err.message : String(err)
       }`,
     );
@@ -179,7 +179,7 @@ export async function mintTunnelWsToken(args: {
   if (!token) {
     throw new TunnelWsTokenError(
       response.status,
-      "The Cadet Cloud returned no voice session token.",
+      "Cadet Cloud returned no voice session token.",
     );
   }
   return token;
@@ -188,13 +188,13 @@ export async function mintTunnelWsToken(args: {
 /** Turn a mint rejection into something the user can act on. */
 function describeMintFailure(status: number): string {
   if (status === 401) {
-    return "Not signed in to the Cadet Cloud. Run 'cadet login' and try again.";
+    return "Not signed in to Cadet Cloud. Run 'cadet login' and try again.";
   }
   if (status === 403) {
     return "This account cannot open a voice session on that assistant. Check that it belongs to the organization you are signed in to.";
   }
   if (status === 404) {
-    return "The Cadet Cloud does not offer voice session tokens. It may be running an older release.";
+    return "Cadet Cloud does not offer voice session tokens. It may be running an older release.";
   }
-  return `The Cadet Cloud refused to authorize the voice session (HTTP ${status}).`;
+  return `Cadet Cloud refused to authorize the voice session (HTTP ${status}).`;
 }

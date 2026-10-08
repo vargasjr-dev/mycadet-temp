@@ -59,11 +59,11 @@ Mark setup as started before doing any read-only checks. This lets a managed gat
 
 ```bash
 assistant config set twilio.setupStarted true
-assistant platform status --json
+assistant cloud status --json
 assistant gateway status --json
 ```
 
-If `assistant platform status --json` reports an available platform assistant but `assistant gateway status --json` returns `{}` (no `tunnel` URL yet), continue with setup and check status again before configuring webhooks. Do not treat this as an ngrok setup problem unless the assistant is local/self-hosted without Tunnel.
+If `assistant cloud status --json` reports an available platform assistant but `assistant gateway status --json` returns `{}` (no `tunnel` URL yet), continue with setup and check status again before configuring webhooks. Do not treat this as an ngrok setup problem unless the assistant is local/self-hosted without Tunnel.
 
 Refer to "Checking Current Configuration" above to see the current state of the user's Twilio setup. If Twilio appears to be fully configured, offer to show status or reconfigure. If they are asking about inbound access or an unexpected first greeting, go to "Channel Trust Floors" and the matching Troubleshooting section. Otherwise, continue to the missing steps below.
 
@@ -174,11 +174,11 @@ assistant config set twilio.phoneNumber "+14155551234"
 Twilio needs publicly reachable HTTP webhooks and, for live calls, a publicly reachable WebSocket path. First check managed/platform status:
 
 ```bash
-assistant platform status --json
+assistant cloud status --json
 assistant gateway status --json
 ```
 
-If `assistant platform status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Tunnel route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Tunnel registered`; do not treat that as an ngrok setup problem.
+If `assistant cloud status --json` reports an available platform assistant and `assistant gateway status --json` reports a `tunnel` URL (a `{ "tunnel": "..." }` object), do not load `public-ingress` or install ngrok. Use the managed Tunnel route for the WebSocket leg. If it returns `{}`, restart or re-hatch the assistant/gateway and check gateway logs for `Tunnel registered`; do not treat that as an ngrok setup problem.
 
 For local/self-hosted assistants without Tunnel, load the `public-ingress` skill to determine whether `ingress.publicBaseUrl` is configured and walk the user through setting one up if not.
 

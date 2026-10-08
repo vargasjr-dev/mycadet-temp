@@ -207,7 +207,7 @@ export function normalizeSttError(err: unknown): SttError {
 
 // ---------------------------------------------------------------------------
 // Cadet managed adapter — implements BatchTranscriber on top of the
-// platform's managed speech endpoint. No API key: the platform connection
+// platform's managed speech endpoint. No API key: the cloud connection
 // is the credential.
 // ---------------------------------------------------------------------------
 
@@ -255,7 +255,7 @@ export function createDaemonBatchTranscriber(
   providerId: SttProviderId,
   language?: string,
 ): BatchTranscriber | null {
-  // Managed speech authenticates via the platform connection, not an API
+  // Managed speech authenticates via the cloud connection, not an API
   // key. Callers pass canonical ids; the resolver maps legacy ones first.
   if (providerId === "cadet") {
     return new CadetManagedBatchTranscriber(language);

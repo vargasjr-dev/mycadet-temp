@@ -29,8 +29,6 @@ For assistant architecture deep dives, see [`ARCHITECTURE.md`](ARCHITECTURE.md) 
 ```bash
 cd assistant
 bun install   # installs the whole workspace
-cp .env.example .env
-# Edit .env with your API keys
 ```
 
 ## Configuration

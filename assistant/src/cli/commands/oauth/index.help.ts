@@ -514,7 +514,7 @@ Arguments:
              Run "assistant oauth providers list" to see available providers.
 
 Modes:
-  managed    OAuth credentials are managed by the Cadet Cloud. The
+  managed    OAuth credentials are managed by Cadet Cloud. The
              assistant connects via a platform-hosted authorization flow.
              No local client ID or secret is needed.
   your-own   You supply your own OAuth app credentials (client ID and

@@ -1,5 +1,5 @@
 /**
- * Credentials the Cadet Cloud provisions onto a managed assistant pod for
+ * Credentials Cadet Cloud provisions onto a managed assistant pod for
  * its own use: the API key the daemon authenticates to the managed LLM proxy
  * with, and the base URL that proxy lives at.
  *
@@ -46,5 +46,5 @@ export function platformManagedCredentialRefusal(
   const name = service && field ? `${service}:${field}` : "This credential";
   const verb =
     action === "read" ? "inspected or revealed" : "changed or deleted";
-  return `${name} is provisioned and owned by the Cadet Cloud. It cannot be ${verb} through the credentials API.`;
+  return `${name} is provisioned and owned by Cadet Cloud. It cannot be ${verb} through the credentials API.`;
 }

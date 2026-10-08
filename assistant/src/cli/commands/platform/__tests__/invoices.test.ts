@@ -46,7 +46,7 @@ function runInvoices(args: string[]): Promise<string[]> {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("assistant platform invoices list", () => {
+describe("assistant cloud invoices list", () => {
   beforeEach(() => {
     ipc.calls = [];
     ipc.response = {
@@ -108,7 +108,7 @@ describe("assistant platform invoices list", () => {
     const out = await runInvoices(["list"]);
 
     expect(out.join("").trim()).toEndWith(
-      "More invoices available. Run 'assistant platform invoices list --starting-after in_b' for the next page.",
+      "More invoices available. Run 'assistant cloud invoices list --starting-after in_b' for the next page.",
     );
   });
 
@@ -119,7 +119,7 @@ describe("assistant platform invoices list", () => {
   });
 });
 
-describe("assistant platform invoices get", () => {
+describe("assistant cloud invoices get", () => {
   beforeEach(() => {
     ipc.calls = [];
     ipc.response = { ok: true, result: invoiceA };
@@ -191,7 +191,7 @@ describe("assistant platform invoices get", () => {
   });
 });
 
-describe("assistant platform invoices error handling", () => {
+describe("assistant cloud invoices error handling", () => {
   beforeEach(() => {
     ipc.calls = [];
     ipc.response = {
@@ -220,7 +220,7 @@ describe("assistant platform invoices error handling", () => {
   });
 });
 
-describe("assistant platform invoices --help", () => {
+describe("assistant cloud invoices --help", () => {
   test("group help renders both subcommands", async () => {
     const { out } = await runPlatformCaught(["invoices", "--help"]);
     const text = out.join("");

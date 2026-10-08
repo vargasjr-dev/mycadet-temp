@@ -1772,7 +1772,7 @@ describe("ConnectionResolutionError classification", () => {
       "not logged in",
     );
     const result = classifyConversationError(err, errCtx);
-    expect(result.userMessage).toContain("platform login");
+    expect(result.userMessage).toContain("Cadet Cloud login");
     expect(result.userMessage).toContain("Log in");
   });
 

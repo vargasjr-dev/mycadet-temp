@@ -653,7 +653,7 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(registerCalls).toBe(0);
   });
 
-  test("without platform credentials the ingress error surfaces unchanged", async () => {
+  test("without cloud credentials the ingress error surfaces unchanged", async () => {
     await expect(
       resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
     ).rejects.toThrow("No public base URL configured");

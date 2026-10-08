@@ -2,7 +2,7 @@
  * Resolve which assistant API key to inject into a running assistant.
  *
  * The one place that decides, for every flow that hands a local assistant its
- * platform credentials (`login`, `teleport`). Keeping the decision here means a
+ * cloud credentials (`login`, `teleport`). Keeping the decision here means a
  * rule about which stored key is usable holds in all of them at once.
  */
 import {

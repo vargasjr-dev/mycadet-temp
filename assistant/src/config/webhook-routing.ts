@@ -81,7 +81,7 @@ function isIngressExplicitlyDisabled(): boolean {
  *   4. Otherwise nothing is configured.
  *
  * Ingress deliberately precedes the platform fallback: any logged-in local
- * assistant holds platform credentials for the LLM proxy, so treating
+ * assistant holds cloud credentials for the LLM proxy, so treating
  * credential presence as "managed" would misreport an explicitly configured
  * self-hosted webhook as platform-routed. An explicit `ingress.enabled: false`
  * is a decision not to accept inbound webhooks at all and blocks the fallback.

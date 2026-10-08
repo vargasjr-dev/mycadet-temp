@@ -45,7 +45,7 @@ const REMOVED_MODE_PATHS: Record<string, string> = {
     "services.image-generation.mode does not exist; image generation is configured by provider alone. For managed image generation run `config set services.image-generation.provider cadet`.",
 };
 
-/** Provider paths whose "cadet" value requires a platform connection. */
+/** Provider paths whose "cadet" value requires a cloud connection. */
 const CADET_PROVIDER_PATHS = new Set([
   "services.web-search.provider",
   "services.image-generation.provider",
@@ -95,7 +95,7 @@ export function registerConfigCommand(program: Command): void {
             return;
           }
 
-          // Managed services authenticate via the platform connection:
+          // Managed services authenticate via the cloud connection:
           // mode "managed" for mode-based services, provider "cadet" for
           // web search.
           const requiresPlatform =

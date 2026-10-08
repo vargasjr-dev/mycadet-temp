@@ -54,7 +54,7 @@ gateway and returns the stable external URL. Otherwise it reads
 ingress.publicBaseUrl from config and appends the webhook path. That URL is
 either your own tunnel or the Tunnel URL the gateway publishes. If no
 ingress is configured and the assistant is connected to the platform
-(via 'assistant platform connect'), it registers a callback route with the
+(via 'assistant cloud connect'), it registers a callback route with the
 platform gateway instead of failing.
 
 Arguments:
@@ -85,10 +85,10 @@ Examples:
       description: "List registered webhook callback routes",
       helpText: `
 Lists all webhook callback routes registered with the platform for this
-assistant. Only available when platform credentials are configured (either
-via IS_PLATFORM or 'assistant platform connect').
+assistant. Only available when cloud credentials are configured (either
+via IS_PLATFORM or 'assistant cloud connect').
 
-Self-hosted assistants without platform credentials do not have a persistent
+Self-hosted assistants without cloud credentials do not have a persistent
 webhook registry — use 'assistant webhooks register <type>' to resolve URLs
 on demand.
 

@@ -489,7 +489,7 @@ const INTER_WAVE_DELAY_MS = 500;
 
 /**
  * Fetch all messages individually using getMessage (no batch endpoint).
- * Used as a fallback when the batch API is unavailable (e.g. platform connections
+ * Used as a fallback when the batch API is unavailable (e.g. cloud connections
  * that cannot expose raw tokens for the multipart batch endpoint).
  *
  * Processes messages in waves of INDIVIDUAL_CONCURRENCY with a brief inter-wave

@@ -84,7 +84,7 @@ async function fetchAndPersistPairedPlatformId(
   try {
     await updateLockfileAssistant({ ...current, platformAssistantId });
   } catch (error) {
-    console.warn("paired assistant platform lockfile update failed", error);
+    console.warn("paired assistant cloud lockfile update failed", error);
   }
   return platformAssistantId;
 }

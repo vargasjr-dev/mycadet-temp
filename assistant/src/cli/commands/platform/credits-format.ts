@@ -22,7 +22,7 @@ export interface PlatformCreditsResult {
   next_credit_expiry_at: string | null;
 }
 
-/** Human-readable lines for `assistant platform credits`. */
+/** Human-readable lines for `assistant cloud credits`. */
 export function formatCreditsLines(result: PlatformCreditsResult): string[] {
   const staleNote = result.stale ? " (pending data may be stale)" : "";
   const lines = [

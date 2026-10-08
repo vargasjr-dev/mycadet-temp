@@ -246,7 +246,7 @@ describe("cadet TTS definition", () => {
       {
         credentialStoreKey: "credential/cadet/assistant_api_key",
         displayName: "Cadet account connection",
-        setCommand: "assistant platform connect",
+        setCommand: "assistant cloud connect",
       },
     ]);
   });

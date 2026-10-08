@@ -221,7 +221,7 @@ describe("integration-status", () => {
       expect(gmail?.connected).toBe(true);
     });
 
-    test("Gmail shows disconnected when managed but no platform connection", async () => {
+    test("Gmail shows disconnected when managed but no cloud connection", async () => {
       managedProviders.add("google");
 
       const summary = await getIntegrationSummary();

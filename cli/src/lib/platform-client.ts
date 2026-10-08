@@ -508,7 +508,7 @@ export interface CredentialInjectionParams {
 }
 
 /**
- * Inject platform credentials into a running assistant via the gateway,
+ * Inject cloud credentials into a running assistant via the gateway,
  * mirroring `LocalAssistantBootstrapService.injectKeyIntoAssistant` et al.
  *
  * Each credential is posted individually. Failures are collected but do

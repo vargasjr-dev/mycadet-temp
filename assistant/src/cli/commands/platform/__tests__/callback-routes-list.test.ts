@@ -8,7 +8,7 @@ import {
 
 const ipc = setupPlatformIpcMock();
 
-describe("assistant platform callback-routes list", () => {
+describe("assistant cloud callback-routes list", () => {
   beforeEach(() => {
     ipc.calls = [];
     ipc.response = { ok: true, result: { routes: [] } };

@@ -14,7 +14,7 @@ import { writeOutput } from "../../output.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Verify that the user has connected to the Cadet Cloud (has stored
+ * Verify that the user has connected to Cadet Cloud (has stored
  * credentials). Unlike `requirePlatformClient`, this does NOT require a
  * platform assistant ID — it only checks that credentials exist.
  *

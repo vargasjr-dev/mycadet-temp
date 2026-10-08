@@ -219,7 +219,7 @@ export interface OAuthConnection {
   /**
    * Execute a callback with a valid raw access token. This is an escape hatch
    * for provider-specific endpoints that don't fit the relative-path model
-   * (e.g. Gmail batch API on a different host). Throws for platform connections
+   * (e.g. Gmail batch API on a different host). Throws for cloud connections
    * where raw tokens are not available locally.
    */
   withToken<T>(fn: (token: string) => Promise<T>): Promise<T>;

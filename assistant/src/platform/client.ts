@@ -46,7 +46,7 @@ interface PlatformClientConfig {
  * Resolve the platform client's prerequisites.
  *
  * First tries the in-memory managed proxy context (available when the daemon
- * has rehydrated env overrides). Falls back to reading platform credentials
+ * has rehydrated env overrides). Falls back to reading cloud credentials
  * directly from the credential store so that standalone CLI invocations work
  * without the daemon having run its rehydration step.
  *

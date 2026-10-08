@@ -4,7 +4,7 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "Developer Guide - Cadet Docs",
   description:
-    "Technical reference for contributors and developers working on the Cadet Cloud.",
+    "Technical reference for contributors and developers working on Cadet Cloud.",
   path: "/docs/developer-guide",
 });
 

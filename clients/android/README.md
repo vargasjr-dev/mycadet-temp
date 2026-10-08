@@ -350,7 +350,7 @@ restoration.
 If a saved or newly scanned server cannot load, whether the connection is
 refused outright or a tunnel provider answers on the server's behalf with its
 own error page, the native recovery dialog offers Retry or Choose Assistant.
-Choose Assistant clears the active slot and recreates onto the Cadet Cloud
+Choose Assistant clears the active slot and recreates onto Cadet Cloud
 chooser, which lists every remembered server including the one that just
 failed. A failed new server is never promoted over the last server that loaded
 successfully.

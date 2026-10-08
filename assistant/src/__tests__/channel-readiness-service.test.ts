@@ -328,7 +328,7 @@ describe("ChannelReadinessService", () => {
   });
 
   test("configured ingress beats the platform-connected fallback", async () => {
-    // Any logged-in local assistant holds platform credentials for the LLM
+    // Any logged-in local assistant holds cloud credentials for the LLM
     // proxy. Reporting managed routing here would mislabel a webhook that
     // `webhooks register` resolves to the self-hosted URL.
     mockPlatformConnected = true;

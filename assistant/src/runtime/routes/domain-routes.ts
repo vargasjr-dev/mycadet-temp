@@ -56,12 +56,12 @@ async function requireClient(): Promise<CadetPlatformClient> {
   const client = await CadetPlatformClient.create();
   if (!client) {
     throw new UnauthorizedError(
-      "Platform credentials not configured. Run: assistant platform connect",
+      "Platform credentials not configured. Run: assistant cloud connect",
     );
   }
   if (!client.platformAssistantId) {
     throw new UnauthorizedError(
-      "Assistant ID not configured. Run: assistant platform connect",
+      "Assistant ID not configured. Run: assistant cloud connect",
     );
   }
   return client;

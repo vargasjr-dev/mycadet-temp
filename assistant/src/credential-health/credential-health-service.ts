@@ -458,7 +458,7 @@ async function checkManagedProvider(
         provider: providerRow.provider,
         accountInfo: allConnections[0]?.account_label ?? null,
         status: "missing_token",
-        details: `No active managed connection for ${providerRow.provider}. Reconnect on the Cadet Cloud.`,
+        details: `No active managed connection for ${providerRow.provider}. Reconnect on Cadet Cloud.`,
         missingScopes: [],
         canAutoRecover: false,
       });
@@ -555,7 +555,7 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "ping_failed",
-            details: `${providerRow.provider} managed liveness check returned ${pingResp.status} from the upstream provider. The Cadet Cloud may not have refreshed the token before forwarding; will retry next cycle.`,
+            details: `${providerRow.provider} managed liveness check returned ${pingResp.status} from the upstream provider. Cadet Cloud may not have refreshed the token before forwarding; will retry next cycle.`,
             canAutoRecover: false,
           });
         } else {
@@ -582,7 +582,7 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "revoked",
-            details: `${providerRow.provider} managed connection cannot be refreshed by the Cadet Cloud. Reconnect on the Cadet Cloud.`,
+            details: `${providerRow.provider} managed connection cannot be refreshed by Cadet Cloud. Reconnect on Cadet Cloud.`,
             canAutoRecover: false,
           });
         } else {
@@ -684,7 +684,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "missing_token",
       details:
-        "No Cadet-managed credentials are stored yet. Log in to the Cadet Cloud to set them up.",
+        "No Cadet-managed credentials are stored yet. Log in to Cadet Cloud to set them up.",
       canAutoRecover: true,
     };
   }

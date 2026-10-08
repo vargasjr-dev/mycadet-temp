@@ -2123,12 +2123,12 @@ async function importBundleCredentialsIntoCes(
   );
   const skippedPlatform = bundleCredentials.length - userCredentials.length;
   if (skippedPlatform > 0) {
-    log.info(`Skipped ${skippedPlatform} platform credential(s) from import`);
+    log.info(`Skipped ${skippedPlatform} cloud credential(s) from import`);
   }
 
   if (userCredentials.length === 0) {
     if (skippedPlatform > 0) {
-      // All credentials in the bundle were platform credentials — report
+      // All credentials in the bundle were cloud credentials — report
       // the skip count even though nothing was sent to CES.
       return {
         total: 0,

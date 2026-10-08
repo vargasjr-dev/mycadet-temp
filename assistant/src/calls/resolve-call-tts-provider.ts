@@ -77,7 +77,7 @@ export interface ResolveCallTtsOptions {
  * The provider is the effective one after managed-speech defaulting
  * ({@link resolveEffectiveSpeechProviders}): a configured BYOK provider
  * whose credential does not resolve is stood in for by managed speech
- * while the platform connection is usable, the same substitution live
+ * while the cloud connection is usable, the same substitution live
  * voice makes, so a fresh Cadet connection speaks on the phone with zero
  * TTS configuration.
  *

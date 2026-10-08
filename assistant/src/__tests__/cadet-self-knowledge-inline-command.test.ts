@@ -105,7 +105,7 @@ describe("cadet-self-knowledge skill", () => {
     expect(result.content).toContain("assistant config get llm");
     expect(result.content).toContain("assistant --version");
     expect(result.content).toContain("assistant skills list");
-    expect(result.content).toContain("assistant platform status");
+    expect(result.content).toContain("assistant cloud status");
   });
 
   // ── Routes to docs site ──────────────────────────────────────────────

@@ -424,7 +424,7 @@ describe("handleMigrationImport — no-swap path omits newer-migration warning",
     // All-`cadet:*` credentials bundle: the streaming importer returns
     // ok=true with zero files_created/overwritten (no-swap success),
     // and the credential-import callback filters every entry as a
-    // platform credential so CES is never invoked.
+    // cloud credential so CES is never invoked.
     //
     // The synthetic `data/db/assistant.db` entry satisfies the v1
     // manifest schema's contents refine; it's a no-op on disk because

@@ -157,7 +157,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
       );
     });
 
-    test("missing platform credentials fail the inbox check", async () => {
+    test("missing cloud credentials fail the inbox check", async () => {
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,

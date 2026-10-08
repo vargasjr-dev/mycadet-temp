@@ -688,7 +688,7 @@ async function onCredentialsWritten(accounts: string[]): Promise<void> {
 /**
  * Store a secret in secure storage. Writes to exactly one backend, with no
  * dual-writing. Forces a CES reconnection when the backend is dead, because
- * callers (e.g. the post-login platform credential push) do not retry a
+ * callers (e.g. the post-login cloud credential push) do not retry a
  * failed write.
  */
 export async function setSecureKeyAsync(

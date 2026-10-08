@@ -2964,7 +2964,7 @@ async function main() {
       });
 
       // Cadet credentials are load-bearing for the Telegram webhook URL when
-      // the managed callback fallback applies: a platform connection arriving
+      // the managed callback fallback applies: a cloud connection arriving
       // or rotating after Telegram setup must repoint Telegram at the managed
       // callback route without waiting for an unrelated Telegram or ingress
       // change, or a system wake. Skipped when telegram credentials changed in

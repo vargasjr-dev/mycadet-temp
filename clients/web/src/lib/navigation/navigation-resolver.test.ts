@@ -357,7 +357,7 @@ describe("resolveNavigation", () => {
     // assistants are all self-hosted has none in `hasAssistants` (remembered
     // origins are client-local), and the funnel would also drop a `?register=`
     // handoff before the chooser could record it.
-    test("keeps a zero-assistant platform user on select-assistant", () => {
+    test("keeps a zero-assistant cloud user on select-assistant", () => {
       expect(guard(s(NO_ASSISTANTS), CHOOSER)).toEqual(ALLOW);
       // Nothing is held for the assistants list here: with no funnel to decide,
       // an unhydrated read has nothing to get wrong.
@@ -819,7 +819,7 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects a consented no-assistant platform user to hatching", () => {
+    test("redirects a consented no-assistant cloud user to hatching", () => {
       expect(guard(s({ hasAssistants: false }))).toEqual({
         action: "redirect",
         to: "/assistant/onboarding/hatching",

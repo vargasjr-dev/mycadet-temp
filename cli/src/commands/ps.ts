@@ -580,7 +580,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     ? (msg) => console.log(`  [verbose] ${msg}`)
     : undefined;
 
-  // Decide platform login status FIRST, before touching the network. With no
+  // Decide cloud login status FIRST, before touching the network. With no
   // local token we never enter the platform fetch path — so unreachable-host
   // errors from the org-ID/user lookups can't leak onto stderr ahead of the
   // "Platform: not logged in" line.

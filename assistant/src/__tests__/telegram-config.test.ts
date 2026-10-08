@@ -175,7 +175,7 @@ describe("Telegram config handler", () => {
     expect(registerCallbackRouteMock).not.toHaveBeenCalled();
   });
 
-  // A logged-in local assistant holds platform credentials for the LLM proxy,
+  // A logged-in local assistant holds cloud credentials for the LLM proxy,
   // so credential presence must not override an explicitly configured ingress.
   test("set does not register a platform callback route when a public ingress is configured", async () => {
     platformContextEnabled = true;

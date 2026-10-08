@@ -16,7 +16,7 @@ failing to persist the seed does not enable this additional alert. An invalid
 reuse target that falls back to a newly created eligible chat does qualify.
 
 The successful creation makes the local intent non-silent. When cadet is
-selected and platform credentials are configured, routing can also add the
+selected and cloud credentials are configured, routing can also add the
 existing mobile push channel. Explicit quiet intent, suppression, exclusive
 channel allowlists, and single-channel routing retain precedence. A platform
 route added solely for this feature is skipped if creation does not qualify;
@@ -412,7 +412,7 @@ A guardian-sensitive notification (approval requests, access requests, channel a
 
 ### Platform (always connected)
 
-The `PlatformPushAdapter` posts the notification to the platform's `/v1/assistants/{id}/push/dispatch/` endpoint, which fans it out to the bound user's registered devices for native mobile push. Without platform credentials the delivery is recorded as failed.
+The `PlatformPushAdapter` posts the notification to the platform's `/v1/assistants/{id}/push/dispatch/` endpoint, which fans it out to the bound user's registered devices for native mobile push. Without cloud credentials the delivery is recorded as failed.
 
 ### External channels: Telegram, Slack, Discord
 

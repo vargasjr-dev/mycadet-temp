@@ -210,7 +210,7 @@ describe("resolveWebhookUrl", () => {
   });
 
   test("propagates the failure when nothing can answer", async () => {
-    // No ingress and no platform connection means there is no URL that works.
+    // No ingress and no cloud connection means there is no URL that works.
     // Returning a plausible one would produce a vendor registration that
     // silently receives nothing.
     const spy = spyOn(registration, "resolveCallbackUrl").mockRejectedValue(

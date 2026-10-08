@@ -39,7 +39,7 @@ function buildProgram(): Command {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("assistant platform connect", () => {
+describe("assistant cloud connect", () => {
   beforeEach(() => {
     mockCalls = [];
     mockResponse = { ok: true, result: { showPlatformLogin: true } };

@@ -65,7 +65,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Guardian",
     definition:
-      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of the Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet is guardianship, not usage.",
+      "The person who creates, owns, and is responsible for an assistant. The guardian grants permissions, teaches, and is liable for the assistant’s actions, but the assistant acts as their own entity, not as the guardian. This is not a “user” relationship. People are users of Cadet Cloud, which is a SaaS tool. But the relationship between a person and their Cadet is guardianship, not usage.",
   },
   {
     term: "Hatch",
@@ -158,7 +158,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "User",
     definition:
-      "A person who uses the Cadet Cloud. This is a standard SaaS relationship. Importantly, “user” does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of the Cadet Cloud.",
+      "A person who uses Cadet Cloud. This is a standard SaaS relationship. Importantly, “user” does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of Cadet Cloud.",
   },
   {
     term: "Cadet Doctor",

@@ -21,7 +21,7 @@ export function DeveloperGuideArchitectureContent() {
         breadcrumb="Docs / Developer Guide / Architecture"
       >
         <p className="mb-8 text-zinc-600">
-          The Cadet Cloud has three main domains that work together: a
+          Cadet Cloud has three main domains that work together: a
           runtime that manages conversations and tools, a native client for
           macOS, and a gateway that handles all external communication.
         </p>

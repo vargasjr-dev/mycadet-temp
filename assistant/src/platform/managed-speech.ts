@@ -85,7 +85,7 @@ async function resolveClient(): Promise<
 }
 
 /**
- * Whether managed speech can be used at all: a platform connection whose
+ * Whether managed speech can be used at all: a cloud connection whose
  * assistant identity is fully provisioned. A stored API key alone is not
  * enough — synthesis/transcription would fail before any request is made.
  */

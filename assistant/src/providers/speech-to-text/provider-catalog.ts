@@ -320,7 +320,7 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
         "Conversational speech-to-text with model-native turn detection, through your Cadet account. No separate API key needed.",
       setupMode: "connection",
       setupHint: "Connect your Cadet account to enable managed transcription.",
-      // Shared with `cadet`: the platform connection is the credential, and
+      // Shared with `cadet`: the cloud connection is the credential, and
       // Flux is a different endpoint on the same relay, not a second account.
       credentialProvider: "cadet",
       // Streaming only, same as the BYOK Flux entry: Flux has no batch

@@ -414,7 +414,7 @@ describe("POST oauth/mode", () => {
     expect(JSON.stringify(loadRawConfig())).toBe(rawBefore);
   });
 
-  test("requires platform connection when switching to managed", async () => {
+  test("requires cloud connection when switching to managed", async () => {
     platformAvailable = false;
     await expect(
       getRoute("POST", "oauth/mode").handler(
@@ -523,7 +523,7 @@ describe("GET oauth/status", () => {
     expect(result.connections[0]!.account).toBe("@example_bot");
   });
 
-  test("managed mode surfaces platform connections", async () => {
+  test("managed mode surfaces cloud connections", async () => {
     seedServiceModes({ "google-oauth": "managed" });
     mockFetchImpl = async () => ({
       ok: true,
@@ -1247,7 +1247,7 @@ describe("GET oauth/managed-connect/poll", () => {
     ).rejects.toBeInstanceOf(BadRequestError);
   });
 
-  test("returns platform connections list", async () => {
+  test("returns cloud connections list", async () => {
     mockFetchImpl = async () => ({
       ok: true,
       status: 200,

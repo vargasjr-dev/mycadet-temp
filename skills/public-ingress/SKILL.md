@@ -35,7 +35,7 @@ On Windows, use the PowerShell blocks instead of the POSIX ones.
 Check whether managed platform callback routing is available:
 
 ```bash
-assistant platform status --json
+assistant cloud status --json
 ```
 
 If the result shows `isPlatform: true` and `available: true`, stop here. Tell the user that this assistant should use the platform callback route flow instead of ngrok, and do not install or start ngrok.

@@ -307,7 +307,7 @@ function usePlatformGateDecision(
   // on the active assistant's hosting and the platform session. The
   // CADET_DISABLE_PLATFORM env var does NOT apply — it gates the
   // daemon-side API interceptor in local mode, which is orthogonal to
-  // "is this UI's target assistant platform-hosted?"
+  // "is this UI's target assistant cloud-hosted?"
   if (options.platformHostedOnly) {
     if (activeIsSelfHosted) {
       return "gated";

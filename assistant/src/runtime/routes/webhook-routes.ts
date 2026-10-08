@@ -130,7 +130,7 @@ async function registerWithPlatform(
  *      by `IS_PLATFORM`, which is only ever true on a platform pod.
  *
  * Ingress deliberately precedes platform registration: any logged-in local
- * assistant holds platform credentials (it needs them for the LLM proxy), so
+ * assistant holds cloud credentials (it needs them for the LLM proxy), so
  * treating credential presence as "managed" would silently reroute an
  * explicitly configured self-hosted webhook through the platform. The gateway's
  * Telegram and email registrars order the same two tiers the same way.

@@ -521,7 +521,7 @@ describe("command-registry", () => {
 
     // ── low-risk subcommands (no further subcommands) ────────────────────
     describe("simple low-risk subcommands", () => {
-      test("assistant platform is low risk", () => {
+      test("assistant cloud is low risk", () => {
         expect(assistantSubs.platform.baseRisk).toBe("low");
       });
 

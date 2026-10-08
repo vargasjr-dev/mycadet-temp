@@ -53,7 +53,7 @@ async function readPlatformCredential(
  *
  * Skipped for any channel other than `cadet-shared`, while the
  * trusted-contacts flag is off, when platform features are disabled, and when
- * no platform credentials are configured.
+ * no cloud credentials are configured.
  */
 export async function registerSharedInvite(params: {
   sourceChannel: string;
@@ -79,7 +79,7 @@ export async function registerSharedInvite(params: {
   if (!baseUrl.value || !apiKey.value) {
     log.debug(
       { hasPlatformBaseUrl: !!baseUrl.value, hasApiKey: !!apiKey.value },
-      "Shared invite registration skipped: no platform credentials",
+      "Shared invite registration skipped: no cloud credentials",
     );
     return { status: "skipped" };
   }

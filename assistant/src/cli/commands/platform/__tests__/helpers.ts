@@ -60,7 +60,7 @@ export function captureStdout(fn: () => Promise<void>): Promise<string[]> {
     });
 }
 
-/** Run 'assistant platform <args>' against a fresh program, capturing stdout. */
+/** Run 'assistant cloud <args>' against a fresh program, capturing stdout. */
 export async function runPlatform(args: string[]): Promise<string[]> {
   const { out, thrown } = await runPlatformCaught(args);
   if (thrown !== undefined) {

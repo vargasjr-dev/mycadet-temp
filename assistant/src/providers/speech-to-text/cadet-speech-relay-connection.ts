@@ -110,7 +110,7 @@ export function mapTunnelError(error: TunnelErrorInfo): {
       return {
         category: "auth",
         message:
-          "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant platform connect'.",
+          "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.",
       };
     case "invalid_token":
       return {

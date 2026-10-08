@@ -144,7 +144,7 @@ async function resolveSttGap(
       },
       clause:
         entry.credentialProvider === "cadet"
-          ? `a Cadet Cloud connection for managed speech (run 'assistant platform connect')`
+          ? `a Cadet Cloud connection for managed speech (run 'assistant cloud connect')`
           : `an API key for the speech-to-text provider "${entry.id}"`,
     };
   }
@@ -197,7 +197,7 @@ async function resolveTtsGap(
     };
   }
 
-  // Managed speech authenticates via the platform connection — full
+  // Managed speech authenticates via the cloud connection — full
   // availability (API key + assistant ID) is the credential, so the
   // stored-secret loop below would pass half-connected states that
   // synthesis rejects.
@@ -209,7 +209,7 @@ async function resolveTtsGap(
           providerId: entry.id,
           reason: `TTS provider "${entry.id}" needs a Cadet Cloud connection for managed speech`,
         },
-        clause: `a Cadet Cloud connection for managed speech (run 'assistant platform connect')`,
+        clause: `a Cadet Cloud connection for managed speech (run 'assistant cloud connect')`,
       };
     }
     return null;

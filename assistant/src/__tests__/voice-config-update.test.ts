@@ -144,7 +144,7 @@ describe("voice_config_update — tts_provider", () => {
     expect(tts).not.toHaveProperty("mode");
   });
 
-  test("tts_provider cadet persists when a platform connection is available", async () => {
+  test("tts_provider cadet persists when a cloud connection is available", async () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
@@ -536,7 +536,7 @@ describe("voice_config_update — stt_provider", () => {
     );
   });
 
-  test("persists the cadet provider when a platform connection is available", async () => {
+  test("persists the cadet provider when a cloud connection is available", async () => {
     mockManagedSpeechAvailable = true;
 
     const result = await run(
@@ -548,7 +548,7 @@ describe("voice_config_update — stt_provider", () => {
     expect((readConfig().services as any)?.stt?.provider).toBe("cadet");
   });
 
-  test("rejects the cadet provider without a platform connection", async () => {
+  test("rejects the cadet provider without a cloud connection", async () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
@@ -557,7 +557,7 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("assistant platform connect");
+    expect(result.content).toContain("assistant cloud connect");
     expect((readConfig().services as any)?.stt?.provider).toBeUndefined();
   });
 
@@ -916,7 +916,7 @@ describe("voice_config_update - stt_language", () => {
 // ---------------------------------------------------------------------------
 
 describe("voice_config_update — catalog-driven provider validation", () => {
-  test("rejects tts_provider cadet without a platform connection", async () => {
+  test("rejects tts_provider cadet without a cloud connection", async () => {
     mockManagedSpeechAvailable = false;
 
     const result = await run(
@@ -925,12 +925,12 @@ describe("voice_config_update — catalog-driven provider validation", () => {
     );
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("assistant platform connect");
+    expect(result.content).toContain("assistant cloud connect");
     expect((readConfig().services as any)?.tts?.provider).toBeUndefined();
   });
 
   test("accepts every provider ID in the catalog", async () => {
-    // The catalog includes cadet, which is gated on a platform connection.
+    // The catalog includes cadet, which is gated on a cloud connection.
     mockManagedSpeechAvailable = true;
     const catalogIds = listCatalogProviderIds();
     expect(catalogIds.length).toBeGreaterThanOrEqual(1);

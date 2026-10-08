@@ -309,7 +309,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
           'TTS provider "cadet" needs a Cadet Cloud connection for managed speech',
       },
     ]);
-    expect(readiness.userMessage).toContain("assistant platform connect");
+    expect(readiness.userMessage).toContain("assistant cloud connect");
     expect(readiness.userMessage).not.toContain("API key");
   });
 });

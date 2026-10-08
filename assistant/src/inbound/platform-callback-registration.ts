@@ -6,7 +6,7 @@
  * (Telegram, Twilio, email, OAuth) are forwarded correctly.
  *
  * Platform-managed assistants pick up context from environment variables.
- * Self-hosted assistants use stored credentials (from `assistant platform
+ * Self-hosted assistants use stored credentials (from `assistant cloud
  * connect` or the ensure-registration bootstrap).
  *
  * The platform endpoint is:
@@ -260,7 +260,7 @@ export async function registerLocalWebhookRoute(
  * Off a pod, an explicit `ingress.enabled: false` is a decision not to accept
  * inbound webhooks at all, so `PublicIngressDisabledError` propagates instead
  * of being routed around. Ingress precedes the platform fallback because any
- * logged-in local assistant holds platform credentials for the LLM proxy:
+ * logged-in local assistant holds cloud credentials for the LLM proxy:
  * treating credential presence as "managed" would silently reroute an
  * explicitly configured self-hosted callback through the platform.
  *

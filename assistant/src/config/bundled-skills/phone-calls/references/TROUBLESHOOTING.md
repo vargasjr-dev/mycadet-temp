@@ -13,7 +13,7 @@ Run `assistant config set calls.enabled true`.
 First check whether this is a managed/platform assistant:
 
 ```bash
-assistant platform status --json
+assistant cloud status --json
 ```
 
 If it reports an available platform assistant, do not install or start ngrok for Twilio. The gateway should use Tunnel; run `assistant gateway status --json` and confirm it reports a `tunnel` URL (a `{ "tunnel": "..." }` object, not `{}`) after registration. If this is a local/self-hosted assistant without Tunnel, run the **public-ingress** skill to set up ngrok or another custom tunnel and configure `ingress.publicBaseUrl`.

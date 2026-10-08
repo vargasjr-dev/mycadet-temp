@@ -20,11 +20,11 @@ interface PlatformCallbackRouteResponse {
 }
 
 /**
- * Register a callback route with the Cadet Cloud so that inbound email
+ * Register a callback route with Cadet Cloud so that inbound email
  * webhooks are forwarded to this gateway instance.
  *
  * Follows the same pattern as Telegram's managed callback route registration
- * in `telegram/webhook-manager.ts`. Requires platform credentials (base URL,
+ * in `telegram/webhook-manager.ts`. Requires cloud credentials (base URL,
  * assistant API key, assistant ID). The base URL can fall back to
  * `CADET_PLATFORM_URL`; the key can fall back to `ASSISTANT_API_KEY`.
  *

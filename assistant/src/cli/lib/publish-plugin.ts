@@ -339,9 +339,9 @@ export async function postPublishRequest(
 }
 
 /**
- * Resolve platform credentials for the publish request.
+ * Resolve cloud credentials for the publish request.
  *
- * Returns `null` when not connected to the Cadet Cloud (no API key
+ * Returns `null` when not connected to Cadet Cloud (no API key
  * or base URL configured). The CLI command uses this to avoid hoisting
  * `CadetPlatformClient` into its static import graph; resolving it lazily
  * keeps that daemon code out of the CLI process until the command needs it.
@@ -585,7 +585,7 @@ export async function runPublish(
   const platformDeps = await resolvePlatformDeps();
   if (!platformDeps) {
     const msg =
-      "Not connected to Cadet Cloud. Run `assistant platform connect` to connect, or use --print to generate the entry without submitting.";
+      "Not connected to Cadet Cloud. Run `assistant cloud connect` to connect, or use --print to generate the entry without submitting.";
     if (opts.json) {
       process.stdout.write(
         JSON.stringify({

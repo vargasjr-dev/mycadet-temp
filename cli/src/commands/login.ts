@@ -303,7 +303,7 @@ export async function login(): Promise<void> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet login [--token <session-token>] [--force]");
     console.log("");
-    console.log("Log in to the Cadet Cloud.");
+    console.log("Log in to Cadet Cloud.");
     console.log("");
     console.log("By default, opens a browser window for authentication.");
     console.log("Alternatively, pass a session token directly with --token.");
@@ -312,7 +312,7 @@ export async function login(): Promise<void> {
     console.log("lockfile so they appear in `cadet ps`.");
     console.log("");
     console.log("Options:");
-    console.log("  --token <token>    Session token from the Cadet Cloud");
+    console.log("  --token <token>    Session token from Cadet Cloud");
     console.log(
       "  --force, -f        Re-authenticate even if already logged in",
     );
@@ -435,7 +435,7 @@ export async function login(): Promise<void> {
           webhookSecret: registration.webhook_secret,
         });
         if (allInjected) {
-          console.log("Injected platform credentials into assistant.");
+          console.log("Injected cloud credentials into assistant.");
         } else {
           console.warn(
             "Some credentials could not be injected into the assistant.",
@@ -484,7 +484,7 @@ export async function logout(): Promise<void> {
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet logout");
     console.log("");
-    console.log("Log out of the Cadet Cloud, remove the stored session token,");
+    console.log("Log out of Cadet Cloud, remove the stored session token,");
     console.log("and remove cloud-managed assistants from the local lockfile.");
     process.exit(0);
   }

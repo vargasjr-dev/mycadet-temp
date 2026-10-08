@@ -16,7 +16,7 @@ The owner's own roadmap identity lives on \`cadet roadmap\`.
 
 Reads work anonymously when the assistant is not connected to the platform
 (the "upvoted" marker is then blank). Every write needs the connection, so
-run \`assistant platform connect\` first.
+run \`assistant cloud connect\` first.
 
 Items are addressed by slug, which \`roadmap list\` prints in each item's URL.
 Comments are read-only here: they show up under \`roadmap get\`, and there is

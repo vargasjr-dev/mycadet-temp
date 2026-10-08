@@ -423,7 +423,7 @@ describe("secure-keys", () => {
   //
   // Credential writes are rare and have no fallback: a set that fails
   // because a reconnect completed moments earlier is silently dropped by
-  // callers (e.g. the post-login platform credential push stores the
+  // callers (e.g. the post-login cloud credential push stores the
   // assistant API key exactly once). Writes therefore force a reconnection
   // attempt even inside the cooldown window, while reads keep respecting
   // the cooldown to avoid restart stampedes.

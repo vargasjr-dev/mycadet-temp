@@ -1,7 +1,7 @@
 /**
  * Managed-speech defaulting.
  *
- * When the platform connection is usable and a speech service has no working
+ * When the cloud connection is usable and a speech service has no working
  * BYOK credential, that service's effective provider is `"cadet"` so a fresh
  * Cadet connection gets voice features with zero configuration. A service
  * whose BYOK credential is configured is never redirected — connecting Cadet

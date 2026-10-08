@@ -1203,7 +1203,7 @@ function printImportSummary(result: ImportResponse): void {
 
 /**
  * After teleporting to a local/docker target, register the assistant with
- * the platform and inject fresh platform credentials — mirroring the
+ * the platform and inject fresh cloud credentials — mirroring the
  * login flow. Non-fatal: failures are logged as warnings.
  */
 async function tryInjectPlatformCredentials(
@@ -1211,7 +1211,7 @@ async function tryInjectPlatformCredentials(
 ): Promise<void> {
   const token = readPlatformToken();
   if (!token) {
-    console.log("  Skipped platform credential injection (not logged in).");
+    console.log("  Skipped cloud credential injection (not logged in).");
     return;
   }
 
@@ -1269,7 +1269,7 @@ async function tryInjectPlatformCredentials(
     if (allInjected) {
       console.log("  Platform credentials injected.");
     } else {
-      console.warn("  Some platform credentials could not be injected.");
+      console.warn("  Some cloud credentials could not be injected.");
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1647,7 +1647,7 @@ export async function teleport(): Promise<void> {
     bundlePlatformUrl,
   );
 
-  // After successful import, inject fresh platform credentials if the
+  // After successful import, inject fresh cloud credentials if the
   // user is logged in — replaces the source's stale cadet:* credentials
   // that were filtered during import.
   if (fromCloud === "cadet") {

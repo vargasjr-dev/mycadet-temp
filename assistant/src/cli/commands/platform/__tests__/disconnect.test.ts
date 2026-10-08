@@ -42,7 +42,7 @@ function buildProgram(): Command {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("assistant platform disconnect", () => {
+describe("assistant cloud disconnect", () => {
   beforeEach(() => {
     mockCalls = [];
     mockResponse = {
@@ -97,7 +97,7 @@ describe("assistant platform disconnect", () => {
     mockResponse = {
       ok: false,
       error:
-        "Not connected to a platform. Nothing to disconnect.\n\nRun 'assistant platform status' to check connection state.",
+        "Not connected to a platform. Nothing to disconnect.\n\nRun 'assistant cloud status' to check connection state.",
       statusCode: 422,
     };
 

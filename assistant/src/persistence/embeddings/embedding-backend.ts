@@ -917,7 +917,7 @@ async function assembleEmbeddingBackends(
       : [];
 
   // A managed-proxy Gemini primary can fail at the proxy (e.g. a stale or
-  // revoked platform credential) while a valid direct Gemini key sits in the
+  // revoked cloud credential) while a valid direct Gemini key sits in the
   // credential store. The provider chain above never includes Gemini when
   // Gemini IS the primary, so without this the direct key would never be tried.
   if (primary instanceof GeminiEmbeddingBackend && primary.managed) {

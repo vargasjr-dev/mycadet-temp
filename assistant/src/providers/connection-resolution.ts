@@ -604,7 +604,7 @@ export async function resolveDefaultProvider(
  *     providers
  *   - API-key/subscription credential absent from the vault
  *     (`missing_credential`)
- *   - platform auth without a platform login (`platform_unauthenticated`)
+ *   - platform auth without a cloud login (`platform_unauthenticated`)
  *   - model not servable by the connection (`model_incompatible`)
  *
  * Returns silently when the config is healthy AND when it is indeterminate:
@@ -696,7 +696,7 @@ export async function preflightResolvedConfig(
         throw new ConnectionResolutionError(
           connectionName,
           "platform_unauthenticated",
-          "The assistant's platform credentials are temporarily unavailable; retrying automatically.",
+          "The assistant's cloud credentials are temporarily unavailable; retrying automatically.",
           errorOptions,
         );
       }
@@ -706,12 +706,12 @@ export async function preflightResolvedConfig(
           model: resolved.model,
           profileName: attribution.profileName,
         },
-        "Managed platform credential is missing and must be re-provisioned",
+        "Managed cloud credential is missing and must be re-provisioned",
       );
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        "This assistant's platform credential is missing and must be re-provisioned on the Cadet Cloud.",
+        "This assistant's cloud credential is missing and must be re-provisioned on Cadet Cloud.",
         errorOptions,
       );
     }
@@ -719,7 +719,7 @@ export async function preflightResolvedConfig(
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        `provider_connection "${connectionName}" routes through the Cadet Cloud, but no platform login is available — log in or pick a different provider`,
+        `provider_connection "${connectionName}" routes through Cadet Cloud, but no cloud login is available — log in or pick a different provider`,
         errorOptions,
       );
     }
@@ -763,7 +763,7 @@ export async function preflightResolvedConfig(
         throw new ConnectionResolutionError(
           connectionName,
           "platform_unauthenticated",
-          `provider_connection "${connectionName}" uses platform auth, but no platform login is available — log in to use it`,
+          `provider_connection "${connectionName}" uses platform auth, but no cloud login is available — log in to use it`,
           errorOptions,
         );
       }

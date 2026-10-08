@@ -39,11 +39,11 @@ The CLI is the single source of truth for anything about the running assistant's
 | Full config                                                       | `assistant config list`                                                    |
 | Config schema (what's configurable)                               | `assistant config schema [path]`                                           |
 | Available/installed skills                                        | `assistant skills list --json`                                             |
-| Platform connection                                               | `assistant platform status --json`                                         |
-| Balance, plan credit left/used, extra credit, expiry, daily limit | `assistant platform credits --json`                                        |
-| Plan, subscription status, billing cycle boundary                 | `assistant platform subscription --json`                                   |
-| Plan catalog and pricing                                          | `assistant platform plans --json`                                          |
-| Invoices                                                          | `assistant platform invoices list --json`                                  |
+| Platform connection                                               | `assistant cloud status --json`                                         |
+| Balance, plan credit left/used, extra credit, expiry, daily limit | `assistant cloud credits --json`                                        |
+| Plan, subscription status, billing cycle boundary                 | `assistant cloud subscription --json`                                   |
+| Plan catalog and pricing                                          | `assistant cloud plans --json`                                          |
+| Invoices                                                          | `assistant cloud invoices list --json`                                  |
 | Auth/identity                                                     | `assistant auth info --json`                                               |
 | Which providers exist, and in which sense                         | `assistant oauth providers list --json`                                    |
 | Whether one is actually connected                                 | `assistant oauth status <provider>`                                        |
@@ -142,7 +142,7 @@ Base URL: `https://mycadet.ai/docs`
 | Skills reference index   | `/skills-reference`                       |
 | Specific skill reference | `/skills-reference/<skill-name>`          |
 
-Install, platform, and "how do I install you" questions belong on Installation and FAQ, not memory. Pricing and "is it free" belong on Pricing, then the `assistant platform credits|subscription|plans` commands for this assistant's live plan.
+Install, platform, and "how do I install you" questions belong on Installation and FAQ, not memory. Pricing and "is it free" belong on Pricing, then the `assistant cloud credits|subscription|plans` commands for this assistant's live plan.
 
 Use `web_fetch` to pull the page content. If a URL 404s, try fetching the docs homepage and navigating from the sidebar.
 

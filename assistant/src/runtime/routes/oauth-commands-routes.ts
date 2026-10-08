@@ -140,7 +140,7 @@ async function fetchActiveConnections(
 }
 
 /**
- * Best-effort helper to count active platform connections for a provider.
+ * Best-effort helper to count active cloud connections for a provider.
  * Returns 0 if the platform client cannot be created or the fetch fails.
  */
 async function countManagedConnections(provider: string): Promise<number> {
@@ -517,7 +517,7 @@ async function handleModeSet({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  // Require platform connection when switching to managed mode
+  // Require cloud connection when switching to managed mode
   if (b.mode === "managed") {
     const client = await CadetPlatformClient.create();
     if (!client) {
@@ -1284,7 +1284,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Poll managed OAuth connections",
     description:
-      "Fetch active platform connections for a provider (used to detect new connections after managed connect).",
+      "Fetch active cloud connections for a provider (used to detect new connections after managed connect).",
     tags: ["oauth"],
     queryParams: [
       {

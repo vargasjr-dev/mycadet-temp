@@ -1,8 +1,8 @@
 /**
  * `show_platform_login` SSE event.
  *
- * Emitted by the platform-connect route when no platform credentials are
- * stored yet, signalling connected clients to surface the platform login UI.
+ * Emitted by the platform-connect route when no cloud credentials are
+ * stored yet, signalling connected clients to surface the cloud login UI.
  *
  * Canonical wire-contract source. Daemon code imports the type
  * directly from this file; external consumers import via

@@ -514,7 +514,7 @@ export async function resolveStreamingTranscriber(
     (diarizePreference === "preferred" || diarizePreference === "required") &&
     providerSupportsDiarization;
 
-  // Both managed entries authenticate with the platform connection, not a
+  // Both managed entries authenticate with the cloud connection, not a
   // stored API key: there is no key to fetch, and readiness is whether the
   // connection resolves.
   const managed = isManagedSttProvider(provider);
@@ -696,7 +696,7 @@ async function createStreamingTranscriber(
       // Managed Flux: same relay as `cadet`, but the STT v2 endpoint with
       // `contract=flux` so the turn events arrive intact instead of being
       // translated into the released v1 Deepgram dialect. Gated on the local
-      // platform connection for the same reason as `cadet` above.
+      // cloud connection for the same reason as `cadet` above.
       const { cadetManagedSpeechAvailable } =
         await import("./cadet-managed.js");
       if (!(await cadetManagedSpeechAvailable())) {
@@ -787,7 +787,7 @@ export function sttCredentialGapReason(credentialProviderName: string): string {
     credentialProviderName === "cadet" ||
     credentialProviderName === "cadet"
   ) {
-    return "No Cadet Cloud connection for managed speech — run 'assistant platform connect'";
+    return "No Cadet Cloud connection for managed speech — run 'assistant cloud connect'";
   }
   return `No API key configured for credential provider "${credentialProviderName}"`;
 }
@@ -795,7 +795,7 @@ export function sttCredentialGapReason(credentialProviderName: string): string {
 export async function sttProviderKeyResolves(
   credentialProviderName: string,
 ): Promise<boolean> {
-  // cadet has no stored API key — the platform connection is the credential.
+  // cadet has no stored API key — the cloud connection is the credential.
   if (credentialProviderName === "cadet") {
     const { cadetManagedSpeechAvailable } =
       await import("./cadet-managed.js");

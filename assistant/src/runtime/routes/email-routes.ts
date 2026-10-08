@@ -30,12 +30,12 @@ async function requireClient(): Promise<CadetPlatformClient> {
   const client = await CadetPlatformClient.create();
   if (!client) {
     throw new UnauthorizedError(
-      "Platform credentials not configured. Run: assistant platform connect",
+      "Platform credentials not configured. Run: assistant cloud connect",
     );
   }
   if (!client.platformAssistantId) {
     throw new UnauthorizedError(
-      "Assistant ID not configured. Run: assistant platform connect",
+      "Assistant ID not configured. Run: assistant cloud connect",
     );
   }
   return client;
@@ -429,7 +429,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleEmailRegister,
     summary: "Register an email address",
     description:
-      "Register a new email address on the Cadet Cloud for the current assistant.",
+      "Register a new email address on Cadet Cloud for the current assistant.",
     tags: ["email"],
     requestBody: z.object({
       username: z

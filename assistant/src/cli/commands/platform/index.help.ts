@@ -1,16 +1,16 @@
-/** Declarative help for the `assistant platform` command. */
+/** Declarative help for the `assistant cloud` command. */
 
 import type { CliCommandHelp } from "../../lib/cli-command-help.js";
 
 export const platformHelp: CliCommandHelp = {
-  name: "platform",
+  name: "cloud",
   description: "Manage Cadet Cloud integration",
   options: [
     { flags: "--json", description: "Machine-readable compact JSON output" },
   ],
   helpText: `
-The platform subsystem manages the connection to Cadet Cloud. Use
-'connect', 'status', and 'disconnect' to manage platform credentials.
+The cloud subsystem manages the connection to Cadet Cloud. Use
+'connect', 'status', and 'disconnect' to manage cloud credentials.
 Any assistant using the managed LLM proxy can use these commands.
 
 External service callbacks (Telegram webhooks, Twilio webhooks, email,
@@ -19,29 +19,29 @@ OAuth redirects) route through the platform's gateway proxy via
 assistants.
 
 Examples:
-  $ assistant platform status --json
-  $ assistant platform credits --json
-  $ assistant platform subscription --json
-  $ assistant platform plans --json
-  $ assistant platform invoices list --json
-  $ assistant platform connect
-  $ assistant platform disconnect
-  $ assistant platform callback-routes register --path webhooks/telegram --type telegram --json`,
+  $ assistant cloud status --json
+  $ assistant cloud credits --json
+  $ assistant cloud subscription --json
+  $ assistant cloud plans --json
+  $ assistant cloud invoices list --json
+  $ assistant cloud connect
+  $ assistant cloud disconnect
+  $ assistant cloud callback-routes register --path webhooks/telegram --type telegram --json`,
   subcommands: [
     {
       name: "connect",
       description:
-        "Connect this assistant to the Cadet Cloud by storing credentials",
+        "Connect this assistant to Cadet Cloud by storing credentials",
       helpText: `
-Initiates a platform connection flow. Emits a signal for connected clients
-to show a platform login UI where the user can sign in and store credentials.
+Initiates a cloud connection flow. Emits a signal for connected clients
+to show a cloud login UI where the user can sign in and store credentials.
 
-Use 'assistant platform status' to check the current connection state and
-'assistant platform disconnect' to remove stored credentials.
+Use 'assistant cloud status' to check the current connection state and
+'assistant cloud disconnect' to remove stored credentials.
 
 Examples:
-  $ assistant platform connect
-  $ assistant platform connect --json`,
+  $ assistant cloud connect
+  $ assistant cloud connect --json`,
     },
     {
       name: "status",
@@ -67,8 +67,8 @@ For the Tunnel state (only relevant for Twilio webhooks and live
 voice/audio), use 'assistant gateway status' instead.
 
 Examples:
-  $ assistant platform status
-  $ assistant platform status --json`,
+  $ assistant cloud status
+  $ assistant cloud status --json`,
     },
     {
       name: "credits",
@@ -107,14 +107,14 @@ Grant fields are null when the platform does not report grant figures. Plan
 credit mixes grants with different lifetimes (only the Pro bundle turns over
 with the billing cycle), so it has no single reset date. next_credit_expiry_at
 is the earliest expiry across all grants, plan-included or not, and
-'assistant platform subscription' gives the billing cycle boundary.
+'assistant cloud subscription' gives the billing cycle boundary.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform credits
-  $ assistant platform credits --json`,
+  $ assistant cloud credits
+  $ assistant cloud credits --json`,
     },
     {
       name: "subscription",
@@ -138,15 +138,15 @@ Fields:
                       customized }), or null
   entitlements        Plan-gated features ({ managedEmail, phoneNumber })
 
-For the credit balance (not the plan), use 'assistant platform credits'. For
-plan pricing, use 'assistant platform plans'.
+For the credit balance (not the plan), use 'assistant cloud credits'. For
+plan pricing, use 'assistant cloud plans'.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform subscription
-  $ assistant platform subscription --json`,
+  $ assistant cloud subscription
+  $ assistant cloud subscription --json`,
     },
     {
       name: "plans",
@@ -159,15 +159,15 @@ Returns a "plans" array. Each entry has an "id" ("base" or "pro"), "name",
 "price_cents"; the pro plan carries "base_price_cents" plus "machine_tiers",
 "storage_tiers", "credit_tiers", and "packages" (each tier priced in cents).
 
-For the org's OWN plan (not the catalog), use 'assistant platform
-subscription'. For the credit balance, use 'assistant platform credits'.
+For the org's OWN plan (not the catalog), use 'assistant cloud
+subscription'. For the credit balance, use 'assistant cloud credits'.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform plans
-  $ assistant platform plans --json`,
+  $ assistant cloud plans
+  $ assistant cloud plans --json`,
     },
     {
       name: "invoices",
@@ -175,20 +175,20 @@ Examples:
       helpText: `
 Invoices are read from the platform's billing invoices endpoint using this
 assistant's platform API key. Amounts are Stripe-scaled integers; see
-'assistant platform invoices list --help' for the scaling rules. 'created'
+'assistant cloud invoices list --help' for the scaling rules. 'created'
 is a Unix timestamp in seconds.
 
 The platform returns one page of invoices at a time (newest first). When
 the response's 'has_more' is true, pass the last invoice's id via
 --starting-after to fetch the next (older) page.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform invoices list --json
-  $ assistant platform invoices list --starting-after in_1AbCdEfGh
-  $ assistant platform invoices get in_1AbCdEfGh --json`,
+  $ assistant cloud invoices list --json
+  $ assistant cloud invoices list --starting-after in_1AbCdEfGh
+  $ assistant cloud invoices get in_1AbCdEfGh --json`,
       subcommands: [
         {
           name: "list",
@@ -207,7 +207,7 @@ newest first.
 
 Fields:
   invoices            One page of invoices, each with the fields below
-  id                  Stripe invoice ID; pass it to 'assistant platform
+  id                  Stripe invoice ID; pass it to 'assistant cloud
                       invoices get' or to --starting-after
   number              Human-readable invoice number, or null
   status              Stripe status (draft, open, paid, uncollectible,
@@ -228,12 +228,12 @@ Fields:
   has_more            True when older invoices exist beyond this page;
                       fetch them with --starting-after
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform invoices list --json
-  $ assistant platform invoices list --starting-after in_1AbCdEfGh --json`,
+  $ assistant cloud invoices list --json
+  $ assistant cloud invoices list --starting-after in_1AbCdEfGh --json`,
         },
         {
           name: "get",
@@ -242,7 +242,7 @@ Examples:
             {
               name: "<invoice-id>",
               description:
-                "Stripe invoice ID (e.g. in_1AbCdEfGh); run 'assistant platform invoices list' to find it",
+                "Stripe invoice ID (e.g. in_1AbCdEfGh); run 'assistant cloud invoices list' to find it",
             },
           ],
           helpText: `
@@ -251,31 +251,31 @@ the org's invoice list (newest first) until the ID matches. The lookup
 searches the most recent 2,500 invoices (25 pages) and errors if the ID
 is not found within that range.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure CADET_PLATFORM_URL is set and credentials are stored).
 
 Examples:
-  $ assistant platform invoices get in_1AbCdEfGh
-  $ assistant platform invoices get in_1AbCdEfGh --json`,
+  $ assistant cloud invoices get in_1AbCdEfGh
+  $ assistant cloud invoices get in_1AbCdEfGh --json`,
         },
       ],
     },
     {
       name: "disconnect",
       description:
-        "Disconnect from the Cadet Cloud by removing stored credentials",
+        "Disconnect from Cadet Cloud by removing stored credentials",
       helpText: `
-Removes all stored platform credentials from the assistant's secure
+Removes all stored cloud credentials from the assistant's secure
 credential store. After disconnecting, platform-managed features (managed
 proxy, managed OAuth, callback routing) will no longer be available until
-you reconnect with 'assistant platform connect'.
+you reconnect with 'assistant cloud connect'.
 
-Use 'assistant platform status' to check the current connection state
+Use 'assistant cloud status' to check the current connection state
 before disconnecting.
 
 Examples:
-  $ assistant platform disconnect
-  $ assistant platform disconnect --json`,
+  $ assistant cloud disconnect
+  $ assistant cloud disconnect --json`,
     },
     {
       name: "callback-routes",
@@ -287,10 +287,10 @@ and type to a stable external URL that external services (Telegram, Twilio,
 email, OAuth providers) should use.
 
 Examples:
-  $ assistant platform callback-routes list
-  $ assistant platform callback-routes list --json
-  $ assistant platform callback-routes register --path webhooks/telegram --type telegram --json
-  $ assistant platform callback-routes register --path webhooks/twilio/voice --type twilio_voice --json`,
+  $ assistant cloud callback-routes list
+  $ assistant cloud callback-routes list --json
+  $ assistant cloud callback-routes register --path webhooks/telegram --type telegram --json
+  $ assistant cloud callback-routes register --path webhooks/twilio/voice --type twilio_voice --json`,
       subcommands: [
         {
           name: "register",
@@ -334,8 +334,8 @@ CADET_PLATFORM_URL and a platform assistant ID. Returns the platform-provided
 stable callback URL that external services should use.
 
 Examples:
-  $ assistant platform callback-routes register --path webhooks/telegram --type telegram --json
-  $ assistant platform callback-routes register --path webhooks/twilio/voice --type twilio_voice --json`,
+  $ assistant cloud callback-routes register --path webhooks/telegram --type telegram --json
+  $ assistant cloud callback-routes register --path webhooks/twilio/voice --type twilio_voice --json`,
         },
         {
           name: "list",
@@ -344,12 +344,12 @@ Examples:
 Lists all callback routes registered with the platform for this assistant.
 Shows the route type, callback URL, and path for each registered webhook.
 
-Requires platform credentials (run 'assistant platform connect' first or
+Requires cloud credentials (run 'assistant cloud connect' first or
 ensure IS_PLATFORM and CADET_PLATFORM_URL are set and credentials are stored).
 
 Examples:
-  $ assistant platform callback-routes list
-  $ assistant platform callback-routes list --json`,
+  $ assistant cloud callback-routes list
+  $ assistant cloud callback-routes list --json`,
         },
       ],
     },

@@ -1,7 +1,7 @@
 /**
  * Cadet-managed TTS: synthesis through the platform's managed speech
  * surfaces (Cadet-held Deepgram key, billed to Cadet credits). No provider
- * API key exists on this machine — the platform connection is the credential.
+ * API key exists on this machine — the cloud connection is the credential.
  *
  * Two paths:
  * - Batch `synthesize` (read-aloud, mp3 surfaces) via the Django endpoint.
@@ -76,7 +76,7 @@ function synthesisError(failure: ManagedSpeechFailure): Error {
   }
   if (failure.kind === "unavailable") {
     return new Error(
-      `Managed speech is unavailable: ${failure.message} Run 'assistant platform connect' to connect your Cadet account.`,
+      `Managed speech is unavailable: ${failure.message} Run 'assistant cloud connect' to connect your Cadet account.`,
     );
   }
   return new Error(failure.message);
@@ -119,7 +119,7 @@ async function performStreamingSynthesis(
   const connection = await resolveSpeechRelayConnection();
   if (!connection) {
     throw new Error(
-      "Managed speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant platform connect' to connect your Cadet account.",
+      "Managed speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant cloud connect' to connect your Cadet account.",
     );
   }
 
@@ -237,7 +237,7 @@ export const cadetTtsProviderDefinition: TtsProviderDefinition = {
     {
       credentialStoreKey: "credential/cadet/assistant_api_key",
       displayName: "Cadet account connection",
-      setCommand: "assistant platform connect",
+      setCommand: "assistant cloud connect",
     },
   ],
   adapter: createCadetProvider(),

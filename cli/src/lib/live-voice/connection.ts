@@ -128,7 +128,7 @@ export async function resolveLiveVoiceConnection(
 /**
  * Resolve a live-voice connection to a platform-hosted assistant.
  *
- * The session token is the CLI's own platform login, not anything specific to
+ * The session token is the CLI's own cloud login, not anything specific to
  * this assistant, so a missing one is a `cadet login` problem rather than an
  * assistant problem and says so.
  *
@@ -143,7 +143,7 @@ async function resolveCloudConnection(
   if (!sessionToken) {
     throw new LiveVoiceConnectionError(
       `${formatAssistantReference(entry)} is a Cadet cloud assistant, which ` +
-        "needs a platform login. Run 'cadet login' and try again.",
+        "needs a cloud login. Run 'cadet login' and try again.",
     );
   }
 

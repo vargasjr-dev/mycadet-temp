@@ -366,7 +366,7 @@ describe("secret routes managed proxy registry sync", () => {
     expect(avatarSyncCalls).toBe(0);
   });
 
-  test("a failed platform credential write does not enqueue platform syncs", async () => {
+  test("a failed cloud credential write does not enqueue platform syncs", async () => {
     failSecureKeyWrites = true;
 
     await expect(

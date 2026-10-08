@@ -149,7 +149,7 @@ async function runCli(
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("config set - platform connection guard for service mode paths", () => {
+describe("config set - cloud connection guard for service mode paths", () => {
   beforeEach(() => {
     // Default: not connected to platform
     mockPlatformClientCreate = async () => null;
@@ -179,7 +179,7 @@ describe("config set - platform connection guard for service mode paths", () => 
     );
   });
 
-  test("config set calls.enabled true - succeeds without platform connection and parses to boolean", async () => {
+  test("config set calls.enabled true - succeeds without cloud connection and parses to boolean", async () => {
     const { exitCode } = await runCli([
       "node",
       "assistant",

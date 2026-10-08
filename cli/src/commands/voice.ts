@@ -54,7 +54,7 @@ DESCRIPTION:
     is being spoken, ends the session.
 
     Works with local, self-hosted, and Cadet cloud assistants. A cloud
-    assistant needs a platform login ('cadet login'); the session is
+    assistant needs a cloud login ('cadet login'); the session is
     authorized per-connection from it.
 
 EXAMPLES:

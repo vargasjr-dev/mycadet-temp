@@ -1,6 +1,6 @@
 # Internal Reference
 
-Detailed reference documentation for the Cadet Cloud. For an overview and quick start, see the [README](../README.md).
+Detailed reference documentation for Cadet Cloud. For an overview and quick start, see the [README](../README.md).
 
 ## Table of Contents
 

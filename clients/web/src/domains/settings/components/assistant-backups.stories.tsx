@@ -5,7 +5,7 @@
  * A platform-hosted assistant also gets an Export button beside "Create
  * Backup". The component fetches its own rows from both the daemon and the
  * platform, so `beforeEach` answers those two reads from fixtures through each
- * generated client's `fetch` and marks the active assistant platform-hosted.
+ * generated client's `fetch` and marks the active assistant cloud-hosted.
  * The stories cover a populated list, with enough point-in-time backups to
  * show the rotation notice, an assistant with no backups yet, and a
  * self-hosted assistant, which has no Export button.

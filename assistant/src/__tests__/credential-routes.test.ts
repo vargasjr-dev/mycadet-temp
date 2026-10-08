@@ -883,7 +883,7 @@ describe("credentials routes", () => {
       return metadataStore.get(key)!.credentialId;
     }
 
-    test("the listing omits platform credentials and keeps the user's own", async () => {
+    test("the listing omits cloud credentials and keeps the user's own", async () => {
       // GIVEN the platform's provisioned credentials alongside a user's
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
@@ -918,7 +918,7 @@ describe("credentials routes", () => {
       }
     });
 
-    test("reveal refuses a platform credential looked up by UUID", async () => {
+    test("reveal refuses a cloud credential looked up by UUID", async () => {
       const credentialId = seedPlatformCredential(
         "assistant_api_key",
         PLATFORM_KEY,
@@ -929,10 +929,10 @@ describe("credentials routes", () => {
           body: { id: credentialId },
           headers: { "x-cadet-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Cadet Cloud/);
+      ).rejects.toThrow(/owned by Cadet Cloud/);
     });
 
-    test("inspect refuses platform credentials", async () => {
+    test("inspect refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
@@ -945,7 +945,7 @@ describe("credentials routes", () => {
       }
     });
 
-    test("set refuses platform credentials", async () => {
+    test("set refuses cloud credentials", async () => {
       /**
        * A write is a read by another name: repointing `platform_base_url`
        * sends the next platform call, bearing the API key, to a host the
@@ -964,7 +964,7 @@ describe("credentials routes", () => {
       expect(secureStore.has("cadet:platform_base_url")).toBe(false);
     });
 
-    test("set does not overwrite an already-provisioned platform credential", async () => {
+    test("set does not overwrite an already-provisioned cloud credential", async () => {
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
       await expect(
@@ -975,14 +975,14 @@ describe("credentials routes", () => {
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Cadet Cloud/);
+      ).rejects.toThrow(/owned by Cadet Cloud/);
 
       expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
 
-    test("delete refuses platform credentials", async () => {
+    test("delete refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
@@ -1056,7 +1056,7 @@ describe("credentials routes", () => {
       return metadataStore.get(key)!.credentialId;
     }
 
-    test("the listing omits platform credentials and keeps the user's own", async () => {
+    test("the listing omits cloud credentials and keeps the user's own", async () => {
       // GIVEN the platform's provisioned credentials alongside a user's
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
@@ -1091,7 +1091,7 @@ describe("credentials routes", () => {
       }
     });
 
-    test("reveal refuses a platform credential looked up by UUID", async () => {
+    test("reveal refuses a cloud credential looked up by UUID", async () => {
       const credentialId = seedPlatformCredential(
         "assistant_api_key",
         PLATFORM_KEY,
@@ -1102,10 +1102,10 @@ describe("credentials routes", () => {
           body: { id: credentialId },
           headers: { "x-cadet-principal-type": "local" },
         }),
-      ).rejects.toThrow(/owned by the Cadet Cloud/);
+      ).rejects.toThrow(/owned by Cadet Cloud/);
     });
 
-    test("inspect refuses platform credentials", async () => {
+    test("inspect refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
@@ -1118,7 +1118,7 @@ describe("credentials routes", () => {
       }
     });
 
-    test("set refuses platform credentials", async () => {
+    test("set refuses cloud credentials", async () => {
       /**
        * A write is a read by another name: repointing `platform_base_url`
        * sends the next platform call, bearing the API key, to a host the
@@ -1137,7 +1137,7 @@ describe("credentials routes", () => {
       expect(secureStore.has("cadet:platform_base_url")).toBe(false);
     });
 
-    test("set does not overwrite an already-provisioned platform credential", async () => {
+    test("set does not overwrite an already-provisioned cloud credential", async () => {
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
       await expect(
@@ -1148,14 +1148,14 @@ describe("credentials routes", () => {
             value: "https://attacker.test",
           },
         }),
-      ).rejects.toThrow(/owned by the Cadet Cloud/);
+      ).rejects.toThrow(/owned by Cadet Cloud/);
 
       expect(secureStore.get("cadet:platform_base_url")).toBe(
         PLATFORM_BASE_URL,
       );
     });
 
-    test("delete refuses platform credentials", async () => {
+    test("delete refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
       seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 

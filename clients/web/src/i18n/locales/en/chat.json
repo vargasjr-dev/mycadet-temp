@@ -1145,7 +1145,7 @@
   },
   "maintenanceModeBanner": {
     "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
-    "loginHint": "Log in to the Cadet Cloud to exit Recovery Mode.",
+    "loginHint": "Log in to Cadet Cloud to exit Recovery Mode.",
     "resume": "Resume Assistant",
     "title": "Assistant in Recovery Mode"
   },
@@ -2190,7 +2190,7 @@
     "restored": "Restored. Cadet-managed models are working again.",
     "failedNoAssistant": "Select an assistant, then try again.",
     "failedCannotActHere": "This app cannot restore the credential for this assistant. Open the assistant on the computer that runs it.",
-    "failedReplacementRejected": "Cadet rejected the replacement credential. Log in to the Cadet Cloud, then try again.",
+    "failedReplacementRejected": "Cadet rejected the replacement credential. Log in to Cadet Cloud, then try again.",
     "failedUnconfirmed": "The replacement was saved but could not be confirmed with Cadet. It may start working shortly.",
     "failedGeneric": "Could not restore access. Try again in a moment."
   },

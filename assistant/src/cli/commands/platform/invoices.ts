@@ -103,7 +103,7 @@ export function registerPlatformInvoicesCommands(platform: Command): void {
         const lastId = result.invoices.at(-1)?.id;
         if (result.has_more && lastId) {
           log.info(
-            `More invoices available. Run 'assistant platform invoices list --starting-after ${lastId}' for the next page.`,
+            `More invoices available. Run 'assistant cloud invoices list --starting-after ${lastId}' for the next page.`,
           );
         }
       }

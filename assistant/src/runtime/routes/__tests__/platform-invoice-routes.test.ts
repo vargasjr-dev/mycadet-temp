@@ -232,7 +232,7 @@ describe("platform_invoices_by_id_get", () => {
     );
     expect(err).toBeInstanceOf(NotFoundError);
     expect(err.message).toMatch(
-      /Invoice "in_missing" not found.*assistant platform invoices list/,
+      /Invoice "in_missing" not found.*assistant cloud invoices list/,
     );
     // No paging beyond the final (has_more: false) page.
     expect(fetchCalls).toHaveLength(1);

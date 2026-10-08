@@ -1,7 +1,7 @@
 /**
  * The one place that answers "does this assistant have a managed inbox?".
  *
- * Managed email registration lives on the Cadet Cloud: the
+ * Managed email registration lives on Cadet Cloud: the
  * `/v1/assistants/:id/email-addresses/` API is the only writer and the only
  * source of truth. Nothing about a registration lands in workspace config, so
  * any reader that wants the inbox address has to ask the platform. Every
@@ -25,7 +25,7 @@ export type RegisteredInboxState =
   | { status: "registered"; address: string }
   /** The platform answered: no inbox is registered. */
   | { status: "none" }
-  /** No platform credentials, so no managed inbox can exist. */
+  /** No cloud credentials, so no managed inbox can exist. */
   | { status: "no_platform" }
   /** The platform could not be asked; nothing is known either way. */
   | { status: "unavailable"; detail: string };
@@ -62,7 +62,7 @@ const EmailAddressListSchema = z.object({
  * below, the email register/unregister/status/send routes, and verification
  * email delivery. Takes the caller's client rather than creating one so a
  * route that already authenticated (and already knows how to report a
- * missing platform connection) keeps its own error semantics.
+ * missing cloud connection) keeps its own error semantics.
  */
 export async function listEmailAddresses(
   client: CadetPlatformClient,

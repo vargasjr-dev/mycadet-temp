@@ -57,7 +57,7 @@ cadet hatch [options]
 
 - **`local`** -- Starts the local assistant and local gateway. Gateway source resolution order is: repo source tree, then installed `@mycadet/gateway` package.
 - **`docker`** -- Starts the assistant, gateway, and credential service in Docker containers.
-- **`cadet`** -- Hatches an assistant on the Cadet Cloud.
+- **`cadet`** -- Hatches an assistant on Cadet Cloud.
 - **`custom`** -- Recognized but not yet implemented.
 
 #### Environment Variables

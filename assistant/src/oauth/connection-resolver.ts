@@ -111,7 +111,7 @@ export async function resolveOAuthConnectionWithMeta(
           : "missing assistant ID";
         throw new Error(
           `Platform-managed connection for "${provider}" cannot be created: ${detail}. ` +
-            `Log in to the Cadet Cloud or switch to using your own OAuth app.`,
+            `Log in to Cadet Cloud or switch to using your own OAuth app.`,
         );
       }
 
@@ -431,13 +431,13 @@ interface PlatformConnectionResolution {
   ambiguous: boolean;
 }
 
-/** Human-readable label for a platform connection, falling back to its ID. */
+/** Human-readable label for a cloud connection, falling back to its ID. */
 function platformConnectionLabel(entry: PlatformConnectionEntry): string {
   return entry.account_label ?? entry.id;
 }
 
 /**
- * Fetch active platform connections for a managed provider by calling the
+ * Fetch active cloud connections for a managed provider by calling the
  * List Connections endpoint.
  */
 async function fetchPlatformConnections(options: {
@@ -462,7 +462,7 @@ async function fetchPlatformConnections(options: {
       "Failed to list platform OAuth connections",
     );
     throw new Error(
-      `Failed to resolve platform connection for "${provider}": HTTP ${response.status}`,
+      `Failed to resolve cloud connection for "${provider}": HTTP ${response.status}`,
     );
   }
 
@@ -525,7 +525,7 @@ async function resolvePlatformConnectionId(
     if (eligible.length === 0) {
       log.warn(
         { provider, count: connections.length, requiredScopes, missingScopes },
-        "Active platform connection(s) found but none carry the required scopes",
+        "Active cloud connection(s) found but none carry the required scopes",
       );
       throw new Error(missingScopesMessage(provider, missingScopes));
     }
@@ -542,7 +542,7 @@ async function resolvePlatformConnectionId(
         selectedId: connections[0].id,
         allAccounts: allAccountLabels.join(", "),
       },
-      "Multiple active platform connections found; using the most recently created. " +
+      "Multiple active cloud connections found; using the most recently created. " +
         "Pass an account option to select a specific connection.",
     );
   }

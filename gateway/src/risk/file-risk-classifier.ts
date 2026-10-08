@@ -51,7 +51,7 @@
  * (`isControlPlaneWorkspaceWrite`).
  *
  * Gateway adaptation: accepts a FileClassificationContext parameter instead
- * of importing assistant platform utilities directly. The assistant is
+ * of importing assistant cloud utilities directly. The assistant is
  * responsible for constructing the context from its config/platform modules
  * before calling the classifier.
  */

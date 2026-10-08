@@ -21,7 +21,7 @@
  * cursors, so the split shares no flush state.
  *
  * Authenticated-only: events are sent via the managed proxy context
- * (Api-Key header). When no platform credentials are available, or when
+ * (Api-Key header). When no cloud credentials are available, or when
  * platform features are disabled (CADET_DISABLE_PLATFORM in local mode), the
  * flush is skipped and retried next cycle.
  */
@@ -477,7 +477,7 @@ export class UsageTelemetryReporter {
               0,
             ),
           },
-          "Telemetry flush: no platform credentials — skipping, will retry next cycle",
+          "Telemetry flush: no cloud credentials — skipping, will retry next cycle",
         );
         return settle("no-credentials");
       }
