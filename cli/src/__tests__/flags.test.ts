@@ -42,7 +42,7 @@ function writeLockfile(
 ): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify(
       {
         assistants: entries,
@@ -70,7 +70,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 describe("cadet flags --assistant routing", () => {
   beforeEach(() => {
     process.env.CADET_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    rmSync(join(testDir, "lockfile.json"), { force: true });
     fetchCalls = [];
     // Capture every outgoing fetch and respond with a stub matching the
     // subcommand's expected shape. The URL is what the test asserts on.

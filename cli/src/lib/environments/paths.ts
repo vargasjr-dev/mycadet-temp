@@ -38,9 +38,9 @@ export function getConfigDirs(env: EnvironmentDefinition): string[] {
  *
  * Every environment keeps its canonical lockfile in the XDG config dir
  * (`~/.config/cadet/lockfile.json` for production, env-scoped for
- * non-production). Production additionally lists the home-level
- * `.cadet.lock.json` / `.cadet.lockfile.json` names so read-side callers
- * fall back to installs that predate the move.
+ * non-production). The legacy home-level `.cadet.lock.json` names are NOT
+ * supported here — the vellum → cadet migration moves them into place for
+ * installs that predate the move.
  *
  * Read-side callers should iterate this array and use the first existing
  * file (matching `cli/src/lib/assistant-config.ts:readLockfile`). Write-side
@@ -57,7 +57,7 @@ export function getLockfilePaths(env: EnvironmentDefinition): string[] {
 
 /**
  * Canonical lockfile path for writes — always the config-dir
- * `lockfile.json` (legacy reads handled by {@link getLockfilePaths}).
+ * `lockfile.json`.
  */
 export function getLockfilePath(env: EnvironmentDefinition): string {
   return getLockfilePaths(env)[0]!;

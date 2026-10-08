@@ -64,13 +64,11 @@ const makeEntry = (
 
 describe("assistant-config", () => {
   beforeEach(() => {
-    // Reset every lockfile candidate between tests (canonical + legacy)
-    for (const name of ["lockfile.json", ".cadet.lock.json", ".cadet.lockfile.json"]) {
-      try {
-        rmSync(join(testDir, name));
-      } catch {
-        // file may not exist
-      }
+    // Reset the canonical lockfile between tests
+    try {
+      rmSync(join(testDir, "lockfile.json"));
+    } catch {
+      // file may not exist
     }
   });
 
@@ -79,22 +77,18 @@ describe("assistant-config", () => {
   });
 
   test("loadAllAssistants returns empty array for malformed lockfile", () => {
-    // Legacy home-level name: malformed canonical candidates fall through
-    // to the next candidate, so a malformed legacy file alone yields empty.
-    writeFileSync(join(testDir, ".cadet.lock.json"), "not json");
+    writeFileSync(join(testDir, "lockfile.json"), "not json");
     expect(loadAllAssistants()).toEqual([]);
   });
 
-  test("legacy home-level lockfile names still resolve for reads (identity continuity)", () => {
-    // Seed the LEGACY name directly — the canonical path is absent, so the
-    // entry must come from the legacy fallback candidate.
+  test("legacy home-level lockfile names are no longer read (the migration moves them into place)", () => {
+    // A pre-move home-level file alone must NOT be picked up — the vellum →
+    // cadet migration is what moves it to the canonical config-dir path.
     writeFileSync(
       join(testDir, ".cadet.lock.json"),
       JSON.stringify({ assistants: [makeEntry("legacy-1")] }, null, 2),
     );
-    const all = loadAllAssistants();
-    expect(all).toHaveLength(1);
-    expect(all[0].assistantId).toBe("legacy-1");
+    expect(loadAllAssistants()).toEqual([]);
   });
 
   test("loadAllAssistants returns empty array when assistants key is missing", () => {

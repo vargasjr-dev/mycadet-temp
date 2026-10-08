@@ -365,8 +365,8 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
     -h, --help                 Show this help message
 
 ${ANSI.bold}DEFAULTS:${ANSI.reset}
-    Reads from the config-dir lockfile.json (home-level legacy names
-    still honored for reads; created by cadet hatch).
+    Reads from the config-dir lockfile.json (created by cadet hatch; the
+    vellum → cadet migration moves pre-move home-level files into place).
     Override with flags above.
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}

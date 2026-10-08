@@ -156,9 +156,9 @@ describe("getPlatformUrl resolution order", () => {
   });
 
   function writeLockfile(data: Record<string, unknown>): void {
-    // CADET_ENVIRONMENT is unset → production env → `.cadet.lock.json`.
+    // CADET_ENVIRONMENT is unset → production env → config-dir lockfile.json.
     writeFileSync(
-      join(tempLockDir, ".cadet.lock.json"),
+      join(tempLockDir, "lockfile.json"),
       JSON.stringify(data, null, 2),
     );
   }

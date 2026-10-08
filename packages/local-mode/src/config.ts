@@ -52,37 +52,26 @@ export function resolveLockfilePaths(
   if ((options.platform ?? process.platform) === "win32") {
     const canonicalDir = lockfileDir ?? resolveConfigDir(env, options);
     const canonical = joinLocalPath(options, canonicalDir, "lockfile.json");
-    const legacyDir = lockfileDir ?? options.homeDir ?? os.homedir();
-    const legacy =
-      cadetEnv === PRODUCTION_ENVIRONMENT_NAME
-        ? [".cadet.lock.json", ".cadet.lockfile.json"].map((name) =>
-            joinLocalPath(options, legacyDir, name),
-          )
-        : [
-            joinLocalPath(
-              options,
-              lockfileDir ?? resolveConfigDirPaths(env, options).at(-1)!,
-              "lockfile.json",
-            ),
-          ];
+    if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
+      return [canonical];
+    }
     return [
       canonical,
-      ...legacy.filter((candidate) => candidate !== canonical),
+      joinLocalPath(
+        options,
+        lockfileDir ?? resolveConfigDirPaths(env, options).at(-1)!,
+        "lockfile.json",
+      ),
     ];
   }
 
   if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
     // Canonical: the XDG config dir, where every other environment keeps
-    // its lockfile. The home-level names stay as READ-ONLY fallback
-    // candidates for installs that predate the move — writes always go to
-    // the canonical path.
+    // its lockfile. Installs that predate the move are handled by the
+    // vellum → cadet migration, which moves the home-level file into
+    // place — no legacy candidates here.
     const dir = lockfileDir ?? resolveConfigDir(env, options);
-    const legacyDir = lockfileDir ?? options.homeDir ?? os.homedir();
-    return [
-      joinLocalPath(options, dir, "lockfile.json"),
-      joinLocalPath(options, legacyDir, ".cadet.lock.json"),
-      joinLocalPath(options, legacyDir, ".cadet.lockfile.json"),
-    ];
+    return [joinLocalPath(options, dir, "lockfile.json")];
   }
 
   const dir = lockfileDir ?? resolveConfigDir(env, options);

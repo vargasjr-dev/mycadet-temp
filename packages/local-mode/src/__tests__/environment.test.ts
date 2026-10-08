@@ -118,8 +118,6 @@ describe("path resolvers honor the persisted default", () => {
     };
     expect(resolveLockfilePaths(env)).toEqual([
       path.join(configHome, "cadet", "lockfile.json"),
-      path.join(os.homedir(), ".cadet.lock.json"),
-      path.join(os.homedir(), ".cadet.lockfile.json"),
     ]);
   });
 });
@@ -163,8 +161,6 @@ describe("Windows path resolution", () => {
     const productionEnv = { CADET_ENVIRONMENT: "production" };
     expect(resolveLockfilePaths(productionEnv, options)).toEqual([
       "C:\\Users\\Example\\AppData\\Roaming\\cadet\\lockfile.json",
-      "C:\\Users\\Example\\.cadet.lock.json",
-      "C:\\Users\\Example\\.cadet.lockfile.json",
     ]);
     expect(defaultEnvironmentFilePaths(env, options)).toEqual([
       "C:\\Users\\Example\\AppData\\Roaming\\cadet\\environment",
