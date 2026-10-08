@@ -72,12 +72,6 @@ jobs:
       - name: Lint unused code
         run: bun run lint:unused
 
-      - name: Check OpenAPI spec is up to date
-        run: bun run generate:openapi -- --check
-
-      - name: Validate bundled skills against Agent Skills spec
-        run: bun scripts/skills/lint-skill-spec.mjs --dir assistant/src/config/bundled-skills --allow-tools-json
-
       - name: Type check
         run: bunx tsc --noEmit
 

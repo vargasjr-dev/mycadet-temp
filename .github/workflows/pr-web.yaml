@@ -86,12 +86,6 @@ jobs:
       - name: Type check
         run: bun run typecheck
 
-      - name: Test
-        env:
-          TEST_TIMEOUT_MS: 15000
-          TEST_DIFF_ONLY: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
-        run: bun run test:ci
-
       - name: Build
         env:
           VITE_PLATFORM_MODE: "true"
@@ -99,3 +93,10 @@ jobs:
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_APP_VERSION: ${{ github.sha }}
         run: bun run build
+
+      - name: Test
+        env:
+          TEST_TIMEOUT_MS: 15000
+          TEST_DIFF_ONLY: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
+        run: bun run test:ci
+

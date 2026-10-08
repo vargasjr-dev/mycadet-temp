@@ -227,9 +227,7 @@ export async function hatchLocal(
           stdinIsTTY: process.stdin.isTTY,
         })
       ) {
-        const picked = await promptProviderChoice({
-          defaultProvider: provider ?? undefined,
-        });
+        const picked = await promptProviderChoice();
         if (picked) {
           provider = picked;
           pickedProvider = true;

@@ -51,11 +51,23 @@ export function buildNestedConfig(
  *
  * Either path removes the need for this helper.
  */
+// Endpoint-supplied catalogs (no fixed default model) cannot back
+// llm.default.provider — DefaultProviderEnum in the assistant's LLMSchema
+// rejects them — so hatch collects their key without writing the default.
+const ENDPOINT_CATALOG_PROVIDERS: ReadonlySet<string> = new Set([
+  "litellm",
+  "opencode",
+]);
+
 export function buildHatchConfigValues(
   configValues: Record<string, string>,
   provider: string | null | undefined,
 ): Record<string, string> {
   if (!provider || configValues["llm.default.provider"]) {
+    return configValues;
+  }
+
+  if (ENDPOINT_CATALOG_PROVIDERS.has(provider)) {
     return configValues;
   }
 

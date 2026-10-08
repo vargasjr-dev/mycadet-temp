@@ -330,9 +330,11 @@ describe("hatch provider secrets", () => {
     expect(logs.join("\n")).toBe("");
   });
 
-  test("HATCH_PROVIDER_CHOICES excludes endpoint-supplied providers that cannot back llm.defaultProvider", () => {
-    expect(HATCH_PROVIDER_CHOICES).not.toContain("litellm");
-    expect(HATCH_PROVIDER_CHOICES).not.toContain("opencode");
+  test("endpoint-supplied providers are listed last but cannot back llm.defaultProvider", () => {
+    // Listed so their keys can be collected, but hatch must not write them
+    // as llm.default.provider — the assistant's DefaultProviderEnum rejects
+    // them and hatch would fail at config parse.
+    expect(HATCH_PROVIDER_CHOICES.slice(-2)).toEqual(["litellm", "opencode"]);
   });
 
   describe("hasExplicitHatchProvider", () => {

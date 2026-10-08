@@ -88,12 +88,7 @@ const PROVIDER_LABELS: Record<LlmProviderId, string> = {
 
 // Ranked for the hatch prompt: Cadet Cloud first (the managed connection —
 // no key to collect), then the hosted-inference gateways, then the BYO-key
-// incumbents, then the rest in their former relative order.
-// litellm and opencode are deliberately excluded: they have no fixed default
-// model (endpoint-supplied catalogs), so they cannot back llm.defaultProvider
-// (see DEFAULT_PROVIDER_CHOICES in assistant/src/config/schemas/llm.ts).
-// Picking them here would collect a key the assistant then never uses, since
-// resolveHatchDefaultProvider falls back to anthropic instead.
+// incumbents, then the rest, with the endpoint-supplied catalogs last.
 export const HATCH_PROVIDER_CHOICES: readonly LlmProviderId[] = [
   "cadet",
   "fireworks",
@@ -108,6 +103,8 @@ export const HATCH_PROVIDER_CHOICES: readonly LlmProviderId[] = [
   "atlascloud",
   "ionet",
   "poolside",
+  "litellm",
+  "opencode",
 ];
 
 export function formatProviderName(provider: LlmProviderId): string {
@@ -596,12 +593,9 @@ export interface PromptProviderChoiceOptions {
   input?: NodeJS.ReadStream;
   output?: NodeJS.WriteStream;
   choices?: readonly LlmProviderId[];
-  /** The provider Enter keeps (marked in the list); defaults to choices[0]. */
-  defaultProvider?: LlmProviderId;
 }
 
-// Resolves null on blank input: the caller's signal to keep whatever
-// resolveHatchProvider already picked.
+// Resolves choices[0] on blank input: Enter takes the top-ranked default.
 export async function promptProviderChoice(
   options: PromptProviderChoiceOptions = {},
 ): Promise<LlmProviderId | null> {
@@ -610,14 +604,13 @@ export async function promptProviderChoice(
   const choices = options.choices ?? HATCH_PROVIDER_CHOICES;
 
   output.write("No LLM provider detected. Choose:\n\n");
-  const defaultProvider = options.defaultProvider ?? choices[0];
   choices.forEach((provider, index) => {
-    const suffix = provider === defaultProvider ? " (default)" : "";
+    const suffix = index === 0 ? " (default)" : "";
     output.write(`  ${index + 1}) ${formatProviderName(provider)}${suffix}\n`);
   });
   output.write("\n");
 
-  const defaultLabel = formatProviderName(defaultProvider);
+  const defaultLabel = formatProviderName(choices[0]);
   const reader = createLineReader(input);
   try {
     for (;;) {
@@ -627,7 +620,7 @@ export async function promptProviderChoice(
       const answer = (await reader.readLine()).trim();
 
       if (answer === "") {
-        return null;
+        return choices[0];
       }
 
       if (/^\d+$/.test(answer)) {

@@ -529,20 +529,6 @@ function readClientHostname(): string | undefined {
  * credential pair. The returned tokens are persisted locally under
  * `$XDG_CONFIG_HOME/cadet{-env}/assistants/<assistantId>/guardian-token.json`.
  */
-function isLoopbackGateway(gatewayUrl: string): boolean {
-  try {
-    const hostname = new URL(gatewayUrl).hostname;
-    return (
-      hostname === "127.0.0.1" ||
-      hostname === "localhost" ||
-      hostname === "::1" ||
-      hostname === "[::1]"
-    );
-  } catch {
-    return false;
-  }
-}
-
 const READY_POLL_INTERVAL_MS = 500;
 const READY_POLL_BUDGET_MS = 60_000;
 
@@ -573,12 +559,10 @@ export async function leaseGuardianToken(
 ): Promise<GuardianTokenData> {
   // The gateway 503s every non-probe route ({status: "starting"}) while its
   // post-assistant-ready backfills run — exactly the window that burned the
-  // caller's lease-retry budget. When leasing against a loopback gateway,
-  // poll /readyz (body-aware: it is the probe the gateway docs point CLI
-  // waits at) until the gate opens before the first init attempt.
-  if (isLoopbackGateway(gatewayUrl)) {
-    await waitForGatewayReady(gatewayUrl);
-  }
+  // caller's lease-retry budget. Poll /readyz (body-aware: it is the probe
+  // the gateway docs point CLI waits at) until the gate opens before the
+  // first init attempt.
+  await waitForGatewayReady(gatewayUrl);
 
   const deviceId = computeDeviceId();
   const clientReportedName = readClientHostname();

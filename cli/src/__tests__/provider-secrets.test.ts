@@ -434,7 +434,7 @@ describe("promptProviderChoice", () => {
     await expect(resultPromise).resolves.toBe("gemini");
   });
 
-  test("resolves null on blank input", async () => {
+  test("resolves the top-ranked default on blank input", async () => {
     const input = new FakePromptInput();
     const output = fakeOutput();
 
@@ -445,10 +445,10 @@ describe("promptProviderChoice", () => {
     });
     input.emit("data", Buffer.from("\n"));
 
-    await expect(resultPromise).resolves.toBeNull();
+    await expect(resultPromise).resolves.toBe("anthropic");
   });
 
-  test("resolves null instead of hanging when input hits EOF (Ctrl-D)", async () => {
+  test("resolves the default instead of hanging when input hits EOF (Ctrl-D)", async () => {
     const input = new FakePromptInput();
     const output = fakeOutput();
 
@@ -459,7 +459,7 @@ describe("promptProviderChoice", () => {
     });
     input.emit("end");
 
-    await expect(resultPromise).resolves.toBeNull();
+    await expect(resultPromise).resolves.toBe("anthropic");
   });
 
   test("validates against a custom, shorter choice list", async () => {

@@ -20,7 +20,7 @@
     "probe:skill-retrieval": "bun run scripts/probe-skill-retrieval.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint",
+    "lint": "bun run lint:skills && bun run lint:openapi && eslint",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "lint:circular": "bun run scripts/check-circular-deps.ts",
     "lint:unused:production": "knip --production --include exports",
@@ -34,7 +34,9 @@
     "test:stable": "EXCLUDE_EXPERIMENTAL=true bun run scripts/run-tests.ts",
     "test:bench": "find src -type f -name '*.benchmark.test.ts' -print0 | xargs -0 -P 1 -I {} bun test {}",
     "test:filesystem-tools": "bash scripts/test-filesystem-tools.sh",
-    "postinstall": "bun run scripts/postinstall.ts"
+    "postinstall": "bun run scripts/postinstall.ts",
+    "lint:skills": "bun ../scripts/skills/lint-skill-spec.mjs --dir src/config/bundled-skills --allow-tools-json",
+    "lint:openapi": "bun run generate:openapi -- --check"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "0.25.0",
