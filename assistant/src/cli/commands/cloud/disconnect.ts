@@ -5,7 +5,7 @@ import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
 
-export function registerPlatformDisconnectCommand(platform: Command): void {
+export function registerCloudDisconnectCommand(platform: Command): void {
   subcommand(platform, "disconnect").action(
     async (_opts: Record<string, unknown>, cmd: Command) => {
       const r = await cliIpcCall<{

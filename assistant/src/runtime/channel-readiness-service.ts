@@ -357,7 +357,7 @@ const emailProbe: ChannelProbe = {
             name,
             passed: false,
             message:
-              "Email is not configured. Connect the platform for a managed inbox (assistant cloud connect), or configure your own provider (Resend or Mailgun)",
+              "Email is not configured. Connect to Cadet Cloud for a managed inbox (assistant cloud connect), or configure your own provider",
           },
         ];
       case "unavailable":

@@ -63,7 +63,7 @@ describe("requirePlatformConnection", () => {
       const output = stdoutChunks.join("");
       const parsed = JSON.parse(output);
       expect(parsed.ok).toBe(false);
-      expect(parsed.error).toContain("cadet platform connect");
+      expect(parsed.error).toContain("cadet cloud connect");
       expect(parsed.error).toContain("Not connected");
     } finally {
       process.stdout.write = originalWrite;

@@ -1,6 +1,6 @@
 import { formatCostUsd } from "../../lib/cli-output.js";
 
-export interface PlatformCreditsResult {
+export interface CloudCreditsResult {
   remaining: number;
   settled: number;
   pending: number;
@@ -23,7 +23,7 @@ export interface PlatformCreditsResult {
 }
 
 /** Human-readable lines for `assistant cloud credits`. */
-export function formatCreditsLines(result: PlatformCreditsResult): string[] {
+export function formatCreditsLines(result: CloudCreditsResult): string[] {
   const staleNote = result.stale ? " (pending data may be stale)" : "";
   const lines = [
     `Remaining: ${formatCostUsd(result.remaining)} ${result.unit} (as of ${result.as_of})${staleNote}`,

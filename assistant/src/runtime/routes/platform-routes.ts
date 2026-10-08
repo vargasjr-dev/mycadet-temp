@@ -678,7 +678,7 @@ async function fetchPlatformJson(
 
   if (!context.platformBaseUrl || !context.authHeader) {
     throw new UnprocessableEntityError(
-      "Platform credentials not available — run 'assistant cloud connect' or set CADET_PLATFORM_URL",
+      "Cloud credentials not available — run 'assistant cloud connect' or set CADET_PLATFORM_URL",
     );
   }
 
@@ -939,7 +939,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Connect to Cadet Cloud",
     description:
-      "Checks whether the stored cloud credentials still connect. Reports a stored key the platform rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
+      "Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
     tags: ["platform"],
     handler: handlePlatformConnect,
     responseBody: PlatformConnectResponseSchema,

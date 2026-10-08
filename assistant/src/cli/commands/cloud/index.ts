@@ -11,16 +11,16 @@ import { applyCommandHelp, subcommand } from "../../lib/cli-command-help.js";
 import { registerCommand } from "../../lib/register-command.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
-import { registerPlatformConnectCommand } from "./connect.js";
+import { registerCloudConnectCommand } from "./connect.js";
 import {
+  type CloudCreditsResult,
   formatCreditsLines,
-  type PlatformCreditsResult,
 } from "./credits-format.js";
-import { registerPlatformDisconnectCommand } from "./disconnect.js";
-import { platformHelp } from "./index.help.js";
-import { registerPlatformInvoicesCommands } from "./invoices.js";
+import { registerCloudDisconnectCommand } from "./disconnect.js";
+import { cloudHelp } from "./index.help.js";
+import { registerCloudInvoicesCommands } from "./invoices.js";
 
-interface PlatformStatusResult {
+interface CloudStatusResult {
   isPlatform: boolean;
   baseUrl: string;
   assistantId: string;
@@ -31,7 +31,7 @@ interface PlatformStatusResult {
   userId: string | null;
 }
 
-interface PlatformSubscriptionResult {
+interface CloudSubscriptionResult {
   planId: "base" | "pro";
   status: string | null;
   renewalDate: string | null;
@@ -51,26 +51,26 @@ interface PlatformSubscriptionResult {
   };
 }
 
-interface PlatformPlansResult {
+interface CloudPlansResult {
   plans: Array<Record<string, unknown>>;
 }
 
-export function registerPlatformCommand(program: Command): void {
+export function registerCloudCommand(program: Command): void {
   registerCommand(program, {
-    name: platformHelp.name,
+    name: cloudHelp.name,
     // `platform` stays as an alias for backwards compatibility with the
     // pre-rebrand spelling.
     aliases: ["platform"],
     transport: "ipc",
-    description: platformHelp.description,
+    description: cloudHelp.description,
     build: (platform) => {
-      applyCommandHelp(platform, platformHelp);
+      applyCommandHelp(platform, cloudHelp);
 
       // -----------------------------------------------------------------------
       // connect
       // -----------------------------------------------------------------------
 
-      registerPlatformConnectCommand(platform);
+      registerCloudConnectCommand(platform);
 
       // -----------------------------------------------------------------------
       // status
@@ -78,7 +78,7 @@ export function registerPlatformCommand(program: Command): void {
 
       subcommand(platform, "status").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<PlatformStatusResult>(
+          const r = await cliIpcCall<CloudStatusResult>(
             "platform_status",
             {},
           );
@@ -126,7 +126,7 @@ export function registerPlatformCommand(program: Command): void {
 
       subcommand(platform, "credits").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<PlatformCreditsResult>(
+          const r = await cliIpcCall<CloudCreditsResult>(
             "platform_credits",
             {},
           );
@@ -155,7 +155,7 @@ export function registerPlatformCommand(program: Command): void {
 
       subcommand(platform, "subscription").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<PlatformSubscriptionResult>(
+          const r = await cliIpcCall<CloudSubscriptionResult>(
             "platform_subscription",
             {},
           );
@@ -209,7 +209,7 @@ export function registerPlatformCommand(program: Command): void {
 
       subcommand(platform, "plans").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<PlatformPlansResult>("platform_plans", {});
+          const r = await cliIpcCall<CloudPlansResult>("platform_plans", {});
           if (!r.ok) {
             return exitFromIpcResult(
               { ok: false, error: r.error, statusCode: r.statusCode },
@@ -239,13 +239,13 @@ export function registerPlatformCommand(program: Command): void {
       // invoices
       // -----------------------------------------------------------------------
 
-      registerPlatformInvoicesCommands(platform);
+      registerCloudInvoicesCommands(platform);
 
       // -----------------------------------------------------------------------
       // disconnect
       // -----------------------------------------------------------------------
 
-      registerPlatformDisconnectCommand(platform);
+      registerCloudDisconnectCommand(platform);
 
       // -----------------------------------------------------------------------
       // callback-routes

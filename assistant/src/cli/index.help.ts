@@ -24,6 +24,7 @@ import { changelogHelp } from "./commands/changelog.help.js";
 import { channelVerificationSessionsHelp } from "./commands/channel-verification-sessions.help.js";
 import { channelsHelp } from "./commands/channels/index.help.js";
 import { clientsHelp } from "./commands/clients.help.js";
+import { cloudHelp } from "./commands/cloud/index.help.js";
 import { completionsHelp } from "./commands/completions.help.js";
 import { configHelp } from "./commands/config.help.js";
 import { contactsHelp } from "./commands/contacts.help.js";
@@ -42,7 +43,6 @@ import { monitoringHelp } from "./commands/monitoring.help.js";
 import { notificationsHelp } from "./commands/notifications.help.js";
 import { oauthHelp } from "./commands/oauth/index.help.js";
 import { pendingHelp } from "./commands/pending.help.js";
-import { platformHelp } from "./commands/platform/index.help.js";
 import { pluginsHelp } from "./commands/plugins.help.js";
 import { psHelp } from "./commands/ps.help.js";
 import { roadmapHelp } from "./commands/roadmap.help.js";
@@ -94,7 +94,7 @@ export const CLI_COMMAND_HELP: readonly CliCommandHelp[] = [
   notificationsHelp,
   oauthHelp,
   pendingHelp,
-  platformHelp,
+  cloudHelp,
   pluginsHelp,
   monitoringHelp,
   psHelp,

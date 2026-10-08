@@ -257,7 +257,7 @@ describe("config set - cloud connection guard for service mode paths", () => {
     expect(exitCode).toBe(1);
     const parsed = JSON.parse(stdout);
     expect(parsed.ok).toBe(false);
-    expect(parsed.error).toContain("cadet platform connect");
+    expect(parsed.error).toContain("cadet cloud connect");
     // The guard runs *before* the IPC call - no config_set should have been
     // emitted.
     expect(mockIpcCalls.filter((c) => c.method === "config_set")).toHaveLength(

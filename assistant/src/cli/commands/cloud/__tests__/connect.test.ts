@@ -23,15 +23,15 @@ mock.module("../../../../ipc/cli-client.js", () => ({
   },
 }));
 
-const { registerPlatformConnectCommand } = await import("../connect.js");
+const { registerCloudConnectCommand } = await import("../connect.js");
 const { applyCommandHelp } = await import("../../../lib/cli-command-help.js");
-const { platformHelp } = await import("../index.help.js");
+const { cloudHelp } = await import("../index.help.js");
 
 function buildProgram(): Command {
   const program = new Command();
   program.exitOverride();
-  applyCommandHelp(program, platformHelp);
-  registerPlatformConnectCommand(program);
+  applyCommandHelp(program, cloudHelp);
+  registerCloudConnectCommand(program);
   return program;
 }
 

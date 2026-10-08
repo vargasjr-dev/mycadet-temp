@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
-  runPlatform,
-  runPlatformCaught,
-  setupPlatformIpcMock,
+  runCloud,
+  runCloudCaught,
+  setupCloudIpcMock,
 } from "./helpers.js";
 
-const ipc = setupPlatformIpcMock();
+const ipc = setupCloudIpcMock();
 
 describe("assistant cloud callback-routes list", () => {
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe("assistant cloud callback-routes list", () => {
   });
 
   test("returns empty list when no routes registered", async () => {
-    const out = await runPlatform(["callback-routes", "list", "--json"]);
+    const out = await runCloud(["callback-routes", "list", "--json"]);
 
     expect(ipc.calls[0][0]).toBe("platform_callback_routes_list");
 
@@ -45,7 +45,7 @@ describe("assistant cloud callback-routes list", () => {
     ];
     ipc.response = { ok: true, result: { routes } };
 
-    const out = await runPlatform(["callback-routes", "list", "--json"]);
+    const out = await runCloud(["callback-routes", "list", "--json"]);
 
     const parsed = JSON.parse(out.join(""));
     expect(parsed.ok).toBe(true);
@@ -57,11 +57,11 @@ describe("assistant cloud callback-routes list", () => {
   test("fails when platform credentials are missing", async () => {
     ipc.response = {
       ok: false,
-      error: "Platform credentials not available",
+      error: "Cloud credentials not available",
       statusCode: 422,
     };
 
-    const { thrown } = await runPlatformCaught([
+    const { thrown } = await runCloudCaught([
       "callback-routes",
       "list",
       "--json",
@@ -81,7 +81,7 @@ describe("assistant cloud callback-routes list", () => {
       },
     };
 
-    const out = await runPlatform([
+    const out = await runCloud([
       "callback-routes",
       "register",
       "--path",

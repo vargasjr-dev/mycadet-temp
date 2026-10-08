@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  type CloudCreditsResult,
   formatCreditsLines,
-  type PlatformCreditsResult,
 } from "../credits-format.js";
 
-const BASE: PlatformCreditsResult = {
+const BASE: CloudCreditsResult = {
   remaining: 42.17,
   settled: 50,
   pending: 7.83,
@@ -27,7 +27,7 @@ const BASE: PlatformCreditsResult = {
   next_credit_expiry_at: "2026-10-01T00:00:00Z",
 };
 
-const NO_GRANTS: PlatformCreditsResult = {
+const NO_GRANTS: CloudCreditsResult = {
   ...BASE,
   plan_credit_remaining: null,
   plan_credit_total: null,

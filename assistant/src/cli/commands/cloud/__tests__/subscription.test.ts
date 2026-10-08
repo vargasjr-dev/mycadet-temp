@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { runPlatform, setupPlatformIpcMock } from "./helpers.js";
+import { runCloud, setupCloudIpcMock } from "./helpers.js";
 
-const ipc = setupPlatformIpcMock();
+const ipc = setupCloudIpcMock();
 
 describe("assistant cloud subscription", () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe("assistant cloud subscription", () => {
   });
 
   test("calls platform_subscription and emits plan JSON with --json", async () => {
-    const out = await runPlatform(["subscription", "--json"]);
+    const out = await runCloud(["subscription", "--json"]);
 
     expect(ipc.calls[0][0]).toBe("platform_subscription");
 
@@ -36,7 +36,7 @@ describe("assistant cloud subscription", () => {
   });
 
   test("plain text mode does not emit JSON to stdout", async () => {
-    const out = await runPlatform(["subscription"]);
+    const out = await runCloud(["subscription"]);
 
     // Plain-text mode logs via log.info; verify writeOutput (JSON) was NOT called
     expect(() => JSON.parse(out.join("").trim())).toThrow();

@@ -624,7 +624,7 @@ describe("credentials routes", () => {
       expect(scrubbedValues).toEqual([SECRET_VALUE]);
     });
 
-    test("non-secret cadet platform fields are stored but never scrubbed", async () => {
+    test("non-secret cadet cloud fields are stored but never scrubbed", async () => {
       /**
        * Platform identity ids are benign UUIDs that legitimately appear in
        * transcripts; scrubbing them would redact ordinary conversation

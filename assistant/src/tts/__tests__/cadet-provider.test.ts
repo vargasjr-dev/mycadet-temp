@@ -139,7 +139,7 @@ describe("cadet TTS adapter", () => {
     };
     const provider = createCadetProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(
-      /platform connect/,
+      /cloud connect/,
     );
   });
 });
@@ -218,7 +218,7 @@ describe("cadet TTS streaming", () => {
 
     await expect(
       provider.synthesizeStream!(request({ outputFormat: "pcm" }), () => {}),
-    ).rejects.toThrow(/platform connect/);
+    ).rejects.toThrow(/cloud connect/);
   });
 
   test("streaming capability is advertised", () => {

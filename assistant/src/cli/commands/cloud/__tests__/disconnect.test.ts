@@ -26,15 +26,15 @@ mock.module("../../../../ipc/cli-client.js", () => ({
   },
 }));
 
-const { registerPlatformDisconnectCommand } = await import("../disconnect.js");
+const { registerCloudDisconnectCommand } = await import("../disconnect.js");
 const { applyCommandHelp } = await import("../../../lib/cli-command-help.js");
-const { platformHelp } = await import("../index.help.js");
+const { cloudHelp } = await import("../index.help.js");
 
 function buildProgram(): Command {
   const program = new Command();
   program.exitOverride();
-  applyCommandHelp(program, platformHelp);
-  registerPlatformDisconnectCommand(program);
+  applyCommandHelp(program, cloudHelp);
+  registerCloudDisconnectCommand(program);
   return program;
 }
 

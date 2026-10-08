@@ -2,7 +2,7 @@
 
 import type { CliCommandHelp } from "../../lib/cli-command-help.js";
 
-export const platformHelp: CliCommandHelp = {
+export const cloudHelp: CliCommandHelp = {
   name: "cloud",
   description: "Manage Cadet Cloud integration",
   options: [

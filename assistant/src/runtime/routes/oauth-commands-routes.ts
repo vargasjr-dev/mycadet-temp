@@ -101,7 +101,7 @@ async function requirePlatformClient(): Promise<CadetPlatformClient> {
   const client = await CadetPlatformClient.create();
   if (!client) {
     throw new BadRequestError(
-      "Not connected to Cadet Cloud. Run `cadet platform connect` to connect first.",
+      "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
     );
   }
   if (!client.platformAssistantId) {
@@ -126,7 +126,7 @@ async function fetchActiveConnections(
   if (!response.ok) {
     const hint =
       response.status === 401 || response.status === 403
-        ? `. Your platform session may have expired. Run \`cadet platform connect\` to reconnect.`
+        ? `. Your cloud session may have expired. Run \`cadet cloud connect\` to reconnect.`
         : "";
     throw new InternalError(`Platform returned HTTP ${response.status}${hint}`);
   }
@@ -522,7 +522,7 @@ async function handleModeSet({ body = {} }: RouteHandlerArgs) {
     const client = await CadetPlatformClient.create();
     if (!client) {
       throw new BadRequestError(
-        "Not connected to Cadet Cloud. Run `cadet platform connect` to connect first.",
+        "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
       );
     }
   }
@@ -1104,7 +1104,7 @@ async function handleManagedConnect({ body = {} }: RouteHandlerArgs) {
     const baseMsg = `Platform returned HTTP ${response.status}${errorText ? `: ${errorText}` : ""}`;
     if (response.status === 401 || response.status === 403) {
       throw new InternalError(
-        `${baseMsg}. Your platform session may have expired. Run \`cadet platform connect\` to reconnect.`,
+        `${baseMsg}. Your cloud session may have expired. Run \`cadet cloud connect\` to reconnect.`,
       );
     }
     throw new InternalError(baseMsg);

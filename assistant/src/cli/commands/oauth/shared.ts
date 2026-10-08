@@ -32,7 +32,7 @@ export async function requirePlatformConnection(
     writeOutput(cmd, {
       ok: false,
       error:
-        "Not connected to Cadet Cloud. Run `cadet platform connect` to connect first.",
+        "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
     });
     process.exitCode = 1;
     return false;

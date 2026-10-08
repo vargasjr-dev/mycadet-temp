@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
-  runPlatform,
-  runPlatformCaught,
-  setupPlatformIpcMock,
+  runCloud,
+  runCloudCaught,
+  setupCloudIpcMock,
 } from "./helpers.js";
 
 // ---------------------------------------------------------------------------
@@ -36,10 +36,10 @@ const invoiceB = {
   invoice_pdf: null,
 };
 
-const ipc = setupPlatformIpcMock();
+const ipc = setupCloudIpcMock();
 
 function runInvoices(args: string[]): Promise<string[]> {
-  return runPlatform(["invoices", ...args]);
+  return runCloud(["invoices", ...args]);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,14 +202,14 @@ describe("assistant cloud invoices error handling", () => {
   });
 
   test("list exits via exitFromIpcResult on IPC failure without writing output", async () => {
-    const { out, thrown } = await runPlatformCaught(["invoices", "list"]);
+    const { out, thrown } = await runCloudCaught(["invoices", "list"]);
 
     expect((thrown as Error).message).toBe("exitFromIpcResult called");
     expect(out.join("")).toBe("");
   });
 
   test("get exits via exitFromIpcResult on IPC failure without writing output", async () => {
-    const { out, thrown } = await runPlatformCaught([
+    const { out, thrown } = await runCloudCaught([
       "invoices",
       "get",
       "in_missing",
@@ -222,7 +222,7 @@ describe("assistant cloud invoices error handling", () => {
 
 describe("assistant cloud invoices --help", () => {
   test("group help renders both subcommands", async () => {
-    const { out } = await runPlatformCaught(["invoices", "--help"]);
+    const { out } = await runCloudCaught(["invoices", "--help"]);
     const text = out.join("");
 
     expect(text).toContain("list");
@@ -231,7 +231,7 @@ describe("assistant cloud invoices --help", () => {
   });
 
   test("list help renders the --starting-after option", async () => {
-    const { out } = await runPlatformCaught(["invoices", "list", "--help"]);
+    const { out } = await runCloudCaught(["invoices", "list", "--help"]);
 
     expect(out.join("")).toContain("--starting-after <invoice-id>");
   });

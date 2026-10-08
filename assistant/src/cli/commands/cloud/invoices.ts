@@ -72,7 +72,7 @@ function logInvoice(invoice: PlatformInvoice, includePdf: boolean): void {
   }
 }
 
-export function registerPlatformInvoicesCommands(platform: Command): void {
+export function registerCloudInvoicesCommands(platform: Command): void {
   const invoices = subcommand(platform, "invoices");
 
   subcommand(invoices, "list").action(
