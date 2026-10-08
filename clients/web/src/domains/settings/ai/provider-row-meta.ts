@@ -28,6 +28,8 @@ const DEFAULT_PROVIDER_ELIGIBLE: Record<DefaultProviderId, true> = {
   baseten: true,
   ionet: true,
   poolside: true,
+  litellm: true,
+  opencode: true,
 };
 
 export function isDefaultProviderId(
