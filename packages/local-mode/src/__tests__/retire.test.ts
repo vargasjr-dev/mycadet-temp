@@ -70,4 +70,37 @@ describe("runRetire", () => {
       error: "retire failed",
     });
   });
+
+  test("a non-zero exit falls back to stdout when stderr is empty", async () => {
+    const pending = runRetire(invocation, "asst-42");
+    lastChild.stdout.emit("data", Buffer.from("assistant not found"));
+    lastChild.emit("close", 2);
+
+    expect(await pending).toEqual({
+      ok: false,
+      status: 500,
+      error: "assistant not found",
+    });
+  });
+
+  test("a spawn failure resolves to a failure rather than rejecting", async () => {
+    const pending = runRetire(invocation, "asst-42");
+    lastChild.emit("error", new Error("ENOENT"));
+
+    const result = await pending;
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(500);
+      expect(result.error).toContain("Failed to spawn CLI");
+      expect(result.error).toContain("ENOENT");
+    }
+  });
+
+  test("resolves at most once when the child emits close after error", async () => {
+    const pending = runRetire(invocation, "asst-42");
+    lastChild.emit("close", 0);
+    lastChild.emit("error", new Error("late EPIPE"));
+
+    expect(await pending).toEqual({ ok: true });
+  });
 });

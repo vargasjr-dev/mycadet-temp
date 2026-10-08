@@ -7,6 +7,7 @@ import {
   getGuardianAccessToken,
   formatGuardianRefreshCliFailure,
   parseGuardianRefreshCliFailure,
+  GUARDIAN_REFRESH_ERROR_PREFIX,
   PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   isConfidentialRefreshUrl,
@@ -179,6 +180,32 @@ describe("getGuardianAccessToken", () => {
     ).toEqual({ ok: true, accessToken: "access" });
   });
 
+  test("refuses non-loopback callers with 403 before touching the disk", async () => {
+    const result = await getGuardianAccessToken("asst-1", configDir, invocation, false);
+    expect(result).toEqual({ ok: false, status: 403, error: "Forbidden" });
+  });
+
+  test("rejects an unsafe assistant id with 400", async () => {
+    const result = await getGuardianAccessToken("../escape", configDir, invocation, true);
+    expect(result).toEqual({ ok: false, status: 400, error: "Invalid assistant ID" });
+  });
+
+  test("rejects a malformed token file with 500", async () => {
+    fs.mkdirSync(path.join(configDir, "assistants", "asst-1"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(configDir, "assistants", "asst-1", "guardian-token.json"),
+      "{ not json",
+    );
+    const result = await getGuardianAccessToken("asst-1", configDir, invocation, true);
+    expect(result).toEqual({
+      ok: false,
+      status: 500,
+      error: "Malformed guardian token file",
+    });
+  });
+
   test("binds a legacy paired token before returning it", async () => {
     saveGuardianToken(configDir, "paired-1", makeTokenData({}));
 
@@ -239,6 +266,42 @@ describe("parseGuardianRefreshCliFailure", () => {
     ).toEqual({
       ok: false,
       status: 503,
+      error: "Failed to refresh guardian token",
+    });
+  });
+
+  test("a malformed labeled line keeps scanning and a later good line wins", () => {
+    expect(
+      parseGuardianRefreshCliFailure(
+        formatGuardianRefreshCliFailure(401, "spent token"),
+        `${GUARDIAN_REFRESH_ERROR_PREFIX}not json at all`,
+      ),
+    ).toEqual({ ok: false, status: 401, error: "spent token" });
+  });
+
+  test("labels with non-4xx/5xx statuses are skipped", () => {
+    expect(
+      parseGuardianRefreshCliFailure(
+        formatGuardianRefreshCliFailure(200, "fine"),
+        "",
+      ),
+    ).toEqual({
+      ok: false,
+      status: 503,
+      error: "Failed to refresh guardian token",
+    });
+  });
+
+  test("a label without an error field falls back to the default message", () => {
+    const status = 502;
+    expect(
+      parseGuardianRefreshCliFailure(
+        "",
+        `${GUARDIAN_REFRESH_ERROR_PREFIX}${JSON.stringify({ status })}`,
+      ),
+    ).toEqual({
+      ok: false,
+      status: 502,
       error: "Failed to refresh guardian token",
     });
   });

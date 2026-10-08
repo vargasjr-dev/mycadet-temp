@@ -296,4 +296,239 @@ describe("resolveLockfileInstanceDir", () => {
       resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1", {}),
     ).toEqual({ ok: true });
   });
+
+  test("never resolves an instance dir for an unsafe assistant id", () => {
+    // The parsed contract keeps an unsafe id findable, but resolving its
+    // default instance dir would assert — the caller gets absence, not a throw.
+    writeLockfile({ assistantId: "../escape", cloud: "local" });
+    expect(
+      resolveLockfileInstanceDir([lockfilePath], "../escape", {}),
+    ).toEqual({ ok: true });
+  });
+});
+
+// The runtime state classification family: real pid files + real loopback
+// servers answering /healthz and /readyz, mirroring the CLI's
+// daemon-readiness-probe tests. Only the readyz body/status varies.
+describe("runtime state classification", () => {
+  type Responder = () => { status: number; body: unknown };
+
+  let daemonServer: Server | null = null;
+  let gatewayServer: Server | null = null;
+  let daemonPort = 0;
+  let gatewayPort = 0;
+
+  /** Serve both probe ports. Everything answers a healthy /healthz; the
+   *  optional responder answers the daemon's /readyz. */
+  async function serveStack(daemonResponder?: Responder): Promise<void> {
+    daemonServer = createServer((req, res) => {
+      const pathname = new URL(req.url ?? "/", "http://x").pathname;
+      if (pathname === "/readyz" && daemonResponder) {
+        const { status, body } = daemonResponder();
+        res.writeHead(status, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(body));
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "healthy" }));
+    });
+    gatewayServer = createServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "healthy" }));
+    });
+    [daemonPort, gatewayPort] = await Promise.all([
+      listen(daemonServer),
+      listen(gatewayServer),
+    ]);
+  }
+
+  afterEach(async () => {
+    if (daemonServer) await close(daemonServer);
+    if (gatewayServer) await close(gatewayServer);
+    daemonServer = null;
+    gatewayServer = null;
+  });
+
+  function writeLivePids(): void {
+    writeAssistantPid(String(process.pid));
+    writeFileSync(path.join(instanceDir, "gateway.pid"), String(process.pid));
+  }
+
+  function writeStackLockfile(): void {
+    writeLocalLockfile({
+      resources: { instanceDir, daemonPort, gatewayPort, qdrantPort: 0 },
+    });
+  }
+
+  test("reports healthy when both processes answer and the daemon is migration-ready", async () => {
+    await serveStack(() => ({ status: 200, body: { ready: true } }));
+    writeStackLockfile();
+    writeLivePids();
+
+    expect(await getLocalAssistantStatus([lockfilePath], "local-1")).toEqual({
+      ok: true,
+      state: "healthy",
+      pid: process.pid,
+    });
+  });
+
+  test("reports unhealthy when the daemon's readyz says migrations failed", async () => {
+    await serveStack(() => ({
+      status: 200,
+      body: { ready: false, dbMigrations: { ready: false, state: "failed" } },
+    }));
+    writeStackLockfile();
+    writeLivePids();
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("unhealthy");
+      expect(result.detail).toContain("migrations failed");
+    }
+  });
+
+  test("reports starting while the daemon is mid-migration", async () => {
+    await serveStack(() => ({
+      status: 200,
+      body: { ready: false, dbMigrations: { ready: false, state: "running" } },
+    }));
+    writeStackLockfile();
+    writeLivePids();
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("starting");
+      expect(result.detail).toContain("migrations are running");
+    }
+  });
+
+  test("treats a legacy strict-503 readyz body as migrating, not crashed", async () => {
+    await serveStack(() => ({
+      // A pre-dbMigrations daemon: 503 with no dbMigrations field.
+      status: 503,
+      body: { status: "starting" },
+    }));
+    writeStackLockfile();
+    writeLivePids();
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("starting");
+    }
+  });
+
+  test("reports crashed when a stale live gateway stops answering its health check", async () => {
+    await serveStack();
+    writeStackLockfile();
+    const pidPath = writeAssistantPid(String(process.pid));
+    const gatewayPidPath = path.join(instanceDir, "gateway.pid");
+    writeFileSync(gatewayPidPath, String(process.pid));
+    markStale(pidPath);
+    markStale(gatewayPidPath);
+    // Non-200 on the gateway's /healthz = not responding.
+    gatewayServer?.removeAllListeners("request");
+    gatewayServer?.on("request", (_req, res) => {
+      res.writeHead(500);
+      res.end();
+    });
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("crashed");
+      expect(result.detail).toBe("gateway process is not responding");
+      expect(result.pid).toBe(process.pid);
+    }
+  });
+
+  test("reports starting when a fresh gateway pid has not bound its port yet", async () => {
+    await serveStack();
+    writeStackLockfile();
+    const pidPath = writeAssistantPid(String(process.pid));
+    markStale(pidPath);
+    // The gateway just started: pid file fresh, port not answering yet.
+    writeFileSync(path.join(instanceDir, "gateway.pid"), String(process.pid));
+    gatewayServer?.removeAllListeners("request");
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("starting");
+    }
+  });
+
+  test("reports crashed when a stale live assistant answers its health check with a non-200", async () => {
+    await serveStack();
+    writeStackLockfile();
+    const pidPath = writeAssistantPid(String(process.pid));
+    markStale(pidPath);
+    // Non-200 on the daemon's /healthz = not responding.
+    daemonServer?.removeAllListeners("request");
+    daemonServer?.on("request", (_req, res) => {
+      res.writeHead(500);
+      res.end();
+    });
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("crashed");
+      expect(result.detail).toContain("assistant process is not responding");
+    }
+  });
+
+  test("reports crashed when a stale live assistant has no gateway pid at all", async () => {
+    await serveStack();
+    writeStackLockfile();
+    const pidPath = writeAssistantPid(String(process.pid));
+    markStale(pidPath);
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state).toBe("crashed");
+      expect(result.detail).toBe("gateway process is not running");
+    }
+  });
+
+  test("propagates the unreadable-lockfile error to status callers", async () => {
+    writeFileSync(lockfilePath, "{ not json");
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(500);
+      expect(result.error).toContain("lockfile");
+    }
+  });
+
+  test("dials the environment seed's ports when the lockfile carries none", async () => {
+    // No ports in the lockfile: the dev seed's daemon port (18000), not the
+    // code defaults (7821), must receive the probe. A live server on 18000
+    // plus a stale pid proves the dial by answering it.
+    const devSeedDaemonPort = 18000;
+    daemonServer = createServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "healthy" }));
+    });
+    await new Promise<void>((resolve) => {
+      daemonServer!.listen(devSeedDaemonPort, "127.0.0.1", resolve);
+    });
+    writeLocalLockfile({ resources: { instanceDir, qdrantPort: 0 } });
+    const pidPath = writeAssistantPid(String(process.pid));
+    markStale(pidPath);
+
+    const result = await getLocalAssistantStatus([lockfilePath], "local-1", {
+      CADET_ENVIRONMENT: "dev",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // The daemon answered, so the run continues to the gateway check.
+      expect(result.state).toBe("crashed");
+      expect(result.detail).toBe("gateway process is not running");
+    }
+  });
 });
