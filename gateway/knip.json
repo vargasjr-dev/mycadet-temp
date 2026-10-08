@@ -1,6 +1,12 @@
 {
-  "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts", "src/cli/index.ts"],
-  "project": ["src/**/*.ts"],
+  "entry": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/cli/index.ts"
+  ],
+  "project": [
+    "src/**/*.ts"
+  ],
   "ignoreDependencies": [
     "@mycadet/assistant-client",
     "@mycadet/ces-client",
@@ -8,6 +14,7 @@
     "@mycadet/gateway-client",
     "@mycadet/ipc-server-utils",
     "@mycadet/service-contracts",
+    "@mycadet/shared",
     "@mycadet/slack-text",
     "@mycadet/twilio-client"
   ]

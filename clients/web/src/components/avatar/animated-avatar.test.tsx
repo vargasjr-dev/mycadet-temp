@@ -204,3 +204,4 @@ describe("AnimatedAvatar streaming morph", () => {
     expect(container.innerHTML).toBe("");
   });
 });
+
