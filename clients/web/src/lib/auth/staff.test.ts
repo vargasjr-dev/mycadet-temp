@@ -22,7 +22,7 @@ describe("isCadetStaff", () => {
   });
 
   test("accepts a Cadet address case-insensitively", () => {
-    expect(isCadetStaff(user({ email: "alice@" + "CADET.AI" }))).toBe(true);
+    expect(isCadetStaff(user({ email: "alice@" + "MYCADET.AI" }))).toBe(true);
   });
 
   test("rejects a lookalike domain", () => {
