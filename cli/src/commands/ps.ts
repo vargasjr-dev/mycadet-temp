@@ -380,10 +380,21 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   return results;
 }
 
+function locationFor(entry: AssistantEntry): string {
+  if (entry.cloud === "local") {
+    return entry.resources?.instanceDir ?? "unknown — no instance dir recorded";
+  }
+  if (entry.cloud === "docker") {
+    return `docker container ${dockerResourceNames(entry.assistantId).assistantContainer}`;
+  }
+  return entry.runtimeUrl ?? "unknown — no runtime URL recorded";
+}
+
 async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
   const cloud = entry.cloud;
 
-  console.log(`Processes for ${formatAssistantReference(entry)} (${cloud}):\n`);
+  console.log(`Processes for ${formatAssistantReference(entry)} (${cloud}):`);
+  console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
     const rows = await getLocalProcesses(entry);
@@ -553,9 +564,8 @@ function formatAssistantListRow(
   health: AssistantHealth,
 ): TableRow {
   const infoParts: string[] = [];
-  infoParts.push(`id: ${entry.assistantId}`);
   if (entry.runtimeUrl) infoParts.push(entry.runtimeUrl);
-  if (entry.cloud) infoParts.push(`cloud: ${entry.cloud}`);
+  if (entry.cloud) infoParts.push(`remote: ${entry.cloud}`);
   if (health.detail) infoParts.push(health.detail);
 
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";
@@ -578,33 +588,15 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     ? (msg) => console.log(`  [verbose] ${msg}`)
     : undefined;
 
-  // Decide cloud login status FIRST, before touching the network. With no
-  // local token we never enter the platform fetch path — so unreachable-host
-  // errors from the org-ID/user lookups can't leak onto stderr ahead of the
-  // "Cloud: not logged in" line.
+  // Sync cloud assistants (when logged in) before listing. Login status has
+  // its own command — `cadet whoami` — so ps stays silent about it.
   const platformToken = readPlatformToken();
   if (!platformToken) {
     log?.("No platform token found — skipping cloud sync");
-    console.log("Cloud: not logged in");
   } else {
-    const syncResult = await syncCloudAssistants(platformToken, { log });
-    if (syncResult) {
-      const parts = [`Cloud: logged in`];
-      if (syncResult.email) parts[0] += ` as ${syncResult.email}`;
-      if (syncResult.added > 0 || syncResult.removed > 0) {
-        const changes: string[] = [];
-        if (syncResult.added > 0) changes.push(`${syncResult.added} added`);
-        if (syncResult.removed > 0)
-          changes.push(`${syncResult.removed} removed`);
-        parts.push(`(${changes.join(", ")})`);
-      }
-      console.log(parts.join(" "));
-    } else {
-      // We had a token but the platform fetch failed (offline, expired, etc.).
-      // Treat it the same as "not logged in" from a UX perspective — the user
-      // can't reach cloud-managed assistants right now either way.
-      console.log("Cloud: not logged in");
-    }
+    // A failed sync (offline, expired token) just means cloud-managed
+    // assistants may be stale — the local list still renders.
+    await syncCloudAssistants(platformToken, { log });
   }
   console.log("");
 
