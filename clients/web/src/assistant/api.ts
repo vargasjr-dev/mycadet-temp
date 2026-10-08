@@ -22,10 +22,8 @@ import type {
   Assistant as GeneratedAssistant,
   HatchAssistantRequest,
 } from "@/generated/api/types.gen";
+import { client as daemonClient } from "@/generated/daemon/client.gen";
 import {
-  backupsCreatePost,
-  backupsGet,
-  backupsRestorePost,
   diskpressureAcknowledgePost,
   diskpressureStatusGet,
   healthzGet,
@@ -426,8 +424,11 @@ export async function listAssistantBackups(
   const needsPlatform = !getSelfHostedIngressUrl();
 
   const [daemonResult, platformResult] = await Promise.all([
-    backupsGet({
-      path: { assistant_id: assistantId },
+    // Backups are not an assistant-container concern — the daemon client's
+    // interceptor rewrites this assistant-scoped URL to the gateway, which
+    // owns the backup system.
+    daemonClient.get({
+      url: `/v1/assistants/${assistantId}/backups`,
       throwOnError: false,
     }),
     needsPlatform
@@ -496,9 +497,12 @@ export async function createAssistantBackup(
   // self-hosted assistant — whether accessed locally or via the
   // platform web app. For pure platform-hosted assistants (no ingress
   // URL), backup creation goes through Django → vembda.
+  // Same ownership note as listAssistantBackups: self-hosted create is
+  // served by the gateway's assistant-scoped mirror, platform create by
+  // Django → vembda.
   const { data, error, response } = getSelfHostedIngressUrl()
-    ? await backupsCreatePost({
-        path: { assistant_id: assistantId },
+    ? await daemonClient.post({
+        url: `/v1/assistants/${assistantId}/backups/create`,
         throwOnError: false,
       })
     : await assistantsBackupsCreate({
@@ -532,11 +536,15 @@ export async function restoreAssistantBackup(
   assistantId: string,
   backup: AssistantBackup,
 ): Promise<RestoreBackupResult> {
-  // Same routing split as createAssistantBackup.
+  // Same routing split as createAssistantBackup. NOTE: the gateway does not
+  // yet expose a restore route (the assistant daemon's restore endpoint was
+  // removed with its backup routes), so self-hosted restore surfaces the
+  // runtime error from this request until restore moves to the gateway.
   const { data, error, response } = getSelfHostedIngressUrl()
-    ? await backupsRestorePost({
-        path: { assistant_id: assistantId },
+    ? await daemonClient.post({
+        url: `/v1/assistants/${assistantId}/backups/restore`,
         body: { path: backup.path ?? backup.snapshot_name },
+        headers: { "Content-Type": "application/json" },
         throwOnError: false,
       })
     : await assistantsBackupsRestoreCreate({

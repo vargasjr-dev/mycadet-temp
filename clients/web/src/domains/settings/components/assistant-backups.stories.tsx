@@ -17,7 +17,6 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { client as platformClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
-import type { BackupsGetResponse } from "@/generated/daemon/types.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
 
 const ASSISTANT_IDS = {
@@ -70,12 +69,15 @@ const BACKUPS: AssistantBackup[] = [
   },
 ];
 
-/** The daemon's side of the list, with nothing stored locally or offsite. */
-const DAEMON_BACKUPS: BackupsGetResponse = {
-  local: [],
-  offsite: [],
-  offsiteEnabled: false,
-  nextRunAt: null,
+/** The gateway's list response, with nothing stored locally or offsite. */
+const DAEMON_BACKUPS = {
+  local: { directory: "/tmp/none", snapshots: [] },
+  offsite: [] as Array<{ directory: string; encrypted: boolean; snapshots: unknown[] }>,
+} satisfies GatewayBackupsList;
+
+type GatewayBackupsList = {
+  local: { directory: string; snapshots: unknown[] };
+  offsite: Array<{ directory: string; encrypted: boolean; snapshots: unknown[] }>;
 };
 
 function backupsFor(pathname: string): AssistantBackup[] {
@@ -97,7 +99,7 @@ async function platformFetch(request: Request): Promise<Response> {
 async function daemonFetch(request: Request): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname.endsWith("/backups") && request.method === "GET") {
-    return Response.json(DAEMON_BACKUPS satisfies BackupsGetResponse);
+    return Response.json(DAEMON_BACKUPS satisfies GatewayBackupsList);
   }
   return fixtureNotFound();
 }
