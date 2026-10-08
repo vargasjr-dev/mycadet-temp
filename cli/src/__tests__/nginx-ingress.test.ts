@@ -1758,7 +1758,7 @@ describe("ensureTunnelEdge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
     writeFileSync(
-      join(lockfileDir, ".cadet.lock.json"),
+      join(lockfileDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -1845,7 +1845,7 @@ describe("ensureTunnelEdge", () => {
     mockWebDistPresent();
     const writeLockfile = (name: string) =>
       writeFileSync(
-        join(lockfileDir, ".cadet.lock.json"),
+        join(lockfileDir, "lockfile.json"),
         JSON.stringify({
           assistants: [
             {

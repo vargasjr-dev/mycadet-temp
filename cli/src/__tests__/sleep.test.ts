@@ -95,7 +95,7 @@ import {
 // assistant without needing to mock the entire assistant-config module.
 function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify(
       {
         assistants: [
@@ -161,7 +161,7 @@ describe("sleep command", () => {
     // Reset per-test state: drop the lockfile and any lease file left behind.
     // assistantRootDir IS testDir now (state is flattened into the instance
     // dir), so wipe files rather than the directory itself.
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    rmSync(join(testDir, "lockfile.json"), { force: true });
     rmSync(join(assistantRootDir, "active-call-leases.json"), { force: true });
     writeLockfile();
   });

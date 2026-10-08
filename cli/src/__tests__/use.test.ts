@@ -43,7 +43,7 @@ function writeLockfile(
 ): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify(
       {
         assistants: entries,
@@ -58,7 +58,7 @@ function writeLockfile(
 describe("cadet use", () => {
   beforeEach(() => {
     process.env.CADET_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    rmSync(join(testDir, "lockfile.json"), { force: true });
     process.argv = ["bun", "cadet", "use"];
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);

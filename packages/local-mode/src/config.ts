@@ -72,10 +72,16 @@ export function resolveLockfilePaths(
   }
 
   if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
-    const dir = lockfileDir ?? options.homeDir ?? os.homedir();
+    // Canonical: the XDG config dir, where every other environment keeps
+    // its lockfile. The home-level names stay as READ-ONLY fallback
+    // candidates for installs that predate the move — writes always go to
+    // the canonical path.
+    const dir = lockfileDir ?? resolveConfigDir(env, options);
+    const legacyDir = lockfileDir ?? options.homeDir ?? os.homedir();
     return [
-      joinLocalPath(options, dir, ".cadet.lock.json"),
-      joinLocalPath(options, dir, ".cadet.lockfile.json"),
+      joinLocalPath(options, dir, "lockfile.json"),
+      joinLocalPath(options, legacyDir, ".cadet.lock.json"),
+      joinLocalPath(options, legacyDir, ".cadet.lockfile.json"),
     ];
   }
 

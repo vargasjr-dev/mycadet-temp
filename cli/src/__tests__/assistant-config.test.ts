@@ -46,7 +46,7 @@ afterAll(() => {
 
 function writeLockfile(data: unknown): void {
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify(data, null, 2),
   );
 }
@@ -64,16 +64,13 @@ const makeEntry = (
 
 describe("assistant-config", () => {
   beforeEach(() => {
-    // Reset lockfile between tests
-    try {
-      rmSync(join(testDir, ".cadet.lock.json"));
-    } catch {
-      // file may not exist
-    }
-    try {
-      rmSync(join(testDir, ".cadet.lockfile.json"));
-    } catch {
-      // file may not exist
+    // Reset every lockfile candidate between tests (canonical + legacy)
+    for (const name of ["lockfile.json", ".cadet.lock.json", ".cadet.lockfile.json"]) {
+      try {
+        rmSync(join(testDir, name));
+      } catch {
+        // file may not exist
+      }
     }
   });
 
@@ -82,8 +79,22 @@ describe("assistant-config", () => {
   });
 
   test("loadAllAssistants returns empty array for malformed lockfile", () => {
+    // Legacy home-level name: malformed canonical candidates fall through
+    // to the next candidate, so a malformed legacy file alone yields empty.
     writeFileSync(join(testDir, ".cadet.lock.json"), "not json");
     expect(loadAllAssistants()).toEqual([]);
+  });
+
+  test("legacy home-level lockfile names still resolve for reads (identity continuity)", () => {
+    // Seed the LEGACY name directly — the canonical path is absent, so the
+    // entry must come from the legacy fallback candidate.
+    writeFileSync(
+      join(testDir, ".cadet.lock.json"),
+      JSON.stringify({ assistants: [makeEntry("legacy-1")] }, null, 2),
+    );
+    const all = loadAllAssistants();
+    expect(all).toHaveLength(1);
+    expect(all[0].assistantId).toBe("legacy-1");
   });
 
   test("loadAllAssistants returns empty array when assistants key is missing", () => {
@@ -103,11 +114,11 @@ describe("assistant-config", () => {
     saveAssistantEntry(makeEntry("locked-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
-    expect(existsSync(join(testDir, ".cadet.lock.json.lock"))).toBe(false);
+    expect(existsSync(join(testDir, "lockfile.json.lock"))).toBe(false);
   });
 
   test("saveAssistantEntry breaks a stale lock and still lands the write", () => {
-    const lockDir = join(testDir, ".cadet.lock.json.lock");
+    const lockDir = join(testDir, "lockfile.json.lock");
     mkdirSync(lockDir);
     const past = new Date(Date.now() - 60_000);
     utimesSync(lockDir, past, past);
@@ -118,7 +129,7 @@ describe("assistant-config", () => {
   });
 
   test("saveAssistantEntry fails fast without writing when another holder is fresh", () => {
-    const lockDir = join(testDir, ".cadet.lock.json.lock");
+    const lockDir = join(testDir, "lockfile.json.lock");
     mkdirSync(lockDir);
     try {
       const start = Date.now();
@@ -615,9 +626,11 @@ describe("legacy migration via loadAllAssistants", () => {
     );
     expect(all[0].resources!.gatewayPort).toBe(7830);
 
-    // AND the lockfile on disk should reflect the migration
+    // AND the lockfile on disk should reflect the migration — persisted to
+    // the canonical config-dir path (the legacy seed file is left in place
+    // as a read-only fallback).
     const rawDisk = JSON.parse(
-      readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
+      readFileSync(join(testDir, "lockfile.json"), "utf-8"),
     );
     const diskEntry = rawDisk.assistants[0];
     expect(diskEntry.baseDataDir).toBeUndefined();
@@ -715,21 +728,17 @@ describe("env-scoped lockfile and migration", () => {
     }
   });
 
-  test("production lockfile path is unchanged — uses .cadet.lock.json", () => {
+  test("production writes land at the config-dir lockfile.json, never the legacy home-level name", () => {
     // With CADET_ENVIRONMENT unset, the env package resolves production,
-    // whose canonical lockfile filename is `.cadet.lock.json`. This test
-    // uses the existing CADET_LOCKFILE_DIR=testDir override to route the
-    // lockfile to a scratch directory but verifies the FILENAME matches
-    // the production convention (not the non-prod "lockfile.json").
+    // whose canonical lockfile is the config-dir `lockfile.json` — the same
+    // convention every environment uses. The home-level `.cadet.lock.json`
+    // name is a read-only fallback and is never (re)created by writes.
     const prevEnv = process.env.CADET_ENVIRONMENT;
     delete process.env.CADET_ENVIRONMENT;
     try {
       // Clear any existing lockfile from earlier tests
-      try {
-        rmSync(join(testDir, ".cadet.lock.json"));
-      } catch {
-        // ignore
-      }
+      rmSync(join(testDir, "lockfile.json"), { force: true });
+      rmSync(join(testDir, ".cadet.lock.json"), { force: true });
 
       saveAssistantEntry({
         assistantId: "prod-bot",
@@ -737,12 +746,10 @@ describe("env-scoped lockfile and migration", () => {
         cloud: "local",
       });
 
-      // The file should land at testDir/.cadet.lock.json — the production
-      // filename — rather than testDir/lockfile.json.
-      const prodPath = join(testDir, ".cadet.lock.json");
-      const raw = JSON.parse(readFileSync(prodPath, "utf-8"));
+      const raw = JSON.parse(readFileSync(join(testDir, "lockfile.json"), "utf-8"));
       expect(raw.assistants).toHaveLength(1);
       expect(raw.assistants[0].assistantId).toBe("prod-bot");
+      expect(existsSync(join(testDir, ".cadet.lock.json"))).toBe(false);
     } finally {
       if (prevEnv !== undefined) {
         process.env.CADET_ENVIRONMENT = prevEnv;
@@ -765,6 +772,7 @@ describe("cross-environment hint on resolution failure", () => {
     // copy is deterministic. The current-env lockfile is emptied so resolution
     // genuinely finds nothing.
     process.env.CADET_ENVIRONMENT = "production";
+    rmSync(join(testDir, "lockfile.json"), { force: true });
     rmSync(join(testDir, ".cadet.lock.json"), { force: true });
     rmSync(join(testDir, ".cadet.lockfile.json"), { force: true });
   });

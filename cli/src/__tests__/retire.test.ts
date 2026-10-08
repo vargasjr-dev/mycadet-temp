@@ -111,13 +111,13 @@ function makeEntry(
 function writeLockfile(entries: AssistantEntry[]): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }
 
 function readLockfile(): string {
-  return readFileSync(join(testDir, ".cadet.lock.json"), "utf-8");
+  return readFileSync(join(testDir, "lockfile.json"), "utf-8");
 }
 
 function setTerminalMode(isTTY: boolean): void {
@@ -168,7 +168,9 @@ describe("cadet retire", () => {
   beforeEach(() => {
     process.env.CADET_LOCKFILE_DIR = testDir;
     delete process.env.CADET_PLATFORM_TOKEN;
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
+    for (const name of ["lockfile.json", ".cadet.lock.json", ".cadet.lockfile.json"]) {
+      rmSync(join(testDir, name), { force: true });
+    }
     process.argv = ["bun", "cadet", "retire"];
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);

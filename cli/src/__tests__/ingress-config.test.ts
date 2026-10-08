@@ -23,14 +23,14 @@ import {
 
 function writeLockfile(entry: Record<string, unknown>): void {
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify({ assistants: [entry], activeAssistant: "ingress-test" }),
   );
 }
 
 function readLockfileEntry(): Record<string, unknown> {
   const data = JSON.parse(
-    readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
+    readFileSync(join(testDir, "lockfile.json"), "utf-8"),
   ) as { assistants: Record<string, unknown>[] };
   return data.assistants[0];
 }

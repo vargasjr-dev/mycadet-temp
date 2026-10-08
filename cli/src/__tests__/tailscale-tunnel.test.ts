@@ -92,7 +92,7 @@ function makeDeps(opts: {
 function useTempLockfile(assistantId: string, ingressUrl?: string): string {
   const lockfileDir = makeWorkspace();
   process.env.CADET_LOCKFILE_DIR = lockfileDir;
-  const lockfilePath = join(lockfileDir, ".cadet.lock.json");
+  const lockfilePath = join(lockfileDir, "lockfile.json");
   writeFileSync(
     lockfilePath,
     JSON.stringify({

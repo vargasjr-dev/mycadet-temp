@@ -117,6 +117,7 @@ describe("path resolvers honor the persisted default", () => {
       CADET_ENVIRONMENT: "production",
     };
     expect(resolveLockfilePaths(env)).toEqual([
+      path.join(configHome, "cadet", "lockfile.json"),
       path.join(os.homedir(), ".cadet.lock.json"),
       path.join(os.homedir(), ".cadet.lockfile.json"),
     ]);

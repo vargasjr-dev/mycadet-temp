@@ -365,7 +365,8 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
     -h, --help                 Show this help message
 
 ${ANSI.bold}DEFAULTS:${ANSI.reset}
-    Reads from ~/.cadet.lock.json (created by cadet hatch).
+    Reads from the config-dir lockfile.json (home-level legacy names
+    still honored for reads; created by cadet hatch).
     Override with flags above.
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
