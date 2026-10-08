@@ -95,25 +95,6 @@ export function getDeviceIdOverride(): string | undefined {
   return str("CADET_DEVICE_ID");
 }
 
-/**
- * CADET_BACKUP_DIR — string, default: undefined
- * Overrides the default backup root directory (~/.cadet/backups/).
- * Used in containerized deployments where the backup directory must be
- * on a persistent volume.
- */
-export function getBackupDirOverride(): string | undefined {
-  return str("CADET_BACKUP_DIR");
-}
-
-/**
- * CADET_BACKUP_KEY_PATH — string, default: undefined
- * Overrides the default backup encryption key path (~/.cadet/protected/backup.key).
- * Used in containerized deployments where the key must be on a persistent volume.
- */
-export function getBackupKeyPathOverride(): string | undefined {
-  return str("CADET_BACKUP_KEY_PATH");
-}
-
 // ── Profiler env vars ───────────────────────────────────────────────────
 // These are injected by the platform when running a managed assistant in
 // profiler mode. The runtime uses them to locate, scope, and budget-limit

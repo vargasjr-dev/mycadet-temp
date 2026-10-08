@@ -8,8 +8,6 @@
 
 import { join } from "node:path";
 
-import { cadetDataHome } from "../paths.js";
-
 import { getGatewaySecurityDir } from "../paths.js";
 
 // ---------------------------------------------------------------------------
@@ -40,12 +38,11 @@ export function getBackupKeyPath(): string {
 /**
  * Returns the backup root directory. Respects the `CADET_BACKUP_DIR`
  * environment variable override (used in containerized deployments where
- * backups must be on a persistent volume); falls back to the XDG data home —
- * never the cwd, so a bare run from anywhere (including the repo root)
- * cannot write backups into the checkout.
+ * backups must be on a persistent volume); falls back to `<cwd>/backups`
+ * (the spawner picks the cwd — the XDG data home for CLI-hatched instances).
  */
 export function getBackupRootDir(): string {
-  return process.env.CADET_BACKUP_DIR?.trim() || join(cadetDataHome(), "backups");
+  return process.env.CADET_BACKUP_DIR?.trim() || join(process.cwd(), "backups");
 }
 
 // ---------------------------------------------------------------------------

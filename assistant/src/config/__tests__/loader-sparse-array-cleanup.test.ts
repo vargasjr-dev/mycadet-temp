@@ -97,19 +97,19 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
     expect(config.maxStepsPerSession).toBe(66);
   });
 
-  test("emptied-by-compaction array reverts to a non-empty schema default (backup.offsite.destinations)", () => {
-    // `backup.offsite.destinations` defaults to `null`, where `null` means "use
-    // the platform default" and `[]` means "no offsite destinations".
-    // Stripping the sole invalid element must NOT leave an explicit `[]` that
-    // overrides the default — it must fall back to the schema default `null`.
+  test("emptied-by-compaction array reverts to a non-empty schema default (skills.allowBundled)", () => {
+    // `skills.allowBundled` defaults to `null`, where `null` means "load all
+    // bundled skills" and `[]` means "load none". Stripping the sole invalid
+    // element must NOT leave an explicit `[]` that overrides the default —
+    // it must fall back to the schema default `null`.
     writeConfig({
-      backup: { offsite: { destinations: [123] } },
+      skills: { allowBundled: [123] },
       maxStepsPerSession: 66,
     });
 
     const config = loadConfig();
 
-    expect(config.backup.offsite.destinations).toBeNull();
+    expect(config.skills.allowBundled).toBeNull();
     expect(config.maxStepsPerSession).toBe(66);
   });
 
@@ -129,17 +129,17 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
   });
 
   test("an explicitly-empty array on disk is preserved as the user's choice", () => {
-    // `backup.offsite.destinations: []` has no invalid elements to strip, so it
-    // is never touched by compaction. An unrelated invalid field forces the
-    // cleanup path to run over the whole tree; the empty array must survive as
-    // the user's explicit "no offsite destinations" choice.
+    // `skills.allowBundled: []` has no invalid elements to strip, so it is
+    // never touched by compaction. An unrelated invalid field forces the
+    // cleanup path to run over the whole tree; the empty array must survive
+    // as the user's explicit "load no bundled skills" choice.
     writeConfig({
-      backup: { offsite: { destinations: [] } },
+      skills: { allowBundled: [] },
       maxStepsPerSession: "not-a-number",
     });
 
     const config = loadConfig();
 
-    expect(config.backup.offsite.destinations).toEqual([]);
+    expect(config.skills.allowBundled).toEqual([]);
   });
 });

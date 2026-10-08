@@ -11,7 +11,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { defaultGatewaySecurityDir } from "../paths.js";
 import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 
 const originalSecurityDir = process.env.GATEWAY_SECURITY_DIR;
@@ -62,7 +61,7 @@ test("initGatewayDb refuses test runs without an isolated security dir", async (
 
 test("initGatewayDb refuses the real security dir during tests even when explicitly set", async () => {
   resetGatewayDb();
-  process.env.GATEWAY_SECURITY_DIR = defaultGatewaySecurityDir();
+  process.env.GATEWAY_SECURITY_DIR = join(process.cwd(), "gateway-security");
   delete process.env.CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS;
 
   await expect(initGatewayDb()).rejects.toThrow(

@@ -16,7 +16,7 @@ import {
 import { createRequire } from "module";
 import { Socket } from "net";
 import { homedir, networkInterfaces, platform, tmpdir } from "os";
-import { basename, dirname, isAbsolute, join } from "path";
+import { basename, dirname, isAbsolute, join, resolve } from "path";
 
 import {
   findAssistantCommand,
@@ -37,6 +37,19 @@ import { isValidReleaseVersion } from "@mycadet/local-mode";
  */
 function defaultCadetRoot(): string {
   return getStateDir(getCurrentEnvironment());
+}
+
+/**
+ * cwd for every service spawn — the XDG data home
+ * (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet`). The spawner
+ * picks where services run so their `process.cwd()`-fallback state dirs
+ * resolve under XDG and never into a checkout (the repo root included);
+ * containerized deployments set explicit env vars instead.
+ */
+function spawnStateRoot(): string {
+  const root = defaultCadetRoot();
+  mkdirSync(root, { recursive: true });
+  return root;
 }
 
 import {
@@ -830,14 +843,16 @@ async function startDaemonFromSource(
     assistantCommand ? [dirname(assistantCommand)] : [],
   );
   const child = foreground
-    ? spawn(bunPath, ["run", daemonMainPath], {
+    ? spawn(bunPath, ["run", resolve(daemonMainPath)], {
+        cwd: spawnStateRoot(),
         stdio: "inherit",
         env: spawnEnv,
         windowsHide: true,
       })
     : (() => {
         const daemonLogFd = openLogFile("hatch.log");
-        const c = spawn(bunPath, ["run", daemonMainPath], {
+        const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
+          cwd: spawnStateRoot(),
           detached: true,
           stdio: ["ignore", "pipe", "pipe"],
           windowsHide: true,
@@ -909,12 +924,17 @@ async function startDaemonWatchFromSource(
   writeFileSync(pidFile, "starting", "utf-8");
 
   const daemonLogFd = openLogFile("hatch.log");
-  const child = spawn(resolveBunExecutable(), ["--watch", "run", mainPath], {
-    detached: true,
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-    env: envWithBunPath(env),
-  });
+  const child = spawn(
+    resolveBunExecutable(),
+    ["--watch", "run", resolve(mainPath)],
+    {
+      cwd: spawnStateRoot(),
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+      env: envWithBunPath(env),
+    },
+  );
   pipeToLogFile(child, daemonLogFd, "daemon");
   child.unref();
   const daemonPid = child.pid;
@@ -1100,6 +1120,7 @@ export async function startCes(
     // Compiled binary alongside the CLI (desktop app / compiled CLI).
     const cesLogFd = openLogFile("hatch.log");
     ces = spawn(cesBinary, [], {
+      cwd: spawnStateRoot(),
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
@@ -1109,12 +1130,13 @@ export async function startCes(
   } else {
     // Source tree / bunx: run the CES entry point via bun.
     const cesDir = runtimeCesDir ?? resolveCesDir(resources);
+    const cesEntry = join(cesDir, "src/main.ts");
     const bunArgs = watch
-      ? ["--watch", "run", "src/main.ts"]
-      : ["run", "src/main.ts"];
+      ? ["--watch", "run", cesEntry]
+      : ["run", cesEntry];
     const cesLogFd = openLogFile("hatch.log");
     ces = spawn(resolveBunExecutable(), bunArgs, {
-      cwd: cesDir,
+      cwd: spawnStateRoot(),
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
@@ -1650,7 +1672,7 @@ export async function startLocalDaemon(
 
       const child = foreground
         ? spawn(daemonBinary, [], {
-            cwd: dirname(daemonBinary),
+            cwd: spawnStateRoot(),
             stdio: "inherit",
             env: daemonSpawnEnv,
             windowsHide: true,
@@ -1658,7 +1680,7 @@ export async function startLocalDaemon(
         : (() => {
             const daemonLogFd = openLogFile("hatch.log");
             const c = spawn(daemonBinary, [], {
-              cwd: dirname(daemonBinary),
+              cwd: spawnStateRoot(),
               detached: true,
               stdio: ["ignore", "pipe", "pipe"],
               windowsHide: true,
@@ -1875,6 +1897,7 @@ export async function startGateway(
     // and use source (bun --watch only works with source files).
     const gatewayLogFd = openLogFile("hatch.log");
     gateway = spawn(gatewayBinary, [], {
+      cwd: spawnStateRoot(),
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
@@ -1884,12 +1907,13 @@ export async function startGateway(
   } else {
     // Source tree / bunx: resolve the gateway source directory and run via bun.
     const gatewayDir = runtimeGatewayDir ?? resolveGatewayDir(resources);
+    const gatewayEntry = join(gatewayDir, "src/index.ts");
     const bunArgs = watch
-      ? ["--watch", "run", "src/index.ts", "--cadet-gateway"]
-      : ["run", "src/index.ts", "--cadet-gateway"];
+      ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
+      : ["run", gatewayEntry, "--cadet-gateway"];
     const gwLogFd = openLogFile("hatch.log");
     gateway = spawn(resolveBunExecutable(), bunArgs, {
-      cwd: gatewayDir,
+      cwd: spawnStateRoot(),
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,

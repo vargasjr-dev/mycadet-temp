@@ -23,9 +23,9 @@ import {
 
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
-// This file characterizes path resolution itself (including the XDG
-// data-home fallback and literal override paths) without reading or writing
-// those locations, so the live-workspace guard is deliberately bypassed.
+// This file characterizes path resolution itself (including the cwd
+// fallback and literal override paths) without reading or writing those
+// locations, so the live-workspace guard is deliberately bypassed.
 const originalAllowRealWorkspace =
   process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
 process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS = "1";
@@ -60,7 +60,7 @@ afterEach(() => {
 
 // Path characterization: documents the current path layout.
 // Workspace helpers resolve under CADET_WORKSPACE_DIR when set,
-// otherwise under the XDG data home ($XDG_DATA_HOME/cadet/assistant/workspace).
+// otherwise under <cwd>/workspace.
 describe("path characterization", () => {
   test("formats Windows workspace paths relative to the home directory", () => {
     expect(
@@ -76,17 +76,14 @@ describe("path characterization", () => {
   });
 
   test("all path helpers resolve to expected locations", () => {
-    // Without CADET_WORKSPACE_DIR override, workspace is the XDG data home
-    const originalXdgDataHome = process.env.XDG_DATA_HOME;
-    process.env.XDG_DATA_HOME = "/tmp/platform-test-xdg-data";
+    // Without CADET_WORKSPACE_DIR override, workspace is <cwd>/workspace
     delete process.env.CADET_WORKSPACE_DIR;
+    const root = process.cwd();
     const ws = getWorkspaceDir();
     const data = getDataDir();
 
-    // Workspace is under the XDG data home
-    expect(ws).toBe(
-      join("/tmp/platform-test-xdg-data", "cadet", "assistant", "workspace"),
-    );
+    // Workspace is under root
+    expect(ws).toBe(join(root, "workspace"));
 
     // Data dir is under workspace
     expect(data).toBe(join(ws, "data"));
@@ -103,12 +100,6 @@ describe("path characterization", () => {
 
     // PID file lives in the workspace directory
     expect(getPidPath()).toBe(join(ws, "cadet.pid"));
-
-    if (originalXdgDataHome === undefined) {
-      delete process.env.XDG_DATA_HOME;
-    } else {
-      process.env.XDG_DATA_HOME = originalXdgDataHome;
-    }
   });
 
   test("CADET_WORKSPACE_DIR overrides workspace location", () => {

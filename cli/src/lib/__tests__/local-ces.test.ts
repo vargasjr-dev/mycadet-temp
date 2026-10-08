@@ -121,10 +121,13 @@ describe("startCes", () => {
     expect(lastSpawnCall!.options.detached).toBe(true);
 
     // Under plain bun (source tree / tests), CES must run via `bun run
-    // src/main.ts` — never an adjacent `credential-executor` binary, which in
-    // bun's own bin dir is an unrelated globally-installed package bin.
+    // <abs>/src/main.ts` — never an adjacent `credential-executor` binary,
+    // which in bun's own bin dir is an unrelated globally-installed package
+    // bin. The entry is absolute because the spawn cwd is the XDG state root.
     expect(lastSpawnCall!.cmd[0]).toBe(process.execPath);
-    expect(lastSpawnCall!.cmd).toContain("src/main.ts");
+    expect(
+      lastSpawnCall!.cmd.some((arg) => arg.endsWith("src/main.ts")),
+    ).toBe(true);
 
     // Verify env vars
     const env = lastSpawnCall!.options.env!;

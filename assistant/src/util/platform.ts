@@ -349,29 +349,16 @@ function assertTestPathIsEphemeral(dir: string): void {
  *
  * When the CADET_WORKSPACE_DIR env var is set, returns that value (used in
  * containerized deployments where the workspace is a separate volume).
- * Otherwise falls back to the XDG data home
- * (`~/.local/share/cadet/assistant/workspace`) — never the cwd, so a bare
- * run from anywhere (including the repo root) cannot write state into the
- * checkout.
+ * Otherwise falls back to `<cwd>/workspace`.
  *
  * In test processes the resolved directory must live under `os.tmpdir()`
  * (see the live-workspace guard above); anything else throws.
  */
 export function getWorkspaceDir(): string {
   const dir =
-    process.env.CADET_WORKSPACE_DIR?.trim() ||
-    join(xdgDataHome(), "cadet", "assistant", "workspace");
+    process.env.CADET_WORKSPACE_DIR?.trim() || join(process.cwd(), "workspace");
   assertTestPathIsEphemeral(dir);
   return dir;
-}
-
-/**
- * XDG data home for cadet state that outlives the process. The workspace
- * fallback resolves here — never into the cwd — so running the daemon from
- * the repo root cannot litter the worktree.
- */
-function xdgDataHome(): string {
-  return process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
 }
 
 /**

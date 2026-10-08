@@ -3,8 +3,6 @@ import { z } from "zod";
 import { getDataDir } from "../util/platform.js";
 
 // Re-export domain schemas that have external consumers
-export type { BackupConfig, BackupDestination } from "./schemas/backup.js";
-export { BackupConfigSchema } from "./schemas/backup.js";
 export { VALID_CALLER_IDENTITY_MODES } from "./schemas/calls.js";
 export { DEFAULT_ELEVENLABS_VOICE_ID } from "./schemas/elevenlabs.js";
 export type {
@@ -16,7 +14,6 @@ export type { SkillEntryConfig } from "./schemas/skills.js";
 // Imports for AssistantConfigSchema composition
 import { AcpConfigSchema } from "./acp-schema.js";
 import { ApiRateLimitConfigSchema } from "./schemas/api-rate-limit.js";
-import { BackupConfigSchema } from "./schemas/backup.js";
 import { CallsConfigSchema } from "./schemas/calls.js";
 import {
   A2AConfigSchema,
@@ -107,7 +104,6 @@ export const AssistantConfigSchema = z.object({
     ConversationsConfigSchema.parse({}),
   ),
   journal: JournalConfigSchema.default(JournalConfigSchema.parse({})),
-  backup: BackupConfigSchema.default(BackupConfigSchema.parse({})),
   acp: AcpConfigSchema.default(AcpConfigSchema.parse({})),
   skills: SkillsConfigSchema.default(SkillsConfigSchema.parse({})),
   workspaceGit: WorkspaceGitConfigSchema.default(

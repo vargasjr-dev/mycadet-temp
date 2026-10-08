@@ -6,22 +6,12 @@
  * without pulling in the full credential-reader dependency tree.
  */
 
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { assertTestPathIsEphemeral } from "@mycadet/environments/test-path-guard";
 
-/**
- * XDG data home for cadet state that outlives the process. The fallback for
- * every state dir below resolves here — never into the checkout — so running
- * a service from the repo root cannot litter the worktree.
- */
-export function cadetDataHome(): string {
-  return (
-    process.env.XDG_DATA_HOME?.trim() ||
-    join(homedir(), ".local", "share", "cadet")
-  );
-}
+let warnedWorkspaceDir = false;
+let warnedSecurityDir = false;
 
 // In test processes both resolvers below must stay under os.tmpdir():
 // gateway code exercised by a test would otherwise read and write live state
@@ -45,37 +35,47 @@ const SECURITY_GUARD = {
  *
  * When CADET_WORKSPACE_DIR is set, returns that value (used in containerized
  * deployments where the workspace is a separate volume). Otherwise falls
- * back to the XDG data home (`~/.local/share/cadet/workspace`) — never the
- * cwd, so a bare run from anywhere (including the repo root) cannot write
- * state into the checkout.
+ * back to `<cwd>/workspace` and logs a warning (once).
  */
 export function getWorkspaceDir(): string {
   const override = process.env.CADET_WORKSPACE_DIR?.trim();
-  const dir = override || join(cadetDataHome(), "workspace");
+  if (override) {
+    assertTestPathIsEphemeral(override, WORKSPACE_GUARD);
+    return override;
+  }
+  if (!warnedWorkspaceDir) {
+    warnedWorkspaceDir = true;
+    console.warn(
+      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to ./workspace. " +
+        "Set CADET_WORKSPACE_DIR explicitly in the entrypoint.",
+    );
+  }
+  const dir = join(process.cwd(), "workspace");
   assertTestPathIsEphemeral(dir, WORKSPACE_GUARD);
   return dir;
-}
-
-/**
- * The gateway-security fallback used when GATEWAY_SECURITY_DIR is unset —
- * exported so the test-isolation guard in db/connection.ts can mirror the
- * real-dir check against the same path.
- */
-export function defaultGatewaySecurityDir(): string {
-  return join(cadetDataHome(), "gateway-security");
 }
 
 /**
  * Directory containing files private to the gateway container.
  *
  * In Docker, this is a dedicated volume mounted at /gateway-security via the
- * GATEWAY_SECURITY_DIR env var. Otherwise falls back to the XDG data home —
- * never the cwd, so a bare run from anywhere (including the repo root)
- * cannot write state into the checkout.
+ * GATEWAY_SECURITY_DIR env var. Otherwise falls back to
+ * `<cwd>/gateway-security` and logs a warning (once).
  */
 export function getGatewaySecurityDir(): string {
   const override = process.env.GATEWAY_SECURITY_DIR?.trim();
-  const dir = override || defaultGatewaySecurityDir();
+  if (override) {
+    assertTestPathIsEphemeral(override, SECURITY_GUARD);
+    return override;
+  }
+  if (!warnedSecurityDir) {
+    warnedSecurityDir = true;
+    console.warn(
+      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to ./gateway-security. " +
+        "Set GATEWAY_SECURITY_DIR explicitly in the entrypoint.",
+    );
+  }
+  const dir = join(process.cwd(), "gateway-security");
   assertTestPathIsEphemeral(dir, SECURITY_GUARD);
   return dir;
 }
