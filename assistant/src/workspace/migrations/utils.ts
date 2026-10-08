@@ -2,12 +2,14 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 /**
- * Resolve the legacy Cadet root directory (~/.cadet).
+ * Resolve the Cadet root directory.
  *
  * Resolution order:
- * 1. Parent of CADET_WORKSPACE_DIR — e.g. /data/.cadet/workspace → /data/.cadet
- * 2. If that parent is "/" (workspace at top level, e.g. /workspace), fall back
- *    to homedir()/.cadet
+ * 1. Parent of CADET_WORKSPACE_DIR — e.g.
+ *    .../assistants/<name>/workspace → .../assistants/<name>
+ * 2. If that parent is "/" (workspace at top level, e.g. /workspace), fall
+ *    back to the env-scoped XDG data root
+ *    (`$XDG_DATA_HOME/cadet[-<env>]`).
  *
  * This replaces the old inlined `getRootDir()` pattern used by individual migrations.
  */
@@ -19,5 +21,9 @@ export function getCadetRoot(): string {
       return parent;
     }
   }
-  return join(homedir(), ".cadet");
+  const dataHome =
+    process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
+  const rawEnv = process.env.CADET_ENVIRONMENT?.trim();
+  const dirName = !rawEnv || rawEnv === "production" ? "cadet" : `cadet-${rawEnv}`;
+  return join(dataHome, dirName);
 }

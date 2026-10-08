@@ -99,7 +99,7 @@ function assertTestDbIsIsolated(): void {
     canonicalizePathThroughExistingParent(securityDir);
   const realSecurityDir = canonicalizePathThroughExistingParent(
     process.env.CADET_TEST_REAL_GATEWAY_SECURITY_DIR?.trim() ||
-      join(homedir(), ".cadet", "protected"),
+      join(homedir(), ".local", "share", "cadet", "protected"),
   );
   if (
     resolvedSecurityDir === realSecurityDir ||

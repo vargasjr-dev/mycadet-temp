@@ -19,7 +19,6 @@ import {
   renameSync,
   writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { getIsContainerized } from "../../config/env-registry.js";
@@ -37,21 +36,6 @@ const log = getLogger("token-service");
 let _authSigningKey: Buffer | undefined;
 
 /**
- * Hardcoded legacy path to the signing key under ~/.cadet/protected/.
- * Used as a read-only fallback so existing assistants keep working after
- * the code update — avoids generating a new key that would break auth
- * with an already-running daemon.
- *
- * This constant can be deleted once we stop calling the gateway directly.
- */
-const LEGACY_SIGNING_KEY_PATH = join(
-  homedir(),
-  ".cadet",
-  "protected",
-  "actor-token-signing-key",
-);
-
-/**
  * Returns the canonical path to the signing key file under workspace/deprecated/.
  *
  * This file can be fully deleted once the assistant stops making direct
@@ -66,22 +50,19 @@ function getSigningKeyPath(): string {
  * and valid, or undefined if the file does not exist or is invalid.
  */
 export function loadSigningKey(): Buffer | undefined {
-  // Try the canonical workspace/deprecated/ path first, then fall back to
-  // the legacy protected/ path so existing assistants keep working.
-  for (const keyPath of [getSigningKeyPath(), LEGACY_SIGNING_KEY_PATH]) {
-    if (!existsSync(keyPath)) {
-      continue;
+  const keyPath = getSigningKeyPath();
+  if (!existsSync(keyPath)) {
+    return undefined;
+  }
+  try {
+    const raw = readFileSync(keyPath);
+    if (raw.length === 32) {
+      log.info({ keyPath }, "Auth signing key loaded from disk");
+      return raw;
     }
-    try {
-      const raw = readFileSync(keyPath);
-      if (raw.length === 32) {
-        log.info({ keyPath }, "Auth signing key loaded from disk");
-        return raw;
-      }
-      log.warn({ keyPath }, "Signing key file has unexpected length");
-    } catch (err) {
-      log.warn({ err, keyPath }, "Failed to read signing key file");
-    }
+    log.warn({ keyPath }, "Signing key file has unexpected length");
+  } catch (err) {
+    log.warn({ err, keyPath }, "Failed to read signing key file");
   }
   return undefined;
 }

@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import {
@@ -15,6 +14,8 @@ import {
   saveAssistantEntry,
   type AssistantEntry,
 } from "./assistant-config.js";
+import { getStateDir } from "./environments/paths.js";
+import { getCurrentEnvironment } from "./environments/resolve.js";
 
 /**
  * Shared workspace-config helpers for tunnel providers (ngrok, cloudflare,
@@ -57,11 +58,14 @@ export function parseGatewayPortFromEntryUrls(
   );
 }
 
-/** Default workspace dir: `$CADET_WORKSPACE_DIR` or `~/.cadet/workspace`. */
+/**
+ * Default workspace dir: `$CADET_WORKSPACE_DIR` or the XDG data root's
+ * workspace (`$XDG_DATA_HOME/cadet[-<env>]/workspace`).
+ */
 export function getDefaultWorkspaceDir(): string {
   return (
     process.env.CADET_WORKSPACE_DIR?.trim() ||
-    join(homedir(), ".cadet", "workspace")
+    join(getStateDir(getCurrentEnvironment()), "workspace")
   );
 }
 

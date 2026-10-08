@@ -5,8 +5,8 @@ import {
   renameSync,
   unlinkSync,
 } from "fs";
+import { homedir } from "node:os";
 import { basename, dirname, join } from "path";
-import { instanceStateDir } from "@mycadet/local-mode";
 
 import { saveAssistantEntry } from "../lib/assistant-config";
 import type { AssistantEntry } from "../lib/assistant-config";
@@ -72,8 +72,19 @@ export async function recover(): Promise<void> {
     );
   }
 
-  // 3. Check that the recovering entry's own target directory is free.
-  const target = instanceStateDir(entry.resources.instanceDir);
+  // 3. Refuse the legacy "first local" layout (instanceDir === home).
+  // State lives exclusively in the instance dir now — a home-dir
+  // instanceDir predates the XDG layout and must re-hatch.
+  if (entry.resources.instanceDir === homedir()) {
+    console.error(
+      `Error: '${name}' uses the legacy home-directory instance layout, ` +
+        `which is no longer supported. Run 'cadet hatch' to re-provision.`,
+    );
+    process.exit(1);
+  }
+
+  // 4. Check that the recovering entry's own target directory is free.
+  const target = entry.resources.instanceDir;
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -82,18 +93,17 @@ export async function recover(): Promise<void> {
     process.exit(1);
   }
 
-  // 4. Determine the original target directory, then extract and rename.
+  // 5. Determine the original target directory, then extract and rename.
   //
-  // retireLocal archives either the full instanceDir (named instances) or just
-  // the .cadet/ subdirectory (default instance whose instanceDir === homedir()).
-  // The directory is staged under `<archive>.staging` inside the retired dir
-  // before being packed with `tar -C <retiredDir> <stagingBasename>`, so the
-  // top-level entry inside the tarball is always `<name>.tar.gz.staging`.
+  // retireLocal archives the full instanceDir. The directory is staged under
+  // `<archive>.staging` inside the retired dir before being packed with
+  // `tar -C <retiredDir> <stagingBasename>`, so the top-level entry inside
+  // the tarball is always `<name>.tar.gz.staging`.
   //
   // Correct restoration: extract to retiredDir, then rename the staging entry
-  // back to the original target path.  Using homedir() as the -C target was
+  // back to the original target path. Using homedir() as the -C target was
   // wrong for any instance stored outside the home directory.
-  const targetDir = instanceStateDir(entry.resources.instanceDir);
+  const targetDir = entry.resources.instanceDir;
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
@@ -101,21 +111,21 @@ export async function recover(): Promise<void> {
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
 
-  // 5. Restore lockfile entry
+  // 6. Restore lockfile entry
   saveAssistantEntry(entry);
 
-  // 6. Clean up archive
+  // 7. Clean up archive
   unlinkSync(archivePath);
   unlinkSync(metadataPath);
 
-  // 7. Persist signing key and bootstrap secret so they survive daemon/gateway restarts
+  // 8. Persist signing key and bootstrap secret so they survive daemon/gateway restarts
   const signingKey = generateLocalSigningKey();
   const bootstrapSecret = generateLocalSigningKey();
   entry.resources = { ...entry.resources, signingKey };
   entry.guardianBootstrapSecret = bootstrapSecret;
   saveAssistantEntry(entry);
 
-  // 8. Start CES sibling + daemon + gateway in parallel, the way the
+  // 9. Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([

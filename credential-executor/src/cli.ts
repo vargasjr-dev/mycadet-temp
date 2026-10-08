@@ -17,7 +17,8 @@
  *   CREDENTIAL_SECURITY_DIR — directory containing `keys.enc` + `store.key`
  *   CES_ASSISTANT_DATA_MOUNT — fallback root for `<mount>/.cadet/protected/`
  *
- * When neither is set, defaults to `~/.cadet/protected/` (local mode).
+ * When neither is set, defaults to the XDG data root's protected dir
+ * (`$XDG_DATA_HOME/cadet/protected/` — local mode).
  */
 
 import { join } from "node:path";
@@ -47,7 +48,10 @@ function resolveCadetRoot(): string {
     return join(mount, ".cadet");
   }
 
-  return join(homedir(), ".cadet");
+  return join(
+    process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
+    "cadet",
+  );
 }
 
 // ---------------------------------------------------------------------------

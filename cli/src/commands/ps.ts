@@ -1,6 +1,5 @@
 import { isManagedCloud } from "../lib/managed-cloud.js";
 import { join } from "path";
-import { instanceStateDir } from "@mycadet/local-mode";
 
 import {
   extractHostFromUrl,
@@ -276,7 +275,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
     );
   }
   const resources = entry.resources;
-  const cadetDir = instanceStateDir(resources.instanceDir);
+  const cadetDir = resources.instanceDir;
 
   const assistantSpec: ProcessSpec = {
     name: "assistant",

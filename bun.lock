@@ -701,7 +701,7 @@
     },
     "packages/shared": {
       "name": "@mycadet/shared",
-      "version": "0.0.0",
+      "version": "0.0.1",
     },
     "packages/slack-text": {
       "name": "@mycadet/slack-text",

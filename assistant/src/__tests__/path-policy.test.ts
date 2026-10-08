@@ -351,14 +351,20 @@ describe("sandboxPolicyWithHostFallback", () => {
   test("denies the default gateway security dir when the env is unset", () => {
     const boundary = makeTempDir();
 
-    const result = sandboxPolicyWithHostFallback(
-      join(process.env.HOME!, ".cadet", "protected", "actor-token-signing-key"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
+    for (const defaultSecurityDir of [
+      join(process.env.HOME!, ".local", "share", "cadet", "protected"),
+      // The retired `~/.cadet` root — existing installs still hold keys there.
+      join(process.env.HOME!, ".cadet", "protected"),
+    ]) {
+      const result = sandboxPolicyWithHostFallback(
+        join(defaultSecurityDir, "actor-token-signing-key"),
+        boundary,
+        { mustExist: false },
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.reason).toBe("denied");
+      }
     }
   });
 

@@ -266,6 +266,16 @@ function isActorTokenSigningKeyPath(
 ): boolean {
   const signingKeyPaths = Array.from(
     new Set([
+      // Bare-metal defaults: the current XDG data root and the retired
+      // `~/.cadet` root (existing installs still have the key there).
+      join(
+        homedir(),
+        ".local",
+        "share",
+        "cadet",
+        "protected",
+        "actor-token-signing-key",
+      ),
       join(homedir(), ".cadet", "protected", "actor-token-signing-key"),
       join(context.protectedDir, "actor-token-signing-key"),
       join(context.deprecatedDir, "actor-token-signing-key"),

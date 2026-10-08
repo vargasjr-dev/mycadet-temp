@@ -13,24 +13,33 @@ import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/en
 import { getWorkspaceDirOverride } from "../config/env-registry.js";
 
 /**
- * The daemon's root data directory (`~/.cadet`).
+ * The daemon's root data directory: the env-scoped XDG data home
+ * (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
+ * production).
  *
  * Used as a fallback when `CADET_WORKSPACE_DIR` is not set, and as a
- * stable constant for paths (like `.env`) that intentionally live at the
- * host home directory regardless of workspace relocation.
+ * stable root for paths (like `.env`) that live outside the workspace
+ * regardless of workspace relocation.
  */
-const CADET_ROOT = join(homedir(), ".cadet");
+export function getXdgCadetDataDir(): string {
+  const dataHome =
+    process.env.XDG_DATA_HOME?.trim() ||
+    join(homedir(), ".local", "share");
+  return join(dataHome, getXdgCadetConfigDirName());
+}
 
 /**
  * Returns the Cadet root directory.
  *
  * Resolution order (mirrors workspace/migrations/utils.ts):
- * 1. Parent of CADET_WORKSPACE_DIR — e.g. /data/.cadet/workspace → /data/.cadet
- * 2. If that parent is "/" (workspace at top level), fall back to ~/.cadet
+ * 1. Parent of CADET_WORKSPACE_DIR — e.g.
+ *    .../assistants/<name>/workspace → .../assistants/<name>
+ * 2. If that parent is "/" (workspace at top level), fall back to the
+ *    XDG data root (getXdgCadetDataDir()).
  */
 export function cadetRoot(): string {
   const override = getWorkspaceDirOverride();
-  let root = CADET_ROOT;
+  let root = getXdgCadetDataDir();
   if (override) {
     const parent = dirname(override);
     if (parent !== "/") {
@@ -320,7 +329,7 @@ export function getBinDir(): string {
   return join(getWorkspaceDir(), "bin");
 }
 
-/** Returns the path to the dot-env file (~/.cadet/.env). Stays at root because it contains secrets. */
+/** Returns the path to the dot-env file (<cadetRoot>/.env). Stays at root because it contains secrets. */
 export function getDotEnvPath(): string {
   return join(cadetRoot(), ".env");
 }
@@ -415,13 +424,14 @@ function assertTestPathIsEphemeral(dir: string): void {
  *
  * When the CADET_WORKSPACE_DIR env var is set, returns that value (used in
  * containerized deployments where the workspace is a separate volume).
- * Otherwise falls back to ~/.cadet/workspace.
+ * Otherwise falls back to the XDG data root's workspace
+ * (getXdgCadetDataDir()/workspace).
  *
  * In test processes the resolved directory must live under `os.tmpdir()`
  * (see the live-workspace guard above); anything else throws.
  */
 export function getWorkspaceDir(): string {
-  const dir = getWorkspaceDirOverride() ?? join(CADET_ROOT, "workspace");
+  const dir = getWorkspaceDirOverride() ?? join(getXdgCadetDataDir(), "workspace");
   assertTestPathIsEphemeral(dir);
   return dir;
 }
@@ -432,8 +442,8 @@ export function getWorkspaceDir(): string {
  * so paths stay concise and portable across machines.
  *
  * Examples:
- *   /Users/alice/.cadet/workspace → ~/.cadet/workspace
- *   /data/.cadet/workspace        → /data/.cadet/workspace
+ *   /Users/alice/.local/share/cadet/workspace → ~/.local/share/cadet/workspace
+ *   /data/.cadet/workspace                    → /data/.cadet/workspace
  */
 export function getWorkspaceDirDisplay(): string {
   return formatHomeRelativePath(getWorkspaceDir(), homedir());

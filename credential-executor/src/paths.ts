@@ -50,13 +50,18 @@ export function getCesMode(): CesMode {
  * Priority:
  * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the platform template for the
  *    CES container — `/ces-security` in managed mode)
- * 2. Default: `~/.cadet/protected` (local mode shares the filesystem with
- *    the gateway)
+ * 2. Default: the XDG data root's protected dir
+ *    (`$XDG_DATA_HOME/cadet/protected` — local mode shares the filesystem
+ *    with the gateway)
  */
 export function getSecurityDir(): string {
   return (
     process.env["CREDENTIAL_SECURITY_DIR"]?.trim() ||
-    join(homedir(), ".cadet", "protected")
+    join(
+      process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
+      "cadet",
+      "protected",
+    )
   );
 }
 

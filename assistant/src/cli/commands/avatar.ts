@@ -50,7 +50,12 @@ export function registerAvatarCommand(program: Command): void {
             ? opts.image
             : join(
                 process.env.CADET_WORKSPACE_DIR ||
-                  join(homedir(), ".cadet", "workspace"),
+                  join(
+                    process.env.XDG_DATA_HOME?.trim() ||
+                      join(homedir(), ".local", "share"),
+                    "cadet",
+                    "workspace",
+                  ),
                 opts.image,
               );
 

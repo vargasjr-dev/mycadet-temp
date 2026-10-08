@@ -386,8 +386,8 @@ describe("CES data paths", () => {
 
   test("local data root is under the Cadet root, not the workspace", () => {
     const root = getCesDataRoot("local");
-    // Must be under .cadet/protected/, NOT .cadet/workspace/
-    expect(root).toMatch(/\.cadet[/\\]protected[/\\]/);
+    // Must be under cadet/protected/ (the XDG data root), NOT the workspace
+    expect(root).toMatch(/cadet[/\\]protected[/\\]/);
     expect(root).not.toMatch(/workspace/);
   });
 

@@ -17,11 +17,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 function getWorkspaceDir(): string {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "/tmp";
   return (
     process.env.CADET_WORKSPACE_DIR ??
     join(
-      process.env.HOME ?? process.env.USERPROFILE ?? "/tmp",
-      ".cadet",
+      process.env.XDG_DATA_HOME?.trim() || join(home, ".local", "share"),
+      "cadet",
       "workspace",
     )
   );

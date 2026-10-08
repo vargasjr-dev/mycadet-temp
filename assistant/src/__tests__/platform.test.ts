@@ -61,9 +61,10 @@ afterEach(() => {
 });
 
 // Path characterization: documents the current path layout.
-// Root-level helpers always resolve under ~/.cadet (from homedir()).
+// Root-level helpers resolve under the XDG data root
+// ($XDG_DATA_HOME/cadet, i.e. ~/.local/share/cadet).
 // Workspace helpers resolve under CADET_WORKSPACE_DIR when set,
-// otherwise under ~/.cadet/workspace.
+// otherwise under the XDG data root's workspace.
 describe("path characterization", () => {
   test("formats Windows workspace paths relative to the home directory", () => {
     expect(
@@ -79,9 +80,9 @@ describe("path characterization", () => {
   });
 
   test("all path helpers resolve to expected locations", () => {
-    // Without CADET_WORKSPACE_DIR override, workspace is under ~/.cadet
+    // Without CADET_WORKSPACE_DIR override, workspace is under the XDG data root
     delete process.env.CADET_WORKSPACE_DIR;
-    const root = join(homedir(), ".cadet");
+    const root = join(homedir(), ".local", "share", "cadet");
     const ws = getWorkspaceDir();
     const data = getDataDir();
 

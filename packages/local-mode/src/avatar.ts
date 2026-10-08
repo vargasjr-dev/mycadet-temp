@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { instanceStateDir } from "./config";
 
 import {
   readWorkspaceAvatar,
@@ -139,7 +138,7 @@ export function readLockfileAssistantAvatar(
   if (!resolved.instanceDir) {
     return { ok: true, avatar: null };
   }
-  const workspaceDir = path.join(instanceStateDir(resolved.instanceDir), "workspace");
+  const workspaceDir = path.join(resolved.instanceDir, "workspace");
   const avatar = readWorkspaceAvatar(workspaceDir);
   switch (avatar.kind) {
     case "character":

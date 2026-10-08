@@ -39,11 +39,19 @@ export function getBackupKeyPath(): string {
 /**
  * Returns the backup root directory. Respects the `CADET_BACKUP_DIR`
  * environment variable override (used in containerized deployments where
- * backups must be on a persistent volume); falls back to `~/.cadet/backups`.
+ * backups must be on a persistent volume); falls back to the XDG data
+ * root's backups directory (`$XDG_DATA_HOME/cadet/backups`).
  */
 export function getBackupRootDir(): string {
   const override = process.env.CADET_BACKUP_DIR?.trim();
-  return override || join(homedir(), ".cadet", "backups");
+  return (
+    override ||
+    join(
+      process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
+      "cadet",
+      "backups",
+    )
+  );
 }
 
 /**

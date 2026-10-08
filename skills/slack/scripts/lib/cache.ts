@@ -11,7 +11,12 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { slackRequest } from "./slack-client.js";
 
 const CACHE_DIR = join(
-  process.env.CADET_WORKSPACE_DIR ?? join(homedir(), ".cadet", "workspace"),
+  process.env.CADET_WORKSPACE_DIR ??
+    join(
+      process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
+      "cadet",
+      "workspace",
+    ),
   "data",
   "slack-skill",
 );

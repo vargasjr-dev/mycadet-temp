@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { instanceStateDir } from "@mycadet/local-mode";
 
 import {
   getDaemonPidPath,
@@ -196,7 +195,7 @@ export async function wake(): Promise<void> {
   // of the signing key from the assistant daemon. Until then, the on-disk key
   // must remain the authoritative source.
   const legacyKeyPath = join(
-    instanceStateDir(resources.instanceDir),
+    resources.instanceDir,
     "protected",
     "actor-token-signing-key",
   );
@@ -265,7 +264,7 @@ export async function wake(): Promise<void> {
     // means credential operations will fail until the next wake. Relaunch the
     // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
     // the next credential read. startCes always launches the sibling.
-    const cadetDir = instanceStateDir(resources.instanceDir);
+    const cadetDir = resources.instanceDir;
     const cesPidFile = join(cadetDir, "ces.pid");
     const cesAlive = isProcessAlive(cesPidFile).alive;
     if (!cesAlive) {
@@ -277,7 +276,7 @@ export async function wake(): Promise<void> {
   // Start gateway
   let gatewayStarted = false;
   {
-    const cadetDir = instanceStateDir(resources.instanceDir);
+    const cadetDir = resources.instanceDir;
     const gatewayPidFile = join(cadetDir, "gateway.pid");
     const gatewayState = await resolveProcessState(
       gatewayPidFile,
@@ -420,14 +419,14 @@ export async function wake(): Promise<void> {
 
   // Restore the nginx edge and point the webhook auto-tunnel at it. Non-fatal:
   // a down edge is a degraded remote-web/webhook path, not a broken assistant.
-  const workspaceDir = join(instanceStateDir(resources.instanceDir), "workspace");
+  const workspaceDir = join(resources.instanceDir, "workspace");
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     resources.gatewayPort,
     workspaceDir,
   );
   if (ngrokChild?.pid) {
-    const ngrokPidFile = join(instanceStateDir(resources.instanceDir), "ngrok.pid");
+    const ngrokPidFile = join(resources.instanceDir, "ngrok.pid");
     writeFileSync(ngrokPidFile, String(ngrokChild.pid));
   }
 

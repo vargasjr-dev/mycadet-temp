@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { instanceStateDir } from "@mycadet/local-mode";
 import {
   copyFileSync,
   existsSync,
@@ -45,7 +44,7 @@ export function stagingTargetFromEntry(
 }
 
 function localWorkspaceDir(instanceDir: string): string {
-  return join(instanceStateDir(instanceDir), "workspace");
+  return join(instanceDir, "workspace");
 }
 
 export function formatBundleSizeMb(bytes: number): string {

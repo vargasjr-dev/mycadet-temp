@@ -1,11 +1,9 @@
 #!/usr/bin/env bun
 process.title = "cadet-daemon";
 
-import { homedir } from "node:os";
-import { join } from "node:path";
 
 import { getLogger } from "../util/logger.js";
-import { getDataDir } from "../util/platform.js";
+import { getDataDir, getWorkspaceDir } from "../util/platform.js";
 import { runDaemon } from "./lifecycle.js";
 import { emitDaemonError } from "./startup-error.js";
 
@@ -21,7 +19,7 @@ runDaemon().catch((err) => {
   }
   console.error("Failed to start assistant:", err);
   console.error(
-    `Troubleshooting: check if another assistant is already running, verify ${join(homedir(), ".cadet")} permissions, and review logs at ${getDataDir()}/logs/`,
+    `Troubleshooting: check if another assistant is already running, verify ${getWorkspaceDir()} permissions, and review logs at ${getDataDir()}/logs/`,
   );
   // Emit a structured error line as the last line of stderr so consumers
   // (e.g. the macOS app) can parse it reliably.

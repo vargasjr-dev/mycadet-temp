@@ -76,7 +76,6 @@ afterAll(() => {
 import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
-const cadetDir = instanceDir;
 
 function makeEntry(assistantId: string): AssistantEntry {
   return {
@@ -115,7 +114,7 @@ describe("retireLocal — CES sibling stop", () => {
 
     rmSync(instanceDir, { recursive: true, force: true });
     rmSync(join(testDir, "retired"), { recursive: true, force: true });
-    mkdirSync(cadetDir, { recursive: true });
+    mkdirSync(instanceDir, { recursive: true });
     writeLockfile([makeEntry("test-assistant")]);
 
     // Suppress console output from the lifecycle reporter.
@@ -144,7 +143,7 @@ describe("retireLocal — CES sibling stop", () => {
     // Verify CES PID file is among the stop calls.
     const cesStopCall = stopProcessByPidFileMock.mock.calls.find(
       ([pidFile, label]) =>
-        pidFile === join(cadetDir, "ces.pid") &&
+        pidFile === join(instanceDir, "ces.pid") &&
         label === "credential-executor",
     );
     expect(cesStopCall).toBeDefined();
@@ -205,7 +204,7 @@ describe("retireLocal — CES sibling stop", () => {
     // The CES stop was attempted (PID file checked) but returned false.
     const cesStopCall = stopProcessByPidFileMock.mock.calls.find(
       ([pidFile, label]) =>
-        pidFile === join(cadetDir, "ces.pid") &&
+        pidFile === join(instanceDir, "ces.pid") &&
         label === "credential-executor",
     );
     expect(cesStopCall).toBeDefined();

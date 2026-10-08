@@ -22,15 +22,11 @@ import { resolveConfigDir, resolveEnvironmentName } from "@mycadet/local-mode";
 let cached: string | undefined;
 
 /**
- * Resolve the directory containing device.json. Production uses the legacy
- * ~/.cadet path (shared with the Swift client and daemon); non-production
- * uses resolveConfigDir from @mycadet/local-mode.
+ * Resolve the directory containing device.json: the env-scoped XDG config
+ * directory from @mycadet/local-mode (`$XDG_CONFIG_HOME/cadet[-<env>]`),
+ * shared with the CLI and daemon.
  */
 function resolveDeviceDir(): string {
-  const env = resolveEnvironmentName(process.env);
-  if (env === "production") {
-    return join(homedir(), ".cadet");
-  }
   return resolveConfigDir(process.env);
 }
 

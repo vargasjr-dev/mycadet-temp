@@ -91,26 +91,24 @@ describe("getDeviceId env-awareness", () => {
     expect(existsSync(expectedPath)).toBe(true);
   });
 
-  test("unknown environment does NOT write under $XDG_CONFIG_HOME/cadet-<unknown>", () => {
-    // Unknown env names fall back to the legacy production behavior.
-    // We can't assert the exact legacy path without mocking homedir(),
-    // but we can assert that the XDG env-scoped dir is NOT created.
+  test("unknown environment falls back to $XDG_CONFIG_HOME/cadet", () => {
+    // Unknown env names resolve to the production-shaped XDG config dir.
     delete process.env.IS_CONTAINERIZED;
     process.env.CADET_ENVIRONMENT = "no-such-env";
     process.env.XDG_CONFIG_HOME = tempDir;
 
     getDeviceId();
 
-    // No `cadet-no-such-env` directory created under our XDG tempdir.
+    const productionXdgPath = join(tempDir, "cadet", "device.json");
+    expect(existsSync(productionXdgPath)).toBe(true);
+    // No env-scoped dir is created for the unknown name.
     const envScopedPath = join(tempDir, "cadet-no-such-env", "device.json");
     expect(existsSync(envScopedPath)).toBe(false);
-    // Legacy fallback would write under `${homedir()}/.cadet` — not touched.
-    const productionXdgPath = join(tempDir, "cadet", "device.json");
-    expect(existsSync(productionXdgPath)).toBe(false);
   });
 
-  test("production does NOT write under $XDG_CONFIG_HOME/cadet", () => {
-    // Production path is ~/.cadet/device.json, never XDG_CONFIG_HOME.
+  test("production writes under $XDG_CONFIG_HOME/cadet", () => {
+    // device.json lives in the env-scoped XDG config directory for every
+    // non-containerized environment.
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CADET_ENVIRONMENT;
     process.env.XDG_CONFIG_HOME = tempDir;
@@ -118,7 +116,7 @@ describe("getDeviceId env-awareness", () => {
     getDeviceId();
 
     const xdgPath = join(tempDir, "cadet", "device.json");
-    expect(existsSync(xdgPath)).toBe(false);
+    expect(existsSync(xdgPath)).toBe(true);
   });
 });
 

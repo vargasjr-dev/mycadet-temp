@@ -61,7 +61,13 @@ test("initGatewayDb refuses test runs without an isolated security dir", async (
 
 test("initGatewayDb refuses the real security dir during tests even when explicitly set", async () => {
   resetGatewayDb();
-  process.env.GATEWAY_SECURITY_DIR = join(homedir(), ".cadet", "protected");
+  process.env.GATEWAY_SECURITY_DIR = join(
+    homedir(),
+    ".local",
+    "share",
+    "cadet",
+    "protected",
+  );
   delete process.env.CADET_ALLOW_REAL_GATEWAY_SECURITY_IN_TESTS;
 
   await expect(initGatewayDb()).rejects.toThrow(
@@ -77,7 +83,13 @@ test("initGatewayDb refuses symlink aliases to the real security dir during test
 
   try {
     const fakeHome = join(testRoot, "home");
-    const realSecurityDir = join(fakeHome, ".cadet", "protected");
+    const realSecurityDir = join(
+      fakeHome,
+      ".local",
+      "share",
+      "cadet",
+      "protected",
+    );
     const aliasParent = join(testRoot, "aliases");
     const securityAlias = join(aliasParent, "gateway-security-link");
 
@@ -106,7 +118,13 @@ test("initGatewayDb refuses missing children under symlink aliases to the real s
 
   try {
     const fakeHome = join(testRoot, "home");
-    const realSecurityDir = join(fakeHome, ".cadet", "protected");
+    const realSecurityDir = join(
+      fakeHome,
+      ".local",
+      "share",
+      "cadet",
+      "protected",
+    );
     const aliasParent = join(testRoot, "aliases");
     const securityLink = join(aliasParent, "gateway-security-link");
     const missingChild = join(securityLink, "new-security-dir");

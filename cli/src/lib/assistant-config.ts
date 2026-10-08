@@ -7,11 +7,10 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { homedir } from "os";
 import { dirname, join } from "path";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-import { instanceStateDir, withLockfileLock } from "@mycadet/local-mode";
+import { withLockfileLock } from "@mycadet/local-mode";
 import {
   resolveCloud,
   type LocalAssistantResources,
@@ -25,6 +24,7 @@ import {
   getLockfilePath,
   getLockfilePaths,
   getMultiInstanceDir,
+  getStateDir,
 } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { probePort } from "./port-probe.js";
@@ -162,12 +162,13 @@ interface LockfileData {
 /**
  * Derive the daemon PID file path from a resources object. The PID file
  * lives inside the instance's workspace directory. When no resources are
- * available, falls back to `~/.cadet/workspace/cadet.pid`.
+ * available, falls back to the XDG data root's workspace
+ * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
  */
 export function getDaemonPidPath(resources?: LocalInstanceResources): string {
   const cadetDir = resources
-    ? instanceStateDir(resources.instanceDir)
-    : join(homedir(), ".cadet");
+    ? resources.instanceDir
+    : getStateDir(getCurrentEnvironment());
   return join(cadetDir, "workspace", "cadet.pid");
 }
 

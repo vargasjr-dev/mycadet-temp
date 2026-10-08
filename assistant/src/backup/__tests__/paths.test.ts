@@ -50,10 +50,10 @@ describe("CADET_BACKUP_DIR override", () => {
     expect(getBackupRootDir()).toBe("/workspace/.backups");
   });
 
-  test("getBackupRootDir() falls back to ~/.cadet/backups when unset", () => {
+  test("getBackupRootDir() falls back to the XDG data root when unset", () => {
     delete process.env.CADET_BACKUP_DIR;
     const dir = getBackupRootDir();
-    expect(dir).toMatch(/\/\.cadet\/backups$/);
+    expect(dir).toMatch(/\.local\/share\/cadet\/backups$/);
   });
 
   test("getLocalBackupsDir() resolves under CADET_BACKUP_DIR", () => {
@@ -63,7 +63,7 @@ describe("CADET_BACKUP_DIR override", () => {
 
   test("getLocalBackupsDir() falls back to default when env var is unset", () => {
     delete process.env.CADET_BACKUP_DIR;
-    expect(getLocalBackupsDir()).toMatch(/\/\.cadet\/backups\/local$/);
+    expect(getLocalBackupsDir()).toMatch(/\.local\/share\/cadet\/backups\/local$/);
   });
 
   test("config override still takes precedence over CADET_BACKUP_DIR", () => {
@@ -79,7 +79,7 @@ describe("CADET_BACKUP_DIR override", () => {
   test("getSnapshotLockPath() falls back to default when env var is unset", () => {
     delete process.env.CADET_BACKUP_DIR;
     expect(getSnapshotLockPath()).toMatch(
-      /\/\.cadet\/backups\/\.snapshot\.lock$/,
+      /\.local\/share\/cadet\/backups\/\.snapshot\.lock$/,
     );
   });
 });

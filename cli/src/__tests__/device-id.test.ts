@@ -128,7 +128,7 @@ describe("getOrCreateHostDeviceId (production)", () => {
     fakeHome = tempHome;
     process.env.XDG_CONFIG_HOME = join(tempHome, ".config");
     process.env.CADET_ENVIRONMENT = "production";
-    deviceFile = join(tempHome, ".cadet", "device.json");
+    deviceFile = join(tempHome, ".config", "cadet", "device.json");
     resetHostDeviceIdCache();
   });
 
@@ -139,7 +139,7 @@ describe("getOrCreateHostDeviceId (production)", () => {
     resetHostDeviceIdCache();
   });
 
-  test("creates device.json in the shared ~/.cadet dir", () => {
+  test("creates device.json in the shared XDG config dir", () => {
     const id = getOrCreateHostDeviceId();
 
     expect(id).toMatch(UUID_RE);
@@ -147,8 +147,8 @@ describe("getOrCreateHostDeviceId (production)", () => {
     expect(JSON.parse(readFileSync(deviceFile, "utf-8")).deviceId).toBe(id);
   });
 
-  test("reuses an existing ~/.cadet/device.json", () => {
-    mkdirSync(join(tempHome, ".cadet"), { recursive: true });
+  test("reuses an existing XDG config device.json", () => {
+    mkdirSync(join(tempHome, ".config", "cadet"), { recursive: true });
     writeFileSync(deviceFile, JSON.stringify({ deviceId: "shared-prod-id" }));
 
     expect(getOrCreateHostDeviceId()).toBe("shared-prod-id");

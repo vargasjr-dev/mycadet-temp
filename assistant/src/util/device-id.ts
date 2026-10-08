@@ -42,28 +42,20 @@ let cached: string | undefined;
  * Resolve the directory and file path for `device.json` based on the
  * runtime environment. See the module docblock for the resolution table.
  *
- * Production and containerized modes preserve the legacy `~/.cadet` /
- * `/home/assistant/.cadet` paths. Non-production, non-containerized
- * deployments route through `$XDG_CONFIG_HOME/cadet-<env>` to match
- * the Swift client's `CadetPaths.deviceIdFile`.
+ * Containerized deployments use the mounted `/home/assistant/.cadet`
+ * volume. Everything else routes through the env-scoped XDG config
+ * directory (`$XDG_CONFIG_HOME/cadet[-<env>]`), shared across all local
+ * instances on the same machine.
  */
-function resolveDeviceIdPaths(): { dir: string; file: string } {
+export function resolveDeviceIdPaths(): { dir: string; file: string } {
   if (getIsContainerized()) {
     const dir = join("/home/assistant", ".cadet");
     return { dir, file: join(dir, "device.json") };
   }
 
-  const configDirName = getXdgCadetConfigDirName();
-  if (configDirName === "cadet") {
-    // Production: device.json lives at ~/.cadet/device.json, shared
-    // across all local instances on the same machine.
-    const dir = join(homedir(), ".cadet");
-    return { dir, file: join(dir, "device.json") };
-  }
-
   const configHome =
     process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
-  const dir = join(configHome, configDirName);
+  const dir = join(configHome, getXdgCadetConfigDirName());
   return { dir, file: join(dir, "device.json") };
 }
 

@@ -41,6 +41,37 @@ export function getLegacyRootDir(): string {
   );
 }
 
+/**
+ * Bare-metal fallback root for machine-scoped gateway state: the XDG data
+ * home (`$XDG_DATA_HOME/cadet`, i.e. `~/.local/share/cadet`).
+ */
+function getXdgCadetDataDir(): string {
+  return join(
+    process.env.XDG_DATA_HOME?.trim() ||
+      join(
+        process.env.HOME || safeUserInfoHomedir() || homedir(),
+        ".local",
+        "share",
+      ),
+    "cadet",
+  );
+}
+
+/**
+ * Path to the machine's shared `device.json` in the env-scoped XDG config
+ * directory (`$XDG_CONFIG_HOME/cadet[-<env>]`) — the same file the CLI and
+ * daemon write.
+ */
+export function getDeviceIdPath(): string {
+  const configHome =
+    process.env.XDG_CONFIG_HOME?.trim() ||
+    join(process.env.HOME || safeUserInfoHomedir() || homedir(), ".config");
+  const rawEnv = process.env.CADET_ENVIRONMENT?.trim();
+  const dirName =
+    !rawEnv || rawEnv === "production" ? "cadet" : `cadet-${rawEnv}`;
+  return join(configHome, dirName, "device.json");
+}
+
 let warnedWorkspaceDir = false;
 let warnedSecurityDir = false;
 
@@ -66,7 +97,8 @@ const SECURITY_GUARD = {
  *
  * When CADET_WORKSPACE_DIR is set, returns that value (used in containerized
  * deployments where the workspace is a separate volume). Otherwise falls back
- * to ~/.cadet/workspace via getLegacyRootDir() and logs a warning (once).
+ * to the XDG data root's workspace (getXdgCadetDataDir()/workspace) and logs
+ * a warning (once).
  */
 export function getWorkspaceDir(): string {
   const override = process.env.CADET_WORKSPACE_DIR?.trim();
@@ -77,11 +109,11 @@ export function getWorkspaceDir(): string {
   if (!warnedWorkspaceDir) {
     warnedWorkspaceDir = true;
     console.warn(
-      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to getLegacyRootDir(). " +
+      "[gateway/paths] CADET_WORKSPACE_DIR is not set — falling back to the XDG data root. " +
         "Set CADET_WORKSPACE_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(getLegacyRootDir(), "workspace");
+  const dir = join(getXdgCadetDataDir(), "workspace");
   assertTestPathIsEphemeral(dir, WORKSPACE_GUARD);
   return dir;
 }
@@ -91,7 +123,8 @@ export function getWorkspaceDir(): string {
  *
  * In Docker, this is a dedicated volume mounted at /gateway-security via the
  * GATEWAY_SECURITY_DIR env var. In local (non-Docker) mode, falls back to
- * ~/.cadet/protected/ via getLegacyRootDir() and logs a warning (once).
+ * the XDG data root's protected dir (getXdgCadetDataDir()/protected) and
+ * logs a warning (once).
  */
 export function getGatewaySecurityDir(): string {
   const override = process.env.GATEWAY_SECURITY_DIR?.trim();
@@ -102,11 +135,11 @@ export function getGatewaySecurityDir(): string {
   if (!warnedSecurityDir) {
     warnedSecurityDir = true;
     console.warn(
-      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to getLegacyRootDir(). " +
+      "[gateway/paths] GATEWAY_SECURITY_DIR is not set — falling back to the XDG data root. " +
         "Set GATEWAY_SECURITY_DIR explicitly in the entrypoint.",
     );
   }
-  const dir = join(getLegacyRootDir(), "protected");
+  const dir = join(getXdgCadetDataDir(), "protected");
   assertTestPathIsEphemeral(dir, SECURITY_GUARD);
   return dir;
 }

@@ -3,14 +3,16 @@ import { dirname, isAbsolute, join } from "node:path";
 
 import { getBackupDirOverride } from "../config/env-registry.js";
 import type { BackupDestination } from "../config/schema.js";
+import { getXdgCadetDataDir } from "../util/platform.js";
 
 /**
  * Returns the backup root directory. Respects the `CADET_BACKUP_DIR`
  * environment variable override (used in containerized deployments where
- * backups must be on a persistent volume); falls back to `~/.cadet/backups`.
+ * backups must be on a persistent volume); falls back to the XDG data
+ * root's backups directory (getXdgCadetDataDir()/backups).
  */
 export function getBackupRootDir(): string {
-  return getBackupDirOverride() ?? join(homedir(), ".cadet", "backups");
+  return getBackupDirOverride() ?? join(getXdgCadetDataDir(), "backups");
 }
 
 /**

@@ -1,9 +1,9 @@
 /**
  * Host device ID resolver. Resolution order: `CADET_DEVICE_ID` env var,
- * then `device.json`. Production uses the machine-wide shared
- * `~/.cadet/device.json`, matching Electron (`clients/macos/src/main/device-id.ts`)
- * and Swift (`CadetPaths.deviceIdFile`); non-production uses
- * `<configDir>/device.json`.
+ * then `device.json` in the env-scoped XDG config directory
+ * (`$XDG_CONFIG_HOME/cadet[-<env>]/device.json`), shared across all local
+ * instances on the same machine and matching the Electron client
+ * (`packages/electron-desktop/src/device-id.ts`).
  *
  * Not to be confused with `guardian-token.ts`'s salted-hash Guardian
  * identity (`computeDeviceId` / `getOrCreatePersistedDeviceId`) — do not
@@ -12,7 +12,6 @@
 
 import { randomUUID } from "crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
-import { homedir } from "os";
 import { join } from "path";
 
 import { getConfigDir } from "./environments/paths.js";
@@ -21,9 +20,7 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
 let cached: string | undefined;
 
 function resolveDeviceIdPaths(): { dir: string; file: string } {
-  const env = getCurrentEnvironment();
-  const dir =
-    env.name === "production" ? join(homedir(), ".cadet") : getConfigDir(env);
+  const dir = getConfigDir(getCurrentEnvironment());
   return { dir, file: join(dir, "device.json") };
 }
 

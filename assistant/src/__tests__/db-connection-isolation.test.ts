@@ -58,7 +58,13 @@ test("getDb refuses test runs without an isolated workspace", () => {
 
 test("getDb refuses the real workspace during tests even when explicitly set", () => {
   resetDbForTesting();
-  process.env.CADET_WORKSPACE_DIR = join(homedir(), ".cadet", "workspace");
+  process.env.CADET_WORKSPACE_DIR = join(
+    homedir(),
+    ".local",
+    "share",
+    "cadet",
+    "workspace",
+  );
   delete process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;
 
   expect(() => getDb()).toThrow(

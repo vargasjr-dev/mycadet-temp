@@ -241,7 +241,9 @@ const SECURITY_DIR_ENV_VARS = [
  *   data flows through the gateway and CES APIs (root AGENTS.md). The
  *   env-based resolution mirrors the owning services', since the
  *   cross-package import boundary bars importing it; the shared bare-metal
- *   default `<home>/.cadet/protected` is always denied. Only absolute
+ *   default `$XDG_DATA_HOME/cadet/protected` is always denied (as is the
+ *   retired `~/.cadet/protected` — existing installs still hold keys
+ *   there). Only absolute
  *   overrides join the set — a relative override is unmirrorable and
  *   disables the host fallback outright (see
  *   {@link securityDirConfigMirrorable}).
@@ -250,13 +252,15 @@ const SECURITY_DIR_ENV_VARS = [
  */
 function getProtectedServicePaths(): string[] {
   const paths = new Set<string>();
+  const homeDir = process.env.HOME || safeUserInfoHomedir() || homedir();
   paths.add(
     join(
-      process.env.HOME || safeUserInfoHomedir() || homedir(),
-      ".cadet",
+      process.env.XDG_DATA_HOME?.trim() || join(homeDir, ".local", "share"),
+      "cadet",
       "protected",
     ),
   );
+  paths.add(join(homeDir, ".cadet", "protected"));
   for (const name of SECURITY_DIR_ENV_VARS) {
     const override = process.env[name]?.trim();
     if (override && isAbsolute(override)) {
