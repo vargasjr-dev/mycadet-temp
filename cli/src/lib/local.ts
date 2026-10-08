@@ -562,7 +562,7 @@ type DaemonStartOptions = {
 /**
  * Directory that holds the local CES Unix socket (`ces.sock`).
  *
- * Matches CES's local data root: `{CREDENTIAL_SECURITY_DIR}/credential-executor`.
+ * Matches CES's local data root: `{CES_DATA_DIR}` (`<instanceDir>/ces-data`).
  * Local CLI and managed sidecars share `CES_BOOTSTRAP_SOCKET_DIR`; this is the
  * writable per-instance directory used outside containers.
  */
@@ -570,11 +570,12 @@ function resolveCesBootstrapSocketDir(
   resources?: LocalInstanceResources,
   env?: Record<string, string | undefined>,
 ): string {
-  const securityDir = resources
-    ? join(resources.instanceDir, "protected")
-    : env?.CREDENTIAL_SECURITY_DIR?.trim() ||
-      join(defaultCadetRoot(), "protected");
-  return join(securityDir, "credential-executor");
+  if (resources) {
+    return join(resources.instanceDir, "ces-data");
+  }
+  const dataDir =
+    env?.CES_DATA_DIR?.trim() || join(defaultCadetRoot(), "ces-data");
+  return dataDir;
 }
 
 /**
@@ -594,12 +595,13 @@ function applyDaemonEnvOverrides(
     );
     env.GATEWAY_SECURITY_DIR = join(
       resources.instanceDir,
-      "protected",
+      "gateway-security",
     );
     env.CREDENTIAL_SECURITY_DIR = join(
       resources.instanceDir,
-      "protected",
+      "ces-security",
     );
+    env.CES_DATA_DIR = join(resources.instanceDir, "ces-data");
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
     env.GATEWAY_PORT = String(resources.gatewayPort);
     env.QDRANT_HTTP_PORT = String(resources.qdrantPort);
@@ -1070,18 +1072,23 @@ export async function startCes(
   removeIpcEndpointFile(socketPath);
 
   const securityDir = resources
-    ? join(resources.instanceDir, "protected")
-    : join(defaultCadetRoot(), "protected");
+    ? join(resources.instanceDir, "ces-security")
+    : join(defaultCadetRoot(), "ces-security");
+  const dataDir = resources
+    ? join(resources.instanceDir, "ces-data")
+    : join(defaultCadetRoot(), "ces-data");
   const workspaceDir = resources
     ? join(resources.instanceDir, "workspace")
     : join(defaultCadetRoot(), "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
+  mkdirSync(dataDir, { recursive: true });
   mkdirSync(bootstrapDir, { recursive: true });
 
   const cesEnv: Record<string, string | undefined> = {
     ...process.env,
     CREDENTIAL_SECURITY_DIR: securityDir,
+    CES_DATA_DIR: dataDir,
     CADET_WORKSPACE_DIR: workspaceDir,
     CES_BOOTSTRAP_SOCKET_DIR: bootstrapDir,
   };
@@ -1454,7 +1461,9 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
   if (!isCompiledCli() || !existsSync(assistantBinary)) return;
 
   const workspaceDir = join(resources.instanceDir, "workspace");
-  const protectedDir = join(resources.instanceDir, "protected");
+  const gatewaySecurityDir = join(resources.instanceDir, "gateway-security");
+  const cesSecurityDir = join(resources.instanceDir, "ces-security");
+  const cesDataDir = join(resources.instanceDir, "ces-data");
   const binDir = join(workspaceDir, "bin");
 
   mkdirSync(binDir, { recursive: true });
@@ -1464,8 +1473,9 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
     [
       "#!/bin/sh",
       `export CADET_WORKSPACE_DIR="${workspaceDir}"`,
-      `export CREDENTIAL_SECURITY_DIR="${protectedDir}"`,
-      `export GATEWAY_SECURITY_DIR="${protectedDir}"`,
+      `export CREDENTIAL_SECURITY_DIR="${cesSecurityDir}"`,
+      `export GATEWAY_SECURITY_DIR="${gatewaySecurityDir}"`,
+      `export CES_DATA_DIR="${cesDataDir}"`,
       `exec "${assistantBinary}" "$@"`,
       "",
     ].join("\n"),
@@ -1612,6 +1622,7 @@ export async function startLocalDaemon(
         "APP_VERSION",
         "GATEWAY_SECURITY_DIR",
         "CREDENTIAL_SECURITY_DIR",
+        "CES_DATA_DIR",
         "CADET_ENVIRONMENT",
         "CADET_PLATFORM_URL",
         "QDRANT_HTTP_PORT",
@@ -1837,12 +1848,13 @@ export async function startGateway(
           ),
           GATEWAY_SECURITY_DIR: join(
             resources.instanceDir,
-            "protected",
+            "gateway-security",
           ),
           CREDENTIAL_SECURITY_DIR: join(
             resources.instanceDir,
-            "protected",
+            "ces-security",
           ),
+          CES_DATA_DIR: join(resources.instanceDir, "ces-data"),
         }
       : {}),
   };

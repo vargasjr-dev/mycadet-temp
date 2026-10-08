@@ -158,6 +158,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
     { name: "gateway-ipc-socket",   dockerVolume: (n) => `${n}-gateway-ipc` },
     { name: "gateway-security",     dockerVolume: (n) => `${n}-gateway-sec` },
     { name: "ces-security",         dockerVolume: (n) => `${n}-ces-sec` },
+    { name: "ces-data",             dockerVolume: (n) => `${n}-ces-data` },
   ],
 
   containers: [
@@ -246,12 +247,14 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "CES_BOOTSTRAP_SOCKET_DIR",  value: "/run/ces-bootstrap" },
         { kind: "static", name: "CREDENTIAL_SECURITY_DIR",   value: "/ces-security" },
+        { kind: "static", name: "CES_DATA_DIR",              value: "/ces-data" },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace", readOnly: true },
         { volumeName: "ces-bootstrap-socket", mountPath: "/run/ces-bootstrap" },
         { volumeName: "ces-security",         mountPath: "/ces-security" },
+        { volumeName: "ces-data",             mountPath: "/ces-data" },
       ],
     },
   ],

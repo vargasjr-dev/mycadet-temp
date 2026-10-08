@@ -2,25 +2,26 @@
  * CES private data-root layout.
  *
  * Defines the directory structure for CES-private durable state (grants,
- * audit logs, tool store). This state is never stored on the assistant-visible
- * workspace/data root — it lives in a CES-only path that the assistant process
- * cannot read or write.
+ * audit logs, tool store) and CES-private security material (the encrypted
+ * store, `keys.enc` + `store.key`). This state is never stored on the
+ * assistant-visible workspace/data root — it lives in CES-only paths that
+ * the assistant process cannot read or write.
  *
- * Two modes:
+ * Resolution convention (shared with the gateway and the assistant):
+ * every directory comes from its env var, falling back to
+ * `process.cwd()/<hardcoded-value>`:
  *
- * - **Local**: CES private state lives under the Cadet root's `protected/`
- *   directory at `<rootDir>/protected/credential-executor/`.
+ * - `CREDENTIAL_SECURITY_DIR` → `./ces-security`
+ * - `CES_DATA_DIR` → `./ces-data`
  *
- * - **Managed**: CES private state lives at `/ces-data` by default
- *   (overridable via `CES_DATA_DIR` env var). The assistant container never
- *   sees this path.
- *
- * The assistant-visible data root (where workspace, embeddings, etc. live)
- * is a separate path and must never be used for CES-private writes.
+ * Managed containers set both explicitly (the platform template provisions
+ * `/ces-security` and `/ces-data` volumes); local mode sets them per
+ * instance dir via the CLI. The assistant-visible data root (where
+ * workspace, embeddings, etc. live) is a separate path and must never be
+ * used for CES-private writes.
  */
 
 import { join } from "node:path";
-import { homedir } from "node:os";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
@@ -45,46 +46,31 @@ export function getCesMode(): CesMode {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve the CES security directory.
+ * Resolve the CES security directory (contains `keys.enc` + `store.key`).
  *
  * Priority:
  * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the platform template for the
- *    CES container — `/ces-security` in managed mode)
- * 2. Default: the XDG data root's protected dir
- *    (`$XDG_DATA_HOME/cadet/protected` — local mode shares the filesystem
- *    with the gateway)
+ *    CES container — `/ces-security` in managed mode; per-instance
+ *    `<instanceDir>/ces-security` in local mode)
+ * 2. Default: `./ces-security` (cwd fallback convention)
  */
 export function getSecurityDir(): string {
   return (
     process.env["CREDENTIAL_SECURITY_DIR"]?.trim() ||
-    join(
-      process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
-      "cadet",
-      "protected",
-    )
+    join(process.cwd(), "ces-security")
   );
 }
 
 /**
- * Default managed CES data root.
+ * Return the CES-private data root (grants, audit logs, tool store).
  *
- * Defaults to `/ces-data` — the platform template provisions this path
- * via the `CES_DATA_DIR` env var and a dedicated PVC.
+ * Priority:
+ * 1. `CES_DATA_DIR` env var (set by the platform template — `/ces-data` in
+ *    managed mode; per-instance `<instanceDir>/ces-data` in local mode)
+ * 2. Default: `./ces-data` (cwd fallback convention)
  */
-const DEFAULT_MANAGED_CES_DATA_ROOT = "/ces-data";
-
-/**
- * Return the CES-private data root.
- *
- * - Local: `<securityDir>/credential-executor/`
- * - Managed: `CES_DATA_DIR` env var, or `/ces-data` by default
- */
-export function getCesDataRoot(mode?: CesMode): string {
-  const resolvedMode = mode ?? getCesMode();
-  if (resolvedMode === "managed") {
-    return process.env["CES_DATA_DIR"] ?? DEFAULT_MANAGED_CES_DATA_ROOT;
-  }
-  return join(getSecurityDir(), "credential-executor");
+export function getCesDataRoot(_mode?: CesMode): string {
+  return process.env["CES_DATA_DIR"]?.trim() || join(process.cwd(), "ces-data");
 }
 
 // ---------------------------------------------------------------------------

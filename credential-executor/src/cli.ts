@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * CES CLI — lightweight credential CRUD for the CES container.
+ * CES CLI — lightweight credential CRUD for the encrypted key store.
  *
  * Operates directly on the encrypted key store (`keys.enc` + `store.key`)
  * without requiring the RPC server, HTTP routes, or a running assistant.
@@ -15,44 +15,11 @@
  *
  * Environment variables:
  *   CREDENTIAL_SECURITY_DIR — directory containing `keys.enc` + `store.key`
- *   CES_ASSISTANT_DATA_MOUNT — fallback root for `<mount>/.cadet/protected/`
- *
- * When neither is set, defaults to the XDG data root's protected dir
- * (`$XDG_DATA_HOME/cadet/protected/` — local mode).
+ *                             (falls back to `./ces-security`)
  */
 
-import { join } from "node:path";
-import { homedir } from "node:os";
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
-
-// ---------------------------------------------------------------------------
-// Path resolution (mirrors the managed-mode path in main.ts)
-// ---------------------------------------------------------------------------
-
-function resolveCadetRoot(): string {
-  const secDir = process.env["CREDENTIAL_SECURITY_DIR"]?.trim();
-  if (secDir) {
-    // CREDENTIAL_SECURITY_DIR points directly at the dir containing
-    // keys.enc, but createLocalSecureKeyBackend wants the parent
-    // (.cadet root) and appends /protected/ itself — unless
-    // CREDENTIAL_SECURITY_DIR is set, in which case the backend reads
-    // from that dir directly. So we pass dirname(secDir) as cadetRoot.
-    // Actually, looking at resolveSecurityDir(): if CREDENTIAL_SECURITY_DIR
-    // is set it uses that directly, ignoring cadetRoot. So cadetRoot
-    // can be anything — the env var takes precedence.
-    return join(secDir, "..");
-  }
-
-  const mount = process.env["CES_ASSISTANT_DATA_MOUNT"]?.trim();
-  if (mount) {
-    return join(mount, ".cadet");
-  }
-
-  return join(
-    process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share"),
-    "cadet",
-  );
-}
+import { getSecurityDir } from "./paths.js";
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -66,8 +33,7 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  const cadetRoot = resolveCadetRoot();
-  const backend = createLocalSecureKeyBackend(cadetRoot);
+  const backend = createLocalSecureKeyBackend(getSecurityDir());
 
   switch (command) {
     case "list": {
@@ -153,7 +119,7 @@ Account format:
 
 Environment:
   CREDENTIAL_SECURITY_DIR    Directory containing keys.enc + store.key
-  CES_ASSISTANT_DATA_MOUNT   Fallback: <mount>/.cadet/protected/`);
+                             (falls back to ./ces-security)`);
 }
 
 main().catch((err) => {
