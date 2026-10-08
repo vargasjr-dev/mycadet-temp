@@ -816,7 +816,7 @@
     "credits": "Créditos"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "Inicia sesión en la plataforma Cadet para agregar créditos."
+    "loginToAddCredits": "Inicia sesión en Cadet Cloud para agregar créditos."
   },
   "csvPreview": {
     "emptyFile": "Este archivo está vacío",

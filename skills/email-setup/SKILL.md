@@ -66,7 +66,7 @@ Confirm the address is active.
 - **One-time only.** If a domain and email already exist, do not register another.
 - **Domain first.** `email register` will fail if no domain is registered. Always check/register the domain before the email.
 - **User-initiated only.** Never run this skill unless the user asks.
-- **No API key prompting.** Email is handled through the Cadet platform — no provider API keys or DNS configuration needed.
+- **No API key prompting.** Email is handled through the Cadet Cloud — no provider API keys or DNS configuration needed.
 
 ## Troubleshooting
 

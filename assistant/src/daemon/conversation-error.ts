@@ -373,9 +373,9 @@ function connectionResolutionUserMessage(
       // this classifier only sees the reason code, so one honest wording covers
       // both the transient and the re-provision cases.
       if (getIsPlatform()) {
-        return `${connection}${usedBy} is unavailable. If this persists, the platform credential may need to be re-provisioned on the Cadet platform.`;
+        return `${connection}${usedBy} is unavailable. If this persists, the platform credential may need to be re-provisioned on the Cadet Cloud.`;
       }
-      return `${connection}${usedBy} requires a Cadet platform login. Log in, or pick a different provider in ${fixPath}.`;
+      return `${connection}${usedBy} requires a Cadet Cloud login. Log in, or pick a different provider in ${fixPath}.`;
     case "model_incompatible":
       return `${error.model ? `Model "${error.model}"` : "The requested model"} isn't available on ${connectionName ? `connection "${connectionName}"` : "the configured connection"}${usedBy}. Pick a different model or connection in ${fixPath}.`;
   }

@@ -30,10 +30,10 @@
     "loadOlder": "Load older events"
   },
   "emailsPage": {
-    "platformLoginNotice": "Log in to the Cadet platform to view emails."
+    "platformLoginNotice": "Log in to the Cadet Cloud to view emails."
   },
   "systemEventsPage": {
-    "platformLoginNotice": "Log in to the Cadet platform to view system events.",
+    "platformLoginNotice": "Log in to the Cadet Cloud to view system events.",
     "notAvailable": "System events aren't available for the current assistant."
   }
 }

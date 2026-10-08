@@ -1,7 +1,7 @@
 /**
  * The one place that answers "does this assistant have a managed inbox?".
  *
- * Managed email registration lives on the Cadet platform: the
+ * Managed email registration lives on the Cadet Cloud: the
  * `/v1/assistants/:id/email-addresses/` API is the only writer and the only
  * source of truth. Nothing about a registration lands in workspace config, so
  * any reader that wants the inbox address has to ask the platform. Every

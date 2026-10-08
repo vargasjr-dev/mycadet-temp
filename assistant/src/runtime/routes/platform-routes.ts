@@ -937,7 +937,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Connect to the Cadet Platform",
+    summary: "Connect to the Cadet Cloud",
     description:
       "Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
     tags: ["platform"],
@@ -972,7 +972,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Disconnect from the Cadet Platform",
+    summary: "Disconnect from the Cadet Cloud",
     description:
       "Deletes stored platform credentials and emits platform_disconnected signal to connected clients.",
     tags: ["platform"],

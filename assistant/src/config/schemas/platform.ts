@@ -45,7 +45,7 @@ export const PlatformConfigSchema = z
         "platform.baseUrl must be an absolute URL starting with http:// or https://",
       )
       .default("")
-      .describe("Base URL of the Cadet platform API"),
+      .describe("Base URL of the Cadet Cloud API"),
     subdomain: z
       .string({ error: "platform.subdomain must be a string" })
       .default("")
@@ -53,7 +53,7 @@ export const PlatformConfigSchema = z
         "Registered subdomain on mycadet.bot (e.g. 'apollobot' → apollobot.mycadet.bot). Set automatically by 'assistant domain register'.",
       ),
   })
-  .describe("Cadet platform connection settings");
+  .describe("Cadet Cloud connection settings");
 
 export type PlatformConfig = z.infer<typeof PlatformConfigSchema>;
 

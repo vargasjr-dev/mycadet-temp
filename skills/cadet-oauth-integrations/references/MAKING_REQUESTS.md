@@ -119,7 +119,7 @@ An unlabeled connection can be selected with `--account <connection-id>`. For br
 
 A side-effect request made through the proxy still needs the `assistant ui confirm` gate described above.
 
-**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A managed connection is proxied by the Cadet platform, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
+**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A managed connection is proxied by the Cadet Cloud, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
 
 A 3xx that does reach you keeps its status, but its target moves to the `x-cadet-proxy-location` response header, so nothing follows it automatically while carrying the grant. A tool that must follow one reads that header.
 

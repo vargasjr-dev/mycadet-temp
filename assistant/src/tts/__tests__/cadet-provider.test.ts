@@ -135,7 +135,7 @@ describe("cadet TTS adapter", () => {
     mockSynthesizeResult = {
       ok: false,
       kind: "unavailable",
-      message: "No Cadet platform connection.",
+      message: "No Cadet Cloud connection.",
     };
     const provider = createCadetProvider();
     await expect(provider.synthesize(request())).rejects.toThrow(

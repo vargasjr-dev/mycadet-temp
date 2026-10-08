@@ -711,7 +711,7 @@ export async function preflightResolvedConfig(
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        "This assistant's platform credential is missing and must be re-provisioned on the Cadet platform.",
+        "This assistant's platform credential is missing and must be re-provisioned on the Cadet Cloud.",
         errorOptions,
       );
     }
@@ -719,7 +719,7 @@ export async function preflightResolvedConfig(
       throw new ConnectionResolutionError(
         connectionName,
         "platform_unauthenticated",
-        `provider_connection "${connectionName}" routes through the Cadet platform, but no platform login is available — log in or pick a different provider`,
+        `provider_connection "${connectionName}" routes through the Cadet Cloud, but no platform login is available — log in or pick a different provider`,
         errorOptions,
       );
     }

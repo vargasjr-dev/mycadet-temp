@@ -813,7 +813,7 @@
     "credits": "积分"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "登录Cadet平台以添加积分。"
+    "loginToAddCredits": "登录Cadet Cloud以添加积分。"
   },
   "csvPreview": {
     "emptyFile": "此文件为空",

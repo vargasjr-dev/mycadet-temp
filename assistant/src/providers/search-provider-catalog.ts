@@ -46,7 +46,7 @@ export interface SearchProviderCatalogEntry {
    * Authentication style for the search provider choice.
    *
    * `managed` means the choice does not require a user-supplied search API key.
-   * `cadet` searches through the Cadet platform search proxy, billed to
+   * `cadet` searches through the Cadet Cloud search proxy, billed to
    * Cadet credits; the platform connection is the credential. For
    * `inference-provider-native`, the daemon uses the inference API's native
    * hosted web-search tool only when the selected inference provider/model

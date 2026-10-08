@@ -13657,7 +13657,7 @@ paths:
     post:
       operationId: email_register_post
       summary: Register an email address
-      description: Register a new email address on the Cadet platform for the current assistant.
+      description: Register a new email address on the Cadet Cloud for the current assistant.
       tags:
         - email
       requestBody:
@@ -26995,7 +26995,7 @@ paths:
   /v1/platform/connect:
     post:
       operationId: platform_connect_post
-      summary: Connect to the Cadet Platform
+      summary: Connect to the Cadet Cloud
       description:
         Checks whether the stored platform credentials still connect. Reports a stored key the platform rejects as
         credentialRejected, so the caller can direct the user to sign in again and replace it.
@@ -27152,7 +27152,7 @@ paths:
   /v1/platform/disconnect:
     post:
       operationId: platform_disconnect_post
-      summary: Disconnect from the Cadet Platform
+      summary: Disconnect from the Cadet Cloud
       description: Deletes stored platform credentials and emits platform_disconnected signal to connected clients.
       tags:
         - platform
@@ -28719,7 +28719,7 @@ paths:
           schema:
             type: string
           description:
-            Accepted for backward compatibility. The catalog is resolved from the Cadet platform (or the bundled
+            Accepted for backward compatibility. The catalog is resolved from the Cadet Cloud (or the bundled
             manifest when platform features are disabled); this ref does not select a git revision — it is echoed back
             and used as the cache key. Defaults to the CLI's `DEFAULT_PLUGIN_REF` (typically `main`).
       responses:

@@ -1263,7 +1263,7 @@ wrapping the SPA.
 
 ## Platform gating
 
-"Platform" here means the Cadet platform (hosting and auth), not the device
+"Platform" here means the Cadet Cloud (hosting and auth), not the device
 platform. For surfaces that differ across desktop, iOS, and Android, see
 [`PLATFORM_ADAPTATION.md`](./PLATFORM_ADAPTATION.md).
 
@@ -1272,8 +1272,8 @@ which UI surfaces are available:
 
 | Signal                 | Where                      | What it means                                                                                                                                                                        |
 | ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `isLocalClient()`      | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not the Cadet platform                                                            |
-| `hasPlatformSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with the Cadet platform (set asynchronously after probing the allauth session endpoint)                                                     |
+| `isLocalClient()`      | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not the Cadet Cloud                                                            |
+| `hasPlatformSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with the Cadet Cloud (set asynchronously after probing the allauth session endpoint)                                                     |
 | `isPlatformDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_CADET_DISABLE_PLATFORM` or `__CADET_CONFIG__.disablePlatform`). When `true` in local mode, the API interceptor no-ops all platform client requests |
 
 ### The five user states
@@ -1295,7 +1295,7 @@ returns one of three states:
 | `"disabled"` | Show the UI but disable it (prompt re-login) | `hasPlatformSession` is `false`, platform features still enabled |
 | `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_CADET_DISABLE_PLATFORM` is set             |
 
-Use this hook for any UI surface that depends on the Cadet platform
+Use this hook for any UI surface that depends on the Cadet Cloud
 API. The three actions map to concrete UI patterns:
 
 - **Full** — render normally.

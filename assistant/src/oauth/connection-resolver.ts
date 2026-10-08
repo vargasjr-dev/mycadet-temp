@@ -111,7 +111,7 @@ export async function resolveOAuthConnectionWithMeta(
           : "missing assistant ID";
         throw new Error(
           `Platform-managed connection for "${provider}" cannot be created: ${detail}. ` +
-            `Log in to the Cadet platform or switch to using your own OAuth app.`,
+            `Log in to the Cadet Cloud or switch to using your own OAuth app.`,
         );
       }
 

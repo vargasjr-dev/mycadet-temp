@@ -4,7 +4,7 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "Security & Permissions - Developer Guide - Cadet Docs",
   description:
-    "Sandbox model, credential storage, trust rules, and permission modes for the Cadet platform.",
+    "Sandbox model, credential storage, trust rules, and permission modes for the Cadet Cloud.",
   path: "/docs/developer-guide/security",
 });
 

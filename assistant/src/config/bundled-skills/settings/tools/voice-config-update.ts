@@ -480,7 +480,7 @@ export async function run(
   if (wantsManagedSpeech && !(await managedSpeechAvailable())) {
     return {
       content:
-        "Error: managed speech requires a Cadet platform connection. Run 'assistant platform connect' first.",
+        "Error: managed speech requires a Cadet Cloud connection. Run 'assistant platform connect' first.",
       isError: true,
     };
   }

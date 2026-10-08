@@ -41,13 +41,13 @@ All providers support "your-own" mode and some support "managed" mode.
 
 ### Default: Managed Mode
 
-"managed" mode relies on a first-class integration with the Cadet Platform. Managed mode is typically easier to set up and get going, often only requiring the user to log in with no additional configuration needed before they can begin using the integration. Managed mode is the recommended method for most users, especially those that are less technical or newer to their Cadet assistant.
+"managed" mode relies on a first-class integration with the Cadet Cloud. Managed mode is typically easier to set up and get going, often only requiring the user to log in with no additional configuration needed before they can begin using the integration. Managed mode is the recommended method for most users, especially those that are less technical or newer to their Cadet assistant.
 
 When a task needs a managed OAuth connection, present it in chat with `ui_show` using `surface_type: "oauth_connect"` instead of sending the user to Settings or trying to open the OAuth flow from shell. See [Connecting Accounts](references/CONNECTING_ACCOUNTS.md) for the exact surface shape.
 
 Note that using managed mode:
 
-- Requires an account with the Cadet Platform
+- Requires an account with the Cadet Cloud
 - May result in billable usage
 - Requires that requests to the third party are sent through Cadet's servers
 
@@ -59,9 +59,9 @@ Your-own mode is typically best if:
 
 - Cadet does not have a first-party integration with the provider and managed mode is not supported
 - The user is more tech-savvy and comfortable setting up OAuth apps
-- The user does not want to create an account with the Cadet Platform
+- The user does not want to create an account with the Cadet Cloud
 - The user is more sensitive to potential billing implications
-- The user is sensitive to their data going to the Cadet Platform
+- The user is sensitive to their data going to the Cadet Cloud
 
 ### How to Choose
 

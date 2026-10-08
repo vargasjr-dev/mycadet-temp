@@ -7,7 +7,7 @@ import type { WorkspaceMigration } from "./types.js";
  * Fold `services["image-generation"].mode` into the provider field.
  *
  * Configs written by older versions carry two axes: `mode: "managed"` routes
- * generation through the Cadet platform runtime proxy while `provider`
+ * generation through the Cadet Cloud runtime proxy while `provider`
  * names the backend the proxy fronts (gemini or openai). The schema treats
  * `provider` as the only axis, with `"cadet"` meaning managed and the
  * backend derived from the selected model's prefix at request time, so this

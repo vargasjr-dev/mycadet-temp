@@ -4,7 +4,7 @@
  *
  * Decides whether `vel up` is running by probing its edge proxy at
  * http://localhost:3000 (the URL Swift Cadet hits today; see
- * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Cadet platform
+ * `cli/commands/up.ts::ensureEdgeProxyRunning` in the Cadet Cloud
  * repo) and dispatches accordingly:
  *
  *   - vel up detected → `bun run dev:electron-only` with

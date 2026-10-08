@@ -117,7 +117,7 @@ export async function scrubStoredCredentialFromTranscripts(
 }
 
 /**
- * The Cadet platform identity ids and base URL are stored through the
+ * The Cadet Cloud identity ids and base URL are stored through the
  * credential routes but are not secrets — they are UUIDs/URLs that
  * legitimately appear in conversation text, so scrubbing them would redact
  * benign transcript content. Both credential write paths

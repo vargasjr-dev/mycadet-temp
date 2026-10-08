@@ -125,7 +125,7 @@ describe("CreditsUpsellCard", () => {
     );
 
     expect(getByTestId("platform-login-notice-stub")).toBeTruthy();
-    expect(getByText("Log in to the Cadet platform to add credits.")).toBeTruthy();
+    expect(getByText("Log in to Cadet Cloud to add credits.")).toBeTruthy();
     expect(queryByRole("button", { name: "Add credits" })).toBeNull();
     expect(queryByRole("button", { name: "View plans" })).toBeNull();
     // No platform session means the subscription request would go out

@@ -306,7 +306,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
         kind: "tts",
         providerId: "cadet",
         reason:
-          'TTS provider "cadet" needs a Cadet platform connection for managed speech',
+          'TTS provider "cadet" needs a Cadet Cloud connection for managed speech',
       },
     ]);
     expect(readiness.userMessage).toContain("assistant platform connect");

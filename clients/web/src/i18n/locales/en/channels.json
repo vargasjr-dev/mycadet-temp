@@ -147,9 +147,9 @@
   },
   "emailChannelSection": {
     "apiKeyConfigured": "{providerName} API key configured. To reconfigure, run the <code>{setupSkill}</code> skill.",
-    "connecting": "Connecting to the Cadet platform…",
+    "connecting": "Connecting to the Cadet Cloud…",
     "openProvider": "Open {providerName}",
-    "platformLoginNotice": "Log in to the Cadet platform to manage email settings.",
+    "platformLoginNotice": "Log in to the Cadet Cloud to manage email settings.",
     "providerLabel": "Provider",
     "saveSuccessToast": "Email settings saved.",
     "setupInstructions": "Configure {providerName} via the assistant CLI: ask the assistant to run the <code>{setupSkill}</code> skill. It walks you through storing the API key, detecting the domain, and (optionally) wiring up an inbound webhook.",

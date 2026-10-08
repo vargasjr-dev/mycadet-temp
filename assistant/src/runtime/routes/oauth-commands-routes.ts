@@ -101,12 +101,12 @@ async function requirePlatformClient(): Promise<CadetPlatformClient> {
   const client = await CadetPlatformClient.create();
   if (!client) {
     throw new BadRequestError(
-      "Not connected to Cadet platform. Run `cadet platform connect` to connect first.",
+      "Not connected to Cadet Cloud. Run `cadet platform connect` to connect first.",
     );
   }
   if (!client.platformAssistantId) {
     throw new BadRequestError(
-      "Connected to Cadet platform but no assistant ID is configured. Ensure the assistant is registered on the platform.",
+      "Connected to Cadet Cloud but no assistant ID is configured. Ensure the assistant is registered on the platform.",
     );
   }
   return client;
@@ -522,7 +522,7 @@ async function handleModeSet({ body = {} }: RouteHandlerArgs) {
     const client = await CadetPlatformClient.create();
     if (!client) {
       throw new BadRequestError(
-        "Not connected to Cadet platform. Run `cadet platform connect` to connect first.",
+        "Not connected to Cadet Cloud. Run `cadet platform connect` to connect first.",
       );
     }
   }

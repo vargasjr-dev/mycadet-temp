@@ -144,7 +144,7 @@ async function resolveSttGap(
       },
       clause:
         entry.credentialProvider === "cadet"
-          ? `a Cadet platform connection for managed speech (run 'assistant platform connect')`
+          ? `a Cadet Cloud connection for managed speech (run 'assistant platform connect')`
           : `an API key for the speech-to-text provider "${entry.id}"`,
     };
   }
@@ -207,9 +207,9 @@ async function resolveTtsGap(
         gap: {
           kind: "tts",
           providerId: entry.id,
-          reason: `TTS provider "${entry.id}" needs a Cadet platform connection for managed speech`,
+          reason: `TTS provider "${entry.id}" needs a Cadet Cloud connection for managed speech`,
         },
-        clause: `a Cadet platform connection for managed speech (run 'assistant platform connect')`,
+        clause: `a Cadet Cloud connection for managed speech (run 'assistant platform connect')`,
       };
     }
     return null;

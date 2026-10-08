@@ -1240,7 +1240,7 @@ async function executeManagedBraveSearch(
       query,
       "brave",
       startedAt,
-      "Managed Brave Search is not authenticated correctly. This is a Cadet platform configuration issue.",
+      "Managed Brave Search is not authenticated correctly. This is a Cadet Cloud configuration issue.",
     );
   }
 

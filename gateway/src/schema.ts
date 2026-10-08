@@ -629,7 +629,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Email inbound webhook",
           description:
-            "Receives inbound email webhook events from the Cadet platform, verifies the HMAC signature, normalizes the message, and forwards it to the assistant runtime.",
+            "Receives inbound email webhook events from the Cadet Cloud, verifies the HMAC signature, normalizes the message, and forwards it to the assistant runtime.",
           operationId: "emailInboundWebhook",
           security: [{ CadetSignature: [] }],
           requestBody: {
@@ -5009,7 +5009,7 @@ export function buildSchema(): Record<string, unknown> {
           in: "header",
           name: "Cadet-Signature",
           description:
-            "HMAC-SHA256 signature computed by the Cadet platform over the raw request body using the webhook secret. Format: sha256=<hex-digest>.",
+            "HMAC-SHA256 signature computed by the Cadet Cloud over the raw request body using the webhook secret. Format: sha256=<hex-digest>.",
         },
         WhatsAppHubSignature: {
           type: "apiKey",

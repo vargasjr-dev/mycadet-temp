@@ -118,7 +118,7 @@ export class PlatformOAuthConnection implements OAuthConnection {
     if (!options.connectionId) {
       throw new BackendError(
         `Platform-managed connection for "${options.provider}" cannot be created: missing connection ID. ` +
-          `Log in to the Cadet platform or switch to using your own OAuth app.`,
+          `Log in to the Cadet Cloud or switch to using your own OAuth app.`,
       );
     }
 

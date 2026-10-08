@@ -500,7 +500,7 @@ export function supportsDiarization(id: SttProviderId): boolean {
  * session change.
  */
 /**
- * Whether a provider authenticates with the Cadet platform connection rather
+ * Whether a provider authenticates with the Cadet Cloud connection rather
  * than a stored API key.
  *
  * Derived from the catalog rather than a hand-kept id list: every check that

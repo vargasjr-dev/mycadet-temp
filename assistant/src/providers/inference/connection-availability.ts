@@ -236,7 +236,7 @@ export async function computeConnectionAvailability(
       }
       return {
         status: "unsupported_auth",
-        message: `Connection "${resolvedConnectionName}" uses Cadet platform auth, which cannot serve provider "${provider}". Add an API-key connection for "${provider}" ${SETTINGS_HINT}.`,
+        message: `Connection "${resolvedConnectionName}" uses Cadet Cloud auth, which cannot serve provider "${provider}". Add an API-key connection for "${provider}" ${SETTINGS_HINT}.`,
       };
     case "none": {
       // Keyless providers (catalog setupMode "keyless", e.g. ollama) and

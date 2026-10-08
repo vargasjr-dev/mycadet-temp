@@ -481,7 +481,7 @@ async function listSkillsWithCatalog(): Promise<SlimSkillResponse[]> {
     return installed;
   }
 
-  // All entries from the Cadet platform API are first-party.
+  // All entries from the Cadet Cloud API are first-party.
   // Create SlimSkillResponses for catalog skills not already installed.
   const available: SlimSkillResponse[] = filterSkillsByPlatform(catalogSkills)
     .filter((cs) => !installedIds.has(cs.id))

@@ -67,7 +67,7 @@ async function resolveClient(): Promise<
         ok: false,
         kind: "unavailable",
         message:
-          "Managed speech is unavailable: no Cadet platform connection.",
+          "Managed speech is unavailable: no Cadet Cloud connection.",
       },
     };
   }

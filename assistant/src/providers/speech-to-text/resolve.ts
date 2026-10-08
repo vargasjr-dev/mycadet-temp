@@ -787,7 +787,7 @@ export function sttCredentialGapReason(credentialProviderName: string): string {
     credentialProviderName === "cadet" ||
     credentialProviderName === "cadet"
   ) {
-    return "No Cadet platform connection for managed speech — run 'assistant platform connect'";
+    return "No Cadet Cloud connection for managed speech — run 'assistant platform connect'";
   }
   return `No API key configured for credential provider "${credentialProviderName}"`;
 }

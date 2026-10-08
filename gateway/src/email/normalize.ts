@@ -2,7 +2,7 @@ import type { GatewayInboundEvent } from "../types.js";
 
 /**
  * A single inbound email attachment, inlined as base64 by the upstream
- * caller (the Cadet platform fetches the blob from the provider's
+ * caller (the Cadet Cloud fetches the blob from the provider's
  * Attachments API and embeds it here, bounded by a per-file / per-message
  * cap). The gateway uploads each attachment to the assistant's attachment
  * store so it lands in the conversation workspace.

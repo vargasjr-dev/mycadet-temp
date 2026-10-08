@@ -170,7 +170,7 @@ async function requireAssistantApiKey(): Promise<string> {
   const key = await assistantApiKey();
   if (!key) {
     throw new UnprocessableEntityError(
-      "Not connected to the Cadet Platform, so there is no assistant identity to post as. " +
+      "Not connected to the Cadet Cloud, so there is no assistant identity to post as. " +
         "Run `assistant platform connect` first.",
     );
   }

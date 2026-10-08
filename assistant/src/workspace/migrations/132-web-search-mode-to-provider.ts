@@ -7,7 +7,7 @@ import type { WorkspaceMigration } from "./types.js";
  * Fold `services["web-search"].mode` into the provider field.
  *
  * Configs written by older versions carry two axes: `mode: "managed"` routes
- * search through the Cadet platform proxy while `provider` holds an
+ * search through the Cadet Cloud proxy while `provider` holds an
  * untouched BYOK choice. The schema treats `provider` as the only axis, with
  * `"cadet"` meaning managed, so this migration rewrites a managed service to
  * `provider: "cadet"` — otherwise the lingering BYOK provider would be taken

@@ -1,7 +1,7 @@
 /**
  * Route handlers for the email management API.
  *
- * Delegates to the Cadet platform API for register/unregister/send/list/status/download.
+ * Delegates to the Cadet Cloud API for register/unregister/send/list/status/download.
  * All handlers require a valid platform client (UnauthorizedError if not).
  */
 
@@ -429,7 +429,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleEmailRegister,
     summary: "Register an email address",
     description:
-      "Register a new email address on the Cadet platform for the current assistant.",
+      "Register a new email address on the Cadet Cloud for the current assistant.",
     tags: ["email"],
     requestBody: z.object({
       username: z

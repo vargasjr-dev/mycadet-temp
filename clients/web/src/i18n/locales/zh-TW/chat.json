@@ -813,7 +813,7 @@
     "credits": "點數"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "登入 Cadet 平台以新增點數。"
+    "loginToAddCredits": "登入 Cadet Cloud 以新增點數。"
   },
   "csvPreview": {
     "emptyFile": "此檔案為空",
