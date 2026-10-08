@@ -12,17 +12,13 @@
  *      (`IS_CONTAINERIZED` + `CES_CREDENTIAL_URL`). Used if the assistant's
  *      bootstrap RPC transport is down, or if a process with HTTP env could
  *      not open the socket.
- *   3. Encrypted file store (fallback) - used when CES is unavailable locally.
  *
- * All operations (reads, writes, lists, deletes) go to exactly one backend.
- * There are no cross-store fallbacks or merges. The only transport failover is
- * CES RPC to CES HTTP in managed mode; both backends target the same CES
- * sidecar and credential data.
+ * CES is purely a sibling process: it is the only credential store. When no
+ * CES backend is ready, credentials report unreachable (callers fall back to
+ * env vars); there is no local file fallback.
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 
 import type {
   SecureKeyBackend,
@@ -38,7 +34,6 @@ import { type CesClient } from "../credential-execution/client.js";
 import { discoverCes } from "../credential-execution/executable-discovery.js";
 import { getAnyProviderEnvVar } from "../providers/provider-env-vars.js";
 import { getLogger } from "../util/logger.js";
-import { getCredentialSecurityDir } from "../util/platform.js";
 import { createCesCredentialBackend } from "./ces-credential-client.js";
 import { CesRpcCredentialBackend } from "./ces-rpc-credential-backend.js";
 import type {
@@ -46,10 +41,7 @@ import type {
   CredentialListResult,
   DeleteResult,
 } from "./credential-backend.js";
-import {
-  createEncryptedStoreBackend,
-  createUnavailableBackend,
-} from "./credential-backend.js";
+import { createUnavailableBackend } from "./credential-backend.js";
 import { credentialKey } from "./credential-key.js";
 
 export type {
@@ -73,15 +65,14 @@ export interface SecureKeyResult {
 const log = getLogger("secure-keys");
 
 let _cesClient: CesClient | undefined;
-let _encryptedStore: CredentialBackend | undefined;
 let _resolvedBackend: CredentialBackend | undefined;
 let _resolvePromise: Promise<CredentialBackend> | undefined;
 
 /**
  * Test-only backend pin. When set, resolveBackendAsync() returns it directly,
- * bypassing CES routing, the encrypted store, and their reconnection logic —
- * the same way a test process has no CES daemon to reach. Prefer the
- * `useMemorySecureKeys` test helper over calling this directly.
+ * bypassing CES routing and its reconnection logic — the same way a test
+ * process has no CES daemon to reach. Prefer the `useMemorySecureKeys` test
+ * helper over calling this directly.
  */
 let _testingBackend: CredentialBackend | undefined;
 
@@ -203,28 +194,18 @@ export function setCesReconnect(
   _cesReconnect = fn;
 }
 
-function getEncryptedStoreBackend(): CredentialBackend {
-  if (!_encryptedStore) {
-    _encryptedStore = createEncryptedStoreBackend();
-  }
-  return _encryptedStore;
-}
-
 /**
  * Resolve the primary credential backend for this process (async).
  *
  * Priority:
  *   1. CES RPC: live client, or open one via `openCesRpcSession`.
  *   2. Containerized + CES_CREDENTIAL_URL: CES HTTP, only if IPC is down.
- *   3. Encrypted file store: local fallback when CES is unavailable.
  *
  * Once resolved, the backend is cached. If it becomes unavailable (e.g. the
  * CES transport dies), we attempt to reconnect via `_cesReconnect` rather
- * than falling back to a different backend. In managed cloud mode CES is the
- * primary credential source. Falling back to the encrypted file store would
- * silently serve stale or empty data.
+ * than falling back to a different backend.
  *
- * In managed mode, if the CES bootstrap RPC transport dies, we first fail
+ * If the CES bootstrap RPC transport dies in managed mode, we first fail
  * over from CES RPC to the CES HTTP credential API exposed by the same
  * sidecar. This avoids pinning credential reads to a dead bootstrap socket
  * when the in-pod HTTP interface is still healthy.
@@ -236,10 +217,10 @@ function getEncryptedStoreBackend(): CredentialBackend {
  * returned — its methods short-circuit via `isAvailable()` guards and return
  * `unreachable` results so callers can degrade gracefully.
  *
- * Additionally, if CES failed on initial startup (so the encrypted file
- * store became the resolved backend) but the reconnection callback is
- * registered, we periodically attempt to upgrade to CES — ensuring managed
- * cloud deployments don't stay on the (potentially stale) file store.
+ * CES is purely a sibling process: when no CES backend is ready, an
+ * unreachable backend is returned WITHOUT caching it (presence indeterminate,
+ * which callers retry), so the next credential op re-attempts CES. There is
+ * no local file fallback.
  *
  * Call `_resetBackend()` in tests to clear the cached resolution.
  */
@@ -251,57 +232,53 @@ async function resolveBackendAsync(
   }
   if (_resolvedBackend) {
     if (!_resolvedBackend.isAvailable()) {
-      const cesHttpFallback = tryFailoverToCesHttpBackend(_resolvedBackend);
-      if (cesHttpFallback) {
-        return cesHttpFallback;
-      }
-
-      // Backend is no longer reachable — attempt CES reconnection. Mutating
-      // ops pass `forceReconnect` to bypass the cooldown: writes are rare,
-      // and refusing the reconnect turns a transient transport blip into a
-      // silently dropped credential (reads degrade gracefully via env-var
-      // and dead-backend fallbacks; writes have no fallback).
-      const reconnected = await attemptCesReconnection({
-        ignoreCooldown: options.forceReconnect,
-      });
-      if (reconnected) {
-        // setCesClient() cleared the cache — fall through to re-resolve
-        // with the fresh client.
+      // A CES client became ready after we reported unreachable (e.g. a
+      // worker/CLI whose handshake completed after the first read). No
+      // reconnect callback is needed — the live client already exists. Drop
+      // the cache and re-resolve so the CES RPC path wins.
+      if (_resolvedBackend.name === "unavailable" && _cesClient?.isReady()) {
+        log.info(
+          "CES client is ready; upgrading credential backend to CES RPC",
+        );
+        _resolvedBackend = undefined;
+        _resolvePromise = undefined;
       } else {
-        // Reconnection failed or on cooldown — return the existing (dead)
-        // backend. Its methods short-circuit via isAvailable() guards and
-        // return unreachable results. Callers like getProviderKeyAsync fall
-        // back to env vars, and embedding backend selection uses cached
-        // backends.
-        return _resolvedBackend;
+        const cesHttpFallback = tryFailoverToCesHttpBackend(_resolvedBackend);
+        if (cesHttpFallback) {
+          return cesHttpFallback;
+        }
+
+        // Backend is no longer reachable — attempt CES reconnection. Mutating
+        // ops pass `forceReconnect` to bypass the cooldown: writes are rare,
+        // and refusing the reconnect turns a transient transport blip into a
+        // silently dropped credential (reads degrade gracefully via env-var
+        // and dead-backend fallbacks; writes have no fallback).
+        const reconnected = await attemptCesReconnection({
+          ignoreCooldown: options.forceReconnect,
+        });
+        if (reconnected) {
+          // setCesClient() cleared the cache — fall through to re-resolve
+          // with the fresh client.
+        } else {
+          // Reconnection failed or on cooldown — return the existing (dead)
+          // backend. Its methods short-circuit via isAvailable() guards and
+          // return unreachable results. Callers like getProviderKeyAsync fall
+          // back to env vars, and embedding backend selection uses cached
+          // backends.
+          return _resolvedBackend;
+        }
       }
-    } else if (
-      _resolvedBackend.name === "encrypted-store" &&
-      _cesClient?.isReady()
-    ) {
-      // A CES client became ready after we fell back to the encrypted store
-      // (e.g. a worker/CLI whose handshake completed post-fallback, or a
-      // client injected before its handshake finished). No reconnect callback
-      // is needed, since the live client already exists. Drop the fallback and
-      // re-resolve so the CES RPC path wins.
-      log.info(
-        "CES client is ready; upgrading credential backend from encrypted store to CES RPC",
-      );
-      _resolvedBackend = undefined;
-      _resolvePromise = undefined;
-      // Fall through to re-resolve.
     } else if (
       _cesReconnect &&
-      (_resolvedBackend.name === "encrypted-store" ||
-        (_resolvedBackend.name === "ces-http" && _cesHttpUnreachable))
+      (_resolvedBackend.name === "ces-http" && _cesHttpUnreachable)
     ) {
-      // CES RPC is the preferred backend. Attempt to reconnect when:
-      // - We fell back to the encrypted store (CES startup failed), or
-      // - We're on ces-http but an operation returned unreachable (HTTP
-      //   endpoint is actually down even though isAvailable() returned true,
-      //   since it only checks env vars, not actual connectivity).
+      // CES RPC is the preferred backend. Attempt to reconnect when we have
+      // no backend at all (CES startup failed), or when we're on ces-http
+      // but an operation returned unreachable (HTTP endpoint is actually
+      // down even though isAvailable() returned true, since it only checks
+      // env vars, not actual connectivity).
       // Mutating ops bypass the cooldown here too, so a write during the
-      // window lands on CES rather than on a fallback CES never sees.
+      // window lands on CES rather than being dropped.
       const reconnected = await attemptCesReconnection({
         ignoreCooldown: options.forceReconnect,
       });
@@ -440,7 +417,7 @@ export async function attemptCesReconnection(
  * drops mid-process.
  *
  * Returns undefined on any failure (socket not found, handshake rejected,
- * timeout) so the caller falls through to the encrypted file store.
+ * timeout) so the caller falls through to the next backend.
  */
 async function tryLazyCesConnect(): Promise<CesClient | undefined> {
   if (_lazyConnectPromise) {
@@ -452,7 +429,7 @@ async function tryLazyCesConnect(): Promise<CesClient | undefined> {
     if (discovery.mode === "unavailable") {
       log.info(
         { reason: discovery.reason },
-        "CES socket not reachable for lazy connect, falling back to encrypted file store",
+        "CES socket not reachable for lazy connect",
       );
       return undefined;
     }
@@ -524,22 +501,15 @@ async function doResolveBackend(): Promise<CredentialBackend> {
     );
   }
 
-  // 3. On a containerized pod the local encrypted store does not exist and CES
-  //    owns credentials. Never resolve to the encrypted store here; it would
-  //    report a provisioned credential as absent. Return an unreachable backend
-  //    (presence indeterminate, which callers retry) WITHOUT caching it, so the
-  //    next credential op re-attempts CES rather than pinning the dead answer.
-  if (getIsContainerized()) {
-    log.error(
-      "No CES credential backend is ready on a containerized pod; reporting credentials as unreachable (indeterminate). The local encrypted store is not used in managed mode.",
-    );
-    return createUnavailableBackend();
-  }
-
-  // 4. Encrypted file store: the legitimate backend for local / self-hosted
-  //    mode when CES is unavailable.
-  _resolvedBackend = getEncryptedStoreBackend();
-  log.info("Resolved credential backend: encrypted-store (local mode)");
+  // 3. CES is purely a sibling process: when no CES backend is ready, resolve
+  //    to an unreachable backend (presence indeterminate — callers retry).
+  //    Cache it so the reconnection machinery below can fire on later ops
+  //    (cooldown-gated); a CES client arrival clears the cache via
+  //    setCesClient().
+  log.error(
+    "No CES credential backend is ready; reporting credentials as unreachable (indeterminate).",
+  );
+  _resolvedBackend = createUnavailableBackend();
   return _resolvedBackend;
 }
 
@@ -860,13 +830,6 @@ export function getActiveBackendName(): string {
 // ---------------------------------------------------------------------------
 
 export type BackendInfo =
-  | {
-      backend: "encrypted-store";
-      storePath: string;
-      storeKeyPath: string;
-      storeExists: boolean;
-      storeKeyExists: boolean;
-    }
   | { backend: "ces-rpc"; ready: boolean }
   | { backend: "ces-http"; url: string }
   | { backend: "none" };
@@ -883,18 +846,6 @@ export function getActiveBackendInfoAsync(): Promise<BackendInfo> {
   return withCredentialTimeout(
     async () => {
       const backend = await resolveBackendAsync();
-      if (backend.name === "encrypted-store") {
-        const securityDir = getCredentialSecurityDir();
-        const storePath = join(securityDir, "keys.enc");
-        const storeKeyPath = join(securityDir, "store.key");
-        return {
-          backend: "encrypted-store" as const,
-          storePath,
-          storeKeyPath,
-          storeExists: existsSync(storePath),
-          storeKeyExists: existsSync(storeKeyPath),
-        };
-      }
       if (backend.name === "ces-rpc") {
         return { backend: "ces-rpc" as const, ready: backend.isAvailable() };
       }
@@ -913,7 +864,6 @@ export function getActiveBackendInfoAsync(): Promise<BackendInfo> {
 /** @internal Test-only: reset the cached backends so they're re-created. */
 export function _resetBackend(): void {
   _cesClient = undefined;
-  _encryptedStore = undefined;
   _resolvedBackend = undefined;
   _resolvePromise = undefined;
   _cesReconnect = undefined;

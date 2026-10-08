@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, sep } from "node:path";
+import { join, sep } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { getBundledSkillsDir } from "../config/skills.js";
@@ -26,7 +26,7 @@ import {
   sandboxPolicyWithHostFallback,
   sandboxReadPolicy,
 } from "../tools/shared/filesystem/path-policy.js";
-import { getDotEnvPath, getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/platform.js";
 
 // The classifier reads REAL roots: managed = the per-process workspace skills
 // dir (writable, from the test preload), bundled = the repo's bundled-skills
@@ -217,8 +217,6 @@ describe("sandboxPolicy", () => {
 describe("sandboxPolicyWithHostFallback", () => {
   afterEach(() => {
     delete process.env.IS_CONTAINERIZED;
-    delete process.env.GATEWAY_SECURITY_DIR;
-    delete process.env.CREDENTIAL_SECURITY_DIR;
   });
 
   test("matches sandboxPolicy for in-bounds paths", () => {
@@ -285,187 +283,6 @@ describe("sandboxPolicyWithHostFallback", () => {
     }
   });
 
-  test("denies paths inside the gateway security dir (env override)", () => {
-    const boundary = makeTempDir();
-    const securityDir = makeTempDir();
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-
-    const result = sandboxPolicyWithHostFallback(
-      join(securityDir, "trust.json"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-      expect(result.error).toContain("service security directory");
-    }
-  });
-
-  test("denies paths inside the CES security dir (env override)", () => {
-    const boundary = makeTempDir();
-    const securityDir = makeTempDir();
-    process.env.CREDENTIAL_SECURITY_DIR = securityDir;
-
-    for (const basename of ["keys.enc", "store.key"]) {
-      const result = sandboxPolicyWithHostFallback(
-        join(securityDir, basename),
-        boundary,
-        { mustExist: false },
-      );
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.reason).toBe("denied");
-      }
-    }
-  });
-
-  test("a root-configured security dir denies every absolute target", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    process.env.GATEWAY_SECURITY_DIR = "/";
-
-    const result = sandboxPolicyWithHostFallback(
-      join(outside, "trust.json"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies the daemon dotenv", () => {
-    const boundary = makeTempDir();
-
-    const result = sandboxPolicyWithHostFallback(getDotEnvPath(), boundary, {
-      mustExist: false,
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies the default gateway security dir when the env is unset", () => {
-    const boundary = makeTempDir();
-
-    const result = sandboxPolicyWithHostFallback(
-      join(dirname(process.env.CADET_WORKSPACE_DIR!), "gateway-security", "actor-token-signing-key"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies the gateway security dir even when it sits inside the boundary", () => {
-    const boundary = makeTempDir();
-    const securityDir = join(boundary, "protected");
-    mkdirSync(securityDir);
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-
-    for (const policy of [sandboxPolicy, sandboxPolicyWithHostFallback]) {
-      const result = policy("protected/trust.json", boundary, {
-        mustExist: false,
-      });
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.reason).toBe("denied");
-      }
-    }
-  });
-
-  test("denies a dangling symlink pointing into the gateway security dir", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    const securityDir = makeTempDir();
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-    // The destination does NOT exist — a write through the link would create
-    // it inside the security dir.
-    symlinkSync(
-      join(securityDir, "new-signing-key"),
-      join(outside, "innocent.txt"),
-    );
-
-    const result = sandboxPolicyWithHostFallback(
-      join(outside, "innocent.txt"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies a long dangling symlink chain into the gateway security dir", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    const securityDir = makeTempDir();
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-
-    // A 33-link chain exceeds macOS's own 32-link traversal limit but stays
-    // within Linux's 40 — the policy must resolve past it either way.
-    let target = join(securityDir, "new-signing-key");
-    for (let i = 32; i >= 0; i--) {
-      const link = join(outside, `link-${i}`);
-      symlinkSync(target, link);
-      target = link;
-    }
-
-    const result = sandboxPolicyWithHostFallback(target, boundary, {
-      mustExist: false,
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies a symlink that resolves into the gateway security dir", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    const securityDir = makeTempDir();
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-    writeFileSync(join(securityDir, "trust.json"), "{}");
-    symlinkSync(
-      join(securityDir, "trust.json"),
-      join(outside, "innocent.json"),
-    );
-
-    const result = sandboxPolicyWithHostFallback(
-      join(outside, "innocent.json"),
-      boundary,
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("fails closed to the hard boundary when a security-dir override is relative", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    // A relative override resolves against the owning service's cwd, which
-    // the daemon cannot know — the deny set is unmirrorable, so no escape
-    // is permitted at all.
-    process.env.GATEWAY_SECURITY_DIR = "relative/security-dir";
-
-    const result = sandboxPolicyWithHostFallback(
-      join(outside, "file.txt"),
-      boundary,
-      { mustExist: false },
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("out_of_bounds");
-    }
-  });
-
   test("keeps the hard boundary when containerized", () => {
     const boundary = makeTempDir();
     const outside = makeTempDir();
@@ -501,8 +318,6 @@ describe("sandboxPolicyWithHostFallback", () => {
 describe("sandboxReadPolicy", () => {
   afterEach(() => {
     delete process.env.IS_CONTAINERIZED;
-    delete process.env.GATEWAY_SECURITY_DIR;
-    delete process.env.CREDENTIAL_SECURITY_DIR;
   });
 
   test("matches sandboxPolicy for in-bounds paths", () => {
@@ -540,35 +355,6 @@ describe("sandboxReadPolicy", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("denies the gateway security dir when containerized", () => {
-    const boundary = makeTempDir();
-    const securityDir = makeTempDir();
-    writeFileSync(join(securityDir, "trust.json"), "{}");
-    process.env.GATEWAY_SECURITY_DIR = securityDir;
-    process.env.IS_CONTAINERIZED = "true";
-
-    const result = sandboxReadPolicy(join(securityDir, "trust.json"), boundary);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("denies a symlink that resolves into the credential security dir", () => {
-    const boundary = makeTempDir();
-    const securityDir = makeTempDir();
-    writeFileSync(join(securityDir, "keys.enc"), "cipher");
-    symlinkSync(join(securityDir, "keys.enc"), join(boundary, "innocent.txt"));
-    process.env.CREDENTIAL_SECURITY_DIR = securityDir;
-    process.env.IS_CONTAINERIZED = "true";
-
-    const result = sandboxReadPolicy(join(boundary, "innocent.txt"), boundary);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("denied");
-    }
-  });
-
   test("denies a denylisted basename outside the boundary", () => {
     const boundary = makeTempDir();
     const outside = makeTempDir();
@@ -579,22 +365,6 @@ describe("sandboxReadPolicy", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("denied");
-    }
-  });
-
-  test("fails closed to the hard boundary when a security-dir override is relative", () => {
-    const boundary = makeTempDir();
-    const outside = makeTempDir();
-    writeFileSync(join(outside, "file.txt"), "x");
-    // Unmirrorable deny set: the real security dir could be anywhere, so the
-    // read allowance must not widen past the boundary.
-    process.env.GATEWAY_SECURITY_DIR = "relative/security-dir";
-    process.env.IS_CONTAINERIZED = "true";
-
-    const result = sandboxReadPolicy(join(outside, "file.txt"), boundary);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("out_of_bounds");
     }
   });
 

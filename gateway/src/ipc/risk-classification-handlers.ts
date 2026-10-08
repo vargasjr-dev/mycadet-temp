@@ -397,8 +397,6 @@ export async function handleClassifyRisk(
       const SENTINEL = "/__cadet_no_context__";
       const fileCtx = params.fileContext;
       const context: FileClassificationContext = {
-        protectedDir: fileCtx?.protectedDir ?? SENTINEL,
-        deprecatedDir: fileCtx?.deprecatedDir ?? SENTINEL,
         hooksDir: fileCtx?.hooksDir ?? SENTINEL,
         pluginsDir: fileCtx?.pluginsDir ?? SENTINEL,
         toolsDir: fileCtx?.toolsDir ?? SENTINEL,

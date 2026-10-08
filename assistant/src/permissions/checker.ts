@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import { getIsContainerized } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
@@ -22,8 +22,6 @@ import { getTool, getToolOwner, resolveTool } from "../tools/registry.js";
 import { resolveRealPath } from "../tools/shared/filesystem/path-policy.js";
 import type { Tool } from "../tools/types.js";
 import {
-  getDeprecatedDir,
-  getGatewaySecurityDir,
   getMonitoringDataDir,
   getWorkspaceDir,
   getWorkspaceHooksDir,
@@ -260,25 +258,13 @@ import type {
 
 function buildFileContext(): ClassifyRiskFileContext {
   const config = getConfig();
-  // Canonicalize the security-sensitive directories via realpath so that a
-  // symlinked component anywhere in their path still prefix-matches the
-  // canonicalized target path computed in buildClassifyRiskParams. Both
-  // sides must be symlink-resolved for the gateway's lexical prefix checks
-  // to be sound.
-  // protectedDir is the gateway's security directory: the gateway's
-  // actor-token-signing-key lives there in local mode (the gateway writes
-  // getGatewaySecurityDir()/actor-token-signing-key).
-  const protectedDir = resolveRealPath(getGatewaySecurityDir());
   return {
-    protectedDir,
-    deprecatedDir: resolveRealPath(getDeprecatedDir()),
     hooksDir: resolveRealPath(getWorkspaceHooksDir()),
     pluginsDir: resolveRealPath(getWorkspacePluginsDir()),
     toolsDir: resolveRealPath(getWorkspaceToolsDir()),
     routesDir: resolveRealPath(getWorkspaceRoutesDir()),
     workflowsDir: resolveRealPath(getWorkspaceWorkflowsDir()),
     monitoringDir: resolveRealPath(getMonitoringDataDir()),
-    actorTokenSigningKeyPath: join(protectedDir, "actor-token-signing-key"),
     skillSourceDirs: getSkillRoots(config.skills.load.extraDirs).map(
       resolveRealPath,
     ),

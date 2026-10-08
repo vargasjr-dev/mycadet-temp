@@ -1,10 +1,8 @@
-import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -18,7 +16,6 @@ import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 // Mock logger (no-op — compatible with other test files' identical mock)
 // ---------------------------------------------------------------------------
 import type { CesClient } from "../credential-execution/client.js";
-import * as encryptedStore from "../security/encrypted-store.js";
 import {
   _resetBackend,
   deleteSecureKeyAsync,
@@ -29,63 +26,58 @@ import {
   setCesClient,
   setCesReconnect,
   setSecureKeyAsync,
+  setSecureKeyBackendForTesting,
 } from "../security/secure-keys.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
-
-// ---------------------------------------------------------------------------
-// Use a temp directory for encrypted store tests
-// ---------------------------------------------------------------------------
-
-const TEST_DIR = join(
-  tmpdir(),
-  `cadet-seckeys-test-${randomBytes(4).toString("hex")}`,
-);
-const STORE_PATH = join(TEST_DIR, "keys.enc");
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 describe("secure-keys", () => {
+  let memoryKeys: Record<string, string>;
+  const socketDirs: string[] = [];
+
+  /**
+   * Point CES discovery at an empty temp dir so tests whose premise is "no
+   * CES sibling is reachable" never find this machine's live bootstrap
+   * socket (/run/ces-bootstrap).
+   */
+  function useEmptyCesSocketDir(): void {
+    const dir = mkdtempSync(join(tmpdir(), "no-ces-socket-"));
+    process.env.CES_BOOTSTRAP_SOCKET_DIR = dir;
+    socketDirs.push(dir);
+  }
+
   beforeEach(() => {
     _resetBackend();
 
     // Ensure CADET_DEV and CADET_DESKTOP_APP are NOT set
     delete process.env.CADET_DEV;
     delete process.env.CADET_DESKTOP_APP;
-
-    if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true });
-    }
-    mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     _resetBackend();
+    // Clear any memory-backend pin a describe installed.
+    setSecureKeyBackendForTesting(undefined);
     delete process.env.CADET_DEV;
     delete process.env.CADET_DESKTOP_APP;
     delete process.env.IS_CONTAINERIZED;
     delete process.env.CES_CREDENTIAL_URL;
-  });
-
-  afterAll(() => {
-    if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true });
+    delete process.env.CES_BOOTSTRAP_SOCKET_DIR;
+    while (socketDirs.length) {
+      rmSync(socketDirs.pop()!, { recursive: true, force: true });
     }
   });
 
   // -----------------------------------------------------------------------
-  // CRUD operations (encrypted store backend)
+  // CRUD operations (through the pinned backend)
   // -----------------------------------------------------------------------
-  describe("CRUD with encrypted backend", () => {
+  describe("CRUD with the pinned backend", () => {
+    beforeEach(() => {
+      memoryKeys = useMemorySecureKeys();
+    });
+
     test("set and get a key", async () => {
       await setSecureKeyAsync("openai", "sk-openai-789");
       expect(await getSecureKeyAsync("openai")).toBe("sk-openai-789");
-    });
-
-    test("does not poll for a CES socket when none is present", async () => {
-      const start = Date.now();
-      await getSecureKeyAsync("openai");
-      expect(Date.now() - start).toBeLessThan(1_000);
-      expect(getActiveBackendName()).toBe("encrypted-store");
     });
 
     test("get returns undefined for nonexistent key", async () => {
@@ -104,112 +96,64 @@ describe("secure-keys", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Desktop app uses encrypted store (same as dev/CLI)
+  // No CES backend ready → unreachable, never absent
   // -----------------------------------------------------------------------
-  describe("desktop app uses encrypted store", () => {
-    test("CADET_DESKTOP_APP=1 writes to encrypted store", async () => {
-      process.env.CADET_DESKTOP_APP = "1";
-      _resetBackend();
-
-      const result = await setSecureKeyAsync("api-key", "new-value");
-      expect(result).toBe(true);
-      expect(encryptedStore.getKey("api-key")).toBe("new-value");
+  describe("no CES backend ready", () => {
+    beforeEach(() => {
+      useEmptyCesSocketDir();
     });
 
-    test("CADET_DESKTOP_APP=1 reads from encrypted store", async () => {
-      process.env.CADET_DESKTOP_APP = "1";
+    test("reads report unreachable (indeterminate)", async () => {
       _resetBackend();
 
-      encryptedStore.setKey("api-key", "encrypted-value");
-
-      const result = await getSecureKeyAsync("api-key");
-      expect(result).toBe("encrypted-value");
+      const result = await getSecureKeyResultAsync("openai");
+      expect(result.value).toBeUndefined();
+      // unreachable → presence indeterminate, NEVER absent.
+      expect(result.unreachable).toBe(true);
+      expect(getActiveBackendName()).toBe("unavailable");
     });
 
-    test("CADET_DESKTOP_APP=1 deletes from encrypted store", async () => {
-      process.env.CADET_DESKTOP_APP = "1";
+    test("does not poll for a CES socket when none is present", async () => {
       _resetBackend();
 
-      encryptedStore.setKey("api-key", "encrypted-value");
+      const start = Date.now();
+      await getSecureKeyAsync("openai");
+      expect(Date.now() - start).toBeLessThan(1_000);
+      expect(getActiveBackendName()).toBe("unavailable");
+    });
+
+    test("writes fail while unreachable", async () => {
+      _resetBackend();
+
+      const ok = await setSecureKeyAsync("api-key", "new-value");
+      expect(ok).toBe(false);
+    });
+
+    test("delete reports an error while unreachable", async () => {
+      _resetBackend();
 
       const result = await deleteSecureKeyAsync("api-key");
-      expect(result).toBe("deleted");
-      expect(encryptedStore.getKey("api-key")).toBeUndefined();
+      expect(result).toBe("error");
     });
-  });
 
-  // -----------------------------------------------------------------------
-  // Dev mode — CADET_DEV=1 uses encrypted store
-  // -----------------------------------------------------------------------
-  describe("dev mode (CADET_DEV=1)", () => {
-    test("setSecureKeyAsync writes to encrypted store", async () => {
-      process.env.CADET_DEV = "1";
+    test("list reports unreachable (empty accounts)", async () => {
       _resetBackend();
 
-      const result = await setSecureKeyAsync("api-key", "dev-value");
-      expect(result).toBe(true);
-      expect(encryptedStore.getKey("api-key")).toBe("dev-value");
+      const result = await listSecureKeysAsync();
+      expect(result.unreachable).toBe(true);
+      expect(result.accounts).toEqual([]);
     });
 
-    test("getSecureKeyAsync reads from encrypted store", async () => {
-      process.env.CADET_DEV = "1";
+    test("a ready CES client wins the next read", async () => {
       _resetBackend();
+      expect((await getSecureKeyResultAsync("openai")).unreachable).toBe(true);
 
-      encryptedStore.setKey("api-key", "encrypted-value");
+      const client = makeMockCesClient(true);
+      setCesClient(client);
 
-      const result = await getSecureKeyAsync("api-key");
-      expect(result).toBe("encrypted-value");
-    });
-
-    test("getSecureKeyAsync returns undefined when encrypted store is empty", async () => {
-      process.env.CADET_DEV = "1";
-      _resetBackend();
-
-      const result = await getSecureKeyAsync("api-key");
-      expect(result).toBeUndefined();
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // Non-desktop topology uses encrypted store
-  // -----------------------------------------------------------------------
-  describe("non-desktop topology", () => {
-    test("uses encrypted store", async () => {
-      _resetBackend();
-
-      const result = await setSecureKeyAsync("api-key", "new-value");
-      expect(result).toBe(true);
-      expect(encryptedStore.getKey("api-key")).toBe("new-value");
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // Delete — single backend
-  // -----------------------------------------------------------------------
-  describe("delete from encrypted store", () => {
-    test("deleteSecureKeyAsync removes key from encrypted store", async () => {
-      encryptedStore.setKey("api-key", "encrypted-value");
-
-      const result = await deleteSecureKeyAsync("api-key");
-      expect(result).toBe("deleted");
-      expect(encryptedStore.getKey("api-key")).toBeUndefined();
-    });
-
-    test("deleteSecureKeyAsync in dev mode deletes from encrypted store", async () => {
-      process.env.CADET_DEV = "1";
-      process.env.CADET_DESKTOP_APP = "1";
-      _resetBackend();
-
-      encryptedStore.setKey("api-key", "encrypted-value");
-
-      const result = await deleteSecureKeyAsync("api-key");
-      expect(result).toBe("deleted");
-      expect(encryptedStore.getKey("api-key")).toBeUndefined();
-    });
-
-    test("deleteSecureKeyAsync returns not-found when key missing", async () => {
-      const result = await deleteSecureKeyAsync("missing-key");
-      expect(result).toBe("not-found");
+      const afterAttach = await getSecureKeyResultAsync("openai");
+      expect(afterAttach.unreachable).toBe(false);
+      expect(getActiveBackendName()).toBe("ces-rpc");
     });
   });
 
@@ -217,9 +161,13 @@ describe("secure-keys", () => {
   // listSecureKeysAsync — single-backend key listing
   // -----------------------------------------------------------------------
   describe("listSecureKeysAsync", () => {
-    test("returns encrypted store keys", async () => {
-      encryptedStore.setKey("enc-key-1", "val1");
-      encryptedStore.setKey("enc-key-2", "val2");
+    beforeEach(() => {
+      memoryKeys = useMemorySecureKeys();
+    });
+
+    test("returns the pinned backend's keys", async () => {
+      memoryKeys["enc-key-1"] = "val1";
+      memoryKeys["enc-key-2"] = "val2";
 
       const result = await listSecureKeysAsync();
       expect(result.unreachable).toBe(false);
@@ -228,35 +176,7 @@ describe("secure-keys", () => {
       expect(result.accounts.length).toBe(2);
     });
 
-    test("returns encrypted store keys with CADET_DEV=1", async () => {
-      process.env.CADET_DEV = "1";
-      _resetBackend();
-
-      encryptedStore.setKey("dev-key-1", "val2");
-      encryptedStore.setKey("dev-key-2", "val3");
-
-      const result = await listSecureKeysAsync();
-      expect(result.unreachable).toBe(false);
-      expect(result.accounts).toContain("dev-key-1");
-      expect(result.accounts).toContain("dev-key-2");
-      expect(result.accounts.length).toBe(2);
-    });
-
-    test("returns encrypted store keys with CADET_DESKTOP_APP=1", async () => {
-      process.env.CADET_DESKTOP_APP = "1";
-      _resetBackend();
-
-      encryptedStore.setKey("desktop-key-1", "val1");
-      encryptedStore.setKey("desktop-key-2", "val2");
-
-      const result = await listSecureKeysAsync();
-      expect(result.unreachable).toBe(false);
-      expect(result.accounts).toContain("desktop-key-1");
-      expect(result.accounts).toContain("desktop-key-2");
-      expect(result.accounts.length).toBe(2);
-    });
-
-    test("returns empty accounts when store is empty", async () => {
+    test("returns empty accounts when the store is empty", async () => {
       const result = await listSecureKeysAsync();
       expect(result).toEqual({ accounts: [], unreachable: false });
     });
@@ -266,33 +186,19 @@ describe("secure-keys", () => {
   // getSecureKeyResultAsync — richer result with unreachable flag
   // -----------------------------------------------------------------------
   describe("getSecureKeyResultAsync", () => {
+    beforeEach(() => {
+      memoryKeys = useMemorySecureKeys();
+    });
+
     test("returns value and unreachable false on success", async () => {
-      encryptedStore.setKey("api-key", "stored-value");
+      memoryKeys["api-key"] = "stored-value";
 
       const result = await getSecureKeyResultAsync("api-key");
       expect(result.value).toBe("stored-value");
       expect(result.unreachable).toBe(false);
     });
 
-    test("returns unreachable false when key missing (encrypted store always reachable)", async () => {
-      const result = await getSecureKeyResultAsync("missing-key");
-      expect(result.value).toBeUndefined();
-      expect(result.unreachable).toBe(false);
-    });
-
-    test("returns unreachable false in dev mode", async () => {
-      process.env.CADET_DEV = "1";
-      _resetBackend();
-
-      const result = await getSecureKeyResultAsync("missing-key");
-      expect(result.value).toBeUndefined();
-      expect(result.unreachable).toBe(false);
-    });
-
-    test("returns unreachable false with CADET_DESKTOP_APP=1", async () => {
-      process.env.CADET_DESKTOP_APP = "1";
-      _resetBackend();
-
+    test("returns unreachable false when key missing (backend reachable)", async () => {
       const result = await getSecureKeyResultAsync("missing-key");
       expect(result.value).toBeUndefined();
       expect(result.unreachable).toBe(false);
@@ -347,10 +253,6 @@ describe("secure-keys", () => {
   // and the outer reconnect makes progress.
   describe("reconnect callback reentrancy", () => {
     test("nested credential read inside reconnect callback does not deadlock", async () => {
-      // Seed the encrypted store with a value so nested reads have something
-      // to target if they were to accidentally succeed via fallback paths.
-      encryptedStore.setKey("test-key", "encrypted-value");
-
       // Install a CES client that starts ready so the first read resolves
       // the backend to CES RPC, then flip it to unready so the NEXT read
       // triggers the reconnect path.
@@ -490,10 +392,12 @@ describe("secure-keys", () => {
       expect(result.unreachable).toBe(true);
     });
 
-    test("set during the cooldown upgrades from the encrypted-store fallback to CES", async () => {
-      // No CES client installed — the resolver lands on the encrypted store,
-      // the fallback used when CES fails at startup.
+    test("set during the cooldown upgrades from unreachable to CES", async () => {
+      useEmptyCesSocketDir();
+      // No CES client installed — the resolver reports unreachable (CES
+      // failed at startup and there is no local fallback).
       await getSecureKeyAsync("prime-key");
+      expect(getActiveBackendName()).toBe("unavailable");
 
       const fresh = makeMockCesClient(true);
       const counter = { runs: 0 };
@@ -514,31 +418,27 @@ describe("secure-keys", () => {
       expect(fresh.sets).toEqual([
         { account: "credential/cadet/api_key", value: "sk-2" },
       ]);
-      // The write went to CES, not the local fallback store.
-      expect(
-        encryptedStore.getKey("credential/cadet/api_key"),
-      ).toBeUndefined();
     });
   });
 
   // -----------------------------------------------------------------------
-  // Encrypted-store → CES upgrade without a reconnect callback
+  // Unreachable → CES upgrade without a reconnect callback
   // -----------------------------------------------------------------------
   //
   // Worker/CLI processes inject a CES client whose handshake is still in
-  // flight, so the first credential read falls back to the encrypted store.
-  // These processes never register `_cesReconnect`. Once the handshake
-  // completes and the client reports ready, the next read must upgrade to
-  // CES RPC, since the live client already exists and no reconnect is needed.
-  describe("encrypted-store → CES upgrade without a reconnect callback", () => {
+  // flight, so the first credential read reports unreachable. These
+  // processes never register `_cesReconnect`. Once the handshake completes
+  // and the client reports ready, the next read must upgrade to CES RPC,
+  // since the live client already exists and no reconnect is needed.
+  describe("unreachable → CES upgrade without a reconnect callback", () => {
     test("upgrades to CES RPC once the injected client becomes ready", async () => {
       const client = makeMockCesClient(false);
       setCesClient(client);
 
-      // Not ready yet → falls back to the encrypted store (local mode).
-      encryptedStore.setKey("openai", "local-value");
-      expect(await getSecureKeyAsync("openai")).toBe("local-value");
-      expect(getActiveBackendName()).toBe("encrypted-store");
+      // Not ready yet → unreachable (no local fallback exists).
+      const before = await getSecureKeyResultAsync("openai");
+      expect(before.unreachable).toBe(true);
+      expect(getActiveBackendName()).toBe("unavailable");
 
       // Handshake completes; no `_cesReconnect` was ever registered.
       client.setReady(true);
@@ -552,12 +452,16 @@ describe("secure-keys", () => {
   // Containerized pod with no ready CES backend
   // -----------------------------------------------------------------------
   //
-  // On a pod the local encrypted store does not exist. When no CES path is
-  // ready, reads must report the store as unreachable (presence
-  // indeterminate) rather than absent. A provisioned credential is never
-  // reported as "no key". The unreachable result must not be pinned: once a
-  // CES client arrives, the next read routes through it.
+  // On a pod the local file store does not exist (and no process has one).
+  // When no CES path is ready, reads must report the store as unreachable
+  // (presence indeterminate) rather than absent. A provisioned credential
+  // is never reported as "no key". The unreachable result must not pin
+  // forever: once a CES client arrives, the next read routes through it.
   describe("containerized pod with no ready CES backend", () => {
+    beforeEach(() => {
+      useEmptyCesSocketDir();
+    });
+
     test("reads report unreachable (indeterminate), never absent", async () => {
       process.env.IS_CONTAINERIZED = "1";
       delete process.env.CES_CREDENTIAL_URL;
@@ -585,28 +489,6 @@ describe("secure-keys", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Encrypted-store read error vs genuinely-absent (local mode)
-  // -----------------------------------------------------------------------
-  describe("encrypted-store read error vs absent", () => {
-    test("genuinely-missing store → absent (unreachable false)", async () => {
-      const result = await getSecureKeyResultAsync("nope");
-      expect(result.value).toBeUndefined();
-      expect(result.unreachable).toBe(false);
-    });
-
-    test("store exists but key material is missing → unreachable", async () => {
-      encryptedStore.setKey("openai", "sk-1");
-      // Remove the store key so the existing entry can no longer be decrypted.
-      rmSync(join(TEST_DIR, "store.key"));
-      _resetBackend();
-
-      const result = await getSecureKeyResultAsync("openai");
-      expect(result.value).toBeUndefined();
-      expect(result.unreachable).toBe(true);
-    });
-  });
-
-  // -----------------------------------------------------------------------
   // Session ownership: boot claims reconnect before identity reads
   // -----------------------------------------------------------------------
   describe("CES session owner skips a second open", () => {
@@ -628,7 +510,7 @@ describe("secure-keys", () => {
         const start = Date.now();
         await getSecureKeyAsync("openai");
         expect(Date.now() - start).toBeLessThan(1_000);
-        expect(getActiveBackendName()).toBe("encrypted-store");
+        expect(getActiveBackendName()).toBe("unavailable");
         expect(connections.length).toBe(0);
       } finally {
         for (const sock of connections) {

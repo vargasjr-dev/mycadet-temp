@@ -539,8 +539,6 @@ export type RiskMatchType = z.infer<typeof RiskMatchTypeSchema>;
  * helpers. Directories are canonicalized (symlinks resolved) by the sender.
  */
 export const ClassifyRiskFileContextSchema = z.object({
-  protectedDir: z.string(),
-  deprecatedDir: z.string(),
   hooksDir: z.string(),
   pluginsDir: z.string().optional(),
   toolsDir: z.string().optional(),
@@ -548,7 +546,6 @@ export const ClassifyRiskFileContextSchema = z.object({
   workflowsDir: z.string().optional(),
   /** Monitoring data dir: the sentinel lives here, writes are code-injection risk. */
   monitoringDir: z.string().optional(),
-  actorTokenSigningKeyPath: z.string(),
   skillSourceDirs: z.array(z.string()),
 });
 export type ClassifyRiskFileContext = z.infer<

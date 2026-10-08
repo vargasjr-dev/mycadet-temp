@@ -1620,9 +1620,6 @@ export async function startLocalDaemon(
       for (const key of [
         "ANTHROPIC_API_KEY",
         "APP_VERSION",
-        "GATEWAY_SECURITY_DIR",
-        "CREDENTIAL_SECURITY_DIR",
-        "CES_DATA_DIR",
         "CADET_ENVIRONMENT",
         "CADET_PLATFORM_URL",
         "QDRANT_HTTP_PORT",

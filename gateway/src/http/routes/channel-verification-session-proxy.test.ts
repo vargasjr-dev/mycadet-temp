@@ -20,7 +20,7 @@ mock.module("../../fetch.js", () => ({
   },
 }));
 
-// Spread the actual module so untouched exports (getLegacyRootDir, …) stay
+// Spread the actual module so untouched exports stay
 // importable by transitive dependencies of the modules under test.
 const actualPaths = await import("../../paths.js");
 mock.module("../../paths.js", () => ({

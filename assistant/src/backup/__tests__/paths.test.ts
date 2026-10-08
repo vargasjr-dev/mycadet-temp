@@ -5,7 +5,6 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
   deriveSafeAncestor,
   formatBackupFilename,
-  getBackupRootDir,
   getDefaultOffsiteBackupsDir,
   getICloudDriveRoot,
   getLocalBackupsDir,
@@ -43,20 +42,6 @@ describe("CADET_BACKUP_DIR override", () => {
     } else {
       process.env.CADET_BACKUP_DIR = ORIGINAL;
     }
-  });
-
-  test("getBackupRootDir() uses CADET_BACKUP_DIR when set", () => {
-    process.env.CADET_BACKUP_DIR = "/workspace/.backups";
-    expect(getBackupRootDir()).toBe("/workspace/.backups");
-  });
-
-  test("getBackupRootDir() falls back to the cadet root when unset", () => {
-    delete process.env.CADET_BACKUP_DIR;
-    const dir = getBackupRootDir();
-    // dirname(CADET_WORKSPACE_DIR)/backups — the preload puts the workspace
-    // at <tmpRoot>/workspace, so the root is <tmpRoot>/backups.
-    expect(dir).toMatch(/backups$/);
-    expect(dir).not.toContain(join("workspace", "backups"));
   });
 
   test("getLocalBackupsDir() resolves under CADET_BACKUP_DIR", () => {

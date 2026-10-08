@@ -35,13 +35,11 @@ afterAll(() => {
 });
 
 import { _resetBackend } from "../security/secure-keys.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-invariants-test-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 // ---------------------------------------------------------------------------
 // Mock registry to avoid double-registration
@@ -410,7 +408,6 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
 
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
@@ -418,7 +415,6 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });
@@ -497,14 +493,12 @@ describe("Invariant 4: credentials only used for allowed purpose", () => {
 describe("Invariant 6: oauth2ClientSecret not in metadata, only in secure store", () => {
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
   });
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });

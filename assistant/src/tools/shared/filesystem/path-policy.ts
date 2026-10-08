@@ -10,11 +10,6 @@ import {
 
 import { getIsContainerized } from "../../../config/env-registry.js";
 import { resolveTrailingLinkTarget } from "../../../util/fs-symlinks.js";
-import {
-  getCredentialSecurityDir,
-  getDotEnvPath,
-  getGatewaySecurityDir,
-} from "../../../util/platform.js";
 
 /**
  * Result type shared by both sandbox and host path policies.
@@ -222,84 +217,6 @@ function deniedFailure(target: SandboxTarget): PathResult | null {
   return null;
 }
 
-const SECURITY_DIR_ENV_VARS = [
-  "GATEWAY_SECURITY_DIR",
-  "CREDENTIAL_SECURITY_DIR",
-] as const;
-
-/**
- * Secret-bearing paths the file tools must never touch, in any policy:
- *
- * - Gateway trust material and token signing keys (gateway security dir)
- *   and CES credential keys (CES security dir — `keys.enc`, `store.key`).
- *   The daemon must never read from or write to them — that data flows
- *   through the gateway and CES APIs (root AGENTS.md). Both directories
- *   resolve through the same helpers the owning services use (env var,
- *   then the instance-dir/cwd fallback), so the deny set tracks wherever
- *   the keys actually are. A relative override is unmirrorable and
- *   disables the host fallback outright (see
- *   {@link securityDirConfigMirrorable}).
- * - The daemon dotenv (`<cadetRoot>/.env`), which carries provider
- *   secrets.
- */
-function getProtectedServicePaths(): string[] {
-  const paths = new Set<string>();
-  for (const dir of [
-    getGatewaySecurityDir(),
-    getCredentialSecurityDir(),
-    getDotEnvPath(),
-  ]) {
-    paths.add(resolve(dir));
-  }
-  return [...paths];
-}
-
-/**
- * Whether the security-dir deny set can be mirrored faithfully. A relative
- * override resolves against the owning service's cwd, which this process
- * cannot know — the true directory would be absent from the deny set, so
- * the host fallback fails closed to the hard boundary instead.
- */
-function securityDirConfigMirrorable(): boolean {
-  return SECURITY_DIR_ENV_VARS.every((name) => {
-    const override = process.env[name]?.trim();
-    return !override || isAbsolute(override);
-  });
-}
-
-function isWithinDir(path: string, dir: string): boolean {
-  const normalized = dir !== "/" && dir.endsWith("/") ? dir.slice(0, -1) : dir;
-  if (normalized === "/") {
-    return isAbsolute(path);
-  }
-  return path === normalized || path.startsWith(normalized + "/");
-}
-
-/**
- * Deny a target that lands in (or on) a protected service path. Both the
- * lexical and symlink-resolved target are checked against both the lexical
- * and symlink-resolved protected path, so neither a symlinked target nor a
- * symlinked directory prefix can mask the hit.
- */
-function securityDirDenial(target: SandboxTarget): PathResult | null {
-  for (const protectedPath of getProtectedServicePaths()) {
-    const realProtectedPath = resolveRealPath(protectedPath);
-    const hit = [target.resolved, target.realResolved].some(
-      (path) =>
-        isWithinDir(path, protectedPath) ||
-        isWithinDir(path, realProtectedPath),
-    );
-    if (hit) {
-      return {
-        ok: false,
-        reason: "denied",
-        error: "Access to the service security directory is denied",
-      };
-    }
-  }
-  return null;
-}
-
 function evaluateSandboxPolicy(
   rawPath: string,
   boundaryDir: string,
@@ -314,13 +231,6 @@ function evaluateSandboxPolicy(
 
   if (!allowOutOfBounds && isOutOfBounds(target)) {
     return outOfBoundsFailure(rawPath, target);
-  }
-
-  // Applied unconditionally — even a boundary configured to contain a
-  // service security dir must not expose it through the file tools.
-  const securityDenied = securityDirDenial(target);
-  if (securityDenied) {
-    return securityDenied;
   }
 
   const denied = deniedFailure(target);
@@ -358,8 +268,9 @@ export function sandboxPolicy(
  *
  * Identical to {@link sandboxPolicy} for in-bounds targets. A target that
  * escapes the boundary is allowed with host-style validation: the basename
- * denylist still applies to both the logical and symlink-resolved paths, and
- * the service security directories stay denied outright.
+ * denylist and process-environ patterns still apply to both the logical and
+ * symlink-resolved paths, but no per-path deny list is evaluated — the policy
+ * is purely about the out-of-bounds target.
  * The permission lane runs before tool execution and classifies
  * out-of-workspace file operations as elevated risk (see the gateway
  * FileRiskClassifier), so an escape reaching this policy has already been
@@ -378,7 +289,7 @@ export function sandboxPolicyWithHostFallback(
     rawPath,
     boundaryDir,
     options,
-    !getIsContainerized() && securityDirConfigMirrorable(),
+    !getIsContainerized(),
   );
 }
 
@@ -394,13 +305,11 @@ export function sandboxPolicyWithHostFallback(
  * elevated risk before execution (see the gateway FileRiskClassifier). Either
  * way the boundary is not what protects secrets.
  *
- * The denials are what protect secrets, and they apply to every read: the
- * service security directories (gateway trust material, CES credential keys,
- * the daemon dotenv), the basename denylist, and process environment blocks
- * (see {@link isProcessEnvironPath}), each checked on both the logical and
- * the symlink-resolved path. When that deny set cannot be mirrored faithfully
- * (see {@link securityDirConfigMirrorable}), reads fail closed to the hard
- * boundary rather than escape it unprotected.
+ * The generic denials still apply to every read: the basename denylist and
+ * process environment blocks (see {@link isProcessEnvironPath}), each checked
+ * on both the logical and the symlink-resolved path. Secret-bearing service
+ * directories are siblings of the workspace — outside any boundary the file
+ * tools are given — so no per-path deny list is evaluated here.
  *
  * Write-side policies do not take this allowance.
  */
@@ -409,12 +318,7 @@ export function sandboxReadPolicy(
   boundaryDir: string,
   options?: { mustExist?: boolean },
 ): PathResult {
-  return evaluateSandboxPolicy(
-    rawPath,
-    boundaryDir,
-    options,
-    securityDirConfigMirrorable(),
-  );
+  return evaluateSandboxPolicy(rawPath, boundaryDir, options, true);
 }
 
 // ---------------------------------------------------------------------------

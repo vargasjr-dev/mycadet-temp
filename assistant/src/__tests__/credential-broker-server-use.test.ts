@@ -12,6 +12,7 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeys } from "../__tests__/helpers/secure-keys.js";
 // ---------------------------------------------------------------------------
 // Mock logger
 // ---------------------------------------------------------------------------
@@ -19,13 +20,11 @@ import {
 // Use encrypted backend with a temp store path
 // ---------------------------------------------------------------------------
 import { _resetBackend } from "../security/secure-keys.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-broker-server-use-test-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 // ---------------------------------------------------------------------------
 // Mock registry to avoid double-registration
@@ -60,15 +59,14 @@ describe("CredentialBroker.serverUse", () => {
 
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
+    useMemorySecureKeys();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });

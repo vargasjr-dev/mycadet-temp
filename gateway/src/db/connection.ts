@@ -1,10 +1,10 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import { existsSync, mkdirSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join, sep } from "node:path";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 
-import { getGatewaySecurityDir, getLegacyRootDir } from "../paths.js";
+import { getGatewaySecurityDir } from "../paths.js";
 import * as schema from "./schema.js";
 import { AdmissionPolicyStore } from "./admission-policy-store.js";
 import { seedAdmissionPolicyDefaults } from "./seed-admission-policy.js";
@@ -114,34 +114,6 @@ function assertTestDbIsIsolated(): void {
   }
 }
 
-/**
- * One-time migration: move gateway.sqlite from the legacy path
- * (~/.cadet/data/gateway.sqlite) to the new PVC-backed path
- * ({gatewaySecurityDir}/gateway.sqlite). Idempotent — skips if
- * the new path already exists or the old path doesn't.
- */
-function migrateLegacyDb(newPath: string): void {
-  const legacyPath = join(getLegacyRootDir(), "data", "gateway.sqlite");
-  if (legacyPath === newPath) return;
-  if (existsSync(newPath)) return;
-  if (!existsSync(legacyPath)) return;
-
-  try {
-    renameSync(legacyPath, newPath);
-  } catch {
-    return;
-  }
-
-  for (const suffix of ["-wal", "-shm"]) {
-    try {
-      const old = legacyPath + suffix;
-      if (existsSync(old)) renameSync(old, newPath + suffix);
-    } catch {
-      // Best-effort
-    }
-  }
-}
-
 function getDbPath(): string {
   assertTestDbIsIsolated();
   const securityDir = getGatewaySecurityDir();
@@ -149,9 +121,6 @@ function getDbPath(): string {
     mkdirSync(securityDir, { recursive: true });
   }
   const dbPath = join(securityDir, "gateway.sqlite");
-  if (process.env.NODE_ENV !== "test") {
-    migrateLegacyDb(dbPath);
-  }
   return dbPath;
 }
 

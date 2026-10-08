@@ -13,6 +13,7 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeys } from "../__tests__/helpers/secure-keys.js";
 // ---------------------------------------------------------------------------
 // Mock logger
 // ---------------------------------------------------------------------------
@@ -20,13 +21,11 @@ import {
 // Use encrypted backend with a temp store path
 // ---------------------------------------------------------------------------
 import { _resetBackend } from "../security/secure-keys.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-broker-fill-test-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 // ---------------------------------------------------------------------------
 // Mock registry to avoid double-registration
@@ -65,15 +64,14 @@ describe("CredentialBroker.browserFill", () => {
     for (const entry of readdirSync(TEST_DIR)) {
       rmSync(join(TEST_DIR, entry), { recursive: true, force: true });
     }
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
+    useMemorySecureKeys();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
   });
 

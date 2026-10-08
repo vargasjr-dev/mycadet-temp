@@ -23,8 +23,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setStorePathForTesting } from "../../__tests__/encrypted-store-test-helpers.js";
 import { createMockLoggerModule } from "../../__tests__/helpers/mock-logger.js";
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 import { FailedDependencyError } from "../../runtime/routes/errors.js";
 import { credentialKey } from "../../security/credential-key.js";
 import {
@@ -82,8 +82,9 @@ const TEST_DIR = join(
 
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
-  setStorePathForTesting(join(TEST_DIR, "keys.enc"));
   _resetBackend();
+  // Pin a memory vault so tests never touch this machine's real CES store.
+  useMemorySecureKeys();
   _setMetadataPath(join(TEST_DIR, "metadata.json"));
   mockLogWarn.mockClear();
   ensureFreshAcpClaudeToken.mockClear();
@@ -91,7 +92,6 @@ beforeEach(() => {
 
 afterEach(() => {
   _setMetadataPath(null);
-  setStorePathForTesting(null);
   _resetBackend();
   rmSync(TEST_DIR, { recursive: true, force: true });
 });

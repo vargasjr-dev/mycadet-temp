@@ -22,13 +22,7 @@
  * reference these globals instead of declaring their own copies.
  */
 
-/** Slot value: the encrypted credential store path override. Managed by `security/store-path-override.ts`. */
-interface CadetStorePathOverride {
-  storePath: string | null;
-  storeKeyPath: string | null;
-}
-
-/** Which assistant DB connection a singleton slot holds. */
+/** The per-process `globalThis.cadetAssistant` namespace. */
 type CadetDbSlotKey =
   | "main"
   | "main-readonly"
@@ -62,8 +56,6 @@ interface CadetAssistantNamespace {
    * daemon entrypoint; absent elsewhere. See `runtime/process-role.ts`.
    */
   mainDaemonProcess?: boolean;
-  /** See `security/store-path-override.ts`. */
-  storePathOverride?: CadetStorePathOverride;
   /** See `persistence/db-singleton.ts`. */
   dbSingletons?: CadetDbSlots;
   /** See `config/feature-flag-cache.ts`. */

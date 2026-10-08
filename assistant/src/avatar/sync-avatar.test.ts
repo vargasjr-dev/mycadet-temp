@@ -24,11 +24,11 @@ import {
 
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
-import type { AvatarState } from "../avatar/avatar-manifest.js";
-import * as realAvatarManifest from "../avatar/avatar-manifest.js";
-import * as realEnsureRaster from "../avatar/ensure-raster.js";
-import * as realResvgLazy from "../avatar/resvg-lazy.js";
-import * as realPlatformClient from "./client.js";
+import * as realPlatformClient from "../platform/client.js";
+import type { AvatarState } from "./avatar-manifest.js";
+import * as realAvatarManifest from "./avatar-manifest.js";
+import * as realEnsureRaster from "./ensure-raster.js";
+import * as realResvgLazy from "./resvg-lazy.js";
 
 // Snapshotted before `installMocks` swaps the modules. `mock.module` is
 // process-global and the assistant suite runs by directory, so the mocks below
@@ -59,11 +59,11 @@ let lastResvgSvg = "";
 let rasterCalls = 0;
 
 function installMocks(): void {
-  mock.module("./client.js", () => ({
+  mock.module("../platform/client.js", () => ({
     CadetPlatformClient: { create: async () => mockClient },
   }));
 
-  mock.module("../avatar/avatar-manifest.js", () => ({
+  mock.module("./avatar-manifest.js", () => ({
     readAvatarState: () => mockState,
     computeImageMeta: (path: string) => {
       const stats = statSync(path);
@@ -76,7 +76,7 @@ function installMocks(): void {
 
   // Both entry points bump the same counter, so `rasterCalls` measures every
   // avatar-raster resolution a sync does, not just the one it goes through.
-  mock.module("../avatar/ensure-raster.js", () => ({
+  mock.module("./ensure-raster.js", () => ({
     ensureAvatarRasterPath: async () => {
       rasterCalls += 1;
       return mockRasterPath;
@@ -90,7 +90,7 @@ function installMocks(): void {
     readContainedAvatarRaster: realReadContainedAvatarRaster,
   }));
 
-  mock.module("../avatar/resvg-lazy.js", () => ({
+  mock.module("./resvg-lazy.js", () => ({
     isResvgAvailable: () => mockResvgAvailable,
     isResvgDecodableType: REAL_RESVG_LAZY.isResvgDecodableType,
     RESVG_DECODABLE_TYPES: REAL_RESVG_LAZY.RESVG_DECODABLE_TYPES,
@@ -110,10 +110,10 @@ function installMocks(): void {
 }
 
 function restoreRealModules(): void {
-  mock.module("./client.js", () => REAL_PLATFORM_CLIENT);
-  mock.module("../avatar/avatar-manifest.js", () => REAL_AVATAR_MANIFEST);
-  mock.module("../avatar/ensure-raster.js", () => REAL_ENSURE_RASTER);
-  mock.module("../avatar/resvg-lazy.js", () => REAL_RESVG_LAZY);
+  mock.module("../platform/client.js", () => REAL_PLATFORM_CLIENT);
+  mock.module("./avatar-manifest.js", () => REAL_AVATAR_MANIFEST);
+  mock.module("./ensure-raster.js", () => REAL_ENSURE_RASTER);
+  mock.module("./resvg-lazy.js", () => REAL_RESVG_LAZY);
 }
 
 installMocks();
@@ -160,7 +160,8 @@ function withMagic(magic: number[]): Buffer<ArrayBuffer> {
 const dir = mkdtempSync(join(tmpdir(), "sync-avatar-test-"));
 const workspaceDir = join(dir, "workspace");
 const avatarDir = join(workspaceDir, "data", "avatar");
-const syncStatePath = join(dir, "protected", "platform-sync", "avatar.json");
+// The sync state lives at the cadet root (the workspace's parent).
+const syncStatePath = join(dir, "platform-sync", "avatar.json");
 const prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 process.env.CADET_WORKSPACE_DIR = workspaceDir;
 beforeAll(() => {
@@ -241,7 +242,7 @@ async function settle(): Promise<void> {
 describe("syncAvatarToPlatform", () => {
   beforeEach(() => {
     rmSync(workspaceDir, { recursive: true, force: true });
-    rmSync(join(dir, "protected"), { recursive: true, force: true });
+    rmSync(join(dir, "platform-sync"), { recursive: true, force: true });
     mkdirSync(avatarDir, { recursive: true });
     _resetSyncAvatarStateForTests();
     patches = [];

@@ -8,8 +8,8 @@
  * Risk escalation paths:
  * - file_read: Low by default, Medium when the target resolves outside the
  *   sandbox working directory on a non-containerized install, High if
- *   targeting the actor token signing key or the monitoring data directory
- *   (snapshot files may contain secrets).
+ *   targeting the monitoring data directory (snapshot files may contain
+ *   secrets).
  * - file_write / file_edit: Low by default, Medium when the target resolves
  *   outside the sandbox working directory on a non-containerized install or
  *   lands in an app authoring sink (the user plugins directory or the
@@ -56,12 +56,8 @@
  * before calling the classifier.
  */
 
-// NOTE: homedir() is only used for allowlist option directory traversal
-// cosmetics (trimming ~/… prefixes); escalation checks use the explicit
-// context paths (protectedDir, deprecatedDir), which are reliable in Docker
-// mode where the gateway's HOME may differ from the assistant's.
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import type {
   AllowlistOption,
@@ -79,10 +75,6 @@ import { applyUserRuleOverride } from "./user-rule-override.js";
  * getDeprecatedDir, getConfig, etc.).
  */
 export interface FileClassificationContext {
-  /** Absolute path to the per-instance protected directory. */
-  protectedDir: string;
-  /** Absolute path to the deprecated directory (legacy signing key location). */
-  deprecatedDir: string;
   /** Absolute path to the workspace hooks directory. */
   hooksDir: string;
   /** Absolute path to the user plugins directory. */
@@ -249,27 +241,6 @@ function isOutsideSandboxBoundary(input: FileClassifierInput): boolean {
     resolveSandboxPath(input.filePath, input.workingDir),
     input.workingDir,
   );
-}
-
-/**
- * Check whether a resolved absolute path targets the actor token signing key.
- * Covers the per-instance protected dir, the legacy global path, the
- * deprecated dir, and a relative "deprecated/actor-token-signing-key"
- * resolved against workingDir.
- */
-function isActorTokenSigningKeyPath(
-  resolvedPath: string,
-  workingDir: string,
-  context: FileClassificationContext,
-): boolean {
-  const signingKeyPaths = Array.from(
-    new Set([
-      join(context.protectedDir, "actor-token-signing-key"),
-      join(context.deprecatedDir, "actor-token-signing-key"),
-      resolve(workingDir, "deprecated", "actor-token-signing-key"),
-    ]),
-  );
-  return signingKeyPaths.includes(resolvedPath);
 }
 
 /**
@@ -612,19 +583,6 @@ export class FileRiskClassifier implements RiskClassifier<
           // protected location). Escalate if either matches.
           const lexicalPath = resolveSandboxPath(filePath, workingDir);
           const realPath = resolvedPath ?? lexicalPath;
-          if (
-            isActorTokenSigningKeyPath(lexicalPath, workingDir, context) ||
-            isActorTokenSigningKeyPath(realPath, workingDir, context)
-          ) {
-            assessment = {
-              riskLevel: "high",
-              reason: "Reads actor token signing key",
-              scopeOptions: [],
-              matchType: "registry",
-              allowlistOptions,
-            };
-            break;
-          }
           // Monitor snapshots contain process command lines that may carry
           // secrets (tokens, API keys, DB URLs). Escalate reads of the
           // monitoring data directory to High so they require explicit

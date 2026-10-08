@@ -11,13 +11,6 @@ import {
 
 // -- Test context -------------------------------------------------------------
 
-const MOCK_PROTECTED_DIR = join(homedir(), ".cadet", "protected");
-const MOCK_DEPRECATED_DIR = join(
-  homedir(),
-  ".cadet",
-  "workspace",
-  "deprecated",
-);
 const MOCK_WORKSPACE_DIR = join(homedir(), ".cadet", "workspace");
 const MOCK_HOOKS_DIR = join(MOCK_WORKSPACE_DIR, "hooks");
 const MOCK_PLUGINS_DIR = join(MOCK_WORKSPACE_DIR, "plugins");
@@ -31,8 +24,6 @@ let testSkillSourceDirs: string[] = [];
 
 function makeContext(): FileClassificationContext {
   return {
-    protectedDir: MOCK_PROTECTED_DIR,
-    deprecatedDir: MOCK_DEPRECATED_DIR,
     hooksDir: MOCK_HOOKS_DIR,
     pluginsDir: MOCK_PLUGINS_DIR,
     toolsDir: MOCK_TOOLS_DIR,
@@ -93,74 +84,6 @@ describe("FileRiskClassifier", () => {
       const result = await classifyInput({
         toolName: "file_read",
         filePath: "",
-      });
-      expect(result.riskLevel).toBe("low");
-    });
-
-    test("actor token signing key in protected dir is high", async () => {
-      testSkillSourceDirs = [];
-      const signingKeyPath = join(
-        MOCK_PROTECTED_DIR,
-        "actor-token-signing-key",
-      );
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: signingKeyPath,
-        workingDir: "/",
-      });
-      expect(result.riskLevel).toBe("high");
-      expect(result.reason).toBe("Reads actor token signing key");
-    });
-
-    test("actor token signing key in legacy home dir is high", async () => {
-      testSkillSourceDirs = [];
-      const legacyPath = join(
-        homedir(),
-        ".cadet",
-        "protected",
-        "actor-token-signing-key",
-      );
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: legacyPath,
-        workingDir: "/",
-      });
-      expect(result.riskLevel).toBe("high");
-    });
-
-    test("actor token signing key in deprecated dir is high", async () => {
-      testSkillSourceDirs = [];
-      const deprecatedPath = join(
-        MOCK_DEPRECATED_DIR,
-        "actor-token-signing-key",
-      );
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: deprecatedPath,
-        workingDir: "/",
-      });
-      expect(result.riskLevel).toBe("high");
-    });
-
-    test("relative deprecated/actor-token-signing-key resolved against workingDir is high", async () => {
-      testSkillSourceDirs = [];
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: "deprecated/actor-token-signing-key",
-        workingDir: WORKING_DIR,
-      });
-      // The resolved path is WORKING_DIR/deprecated/actor-token-signing-key
-      // which matches resolve(workingDir, "deprecated", "actor-token-signing-key")
-      expect(result.riskLevel).toBe("high");
-    });
-
-    test("other protected dir files are low", async () => {
-      testSkillSourceDirs = [];
-      const otherPath = join(MOCK_PROTECTED_DIR, "some-other-key");
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: otherPath,
-        workingDir: "/",
       });
       expect(result.riskLevel).toBe("low");
     });
@@ -615,19 +538,6 @@ describe("FileRiskClassifier", () => {
       expect(result.riskLevel).toBe("medium");
     });
 
-    test("medium even for actor token signing key path", async () => {
-      testSkillSourceDirs = [];
-      // host_file_read has no escalation paths — it's always medium.
-      const signingKeyPath = join(
-        MOCK_PROTECTED_DIR,
-        "actor-token-signing-key",
-      );
-      const result = await classifyInput({
-        toolName: "host_file_read",
-        filePath: signingKeyPath,
-      });
-      expect(result.riskLevel).toBe("medium");
-    });
   });
 
   // -- host_file_write --------------------------------------------------------
@@ -1017,18 +927,6 @@ describe("FileRiskClassifier", () => {
       testSkillSourceDirs = [];
     });
 
-    test("file_read escalates when resolvedPath is the signing key", async () => {
-      testSkillSourceDirs = [];
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: "harmless.txt",
-        workingDir: WORKING_DIR,
-        resolvedPath: join(MOCK_PROTECTED_DIR, "actor-token-signing-key"),
-      });
-      expect(result.riskLevel).toBe("high");
-      expect(result.reason).toBe("Reads actor token signing key");
-    });
-
     test("host_file_write escalates when resolvedPath lands in hooks dir", async () => {
       testSkillSourceDirs = [];
       const result = await classifyInput({
@@ -1085,18 +983,6 @@ describe("FileRiskClassifier", () => {
       });
       expect(result.riskLevel).toBe("high");
       expect(result.reason).toBe("Writes to hooks directory");
-    });
-
-    test("file_read escalates when lexical path is the signing key but resolvedPath points out", async () => {
-      testSkillSourceDirs = [];
-      const result = await classifyInput({
-        toolName: "file_read",
-        filePath: join(MOCK_PROTECTED_DIR, "actor-token-signing-key"),
-        workingDir: "/",
-        resolvedPath: "/tmp/elsewhere",
-      });
-      expect(result.riskLevel).toBe("high");
-      expect(result.reason).toBe("Reads actor token signing key");
     });
 
     test("host_file_write escalates when lexical path is in plugins dir but resolvedPath points out", async () => {

@@ -74,7 +74,6 @@ path or connection details. Run this to diagnose credential lookup mismatches â€
 for example, when the CLI and the daemon are reading from different stores.
 
 Backend types:
-  encrypted-store   Direct file read from keys.enc (standalone CLI, no assistant)
   ces-rpc           Delegates to the running CES process via socket RPC
   ces-http          Managed failover when the CES socket is unavailable
 

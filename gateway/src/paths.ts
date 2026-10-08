@@ -7,56 +7,8 @@
  */
 
 import { join } from "node:path";
-import { homedir, userInfo } from "node:os";
 
 import { assertTestPathIsEphemeral } from "@mycadet/environments/test-path-guard";
-
-function safeUserInfoHomedir(): string {
-  try {
-    return userInfo().homedir;
-  } catch {
-    return "";
-  }
-}
-
-/**
- * @deprecated Only used as a fallback when CADET_WORKSPACE_DIR /
- * GATEWAY_SECURITY_DIR are not set. Logs a warning so we can identify
- * hatch entrypoints that still rely on the old path.
- *
- * Home fallback chain: `$HOME` → `userInfo().homedir` → `homedir()`.
- * `homedir()` alone is insufficient because libuv's `uv_os_homedir` returns
- * `$HOME` as-is when set (even to `""`) and only consults `getpwuid_r` when
- * `HOME` is unset entirely. `userInfo()` calls `getpwuid_r` directly, so it
- * returns the passwd-table home regardless of `HOME`. The `userInfo()` call
- * is guarded via `safeUserInfoHomedir()` because it throws `SystemError`
- * when the current UID has no passwd entry (common in containers run with
- * `--user <uid>` without a matching `/etc/passwd` line); catching keeps the
- * `homedir()` fallback reachable.
- */
-/**
- * The retired `~/.cadet` home root, and a log warning for hatch
- * entrypoints that still rely on the old path.
- *
- * Home fallback chain: `$HOME` → `userInfo().homedir` → `homedir()`.
- * `homedir()` alone is insufficient because libuv's `uv_os_homedir` returns
- * `$HOME` as-is when set (even to `""`) and only consults `getpwuid_r` when
- * `HOME` is unset entirely. `userInfo()` calls `getpwuid_r` directly, so it
- * returns the passwd-table home regardless of `HOME`. The `userInfo()` call
- * is guarded via `safeUserInfoHomedir()` because it throws `SystemError`
- * when the current UID has no passwd entry (common in containers run with
- * `--user <uid>` without a matching `/etc/passwd` line); catching keeps the
- * `homedir()` fallback reachable.
- *
- * Only consumed by the legacy-recovery data migrations and the legacy DB
- * relocation in db/connection.ts.
- */
-export function getLegacyRootDir(): string {
-  return join(
-    process.env.HOME || safeUserInfoHomedir() || homedir(),
-    ".cadet",
-  );
-}
 
 let warnedWorkspaceDir = false;
 let warnedSecurityDir = false;

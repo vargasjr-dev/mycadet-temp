@@ -1,3 +1,4 @@
+import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
 import type { IdentityFields } from "../../daemon/handlers/identity.js";
 import {
   conversationMessagesSyncTag,
@@ -5,7 +6,6 @@ import {
   SYNC_TAGS,
 } from "../../daemon/message-types/sync.js";
 import { resolveConversationTitle } from "../../i18n/index.js";
-import { syncAvatarToPlatform } from "../../platform/sync-avatar.js";
 import { getAvatarImagePath } from "../../util/platform.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { isStreamSeqStampingDisabled } from "../assistant-stream-state.js";

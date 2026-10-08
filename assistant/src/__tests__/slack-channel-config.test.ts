@@ -101,13 +101,12 @@ import {
   listCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
 afterAll(() => {
   globalThis.fetch = originalFetch;
   _setMetadataPath(null);
-  setStorePathForTesting(null);
   _resetBackend();
   if (originalCadetDev === undefined) {
     delete process.env.CADET_DEV;
@@ -121,9 +120,9 @@ describe("Slack channel config handler", () => {
     oauthConnectionStore = {};
     setConfig("slack", {});
     globalThis.fetch = originalFetch;
+    useMemorySecureKeys();
     rmSync(secureStorePath, { force: true });
     rmSync(metadataPath, { force: true });
-    setStorePathForTesting(secureStorePath);
     _resetBackend();
     _setMetadataPath(metadataPath);
   });

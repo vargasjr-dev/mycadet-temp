@@ -30,7 +30,6 @@ import {
   withSuppressedConfigDiskWritesSync,
 } from "../config/loader.js";
 import { getConfigValidationResetNoticePath } from "../util/platform.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
@@ -92,12 +91,10 @@ function writeFullResetConfig(): void {
 describe("config-validation-reset notice sentinel", () => {
   beforeEach(() => {
     resetWorkspace();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     invalidateConfigCache();
   });
 

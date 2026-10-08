@@ -26,8 +26,7 @@ const ALLOWED_FILES = new Set([
   "assistant/src/permissions/trust-store.ts",
   "assistant/src/permissions/trust-client.ts",
   "assistant/src/permissions/trust-store-interface.ts",
-  // Credential / encrypted store backends
-  "assistant/src/security/encrypted-store.ts",
+  // Credential backends
   "assistant/src/security/secure-keys.ts",
   "assistant/src/security/credential-backend.ts",
   "assistant/src/security/ces-credential-client.ts",
@@ -138,7 +137,7 @@ describe("volume security: protected directory access guard", () => {
           "accessible to the assistant. All access to protected files must go",
           "through the abstraction layers:",
           "  - Trust rules: trust-store.ts / trust-client.ts",
-          "  - Credentials: encrypted-store.ts / ces-credential-client.ts",
+          "  - Credentials: secure-keys.ts / ces-credential-client.ts",
           "  - Signing keys: secure-keys.ts / credential-backend.ts",
           "",
           "If this file is a new abstraction backend, add it to ALLOWED_FILES",

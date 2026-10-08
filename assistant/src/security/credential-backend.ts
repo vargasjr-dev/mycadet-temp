@@ -4,9 +4,6 @@
  * is in use.
  */
 
-import { getIsContainerized } from "../config/env-registry.js";
-import { deleteKey, listKeys, readKey, setKey } from "./encrypted-store.js";
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -56,57 +53,6 @@ export interface CredentialBackend {
 }
 
 // ---------------------------------------------------------------------------
-// EncryptedStoreBackend
-// ---------------------------------------------------------------------------
-
-class EncryptedStoreBackend implements CredentialBackend {
-  readonly name = "encrypted-store";
-
-  isAvailable(): boolean {
-    // The local encrypted store is the legitimate backend only outside
-    // containers. On a pod `keys.enc` does not exist and CES owns credentials,
-    // so reporting available here would pin reads to a store that can never
-    // hold the key. Returning false lets the resolver recover to CES.
-    return !getIsContainerized();
-  }
-
-  async get(account: string): Promise<CredentialGetResult> {
-    try {
-      return { value: readKey(account), unreachable: false };
-    } catch {
-      // A thrown error means the store exists but could not be read or
-      // decrypted, so it is unavailable, not absent. A genuinely-missing store
-      // or key returns undefined from readKey without throwing.
-      return { value: undefined, unreachable: true };
-    }
-  }
-
-  async set(account: string, value: string): Promise<boolean> {
-    try {
-      return setKey(account, value);
-    } catch {
-      return false;
-    }
-  }
-
-  async delete(account: string): Promise<DeleteResult> {
-    try {
-      return deleteKey(account);
-    } catch {
-      return "error";
-    }
-  }
-
-  async list(): Promise<CredentialListResult> {
-    try {
-      return { accounts: listKeys(), unreachable: false };
-    } catch {
-      return { accounts: [], unreachable: true };
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
 // UnavailableBackend
 // ---------------------------------------------------------------------------
 
@@ -144,10 +90,6 @@ class UnavailableBackend implements CredentialBackend {
 // ---------------------------------------------------------------------------
 // Factory functions
 // ---------------------------------------------------------------------------
-
-export function createEncryptedStoreBackend(): EncryptedStoreBackend {
-  return new EncryptedStoreBackend();
-}
 
 export function createUnavailableBackend(): UnavailableBackend {
   return new UnavailableBackend();

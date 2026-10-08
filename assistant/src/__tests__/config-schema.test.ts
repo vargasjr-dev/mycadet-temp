@@ -41,7 +41,6 @@ import type { AssistantConfig } from "../config/types.js";
 import { listCatalogProviderIds } from "../tts/provider-catalog.js";
 import { resolveTtsConfig } from "../tts/tts-config-resolver.js";
 import { TTS_PROVIDER_IDS } from "../tts/types.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -2377,12 +2376,10 @@ describe("loadConfig with schema validation", () => {
       }
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     invalidateConfigCache();
   });
 
@@ -2684,12 +2681,10 @@ describe("Call entrypoint gating", () => {
       }
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     invalidateConfigCache();
   });
 

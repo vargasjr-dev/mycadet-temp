@@ -27,7 +27,6 @@ import {
   loadConfig,
 } from "../config/loader.js";
 import { getConfigQuarantineNoticePath } from "../util/platform.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -80,12 +79,10 @@ function readNotice(): {
 describe("config-quarantine notice sentinel", () => {
   beforeEach(() => {
     resetWorkspace();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     invalidateConfigCache();
   });
 

@@ -52,7 +52,6 @@ afterAll(() => {
   mock.restore();
 });
 
-import { setStorePathForTesting } from "../../__tests__/encrypted-store-test-helpers.js";
 import { enableMemoryV3LiveForNewWorkspacesMigration } from "../../workspace/migrations/105-enable-memory-v3-live-for-new-workspaces.js";
 import { invalidateConfigCache, loadConfig } from "../loader.js";
 
@@ -90,7 +89,6 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
       }
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     invalidateConfigCache();
 
     originalIsPlatform = process.env.IS_PLATFORM;
@@ -98,7 +96,6 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     invalidateConfigCache();
 
     if (originalIsPlatform !== undefined) {

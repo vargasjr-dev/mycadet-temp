@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeys } from "../__tests__/helpers/secure-keys.js";
 import { credentialKey } from "../security/credential-key.js";
 import { _resetBackend, setSecureKeyAsync } from "../security/secure-keys.js";
 import { CredentialBroker } from "../tools/credentials/broker.js";
@@ -12,13 +13,11 @@ import {
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { BROWSER_FILL_CAPABILITY } from "../tools/credentials/tool-policy.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-broker-test-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 describe("CredentialBroker (encrypted store backend)", () => {
   let broker: CredentialBroker;
@@ -28,15 +27,14 @@ describe("CredentialBroker (encrypted store backend)", () => {
       rmSync(TEST_DIR, { recursive: true });
     }
     mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
+    useMemorySecureKeys();
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
     broker = new CredentialBroker();
   });
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
     rmSync(TEST_DIR, { recursive: true, force: true });
   });

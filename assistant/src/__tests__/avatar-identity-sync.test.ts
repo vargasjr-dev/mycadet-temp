@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
-mock.module("../platform/sync-avatar.js", () => ({
+mock.module("../avatar/sync-avatar.js", () => ({
   syncAvatarToPlatform: () => {},
 }));
 mock.module("../telemetry/telemetry-events-outbox.js", () => ({

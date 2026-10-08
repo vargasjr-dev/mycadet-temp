@@ -21,8 +21,6 @@ import "./test-preload.js";
 let store: TrustRuleStore;
 
 const dummyFileContext: FileClassificationContext = {
-  protectedDir: "/tmp/test-protected",
-  deprecatedDir: "/tmp/test-deprecated",
   hooksDir: "/tmp/test-hooks",
   pluginsDir: "/tmp/test-plugins",
   toolsDir: "/tmp/test-tools",

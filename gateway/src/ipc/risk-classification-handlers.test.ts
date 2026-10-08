@@ -304,10 +304,7 @@ describe("file classification", () => {
       path: "/workspace/.hooks/on-start.sh",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
@@ -321,10 +318,7 @@ describe("file classification", () => {
       path: "/workspace/.cadet/skills/my-skill/index.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
@@ -338,12 +332,9 @@ describe("file classification", () => {
       path: "/workspace/tools/evil_tool.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
@@ -357,12 +348,9 @@ describe("file classification", () => {
       path: "/workspace/routes/evil.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
@@ -376,14 +364,11 @@ describe("file classification", () => {
       path: "/workspace/workflows/victim/workflow.ts",
       workingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
         workflowsDir: "/workspace/workflows",
         monitoringDir: "/workspace/data/monitoring",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });
@@ -400,12 +385,9 @@ describe("file classification", () => {
       transferSandboxDestPath: "tools/evil.ts",
       transferSandboxWorkingDir: "/workspace",
       fileContext: {
-        protectedDir: "/workspace/.cadet/protected",
         hooksDir: "/workspace/.hooks",
         toolsDir: "/workspace/tools",
         routesDir: "/workspace/routes",
-        actorTokenSigningKeyPath:
-          "/workspace/.cadet/protected/actor-token-signing-key",
         skillSourceDirs: ["/workspace/.cadet/skills"],
       },
     });

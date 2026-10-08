@@ -20,13 +20,11 @@ import {
 // Use encrypted backend with a temp store path
 // ---------------------------------------------------------------------------
 import { _resetBackend, setSecureKeyAsync } from "../security/secure-keys.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-token-manager-test-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 // ---------------------------------------------------------------------------
 // Mock OAuth2 token refresh so dedup can be observed without network I/O
@@ -125,7 +123,6 @@ describe("withValidToken refresh deduplication", () => {
     for (const entry of readdirSync(TEST_DIR)) {
       rmSync(join(TEST_DIR, entry), { recursive: true, force: true });
     }
-    setStorePathForTesting(STORE_PATH);
     _setMetadataPath(join(TEST_DIR, "metadata.json"));
     _resetRefreshBreakers();
     _resetInflightRefreshes();
@@ -138,7 +135,6 @@ describe("withValidToken refresh deduplication", () => {
 
   afterEach(() => {
     _setMetadataPath(null);
-    setStorePathForTesting(null);
     _resetBackend();
     _resetRefreshBreakers();
     _resetInflightRefreshes();

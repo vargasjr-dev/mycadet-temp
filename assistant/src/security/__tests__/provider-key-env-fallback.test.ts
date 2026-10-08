@@ -11,20 +11,19 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 // ---------------------------------------------------------------------------
 // Mock logger before importing any code that uses it.
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // Imports under test
 // ---------------------------------------------------------------------------
-import { setStorePathForTesting } from "../../__tests__/encrypted-store-test-helpers.js";
 import { _resetBackend, getProviderKeyAsync } from "../secure-keys.js";
 
 const TEST_DIR = join(
   tmpdir(),
   `cadet-provkey-envfallback-${randomBytes(4).toString("hex")}`,
 );
-const STORE_PATH = join(TEST_DIR, "keys.enc");
 
 /**
  * Regression test for the env-var fallback in `getProviderKeyAsync`.
@@ -54,8 +53,8 @@ describe("getProviderKeyAsync env-var fallback (regression #27126)", () => {
       rmSync(TEST_DIR, { recursive: true });
     }
     mkdirSync(TEST_DIR, { recursive: true });
-    setStorePathForTesting(STORE_PATH);
     _resetBackend();
+    useMemorySecureKeys();
 
     // Snapshot env so each test starts clean.
     for (const name of MANAGED_VARS) {
@@ -65,7 +64,6 @@ describe("getProviderKeyAsync env-var fallback (regression #27126)", () => {
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     _resetBackend();
     for (const name of MANAGED_VARS) {
       const saved = SAVED_ENV[name];

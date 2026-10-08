@@ -153,3 +153,12 @@ evals/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Per-service local state dirs — services resolve these via env var with a
+# ./<dir> cwd fallback (XDG sweep), so running them from the repo root would
+# otherwise litter the worktree and leak into commits (PR #100 review).
+/gateway-security/
+/ces-security/
+/ces-data/
+/workspace/
+/backups/

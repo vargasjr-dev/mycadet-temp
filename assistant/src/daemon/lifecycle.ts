@@ -1,6 +1,7 @@
 import { config as dotenvConfig } from "dotenv";
 
 import { reconcileAppPins } from "../apps/app-pin-reconciler.js";
+import { syncAvatarToPlatform } from "../avatar/sync-avatar.js";
 import { reconcileCallsOnStartup } from "../calls/call-recovery.js";
 import { TwilioVoiceProvider } from "../calls/twilio-provider.js";
 import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guardian-requests.js";
@@ -32,7 +33,6 @@ import { maybeEnqueueLexicalBackfillOnUpgrade } from "../persistence/job-handler
 import { clearLifecycleQuiesce } from "../persistence/lifecycle-quiesce.js";
 import { isPlatformClientConfigured } from "../platform/client.js";
 import { startConsentRefresh } from "../platform/consent-cache.js";
-import { syncAvatarToPlatform } from "../platform/sync-avatar.js";
 import { syncWorkspaceIdentityToPlatform } from "../platform/sync-identity.js";
 import { ensurePromptFiles } from "../prompts/system-prompt.js";
 import { runProviderConnectionsBackfill } from "../providers/inference/backfill.js";

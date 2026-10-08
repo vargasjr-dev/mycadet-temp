@@ -87,10 +87,6 @@ interface CredentialsListResponse {
 
 interface CredentialsStatusResponse {
   backend: string;
-  storePath?: string;
-  storeExists?: boolean;
-  storeKeyPath?: string;
-  storeKeyExists?: boolean;
   ready?: boolean;
   url?: string;
 }
@@ -179,14 +175,7 @@ export function registerCredentialsCommand(program: Command): void {
             writeOutput(cmd, { ok: true, ...info });
           } else {
             log.info(`Backend: ${info.backend}`);
-            if (info.backend === "encrypted-store") {
-              log.info(
-                `  Store path:  ${info.storePath} [${info.storeExists ? "exists" : "missing"}]`,
-              );
-              log.info(
-                `  Key path:    ${info.storeKeyPath} [${info.storeKeyExists ? "exists" : "missing"}]`,
-              );
-            } else if (info.backend === "ces-rpc") {
+            if (info.backend === "ces-rpc") {
               log.info(`  RPC ready:   ${info.ready}`);
             } else if (info.backend === "ces-http") {
               log.info(`  URL:         ${info.url}`);

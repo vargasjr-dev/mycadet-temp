@@ -40,7 +40,7 @@ import { credentialKey } from "../security/credential-key.js";
 import * as secureKeys from "../security/secure-keys.js";
 import { _resetBackend, getSecureKeyAsync } from "../security/secure-keys.js";
 import { _setMetadataPath } from "../tools/credentials/metadata-store.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const BOT_TOKEN_KEY = credentialKey("discord_channel", "bot_token");
@@ -78,7 +78,6 @@ function installDiscordApi(fake: FakeDiscord) {
 afterAll(() => {
   globalThis.fetch = originalFetch;
   _setMetadataPath(null);
-  setStorePathForTesting(null);
   _resetBackend();
   if (originalCadetDev === undefined) {
     delete process.env.CADET_DEV;
@@ -96,8 +95,8 @@ beforeEach(() => {
   setConfig("discord", {});
   rmSync(secureStorePath, { force: true });
   rmSync(metadataPath, { force: true });
-  setStorePathForTesting(secureStorePath);
   _resetBackend();
+  useMemorySecureKeys();
   _setMetadataPath(metadataPath);
 });
 

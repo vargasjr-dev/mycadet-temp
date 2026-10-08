@@ -9,46 +9,6 @@ import {
 } from "@mycadet/avatar-manifest";
 import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/environments/test-path-guard";
 
-/**
- * Returns the Cadet root directory: the parent of the workspace
- * directory — e.g. `.../assistants/<name>/workspace` → `.../assistants/<name>`.
- *
- * Paths that must live outside the workspace (`.env`, the per-service
- * security dirs) resolve from here. When `CADET_WORKSPACE_DIR` is unset the
- * workspace falls back to `<cwd>/workspace`, so the root falls back to the
- * process cwd itself.
- */
-function cadetRoot(): string {
-  return dirname(getWorkspaceDir());
-}
-
-/**
- * Directory containing files private to the credential-executor (CES):
- * the encrypted store (`keys.enc`) and its `store.key`. Local mode shares
- * it with the CES sibling via the `CREDENTIAL_SECURITY_DIR` env var; when
- * unset, falls back to `<cadetRoot>/ces-security` (which equals
- * `<cwd>/ces-security` under the cwd workspace fallback).
- */
-export function getCredentialSecurityDir(): string {
-  return (
-    process.env.CREDENTIAL_SECURITY_DIR?.trim() ||
-    join(cadetRoot(), "ces-security")
-  );
-}
-
-/**
- * Directory containing files private to the gateway: the actor token
- * signing key, the backup key, trust rules, feature flags. Local mode
- * shares it with the gateway via the `GATEWAY_SECURITY_DIR` env var; when
- * unset, falls back to `<cadetRoot>/gateway-security`.
- */
-export function getGatewaySecurityDir(): string {
-  return (
-    process.env.GATEWAY_SECURITY_DIR?.trim() ||
-    join(cadetRoot(), "gateway-security")
-  );
-}
-
 export function isMacOS(): boolean {
   return process.platform === "darwin";
 }
@@ -291,12 +251,12 @@ export function getBinDir(): string {
 }
 
 /**
- * Returns the path to the dot-env file (`<cadetRoot>/.env`). Stays at the
- * cadet root (outside the workspace sandbox boundary) because it contains
- * secrets.
+ * Returns the path to the dot-env file (`<cadetRoot>/.env`, the parent of
+ * the workspace directory). Stays outside the workspace sandbox boundary
+ * because it contains secrets.
  */
 export function getDotEnvPath(): string {
-  return join(cadetRoot(), ".env");
+  return join(dirname(getWorkspaceDir()), ".env");
 }
 
 /** Returns the path to the embed-worker PID file ($CADET_WORKSPACE_DIR/embed-worker.pid). */
@@ -408,7 +368,7 @@ export function getWorkspaceDir(): string {
  *
  * Examples:
  *   /Users/alice/.local/share/cadet/workspace → ~/.local/share/cadet/workspace
- *   /opt/assistants/alice/workspace           → /opt/assistants/alice/workspace
+ *   /workspace           → /workspace
  */
 export function getWorkspaceDirDisplay(): string {
   return formatHomeRelativePath(getWorkspaceDir(), homedir());
@@ -570,12 +530,9 @@ export function getProfilerRunDir(runId: string): string {
 }
 
 export function ensureDataDir(): void {
-  const root = cadetRoot();
   const workspace = getWorkspaceDir();
   const wsData = join(workspace, "data");
   const dirs = [
-    // Root-level dirs (runtime)
-    root,
     // Workspace dirs
     workspace,
     join(workspace, "signals"),
@@ -605,7 +562,7 @@ export function ensureDataDir(): void {
   // Lock down the root directory so only the owner can traverse it.
   // Runtime files (socket, session token, PID) live directly under root.
   try {
-    chmodSync(root, 0o700);
+    chmodSync(dirname(workspace), 0o700);
   } catch {
     // Non-fatal: some filesystems don't support Unix permissions
   }

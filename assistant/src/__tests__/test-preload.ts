@@ -26,10 +26,6 @@ import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
 
 // --- Phase 1: env override (zero source-module imports above this point) ---
 
-// Layout: <tmpRoot>/workspace as CADET_WORKSPACE_DIR. The parent of
-// CADET_WORKSPACE_DIR is what `cadetRoot()` resolves to, so a separate
-// tmpRoot per process gives the workspace-derived paths per-process
-// isolation without needing an explicit `setStorePathForTesting()`.
 const tmpRoot = realpathSync(mkdtempSync(join(tmpdir(), "cadet-test-")));
 const testDir = join(tmpRoot, "workspace");
 mkdirSync(testDir);

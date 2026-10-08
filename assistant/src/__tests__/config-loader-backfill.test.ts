@@ -74,7 +74,6 @@ import * as schema from "../persistence/schema/index.js";
 import { getConnection } from "../providers/inference/connections.js";
 import { getProviderDefaultModel } from "../providers/model-intents.js";
 import { getConfigQuarantineNoticePath } from "../util/platform.js";
-import { setStorePathForTesting } from "./encrypted-store-test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -402,14 +401,12 @@ describe("loadConfig startup behavior", () => {
       rmSync(noticePath, { force: true });
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
@@ -1523,14 +1520,12 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
       }
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
@@ -2048,14 +2043,12 @@ describe("OS Beta managed profile template", () => {
       }
     }
     ensureTestDir();
-    setStorePathForTesting(join(WORKSPACE_DIR, "keys.enc"));
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    setStorePathForTesting(null);
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
     delete process.env.IS_PLATFORM;
     invalidateConfigCache();

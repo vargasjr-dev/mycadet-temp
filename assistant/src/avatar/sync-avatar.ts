@@ -54,33 +54,33 @@ import { dirname, join } from "node:path";
 
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
-import { backfillAccent } from "../avatar/accent-backfill.js";
-import { readAvatarState } from "../avatar/avatar-manifest.js";
-import {
-  ensureAvatarRasterPath,
-  readContainedAvatarRaster,
-} from "../avatar/ensure-raster.js";
-import {
-  canRenderNotificationAvatar,
-  renderNotificationAvatarPng,
-  resolveNotificationAccentHex,
-} from "../avatar/notification-avatar.js";
-import {
-  getResvg,
-  isResvgAvailable,
-  isResvgDecodableType,
-  RESVG_DECODABLE_TYPES,
-} from "../avatar/resvg-lazy.js";
-import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
-import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import {
   createPlatformPatchQueue,
   type PatchBodyResult,
   type PatchPayload,
   type PlatformPatchQueue,
   type SyncedKey,
-} from "./platform-patch-queue.js";
+} from "../platform/platform-patch-queue.js";
+import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
+import { getLogger } from "../util/logger.js";
+import { getWorkspaceDir } from "../util/platform.js";
+import { backfillAccent } from "./accent-backfill.js";
+import { readAvatarState } from "./avatar-manifest.js";
+import {
+  ensureAvatarRasterPath,
+  readContainedAvatarRaster,
+} from "./ensure-raster.js";
+import {
+  canRenderNotificationAvatar,
+  renderNotificationAvatarPng,
+  resolveNotificationAccentHex,
+} from "./notification-avatar.js";
+import {
+  getResvg,
+  isResvgAvailable,
+  isResvgDecodableType,
+  RESVG_DECODABLE_TYPES,
+} from "./resvg-lazy.js";
 
 const log = getLogger("sync-avatar");
 

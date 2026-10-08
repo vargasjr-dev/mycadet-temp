@@ -14,6 +14,7 @@ import {
   AcpCredentialFormatError,
   assertAcpCredentialFormat,
 } from "../../acp/acp-credentials.js";
+import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
 import {
   getPlatformAssistantId,
   setPlatformBaseUrl,
@@ -27,7 +28,6 @@ import {
   scrubStoredCredentialFromTranscripts,
 } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
-import { syncAvatarToPlatform } from "../../platform/sync-avatar.js";
 import { syncWorkspaceIdentityToPlatform } from "../../platform/sync-identity.js";
 import { maybeReseedCapabilitiesAfterManagedCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";
 import { validateAnthropicApiKey } from "../../providers/anthropic/client.js";

@@ -126,7 +126,7 @@ mock.module("../platform/sync-identity.js", () => ({
     identitySyncCalls++;
   },
 }));
-mock.module("../platform/sync-avatar.js", () => ({
+mock.module("../avatar/sync-avatar.js", () => ({
   syncAvatarToPlatform: () => {
     avatarSyncCalls++;
   },
