@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
+  LockfileAssistantSchema,
   parseLockfile,
   resolveCloud,
   type Lockfile,
@@ -207,7 +208,8 @@ export function stampLockfileAssistantOnboardedIfPresent(
     lockfilePaths,
     assistantId,
     { onboardedAt },
-    (entry) => typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
+    (entry) =>
+      typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
   );
 }
 
@@ -289,6 +291,10 @@ export function upsertLockfileAssistant(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
+const RendererAssistantUpdateSchema = LockfileAssistantSchema.omit({
+  resources: true,
+});
+
 const PAIRED_LOCKFILE_WRITE_ERROR =
   "Paired assistant identity can only be changed through the connect flow";
 
@@ -296,6 +302,7 @@ const PAIRED_LOCKFILE_WRITE_ERROR =
  * Apply a renderer-originated lockfile upsert without allowing it to create,
  * retarget, or reclassify a paired assistant. Existing paired entries may
  * still update non-security fields and become the active assistant.
+ * Resources and secrets are host-owned and never accepted from a renderer.
  */
 export function upsertRendererLockfileAssistant(
   lockfilePaths: string[],
@@ -309,7 +316,11 @@ export function upsertRendererLockfileAssistant(
   // Lock spans the paired-guard read and the upsert (which reenters) so the
   // guard cannot be judged against a snapshot another writer replaces.
   const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
-    const lockfile = readRawLockfile(lockfilePaths);
+    const read = readRawLockfileStrict(lockfilePaths);
+    if (!read.ok) {
+      return { ok: false, status: 409, error: read.error };
+    }
+    const lockfile = read.lockfile;
     const assistants = Array.isArray(lockfile.assistants)
       ? (lockfile.assistants as Array<Record<string, unknown>>)
       : [];
@@ -335,7 +346,11 @@ export function upsertRendererLockfileAssistant(
       return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
     }
 
-    return upsertLockfileAssistant(lockfilePaths, assistant, activeAssistant);
+    const update = RendererAssistantUpdateSchema.safeParse(assistant);
+    if (!update.success) {
+      return { ok: false, status: 400, error: "Invalid assistant metadata" };
+    }
+    return upsertLockfileAssistant(lockfilePaths, update.data, activeAssistant);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

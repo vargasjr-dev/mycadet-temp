@@ -85,26 +85,26 @@ Every local assistant's daemon root is `<resources.instanceDir>/.cadet/`. The CL
 
 Allocation of `instanceDir` for new hatches:
 
-| Environment                     | `instanceDir` path                               |
-| ------------------------------- | ------------------------------------------------ |
-| `production`                    | `$XDG_DATA_HOME/cadet/assistants/<name>/`       |
+| Environment                    | `instanceDir` path                              |
+| ------------------------------ | ----------------------------------------------- |
+| `production`                   | `$XDG_DATA_HOME/cadet/assistants/<name>/`       |
 | non-production (`cadet-<env>`) | `$XDG_DATA_HOME/cadet-<env>/assistants/<name>/` |
 
 There is no "first local" special case — every new hatch goes through the same allocator (`cli/src/lib/assistant-config.ts:allocateLocalResources`) and lands under the XDG multi-instance tree. `~/.cadet/` is never an allocation target; it is only reached via existing lockfile entries whose `instanceDir = homedir()` was recorded before this change.
 
 ### Lockfile
 
-| Environment    | Canonical path                                | Read fallback                             |
-| -------------- | --------------------------------------------- | ----------------------------------------- |
+| Environment    | Canonical path                               | Read fallback                            |
+| -------------- | -------------------------------------------- | ---------------------------------------- |
 | `production`   | `~/.cadet.lock.json`                         | `~/.cadet.lockfile.json` (legacy rename) |
-| non-production | `$XDG_CONFIG_HOME/cadet-<env>/lockfile.json` | (none — new path)                         |
+| non-production | `$XDG_CONFIG_HOME/cadet-<env>/lockfile.json` | (none — new path)                        |
 
 The CLI routes all lockfile reads/writes through `cli/src/lib/environments/paths.ts:getLockfilePath` / `getLockfilePaths` so non-production environments land in the env-scoped XDG config tree. The parent directory is created on first write.
 
 ### Config directory (XDG-shared auth state)
 
-| Environment    | Config dir                       |
-| -------------- | -------------------------------- |
+| Environment    | Config dir                      |
+| -------------- | ------------------------------- |
 | `production`   | `$XDG_CONFIG_HOME/cadet/`       |
 | non-production | `$XDG_CONFIG_HOME/cadet-<env>/` |
 
@@ -300,7 +300,11 @@ In Docker mode, the gateway and daemon must share the same actor-token signing k
 5. **Daemon restart**: On restart, the gateway returns 403 (lockfile present). The daemon catches `BootstrapAlreadyCompleted` and loads the key from its local disk copy.
 6. **Docker upgrade**: The CLI's `hatch` command deletes the gateway lockfile before starting containers, allowing the bootstrap to repeat with a fresh daemon container.
 
-In local mode (non-Docker), `resolveSigningKey()` delegates to `loadOrCreateSigningKey()`, which loads an existing key from disk or generates a new one — no network calls involved.
+For CLI-managed local instances, `resources.signingKey` is host-owned identity state. The CLI injects the same key into the gateway and assistant; the renderer receives a redacted view and cannot write resources or secret fields back through its metadata API.
+
+Wake, local upgrade and archive recovery share `resolveExistingLocalSigningKey()`. A valid host key is authoritative; legacy protected/deprecated files are read-only migration sources only when the host key is absent, and must agree. Ordinary wake/upgrade refuse missing, malformed, inaccessible or conflicting migration state before changing running services. Wake reports `AUTH_IDENTITY_UNAVAILABLE` and an explicit repair command. `wake --repair-guardian` preserves a resolvable key, or warns and generates a replacement when identity cannot be resolved. Only when replacing the key does it stop both services and persist the key before startup. Repair then resets bootstrap and leases credentials; clients may need to authenticate again. The host key remains authoritative over stale legacy files on subsequent wakes. Archive recovery validates identity against staging before destination promotion or registry mutation, and retains its source archive until successful startup.
+
+The existing storage format is retained for compatibility. The assistant's legacy disk synchronization and unmanaged service startup paths remain separate compatibility concerns; this local CLI policy does not change container key injection or managed deployment provisioning.
 
 ## System Overview
 

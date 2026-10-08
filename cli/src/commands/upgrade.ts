@@ -1,3 +1,4 @@
+import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
@@ -890,6 +891,12 @@ async function upgradeLocal(
     process.exit(1);
   }
 
+  const signingKey = resolveExistingLocalSigningKey(entry.resources);
+  if (entry.resources.signingKey !== signingKey) {
+    entry.resources.signingKey = signingKey;
+    saveAssistantEntry(entry);
+  }
+
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = localAdminUrl(entry);
   const { currentVersion, preMigrationState } = await fetchLocalUpgradeState(
@@ -964,14 +971,8 @@ async function upgradeLocal(
     console.warn("⚠️  Pre-upgrade backup failed (continuing with upgrade)\n");
   }
 
-  let signingKey = entry.resources.signingKey;
   let bootstrapSecret = entry.guardianBootstrapSecret;
   let entryChanged = false;
-  if (!signingKey) {
-    signingKey = generateLocalSigningKey();
-    entry.resources = { ...entry.resources, signingKey };
-    entryChanged = true;
-  }
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSigningKey();
     entry.guardianBootstrapSecret = bootstrapSecret;
@@ -1050,10 +1051,7 @@ async function upgradeLocal(
   );
   console.log("✅ Local assistant processes started\n");
 
-  const workspaceDir = join(
-    entry.resources.instanceDir,
-    "workspace",
-  );
+  const workspaceDir = join(entry.resources.instanceDir, "workspace");
   const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     entry.resources.gatewayPort,
