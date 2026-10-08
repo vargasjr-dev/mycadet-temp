@@ -7,49 +7,46 @@ import {
   AVATAR_MANIFEST_FILENAME,
   resolveAvatarDir,
 } from "@mycadet/avatar-manifest";
-import { SEEDS } from "@mycadet/environments";
 import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/environments/test-path-guard";
 
-import { getWorkspaceDirOverride } from "../config/env-registry.js";
-
 /**
- * The daemon's root data directory: the env-scoped XDG data home
- * (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
- * production).
+ * Returns the Cadet root directory: the parent of the workspace
+ * directory — e.g. `.../assistants/<name>/workspace` → `.../assistants/<name>`.
  *
- * Used as a fallback when `CADET_WORKSPACE_DIR` is not set, and as a
- * stable root for paths (like `.env`) that live outside the workspace
- * regardless of workspace relocation.
+ * Paths that must live outside the workspace (`.env`, the per-service
+ * security dirs) resolve from here. When `CADET_WORKSPACE_DIR` is unset the
+ * workspace falls back to `<cwd>/workspace`, so the root falls back to the
+ * process cwd itself.
  */
-export function getXdgCadetDataDir(): string {
-  const dataHome =
-    process.env.XDG_DATA_HOME?.trim() ||
-    join(homedir(), ".local", "share");
-  return join(dataHome, getXdgCadetConfigDirName());
+function cadetRoot(): string {
+  return dirname(getWorkspaceDir());
 }
 
 /**
- * Returns the Cadet root directory.
- *
- * Resolution order (mirrors workspace/migrations/utils.ts):
- * 1. Parent of CADET_WORKSPACE_DIR — e.g.
- *    .../assistants/<name>/workspace → .../assistants/<name>
- * 2. If that parent is "/" (workspace at top level), fall back to the
- *    XDG data root (getXdgCadetDataDir()).
+ * Directory containing files private to the credential-executor (CES):
+ * the encrypted store (`keys.enc`) and its `store.key`. Local mode shares
+ * it with the CES sibling via the `CREDENTIAL_SECURITY_DIR` env var; when
+ * unset, falls back to `<cadetRoot>/ces-security` (which equals
+ * `<cwd>/ces-security` under the cwd workspace fallback).
  */
-export function cadetRoot(): string {
-  const override = getWorkspaceDirOverride();
-  let root = getXdgCadetDataDir();
-  if (override) {
-    const parent = dirname(override);
-    if (parent !== "/") {
-      root = parent;
-    }
-  }
-  // Same containment rule as getWorkspaceDir(): root-derived paths (protected
-  // dir, .env) must stay ephemeral in test processes too.
-  assertTestPathIsEphemeral(root);
-  return root;
+export function getCredentialSecurityDir(): string {
+  return (
+    process.env.CREDENTIAL_SECURITY_DIR?.trim() ||
+    join(cadetRoot(), "ces-security")
+  );
+}
+
+/**
+ * Directory containing files private to the gateway: the actor token
+ * signing key, the backup key, trust rules, feature flags. Local mode
+ * shares it with the gateway via the `GATEWAY_SECURITY_DIR` env var; when
+ * unset, falls back to `<cadetRoot>/gateway-security`.
+ */
+export function getGatewaySecurityDir(): string {
+  return (
+    process.env.GATEWAY_SECURITY_DIR?.trim() ||
+    join(cadetRoot(), "gateway-security")
+  );
 }
 
 export function isMacOS(): boolean {
@@ -205,7 +202,7 @@ export function getEmbeddingModelsDir(): string {
 }
 
 /**
- * Returns the sandbox root directory (~/.cadet/data/sandbox).
+ * Returns the sandbox root directory (<workspace>/data/sandbox).
  * Global sandbox state lives under this directory.
  */
 export function getSandboxRootDir(): string {
@@ -244,29 +241,6 @@ export function getAvatarManifestPath(): string {
   return join(getAvatarDir(), AVATAR_MANIFEST_FILENAME);
 }
 
-// The set of known environment names, derived from the shared
-// `@mycadet/environments` seed table so this site can never drift from the
-// CLI. The Swift client mirrors the same list (it can't import TS); that
-// cross-language pair is guarded by `cli/src/__tests__/env-drift.test.ts`.
-const KNOWN_ENVIRONMENTS: ReadonlySet<string> = new Set(Object.keys(SEEDS));
-
-/**
- * Returns the env-scoped XDG config subdirectory name for Cadet
- * (`cadet` in production, `cadet-<env>` otherwise). Mirrors the Swift
- * side's `CadetPaths.configDir` and the CLI's
- * `environments/paths.ts:getConfigDir`.
- */
-export function getXdgCadetConfigDirName(): string {
-  const raw = process.env.CADET_ENVIRONMENT?.trim();
-  if (!raw || raw === "production") {
-    return "cadet";
-  }
-  if (!KNOWN_ENVIRONMENTS.has(raw)) {
-    return "cadet";
-  }
-  return `cadet-${raw}`;
-}
-
 export function getPidPath(): string {
   return join(getWorkspaceDir(), "cadet.pid");
 }
@@ -286,19 +260,6 @@ export function getLogsDir(): string {
 
 export function getHistoryPath(): string {
   return join(getDataDir(), "history");
-}
-
-/**
- * Returns the protected directory. Security-sensitive files — trust rules,
- * encrypted credential store, signing keys, feature-flag overrides, device
- * approval lists — live here.
- *
- * This directory is:
- * - Outside the sandbox write boundary (tools cannot modify it)
- * - Skipped in containerized mode (credentials via CES, trust via gateway)
- */
-export function getProtectedDir(): string {
-  return join(cadetRoot(), "protected");
 }
 
 /** Returns $CADET_WORKSPACE_DIR/signals — the directory for IPC signal files. */
@@ -329,7 +290,11 @@ export function getBinDir(): string {
   return join(getWorkspaceDir(), "bin");
 }
 
-/** Returns the path to the dot-env file (<cadetRoot>/.env). Stays at root because it contains secrets. */
+/**
+ * Returns the path to the dot-env file (`<cadetRoot>/.env`). Stays at the
+ * cadet root (outside the workspace sandbox boundary) because it contains
+ * secrets.
+ */
 export function getDotEnvPath(): string {
   return join(cadetRoot(), ".env");
 }
@@ -424,14 +389,14 @@ function assertTestPathIsEphemeral(dir: string): void {
  *
  * When the CADET_WORKSPACE_DIR env var is set, returns that value (used in
  * containerized deployments where the workspace is a separate volume).
- * Otherwise falls back to the XDG data root's workspace
- * (getXdgCadetDataDir()/workspace).
+ * Otherwise falls back to `<cwd>/workspace`.
  *
  * In test processes the resolved directory must live under `os.tmpdir()`
  * (see the live-workspace guard above); anything else throws.
  */
 export function getWorkspaceDir(): string {
-  const dir = getWorkspaceDirOverride() ?? join(getXdgCadetDataDir(), "workspace");
+  const dir =
+    process.env.CADET_WORKSPACE_DIR?.trim() || join(process.cwd(), "workspace");
   assertTestPathIsEphemeral(dir);
   return dir;
 }
@@ -443,7 +408,7 @@ export function getWorkspaceDir(): string {
  *
  * Examples:
  *   /Users/alice/.local/share/cadet/workspace → ~/.local/share/cadet/workspace
- *   /data/.cadet/workspace                    → /data/.cadet/workspace
+ *   /opt/assistants/alice/workspace           → /opt/assistants/alice/workspace
  */
 export function getWorkspaceDirDisplay(): string {
   return formatHomeRelativePath(getWorkspaceDir(), homedir());

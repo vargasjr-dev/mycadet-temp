@@ -30,7 +30,7 @@ import { dirname, join } from "node:path";
 import { getIsContainerized } from "../config/env-registry.js";
 import { ensureDir, pathExists } from "../util/fs.js";
 import { getLogger } from "../util/logger.js";
-import { getPlatformName, getProtectedDir } from "../util/platform.js";
+import { getPlatformName, getCredentialSecurityDir } from "../util/platform.js";
 import {
   getStoreKeyPathOverride,
   getStorePathOverride,
@@ -82,7 +82,9 @@ interface EncryptedEntry {
 // ---------------------------------------------------------------------------
 
 function getStorePath(): string {
-  return getStorePathOverride() ?? join(getProtectedDir(), "keys.enc");
+  return (
+    getStorePathOverride() ?? join(getCredentialSecurityDir(), "keys.enc")
+  );
 }
 
 // ---------------------------------------------------------------------------

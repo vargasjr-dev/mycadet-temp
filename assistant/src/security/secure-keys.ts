@@ -38,7 +38,7 @@ import { type CesClient } from "../credential-execution/client.js";
 import { discoverCes } from "../credential-execution/executable-discovery.js";
 import { getAnyProviderEnvVar } from "../providers/provider-env-vars.js";
 import { getLogger } from "../util/logger.js";
-import { getProtectedDir } from "../util/platform.js";
+import { getCredentialSecurityDir } from "../util/platform.js";
 import { createCesCredentialBackend } from "./ces-credential-client.js";
 import { CesRpcCredentialBackend } from "./ces-rpc-credential-backend.js";
 import type {
@@ -884,9 +884,9 @@ export function getActiveBackendInfoAsync(): Promise<BackendInfo> {
     async () => {
       const backend = await resolveBackendAsync();
       if (backend.name === "encrypted-store") {
-        const protectedDir = getProtectedDir();
-        const storePath = join(protectedDir, "keys.enc");
-        const storeKeyPath = join(protectedDir, "store.key");
+        const securityDir = getCredentialSecurityDir();
+        const storePath = join(securityDir, "keys.enc");
+        const storeKeyPath = join(securityDir, "store.key");
         return {
           backend: "encrypted-store" as const,
           storePath,

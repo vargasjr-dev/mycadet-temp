@@ -1,5 +1,4 @@
 import { realpathSync } from "node:fs";
-import { homedir, userInfo } from "node:os";
 import {
   basename,
   dirname,
@@ -11,7 +10,11 @@ import {
 
 import { getIsContainerized } from "../../../config/env-registry.js";
 import { resolveTrailingLinkTarget } from "../../../util/fs-symlinks.js";
-import { getDotEnvPath } from "../../../util/platform.js";
+import {
+  getCredentialSecurityDir,
+  getDotEnvPath,
+  getGatewaySecurityDir,
+} from "../../../util/platform.js";
 
 /**
  * Result type shared by both sandbox and host path policies.
@@ -219,14 +222,6 @@ function deniedFailure(target: SandboxTarget): PathResult | null {
   return null;
 }
 
-function safeUserInfoHomedir(): string {
-  try {
-    return userInfo().homedir;
-  } catch {
-    return "";
-  }
-}
-
 const SECURITY_DIR_ENV_VARS = [
   "GATEWAY_SECURITY_DIR",
   "CREDENTIAL_SECURITY_DIR",
@@ -235,14 +230,13 @@ const SECURITY_DIR_ENV_VARS = [
 /**
  * Secret-bearing paths the file tools must never touch, in any policy:
  *
- * - Gateway trust material and token signing keys (GATEWAY_SECURITY_DIR)
- *   and CES credential keys (CREDENTIAL_SECURITY_DIR — `keys.enc`,
- *   `store.key`). The daemon must never read from or write to them — that
- *   data flows through the gateway and CES APIs (root AGENTS.md). The
- *   env-based resolution mirrors the owning services', since the
- *   cross-package import boundary bars importing it; the shared bare-metal
- *   default `$XDG_DATA_HOME/cadet/protected` is always denied. Only absolute
- *   overrides join the set — a relative override is unmirrorable and
+ * - Gateway trust material and token signing keys (gateway security dir)
+ *   and CES credential keys (CES security dir — `keys.enc`, `store.key`).
+ *   The daemon must never read from or write to them — that data flows
+ *   through the gateway and CES APIs (root AGENTS.md). Both directories
+ *   resolve through the same helpers the owning services use (env var,
+ *   then the instance-dir/cwd fallback), so the deny set tracks wherever
+ *   the keys actually are. A relative override is unmirrorable and
  *   disables the host fallback outright (see
  *   {@link securityDirConfigMirrorable}).
  * - The daemon dotenv (`<cadetRoot>/.env`), which carries provider
@@ -250,21 +244,13 @@ const SECURITY_DIR_ENV_VARS = [
  */
 function getProtectedServicePaths(): string[] {
   const paths = new Set<string>();
-  const homeDir = process.env.HOME || safeUserInfoHomedir() || homedir();
-  paths.add(
-    join(
-      process.env.XDG_DATA_HOME?.trim() || join(homeDir, ".local", "share"),
-      "cadet",
-      "protected",
-    ),
-  );
-  for (const name of SECURITY_DIR_ENV_VARS) {
-    const override = process.env[name]?.trim();
-    if (override && isAbsolute(override)) {
-      paths.add(resolve(override));
-    }
+  for (const dir of [
+    getGatewaySecurityDir(),
+    getCredentialSecurityDir(),
+    getDotEnvPath(),
+  ]) {
+    paths.add(resolve(dir));
   }
-  paths.add(getDotEnvPath());
   return [...paths];
 }
 

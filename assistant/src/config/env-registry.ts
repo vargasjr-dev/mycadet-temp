@@ -96,15 +96,6 @@ export function getDeviceIdOverride(): string | undefined {
 }
 
 /**
- * CADET_WORKSPACE_DIR — string, default: undefined
- * Overrides the default workspace directory.
- * Used in containerized deployments where the workspace is a separate volume.
- */
-export function getWorkspaceDirOverride(): string | undefined {
-  return str("CADET_WORKSPACE_DIR");
-}
-
-/**
  * CADET_BACKUP_DIR — string, default: undefined
  * Overrides the default backup root directory (~/.cadet/backups/).
  * Used in containerized deployments where the backup directory must be

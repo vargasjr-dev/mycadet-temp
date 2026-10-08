@@ -73,7 +73,7 @@ import {
 } from "../avatar/resvg-lazy.js";
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
 import { getLogger } from "../util/logger.js";
-import { getProtectedDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/platform.js";
 import {
   createPlatformPatchQueue,
   type PatchBodyResult,
@@ -127,7 +127,11 @@ export function syncAvatarToPlatform(): void {
 }
 
 function syncStatePath(): string {
-  return join(getProtectedDir(), ...SYNC_STATE_SUBPATH);
+  // Lives at the cadet root (outside the workspace sandbox boundary, beside
+  // the .env file) so agent-writable tools cannot tamper with sync state.
+  // In containerized deployments the cadet root is the container root, so
+  // this state is ephemeral — same lifetime as the legacy protected dir had.
+  return join(dirname(getWorkspaceDir()), ...SYNC_STATE_SUBPATH);
 }
 
 /** Returns the persisted key, or null when missing or malformed. */
