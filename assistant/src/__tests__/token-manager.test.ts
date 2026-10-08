@@ -20,6 +20,7 @@ import {
 // Use encrypted backend with a temp store path
 // ---------------------------------------------------------------------------
 import { _resetBackend, setSecureKeyAsync } from "../security/secure-keys.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 const TEST_DIR = join(
   tmpdir(),
@@ -120,6 +121,9 @@ describe("withValidToken refresh deduplication", () => {
 
   beforeEach(() => {
     _resetBackend();
+    // CES is the only credential store now — pin the memory backend so
+    // seeded tokens land somewhere real instead of reporting unreachable.
+    useMemorySecureKeys();
     for (const entry of readdirSync(TEST_DIR)) {
       rmSync(join(TEST_DIR, entry), { recursive: true, force: true });
     }

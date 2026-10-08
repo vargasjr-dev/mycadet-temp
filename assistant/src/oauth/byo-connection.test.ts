@@ -13,6 +13,7 @@ import {
   test,
 } from "bun:test";
 
+import { useMemorySecureKeys } from "../__tests__/helpers/secure-keys.js";
 // ---------------------------------------------------------------------------
 // Mock logger
 // ---------------------------------------------------------------------------
@@ -175,6 +176,9 @@ afterAll(() => {
 beforeEach(() => {
   _setMetadataPath(join(TEST_DIR, "metadata.json"));
   _resetBackend();
+  // CES is the only credential store now — pin the memory backend so
+  // seeded tokens land somewhere real instead of reporting unreachable.
+  useMemorySecureKeys();
   _resetRefreshBreakers();
   _resetInflightRefreshes();
   // Clear mock oauth-store maps
