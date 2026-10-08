@@ -43,6 +43,7 @@
     "react-devtools-core": "7.0.1"
   },
   "bundledDependencies": [
+    "@mycadet/assistant-api",
     "@mycadet/avatar-manifest",
     "@mycadet/environments",
     "@mycadet/ipc-server-utils",
