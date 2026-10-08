@@ -31,7 +31,7 @@ import { rollback } from "./commands/rollback";
 import { setup } from "./commands/setup";
 import { sleep } from "./commands/sleep";
 import { ssh } from "./commands/ssh";
-import { debugBundle } from "./commands/debug-bundle";
+import { debugBundle } from "./commands/debug";
 import { teleport } from "./commands/teleport";
 import { terminal } from "./commands/terminal";
 import { tunnel } from "./commands/tunnel";
@@ -46,12 +46,12 @@ import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 
 const commands = {
-  "debug-bundle": debugBundle,
   backup,
   clean,
   client,
   confirm,
   connect,
+  debug: debugBundle,
   devices,
   env,
   events,
@@ -99,6 +99,9 @@ function printHelp(): void {
     "  connect  Pair with an assistant running on another machine [beta]",
   );
   console.log(
+    "  debug    Send Cadet staff a debug bundle of a self-hosted assistant",
+  );
+  console.log(
     "  devices  List or revoke devices paired to a local assistant [beta]",
   );
   console.log("  env      Manage the default CLI environment");
@@ -127,9 +130,6 @@ function printHelp(): void {
   console.log("  setup    Configure API keys interactively");
   console.log("  sleep    Stop the assistant process");
   console.log("  ssh      SSH into a remote assistant instance");
-  console.log(
-    "  debug-bundle  Send Cadet staff a debug bundle of a self-hosted assistant",
-  );
   console.log("  teleport Transfer assistant data between environments");
   console.log("  terminal Open a terminal into a managed assistant container");
   console.log("  tunnel   Create a tunnel for a locally hosted assistant");

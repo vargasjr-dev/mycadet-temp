@@ -1,5 +1,5 @@
 /**
- * `cadet debug-bundle [name]`
+ * `cadet debug [name]`
  *
  * Send Cadet staff a debug bundle of a self-hosted assistant: the
  * workspace, its logs, and the gateway's own database, with no credentials.
@@ -47,7 +47,7 @@ export const DEBUG_PROFILE_MIN_VERSION = "0.12.3";
 const TOKEN_EXPIRY_MARGIN_MS = 60 * 1000;
 
 function printHelp(): void {
-  console.log(`Usage: cadet debug-bundle [name]
+  console.log(`Usage: cadet debug [name]
 
 Send Cadet staff a debug bundle of a self-hosted assistant so they can
 inspect a copy of it. The bundle holds the assistant's workspace, its
@@ -72,9 +72,9 @@ Side effects:
   - Waits for the upload to finish (up to 60 minutes for a large workspace).
 
 Examples:
-  cadet debug-bundle
-  cadet debug-bundle my-assistant
-  cadet debug-bundle Support Bot
+  cadet debug
+  cadet debug my-assistant
+  cadet debug Support Bot
 `);
 }
 

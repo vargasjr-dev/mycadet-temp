@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // Lockfile isolation (mirrors backup.test.ts)
-const testDir = mkdtempSync(join(tmpdir(), "cli-debug-bundle-test-"));
+const testDir = mkdtempSync(join(tmpdir(), "cli-debug-test-"));
 process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
@@ -64,7 +64,7 @@ const leaseGuardianTokenSpy = spyOn(
   accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
 } as unknown as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>);
 
-const { debugBundle } = await import("../commands/debug-bundle.js");
+const { debugBundle } = await import("../commands/debug.js");
 
 const LOCAL_ENTRY = {
   name: "mine",
@@ -83,7 +83,7 @@ let fetchCalls: { url: string; init?: RequestInit }[] = [];
 let uploadUrlStatus = 201;
 
 beforeEach(() => {
-  process.argv = ["bun", "cadet", "debug-bundle"];
+  process.argv = ["bun", "cadet", "debug"];
   originalFetch = globalThis.fetch;
   originalExit = process.exit;
   process.exit = mock((code?: number) => {
@@ -130,7 +130,7 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
 });
 
-describe("cadet debug-bundle", () => {
+describe("cadet debug", () => {
   test("mints the URL on the platform, exports with the debug profile, and waits", async () => {
     await debugBundle();
 
@@ -160,7 +160,7 @@ describe("cadet debug-bundle", () => {
   });
 
   test("passes an unquoted multi-word display name through to the shared resolver", async () => {
-    process.argv = ["bun", "cadet", "debug-bundle", "Support", "Bot"];
+    process.argv = ["bun", "cadet", "debug", "Support", "Bot"];
     await debugBundle();
     expect(resolveTargetMock).toHaveBeenCalledWith("Support Bot");
   });
