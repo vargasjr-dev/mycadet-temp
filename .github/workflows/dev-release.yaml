@@ -62,14 +62,6 @@ jobs:
 
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
-  # The assistant suite outgrew a single ci-assistant job (pass 7 died at
-  # the 15-minute cap), so lint and types run standalone and the tests fan
-  # out across 4 shards. Each shard takes every 4th file of the
-  # longest-first-sorted list (TEST_SHARD=i/N), which spreads the slow files
-  # evenly across shards. ci-web got the same split (pass 20's Test step
-  # alone ran ~16 minutes behind a 2-minute lint+type front): assistant and
-  # gateway now run through the same shared run-isolated-tests.ts, which
-  # speaks the 1-based TEST_SHARD every sharded consumer uses.
   ci-assistant-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15

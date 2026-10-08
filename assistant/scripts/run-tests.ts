@@ -10,6 +10,7 @@
 
 import { existsSync } from "node:fs";
 import { basename } from "node:path";
+
 import { runIsolatedTests } from "@mycadet/shared/scripts/run-isolated-tests";
 
 const EXCLUDE_EXPERIMENTAL = Bun.env.EXCLUDE_EXPERIMENTAL === "true";
