@@ -82,8 +82,8 @@ describe("assistant-config", () => {
   });
 
   test("legacy home-level lockfile names are no longer read (the migration moves them into place)", () => {
-    // A pre-move home-level file alone must NOT be picked up — the vellum →
-    // cadet migration is what moves it to the canonical config-dir path.
+    // A pre-move home-level file alone must NOT be picked up — the
+    // migration tooling is what moves it to the canonical config-dir path.
     writeFileSync(
       join(testDir, ".cadet.lock.json"),
       JSON.stringify({ assistants: [makeEntry("legacy-1")] }, null, 2),

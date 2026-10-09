@@ -130,8 +130,10 @@ describe("path helpers", () => {
   });
 
   describe("getLockfilePath", () => {
-    test("production returns ~/.cadet.lock.json", () => {
-      expect(getLockfilePath(prod)).toBe(join(TEST_HOME, ".cadet.lock.json"));
+    test("production returns the config-dir lockfile.json", () => {
+      expect(getLockfilePath(prod)).toBe(
+        join(TEST_HOME, ".config", "cadet", "lockfile.json"),
+      );
     });
 
     test("dev returns ~/.config/cadet-dev/lockfile.json", () => {
@@ -153,7 +155,7 @@ describe("path helpers", () => {
         ...prod,
         lockfileDirOverride: "/tmp/lock",
       };
-      expect(getLockfilePath(env)).toBe("/tmp/lock/.cadet.lock.json");
+      expect(getLockfilePath(env)).toBe("/tmp/lock/lockfile.json");
     });
 
     test("non-prod respects lockfileDirOverride (overrides configDir)", () => {
@@ -167,10 +169,9 @@ describe("path helpers", () => {
   });
 
   describe("getLockfilePaths", () => {
-    test("production returns both current and legacy filenames in priority order", () => {
+    test("production returns a single canonical path", () => {
       expect(getLockfilePaths(prod)).toEqual([
-        join(TEST_HOME, ".cadet.lock.json"),
-        join(TEST_HOME, ".cadet.lockfile.json"),
+        join(TEST_HOME, ".config", "cadet", "lockfile.json"),
       ]);
     });
 
@@ -180,15 +181,12 @@ describe("path helpers", () => {
       ]);
     });
 
-    test("production with lockfileDirOverride applies to both candidates", () => {
+    test("production with lockfileDirOverride applies to the canonical path", () => {
       const env: EnvironmentDefinition = {
         ...prod,
         lockfileDirOverride: "/tmp/lock",
       };
-      expect(getLockfilePaths(env)).toEqual([
-        "/tmp/lock/.cadet.lock.json",
-        "/tmp/lock/.cadet.lockfile.json",
-      ]);
+      expect(getLockfilePaths(env)).toEqual(["/tmp/lock/lockfile.json"]);
     });
 
     test("non-prod with lockfileDirOverride overrides the config dir", () => {
