@@ -3,6 +3,7 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  loadAllAssistantsAcrossEnvs,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
@@ -63,7 +64,7 @@ function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
 export async function sleep(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet sleep [<name>] [--force] [--wait [<duration>]]");
+    console.log("Usage: cadet sleep [<name> | --all] [--force] [--wait [<duration>]]");
     console.log("");
     console.log("Stop the assistant and gateway processes.");
     console.log("");
@@ -73,6 +74,9 @@ export async function sleep(): Promise<void> {
     );
     console.log("");
     console.log("Options:");
+    console.log(
+      "  --all     Stop every assistant across all environments instead of one",
+    );
     console.log(
       "  --force   Stop the assistant even if a phone call keepalive lease is active",
     );
@@ -128,7 +132,108 @@ export async function sleep(): Promise<void> {
   const nameArg = args.find(
     (a) => !a.startsWith("-") && a !== waitDurationToken,
   );
+  const all = args.includes("--all");
+
+  if (all && nameArg) {
+    console.error("Error: --all cannot be combined with an assistant name.");
+    process.exit(1);
+  }
+
+  if (all) {
+    await sleepAll({ force, wait, waitMs });
+    return;
+  }
+
   const entry = resolveTargetAssistant(nameArg);
+  try {
+    await sleepAssistant(entry, { force, wait, waitMs });
+  } catch (err) {
+    if (err instanceof SleepExit) {
+      console.log(err.message);
+      process.exit(err.exitCode);
+    }
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
+}
+
+type SleepOptions = {
+  force: boolean;
+  wait: boolean;
+  waitMs: number | null;
+};
+
+/**
+ * Carries a deliberate exit outcome (a cancelled drain) across the
+ * per-assistant boundary so the callers can exit with the right code
+ * instead of treating it as a stop failure.
+ */
+class SleepExit extends Error {
+  constructor(
+    readonly exitCode: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Stop every assistant the lockfiles know about, across all environments —
+ * `--all`. Same per-assistant stop as the single path, but one assistant's
+ * failure (or an unmanageable runtime) never blocks the others; a failure
+ * only decides the exit code.
+ */
+async function sleepAll(opts: SleepOptions): Promise<void> {
+  const entries = loadAllAssistantsAcrossEnvs();
+  if (entries.length === 0) {
+    console.error("Error: no assistants found. Run 'cadet hatch' first.");
+    process.exit(1);
+  }
+
+  let failures = 0;
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    // The same assistantId can surface from more than one environment's
+    // lockfile when a directory override is set — stop it once.
+    if (seen.has(entry.assistantId)) continue;
+    seen.add(entry.assistantId);
+    if (entry.cloud === "apple-container" || entry.cloud === "paired") {
+      console.log(
+        `Skipping '${entry.assistantId}' (${entry.cloud}) — its lifecycle is managed elsewhere.`,
+      );
+      continue;
+    }
+    try {
+      await sleepAssistant(entry, opts);
+    } catch (err) {
+      if (err instanceof SleepExit) {
+        // A cancelled drain is the user asking to stop — honor it immediately.
+        console.log(err.message);
+        process.exit(err.exitCode);
+      }
+      failures++;
+      console.error(
+        `Error: failed to stop '${entry.assistantId}': ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+  if (failures > 0) {
+    process.exit(1);
+  }
+}
+
+/**
+ * Stop one assistant. Throws on hard errors (active call leases, missing
+ * resources, unmanageable runtimes) so the caller decides between exiting
+ * (single-assistant path) and continuing to the next entry (`--all`).
+ */
+async function sleepAssistant(
+  entry: AssistantEntry,
+  opts: SleepOptions,
+): Promise<void> {
+  const { force, wait, waitMs } = opts;
 
   if (entry.cloud === "docker") {
     if (wait) {
@@ -146,31 +251,27 @@ export async function sleep(): Promise<void> {
   }
 
   if (entry.cloud === "apple-container") {
-    console.error(
-      `Error: '${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to stop it.`,
+    throw new Error(
+      `'${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to stop it.`,
     );
-    process.exit(1);
   }
 
   if (entry.cloud === "paired") {
-    console.error(
-      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
+    throw new Error(
+      `'${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
     );
-    process.exit(1);
   }
 
   if (entry.cloud && entry.cloud !== "local") {
-    console.error(
-      `Error: 'cadet sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
+    throw new Error(
+      `'cadet sleep' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
     );
-    process.exit(1);
   }
 
   if (!entry.resources) {
-    console.error(
-      `Error: Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
+    throw new Error(
+      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
-    process.exit(1);
   }
   const resources = entry.resources;
   const assistantPidFile = getDaemonPidPath(resources);
@@ -180,26 +281,23 @@ export async function sleep(): Promise<void> {
   if (!force) {
     const assistantAlive = isProcessAlive(assistantPidFile).alive;
     if (assistantAlive) {
+      let leases: ActiveCallLease[];
       try {
-        const activeCallLeases = readActiveCallLeases(cadetDir);
-        if (activeCallLeases.length > 0) {
-          const activeIds = activeCallLeases.map(
-            (lease) => lease.callSessionId,
-          );
-          console.error(
-            `Error: assistant is staying awake for active phone calls (${activeIds.join(
-              ", ",
-            )}). Use 'cadet sleep --force' to stop it anyway.`,
-          );
-          process.exit(1);
-        }
+        leases = readActiveCallLeases(cadetDir);
       } catch (err) {
-        console.error(
-          `Error: ${
+        throw new Error(
+          `${
             err instanceof Error ? err.message : String(err)
           }. Use 'cadet sleep --force' to override if you want to stop the assistant anyway.`,
         );
-        process.exit(1);
+      }
+      if (leases.length > 0) {
+        const activeIds = leases.map((lease) => lease.callSessionId);
+        throw new Error(
+          `assistant is staying awake for active phone calls (${activeIds.join(
+            ", ",
+          )}). Use 'cadet sleep --force' to stop it anyway.`,
+        );
       }
     }
   }
@@ -207,8 +305,7 @@ export async function sleep(): Promise<void> {
   if (wait) {
     const outcome = await runDrainPhase(entry, assistantPidFile, waitMs);
     if (outcome === "cancelled") {
-      console.log("Sleep cancelled — the assistant is still running.");
-      process.exit(130);
+      throw new SleepExit(130, "Sleep cancelled — the assistant is still running.");
     }
   }
 

@@ -18,10 +18,12 @@ const assistantRootDir = testDir;
 process.env.CADET_LOCKFILE_DIR = testDir;
 
 const stopProcessByPidFileMock = mock(async () => true);
-const isProcessAliveMock = mock((): { alive: boolean; pid: number | null } => ({
-  alive: false,
-  pid: null,
-}));
+const isProcessAliveMock = mock(
+  (_pidFile?: string): { alive: boolean; pid: number | null } => ({
+    alive: false,
+    pid: null,
+  }),
+);
 
 const realProcess = { ...(await import("../lib/process.js")) };
 
@@ -364,6 +366,187 @@ describe("sleep command", () => {
       }
 
       expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("--all", () => {
+    function writeMultiAssistantLockfile(): void {
+      writeFileSync(
+        join(testDir, "lockfile.json"),
+        JSON.stringify(
+          {
+            assistants: [
+              {
+                assistantId: "sleep-all-1",
+                runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
+                cloud: "local",
+                resources: {
+                  instanceDir: join(testDir, "instance-1"),
+                  daemonPort: DEFAULT_DAEMON_PORT,
+                  gatewayPort: DEFAULT_GATEWAY_PORT,
+                  qdrantPort: DEFAULT_QDRANT_PORT,
+                },
+              },
+              {
+                assistantId: "sleep-all-2",
+                runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
+                cloud: "local",
+                resources: {
+                  instanceDir: join(testDir, "instance-2"),
+                  daemonPort: DEFAULT_DAEMON_PORT,
+                  gatewayPort: DEFAULT_GATEWAY_PORT,
+                  qdrantPort: DEFAULT_QDRANT_PORT,
+                },
+              },
+            ],
+            activeAssistant: "sleep-all-1",
+          },
+          null,
+          2,
+        ),
+      );
+    }
+
+    test("stops every assistant in the lockfile", async () => {
+      writeMultiAssistantLockfile();
+      process.argv = ["bun", "cadet", "sleep", "--all"];
+
+      const consoleLog = spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await sleep();
+      } finally {
+        consoleLog.mockRestore();
+      }
+
+      expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(6); // assistant+gateway+CES × 2
+    });
+
+    test("skips assistants whose lifecycle is managed elsewhere", async () => {
+      writeMultiAssistantLockfile();
+      // Rewrite the lockfile with the second entry paired.
+      writeFileSync(
+        join(testDir, "lockfile.json"),
+        JSON.stringify({
+          assistants: [
+            {
+              assistantId: "sleep-all-1",
+              runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
+              cloud: "local",
+              resources: {
+                instanceDir: join(testDir, "instance-1"),
+                daemonPort: DEFAULT_DAEMON_PORT,
+                gatewayPort: DEFAULT_GATEWAY_PORT,
+                qdrantPort: DEFAULT_QDRANT_PORT,
+              },
+            },
+            {
+              assistantId: "paired-one",
+              runtimeUrl: "http://127.0.0.1:1",
+              cloud: "paired",
+            },
+          ],
+          activeAssistant: "sleep-all-1",
+        }),
+      );
+      process.argv = ["bun", "cadet", "sleep", "--all"];
+
+      const consoleLog = spyOn(console, "log").mockImplementation(() => {});
+      try {
+        await sleep();
+      } finally {
+        consoleLog.mockRestore();
+      }
+
+      expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3); // assistant+gateway+CES, one local entry
+    });
+
+    test("continues past a failing assistant and exits 1", async () => {
+      writeMultiAssistantLockfile();
+      // instance-1 hits an active-call lease refusal; instance-2 is fine.
+      isProcessAliveMock.mockImplementation((pidFile?: string) => ({
+        alive: pidFile?.includes("instance-1") ?? false,
+        pid: pidFile?.includes("instance-1") ? 12345 : null,
+      }));
+      mkdirSync(join(testDir, "instance-1"), { recursive: true });
+      writeFileSync(
+        join(testDir, "instance-1", "active-call-leases.json"),
+        JSON.stringify({
+          version: 1,
+          leases: [
+            {
+              callSessionId: "call-all-1",
+              providerCallSid: null,
+              updatedAt: Date.now(),
+            },
+          ],
+        }),
+      );
+      process.argv = ["bun", "cadet", "sleep", "--all"];
+
+      const consoleError = spyOn(console, "error").mockImplementation(() => {});
+      const exitMock = mock((code?: number) => {
+        throw new Error(`process.exit:${code}`);
+      });
+      const originalExit = process.exit;
+      process.exit = exitMock as unknown as typeof process.exit;
+
+      try {
+        await expect(sleep()).rejects.toThrow("process.exit:1");
+        expect(
+          consoleError.mock.calls.some(([line]) =>
+            String(line).includes("failed to stop 'sleep-all-1'"),
+          ),
+        ).toBe(true);
+      } finally {
+        process.exit = originalExit;
+        consoleError.mockRestore();
+      }
+
+      // The healthy assistant was still stopped.
+      expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3); // assistant+gateway+CES of instance-2
+    });
+
+    test("exits 1 when there is nothing to stop", async () => {
+      rmSync(join(testDir, "lockfile.json"), { force: true });
+      process.argv = ["bun", "cadet", "sleep", "--all"];
+
+      const consoleError = spyOn(console, "error").mockImplementation(() => {});
+      const exitMock = mock((code?: number) => {
+        throw new Error(`process.exit:${code}`);
+      });
+      const originalExit = process.exit;
+      process.exit = exitMock as unknown as typeof process.exit;
+
+      try {
+        await expect(sleep()).rejects.toThrow("process.exit:1");
+        expect(consoleError).toHaveBeenCalledWith(
+          expect.stringContaining("no assistants found"),
+        );
+      } finally {
+        process.exit = originalExit;
+        consoleError.mockRestore();
+      }
+    });
+
+    test("refuses --all combined with a name", async () => {
+      process.argv = ["bun", "cadet", "sleep", "sleep-test", "--all"];
+
+      const consoleError = spyOn(console, "error").mockImplementation(() => {});
+      const exitMock = mock((code?: number) => {
+        throw new Error(`process.exit:${code}`);
+      });
+      const originalExit = process.exit;
+      process.exit = exitMock as unknown as typeof process.exit;
+
+      try {
+        await expect(sleep()).rejects.toThrow("process.exit:1");
+        expect(consoleError).toHaveBeenCalledWith(
+          expect.stringContaining("--all cannot be combined"),
+        );
+      } finally {
+        process.exit = originalExit;
+        consoleError.mockRestore();
+      }
     });
   });
 });
