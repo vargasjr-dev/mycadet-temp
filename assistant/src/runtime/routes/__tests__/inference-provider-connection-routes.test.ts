@@ -6,7 +6,7 @@
  *   GET    /v1/inference/provider-connections/:name    — single, 404
  *   POST   /v1/inference/provider-connections          — create happy paths + 409 + 400 cases
  *   PATCH  /v1/inference/provider-connections/:name    — update auth, 404
- *   DELETE /v1/inference/provider-connections/:name    — happy path, 409 with profile ref, llm.defaultProvider guard
+ *   DELETE /v1/inference/provider-connections/:name    — happy path, 409 with profile ref, llm.default pin guard
  *   Auth   — 401 (missing key) and 403 (insufficient scope) via route-policy assertions
  */
 
@@ -1092,16 +1092,16 @@ describe("DELETE inference/provider-connections/:name (delete)", () => {
   });
 });
 
-// ── llm.defaultProvider guard ─────────────────────────────────────────────────
+// ── llm.default guard ─────────────────────────────────────────────────
 
-describe("DELETE guards the llm.defaultProvider reference", () => {
+describe("DELETE guards the llm.default pin reference", () => {
   test("throws 409 deleting the default's resolved connection (convention name)", async () => {
     seedConnection({
       name: "anthropic-personal",
       provider: "anthropic",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const err = await call(
       findHandler("inference_provider_connections_delete"),
@@ -1109,9 +1109,9 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     ).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).message).toContain("llm.defaultProvider");
+    expect((err as ConflictError).message).toContain("llm.default");
     expect((err as ConflictError).details).toEqual({
-      referencedBy: ["llm.defaultProvider"],
+      referencedBy: ["llm.default"],
     });
   });
 
@@ -1122,7 +1122,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       auth: { type: "platform" },
     });
     setConfig("llm", {
-      defaultProvider: { provider: "openai", connectionName: "my-conn" },
+      default: { provider: "openai", provider_connection: "my-conn" },
     });
 
     await expect(
@@ -1141,7 +1141,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       provider: "anthropic",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const err = await call(
       findHandler("inference_provider_connections_delete"),
@@ -1150,7 +1150,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
 
     expect(err).toBeInstanceOf(ConflictError);
     expect((err as ConflictError).details).toEqual({
-      referencedBy: ["llm.defaultProvider"],
+      referencedBy: ["llm.default"],
     });
   });
 
@@ -1163,9 +1163,9 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       auth: { type: "platform" },
     });
     setConfig("llm", {
-      defaultProvider: {
+      default: {
         provider: "anthropic",
-        connectionName: "anthropic-personal",
+        provider_connection: "anthropic-personal",
       },
     });
 
@@ -1189,7 +1189,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       provider: "anthropic",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const err = await call(
       findHandler("inference_provider_connections_delete"),
@@ -1198,7 +1198,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
 
     expect(err).toBeInstanceOf(ConflictError);
     expect((err as ConflictError).details).toEqual({
-      referencedBy: ["llm.defaultProvider"],
+      referencedBy: ["llm.default"],
     });
   });
 
@@ -1213,7 +1213,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       provider: "anthropic",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = (await call(
       findHandler("inference_provider_connections_delete"),
@@ -1228,7 +1228,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       provider: "openai",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = (await call(
       findHandler("inference_provider_connections_delete"),
@@ -1245,7 +1245,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     });
     // No "anthropic" rows exist at all — an already-dangling default is a
     // legal state; the guard must no-op rather than crash on an empty list.
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = (await call(
       findHandler("inference_provider_connections_delete"),
@@ -1254,7 +1254,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("succeeds when defaultProvider is absent", async () => {
+  test("succeeds when the default provider blob is absent", async () => {
     seedConnection({
       name: "some-conn",
       provider: "openai",
@@ -1269,16 +1269,19 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("succeeds when the blob's provider is malformed (stripped by leaf recovery)", async () => {
+  test("succeeds when the blob's provider has no matrix column (clamped to null)", async () => {
     seedConnection({
       name: "some-conn",
       provider: "openai",
       auth: { type: "platform" },
     });
+    // A provider the matrix cannot implement stays on disk (the blob is a
+    // partial fragment) but the guard's read clamps it to null — the same
+    // verdict the loader's leaf-recovery produces for a fully malformed
+    // provider leaf (covered by the loader tests).
     const parsed = LLMSchema.parse({
-      default: { provider: "not-a-provider" },
+      default: { provider: "openai-compatible" },
     });
-    expect(parsed.default?.provider).toBeUndefined();
     setConfig("llm", parsed);
 
     const result = (await call(
@@ -1294,7 +1297,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
       provider: "cadet",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
 
     const err = await call(
       findHandler("inference_provider_connections_delete"),
@@ -1453,7 +1456,7 @@ describe("Managed connection write protection", () => {
         provider: "openai",
         auth: { type: "api_key", credential: "credential/openai/api_key" },
       });
-      setConfig("llm", { defaultProvider: { provider: "cadet" } });
+      setConfig("llm", { default: { provider: "cadet" } });
 
       await call(findHandler("inference_provider_connections_delete"), {
         pathParams: { name: "cadet" },
