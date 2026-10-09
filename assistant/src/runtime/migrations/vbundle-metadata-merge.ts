@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Merge helper for `data/credentials/metadata.json` on bundle import.
  *
@@ -27,53 +29,38 @@
 
 const CADET_SERVICE = "cadet";
 
-interface MetadataRecord {
-  credentialId: string;
-  service: string;
-  field: string;
-  [key: string]: unknown;
-}
+const MetadataRecordSchema = z.looseObject({
+  credentialId: z.string(),
+  service: z.string(),
+  field: z.string(),
+});
+type MetadataRecord = z.infer<typeof MetadataRecordSchema>;
 
-interface MetadataFile {
-  version?: number;
-  credentials?: unknown[];
-  [key: string]: unknown;
-}
-
-function isRecord(value: unknown): value is MetadataRecord {
-  if (typeof value !== "object" || value == null) {
-    return false;
-  }
-  const r = value as Record<string, unknown>;
-  return (
-    typeof r.credentialId === "string" &&
-    typeof r.service === "string" &&
-    typeof r.field === "string"
-  );
-}
+// A malformed record becomes null instead of failing the whole file, so one
+// bad entry cannot invalidate the valid siblings around it.
+const MetadataFileSchema = z.looseObject({
+  version: z.number().optional(),
+  credentials: z.array(MetadataRecordSchema.nullish().catch(null)).optional(),
+});
+type MetadataFile = z.infer<typeof MetadataFileSchema>;
 
 function parseMetadata(json: string | null | undefined): MetadataFile | null {
   if (!json) {
     return null;
   }
   try {
-    const parsed: unknown = JSON.parse(json);
-    if (typeof parsed !== "object" || parsed == null || Array.isArray(parsed)) {
-      return null;
-    }
-    return parsed as MetadataFile;
+    const parsed = MetadataFileSchema.safeParse(JSON.parse(json));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
 }
 
 function extractCadetRecords(file: MetadataFile | null): MetadataRecord[] {
-  if (!file || !Array.isArray(file.credentials)) {
-    return [];
-  }
-  return file.credentials
-    .filter(isRecord)
-    .filter((r) => r.service === CADET_SERVICE);
+  return (file?.credentials ?? []).filter(
+    (record): record is MetadataRecord =>
+      record != null && record.service === CADET_SERVICE,
+  );
 }
 
 /**
@@ -99,13 +86,10 @@ export function mergeMetadataPreservingCadet(
 
   const preservedCadet = extractCadetRecords(parseMetadata(liveJson));
 
-  const bundleCredentials = Array.isArray(bundle.credentials)
-    ? bundle.credentials.filter(isRecord)
-    : [];
-
   // Drop any `service === "cadet"` entries from the bundle (defense-in-depth).
-  const filteredBundle = bundleCredentials.filter(
-    (r) => r.service !== CADET_SERVICE,
+  const filteredBundle = (bundle.credentials ?? []).filter(
+    (record): record is MetadataRecord =>
+      record != null && record.service !== CADET_SERVICE,
   );
 
   // Union: bundle non-cadet entries + target cadet entries. If the

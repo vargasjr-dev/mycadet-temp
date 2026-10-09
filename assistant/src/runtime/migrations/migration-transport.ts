@@ -25,6 +25,8 @@
  * the global `fetch`). Auth headers are passed via `TransportConfig`.
  */
 
+import { z } from "zod";
+
 export type MigrationTarget = "runtime" | "managed";
 
 export interface TransportConfig {
@@ -501,39 +503,38 @@ export async function pollImportStatus(
   return fetchJobStatus(config, "import", jobId);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const jobStatusWireSchema = z.object({
+  status: z.enum(["pending", "processing", "complete", "failed"]),
+  job_id: z.string().optional(),
+  download_url: z.string().optional(),
+  progress: z.number().optional(),
+  error: z.string().optional(),
+  result: z.unknown().optional(),
+});
 
-function jobStatusFromJson(
-  json: unknown,
+function jobStatusFromWire(
+  wire: z.infer<typeof jobStatusWireSchema>,
   fallbackJobId: string,
-): JobStatusResponse | null {
-  if (!isRecord(json)) {return null;}
-  const jobId = typeof json.job_id === "string" ? json.job_id : fallbackJobId;
-
-  if (json.status === "complete") {
-    const status: JobStatusComplete = { status: "complete", jobId };
-    if (typeof json.download_url === "string") {
-      status.downloadUrl = json.download_url;
-    }
-    if (json.result !== undefined) {status.result = json.result;}
-    return status;
+): JobStatusResponse {
+  const jobId = wire.job_id ?? fallbackJobId;
+  if (wire.status === "complete") {
+    return {
+      status: "complete",
+      jobId,
+      ...(wire.download_url !== undefined
+        ? { downloadUrl: wire.download_url }
+        : {}),
+      ...(wire.result !== undefined ? { result: wire.result } : {}),
+    };
   }
-  if (json.status === "failed") {
+  if (wire.status === "failed") {
     return {
       status: "failed",
       jobId,
-      error:
-        typeof json.error === "string" ? json.error : "unknown export error",
+      error: wire.error ?? "unknown export error",
     };
   }
-  if (json.status === "pending" || json.status === "processing") {
-    const status: JobStatusPending = { status: json.status, jobId };
-    if (typeof json.progress === "number") {status.progress = json.progress;}
-    return status;
-  }
-  return null;
+  return { status: wire.status, jobId, progress: wire.progress };
 }
 
 async function fetchJobStatus(
@@ -559,15 +560,15 @@ async function fetchJobStatus(
   });
 
   await assertOk(response, `${kind} status (job ${jobId})`);
-  const status = jobStatusFromJson(await response.json(), jobId);
-  if (!status) {
+  const parsed = jobStatusWireSchema.safeParse(await response.json());
+  if (!parsed.success) {
     throw new MigrationTransportError(
       `${kind} status (job ${jobId}): malformed response`,
       response.status,
       "",
     );
   }
-  return status;
+  return jobStatusFromWire(parsed.data, jobId);
 }
 
 interface PollOptions {

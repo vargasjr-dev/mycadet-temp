@@ -13,6 +13,8 @@
  * for persistence/resume across app restarts.
  */
 
+import { z } from "zod";
+
 import type {
   ExportManagedResult,
   ImportCommitResponse,
@@ -35,27 +37,32 @@ export type MigrationDirection =
   | "managed-to-self-hosted"
   | "self-hosted-to-managed";
 
-export type WizardStep =
-  | "select-direction"
-  | "upload-bundle"
-  | "validate"
-  | "preflight-review"
-  | "transfer"
-  | "rebind-secrets"
-  | "complete";
+export const WizardStepSchema = z.enum([
+  "select-direction",
+  "upload-bundle",
+  "validate",
+  "preflight-review",
+  "transfer",
+  "rebind-secrets",
+  "complete",
+]);
+export type WizardStep = z.infer<typeof WizardStepSchema>;
 
-export type StepStatus = "idle" | "loading" | "success" | "error";
+const StepStatusSchema = z.enum(["idle", "loading", "success", "error"]);
+type StepStatus = z.infer<typeof StepStatusSchema>;
 
-export interface StepError {
-  message: string;
-  code?: string;
-  retryable: boolean;
-}
+const StepErrorSchema = z.object({
+  message: z.string(),
+  code: z.string().optional(),
+  retryable: z.boolean(),
+});
+export type StepError = z.infer<typeof StepErrorSchema>;
 
-export interface StepState {
-  status: StepStatus;
-  error?: StepError;
-}
+const StepStateSchema = z.object({
+  status: StepStatusSchema,
+  error: StepErrorSchema.optional(),
+});
+export type StepState = z.infer<typeof StepStateSchema>;
 
 /**
  * Full wizard state — serializable to JSON for persistence.
@@ -108,19 +115,28 @@ export interface MigrationWizardState {
   createdAt: string;
 }
 
+/**
+ * Envelope for the persisted wizard state. The step payloads
+ * (validateResult, preflightResult, …) are opaque here — they pass through
+ * untouched and are the transport module's contract, validated at its own
+ * boundary.
+ */
+const WizardStateSchema = z.looseObject({
+  currentStep: WizardStepSchema,
+  direction: z
+    .enum(["managed-to-self-hosted", "self-hosted-to-managed"])
+    .optional(),
+  steps: z.record(z.string(), StepStateSchema),
+  hasBundleData: z.boolean(),
+  updatedAt: z.string(),
+  createdAt: z.string(),
+});
+
 // ---------------------------------------------------------------------------
 // Step ordering and transitions
 // ---------------------------------------------------------------------------
 
-const STEP_ORDER: readonly WizardStep[] = [
-  "select-direction",
-  "upload-bundle",
-  "validate",
-  "preflight-review",
-  "transfer",
-  "rebind-secrets",
-  "complete",
-] as const;
+const STEP_ORDER: readonly WizardStep[] = WizardStepSchema.options;
 
 const STEP_INDEX = new Map<WizardStep, number>(
   STEP_ORDER.map((step, i) => [step, i]),
@@ -573,32 +589,21 @@ export function deserializeWizardState(
   json: string,
 ): MigrationWizardState | undefined {
   try {
-    const parsed = JSON.parse(json) as MigrationWizardState;
-
-    // Validate required fields
-    if (
-      !parsed.currentStep ||
-      !parsed.steps ||
-      !parsed.createdAt ||
-      !parsed.updatedAt
-    ) {
+    const parsed = WizardStateSchema.safeParse(JSON.parse(json));
+    if (!parsed.success) {
       return undefined;
     }
+    const state = parsed.data;
 
-    // Validate that currentStep is a known step
-    if (!STEP_INDEX.has(parsed.currentStep)) {
-      return undefined;
-    }
-
-    // Validate that all steps exist
+    // Every step must be present (the persisted record is exhaustive).
     for (const step of STEP_ORDER) {
-      if (!parsed.steps[step] || !parsed.steps[step].status) {
+      if (!state.steps[step]) {
         return undefined;
       }
     }
 
     // Bundle data is never persisted — must be re-provided
-    return { ...parsed, hasBundleData: false };
+    return { ...state, hasBundleData: false };
   } catch {
     return undefined;
   }

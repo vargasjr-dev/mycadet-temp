@@ -47,6 +47,8 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { type Readable, Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
+import { z } from "zod";
+
 import { invalidateConfigCache } from "../../config/loader.js";
 import { sanitizeConfigForTransfer } from "../../config/sanitize-for-transfer.js";
 import { resetDb } from "../../persistence/db-connection.js";
@@ -1528,10 +1530,10 @@ async function mergeCredentialMetadataIntoTemp(
     JSON.stringify({ version: 5, credentials: [] }),
     liveJson,
   );
-  const parsed = JSON.parse(synthesized) as {
-    credentials?: unknown[];
-  };
-  if (!parsed.credentials || parsed.credentials.length === 0) {
+  const parsed = z
+    .object({ credentials: z.array(z.unknown()).optional() })
+    .safeParse(JSON.parse(synthesized));
+  if (!parsed.success || (parsed.data.credentials?.length ?? 0) === 0) {
     // Live file exists but had no cadet entries worth preserving.
     return;
   }
@@ -2576,18 +2578,20 @@ function isEXDEV(err: unknown): boolean {
 // detect (JSON parse failure → skip recovery rather than act on garbage).
 // ---------------------------------------------------------------------------
 
-interface ImportMarker {
+const ImportMarkerSchema = z.object({
   /** Absolute path of the `.import-<uuid>` temp tree. */
-  tempWorkspaceDir: string;
+  tempWorkspaceDir: z.string(),
   /** Preserved paths moved out of the live workspace pre-swap. */
-  carried: Array<{ liveChild: string; tempChild: string }>;
+  carried: z.array(
+    z.object({ liveChild: z.string(), tempChild: z.string() }),
+  ),
   /**
    * Absolute path of the `${realWorkspaceDir}.pre-import-<ts>` backup dir
    * (optional — only present once the content-level swap phase has started).
    * `recoverInterruptedImport` moves entries from here back into
    * `realWorkspaceDir` if it's populated, reversing any partial swap.
    */
-  backupDir?: string;
+  backupDir: z.string().optional(),
   /**
    * `true` once `swapWorkspaceContents` has returned successfully.
    * `recoverInterruptedImport` checks this before restoring from
@@ -2596,8 +2600,10 @@ interface ImportMarker {
    * import. Instead, recovery just cleans up residual backup / temp
    * artifacts.
    */
-  swapCompleted?: boolean;
-}
+  swapCompleted: z.boolean().optional(),
+});
+
+type ImportMarker = z.infer<typeof ImportMarkerSchema>;
 
 /** Basename of the recovery marker inside `realWorkspaceDir`. */
 const IMPORT_MARKER_BASENAME = ".import-marker.json";
@@ -2692,9 +2698,9 @@ export async function recoverInterruptedImport(
     return { ok: true, failedCount: 0 };
   }
 
-  let marker: ImportMarker;
+  let rawJson: unknown;
   try {
-    marker = JSON.parse(raw) as ImportMarker;
+    rawJson = JSON.parse(raw);
   } catch (err) {
     log.warn(
       { err, markerPath },
@@ -2704,17 +2710,16 @@ export async function recoverInterruptedImport(
     return { ok: true, failedCount: 0 };
   }
 
-  if (
-    !Array.isArray(marker.carried) ||
-    typeof marker.tempWorkspaceDir !== "string"
-  ) {
+  const parsed = ImportMarkerSchema.safeParse(rawJson);
+  if (!parsed.success) {
     log.warn(
-      { markerPath, marker },
+      { markerPath, error: parsed.error.message },
       "Import-recovery marker has unexpected shape; deleting",
     );
     await safelyDeleteMarker(markerPath);
     return { ok: true, failedCount: 0 };
   }
+  const marker = parsed.data;
 
   log.info(
     {
