@@ -163,12 +163,6 @@ export async function exec(): Promise<void> {
   const cloud = entry.cloud;
 
   if (cloud === "local") {
-    // Local assistants run their runtime with CADET_WORKSPACE_DIR pointed at
-    // `<instanceDir>/workspace` (see applyDaemonEnvOverrides in local.ts).
-    // Mirror that here so spawned commands — most commonly
-    // `cadet exec -- assistant ps` — resolve the same IPC socket as the
-    // running daemon instead of a cwd-derived default like
-    // `~/workspace/assistant.sock`.
     const instanceDir = entry.resources?.instanceDir;
     if (!instanceDir) {
       console.error(

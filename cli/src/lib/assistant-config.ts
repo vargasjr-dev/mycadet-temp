@@ -144,6 +144,10 @@ export type AssistantEntry = Omit<
   previousDbMigrationVersion?: number;
   /** Pre-upgrade workspace migration ID — used by rollback to know how far back to revert. */
   previousWorkspaceMigrationId?: string;
+  /** Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
+   *  assistant's chat conversation by. Minted once on first `cadet client`
+   *  launch and persisted here so every session shares one conversation. */
+  conversationKey?: string;
   [key: string]: unknown;
 };
 
@@ -650,6 +654,20 @@ export function saveAssistantEntry(entry: AssistantEntry): void {
     entries.unshift(entry);
     writeAssistants(entries);
   });
+}
+
+/**
+ * The client-minted uuid this CLI addresses the assistant's chat
+ * conversation by (web's temp-client-id pattern: clients/web
+ * document-conversation mints a uuid, persists it, and passes it as the
+ * conversation key so creation is retry-safe). Minted once and persisted
+ * on the entry so every session shares one conversation.
+ */
+export function resolveConversationKey(entry: AssistantEntry): string {
+  if (entry.conversationKey) return entry.conversationKey;
+  const minted = crypto.randomUUID();
+  saveAssistantEntry({ ...entry, conversationKey: minted });
+  return minted;
 }
 
 /**

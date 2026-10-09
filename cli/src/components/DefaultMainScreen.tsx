@@ -289,16 +289,17 @@ interface MetaSlashResponse {
 /**
  * Resolve a local meta slash command (/clean, /commands, /models, /status)
  * through the daemon — no turn starts, nothing persists. The CLI addresses
- * its conversation by key (the assistant id); the daemon's slash route
- * resolves keys to conversation ids.
+ * its conversation by the client-minted conversation key (a uuid, web's
+ * temp-client-id pattern).
  */
 async function resolveMetaCommand(
   baseUrl: string,
   assistantId: string,
+  conversationKey: string,
   command: string,
   auth?: Record<string, string>,
 ): Promise<MetaSlashResponse> {
-  const url = `${baseUrl}/v1/conversations/${encodeURIComponent(assistantId)}/slash`;
+  const url = `${baseUrl}/v1/conversations/${encodeURIComponent(conversationKey)}/slash`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...auth },
@@ -394,9 +395,10 @@ async function checkHealthRuntime(baseUrl: string): Promise<HealthResponse> {
 async function pollMessages(
   baseUrl: string,
   assistantId: string,
+  conversationKey: string,
   auth?: Record<string, string>,
 ): Promise<ListMessagesResponse> {
-  const params = new URLSearchParams({ conversationKey: assistantId });
+  const params = new URLSearchParams({ conversationKey });
   const response = await runtimeRequest<ListMessagesResponse>(
     baseUrl,
     assistantId,
@@ -416,6 +418,7 @@ async function pollMessages(
 async function sendMessage(
   baseUrl: string,
   assistantId: string,
+  conversationKey: string,
   content: string,
   signal?: AbortSignal,
   auth?: Record<string, string>,
@@ -427,7 +430,7 @@ async function sendMessage(
     {
       method: "POST",
       body: JSON.stringify({
-        conversationKey: assistantId,
+        conversationKey,
         content,
         sourceChannel: "cadet",
         interface: "cli",
@@ -1208,6 +1211,8 @@ export interface ChatAppHandle {
 interface ChatAppProps {
   runtimeUrl: string;
   assistantId: string;
+  /** Client-minted conversation key the CLI addresses its conversation by. */
+  conversationKey: string;
   assistantName?: string;
   /** Assistant data root for the header details panel (home-collapsed). */
   workspaceRoot?: string;
@@ -1221,6 +1226,7 @@ interface ChatAppProps {
 function ChatApp({
   runtimeUrl,
   assistantId,
+  conversationKey,
   assistantName,
   workspaceRoot,
   auth,
@@ -1562,6 +1568,7 @@ function ChatApp({
         const historyResponse = await pollMessages(
           runtimeUrl,
           assistantId,
+          conversationKey,
           auth,
         );
         h.hideSpinner();
@@ -1585,7 +1592,7 @@ function ChatApp({
           for await (const event of streamEvents(
             runtimeUrl,
             assistantId,
-            assistantId,
+            conversationKey,
             sseAc.signal,
             auth,
           )) {
@@ -1856,6 +1863,7 @@ function ChatApp({
           const result = await resolveMetaCommand(
             runtimeUrl,
             assistantId,
+            conversationKey,
             trimmed,
             auth,
           );
@@ -1968,7 +1976,7 @@ function ChatApp({
                 ...auth,
               },
               body: JSON.stringify({
-                conversationKey: assistantId,
+                conversationKey,
                 content: question,
               }),
               signal: AbortSignal.timeout(30_000),
@@ -2060,6 +2068,7 @@ function ChatApp({
           const sendResult = await sendMessage(
             runtimeUrl,
             assistantId,
+            conversationKey,
             trimmed,
             controller.signal,
             auth,
@@ -2110,6 +2119,7 @@ function ChatApp({
         const sendResult = await sendMessage(
           runtimeUrl,
           assistantId,
+          conversationKey,
           trimmed,
           controller.signal,
           auth,
@@ -2449,6 +2459,9 @@ export function renderChatApp(
     auth?: Record<string, string>;
     assistantName?: string;
     workspaceRoot?: string;
+    /** Client-minted conversation key (resolved from the assistant entry).
+     *  Unregistered targets (--url) get an ephemeral uuid. */
+    conversationKey?: string;
   },
 ): ChatAppInstance {
   let chatHandle: ChatAppHandle | null = null;
@@ -2457,6 +2470,7 @@ export function renderChatApp(
     <ChatApp
       runtimeUrl={runtimeUrl}
       assistantId={assistantId}
+      conversationKey={options?.conversationKey ?? crypto.randomUUID()}
       assistantName={options?.assistantName}
       workspaceRoot={options?.workspaceRoot}
       auth={options?.auth}

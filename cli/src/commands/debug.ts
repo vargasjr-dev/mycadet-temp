@@ -78,7 +78,7 @@ Examples:
 `);
 }
 
-export async function debugBundle(): Promise<void> {
+export async function debug(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     printHelp();

@@ -10,6 +10,7 @@ import {
   getActiveAssistant,
   lookupAssistantByIdentifier,
   resolveAssistant,
+  resolveConversationKey,
   saveAssistantEntry,
   type AssistantEntry,
 } from "../lib/assistant-config";
@@ -1669,6 +1670,13 @@ export async function client(): Promise<void> {
     };
   }
 
+  // The CLI addresses its chat conversation by a client-minted uuid key
+  // (web's temp-client-id pattern) — resolve-or-mint once, persisted on the
+  // entry, so every session shares one conversation.
+  const lookup = lookupAssistantByIdentifier(assistantId);
+  const conversationKey =
+    lookup.status === "found" ? resolveConversationKey(lookup.entry) : undefined;
+
   const { renderChatApp } = await import("../components/DefaultMainScreen");
 
   process.stdout.write("\x1b[2J\x1b[H");
@@ -1684,6 +1692,6 @@ export async function client(): Promise<void> {
       console.log(`${ANSI.dim}Disconnected.${ANSI.reset}`);
       process.exit(0);
     },
-    { auth, assistantName, workspaceRoot },
+    { auth, assistantName, workspaceRoot, conversationKey },
   );
 }

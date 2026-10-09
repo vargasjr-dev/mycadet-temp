@@ -1280,14 +1280,9 @@ export const ROUTES: RouteDefinition[] = [
       "Run a local meta slash command (/clean, /status, /commands, /models) " +
       "without starting a turn: no messages are persisted and no turn events " +
       "are emitted. /clean also strips runtime injections from the history. " +
-      "Returns the text to render and, for /clean, the post-strip context usage. " +
-      "The path accepts a conversation id or a conversation key — the CLI " +
-      "addresses its conversation by key (the assistant id).",
+      "Returns the text to render and, for /clean, the post-strip context usage.",
     tags: ["conversations"],
-    // Untyped (no uuid constraint): the handler resolves conversation keys
-    // via resolveConversationId, and the CLI addresses its conversation by
-    // key (the assistant id).
-    pathParams: [{ name: "id" }],
+    pathParams: [{ name: "id", type: "uuid" }],
     requestBody: z.object({
       command: z
         .string()

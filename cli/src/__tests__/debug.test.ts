@@ -64,7 +64,7 @@ const leaseGuardianTokenSpy = spyOn(
   accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
 } as unknown as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>);
 
-const { debugBundle } = await import("../commands/debug.js");
+const { debug } = await import("../commands/debug.js");
 
 const LOCAL_ENTRY = {
   name: "mine",
@@ -132,7 +132,7 @@ afterAll(() => {
 
 describe("cadet debug", () => {
   test("mints the URL on the platform, exports with the debug profile, and waits", async () => {
-    await debugBundle();
+    await debug();
 
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0].url).toBe(
@@ -161,7 +161,7 @@ describe("cadet debug", () => {
 
   test("passes an unquoted multi-word display name through to the shared resolver", async () => {
     process.argv = ["bun", "cadet", "debug", "Support", "Bot"];
-    await debugBundle();
+    await debug();
     expect(resolveTargetMock).toHaveBeenCalledWith("Support Bot");
   });
 
@@ -174,7 +174,7 @@ describe("cadet debug", () => {
       errors.push(String(msg));
     });
     try {
-      await expect(debugBundle()).rejects.toThrow("process.exit:1");
+      await expect(debug()).rejects.toThrow("process.exit:1");
     } finally {
       errorSpy.mockRestore();
     }
@@ -201,7 +201,7 @@ describe("cadet debug", () => {
       >;
     });
 
-    await debugBundle();
+    await debug();
 
     expect(leaseGuardianTokenSpy).toHaveBeenCalledTimes(1);
     expect(polls).toBe(2);
@@ -214,7 +214,7 @@ describe("cadet debug", () => {
       errors.push(String(msg));
     });
     try {
-      await expect(debugBundle()).rejects.toThrow("process.exit:1");
+      await expect(debug()).rejects.toThrow("process.exit:1");
     } finally {
       errorSpy.mockRestore();
     }
@@ -229,7 +229,7 @@ describe("cadet debug", () => {
     } as unknown as assistantConfig.AssistantEntry);
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     try {
-      await expect(debugBundle()).rejects.toThrow("process.exit:1");
+      await expect(debug()).rejects.toThrow("process.exit:1");
     } finally {
       errorSpy.mockRestore();
     }
@@ -246,7 +246,7 @@ describe("cadet debug", () => {
       errors.push(String(msg));
     });
     try {
-      await expect(debugBundle()).rejects.toThrow("process.exit:1");
+      await expect(debug()).rejects.toThrow("process.exit:1");
     } finally {
       errorSpy.mockRestore();
     }
