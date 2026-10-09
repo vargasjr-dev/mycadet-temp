@@ -79,14 +79,6 @@ mock.module("../prompts/persona-resolver.js", () => ({
   }),
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  clearCache: () => {},
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
-}));
-
 // Stub workspace-git so the test doesn't run real `git init` / `git add -A`
 // against the workingDir. On GitHub-hosted runners /tmp contains
 // root-owned systemd-private-* directories that return EACCES, and the

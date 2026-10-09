@@ -34,16 +34,7 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Database } from "bun:sqlite";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 // ---------------------------------------------------------------------------
 // Test isolation: per-file workspace root.
@@ -72,16 +63,6 @@ function freshWorkspaceRoot(): string {
 function setWorkspaceDir(dir: string): void {
   process.env.CADET_WORKSPACE_DIR = dir;
 }
-
-// ---------------------------------------------------------------------------
-// Mocks (mirrors migration-import-commit-http.test.ts)
-// ---------------------------------------------------------------------------
-
-mock.module("../permissions/trust-store.js", () => ({
-  getAllRules: () => [],
-  isStarterBundleAccepted: () => false,
-  clearCache: () => {},
-}));
 
 process.env.DISABLE_HTTP_AUTH = "true";
 

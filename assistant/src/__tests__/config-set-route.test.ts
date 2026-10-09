@@ -6,7 +6,9 @@
 
 import { utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, spyOn, test } from "bun:test";
+
+import * as allowlistModule from "../security/secret-allowlist.js";
 
 // ---------------------------------------------------------------------------
 // Mocks for handleSetConfig's transitive deps
@@ -21,7 +23,7 @@ mock.module("../persistence/embeddings/embedding-backend.js", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock the allowlist module so we can drive throw / return paths
+// Spy on the allowlist module so we can drive throw / return paths
 // ---------------------------------------------------------------------------
 
 let mockAllowlistResult:
@@ -31,14 +33,15 @@ let mockAllowlistResult:
     }
   | { kind: "throw"; error: Error } = { kind: "ok", value: null };
 
-mock.module("../security/secret-allowlist.js", () => ({
-  validateAllowlistFile: () => {
-    if (mockAllowlistResult.kind === "throw") {
-      throw mockAllowlistResult.error;
-    }
-    return mockAllowlistResult.value;
-  },
-}));
+// Spy on the REAL module so the route's import binding hits the spy; the
+// implementation reads `mockAllowlistResult` live, so per-test edits land
+// without resetting the spy.
+spyOn(allowlistModule, "validateAllowlistFile").mockImplementation(() => {
+  if (mockAllowlistResult.kind === "throw") {
+    throw mockAllowlistResult.error;
+  }
+  return mockAllowlistResult.value;
+});
 
 import { loadRawConfig } from "../config/loader.js";
 import { ROUTES } from "../runtime/routes/conversation-query-routes.js";

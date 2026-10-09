@@ -35,6 +35,21 @@ const eslintConfig = defineConfig([
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "error",
+      // Flag `mock.module` at warning level: the lint script pins
+      // --max-warnings to the current count and each PR chips away at it
+      // (same countdown the cli uses for `as` casts). Prefer running the
+      // test on the real backend behind a seam — e.g. the memory-backed
+      // helpers in src/__tests__/helpers/secure-keys.ts — instead of
+      // masking module state.
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "CallExpression[callee.object.name='mock'][callee.property.name='module']",
+          message:
+            "mock.module masks module state across tests; run on the real backend behind a seam instead. Remaining uses are being counted down — do not add new ones.",
+        },
+      ],
     },
   },
   {

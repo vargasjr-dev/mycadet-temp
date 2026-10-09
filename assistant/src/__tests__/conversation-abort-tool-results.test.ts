@@ -17,14 +17,6 @@ mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  clearCache: () => {},
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
-}));
-
 mock.module("../workspace/turn-commit.js", () => ({
   commitTurnChanges: async () => {},
 }));

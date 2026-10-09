@@ -18,14 +18,6 @@ mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  clearCache: () => {},
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
-}));
-
 const addMessageCalls: Array<{
   convId: string;
   role: string;

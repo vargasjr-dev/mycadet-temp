@@ -42,16 +42,6 @@ mock.module("../config/skill-state.js", () => ({
   resolveSkillStates: () => [],
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: () => {},
-  findHighestPriorityRule: () => null,
-  clearCache: () => {},
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
-}));
-
 // Controllable persisted-write behavior: `setProcessing` reverts its
 // in-memory flag when this throws, and waiters must not observe that
 // aborted clear as a release.

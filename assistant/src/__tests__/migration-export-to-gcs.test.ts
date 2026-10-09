@@ -54,12 +54,6 @@ mock.module("../ipc/gateway-client.js", () => ({
   },
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  getAllRules: () => [],
-  isStarterBundleAccepted: () => false,
-  clearCache: () => {},
-}));
-
 // Force the credential collector onto the unreachable branch so the
 // handler treats it as "export without credentials" (fast, no CES).
 // The REAL secure-keys module pinned to a faultable memory backend with the

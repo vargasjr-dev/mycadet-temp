@@ -125,12 +125,6 @@ mock.module("./gateway-threshold-reader.js", () => ({
   _clearGlobalCacheForTesting: () => {},
 }));
 
-// Mock trust-store — no rules by default.
-mock.module("./trust-store.js", () => ({
-  findHighestPriorityRule: () => null,
-  onRulesChanged: () => {},
-}));
-
 // Mock workspace policy. Spread the real module so pure path helpers
 // (resolveSandboxBase) keep their real behavior for param building.
 const realWorkspacePolicy = await import("./workspace-policy.js");

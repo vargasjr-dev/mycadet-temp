@@ -17,10 +17,6 @@ mock.module("../persistence/embeddings/embedding-backend.js", () => ({
   clearEmbeddingBackendCache: () => {},
 }));
 
-mock.module("../security/secret-allowlist.js", () => ({
-  validateAllowlistFile: () => null,
-}));
-
 import { ROUTES } from "../runtime/routes/conversation-query-routes.js";
 import { setConfig } from "./helpers/set-config.js";
 

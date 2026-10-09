@@ -23,27 +23,6 @@ const addRuleCalls: Array<{
   priority?: number;
   options?: { executionTarget?: string };
 }> = [];
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: (
-    tool: string,
-    pattern: string,
-    scope: string,
-    decision: string,
-    priority?: number,
-    options?: { executionTarget?: string },
-  ) => {
-    addRuleCalls.push({ tool, pattern, scope, decision, priority, options });
-    return {
-      id: "test-rule",
-      tool,
-      pattern,
-      scope,
-      decision,
-      priority: priority ?? 100,
-    };
-  },
-  getRules: () => [],
-}));
 
 // ---------------------------------------------------------------------------
 // Module mocks for direct-import deps used by conversation-routes ROUTES

@@ -86,13 +86,6 @@ mock.module("../persistence/embeddings/embedding-backend.js", () => ({
   selectedBackendSupportsMultimodal: async () => false,
 }));
 
-mock.module("../security/secret-allowlist.js", () => ({
-  isAllowlisted: () => false,
-  loadAllowlist: () => {},
-  resetAllowlist: () => {},
-  validateAllowlistFile: () => null,
-}));
-
 const { ROUTES } =
   await import("../runtime/routes/conversation-query-routes.js");
 const { BadRequestError } = await import("../runtime/routes/errors.js");

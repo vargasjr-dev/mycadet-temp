@@ -62,17 +62,6 @@ mock.module("../config/skill-state.js", () => ({
   resolveSkillStates: () => [],
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: () => {},
-  findHighestPriorityRule: () => null,
-  clearCache: () => {},
-  patternMatchesCandidate: () => false,
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
-}));
-
 mock.module("../persistence/conversation-crud.js", () => ({
   setConversationProcessingStartedAt: () => {},
   isConversationProcessing: () => false,

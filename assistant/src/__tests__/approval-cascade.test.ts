@@ -6,8 +6,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { Minimatch } from "minimatch";
-
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
 import type { ConfirmationStateChangedEvent } from "../api/events/confirmation-state-changed.js";
@@ -36,26 +34,6 @@ mock.module("../config/skills.js", () => ({
 
 mock.module("../config/skill-state.js", () => ({
   resolveSkillStates: () => [],
-}));
-
-// Trust store mock — uses real minimatch for patternMatchesCandidate so the
-// mock doesn't break trust-store-pattern-matches.test.ts when both files run
-// in the same Bun process (mock.module leaks across test files).
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: () => {},
-  findHighestPriorityRule: () => null,
-  clearCache: () => {},
-  patternMatchesCandidate: (pattern: string, candidate: string): boolean => {
-    try {
-      return new Minimatch(pattern).match(candidate);
-    } catch {
-      return false;
-    }
-  },
-}));
-
-mock.module("../security/secret-allowlist.js", () => ({
-  resetAllowlist: () => {},
 }));
 
 mock.module("../persistence/conversation-crud.js", () => ({

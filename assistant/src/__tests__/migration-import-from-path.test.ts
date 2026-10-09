@@ -17,21 +17,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
-
-mock.module("../permissions/trust-store.js", () => ({
-  getAllRules: () => [],
-  isStarterBundleAccepted: () => false,
-  clearCache: () => {},
-}));
+import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 process.env.DISABLE_HTTP_AUTH = "true";
 

@@ -96,10 +96,6 @@ mock.module("../persistence/embeddings/embedding-backend.js", () => ({
   clearEmbeddingBackendCache: () => {},
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  clearCache: () => {},
-}));
-
 mock.module("../providers/registry.js", () => ({
   getProvider: () => undefined,
   listProviders: () => [],

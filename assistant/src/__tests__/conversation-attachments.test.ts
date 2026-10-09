@@ -18,10 +18,6 @@ mock.module("../permissions/checker.js", () => ({
   generateScopeOptions: () => [],
 }));
 
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: addRuleSpy,
-}));
-
 mock.module("../permissions/types.js", () => ({
   RiskLevel: {
     Low: "low",

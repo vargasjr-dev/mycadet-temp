@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
 /** Convert a Uint8Array to an ArrayBuffer for BodyInit compatibility. */
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {
@@ -28,12 +28,6 @@ const testDir = process.env.CADET_WORKSPACE_DIR!;
 const testDbDir = join(testDir, "data", "db");
 const testDbPath = join(testDbDir, "assistant.db");
 const testConfigPath = join(testDir, "config.json");
-
-mock.module("../permissions/trust-store.js", () => ({
-  getAllRules: () => [],
-  isStarterBundleAccepted: () => false,
-  clearCache: () => {},
-}));
 
 process.env.DISABLE_HTTP_AUTH = "true";
 

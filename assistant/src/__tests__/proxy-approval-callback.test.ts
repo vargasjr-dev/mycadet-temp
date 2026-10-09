@@ -2,16 +2,6 @@ import { describe, expect, mock, test } from "bun:test";
 
 import type { ProxyApprovalRequest } from "../outbound-proxy/index.js";
 
-// ---------------------------------------------------------------------------
-// Mocks — must precede the import of `createProxyApprovalCallback`.
-// ---------------------------------------------------------------------------
-
-mock.module("../permissions/trust-store.js", () => ({
-  addRule: mock(() => {}),
-  findHighestPriorityRule: mock(() => null),
-  clearCache: () => {},
-}));
-
 mock.module("../security/redaction.js", () => ({
   redactSensitiveFields: (input: Record<string, unknown>) => input,
 }));
