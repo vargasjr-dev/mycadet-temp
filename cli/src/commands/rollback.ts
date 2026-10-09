@@ -211,7 +211,8 @@ async function rollbackPlatformViaEndpoint(
   }
 }
 
-export async function rollback(): Promise<void> {
+export const rollback = Object.assign(
+  async function rollback(): Promise<void> {
   const { name, version } = parseArgs();
   const entry = resolveTargetAssistant(name);
   const cloud = entry.cloud;
@@ -478,4 +479,7 @@ export async function rollback(): Promise<void> {
     emitCliError(categorizeUpgradeError(err), "Rollback failed", detail);
     process.exit(1);
   }
-}
+},
+  { description: "Roll back an assistant to a previous version" },
+);
+

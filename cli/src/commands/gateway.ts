@@ -9,7 +9,8 @@ function printUsage(): void {
   console.log("  token    Manage gateway authentication tokens");
 }
 
-export async function gateway(): Promise<void> {
+export const gateway = Object.assign(
+  async function gateway(): Promise<void> {
   const args = process.argv.slice(3);
   const subcommand = args[0];
 
@@ -26,4 +27,7 @@ export async function gateway(): Promise<void> {
   console.error(`Unknown subcommand: ${subcommand}`);
   printUsage();
   process.exit(1);
-}
+},
+  { description: "Gateway management commands" },
+);
+

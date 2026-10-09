@@ -681,7 +681,8 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
 // ── Entry point ─────────────────────────────────────────────────
 
-export async function ps(): Promise<void> {
+export const ps = Object.assign(
+  async function ps(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
@@ -717,4 +718,7 @@ export async function ps(): Promise<void> {
   }
 
   await showAssistantProcesses(result.entry);
-}
+},
+  { description: "List assistants (or processes for a specific assistant)" },
+);
+

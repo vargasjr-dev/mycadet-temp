@@ -52,7 +52,8 @@ function resolveDockerContainer(
   }
 }
 
-export async function exec(): Promise<void> {
+export const exec = Object.assign(
+  async function exec(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   // Only check for help flags before the -- separator so that
@@ -280,4 +281,7 @@ export async function exec(): Promise<void> {
 
   console.error(red(`Error: 'cadet exec' is not supported for ${cloud} instances.`));
   process.exit(1);
-}
+},
+  { description: "Execute a command inside an assistant's container" },
+);
+

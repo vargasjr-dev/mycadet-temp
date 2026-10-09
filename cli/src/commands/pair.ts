@@ -258,7 +258,8 @@ async function approveRemoteWebPairing(
   return (await response.json()) as RemoteWebPairingVerificationResponse;
 }
 
-export async function pair(): Promise<void> {
+export const pair = Object.assign(
+  async function pair(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
@@ -497,4 +498,7 @@ export async function pair(): Promise<void> {
   console.log(`On another computer, run:  cadet connect import "${pairUrl}"`);
   console.log("");
   console.log(`Expires: ${challenge.expiresAt}`);
-}
+},
+  { description: "Print a pairing link and QR code for another device [beta]" },
+);
+

@@ -14,6 +14,7 @@ import {
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
+import { isJsonObject } from "./json";
 import {
   ensureTunnelEdge,
   formatEdgeMode,
@@ -33,11 +34,10 @@ export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
  * enabled with a saved public URL.
  */
 function wantsWebIngress(config: Record<string, unknown>): boolean {
-  const ingress = config.ingress as
-    | { enabled?: unknown; publicBaseUrl?: unknown }
-    | undefined;
+  const ingress = config.ingress;
   return (
-    ingress?.enabled === true &&
+    isJsonObject(ingress) &&
+    ingress.enabled === true &&
     typeof ingress.publicBaseUrl === "string" &&
     ingress.publicBaseUrl.trim() !== ""
   );

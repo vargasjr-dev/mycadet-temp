@@ -1544,7 +1544,8 @@ async function resolveLatestAndMaybeSelfUpdate(
   return latestTag;
 }
 
-export async function upgrade(): Promise<void> {
+export const upgrade = Object.assign(
+  async function upgrade(): Promise<void> {
   const { name, version, latest, prepare, finalize, noWait, force } =
     parseArgs();
   const entry = resolveTargetAssistant(name);
@@ -1608,4 +1609,7 @@ export async function upgrade(): Promise<void> {
   console.error(msg);
   emitCliError("UNSUPPORTED_TOPOLOGY", msg);
   process.exit(1);
-}
+},
+  { description: "Upgrade an assistant to a newer version" },
+);
+

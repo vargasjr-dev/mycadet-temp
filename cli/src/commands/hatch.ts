@@ -222,7 +222,8 @@ function getCliVersion(): string {
   return cliPkg.version ?? "unknown";
 }
 
-export async function hatch(): Promise<void> {
+export const hatch = Object.assign(
+  async function hatch(): Promise<void> {
   const cliVersion = getCliVersion();
   console.log(`@mycadet/cli v${cliVersion}`);
 
@@ -314,7 +315,10 @@ export async function hatch(): Promise<void> {
 
   console.error(`Error: Remote host '${remote}' is not yet supported.`);
   process.exit(1);
-}
+},
+  { description: "Create a new assistant instance" },
+);
+
 
 async function hatchCadetPlatform(): Promise<void> {
   const token = readPlatformToken();

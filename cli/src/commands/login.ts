@@ -22,7 +22,8 @@ import { getPlatformUrl } from "../lib/platform-client";
 import { syncCloudAssistants } from "../lib/sync-cloud-assistants";
 
 
-export async function login(): Promise<void> {
+export const login = Object.assign(
+  async function login(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -135,9 +136,13 @@ export async function login(): Promise<void> {
     );
     process.exit(1);
   }
-}
+},
+  { description: "Log in to Cadet Cloud" },
+);
 
-export async function logout(): Promise<void> {
+
+export const logout = Object.assign(
+  async function logout(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet logout");
@@ -162,9 +167,13 @@ export async function logout(): Promise<void> {
 
   clearPlatformToken();
   console.log("Logged out. Cadet Cloud token removed.");
-}
+},
+  { description: "Log out of Cadet Cloud" },
+);
 
-export async function whoami(): Promise<void> {
+
+export const whoami = Object.assign(
+  async function whoami(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet whoami");
@@ -190,4 +199,7 @@ export async function whoami(): Promise<void> {
     console.error(`Error: ${error instanceof Error ? error.message : error}`);
     process.exit(1);
   }
-}
+},
+  { description: "Show current logged-in user" },
+);
+

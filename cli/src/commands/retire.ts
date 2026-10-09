@@ -364,7 +364,8 @@ function teeConsoleToLogFile(fd: number | "ignore"): void {
   };
 }
 
-export async function retire(): Promise<void> {
+export const retire = Object.assign(
+  async function retire(): Promise<void> {
   if (process.env.CADET_DESKTOP_APP) {
     resetLogFile("retire.log");
   }
@@ -378,7 +379,10 @@ export async function retire(): Promise<void> {
   } finally {
     closeLogFile(logFd);
   }
-}
+},
+  { description: "Delete an assistant instance" },
+);
+
 
 async function retireInner(): Promise<void> {
   const args = process.argv.slice(3);

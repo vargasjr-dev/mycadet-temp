@@ -23,7 +23,8 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 // --export-timeout.
 const DEFAULT_EXPORT_TIMEOUT_MS = 300_000;
 
-export async function backup(): Promise<void> {
+export const backup = Object.assign(
+  async function backup(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -224,7 +225,10 @@ export async function backup(): Promise<void> {
   if (manifestSha) {
     console.log(`Manifest SHA-256: ${manifestSha}`);
   }
-}
+},
+  { description: "Export a backup of a running assistant" },
+);
+
 
 // ---------------------------------------------------------------------------
 // Platform-managed (cloud="cadet") backup over GCS.

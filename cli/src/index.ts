@@ -50,106 +50,44 @@ import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 
-/**
- * Attach a one-line description to a command function. The help table
- * derives from these (see printHelp), so a command added here without a
- * description is a type error and the two lists can never drift.
- */
-function withDescription(
-  run: () => Promise<void>,
-  description: string,
-): (() => Promise<void>) & { description: string } {
-  return Object.assign(run, { description });
-}
 
 const commands = {
-  backup: withDescription(backup, "Export a backup of a running assistant"),
-  clean: withDescription(clean, "Kill orphaned cadet processes"),
-  client: withDescription(client, "Connect to a hatched assistant"),
-  confirm: withDescription(
-    confirm,
-    "Resolve a pending tool confirmation on an assistant",
-  ),
-  connect: withDescription(
-    connect,
-    "Pair with an assistant running on another machine [beta]",
-  ),
-  debug: withDescription(
-    debug,
-    "Send Cadet staff a debug bundle of a self-hosted assistant",
-  ),
-  devices: withDescription(
-    devices,
-    "List or revoke devices paired to a local assistant [beta]",
-  ),
-  events: withDescription(events, "Stream events from a running assistant"),
-  exec: withDescription(
-    exec,
-    "Execute a command inside an assistant's container",
-  ),
-  flags: withDescription(flags, "Show and toggle feature flags"),
-  gateway: withDescription(gateway, "Gateway management commands"),
-  hatch: withDescription(hatch, "Create a new assistant instance"),
-  login: withDescription(login, "Log in to Cadet Cloud"),
-  logout: withDescription(logout, "Log out of Cadet Cloud"),
-  logs: withDescription(logs, "View logs from an assistant instance"),
-  message: withDescription(
-    message,
-    "Send a message to a running assistant",
-  ),
-  pair: withDescription(
-    pair,
-    "Print a pairing link and QR code for another device [beta]",
-  ),
-  ps: withDescription(
-    ps,
-    "List assistants (or processes for a specific assistant)",
-  ),
-  recover: withDescription(
-    recover,
-    "Restore a previously retired local assistant",
-  ),
-  restore: withDescription(
-    restore,
-    "Restore data (and optionally version) from a .vbundle backup",
-  ),
-  retire: withDescription(retire, "Delete an assistant instance"),
-  roadmap: withDescription(roadmap, "Manage roadmap items"),
-  rollback: withDescription(
-    rollback,
-    "Roll back an assistant to a previous version",
-  ),
-  setup: withDescription(setup, "Configure API keys interactively"),
-  sleep: withDescription(sleep, "Stop the assistant process"),
-  ssh: withDescription(ssh, "SSH into a remote assistant instance"),
-  teleport: withDescription(
-    teleport,
-    "Transfer assistant data between environments",
-  ),
-  terminal: withDescription(
-    terminal,
-    "Open a terminal into a managed assistant container",
-  ),
-  tunnel: withDescription(
-    tunnel,
-    "Create a tunnel for a locally hosted assistant",
-  ),
-  unpair: withDescription(
-    unpair,
-    "Forget a paired assistant imported from another machine [beta]",
-  ),
-  upgrade: withDescription(
-    upgrade,
-    "Upgrade an assistant to a newer version",
-  ),
-  use: withDescription(use, "Set the active assistant for commands"),
-  voice: withDescription(
-    voice,
-    "Type to an assistant and hear it answer out loud",
-  ),
-  wake: withDescription(wake, "Start the assistant and gateway"),
-  whoami: withDescription(whoami, "Show current logged-in user"),
-  workflows: withDescription(workflows, "Inspect and control workflow runs"),
+  backup,
+  clean,
+  client,
+  confirm,
+  connect,
+  debug,
+  devices,
+  events,
+  exec,
+  flags,
+  gateway,
+  hatch,
+  login,
+  logout,
+  logs,
+  message,
+  pair,
+  ps,
+  recover,
+  restore,
+  retire,
+  roadmap,
+  rollback,
+  setup,
+  sleep,
+  ssh,
+  teleport,
+  terminal,
+  tunnel,
+  unpair,
+  upgrade,
+  use,
+  voice,
+  wake,
+  whoami,
+  workflows,
 };
 
 type CommandName = keyof typeof commands;

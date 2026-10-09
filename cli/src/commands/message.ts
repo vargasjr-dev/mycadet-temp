@@ -123,7 +123,8 @@ function exitWithUsage(error: string): never {
   process.exit(1);
 }
 
-export async function message(): Promise<void> {
+export const message = Object.assign(
+  async function message(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
@@ -192,4 +193,7 @@ export async function message(): Promise<void> {
       console.log(`Message rejected (id: ${result.messageId})`);
     }
   }
-}
+},
+  { description: "Send a message to a running assistant" },
+);
+

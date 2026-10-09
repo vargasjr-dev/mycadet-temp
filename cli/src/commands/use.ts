@@ -7,7 +7,8 @@ import {
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
-export async function use(): Promise<void> {
+export const use = Object.assign(
+  async function use(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -55,4 +56,7 @@ export async function use(): Promise<void> {
   console.log(
     `Active assistant set to ${formatAssistantReference(result.entry)}.`,
   );
-}
+},
+  { description: "Set the active assistant for commands" },
+);
+

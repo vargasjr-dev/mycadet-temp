@@ -11,7 +11,8 @@ function printUsage(): void {
   );
 }
 
-export async function connect(): Promise<void> {
+export const connect = Object.assign(
+  async function connect(): Promise<void> {
   const args = process.argv.slice(3);
   const subcommand = args[0];
 
@@ -28,4 +29,7 @@ export async function connect(): Promise<void> {
   console.error(`Unknown subcommand: ${subcommand}`);
   printUsage();
   process.exit(1);
-}
+},
+  { description: "Pair with an assistant running on another machine [beta]" },
+);
+

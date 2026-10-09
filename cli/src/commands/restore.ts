@@ -515,7 +515,8 @@ async function restorePlatform(
   }
 }
 
-export async function restore(): Promise<void> {
+export const restore = Object.assign(
+  async function restore(): Promise<void> {
   const { name, fromPath, version, dryRun, help } = parseArgs(process.argv);
 
   if (help) {
@@ -623,7 +624,10 @@ export async function restore(): Promise<void> {
       await cleanupStaged();
     }
   }
-}
+},
+  { description: "Restore data (and optionally version) from a .vbundle backup" },
+);
+
 
 async function runLocalRestore(opts: {
   entry: AssistantEntry;

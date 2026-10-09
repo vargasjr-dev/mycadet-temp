@@ -61,7 +61,8 @@ function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
   );
 }
 
-export async function sleep(): Promise<void> {
+export const sleep = Object.assign(
+  async function sleep(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet sleep [<name> | --all] [--force] [--wait [<duration>]]");
@@ -155,7 +156,10 @@ export async function sleep(): Promise<void> {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
-}
+},
+  { description: "Stop the assistant process" },
+);
+
 
 type SleepOptions = {
   force: boolean;

@@ -440,7 +440,8 @@ async function spawnDetachedTunnel(): Promise<void> {
   }
 }
 
-export async function tunnel(): Promise<void> {
+export const tunnel = Object.assign(
+  async function tunnel(): Promise<void> {
   const { assistantName, provider, domain, clearDomain, detach } = parseArgs();
 
   if (detach) {
@@ -506,4 +507,7 @@ export async function tunnel(): Promise<void> {
     ...baseTunnelOpts,
     ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
   });
-}
+},
+  { description: "Create a tunnel for a locally hosted assistant" },
+);
+

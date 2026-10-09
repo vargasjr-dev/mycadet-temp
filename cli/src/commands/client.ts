@@ -1587,7 +1587,8 @@ export async function resolveFreshBearerToken(
   return refreshed?.accessToken ?? bearerToken;
 }
 
-export async function client(): Promise<void> {
+export const client = Object.assign(
+  async function client(): Promise<void> {
   const {
     runtimeUrl,
     assistantId,
@@ -1694,4 +1695,7 @@ export async function client(): Promise<void> {
     },
     { auth, assistantName, workspaceRoot, conversationKey },
   );
-}
+},
+  { description: "Connect to a hatched assistant" },
+);
+

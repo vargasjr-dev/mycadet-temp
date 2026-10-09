@@ -413,7 +413,8 @@ async function roadmapUnvote(args: string[]): Promise<void> {
 
 // ── main ──
 
-export async function roadmap(): Promise<void> {
+export const roadmap = Object.assign(
+  async function roadmap(): Promise<void> {
   const args = process.argv.slice(3);
   const sub = args[0];
 
@@ -452,4 +453,7 @@ export async function roadmap(): Promise<void> {
       printUsage();
       process.exitCode = 1;
   }
-}
+},
+  { description: "Manage roadmap items" },
+);
+

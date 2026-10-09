@@ -279,7 +279,8 @@ async function revokeDevice(
   );
 }
 
-export async function devices(): Promise<void> {
+export const devices = Object.assign(
+  async function devices(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
@@ -311,4 +312,7 @@ export async function devices(): Promise<void> {
   const entry = resolveTargetAssistant(nameArg);
   const base = resolveLoopbackBase(entry);
   await listDevices(entry, base, jsonOutput);
-}
+},
+  { description: "List or revoke devices paired to a local assistant [beta]" },
+);
+

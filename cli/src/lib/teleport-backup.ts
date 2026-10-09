@@ -23,6 +23,7 @@ import {
 
 import type { AssistantEntry } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { isJsonObject } from "./json";
 import { authHeaders, invalidateOrgIdCache } from "./platform-client.js";
 
 type PlatformEntry = Pick<AssistantEntry, "runtimeUrl" | "assistantId">;
@@ -113,10 +114,14 @@ export async function createPlatformBackup(
       `Cadet Cloud backup create failed ${await errorSuffix(response)}`,
     );
   }
-  const created = (await response.json().catch(() => null)) as {
-    snapshot_name?: string;
-    ready_to_use?: boolean;
-  } | null;
+  const body: unknown = await response.json().catch(() => null);
+  const created = isJsonObject(body)
+    ? {
+        snapshot_name:
+          typeof body.snapshot_name === "string" ? body.snapshot_name : undefined,
+        ready_to_use: body.ready_to_use === true ? true : undefined,
+      }
+    : null;
   const snapshotName = created?.snapshot_name;
   if (!snapshotName) {
     throw new Error("Cadet Cloud backup create returned no snapshot name");

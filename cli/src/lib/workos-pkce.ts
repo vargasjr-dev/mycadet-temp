@@ -5,6 +5,7 @@
 import crypto from "node:crypto";
 
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { isJsonObject } from "./json";
 
 const WORKOS_API_BASE_URL = "https://api.workos.com";
 const PROVIDER_ID = "workos";
@@ -122,11 +123,15 @@ export async function exchangeCodeWithWorkos(options: {
       `WorkOS code exchange failed (${response.status}): ${body}`,
     );
   }
-  const data = (await response.json()) as { access_token?: string };
-  if (!data.access_token) {
+  const body: unknown = await response.json();
+  const accessToken =
+    isJsonObject(body) && typeof body.access_token === "string"
+      ? body.access_token
+      : undefined;
+  if (!accessToken) {
     throw new Error("WorkOS code exchange returned no access token.");
   }
-  return data.access_token;
+  return accessToken;
 }
 
 /** Exchange the WorkOS access token for a platform session token. */
@@ -149,11 +154,11 @@ export async function exchangeAccessTokenForSession(
     const body = await response.text();
     throw new Error(`Session exchange failed (${response.status}): ${body}`);
   }
-  const data = (await response.json()) as {
-    meta?: { session_token?: string };
-  };
-  if (!data.meta?.session_token) {
+  const body: unknown = await response.json();
+  const meta = isJsonObject(body) && isJsonObject(body.meta) ? body.meta : undefined;
+  const sessionToken = meta?.session_token;
+  if (typeof sessionToken !== "string" || !sessionToken) {
     throw new Error("Session exchange returned no session token.");
   }
-  return data.meta.session_token;
+  return sessionToken;
 }

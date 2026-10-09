@@ -41,7 +41,8 @@ import {
   restoreTunnelEdgeAndAutoTunnel,
 } from "../lib/tunnel-edge.js";
 
-export async function wake(): Promise<void> {
+export const wake = Object.assign(
+  async function wake(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet wake [<name>] [options]");
@@ -482,4 +483,7 @@ export async function wake(): Promise<void> {
       process.on("SIGTERM", () => resolve());
     });
   }
-}
+},
+  { description: "Start the assistant and gateway" },
+);
+

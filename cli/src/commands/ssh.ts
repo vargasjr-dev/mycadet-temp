@@ -18,7 +18,8 @@ const SSH_OPTS = [
   "LogLevel=ERROR",
 ];
 
-export async function ssh(): Promise<void> {
+export const ssh = Object.assign(
+  async function ssh(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet ssh [<name>]");
@@ -137,4 +138,7 @@ export async function ssh(): Promise<void> {
     });
     child.on("error", reject);
   });
-}
+},
+  { description: "SSH into a remote assistant instance" },
+);
+

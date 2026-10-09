@@ -11,6 +11,7 @@ import {
   saveIngressUrl,
   saveNgrokDomain,
 } from "./ingress-config.js";
+import { isJsonObject } from "./json";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
@@ -197,9 +198,9 @@ export async function waitForNgrokUrl(
 export function hasWebhookIntegrations(
   config: Record<string, unknown>,
 ): boolean {
-  const telegram = config.telegram as Record<string, unknown> | undefined;
+  const telegram = isJsonObject(config.telegram) ? config.telegram : undefined;
   if (telegram?.botUsername) return true;
-  const twilio = config.twilio as Record<string, unknown> | undefined;
+  const twilio = isJsonObject(config.twilio) ? config.twilio : undefined;
   if (twilio?.accountSid || twilio?.phoneNumber) return true;
   return false;
 }
@@ -226,7 +227,7 @@ export function hasWebhookIntegrationsConfigured(
 function hasNonNgrokIngressUrl(workspaceDir: string): boolean {
   try {
     const config = loadRawConfig(workspaceDir);
-    const ingress = config.ingress as Record<string, unknown> | undefined;
+    const ingress = isJsonObject(config.ingress) ? config.ingress : undefined;
     const publicBaseUrl = ingress?.publicBaseUrl;
     if (!publicBaseUrl || typeof publicBaseUrl !== "string") return false;
     return !publicBaseUrl.includes("ngrok");

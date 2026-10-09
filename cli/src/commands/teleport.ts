@@ -1274,7 +1274,8 @@ async function tryInjectPlatformCredentials(
 // Main entry point
 // ---------------------------------------------------------------------------
 
-export async function teleport(): Promise<void> {
+export const teleport = Object.assign(
+  async function teleport(): Promise<void> {
   const args = process.argv.slice(3);
   const { from, to, targetEnv, targetName, keepSource, dryRun, help } =
     parseArgs(args);
@@ -1664,4 +1665,7 @@ export async function teleport(): Promise<void> {
   }
 
   console.log(`Teleport complete: ${from} → ${toEntry.assistantId}`);
-}
+},
+  { description: "Transfer assistant data between environments" },
+);
+

@@ -66,7 +66,8 @@ EXAMPLES:
 `);
 }
 
-export async function voice(): Promise<void> {
+export const voice = Object.assign(
+  async function voice(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     printUsage();
@@ -119,7 +120,10 @@ export async function voice(): Promise<void> {
     reference: connection.reference,
     ...(sayText !== undefined ? { sayText } : {}),
   });
-}
+},
+  { description: "Type to an assistant and hear it answer out loud" },
+);
+
 
 /** Exported for tests. Not part of the command's public surface. */
 export interface SessionDeps {

@@ -159,7 +159,8 @@ async function listTmuxSessions(
 // Main entry point
 // ---------------------------------------------------------------------------
 
-export async function terminal(): Promise<void> {
+export const terminal = Object.assign(
+  async function terminal(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -222,4 +223,7 @@ export async function terminal(): Promise<void> {
 
   // Default: interactive shell
   await interactiveSession(assistant);
-}
+},
+  { description: "Open a terminal into a managed assistant container" },
+);
+

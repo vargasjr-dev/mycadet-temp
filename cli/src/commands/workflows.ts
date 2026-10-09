@@ -242,7 +242,8 @@ async function resumeRun(runId: string, assistantName?: string): Promise<void> {
   );
 }
 
-export async function workflows(): Promise<void> {
+export const workflows = Object.assign(
+  async function workflows(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -298,4 +299,7 @@ export async function workflows(): Promise<void> {
   console.error(`Unknown subcommand: ${subcommand}`);
   printHelp();
   process.exit(1);
-}
+},
+  { description: "Inspect and control workflow runs" },
+);
+

@@ -8,6 +8,7 @@
 
 import { authHeaders, getPlatformUrl } from "./platform-client.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { isJsonObject } from "./json";
 
 // ---------------------------------------------------------------------------
 // Create / Close
@@ -40,7 +41,11 @@ export async function createTerminalSession(
       `Failed to create terminal session (${response.status}): ${detail || response.statusText}`,
     );
   }
-  return (await response.json()) as { session_id: string };
+  const payloadBody: unknown = await response.json();
+  if (!isJsonObject(payloadBody) || typeof payloadBody.session_id !== "string") {
+    throw new Error("Terminal session response did not include a session_id.");
+  }
+  return { session_id: payloadBody.session_id };
 }
 
 export async function closeTerminalSession(

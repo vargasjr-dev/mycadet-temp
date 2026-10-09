@@ -1,7 +1,8 @@
 import { detectOrphanedProcesses } from "../lib/orphan-detection";
 import { stopProcess } from "../lib/process";
 
-export async function clean(): Promise<void> {
+export const clean = Object.assign(
+  async function clean(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet clean");
@@ -36,4 +37,7 @@ export async function clean(): Promise<void> {
   }
 
   console.log(`\nCleaned up ${killed} process${killed === 1 ? "" : "es"}.`);
-}
+},
+  { description: "Kill orphaned cadet processes" },
+);
+

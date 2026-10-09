@@ -46,7 +46,8 @@ EXAMPLES:
 `);
 }
 
-export async function unpair(): Promise<void> {
+export const unpair = Object.assign(
+  async function unpair(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -115,4 +116,7 @@ export async function unpair(): Promise<void> {
   console.log(
     "Note: this only forgets the connection on this machine. The assistant's host can fully revoke this device from its side.",
   );
-}
+},
+  { description: "Forget a paired assistant imported from another machine [beta]" },
+);
+

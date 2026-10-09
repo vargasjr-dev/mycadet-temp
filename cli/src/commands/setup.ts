@@ -139,7 +139,8 @@ async function resolveSetupBearerToken(
   return entry.bearerToken;
 }
 
-export async function setup(): Promise<void> {
+export const setup = Object.assign(
+  async function setup(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -234,4 +235,7 @@ export async function setup(): Promise<void> {
     );
     process.exit(1);
   }
-}
+},
+  { description: "Configure API keys interactively" },
+);
+

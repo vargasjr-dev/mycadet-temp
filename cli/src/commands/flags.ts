@@ -203,7 +203,8 @@ async function setFlag(
   console.log(`Flag "${key}" set to ${value}`);
 }
 
-export async function flags(): Promise<void> {
+export const flags = Object.assign(
+  async function flags(): Promise<void> {
   const args = process.argv.slice(3);
 
   if (args.includes("--help") || args.includes("-h")) {
@@ -248,4 +249,7 @@ export async function flags(): Promise<void> {
   console.error(`Unknown subcommand: ${subcommand}`);
   printHelp();
   process.exit(1);
-}
+},
+  { description: "Show and toggle feature flags" },
+);
+

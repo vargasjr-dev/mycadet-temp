@@ -19,7 +19,8 @@ import {
 import { getArchivePath, getMetadataPath } from "../lib/retire-archive";
 import { exec } from "../lib/step-runner";
 
-export async function recover(): Promise<void> {
+export const recover = Object.assign(
+  async function recover(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     console.log("Usage: cadet recover <name>");
@@ -124,4 +125,7 @@ export async function recover(): Promise<void> {
   unlinkSync(metadataPath);
 
   console.log(`✅ Recovered assistant '${name}'.`);
-}
+},
+  { description: "Restore a previously retired local assistant" },
+);
+

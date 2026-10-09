@@ -78,7 +78,8 @@ Examples:
 `);
 }
 
-export async function debug(): Promise<void> {
+export const debug = Object.assign(
+  async function debug(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
     printHelp();
@@ -182,7 +183,10 @@ export async function debug(): Promise<void> {
   console.log(
     "Debug bundle sent to Cadet. Staff can open it for the next 7 days.",
   );
-}
+},
+  { description: "Send Cadet staff a debug bundle of a self-hosted assistant" },
+);
+
 
 async function daemonAccessToken(
   entry: {

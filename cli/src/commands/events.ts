@@ -113,7 +113,8 @@ export function renderMarkdown(event: AssistantEvent): void {
   }
 }
 
-export async function events(): Promise<void> {
+export const events = Object.assign(
+  async function events(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
@@ -157,4 +158,7 @@ export async function events(): Promise<void> {
       renderMarkdown(event);
     }
   }
-}
+},
+  { description: "Stream events from a running assistant" },
+);
+

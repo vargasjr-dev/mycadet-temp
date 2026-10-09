@@ -583,7 +583,8 @@ async function showAwsLogs(
 
 // ── Entry point ─────────────────────────────────────────────────
 
-export async function logs(): Promise<void> {
+export const logs = Object.assign(
+  async function logs(): Promise<void> {
   const opts = parseArgs();
 
   const entry = resolveAssistant(opts.name);
@@ -640,4 +641,7 @@ export async function logs(): Promise<void> {
       console.error(`Unsupported topology '${cloud}' for log viewing.`);
       process.exit(1);
   }
-}
+},
+  { description: "View logs from an assistant instance" },
+);
+

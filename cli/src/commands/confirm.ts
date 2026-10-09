@@ -103,7 +103,8 @@ function exitWithUsage(error: string): never {
   process.exit(1);
 }
 
-export async function confirm(): Promise<void> {
+export const confirm = Object.assign(
+  async function confirm(): Promise<void> {
   const rawArgs = process.argv.slice(3);
 
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
@@ -141,4 +142,7 @@ export async function confirm(): Promise<void> {
         : `Confirmation not accepted`,
     );
   }
-}
+},
+  { description: "Resolve a pending tool confirmation on an assistant" },
+);
+
