@@ -20,10 +20,6 @@ import {
 
 const log = getLogger("document-store");
 
-// ---------------------------------------------------------------------------
-// Shared types
-// ---------------------------------------------------------------------------
-
 /** A document record with camelCase field names, mapped from the SQLite row. */
 export interface DocumentRecord {
   surfaceId: string;
@@ -48,10 +44,6 @@ function countWords(content: string): number {
   return content.split(/\s+/).filter((word) => word.length > 0).length;
 }
 
-// ---------------------------------------------------------------------------
-// Junction table helper
-// ---------------------------------------------------------------------------
-
 /** Insert a document–conversation association (idempotent via INSERT OR IGNORE). */
 export function addDocumentConversation(
   surfaceId: string,
@@ -65,10 +57,6 @@ export function addDocumentConversation(
     Date.now(),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Shared query helpers
-// ---------------------------------------------------------------------------
 
 interface DocumentRow {
   surface_id: string;
@@ -327,10 +315,6 @@ export function deleteDocument(surfaceId: string): boolean {
   }
 }
 
-// ---------------------------------------------------------------------------
-// In-document search (grep)
-// ---------------------------------------------------------------------------
-
 export interface FindMatch {
   lineNumber: number;
   lineContent: string;
@@ -426,10 +410,6 @@ export function findInDocument(
     return null;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Document persistence
-// ---------------------------------------------------------------------------
 
 /** The document state a conditional save lost to. */
 export interface DocumentRevisionConflict {
@@ -804,10 +784,6 @@ export function createDocument(params: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Find-and-replace
-// ---------------------------------------------------------------------------
-
 export interface ReplaceInDocumentOptions {
   regex?: boolean;
   caseSensitive?: boolean;
@@ -927,10 +903,6 @@ export function replaceInDocument(
     };
   }
 }
-
-// ---------------------------------------------------------------------------
-// Append idempotency
-// ---------------------------------------------------------------------------
 
 /** A blank-line-delimited block of markdown, located in its source string. */
 interface MarkdownBlock {

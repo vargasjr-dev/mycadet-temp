@@ -6,7 +6,6 @@ import { followups } from "../persistence/schema/index.js";
 import type { FollowUp, FollowUpCreateInput, FollowUpStatus } from "./types.js";
 
 function parseFollowUp(row: typeof followups.$inferSelect): FollowUp {
-  const scheduleId = row.reminderCronId;
   return {
     id: row.id,
     channel: row.channel,
@@ -15,7 +14,7 @@ function parseFollowUp(row: typeof followups.$inferSelect): FollowUp {
     sentAt: row.sentAt,
     expectedResponseBy: row.expectedResponseBy,
     status: row.status as FollowUpStatus,
-    reminderScheduleId: scheduleId,
+    reminderScheduleId: row.reminderCronId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

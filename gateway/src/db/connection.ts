@@ -120,8 +120,7 @@ function getDbPath(): string {
   if (!existsSync(securityDir)) {
     mkdirSync(securityDir, { recursive: true });
   }
-  const dbPath = join(securityDir, "gateway.sqlite");
-  return dbPath;
+  return join(securityDir, "gateway.sqlite");
 }
 
 /**

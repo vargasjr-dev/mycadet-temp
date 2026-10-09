@@ -93,10 +93,10 @@ export interface ContainerInfo {
  * validation boundary — the same toolchain writes and reads them — so they are
  * modeled as plain types here rather than re-validated.
  *
- * `runtimeUrl` is required (`readAssistants` only returns entries that have one)
+ * `runtimeUrl` is required (`loadAllAssistants` only returns entries that have one)
  * and `resources` is the richer host shape. `cloud` is inherited from
  * `LockfileAssistant` (always present; normalized at the read seam — see
- * `readAssistants`). The index signature preserves unknown on-disk fields so a
+ * `loadAllAssistants`). The index signature preserves unknown on-disk fields so a
  * read→write round-trip never drops a newer writer's data.
  */
 export type AssistantEntry = Omit<
@@ -330,7 +330,7 @@ export function migrateLegacyEntry(raw: Record<string, unknown>): boolean {
   return mutated;
 }
 
-function readAssistants(): AssistantEntry[] {
+export function loadAllAssistants(): AssistantEntry[] {
   const data = readLockfile();
   const entries = data.assistants;
   if (!Array.isArray(entries)) {
@@ -384,7 +384,7 @@ function writeAssistants(entries: AssistantEntry[]): void {
 }
 
 export function loadLatestAssistant(): AssistantEntry | null {
-  const entries = readAssistants();
+  const entries = loadAllAssistants();
   if (entries.length === 0) {
     return null;
   }
@@ -397,7 +397,7 @@ export function loadLatestAssistant(): AssistantEntry | null {
 }
 
 export function findAssistantByName(name: string): AssistantEntry | null {
-  return readAssistants().find((entry) => entry.assistantId === name) ?? null;
+  return loadAllAssistants().find((entry) => entry.assistantId === name) ?? null;
 }
 
 export function getAssistantDisplayName(entry: AssistantEntry): string {
@@ -430,7 +430,7 @@ function getAssistantDisplayNameCandidates(entry: AssistantEntry): string[] {
 export function lookupAssistantByIdentifier(
   identifier: string,
 ): AssistantLookupResult {
-  const entries = readAssistants();
+  const entries = loadAllAssistants();
   const exactId = entries.find((entry) => entry.assistantId === identifier);
   if (exactId) {
     return { status: "found", entry: exactId };
@@ -481,10 +481,6 @@ export function removeAssistantEntry(assistantId: string): void {
     }
     writeLockfileUnlocked(data);
   });
-}
-
-export function loadAllAssistants(): AssistantEntry[] {
-  return readAssistants();
 }
 
 /**
@@ -585,7 +581,7 @@ export function resolveAssistant(nameArg?: string): AssistantEntry | null {
     // Active assistant no longer exists in lockfile — fall through
   }
 
-  const all = readAssistants();
+  const all = loadAllAssistants();
   if (all.length === 1) return all[0];
 
   return null;
@@ -617,7 +613,7 @@ export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
       // Active assistant no longer exists in lockfile — fall through.
     }
 
-    const all = readAssistants();
+    const all = loadAllAssistants();
     if (all.length === 1) return all[0];
 
     if (all.length === 0) {
@@ -648,7 +644,7 @@ export function extractHostFromUrl(url: string): string {
 
 export function saveAssistantEntry(entry: AssistantEntry): void {
   withCliLockfileLock(() => {
-    const entries = readAssistants().filter(
+    const entries = loadAllAssistants().filter(
       (e) => e.assistantId !== entry.assistantId,
     );
     entries.unshift(entry);
