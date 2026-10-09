@@ -17,9 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  ASSISTANT_IMAGE_NAME: sandbox-images/assistant-server
-  GATEWAY_IMAGE_NAME: sandbox-images/assistant-gateway
-  CREDENTIAL_EXECUTOR_IMAGE_NAME: sandbox-images/credential-executor
+  ASSISTANT_IMAGE_NAME: mycadet-assistant
+  GATEWAY_IMAGE_NAME: mycadet-gateway
+  CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor
 
 jobs:
   extract-version:
@@ -345,7 +345,6 @@ jobs:
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        push-dockerhub-image,
       ]
     if: >-
       needs.extract-version.outputs.chrome_extension_changed == 'true'
@@ -408,10 +407,19 @@ jobs:
           chrome-webstore-upload publish \
             --extension-id "$EXTENSION_ID"
 
+  # ── Docker Images ──────────────────────────────────────────────────────
+  # One pipeline, mirroring dev-release.yaml: build per-platform by digest,
+  # then assemble and push the multi-platform manifest to Docker Hub — the
+  # registry the platform pulls from. Production runs add `:latest`. The
+  # digest split (per-platform builds, manifest second) replaces the old GCR
+  # push + second full Docker Hub rebuild: one build, one registry of truth.
+
   push-assistant-image:
-    needs: [extract-version, ci-assistant]
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 30
+    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    runs-on: ubuntu-latest
+    # 2-core ubuntu-latest builds the assistant image slower than the
+    # 8-core runner this repo no longer has access to.
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
@@ -423,43 +431,28 @@ jobs:
           - linux/arm64
     environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Compute image names
+      - name: Compute image name
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp dev version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
 
       - name: Sync feature flag registry for Docker context
         run: cp meta/feature-flags/feature-flag-registry.json assistant/src/config/feature-flag-registry.json
-
-      - name: Stamp release version into package.json
-        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
 
       - name: Build and push by digest
         id: build
@@ -468,9 +461,9 @@ jobs:
           context: .
           file: assistant/Dockerfile
           platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.gcp }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=assistant-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=assistant-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
+          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=assistant-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=assistant-release-${{ matrix.platform }}
 
       - name: Export digest
         run: |
@@ -487,51 +480,28 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: assistant-digests-${{ needs.extract-version.outputs.docker_environment }}-${{ steps.platform.outputs.suffix }}
+          name: assistant-digests-release-${{ steps.platform.outputs.suffix }}
           path: /tmp/digests/*
           retention-days: 1
 
   push-assistant-manifest:
-    needs: [extract-version, push-assistant-image]
-    if: ${{ always() && !cancelled() }}
+    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' }}
+    outputs:
+      repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
     environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
-      - name: Fail if image build failed
-        if: needs.push-assistant-image.result != 'success'
-        run: |
-          echo "::error::push-assistant-image failed with result: ${{ needs.push-assistant-image.result }}"
-          exit 1
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Get release SHA
-        id: release-sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
@@ -541,72 +511,53 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: /tmp/digests
-          pattern: assistant-digests-${{ needs.extract-version.outputs.docker_environment }}-*
+          pattern: assistant-digests-release-*
           merge-multiple: true
 
       - name: Compute image tags
         id: tags
         run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
-          SHA="${{ steps.release-sha.outputs.sha }}"
-          IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
-          GCP_TAGS="${GCP_IMAGE}:${SHA}"
-          GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:v${VERSION}")
-          if [ "$IS_STAGING" != "true" ]; then
-            GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:latest")
+          SHORT_SHA="${{ needs.extract-version.outputs.short_sha }}"
+          IMAGE_REF="docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}"
+          IMAGE_TAGS="${IMAGE_REF}:${{ github.sha }}"
+          IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
+          if [ "${{ needs.extract-version.outputs.is_staging }}" != "true" ]; then
+            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:latest")
           fi
-
-          echo "gcp_tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$GCP_TAGS" >> "$GITHUB_OUTPUT"
+          echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "image_name=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
 
-          echo "gcp_image=${GCP_IMAGE}" >> "$GITHUB_OUTPUT"
-
-      - name: Create GCP manifest list and push
+      - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
+          IMAGE="${{ steps.tags.outputs.image_name }}"
           TAG_ARGS=""
           while IFS= read -r tag; do
             [ -n "$tag" ] && TAG_ARGS="$TAG_ARGS -t $tag"
-          done <<< "${{ steps.tags.outputs.gcp_tags }}"
+          done <<< "${{ steps.tags.outputs.image_tags }}"
           SOURCES=$(printf "${IMAGE}@sha256:%s " *)
           docker buildx imagetools create $TAG_ARGS $SOURCES
 
       - name: Export manifest digest
         id: manifest-digest
         run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
+          IMAGE="${{ steps.tags.outputs.image_name }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
-          TAG="v${VERSION}"
-          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${VERSION}" --format '{{json .Manifest.Digest}}' | tr -d '"')
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "Manifest digest: ${DIGEST}"
           mkdir -p /tmp/manifest-digest
           echo "${DIGEST}" > /tmp/manifest-digest/digest
+          echo "${IMAGE}" > /tmp/manifest-digest/repository
 
       - name: Upload manifest digest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: assistant-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/manifest-digest/digest
+          name: assistant-manifest-digest-dev
+          path: /tmp/manifest-digest/*
           retention-days: 1
-
-      - name: Export image metadata
-        id: meta
-        run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
-
-      - name: Summary
-        run: |
-          echo "## Assistant Image Published (${{ needs.extract-version.outputs.docker_environment }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** \`${{ needs.extract-version.outputs.docker_environment }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**SHA tag:** \`${{ steps.release-sha.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
 
   push-gateway-image:
     needs: [extract-version, ci-gateway]
@@ -623,43 +574,28 @@ jobs:
           - linux/arm64
     environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Compute image names
+      - name: Compute image name
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp dev version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
 
       - name: Sync feature flag registry for Docker context
         run: cp meta/feature-flags/feature-flag-registry.json gateway/src/feature-flag-registry.json
-
-      - name: Stamp release version into package.json
-        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
 
       - name: Build and push by digest
         id: build
@@ -668,9 +604,9 @@ jobs:
           context: .
           file: gateway/Dockerfile
           platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.gcp }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=gateway-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=gateway-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
+          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=gateway-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=gateway-release-${{ matrix.platform }}
 
       - name: Export digest
         run: |
@@ -687,8 +623,82 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: gateway-digests-${{ needs.extract-version.outputs.docker_environment }}-${{ steps.platform.outputs.suffix }}
+          name: gateway-digests-release-${{ steps.platform.outputs.suffix }}
           path: /tmp/digests/*
+          retention-days: 1
+
+  push-gateway-manifest:
+    needs: [extract-version, ci-gateway]
+    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' }}
+    outputs:
+      repository: ${{ steps.tags.outputs.image_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    environment: ${{ needs.extract-version.outputs.docker_environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        with:
+          version: latest
+
+      - name: Download digests
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: /tmp/digests
+          pattern: gateway-digests-release-*
+          merge-multiple: true
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          VERSION="${{ needs.extract-version.outputs.version }}"
+          IMAGE_REF="docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}"
+          IMAGE_TAGS="${IMAGE_REF}:${{ github.sha }}"
+          IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
+          if [ "${{ needs.extract-version.outputs.is_staging }}" != "true" ]; then
+            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:latest")
+          fi
+          echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "image_name=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          IMAGE="${{ steps.tags.outputs.image_name }}"
+          TAG_ARGS=""
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && TAG_ARGS="$TAG_ARGS -t $tag"
+          done <<< "${{ steps.tags.outputs.image_tags }}"
+          SOURCES=$(printf "${IMAGE}@sha256:%s " *)
+          docker buildx imagetools create $TAG_ARGS $SOURCES
+
+      - name: Export manifest digest
+        id: manifest-digest
+        run: |
+          IMAGE="${{ steps.tags.outputs.image_name }}"
+          VERSION="${{ needs.extract-version.outputs.version }}"
+          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${VERSION}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          mkdir -p /tmp/manifest-digest
+          echo "${DIGEST}" > /tmp/manifest-digest/digest
+          echo "${IMAGE}" > /tmp/manifest-digest/repository
+
+      - name: Upload manifest digest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gateway-manifest-digest-dev
+          path: /tmp/manifest-digest/*
           retention-days: 1
 
   push-credential-executor-image:
@@ -706,39 +716,24 @@ jobs:
           - linux/arm64
     environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Compute image names
+      - name: Compute image name
         id: image
         run: |
-          echo "gcp=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp release version into package.json
+      - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
 
       - name: Build and push by digest
@@ -748,9 +743,9 @@ jobs:
           context: .
           file: credential-executor/Dockerfile
           platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.gcp }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=credential-executor-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=credential-executor-${{ needs.extract-version.outputs.docker_environment }}-${{ matrix.platform }}
+          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=credential-executor-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=credential-executor-release-${{ matrix.platform }}
 
       - name: Export digest
         run: |
@@ -767,360 +762,126 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: credential-executor-digests-${{ needs.extract-version.outputs.docker_environment }}-${{ steps.platform.outputs.suffix }}
+          name: credential-executor-digests-release-${{ steps.platform.outputs.suffix }}
           path: /tmp/digests/*
           retention-days: 1
 
-  push-gateway-manifest:
-    needs: [extract-version, push-gateway-image]
-    if: ${{ always() && !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      id-token: write
-    environment: ${{ needs.extract-version.outputs.docker_environment }}
-    steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
-      - name: Fail if image build failed
-        if: needs.push-gateway-image.result != 'success'
-        run: |
-          echo "::error::push-gateway-image failed with result: ${{ needs.push-gateway-image.result }}"
-          exit 1
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Get release SHA
-        id: release-sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-        with:
-          version: latest
-
-      - name: Download digests
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          path: /tmp/digests
-          pattern: gateway-digests-${{ needs.extract-version.outputs.docker_environment }}-*
-          merge-multiple: true
-
-      - name: Compute image tags
-        id: tags
-        run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          SHA="${{ steps.release-sha.outputs.sha }}"
-          IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
-          GCP_TAGS="${GCP_IMAGE}:${SHA}"
-          GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:v${VERSION}")
-          if [ "$IS_STAGING" != "true" ]; then
-            GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:latest")
-          fi
-
-          echo "gcp_tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$GCP_TAGS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-          echo "gcp_image=${GCP_IMAGE}" >> "$GITHUB_OUTPUT"
-
-      - name: Create GCP manifest list and push
-        working-directory: /tmp/digests
-        run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
-          TAG_ARGS=""
-          while IFS= read -r tag; do
-            [ -n "$tag" ] && TAG_ARGS="$TAG_ARGS -t $tag"
-          done <<< "${{ steps.tags.outputs.gcp_tags }}"
-          SOURCES=$(printf "${IMAGE}@sha256:%s " *)
-          docker buildx imagetools create $TAG_ARGS $SOURCES
-
-      - name: Export manifest digest
-        id: manifest-digest
-        run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          TAG="v${VERSION}"
-          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "Manifest digest: ${DIGEST}"
-          mkdir -p /tmp/manifest-digest
-          echo "${DIGEST}" > /tmp/manifest-digest/digest
-
-      - name: Upload manifest digest
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: gateway-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/manifest-digest/digest
-          retention-days: 1
-
-      - name: Export image metadata
-        id: meta
-        run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
-
-      - name: Summary
-        run: |
-          echo "## Gateway Image Published (${{ needs.extract-version.outputs.docker_environment }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** \`${{ needs.extract-version.outputs.docker_environment }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**SHA tag:** \`${{ steps.release-sha.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
-
   push-credential-executor-manifest:
-    needs: [extract-version, push-credential-executor-image]
-    if: ${{ always() && !cancelled() }}
+    needs: [extract-version, ci-credential-executor]
+    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' }}
+    outputs:
+      repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     permissions:
       contents: read
       id-token: write
     environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
-      - name: Fail if image build failed
-        if: needs.push-credential-executor-image.result != 'success'
-        run: |
-          echo "::error::push-credential-executor-image failed with result: ${{ needs.push-credential-executor-image.result }}"
-          exit 1
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Get release SHA
-        id: release-sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker ${{ vars.GCP_REGISTRY_HOST }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-        with:
-          version: latest
-
-      - name: Download digests
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          path: /tmp/digests
-          pattern: credential-executor-digests-${{ needs.extract-version.outputs.docker_environment }}-*
-          merge-multiple: true
-
-      - name: Compute image tags
-        id: tags
-        run: |
-          GCP_IMAGE="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          SHA="${{ steps.release-sha.outputs.sha }}"
-          IS_STAGING="${{ needs.extract-version.outputs.is_staging }}"
-          GCP_TAGS="${GCP_IMAGE}:${SHA}"
-          GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:v${VERSION}")
-          if [ "$IS_STAGING" != "true" ]; then
-            GCP_TAGS=$(printf "%s\n%s" "$GCP_TAGS" "${GCP_IMAGE}:latest")
-          fi
-
-          echo "gcp_tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$GCP_TAGS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-          echo "gcp_image=${GCP_IMAGE}" >> "$GITHUB_OUTPUT"
-
-      - name: Create GCP manifest list and push
-        working-directory: /tmp/digests
-        run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
-          TAG_ARGS=""
-          while IFS= read -r tag; do
-            [ -n "$tag" ] && TAG_ARGS="$TAG_ARGS -t $tag"
-          done <<< "${{ steps.tags.outputs.gcp_tags }}"
-          SOURCES=$(printf "${IMAGE}@sha256:%s " *)
-          docker buildx imagetools create $TAG_ARGS $SOURCES
-
-      - name: Export manifest digest
-        id: manifest-digest
-        run: |
-          IMAGE="${{ steps.tags.outputs.gcp_image }}"
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          TAG="v${VERSION}"
-          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')
-          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "Manifest digest: ${DIGEST}"
-          mkdir -p /tmp/manifest-digest
-          echo "${DIGEST}" > /tmp/manifest-digest/digest
-
-      - name: Upload manifest digest
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: credential-executor-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/manifest-digest/digest
-          retention-days: 1
-
-      - name: Export image metadata
-        id: meta
-        run: |
-          echo "repository=${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${{ needs.extract-version.outputs.version }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ steps.release-sha.outputs.sha }}" >> "$GITHUB_OUTPUT"
-
-      - name: Summary
-        run: |
-          echo "## Credential Executor Image Published (${{ needs.extract-version.outputs.docker_environment }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** \`${{ needs.extract-version.outputs.docker_environment }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**SHA tag:** \`${{ steps.release-sha.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-  push-dockerhub-image:
-    needs: [extract-version, ci-assistant, ci-gateway, ci-credential-executor]
-    if: ${{ needs.extract-version.outputs.is_staging != 'true' }}
-    runs-on: ${{ matrix.runs_on }}
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: assistant
-            runs_on: ubuntu-latest-8-cores
-            dockerhub_image_name: mycadet-assistant
-            context: .
-            dockerfile: assistant/Dockerfile
-            feature_flag_path: assistant/src/config/feature-flag-registry.json
-          - service: gateway
-            runs_on: ubuntu-latest
-            dockerhub_image_name: mycadet-gateway
-            context: .
-            dockerfile: gateway/Dockerfile
-            feature_flag_path: gateway/src/feature-flag-registry.json
-          - service: credential-executor
-            runs_on: ubuntu-latest
-            dockerhub_image_name: mycadet-credential-executor
-            context: .
-            dockerfile: credential-executor/Dockerfile
-            feature_flag_path: ""
-    steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: "1.3.11"
-
-      - name: Login to Docker Hub
+      - name: Log in to Docker Hub
         env:
           DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: bun scripts/docker-login-with-retry.ts
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           version: latest
 
-      - name: Compute Docker Hub tags
+      - name: Download digests
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: /tmp/digests
+          pattern: credential-executor-digests-release-*
+          merge-multiple: true
+
+      - name: Compute image tags
         id: tags
         run: |
-          IMAGE_NAME="${{ matrix.dockerhub_image_name }}"
-          IMAGE="mycadet/${IMAGE_NAME}"
           VERSION="${{ needs.extract-version.outputs.version }}"
-          TAGS="${IMAGE}:v${VERSION}"
-          TAGS=$(printf "%s\n%s" "$TAGS" "${IMAGE}:latest")
-          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
-          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$TAGS" >> "$GITHUB_OUTPUT"
+          IMAGE_REF="docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
+          IMAGE_TAGS="${IMAGE_REF}:${{ github.sha }}"
+          IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
+          if [ "${{ needs.extract-version.outputs.is_staging }}" != "true" ]; then
+            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:latest")
+          fi
+          echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "image_name=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
 
-      - name: Sync feature flag registry for Docker context
-        if: matrix.feature_flag_path != ''
-        run: cp meta/feature-flags/feature-flag-registry.json ${{ matrix.feature_flag_path }}
-
-      - name: Stamp release version into package.json
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
         run: |
+          IMAGE="${{ steps.tags.outputs.image_name }}"
+          TAG_ARGS=""
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && TAG_ARGS="$TAG_ARGS -t $tag"
+          done <<< "${{ steps.tags.outputs.image_tags }}"
+          SOURCES=$(printf "${IMAGE}@sha256:%s " *)
+          docker buildx imagetools create $TAG_ARGS $SOURCES
+
+      - name: Export manifest digest
+        id: manifest-digest
+        run: |
+          IMAGE="${{ steps.tags.outputs.image_name }}"
           VERSION="${{ needs.extract-version.outputs.version }}"
-          for pkg in assistant/package.json gateway/package.json credential-executor/package.json; do
-            [ -f "$pkg" ] && jq --arg v "$VERSION" '.version = $v' "$pkg" > "${pkg}.tmp" && mv "${pkg}.tmp" "$pkg"
-          done
+          DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${VERSION}" --format '{{json .Manifest.Digest}}' | tr -d '"')
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          mkdir -p /tmp/manifest-digest
+          echo "${DIGEST}" > /tmp/manifest-digest/digest
+          echo "${IMAGE}" > /tmp/manifest-digest/repository
 
-      - name: Build and push multi-platform image to Docker Hub
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+      - name: Upload manifest digest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          provenance: false
-          tags: ${{ steps.tags.outputs.tags }}
+          name: credential-executor-manifest-digest-dev
+          path: /tmp/manifest-digest/*
+          retention-days: 1
 
-      - name: Summary
-        run: |
-          echo "## Docker Hub Image Published (${{ matrix.service }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`v${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Docker Hub:** \`${{ steps.tags.outputs.image }}:v${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+  # ── Web SPA (dev bucket) ─────────────────────────────────────────────
+  # The platform SPA ships to the dev GCS bucket with every dev release,
+  # not on merge to main; staging/production deploys live in release.yml.
+  #
+  # ci-web is the only hard gate: a dev release must always get the web changes
+  # onto the dev instance, even when the backend half of the release does not
+  # land. The push-*-manifest jobs stay in `needs` purely for *ordering* — when
+  # the backend images do ship, the SPA still publishes after them, so the dev
+  # UI is never pushed ahead of a backend that shipped in the same run. But the
+  # `if` deliberately uses a status function, which drops the implicit
+  # success() check on every `needs` entry: a failed or skipped manifest push
+  # (backend CI red, a Docker build failure) no longer strands green web
+  # commits outside dev until the next run happens to be fully green.
+  #
+  # The platform learns about dev releases by pulling from Docker Hub itself;
+  # this workflow no longer registers anything with the platform API.
+  #
+  # The trade-off is accepted on dev only: a dev SPA can briefly run against the
+  # previously-released dev backend. Staging and production keep the strict
+  # gating in release.yml, where a UI ahead of its backend actually matters.
+  #
+  # !cancelled() (rather than always()) keeps this quiet when a run is
+  # superseded by the next release via concurrency.cancel-in-progress.
 
-  register-release:
+  tag-staging-release:
+    # Anchors the staging version with a git tag (vX.Y.Z-staging.N) — the
+    # next staging run's suffix walk (extract-version) and staging QA both
+    # key off it. Production tags are cut by the `release` job instead. The
+    # platform itself learns about releases by pulling from Docker Hub, so
+    # there is no registration API call here (a dev-release learning).
     needs:
-      [
-        extract-version,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
-        push-dockerhub-image,
-        release,
-      ]
-    if: ${{ always() && !cancelled() && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && (needs.extract-version.outputs.is_staging == 'true' || (needs.push-dockerhub-image.result == 'success' && needs.release.result == 'success')) }}
+      [extract-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    if: >-
+      ${{
+        always() && !cancelled()
+        && needs.extract-version.outputs.is_staging == 'true'
+        && needs.push-assistant-manifest.result == 'success'
+        && needs.push-gateway-manifest.result == 'success'
+        && needs.push-credential-executor-manifest.result == 'success'
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: ${{ needs.extract-version.outputs.docker_environment }}
     steps:
       - name: Generate GitHub App token
         id: app-token
@@ -1134,146 +895,12 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Get release SHA
-        id: release-sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Download assistant manifest digest
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: assistant-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/assistant-digest
-
-      - name: Download gateway manifest digest
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: gateway-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/gateway-digest
-
-      - name: Download credential-executor manifest digest
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: credential-executor-manifest-digest-${{ needs.extract-version.outputs.docker_environment }}
-          path: /tmp/credential-executor-digest
-
-      - name: Extract manifest digests
-        id: digests
-        run: |
-          ASSISTANT_DIGEST=$(cat /tmp/assistant-digest/digest)
-          GATEWAY_DIGEST=$(cat /tmp/gateway-digest/digest)
-          CREDENTIAL_EXECUTOR_DIGEST=$(cat /tmp/credential-executor-digest/digest)
-          echo "assistant_digest=${ASSISTANT_DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "credential_executor_digest=${CREDENTIAL_EXECUTOR_DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "gateway_digest=${GATEWAY_DIGEST}" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve platform credentials
-        id: platform-creds
-        run: |
-          echo "api_url=${{ secrets.PLATFORM_API_URL }}" >> "$GITHUB_OUTPUT"
-          echo "api_key=${{ secrets.PLATFORM_INTERNAL_SERVICE_API_KEY }}" >> "$GITHUB_OUTPUT"
-
-      - name: Register release with platform
-        run: |
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          SHA="${{ steps.release-sha.outputs.sha }}"
-          ASSISTANT_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.ASSISTANT_IMAGE_NAME }}"
-          GATEWAY_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.GATEWAY_IMAGE_NAME }}"
-          CREDENTIAL_EXECUTOR_REPO="${{ vars.GCP_REGISTRY_HOST }}/${{ vars.GCP_PROJECT_ID }}/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}"
-          IS_STABLE="true"
-
-          PAYLOAD=$(jq -n \
-            --arg version "$VERSION" \
-            --arg released_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --argjson is_stable "$IS_STABLE" \
-            --arg assistant_repo "$ASSISTANT_REPO" \
-            --arg assistant_tag "v${VERSION}" \
-            --arg assistant_sha "$SHA" \
-            --arg assistant_digest "${{ steps.digests.outputs.assistant_digest }}" \
-            --arg gateway_repo "$GATEWAY_REPO" \
-            --arg gateway_tag "v${VERSION}" \
-            --arg gateway_sha "$SHA" \
-            --arg gateway_digest "${{ steps.digests.outputs.gateway_digest }}" \
-            --arg credential_executor_repo "$CREDENTIAL_EXECUTOR_REPO" \
-            --arg credential_executor_tag "v${VERSION}" \
-            --arg credential_executor_sha "$SHA" \
-            --arg credential_executor_digest "${{ steps.digests.outputs.credential_executor_digest }}" \
-            '{
-              version: $version,
-              released_at: $released_at,
-              is_stable: $is_stable,
-              assistant_image: {
-                repository: $assistant_repo,
-                tag: $assistant_tag,
-                sha: $assistant_sha,
-                digest: $assistant_digest
-              },
-              gateway_image: {
-                repository: $gateway_repo,
-                tag: $gateway_tag,
-                sha: $gateway_sha,
-                digest: $gateway_digest
-              },
-              credential_executor_image: {
-                repository: $credential_executor_repo,
-                tag: $credential_executor_tag,
-                sha: $credential_executor_sha,
-                digest: $credential_executor_digest
-              }
-            }')
-
-          DELAYS=(5 15 30)
-          MAX_ATTEMPTS=3
-
-          for attempt in $(seq 1 $MAX_ATTEMPTS); do
-            CURL_EXIT=0
-            echo "Registering release v${VERSION} with platform (${{ needs.extract-version.outputs.docker_environment }}) [attempt ${attempt}/${MAX_ATTEMPTS}]..."
-            HTTP_STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
-              -X POST "${{ steps.platform-creds.outputs.api_url }}/v1/internal/assistant-image-releases/" \
-              -H "Content-Type: application/json" \
-              -H "X-Internal-Service-Api-Key: ${{ steps.platform-creds.outputs.api_key }}" \
-              -d "$PAYLOAD") || CURL_EXIT=$?
-
-            if [ "${CURL_EXIT:-0}" -ne 0 ]; then
-              echo "::warning::curl transport error (exit code $CURL_EXIT) on attempt ${attempt}"
-              HTTP_STATUS="000"
-            else
-              echo "HTTP Status: $HTTP_STATUS"
-              cat /tmp/response.json
-            fi
-
-            if [ "$HTTP_STATUS" -ge 200 ] 2>/dev/null && [ "$HTTP_STATUS" -lt 300 ] 2>/dev/null; then
-              echo "Registration succeeded on attempt ${attempt}"
-              exit 0
-            fi
-
-            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
-              DELAY=${DELAYS[$((attempt - 1))]}
-              echo "::warning::Attempt ${attempt} failed (HTTP $HTTP_STATUS). Retrying in ${DELAY}s..."
-              sleep "$DELAY"
-            else
-              echo "::error::Release registration failed after ${MAX_ATTEMPTS} attempts (last HTTP $HTTP_STATUS)"
-              exit 1
-            fi
-          done
-
-      - name: Summary
-        run: |
-          echo "## Release Registered (${{ needs.extract-version.outputs.docker_environment }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** \`${{ needs.extract-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-
       - name: Tag staging release
-        if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
           git tag "v${VERSION}"
           git push origin "v${VERSION}"
           echo "Tagged staging release: v${VERSION}"
-
-  # Build (untrusted: runs `bun install` postinstall scripts) is isolated from
-  # publish (holds NPM_TOKEN) in a separate job. `npm pack` produces the tarball
-  # here with no token; `npm publish <tarball>` below does not re-run prepack, so
-  # no build/dependency code executes alongside the credential.
   build-npm-prod:
     # Build has no side effects; release-ordering gates live on publish-npm-prod.
     needs: [extract-version, ci-cli, ci-gateway]
@@ -1329,21 +956,9 @@ jobs:
           retention-days: 1
 
   publish-npm-prod:
-    # Don't publish until backend images are live.
-    needs:
-      [
-        extract-version,
-        build-npm-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
-        push-dockerhub-image,
-      ]
-    if: ${{ always() && !cancelled() && needs.build-npm-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     strategy:
       matrix:
         package: [assistant, cli, credential-executor, gateway]
@@ -1365,8 +980,6 @@ jobs:
           path: /tmp/npm-dist
 
       - name: Publish package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -1384,7 +997,7 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping (treating as retry)."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --access public
 
   # `@mycadet/plugin-api` is the public TypeScript authoring contract external
   # plugins compile against. Unlike the other npm packages it is not a package
@@ -1434,21 +1047,9 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-prod:
-    # Don't publish until backend images are live.
-    needs:
-      [
-        extract-version,
-        build-plugin-api-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
-        push-dockerhub-image,
-      ]
-    if: ${{ always() && !cancelled() && needs.build-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1464,8 +1065,6 @@ jobs:
           name: npm-tarball-prod-plugin-api
           path: /tmp/npm-dist
       - name: Publish package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -1483,7 +1082,7 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping (treating as retry)."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --access public
 
   # ── Staging: pack CLI tarball and dispatch QA to platform repo ──────
   pack-cli:
@@ -1542,8 +1141,6 @@ jobs:
         with:
           app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
           private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: cadet-ai
-          repositories: mycadet-platform
 
       - name: Trigger platform QA
         env:
@@ -1558,7 +1155,9 @@ jobs:
     needs:
       [
         extract-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -1607,12 +1206,9 @@ jobs:
           retention-days: 1
 
   publish-npm-staging:
-    needs: [extract-version, build-npm-staging]
-    if: ${{ always() && !cancelled() && needs.build-npm-staging.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     strategy:
       matrix:
         package: [assistant, cli, credential-executor, gateway]
@@ -1631,8 +1227,6 @@ jobs:
           name: npm-tarball-staging-${{ matrix.package }}
           path: /tmp/npm-dist
       - name: Publish package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -1650,13 +1244,15 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --tag staging --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --tag staging --access public
 
   build-plugin-api-staging:
     needs:
       [
         extract-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -1699,12 +1295,9 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-staging:
-    needs: [extract-version, build-plugin-api-staging]
-    if: ${{ always() && !cancelled() && needs.build-plugin-api-staging.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1720,8 +1313,6 @@ jobs:
           name: npm-tarball-staging-plugin-api
           path: /tmp/npm-dist
       - name: Publish package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -1739,7 +1330,7 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --tag staging --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --tag staging --access public
 
   build-web-staging:
     name: build-npm-staging (web)
@@ -1750,7 +1341,9 @@ jobs:
         ci-cli,
         ci-gateway,
         ci-credential-executor,
-        ci-web,
+        ci-web-lint,
+        ci-web-types,
+        ci-web-tests,
       ]
     if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
     runs-on: ubuntu-latest
@@ -1799,13 +1392,9 @@ jobs:
           retention-days: 1
 
   publish-web-staging:
-    name: publish-npm-staging (web)
-    needs: [extract-version, build-web-staging]
-    if: ${{ always() && !cancelled() && needs.build-web-staging.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1821,8 +1410,6 @@ jobs:
           name: npm-tarball-staging-web
           path: /tmp/npm-dist
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -1840,16 +1427,12 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --tag staging --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --tag staging --access public
 
   publish-meta-staging:
-    name: publish-npm-staging (meta)
-    needs: [extract-version, publish-npm-staging, publish-web-staging]
-    if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -1874,8 +1457,6 @@ jobs:
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
       - name: Publish
         working-directory: meta
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(node -p "require('./package.json').name")
           PKG_VERSION=$(node -p "require('./package.json').version")
@@ -1888,44 +1469,58 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
-          npm publish --tag staging --access public --no-provenance
+          npm publish --tag staging --access public
 
   # ── Web SPA (staging/production buckets) ──────────────────────────────
-  # The platform SPA (VITE_PLATFORM_MODE=true → GCS) ships with releases:
-  # staging bucket on every staging release, production bucket when a
-  # release goes live. The dev bucket is deployed by dev-release.yaml.
-  # Both jobs gate on register-release (like the dev deploy's
-  # register-release gate) so the UI is never updated when the backend
-  # release failed to register; on production runs the SPA ships LAST,
-  # after the GitHub Release is published and the release is registered
-  # with the platform.
+  # The platform SPA ships with releases: staging bucket on every staging
+  # release, production bucket when a release goes live. The dev bucket is
+  # deployed by dev-release.yaml. Both jobs gate with explicit status
+  # functions (a dev-release learning): always()-gated dependencies never
+  # block via implicit success() — every required result is spelled out.
+  #
+  # Ordering convention (backend first, UI last): the production SPA ships
+  # only after the `release` job — which transitively requires the image
+  # manifests, the npm/web/meta/plugin-api publishes, and the Electron
+  # build — so a failed go-live never leaves the prod UI ahead of the
+  # backend. A failed SPA upload after release is retryable and surfaced
+  # by notify-release.
   deploy-web-spa-staging:
     name: Deploy Web SPA (staging)
     needs:
       [
         extract-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
-        ci-web,
-        register-release,
+        ci-web-lint,
+        ci-web-types,
+        ci-web-tests,
+        push-assistant-manifest,
+        push-gateway-manifest,
+        push-credential-executor-manifest,
+        tag-staging-release,
       ]
-    # register-release is gated with `always()`; a downstream job that needs an
-    # always()-gated job must gate on its needs' results explicitly, or the
-    # runner inherits the upstream conditional and skips this job even when every
-    # dependency succeeded. Mirror deploy-web-spa-production's explicit gating.
     if: >-
       ${{
         always() && !cancelled()
         && needs.extract-version.outputs.is_staging == 'true'
         && needs.extract-version.result == 'success'
-        && needs.ci-assistant.result == 'success'
+        && needs.ci-assistant-lint.result == 'success'
+        && needs.ci-assistant-types.result == 'success'
+        && needs.ci-assistant-tests.result == 'success'
         && needs.ci-cli.result == 'success'
         && needs.ci-gateway.result == 'success'
         && needs.ci-credential-executor.result == 'success'
-        && needs.ci-web.result == 'success'
-        && needs.register-release.result == 'success'
+        && needs.ci-web-lint.result == 'success'
+        && needs.ci-web-types.result == 'success'
+        && needs.ci-web-tests.result == 'success'
+        && needs.push-assistant-manifest.result == 'success'
+        && needs.push-gateway-manifest.result == 'success'
+        && needs.push-credential-executor-manifest.result == 'success'
+        && needs.tag-staging-release.result == 'success'
       }}
     permissions:
       contents: read
@@ -1935,21 +1530,19 @@ jobs:
       environment: staging
     secrets: inherit
 
-  # The production SPA deploy is the LAST step of a production release,
-  # matching the dev/staging convention (registration first, SPA last): it
-  # runs only after the GitHub Release is published and the release is
-  # registered with the platform, so a failed go-live never leaves the prod
-  # UI ahead of the backend. Gating on register-release transitively
-  # guarantees everything else: its production `if` requires the three
-  # image manifests, the DockerHub push, AND the `release` job — which
-  # itself requires the npm/web/meta/plugin-api publishes and the Electron
-  # build + update upload. Only ci-web is not covered transitively, so it
-  # stays explicit. A failed SPA upload after registration is retryable
-  # (re-run this job) and is surfaced as a failed release by notify-release.
   deploy-web-spa-production:
     name: Deploy Web SPA (production)
-    needs: [extract-version, ci-web, register-release]
-    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.ci-web.result == 'success' && needs.register-release.result == 'success' }}
+    needs: [extract-version, ci-web-lint, ci-web-types, ci-web-tests, release]
+    if: >-
+      ${{
+        always() && !cancelled()
+        && needs.extract-version.outputs.is_staging != 'true'
+        && needs.extract-version.result == 'success'
+        && needs.ci-web-lint.result == 'success'
+        && needs.ci-web-types.result == 'success'
+        && needs.ci-web-tests.result == 'success'
+        && needs.release.result == 'success'
+      }}
     permissions:
       contents: read
       id-token: write
@@ -1957,12 +1550,11 @@ jobs:
     with:
       environment: production
     secrets: inherit
-
   build-web-prod:
     name: build-npm-prod (web)
     # Build has no side effects; release-ordering gates live on publish-web-prod.
-    needs: [extract-version, ci-cli, ci-gateway, ci-web]
-    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.ci-cli.result == 'success' && needs.ci-gateway.result == 'success' && needs.ci-web.result == 'success' }}
+    needs: [extract-version, ci-cli, ci-gateway, ci-web-lint, ci-web-types, ci-web-tests]
+    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.ci-cli.result == 'success' && needs.ci-gateway.result == 'success' && needs.ci-web-lint.result == 'success' && needs.ci-web-types.result == 'success' && needs.ci-web-tests.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -2019,22 +1611,9 @@ jobs:
           retention-days: 1
 
   publish-web-prod:
-    name: publish-npm-prod (web)
-    # Don't publish until backend images are live.
-    needs:
-      [
-        extract-version,
-        build-web-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
-        push-dockerhub-image,
-      ]
-    if: ${{ always() && !cancelled() && needs.build-web-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -2053,8 +1632,6 @@ jobs:
           path: /tmp/npm-dist
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(cat /tmp/npm-dist/name)
           PKG_VERSION=$(cat /tmp/npm-dist/version)
@@ -2072,16 +1649,12 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping (treating as retry)."
             exit 0
           fi
-          npm publish /tmp/npm-dist/package.tgz --access public --no-provenance
+          npm publish /tmp/npm-dist/package.tgz --access public
 
   publish-meta-prod:
-    name: publish-npm-prod (meta)
-    needs: [extract-version, publish-npm-prod, publish-web-prod]
-    if: ${{ needs.extract-version.outputs.is_staging != 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -2096,8 +1669,6 @@ jobs:
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
 
       - name: Publish meta-package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cd meta
           PKG_NAME=$(node -p "require('./package.json').name")
@@ -2111,7 +1682,7 @@ jobs:
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping (treating as retry)."
             exit 0
           fi
-          npm publish --access public --no-provenance
+          npm publish --access public
 
   # ── Electron macOS build (arm64 + x64) ────────────────────────────────
   # Builds the Electron-wrapped macOS app for each architecture, code-signs,
@@ -2382,19 +1953,23 @@ jobs:
           security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
           rm -rf ~/.private_keys 2>/dev/null || true
 
-  # ── Upload Electron update artifacts to GCS ────────────────────────────
-  # Push per-arch update feeds (manifest + ZIP + blockmap) to the public
-  # GCS bucket so electron-updater can pull delta updates. Each arch gets
-  # its own path: mac-electron/{channel}/{arch}/.
 
+  # ── Upload Electron update artifacts to the sandbox updates store ─────
+  # Push per-arch update feeds (manifest + ZIP + blockmap) so electron-updater
+  # can pull delta updates. Each environment+arch gets its own path:
+  # mac-electron/{environment}/{arch}/.
   upload-electron-updates:
-    # Gate the GCS update-feed publish (an external side effect) on the channel's
-    # meta publish: never offer an auto-update for a release that didn't publish.
+    # Gate the update-feed publish (an external side effect) on the channel's
+    # meta publish: never offer an auto-update for a release that didn't
+    # publish. Best-effort by design: a failed feed upload must not block the
+    # release — the DMGs still attach to the GitHub Release, and clients stay
+    # on their current version until the feed lands (notify-release reports it).
     needs:
       [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
     # always() disables the implicit success(): publish-meta-prod/-staging is
     # skipped on the other channel.
     if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
@@ -2402,9 +1977,6 @@ jobs:
       contents: read
       id-token: write
     steps:
-      # build-electron is a hard dependency, so both arches' update artifacts
-      # must be present and complete. A missing download or artifact fails the
-      # job, which blocks the release gate.
       - name: Download arm64 update artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -2419,56 +1991,45 @@ jobs:
 
       - name: Validate update artifacts
         run: |
-          for ARCH in arm64 x64; do
-            DIR="electron-artifacts/${ARCH}"
-            if [ ! -d "$DIR" ]; then
-              echo "::error::No update artifacts for ${ARCH}"
-              exit 1
-            fi
-            if [ -z "$(find "$DIR" -name '*-mac.yml' -type f 2>/dev/null | grep -m1 .)" ]; then
-              echo "::error::Missing update manifest (*-mac.yml) for ${ARCH}"
-              exit 1
-            fi
-            if [ -z "$(find "$DIR" -name '*.zip' -type f ! -name '*.blockmap' 2>/dev/null | grep -m1 .)" ]; then
-              echo "::error::Missing ZIP for ${ARCH}"
-              exit 1
-            fi
-            if [ -z "$(find "$DIR" -name '*.zip.blockmap' -type f 2>/dev/null | grep -m1 .)" ]; then
-              echo "::error::Missing blockmap (*.zip.blockmap) for ${ARCH}"
-              exit 1
-            fi
-          done
+          DIR="electron-artifacts/arm64"
+          if [ ! -f "$(find "$DIR" -name '*-mac.yml' -type f 2>/dev/null | grep -m1 .)" ]; then
+            echo "::error::Missing update manifest (*-mac.yml) for arm64"
+            exit 1
+          fi
+          if [ -z "$(find "$DIR" -name '*.zip' -type f ! -name '*.blockmap' 2>/dev/null | grep -m1 .)" ]; then
+            echo "::error::Missing ZIP for arm64"
+            exit 1
+          fi
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Upload Electron update artifacts to GCS
+      - name: Upload Electron update artifacts to the sandbox updates store
+        env:
+          RCLONE_CREDENTIALS: ${{ secrets.SANDBOX_UPDATES_STORAGE_CREDENTIALS }}
+          BUCKET: ${{ secrets.SANDBOX_UPDATES_BUCKET }}
         run: |
           ENVIRONMENT=${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
-          BUCKET=${{ needs.extract-version.outputs.is_staging == 'true' && 'mycadet-staging-releases' || 'mycadet-prod-releases' }}
           MANIFEST_NAME="${ENVIRONMENT}-mac.yml"
 
           for ARCH in arm64 x64; do
             ARCH_DIR="electron-artifacts/${ARCH}"
             [ -d "$ARCH_DIR" ] || continue
-            PREFIX="mac-electron/${ARCH}"
+            PREFIX="mac-electron/${ENVIRONMENT}/${ARCH}"
 
-            find "$ARCH_DIR" -name "*.zip" -type f ! -name "*.blockmap" | while read -r ZIP; do
-              gcloud storage cp "$ZIP" "gs://${BUCKET}/${PREFIX}/$(basename "$ZIP")"
+            find "$ARCH_DIR" -type f \( -name "*.zip" -o -name "*.zip.blockmap" -o -name "*-mac.yml" \) | while read -r FILE; do
+              [ -z "$FILE" ] && continue
+              docker run --rm \
+                -v "$PWD:/work" -w /work \
+                -e RCLONE_CONFIG_REMOTE_TYPE=googlecloudstorage \
+                -e RCLONE_CONFIG_REMOTE_SERVICE_ACCOUNT_CREDENTIALS="$RCLONE_CREDENTIALS" \
+                -e RCLONE_CONFIG_REMOTE_BUCKET_POLICY_ONLY=true \
+                rclone/rclone:1.69.1 copyto "/work/$FILE" "remote:$BUCKET/$PREFIX/$(basename "$FILE")"
             done
-
-            find "$ARCH_DIR" -name "*.zip.blockmap" -type f | while read -r BM; do
-              gcloud storage cp "$BM" "gs://${BUCKET}/${PREFIX}/$(basename "$BM")"
-            done
-
-            YML=$(find "$ARCH_DIR" -name "*-mac.yml" -type f | grep -m1 .)
-            [ -n "$YML" ] && gcloud storage cp "$YML" "gs://${BUCKET}/${PREFIX}/${MANIFEST_NAME}"
           done
 
+  # ── Dev npm publishing ─────────────────────────────────────────────────
   release:
+    # The update-feed upload is best-effort (continue-on-error) and is
+    # deliberately absent from these hard needs — the DMGs are the desktop
+    # release; the feed is an optimization.
     needs:
       [
         extract-version,
@@ -2477,14 +2038,12 @@ jobs:
         publish-meta-prod,
         publish-plugin-api-prod,
         build-electron,
-        upload-electron-updates,
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        push-dockerhub-image,
         build-chrome-extension,
       ]
-    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.push-dockerhub-image.result == 'success' && needs.build-electron.result == 'success' && needs.upload-electron-updates.result == 'success' }}
+    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.build-electron.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -2494,8 +2053,6 @@ jobs:
         with:
           app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
           private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: cadet-ai
-          repositories: mycadet
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -2537,9 +2094,9 @@ jobs:
           path: chrome-extension-artifacts
 
       # Electron is a hard release dependency: the `release` job only runs when
-      # both build-electron and upload-electron-updates succeeded, so these
-      # artifacts are guaranteed present. A download failure here fails the
-      # release rather than silently shipping without Electron assets.
+      # build-electron succeeded (the update-feed upload is best-effort and does
+      # not gate), so these artifacts are guaranteed present. A download failure
+      # here fails the release rather than silently shipping without Electron assets.
       - name: Download Electron DMG artifact (arm64)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -2609,8 +2166,8 @@ jobs:
           rm -f "$NOTES_FILE"
 
   merge-release-branch:
-    needs: [extract-version, release, register-release]
-    if: ${{ !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.release.result == 'success' && needs.register-release.result == 'success' }}
+    needs: [extract-version, release]
+    if: ${{ !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -2679,7 +2236,6 @@ jobs:
         with:
           app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
           private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: cadet-ai
           repositories: mycadet-platform
 
       - name: Checkout platform repo
@@ -2734,7 +2290,6 @@ jobs:
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        push-dockerhub-image,
         build-chrome-extension,
       ]
     if: >-
@@ -2749,7 +2304,6 @@ jobs:
         && (needs.publish-web-prod.result == 'success' || needs.publish-web-prod.result == 'skipped')
         && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-prod.result == 'skipped')
         && (needs.publish-plugin-api-prod.result == 'success' || needs.publish-plugin-api-prod.result == 'skipped')
-        && (needs.push-dockerhub-image.result == 'success' || needs.push-dockerhub-image.result == 'skipped')
       }}
     uses: ./.github/workflows/release-ios.yaml
     with:
@@ -2769,7 +2323,6 @@ jobs:
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        push-dockerhub-image,
         build-chrome-extension,
       ]
     if: >-
@@ -2788,7 +2341,6 @@ jobs:
         && (needs.publish-web-prod.result == 'success' || needs.publish-web-prod.result == 'skipped')
         && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-prod.result == 'skipped')
         && (needs.publish-plugin-api-prod.result == 'success' || needs.publish-plugin-api-prod.result == 'skipped')
-        && (needs.push-dockerhub-image.result == 'success' || needs.push-dockerhub-image.result == 'skipped')
       }}
     permissions:
       contents: read
@@ -2840,14 +2392,13 @@ jobs:
       environment: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
     secrets: inherit
 
-  # ci-assistant runs lint/typecheck/test for the assistant service. It also
-  # transitively gates the release pipeline because push-assistant-image and
-  # push-dockerhub-image depend on it — a failure here blocks Docker image
-  # builds, which in turn blocks npm publish, the macOS DMG, and GitHub Release.
-  ci-assistant:
+  # The split CI jobs (a dev-release.yaml learning) gate the release pipeline:
+  # push-assistant-image needs all three assistant legs — a failure blocks the
+  # Docker build, and with it npm publish, the macOS DMG, and the GitHub Release.
+  ci-assistant-lint:
     needs: extract-version
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -2859,40 +2410,24 @@ jobs:
         run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/gateway
         working-directory: assistant
 
+      - name: Install bundled skill dependencies
+        run: |
+          for dir in skills/*/; do
+            [ -f "${dir}/package.json" ] || continue
+            (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
+          done
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+
       - name: Lint
         run: bun run lint
         working-directory: assistant
 
-      - name: Typecheck
-        run: bunx tsc --noEmit
-        working-directory: assistant
-
-      - name: Restore test durations cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: assistant/.test-durations
-          key: test-durations-unused
-          restore-keys: test-durations-
-
-      - name: Test
-        run: bun run test:stable
-        working-directory: assistant
-        env:
-          TEST_WORKERS: "16"
-          TEST_DURATIONS_FILE: .test-durations
-          TEST_DURATIONS_OUTPUT: .test-durations
-
-      - name: Save test durations cache
-        if: always()
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: assistant/.test-durations
-          key: test-durations-${{ github.run_id }}
-
-  ci-cli:
+  ci-assistant-types:
     needs: extract-version
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -2901,16 +2436,61 @@ jobs:
           bun-version: "1.3.11"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/cli
-        working-directory: cli
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/gateway
+        working-directory: assistant
 
-      - name: Lint
-        run: bun run lint
-        working-directory: cli
+      - name: Install bundled skill dependencies
+        run: |
+          for dir in skills/*/; do
+            [ -f "${dir}/package.json" ] || continue
+            (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
+          done
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
 
       - name: Typecheck
-        run: bun run typecheck
-        working-directory: cli
+        run: bunx tsc --noEmit
+        working-directory: assistant
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+
+  ci-assistant-tests:
+    needs: extract-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1", "2", "3", "4"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/assistant --filter=@mycadet/gateway
+        working-directory: assistant
+
+      - name: Install bundled skill dependencies
+        run: |
+          for dir in skills/*/; do
+            [ -f "${dir}/package.json" ] || continue
+            (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
+          done
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+
+      - name: Test (shard ${{ matrix.shard }} of 4)
+        run: bun run test
+        working-directory: assistant
+        env:
+          EXCLUDE_EXPERIMENTAL: "true"
+          TEST_WORKERS: "8"
+          TEST_SHARD: "${{ matrix.shard }}/4"
 
   ci-gateway:
     needs: extract-version
@@ -2926,6 +2506,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --filter=@mycadet/gateway
         working-directory: gateway
+
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
 
       - name: Lint
         run: bun run lint
@@ -2962,12 +2545,35 @@ jobs:
         run: bun run test
         working-directory: credential-executor
 
-  # Gates the staging/production SPA deploys: web lint/typecheck/test must
-  # pass on the release SHA before either bucket is updated.
-  ci-web:
+  ci-cli:
     needs: extract-version
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/cli
+        working-directory: cli
+
+      - name: Lint
+        run: bun run lint
+        working-directory: cli
+
+      - name: Typecheck
+        run: bun run typecheck
+        working-directory: cli
+
+  ci-web-lint:
+    needs: extract-version
+    needs: [compute-version]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -2987,14 +2593,66 @@ jobs:
         run: bun run lint
         working-directory: clients/web
 
+  ci-web-types:
+    needs: extract-version
+    needs: [compute-version]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/web
+        working-directory: clients/web
+
+      - name: Generate API clients
+        run: bun run openapi-ts
+        working-directory: clients/web
+
       - name: Typecheck
         run: bun run typecheck
         working-directory: clients/web
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Test
-        run: bun run test:ci
+  ci-web-tests:
+    needs: extract-version
+    needs: [compute-version]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1-based: run-isolated-tests.ts parses "i/N" with 1 <= i <= N.
+        shard: ["1", "2", "3", "4"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/web
         working-directory: clients/web
 
+      - name: Generate API clients
+        run: bun run openapi-ts
+        working-directory: clients/web
+
+      - name: Test (shard ${{ matrix.shard }} of 4)
+        run: bun run test:ci
+        working-directory: clients/web
+        env:
+          TEST_SHARD: ${{ matrix.shard }}/4
+
+  # ── Docker Images ──────────────────────────────────────────────────────
   notify-release:
     name: Slack Notification (Release)
     if: ${{ always() && !cancelled() }}
@@ -3013,8 +2671,7 @@ jobs:
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        push-dockerhub-image,
-        register-release,
+        tag-staging-release,
         release,
         merge-release-branch,
         update-platform,
@@ -3024,11 +2681,15 @@ jobs:
         release-android,
         build-windows,
         release-windows,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-credential-executor,
         ci-gateway,
-        ci-web,
+        ci-web-lint,
+        ci-web-types,
+        ci-web-tests,
         build-chrome-extension,
         publish-chrome-extension,
         deploy-web-spa-staging,
@@ -3097,7 +2758,7 @@ jobs:
             if [ "${{ needs.push-credential-executor-manifest.result }}" != "success" ]; then
               STAGING_READY="false"
             fi
-            if [ "${{ needs.register-release.result }}" != "success" ]; then
+            if [ "${{ needs.tag-staging-release.result }}" != "success" ]; then
               STAGING_READY="false"
             fi
             if [ "${{ needs.deploy-web-spa-staging.result }}" != "success" ]; then
@@ -3146,17 +2807,24 @@ jobs:
           # Build CI status icons
           ci_icon() { if [ "$1" = "success" ]; then printf '✅'; elif [ "$1" = "skipped" ]; then printf '⏭️'; else printf '❌'; fi; }
 
-          A=$(ci_icon "${{ needs.ci-assistant.result }}")
+          # Aggregate the split CI legs into one icon per service: the worst
+          # leg decides (failure > cancelled > skipped > success).
+          worst() {
+            if [ "$2" = "failure" ] || [ "$3" = "failure" ] || [ "$4" = "failure" ]; then echo failure
+            elif [ "$2" = "cancelled" ] || [ "$3" = "cancelled" ] || [ "$4" = "cancelled" ]; then echo cancelled
+            elif [ "$2" = "skipped" ] && [ "$3" = "skipped" ] && [ "$4" = "skipped" ]; then echo skipped
+            else echo success; fi
+          }
+          A=$(ci_icon "$(worst x "${{ needs.ci-assistant-lint.result }}" "${{ needs.ci-assistant-types.result }}" "${{ needs.ci-assistant-tests.result }}")")
+          W=$(ci_icon "$(worst x "${{ needs.ci-web-lint.result }}" "${{ needs.ci-web-types.result }}" "${{ needs.ci-web-tests.result }}")")
           C=$(ci_icon "${{ needs.ci-cli.result }}")
           CE=$(ci_icon "${{ needs.ci-credential-executor.result }}")
           G=$(ci_icon "${{ needs.ci-gateway.result }}")
-          W=$(ci_icon "${{ needs.ci-web.result }}")
           DE=$(ci_icon "${{ needs.build-electron.result }}")
           AI=$(ci_icon "${{ needs.push-assistant-manifest.result }}")
           GI=$(ci_icon "${{ needs.push-gateway-manifest.result }}")
           CEI=$(ci_icon "${{ needs.push-credential-executor-manifest.result }}")
-          DH=$(ci_icon "${{ needs.push-dockerhub-image.result }}")
-          RR=$(ci_icon "${{ needs.register-release.result }}")
+          TR=$(ci_icon "${{ needs.tag-staging-release.result }}")
           PC=$(ci_icon "${{ needs.pack-cli.result }}")
           TQ=$(ci_icon "${{ needs.trigger-platform-qa.result }}")
           DI=$(ci_icon "${{ needs.release-ios.result }}")
@@ -3169,7 +2837,7 @@ jobs:
 
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          CI_LINE=$(printf '*CI Checks:*\n• %s assistant\n• %s cli\n• %s credential-executor\n• %s gateway\n• %s web\n• %s desktop-electron\n• %s release-ios\n• %s release-android\n• %s release-windows\n• %s chrome-extension\n• %s cws-publish\n• %s assistant-docker\n• %s gateway-docker\n• %s credential-executor-docker\n• %s dockerhub\n• %s register-release\n• %s pack-cli\n• %s trigger-platform-qa\n• %s merge-release-branch' "$A" "$C" "$CE" "$G" "$W" "$DE" "$DI" "$DA" "$DW" "$CX" "$CXP" "$AI" "$GI" "$CEI" "$DH" "$RR" "$PC" "$TQ" "$MB")
+          CI_LINE=$(printf '*CI Checks:*\n• %s assistant\n• %s cli\n• %s credential-executor\n• %s gateway\n• %s web\n• %s desktop-electron\n• %s release-ios\n• %s release-android\n• %s release-windows\n• %s chrome-extension\n• %s cws-publish\n• %s assistant-docker\n• %s gateway-docker\n• %s credential-executor-docker\n• %s tag-staging-release\n• %s pack-cli\n• %s trigger-platform-qa\n• %s merge-release-branch' "$A" "$C" "$CE" "$G" "$W" "$DE" "$DI" "$DA" "$DW" "$CX" "$CXP" "$AI" "$GI" "$CEI" "$TR" "$PC" "$TQ" "$MB")
 
           if [ -n "$SLACK_USER_ID" ]; then
             TRIGGERED_BY="<@${SLACK_USER_ID}>"
@@ -3178,7 +2846,7 @@ jobs:
           fi
 
           if [ "$IS_STAGING" = "true" ]; then
-            META_LINE=$(printf '*Version:* `%s`\n*Triggered by:* %s\n\n_This is a staging release. npm, GitHub Release, and DockerHub publishes were skipped. Docker images pushed to staging GCR, and the staging release was registered._' "$VERSION" "$TRIGGERED_BY")
+            META_LINE=$(printf '*Version:* `%s`\n*Triggered by:* %s\n\n_This is a staging release. npm packages published to the staging dist-tag, Docker images pushed to Docker Hub, and the staging release was tagged._' "$VERSION" "$TRIGGERED_BY")
           else
             META_LINE=$(printf '*Version:* `%s`\n*Triggered by:* %s' "$VERSION" "$TRIGGERED_BY")
           fi
