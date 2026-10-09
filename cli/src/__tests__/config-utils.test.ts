@@ -38,7 +38,7 @@ describe("config-utils", () => {
 
   test("buildHatchConfigValues adds the default hatch provider when no config exists", () => {
     expect(buildHatchConfigValues({}, "anthropic")).toEqual({
-      "llm.default.provider": "anthropic",
+      "llm.defaultProvider.provider": "anthropic",
     });
   });
 
@@ -46,14 +46,14 @@ describe("config-utils", () => {
     expect(
       buildHatchConfigValues(
         {
-          "llm.default.provider": "openai",
-          "llm.default.model": "gpt-5.4",
+          "llm.defaultProvider.provider": "openai",
+          "llm.defaultProvider.model": "gpt-5.4",
         },
         "anthropic",
       ),
     ).toEqual({
-      "llm.default.provider": "openai",
-      "llm.default.model": "gpt-5.4",
+      "llm.defaultProvider.provider": "openai",
+      "llm.defaultProvider.model": "gpt-5.4",
     });
   });
 
@@ -65,12 +65,12 @@ describe("config-utils", () => {
   test("writeInitialConfig does not add a mainAgent callSite for Anthropic defaults", () => {
     expect(
       readInitialConfig({
-        "llm.default.provider": "anthropic",
-        "llm.default.model": "claude-opus-4-7",
+        "llm.defaultProvider.provider": "anthropic",
+        "llm.defaultProvider.model": "claude-opus-4-7",
       }),
     ).toEqual({
       llm: {
-        default: {
+        defaultProvider: {
           provider: "anthropic",
           model: "claude-opus-4-7",
         },
@@ -103,13 +103,13 @@ describe("config-utils", () => {
   test("writeInitialConfig preserves explicit mainAgent overrides without rewriting them", () => {
     expect(
       readInitialConfig({
-        "llm.default.provider": "anthropic",
-        "llm.default.model": "claude-opus-4-7",
+        "llm.defaultProvider.provider": "anthropic",
+        "llm.defaultProvider.model": "claude-opus-4-7",
         "llm.callSites.mainAgent.model": "claude-haiku-4-5-20251001",
       }),
     ).toEqual({
       llm: {
-        default: {
+        defaultProvider: {
           provider: "anthropic",
           model: "claude-opus-4-7",
         },
@@ -125,12 +125,12 @@ describe("config-utils", () => {
   test("writeInitialConfig respects explicit non-default Anthropic models", () => {
     expect(
       readInitialConfig({
-        "llm.default.provider": "anthropic",
-        "llm.default.model": "claude-haiku-4-5-20251001",
+        "llm.defaultProvider.provider": "anthropic",
+        "llm.defaultProvider.model": "claude-haiku-4-5-20251001",
       }),
     ).toEqual({
       llm: {
-        default: {
+        defaultProvider: {
           provider: "anthropic",
           model: "claude-haiku-4-5-20251001",
         },
@@ -161,12 +161,12 @@ describe("config-utils", () => {
   test("writeInitialConfig does not add Opus for non-Anthropic providers", () => {
     expect(
       readInitialConfig({
-        "llm.default.provider": "openai",
-        "llm.default.model": "gpt-5.5",
+        "llm.defaultProvider.provider": "openai",
+        "llm.defaultProvider.model": "gpt-5.5",
       }),
     ).toEqual({
       llm: {
-        default: {
+        defaultProvider: {
           provider: "openai",
           model: "gpt-5.5",
         },

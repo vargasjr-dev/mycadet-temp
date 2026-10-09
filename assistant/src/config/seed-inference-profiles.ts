@@ -1,4 +1,5 @@
 import type { DrizzleDb } from "../persistence/db-connection.js";
+import { CADET_MANAGED_PROVIDER } from "../providers/cadet-model-routing.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../providers/inference/auth.js";
 import {
   createConnection,
@@ -47,7 +48,9 @@ export type SeedInferenceProfilesOptions = {
  *    `<provider>-personal` connection backed by the user's API key in CES.
  *    The BYOK columns of the intent × provider matrix stamp exactly that
  *    connection name (via `resolveDefaultConnectionName`), so the default
- *    profiles dispatch through it.
+ *    profiles dispatch through it. Skipped for the managed provider — the
+ *    `cadet` column routes through the canonical platform-backed row, never
+ *    a user key, so no `cadet-personal` connection exists or is needed.
  *
  * 2. **`llm.defaultProvider`**: written once at hatch time, mirroring the
  *    platform/managed/BYOK decision, and never overwritten afterward. The
@@ -89,9 +92,14 @@ export function seedInferenceProfiles(
   //    default profiles to dispatch.
   let usableHatchProvider: string | undefined;
   if (options.isHatch && !isPlatform) {
-    const hatchProvider = readString(readObject(llm.default)?.provider);
+    // The hatch overlay writes `llm.defaultProvider` directly (older CLIs
+    // wrote the legacy `llm.default` blob — read it as a fallback).
+    const hatchProvider =
+      readString(readObject(llm.defaultProvider)?.provider) ??
+      readString(readObject(llm.default)?.provider);
     if (
       hatchProvider &&
+      hatchProvider !== CADET_MANAGED_PROVIDER &&
       hatchProvider !== "ollama" &&
       !PROVIDERS_REQUIRING_BASE_URL_AND_MODELS.has(hatchProvider)
     ) {

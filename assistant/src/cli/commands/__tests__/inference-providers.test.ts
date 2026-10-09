@@ -1,9 +1,8 @@
 /**
  * Tests for `assistant inference providers` CLI arg parsing / IPC wiring —
  * the provider-first verbs (auth derived from the provider, explicit --auth
- * as an override), the openai-compatible `--base-url` / `--model` flags that
- * forward to the connection route's `base_url` + `models` fields, and the
- * deprecated `providers connections` alias.
+ * the openai-compatible `--base-url` / `--model` flags that
+ * forward to the connection route's `base_url` + `models` fields.
  */
 
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
@@ -487,34 +486,6 @@ describe("providers list output", () => {
       type: "api_key",
       credential: "credential/anthropic/x",
     });
-  });
-});
-
-describe("deprecated providers connections alias", () => {
-  test("connections create still forwards to the same route", async () => {
-    await run([
-      "providers",
-      "connections",
-      "create",
-      "anthropic-personal",
-      "--provider",
-      "anthropic",
-      "--credential",
-      "credential/anthropic/api_key",
-    ]);
-    expect(lastIpcCall()?.method).toBe("inference_provider_connections_create");
-    expect(lastIpcCall()?.params?.body).toEqual({
-      name: "anthropic-personal",
-      provider: "anthropic",
-      auth: { type: "api_key", credential: "credential/anthropic/api_key" },
-    });
-  });
-
-  test("connections list forwards to the same route", async () => {
-    mockIpcResult = { ok: true, result: { connections: [] } };
-    const { stdout } = await run(["providers", "connections", "list"]);
-    expect(lastIpcCall()?.method).toBe("inference_provider_connections_list");
-    expect(stdout).toContain("No providers found.");
   });
 });
 

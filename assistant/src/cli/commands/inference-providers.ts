@@ -10,9 +10,6 @@
  *     update  — update a provider entry
  *     delete  — remove a provider (rejects if profiles reference it)
  *
- *   `assistant inference providers connections <verb>` is a deprecated alias
- *   of the same verbs, kept for one release.
- *
  * All subcommands delegate to the daemon via IPC using the
  * `inference_provider_connections_*` routes.
  */
@@ -568,10 +565,6 @@ function attachCrudVerbs(parent: Command): void {
 export function attachProvidersSubcommand(inference: Command): void {
   const providers = subcommand(inference, "providers");
   attachCrudVerbs(providers);
-
-  // Deprecated alias, kept for one release.
-  const connections = subcommand(providers, "connections");
-  attachCrudVerbs(connections);
 
   attachLoginChatgptSubcommand(providers);
   attachDefaultProviderSubcommand(providers);

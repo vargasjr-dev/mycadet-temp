@@ -37,6 +37,7 @@ afterAll(() => {
   mock.restore();
 });
 
+import { CADET_MANAGED_PROVIDER } from "../../providers/cadet-model-routing.js";
 import { invalidateConfigCache } from "../loader.js";
 import { LLMSchema } from "../schemas/llm.js";
 import {
@@ -230,5 +231,57 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
 
     const fallbackLLM = seed({ llm: {} }, { isHatch: true });
     expect(fallbackLLM.defaultProvider?.connectionName).toBeUndefined();
+  });
+
+  test("hatch with the managed provider creates no personal connection", async () => {
+    const { initializeDb } = await import("../../persistence/db-init.js");
+    const { getDb } = await import("../../persistence/db-connection.js");
+    const { providerConnections } = await import(
+      "../../persistence/schema/inference.js"
+    );
+    const { getConnection } = await import(
+      "../../providers/inference/connections.js"
+    );
+    await initializeDb();
+    try {
+      // A Cadet Cloud hatch: the modern overlay key names the managed
+      // provider. The managed column routes through the canonical
+      // platform-backed row — a `cadet-personal` connection backed by a
+      // user API key must not be created.
+      seed(
+        { llm: { defaultProvider: { provider: CADET_MANAGED_PROVIDER } } },
+        { isHatch: true, db: getDb() },
+      );
+      expect(
+        getConnection(getDb(), `${CADET_MANAGED_PROVIDER}-personal`),
+      ).toBeNull();
+      expect(getDb().select().from(providerConnections).all()).toEqual([]);
+    } finally {
+      getDb().delete(providerConnections).run();
+    }
+  });
+
+  test("BYOK hatch via the modern overlay key still creates the personal connection", async () => {
+    const { initializeDb } = await import("../../persistence/db-init.js");
+    const { getDb } = await import("../../persistence/db-connection.js");
+    const { providerConnections } = await import(
+      "../../persistence/schema/inference.js"
+    );
+    const { getConnection } = await import(
+      "../../providers/inference/connections.js"
+    );
+    await initializeDb();
+    try {
+      const llm = seed(
+        { llm: { defaultProvider: { provider: "anthropic" } } },
+        { isHatch: true, db: getDb() },
+      );
+      expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
+      const conn = getConnection(getDb(), "anthropic-personal");
+      expect(conn?.name).toBe("anthropic-personal");
+      expect(conn?.provider).toBe("anthropic");
+    } finally {
+      getDb().delete(providerConnections).run();
+    }
   });
 });

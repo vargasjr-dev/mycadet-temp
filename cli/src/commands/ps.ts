@@ -677,6 +677,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
   );
 
   printTable(rows, { name: "NAME", status: "STATUS", info: "INFO" });
+  console.log("");
 }
 
 // ── Entry point ─────────────────────────────────────────────────
