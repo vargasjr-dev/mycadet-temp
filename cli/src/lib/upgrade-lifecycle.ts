@@ -25,6 +25,16 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { fetchReleases, resolveImageRefs } from "./platform-releases.js";
+import { z } from "zod";
+
+const GatewayHealthSchema = z.object({
+  version: z.string().optional(),
+});
+
+const MigrationGateBodySchema = z.object({
+  status: z.string().optional(),
+  reason: z.string().optional(),
+});
 import {
   getBuilderManagedEnvKeys,
   type DockerStatefulSetSpec,
@@ -289,8 +299,8 @@ export async function fetchCurrentVersion(
       signal: AbortSignal.timeout(5000),
     });
     if (resp.ok) {
-      const body = (await resp.json()) as { version?: string };
-      return body.version;
+      const parsed = GatewayHealthSchema.safeParse(await resp.json());
+      return parsed.success ? parsed.data.version : undefined;
     }
   } catch {
     // Best-effort
@@ -532,9 +542,11 @@ export async function rollbackMigrations(
         // The daemon's running-migrations 503 also says "starting" but
         // carries a `reason` field — don't retry against that one (the
         // rollback stays blocked until migrations leave the running state).
-        const parsed = JSON.parse(text) as { status?: string; reason?: string };
+        const parsed = MigrationGateBodySchema.safeParse(JSON.parse(text));
         gatewayStarting =
-          parsed.status === "starting" && parsed.reason === undefined;
+          parsed.success &&
+          parsed.data.status === "starting" &&
+          parsed.data.reason === undefined;
       } catch {
         // Non-JSON error body — not the starting gate.
       }

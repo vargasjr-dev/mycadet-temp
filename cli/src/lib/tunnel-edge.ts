@@ -14,7 +14,7 @@ import {
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
-import { isJsonObject } from "./json";
+import { IngressConfigSchema } from "./ngrok.js";
 import {
   ensureTunnelEdge,
   formatEdgeMode,
@@ -34,12 +34,11 @@ export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
  * enabled with a saved public URL.
  */
 function wantsWebIngress(config: Record<string, unknown>): boolean {
-  const ingress = config.ingress;
+  const parsed = IngressConfigSchema.safeParse(config.ingress);
   return (
-    isJsonObject(ingress) &&
-    ingress.enabled === true &&
-    typeof ingress.publicBaseUrl === "string" &&
-    ingress.publicBaseUrl.trim() !== ""
+    parsed.success &&
+    parsed.data.enabled === true &&
+    (parsed.data.publicBaseUrl?.trim() ?? "") !== ""
   );
 }
 
@@ -189,17 +188,16 @@ function ownsSharedIngress(
   ) {
     return false;
   }
-  let publicBaseUrl: unknown;
+  let publicBaseUrl: string | undefined;
   try {
-    publicBaseUrl = (
-      loadRawConfig(workspaceDir).ingress as
-        | { publicBaseUrl?: unknown }
-        | undefined
-    )?.publicBaseUrl;
+    const parsed = IngressConfigSchema.safeParse(
+      loadRawConfig(workspaceDir).ingress,
+    );
+    publicBaseUrl = parsed.success ? parsed.data.publicBaseUrl : undefined;
   } catch {
     return true;
   }
-  if (typeof publicBaseUrl !== "string" || !publicBaseUrl.trim()) {
+  if (!publicBaseUrl || !publicBaseUrl.trim()) {
     return true;
   }
   if (entry.ingressUrl === publicBaseUrl) {

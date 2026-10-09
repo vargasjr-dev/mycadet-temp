@@ -23,8 +23,23 @@ import {
 
 import type { AssistantEntry } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { isJsonObject } from "./json";
 import { authHeaders, invalidateOrgIdCache } from "./platform-client.js";
+import { z } from "zod";
+
+const ManagedBackupEntrySchema = z.object({
+  snapshot_name: z.string().optional(),
+  created_at: z.string().optional(),
+  ready_to_use: z.boolean().optional(),
+});
+
+const ManagedBackupsResponseSchema = z.object({
+  backups: z.array(ManagedBackupEntrySchema).optional(),
+});
+
+const CreatedBackupResponseSchema = z.object({
+  snapshot_name: z.string().optional(),
+  ready_to_use: z.boolean().optional(),
+});
 
 type PlatformEntry = Pick<AssistantEntry, "runtimeUrl" | "assistantId">;
 
@@ -73,8 +88,8 @@ async function fetchPlatformBackups(
       `Cadet Cloud backup list failed ${await errorSuffix(response)}`,
     );
   }
-  const body = (await response.json()) as { backups?: ManagedBackupEntry[] };
-  return body.backups ?? [];
+  const parsed = ManagedBackupsResponseSchema.safeParse(await response.json());
+  return parsed.success ? (parsed.data.backups ?? []) : [];
 }
 
 /**
@@ -115,20 +130,14 @@ export async function createPlatformBackup(
     );
   }
   const body: unknown = await response.json().catch(() => null);
-  const created = isJsonObject(body)
-    ? {
-        snapshot_name:
-          typeof body.snapshot_name === "string" ? body.snapshot_name : undefined,
-        ready_to_use: body.ready_to_use === true ? true : undefined,
-      }
-    : null;
-  const snapshotName = created?.snapshot_name;
-  if (!snapshotName) {
+  const created = CreatedBackupResponseSchema.safeParse(body);
+  if (!created.success || !created.data.snapshot_name) {
     throw new Error("Cadet Cloud backup create returned no snapshot name");
   }
-  if (created?.ready_to_use === true) {
+  if (created.data.ready_to_use === true) {
     return;
   }
+  const snapshotName = created.data.snapshot_name;
 
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {

@@ -77,6 +77,11 @@ import { relaunchDetached } from "../lib/detached-process.js";
 import { probePort } from "../lib/port-probe.js";
 import { openBrowser } from "../lib/open-browser";
 import { findWebDistDir } from "../lib/web-dist.js";
+import { z } from "zod";
+
+const AssistantIdBodySchema = z.object({
+  assistantId: z.string().optional(),
+});
 
 const SUPPORTED_INTERFACES = ["cli", "web"] as const;
 type SupportedInterface = (typeof SUPPORTED_INTERFACES)[number];
@@ -656,8 +661,9 @@ async function handleLocalEndpoints(
 
     let assistantId: string | undefined;
     try {
-      const body = (await req.json()) as { assistantId?: string };
-      assistantId = body.assistantId;
+      const parsed = AssistantIdBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new Error("invalid body");
+      assistantId = parsed.data.assistantId;
     } catch {
       return Response.json(
         { ok: false, error: "Invalid JSON body" },
@@ -707,8 +713,9 @@ async function handleLocalEndpoints(
 
     let assistantId: string | undefined;
     try {
-      const body = (await req.json()) as { assistantId?: string };
-      assistantId = body.assistantId;
+      const parsed = AssistantIdBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new Error("invalid body");
+      assistantId = parsed.data.assistantId;
     } catch {
       return Response.json(
         { ok: false, error: "Invalid JSON body" },

@@ -11,21 +11,36 @@ import {
   saveIngressUrl,
   saveNgrokDomain,
 } from "./ingress-config.js";
-import { isJsonObject } from "./json";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_POLL_INTERVAL_MS = 500;
 const NGROK_POLL_TIMEOUT_MS = 15_000;
 
-interface NgrokTunnel {
-  public_url: string;
-  config?: { addr?: string };
-}
+const NgrokTunnelSchema = z.object({
+  public_url: z.string(),
+  config: z
+    .object({
+      addr: z.string().optional(),
+    })
+    .optional(),
+});
 
-interface NgrokTunnelsResponse {
-  tunnels: NgrokTunnel[];
-}
+type NgrokTunnel = z.infer<typeof NgrokTunnelSchema>;
+
+const NgrokTunnelsResponseSchema = z.object({
+  tunnels: z.array(NgrokTunnelSchema).optional(),
+});
+
+/**
+ * The ingress block of the workspace config, as read by the tunnel edge:
+ * explicitly enabled with a saved public URL.
+ */
+export const IngressConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  publicBaseUrl: z.string().optional(),
+});
 
 /**
  * Check whether ngrok is installed and accessible on the PATH.
@@ -55,8 +70,8 @@ async function queryNgrokTunnels(): Promise<NgrokTunnel[] | null> {
       signal: AbortSignal.timeout(2_000),
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as NgrokTunnelsResponse;
-    return data.tunnels ?? [];
+    const parsed = NgrokTunnelsResponseSchema.safeParse(await res.json());
+    return parsed.success ? (parsed.data.tunnels ?? []) : null;
   } catch {
     return null;
   }
@@ -195,13 +210,27 @@ export async function waitForNgrokUrl(
  * Check whether an already-loaded workspace config has webhook-based
  * integrations (e.g. Telegram, Twilio) that require a public ingress URL.
  */
+const TelegramIntegrationSchema = z.object({
+  botUsername: z.unknown().optional(),
+});
+
+const TwilioIntegrationSchema = z.object({
+  accountSid: z.unknown().optional(),
+  phoneNumber: z.unknown().optional(),
+});
+
 export function hasWebhookIntegrations(
   config: Record<string, unknown>,
 ): boolean {
-  const telegram = isJsonObject(config.telegram) ? config.telegram : undefined;
-  if (telegram?.botUsername) return true;
-  const twilio = isJsonObject(config.twilio) ? config.twilio : undefined;
-  if (twilio?.accountSid || twilio?.phoneNumber) return true;
+  const telegram = TelegramIntegrationSchema.safeParse(config.telegram);
+  if (telegram.success && telegram.data.botUsername) return true;
+  const twilio = TwilioIntegrationSchema.safeParse(config.twilio);
+  if (
+    twilio.success &&
+    (twilio.data.accountSid || twilio.data.phoneNumber)
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -227,9 +256,11 @@ export function hasWebhookIntegrationsConfigured(
 function hasNonNgrokIngressUrl(workspaceDir: string): boolean {
   try {
     const config = loadRawConfig(workspaceDir);
-    const ingress = isJsonObject(config.ingress) ? config.ingress : undefined;
-    const publicBaseUrl = ingress?.publicBaseUrl;
-    if (!publicBaseUrl || typeof publicBaseUrl !== "string") return false;
+    const parsed = IngressConfigSchema.safeParse(config.ingress);
+    const publicBaseUrl = parsed.success
+      ? parsed.data.publicBaseUrl
+      : undefined;
+    if (!publicBaseUrl) return false;
     return !publicBaseUrl.includes("ngrok");
   } catch {
     return false;

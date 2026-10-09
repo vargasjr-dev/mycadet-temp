@@ -1,12 +1,13 @@
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
+
+const HealthResponseSchema = z.object({
+  status: z.string().optional(),
+  message: z.string().optional(),
+  version: z.string().optional(),
+});
 
 export const HEALTH_CHECK_TIMEOUT_MS = 1500;
-
-interface HealthResponse {
-  status: string;
-  message?: string;
-  version?: string;
-}
 
 export interface HealthCheckResult {
   status: string;
@@ -57,7 +58,9 @@ export async function checkManagedHealth(
       return { status: `error (${response.status})`, detail: null };
     }
 
-    const data = (await response.json()) as HealthResponse;
+    const data = HealthResponseSchema
+      .catch({})
+      .parse(await response.json());
     const status = data.status || "unknown";
     return {
       status,
@@ -168,12 +171,12 @@ export async function fetchManagedPs(
   }
 }
 
-interface LegacyConnectionStatus {
-  state: string;
-  is_awake: boolean;
-  pod_status: string | null;
-  detail: string | null;
-}
+const LegacyConnectionStatusSchema = z.object({
+  state: z.string(),
+  is_awake: z.boolean(),
+  pod_status: z.string().nullable(),
+  detail: z.string().nullable(),
+});
 
 async function fetchLegacyConnectionStatus(
   runtimeUrl: string,
@@ -194,7 +197,11 @@ async function fetchLegacyConnectionStatus(
     clearTimeout(timeoutId);
     if (!response.ok) return null;
 
-    const data = (await response.json()) as LegacyConnectionStatus;
+    const parsed = LegacyConnectionStatusSchema.safeParse(
+      await response.json(),
+    );
+    if (!parsed.success) return null;
+    const data = parsed.data;
 
     // Translate legacy shape into the ps process tree
     const status: ManagedProcessEntry["status"] = data.is_awake
@@ -240,7 +247,9 @@ export async function checkHealth(
       return { status: `error (${response.status})`, detail: null };
     }
 
-    const data = (await response.json()) as HealthResponse;
+    const data = HealthResponseSchema
+      .catch({})
+      .parse(await response.json());
     const status = data.status || "unknown";
     return {
       status,

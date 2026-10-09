@@ -6,9 +6,19 @@
  * the web UI's xterm.js terminal uses.
  */
 
-import { authHeaders, getPlatformUrl } from "./platform-client.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { isJsonObject } from "./json";
+import { authHeaders, getPlatformUrl } from "./platform-client.js";
+import { z } from "zod";
+
+const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
+
+const TerminalOutputEventSchema = z.object({
+  seq: z.number(),
+  /** Base64-encoded PTY output bytes. */
+  data: z.string(),
+});
+
+export type TerminalOutputEvent = z.infer<typeof TerminalOutputEventSchema>;
 
 // ---------------------------------------------------------------------------
 // Create / Close
@@ -41,11 +51,11 @@ export async function createTerminalSession(
       `Failed to create terminal session (${response.status}): ${detail || response.statusText}`,
     );
   }
-  const payloadBody: unknown = await response.json();
-  if (!isJsonObject(payloadBody) || typeof payloadBody.session_id !== "string") {
+  const parsed = TerminalSessionResponseSchema.safeParse(await response.json());
+  if (!parsed.success) {
     throw new Error("Terminal session response did not include a session_id.");
   }
-  return { session_id: payloadBody.session_id };
+  return parsed.data;
 }
 
 export async function closeTerminalSession(
@@ -125,12 +135,6 @@ export async function resizeTerminalSession(
 // SSE event stream
 // ---------------------------------------------------------------------------
 
-export interface TerminalOutputEvent {
-  seq: number;
-  /** Base64-encoded PTY output bytes. */
-  data: string;
-}
-
 /**
  * Subscribe to the terminal output SSE stream. Yields parsed events as they
  * arrive. The generator completes when the stream ends or is aborted.
@@ -175,7 +179,10 @@ export async function* subscribeTerminalEvents(
         const trimmed = line.trimEnd();
         if (trimmed.startsWith("data: ")) {
           try {
-            yield JSON.parse(trimmed.slice(6)) as TerminalOutputEvent;
+            const frame = TerminalOutputEventSchema.safeParse(
+              JSON.parse(trimmed.slice(6)),
+            );
+            if (frame.success) yield frame.data;
           } catch {
             // Skip malformed SSE frames
           }

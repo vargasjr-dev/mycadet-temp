@@ -5,7 +5,7 @@
 import crypto from "node:crypto";
 
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { isJsonObject } from "./json";
+import { z } from "zod";
 
 const WORKOS_API_BASE_URL = "https://api.workos.com";
 const PROVIDER_ID = "workos";
@@ -51,13 +51,39 @@ export function buildAuthorizeUrl(options: AuthorizeUrlOptions): string {
   return url.toString();
 }
 
-interface HeadlessProviderEntry {
-  id: string;
-  name?: string;
-  client_id?: string;
-  flows?: string[];
-  openid_configuration_url?: string;
-}
+const HeadlessProviderEntrySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  client_id: z.string().optional(),
+  flows: z.array(z.string()).optional(),
+  openid_configuration_url: z.string().optional(),
+});
+
+type HeadlessProviderEntry = z.infer<typeof HeadlessProviderEntrySchema>;
+
+const WorkosAuthConfigSchema = z.object({
+  data: z
+    .object({
+      socialaccount: z
+        .object({
+          providers: z.array(HeadlessProviderEntrySchema).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+const WorkosAccessTokenResponseSchema = z.object({
+  access_token: z.string(),
+});
+
+const WorkosSessionTokenResponseSchema = z.object({
+  meta: z
+    .object({
+      session_token: z.string(),
+    })
+    .optional(),
+});
 
 /**
  * Pick the OAuth2 WorkOS provider from the headless config. During the
@@ -84,12 +110,11 @@ export async function fetchWorkosClientId(
   if (!response.ok) {
     throw new Error(`Failed to fetch auth config (${response.status})`);
   }
-  const body = (await response.json()) as {
-    data?: { socialaccount?: { providers?: HeadlessProviderEntry[] } };
-  };
-  const clientId = selectWorkosClientId(
-    body.data?.socialaccount?.providers ?? [],
-  );
+  const parsed = WorkosAuthConfigSchema.safeParse(await response.json());
+  const providers = parsed.success
+    ? (parsed.data.data?.socialaccount?.providers ?? [])
+    : [];
+  const clientId = selectWorkosClientId(providers);
   if (!clientId) {
     throw new Error(
       "Cadet Cloud does not advertise a token-auth WorkOS provider; cannot start PKCE login.",
@@ -123,15 +148,13 @@ export async function exchangeCodeWithWorkos(options: {
       `WorkOS code exchange failed (${response.status}): ${body}`,
     );
   }
-  const body: unknown = await response.json();
-  const accessToken =
-    isJsonObject(body) && typeof body.access_token === "string"
-      ? body.access_token
-      : undefined;
-  if (!accessToken) {
+  const parsed = WorkosAccessTokenResponseSchema.safeParse(
+    await response.json(),
+  );
+  if (!parsed.success) {
     throw new Error("WorkOS code exchange returned no access token.");
   }
-  return accessToken;
+  return parsed.data.access_token;
 }
 
 /** Exchange the WorkOS access token for a platform session token. */
@@ -154,10 +177,13 @@ export async function exchangeAccessTokenForSession(
     const body = await response.text();
     throw new Error(`Session exchange failed (${response.status}): ${body}`);
   }
-  const body: unknown = await response.json();
-  const meta = isJsonObject(body) && isJsonObject(body.meta) ? body.meta : undefined;
-  const sessionToken = meta?.session_token;
-  if (typeof sessionToken !== "string" || !sessionToken) {
+  const parsed = WorkosSessionTokenResponseSchema.safeParse(
+    await response.json(),
+  );
+  const sessionToken = parsed.success
+    ? parsed.data.meta?.session_token
+    : undefined;
+  if (!sessionToken) {
     throw new Error("Session exchange returned no session token.");
   }
   return sessionToken;

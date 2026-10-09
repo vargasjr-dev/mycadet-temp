@@ -1,5 +1,6 @@
 import { execFileSync } from "child_process";
 import { createHash, randomUUID } from "crypto";
+import { z } from "zod";
 import {
   closeSync,
   mkdirSync,
@@ -87,30 +88,15 @@ function processStartedAt(pid: number): string | undefined {
   }
 }
 
+const LockOwnerFileSchema = z.object({
+  pid: z.number().int().positive(),
+  processStartedAt: z.string().min(1).optional().catch(undefined),
+  token: z.string().min(1),
+});
+
 function parseOwner(raw: string): LockOwner | undefined {
   try {
-    const parsed = JSON.parse(raw) as {
-      pid?: unknown;
-      processStartedAt?: unknown;
-      token?: unknown;
-    };
-    if (
-      typeof parsed.pid === "number" &&
-      Number.isInteger(parsed.pid) &&
-      parsed.pid > 0 &&
-      typeof parsed.token === "string" &&
-      parsed.token.length > 0
-    ) {
-      return {
-        pid: parsed.pid,
-        processStartedAt:
-          typeof parsed.processStartedAt === "string" &&
-          parsed.processStartedAt.length > 0
-            ? parsed.processStartedAt
-            : undefined,
-        token: parsed.token,
-      };
-    }
+    return LockOwnerFileSchema.parse(JSON.parse(raw));
   } catch {}
   return undefined;
 }

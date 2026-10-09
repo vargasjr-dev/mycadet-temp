@@ -11,6 +11,9 @@ import {
   resolveRuntimeUrl,
 } from "./runtime-url.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
+
+const RuntimeIdentitySchema = z.object({ version: z.string().min(1) });
 
 /**
  * Thrown when the local runtime returns 409 for an export/import request
@@ -66,15 +69,23 @@ async function migrationRequestHeaders(
   return bearerHeaders(token);
 }
 
-interface Raw409Body {
-  detail?: string;
+const Raw409BodySchema = z.object({
+  detail: z.string().optional(),
   // The runtime's current 409 contract nests the payload under `error`:
   //   { error: { code: "export_in_progress" | "import_in_progress", job_id } }
   // We also tolerate a legacy flat shape ({ code, job_id }) for resilience.
-  error?: string | { code?: string; job_id?: string };
-  code?: string;
-  job_id?: string;
-}
+  error: z
+    .union([
+      z.string(),
+      z.object({
+        code: z.string().optional(),
+        job_id: z.string().optional(),
+      }),
+    ])
+    .optional(),
+  code: z.string().optional(),
+  job_id: z.string().optional(),
+});
 
 /** Common 409 → MigrationInProgressError parsing used by the two POST helpers. */
 async function throwIfInProgress(
@@ -82,11 +93,11 @@ async function throwIfInProgress(
   defaultKind: "export_in_progress" | "import_in_progress",
 ): Promise<void> {
   if (response.status !== 409) return;
-  const body = (await response.json().catch(() => ({}))) as Raw409Body;
-  const nested =
-    typeof body.error === "object" && body.error !== null
-      ? body.error
-      : undefined;
+  const parsed = Raw409BodySchema.safeParse(
+    await response.json().catch(() => ({})),
+  );
+  const body = parsed.success ? parsed.data : {};
+  const nested = typeof body.error === "object" ? body.error : undefined;
   const jobId = nested?.job_id ?? body.job_id ?? "";
   const rawKind =
     nested?.code ??
@@ -355,9 +366,9 @@ export async function localRuntimeIdentity(
       `Failed to fetch runtime identity: ${response.status} ${response.statusText}`,
     );
   }
-  const body = (await response.json()) as { version?: unknown };
-  if (typeof body.version !== "string" || !body.version) {
+  const parsed = RuntimeIdentitySchema.safeParse(await response.json());
+  if (!parsed.success) {
     throw new Error("Runtime identity response missing version");
   }
-  return { version: body.version };
+  return { version: parsed.data.version };
 }

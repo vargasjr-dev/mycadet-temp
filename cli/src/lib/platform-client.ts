@@ -16,6 +16,15 @@ import { getLockfilePlatformBaseUrl } from "./assistant-config.js";
 import { getConfigDir, getConfigDirs } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
+
+const PlatformErrorDetailSchema = z.object({
+  detail: z.string().optional(),
+});
+
+const InProgressResponseSchema = z.object({
+  in_progress: z.boolean().optional(),
+});
 
 function getPlatformTokenPath(): string {
   return join(getConfigDir(getCurrentEnvironment()), "platform-token");
@@ -558,9 +567,9 @@ export async function hatchAssistant(
   }
 
   if (response.status === 401 || response.status === 403) {
-    const detail = (await response.json().catch(() => ({}))) as {
-      detail?: string;
-    };
+    const detail = PlatformErrorDetailSchema
+      .catch({})
+      .parse(await response.json().catch(() => ({})));
     throw new Error(
       detail.detail ??
         "Invalid or expired token. Run `cadet login` to re-authenticate.",
@@ -571,9 +580,9 @@ export async function hatchAssistant(
     throw new Error("Insufficient balance to hatch a new assistant.");
   }
 
-  const errorBody = (await response.json().catch(() => ({}))) as {
-    detail?: string;
-  };
+  const errorBody = PlatformErrorDetailSchema
+    .catch({})
+    .parse(await response.json().catch(() => ({})));
   throw new Error(
     errorBody.detail ??
       `Platform API error: ${response.status} ${response.statusText}`,
@@ -720,8 +729,10 @@ export async function fetchUpgradeInProgress(
 
     if (!response.ok) return null;
 
-    const body = (await response.json()) as { in_progress?: boolean };
-    return typeof body.in_progress === "boolean" ? body.in_progress : null;
+    const parsed = InProgressResponseSchema.safeParse(await response.json());
+    return parsed.success && parsed.data.in_progress !== undefined
+      ? parsed.data.in_progress
+      : null;
   } catch {
     return null;
   }
