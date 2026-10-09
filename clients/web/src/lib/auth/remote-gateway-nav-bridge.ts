@@ -30,7 +30,9 @@ function currentPath(): string {
 }
 
 function emitToParent(nav: "push" | "replace" | "pop"): void {
-  if (applyingParentNav) return;
+  if (applyingParentNav) {
+    return;
+  }
   try {
     window.parent.postMessage(
       { source: NAV_SOURCE, nav, path: currentPath() },
@@ -42,7 +44,9 @@ function emitToParent(nav: "push" | "replace" | "pop"): void {
 }
 
 export function setupRemoteGatewayNavBridge(): void {
-  if (!isRemoteGatewayMode()) return;
+  if (!isRemoteGatewayMode()) {
+    return;
+  }
 
   for (const method of ["pushState", "replaceState"] as const) {
     const original = window.history[method].bind(window.history);
@@ -61,11 +65,22 @@ export function setupRemoteGatewayNavBridge(): void {
   window.addEventListener("hashchange", () => emitToParent("pop"));
 
   window.addEventListener("message", (event: MessageEvent) => {
-    if (event.source !== window.parent) return;
+    if (event.source !== window.parent) {
+      return;
+    }
     const data = event.data as { source?: string; path?: unknown } | null;
-    if (!data || data.source !== PARENT_NAV_SOURCE) return;
-    if (typeof data.path !== "string" || !data.path.startsWith("/")) return;
-    if (data.path === currentPath()) return;
+    if (!data || data.source !== PARENT_NAV_SOURCE) {
+      return;
+    }
+    if (
+      typeof data.path !== "string" ||
+      !data.path.startsWith("/")
+    ) {
+      return;
+    }
+    if (data.path === currentPath()) {
+      return;
+    }
 
     applyingParentNav = true;
     try {
