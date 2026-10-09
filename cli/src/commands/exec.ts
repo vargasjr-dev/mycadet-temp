@@ -1,5 +1,9 @@
+import { existsSync } from "fs";
+import { join } from "path";
+
 import { isManagedCloud } from "../lib/managed-cloud.js";
 import { spawn } from "child_process";
+import { red } from "../lib/color";
 
 import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
@@ -26,7 +30,7 @@ function normalizeService(raw: string): ServiceName {
   const normalized = SERVICE_ALIASES[raw];
   if (!normalized) {
     console.error(
-      `Unknown service '${raw}'. Valid services: assistant, gateway, credential-executor`,
+      red(`Unknown service '${raw}'. Valid services: assistant, gateway, credential-executor`),
     );
     process.exit(1);
   }
@@ -103,8 +107,10 @@ export async function exec(): Promise<void> {
 
   if (dashDashIndex === -1) {
     console.error(
-      "Error: missing '--' separator before command.\n" +
-        "Usage: cadet exec [<name>] -- <command...>",
+      red(
+        "Error: missing '--' separator before command.\n" +
+          "Usage: cadet exec [<name>] -- <command...>",
+      ),
     );
     process.exit(1);
   }
@@ -112,7 +118,7 @@ export async function exec(): Promise<void> {
   const command = rawArgs.slice(dashDashIndex + 1);
 
   if (command.length === 0) {
-    console.error("Error: no command specified after '--'.");
+    console.error(red("Error: no command specified after '--'."));
     process.exit(1);
   }
 
@@ -130,7 +136,7 @@ export async function exec(): Promise<void> {
     } else if (preArgs[i] === "--timeout" && preArgs[i + 1]) {
       const secs = Number(preArgs[++i]);
       if (!Number.isFinite(secs) || secs < 0) {
-        console.error("Error: --timeout must be a non-negative number.");
+        console.error(red("Error: --timeout must be a non-negative number."));
         process.exit(1);
       }
       timeoutMs = secs === 0 ? 0 : secs * 1000;
@@ -147,9 +153,9 @@ export async function exec(): Promise<void> {
 
   if (!entry) {
     if (nameArg) {
-      console.error(`No assistant instance found with name '${nameArg}'.`);
+      console.error(red(`No assistant instance found with name '${nameArg}'.`));
     } else {
-      console.error("No assistant instance found. Run `cadet hatch` first.");
+      console.error(red("No assistant instance found. Run `cadet hatch` first."));
     }
     process.exit(1);
   }
@@ -157,9 +163,43 @@ export async function exec(): Promise<void> {
   const cloud = entry.cloud;
 
   if (cloud === "local") {
+    // Local assistants run their runtime with CADET_WORKSPACE_DIR pointed at
+    // `<instanceDir>/workspace` (see applyDaemonEnvOverrides in local.ts).
+    // Mirror that here so spawned commands — most commonly
+    // `cadet exec -- assistant ps` — resolve the same IPC socket as the
+    // running daemon instead of a cwd-derived default like
+    // `~/workspace/assistant.sock`.
+    const instanceDir = entry.resources?.instanceDir;
+    if (!instanceDir) {
+      console.error(
+        red(
+          `Error: assistant '${entry.assistantId}' has no local instance directory recorded.`,
+        ),
+      );
+      process.exit(1);
+    }
+
+    const workspaceDir = join(instanceDir, "workspace");
+    const socketPath = join(workspaceDir, "assistant.sock");
+    if (!existsSync(socketPath)) {
+      console.error(
+        red(
+          `Error: the assistant runtime is not reachable (no socket at ${socketPath}).`,
+        ),
+      );
+      console.error(
+        red("Start it with `cadet wake`, or check `cadet ps` for its status."),
+      );
+      process.exit(1);
+    }
+
     const child = spawn(command[0], command.slice(1), {
       stdio: "inherit",
       windowsHide: true,
+      env: {
+        ...process.env,
+        CADET_WORKSPACE_DIR: workspaceDir,
+      },
     });
     await new Promise<void>((resolve) => {
       child.on("close", (code) => {
@@ -167,7 +207,7 @@ export async function exec(): Promise<void> {
         resolve();
       });
       child.on("error", (err) => {
-        console.error(`Error: ${err.message}`);
+        console.error(red(`Error: ${err.message}`));
         process.exitCode = 1;
         resolve();
       });
@@ -212,7 +252,7 @@ export async function exec(): Promise<void> {
     const token = readPlatformToken();
     if (!token) {
       console.error(
-        "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+        red("Not logged in. Run `cadet login` first to authenticate with Cadet Cloud."),
       );
       process.exit(1);
     }
@@ -244,6 +284,6 @@ export async function exec(): Promise<void> {
     return;
   }
 
-  console.error(`Error: 'cadet exec' is not supported for ${cloud} instances.`);
+  console.error(red(`Error: 'cadet exec' is not supported for ${cloud} instances.`));
   process.exit(1);
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { startLoopbackListener } from "../commands/login.js";
+import { startLoopbackListener } from "../lib/cloud-login.js";
 
 /** Resolve "settled"/"pending" — proves whether `waitForCode` resolved. */
 async function settleState(

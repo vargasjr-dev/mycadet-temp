@@ -25,7 +25,6 @@ import {
   DEFAULT_TERMINAL_COLUMNS,
   estimateItemHeight,
   formatConfirmationPreview,
-  formatHeaderEyebrow,
   formatHeaderTitle,
   formatTimestamp,
   isRuntimeMessage,
@@ -65,14 +64,36 @@ export const ANSI = {
   gray: "\x1b[90m",
 } as const;
 
+/**
+ * The completion catalog: the CLI's own commands plus the web client's set
+ * (clients/web slash-command-catalog: /commands /compact /clean /models
+ * /status /doctor /btw). /clean /commands /models /status resolve through
+ * the daemon's meta-command endpoint; /compact and /doctor run as real
+ * turns (same as web); /config is CLI-local (runtime config get/set).
+ */
 export const SLASH_COMMANDS = [
   "/btw",
+  "/clean",
   "/clear",
+  "/commands",
+  "/compact",
+  "/config",
+  "/doctor",
   "/exit",
   "/help",
+  "/models",
   "/q",
   "/quit",
+  "/status",
 ];
+
+/** Commands the daemon resolves via POST /v1/conversations/{id}/slash. */
+const DAEMON_META_COMMANDS = new Set([
+  "/clean",
+  "/commands",
+  "/models",
+  "/status",
+]);
 
 const SEND_TIMEOUT_MS = 5000;
 /** Fresh deadline for a request retried after a mid-session token refresh —
@@ -82,8 +103,7 @@ const RETRY_TIMEOUT_MS = 30_000;
 // ── Layout constants ──────────────────────────────────────
 const MAX_TOTAL_WIDTH = 72;
 const DEFAULT_TERMINAL_ROWS = 24;
-const HEADER_PREFIX_UNICODE = "── Cadet ";
-const HEADER_PREFIX_ASCII = "-- Cadet ";
+// The header opens with a plain full-width rule (no word prefix).
 
 // Left panel structure: HEADER lines + art + FOOTER lines
 // Header chrome (borders around panel content)
@@ -258,6 +278,98 @@ async function runtimeRequest<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+interface MetaSlashResponse {
+  kind: "clean" | "info";
+  text: string;
+  contextUsage?: { tokens: number; maxTokens: number | null; fillRatio: number | null };
+}
+
+/**
+ * Resolve a local meta slash command (/clean, /commands, /models, /status)
+ * through the daemon — no turn starts, nothing persists. The CLI addresses
+ * its conversation by key (the assistant id); the daemon's slash route
+ * resolves keys to conversation ids.
+ */
+async function resolveMetaCommand(
+  baseUrl: string,
+  assistantId: string,
+  command: string,
+  auth?: Record<string, string>,
+): Promise<MetaSlashResponse> {
+  const url = `${baseUrl}/v1/conversations/${encodeURIComponent(assistantId)}/slash`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...auth },
+    body: JSON.stringify({ command }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(friendlyErrorMessage(response.status, body));
+  }
+  return response.json() as Promise<MetaSlashResponse>;
+}
+
+async function fetchRuntimeConfig(
+  baseUrl: string,
+  auth?: Record<string, string>,
+): Promise<unknown> {
+  const url = `${baseUrl}/v1/config`;
+  const response = await fetch(url, {
+    headers: { "Content-Type": "application/json", ...auth },
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(friendlyErrorMessage(response.status, body));
+  }
+  return response.json();
+}
+
+async function setRuntimeConfigValue(
+  baseUrl: string,
+  path: string,
+  value: unknown,
+  auth?: Record<string, string>,
+): Promise<void> {
+  const url = `${baseUrl}/v1/config/set`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...auth },
+    body: JSON.stringify({ path, value }),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(friendlyErrorMessage(response.status, body));
+  }
+}
+
+/** Resolve a dotted config path within the fetched config object. */
+function resolveConfigPath(config: unknown, dottedPath: string): unknown {
+  let current: unknown = config;
+  for (const segment of dottedPath.split(".")) {
+    if (
+      current === null ||
+      typeof current !== "object" ||
+      !(segment in (current as Record<string, unknown>))
+    ) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+/** Parse a /config value: JSON when it parses, plain string otherwise. */
+function parseConfigValue(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
 }
 
 async function checkHealthRuntime(baseUrl: string): Promise<HealthResponse> {
@@ -702,7 +814,7 @@ interface DefaultMainScreenProps {
 
 interface StyledLine {
   text: string;
-  style: "heading" | "dim" | "normal" | "eyebrow" | "title" | "art";
+  style: "heading" | "dim" | "normal" | "title" | "art";
 }
 
 function CompactHeader({
@@ -747,14 +859,12 @@ function DefaultMainScreen({
 }: DefaultMainScreenProps): ReactElement {
   const accentColor = "magenta";
   const caps = getTerminalCapabilities();
-  const headerPrefix = caps.unicodeSupported
-    ? HEADER_PREFIX_UNICODE
-    : HEADER_PREFIX_ASCII;
   const headerSep = caps.unicodeSupported ? "─" : "-";
 
   const { stdout } = useStdout();
   const terminalColumns = stdout.columns || DEFAULT_TERMINAL_COLUMNS;
-  const totalWidth = Math.min(MAX_TOTAL_WIDTH, terminalColumns);
+  // The header spans the full terminal width (previously capped at 72).
+  const totalWidth = terminalColumns;
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
 
   if (isCompact) {
@@ -772,7 +882,6 @@ function DefaultMainScreen({
 
   const leftLines: StyledLine[] = [
     { text: " ", style: "normal" },
-    { text: formatHeaderEyebrow(), style: "eyebrow" },
     { text: formatHeaderTitle(assistantName), style: "title" },
     { text: " ", style: "normal" },
     ...art.map((line) => ({
@@ -800,25 +909,15 @@ function DefaultMainScreen({
 
   return (
     <Box flexDirection="column" width={totalWidth}>
-      <Text dimColor>
-        {headerPrefix +
-          headerSep.repeat(Math.max(0, totalWidth - headerPrefix.length))}
-      </Text>
+      <Text dimColor>{headerSep.repeat(totalWidth)}</Text>
       <Box flexDirection="row">
         <Box flexDirection="column" width={LEFT_PANEL_WIDTH}>
           {Array.from({ length: maxLines }, (_, i) => {
             const item = leftLines[i];
             if (!item) return <Text key={i}> </Text>;
-            if (item.style === "eyebrow") {
-              return (
-                <Text key={i} color={caps.isDumb ? undefined : accentColor}>
-                  {item.text}
-                </Text>
-              );
-            }
             if (item.style === "title") {
               return (
-                <Text key={i} bold>
+                <Text key={i} bold color={caps.isDumb ? undefined : accentColor}>
                   {item.text}
                 </Text>
               );
@@ -1744,6 +1843,104 @@ function ChatApp({
         return;
       }
 
+      // Daemon meta commands (/clean /commands /models /status) — the same
+      // set web resolves through the daemon's slash endpoint. No turn
+      // starts; the answer renders as an ephemeral status line.
+      const metaCommand = trimmed.split(/\s+/)[0]?.toLowerCase();
+      if (metaCommand && DAEMON_META_COMMANDS.has(metaCommand)) {
+        const isConnected = await ensureConnected();
+        if (!isConnected) return;
+
+        h.showSpinner(`Running ${metaCommand}...`);
+        try {
+          const result = await resolveMetaCommand(
+            runtimeUrl,
+            assistantId,
+            trimmed,
+            auth,
+          );
+          h.hideSpinner();
+          h.addStatus(result.text || "(no output)");
+          if (result.contextUsage) {
+            const usage = result.contextUsage;
+            const pct =
+              usage.maxTokens && usage.maxTokens > 0
+                ? ` (${Math.round((usage.tokens / usage.maxTokens) * 100)}% of context)`
+                : "";
+            h.addStatus(
+              `Context: ${usage.tokens.toLocaleString()} tokens${pct}`,
+              "gray",
+            );
+          }
+        } catch (err) {
+          h.hideSpinner();
+          h.showError(
+            `${metaCommand} failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+        setInputFocused(true);
+        return;
+      }
+
+      // /config — read and write runtime config values (GET /v1/config,
+      // POST /v1/config/set — the same API `assistant config set` uses).
+      if (metaCommand === "/config") {
+        const argString = trimmed.slice("/config".length).trim();
+        const isConnected = await ensureConnected();
+        if (!isConnected) return;
+
+        h.showSpinner("Reading config...");
+        try {
+          if (!argString) {
+            const config = await fetchRuntimeConfig(runtimeUrl, auth);
+            h.hideSpinner();
+            const printed = JSON.stringify(config, null, 2);
+            const lines = printed.split("\n");
+            h.addStatus(
+              lines.length > 40
+                ? lines.slice(0, 40).join("\n") + `\n... (${lines.length - 40} more lines)`
+                : printed,
+            );
+          } else {
+            // Split "<path>" or "<path> <value>" — the path is dotted and
+            // never contains spaces; the value is everything after it.
+            const spaceIndex = argString.indexOf(" ");
+            const configPath = (
+              spaceIndex === -1 ? argString : argString.slice(0, spaceIndex)
+            ).trim();
+            const rawValue =
+              spaceIndex === -1 ? undefined : argString.slice(spaceIndex + 1).trim();
+
+            if (rawValue === undefined) {
+              const config = await fetchRuntimeConfig(runtimeUrl, auth);
+              h.hideSpinner();
+              const value = resolveConfigPath(config, configPath);
+              h.addStatus(
+                value === undefined
+                  ? `config.${configPath} is not set`
+                  : `config.${configPath} = ${JSON.stringify(value, null, 2)}`,
+              );
+            } else {
+              await setRuntimeConfigValue(
+                runtimeUrl,
+                configPath,
+                parseConfigValue(rawValue),
+                auth,
+              );
+              h.hideSpinner();
+              h.addStatus(`Set config.${configPath} = ${rawValue}`, "green");
+            }
+          }
+        } catch (err) {
+          h.hideSpinner();
+          h.showError(
+            `/config failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+        setInputFocused(true);
+        return;
+      }
+
       // If a connection attempt is already in progress, don't silently drop input
       if (connectingRef.current) {
         h.addStatus(
@@ -1836,8 +2033,10 @@ function ChatApp({
       }
 
       if (busyRef.current) {
-        // /btw is already handled above this block
-        if (!trimmed.startsWith("/")) {
+        // /btw and the other local commands are already handled above this
+        // block — anything reaching here (including unknown /commands, which
+        // run as real turns) echoes as a user message.
+        {
           const userMsg: RuntimeMessage = {
             id: "local-user-" + Date.now(),
             role: "user",
@@ -1883,15 +2082,16 @@ function ChatApp({
         return;
       }
 
-      if (!trimmed.startsWith("/")) {
-        const userMsg: RuntimeMessage = {
-          id: "local-user-" + Date.now(),
-          role: "user",
-          content: trimmed,
-          timestamp: new Date().toISOString(),
-        };
-        h.addMessage(userMsg);
-      }
+      // Unknown /commands run as real turns (web-consistent: /compact and
+      // /doctor are turns too) and show up in the transcript like any other
+      // user message.
+      const userMsg: RuntimeMessage = {
+        id: "local-user-" + Date.now(),
+        role: "user",
+        content: trimmed,
+        timestamp: new Date().toISOString(),
+      };
+      h.addMessage(userMsg);
 
       const isConnected = await ensureConnected();
       if (!isConnected) {

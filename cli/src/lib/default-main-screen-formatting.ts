@@ -9,7 +9,7 @@ export const LEFT_PANEL_WIDTH = 36;
 export const DEFAULT_TERMINAL_COLUMNS = 80;
 export const COMPACT_THRESHOLD = 60;
 
-const LEFT_HEADER_LINES = 4;
+const LEFT_HEADER_LINES = 3;
 const LEFT_FOOTER_LINES = 1;
 const HEADER_TOP_BORDER_LINES = 1;
 const HEADER_BOTTOM_BORDER_LINES = 2;
@@ -24,18 +24,46 @@ const RIGHT_PANEL_TIPS_HEADING = 1;
 const TOOL_CALL_CHROME_LINES = 2;
 const MESSAGE_SPACING = 1;
 
+/**
+ * Kept in sync with the web client's command set
+ * (clients/web slash-command-catalog) plus the CLI-local commands.
+ */
 export const HELP_COMMANDS = [
   {
     command: "/btw <question>",
     description: "Ask a side question while the assistant is working",
   },
   {
-    command: "/quit, /exit, /q",
-    description: "Disconnect and exit",
+    command: "/config [path] [value]",
+    description: "Read or set a runtime config value",
+  },
+  {
+    command: "/clean",
+    description: "Strip injected runtime context from the conversation",
+  },
+  {
+    command: "/commands",
+    description: "List all available commands",
+  },
+  {
+    command: "/compact",
+    description: "Force context compaction immediately",
+  },
+  {
+    command: "/models",
+    description: "List all available models",
+  },
+  {
+    command: "/status",
+    description: "Show conversation status and context usage",
   },
   {
     command: "/clear",
     description: "Clear the screen",
+  },
+  {
+    command: "/quit, /exit, /q",
+    description: "Disconnect and exit",
   },
   {
     command: "/help, ?",
@@ -186,7 +214,7 @@ export function truncateValue(value: unknown, maxLength: number): string {
 }
 
 export function formatHeaderTitle(assistantName?: string): string {
-  const rawTitle = assistantName?.trim() || "Meet your Assistant!";
+  const rawTitle = assistantName?.trim() || "Meet your Cadet!";
   const title = rawTitle.replace(/\s+/g, " ");
   const maxTitleLength = LEFT_PANEL_WIDTH - 2;
   const displayTitle =
@@ -194,10 +222,6 @@ export function formatHeaderTitle(assistantName?: string): string {
       ? title.slice(0, maxTitleLength - 3) + "..."
       : title;
   return `  ${displayTitle}`;
-}
-
-export function formatHeaderEyebrow(): string {
-  return "  Assistant";
 }
 
 export function stripAnsi(value: string): string {

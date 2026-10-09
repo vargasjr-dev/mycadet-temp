@@ -10,8 +10,8 @@ import {
   formatProviderName,
 } from "../lib/provider-secrets.js";
 
-function parseSetupArgs(args: string[]): { provider: string } {
-  let provider = "anthropic";
+function parseSetupArgs(args: string[]): { provider?: string } {
+  let provider: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -30,6 +30,42 @@ function parseSetupArgs(args: string[]): { provider: string } {
   }
 
   return { provider };
+}
+
+interface DefaultProviderResponse {
+  provider?: string;
+}
+
+/**
+ * Ask the active assistant which provider it routes by default
+ * (`GET /v1/config/llm/default-provider`), so `cadet setup` without
+ * `--provider` configures the connection the assistant actually uses —
+ * e.g. the keyless Cadet Cloud managed connection picked at hatch —
+ * instead of blindly prompting for an Anthropic key. Falls back to
+ * anthropic when the runtime is unreachable or predates the endpoint.
+ */
+async function resolveDefaultProvider(
+  gatewayUrl: string,
+  bearerToken?: string,
+): Promise<string> {
+  try {
+    const response = await fetch(
+      `${gatewayUrl}/v1/config/llm/default-provider`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
+        },
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (!response.ok) return "anthropic";
+    const data = (await response.json()) as DefaultProviderResponse;
+    const provider = data.provider?.trim().toLowerCase();
+    return provider || "anthropic";
+  } catch {
+    return "anthropic";
+  }
 }
 
 function isGuardianAccessTokenUsable(
@@ -96,7 +132,10 @@ export async function setup(): Promise<void> {
     console.log("");
     console.log("Options:");
     console.log(
-      "  --provider <provider>  Provider to configure. Defaults to anthropic.",
+      "  --provider <provider>  Provider to configure. Defaults to the assistant's",
+    );
+    console.log(
+      "                         configured default provider, then anthropic.",
     );
     console.log("");
     console.log("Behavior:");
@@ -113,7 +152,7 @@ export async function setup(): Promise<void> {
     process.exit(0);
   }
 
-  let parsed: { provider: string };
+  let parsed: { provider?: string };
   try {
     parsed = parseSetupArgs(args);
   } catch (error) {
@@ -130,13 +169,21 @@ export async function setup(): Promise<void> {
   const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
   const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
 
+  // Respect the assistant's configured default provider (e.g. Cadet Cloud
+  // chosen at hatch) unless the caller named one explicitly — the runtime's
+  // keyless managed connection should not be greeted by an API-key prompt.
+  let provider = parsed.provider;
+  if (!provider) {
+    provider = await resolveDefaultProvider(gatewayUrl, bearerToken);
+  }
+
   console.log("Cadet Setup");
   console.log("============\n");
 
   try {
     const result = await ensureProviderApiKey({
       gatewayUrl,
-      provider: parsed.provider,
+      provider,
       bearerToken,
       env: process.env,
     });

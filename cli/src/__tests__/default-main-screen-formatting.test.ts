@@ -4,8 +4,8 @@ import {
   calculateHeaderHeight,
   estimateItemHeight,
   formatConfirmationPreview,
-  formatHeaderEyebrow,
   formatHeaderTitle,
+  HELP_COMMANDS,
   formatTimestamp,
   formatToolCallPreview,
   stripAnsi,
@@ -125,8 +125,7 @@ describe("truncateValue", () => {
 
 describe("header formatting", () => {
   test("uses the default title and eyebrow", () => {
-    expect(formatHeaderEyebrow()).toBe("  Assistant");
-    expect(formatHeaderTitle()).toBe("  Meet your Assistant!");
+    expect(formatHeaderTitle()).toBe("  Meet your Cadet!");
   });
 
   test("normalizes title whitespace", () => {
@@ -169,7 +168,9 @@ describe("estimateItemHeight", () => {
   });
 
   test("estimates non-message feed items", () => {
-    expect(estimateItemHeight({ type: "help" }, 80)).toBe(5);
+    expect(estimateItemHeight({ type: "help" }, 80)).toBe(
+      HELP_COMMANDS.length + 1,
+    );
     expect(estimateItemHeight({ type: "status", text: "123456\n12" }, 5)).toBe(
       3,
     );

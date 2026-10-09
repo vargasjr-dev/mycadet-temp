@@ -45,6 +45,7 @@ import { use } from "./commands/use";
 import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { workflows } from "./commands/workflows";
+import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
@@ -90,60 +91,54 @@ const commands = {
 
 type CommandName = keyof typeof commands;
 
+/** Command name → one-line description, rendered with computed alignment. */
+const COMMAND_HELP: Array<[string, string]> = [
+  ["backup", "Export a backup of a running assistant"],
+  ["clean", "Kill orphaned cadet processes"],
+  ["client", "Connect to a hatched assistant"],
+  ["confirm", "Resolve a pending tool confirmation on an assistant"],
+  ["connect", "Pair with an assistant running on another machine [beta]"],
+  ["debug", "Send Cadet staff a debug bundle of a self-hosted assistant"],
+  ["devices", "List or revoke devices paired to a local assistant [beta]"],
+  ["events", "Stream events from a running assistant"],
+  ["exec", "Execute a command inside an assistant's container"],
+  ["flags", "Show and toggle feature flags"],
+  ["gateway", "Gateway management commands"],
+  ["hatch", "Create a new assistant instance"],
+  ["logs", "View logs from an assistant instance"],
+  ["login", "Log in to Cadet Cloud"],
+  ["logout", "Log out of Cadet Cloud"],
+  ["message", "Send a message to a running assistant"],
+  ["pair", "Print a pairing link and QR code for another device [beta]"],
+  ["ps", "List assistants (or processes for a specific assistant)"],
+  ["recover", "Restore a previously retired local assistant"],
+  ["restore", "Restore data (and optionally version) from a .vbundle backup"],
+  ["retire", "Delete an assistant instance"],
+  ["roadmap", "Manage roadmap items"],
+  ["rollback", "Roll back an assistant to a previous version"],
+  ["setup", "Configure API keys interactively"],
+  ["sleep", "Stop the assistant process"],
+  ["ssh", "SSH into a remote assistant instance"],
+  ["teleport", "Transfer assistant data between environments"],
+  ["terminal", "Open a terminal into a managed assistant container"],
+  ["tunnel", "Create a tunnel for a locally hosted assistant"],
+  ["unpair", "Forget a paired assistant imported from another machine [beta]"],
+  ["upgrade", "Upgrade an assistant to a newer version"],
+  ["use", "Set the active assistant for commands"],
+  ["voice", "Type to an assistant and hear it answer out loud"],
+  ["wake", "Start the assistant and gateway"],
+  ["whoami", "Show current logged-in user"],
+  ["workflows", "Inspect and control workflow runs"],
+];
+
 function printHelp(): void {
   console.log("Usage: cadet <command> [options]");
   console.log("");
   console.log("Commands:");
-  console.log("  backup   Export a backup of a running assistant");
-  console.log("  clean    Kill orphaned cadet processes");
-  console.log("  client   Connect to a hatched assistant");
-  console.log("  confirm  Resolve a pending tool confirmation on an assistant");
-  console.log(
-    "  connect  Pair with an assistant running on another machine [beta]",
-  );
-  console.log(
-    "  debug    Send Cadet staff a debug bundle of a self-hosted assistant",
-  );
-  console.log(
-    "  devices  List or revoke devices paired to a local assistant [beta]",
-  );
-  console.log("  events   Stream events from a running assistant");
-  console.log("  exec     Execute a command inside an assistant's container");
-  console.log("  flags    Show and toggle feature flags");
-  console.log("  gateway  Gateway management commands");
-  console.log("  hatch    Create a new assistant instance");
-  console.log("  logs     View logs from an assistant instance");
-  console.log("  login    Log in to Cadet Cloud");
-  console.log("  logout   Log out of Cadet Cloud");
-  console.log("  message  Send a message to a running assistant");
-  console.log(
-    "  pair     Print a pairing link and QR code for another device [beta]",
-  );
-  console.log(
-    "  ps       List assistants (or processes for a specific assistant)",
-  );
-  console.log("  recover  Restore a previously retired local assistant");
-  console.log(
-    "  restore  Restore data (and optionally version) from a .vbundle backup",
-  );
-  console.log("  retire   Delete an assistant instance");
-  console.log("  roadmap  Manage roadmap items");
-  console.log("  rollback  Roll back an assistant to a previous version");
-  console.log("  setup    Configure API keys interactively");
-  console.log("  sleep    Stop the assistant process");
-  console.log("  ssh      SSH into a remote assistant instance");
-  console.log("  teleport Transfer assistant data between environments");
-  console.log("  terminal Open a terminal into a managed assistant container");
-  console.log("  tunnel   Create a tunnel for a locally hosted assistant");
-  console.log(
-    "  unpair   Forget a paired assistant imported from another machine [beta]",
-  );
-  console.log("  upgrade  Upgrade an assistant to a newer version");
-  console.log("  use      Set the active assistant for commands");
-  console.log("  voice    Type to an assistant and hear it answer out loud");
-  console.log("  wake     Start the assistant and gateway");
-  console.log("  whoami   Show current logged-in user");
-  console.log("  workflows Inspect and control workflow runs");
+  const nameWidth = Math.max(...COMMAND_HELP.map(([name]) => name.length));
+  for (const [name, description] of COMMAND_HELP) {
+    console.log(`  ${name.padEnd(nameWidth)}  ${description}`);
+  }
   console.log("");
   console.log("Options:");
   console.log(
@@ -280,7 +275,7 @@ async function main() {
   const command = commands[commandName as CommandName];
 
   if (!command) {
-    console.error(`Unknown command: ${commandName}`);
+    console.error(red(`Unknown command: ${commandName}`));
     process.exit(1);
   }
 
@@ -290,7 +285,7 @@ async function main() {
     if (error instanceof SigningKeyContinuityError) {
       emitCliError("AUTH_IDENTITY_UNAVAILABLE", error.message, error.code);
     }
-    console.error("Error:", error instanceof Error ? error.message : error);
+    console.error(red(`Error: ${error instanceof Error ? error.message : error}`));
     process.exit(1);
   }
 }

@@ -24,7 +24,15 @@ export interface LifecycleReporter {
  * that existing subprocess consumers parse.
  */
 export const consoleLifecycleReporter: LifecycleReporter = {
-  progress: (step, total, label) => emitProgress(step, total, label),
+  progress: (step, total, label) => {
+    emitProgress(step, total, label);
+    // Plain terminals get an active status line per step — without this the
+    // startup goes silent between prompts (the desktop channel is the only
+    // consumer of emitProgress otherwise).
+    if (!process.env.CADET_DESKTOP_APP) {
+      console.log(`[${step}/${total}] ${label}`);
+    }
+  },
   log: (message) => console.log(message),
   warn: (message) => console.warn(message),
   error: (message) => console.error(message),

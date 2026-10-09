@@ -49,6 +49,12 @@ import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { printInstanceDetails } from "./instance-details.js";
 import { checkProviderApiKey } from "./api-key-check.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import {
+  describeLoginError,
+  ensureCloudLoginInteractive,
+  registerLocalAssistantWithPlatform,
+} from "./cloud-login.js";
+import { fetchCurrentUser, readPlatformToken } from "./platform-client.js";
 import { withLocalHatchLock } from "./local-hatch-lock.js";
 
 /**
@@ -179,6 +185,8 @@ export interface HatchLocalResult {
   guardianAccessToken?: string;
 }
 
+
+
 export async function hatchLocal(
   params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
@@ -247,6 +255,32 @@ export async function hatchLocal(
           // Collect the key immediately, while the choice is fresh — the
           // startup logs are quiet now, so nothing separates the two prompts.
           precollectedApiKey = await collectProviderApiKey(picked);
+
+          // Picking Cadet Cloud should feel like signing in, not like a
+          // mystery later — open the browser login right here. Skipped for
+          // the desktop app (it runs its own login UI) and non-TTY runs.
+          if (
+            picked === "cadet" &&
+            !process.env.CADET_DESKTOP_APP &&
+            process.stdin.isTTY &&
+            !readPlatformToken()
+          ) {
+            reporter.log("");
+            reporter.log(
+              "Cadet Cloud selected — opening your browser to log in...",
+            );
+            try {
+              await ensureCloudLoginInteractive();
+              reporter.log("✅ Logged in to Cadet Cloud");
+            } catch (error) {
+              reporter.warn(
+                `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
+              );
+              reporter.warn(
+                "   You can retry later with `cadet login`.",
+              );
+            }
+          }
         }
       }
 
@@ -267,7 +301,7 @@ export async function hatchLocal(
         process.env.APP_VERSION = cliPkg.version;
       }
 
-      reporter.progress(2, 6, "Writing configuration...");
+      reporter.progress(2, 6, "Setting up local assistant...");
       const hatchConfigValues = buildHatchConfigValues(configValues, provider);
       const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
 
@@ -379,6 +413,23 @@ export async function hatchLocal(
       env: process.env,
       precollectedKey: precollectedApiKey,
     });
+  }
+
+  // Picking Cadet Cloud ends with the assistant registered on the platform
+  // and its cloud credentials injected — the same post-login flow
+  // `cadet login` runs — so messages route through the managed connection
+  // immediately after hatch. Non-fatal: the assistant is up either way.
+  if (provider === "cadet" && readPlatformToken()) {
+    try {
+      const token = readPlatformToken()!;
+      const user = await fetchCurrentUser(token);
+      await registerLocalAssistantWithPlatform(token, user, {
+        bearerToken: guardianAccessToken,
+        log: (m) => reporter.log(m),
+      });
+    } catch {
+      // Non-fatal — `cadet login` can complete the registration later.
+    }
   }
 
   reporter.log("");
