@@ -19,9 +19,6 @@ function isPathInside(
 }
 
 export function getRetiredDir(): string {
-  // Archives land in the CURRENT environment's state dir — a dev CLI
-  // (`cadet-dev`) must not drop them into production's data dir. Production
-  // resolves to the same `~/.local/share/cadet/retired` as before.
   const dir = join(getStateDir(getCurrentEnvironment()), "retired");
   mkdirSync(dir, { recursive: true });
   return dir;

@@ -1,25 +1,24 @@
 /**
  * Stable per-install client identity for the CLI.
  *
- * Generates a UUID on first use and persists it to
- * `~/.config/cadet/client-id` so the daemon's event hub can
+ * Generates a UUID on first use and persists it to the environment's
+ * config dir (`client-id`) so the daemon's event hub can
  * track this terminal across SSE reconnects and CLI restarts.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { randomUUID } from "crypto";
-import { homedir } from "os";
 import { join } from "path";
+
+import { getConfigDir } from "./environments/paths.js";
+import { getCurrentEnvironment } from "./environments/resolve.js";
 
 export const CLI_INTERFACE_ID = "cli";
 export const WEB_INTERFACE_ID = "web";
 
 let cached: string | null = null;
 
-function getConfigDir(): string {
-  const configHome = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
-  return join(configHome, "cadet");
-}
+
 
 /**
  * Returns a stable UUID identifying this CLI installation.
@@ -28,8 +27,7 @@ function getConfigDir(): string {
 export function getClientId(): string {
   if (cached) return cached;
 
-  const configDir = getConfigDir();
-  const idFile = join(configDir, "client-id");
+  const idFile = join(getConfigDir(getCurrentEnvironment()), "client-id");
 
   try {
     if (existsSync(idFile)) {

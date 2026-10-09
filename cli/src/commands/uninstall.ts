@@ -21,12 +21,14 @@ interface DeleteTarget {
   description: string;
 }
 
-/** Owning package names a global install of the CLI can live under. */
-const OWNED_PACKAGE_NAMES = new Set([
+/**
+ * Owning packages a global install of the CLI can live under, in priority
+ * order — @mycadet/cli always wins over its meta wrapper.
+ */
+const OWNED_PACKAGE_NAMES: ReadonlyArray<string> = [
   "@mycadet/cli",
   "@mycadet/meta",
-  "mycadet",
-]);
+];
 
 /**
  * Find the package root the CLI is running from (…/node_modules/mycadet),
@@ -41,28 +43,32 @@ function findInstalledPackageRoot(startDir: string): string | null {
     const parent = dirname(dir);
     if (parent === dir) break; // Reached the filesystem root.
   }
-  // Pass 2: walk up looking for the owned package root.
-  for (let dir = startDir; ; dir = dirname(dir)) {
-    const pkgPath = join(dir, "package.json");
-    if (existsSync(pkgPath)) {
-      try {
-        const parsed: unknown = JSON.parse(readFileSync(pkgPath, "utf8"));
-        if (
-          typeof parsed === "object" &&
-          parsed !== null &&
-          "name" in parsed &&
-          typeof parsed.name === "string" &&
-          OWNED_PACKAGE_NAMES.has(parsed.name)
-        ) {
-          return dir;
+  // Pass 2: walk up looking for the owned package root, priority order —
+  // the whole chain is checked for each name in turn, so @mycadet/cli wins
+  // over @mycadet/meta wherever both appear.
+  for (const owned of OWNED_PACKAGE_NAMES) {
+    for (let dir = startDir; ; dir = dirname(dir)) {
+      const pkgPath = join(dir, "package.json");
+      if (existsSync(pkgPath)) {
+        try {
+          const parsed: unknown = JSON.parse(readFileSync(pkgPath, "utf8"));
+          if (
+            typeof parsed === "object" &&
+            parsed !== null &&
+            "name" in parsed &&
+            parsed.name === owned
+          ) {
+            return dir;
+          }
+        } catch {
+          // Unreadable package.json — keep walking up.
         }
-      } catch {
-        // Unreadable package.json — keep walking up.
       }
+      const parent = dirname(dir);
+      if (parent === dir) break;
     }
-    const parent = dirname(dir);
-    if (parent === dir) return null;
   }
+  return null;
 }
 
 /**

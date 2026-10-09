@@ -7,7 +7,6 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { homedir } from "os";
 import { dirname, join } from "path";
 
 import {
@@ -17,12 +16,12 @@ import {
 } from "./bundle-staging.js";
 import { loadGuardianToken, refreshGuardianToken } from "./guardian-token.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { getStateDir } from "./environments/paths.js";
+import { getCurrentEnvironment } from "./environments/resolve.js";
 
 /** Default backup directory following XDG convention */
 export function getBackupsDir(): string {
-  const dataHome =
-    process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
-  return join(dataHome, "cadet", "backups");
+  return join(getStateDir(getCurrentEnvironment()), "backups");
 }
 
 /** Human-readable file size */
