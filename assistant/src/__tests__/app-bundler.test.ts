@@ -6,22 +6,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 
 import JSZip from "jszip";
 
-// Temp directory for fake app data used in packageApp tests
-const testAppsDir = join(tmpdir(), `app-bundler-test-${Date.now()}`);
-
-// Mock app-store so packageApp can find our test apps
-const mockApps = new Map<string, Record<string, unknown>>();
-mock.module("../apps/app-store.js", () => ({
-  getApp: (id: string) => mockApps.get(id) ?? null,
-  getAppsDir: () => testAppsDir,
-  getAppDirPath: (id: string) => join(testAppsDir, id),
-}));
+// Real apps dir inside the per-process test workspace; packageApp tests
+// write the store's on-disk format (<id>.json + <id>/src) directly.
+let testAppsDir: string;
 
 // Mock content-id to avoid pulling in crypto internals
 mock.module("../util/content-id.js", () => ({
@@ -79,6 +71,7 @@ mock.module("./bundle-signer.js", () => ({
   signBundle: async () => ({}),
 }));
 
+import { getAppsDir } from "../apps/app-store.js";
 import { packageApp } from "../bundler/app-bundler.js";
 import type { AppManifest } from "../bundler/manifest.js";
 
@@ -87,9 +80,12 @@ import type { AppManifest } from "../bundler/manifest.js";
 // ---------------------------------------------------------------------------
 
 describe("packageApp", () => {
+  beforeAll(() => {
+    testAppsDir = getAppsDir();
+  });
+
   afterEach(() => {
     compileAppOverride = undefined;
-    mockApps.clear();
     try {
       rmSync(testAppsDir, { recursive: true, force: true });
     } catch {
@@ -133,7 +129,6 @@ describe("packageApp", () => {
       formatVersion: 2,
     };
     writeFileSync(join(testAppsDir, `${appId}.json`), JSON.stringify(appDef));
-    mockApps.set(appId, appDef);
 
     return appDef;
   }
@@ -156,7 +151,6 @@ describe("packageApp", () => {
       updatedAt: Date.now(),
     };
     writeFileSync(join(testAppsDir, `${appId}.json`), JSON.stringify(appDef));
-    mockApps.set(appId, appDef);
 
     return appDef;
   }
@@ -238,7 +232,6 @@ describe("packageApp", () => {
       formatVersion: 2,
     };
     writeFileSync(join(testAppsDir, `${appId}.json`), JSON.stringify(appDef));
-    mockApps.set(appId, appDef);
 
     await expect(packageApp(appId)).rejects.toThrow(
       /Compilation failed for app "Broken App"/,
@@ -264,7 +257,6 @@ describe("packageApp", () => {
       formatVersion: 2,
     };
     writeFileSync(join(testAppsDir, `${appId}.json`), JSON.stringify(appDef));
-    mockApps.set(appId, appDef);
 
     await expect(packageApp(appId)).rejects.toThrow(
       /missing src\/index\.html and src\/main\.tsx/,
@@ -302,7 +294,6 @@ render(<App />, document.getElementById('app')!);
       formatVersion: 2,
     };
     writeFileSync(join(testAppsDir, `${appId}.json`), JSON.stringify(appDef));
-    mockApps.set(appId, appDef);
 
     await expect(packageApp(appId)).rejects.toThrow(
       /still has the default src\/main\.tsx scaffold/,

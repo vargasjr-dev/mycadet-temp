@@ -8,39 +8,15 @@
  * third-party binary is refused, and a normal client still gets its page.
  */
 
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+
+import { seedApp } from "../../__tests__/helpers/seed-app.js";
+import { getAppDirPath } from "../../apps/app-store.js";
 
 const APP_ID = "app-under-test";
-const appDir = mkdtempSync(join(tmpdir(), "cadet-pages-"));
-mkdirSync(join(appDir, "dist"), { recursive: true });
-writeFileSync(
-  join(appDir, "dist", "index.html"),
-  '<!DOCTYPE html><html><body><script src="./main.js"></script></body></html>',
-);
-
-const appStore = await import("../../apps/app-store.js");
-// Captured before the mock replaces the namespace's own binding, which would
-// otherwise make the fall-through below call itself.
-const resolveRealAppSource = appStore.resolveAppSource;
-mock.module("../../apps/app-store.js", () => ({
-  ...appStore,
-  // Only the app under test is stubbed onto a temp dir; every other id falls
-  // through to the real resolver, so what the router hands it is exercised.
-  resolveAppSource: (id: string) =>
-    id === APP_ID
-      ? {
-          id: APP_ID,
-          name: "Test App",
-          dirName: APP_ID,
-          sourceDir: appDir,
-          origin: { kind: "workspace" },
-        }
-      : resolveRealAppSource(id),
-}));
 
 const { setDbReady } = await import("../../daemon/daemon-readiness.js");
 const { CURRENT_POLICY_EPOCH } = await import("../auth/policy.js");
@@ -70,6 +46,14 @@ describe("GET /pages/:appId enforces its route policy", () => {
   let port = 0;
 
   beforeAll(async () => {
+    // Real store row + real dist/index.html in the per-process workspace.
+    seedApp({ id: APP_ID, name: "Test App" });
+    const appDir = getAppDirPath(APP_ID);
+    mkdirSync(join(appDir, "dist"), { recursive: true });
+    writeFileSync(
+      join(appDir, "dist", "index.html"),
+      '<!DOCTYPE html><html><body><script src="./main.js"></script></body></html>',
+    );
     setDbReady(true);
     server = new RuntimeHttpServer({ port: await getFreePort() });
     await server.start();

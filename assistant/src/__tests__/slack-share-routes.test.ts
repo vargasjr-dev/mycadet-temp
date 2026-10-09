@@ -6,6 +6,7 @@ import {
   ServiceUnavailableError,
 } from "../runtime/routes/errors.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+import { seedApp } from "./helpers/seed-app.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before any imports that pull in mocked modules
@@ -49,12 +50,6 @@ mock.module("../messaging/providers/slack/client.js", () => ({
   ) => postMessageResult,
 }));
 
-let appStoreResult: unknown = null;
-mock.module("../apps/app-store.js", () => ({
-  getApp: (_id: string) => appStoreResult,
-  getAppsDir: () => "/tmp/apps",
-  listApps: () => [],
-}));
 
 // ---------------------------------------------------------------------------
 // Import under test (after mocks)
@@ -70,7 +65,6 @@ const { handleShareToSlackChannel } =
 beforeEach(() => {
   secureKeyValues.clear();
   connectionByProvider = {};
-  appStoreResult = null;
   postMessageResult = {
     ok: true,
     ts: "1234567890.123456",
@@ -97,7 +91,6 @@ describe("handleShareToSlackChannel", () => {
 
   test("throws NotFoundError when app not found", async () => {
     secureKeyValues.set("credential/slack_channel/bot_token", "xoxb-test");
-    appStoreResult = null;
     expect(
       handleShareToSlackChannel({
         body: { appId: "missing-app", channelId: "C1" },
@@ -107,15 +100,7 @@ describe("handleShareToSlackChannel", () => {
 
   test("posts message and returns success", async () => {
     secureKeyValues.set("credential/slack_channel/bot_token", "xoxb-test");
-    appStoreResult = {
-      id: "app1",
-      name: "My App",
-      description: "A great app",
-      htmlDefinition: "<div></div>",
-      schemaJson: "{}",
-      createdAt: 0,
-      updatedAt: 0,
-    };
+    seedApp({ id: "app1", name: "My App", description: "A great app" });
 
     const result = (await handleShareToSlackChannel({
       body: { appId: "app1", channelId: "C123", message: "Check this out!" },

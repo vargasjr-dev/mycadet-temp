@@ -48,14 +48,6 @@ mock.module("../tools/browser/browser-screencast.js", () => ({
   registerConversationSender: mock(() => {}),
 }));
 
-mock.module("../apps/app-store.js", () => ({
-  getApp: mock(() => null),
-  getAppDirPath: mock(() => "/tmp/test-apps/dummy"),
-  getAppsDir: mock(() => "/tmp/test-apps"),
-  resolveAppIdByDirName: mock(() => null),
-  resolveAppIdFromPath: mock(() => null),
-}));
-
 // Controls the skill tools the projection reports per resolver call.
 let projectedSkillToolNames: string[] = [];
 

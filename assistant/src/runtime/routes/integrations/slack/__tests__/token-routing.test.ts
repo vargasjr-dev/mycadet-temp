@@ -13,8 +13,9 @@
  * user_token IS stored, neither route may put it on the wire.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { seedApp } from "../../../../../__tests__/helpers/seed-app.js";
 import { credentialKey } from "../../../../../security/credential-key.js";
 import { ServiceUnavailableError } from "../../../errors.js";
 
@@ -39,11 +40,6 @@ mock.module("../../../../../oauth/connection-resolver.js", () => ({
   resolveOAuthConnection: async () => {
     throw new Error("No OAuth connection (Socket Mode test)");
   },
-}));
-
-const FAKE_APP = { id: "app-1", name: "Test App", description: "desc" };
-mock.module("../../../../../apps/app-store.js", () => ({
-  getApp: (id: string) => (id === FAKE_APP.id ? FAKE_APP : undefined),
 }));
 
 const { handleListSlackChannels } = await import("../channels.js");
@@ -112,6 +108,10 @@ function storeBothTokens() {
 }
 
 describe("Slack route token routing (channels + share)", () => {
+  beforeAll(() => {
+    seedApp({ id: "app-1", name: "Test App", description: "desc" });
+  });
+
   beforeEach(() => {
     captured.length = 0;
     getSecureKeyAsyncMock.mockReset();
@@ -155,7 +155,7 @@ describe("Slack route token routing (channels + share)", () => {
     storeBothTokens();
 
     const result = (await handleShareToSlackChannel({
-      body: { appId: FAKE_APP.id, channelId: "C123" },
+      body: { appId: "app-1", channelId: "C123" },
     })) as { ok: boolean };
     expect(result.ok).toBe(true);
 
@@ -173,7 +173,7 @@ describe("Slack route token routing (channels + share)", () => {
 
     expect(
       handleShareToSlackChannel({
-        body: { appId: FAKE_APP.id, channelId: "C123" },
+        body: { appId: "app-1", channelId: "C123" },
       }),
     ).rejects.toThrow(ServiceUnavailableError);
   });

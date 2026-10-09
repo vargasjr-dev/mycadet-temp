@@ -1,35 +1,29 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
 import type { SurfaceType } from "../daemon/message-protocol.js";
+import { initializeDb } from "../persistence/db-init.js";
+import { seedApp } from "./helpers/seed-app.js";
 
-mock.module("../apps/app-store.js", () => ({
-  getApp: (id: string) => {
-    if (id !== "test-app") {
-      return null;
-    }
-    return {
-      id,
-      name: "Test App",
-      description: "A test app",
-      htmlDefinition: "<main>Test App</main>",
-    };
-  },
-  getAppPreview: () => null,
-  isDirectAppConversation: (app: { id: string }) => app.id === "test-app",
-  linkAppToConversationLineage: () => {},
-  listAppsByConversation: () => [
-    {
-      id: "inherited-app",
-      updatedAt: 2,
-      inheritedConversationIds: ["session-1"],
-    },
-    { id: "test-app", updatedAt: 1 },
-  ],
-  updateApp: () => {
-    throw new Error("updateApp should not be called in this test");
-  },
-}));
+beforeAll(async () => {
+  await initializeDb();
+  // Real store rows: inherited-app is newer but lineage-linked only, so the
+  // direct test-app still wins the implicit app_open lookup.
+  seedApp({
+    id: "test-app",
+    name: "Test App",
+    description: "A test app",
+    htmlDefinition: "<main>Test App</main>",
+    conversationIds: ["session-1"],
+  });
+  seedApp({
+    id: "inherited-app",
+    name: "Inherited App",
+    updatedAt: 2,
+    conversationIds: ["session-1"],
+    inheritedConversationIds: ["session-1"],
+  });
+});
 
 import type { Conversation } from "../daemon/conversation.js";
 import {

@@ -49,13 +49,6 @@ mock.module("../tools/browser/browser-screencast.js", () => ({
 }));
 
 // Stub app-store functions used by other modules (e.g. conversation-surfaces)
-mock.module("../apps/app-store.js", () => ({
-  getApp: mock(() => null),
-  getAppDirPath: mock(() => "/tmp/test-apps/dummy"),
-  getAppsDir: mock(() => "/tmp/test-apps"),
-  resolveAppIdByDirName: mock(() => null),
-  resolveAppIdFromPath: mock(() => null),
-}));
 
 // ---------------------------------------------------------------------------
 // Import createToolExecutor after mocks are in place

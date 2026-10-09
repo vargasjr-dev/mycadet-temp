@@ -26,35 +26,6 @@ mock.module("../runtime/sync/resource-sync-events.js", () => ({
 mock.module("../media/app-icon-generator.js", () => ({
   generateAppIcon: mock(() => Promise.resolve()),
 }));
-mock.module("../apps/app-store.js", () => ({
-  getApp: mock(() => null),
-  getAppDirPath: mock(() => ""),
-  getAppsDir: mock(() => ""),
-  resolveAppIdFromPath: mock(() => null),
-  resolveAppIdByDirName: mock(() => null),
-  resolveAppDir: mock(() => ({ dirName: "", dirPath: "" })),
-  slugify: mock((s: string) => s),
-  validateDirName: mock(() => {}),
-  generateAppDirName: mock(() => ""),
-  listApps: mock(() => []),
-  createApp: mock(() => ({})),
-  updateApp: mock(() => {}),
-  deleteApp: mock(() => {}),
-  getAppPreview: mock(() => null),
-  createAppRecord: mock(() => ({})),
-  getAppRecord: mock(() => null),
-  queryAppRecords: mock(() => []),
-  updateAppRecord: mock(() => {}),
-  deleteAppRecord: mock(() => {}),
-  listAppFiles: mock(() => []),
-  appFileExists: mock(() => false),
-  readAppFile: mock(() => ""),
-  writeAppFile: mock(() => {}),
-  editAppFile: mock(() => ({})),
-  inlineDistAssets: mock((_: unknown, html: string) => html),
-  addAppConversationId: mock(() => false),
-  linkAppToConversationLineage: mock(() => {}),
-}));
 mock.module("../bundler/app-compiler.js", () => ({
   compileApp: mock(() => Promise.resolve({ ok: true })),
 }));

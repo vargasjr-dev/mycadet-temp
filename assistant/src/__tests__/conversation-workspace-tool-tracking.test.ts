@@ -104,10 +104,6 @@ mock.module("../plugins/defaults/compaction/window-manager.js", () => ({
 mock.module("../persistence/llm-usage-store.js", () => ({
   recordUsageEvent: () => ({ id: "usage-1", createdAt: Date.now() }),
 }));
-mock.module("../apps/app-store.js", () => ({
-  getApp: () => null,
-  updateApp: () => {},
-}));
 
 // Avoid real workspace-git initialization on /tmp — on CI runners,
 // `git add -A` under /tmp hits permission errors on systemd-private dirs,

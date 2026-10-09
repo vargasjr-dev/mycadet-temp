@@ -165,11 +165,6 @@ mock.module("../persistence/conversation-disk-view.js", () => ({
   rebuildConversationDiskViewFromDbState: () => {},
 }));
 
-mock.module("../apps/app-store.js", () => ({
-  getApp: () => null,
-  listAppFiles: () => [],
-  getAppsDir: () => "/tmp/apps",
-}));
 
 mock.module("../daemon/conversation-memory.js", () => ({
   prepareMemoryContext: async () => ({

@@ -104,10 +104,6 @@ mock.module("../persistence/llm-usage-store.js", () => ({
   recordUsageEvent: () => ({ id: "usage-1", createdAt: Date.now() }),
 }));
 
-mock.module("../apps/app-store.js", () => ({
-  getApp: () => null,
-  updateApp: () => {},
-}));
 
 mock.module("../agent/loop.js", () => ({
   AgentLoop: class {

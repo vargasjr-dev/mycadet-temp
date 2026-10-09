@@ -2,43 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, mock, test } from "bun:test";
 
-import type { AppDefinition } from "../apps/app-store.js";
-import type { AppStore } from "../tools/apps/executors.js";
+import { initializeDb } from "../persistence/db-init.js";
 import type { ToolContext } from "../tools/types.js";
-
-// ---------------------------------------------------------------------------
-// Mock factory helpers
-// ---------------------------------------------------------------------------
-
-function makeApp(overrides: Partial<AppDefinition> = {}): AppDefinition {
-  return {
-    id: "app-1",
-    name: "Test App",
-    description: "A test app",
-    schemaJson: "{}",
-    htmlDefinition: "<h1>Hi</h1>",
-    createdAt: 1000,
-    updatedAt: 2000,
-    ...overrides,
-  };
-}
-
-function makeMockStore(overrides: Partial<AppStore> = {}): AppStore {
-  const files = new Set<string>();
-  return {
-    getApp: () => makeApp(),
-    listApps: () => [makeApp()],
-    appFileExists: (_appId: string, path: string) => files.has(path),
-    createApp: (params) =>
-      makeApp({ name: params.name, description: params.description }),
-    updateApp: (id, updates) => makeApp({ id, ...updates }),
-    deleteApp: () => {},
-    writeAppFile: (_appId: string, path: string) => {
-      files.add(path);
-    },
-    ...overrides,
-  };
-}
+import { seedApp } from "./helpers/seed-app.js";
 
 function makeContext(overrides: Partial<ToolContext> = {}): ToolContext {
   return {
@@ -50,25 +16,15 @@ function makeContext(overrides: Partial<ToolContext> = {}): ToolContext {
 }
 
 // ---------------------------------------------------------------------------
-// Mock the app-store module so that skill scripts import our controllable store
+// The skill scripts pass the REAL app-store module to the executors, so the
+// store runs on the per-process test workspace. `app-1` is re-seeded before
+// each test (the app-delete test really deletes it); per-conversation lookups
+// go through real rows seeded with conversationIds.
 // ---------------------------------------------------------------------------
 
-const mockStore = makeMockStore();
-
-// Mutable per-conversation app list backing `listAppsByConversation`, which
-// `resolveAppId` consults when a tool's app_id is omitted. Tests set it directly.
-let appsByConversation: AppDefinition[] = [];
-
-mock.module("../apps/app-store.js", () => ({
-  ...mockStore,
-  listAppsByConversation: (_conversationId: string) => appsByConversation,
-  getAppsDir: () => "/tmp/test-apps",
-  getAppDirPath: (appId: string) => `/tmp/test-apps/${appId}`,
-  resolveAppDir: (id: string) => ({
-    dirName: id,
-    appDir: `/tmp/test-apps/${id}`,
-  }),
-}));
+beforeAll(async () => {
+  await initializeDb();
+});
 
 // Mock compileApp for multifile scaffold path
 mock.module("../bundler/app-compiler.js", () => ({
@@ -84,6 +40,8 @@ mock.module("../bundler/app-compiler.js", () => ({
 // Import skill scripts (after mocking)
 // ---------------------------------------------------------------------------
 
+import { beforeAll, beforeEach } from "bun:test";
+
 import * as appCreateScript from "../config/bundled-skills/app-builder/tools/app-create.js";
 import * as appDeleteScript from "../config/bundled-skills/app-builder/tools/app-delete.js";
 import * as appOpenScript from "../config/bundled-skills/app-builder/tools/app-open.js";
@@ -95,6 +53,10 @@ import * as appUpdateScript from "../config/bundled-skills/app-builder/tools/app
 // ---------------------------------------------------------------------------
 
 describe("app-builder skill tool scripts", () => {
+  beforeEach(() => {
+    seedApp({ id: "app-1", name: "Test App", description: "A test app" });
+  });
+
   // ---- app-create --------------------------------------------------------
 
   describe("app-create", () => {
@@ -208,7 +170,11 @@ describe("app-builder skill tool scripts", () => {
     });
 
     test("resolves the active app when app_id is omitted", async () => {
-      appsByConversation = [makeApp({ id: "active-app" })];
+      seedApp({
+        id: "active-app",
+        name: "active-app",
+        conversationIds: ["conv-open-1"],
+      });
       const calls: Array<{ name: string; input: Record<string, unknown> }> = [];
       const proxy: ToolContext["proxyToolResolver"] = async (name, input) => {
         calls.push({ name, input });
@@ -217,7 +183,7 @@ describe("app-builder skill tool scripts", () => {
 
       const result = await appOpenScript.run(
         {},
-        makeContext({ proxyToolResolver: proxy }),
+        makeContext({ conversationId: "conv-open-1", proxyToolResolver: proxy }),
       );
 
       expect(result.isError).toBe(false);
@@ -227,7 +193,6 @@ describe("app-builder skill tool scripts", () => {
     });
 
     test("forwards an explicit app_id unchanged", async () => {
-      appsByConversation = [makeApp({ id: "active-app" })];
       const calls: Array<{ input: Record<string, unknown> }> = [];
       const proxy: ToolContext["proxyToolResolver"] = async (_name, input) => {
         calls.push({ input });
@@ -243,7 +208,6 @@ describe("app-builder skill tool scripts", () => {
     });
 
     test("errors when app_id is omitted and no active app exists", async () => {
-      appsByConversation = [];
       const proxy: ToolContext["proxyToolResolver"] = async () => ({
         content: "opened",
         isError: false,
@@ -251,7 +215,7 @@ describe("app-builder skill tool scripts", () => {
 
       const result = await appOpenScript.run(
         {},
-        makeContext({ proxyToolResolver: proxy }),
+        makeContext({ conversationId: "conv-open-none", proxyToolResolver: proxy }),
       );
 
       expect(result.isError).toBe(true);
@@ -259,10 +223,14 @@ describe("app-builder skill tool scripts", () => {
     });
 
     test("errors when no client proxy resolver is available", async () => {
-      appsByConversation = [makeApp({ id: "active-app" })];
+      seedApp({
+        id: "active-app",
+        name: "active-app",
+        conversationIds: ["conv-open-noproxy"],
+      });
       const result = await appOpenScript.run(
         { app_id: "app-1" },
-        makeContext(),
+        makeContext({ conversationId: "conv-open-noproxy" }),
       );
 
       expect(result.isError).toBe(true);

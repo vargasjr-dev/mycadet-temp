@@ -1,71 +1,27 @@
-import { describe, expect, mock, test } from "bun:test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { beforeAll, describe, expect, test } from "bun:test";
 
-// Fake app records keyed by ID
-const compiledApp = {
-  id: "app-1",
-  name: "Compiled App",
-  htmlDefinition: "",
-  schemaJson: "{}",
-  createdAt: 0,
-  updatedAt: 0,
-  formatVersion: 2,
-};
+import { getAppDirPath, UNSUPPORTED_LEGACY_APP_HTML } from "../apps/app-store.js";
+import { seedApp } from "./helpers/seed-app.js";
 
-const legacyApp = {
-  id: "legacy-1",
-  name: "Legacy App",
-  htmlDefinition: "<div>Hello</div>",
-  schemaJson: "{}",
-  createdAt: 0,
-  updatedAt: 0,
-};
-
-const apps = new Map<string, typeof compiledApp | typeof legacyApp>([
-  ["app-1", compiledApp],
-  ["legacy-1", legacyApp],
-]);
-
-const UNSUPPORTED_HTML = `<p>This app uses the retired single-file format and can no longer be opened.</p>`;
-
-mock.module("../apps/app-store.js", () => ({
-  resolveAppSource: (id: string) => {
-    const app = apps.get(id);
-    if (!app) {
-      return null;
-    }
-    return {
-      id,
-      name: app.name,
-      dirName: id,
-      sourceDir: `/fake/apps/${id}`,
-      origin: { kind: "workspace" as const },
-    };
-  },
-  readAppFileBytesFromDir: () => Buffer.from(""),
-  // Only the legacy app's directory has a root index.html and no src/.
-  isLegacySingleFileDir: (sourceDir: string) =>
-    sourceDir === "/fake/apps/legacy-1",
-  UNSUPPORTED_LEGACY_APP_HTML: UNSUPPORTED_HTML,
-}));
-
-// Mock shared-app-links-store (imported by app-routes but unused here)
-mock.module("../apps/shared-app-links-store.js", () => ({
-  createSharedAppLink: () => ({ shareToken: "tok" }),
-  getSharedAppLink: () => null,
-  incrementDownloadCount: () => {},
-  deleteSharedAppLinkByToken: () => false,
-}));
-
-// Stub fs so the serve path finds a fake dist/index.html for the compiled app
-mock.module("node:fs", () => ({
-  existsSync: (p: string) => p === "/fake/apps/app-1/dist/index.html",
-  readFileSync: (p: string, _enc?: string) => {
-    if (p === "/fake/apps/app-1/dist/index.html") {
-      return '<!DOCTYPE html><html><head></head><body><script src="main.js"></script></body></html>';
-    }
-    return "";
-  },
-}));
+beforeAll(() => {
+  // Real store rows written in the on-disk format. The compiled app carries
+  // a dist/index.html; the legacy app has only a root index.html and no src/.
+  seedApp({ id: "app-1", name: "Compiled App", schemaJson: "{}" });
+  const appDir = getAppDirPath("app-1");
+  mkdirSync(join(appDir, "dist"), { recursive: true });
+  writeFileSync(
+    join(appDir, "dist", "index.html"),
+    '<!DOCTYPE html><html><head></head><body><script src="main.js"></script></body></html>',
+  );
+  seedApp({
+    id: "legacy-1",
+    name: "Legacy App",
+    htmlDefinition: "<div>Hello</div>",
+    schemaJson: "{}",
+  });
+});
 
 import { ROUTES } from "../runtime/routes/app-routes.js";
 import { BadRequestError, NotFoundError } from "../runtime/routes/errors.js";
@@ -155,7 +111,7 @@ describe("handleServePage", () => {
 
   test("serves the unsupported-format message for legacy single-file apps", () => {
     const html = pageHandler({ pathParams: { appId: "legacy-1" } }) as string;
-    expect(html).toContain(UNSUPPORTED_HTML);
+    expect(html).toContain(UNSUPPORTED_LEGACY_APP_HTML);
     expect(html).not.toContain("<div>Hello</div>");
   });
 

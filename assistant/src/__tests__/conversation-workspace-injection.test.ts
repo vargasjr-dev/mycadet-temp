@@ -107,10 +107,6 @@ mock.module("../plugins/defaults/compaction/window-manager.js", () => ({
 mock.module("../persistence/llm-usage-store.js", () => ({
   recordUsageEvent: () => ({ id: "usage-1", createdAt: Date.now() }),
 }));
-mock.module("../apps/app-store.js", () => ({
-  getApp: () => null,
-  updateApp: () => {},
-}));
 
 mock.module("../workspace/top-level-scanner.js", () => ({
   MAX_TOP_LEVEL_ENTRIES: 120,
