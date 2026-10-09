@@ -20,7 +20,7 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --max-warnings 627",
+    "lint": "eslint --max-warnings 561",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
     "test": "bun run scripts/run-tests.ts",

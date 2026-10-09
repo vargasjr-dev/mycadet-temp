@@ -21,6 +21,14 @@ process.env.CADET_ENVIRONMENT = "production";
 
 import { buildAppConnectUrl, pair } from "../commands/pair.js";
 
+// bun-types' global fetch carries a `preconnect` member; these mocks only need
+// the call shape, so hand the assignment a member-complete callable.
+function withPreconnect(
+  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+): typeof fetch {
+  return Object.assign(impl, { preconnect: () => {} });
+}
+
 // Distinct loopback (mint) vs reachable (advertised) URLs to verify the split.
 const LOCAL_URL = "http://127.0.0.1:7830";
 const RUNTIME_URL = "http://192.168.1.50:7830";
@@ -55,7 +63,8 @@ function stubPairingGateway(
   calls: Array<[string, RequestInit | undefined]>,
   baseUrl = PUBLIC_URL,
 ): void {
-  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+  globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
     calls.push([url, init]);
     if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
       return challengeResponse(baseUrl);
@@ -64,12 +73,12 @@ function stubPairingGateway(
       return approvalResponse(baseUrl);
     }
     return new Response("not found", { status: 404 });
-  }) as unknown as typeof fetch;
+  });
 }
 
 function writeLockfile(): void {
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify({
       assistants: [
         {
@@ -134,10 +143,10 @@ describe("pair command", () => {
       `${LOCAL_URL}/v1/remote-web/pairing-challenge`,
       `${LOCAL_URL}/v1/remote-web/pairing-verification`,
     ]);
-    expect(JSON.parse(calls[0][1]?.body as string)).toEqual({
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
       publicBaseUrl: PUBLIC_URL,
     });
-    expect(JSON.parse(calls[1][1]?.body as string)).toEqual({
+    expect(JSON.parse(String(calls[1][1]?.body))).toEqual({
       userCode: "ABCD-EFGH",
     });
 
@@ -266,21 +275,21 @@ describe("pair command", () => {
     // https QR and drop the scheme silently.
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = [
       "bun",
@@ -295,7 +304,7 @@ describe("pair command", () => {
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -312,28 +321,28 @@ describe("pair command", () => {
   test("--web is refused, pointing at connect import on the other device", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair", "--web", "--url", PUBLIC_URL];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -351,7 +360,7 @@ describe("pair command", () => {
   test("resolves an unquoted multi-word display name", async () => {
     // Assistant whose display name has a space; passed as separate argv tokens.
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -398,28 +407,28 @@ describe("pair command", () => {
   test("rejects an unknown --flag before any network call", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair", "--frobnicate"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -438,7 +447,7 @@ describe("pair command", () => {
 
   test("rejects an unknown --flag even alongside a multi-word positional name", async () => {
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -455,21 +464,21 @@ describe("pair command", () => {
 
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     // Positional name tokens must not rescue an unknown flag from rejection.
     process.argv = ["bun", "cadet", "pair", "My", "Assistant", "--frobnicate"];
@@ -477,7 +486,7 @@ describe("pair command", () => {
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -493,7 +502,7 @@ describe("pair command", () => {
     // Local hatch on a NON-default gateway port (e.g. a 2nd instance).
     const LOOPBACK_CUSTOM = "http://127.0.0.1:7842";
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -509,28 +518,28 @@ describe("pair command", () => {
 
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -552,7 +561,7 @@ describe("pair command", () => {
 
   test("--url override wins over a loopback runtime URL", async () => {
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -587,7 +596,7 @@ describe("pair command", () => {
 
     // Mint still over loopback; the link advertises the override.
     expect(calls[0][0]).toBe(`${LOCAL_URL}/v1/remote-web/pairing-challenge`);
-    expect(JSON.parse(calls[0][1]?.body as string)).toEqual({
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
       publicBaseUrl: OVERRIDE,
     });
     expect(JSON.parse(logs.join("\n")).pairUrl).toBe(
@@ -597,7 +606,7 @@ describe("pair command", () => {
 
   test("--web-approve approves a browser pairing code over loopback", async () => {
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -613,7 +622,8 @@ describe("pair command", () => {
 
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
       calls.push([url, init]);
       if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
         return new Response(
@@ -626,7 +636,7 @@ describe("pair command", () => {
         );
       }
       return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    });
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -652,7 +662,7 @@ describe("pair command", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0][0]).toBe(`${LOCAL_URL}/v1/remote-web/pairing-verification`);
-    expect(JSON.parse(calls[0][1]?.body as string)).toEqual({
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
       userCode: "ABCD-EFGH",
     });
     expect(JSON.parse(logs.join("\n"))).toEqual({
@@ -665,21 +675,21 @@ describe("pair command", () => {
   test("refuses a non-https --url without minting", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = [
       "bun",
@@ -692,7 +702,7 @@ describe("pair command", () => {
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -708,28 +718,28 @@ describe("pair command", () => {
   test("refuses a loopback --url without minting", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair", "--url", "http://127.0.0.1:7830"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -744,28 +754,28 @@ describe("pair command", () => {
   test("refuses an unparseable --url with an accurate error, not a non-https mislabel", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair", "--url", "not-a-url"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -785,21 +795,21 @@ describe("pair command", () => {
   test("refuses a tunnel-provider website URL (Tailscale admin invite) without minting", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = [
       "bun",
@@ -812,7 +822,7 @@ describe("pair command", () => {
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -875,7 +885,8 @@ describe("pair command", () => {
 
   test("--app emits an app connect URL alongside the browser URL", async () => {
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
       if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
         return new Response(
           JSON.stringify({
@@ -899,7 +910,7 @@ describe("pair command", () => {
         );
       }
       return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    });
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -941,7 +952,8 @@ describe("pair command", () => {
 
   test("--app --label overrides the assistant name in the connect link", async () => {
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
       if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
         return new Response(
           JSON.stringify({
@@ -965,7 +977,7 @@ describe("pair command", () => {
         );
       }
       return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    });
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -1001,21 +1013,21 @@ describe("pair command", () => {
   test("--app is refused alongside --web-approve", async () => {
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetchCalled = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
       (...a: unknown[]) => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = [
       "bun",
@@ -1029,7 +1041,7 @@ describe("pair command", () => {
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -1043,7 +1055,7 @@ describe("pair command", () => {
 
   function writeLockfileWithIngress(ingressUrl: string): void {
     writeFileSync(
-      join(testDir, ".cadet.lock.json"),
+      join(testDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -1064,11 +1076,12 @@ describe("pair command", () => {
 
     const calls: string[] = [];
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
       calls.push(url);
       if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
         // The minted challenge must advertise the entry's recorded URL.
-        expect(JSON.parse(init?.body as string)).toEqual({
+        expect(JSON.parse(String(init?.body))).toEqual({
           publicBaseUrl: "https://saved.example.ts.net",
         });
         return new Response(
@@ -1093,7 +1106,7 @@ describe("pair command", () => {
         );
       }
       return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    });
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -1124,9 +1137,10 @@ describe("pair command", () => {
     writeLockfileWithIngress("https://saved.example.ts.net");
 
     const origFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
       if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
-        expect(JSON.parse(init?.body as string)).toEqual({
+        expect(JSON.parse(String(init?.body))).toEqual({
           publicBaseUrl: "https://explicit.example.ts.net",
         });
         return new Response(
@@ -1151,7 +1165,7 @@ describe("pair command", () => {
         );
       }
       return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    });
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -1182,10 +1196,10 @@ describe("pair command", () => {
 
     const origFetch = globalThis.fetch;
     let minted = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       minted = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
 
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
@@ -1193,18 +1207,18 @@ describe("pair command", () => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -1223,10 +1237,10 @@ describe("pair command", () => {
 
     const origFetch = globalThis.fetch;
     let minted = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       minted = true;
       return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
+    });
 
     const errors: string[] = [];
     const errSpy = spyOn(console, "error").mockImplementation(
@@ -1234,18 +1248,18 @@ describe("pair command", () => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
     } catch (e) {
-      exited = (e as Error).message === "exit:1";
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
