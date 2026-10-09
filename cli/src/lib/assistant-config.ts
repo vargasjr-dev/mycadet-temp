@@ -525,17 +525,7 @@ function readLockfileForEnv(env: EnvironmentDefinition): LockfileData {
 export function loadAllAssistantsAcrossEnvs(
   envs?: EnvironmentDefinition[],
 ): AssistantEntry[] {
-  // Propagate the CADET_LOCKFILE_DIR e2e hook the same way
-  // {@link getCurrentEnvironment} does for the current-env read: raw seed
-  // copies would otherwise resolve their real XDG dirs and silently miss
-  // lockfiles the rest of the CLI sees under the override.
-  const lockfileDir = process.env.CADET_LOCKFILE_DIR?.trim();
-  const envList =
-    envs ??
-    Object.values(SEEDS).map((env) => ({
-      ...env,
-      ...(lockfileDir ? { lockfileDirOverride: lockfileDir } : {}),
-    }));
+  const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
   const all: AssistantEntry[] = [];
   for (const env of envList) {
     const data = readLockfileForEnv(env);

@@ -3,7 +3,7 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
-  loadAllAssistantsAcrossEnvs,
+  loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
@@ -75,7 +75,7 @@ export async function sleep(): Promise<void> {
     console.log("");
     console.log("Options:");
     console.log(
-      "  --all     Stop every assistant across all environments instead of one",
+      "  --all     Stop every assistant across all remotes instead of one",
     );
     console.log(
       "  --force   Stop the assistant even if a phone call keepalive lease is active",
@@ -178,13 +178,14 @@ class SleepExit extends Error {
 }
 
 /**
- * Stop every assistant the lockfiles know about, across all environments —
- * `--all`. Same per-assistant stop as the single path, but one assistant's
- * failure (or an unmanageable runtime) never blocks the others; a failure
- * only decides the exit code.
+ * Stop every assistant this CLI's environment knows about — `--all`. The
+ * CLI only ever reaches one environment, so this is the current env's
+ * lockfile. Same per-assistant stop as the single path, but one
+ * assistant's failure (or an unmanageable runtime) never blocks the
+ * others; a failure only decides the exit code.
  */
 async function sleepAll(opts: SleepOptions): Promise<void> {
-  const entries = loadAllAssistantsAcrossEnvs();
+  const entries = loadAllAssistants();
   if (entries.length === 0) {
     console.error("Error: no assistants found. Run 'cadet hatch' first.");
     process.exit(1);
@@ -193,8 +194,6 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
   let failures = 0;
   const seen = new Set<string>();
   for (const entry of entries) {
-    // The same assistantId can surface from more than one environment's
-    // lockfile when a directory override is set — stop it once.
     if (seen.has(entry.assistantId)) continue;
     seen.add(entry.assistantId);
     if (entry.cloud === "apple-container" || entry.cloud === "paired") {
