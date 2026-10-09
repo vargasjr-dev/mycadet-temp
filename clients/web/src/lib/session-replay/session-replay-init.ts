@@ -1,4 +1,4 @@
-import { getPlatformRuntimeUrl } from "@/lib/local-mode";
+import { getPlatformRuntimeUrl, isRemoteGatewayMode } from "@/lib/local-mode";
 import { sessionReplayNetworkConfig } from "@/lib/session-replay/network-sanitize";
 import {
   installSessionReplayControlListeners,
@@ -47,6 +47,12 @@ export function sessionReplayProxyBase(
  * plumbing stays dark until a real provider and the app ID are configured.
  */
 export function initSessionReplay(): void {
+  // Gateway-hosted bundles have no platform replay ingest to proxy to —
+  // the injected platformUrl is gone (it made the bundle call the SSO-
+  // protected platform cross-origin), so recording there is dead weight.
+  if (isRemoteGatewayMode()) {
+    return;
+  }
   const appId = import.meta.env.VITE_SESSION_REPLAY_APP_ID;
   if (!appId) {
     return;

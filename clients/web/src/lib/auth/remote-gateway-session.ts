@@ -1,4 +1,5 @@
 import type {
+  RemoteGatewayHandoffRequest,
   RemoteWebPairingChallengeRequest,
   RemoteWebPairingChallengeResponse,
   RemoteWebPairingTokenApprovedResponse,
@@ -19,6 +20,7 @@ export {
 
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
+const SESSION_HANDOFF_PATH = "/v1/session/handoff";
 const GUARDIAN_REFRESH_PATH = "/v1/guardian/refresh";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;
 const REFRESH_EARLY_MS = 5_000;
@@ -240,6 +242,43 @@ export function activateRemoteGatewaySession(
     url: `${window.location.origin}${remoteGatewayPublicPathPrefix()}`,
     token: session.accessToken,
   });
+}
+
+/**
+ * One-time handoff token the host platform appends to the iframe URL
+ * (`?handoff=...`). Cloud-hosted assistants are minted a session by the
+ * gateway itself, so the device-pairing flow never runs for them.
+ */
+export function readHostHandoffToken(location: Location = window.location): string | null {
+  const token = new URLSearchParams(location.search).get("handoff");
+  return token && token.length <= 2048 ? token : null;
+}
+
+/**
+ * Exchange a host handoff token for a gateway session. Returns false when
+ * there is no token or the gateway rejects it — the caller then falls back
+ * to the pairing flow (self-hosted gateways without user context).
+ */
+export async function activateRemoteGatewayHandoff(): Promise<boolean> {
+  const handoff = readHostHandoffToken();
+  if (!handoff) {
+    return false;
+  }
+  const response = await fetch(remoteGatewayApiPath(SESSION_HANDOFF_PATH), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ handoff } satisfies RemoteGatewayHandoffRequest),
+  });
+  if (!response.ok) {
+    return false;
+  }
+  const body = (await response.json().catch(() => null)) as unknown;
+  if (!isApprovedPayload(body)) {
+    return false;
+  }
+  activateRemoteGatewaySession(body);
+  return true;
 }
 
 export async function exchangeRemoteWebPairingToken(

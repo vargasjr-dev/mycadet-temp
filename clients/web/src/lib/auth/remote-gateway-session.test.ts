@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { clearGatewayToken, getGatewayToken } from "@/lib/auth/gateway-session";
 import {
+  activateRemoteGatewayHandoff,
   activateRemoteGatewaySession,
   createRemoteWebPairingChallenge,
   exchangeRemoteWebPairingToken,
@@ -288,5 +289,48 @@ describe("remote gateway token exchange", () => {
 
     expect(calls).toHaveLength(1);
     expect(getGatewayToken()).toBe("shared-access-token");
+  });
+});
+
+
+describe("host handoff activation", () => {
+  test("exchanges the handoff token and activates the session", async () => {
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    setLocation("/assistant/?handoff=host-minted-token");
+    globalThis.fetch = mock(async () =>
+      new Response(
+        JSON.stringify({
+          status: "approved",
+          accessToken: "gateway-access-token",
+          accessTokenExpiresAt: Date.now() + 3_600_000,
+          refreshAfter: Date.now() + 3_000_000,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    expect(await activateRemoteGatewayHandoff()).toBe(true);
+    expect(getSelfHostedActorToken()).toBe("gateway-access-token");
+    expect(getSelfHostedIngressUrl()).toBe("http://localhost:3000");
+  });
+
+  test("returns false without a handoff token and never fetches", async () => {
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    setLocation("/assistant/");
+    globalThis.fetch = mock(async () => {
+      throw new Error("must not be called");
+    });
+
+    expect(await activateRemoteGatewayHandoff()).toBe(false);
+  });
+
+  test("returns false when the gateway rejects the token", async () => {
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    setLocation("/assistant/?handoff=stale-token");
+    globalThis.fetch = mock(async () =>
+      new Response(JSON.stringify({ error: "handoff_rejected" }), { status: 401 }),
+    );
+
+    expect(await activateRemoteGatewayHandoff()).toBe(false);
   });
 });

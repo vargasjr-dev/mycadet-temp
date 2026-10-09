@@ -44,7 +44,10 @@ import {
   getGatewayToken,
   getLocalTokenUrl,
 } from "@/lib/auth/gateway-session";
-import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
+import {
+  activateRemoteGatewayHandoff,
+  refreshRemoteGatewaySession,
+} from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
   isRemoteGatewayMode,
@@ -987,6 +990,11 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   initSession: async () => {
     if (isRemoteGatewayMode()) {
       if (await hasRemoteGatewaySessionAfterRefresh()) {
+        set({ ...authenticatedLocalUser(), platformSession: "absent" });
+      } else if (await activateRemoteGatewayHandoff()) {
+        // Cloud-hosted: the gateway minted the session from the host's
+        // handoff token — no device pairing for an assistant the host
+        // already has user context for.
         set({ ...authenticatedLocalUser(), platformSession: "absent" });
       } else {
         await endSession(set);

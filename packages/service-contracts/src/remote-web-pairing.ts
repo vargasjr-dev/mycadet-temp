@@ -164,6 +164,12 @@ export function resolveRemoteWebPairingPlatform(
   );
 }
 
+/** `POST /v1/session/handoff` request body: host-minted session bootstrap. */
+export interface RemoteGatewayHandoffRequest {
+  /** The one-time handoff token the host platform appended to the iframe URL. */
+  handoff: string;
+}
+
 /** `POST /v1/remote-web/pairing-token` request body. */
 export interface RemoteWebPairingTokenRequest {
   /** The `deviceCode` from the challenge. */
