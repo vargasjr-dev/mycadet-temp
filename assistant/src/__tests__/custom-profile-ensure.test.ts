@@ -41,10 +41,9 @@ afterEach(() => {
 });
 
 describe("ensureCompleteCustomProfiles", () => {
-  test("materializes a partial custom profile against llm.default", () => {
+  test("materializes a partial custom profile against the schema-default base", () => {
     writeConfig({
       llm: {
-        default: distinctiveDefault,
         profiles: {
           partial: { source: "user", model: "claude-haiku-4-5-20251001" },
         },
@@ -53,20 +52,20 @@ describe("ensureCompleteCustomProfiles", () => {
     ensureCompleteCustomProfiles(workspaceDir);
     const saved = readProfiles().partial;
     expect(saved.model).toBe("claude-haiku-4-5-20251001");
-    // This workspace has no connection rows, so the binding is unverifiable
-    // and passes through in the legacy field for the collapse migration to
-    // judge; with a verified row it would fold into the provider value (see
-    // profile-materialization.test.ts).
+    // The schema-default base carries no binding and completion never
+    // stamps one, so the profile dispatches through auto-resolution.
     expect(saved.provider).toBe("anthropic");
-    expect(saved.provider_connection).toBe("anthropic-personal");
-    expect(saved.maxTokens).toBe(12345);
-    expect(saved.temperature).toBe(0.7);
+    expect(saved.provider_connection).toBeUndefined();
+    // Base fill (64000) clamped to the model's catalog output cap.
+    expect(saved.maxTokens).toBe(64000);
+    // The base's null temperature expresses no preference — not copied.
+    expect(saved.temperature).toBeUndefined();
     expect(saved.logitBias).toBeUndefined();
     expect(saved.thinking).toBeDefined();
     expect(saved.contextWindow).toBeDefined();
   });
 
-  test("implies the catalog provider for a model llm.default's provider does not serve", () => {
+  test("implies the catalog provider for a model the base provider does not serve", () => {
     writeConfig({
       llm: {
         default: distinctiveDefault,
@@ -212,18 +211,12 @@ describe("ensureCompleteCustomProfiles", () => {
     // Unparseable JSON.
     writeFileSync(join(workspaceDir, "config.json"), "{nope");
     ensureCompleteCustomProfiles(workspaceDir);
-    // Non-object root, missing llm, missing profiles, unparseable default.
+    // Non-object root, missing llm, missing profiles.
     for (const config of [
       [1, 2],
       {},
       { llm: {} },
       { llm: { default: { provider: "not-a-provider" }, profiles: {} } },
-      {
-        llm: {
-          default: { maxTokens: "NaN" },
-          profiles: { p: { source: "user", model: "gpt-5.5" } },
-        },
-      },
     ]) {
       writeConfig(config);
       const before = readFileSync(join(workspaceDir, "config.json"), "utf-8");

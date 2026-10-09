@@ -398,7 +398,8 @@ function usableDefaultIntent(
  * fall to these code-owned defaults; the winner's identity fields are
  * guaranteed present by `selectWinningProfile`.
  */
-const CODE_DEFAULT_BASE: z.infer<typeof LLMConfigBase> = LLMConfigBase.parse(
+export const CODE_DEFAULT_BASE: z.infer<typeof LLMConfigBase> =
+  LLMConfigBase.parse(
   {},
 );
 

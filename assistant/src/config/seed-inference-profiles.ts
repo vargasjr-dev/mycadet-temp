@@ -92,11 +92,7 @@ export function seedInferenceProfiles(
   //    default profiles to dispatch.
   let usableHatchProvider: string | undefined;
   if (options.isHatch && !isPlatform) {
-    // The hatch overlay writes `llm.defaultProvider` directly (older CLIs
-    // wrote the legacy `llm.default` blob — read it as a fallback).
-    const hatchProvider =
-      readString(readObject(llm.defaultProvider)?.provider) ??
-      readString(readObject(llm.default)?.provider);
+    const hatchProvider = readString(readObject(llm.defaultProvider)?.provider);
     if (
       hatchProvider &&
       hatchProvider !== CADET_MANAGED_PROVIDER &&

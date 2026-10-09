@@ -1344,18 +1344,9 @@ describe("custom profile write normalization (complete overrides)", () => {
   )!;
   const configSetRoute = ROUTES.find((r) => r.operationId === "config_set")!;
 
-  const distinctiveDefault = {
-    provider: "anthropic",
-    model: "claude-opus-4-8",
-    maxTokens: 12345,
-    temperature: 0.7,
-    logitBias: "suppress-cjk",
-  };
-
   beforeEach(() => {
     rawConfigFixture = {
       llm: {
-        default: structuredClone(distinctiveDefault),
         profiles: {
           partial: { source: "user", model: "claude-haiku-4-5-20251001" },
         },
@@ -1379,9 +1370,10 @@ describe("custom profile write normalization (complete overrides)", () => {
     const saved = savedProfiles().mine;
     expect(saved.model).toBe("claude-haiku-4-5-20251001");
     expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
-    // Non-null default sampling is baked in; logitBias never is.
-    expect(saved.temperature).toBe(0.7);
+    // Schema-default fill, clamped to the model's catalog output cap.
+    expect(saved.maxTokens).toBe(64000);
+    // The base's null temperature expresses no preference — not copied.
+    expect(saved.temperature).toBeUndefined();
     expect(saved.logitBias).toBeUndefined();
     expect(saved.thinking).toBeDefined();
     expect(saved.contextWindow).toBeDefined();
@@ -1391,7 +1383,6 @@ describe("custom profile write normalization (complete overrides)", () => {
     await configPatchRoute.handler({
       body: {
         llm: {
-          default: structuredClone(distinctiveDefault),
           profiles: {
             mine: { source: "user", model: "claude-haiku-4-5-20251001" },
           },
@@ -1400,8 +1391,8 @@ describe("custom profile write normalization (complete overrides)", () => {
     });
     const saved = savedProfiles().mine;
     expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
-    expect(saved.temperature).toBe(0.7);
+    expect(saved.maxTokens).toBe(64000);
+    expect(saved.temperature).toBeUndefined();
     expect(saved.logitBias).toBeUndefined();
   });
 
@@ -1412,7 +1403,7 @@ describe("custom profile write normalization (complete overrides)", () => {
     const saved = savedProfiles().partial;
     expect(saved.maxTokens).toBe(999);
     expect(saved.provider).toBe("anthropic");
-    expect(saved.temperature).toBe(0.7);
+    expect(saved.temperature).toBeUndefined();
     expect(saved.model).toBe("claude-haiku-4-5-20251001");
   });
 
@@ -1471,7 +1462,7 @@ describe("custom profile write normalization (complete overrides)", () => {
     const saved = savedProfiles().mine;
     expect(saved.source).toBe("user");
     expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
+    expect(saved.maxTokens).toBe(64000);
   });
 
   test("a managed status re-enable stays a thin stub", async () => {

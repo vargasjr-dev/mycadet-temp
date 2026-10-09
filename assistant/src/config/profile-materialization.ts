@@ -20,9 +20,8 @@ import {
 
 /**
  * Materializes a partial custom profile into a complete, standalone
- * override by filling absent fields from `dflt` (the workspace's default
- * base config — the legacy raw `llm.default` blob when one is still on
- * disk, otherwise `LLMConfigBase` schema defaults). Single-winner
+ * override by filling absent fields from `dflt` (the `LLMConfigBase`
+ * schema defaults). Single-winner
  * resolution never merges one profile's fields into another, so a custom
  * profile must carry its own provider and model to be a usable selection
  * target — materialization is what completes it. Rules:

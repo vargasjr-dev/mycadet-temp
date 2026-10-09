@@ -51,7 +51,7 @@ describe("hatch provider secrets", () => {
   });
 
   test("uses llm.default.provider override for hatch provider setup", () => {
-    expect(resolveHatchProvider({ "llm.default.provider": "openai" })).toBe(
+    expect(resolveHatchProvider({ "llm.defaultProvider.provider": "openai" })).toBe(
       "openai",
     );
   });
@@ -87,7 +87,7 @@ describe("hatch provider secrets", () => {
   test("uses default provider before static main agent call-site provider", () => {
     expect(
       resolveHatchProvider({
-        "llm.default.provider": "anthropic",
+        "llm.defaultProvider.provider": "anthropic",
         "llm.callSites.mainAgent.provider": "gemini",
       }),
     ).toBe("anthropic");
@@ -96,7 +96,7 @@ describe("hatch provider secrets", () => {
   test("uses default provider before static main agent call-site profile", () => {
     expect(
       resolveHatchProvider({
-        "llm.default.provider": "anthropic",
+        "llm.defaultProvider.provider": "anthropic",
         "llm.callSites.mainAgent.profile": "work",
         "llm.profiles.work.provider": "openai",
       }),
@@ -122,13 +122,13 @@ describe("hatch provider secrets", () => {
 
   test("infers default provider from model before falling back to Anthropic", () => {
     expect(
-      resolveHatchProvider({ "llm.default.model": "gemini-2.5-flash" }),
+      resolveHatchProvider({ "llm.defaultProvider.model": "gemini-2.5-flash" }),
     ).toBe("gemini");
   });
 
   test("skips hatch provider setup for ollama", () => {
     expect(
-      resolveHatchProvider({ "llm.default.provider": "ollama" }),
+      resolveHatchProvider({ "llm.defaultProvider.provider": "ollama" }),
     ).toBeNull();
   });
 
@@ -143,7 +143,7 @@ describe("hatch provider secrets", () => {
 
   test("rejects unsupported hatch providers before hatch starts", () => {
     expect(() =>
-      resolveHatchProvider({ "llm.default.provider": "custom" }),
+      resolveHatchProvider({ "llm.defaultProvider.provider": "custom" }),
     ).toThrow("supported API-key setup flow");
   });
 
@@ -189,7 +189,7 @@ describe("hatch provider secrets", () => {
 
     await configureHatchProviderApiKey({
       gatewayUrl: "http://127.0.0.1:7830",
-      provider: resolveHatchProvider({ "llm.default.provider": "openai" }),
+      provider: resolveHatchProvider({ "llm.defaultProvider.provider": "openai" }),
       bearerToken: "guardian-token",
       env: {},
       fetchImpl,
@@ -344,7 +344,7 @@ describe("hatch provider secrets", () => {
 
     test("is true when llm.default.provider is set", () => {
       expect(
-        hasExplicitHatchProvider({ "llm.default.provider": "openai" }),
+        hasExplicitHatchProvider({ "llm.defaultProvider.provider": "openai" }),
       ).toBe(true);
     });
 
@@ -358,7 +358,7 @@ describe("hatch provider secrets", () => {
     });
 
     test("is true when a model implies the provider", () => {
-      expect(hasExplicitHatchProvider({ "llm.default.model": "gpt-5.4" })).toBe(
+      expect(hasExplicitHatchProvider({ "llm.defaultProvider.model": "gpt-5.4" })).toBe(
         true,
       );
     });
@@ -395,7 +395,7 @@ describe("hatch provider secrets", () => {
       expect(
         shouldPromptForHatchProvider({
           ...base,
-          configValues: { "llm.default.provider": "openai" },
+          configValues: { "llm.defaultProvider.provider": "openai" },
         }),
       ).toBe(false);
     });

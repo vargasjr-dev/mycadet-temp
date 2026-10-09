@@ -23,12 +23,12 @@ describe("config-utils", () => {
   test("buildNestedConfig only converts dot-notation values", () => {
     expect(
       buildNestedConfig({
-        "llm.default.provider": "anthropic",
-        "llm.default.model": "claude-sonnet-4-6",
+        "llm.defaultProvider.provider": "anthropic",
+        "llm.defaultProvider.model": "claude-sonnet-4-6",
       }),
     ).toEqual({
       llm: {
-        default: {
+        defaultProvider: {
           provider: "anthropic",
           model: "claude-sonnet-4-6",
         },

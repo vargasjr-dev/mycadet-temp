@@ -3,18 +3,17 @@
  * `provider` + `source` model to the new `provider_connection` model.
  *
  * Walks three locations in `llm.*` on every boot:
- *   - `llm.default`           — the legacy raw base blob still present in older configs
  *   - `llm.profiles.*`        — named alternate profiles (fast/balanced/...)
  *   - `llm.callSites.*`       — per-call-site overrides with bare `provider`
  *
  * Idempotent: any object that already has `provider_connection` is skipped.
  * Only modifies config.json when at least one location needs updating.
  *
- * The `default` and `callSites` walks were added alongside Phase 1.1 of the
+ * The `callSites` walk was added alongside Phase 1.1 of the
  * post-v1 inference-providers cleanup: dispatch now throws on missing
  * `provider_connection` instead of silently falling back to legacy
- * `getProvider(name)`, so existing configs need an explicit field on the
- * default profile and on any legacy bare-`provider` callsite override.
+ * `getProvider(name)`, so existing configs need an explicit field on
+ * any legacy bare-`provider` callsite override.
  */
 
 import { MANAGED_PROFILE_NAMES } from "../../config/default-profile-catalog.js";
@@ -49,7 +48,7 @@ const log = getLogger("provider-connections-backfill");
  *
  * Steps:
  *   1. Upsert canonical connections.
- *   2. Walk `llm.default`, `llm.profiles.*`, `llm.callSites.*` in config.json.
+ *   2. Walk `llm.profiles.*`, `llm.callSites.*` in config.json.
  *   3. For each entry without `provider_connection`, derive one from the
  *      entry's `provider` field + the global inference mode and write it back.
  *   4. Save config.json if any entry was updated.
@@ -79,18 +78,7 @@ function backfillConfigProfiles(db: DrizzleDb): void {
 
   let changed = false;
 
-  // 1. The default profile — every dispatch path's terminal fallback.
-  const defaultProfile = llm.default as Record<string, unknown> | undefined;
-  if (defaultProfile && typeof defaultProfile === "object") {
-    if (
-      ensureProviderConnection(defaultProfile, "<llm.default>", db, globalMode)
-    ) {
-      llm.default = defaultProfile;
-      changed = true;
-    }
-  }
-
-  // 2. Named alternate profiles.
+  // 1. Named alternate profiles.
   const profiles = llm.profiles as Record<string, unknown> | undefined;
   if (profiles && typeof profiles === "object") {
     for (const [profileName, profileVal] of Object.entries(profiles)) {

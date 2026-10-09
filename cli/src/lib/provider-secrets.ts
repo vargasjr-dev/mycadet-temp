@@ -176,7 +176,6 @@ function resolveConfiguredMainAgentProvider(
       readConfigValue(configValues, "llm.activeProfile"),
     ) ??
     resolveFragmentProvider(configValues, "llm.defaultProvider") ??
-    resolveFragmentProvider(configValues, "llm.default") ??
     resolveFragmentProvider(configValues, "llm.callSites.mainAgent") ??
     resolveProfileProvider(
       configValues,

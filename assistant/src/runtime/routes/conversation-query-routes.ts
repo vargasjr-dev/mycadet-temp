@@ -41,6 +41,7 @@ import {
   modalitiesOf,
   resolveModalityOverride,
 } from "../../config/input-modalities.js";
+import { CODE_DEFAULT_BASE } from "../../config/llm-resolver.js";
 import {
   deepMergeOverwrite,
   fillContextDefaultsForMissingKeys,
@@ -63,7 +64,6 @@ import { AutoArchiveConfigSchema } from "../../config/schemas/conversations.js";
 import {
   collectFallbackProfileIssues,
   DefaultProviderSchema,
-  LLMConfigBase,
   LLMConfigFragment,
   ProfileEntry,
   routingIdentityModelIssue,
@@ -1392,12 +1392,6 @@ function completeChangedCustomProfiles(
   if (!profiles) {
     return;
   }
-  const parsedDefault = LLMConfigBase.safeParse(
-    readPlainObject(raw.llm)?.default ?? {},
-  );
-  if (!parsedDefault.success) {
-    return;
-  }
   const prior = readPlainObject(readPlainObject(preWrite.llm)?.profiles) ?? {};
   for (const [name, entry] of Object.entries(profiles)) {
     if (isDeepStrictEqual(entry, prior[name])) {
@@ -1420,7 +1414,7 @@ function completeChangedCustomProfiles(
     // would delete forward-compatible fields whenever the entry is edited.
     profiles[name] = mergePreservingUnknownKeys(
       readPlainObject(entry) ?? {},
-      completeCustomProfile(parsedDefault.data, entryData) as Record<
+      completeCustomProfile(CODE_DEFAULT_BASE, entryData) as Record<
         string,
         unknown
       >,
@@ -1447,7 +1441,6 @@ function collectProviderEntries(
 ): [string, { provider?: unknown; model?: unknown }][] {
   const llm = raw.llm as
     | {
-        default?: { provider?: unknown; model?: unknown } | null;
         profiles?: Record<
           string,
           { provider?: unknown; model?: unknown } | null | undefined
@@ -1459,12 +1452,6 @@ function collectProviderEntries(
       }
     | undefined;
   const entries: [string, { provider?: unknown; model?: unknown }][] = [];
-  // llm.default is a raw compatibility field outside the parsed schema;
-  // profile materialization uses the on-disk blob as its fill base, so it is
-  // checked like the schema-carried sections.
-  if (llm?.default) {
-    entries.push(["llm.default", llm.default]);
-  }
   for (const section of ["profiles", "callSites"] as const) {
     for (const [name, entry] of Object.entries(llm?.[section] ?? {})) {
       if (entry) {

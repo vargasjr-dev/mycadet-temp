@@ -87,58 +87,10 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
   test("platform hatch writes cadet", () => {
     process.env.IS_PLATFORM = "true";
     const llm = seed(
-      { llm: { default: { provider: "anthropic" } } },
+      { llm: {} },
       { isHatch: true },
     );
     expect(llm.defaultProvider).toEqual({ provider: "cadet" });
-  });
-
-  test("BYOK hatch with an anthropic key writes anthropic", () => {
-    const llm = seed(
-      { llm: { default: { provider: "anthropic" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
-  });
-
-  test("BYOK hatch with an openai key writes openai", () => {
-    const llm = seed(
-      { llm: { default: { provider: "openai" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "openai" });
-  });
-
-  test("BYOK hatch with a non-matrix API-key provider writes that provider", () => {
-    const llm = seed(
-      { llm: { default: { provider: "together" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "together" });
-  });
-
-  test("BYOK hatch with a user-endpoint provider falls back to anthropic", () => {
-    const llm = seed(
-      { llm: { default: { provider: "openai-compatible" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
-  });
-
-  test("BYOK hatch with a router provider (litellm) writes that provider", () => {
-    const llm = seed(
-      { llm: { default: { provider: "litellm" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "litellm" });
-  });
-
-  test("BYOK hatch with provider ollama falls back to anthropic", () => {
-    const llm = seed(
-      { llm: { default: { provider: "ollama" } } },
-      { isHatch: true },
-    );
-    expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
   });
 
   test("BYOK hatch with no provider entered falls back to anthropic", () => {
@@ -150,7 +102,6 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     const llm = seed(
       {
         llm: {
-          default: { provider: "anthropic" },
           activeProfile: "balanced",
         },
       },
@@ -164,7 +115,6 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     const llm = seed(
       {
         llm: {
-          default: { provider: "anthropic" },
           defaultProvider: { provider: "openai" },
         },
       },
@@ -177,7 +127,6 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     const llm = seed(
       {
         llm: {
-          default: { provider: "anthropic" },
           defaultProvider: { provider: "openai" },
         },
       },
@@ -190,7 +139,6 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
     const llm = seed(
       {
         llm: {
-          default: { provider: "anthropic" },
           activeProfile: "balanced",
           defaultProvider: { provider: "openai" },
         },
@@ -201,13 +149,13 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
   });
 
   test("non-hatch boot writes nothing", () => {
-    const llm = seed({ llm: { default: { provider: "anthropic" } } }, {});
+    const llm = seed({ llm: {} }, {});
     expect(llm.defaultProvider).toBeUndefined();
   });
 
   test("seeded config round-trips through LLMSchema.parse with the field intact", () => {
     const llm = seed(
-      { llm: { default: { provider: "anthropic" } } },
+      { llm: {} },
       { isHatch: true },
     );
     const parsed = LLMSchema.parse(llm);
@@ -217,14 +165,14 @@ describe("seedInferenceProfiles / llm.defaultProvider", () => {
   test("no connectionName is ever written", () => {
     process.env.IS_PLATFORM = "true";
     const platformLLM = seed(
-      { llm: { default: { provider: "anthropic" } } },
+      { llm: {} },
       { isHatch: true },
     );
     expect(platformLLM.defaultProvider?.connectionName).toBeUndefined();
 
     delete process.env.IS_PLATFORM;
     const byokLLM = seed(
-      { llm: { default: { provider: "openai" } } },
+      { llm: {} },
       { isHatch: true },
     );
     expect(byokLLM.defaultProvider?.connectionName).toBeUndefined();

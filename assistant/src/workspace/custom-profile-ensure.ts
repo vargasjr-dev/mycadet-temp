@@ -2,12 +2,13 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 
+import { CODE_DEFAULT_BASE } from "../config/llm-resolver.js";
 import { invalidateConfigCache } from "../config/loader.js";
 import {
   completeCustomProfile,
   mergePreservingUnknownKeys,
 } from "../config/profile-materialization.js";
-import { LLMConfigBase, ProfileEntry } from "../config/schemas/llm.js";
+import { type LLMConfigBase, ProfileEntry } from "../config/schemas/llm.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("custom-profile-ensure");
@@ -57,10 +58,6 @@ export function ensureCompleteCustomProfiles(workspaceDir: string): void {
   if (profiles === null) {
     return;
   }
-  const parsedDefault = LLMConfigBase.safeParse(llm.default ?? {});
-  if (!parsedDefault.success) {
-    return;
-  }
 
   let changed = false;
   for (const [name, rawEntry] of Object.entries(profiles)) {
@@ -68,7 +65,7 @@ export function ensureCompleteCustomProfiles(workspaceDir: string): void {
     if (entry === null) {
       continue;
     }
-    const merged = completedProfileBody(entry, parsedDefault.data);
+    const merged = completedProfileBody(entry, CODE_DEFAULT_BASE);
     if (merged === null || isDeepStrictEqual(merged, entry)) {
       continue;
     }
