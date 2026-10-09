@@ -43,7 +43,7 @@ export function getClientId(): string {
 
   const id = randomUUID();
   try {
-    mkdirSync(configDir, { recursive: true });
+    mkdirSync(getConfigDir(getCurrentEnvironment()), { recursive: true });
     writeFileSync(idFile, id, "utf-8");
   } catch {
     /* best-effort persist — transient id still works for this session */
