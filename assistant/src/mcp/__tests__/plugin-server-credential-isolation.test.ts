@@ -20,7 +20,7 @@ import * as secureKeysModule from "../../security/secure-keys.js";
 // the plugin credential key the provider stores. The spy is pass-through so
 // the isolation assertions can still observe the exact keys it reads.
 useMemorySecureKeys({
-  "mcp-plugin/v1/dW5hYnlzcw/dW5hYnlzcw/stored-oauth-token/tokens":
+  "mcp-plugin/v1/YWJjZGFiY2RhYmNk/YWJjZGFiY2RhYmNk/stored-oauth-token/tokens":
     "stored-oauth-token",
 });
 const getSecureKeyAsync = spyOn(secureKeysModule, "getSecureKeyAsync");
@@ -53,8 +53,8 @@ function pluginHttpServer(url = UNREACHABLE) {
   return {
     transport: { type: "streamable-http" as const, url },
     source: "plugin" as const,
-    pluginName: "unabyss",
-    serverKey: "unabyss",
+    pluginName: "abcdabcdabcd",
+    serverKey: "abcdabcdabcd",
   };
 }
 
@@ -68,7 +68,7 @@ describe("plugin-declared MCP servers", () => {
     const manager = new McpServerManager();
 
     await manager.start({
-      servers: { unabyss: pluginHttpServer() },
+      servers: { abcdabcdabcd: pluginHttpServer() },
     });
 
     expect(getMcpHeaders).not.toHaveBeenCalled();
@@ -76,13 +76,13 @@ describe("plugin-declared MCP servers", () => {
     expect(getSecureKeyAsync.mock.calls.map(([key]) => key)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(
-          /^mcp-plugin\/v1\/dW5hYnlzcw\/dW5hYnlzcw\/[a-f0-9]{64}\/tokens$/,
+          /^mcp-plugin\/v1\/YWJjZGFiY2RhYmNk\/YWJjZGFiY2RhYmNk\/[a-f0-9]{64}\/tokens$/,
         ),
       ]),
     );
     expect(
       getSecureKeyAsync.mock.calls.some(
-        ([key]) => key === "mcp:unabyss:tokens",
+        ([key]) => key === "mcp:abcdabcdabcd:tokens",
       ),
     ).toBe(false);
   });
@@ -105,7 +105,7 @@ describe("plugin-declared MCP servers", () => {
 
     await manager.start({
       servers: {
-        unabyss: pluginHttpServer(),
+        abcdabcdabcd: pluginHttpServer(),
         "from-workspace": workspaceHttpServer(),
       },
     });
@@ -125,7 +125,7 @@ describe("plugin-declared MCP servers", () => {
         ? "stored-oauth-token"
         : undefined,
     );
-    const client = new McpClient("unabyss", pluginHttpServer(endpointA));
+    const client = new McpClient("abcdabcdabcd", pluginHttpServer(endpointA));
     const providers: unknown[] = [];
     (client as any).createTransport = () => {
       providers.push((client as any).oauthProvider);
