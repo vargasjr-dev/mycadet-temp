@@ -581,7 +581,7 @@ export async function resolveDefaultProvider(
       throw new ConnectionResolutionError(
         "<default>",
         "missing_connection",
-        `The resolved default config carries no provider_connection and no active connection exists for provider "${resolved.provider}". Connect a provider or point llm.defaultProvider at one with credentials.`,
+        `The resolved default config carries no provider_connection and no active connection exists for provider "${resolved.provider}". Connect a provider or point llm.default.provider at one with credentials.`,
       );
     }
   }

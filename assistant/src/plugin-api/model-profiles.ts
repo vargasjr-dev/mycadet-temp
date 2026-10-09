@@ -1,4 +1,5 @@
 import { getConversationProfilesForProvider } from "../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getConfig } from "../config/loader.js";
 import { isDispatchableProfile } from "../config/profile-dispatchability.js";
 import { orderProfileKeys } from "../config/profile-order.js";
@@ -24,7 +25,7 @@ export function getModelProfiles(): ModelProfileInfo[] {
   const { activeProfile } = llm;
   const profiles = getConversationProfilesForProvider(
     llm.profiles,
-    llm.defaultProvider ?? null,
+    readDefaultProvider(llm.default),
   );
   const result: ModelProfileInfo[] = [];
   for (const key of orderProfileKeys(profiles, llm.profileOrder)) {

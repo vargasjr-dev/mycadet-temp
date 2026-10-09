@@ -57,14 +57,14 @@ function applyConfig(): void {
   config.llm = {
     profiles: mockProfiles,
     ...(mockDefaultProvider != null
-      ? { defaultProvider: mockDefaultProvider }
+      ? { default: mockDefaultProvider }
       : {}),
   };
 }
 
 function setMockConfig(
   profiles: Record<string, MockProfileEntry>,
-  defaultProvider?: { provider: string; connectionName?: string },
+  defaultProvider?: { provider: string; connectionName?: string }, // legacy key shape accepted by the mock seam
 ) {
   mockProfiles = profiles;
   mockDefaultProvider = defaultProvider ?? null;
@@ -246,7 +246,7 @@ describe("doesSupportVision with a BYO default provider", () => {
   });
 
   test("without a default provider, a default profile judges the managed column", () => {
-    // Null-reduction: no defaultProvider resolves cost-optimized through the
+    // Null-reduction: no default provider resolves cost-optimized through the
     // cadet column (deepseek-v4p1-flash, vision-capable).
     setMockConfig({});
     expect(doesSupportVision(profile("cost-optimized"))).toBe(true);

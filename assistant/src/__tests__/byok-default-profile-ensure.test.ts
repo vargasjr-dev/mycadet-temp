@@ -91,7 +91,7 @@ function eraHatchBody(
 function uneditedByokConfig(): Record<string, unknown> {
   return {
     llm: {
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
       activeProfile: "custom-balanced",
       advisorProfile: "custom-quality-optimized",
       profileOrder: [
@@ -314,7 +314,7 @@ describe("ensureByokDefaultProfiles", () => {
     (provider, key, model) => {
       writeConfig({
         llm: {
-          defaultProvider: { provider },
+          default: { provider },
           activeProfile: `custom-${key}`,
           profiles: {
             [`custom-${key}`]: { ...hatchBody(key, provider), model },
@@ -333,7 +333,8 @@ describe("ensureByokDefaultProfiles", () => {
   test("the earliest-era copies (managed source, suffixed labels, no connection stamp) convert fully", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "fireworks" },
+        default: {
+ provider: "fireworks" },
         activeProfile: "custom-balanced",
         advisorProfile: "custom-quality-optimized",
         profiles: {
@@ -374,7 +375,8 @@ describe("ensureByokDefaultProfiles", () => {
   test("an earliest-era copy with a user-edited model stays kept", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "fireworks" },
+        default: {
+ provider: "fireworks" },
         activeProfile: "custom-balanced",
         profiles: {
           "custom-balanced": eraHatchBody(
@@ -400,7 +402,7 @@ describe("ensureByokDefaultProfiles", () => {
     ) as Record<string, unknown>;
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         activeProfile: "custom-balanced",
         profiles: { "custom-balanced": body },
       },
@@ -565,7 +567,7 @@ describe("ensureByokDefaultProfiles", () => {
     // re-enabled stub preserves the enable.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         profiles: {
           "quality-optimized": {
             source: "managed",
@@ -587,7 +589,7 @@ describe("ensureByokDefaultProfiles", () => {
     // rewrite, and migration 126 thinned them to { source, label }.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         profiles: {
           balanced: { source: "managed", label: "Balanced (Managed)" },
           "cost-optimized": { source: "managed", label: "Speed (Managed)" },
@@ -681,7 +683,8 @@ describe("ensureByokDefaultProfiles", () => {
   test("the frozen pre-136 fireworks kimi body converts", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "fireworks" },
+        default: {
+ provider: "fireworks" },
         activeProfile: "custom-cost-optimized",
         profiles: {
           "custom-cost-optimized": {
@@ -709,7 +712,7 @@ describe("ensureByokDefaultProfiles", () => {
   test("the pre-096 effort-max quality body converts", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         advisorProfile: "custom-quality-optimized",
         profiles: {
           "custom-quality-optimized": {
@@ -738,7 +741,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a cadet-default install (hatched BYOK, later platform-connected) converts fully", () => {
     const config = uneditedByokConfig();
-    (config.llm as Record<string, unknown>).defaultProvider = {
+    (config.llm as Record<string, unknown>).default = {
       provider: "cadet",
     };
     writeConfig(config);
@@ -771,7 +774,7 @@ describe("ensureByokDefaultProfiles", () => {
   test("a cadet-default install keeps a user-edited copy untouched", () => {
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "cadet" };
+    llmConfig.default = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>
@@ -794,15 +797,17 @@ describe("ensureByokDefaultProfiles", () => {
     expectSecondRunNoop();
   });
 
-  test("no-op when llm.defaultProvider is absent or invalid", () => {
+  test("no-op when the blob provider is absent or unclamped", () => {
     const config = uneditedByokConfig();
-    delete (config.llm as Record<string, unknown>).defaultProvider;
+    delete (config.llm as Record<string, unknown>).default;
     writeConfig(config);
     const before = readFileSync(configPath(), "utf-8");
     ensureByokDefaultProfiles(workspaceDir);
     expect(readFileSync(configPath(), "utf-8")).toBe(before);
 
-    (config.llm as Record<string, unknown>).defaultProvider = {
+    // A provider with no matrix column clamps to null at the read — the
+    // pass cannot know which column to convert for and no-ops.
+    (config.llm as Record<string, unknown>).default = {
       provider: "not-a-provider",
     };
     writeConfig(config);
@@ -825,7 +830,8 @@ describe("ensureByokDefaultProfiles", () => {
   test("a user-source shadow under a default key is left alone", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "openai" },
+        default: {
+ provider: "openai" },
         profiles: {
           balanced: {
             source: "user",
@@ -849,7 +855,8 @@ describe("ensureByokDefaultProfiles", () => {
     // and call sites pinned at custom-balanced.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "cadet", connectionName: "cadet" },
+        default: {
+ provider: "cadet", connectionName: "cadet" },
         activeProfile: "balanced",
         advisorProfile: "quality-optimized",
         profileOrder: [
@@ -943,7 +950,8 @@ describe("ensureByokDefaultProfiles", () => {
   test("a managed-source default entry with body keys is left alone", () => {
     writeConfig({
       llm: {
-        defaultProvider: { provider: "openai" },
+        default: {
+ provider: "openai" },
         profiles: {
           balanced: {
             source: "managed",
@@ -966,7 +974,8 @@ describe("ensureByokDefaultProfiles", () => {
     // provider, so only copies matching the default provider convert.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "openai" },
+        default: {
+ provider: "openai" },
         profiles: {
           "custom-balanced": hatchBody("balanced", "anthropic"),
         },
@@ -984,7 +993,7 @@ describe("ensureByokDefaultProfiles", () => {
     // requirement keeps it.
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "cadet" };
+    llmConfig.default = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>
@@ -1007,7 +1016,7 @@ describe("ensureByokDefaultProfiles", () => {
     // set; the stubs still delete.
     const config = uneditedByokConfig();
     const llmConfig = config.llm as Record<string, unknown>;
-    llmConfig.defaultProvider = { provider: "cadet" };
+    llmConfig.default = { provider: "cadet" };
     const profileMap = llmConfig.profiles as Record<
       string,
       Record<string, unknown>
@@ -1031,7 +1040,7 @@ describe("ensureByokDefaultProfiles", () => {
     // Pre-#39516 web onboarding stamped the bare connection name.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         activeProfile: "custom-balanced",
         profiles: {
           "custom-balanced": {
@@ -1054,7 +1063,7 @@ describe("ensureByokDefaultProfiles", () => {
     const body = hatchBody("balanced", "anthropic") as Record<string, unknown>;
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         profiles: {
           "custom-balanced": {
             ...body,
@@ -1101,7 +1110,7 @@ describe("ensureByokDefaultProfiles", () => {
     // several keys; retiring it could switch which key gets billed.
     writeConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         profiles: {
           "custom-balanced": {
             ...hatchBody("balanced", "anthropic"),
@@ -1132,7 +1141,7 @@ describe("ensureByokDefaultProfiles", () => {
     (provider, hatchModel) => {
       writeConfig({
         llm: {
-          defaultProvider: { provider },
+          default: { provider },
           activeProfile: "custom-cost-optimized",
           profiles: {
             "custom-cost-optimized": {

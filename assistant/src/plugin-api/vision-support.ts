@@ -8,7 +8,7 @@
  * - a concrete model id (e.g. the provider-reported model that just ran), and
  * - a profile — either a {@link ModelProfileInfo} or a bare profile key —
  *   resolved through `llm.profiles` to an effective `(provider, model)`.
- *   Default profile keys resolve through `llm.defaultProvider`'s column of the
+ *   Default profile keys resolve through `llm.default`'s column of the
  *   intent × provider matrix, so the judged model is the one that actually
  *   runs on a BYO install. A profile whose provider names a connection entry
  *   row (e.g. a `<vendor>-personal` binding) is judged by the row's
@@ -22,6 +22,7 @@
  */
 
 import { resolveDefaultProfileForProvider } from "../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import {
   catalogEntryFor,
   type InputModalities,
@@ -130,7 +131,7 @@ function modelVision(model: string): boolean | undefined {
  */
 function profileVision(profileKey: string): boolean | undefined {
   const { llm } = getConfig();
-  const defaultProvider = llm.defaultProvider ?? null;
+  const defaultProvider = readDefaultProvider(llm.default);
   const entry = resolveDefaultProfileForProvider(
     llm.profiles,
     profileKey,

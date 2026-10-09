@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   afterAll,
@@ -35,103 +35,102 @@ afterAll(() => {
 
 import { CADET_MANAGED_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import {
+  DefaultProviderSelectionSchema,
   getDefaultProvider,
   resolveDefaultConnectionName,
   setDefaultProvider,
 } from "../default-provider.js";
+import { readDefaultProvider } from "../default-provider-resolution.js";
 import { invalidateConfigCache, loadRawConfig } from "../loader.js";
 import { getSchemaAtPath } from "../schema-utils.js";
-import { DefaultProviderSchema, LLMSchema } from "../schemas/llm.js";
+import { LLMSchema } from "../schemas/llm.js";
 
 function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 }
 
-describe("LLMSchema.defaultProvider", () => {
+describe("LLMSchema.default (the base blob)", () => {
   test("accepts a bare provider", () => {
     expect(() =>
-      LLMSchema.parse({ defaultProvider: { provider: "anthropic" } }),
+      LLMSchema.parse({ default: { provider: "anthropic" } }),
     ).not.toThrow();
   });
 
   test("accepts a provider pinned to a connection", () => {
     const parsed = LLMSchema.parse({
-      defaultProvider: { provider: "cadet", connectionName: "x" },
+      default: { provider: "cadet", provider_connection: "x" },
     });
-    expect(parsed.defaultProvider).toEqual({
+    expect(parsed.default).toEqual({
       provider: "cadet",
-      connectionName: "x",
+      provider_connection: "x",
     });
   });
 
-  // The strict write-side schema; the `.catch` only applies when reading
-  // persisted config.
-  test("rejects an unknown provider", () => {
+  // The strict write-side wire contract; the stored blob tolerates more.
+  test("the selection schema rejects an unknown provider", () => {
     expect(() =>
-      DefaultProviderSchema.parse({ provider: "not-a-provider" }),
+      DefaultProviderSelectionSchema.parse({ provider: "not-a-provider" }),
     ).toThrow();
   });
 
-  test("rejects a structured-decision catalog provider", () => {
+  test("the selection schema rejects a structured-decision catalog provider", () => {
     expect(() =>
-      DefaultProviderSchema.parse({ provider: "typesafe" }),
+      DefaultProviderSelectionSchema.parse({ provider: "typesafe" }),
     ).toThrow();
   });
 
-  test("rejects an empty connectionName", () => {
+  test("the selection schema rejects an empty connectionName", () => {
     expect(() =>
-      DefaultProviderSchema.parse({
+      DefaultProviderSelectionSchema.parse({
         provider: "anthropic",
         connectionName: "",
       }),
     ).toThrow();
   });
 
-  test("rejects a missing provider", () => {
+  test("the selection schema rejects a missing provider", () => {
     expect(() =>
-      DefaultProviderSchema.parse({ connectionName: "x" }),
+      DefaultProviderSelectionSchema.parse({ connectionName: "x" }),
     ).toThrow();
   });
 
   test("existing configs without the field still parse", () => {
     const parsed = LLMSchema.parse({});
-    expect(parsed.defaultProvider).toBeUndefined();
+    expect(parsed.default).toBeUndefined();
   });
 
-  // Guards the loader-recovery hazard described at `DefaultProviderField`:
-  // a nested failure must never strand a `{ connectionName }` fragment.
-  test("an invalid defaultProvider is dropped atomically", () => {
-    const result = LLMSchema.safeParse({
-      profiles: { "my-profile": {} },
-      activeProfile: "my-profile",
-      defaultProvider: { provider: "not-a-provider", connectionName: "x" },
+  // The blob is a partial fragment with no `.catch`: a provider with no
+  // matrix column stays on disk (stripping it would drop the blob's other
+  // fields), and the READ clamps it to null — resolution treats that as the
+  // managed column.
+  test("a blob whose provider has no matrix column survives parse and reads as null", () => {
+    const parsed = LLMSchema.parse({
+      default: { provider: "openai-compatible", model: "gpt-x" },
     });
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      return;
-    }
-    expect(result.data.defaultProvider).toBeUndefined();
-    expect(result.data.activeProfile).toBe("my-profile");
+    expect(parsed.default).toEqual({
+      provider: "openai-compatible",
+      model: "gpt-x",
+    });
+    expect(readDefaultProvider(parsed.default)).toBeNull();
   });
 
-  test("a non-object defaultProvider is dropped, not fatal", () => {
-    const result = LLMSchema.safeParse({ defaultProvider: "anthropic" });
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      return;
-    }
-    expect(result.data.defaultProvider).toBeUndefined();
+  test("a non-object blob fails the parse (the loader's leaf recovery strips it)", () => {
+    expect(LLMSchema.safeParse({ default: "anthropic" }).success).toBe(false);
   });
 
-  // The config-schema API must see through the field's wrappers to the
-  // object shape (the introspection hazard described at `DefaultProviderField`).
-  test("schema introspection reaches the object shape and provider enum", () => {
-    const atField = getSchemaAtPath(LLMSchema, "defaultProvider");
+  // The config-schema API must see through the optional wrapper to the
+  // object shape.
+  test("schema introspection reaches the object shape and provider field", () => {
+    const atField = getSchemaAtPath(LLMSchema, "default");
     expect(atField).not.toBeNull();
-    const atProvider = getSchemaAtPath(LLMSchema, "defaultProvider.provider");
+    const atProvider = getSchemaAtPath(LLMSchema, "default.provider");
     expect(atProvider).not.toBeNull();
+    // The blob's provider is the loose provider set on purpose (stripping a
+    // non-choice provider would drop the blob's other fields); the READ
+    // clamps it via isDefaultProviderChoice.
     expect(atProvider?.safeParse("anthropic").success).toBe(true);
-    expect(atProvider?.safeParse("not-a-provider").success).toBe(false);
+    expect(atProvider?.safeParse("openai-compatible").success).toBe(true);
+    expect(atProvider?.safeParse("").success).toBe(false);
   });
 
   test("JSON Schema emission includes the field's object shape", () => {
@@ -142,7 +141,7 @@ describe("LLMSchema.defaultProvider", () => {
     }) as {
       properties?: Record<string, { properties?: Record<string, unknown> }>;
     };
-    const field = json.properties?.defaultProvider;
+    const field = json.properties?.default;
     expect(field?.properties?.provider).toBeDefined();
   });
 });
@@ -224,9 +223,9 @@ describe("getDefaultProvider / setDefaultProvider", () => {
 
     const raw = loadRawConfig();
     const llm = raw.llm as Record<string, unknown>;
-    expect(llm.defaultProvider).toEqual({
+    expect(llm.default).toEqual({
       provider: "openai",
-      connectionName: "openai-work",
+      provider_connection: "openai-work",
     });
   });
 
@@ -239,17 +238,51 @@ describe("getDefaultProvider / setDefaultProvider", () => {
     expect(existsSync(CONFIG_PATH)).toBe(false);
   });
 
+  test("setting without a connection pin replaces any stored pin", () => {
+    setDefaultProvider({ provider: "openai", connectionName: "openai-work" });
+    setDefaultProvider({ provider: "openai" });
+
+    expect(getDefaultProvider()).toEqual({ provider: "openai" });
+    const blob = (loadRawConfig().llm as Record<string, unknown>)
+      .default as Record<string, unknown>;
+    expect(blob.provider_connection).toBeUndefined();
+  });
+
+  test("setDefaultProvider preserves unrelated blob fields", () => {
+    writeFileSync(
+      CONFIG_PATH,
+      JSON.stringify(
+        { llm: { default: { provider: "anthropic", model: "x" } } },
+        null,
+        2,
+      ) + "\n",
+    );
+    invalidateConfigCache();
+
+    setDefaultProvider({ provider: "openai" });
+
+    const blob = (loadRawConfig().llm as Record<string, unknown>)
+      .default as Record<string, unknown>;
+    expect(blob).toEqual({ provider: "openai", model: "x" });
+  });
+
   test("getDefaultProvider accepts a pre-loaded config without re-reading disk", () => {
     setDefaultProvider({ provider: "gemini" });
-    const config = { llm: { defaultProvider: { provider: "anthropic" } } };
+    const config = { llm: { default: { provider: "anthropic" } } };
     // @ts-expect-error partial AssistantConfig stub for the pure-read path
     expect(getDefaultProvider(config)).toEqual({ provider: "anthropic" });
+  });
+
+  test("a blob provider outside the matrix reads as null", () => {
+    const config = { llm: { default: { provider: "openai-compatible" } } };
+    // @ts-expect-error partial AssistantConfig stub for the pure-read path
+    expect(getDefaultProvider(config)).toBeNull();
   });
 
   test("writes invalidate the config cache so getConfigReadOnly sees the new value", () => {
     setDefaultProvider({ provider: "fireworks" });
     const after = readConfig();
-    expect((after.llm as Record<string, unknown>).defaultProvider).toEqual({
+    expect((after.llm as Record<string, unknown>).default).toEqual({
       provider: "fireworks",
     });
   });

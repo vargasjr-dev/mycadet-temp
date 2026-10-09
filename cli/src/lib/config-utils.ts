@@ -5,8 +5,8 @@ import { join } from "path";
 /**
  * Convert flat dot-notation key=value pairs into a nested config object.
  *
- * e.g. {"llm.defaultProvider.provider": "anthropic", "llm.defaultProvider.model": "claude-opus-4-6"}
- *   → {llm: {defaultProvider: {provider: "anthropic", model: "claude-opus-4-6"}}}
+ * e.g. {"llm.default.provider": "anthropic", "llm.default.model": "claude-opus-4-6"}
+ *   → {llm: {default: {provider: "anthropic", model: "claude-opus-4-6"}}}
  */
 export function buildNestedConfig(
   configValues: Record<string, string>,
@@ -55,13 +55,13 @@ export function buildHatchConfigValues(
   configValues: Record<string, string>,
   provider: string | null | undefined,
 ): Record<string, string> {
-  if (!provider || configValues["llm.defaultProvider.provider"]) {
+  if (!provider || configValues["llm.default.provider"]) {
     return configValues;
   }
 
   return {
     ...configValues,
-    "llm.defaultProvider.provider": provider,
+    "llm.default.provider": provider,
   };
 }
 
@@ -74,8 +74,8 @@ export function buildHatchConfigValues(
  * `mergeDefaultWorkspaceConfig` is a same-filesystem rename.
  *
  * Keys use dot-notation to address nested fields. For example:
- *   "llm.defaultProvider.provider" → {llm: {defaultProvider: {provider: ...}}}
- *   "llm.defaultProvider.model"    → {llm: {defaultProvider: {model: ...}}}
+ *   "llm.default.provider" → {llm: {default: {provider: ...}}}
+ *   "llm.default.model"    → {llm: {default: {model: ...}}}
  *
  * Returns undefined when configValues is empty (nothing to write).
  *

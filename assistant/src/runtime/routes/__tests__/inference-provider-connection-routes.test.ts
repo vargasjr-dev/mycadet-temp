@@ -1269,16 +1269,16 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("succeeds when defaultProvider is malformed (dropped by the schema catch)", async () => {
+  test("succeeds when the blob's provider is malformed (stripped by leaf recovery)", async () => {
     seedConnection({
       name: "some-conn",
       provider: "openai",
       auth: { type: "platform" },
     });
     const parsed = LLMSchema.parse({
-      defaultProvider: { provider: "not-a-provider" },
+      default: { provider: "not-a-provider" },
     });
-    expect(parsed.defaultProvider).toBeUndefined();
+    expect(parsed.default?.provider).toBeUndefined();
     setConfig("llm", parsed);
 
     const result = (await call(
@@ -1288,7 +1288,7 @@ describe("DELETE guards the llm.defaultProvider reference", () => {
     expect(result.ok).toBe(true);
   });
 
-  test("managed-connection rejection still takes precedence over the defaultProvider guard", async () => {
+  test("managed-connection rejection still takes precedence over the default-provider guard", async () => {
     seedConnection({
       name: "cadet",
       provider: "cadet",

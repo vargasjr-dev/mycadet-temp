@@ -5659,9 +5659,9 @@ paths:
       operationId: config_llm_defaultprovider_get
       summary: Get the default provider and its availability
       description:
-        Returns `llm.defaultProvider`, the connection name it resolves to, and whether that connection is currently
-        usable (connection exists, credential stored, Cadet authenticated). Availability is informational — a broken
-        default is a valid persisted state that surfaces explainable errors at resolution time.
+        Returns the default provider stored in `llm.default`, the connection name it resolves to, and whether that
+        connection is currently usable (connection exists, credential stored, Cadet authenticated). Availability is
+        informational — a broken default is a valid persisted state that surfaces explainable errors at resolution time.
       tags:
         - config
       responses:
@@ -5675,9 +5675,9 @@ paths:
       operationId: config_llm_defaultprovider_put
       summary: Set the default provider
       description:
-        Replaces `llm.defaultProvider`. Strict-validates the body (unlike the generic config write paths, which
-        silently drop invalid values). Does not require the referenced connection to exist — a dangling name is allowed
-        by design and reported via the availability status.
+        Replaces the default provider stored in the `llm.default` blob. Strict-validates the body (unlike the
+        generic config write paths, which silently drop or clamp invalid values). Does not require the referenced
+        connection to exist — a dangling name is allowed by design and reported via the availability status.
       tags:
         - config
       requestBody:
@@ -39358,6 +39358,7 @@ components:
                   type: boolean
                 provider_connection:
                   type: string
+                  minLength: 1
               additionalProperties: false
             defaultProvider:
               type: object

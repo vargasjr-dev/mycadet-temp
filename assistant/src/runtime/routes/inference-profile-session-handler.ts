@@ -15,6 +15,7 @@
 import { randomUUID } from "node:crypto";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import { loadConfig } from "../../config/loader.js";
 import {
   nonTextConversationProfileMessage,
@@ -159,7 +160,7 @@ export async function setInferenceProfileSession({
   const { llm } = loadConfig();
   const profiles = getUserSelectableProfilesForProvider(
     llm?.profiles,
-    llm?.defaultProvider ?? null,
+    readDefaultProvider(llm?.default),
   );
   if (!Object.prototype.hasOwnProperty.call(profiles, profile)) {
     throw new BadRequestError(

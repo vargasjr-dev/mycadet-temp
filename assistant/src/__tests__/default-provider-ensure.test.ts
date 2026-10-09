@@ -1,8 +1,8 @@
 /**
  * Tests for `ensureDefaultProvider` in `workspace/default-provider-ensure.ts`.
  *
- * `hasManagedProxyPrereqs` and `getProviderKeyAsync` are mocked at module
- * scope; `bun:test` isolates `mock.module` per test file.
+ * `hasManagedProxyPrereqs` is mocked at module scope; `bun:test` isolates
+ * `mock.module` per test file.
  */
 import {
   existsSync,
@@ -78,12 +78,12 @@ afterEach(() => {
 });
 
 describe("ensureDefaultProvider", () => {
-  test("backfills from llm.default.provider", async () => {
+  test("a usable blob provider is left alone", async () => {
     writeConfig({ llm: { default: { provider: "gemini" } } });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "gemini" });
+    expect(llm().default).toEqual({ provider: "gemini" });
   });
 
   test("backfills from custom-balanced provider", async () => {
@@ -97,7 +97,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "openai" });
+    expect(llm().default).toEqual({ provider: "openai" });
   });
 
   test("uses custom-quality-optimized when custom-balanced lacks a provider", async () => {
@@ -112,7 +112,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "fireworks" });
+    expect(llm().default).toEqual({ provider: "fireworks" });
   });
 
   test("IS_PLATFORM true resolves to cadet", async () => {
@@ -121,25 +121,29 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+    expect(llm().default).toEqual({ provider: "cadet" });
   });
 
-  test("IS_PLATFORM outranks a legacy provider signal", async () => {
+  test("a usable blob provider is trusted even on platform", async () => {
+    // The old pass overrode a legacy `llm.default.provider` signal on
+    // platform because the key was the storage and the blob was inert
+    // leftovers. The blob is the storage now — real platform hatches either
+    // write cadet or write nothing, so a usable provider is intent.
     process.env.IS_PLATFORM = "1";
     writeConfig({ llm: { default: { provider: "anthropic" } } });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+    expect(llm().default).toEqual({ provider: "anthropic" });
   });
 
-  test("a legacy BYOK signal outranks the login fallback off-platform", async () => {
+  test("a usable blob provider outranks the login fallback off-platform", async () => {
     proxyState.prereqs = true;
     writeConfig({ llm: { default: { provider: "openai" } } });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "openai" });
+    expect(llm().default).toEqual({ provider: "openai" });
   });
 
   test("hasManagedProxyPrereqs true resolves to cadet when off-platform", async () => {
@@ -148,7 +152,7 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+    expect(llm().default).toEqual({ provider: "cadet" });
   });
 
   test("falls back to anthropic when not on platform and not logged in", async () => {
@@ -157,28 +161,28 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "anthropic" });
+    expect(llm().default).toEqual({ provider: "anthropic" });
   });
 
-  test("a legacy signal naming a non-matrix API-key provider is honored", async () => {
+  test("a non-matrix API-key provider blob is honored", async () => {
     proxyState.prereqs = false;
     writeConfig({ llm: { default: { provider: "minimax" } } });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "minimax" });
+    expect(llm().default).toEqual({ provider: "minimax" });
   });
 
-  test("a signal naming a provider that cannot back the defaults falls through", async () => {
+  test("a blob naming a provider that cannot back the defaults falls through", async () => {
     proxyState.prereqs = false;
     writeConfig({ llm: { default: { provider: "openai-compatible" } } });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "anthropic" });
+    expect(llm().default).toEqual({ provider: "anthropic" });
   });
 
-  test("repairs an invalid defaultProvider object", async () => {
+  test("an invalid retired key's bytes are retired; the blob stands", async () => {
     writeConfig({
       llm: {
         default: { provider: "gemini" },
@@ -188,10 +192,11 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "gemini" });
+    expect(llm().default).toEqual({ provider: "gemini" });
+    expect(llm().defaultProvider).toBeUndefined();
   });
 
-  test("repairs an empty connectionName via the resolution chain", async () => {
+  test("a malformed connectionName invalidates the key, and the chain repairs", async () => {
     process.env.IS_PLATFORM = "1";
     writeConfig({
       llm: { defaultProvider: { provider: "anthropic", connectionName: "" } },
@@ -199,10 +204,11 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+    expect(llm().default).toEqual({ provider: "cadet" });
+    expect(llm().defaultProvider).toBeUndefined();
   });
 
-  test("a valid object with a connectionName is left untouched", async () => {
+  test("a valid key's selection is stamped into the blob, pin carried", async () => {
     writeConfig({
       llm: {
         defaultProvider: {
@@ -214,13 +220,14 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({
+    expect(llm().default).toEqual({
       provider: "openai",
-      connectionName: "openai-personal",
+      provider_connection: "openai-personal",
     });
+    expect(llm().defaultProvider).toBeUndefined();
   });
 
-  test("never overwrites an existing defaultProvider value", async () => {
+  test("a valid retired key's intent overrides the blob's provider", async () => {
     process.env.IS_PLATFORM = "true";
     writeConfig({
       llm: {
@@ -231,7 +238,34 @@ describe("ensureDefaultProvider", () => {
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "openai" });
+    expect(llm().default).toEqual({ provider: "openai" });
+    expect(llm().defaultProvider).toBeUndefined();
+  });
+
+  test("the stamp preserves the blob's other fields", async () => {
+    writeConfig({
+      llm: {
+        default: { provider: "anthropic", model: "x" },
+        defaultProvider: { provider: "openai" },
+      },
+    });
+
+    await ensureDefaultProvider(workspaceDir);
+
+    expect(llm().default).toEqual({ provider: "openai", model: "x" });
+  });
+
+  test("a pin for the old provider does not survive a provider change", async () => {
+    writeConfig({
+      llm: {
+        default: { provider: "anthropic", provider_connection: "old-pin" },
+        defaultProvider: { provider: "openai" },
+      },
+    });
+
+    await ensureDefaultProvider(workspaceDir);
+
+    expect(llm().default).toEqual({ provider: "openai" });
   });
 
   test("is idempotent across repeated runs", async () => {
@@ -245,15 +279,31 @@ describe("ensureDefaultProvider", () => {
     expect(second).toBe(first);
   });
 
-  test("never writes connectionName", async () => {
+  test("stamping is idempotent across repeated runs", async () => {
+    writeConfig({
+      llm: {
+        default: { provider: "anthropic", model: "x" },
+        defaultProvider: { provider: "openai" },
+      },
+    });
+
+    await ensureDefaultProvider(workspaceDir);
+    const first = readFileSync(join(workspaceDir, "config.json"), "utf-8");
+    await ensureDefaultProvider(workspaceDir);
+    const second = readFileSync(join(workspaceDir, "config.json"), "utf-8");
+
+    expect(second).toBe(first);
+  });
+
+  test("never writes a connection pin on the resolution path", async () => {
     process.env.IS_PLATFORM = "true";
     writeConfig({ llm: {} });
 
     await ensureDefaultProvider(workspaceDir);
 
-    expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+    expect(llm().default).toEqual({ provider: "cadet" });
     expect(
-      (llm().defaultProvider as Record<string, unknown>).connectionName,
+      (llm().default as Record<string, unknown>).provider_connection,
     ).toBeUndefined();
   });
 
@@ -263,7 +313,7 @@ describe("ensureDefaultProvider", () => {
     await ensureDefaultProvider(workspaceDir);
 
     const parsed = LLMSchema.parse(llm());
-    expect(parsed.defaultProvider).toEqual({ provider: "anthropic" });
+    expect(parsed.default).toEqual({ provider: "anthropic" });
   });
 
   test("tolerates malformed config shapes without throwing", async () => {
@@ -280,38 +330,41 @@ describe("ensureDefaultProvider", () => {
     await expect(ensureDefaultProvider(workspaceDir)).resolves.toBeUndefined();
   });
 
-  describe("legacy anthropic schema-default echo", () => {
-    test("key present honors anthropic regardless of login state", async () => {
+  describe("a bare anthropic blob is trusted as intent", () => {
+    // The old pass disambiguated a bare "anthropic" via a stored API key
+    // because the value could be a first-launch schema-default echo
+    // masquerading as a routing choice for the retired KEY. The blob is the
+    // state now — that echo routed anthropic then and routes anthropic now,
+    // so there is nothing to disambiguate.
+    test("with a stored key", async () => {
       secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
       proxyState.prereqs = true;
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 
       await ensureDefaultProvider(workspaceDir);
 
-      expect(llm().defaultProvider).toEqual({ provider: "anthropic" });
+      expect(llm().default).toEqual({ provider: "anthropic" });
     });
 
-    test("no key + logged in falls through to the cadet login fallback", async () => {
+    test("without a stored key, logged in", async () => {
       proxyState.prereqs = true;
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 
       await ensureDefaultProvider(workspaceDir);
 
-      expect(llm().defaultProvider).toEqual({ provider: "cadet" });
+      expect(llm().default).toEqual({ provider: "anthropic" });
     });
 
-    test("no key + not logged in falls through to the anthropic login fallback", async () => {
+    test("without a stored key, not logged in", async () => {
       proxyState.prereqs = false;
       writeConfig({ llm: { default: { provider: "anthropic" } } });
 
       await ensureDefaultProvider(workspaceDir);
 
-      // Same value as honoring the echo, but reached via the login fallback
-      // — assert the field is still written.
-      expect(llm().defaultProvider).toEqual({ provider: "anthropic" });
+      expect(llm().default).toEqual({ provider: "anthropic" });
     });
 
-    test("no key + custom profile reaches the profile step", async () => {
+    test("over a custom profile's provider", async () => {
       writeConfig({
         llm: {
           default: { provider: "anthropic" },
@@ -323,31 +376,7 @@ describe("ensureDefaultProvider", () => {
 
       await ensureDefaultProvider(workspaceDir);
 
-      expect(llm().defaultProvider).toEqual({ provider: "openai" });
-    });
-
-    test("IS_PLATFORM outranks the anthropic evidence check", async () => {
-      process.env.IS_PLATFORM = "true";
-      secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
-      writeConfig({ llm: { default: { provider: "anthropic" } } });
-
-      await ensureDefaultProvider(workspaceDir);
-
-      expect(llm().defaultProvider).toEqual({ provider: "cadet" });
-    });
-
-    test("a valid existing defaultProvider is never overwritten by the echo path", async () => {
-      secureKeys.set(ANTHROPIC_KEY, "sk-ant-test");
-      writeConfig({
-        llm: {
-          default: { provider: "anthropic" },
-          defaultProvider: { provider: "openai" },
-        },
-      });
-
-      await ensureDefaultProvider(workspaceDir);
-
-      expect(llm().defaultProvider).toEqual({ provider: "openai" });
+      expect(llm().default).toEqual({ provider: "anthropic" });
     });
   });
 });

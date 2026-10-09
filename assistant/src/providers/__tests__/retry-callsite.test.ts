@@ -467,7 +467,7 @@ describe("RetryProvider — callSite resolution", () => {
   });
 
   test("memory-v3 selection does not inherit high effort", async () => {
-    setLlmConfig({ defaultProvider: { provider: "anthropic" } });
+    setLlmConfig({ default: { provider: "anthropic" } });
 
     let seen: SendMessageOptions | undefined;
     const wrapped = new RetryProvider(

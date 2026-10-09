@@ -287,7 +287,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
       callSites: {
         conversationSummarization: { profile: "quality-optimized" },
       },
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     });
     const snapshot = resolveUsageAttribution({
       callSite: "conversationSummarization",
@@ -299,7 +299,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
   });
 
   test("the default intent attributes its profile key with source 'default'", () => {
-    setLlmConfig({ defaultProvider: { provider: "anthropic" } });
+    setLlmConfig({ default: { provider: "anthropic" } });
     const snapshot = resolveUsageAttribution({
       callSite: "conversationSummarization",
     });
@@ -312,7 +312,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
     setLlmConfig({
       profiles: { mine: completeProfile },
       activeProfile: "mine",
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     });
     expect(resolveUsageAttribution({ callSite: "mainAgent" })).toMatchObject({
       appliedProfile: "mine",
@@ -331,7 +331,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
       profiles: { mine: completeProfile },
       activeProfile: "mine",
       callSites: { compactionAgent: { profile: "cost-optimized" } },
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     });
 
     const snapshot = resolveUsageAttribution({
@@ -355,7 +355,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
   test("attribution provider/model agree with the resolver", () => {
     setLlmConfig({
       profiles: { mine: completeProfile },
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     });
     expectResolvedProviderModelMatchesResolver("conversationSummarization");
     expectResolvedProviderModelMatchesResolver("mainAgent", "mine");

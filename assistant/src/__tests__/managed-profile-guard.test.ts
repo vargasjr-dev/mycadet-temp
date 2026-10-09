@@ -1249,13 +1249,13 @@ describe("code-owned default profiles — wire view and write normalization", ()
 });
 
 describe("code-owned default profiles — BYO default provider wire view", () => {
-  // With llm.defaultProvider set, the wire view must show the column of the
+  // With the llm.default blob set, the wire view must show the column of the
   // intent × provider matrix that actually dispatches — not the cadet
   // column — and the write path must echo-strip against that same view or an
   // honest GET → write round-trip is rejected.
   test("GET materializes the default provider's column for default profiles", async () => {
     seedRawConfig({
-      llm: { defaultProvider: { provider: "anthropic" }, profiles: {} },
+      llm: { default: { provider: "anthropic" }, profiles: {} },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
     const wireBalanced = response.llm.profiles.balanced;
@@ -1270,7 +1270,7 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
   test("GET → PATCH round-trip of the BYO wire view is accepted and keeps disk stubs thin", async () => {
     seedRawConfig({
       llm: {
-        defaultProvider: { provider: "anthropic" },
+        default: { provider: "anthropic" },
         profiles: { balanced: { source: "managed", status: "disabled" } },
       },
     });
@@ -1290,7 +1290,7 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
 
   test("GET → SET llm round-trip of the BYO wire view is accepted", async () => {
     seedRawConfig({
-      llm: { defaultProvider: { provider: "anthropic" }, profiles: {} },
+      llm: { default: { provider: "anthropic" }, profiles: {} },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
     const result = await setRoute.handler({

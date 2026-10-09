@@ -551,7 +551,7 @@ export async function runDaemon(): Promise<void> {
   const defaultConfigMerge = mergeDefaultWorkspaceConfig();
 
   // Seed inference profiles into the workspace config: active/advisor
-  // resolution plus, on off-platform hatches, `llm.defaultProvider` and a
+  // resolution plus, on off-platform hatches, `llm.default` and a
   // personal provider connection for the hatch provider.
   try {
     seedInferenceProfiles({
@@ -599,7 +599,7 @@ export async function runDaemon(): Promise<void> {
   }
 
   // Runs on every boot, after the default-provider ensure (it keys off
-  // llm.defaultProvider) and before custom-profile materialization (so
+  // the llm.default blob) and before custom-profile materialization (so
   // copies it retires this boot are never pointlessly materialized first;
   // its comparison normalizes both sides through the same completion, so
   // ordering is not correctness-bearing).

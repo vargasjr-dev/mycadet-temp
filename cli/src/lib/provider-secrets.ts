@@ -175,8 +175,12 @@ function resolveConfiguredMainAgentProvider(
       configValues,
       readConfigValue(configValues, "llm.activeProfile"),
     ) ??
-    resolveFragmentProvider(configValues, "llm.defaultProvider") ??
+    // The hatch overlay writes `llm.default.provider` (the blob the assistant
+    // actually reads). The retired `llm.defaultProvider` key stays as a
+    // version-skew fallback: an older CLI's overlay carries it, and the
+    // assistant's ensure pass derives the blob from it on boot.
     resolveFragmentProvider(configValues, "llm.default") ??
+    resolveFragmentProvider(configValues, "llm.defaultProvider") ??
     resolveFragmentProvider(configValues, "llm.callSites.mainAgent") ??
     resolveProfileProvider(
       configValues,

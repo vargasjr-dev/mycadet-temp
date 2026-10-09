@@ -4,7 +4,7 @@ import { type LLMCallSite } from "./schemas/llm.js";
 type CallSiteDefaultConfig = {
   /**
    * Named profile the call site resolves to. Omit to fall through to the
-   * balanced intent resolved through `llm.defaultProvider` — used for call
+   * balanced intent resolved through `llm.default` — used for call
    * sites that must resolve to a credentialed provider on every install
    * rather than pinning a profile that may be unavailable.
    */

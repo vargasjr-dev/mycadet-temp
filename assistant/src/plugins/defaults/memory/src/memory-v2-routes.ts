@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { getUserSelectableProfilesForProvider } from "../../../../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../../../../config/default-provider-resolution.js";
 import { loadConfig } from "../../../../config/loader.js";
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
 import type { AssistantConfig } from "../../../../config/types.js";
@@ -525,7 +526,7 @@ export async function handleSimulateRouter({
   if (profileOverride !== undefined) {
     const profiles = getUserSelectableProfilesForProvider(
       liveConfig.llm?.profiles,
-      liveConfig.llm?.defaultProvider ?? null,
+      readDefaultProvider(liveConfig.llm?.default),
     );
     if (!Object.prototype.hasOwnProperty.call(profiles, profileOverride)) {
       const available = Object.keys(profiles).sort();

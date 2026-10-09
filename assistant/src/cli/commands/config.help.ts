@@ -21,9 +21,9 @@ Keys) — agent shells refuse inline keys unless --generated is passed.
 
 Examples:
   $ assistant config list
-  $ assistant config get llm.defaultProvider.provider
+  $ assistant config get llm.default.provider
   $ assistant config schema services
-  $ assistant config set llm.defaultProvider.provider anthropic
+  $ assistant config set llm.default.provider anthropic
   $ assistant config set calls.enabled true`,
   subcommands: [
     {
@@ -33,7 +33,7 @@ Examples:
         "Set a config value (supports dotted paths like calls.enabled)",
       helpText: `
 Arguments:
-  key     Dotted path to the config key (e.g. llm.defaultProvider.provider,
+  key     Dotted path to the config key (e.g. llm.default.provider,
           calls.enabled, twilio.accountSid). Intermediate objects are created
           automatically.
   value   The value to store. Parsed as JSON first (so "true" becomes boolean
@@ -50,7 +50,7 @@ set <provider> <key>" from their own terminal or via the Settings page under
 API Keys (agent shells refuse inline keys unless --generated is passed).
 
 Examples:
-  $ assistant config set llm.defaultProvider.provider anthropic
+  $ assistant config set llm.default.provider anthropic
   $ assistant config set calls.enabled true
   $ assistant config set memory.embeddings.provider custom
   $ assistant config set memory.embeddings.baseUrl https://gateway.example.com/v1`,
@@ -61,7 +61,7 @@ Examples:
       description: "Get a config value (supports dotted paths)",
       helpText: `
 Arguments:
-  key   Dotted path to the config key (e.g. llm.defaultProvider.provider,
+  key   Dotted path to the config key (e.g. llm.default.provider,
         calls.enabled)
 
 Fetches the full config from the assistant and prints the value at the
@@ -71,7 +71,7 @@ values are pretty-printed as indented JSON.
 To view API keys, use "assistant keys list" instead.
 
 Examples:
-  $ assistant config get llm.defaultProvider.provider
+  $ assistant config get llm.default.provider
   $ assistant config get calls.enabled`,
     },
     {

@@ -8,11 +8,11 @@ import {
   USER_PROFILE_TEMPLATES,
 } from "../config/default-profile-catalog.js";
 import type { DefaultProfileKey } from "../config/default-profile-names.js";
+import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getIsPlatform } from "../config/env-registry.js";
 import { invalidateConfigCache } from "../config/loader.js";
 import {
   type DefaultProviderConfig,
-  DefaultProviderSchema,
   isByokDefaultProviderChoice,
   LLMConfigBase,
   type LLMProvider,
@@ -273,8 +273,10 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   if (llm === null) {
     return;
   }
-  const parsedDefault = DefaultProviderSchema.safeParse(llm.defaultProvider);
-  if (!parsedDefault.success) {
+  // The selection lives in the `llm.default` blob (the ensure pass before
+  // this one derives it from any retired `llm.defaultProvider` key).
+  const defaultProvider = readDefaultProvider(llm.default);
+  if (defaultProvider === null) {
     return;
   }
   const profiles = readObject(llm.profiles);
@@ -307,10 +309,10 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   // across the complete copy set on a routing-identity default (cadet,
   // chatgpt); null converts nothing.
   const candidateProvider = ROUTING_IDENTITY_PROVIDERS.has(
-    parsedDefault.data.provider,
+    defaultProvider.provider,
   )
     ? uniformCopyProvider(profiles)
-    : parsedDefault.data.provider;
+    : defaultProvider.provider;
   const convertibleProvider =
     candidateProvider !== null && isByokDefaultProviderChoice(candidateProvider)
       ? candidateProvider
@@ -365,7 +367,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
     return;
   }
 
-  repairProfileSelections(llm, profiles, parsedDefault.data, carriedDisables);
+  repairProfileSelections(llm, profiles, defaultProvider, carriedDisables);
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
   // The lifecycle call site runs before the first loadConfig() of this boot;

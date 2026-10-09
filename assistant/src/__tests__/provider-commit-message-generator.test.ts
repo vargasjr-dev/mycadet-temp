@@ -125,7 +125,7 @@ describe("ProviderCommitMessageGenerator", () => {
     seedCommitMessageLLM();
     // Anchor call-site resolution on anthropic so the resolved provider for
     // `commitMessage` (and thus the API-key preflight) targets anthropic.
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
     reseedMemorySecureKeys(mockSecureKeys, { anthropic: "sk-test-key" });
     mockSendMessage.mockReset();
     resolvedProvider = {

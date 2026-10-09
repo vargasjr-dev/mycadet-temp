@@ -24,6 +24,7 @@ import {
   MANAGED_PROFILE_NAMES,
   resolveDefaultProfileForProvider,
 } from "../../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import {
   getConfig,
   getConfigReadOnly,
@@ -526,7 +527,7 @@ async function handleListProfiles() {
   const config = getConfigReadOnly();
   const effective = getUserSelectableProfilesForProvider(
     config.llm.profiles,
-    config.llm.defaultProvider ?? null,
+    readDefaultProvider(config.llm.default),
   );
   // Presentation order, the same one the pickers use, rather than the
   // on-disk insertion order of `llm.profiles`.
@@ -561,7 +562,7 @@ async function handleGetProfile({ pathParams = {} }: RouteHandlerArgs) {
   const entry = resolveDefaultProfileForProvider(
     config.llm.profiles,
     name,
-    config.llm.defaultProvider ?? null,
+    readDefaultProvider(config.llm.default),
   );
   if (!entry) {
     throw new NotFoundError(`Profile "${name}" not found.`);
@@ -669,7 +670,7 @@ async function handleCreateProfile({ body = {} }: RouteHandlerArgs) {
     entry: (resolveDefaultProfileForProvider(
       getConfig().llm.profiles,
       name,
-      getConfig().llm.defaultProvider ?? null,
+      readDefaultProvider(getConfig().llm.default),
     ) ?? entry) as Record<string, unknown>,
     warnings,
     verify: verifyProfileCommand(name),
@@ -812,7 +813,7 @@ async function handleUpdateProfile({
     entry: (resolveDefaultProfileForProvider(
       getConfig().llm.profiles,
       name,
-      getConfig().llm.defaultProvider ?? null,
+      readDefaultProvider(getConfig().llm.default),
     ) ?? merged) as Record<string, unknown>,
     warnings,
     verify: verifyProfileCommand(name),
@@ -884,7 +885,7 @@ async function handleSetActiveProfile({ body = {} }: RouteHandlerArgs) {
   const config = getConfigReadOnly();
   const effective = getUserSelectableProfilesForProvider(
     config.llm.profiles,
-    config.llm.defaultProvider ?? null,
+    readDefaultProvider(config.llm.default),
   );
   const entry = effective[name] as Record<string, unknown> | undefined;
   if (!entry) {

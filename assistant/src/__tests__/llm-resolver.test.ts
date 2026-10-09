@@ -93,7 +93,8 @@ describe("resolveCallSiteConfig", () => {
     // The winner resolves through the openai default provider; the tweak's
     // model belongs to anthropic's catalog, so the catalog owner is implied.
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "openai" },
+      default: {
+ provider: "openai" },
       callSites: {
         conversationStarters: {
           model: "claude-haiku-4-5-20251001",
@@ -152,7 +153,8 @@ describe("resolveCallSiteConfig", () => {
     // `anthropic/claude-sonnet-4.6` — the catalog owner (openrouter, the
     // earliest entry listing it) is implied.
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "anthropic" },
+      default: {
+ provider: "anthropic" },
       callSites: {
         memoryExtraction: { model: "anthropic/claude-sonnet-4.6" },
       },
@@ -166,7 +168,8 @@ describe("resolveCallSiteConfig", () => {
 
   test("model unique to vercel-ai-gateway implies vercel-ai-gateway", () => {
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "anthropic" },
+      default: {
+ provider: "anthropic" },
       callSites: {
         memoryExtraction: { model: "openai/gpt-5.5-pro" },
       },
@@ -180,7 +183,8 @@ describe("resolveCallSiteConfig", () => {
 
   test("unknown model-only override preserves the winner's provider", () => {
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "openai" },
+      default: {
+ provider: "openai" },
       callSites: {
         memoryExtraction: { model: "local-custom-model" },
       },
@@ -287,7 +291,8 @@ describe("resolveCallSiteConfig", () => {
 
   test("a defined-but-unreferenced profile never leaks into the resolved config", () => {
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "anthropic" },
+      default: {
+ provider: "anthropic" },
       profiles: {
         // Defined but unused — must not leak into the resolved config.
         fast: { speed: "fast", effort: "low" },
@@ -306,7 +311,8 @@ describe("resolveCallSiteConfig", () => {
 
   test("a winning profile's fallbackProfile metadata never leaks into the resolved config", () => {
     const llm = LLMSchema.parse({
-      defaultProvider: { provider: "cadet" },
+      default: {
+ provider: "cadet" },
       profiles: {
         "quality-optimized": {
           source: "managed",
@@ -714,7 +720,8 @@ describe("resolveCallSiteConfig", () => {
       profiles: {
         "cost-optimized": { source: "managed", status: "disabled" },
       },
-      defaultProvider: { provider: "openai" },
+      default: {
+ provider: "openai" },
     });
     const resolved = resolveCallSiteConfig("memoryExtraction", llm);
     expect(resolved.provider).toBe("openai");
@@ -736,7 +743,8 @@ describe("resolveCallSiteConfig", () => {
         },
       },
       activeProfile: "custom-balanced",
-      defaultProvider: { provider: "openai" },
+      default: {
+ provider: "openai" },
     });
 
     const callSites: LLMCallSite[] = [
@@ -783,7 +791,8 @@ describe("resolveCallSiteConfig", () => {
       profiles: {
         "cost-optimized": { source: "managed", status: "disabled" },
       },
-      defaultProvider: { provider: "openai" },
+      default: {
+ provider: "openai" },
     });
 
     const resolved = resolveCallSiteConfig("commitMessage", byokConfig);
@@ -1630,7 +1639,8 @@ describe("resolveCallSiteConfig — workflowLeaf default", () => {
           model: "claude-haiku-4-5-20251001",
         },
       },
-      defaultProvider: { provider: "anthropic" },
+      default: {
+ provider: "anthropic" },
     });
     const resolved = resolveCallSiteConfig("workflowLeaf", llm);
     // No pinned profile → the model comes from the balanced-intent anchor

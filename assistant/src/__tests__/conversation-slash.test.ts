@@ -45,7 +45,7 @@ describe("/model list", () => {
     // that actually dispatches on this install.
     mockLlm = {
       profiles: {},
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     };
     applyConfig();
 
@@ -91,7 +91,7 @@ describe("/model switch", () => {
   test("validates against the same set under a BYO default provider", async () => {
     mockLlm = {
       profiles: {},
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
     };
     applyConfig();
 

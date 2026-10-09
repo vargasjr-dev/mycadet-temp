@@ -10,7 +10,7 @@ describe("jev-managed as a call-site pin target", () => {
     expect(
       LLMSchema.safeParse({
         ...PIN,
-        defaultProvider: { provider: "cadet" },
+        default: { provider: "cadet" },
       }).success,
     ).toBe(true);
   });
@@ -69,7 +69,7 @@ describe("jev-managed as a call-site pin target", () => {
   test("is rejected under a BYOK default provider, where it has no body", () => {
     const result = LLMSchema.safeParse({
       ...PIN,
-      defaultProvider: {
+      default: {
         provider: "anthropic",
         connectionName: "anthropic-personal",
       },

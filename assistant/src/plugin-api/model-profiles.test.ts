@@ -35,7 +35,7 @@ function listProfiles(): ReturnType<typeof getModelProfiles> {
     profiles: mockProfiles,
     activeProfile: mockActiveProfile,
     profileOrder: mockProfileOrder,
-    defaultProvider: mockDefaultProvider,
+    default: mockDefaultProvider,
   };
   return getModelProfiles();
 }

@@ -330,10 +330,10 @@ describe("hatch provider secrets", () => {
     expect(logs.join("\n")).toBe("");
   });
 
-  test("endpoint-supplied providers are listed last but cannot back llm.defaultProvider", () => {
+  test("endpoint-supplied providers are listed last but cannot back llm.default", () => {
     // Listed so their keys can be collected, but hatch must not write them
-    // as llm.default.provider — the assistant's DefaultProviderEnum rejects
-    // them and hatch would fail at config parse.
+    // as llm.default.provider — the assistant's selection schema rejects
+    // them and the defaults would fall back to anthropic at resolution.
     expect(HATCH_PROVIDER_CHOICES.slice(-2)).toEqual(["litellm", "opencode"]);
   });
 

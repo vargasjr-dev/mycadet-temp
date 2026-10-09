@@ -35,6 +35,8 @@ import {
   scrubNulledChatSettings,
   validateChatSettingsWrite,
 } from "../../config/chat-settings.js";
+import { DefaultProviderSelectionSchema } from "../../config/default-provider.js";
+import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import {
   catalogEntryFor,
   type InputModalities,
@@ -62,9 +64,9 @@ import { getSchemaAtPath } from "../../config/schema-utils.js";
 import { AutoArchiveConfigSchema } from "../../config/schemas/conversations.js";
 import {
   collectFallbackProfileIssues,
-  DefaultProviderSchema,
   LLMConfigBase,
   LLMConfigFragment,
+  LLMDefaultConfigSchema,
   ProfileEntry,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
@@ -768,10 +770,10 @@ const ConfigGetResponseSchema = z
     notifications: NotificationsConfigSchema.passthrough().optional(),
     llm: z
       .object({
-        default: LLMConfigFragment.extend({
-          provider_connection: z.string().optional(),
-        }).optional(),
-        defaultProvider: DefaultProviderSchema.optional(),
+        default: LLMDefaultConfigSchema.optional(),
+        // Wire-compat view of the default provider, derived from `default`
+        // by the read overlay (the key is never stored anymore).
+        defaultProvider: DefaultProviderSelectionSchema.optional(),
         profiles: z.record(z.string(), WireProfileEntry).optional(),
         profileOrder: z.array(z.string()).optional(),
         activeProfile: z.string().optional(),
@@ -945,11 +947,32 @@ function handleGetConfig() {
     sanitizeMcpTransportHeadersForSettingsRead(config);
     overlayEffectiveProfilesForWire(config);
     enrichProfilesForWire(config);
+    overlayDefaultProviderForWire(config);
     overlayChatSettingsForWire(config);
     return config;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new InternalError(`Failed to read config: ${message}`);
+  }
+}
+
+/**
+ * Surface the default-provider selection on config reads. The selection lives
+ * in the `llm.default` blob; the dedicated `defaultProvider` response field is
+ * a derived wire-compat view (readers of the config GET predate the blob) and
+ * is never stored on disk — it is stamped here from the blob on every read.
+ */
+function overlayDefaultProviderForWire(config: unknown): void {
+  const root = readPlainObject(config);
+  const llm = readPlainObject(root?.llm);
+  if (llm == null) {
+    return;
+  }
+  const dp = readDefaultProvider(llm.default);
+  if (dp) {
+    llm.defaultProvider = dp;
+  } else {
+    delete llm.defaultProvider;
   }
 }
 
@@ -979,19 +1002,19 @@ function overlayChatSettingsForWire(config: unknown): void {
  * profile CONTENT is code-owned and the workspace holds at most a thin stub,
  * but clients (settings UI, sticky-profile pickers) need the full bodies to
  * render labels/models — so the wire view materializes them, resolved through
- * `llm.defaultProvider`'s column of the intent × provider matrix so a BYO
+ * `llm.default`'s column of the intent × provider matrix so a BYO
  * install sees the provider/model that actually dispatches. Wire-only:
  * `normalizeManagedProfileWrites` reduces echoed bodies back to the
  * workspace-owned fields on the write paths, so a `config get` →
  * `config set` round-trip never persists catalog content — the two must
  * resolve through the same column or honest round-trips are rejected.
  *
- * `defaultProvider` deliberately comes from the parsed config, not the raw
- * object this function mutates: the schema's `.catch(undefined)` shields the
- * matrix lookup from an invalid persisted value, which a raw read would feed
- * straight into resolution. The raw profiles and the cached parse cannot
- * disagree on `defaultProvider` — every write path that touches it
- * invalidates the config cache.
+ * The selection deliberately comes from the parsed config, not the raw
+ * object this function mutates: `readDefaultProvider`'s clamp shields the
+ * matrix lookup from a persisted value the matrix cannot implement, which a
+ * raw read would feed straight into resolution. The raw profiles and the
+ * cached parse cannot disagree on the selection — every write path that
+ * touches it invalidates the config cache.
  */
 function overlayEffectiveProfilesForWire(config: unknown): void {
   const root = readPlainObject(config);
@@ -1005,7 +1028,7 @@ function overlayEffectiveProfilesForWire(config: unknown): void {
   }
   llm.profiles = getUserSelectableProfilesForProvider(
     readPlainObject(llm.profiles) as Record<string, ProfileEntry> | undefined,
-    getConfig().llm.defaultProvider ?? null,
+    readDefaultProvider(getConfig().llm.default),
   );
 }
 
@@ -1097,7 +1120,7 @@ export function normalizeManagedProfileWrites(patch: unknown): void {
       resolveDefaultProfileForProvider(
         currentProfiles,
         name,
-        getConfig().llm.defaultProvider ?? null,
+        readDefaultProvider(getConfig().llm.default),
       ),
     );
     for (const key of Object.keys(entry)) {
@@ -1527,11 +1550,11 @@ function assertRoutableIdentityEntries(
 function assertCodeOwnedFallbackProfiles(raw: Record<string, unknown>): void {
   const llm = readPlainObject(raw.llm);
   const profiles = readPlainObject(llm?.profiles);
-  // The sibling `llm.defaultProvider` decides whether the managed backups are
-  // valid fallback targets: they resolve on the managed column alone.
+  // The sibling `llm.default` decides whether the managed backups are valid
+  // fallback targets: they resolve on the managed column alone.
   const issues = collectFallbackProfileIssues(
     profiles ?? undefined,
-    llm?.defaultProvider,
+    llm?.default,
   );
   if (issues.length > 0) {
     throw new BadRequestError(issues.map((issue) => issue.message).join(" "));
@@ -1941,7 +1964,7 @@ async function handleReplaceInferenceProfile({
     const { llm: parsedLlm } = getConfig();
     const existingProfiles = getEffectiveProfilesForProvider(
       parsedLlm.profiles,
-      parsedLlm.defaultProvider ?? null,
+      readDefaultProvider(parsedLlm.default),
     );
     parsed.data.mix.forEach((arm, index) => {
       if (arm.profile === name) {
@@ -1989,7 +2012,7 @@ async function handleReplaceInferenceProfile({
     const { llm: parsedLlm } = getConfig();
     const existingProfiles = getEffectiveProfilesForProvider(
       parsedLlm.profiles,
-      parsedLlm.defaultProvider ?? null,
+      readDefaultProvider(parsedLlm.default),
     );
     const target = existingProfiles[fallback];
     if (target == null) {

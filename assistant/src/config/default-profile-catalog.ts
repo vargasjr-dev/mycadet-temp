@@ -44,7 +44,7 @@ import {
  * implementation of that intent (model, token budget, effort, thinking).
  * The `cadet` column is the platform-managed implementation and the
  * `chatgpt` column is the ChatGPT-subscription implementation; the other
- * columns are the BYOK implementations resolved through `llm.defaultProvider`
+ * columns are the BYOK implementations resolved through `llm.default`
  * on off-platform installs.
  *
  * Nothing materializes default bodies into workspace config: runtime readers
@@ -866,7 +866,7 @@ function defaultProfileBodyForProvider(
     // (`cadet`) column only: under a BYOK or chatgpt default provider the
     // primaries carry no `fallbackProfile` pointers, and neither may
     // materialize, since the install may hold no credential for their
-    // provider. A null defaultProvider predates `llm.defaultProvider` and
+    // provider. A null selection predates `llm.default` and
     // resolves to the managed column, so it keeps them.
     if (
       isManagedOnlyProfileKey(name) &&
@@ -877,7 +877,7 @@ function defaultProfileBodyForProvider(
     return CODE_DEFAULT_PROFILE_ENTRIES[name];
   }
   if (defaultProvider == null) {
-    // An install that predates `llm.defaultProvider` resolves to the managed
+    // An install that predates `llm.default` resolves to the managed
     // column, which is what the frozen bodies carry.
     return CODE_DEFAULT_PROFILE_ENTRIES[name];
   }
@@ -921,7 +921,7 @@ function clampMaxTokensToModelCap(body: ProfileEntry): ProfileEntry {
  * workspace record is a write-path concern.
  *
  * Deliberately provider-agnostic: it lists the managed backups whatever
- * `llm.defaultProvider` says, because it resolves names against the passed
+ * `llm.default` says, because it resolves names against the passed
  * catalog alone and never reads config. Internal resolution and reference
  * validation use `getEffectiveProfilesForProvider`; user-facing selectors use
  * `getUserSelectableProfilesForProvider`, which additionally removes backups
@@ -948,7 +948,7 @@ export function getEffectiveProfiles(
 
 /**
  * Like `getEffectiveProfiles`, but resolves each default profile key through
- * the same `llm.defaultProvider`-aware path the runtime resolver uses
+ * the same `llm.default`-aware path the runtime resolver uses
  * (`resolveDefaultProfileForProvider`) rather than always the `cadet` column.
  * On BYOK installs this is what makes the reported provider/model/availability
  * for `balanced`/`quality-optimized`/`cost-optimized` match what actually runs.

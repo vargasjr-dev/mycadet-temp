@@ -98,7 +98,7 @@ describe("llm-call-sites-routes", () => {
     expect(managed?.shippedDefaultProfile).toBe("jev-managed");
 
     const byok = buildCallSiteCatalog(
-      LLMSchema.parse({ defaultProvider: { provider: "anthropic" } }),
+      LLMSchema.parse({ default: { provider: "anthropic" } }),
     ).find(({ id }) => id === "voiceEscalationJudge");
     expect(byok?.defaultProfile).toBeUndefined();
     expect(byok?.shippedDefaultProfile).toBeUndefined();

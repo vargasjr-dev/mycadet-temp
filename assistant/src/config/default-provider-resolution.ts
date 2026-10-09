@@ -8,18 +8,50 @@
  */
 import { CADET_MANAGED_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
 import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "../providers/inference/auth.js";
-import type { DefaultProviderConfig } from "./schemas/llm.js";
+import { type DefaultProviderConfig,isDefaultProviderChoice } from "./schemas/llm.js";
 import type { AssistantConfig } from "./types.js";
+
+/**
+ * The default-provider selection carried by an `llm.default` blob, clamped.
+ * The blob stores `provider` as the loose provider set, so the read narrows
+ * it to a choice the intent × provider matrix can implement
+ * (`isDefaultProviderChoice`); anything else — a keyless provider like
+ * ollama, a user-endpoint provider like openai-compatible, garbage, or no
+ * blob at all — reads as `null`, which resolution treats as the managed
+ * column. Accepts unknown so raw and parsed blobs take the same path.
+ */
+export function readDefaultProvider(
+  llmDefault: unknown,
+): DefaultProviderConfig | null {
+  const blob =
+    llmDefault != null &&
+    typeof llmDefault === "object" &&
+    !Array.isArray(llmDefault)
+      ? (llmDefault as Record<string, unknown>)
+      : null;
+  const provider = blob?.provider;
+  if (typeof provider !== "string" || !isDefaultProviderChoice(provider)) {
+    return null;
+  }
+  const connectionName = blob?.provider_connection;
+  return {
+    provider,
+    ...(typeof connectionName === "string" && connectionName !== ""
+      ? { connectionName }
+      : {}),
+  };
+}
 
 export function getDefaultProviderFromConfig(
   config: AssistantConfig,
 ): DefaultProviderConfig | null {
-  return config.llm.defaultProvider ?? null;
+  return readDefaultProvider(config.llm.default);
 }
 
 /**
  * Pure by design — no connection-existence check. A dangling name (explicit
- * or conventional) is allowed; see `DefaultProviderSchema`.
+ * or conventional) is allowed; the stored blob carries the same freedom (see
+ * `LLMDefaultConfigSchema`).
  */
 export function resolveDefaultConnectionName(
   dp: DefaultProviderConfig,

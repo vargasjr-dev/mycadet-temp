@@ -101,7 +101,7 @@ export function unknownLlmProviderIssue(provider: string): string | null {
 }
 
 /**
- * Providers that can back `llm.defaultProvider`: the named columns of the
+ * Providers that can back `llm.default`: the named columns of the
  * default-profile matrix plus every API-key catalog provider whose personal
  * connection can serve the shared BYOK templates (fixed base URL, and a
  * non-empty catalog `defaultModel` for the intent fallback in
@@ -144,10 +144,6 @@ export function isByokDefaultProviderChoice(
     !ROUTING_IDENTITY_PROVIDERS.has(value) && isDefaultProviderChoice(value)
   );
 }
-
-const DefaultProviderEnum = z.enum(
-  DEFAULT_PROVIDER_CHOICES as [LLMProvider, ...LLMProvider[]],
-);
 
 /**
  * Validation for routing-identity (provider, model) pairs in stored config.
@@ -613,6 +609,22 @@ export const LLMConfigFragment = z
   .meta({ id: "LLMConfigFragment" });
 export type LLMConfigFragment = z.infer<typeof LLMConfigFragment>;
 
+/**
+ * The `llm.default` blob: the workspace's base config fragment, which also
+ * carries the default-provider choice in its `provider` field and that
+ * provider's connection pin in `provider_connection`. Stored as a partial
+ * fragment on purpose — parsing must not inject schema defaults onto disk
+ * (`LLMConfigBase` is the all-defaulted VIEW for resolution, never the
+ * storage shape). `provider` stays the loose provider set and is clamped at
+ * read time via `isDefaultProviderChoice`: a value with no matrix column
+ * (keyless ollama, user-endpoint openai-compatible) resolves to the managed
+ * column rather than failing the whole blob.
+ */
+export const LLMDefaultConfigSchema = LLMConfigFragment.extend({
+  provider_connection: z.string().min(1).optional(),
+});
+export type LLMDefaultConfig = z.infer<typeof LLMDefaultConfigSchema>;
+
 export const ProfileStatusSchema = z
   .enum(["active", "disabled"])
   .meta({ id: "ProfileStatus" });
@@ -724,36 +736,28 @@ type LLMCallSiteConfig = z.infer<typeof LLMCallSiteConfig>;
 // ---------------------------------------------------------------------------
 
 /**
- * Pins which provider backs the workspace's default inference identity.
- * When `connectionName` is absent, `resolveDefaultConnectionName`
- * (`../default-provider.js`) supplies the convention.
+ * The default provider selection carried by `llm.default`: which provider
+ * backs the workspace's default inference identity, plus the connection pin
+ * for it. This is the RESOLVED view handed to the matrix resolvers — the
+ * stored shape is the `llm.default` blob below, whose fields are all optional
+ * and whose `provider` is the loose provider set; readers clamp both through
+ * `isDefaultProviderChoice` (see `readDefaultProvider`).
  *
- * No connection-existence validation on purpose: schema validation is
+ * When `connectionName` is absent, `resolveDefaultConnectionName`
+ * (`../default-provider.js`) supplies the convention. No
+ * connection-existence validation on purpose: schema validation is
  * pure/sync and cannot see the sqlite `provider_connections` table, so a
- * dangling `connectionName` is allowed here and surfaced as an explainable
+ * dangling connection pin is allowed and surfaced as an explainable
  * resolution error at read time.
  */
-export const DefaultProviderSchema = z.object({
-  provider: DefaultProviderEnum,
-  connectionName: z.string().min(1).optional(),
-});
-export type DefaultProviderConfig = z.infer<typeof DefaultProviderSchema>;
-
-/**
- * The `.catch(undefined)` drops an invalid value atomically at parse time.
- * Without it, the loader's recovery pass (which deletes the exact key at each
- * issue path) could strand a fragment like `{ connectionName }` that fails
- * the re-parse and escalates a one-field typo into a full config-defaults
- * fallback. A `z.unknown().transform(...)` wrapper would also fix that, but
- * hides the object shape from `getSchemaAtPath` / `z.toJSONSchema`; the catch
- * value must be static because `z.toJSONSchema` rejects callbacks.
- * Writes stay loud: `setDefaultProvider` parses the strict schema directly.
- */
-const DefaultProviderField = DefaultProviderSchema.optional().catch(undefined);
+export type DefaultProviderConfig = {
+  provider: LLMProvider;
+  connectionName?: string;
+};
 
 /**
  * Whether the managed backup profiles (`BACKUP_PROFILE_KEYS`) resolve under a
- * given `llm.defaultProvider`.
+ * given `llm.default` blob.
  *
  * Backups are companions of the managed (`cadet`) column only: on a BYOK or
  * ChatGPT default provider `defaultProfileBodyForProvider` returns `undefined`
@@ -764,20 +768,22 @@ const DefaultProviderField = DefaultProviderSchema.optional().catch(undefined);
  *
  * Accepts an unknown value so the raw write paths (which validate on-disk
  * shapes without a full parse) can share the rule. A missing or malformed
- * value resolves to the managed column: `DefaultProviderField` catches an
- * invalid value to `undefined`, and an install predating
- * `llm.defaultProvider` is managed by definition.
+ * value resolves to the managed column: the blob is optional, and a `provider`
+ * with no matrix column (keyless ollama, user-endpoint openai-compatible) is
+ * clamped to the managed column by resolution — see `readDefaultProvider` —
+ * so backups resolve there too.
  */
 export function backupProfilesResolveUnderDefaultProvider(
-  defaultProvider: unknown,
+  llmDefault: unknown,
 ): boolean {
   const provider =
-    defaultProvider != null &&
-    typeof defaultProvider === "object" &&
-    !Array.isArray(defaultProvider)
-      ? (defaultProvider as Record<string, unknown>).provider
+    llmDefault != null && typeof llmDefault === "object" && !Array.isArray(llmDefault)
+      ? (llmDefault as Record<string, unknown>).provider
       : undefined;
-  return typeof provider !== "string" || provider === "cadet";
+  if (typeof provider !== "string") {
+    return true;
+  }
+  return !isDefaultProviderChoice(provider) || provider === "cadet";
 }
 
 /**
@@ -795,18 +801,18 @@ function unresolvableProfileReason(
     return "is not defined in llm.profiles";
   }
   if (name === JEV_MANAGED_PROFILE_KEY) {
-    return "is the managed Jev profile, which resolves only while llm.defaultProvider is the managed provider";
+    return "is the managed Jev profile, which resolves only while llm.default is the managed provider";
   }
   if (name === AUTO_PROFILE_KEY) {
-    return "is the managed Auto profile, which resolves only while llm.defaultProvider is the managed provider";
+    return "is the managed Auto profile, which resolves only while llm.default is the managed provider";
   }
-  return "is a managed backup profile, which resolves only while llm.defaultProvider is the managed provider";
+  return "is a managed backup profile, which resolves only while llm.default is the managed provider";
 }
 
 /**
  * The `llm.profiles` keys that are reference targets in their own right,
  * given whether the managed backups resolve under the current
- * `llm.defaultProvider`.
+ * `llm.default`.
  *
  * Every on-disk key qualifies but one: a reserved backup name whose entry is
  * a thin `source: "managed"` stub. The stub is not a profile, it is the
@@ -858,13 +864,13 @@ function referenceableProfileKeys(
  * full-schema parse. Accepts a raw or parsed `llm.profiles` record; entries
  * are read defensively so the raw on-disk shape is safe to pass.
  *
- * `defaultProvider` is the sibling `llm.defaultProvider` value (raw or
- * parsed): it decides whether the managed backups are valid targets, since
- * they resolve on the managed column alone.
+ * `llmDefault` is the sibling `llm.default` value (raw or parsed): it
+ * decides whether the managed backups are valid targets, since they resolve
+ * on the managed column alone.
  */
 export function collectFallbackProfileIssues(
   profiles: Record<string, unknown> | undefined,
-  defaultProvider?: unknown,
+  llmDefault?: unknown,
 ): { profileName: string; message: string }[] {
   const issues: { profileName: string; message: string }[] = [];
   const entries = Object.entries(profiles ?? {});
@@ -877,11 +883,11 @@ export function collectFallbackProfileIssues(
   // materialized in `llm.profiles`, so their names are always valid
   // fallback targets (same rule as call-site `profile` references). The
   // managed backups resolve the same way, but on the managed column only,
-  // so they are valid targets only under a managed `llm.defaultProvider`.
+  // so they are valid targets only under a managed `llm.default`.
   // A persisted managed stub for a backup name does not change that, see
   // `referenceableProfileKeys`.
   const backupsResolve =
-    backupProfilesResolveUnderDefaultProvider(defaultProvider);
+    backupProfilesResolveUnderDefaultProvider(llmDefault);
   const profileNames = new Set([
     ...referenceableProfileKeys(profiles, backupsResolve),
     ...DEFAULT_PROFILE_KEYS,
@@ -983,7 +989,13 @@ export const LLMSchema = z
     // under Models & Services). It is excluded from the chat-profile pickers so
     // it can't be selected as the assistant's chat model.
     advisorProfile: z.string().min(1).optional(),
-    defaultProvider: DefaultProviderField,
+    // The base config blob. Carries the default-provider choice in `provider`
+    // (clamped by `isDefaultProviderChoice` at read time) and that provider's
+    // connection pin in `provider_connection`. No `.catch` here on purpose:
+    // every field is optional, so the loader's leaf-recovery can strip a
+    // single invalid leaf and keep the rest of the blob, where a catch would
+    // drop the whole object.
+    default: LLMDefaultConfigSchema.optional(),
     // TTL bounds for inference profile sessions. `defaultTtlSeconds` is read by
     // the CLI to apply when `--ttl` is omitted; the daemon handler itself only
     // reads `maxTtlSeconds` (to clamp caller-supplied values).
@@ -1032,7 +1044,7 @@ export const LLMSchema = z
     // catalog, so a selection naming one (`activeProfile`, `advisorProfile`,
     // a call-site pin) must survive the next load rather than being stripped
     // back to a default. Backups are scoped to the managed column though, so
-    // they join the set only under a managed `llm.defaultProvider`: on a BYOK
+    // they join the set only under a managed `llm.default`: on a BYOK
     // or ChatGPT default provider they have no body to resolve to, and
     // keeping the reference would strand a selection the picker cannot show.
     // The managed Jev profile (`JEV_MANAGED_PROFILE_KEY`) is scoped the same
@@ -1043,7 +1055,7 @@ export const LLMSchema = z
     // thin managed stub does not re-enter the set on a non-managed column
     // either, see `referenceableProfileKeys`.
     const backupsResolve = backupProfilesResolveUnderDefaultProvider(
-      config.defaultProvider,
+      config.default,
     );
     const profileNames = new Set([
       ...referenceableProfileKeys(
@@ -1195,7 +1207,7 @@ export const LLMSchema = z
     // (MIX_DISALLOWED_CONFIG_KEYS).
     for (const issue of collectFallbackProfileIssues(
       config.profiles,
-      config.defaultProvider,
+      config.default,
     )) {
       ctx.addIssue({
         code: "custom",

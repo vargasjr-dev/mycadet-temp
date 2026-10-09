@@ -1,6 +1,6 @@
 /**
  * `assistant inference providers default [name]` — read or set the workspace
- * default provider (`llm.defaultProvider`), wrapping the daemon's
+ * default provider (`llm.default`), wrapping the daemon's
  * `llm_default_provider_get` / `llm_default_provider_put` routes. The read
  * form prints the resolved connection and its availability status.
  */

@@ -20,6 +20,7 @@ import {
   DEFAULT_PROFILE_PROVIDERS,
   OS_BETA_PROFILE_KEY,
 } from "../default-profile-names.js";
+import { readDefaultProvider } from "../default-provider-resolution.js";
 import {
   resolveCallSiteConfig,
   resolveDefaultProfileKey,
@@ -437,17 +438,19 @@ describe("schema validation", () => {
     ).toBe(false);
   });
 
-  test("defaultProvider accepts any default-capable API-key provider and drops the rest", () => {
+  test("the llm.default blob keeps any provider on disk; the read clamps to matrix choices", () => {
     expect(
-      LLMSchema.parse({ defaultProvider: { provider: "together" } })
-        .defaultProvider,
+      LLMSchema.parse({ default: { provider: "together" } }).default,
     ).toEqual({ provider: "together" });
-    // User-endpoint and keyless providers have no code-resolvable
-    // default profile implementation; the catch drops them atomically.
+    // User-endpoint and keyless providers have no code-resolvable default
+    // profile implementation. The blob is a partial fragment (stripping the
+    // provider would drop the blob's other fields), so they stay on disk and
+    // the read clamps them to null — resolution treats that as the managed
+    // column.
     for (const provider of ["openai-compatible", "ollama"]) {
       expect(
-        LLMSchema.parse({ defaultProvider: { provider } }).defaultProvider,
-      ).toBeUndefined();
+        readDefaultProvider(LLMSchema.parse({ default: { provider } }).default),
+      ).toBeNull();
     }
   });
 });

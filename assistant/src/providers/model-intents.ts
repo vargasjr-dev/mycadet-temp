@@ -99,7 +99,7 @@ for (const [provider, intents] of Object.entries(PROVIDER_MODEL_INTENTS)) {
 
 // The openai column must additionally stay inside the ChatGPT Codex
 // subscription set: the subscription default provider is stored as
-// `llm.defaultProvider = { provider: "openai", connectionName:
+// `llm.default = { provider: "openai", provider_connection:
 // "chatgpt-subscription" }`, so the materialized default profiles resolve
 // through this column while pinning the subscription connection, which
 // bypasses the auto-resolution compat gate and hard-routes to the Codex

@@ -620,7 +620,7 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
 
   const config = getConfigReadOnly();
 
-  // llm.defaultProvider: guards both the resolved connection name (explicit
+  // llm.default: guards both the resolved connection name (explicit
   // `connectionName` or the `<provider>-personal` convention) and the case
   // where the convention name is dangling but this is the last remaining
   // connection for the default's provider — resolution treats a dangling
@@ -638,8 +638,8 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   if (dp && !claimsManagedName) {
     if (name === resolveDefaultConnectionName(dp)) {
       throw new ConflictError(
-        `Connection "${name}" is referenced by llm.defaultProvider. Update llm.defaultProvider before deleting.`,
-        { referencedBy: ["llm.defaultProvider"] },
+        `Connection "${name}" is referenced by llm.default (its provider_connection pin). Update the pin before deleting.`,
+        { referencedBy: ["llm.default"] },
       );
     }
     if (
@@ -650,8 +650,8 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
       ).length === 1
     ) {
       throw new ConflictError(
-        `Connection "${name}" is the only connection for provider "${dp.provider}", which llm.defaultProvider depends on. Update llm.defaultProvider or add another connection for provider "${dp.provider}" before deleting.`,
-        { referencedBy: ["llm.defaultProvider"] },
+        `Connection "${name}" is the only connection for provider "${dp.provider}", which llm.default depends on. Update llm.default or add another connection for provider "${dp.provider}" before deleting.`,
+        { referencedBy: ["llm.default"] },
       );
     }
   }
@@ -660,7 +660,7 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // provider-aware so the scan sees the same bodies the runtime resolver
   // produces: on a BYO install the default profiles carry the
   // `provider_connection` they actually dispatch through. Today every name
-  // the defaults can stamp is also caught by the `llm.defaultProvider` guard
+  // the defaults can stamp is also caught by the `llm.default` pin guard
   // above; this keeps the scan a faithful backstop rather than one that
   // silently skips the defaults.
   const profiles = getEffectiveProfilesForProvider(config.llm?.profiles, dp);

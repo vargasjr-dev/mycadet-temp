@@ -428,7 +428,7 @@ describe("setInferenceProfileSession", () => {
 
   test("BYOK default provider — pins a managed preset without a Cadet sign-in", async () => {
     const conv = createConversation("sess-handler-byok-preset");
-    // Signed out of Cadet, but llm.defaultProvider points the managed
+    // Signed out of Cadet, but llm.default points the managed
     // presets at the user's own anthropic connection — the pin must judge
     // that body, not the Cadet column.
     managedProxyEnabled = false;
@@ -447,7 +447,7 @@ describe("setInferenceProfileSession", () => {
       })
       .onConflictDoNothing()
       .run();
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
     try {
       const result = await setInferenceProfileSession({
         conversationId: conv.id,

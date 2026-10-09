@@ -738,7 +738,7 @@ describe("DELETE inference/profiles/:name reference guard", () => {
 
 // ── provider-aware list/get (Finding 2) ───────────────────────────────────────
 
-describe("GET inference/profiles honors llm.defaultProvider", () => {
+describe("GET inference/profiles honors the llm.default blob", () => {
   test("omits managed backup routes from the user-facing catalog", async () => {
     setConfig("llm", { profiles: {} });
 
@@ -774,7 +774,7 @@ describe("GET inference/profiles honors llm.defaultProvider", () => {
 
   test("expands balanced through a BYOK default provider, not the cadet column", async () => {
     setConfig("llm", {
-      defaultProvider: { provider: "anthropic" },
+      default: { provider: "anthropic" },
       profiles: {},
     });
     const listed = (await call("inference_profiles_list", {})) as {

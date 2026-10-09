@@ -44,6 +44,7 @@ import { z } from "zod";
 import { type AgentEvent, AgentLoop } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import { resolveDefaultProfileForProvider } from "../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled } from "../config/memory-v3-gate.js";
 import { isPersonalMemoryAllowed } from "../daemon/trust-context.js";
@@ -336,7 +337,7 @@ function profileExists(profile: string): boolean {
     resolveDefaultProfileForProvider(
       llm.profiles,
       profile,
-      llm.defaultProvider ?? null,
+      readDefaultProvider(llm.default),
     ) != null
   );
 }

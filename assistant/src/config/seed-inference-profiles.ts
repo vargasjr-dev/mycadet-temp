@@ -14,6 +14,7 @@ import {
   MANAGED_PROFILE_NAMES,
   MANAGED_PROFILE_TEMPLATES,
 } from "./default-profile-catalog.js";
+import { readDefaultProvider } from "./default-provider-resolution.js";
 import { loadRawConfig, saveRawConfig } from "./loader.js";
 import { isDispatchableProfile } from "./profile-dispatchability.js";
 import {
@@ -52,9 +53,10 @@ export type SeedInferenceProfilesOptions = {
  *    `cadet` column routes through the canonical platform-backed row, never
  *    a user key, so no `cadet-personal` connection exists or is needed.
  *
- * 2. **`llm.defaultProvider`**: written once at hatch time, mirroring the
- *    platform/managed/BYOK decision, and never overwritten afterward. The
- *    default profiles resolve through this provider's matrix column.
+ * 2. **`llm.default`**: the base blob's `provider` field is written once at
+ *    hatch time, mirroring the platform/managed/BYOK decision, and never
+ *    overwritten afterward. The default profiles resolve through this
+ *    provider's matrix column.
  *
  * 3. **Active/advisor profile resolution**: hatches activate `balanced`;
  *    boots repair dangling or disabled selections.
@@ -92,11 +94,12 @@ export function seedInferenceProfiles(
   //    default profiles to dispatch.
   let usableHatchProvider: string | undefined;
   if (options.isHatch && !isPlatform) {
-    // The hatch overlay writes `llm.defaultProvider` directly (older CLIs
-    // wrote the legacy `llm.default` blob — read it as a fallback).
+    // The hatch overlay writes `llm.default.provider` directly (CLIs from
+    // the retired `llm.defaultProvider` era wrote the key — read it as a
+    // version-skew fallback).
     const hatchProvider =
-      readString(readObject(llm.defaultProvider)?.provider) ??
-      readString(readObject(llm.default)?.provider);
+      readString(readObject(llm.default)?.provider) ??
+      readString(readObject(llm.defaultProvider)?.provider);
     if (
       hatchProvider &&
       hatchProvider !== CADET_MANAGED_PROVIDER &&
@@ -113,7 +116,7 @@ export function seedInferenceProfiles(
       if (!isDefaultProviderChoice(hatchProvider)) {
         log.warn(
           { provider: hatchProvider },
-          "Hatch provider key stored and personal connection created, but the provider cannot back the default profiles; llm.defaultProvider will fall back to anthropic",
+          "Hatch provider key stored and personal connection created, but the provider cannot back the default profiles; llm.default will fall back to anthropic",
         );
       }
       const userConnectionName = `${hatchProvider}-personal`;
@@ -139,8 +142,9 @@ export function seedInferenceProfiles(
   // 2. Default provider: hatch only, never overwritten once set. Always
   //    populated — even dangling, so later resolution can prompt the user
   //    for a key explainably rather than hitting an unset branch.
-  if (options.isHatch && readObject(llm.defaultProvider) === null) {
-    llm.defaultProvider = {
+  if (options.isHatch && readDefaultProvider(llm.default) === null) {
+    llm.default = {
+      ...(readObject(llm.default) ?? {}),
       provider: resolveHatchDefaultProvider(
         isPlatform,
         hatchSelectedManagedConnection,
@@ -154,7 +158,7 @@ export function seedInferenceProfiles(
   // Profile lookups below go through the effective view: a default profile
   // resolves from the code catalog whether or not the workspace carries a
   // stub for it, and a stub contributes only its status/label overlays.
-  // Resolved against `llm.defaultProvider` so the managed backups count as
+  // Resolved against `llm.default` so the managed backups count as
   // available only on the managed column, matching what the schema accepts
   // as a reference: an `activeProfile` naming a backup on a BYOK install is
   // then repaired here rather than preserved as a dangling selection.
@@ -249,22 +253,27 @@ export function seedInferenceProfiles(
 }
 
 /**
- * The `llm.defaultProvider` to resolve the effective catalog against, read
- * from RAW config. Only a value the matrix can implement is used: a
- * hand-edited or legacy provider outside `DEFAULT_PROVIDER_CHOICES` has no
- * column and no verified intent resolution, so materializing against it
- * could throw and fail the whole boot seed. Such a value falls back to
- * `null`, which resolves the managed column.
+ * The `llm.default` blob's provider selection to resolve the effective
+ * catalog against, read from RAW config. Only a value the matrix can
+ * implement is used: a hand-edited or legacy provider outside
+ * `DEFAULT_PROVIDER_CHOICES` has no column and no verified intent
+ * resolution, so materializing against it could throw and fail the whole
+ * boot seed. Such a value falls back to `null`, which resolves the managed
+ * column. The retired `llm.defaultProvider` key is honored as a
+ * version-skew fallback (the boot ensure pass derives the blob from it
+ * later); it carries its pin under `connectionName` instead of the blob's
+ * `provider_connection`.
  */
 function seedResolutionDefaultProvider(
   llm: Record<string, unknown>,
 ): DefaultProviderConfig | null {
-  const raw = readObject(llm.defaultProvider);
+  const raw = readObject(llm.default) ?? readObject(llm.defaultProvider);
   const provider = readString(raw?.provider);
   if (provider === undefined || !isDefaultProviderChoice(provider)) {
     return null;
   }
-  const connectionName = readString(raw?.connectionName);
+  const connectionName =
+    readString(raw?.provider_connection) ?? readString(raw?.connectionName);
   return { provider, ...(connectionName ? { connectionName } : {}) };
 }
 

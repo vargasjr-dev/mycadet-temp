@@ -152,7 +152,7 @@ export function isFlagGatedProfileKey(value: string): boolean {
  * ChatGPT-subscription column (routed through the `chatgpt-subscription`
  * connection to the Codex endpoint); the rest are BYOK columns whose
  * models resolve per provider via `resolveModelIntent`. The full set of
- * providers that can back `llm.defaultProvider` is wider, see
+ * providers that can back `llm.default` is wider, see
  * `DEFAULT_PROVIDER_CHOICES` in `schemas/llm.ts`.
  *
  * Lives in this import-free module rather than `default-profile-catalog.ts`

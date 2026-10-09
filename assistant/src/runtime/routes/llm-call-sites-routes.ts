@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
+import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import {
   resolveDefaultProfileKey,
   resolveShippedDefaultProfileKey,
@@ -77,7 +78,7 @@ async function handleListProfiles(): Promise<LlmProfilesListResult> {
   const { llm } = loadConfig();
   const profiles = getUserSelectableProfilesForProvider(
     llm?.profiles,
-    llm?.defaultProvider ?? null,
+    readDefaultProvider(llm?.default),
   );
   return {
     profiles: Object.keys(profiles).sort(),

@@ -38,10 +38,10 @@ import { ROUTES } from "../default-provider-routes.js";
 import { BadRequestError } from "../errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 
-/** Read `llm.defaultProvider` back from the real workspace config file. */
+/** Read the `llm.default` blob back from the real workspace config file. */
 function persistedDefaultProvider(): unknown {
   const llm = loadRawConfig().llm as Record<string, unknown> | undefined;
-  return llm?.defaultProvider;
+  return llm?.default;
 }
 
 // ── DB bootstrap ──────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet + authenticated → ok", async () => {
     seedCanonicalCadetConnection();
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
     managedProxyEnabled = true;
     const result = await get();
     expect(result.provider).toBe("cadet");
@@ -135,7 +135,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet + unauthenticated → cadet_unauthenticated naming the fix", async () => {
     seedCanonicalCadetConnection();
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
     const result = await get();
     expect(availability(result).status).toBe("cadet_unauthenticated");
     expect(availability(result).message).toContain("Log in");
@@ -143,7 +143,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet + no platform URL → cadet_unauthenticated naming the URL", async () => {
     seedCanonicalCadetConnection();
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
     managedProxyBaseUrl = "";
     const result = await get();
     expect(availability(result).status).toBe("cadet_unauthenticated");
@@ -152,7 +152,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet default with no canonical row → missing_connection", async () => {
     managedProxyEnabled = true;
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
   });
@@ -168,7 +168,7 @@ describe("GET config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     managedProxyEnabled = true;
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
 
     const result = await get();
     expect(availability(result).status).toBe("ok");
@@ -181,7 +181,7 @@ describe("GET config/llm/default-provider", () => {
       auth: { type: "platform" },
     });
     managedProxyEnabled = true;
-    setConfig("llm", { defaultProvider: { provider: "openrouter" } });
+    setConfig("llm", { default: { provider: "openrouter" } });
 
     const result = await get();
     expect(availability(result).status).toBe("unsupported_auth");
@@ -195,7 +195,7 @@ describe("GET config/llm/default-provider", () => {
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
     secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = await get();
     expect(result.resolvedConnectionName).toBe("anthropic-personal");
@@ -211,7 +211,7 @@ describe("GET config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/openai/api_key", "sk-oai");
     setConfig("llm", {
-      defaultProvider: { provider: "openai", connectionName: "work-openai" },
+      default: { provider: "openai", provider_connection: "work-openai" },
     });
 
     const result = await get();
@@ -221,7 +221,7 @@ describe("GET config/llm/default-provider", () => {
   });
 
   test("no connection row → missing_connection naming connection and provider", async () => {
-    setConfig("llm", { defaultProvider: { provider: "openai" } });
+    setConfig("llm", { default: { provider: "openai" } });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
     expect(availability(result).message).toContain('"openai-personal"');
@@ -234,7 +234,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = await get();
     expect(availability(result).status).toBe("missing_credential");
@@ -249,7 +249,7 @@ describe("GET config/llm/default-provider", () => {
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
     setAllUnreachable(true);
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     const result = await get();
     expect(availability(result).status).toBe("unknown");
@@ -258,7 +258,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet + credential store unreachable → unknown, not logged-out", async () => {
     seedCanonicalCadetConnection();
-    setConfig("llm", { defaultProvider: { provider: "cadet" } });
+    setConfig("llm", { default: { provider: "cadet" } });
     setAllUnreachable(true);
     const result = await get();
     expect(availability(result).status).toBe("unknown");
@@ -267,7 +267,7 @@ describe("GET config/llm/default-provider", () => {
 
   test("cadet with a dangling explicit connectionName → missing_connection", async () => {
     setConfig("llm", {
-      defaultProvider: { provider: "cadet", connectionName: "ghost" },
+      default: { provider: "cadet", connectionName: "ghost" },
     });
     const result = await get();
     expect(availability(result).status).toBe("missing_connection");
@@ -281,9 +281,9 @@ describe("GET config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     setConfig("llm", {
-      defaultProvider: {
+      default: {
         provider: "cadet",
-        connectionName: "anthropic-personal",
+        provider_connection: "anthropic-personal",
       },
     });
     const result = await get();
@@ -296,7 +296,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "openai",
       auth: { type: "none" },
     });
-    setConfig("llm", { defaultProvider: { provider: "openai" } });
+    setConfig("llm", { default: { provider: "openai" } });
 
     const result = await get();
     expect(availability(result).status).toBe("unsupported_auth");
@@ -311,9 +311,9 @@ describe("GET config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     setConfig("llm", {
-      defaultProvider: {
+      default: {
         provider: "openai",
-        connectionName: "anthropic-personal",
+        provider_connection: "anthropic-personal",
       },
     });
 
@@ -330,7 +330,7 @@ describe("GET config/llm/default-provider", () => {
       auth: { type: "platform" },
     });
     setConfig("llm", {
-      defaultProvider: { provider: "anthropic", connectionName: "cadet" },
+      default: { provider: "anthropic", provider_connection: "cadet" },
     });
 
     expect(availability(await get()).status).toBe("cadet_unauthenticated");
@@ -346,7 +346,7 @@ describe("GET config/llm/default-provider", () => {
     });
     managedProxyEnabled = true;
     setConfig("llm", {
-      defaultProvider: { provider: "openrouter", connectionName: "cadet" },
+      default: { provider: "openrouter", provider_connection: "cadet" },
     });
 
     const result = await get();
@@ -361,7 +361,7 @@ describe("GET config/llm/default-provider", () => {
       auth: { type: "service_account", credential: "credential/gemini/sa" },
     });
     secureKeyResults.set("credential/gemini/sa", "{}");
-    setConfig("llm", { defaultProvider: { provider: "gemini" } });
+    setConfig("llm", { default: { provider: "gemini" } });
 
     const result = await get();
     expect(availability(result).status).toBe("missing_credential");
@@ -374,7 +374,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "platform" },
     });
-    setConfig("llm", { defaultProvider: { provider: "anthropic" } });
+    setConfig("llm", { default: { provider: "anthropic" } });
 
     expect(availability(await get()).status).toBe("cadet_unauthenticated");
     managedProxyEnabled = true;
@@ -425,11 +425,11 @@ describe("PUT config/llm/default-provider", () => {
     expect(availability(result)).toEqual({ status: "ok" });
   });
 
-  test("persists an explicit connectionName", async () => {
+  test("persists an explicit connectionName as the blob's pin", async () => {
     await put({ provider: "openai", connectionName: "work-openai" });
     expect(persistedDefaultProvider()).toEqual({
       provider: "openai",
-      connectionName: "work-openai",
+      provider_connection: "work-openai",
     });
   });
 
