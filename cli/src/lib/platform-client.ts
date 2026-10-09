@@ -209,6 +209,95 @@ export interface HatchedAssistant {
   status: string;
 }
 
+const HatchedAssistantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.string(),
+});
+
+const HatchedListResponseSchema = z.object({
+  results: z.array(HatchedAssistantSchema).optional(),
+});
+
+const EnsureRegistrationResponseSchema = z.object({
+  assistant: z.object({ id: z.string(), name: z.string() }),
+  registration: z.object({
+    client_installation_id: z.string(),
+    runtime_assistant_id: z.string(),
+    client_platform: z.string(),
+  }),
+  assistant_api_key: z.string().nullable(),
+  webhook_secret: z.string(),
+});
+
+const ReprovisionApiKeyResponseSchema = z.object({
+  provisioning: z.object({ assistant_api_key: z.string() }),
+});
+
+const SecretReadResponseSchema = z
+  .object({
+    found: z.boolean(),
+    value: z.string().optional(),
+    unreachable: z.boolean().optional(),
+  })
+  .catch({ found: false });
+
+const ReleaseChannelResponseSchema = z.object({
+  current_release_version: z.string().nullable().optional(),
+  release_channel: z.string().optional(),
+});
+
+const OrganizationListResponseSchema = z.object({
+  results: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
+});
+
+const AllauthSessionResponseSchema = z.object({
+  status: z.number(),
+  data: z.object({
+    user: z.object({ id: z.string(), email: z.string(), display: z.string() }),
+  }),
+});
+
+const VersionCheckResponseSchema = z
+  .object({
+    detail: z.string().optional(),
+    version: z.string().nullable().optional(),
+  })
+  .catch({});
+
+const PassthroughBodySchema = z.record(z.string(), z.unknown()).catch({});
+
+const BundleUploadUrlSchema = z.object({
+  url: z.string(),
+  bundle_key: z.string(),
+  expires_at: z.string(),
+  max_content_length: z.number().optional(),
+});
+
+const BundleImportErrorSchema = z
+  .object({
+    detail: z.string().optional(),
+    reason: z.string().optional(),
+    bundle_compat: z
+      .object({
+        min_runtime_version: z.string(),
+        max_runtime_version: z.string().nullable(),
+      })
+      .optional()
+      .catch(undefined),
+    target_runtime_version: z.string().optional(),
+  })
+  .catch({});
+
+const RawUnifiedJobStatusSchema = z.object({
+  job_id: z.string(),
+  type: z.enum(["export", "import"]),
+  status: z.enum(["processing", "complete", "failed"]),
+  bundle_key: z.string().optional(),
+  result: z.unknown().optional(),
+  error: z.string().optional(),
+});
+
 export interface HatchAssistantResult {
   assistant: HatchedAssistant;
   /** true when the platform returned an existing assistant (HTTP 200) */
@@ -285,7 +374,7 @@ export async function ensureSelfHostedLocalRegistration(
     );
   }
 
-  return (await response.json()) as EnsureRegistrationResponse;
+  return EnsureRegistrationResponseSchema.parse(await response.json());
 }
 
 // ---------------------------------------------------------------------------
@@ -351,7 +440,7 @@ export async function reprovisionAssistantApiKey(
     );
   }
 
-  return (await response.json()) as ReprovisionApiKeyResponse;
+  return ReprovisionApiKeyResponseSchema.parse(await response.json());
 }
 
 // ---------------------------------------------------------------------------
@@ -451,11 +540,7 @@ export async function readGatewayCredential(
       return { value: null, unreachable: response.status >= 500 };
     }
 
-    const json = (await response.json()) as {
-      found: boolean;
-      value?: string;
-      unreachable?: boolean;
-    };
+    const json = SecretReadResponseSchema.parse(await response.json());
     // The daemon's /v1/secrets/read returns `unreachable: true` when the
     // credential backend (CES) can't be reached. Respect that signal.
     if (json.unreachable) {
@@ -562,7 +647,7 @@ export async function hatchAssistant(
   });
 
   if (response.ok) {
-    const assistant = (await response.json()) as HatchedAssistant;
+    const assistant = HatchedAssistantSchema.parse(await response.json());
     return { assistant, reusedExisting: response.status === 200 };
   }
 
@@ -623,11 +708,9 @@ export async function checkExistingPlatformAssistant(
       return null;
     }
 
-    const body = (await response.json()) as {
-      results?: HatchedAssistant[];
-    };
-    const active = body.results?.find((a) => a.status === "active");
-    return active ?? null;
+    const parsed = HatchedListResponseSchema.safeParse(await response.json());
+    const results = parsed.success ? parsed.data.results : undefined;
+    return results?.find((a) => a.status === "active") ?? null;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -658,11 +741,10 @@ export async function fetchPlatformAssistants(
 
     if (!response.ok) return [];
 
-    const body = (await response.json()) as {
-      results?: HatchedAssistant[];
-    };
+    const parsed = HatchedListResponseSchema.safeParse(await response.json());
+    const results = parsed.success ? (parsed.data.results ?? []) : [];
 
-    return (body.results ?? []).filter((a) => a.status === "active");
+    return results.filter((a) => a.status === "active");
   } finally {
     clearTimeout(timeoutId);
   }
@@ -694,10 +776,10 @@ export async function fetchAssistantDetail(
 
     if (!response.ok) return null;
 
-    const body = (await response.json()) as {
-      current_release_version?: string | null;
-      release_channel?: string;
-    };
+    const parsed = ReleaseChannelResponseSchema.safeParse(
+      await response.json(),
+    );
+    const body = parsed.success ? parsed.data : {};
     return {
       currentReleaseVersion: body.current_release_version ?? null,
       releaseChannel: body.release_channel === "preview" ? "preview" : "stable",
@@ -744,10 +826,6 @@ export interface PlatformUser {
   display: string;
 }
 
-interface OrganizationListResponse {
-  results: { id: string; name: string }[];
-}
-
 export async function fetchOrganizationId(
   token: string,
   platformUrl?: string,
@@ -773,8 +851,10 @@ export async function fetchOrganizationId(
       );
     }
 
-    const body = (await response.json()) as OrganizationListResponse;
-    const orgId = body.results?.[0]?.id;
+    const parsed = OrganizationListResponseSchema.safeParse(
+      await response.json(),
+    );
+    const orgId = parsed.success ? parsed.data.results?.[0]?.id : undefined;
     if (!orgId) {
       throw new Error("No organization found for this account.");
     }
@@ -782,17 +862,6 @@ export async function fetchOrganizationId(
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-interface AllauthSessionResponse {
-  status: number;
-  data: {
-    user: {
-      id: string;
-      email: string;
-      display: string;
-    };
-  };
 }
 
 export async function fetchCurrentUser(
@@ -827,7 +896,7 @@ export async function fetchCurrentUser(
       );
     }
 
-    const body = (await response.json()) as AllauthSessionResponse;
+    const body = AllauthSessionResponseSchema.parse(await response.json());
     return body.data.user;
   } finally {
     clearTimeout(timeoutId);
@@ -854,10 +923,9 @@ export async function rollbackPlatformAssistant(
     },
   );
 
-  const body = (await response.json().catch(() => ({}))) as {
-    detail?: string;
-    version?: string | null;
-  };
+  const body = VersionCheckResponseSchema.parse(
+    await response.json().catch(() => ({})),
+  );
 
   if (response.status === 200) {
     return { detail: body.detail ?? "", version: body.version ?? null };
@@ -918,10 +986,9 @@ export async function platformImportPreflightFromGcs(
     },
   );
 
-  const body = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const body = PassthroughBodySchema.parse(
+    await response.json().catch(() => ({})),
+  );
   return { statusCode: response.status, body };
 }
 
@@ -945,10 +1012,9 @@ export async function platformImportBundleFromGcs(
     throw new Error("Bundle too large to import");
   }
 
-  const body = (await response.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+  const body = PassthroughBodySchema.parse(
+    await response.json().catch(() => ({})),
+  );
   return { statusCode: response.status, body };
 }
 
@@ -1139,12 +1205,7 @@ export async function platformRequestSignedUrl(
   }
 
   if (response.status === 201 || response.status === 200) {
-    const json = (await response.json()) as {
-      url: string;
-      bundle_key: string;
-      expires_at: string;
-      max_content_length?: number;
-    };
+    const json = BundleUploadUrlSchema.parse(await response.json());
     return {
       url: json.url,
       bundleKey: json.bundle_key,
@@ -1156,12 +1217,9 @@ export async function platformRequestSignedUrl(
   // Non-success body. Read once and reuse for both the 422 version-mismatch
   // branch and the generic-error fallthrough — `response.json()` consumes
   // the body, so a second read would always return undefined.
-  const errorBody = (await response.json().catch(() => ({}))) as {
-    detail?: string;
-    reason?: string;
-    bundle_compat?: BundleCompatibility;
-    target_runtime_version?: string;
-  };
+  const errorBody = BundleImportErrorSchema.parse(
+    await response.json().catch(() => ({})),
+  );
 
   if (
     response.status === 422 &&
@@ -1208,6 +1266,6 @@ export async function platformPollJobStatus(
     );
   }
 
-  const raw = (await response.json()) as RawUnifiedJobStatus;
+  const raw = RawUnifiedJobStatusSchema.parse(await response.json());
   return parseUnifiedJobStatus(raw);
 }

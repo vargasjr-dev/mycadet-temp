@@ -83,8 +83,41 @@ const AssistantIdBodySchema = z.object({
   assistantId: z.string().optional(),
 });
 
+const TokenBodySchema = z.object({ token: z.unknown() }).nullable();
+
+const SyncPlatformBodySchema = z.object({
+  syncPlatform: z.unknown().optional(),
+  platformAssistants: z.array(z.record(z.string(), z.unknown())).optional(),
+  organizationId: z.string().optional(),
+  rename: z
+    .object({ assistantId: z.string(), name: z.string() })
+    .optional(),
+  assistant: z.record(z.string(), z.unknown()).optional(),
+  activeAssistant: z.string().optional(),
+});
+
+const RemoteBodySchema = z.object({ remote: z.string().optional() });
+
+const UnpairBodySchema = z.object({
+  assistantId: z.unknown().optional(),
+  hashedDeviceId: z.unknown().optional(),
+});
+
+const DeviceBodySchema = z.object({
+  address: z.unknown().optional(),
+  handle: z.unknown().optional(),
+  name: z.unknown().optional(),
+});
+
+function errnoCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  if (!("code" in error) || typeof error.code !== "string") return undefined;
+  return error.code;
+}
+
 const SUPPORTED_INTERFACES = ["cli", "web"] as const;
 type SupportedInterface = (typeof SUPPORTED_INTERFACES)[number];
+const SupportedInterfaceSchema = z.enum(SUPPORTED_INTERFACES);
 
 const ANSI = {
   reset: "\x1b[0m",
@@ -304,13 +337,14 @@ export function parseArgs(): ParsedArgs {
       assistantName = undefined;
     } else if ((flag === "--interface" || flag === "-i") && flagArgs[i + 1]) {
       const value = flagArgs[++i];
-      if (!(SUPPORTED_INTERFACES as readonly string[]).includes(value)) {
+      const parsedInterface = SupportedInterfaceSchema.safeParse(value);
+      if (!parsedInterface.success) {
         console.error(
           `Unknown interface '${value}'. Supported: ${SUPPORTED_INTERFACES.join(", ")}.`,
         );
         process.exit(1);
       }
-      interfaceId = value as SupportedInterface;
+      interfaceId = parsedInterface.data;
     }
   }
 
@@ -553,10 +587,11 @@ async function handleLocalEndpoints(
       return Response.json({ ok: true });
     }
     if (req.method === "POST") {
-      const body = (await req.json().catch(() => null)) as {
-        token?: unknown;
-      } | null;
-      const token = body?.token;
+      const parsed = TokenBodySchema.safeParse(
+        await req.json().catch(() => null),
+      );
+      const token =
+        parsed.success && parsed.data ? parsed.data.token : undefined;
       if (typeof token !== "string" || !/^[A-Za-z0-9]+$/.test(token)) {
         return Response.json(
           { ok: false, error: "Invalid token" },
@@ -580,9 +615,11 @@ async function handleLocalEndpoints(
       return new Response(null, { status: result.status });
     }
     if (req.method === "POST") {
-      let body: Record<string, unknown>;
+      let body: z.infer<typeof SyncPlatformBodySchema>;
       try {
-        body = (await req.json()) as Record<string, unknown>;
+        const parsed = SyncPlatformBodySchema.safeParse(await req.json());
+        if (!parsed.success) throw new Error("invalid body");
+        body = parsed.data;
       } catch {
         return Response.json(
           { ok: false, error: "Invalid JSON body" },
@@ -590,24 +627,23 @@ async function handleLocalEndpoints(
         );
       }
       let result;
-      if (body.syncPlatform && Array.isArray(body.platformAssistants)) {
+      if (body.syncPlatform && body.platformAssistants) {
         result = replacePlatformAssistants(
           lockfilePaths,
-          body.platformAssistants as Array<Record<string, unknown>>,
-          body.organizationId as string | undefined,
+          body.platformAssistants,
+          body.organizationId,
         );
-      } else if (body.rename && typeof body.rename === "object") {
-        const rename = body.rename as Record<string, unknown>;
+      } else if (body.rename) {
         result = renameLockfileAssistantIfPresent(
           lockfilePaths,
-          rename.assistantId as string,
-          rename.name as string,
+          body.rename.assistantId,
+          body.rename.name,
         );
       } else {
         result = upsertRendererLockfileAssistant(
           lockfilePaths,
-          body.assistant as Record<string, unknown>,
-          body.activeAssistant as string | undefined,
+          body.assistant ?? {},
+          body.activeAssistant,
         );
       }
       return Response.json(result, { status: result.ok ? 200 : result.status });
@@ -623,10 +659,8 @@ async function handleLocalEndpoints(
     const contentType = req.headers.get("content-type") ?? "";
     if (contentType.includes("json")) {
       try {
-        const body = (await req.json()) as {
-          remote?: string;
-        };
-        if (body.remote) remote = body.remote;
+        const parsed = RemoteBodySchema.safeParse(await req.json());
+        if (parsed.success && parsed.data.remote) remote = parsed.data.remote;
       } catch {
         return Response.json(
           { ok: false, error: "Invalid JSON body" },
@@ -750,7 +784,9 @@ async function handleLocalEndpoints(
 
     let body: { assistantId?: unknown; hashedDeviceId?: unknown };
     try {
-      body = (await req.json()) as typeof body;
+      const parsed = UnpairBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new Error("invalid body");
+      body = parsed.data;
     } catch {
       return Response.json(
         { ok: false, error: "Invalid JSON body" },
@@ -809,11 +845,9 @@ async function handleLocalEndpoints(
 
     let body: { address?: unknown; handle?: unknown; name?: unknown };
     try {
-      body = (await req.json()) as {
-        address?: unknown;
-        handle?: unknown;
-        name?: unknown;
-      };
+      const parsed = DeviceBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new Error("invalid body");
+      body = parsed.data;
     } catch {
       return Response.json(
         { ok: false, error: "Invalid JSON body" },
@@ -1051,10 +1085,11 @@ type WebFetchHandler = (
 ) => Promise<Response>;
 
 function isAddrInUse(err: unknown): boolean {
-  const e = err as { code?: string; message?: string } | undefined;
+  const code = errnoCode(err);
+  const message = err instanceof Error ? err.message : undefined;
   return (
-    e?.code === "EADDRINUSE" ||
-    /EADDRINUSE|address already in use/i.test(e?.message ?? "")
+    code === "EADDRINUSE" ||
+    /EADDRINUSE|address already in use/i.test(message ?? "")
   );
 }
 

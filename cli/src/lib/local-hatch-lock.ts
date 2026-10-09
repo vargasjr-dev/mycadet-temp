@@ -58,7 +58,7 @@ function processIsAlive(pid: number): boolean {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
+    return errnoCode(error) === "EPERM";
   }
 }
 
@@ -86,6 +86,12 @@ function processStartedAt(pid: number): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function errnoCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  if (!("code" in error) || typeof error.code !== "string") return undefined;
+  return error.code;
 }
 
 const LockOwnerFileSchema = z.object({
@@ -181,7 +187,7 @@ function acquireRecoveryClaim(
       writeOwnerFile(claimPath, owner);
       return () => releaseLock(claimPath, owner.token);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      if (errnoCode(error) !== "EEXIST") {
         throw error;
       }
       if (
@@ -234,7 +240,7 @@ function removeStaleLock(
       unlinkSync(lockPath);
       return true;
     } catch (error) {
-      return (error as NodeJS.ErrnoException).code === "ENOENT";
+      return errnoCode(error) === "ENOENT";
     }
   } finally {
     releaseRecoveryClaim();
@@ -248,7 +254,7 @@ function releaseLock(lockPath: string, token: string): void {
   try {
     unlinkSync(lockPath);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (errnoCode(error) !== "ENOENT") {
       throw error;
     }
   }
@@ -292,7 +298,7 @@ export async function withLocalHatchLock<T>(
     try {
       writeOwnerFile(lockPath, owner);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      if (errnoCode(error) !== "EEXIST") {
         throw error;
       }
       if (removeStaleLock(lockPath, owner, liveOwnerRecoveryGraceMs)) {
