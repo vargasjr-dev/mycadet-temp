@@ -125,11 +125,22 @@ export async function retireLocal(
     undefined,
     DAEMON_STOP_TIMEOUT_MS,
   );
+  if (daemonStopped) {
+    reporter.log("daemon stopped.");
+  }
 
   // Stop gateway via PID file — use a longer timeout because the gateway has a
   // drain window (5s) before it exits.
   const gatewayPidFile = join(cadetDir, "gateway.pid");
-  await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000);
+  const gatewayStopped = await stopProcessByPidFile(
+    gatewayPidFile,
+    "gateway",
+    undefined,
+    7000,
+  );
+  if (gatewayStopped) {
+    reporter.log("gateway stopped.");
+  }
 
   // Stop the CES sibling — it is stopped by its PID file, a no-op when the
   // PID file is absent (e.g. the sibling was never started or already exited).
@@ -154,12 +165,19 @@ export async function retireLocal(
     "qdrant.pid",
   );
   const qdrantLegacyPidFile = join(cadetDir, "qdrant.pid");
-  await stopProcessByPidFile(qdrantPidFile, "qdrant", undefined, 5000);
-  await stopProcessByPidFile(qdrantLegacyPidFile, "qdrant", undefined, 5000);
+  const qdrantStopped =
+    (await stopProcessByPidFile(qdrantPidFile, "qdrant", undefined, 5000)) ||
+    (await stopProcessByPidFile(qdrantLegacyPidFile, "qdrant", undefined, 5000));
+  if (qdrantStopped) {
+    reporter.log("qdrant stopped.");
+  }
 
   // Stop the nginx ingress if one is fronting this gateway — it would
   // otherwise be orphaned when the instance directory is archived.
-  await stopIngressNginx(join(cadetDir, "workspace"));
+  const ingressStopped = await stopIngressNginx(join(cadetDir, "workspace"));
+  if (ingressStopped) {
+    reporter.log("ingress nginx stopped.");
+  }
 
   // If the PID file didn't track a running daemon, scan for orphaned
   // daemon processes that may have been started without writing a PID.

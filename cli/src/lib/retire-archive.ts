@@ -1,6 +1,8 @@
 import { mkdirSync } from "fs";
-import { homedir } from "os";
 import { join, posix, win32 } from "path";
+
+import { getStateDir } from "./environments/paths.js";
+import { getCurrentEnvironment } from "./environments/resolve.js";
 
 function isPathInside(
   parent: string,
@@ -17,9 +19,10 @@ function isPathInside(
 }
 
 export function getRetiredDir(): string {
-  const xdgData =
-    process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
-  const dir = join(xdgData, "cadet", "retired");
+  // Archives land in the CURRENT environment's state dir — a dev CLI
+  // (`cadet-dev`) must not drop them into production's data dir. Production
+  // resolves to the same `~/.local/share/cadet/retired` as before.
+  const dir = join(getStateDir(getCurrentEnvironment()), "retired");
   mkdirSync(dir, { recursive: true });
   return dir;
 }
