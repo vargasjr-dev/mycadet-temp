@@ -304,14 +304,17 @@ describe("AssistantConfigSchema", () => {
     expect(result.llm.profiles).toEqual({});
   });
 
-  test("legacy llm.default blob parses without error and is ignored", () => {
-    // Load-time backwards compat: `llm.default` is not part of the schema.
-    // Old configs that still carry the blob parse cleanly because Zod strips
-    // unknown keys — the parsed config simply has no `default` key.
+  test("legacy llm.default blob parses without error and is committed", () => {
+    // #139 made `llm.default` a schema-level partial fragment: old configs
+    // that still carry the blob parse cleanly and KEEP the blob as-is —
+    // parsing must not inject schema defaults onto it.
     const result = AssistantConfigSchema.parse({
       llm: { default: { provider: "openai", model: "gpt-4" }, profiles: {} },
     });
-    expect((result.llm as Record<string, unknown>).default).toBeUndefined();
+    expect(result.llm.default).toEqual({
+      provider: "openai",
+      model: "gpt-4",
+    });
     expect(result.llm.profiles).toEqual({});
   });
 
@@ -2412,10 +2415,10 @@ describe("loadConfig with schema validation", () => {
     });
   });
 
-  test("legacy llm.default blob loads without error and is ignored", () => {
+  test("legacy llm.default blob loads without error and is committed", () => {
     // Load-time backwards compat: old configs still carrying `llm.default`
-    // load cleanly — the key is stripped from the parsed config (not an
-    // error, no fallback to full defaults) and sibling llm fields survive.
+    // load cleanly — the blob is kept as written (#139: no schema-default
+    // injection onto it), not an error, and sibling llm fields survive.
     writeConfig({
       llm: {
         default: { provider: "openai", model: "gpt-4" },
@@ -2423,7 +2426,10 @@ describe("loadConfig with schema validation", () => {
       },
     });
     const config = loadConfig();
-    expect((config.llm as Record<string, unknown>).default).toBeUndefined();
+    expect(config.llm.default).toEqual({
+      provider: "openai",
+      model: "gpt-4",
+    });
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
   });
 
