@@ -476,9 +476,7 @@ export class WatchStreamSession {
       await import("../../providers/speech-to-text/resolve.js");
     return resolveStreamingTranscriber({
       role: "watch",
-      ...(this.options.sampleRate !== undefined
-        ? { sampleRate: this.options.sampleRate }
-        : {}),
+      sampleRate: this.options.sampleRate,
     });
   }
 

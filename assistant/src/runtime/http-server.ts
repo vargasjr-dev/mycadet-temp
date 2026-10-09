@@ -436,9 +436,7 @@ export class RuntimeHttpServer {
             );
             const session = new WatchStreamSession(ws, {
               mimeType: watchData.mimeType,
-              ...(watchData.sampleRate !== undefined
-                ? { sampleRate: watchData.sampleRate }
-                : {}),
+              sampleRate: watchData.sampleRate,
               ...(watchData.conversationId
                 ? { conversationId: watchData.conversationId }
                 : {}),

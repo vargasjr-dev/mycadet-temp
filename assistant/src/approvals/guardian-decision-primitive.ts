@@ -424,10 +424,8 @@ export async function applyGuardianDecision(
       id: requestId,
       expectedStatus: "pending",
       status: targetStatus,
-      ...(userText !== undefined ? { answerText: userText } : {}),
-      ...(actorContext.actorExternalUserId !== undefined
-        ? { decidedByExternalUserId: actorContext.actorExternalUserId }
-        : {}),
+      answerText: userText,
+      decidedByExternalUserId: actorContext.actorExternalUserId,
       decidedByPrincipalId: actorContext.guardianPrincipalId,
       ...(plan.aclOutcome ? { aclOutcome: plan.aclOutcome } : {}),
     });

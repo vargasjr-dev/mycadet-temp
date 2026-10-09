@@ -1,5 +1,4 @@
 import * as childProcess from "node:child_process";
-import type { ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fsModule from "node:fs";
 import {
@@ -22,6 +21,8 @@ import {
   mock,
   test,
 } from "bun:test";
+
+import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
@@ -91,7 +92,7 @@ const workspaces: string[] = [];
 const fakePids = new Map<number, { alive: boolean; unkillable?: boolean }>();
 
 function installKillMock(): void {
-  process.kill = mock((targetPid: number, signal?: string | number) => {
+  process.kill = mock((targetPid: number, signal?: string | number): true => {
     const entry = fakePids.get(targetPid);
     if (!entry) {
       return originalKill(targetPid, signal);
@@ -107,7 +108,7 @@ function installKillMock(): void {
     }
     entry.alive = false;
     return true;
-  }) as unknown as typeof process.kill;
+  });
 }
 
 afterEach(() => {
@@ -135,10 +136,18 @@ function makeWorkspace(): string {
   return dir;
 }
 
-function readConfig(workspaceDir: string): Record<string, unknown> {
-  return JSON.parse(
-    readFileSync(join(workspaceDir, "config.json"), "utf-8"),
-  ) as Record<string, unknown>;
+const IngressTestConfigSchema = z.object({
+  ingress: z
+    .object({
+      nginx: z.record(z.string(), z.unknown()).optional(),
+    })
+    .optional(),
+});
+
+function readConfig(workspaceDir: string) {
+  return IngressTestConfigSchema.parse(
+    JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+  );
 }
 
 describe("buildIngressNginxConfig", () => {
@@ -571,7 +580,7 @@ describe("nginx ingress process state", () => {
     writeIngressState(ws, 7841);
     writePidFile(ws, pid);
     execFileSyncMock.mockReturnValue(nginxCommand(ws));
-    process.kill = mock((targetPid: number, signal?: string | number) => {
+    process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) {
         if (!alive) throw new Error("dead");
@@ -582,12 +591,12 @@ describe("nginx ingress process state", () => {
         return true;
       }
       return true;
-    }) as unknown as typeof process.kill;
+    });
 
     await expect(stopIngressNginx(ws)).resolves.toBe(true);
 
     const config = readConfig(ws);
-    expect((config.ingress as Record<string, unknown>).nginx).toBeUndefined();
+    expect(config.ingress?.nginx).toBeUndefined();
     expect(existsSync(pidPath(ws))).toBe(false);
   });
 
@@ -597,16 +606,16 @@ describe("nginx ingress process state", () => {
     writeIngressState(ws, 7841);
     writePidFile(ws, pid);
     execFileSyncMock.mockReturnValue(nginxCommand(ws));
-    process.kill = mock((targetPid: number, signal?: string | number) => {
+    process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) return true;
       throw new Error("operation not permitted");
-    }) as unknown as typeof process.kill;
+    });
 
     await expect(stopIngressNginx(ws)).resolves.toBe(false);
 
     const config = readConfig(ws);
-    expect((config.ingress as Record<string, unknown>).nginx).toEqual({
+    expect(config.ingress?.nginx).toEqual({
       listenPort: 7841,
     });
     expect(existsSync(pidPath(ws))).toBe(true);
@@ -619,7 +628,7 @@ describe("nginx ingress process state", () => {
     writeIngressState(ws, 7841);
     writePidFile(ws, pid);
     execFileSyncMock.mockReturnValue(nginxCommand(ws));
-    process.kill = mock((targetPid: number, signal?: string | number) => {
+    process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) {
         aliveChecks++;
@@ -627,12 +636,12 @@ describe("nginx ingress process state", () => {
         throw new Error("dead");
       }
       throw new Error("no such process");
-    }) as unknown as typeof process.kill;
+    });
 
     await expect(stopIngressNginx(ws)).resolves.toBe(true);
 
     const config = readConfig(ws);
-    expect((config.ingress as Record<string, unknown>).nginx).toBeUndefined();
+    expect(config.ingress?.nginx).toBeUndefined();
     expect(existsSync(pidPath(ws))).toBe(false);
   });
 
@@ -644,16 +653,16 @@ describe("nginx ingress process state", () => {
     execFileSyncMock.mockReturnValue(
       "nginx: master process nginx -p /tmp/other-ingress -c /tmp/other-ingress/nginx.conf",
     );
-    process.kill = mock((targetPid: number, signal?: string | number) => {
+    process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) return true;
       throw new Error("should not kill another nginx instance");
-    }) as unknown as typeof process.kill;
+    });
 
     await expect(stopIngressNginx(ws)).resolves.toBe(false);
 
     const config = readConfig(ws);
-    expect((config.ingress as Record<string, unknown>).nginx).toBeUndefined();
+    expect(config.ingress?.nginx).toBeUndefined();
     expect(existsSync(pidPath(ws))).toBe(false);
   });
 });
@@ -708,25 +717,20 @@ function mockNginxSpawn(): void {
       psArgs?.includes(String(SPAWNED_NGINX_PID))
         ? `nginx: master process nginx -p ${dir} -c ${join(dir, "nginx.conf")} -g daemon off;`
         : "") as typeof childProcess.execFileSync);
-    return {
-      unref: () => {},
-      once: () => {},
-      exitCode: null,
-      pid: SPAWNED_NGINX_PID,
-    } as unknown as ChildProcess;
+    const child = new childProcess.ChildProcess();
+    Object.assign(child, { pid: SPAWNED_NGINX_PID });
+    return child;
   }) as unknown as typeof childProcess.spawn);
 }
 
 /** Spawned nginx that exits on startup, as when the listen port is already bound. */
 function mockNginxSpawnExitsOnStartup(): void {
-  spawnMock.mockReturnValue({
-    unref: () => {},
-    once: (event: string, listener: () => void) => {
-      if (event === "exit") listener();
-    },
-    exitCode: 1,
-    pid: SPAWNED_NGINX_PID,
-  } as unknown as ChildProcess);
+  spawnMock.mockReturnValue(
+    Object.assign(new childProcess.ChildProcess(), {
+      pid: SPAWNED_NGINX_PID,
+      exitCode: 1,
+    }),
+  );
 }
 
 /**
@@ -735,20 +739,13 @@ function mockNginxSpawnExitsOnStartup(): void {
  */
 function mockNginxSpawnExitsAfterProbe(): void {
   spawnMock.mockImplementation((() => {
-    const child = {
-      unref: () => {},
-      exitCode: null as number | null,
-      pid: SPAWNED_NGINX_PID,
-      once: (event: string, listener: () => void) => {
-        if (event === "exit") {
-          setTimeout(() => {
-            child.exitCode = 1;
-            listener();
-          }, 150);
-        }
-      },
-    };
-    return child as unknown as ChildProcess;
+    const child = new childProcess.ChildProcess();
+    Object.assign(child, { pid: SPAWNED_NGINX_PID });
+    setTimeout(() => {
+      Object.assign(child, { exitCode: 1 });
+      child.emit("exit", 1);
+    }, 150);
+    return child;
   }) as unknown as typeof childProcess.spawn);
 }
 
@@ -944,7 +941,7 @@ describe("startRemoteWebIngress", () => {
     expect(conf).not.toContain("__remote-index.html");
     expect(conf).not.toContain("location ^~ /assistant/assets/");
     expect(conf).not.toContain("alias ");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
       gatewayPort: 7830,
@@ -995,7 +992,7 @@ describe("startRemoteWebIngress", () => {
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
     // No assistant name was provided, so the served config omits the label.
     expect(indexHtml).not.toContain("assistantName");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -1206,7 +1203,7 @@ describe("startRemoteWebIngress", () => {
       }),
     );
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830;");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
       gatewayPort: 7830,
@@ -1243,7 +1240,7 @@ describe("startRemoteWebIngress", () => {
         ipv6Loopback: hasIpv6Loopback(),
       }),
     );
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
       gatewayPort: 7900,
@@ -1335,7 +1332,7 @@ describe("startRemoteWebIngress", () => {
       "utf-8",
     );
     expect(indexHtml).toContain('"assistantName":"New Name"');
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -1382,7 +1379,7 @@ describe("startRemoteWebIngress", () => {
     expect(edge.killed()).toBe(true);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /readyz {");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -1410,7 +1407,7 @@ describe("startRemoteWebIngress", () => {
 
     expect(result.status).toBe("started");
     expect(edge.killed()).toBe(true);
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -1479,7 +1476,7 @@ describe("startRemoteWebIngress", () => {
         ipv6Loopback: hasIpv6Loopback(),
       }),
     );
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
       gatewayPort: 7830,
@@ -1495,11 +1492,11 @@ describe("startRemoteWebIngress", () => {
     // Alive for the initial running check, dead by the time the stop helper
     // probes it: the race where the old edge exits on its own mid-switch.
     let liveChecks = 0;
-    process.kill = mock((targetPid: number, signal?: string | number) => {
+    process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0 && ++liveChecks === 1) return true;
       throw new Error("dead");
-    }) as unknown as typeof process.kill;
+    });
 
     const result = await startRemoteWebIngress({
       workspaceDir: ws,
@@ -1523,7 +1520,7 @@ describe("startRemoteWebIngress", () => {
         ipv6Loopback: hasIpv6Loopback(),
       }),
     );
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
       gatewayPort: 7830,
@@ -1552,7 +1549,7 @@ describe("startRemoteWebIngress", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -1577,7 +1574,7 @@ describe("startRemoteWebIngress", () => {
     expect(result).toEqual({ status: "web-dist-missing" });
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: 7845,
       includeWebApp: false,
     });
@@ -1606,9 +1603,7 @@ describe("startRemoteWebIngress", () => {
       logPath: join(ws, "data", "logs", "nginx-ingress.log"),
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const ingress = readConfig(ws).ingress as
-      | Record<string, unknown>
-      | undefined;
+    const ingress = readConfig(ws).ingress;
     expect(ingress?.nginx).toBeUndefined();
   });
 
@@ -1635,9 +1630,7 @@ describe("startRemoteWebIngress", () => {
       logPath: join(ws, "data", "logs", "nginx-ingress.log"),
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const ingress = readConfig(ws).ingress as
-      | Record<string, unknown>
-      | undefined;
+    const ingress = readConfig(ws).ingress;
     expect(ingress?.nginx).toBeUndefined();
   });
 
@@ -1698,16 +1691,15 @@ describe("startRemoteWebIngress", () => {
     // Alive for the whole settle window (nginx retrying its bind), never
     // writes a pid file; an orphan left running could win the bind later.
     spawnMock.mockImplementation((() => {
-      return {
-        unref: () => {},
-        exitCode: null,
+      const child = new childProcess.ChildProcess();
+      Object.assign(child, {
         pid: SPAWNED_NGINX_PID,
-        once: () => {},
         kill: (signal: string) => {
           kills.push(signal);
           return true;
         },
-      } as unknown as ChildProcess;
+      });
+      return child;
     }) as unknown as typeof childProcess.spawn);
 
     const result = await startRemoteWebIngress({
@@ -2036,7 +2028,7 @@ describe("ensureTunnelEdge", () => {
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
     expect(conf).toContain("location ^~ /webhooks/ {");
-    expect((readConfig(ws).ingress as Record<string, unknown>).nginx).toEqual({
+    expect(readConfig(ws).ingress?.nginx).toEqual({
       listenPort: REQUESTED_PORT,
       includeWebApp: true,
       gatewayPort: 7830,
@@ -2180,7 +2172,7 @@ describe("stopContainerTunnelEdge", () => {
       assistantId: "docker-1",
       runtimeUrl: `http://localhost:${port}`,
       cloud: "docker",
-    } as AssistantEntry;
+    };
   }
 
   test("stops the default-workspace edge fronting this assistant", async () => {
@@ -2224,7 +2216,7 @@ describe("stopContainerTunnelEdge", () => {
         assistantId: "docker-1",
         runtimeUrl: "https://runtime.example.com/docker-1",
         cloud: "docker",
-      } as AssistantEntry),
+      }),
     ).toBe(false);
     expect(killed()).toBe(false);
   });

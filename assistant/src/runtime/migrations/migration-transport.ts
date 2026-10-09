@@ -521,10 +521,8 @@ function jobStatusFromWire(
     return {
       status: "complete",
       jobId,
-      ...(wire.download_url !== undefined
-        ? { downloadUrl: wire.download_url }
-        : {}),
-      ...(wire.result !== undefined ? { result: wire.result } : {}),
+      downloadUrl: wire.download_url,
+      result: wire.result,
     };
   }
   if (wire.status === "failed") {

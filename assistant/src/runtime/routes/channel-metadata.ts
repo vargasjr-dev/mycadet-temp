@@ -37,12 +37,8 @@ export function buildChannelMetadata(
     ...provenance,
     userMessageChannel: sourceChannel,
     assistantMessageChannel: sourceChannel,
-    ...(sourceInterface !== undefined
-      ? {
-          userMessageInterface: sourceInterface,
-          assistantMessageInterface: sourceInterface,
-        }
-      : {}),
+    userMessageInterface: sourceInterface,
+    assistantMessageInterface: sourceInterface,
     ...(opts?.automated ? { automated: true } : {}),
     ...(imageSourcePaths ? { imageSourcePaths } : {}),
   };
