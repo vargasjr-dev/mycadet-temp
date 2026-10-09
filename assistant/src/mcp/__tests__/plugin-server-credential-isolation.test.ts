@@ -11,20 +11,23 @@
  * forgets to pass something.
  */
 
-import { beforeEach, describe, expect, jest, mock, test } from "bun:test";
+import { beforeEach, describe, expect, jest, mock, spyOn, test } from "bun:test";
 
-const getSecureKeyAsync = jest.fn(
-  async (_key: string): Promise<string | null> => "stored-oauth-token",
-);
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
+import * as secureKeysModule from "../../security/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the plugin credential key the provider stores. The spy is pass-through so
+// the isolation assertions can still observe the exact keys it reads.
+useMemorySecureKeys({
+  "mcp-plugin/v1/YWJjZGFiY2RhYmNk/YWJjZGFiY2RhYmNk/stored-oauth-token/tokens":
+    "stored-oauth-token",
+});
+const getSecureKeyAsync = spyOn(secureKeysModule, "getSecureKeyAsync");
 const getMcpHeaders = jest.fn(async (_serverId: string) => ({
   Authorization: "Bearer workspace-secret",
 }));
 
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync,
-  setSecureKeyAsync: jest.fn(async () => true),
-  deleteSecureKeyAsync: jest.fn(async () => "deleted"),
-}));
 
 mock.module("../mcp-header-store.js", () => ({
   getMcpHeaders,
@@ -50,8 +53,8 @@ function pluginHttpServer(url = UNREACHABLE) {
   return {
     transport: { type: "streamable-http" as const, url },
     source: "plugin" as const,
-    pluginName: "unabyss",
-    serverKey: "unabyss",
+    pluginName: "abcdabcdabcd",
+    serverKey: "abcdabcdabcd",
   };
 }
 
@@ -65,7 +68,7 @@ describe("plugin-declared MCP servers", () => {
     const manager = new McpServerManager();
 
     await manager.start({
-      servers: { unabyss: pluginHttpServer() },
+      servers: { abcdabcdabcd: pluginHttpServer() },
     });
 
     expect(getMcpHeaders).not.toHaveBeenCalled();
@@ -73,13 +76,13 @@ describe("plugin-declared MCP servers", () => {
     expect(getSecureKeyAsync.mock.calls.map(([key]) => key)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(
-          /^mcp-plugin\/v1\/dW5hYnlzcw\/dW5hYnlzcw\/[a-f0-9]{64}\/tokens$/,
+          /^mcp-plugin\/v1\/YWJjZGFiY2RhYmNk\/YWJjZGFiY2RhYmNk\/[a-f0-9]{64}\/tokens$/,
         ),
       ]),
     );
     expect(
       getSecureKeyAsync.mock.calls.some(
-        ([key]) => key === "mcp:unabyss:tokens",
+        ([key]) => key === "mcp:abcdabcdabcd:tokens",
       ),
     ).toBe(false);
   });
@@ -102,7 +105,7 @@ describe("plugin-declared MCP servers", () => {
 
     await manager.start({
       servers: {
-        unabyss: pluginHttpServer(),
+        abcdabcdabcd: pluginHttpServer(),
         "from-workspace": workspaceHttpServer(),
       },
     });
@@ -115,14 +118,14 @@ describe("plugin-declared MCP servers", () => {
     const { McpClient } = await import("../client.js");
     const endpointA = "https://mcp.example.com/a";
     const endpointB = "https://mcp.example.com/b";
-    getSecureKeyAsync.mockImplementation(async (key: string) =>
+    getSecureKeyAsync.mockImplementation(async (key: string): Promise<string | undefined> =>
       key.endsWith("/tokens") &&
       key.includes("mcp-plugin/") &&
       getSecureKeyAsync.mock.calls.length === 1
         ? "stored-oauth-token"
-        : null,
+        : undefined,
     );
-    const client = new McpClient("unabyss", pluginHttpServer(endpointA));
+    const client = new McpClient("abcdabcdabcd", pluginHttpServer(endpointA));
     const providers: unknown[] = [];
     (client as any).createTransport = () => {
       providers.push((client as any).oauthProvider);

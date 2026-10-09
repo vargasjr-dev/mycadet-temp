@@ -1,23 +1,15 @@
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-const mockDeleteSecureKeyAsync = mock(
-  (): Promise<"deleted" | "not-found" | "error"> =>
-    Promise.resolve("deleted" as const),
-);
-const mockSetSecureKeyAsync = mock(() => Promise.resolve(true));
-/** Simulated secure key store for getSecureKeyAsync lookups. */
-const secureKeyValues = new Map<string, string>();
-mock.module("../security/secure-keys.js", () => ({
-  deleteSecureKeyAsync: mockDeleteSecureKeyAsync,
-  setSecureKeyAsync: mockSetSecureKeyAsync,
-  getSecureKeyAsync: (account: string) =>
-    Promise.resolve(secureKeyValues.get(account)),
-  getSecureKeyResultAsync: (account: string) =>
-    Promise.resolve({
-      value: secureKeyValues.get(account),
-      unreachable: false,
-    }),
-}));
+import * as secureKeysModule from "../security/secure-keys.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend; the spies are
+// pass-through so the storage-call assertions observe the real writes/deletes.
+const secureKeyValues = useMemorySecureKeyMap();
+const realSetSecureKeyAsync = secureKeysModule.setSecureKeyAsync;
+const realDeleteSecureKeyAsync = secureKeysModule.deleteSecureKeyAsync;
+const setSecureKeyAsync = spyOn(secureKeysModule, "setSecureKeyAsync");
+const deleteSecureKeyAsync = spyOn(secureKeysModule, "deleteSecureKeyAsync");
 
 mock.module("../oauth/credential-token-resolver.js", () => ({
   getConnectionAccessTokenResult: async (opts: {
@@ -91,8 +83,10 @@ beforeEach(() => {
   // Clear OAuth tables between tests instead of full DB reset + migration.
   // Delete in FK-dependency order: connections → apps → providers.
   resetTestTables("oauth_connections", "oauth_apps", "oauth_providers");
-  mockDeleteSecureKeyAsync.mockClear();
-  mockSetSecureKeyAsync.mockClear();
+  deleteSecureKeyAsync.mockClear();
+  setSecureKeyAsync.mockClear();
+  setSecureKeyAsync.mockImplementation(realSetSecureKeyAsync);
+  deleteSecureKeyAsync.mockImplementation(realDeleteSecureKeyAsync);
   secureKeyValues.clear();
   resetMockFetch();
 });
@@ -1341,8 +1335,8 @@ describe("app operations", () => {
         clientSecretValue: "my-secret",
       });
 
-      expect(mockSetSecureKeyAsync).toHaveBeenCalledTimes(1);
-      expect(mockSetSecureKeyAsync).toHaveBeenCalledWith(
+      expect(setSecureKeyAsync).toHaveBeenCalledTimes(1);
+      expect(setSecureKeyAsync).toHaveBeenCalledWith(
         `oauth_app/${app.id}/client_secret`,
         "my-secret",
       );
@@ -1354,14 +1348,14 @@ describe("app operations", () => {
     test("stores clientSecret in secure storage when upserting an existing app", async () => {
       seedTestProvider("github");
       const first = await upsertApp("github", "client-abc");
-      mockSetSecureKeyAsync.mockClear();
+      setSecureKeyAsync.mockClear();
 
       await upsertApp("github", "client-abc", {
         clientSecretValue: "updated-secret",
       });
 
-      expect(mockSetSecureKeyAsync).toHaveBeenCalledTimes(1);
-      expect(mockSetSecureKeyAsync).toHaveBeenCalledWith(
+      expect(setSecureKeyAsync).toHaveBeenCalledTimes(1);
+      expect(setSecureKeyAsync).toHaveBeenCalledWith(
         first.clientSecretCredentialPath,
         "updated-secret",
       );
@@ -1369,7 +1363,7 @@ describe("app operations", () => {
 
     test("throws when setSecureKeyAsync returns false", async () => {
       seedTestProvider("github");
-      mockSetSecureKeyAsync.mockResolvedValueOnce(false);
+      setSecureKeyAsync.mockResolvedValueOnce(false);
 
       await expect(
         upsertApp("github", "client-abc", { clientSecretValue: "bad-secret" }),
@@ -1386,7 +1380,7 @@ describe("app operations", () => {
 
       expect(app.clientSecretCredentialPath).toBe("custom/path");
       // Should not have called setSecureKeyAsync since we only provided a path
-      expect(mockSetSecureKeyAsync).not.toHaveBeenCalled();
+      expect(setSecureKeyAsync).not.toHaveBeenCalled();
     });
 
     test("throws when clientSecretCredentialPath points to nonexistent secret", async () => {
@@ -1481,11 +1475,11 @@ describe("app operations", () => {
 
     test("cleans up client_secret from secure storage using stored path", async () => {
       const app = await createTestApp("github", "client-1");
-      mockDeleteSecureKeyAsync.mockClear();
+      deleteSecureKeyAsync.mockClear();
 
       await deleteApp(app.id);
 
-      expect(mockDeleteSecureKeyAsync).toHaveBeenCalledWith(
+      expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
         app.clientSecretCredentialPath,
       );
     });
@@ -1496,11 +1490,11 @@ describe("app operations", () => {
       const app = await upsertApp("github", "client-1", {
         clientSecretCredentialPath: "custom/secret/path",
       });
-      mockDeleteSecureKeyAsync.mockClear();
+      deleteSecureKeyAsync.mockClear();
 
       await deleteApp(app.id);
 
-      expect(mockDeleteSecureKeyAsync).toHaveBeenCalledWith(
+      expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
         "custom/secret/path",
       );
     });
@@ -1511,7 +1505,7 @@ describe("app operations", () => {
 
     test("throws when deleteSecureKeyAsync returns error", async () => {
       const app = await createTestApp("github", "client-1");
-      mockDeleteSecureKeyAsync.mockResolvedValueOnce("error");
+      deleteSecureKeyAsync.mockResolvedValueOnce("error");
 
       await expect(deleteApp(app.id)).rejects.toThrow(
         /failed to remove client_secret from secure storage/i,
@@ -2151,7 +2145,7 @@ describe("disconnectOAuthProvider", () => {
   test("returns 'not-found' when no connection exists for the provider", async () => {
     const result = await disconnectOAuthProvider("github");
     expect(result).toBe("not-found");
-    expect(mockDeleteSecureKeyAsync).not.toHaveBeenCalled();
+    expect(deleteSecureKeyAsync).not.toHaveBeenCalled();
     // No upstream call should be made when there is no connection at all.
     expect(getMockFetchCalls().length).toBe(0);
   });
@@ -2169,11 +2163,11 @@ describe("disconnectOAuthProvider", () => {
     expect(result).toBe("disconnected");
 
     // Verify secure keys were deleted
-    expect(mockDeleteSecureKeyAsync).toHaveBeenCalledTimes(2);
-    expect(mockDeleteSecureKeyAsync).toHaveBeenCalledWith(
+    expect(deleteSecureKeyAsync).toHaveBeenCalledTimes(2);
+    expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
       `oauth_connection/${conn.id}/access_token`,
     );
-    expect(mockDeleteSecureKeyAsync).toHaveBeenCalledWith(
+    expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
       `oauth_connection/${conn.id}/refresh_token`,
     );
 
@@ -2280,7 +2274,7 @@ describe("disconnectOAuthProvider", () => {
     expect(result).toBe("disconnected");
     expect(getMockFetchCalls().length).toBe(1);
     // Local cleanup still happened
-    expect(mockDeleteSecureKeyAsync).toHaveBeenCalledWith(
+    expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
       `oauth_connection/${conn.id}/access_token`,
     );
     expect(getConnection(conn.id)).toBeUndefined();
@@ -2505,9 +2499,9 @@ describe("disconnectOAuthProvider", () => {
 
     // Wrap delete to record its order. We replace the mock implementation
     // for the duration of this test only.
-    mockDeleteSecureKeyAsync.mockImplementation(() => {
+    deleteSecureKeyAsync.mockImplementation(async (key) => {
       order.push("delete");
-      return Promise.resolve("deleted" as const);
+      return realDeleteSecureKeyAsync(key);
     });
 
     // Wrap fetch one more layer: tap into the actual fetch call to record
@@ -2529,10 +2523,7 @@ describe("disconnectOAuthProvider", () => {
       // Restore the wrapper layer; resetMockFetch in beforeEach will reset
       // the underlying mock for the next test.
       globalThis.fetch = wrappedFetch;
-      mockDeleteSecureKeyAsync.mockImplementation(
-        (): Promise<"deleted" | "not-found" | "error"> =>
-          Promise.resolve("deleted" as const),
-      );
+      deleteSecureKeyAsync.mockImplementation(realDeleteSecureKeyAsync);
     }
 
     expect(order[0]).toBe("fetch");

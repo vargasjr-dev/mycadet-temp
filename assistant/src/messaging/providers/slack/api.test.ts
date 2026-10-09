@@ -1,32 +1,15 @@
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
+
 const BOT_TOKEN = "xoxb-test";
 const USER_TOKEN = "xoxp-test";
 
-/** Set false to simulate an install whose Slack setup stored no user token. */
-let userTokenStored = true;
-
-function secureKeyFor(account: string): string | undefined {
-  if (account.endsWith("/user_token")) {
-    return userTokenStored ? USER_TOKEN : undefined;
-  }
-  return BOT_TOKEN;
-}
-
-// `api.ts` resolves identity through `resolveSlackAuth`, whose import graph
-// (oauth/manual-token-connection.ts and siblings) reads several secure-keys
-// exports beyond the two this test overrides. Spread the real module so the
-// mock keeps every export those imports expect; the key accessors are the
-// only behavior under the test's control.
-const realSecureKeys = await import("../../../security/secure-keys.js");
-mock.module("../../../security/secure-keys.js", () => ({
-  ...realSecureKeys,
-  getSecureKeyAsync: async (account: string) => secureKeyFor(account),
-  getSecureKeyResultAsync: async (account: string) => ({
-    value: secureKeyFor(account),
-    unreachable: false,
-  }),
-}));
+// The REAL secure-keys module pinned to a live memory backend, seeded with
+// the bot/user tokens resolveSlackAuth reads.
+const secureKeys = useMemorySecureKeys();
+secureKeys[credentialKey("slack_channel", "bot_token")] = BOT_TOKEN;
 
 // With `userTokenStored` false, `resolveSlackAuth` looks for a `slack` OAuth
 // connection before falling back to the bot token. This suite builds no
@@ -86,7 +69,7 @@ describe("getSlackConversationInfo", () => {
   });
 
   test("retries as the user when the bot cannot see the channel", async () => {
-    userTokenStored = true;
+    secureKeys[credentialKey("slack_channel", "user_token")] = USER_TOKEN;
     const authHeaders: string[] = [];
     globalThis.fetch = mock(async (_input, init) => {
       const auth = (init?.headers as Record<string, string>).Authorization;
@@ -113,7 +96,7 @@ describe("getSlackConversationInfo", () => {
   });
 
   test("does not retry as the user for non-visibility errors", async () => {
-    userTokenStored = true;
+    secureKeys[credentialKey("slack_channel", "user_token")] = USER_TOKEN;
     let calls = 0;
     globalThis.fetch = mock(async () => {
       calls++;
@@ -130,7 +113,7 @@ describe("getSlackConversationInfo", () => {
   });
 
   test("does not retry when no distinct user token is stored", async () => {
-    userTokenStored = false;
+    delete secureKeys[credentialKey("slack_channel", "user_token")];
     let calls = 0;
     globalThis.fetch = mock(async () => {
       calls++;
@@ -144,7 +127,7 @@ describe("getSlackConversationInfo", () => {
       "Slack API error: channel_not_found",
     );
     expect(calls).toBe(1);
-    userTokenStored = true;
+    secureKeys[credentialKey("slack_channel", "user_token")] = USER_TOKEN;
   });
 });
 

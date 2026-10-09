@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { SecureKeyResult } from "../security/secure-keys.js";
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
 
-let secureKeyResults: Record<string, SecureKeyResult> = {};
 let connectionStore: Record<
   string,
   { id: string; provider: string; accountInfo?: string | null }
@@ -30,18 +30,10 @@ mock.module("../util/logger.js", () => ({
   }),
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async (account: string): Promise<SecureKeyResult> =>
-    secureKeyResults[account] ?? { value: undefined, unreachable: false },
-  // Keep getSecureKeyAsync available for any transitive imports
-  getSecureKeyAsync: async (account: string): Promise<string | undefined> => {
-    const result = secureKeyResults[account] ?? {
-      value: undefined,
-      unreachable: false,
-    };
-    return result.value;
-  },
-}));
+// The REAL secure-keys module pinned to a faultable memory backend; per-key
+// unreachable faults simulate dead reads exactly as the old result matrix did.
+const { store: secureKeyValues, setUnreachableKey, clearUnreachableKey } =
+  useFaultableSecureKeyMap();
 
 mock.module("../telegram/bot-username.js", () => ({
   getTelegramBotUsername: () => telegramBotUsername,
@@ -110,7 +102,16 @@ function setCredentialResult(
   field: string,
   result: SecureKeyResult,
 ): void {
-  secureKeyResults[credentialKey(service, field)] = result;
+  const key = credentialKey(service, field);
+  clearUnreachableKey(key);
+  if (result.unreachable) {
+    secureKeyValues.delete(key);
+    setUnreachableKey(key);
+  } else if (result.value !== undefined) {
+    secureKeyValues.set(key, result.value);
+  } else {
+    secureKeyValues.delete(key);
+  }
 }
 
 function seedConnection(
@@ -130,7 +131,8 @@ function seedConnection(
 
 describe("syncManualTokenConnection", () => {
   beforeEach(() => {
-    secureKeyResults = {};
+    secureKeyValues.clear();
+    setUnreachableKey(undefined);
     connectionStore = {};
     deletedConnectionIds = [];
     createdConnections = [];
@@ -413,7 +415,8 @@ describe("syncManualTokenConnection", () => {
 
 describe("backfillManualTokenConnections", () => {
   beforeEach(() => {
-    secureKeyResults = {};
+    secureKeyValues.clear();
+    setUnreachableKey(undefined);
     connectionStore = {};
     deletedConnectionIds = [];
     createdConnections = [];

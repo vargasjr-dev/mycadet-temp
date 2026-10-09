@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import {
   type RedirectedSecretRecord,
@@ -6,8 +6,13 @@ import {
 } from "../daemon/conversation-messaging.js";
 import type { SecretPrompter } from "../permissions/secret-prompter.js";
 import { credentialKey } from "../security/credential-key.js";
+import * as secureKeysModule from "../security/secure-keys.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
-const setSecureKeyMock = mock((_key?: string, _value?: string) => true);
+// The REAL secure-keys module pinned to a live memory backend; the set spy
+// is pass-through so the redirect assertions observe real calls.
+const secureKeys = useMemorySecureKeyMap();
+const setSpy = spyOn(secureKeysModule, "setSecureKeyAsync");
 const upsertCredentialMetadataMock = mock(
   (_service?: string, _field?: string, _metadata?: unknown) => {},
 );
@@ -24,13 +29,6 @@ const metadataByKey = new Map<
   }
 >();
 
-mock.module("../security/secure-keys.js", () => ({
-  setSecureKeyAsync: async (key?: string, value?: string) =>
-    setSecureKeyMock(key, value),
-  deleteSecureKeyAsync: async () => "deleted" as const,
-  listSecureKeysAsync: async () => ({ accounts: [], unreachable: false }),
-  _resetBackend: () => {},
-}));
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   assertMetadataWritable: () => {},
@@ -63,10 +61,10 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
 
 describe("session-messaging secret redirect", () => {
   beforeEach(() => {
-    setSecureKeyMock.mockReset();
+    secureKeys.clear();
+    setSpy.mockClear();
     upsertCredentialMetadataMock.mockReset();
     metadataByKey.clear();
-    setSecureKeyMock.mockImplementation(() => true);
   });
 
   test("maps Telegram Bot Token to canonical credential key and emits stored callback", async () => {
@@ -102,7 +100,7 @@ describe("session-messaging secret redirect", () => {
       field: "bot_token",
       label: "Telegram Bot Token",
     });
-    expect(setSecureKeyMock).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       credentialKey("telegram", "bot_token"),
       "123456789:ABCDefGHIJklmnopQRSTuvwxyz012345678",
     );
@@ -152,7 +150,7 @@ describe("session-messaging secret redirect", () => {
       field: "bot_token",
       label: "Telegram Bot Token",
     });
-    expect(setSecureKeyMock).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       credentialKey("telegram", "bot_token"),
       "123456789:ABCDefGHIJklmnopQRSTuvwxyz012345678",
     );
@@ -191,7 +189,7 @@ describe("session-messaging secret redirect", () => {
       field: "bot_token",
       label: "Telegram Bot Token",
     });
-    expect(setSecureKeyMock).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       credentialKey("telegram", "bot_token"),
       "123456789:ABCDefGHIJklmnopQRSTuvwxyz012345678",
     );
@@ -225,7 +223,7 @@ describe("session-messaging secret redirect", () => {
       field: "Some Unknown Secret",
       label: "Secure Credential Entry",
     });
-    expect(setSecureKeyMock).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       credentialKey("detected", "Some Unknown Secret"),
       "opaque-secret",
     );

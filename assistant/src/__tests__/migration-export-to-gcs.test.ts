@@ -62,15 +62,13 @@ mock.module("../permissions/trust-store.js", () => ({
 
 // Force the credential collector onto the unreachable branch so the
 // handler treats it as "export without credentials" (fast, no CES).
-mock.module("../security/secure-keys.js", () => ({
-  listSecureKeysAsync: async () => ({ accounts: [], unreachable: true }),
-  getSecureKeyAsync: async () => undefined,
-  getSecureKeyResultAsync: async () => ({
-    value: undefined,
-    unreachable: true,
-  }),
-  bulkSetSecureKeysAsync: async () => [],
-}));
+// The REAL secure-keys module pinned to a faultable memory backend with the
+// whole vault faulted: the handler treats it as "export without credentials"
+// (fast, no CES).
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
+
+const { setAllUnreachable } = useFaultableSecureKeyMap();
+setAllUnreachable(true);
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks so module-level code picks up the stubs)

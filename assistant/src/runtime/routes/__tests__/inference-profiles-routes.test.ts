@@ -43,13 +43,14 @@ mock.module("../../../providers/platform-proxy/context.js", () => ({
   }),
 }));
 
-let secureKeyResult: { value: string | undefined; unreachable: boolean } = {
-  value: "test-key",
-  unreachable: false,
-};
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async () => secureKeyResult,
-}));
+import { useFaultableSecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../../security/credential-key.js";
+
+// The REAL secure-keys module pinned to a faultable memory backend. The
+// managed cadet key is seeded so the default managed path counts as
+// credentialed; seedConnection seeds each connection's credential path.
+const { store: secureKeyResults, setAllUnreachable } =
+  useFaultableSecureKeyMap();
 
 // commitConfigWrite notifies clients after every successful write so their
 // config views (e.g. the chat composer's model pill) refetch without a manual
@@ -106,6 +107,13 @@ function seedConnection(
       updatedAt: now,
     })
     .run();
+  // The old blanket mock reported a stored key for EVERY account, so a
+  // seeded connection always counted as credentialed; seeding the declared
+  // credential path preserves that for each connection.
+  const credential = (auth as { credential?: string }).credential;
+  if (typeof credential === "string") {
+    secureKeyResults.set(credential, "test-key");
+  }
 }
 
 /** A credentialed API-key connection — the healthy BYO shape. */
@@ -133,7 +141,9 @@ beforeEach(() => {
   setConfig("llm", {});
   initializeProvidersCalls = 0;
   managedProxyEnabled = true;
-  secureKeyResult = { value: "test-key", unreachable: false };
+  secureKeyResults.clear();
+  setAllUnreachable(false);
+  secureKeyResults.set(credentialKey("cadet", "assistant_api_key"), "test-key");
 });
 
 // ── create validation ─────────────────────────────────────────────────────────
@@ -394,7 +404,7 @@ describe("inference-profile writes are availability-aware", () => {
 
   test("falls back to the credential sequence when the managed route is unusable", async () => {
     managedProxyEnabled = false;
-    secureKeyResult = { value: undefined, unreachable: false };
+    secureKeyResults.clear();
     const promise = call("inference_profiles_create", { body: geminiBody });
     await expect(promise).rejects.toThrow(
       /assistant credentials prompt --service gemini --field api_key/,
@@ -409,7 +419,7 @@ describe("inference-profile writes are availability-aware", () => {
   test("missing credential on an existing connection suggests key collection only", async () => {
     managedProxyEnabled = false;
     seedKeyedConnection("gemini");
-    secureKeyResult = { value: undefined, unreachable: false };
+    secureKeyResults.clear();
     const promise = call("inference_profiles_create", { body: geminiBody });
     await expect(promise).rejects.toThrow(
       /assistant credentials prompt --service gemini --field api_key/,
@@ -455,7 +465,7 @@ describe("inference-profile writes are availability-aware", () => {
     // `unknown` means the credential could not be verified, not that it is
     // absent — blocking here would punish a CES outage.
     seedKeyedConnection("gemini");
-    secureKeyResult = { value: undefined, unreachable: true };
+    setAllUnreachable(true);
     const result = (await call("inference_profiles_create", {
       body: geminiBody,
     })) as { warnings: string[] };
@@ -996,7 +1006,7 @@ describe("PUT inference/active-profile validation", () => {
 
   test("allows a profile whose availability is indeterminate", async () => {
     seedKeyedConnection("gemini");
-    secureKeyResult = { value: undefined, unreachable: true };
+    setAllUnreachable(true);
     setConfig("llm", {
       profiles: {
         "my-gemini": {

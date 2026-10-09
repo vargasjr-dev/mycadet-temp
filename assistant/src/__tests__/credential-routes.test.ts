@@ -11,7 +11,6 @@ import type { CredentialMetadata } from "../tools/credentials/metadata-store.js"
 // Mutable mock state (closed over by the mock factories below)
 // ---------------------------------------------------------------------------
 
-let secureStore: Map<string, string>;
 let metadataStore: Map<string, CredentialMetadata>;
 let syncedServices: string[];
 let syncRejects: boolean;
@@ -20,10 +19,14 @@ let credentialIdCounter: number;
 let scrubbedValues: string[];
 let scrubRejects: boolean;
 let liveRecordsUnreachable: boolean;
-let secretGetUnreachable: boolean;
 
 function metaKey(service: string, field: string): string {
   return `${service}:${field}`;
+}
+
+// The REAL credential-key format (the old fake used "<service>:<field>").
+function seedKey(service: string, field: string): string {
+  return `credential/${service}/${field}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,26 +46,13 @@ mock.module("../config/loader.js", () => ({
   getConfig: () => ({}),
 }));
 
-mock.module("../security/credential-key.js", () => ({
-  credentialKey: (service: string, field: string) => `${service}:${field}`,
-}));
 
-mock.module("../security/secure-keys.js", () => ({
-  setSecureKeyAsync: mock(async (key: string, value: string) => {
-    secureStore.set(key, value);
-    return true;
-  }),
-  getSecureKeyAsync: mock(async (key: string) => secureStore.get(key)),
-  getSecureKeyResultAsync: mock(async (key: string) => ({
-    value: secureStore.get(key),
-    unreachable: secretGetUnreachable,
-  })),
-  deleteSecureKeyAsync: mock(async (key: string) =>
-    secureStore.delete(key) ? "deleted" : "not-found",
-  ),
-  getActiveBackendName: () => "encrypted-store",
-  getActiveBackendInfoAsync: mock(async () => ({ backend: "encrypted-store" })),
-}));
+// The REAL secure-keys module pinned to a faultable memory backend; the
+// unreachable toggle simulates a dead vault. Real credentialKey format
+// ("credential/<service>/<field>") applies to every seed.
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
+
+const { store: secureStore, setAllUnreachable } = useFaultableSecureKeyMap();
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   assertMetadataWritable: () => {},
@@ -202,7 +192,8 @@ const SECRET_VALUE = "super-secret-token-value";
 
 describe("credentials routes", () => {
   beforeEach(() => {
-    secureStore = new Map();
+    secureStore.clear();
+    setAllUnreachable(false);
     metadataStore = new Map();
     syncedServices = [];
     syncRejects = false;
@@ -211,7 +202,6 @@ describe("credentials routes", () => {
     scrubbedValues = [];
     scrubRejects = false;
     liveRecordsUnreachable = false;
-    secretGetUnreachable = false;
     _resetRevealSuccessRegistryForTest();
     resetForChatMintRegistryForTest();
     chatCredentialRevealFlag = false;
@@ -226,7 +216,7 @@ describe("credentials routes", () => {
        */
       // GIVEN a stored credential, a staged tool reveal (open proof
       // window), and the staging watermark
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -254,7 +244,7 @@ describe("credentials routes", () => {
        * reveal — recording them would let a UI click promote a staged ref
        * in a concurrent turn whose command merely echoed the invocation.
        */
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -282,7 +272,7 @@ describe("credentials routes", () => {
        * `x-cadet-proxy-server: ipc` — only a direct (unproxied) local call
        * is a tool shell's CLI and may become proof.
        */
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -310,7 +300,7 @@ describe("credentials routes", () => {
        * has no pending proof to satisfy — the registry must not retain its
        * plaintext at all (recording is gated on an open proof window).
        */
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       const watermark = currentRevealSuccessWatermark();
 
       const result = (await revealRoute!.handler({
@@ -325,7 +315,7 @@ describe("credentials routes", () => {
     });
 
     test("a reveal with no principal header records no proof (fails closed)", async () => {
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -342,7 +332,7 @@ describe("credentials routes", () => {
 
   describe("credentials_reveal --for-chat", () => {
     test("rejects forChat when the chat-credential-reveal flag is off", async () => {
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       await expect(
         revealRoute!.handler({
           body: { service: "vercel", field: "api_token", forChat: true },
@@ -353,7 +343,7 @@ describe("credentials routes", () => {
 
     test("a direct local forChat reveal returns the sentinel, records the mint, and no plaintext proof", async () => {
       chatCredentialRevealFlag = true;
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -388,7 +378,7 @@ describe("credentials routes", () => {
 
     test("a gateway-proxied forChat reveal returns the sentinel but records no mint", async () => {
       chatCredentialRevealFlag = true;
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
 
       const result = (await revealRoute!.handler({
         body: {
@@ -412,7 +402,7 @@ describe("credentials routes", () => {
       // nonce to forward. The reveal works, but neither registry records —
       // there is no conversation whose transcript could spend the record.
       chatCredentialRevealFlag = true;
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
 
@@ -433,7 +423,7 @@ describe("credentials routes", () => {
 
     test("a forChat reveal with no principal header records no mint (fails closed)", async () => {
       chatCredentialRevealFlag = true;
-      secureStore.set("vercel:api_token", SECRET_VALUE);
+      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
 
       const result = (await revealRoute!.handler({
         body: { service: "vercel", field: "api_token", forChat: true },
@@ -472,7 +462,7 @@ describe("credentials routes", () => {
       expect(result.credentialId).toBe("cred-1");
 
       // AND the secret is persisted to secure storage
-      expect(secureStore.get("vercel:api_token")).toBe(SECRET_VALUE);
+      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(SECRET_VALUE);
 
       // AND a manual-token connection sync is triggered for the service
       expect(syncedServices).toContain("vercel");
@@ -527,14 +517,14 @@ describe("credentials routes", () => {
 
       expect(result.service).toBe("acp");
       expect(result.field).toBe("claude_oauth_token");
-      expect(secureStore.get("acp:claude_oauth_token")).toBe(
+      expect(secureStore.get(seedKey("acp", "claude_oauth_token"))).toBe(
         "sk-ant-oat01-a-real-oauth-token",
       );
     });
 
     test("stores a pasted Claude token without touching leftover refresh material", async () => {
-      secureStore.set("acp:claude_oauth_refresh_token", "stale-refresh");
-      secureStore.set("acp:claude_oauth_expires_at", "111");
+      secureStore.set(seedKey("acp", "claude_oauth_refresh_token"), "stale-refresh");
+      secureStore.set(seedKey("acp", "claude_oauth_expires_at"), "111");
 
       await setRoute!.handler({
         body: {
@@ -544,13 +534,13 @@ describe("credentials routes", () => {
         },
       });
 
-      expect(secureStore.get("acp:claude_oauth_token")).toBe(
+      expect(secureStore.get(seedKey("acp", "claude_oauth_token"))).toBe(
         "sk-ant-oat01-pasted-token",
       );
-      expect(secureStore.get("acp:claude_oauth_refresh_token")).toBe(
+      expect(secureStore.get(seedKey("acp", "claude_oauth_refresh_token"))).toBe(
         "stale-refresh",
       );
-      expect(secureStore.get("acp:claude_oauth_expires_at")).toBe("111");
+      expect(secureStore.get(seedKey("acp", "claude_oauth_expires_at"))).toBe("111");
     });
 
     test("a successful set scrubs the normalized value from transcripts exactly once", async () => {
@@ -620,7 +610,7 @@ describe("credentials routes", () => {
       ).rejects.toThrow("simulated oauth-store failure");
 
       // THEN the secret was stored and the scrub ran despite the failure
-      expect(secureStore.get("vercel:api_token")).toBe(SECRET_VALUE);
+      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(SECRET_VALUE);
       expect(scrubbedValues).toEqual([SECRET_VALUE]);
     });
 
@@ -669,7 +659,7 @@ describe("credentials routes", () => {
       // THEN the route still returns success and the secret is persisted
       expect(result.service).toBe("vercel");
       expect(result.credentialId).toBe("cred-1");
-      expect(secureStore.get("vercel:api_token")).toBe(SECRET_VALUE);
+      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(SECRET_VALUE);
       expect(scrubbedValues).toEqual([SECRET_VALUE]);
     });
 
@@ -687,7 +677,7 @@ describe("credentials routes", () => {
       })) as SetResponse;
 
       expect(result.service).toBe("vercel");
-      expect(secureStore.get("vercel:claude_oauth_token")).toBe(
+      expect(secureStore.get(seedKey("vercel", "claude_oauth_token"))).toBe(
         "sk-ant-api03-not-an-oauth-token",
       );
     });
@@ -725,7 +715,7 @@ describe("credentials routes", () => {
       });
 
       expect(result.outcome).toBe("stored");
-      expect(secureStore.get("acp:claude_oauth_token")).toBe(
+      expect(secureStore.get(seedKey("acp", "claude_oauth_token"))).toBe(
         "sk-ant-oat01-a-real-oauth-token",
       );
     });
@@ -850,7 +840,7 @@ describe("credentials routes", () => {
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
-      secretGetUnreachable = true;
+      setAllUnreachable(true);
 
       await expect(listRoute!.handler({ body: {} })).rejects.toThrow(
         InternalError,
@@ -868,8 +858,10 @@ describe("credentials routes", () => {
      * store and metadata table as a user's own credentials.
      */
     function seedPlatformCredential(field: string, value: string): string {
+      // The secure store speaks the REAL credentialKey format; the metadata
+      // mock keeps its own service:field addressing.
+      secureStore.set(seedKey("cadet", field), value);
       const key = `cadet:${field}`;
-      secureStore.set(key, value);
       const now = Date.now();
       metadataStore.set(key, {
         credentialId: `cred-${++credentialIdCounter}`,
@@ -960,8 +952,8 @@ describe("credentials routes", () => {
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.has("cadet:assistant_api_key")).toBe(false);
-      expect(secureStore.has("cadet:platform_base_url")).toBe(false);
+      expect(secureStore.has(seedKey("cadet", "assistant_api_key"))).toBe(false);
+      expect(secureStore.has(seedKey("cadet", "platform_base_url"))).toBe(false);
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
@@ -977,7 +969,7 @@ describe("credentials routes", () => {
         }),
       ).rejects.toThrow(/owned by Cadet Cloud/);
 
-      expect(secureStore.get("cadet:platform_base_url")).toBe(
+      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -992,8 +984,8 @@ describe("credentials routes", () => {
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.get("cadet:assistant_api_key")).toBe(PLATFORM_KEY);
-      expect(secureStore.get("cadet:platform_base_url")).toBe(
+      expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(PLATFORM_KEY);
+      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1003,13 +995,13 @@ describe("credentials routes", () => {
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       })) as SetResponse;
       expect(stored.service).toBe("vercel");
-      expect(secureStore.get("vercel:api_token")).toBe(SECRET_VALUE);
+      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(SECRET_VALUE);
 
       const deleted = (await deleteRoute!.handler({
         body: { service: "vercel", field: "api_token" },
       })) as DeleteResponse;
       expect(deleted.field).toBe("api_token");
-      expect(secureStore.has("vercel:api_token")).toBe(false);
+      expect(secureStore.has(seedKey("vercel", "api_token"))).toBe(false);
     });
 
     test("a user credential still inspects and reveals", async () => {
@@ -1041,8 +1033,10 @@ describe("credentials routes", () => {
      * store and metadata table as a user's own credentials.
      */
     function seedPlatformCredential(field: string, value: string): string {
+      // The secure store speaks the REAL credentialKey format; the metadata
+      // mock keeps its own service:field addressing.
+      secureStore.set(seedKey("cadet", field), value);
       const key = `cadet:${field}`;
-      secureStore.set(key, value);
       const now = Date.now();
       metadataStore.set(key, {
         credentialId: `cred-${++credentialIdCounter}`,
@@ -1133,8 +1127,8 @@ describe("credentials routes", () => {
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.has("cadet:assistant_api_key")).toBe(false);
-      expect(secureStore.has("cadet:platform_base_url")).toBe(false);
+      expect(secureStore.has(seedKey("cadet", "assistant_api_key"))).toBe(false);
+      expect(secureStore.has(seedKey("cadet", "platform_base_url"))).toBe(false);
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
@@ -1150,7 +1144,7 @@ describe("credentials routes", () => {
         }),
       ).rejects.toThrow(/owned by Cadet Cloud/);
 
-      expect(secureStore.get("cadet:platform_base_url")).toBe(
+      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1165,8 +1159,8 @@ describe("credentials routes", () => {
         ).rejects.toThrow(ForbiddenError);
       }
 
-      expect(secureStore.get("cadet:assistant_api_key")).toBe(PLATFORM_KEY);
-      expect(secureStore.get("cadet:platform_base_url")).toBe(
+      expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(PLATFORM_KEY);
+      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
         PLATFORM_BASE_URL,
       );
     });
@@ -1176,13 +1170,13 @@ describe("credentials routes", () => {
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       })) as SetResponse;
       expect(stored.service).toBe("vercel");
-      expect(secureStore.get("vercel:api_token")).toBe(SECRET_VALUE);
+      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(SECRET_VALUE);
 
       const deleted = (await deleteRoute!.handler({
         body: { service: "vercel", field: "api_token" },
       })) as DeleteResponse;
       expect(deleted.field).toBe("api_token");
-      expect(secureStore.has("vercel:api_token")).toBe(false);
+      expect(secureStore.has(seedKey("vercel", "api_token"))).toBe(false);
     });
 
     test("a user credential still inspects and reveals", async () => {
@@ -1214,7 +1208,7 @@ describe("credentials routes", () => {
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
-      expect(secureStore.has("vercel:api_token")).toBe(true);
+      expect(secureStore.has(seedKey("vercel", "api_token"))).toBe(true);
 
       // WHEN the credential is deleted
       const result = (await deleteRoute!.handler({
@@ -1229,7 +1223,7 @@ describe("credentials routes", () => {
       });
 
       // AND the secret and metadata are gone
-      expect(secureStore.has("vercel:api_token")).toBe(false);
+      expect(secureStore.has(seedKey("vercel", "api_token"))).toBe(false);
       expect(metadataStore.has("vercel:api_token")).toBe(false);
     });
 
@@ -1241,9 +1235,9 @@ describe("credentials routes", () => {
        * the integration's connected state does not flap.
        */
       // GIVEN a connected Slack channel with bot, app, and user tokens
-      secureStore.set("slack_channel:bot_token", "xoxb-bot");
-      secureStore.set("slack_channel:app_token", "xapp-app");
-      secureStore.set("slack_channel:user_token", "xoxp-user");
+      secureStore.set(seedKey("slack_channel", "bot_token"), "xoxb-bot");
+      secureStore.set(seedKey("slack_channel", "app_token"), "xapp-app");
+      secureStore.set(seedKey("slack_channel", "user_token"), "xoxp-user");
 
       // WHEN only the user_token is deleted
       const result = (await deleteRoute!.handler({
@@ -1258,9 +1252,9 @@ describe("credentials routes", () => {
       });
 
       // AND only the user_token is removed; bot + app tokens remain
-      expect(secureStore.has("slack_channel:user_token")).toBe(false);
-      expect(secureStore.has("slack_channel:bot_token")).toBe(true);
-      expect(secureStore.has("slack_channel:app_token")).toBe(true);
+      expect(secureStore.has(seedKey("slack_channel", "user_token"))).toBe(false);
+      expect(secureStore.has(seedKey("slack_channel", "bot_token"))).toBe(true);
+      expect(secureStore.has(seedKey("slack_channel", "app_token"))).toBe(true);
 
       // AND the OAuth provider is never disconnected
       expect(disconnectedProviders).not.toContain("slack_channel");
@@ -1274,8 +1268,8 @@ describe("credentials routes", () => {
        * OAuth teardown so a connected channel's bot + app tokens are untouched.
        */
       // GIVEN a connected Slack channel with only bot + app tokens (no user_token)
-      secureStore.set("slack_channel:bot_token", "xoxb-bot");
-      secureStore.set("slack_channel:app_token", "xapp-app");
+      secureStore.set(seedKey("slack_channel", "bot_token"), "xoxb-bot");
+      secureStore.set(seedKey("slack_channel", "app_token"), "xapp-app");
 
       // WHEN the absent user_token is deleted
       const call = deleteRoute!.handler({
@@ -1286,8 +1280,8 @@ describe("credentials routes", () => {
       await expect(call).rejects.toBeInstanceOf(BadRequestError);
 
       // AND the bot + app tokens remain and the provider is never disconnected
-      expect(secureStore.has("slack_channel:bot_token")).toBe(true);
-      expect(secureStore.has("slack_channel:app_token")).toBe(true);
+      expect(secureStore.has(seedKey("slack_channel", "bot_token"))).toBe(true);
+      expect(secureStore.has(seedKey("slack_channel", "app_token"))).toBe(true);
       expect(disconnectedProviders).not.toContain("slack_channel");
     });
 
@@ -1297,7 +1291,7 @@ describe("credentials routes", () => {
        * follows the generic path, which tears down the OAuth connection.
        */
       // GIVEN a stored Slack bot_token
-      secureStore.set("slack_channel:bot_token", "xoxb-bot");
+      secureStore.set(seedKey("slack_channel", "bot_token"), "xoxb-bot");
 
       // WHEN the bot_token is deleted
       await deleteRoute!.handler({
@@ -1324,19 +1318,19 @@ describe("credentials routes", () => {
     });
 
     test("deletes only the requested Claude access-token field", async () => {
-      secureStore.set("acp:claude_oauth_token", "sk-ant-oat01-connected");
-      secureStore.set("acp:claude_oauth_refresh_token", "refresh-leftover");
-      secureStore.set("acp:claude_oauth_expires_at", "111");
+      secureStore.set(seedKey("acp", "claude_oauth_token"), "sk-ant-oat01-connected");
+      secureStore.set(seedKey("acp", "claude_oauth_refresh_token"), "refresh-leftover");
+      secureStore.set(seedKey("acp", "claude_oauth_expires_at"), "111");
 
       await deleteRoute!.handler({
         body: { service: "acp", field: "claude_oauth_token" },
       });
 
-      expect(secureStore.has("acp:claude_oauth_token")).toBe(false);
-      expect(secureStore.get("acp:claude_oauth_refresh_token")).toBe(
+      expect(secureStore.has(seedKey("acp", "claude_oauth_token"))).toBe(false);
+      expect(secureStore.get(seedKey("acp", "claude_oauth_refresh_token"))).toBe(
         "refresh-leftover",
       );
-      expect(secureStore.get("acp:claude_oauth_expires_at")).toBe("111");
+      expect(secureStore.get(seedKey("acp", "claude_oauth_expires_at"))).toBe("111");
     });
   });
 });

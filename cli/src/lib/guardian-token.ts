@@ -27,7 +27,45 @@ import {
 
 import { getConfigDir, getConfigDirs } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
+import { isJsonObject } from "./json.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+
+function isTokenExpiry(value: unknown): value is string | number {
+  return typeof value === "string" || typeof value === "number";
+}
+
+/** Narrow untrusted JSON to the token fields whose values have the right
+ * shape; fields absent or malformed come back undefined for callers to
+ * fall back on or reject. */
+function parseGuardianTokenFields(value: unknown): Partial<GuardianTokenData> {
+  if (!isJsonObject(value)) return {};
+  const data: Partial<GuardianTokenData> = {};
+  if (typeof value.guardianPrincipalId === "string") {
+    data.guardianPrincipalId = value.guardianPrincipalId;
+  }
+  if (typeof value.accessToken === "string") {
+    data.accessToken = value.accessToken;
+  }
+  if (isTokenExpiry(value.accessTokenExpiresAt)) {
+    data.accessTokenExpiresAt = value.accessTokenExpiresAt;
+  }
+  if (typeof value.refreshToken === "string") {
+    data.refreshToken = value.refreshToken;
+  }
+  if (isTokenExpiry(value.refreshTokenExpiresAt)) {
+    data.refreshTokenExpiresAt = value.refreshTokenExpiresAt;
+  }
+  if (typeof value.refreshAfter === "string") {
+    data.refreshAfter = value.refreshAfter;
+  }
+  if (typeof value.isNew === "boolean") {
+    data.isNew = value.isNew;
+  }
+  if (typeof value.deviceId === "string") {
+    data.deviceId = value.deviceId;
+  }
+  return data;
+}
 
 const DEVICE_ID_SALT = "mycadet-host-id";
 
@@ -470,19 +508,24 @@ export async function refreshGuardianTokenResult(
       return classifyRefreshHttpStatus(response.status);
     }
 
-    const json = (await response.json()) as Record<string, unknown>;
+    const parsed = parseGuardianTokenFields(await response.json());
+    if (parsed.accessToken == null) {
+      return {
+        ok: false,
+        status: 502,
+        error: "Assistant gateway returned a malformed token refresh response",
+      };
+    }
     const refreshed: GuardianTokenData = {
       guardianPrincipalId:
-        (json.guardianPrincipalId as string) ?? tokenData.guardianPrincipalId,
-      accessToken: json.accessToken as string,
+        parsed.guardianPrincipalId ?? tokenData.guardianPrincipalId,
+      accessToken: parsed.accessToken,
       accessTokenExpiresAt:
-        (json.accessTokenExpiresAt as string | number) ??
-        tokenData.accessTokenExpiresAt,
-      refreshToken: (json.refreshToken as string) ?? tokenData.refreshToken,
+        parsed.accessTokenExpiresAt ?? tokenData.accessTokenExpiresAt,
+      refreshToken: parsed.refreshToken ?? tokenData.refreshToken,
       refreshTokenExpiresAt:
-        (json.refreshTokenExpiresAt as string | number) ??
-        tokenData.refreshTokenExpiresAt,
-      refreshAfter: (json.refreshAfter as string) ?? tokenData.refreshAfter,
+        parsed.refreshTokenExpiresAt ?? tokenData.refreshTokenExpiresAt,
+      refreshAfter: parsed.refreshAfter ?? tokenData.refreshAfter,
       isNew: false,
       deviceId: tokenData.deviceId,
       leasedAt: new Date().toISOString(),
@@ -583,15 +626,28 @@ export async function leaseGuardianToken(
     throw new Error(`guardian/init failed (${response.status}): ${body}`);
   }
 
-  const json = (await response.json()) as Record<string, unknown>;
+  const parsed = parseGuardianTokenFields(await response.json());
+  if (
+    parsed.guardianPrincipalId == null ||
+    parsed.accessToken == null ||
+    parsed.accessTokenExpiresAt == null ||
+    parsed.refreshToken == null ||
+    parsed.refreshTokenExpiresAt == null ||
+    parsed.refreshAfter == null ||
+    parsed.isNew == null
+  ) {
+    throw new Error(
+      `guardian/init returned a malformed token response (${response.status})`,
+    );
+  }
   const tokenData: GuardianTokenData = {
-    guardianPrincipalId: json.guardianPrincipalId as string,
-    accessToken: json.accessToken as string,
-    accessTokenExpiresAt: json.accessTokenExpiresAt as string | number,
-    refreshToken: json.refreshToken as string,
-    refreshTokenExpiresAt: json.refreshTokenExpiresAt as string | number,
-    refreshAfter: json.refreshAfter as string,
-    isNew: json.isNew as boolean,
+    guardianPrincipalId: parsed.guardianPrincipalId,
+    accessToken: parsed.accessToken,
+    accessTokenExpiresAt: parsed.accessTokenExpiresAt,
+    refreshToken: parsed.refreshToken,
+    refreshTokenExpiresAt: parsed.refreshTokenExpiresAt,
+    refreshAfter: parsed.refreshAfter,
+    isNew: parsed.isNew,
     deviceId,
     leasedAt: new Date().toISOString(),
   };
@@ -675,7 +731,10 @@ export function seedGuardianTokenFromSiblingEnv(assistantId: string): boolean {
   for (const { path: sibling } of candidates) {
     try {
       const raw = readFileSync(sibling);
-      const parsed = JSON.parse(raw.toString("utf-8")) as GuardianTokenData;
+      const parsed = parseGuardianTokenFields(
+        JSON.parse(raw.toString("utf-8")),
+      );
+      if (parsed.refreshTokenExpiresAt == null) continue;
       const refreshExpiry = new Date(parsed.refreshTokenExpiresAt).getTime();
       if (!Number.isFinite(refreshExpiry) || refreshExpiry <= now) continue;
       const dir = dirname(destPath);

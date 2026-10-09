@@ -4,15 +4,14 @@ import {
   beforeEach,
   describe,
   expect,
-  mock,
   test,
 } from "bun:test";
 
-mock.module("../security/secure-keys.js", () => ({
-  deleteSecureKeyAsync: () => Promise.resolve("deleted" as const),
-  setSecureKeyAsync: () => Promise.resolve(true),
-  getSecureKeyAsync: () => Promise.resolve(undefined),
-}));
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
+// The REAL secure-keys module pinned to an empty memory backend: no
+// credentials configured, no keychain access.
+useMemorySecureKeyMap();
 
 import type { AssistantConfig } from "../config/schema.js";
 import { listProviders, seedProviders } from "../oauth/oauth-store.js";

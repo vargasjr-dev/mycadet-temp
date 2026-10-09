@@ -5,13 +5,12 @@ import type { RegisterWebhookRouteIpcParams } from "@mycadet/gateway-client";
 import { setIngressPublicBaseUrl } from "../config/env.js";
 import type { IpcRegisterWebhookRouteResult } from "../ipc/gateway-client.js";
 import { credentialKey } from "../security/credential-key.js";
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 let mockIsPlatform = true;
 let mockTunnelWebhooksEnabled = false;
 let mockPlatformBaseUrl = "";
 let mockPlatformAssistantId = "";
-let mockSecureKeys: Record<string, string> = {};
-let mockSecureKeysUnreachable = false;
 let mockConfig: { ingress?: { publicBaseUrl?: string; enabled?: boolean } } =
   {};
 
@@ -63,16 +62,9 @@ mock.module("../ipc/gateway-client.js", () => ({
   },
 }));
 
-const actualSecureKeys = await import("../security/secure-keys.js");
-mock.module("../security/secure-keys.js", () => ({
-  ...actualSecureKeys,
-  getSecureKeyAsync: async (key: string) =>
-    mockSecureKeysUnreachable ? undefined : (mockSecureKeys[key] ?? undefined),
-  getSecureKeyResultAsync: async (key: string) =>
-    mockSecureKeysUnreachable
-      ? { value: undefined, unreachable: true }
-      : { value: mockSecureKeys[key] ?? undefined, unreachable: false },
-}));
+// The REAL secure-keys module pinned to a faultable memory backend: the
+// unreachable toggle simulates a dead vault, seeds are real credential keys.
+const { store: secureKeyStore, setAllUnreachable } = useFaultableSecureKeyMap();
 
 const actualLoader = await import("../config/loader.js");
 mock.module("../config/loader.js", () => ({
@@ -97,8 +89,8 @@ describe("platform callback registration", () => {
     mockIsPlatform = true;
     mockPlatformBaseUrl = "";
     mockPlatformAssistantId = "";
-    mockSecureKeys = {};
-    mockSecureKeysUnreachable = false;
+    secureKeyStore.clear();
+    setAllUnreachable(false);
     mockConfig = {};
     setIngressPublicBaseUrl(undefined);
     delete process.env.ASSISTANT_API_KEY;
@@ -115,11 +107,9 @@ describe("platform callback registration", () => {
   });
 
   test("resolves managed callback context from stored credentials", async () => {
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-managed-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -133,11 +123,9 @@ describe("platform callback registration", () => {
 
   test("self-hosted assistant with stored credentials is enabled without IS_PLATFORM", async () => {
     mockIsPlatform = false;
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-self-hosted-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -177,7 +165,7 @@ describe("platform callback registration", () => {
   test("reports the key state as unknown when the store did not answer", async () => {
     // A client that provisions a key when it sees none must not be told
     // "none" by a daemon whose store did not answer.
-    mockSecureKeysUnreachable = true;
+    setAllUnreachable(true);
     mockPlatformBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
 
@@ -189,7 +177,7 @@ describe("platform callback registration", () => {
   });
 
   test("an environment key counts as present even when the store did not answer", async () => {
-    mockSecureKeysUnreachable = true;
+    setAllUnreachable(true);
     process.env.ASSISTANT_API_KEY = "env-key";
     mockPlatformBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
@@ -201,11 +189,9 @@ describe("platform callback registration", () => {
   });
 
   test("registerCallbackRoute falls back to assistant API key auth", async () => {
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-managed-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
 
     globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -248,11 +234,9 @@ describe("platform callback registration", () => {
     mockConfig = {
       ingress: { publicBaseUrl: "https://my-assistant.example.com" },
     };
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-self-hosted-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -289,11 +273,9 @@ describe("platform callback registration", () => {
     mockIsPlatform = false;
     mockConfig = {};
     setIngressPublicBaseUrl("https://detected.example.com/");
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-self-hosted-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -329,11 +311,9 @@ describe("platform callback registration", () => {
   test("self-hosted registerCallbackRoute omits callback_base_url when no ingress is available", async () => {
     mockIsPlatform = false;
     mockConfig = {};
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-self-hosted-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -370,11 +350,9 @@ describe("platform callback registration", () => {
   test("platform-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
     mockIsPlatform = true;
     mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-managed-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -431,11 +409,9 @@ describe("resolveCallbackUrl resolution order", () => {
   }
 
   function seedPlatformCredentials(): void {
-    mockSecureKeys[credentialKey("cadet", "platform_base_url")] =
-      "https://platform.example.com";
+    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
-      "ast-managed-key";
+    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
   }
 
   let registerCalls: number;
@@ -445,8 +421,8 @@ describe("resolveCallbackUrl resolution order", () => {
     mockTunnelWebhooksEnabled = false;
     mockPlatformBaseUrl = "";
     mockPlatformAssistantId = "";
-    mockSecureKeys = {};
-    mockSecureKeysUnreachable = false;
+    secureKeyStore.clear();
+    setAllUnreachable(false);
     mockConfig = {};
     setIngressPublicBaseUrl(undefined);
     delete process.env.ASSISTANT_API_KEY;

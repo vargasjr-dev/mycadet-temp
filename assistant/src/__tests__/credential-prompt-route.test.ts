@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import type { SlackChannelConfigResult } from "../daemon/handlers/config-slack-channel.js";
 import type { SecretPromptResult } from "../permissions/secret-prompt-types.js";
@@ -16,7 +16,9 @@ let secretResult: SecretPromptResult = {
 let existingMetadata: Record<string, unknown> | undefined;
 let slackConfigResult: SlackChannelConfigResult;
 let slackConfigArgs: Array<(string | undefined)[]>;
-let secureKeyWrites: Array<{ key: string; value: string }>;
+import * as secureKeysModule from "../security/secure-keys.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
+
 let transientInjections: Array<{
   service: string;
   field: string;
@@ -57,16 +59,11 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
   ),
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  setSecureKeyAsync: mock(async (key: string, value: string) => {
-    secureKeyWrites.push({ key, value });
-    return true;
-  }),
-}));
-
-mock.module("../security/credential-key.js", () => ({
-  credentialKey: (service: string, field: string) => `${service}:${field}`,
-}));
+// The REAL secure-keys module pinned to a live memory backend; the set spy
+// is pass-through so the write assertions observe the real keys (real
+// credentialKey format: "credential/<service>/<field>").
+useMemorySecureKeyMap();
+const setSpy = spyOn(secureKeysModule, "setSecureKeyAsync");
 
 mock.module("../oauth/manual-token-connection.js", () => ({
   syncManualTokenConnection: mock(async (service: string) => {
@@ -148,7 +145,7 @@ describe("credentials/prompt route", () => {
     existingMetadata = undefined;
     slackConfigResult = slackResult({});
     slackConfigArgs = [];
-    secureKeyWrites = [];
+    setSpy.mockClear();
     transientInjections = [];
     syncedServices = [];
     conversationExists = true;
@@ -221,8 +218,8 @@ describe("credentials/prompt route", () => {
 
     // THEN the value is written to secure storage
     expect(result.ok).toBe(true);
-    expect(secureKeyWrites).toEqual([
-      { key: "stripe:api_key", value: "secret-value" },
+    expect(setSpy.mock.calls).toEqual([
+      ["credential/stripe/api_key", "secret-value"],
     ]);
 
     // AND the manual token connection is synced for the service
@@ -300,7 +297,7 @@ describe("credentials/prompt route", () => {
 
     // THEN the token is routed through the Slack channel config, not secure storage
     expect(slackConfigArgs).toEqual([["secret-value", undefined, undefined]]);
-    expect(secureKeyWrites).toEqual([]);
+    expect(setSpy).not.toHaveBeenCalled();
 
     // AND the connection status is surfaced as the response message
     expect(result.ok).toBe(true);
@@ -376,7 +373,7 @@ describe("credentials/prompt route", () => {
     expect(transientInjections).toEqual([
       { service: "stripe", field: "api_key", value: "secret-value" },
     ]);
-    expect(secureKeyWrites).toEqual([]);
+    expect(setSpy).not.toHaveBeenCalled();
 
     // AND the response message notes the value was not saved
     expect(result.ok).toBe(true);
@@ -474,7 +471,7 @@ describe("credentials/prompt route", () => {
     expect(result.error).toBe("Cancelled by the user");
 
     // AND nothing was written to secure storage
-    expect(secureKeyWrites).toEqual([]);
+    expect(setSpy).not.toHaveBeenCalled();
   });
 
   test("reports a timeout as a failure, not a cancel", async () => {
@@ -606,7 +603,7 @@ describe("credentials/prompt route", () => {
     expect(capturedMetadata).toBeUndefined();
 
     // AND nothing was written to secure storage yet
-    expect(secureKeyWrites).toEqual([]);
+    expect(setSpy).not.toHaveBeenCalled();
   });
 
   test("reports a superseded prompt as a failure, not a cancel", async () => {
@@ -692,7 +689,7 @@ describe("credentials/prompt route", () => {
 
     // AND no secure prompt was issued and nothing was stored
     expect(capturedSecretParams).toBeUndefined();
-    expect(secureKeyWrites).toEqual([]);
+    expect(setSpy).not.toHaveBeenCalled();
   });
 
   test("still prompts when NO Connect card has been raised (proactive prompt must not dead-end)", async () => {
