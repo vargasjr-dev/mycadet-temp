@@ -21,7 +21,6 @@ import { compileApp } from "./app-compiler.js";
 import type { SigningCallback } from "./bundle-signer.js";
 import { signBundle } from "./bundle-signer.js";
 import type { AppManifest } from "./manifest.js";
-import { serializeManifest } from "./manifest.js";
 
 const bundlerLog = getLogger("app-bundler");
 
@@ -173,7 +172,7 @@ export async function packageApp(
   const zip = new JSZip();
 
   // Add manifest.json at root level
-  zip.file("manifest.json", serializeManifest(manifest));
+  zip.file("manifest.json", JSON.stringify(manifest, null, 2));
 
   // Add compiled dist/ files
   for (const file of compiledFiles) {

@@ -12,10 +12,6 @@ import { getLogger } from "../util/logger.js";
 
 const log = getLogger("document-comments-store");
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 /** A comment record with camelCase fields mapped from snake_case DB columns. */
 export interface CommentRecord {
   id: string;
@@ -51,10 +47,6 @@ interface CommentRow {
   updated_at: number;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function mapRowToComment(row: CommentRow): CommentRecord {
   return {
     id: row.id,
@@ -73,10 +65,6 @@ function mapRowToComment(row: CommentRow): CommentRecord {
     updatedAt: row.updated_at,
   };
 }
-
-// ---------------------------------------------------------------------------
-// CRUD
-// ---------------------------------------------------------------------------
 
 export function createComment(params: {
   surfaceId: string;

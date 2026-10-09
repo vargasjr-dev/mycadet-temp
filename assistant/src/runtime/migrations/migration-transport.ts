@@ -25,10 +25,6 @@
  * the global `fetch`). Auth headers are passed via `TransportConfig`.
  */
 
-// ---------------------------------------------------------------------------
-// Transport configuration
-// ---------------------------------------------------------------------------
-
 export type MigrationTarget = "runtime" | "managed";
 
 export interface TransportConfig {
@@ -50,10 +46,6 @@ export interface TransportConfig {
   /** Custom fetch implementation for testing or environments without global fetch. */
   fetchFn?: typeof fetch;
 }
-
-// ---------------------------------------------------------------------------
-// Shared types — validation
-// ---------------------------------------------------------------------------
 
 export interface ValidationError {
   code: string;
@@ -103,10 +95,6 @@ export interface Manifest {
   export_options: ManifestExportOptions;
 }
 
-// ---------------------------------------------------------------------------
-// Validate
-// ---------------------------------------------------------------------------
-
 export interface ValidateSuccessResponse {
   is_valid: true;
   errors: ValidationError[];
@@ -121,10 +109,6 @@ export interface ValidateFailureResponse {
 export type ValidateResponse =
   | ValidateSuccessResponse
   | ValidateFailureResponse;
-
-// ---------------------------------------------------------------------------
-// Export
-// ---------------------------------------------------------------------------
 
 /** Runtime export returns the binary archive directly. */
 export interface ExportRuntimeResult {
@@ -143,10 +127,6 @@ export interface ExportManagedResult {
 }
 
 type ExportResult = ExportRuntimeResult | ExportManagedResult;
-
-// ---------------------------------------------------------------------------
-// Import preflight
-// ---------------------------------------------------------------------------
 
 export interface ImportPreflightFileReport {
   path: string;
@@ -204,10 +184,6 @@ export type ImportPreflightResponse =
   | ImportPreflightValidationFailedResponse
   | ImportPreflightConflictResponse;
 
-// ---------------------------------------------------------------------------
-// Import commit
-// ---------------------------------------------------------------------------
-
 export interface ImportedFileReport {
   path: string;
   disk_path: string;
@@ -250,10 +226,6 @@ export type ImportCommitResponse =
   | ImportCommitSuccessResponse
   | ImportCommitFailureResponse;
 
-// ---------------------------------------------------------------------------
-// Job status polling (managed only)
-// ---------------------------------------------------------------------------
-
 export interface JobStatusPending {
   status: "pending" | "processing";
   jobId: string;
@@ -278,10 +250,6 @@ export type JobStatusResponse =
   | JobStatusComplete
   | JobStatusFailed;
 
-// ---------------------------------------------------------------------------
-// Transport error
-// ---------------------------------------------------------------------------
-
 export class MigrationTransportError extends Error {
   readonly statusCode: number;
   readonly responseBody: string;
@@ -293,10 +261,6 @@ export class MigrationTransportError extends Error {
     this.responseBody = responseBody;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 function resolveFetch(config: TransportConfig): typeof fetch {
   return config.fetchFn ?? globalThis.fetch;
@@ -359,10 +323,6 @@ async function assertOk(response: Response, context: string): Promise<void> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Transport methods
-// ---------------------------------------------------------------------------
 
 /**
  * Validate a .vbundle archive.
@@ -515,10 +475,6 @@ export async function importCommit(
   return (await response.json()) as ImportCommitResponse;
 }
 
-// ---------------------------------------------------------------------------
-// Managed-only: job status polling
-// ---------------------------------------------------------------------------
-
 /**
  * Poll the status of a managed export job.
  *
@@ -529,33 +485,7 @@ export async function pollExportStatus(
   config: TransportConfig,
   jobId: string,
 ): Promise<JobStatusResponse> {
-  if (config.target !== "managed") {
-    throw new Error("pollExportStatus is only supported for managed targets");
-  }
-
-  const doFetch = resolveFetch(config);
-  const base = config.baseURL.replace(/\/+$/, "");
-  const url = `${base}/v1/migrations/export/${encodeURIComponent(
-    jobId,
-  )}/status/`;
-
-  const response = await doFetch(url, {
-    method: "GET",
-    headers: buildHeaders(config),
-  });
-
-  await assertOk(response, `export status (job ${jobId})`);
-  const json = (await response.json()) as Record<string, unknown>;
-  return {
-    status: json.status as JobStatusResponse["status"],
-    jobId: (json.job_id as string) ?? jobId,
-    ...(json.download_url ? { downloadUrl: json.download_url as string } : {}),
-    ...(json.progress !== undefined
-      ? { progress: json.progress as number }
-      : {}),
-    ...(json.error ? { error: json.error as string } : {}),
-    ...(json.result !== undefined ? { result: json.result } : {}),
-  } as JobStatusResponse;
+  return fetchJobStatus(config, "export", jobId);
 }
 
 /**
@@ -568,13 +498,58 @@ export async function pollImportStatus(
   config: TransportConfig,
   jobId: string,
 ): Promise<JobStatusResponse> {
+  return fetchJobStatus(config, "import", jobId);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function jobStatusFromJson(
+  json: unknown,
+  fallbackJobId: string,
+): JobStatusResponse | null {
+  if (!isRecord(json)) {return null;}
+  const jobId = typeof json.job_id === "string" ? json.job_id : fallbackJobId;
+
+  if (json.status === "complete") {
+    const status: JobStatusComplete = { status: "complete", jobId };
+    if (typeof json.download_url === "string") {
+      status.downloadUrl = json.download_url;
+    }
+    if (json.result !== undefined) {status.result = json.result;}
+    return status;
+  }
+  if (json.status === "failed") {
+    return {
+      status: "failed",
+      jobId,
+      error:
+        typeof json.error === "string" ? json.error : "unknown export error",
+    };
+  }
+  if (json.status === "pending" || json.status === "processing") {
+    const status: JobStatusPending = { status: json.status, jobId };
+    if (typeof json.progress === "number") {status.progress = json.progress;}
+    return status;
+  }
+  return null;
+}
+
+async function fetchJobStatus(
+  config: TransportConfig,
+  kind: "export" | "import",
+  jobId: string,
+): Promise<JobStatusResponse> {
   if (config.target !== "managed") {
-    throw new Error("pollImportStatus is only supported for managed targets");
+    throw new Error(
+      `poll${kind === "export" ? "Export" : "Import"}Status is only supported for managed targets`,
+    );
   }
 
   const doFetch = resolveFetch(config);
   const base = config.baseURL.replace(/\/+$/, "");
-  const url = `${base}/v1/migrations/import/${encodeURIComponent(
+  const url = `${base}/v1/migrations/${kind}/${encodeURIComponent(
     jobId,
   )}/status/`;
 
@@ -583,22 +558,17 @@ export async function pollImportStatus(
     headers: buildHeaders(config),
   });
 
-  await assertOk(response, `import status (job ${jobId})`);
-  const json = (await response.json()) as Record<string, unknown>;
-  return {
-    status: json.status as JobStatusResponse["status"],
-    jobId: (json.job_id as string) ?? jobId,
-    ...(json.progress !== undefined
-      ? { progress: json.progress as number }
-      : {}),
-    ...(json.error ? { error: json.error as string } : {}),
-    ...(json.result !== undefined ? { result: json.result } : {}),
-  } as JobStatusResponse;
+  await assertOk(response, `${kind} status (job ${jobId})`);
+  const status = jobStatusFromJson(await response.json(), jobId);
+  if (!status) {
+    throw new MigrationTransportError(
+      `${kind} status (job ${jobId}): malformed response`,
+      response.status,
+      "",
+    );
+  }
+  return status;
 }
-
-// ---------------------------------------------------------------------------
-// Convenience: poll until terminal state
-// ---------------------------------------------------------------------------
 
 interface PollOptions {
   /** Polling interval in milliseconds. Defaults to 2000. */
