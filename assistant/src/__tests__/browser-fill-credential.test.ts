@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -105,16 +105,14 @@ mock.module("../tools/network/url-safety.js", () => ({
   sanitizeUrlForOutput: (url: URL) => url.href,
 }));
 
-let mockGetSecureKey: ReturnType<typeof mock>;
-let mockGetCredentialMetadata: ReturnType<typeof mock>;
+import * as secureKeysModule from "../security/secure-keys.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (...args: unknown[]) => mockGetSecureKey(...args),
-  setSecureKeyAsync: async () => true,
-  deleteSecureKeyAsync: async () => "deleted",
-  listSecureKeysAsync: async () => ({ accounts: [], unreachable: false }),
-  _resetBackend: () => {},
-}));
+// The REAL secure-keys module pinned to a live memory backend; the get spy
+// is pass-through so the broker assertions still observe the exact key read.
+const secureKeys = useMemorySecureKeyMap();
+const getSpy = spyOn(secureKeysModule, "getSecureKeyAsync");
+let mockGetCredentialMetadata: ReturnType<typeof mock>;
 
 mock.module("../tools/credentials/metadata-store.js", () => ({
   getCredentialMetadata: (...args: unknown[]) =>
@@ -200,7 +198,10 @@ describe("executeBrowserFillCredential", () => {
     resetMockPage();
     resetCdpMock();
     snapshotBackendNodeMaps.clear();
-    mockGetSecureKey = mock(() => "super-secret-password");
+    secureKeys.clear();
+    secureKeys.set(credentialKey("gmail", "password"), "super-secret-password");
+    secureKeys.set(credentialKey("github", "token"), "super-secret-password");
+    getSpy.mockClear();
     mockGetCredentialMetadata = mock((service: string, field: string) =>
       defaultMetadata(service, field),
     );
@@ -235,7 +236,7 @@ describe("executeBrowserFillCredential", () => {
     const insertCall = sendCalls.find((c) => c.method === "Input.insertText")!;
     expect(insertCall.params).toEqual({ text: "super-secret-password" });
 
-    expect(mockGetSecureKey).toHaveBeenCalledWith(
+    expect(getSpy).toHaveBeenCalledWith(
       credentialKey("gmail", "password"),
     );
 
@@ -314,7 +315,7 @@ describe("executeBrowserFillCredential", () => {
   });
 
   test("returns error when metadata exists but no stored value", async () => {
-    mockGetSecureKey = mock(() => undefined);
+    secureKeys.clear();
     snapshotBackendNodeMaps.set("test-conversation", new Map([["e1", 555]]));
     const result = await executeBrowserFillCredential(
       { service: "slack", field: "api_key", element_id: "e1" },
@@ -433,7 +434,7 @@ describe("executeBrowserFillCredential", () => {
         "gmail",
         "password",
       );
-      expect(mockGetSecureKey).toHaveBeenCalledWith(
+      expect(getSpy).toHaveBeenCalledWith(
         credentialKey("gmail", "password"),
       );
     });

@@ -8,20 +8,18 @@
  *  - POST /v1/conversations/inference-profile-session/close (inference_profile_close)
  */
 
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 // Stub the event hub to avoid spinning up real SSE infrastructure.
 setBroadcastOverrideForTesting(() => {});
 setHubPublishOverrideForTesting(() => {});
 
-// Pinning consults connection availability, which reads the credential store.
-// Report a stored key so a seeded connection counts as credentialed.
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async () => ({
-    value: "test-key",
-    unreachable: false,
-  }),
-}));
+// The REAL secure-keys module pinned to a live memory backend; seeded
+// connections get their declared credential path seeded (see
+// seedKeyedConnection) so pinning still counts them as credentialed.
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+
+const secureKeys = useMemorySecureKeyMap();
 
 import { eq } from "drizzle-orm";
 
@@ -64,6 +62,8 @@ await initializeDb();
  * profile is only a valid pin target with a connection behind it.
  */
 function seedKeyedConnection(provider: string): void {
+  const credential = `credential/${provider}/api_key`;
+  secureKeys.set(credential, "test-key");
   const now = Date.now();
   getDb()
     .insert(providerConnections)
@@ -72,7 +72,7 @@ function seedKeyedConnection(provider: string): void {
       provider,
       auth: JSON.stringify({
         type: "api_key",
-        credential: `credential/${provider}/api_key`,
+        credential,
       }),
       createdAt: now,
       updatedAt: now,

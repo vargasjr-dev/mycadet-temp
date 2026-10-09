@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 import type { AssistantConfig } from "../../config/types.js";
+import { credentialKey } from "../../security/credential-key.js";
 import {
   clearEmbeddingBackendCache,
   customEmbeddingSpaceIdentity,
@@ -16,12 +18,16 @@ import {
 } from "./embedding-billing-breaker.js";
 import { OpenAIEmbeddingBackend } from "./embedding-openai.js";
 
-const getProviderKeyAsyncMock = mock(
-  async (_provider: string): Promise<string | undefined> => undefined,
-);
-mock.module("../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: getProviderKeyAsyncMock,
-}));
+// The REAL secure-keys module pinned to a live memory backend; per-test
+// provider keys are seeded under their real credentialKey lookups.
+const secureKeys = useMemorySecureKeyMap();
+function setKey(provider: string, value: string | undefined): void {
+  if (value === undefined) {
+    secureKeys.delete(credentialKey(provider, "api_key"));
+  } else {
+    secureKeys.set(credentialKey(provider, "api_key"), value);
+  }
+}
 
 const DISABLED_PROXY_CONTEXT = {
   enabled: false,
@@ -107,8 +113,7 @@ describe("isEmbeddingDimensionAvailable", () => {
   afterEach(() => {
     clearEmbeddingBackendCache();
     _resetEmbeddingBillingBreaker();
-    getProviderKeyAsyncMock.mockReset();
-    getProviderKeyAsyncMock.mockImplementation(async () => undefined);
+    secureKeys.clear();
   });
 
   function localConfigWithVectorSize(vectorSize: number): AssistantConfig {
@@ -195,9 +200,7 @@ describe("isEmbeddingDimensionAvailable", () => {
     // configured OpenAI fallback produces 3072. `embedWithBackend` would fall
     // through to the fallback, so dense recall must stay available rather than
     // being disabled because only the primary mismatches.
-    getProviderKeyAsyncMock.mockImplementation(async (p: string) =>
-      p === "openai" ? "sk-test" : undefined,
-    );
+    setKey("openai", "sk-test");
     const config = {
       // `selectFallbackBackends` probes ollama via `resolveCallSiteConfig`, which
       // reads `llm.default`; provide a minimal one so the fallback chain builds.
@@ -302,8 +305,7 @@ describe("managed-proxy Gemini fallback to direct key", () => {
   afterEach(() => {
     globalThis.fetch = originalFetch;
     clearEmbeddingBackendCache();
-    getProviderKeyAsyncMock.mockReset();
-    getProviderKeyAsyncMock.mockImplementation(async () => undefined);
+    secureKeys.clear();
     resolveManagedProxyContextMock.mockReset();
     resolveManagedProxyContextMock.mockImplementation(
       async () => DISABLED_PROXY_CONTEXT,
@@ -314,9 +316,7 @@ describe("managed-proxy Gemini fallback to direct key", () => {
     resolveManagedProxyContextMock.mockImplementation(
       async () => ENABLED_PROXY_CONTEXT,
     );
-    getProviderKeyAsyncMock.mockImplementation(async (provider) =>
-      provider === "gemini" ? "direct-key" : undefined,
-    );
+    setKey("gemini", "direct-key");
 
     const result = await embedWithBackend(GEMINI_CONFIG, ["hello world"]);
 
@@ -351,9 +351,7 @@ describe("managed-proxy Gemini fallback to direct key", () => {
   });
 
   test("uses the direct key as primary when the managed proxy is disabled", async () => {
-    getProviderKeyAsyncMock.mockImplementation(async (provider) =>
-      provider === "gemini" ? "direct-key" : undefined,
-    );
+    setKey("gemini", "direct-key");
 
     const result = await embedWithBackend(GEMINI_CONFIG, ["another input"]);
 
@@ -385,14 +383,11 @@ function customConfig(overrides: {
 describe("custom OpenAI-compatible embedding backend selection", () => {
   afterEach(() => {
     clearEmbeddingBackendCache();
-    getProviderKeyAsyncMock.mockReset();
-    getProviderKeyAsyncMock.mockImplementation(async () => undefined);
+    secureKeys.clear();
   });
 
   test("selects a custom backend with a trimmed baseUrl", async () => {
-    getProviderKeyAsyncMock.mockImplementation(async (provider) =>
-      provider === "custom" ? "gw-key" : undefined,
-    );
+    setKey("custom", "gw-key");
     const { backend, reason } = await selectEmbeddingBackend(
       customConfig({
         baseUrl: "http://127.0.0.1:4000/v1/",

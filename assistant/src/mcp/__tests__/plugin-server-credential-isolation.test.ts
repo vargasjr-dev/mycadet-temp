@@ -11,20 +11,23 @@
  * forgets to pass something.
  */
 
-import { beforeEach, describe, expect, jest, mock, test } from "bun:test";
+import { beforeEach, describe, expect, jest, mock, spyOn, test } from "bun:test";
 
-const getSecureKeyAsync = jest.fn(
-  async (_key: string): Promise<string | null> => "stored-oauth-token",
-);
+import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
+import * as secureKeysModule from "../../security/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend, seeded under
+// the plugin credential key the provider stores. The spy is pass-through so
+// the isolation assertions can still observe the exact keys it reads.
+useMemorySecureKeys({
+  "mcp-plugin/v1/dW5hYnlzcw/dW5hYnlzcw/stored-oauth-token/tokens":
+    "stored-oauth-token",
+});
+const getSecureKeyAsync = spyOn(secureKeysModule, "getSecureKeyAsync");
 const getMcpHeaders = jest.fn(async (_serverId: string) => ({
   Authorization: "Bearer workspace-secret",
 }));
 
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync,
-  setSecureKeyAsync: jest.fn(async () => true),
-  deleteSecureKeyAsync: jest.fn(async () => "deleted"),
-}));
 
 mock.module("../mcp-header-store.js", () => ({
   getMcpHeaders,
@@ -115,12 +118,12 @@ describe("plugin-declared MCP servers", () => {
     const { McpClient } = await import("../client.js");
     const endpointA = "https://mcp.example.com/a";
     const endpointB = "https://mcp.example.com/b";
-    getSecureKeyAsync.mockImplementation(async (key: string) =>
+    getSecureKeyAsync.mockImplementation(async (key: string): Promise<string | undefined> =>
       key.endsWith("/tokens") &&
       key.includes("mcp-plugin/") &&
       getSecureKeyAsync.mock.calls.length === 1
         ? "stored-oauth-token"
-        : null,
+        : undefined,
     );
     const client = new McpClient("unabyss", pluginHttpServer(endpointA));
     const providers: unknown[] = [];

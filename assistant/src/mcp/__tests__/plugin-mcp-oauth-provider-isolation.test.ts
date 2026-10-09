@@ -1,23 +1,11 @@
-import { beforeEach, describe, expect, jest, mock, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 import type { McpOAuthCredentialTarget } from "../credential-target.js";
 
-const store = new Map<string, string>();
-
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: jest.fn(async (key: string) => store.get(key)),
-  setSecureKeyAsync: jest.fn(async (key: string, value: string) => {
-    store.set(key, value);
-    return true;
-  }),
-  deleteSecureKeyAsync: jest.fn(async (key: string) =>
-    store.delete(key) ? "deleted" : "not-found",
-  ),
-  listSecureKeysAsync: jest.fn(async () => ({
-    accounts: [...store.keys()],
-    unreachable: false,
-  })),
-}));
+// The REAL secure-keys module pinned to a live memory backend — same KV
+// semantics the old inline fake reimplemented.
+const store = useMemorySecureKeyMap();
 
 const { McpOAuthProvider } = await import("../mcp-oauth-provider.js");
 const { pluginMcpOAuthCredentialTarget, workspaceMcpOAuthCredentialTarget } =

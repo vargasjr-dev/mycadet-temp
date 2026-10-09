@@ -21,14 +21,11 @@ mock.module("../../../providers/platform-proxy/context.js", () => ({
   }),
 }));
 
-let secureKeyResults: Record<
-  string,
-  { value: string | undefined; unreachable: boolean }
-> = {};
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyResultAsync: async (account: string) =>
-    secureKeyResults[account] ?? { value: undefined, unreachable: false },
-}));
+import { useFaultableSecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+// The REAL secure-keys module pinned to a faultable memory backend; seeds
+// use real credential keys, the unreachable toggle simulates a dead vault.
+const { store: secureKeyResults, setAllUnreachable } =
+  useFaultableSecureKeyMap();
 
 // ── Real imports (after mocks) ────────────────────────────────────────────────
 
@@ -112,7 +109,8 @@ beforeEach(() => {
   setConfig("llm", {});
   managedProxyEnabled = false;
   managedProxyBaseUrl = "https://platform.example";
-  secureKeyResults = {};
+  secureKeyResults.clear();
+  setAllUnreachable(false);
 });
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -168,10 +166,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    secureKeyResults["credential/anthropic/api_key"] = {
-      value: "sk-ant",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     managedProxyEnabled = true;
     setConfig("llm", { defaultProvider: { provider: "cadet" } });
 
@@ -199,10 +194,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    secureKeyResults["credential/anthropic/api_key"] = {
-      value: "sk-ant",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     setConfig("llm", { defaultProvider: { provider: "anthropic" } });
 
     const result = await get();
@@ -217,10 +209,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "openai",
       auth: { type: "api_key", credential: "credential/openai/api_key" },
     });
-    secureKeyResults["credential/openai/api_key"] = {
-      value: "sk-oai",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/openai/api_key", "sk-oai");
     setConfig("llm", {
       defaultProvider: { provider: "openai", connectionName: "work-openai" },
     });
@@ -259,10 +248,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    secureKeyResults["credential/anthropic/api_key"] = {
-      value: undefined,
-      unreachable: true,
-    };
+    setAllUnreachable(true);
     setConfig("llm", { defaultProvider: { provider: "anthropic" } });
 
     const result = await get();
@@ -273,10 +259,7 @@ describe("GET config/llm/default-provider", () => {
   test("cadet + credential store unreachable → unknown, not logged-out", async () => {
     seedCanonicalCadetConnection();
     setConfig("llm", { defaultProvider: { provider: "cadet" } });
-    secureKeyResults["credential/cadet/assistant_api_key"] = {
-      value: undefined,
-      unreachable: true,
-    };
+    setAllUnreachable(true);
     const result = await get();
     expect(availability(result).status).toBe("unknown");
     expect(availability(result).message).toContain("unreachable");
@@ -296,10 +279,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    secureKeyResults["credential/anthropic/api_key"] = {
-      value: "sk-ant",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     setConfig("llm", {
       defaultProvider: {
         provider: "cadet",
@@ -329,10 +309,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "anthropic",
       auth: { type: "api_key", credential: "credential/anthropic/api_key" },
     });
-    secureKeyResults["credential/anthropic/api_key"] = {
-      value: "sk-ant",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/anthropic/api_key", "sk-ant");
     setConfig("llm", {
       defaultProvider: {
         provider: "openai",
@@ -383,10 +360,7 @@ describe("GET config/llm/default-provider", () => {
       provider: "gemini",
       auth: { type: "service_account", credential: "credential/gemini/sa" },
     });
-    secureKeyResults["credential/gemini/sa"] = {
-      value: "{}",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/gemini/sa", "{}");
     setConfig("llm", { defaultProvider: { provider: "gemini" } });
 
     const result = await get();
@@ -417,10 +391,7 @@ describe("PUT config/llm/default-provider", () => {
       provider: "openai",
       auth: { type: "api_key", credential: "credential/openai/api_key" },
     });
-    secureKeyResults["credential/openai/api_key"] = {
-      value: "sk-oai",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/openai/api_key", "sk-oai");
 
     const result = (await put({ provider: "openai" })) as Record<
       string,
@@ -441,10 +412,7 @@ describe("PUT config/llm/default-provider", () => {
         credential: "credential/chatgpt/access_token",
       },
     });
-    secureKeyResults["credential/chatgpt/access_token"] = {
-      value: "token",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/chatgpt/access_token", "token");
 
     const result = (await put({ provider: "chatgpt" })) as Record<
       string,
@@ -496,10 +464,7 @@ describe("PUT config/llm/default-provider", () => {
         credential: "credential/chatgpt/access_token",
       },
     });
-    secureKeyResults["credential/chatgpt/access_token"] = {
-      value: "token",
-      unreachable: false,
-    };
+    secureKeyResults.set("credential/chatgpt/access_token", "token");
 
     const result = (await put({
       provider: "chatgpt",

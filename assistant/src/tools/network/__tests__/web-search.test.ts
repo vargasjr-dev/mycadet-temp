@@ -1,19 +1,20 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
+import { credentialKey } from "../../../security/credential-key.js";
 import { WEB_SEARCH_BACKEND_FAILURE_MESSAGE } from "../web-search-error.js";
 
-// Mutable mock state - set per test
-let mockBraveSecureKey: string | undefined;
-let mockPerplexitySecureKey: string | undefined;
-let mockTavilySecureKey: string | undefined;
-let mockFirecrawlSecureKey: string | undefined;
-let mockKeenableSecureKey: string | undefined;
-let mockFastcrwSecureKey: string | undefined;
-let mockSearxngSecureKey: string | undefined;
-let mockTinyfishSecureKey: string | undefined;
-let mockExaSecureKey: string | undefined;
-let mockSerplySecureKey: string | undefined;
+// The REAL secure-keys module pinned to a live memory backend; tests seed the
+// credential key for whichever provider they exercise.
+const secureKeys = useMemorySecureKeyMap();
+function setKey(provider: string, value: string | undefined): void {
+  if (value === undefined) {
+    secureKeys.delete(credentialKey(provider, "api_key"));
+  } else {
+    secureKeys.set(credentialKey(provider, "api_key"), value);
+  }
+}
 let mockManagedSearchProxyResult: any;
 let mockManagedSearchAvailable = true;
 let mockManagedSearchProxyCalls: Array<{
@@ -41,46 +42,6 @@ function seedWebSearch(
   });
 }
 
-mock.module("../../../security/secure-keys.js", () => ({
-  getProviderKeyAsync: async (provider: string) => {
-    if (provider === "brave") {
-      return mockBraveSecureKey;
-    }
-    if (provider === "perplexity") {
-      return mockPerplexitySecureKey;
-    }
-    if (provider === "tavily") {
-      return mockTavilySecureKey;
-    }
-    if (provider === "firecrawl") {
-      return mockFirecrawlSecureKey;
-    }
-    if (provider === "keenable") {
-      return mockKeenableSecureKey;
-    }
-    if (provider === "fastcrw") {
-      return mockFastcrwSecureKey;
-    }
-    if (provider === "searxng") {
-      return mockSearxngSecureKey;
-    }
-    if (provider === "tinyfish") {
-      return mockTinyfishSecureKey;
-    }
-    if (provider === "exa") {
-      return mockExaSecureKey;
-    }
-    if (provider === "serply") {
-      return mockSerplySecureKey;
-    }
-    return undefined;
-  },
-}));
-
-mock.module("../../../permissions/types.js", () => ({
-  RiskLevel: { Low: "low", Medium: "medium", High: "high" },
-}));
-
 mock.module("../managed-search-proxy.js", () => ({
   callManagedSearchProxy: async (
     provider: string,
@@ -102,16 +63,16 @@ describe("web_search tool", () => {
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     seedWebSearch("your-own", "perplexity");
-    mockBraveSecureKey = undefined;
-    mockPerplexitySecureKey = undefined;
-    mockTavilySecureKey = undefined;
-    mockFirecrawlSecureKey = undefined;
-    mockKeenableSecureKey = undefined;
-    mockFastcrwSecureKey = undefined;
-    mockSearxngSecureKey = undefined;
-    mockTinyfishSecureKey = undefined;
-    mockExaSecureKey = undefined;
-    mockSerplySecureKey = undefined;
+    setKey("brave", undefined);
+    setKey("perplexity", undefined);
+    setKey("tavily", undefined);
+    setKey("firecrawl", undefined);
+    setKey("keenable", undefined);
+    setKey("fastcrw", undefined);
+    setKey("searxng", undefined);
+    setKey("tinyfish", undefined);
+    setKey("exa", undefined);
+    setKey("serply", undefined);
     mockManagedSearchProxyCalls = [];
     mockManagedSearchAvailable = true;
     mockManagedSearchProxyResult = {
@@ -180,7 +141,7 @@ describe("web_search tool", () => {
     // Billing rule: an explicit cadet choice must never silently reroute to
     // a user's paid third-party key (and vice versa).
     seedWebSearch(undefined, "cadet");
-    mockPerplexitySecureKey = "pplx-should-not-be-used";
+    setKey("perplexity", "pplx-should-not-be-used");
     mockManagedSearchProxyResult = {
       ok: false,
       kind: "platform-error",
@@ -207,7 +168,7 @@ describe("web_search tool", () => {
 
   test("provider native with a BYOK key uses the key, not the proxy", async () => {
     seedWebSearch(undefined, "inference-provider-native");
-    mockPerplexitySecureKey = "pplx-test-key";
+    setKey("perplexity", "pplx-test-key");
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -247,7 +208,7 @@ describe("web_search tool", () => {
   // ---- Perplexity provider ------------------------------------------------
 
   test("executes Perplexity search successfully", async () => {
-    mockPerplexitySecureKey = "pplx-test-key";
+    setKey("perplexity", "pplx-test-key");
     globalThis.fetch = (async (_url: string, _init?: RequestInit) => {
       return new Response(
         JSON.stringify({
@@ -268,7 +229,7 @@ describe("web_search tool", () => {
   });
 
   test("Perplexity sends correct request format", async () => {
-    mockPerplexitySecureKey = "pplx-test-key";
+    setKey("perplexity", "pplx-test-key");
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
@@ -292,7 +253,7 @@ describe("web_search tool", () => {
   });
 
   test("Perplexity returns no results message when response is empty", async () => {
-    mockPerplexitySecureKey = "pplx-test-key";
+    setKey("perplexity", "pplx-test-key");
     globalThis.fetch = (async () => {
       return new Response(JSON.stringify({ choices: [] }), {
         status: 200,
@@ -306,7 +267,7 @@ describe("web_search tool", () => {
   });
 
   test("Perplexity handles 401/403 auth errors", async () => {
-    mockPerplexitySecureKey = "bad-key";
+    setKey("perplexity", "bad-key");
     globalThis.fetch = (async () => {
       return new Response("Unauthorized", { status: 401 });
     }) as any;
@@ -317,7 +278,7 @@ describe("web_search tool", () => {
   });
 
   test("Perplexity handles 429 rate limit after max retries", async () => {
-    mockPerplexitySecureKey = "pplx-key";
+    setKey("perplexity", "pplx-key");
     let callCount = 0;
     globalThis.fetch = (async () => {
       callCount++;
@@ -336,7 +297,7 @@ describe("web_search tool", () => {
   });
 
   test("Perplexity handles generic server error", async () => {
-    mockPerplexitySecureKey = "pplx-key";
+    setKey("perplexity", "pplx-key");
     globalThis.fetch = (async () => {
       return new Response("Internal Server Error", { status: 500 });
     }) as any;
@@ -352,7 +313,7 @@ describe("web_search tool", () => {
 
   test("executes Brave search successfully", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-test-key";
+    setKey("brave", "brave-test-key");
     globalThis.fetch = (async (_url: string) => {
       return new Response(
         JSON.stringify({
@@ -388,7 +349,7 @@ describe("web_search tool", () => {
 
   test("Brave sends correct query parameters", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -413,7 +374,7 @@ describe("web_search tool", () => {
 
   test("Brave clamps count and offset", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -431,7 +392,7 @@ describe("web_search tool", () => {
 
   test("Brave skips invalid freshness values", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -448,7 +409,7 @@ describe("web_search tool", () => {
 
   test("Brave handles empty results", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     globalThis.fetch = (async () => {
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
@@ -463,7 +424,7 @@ describe("web_search tool", () => {
 
   test("Brave handles 401 auth error", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "bad-key";
+    setKey("brave", "bad-key");
     globalThis.fetch = (async () => {
       return new Response("Forbidden", { status: 403 });
     }) as any;
@@ -475,7 +436,7 @@ describe("web_search tool", () => {
 
   test("Brave handles 429 rate limit with Retry-After header", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     let callCount = 0;
     globalThis.fetch = (async () => {
       callCount++;
@@ -576,7 +537,7 @@ describe("web_search tool", () => {
     };
 
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-key";
+    setKey("brave", "brave-key");
     globalThis.fetch = (async () => {
       return new Response(JSON.stringify(braveBody), {
         status: 200,
@@ -587,7 +548,7 @@ describe("web_search tool", () => {
     const directResult = await execute({ query: "same query" });
 
     seedWebSearch(undefined, "cadet");
-    mockBraveSecureKey = undefined;
+    setKey("brave", undefined);
     mockManagedSearchProxyResult = {
       ok: true,
       status: 200,
@@ -667,7 +628,7 @@ describe("web_search tool", () => {
 
   test("your-own mode keeps direct Brave BYOK behavior unchanged", async () => {
     seedWebSearch("your-own", "brave");
-    mockBraveSecureKey = "brave-direct-key";
+    setKey("brave", "brave-direct-key");
     let capturedHeaders: Headers | undefined;
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       capturedHeaders = new Headers(init?.headers);
@@ -690,7 +651,7 @@ describe("web_search tool", () => {
 
   test("executes Tavily search successfully", async () => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "tvly-test-key";
+    setKey("tavily", "tvly-test-key");
     globalThis.fetch = (async () => {
       return new Response(
         JSON.stringify({
@@ -721,7 +682,7 @@ describe("web_search tool", () => {
 
   test("Tavily sends correct request format", async () => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "tvly-test-key";
+    setKey("tavily", "tvly-test-key");
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
@@ -746,7 +707,7 @@ describe("web_search tool", () => {
 
   test("Tavily skips invalid freshness values", async () => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "tvly-key";
+    setKey("tavily", "tvly-key");
     let capturedBody: any = null;
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       capturedBody = JSON.parse(init?.body as string);
@@ -762,7 +723,7 @@ describe("web_search tool", () => {
 
   test("Tavily returns no results message when response is empty", async () => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "tvly-key";
+    setKey("tavily", "tvly-key");
     globalThis.fetch = (async () => {
       return new Response(JSON.stringify({ results: [] }), {
         status: 200,
@@ -777,7 +738,7 @@ describe("web_search tool", () => {
 
   test.each([401, 403])("Tavily handles %d auth error", async (status) => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "bad-key";
+    setKey("tavily", "bad-key");
     globalThis.fetch = (async () => {
       return new Response("Auth error", { status });
     }) as any;
@@ -789,7 +750,7 @@ describe("web_search tool", () => {
 
   test("Tavily handles 429 rate limit after max retries", async () => {
     seedWebSearch("your-own", "tavily");
-    mockTavilySecureKey = "tvly-key";
+    setKey("tavily", "tvly-key");
     let callCount = 0;
     globalThis.fetch = (async () => {
       callCount++;
@@ -881,7 +842,7 @@ describe("web_search tool", () => {
 
   test("Keenable uses the authenticated endpoint when a key is set", async () => {
     seedWebSearch("your-own", "keenable");
-    mockKeenableSecureKey = "keen_test";
+    setKey("keenable", "keen_test");
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
@@ -927,7 +888,7 @@ describe("web_search tool", () => {
 
   test.each([401, 403])("Keenable handles %d auth error", async (status) => {
     seedWebSearch("your-own", "keenable");
-    mockKeenableSecureKey = "bad-key";
+    setKey("keenable", "bad-key");
     globalThis.fetch = (async () => {
       return new Response(JSON.stringify({ message: "unauthorized" }), {
         status,
@@ -944,7 +905,7 @@ describe("web_search tool", () => {
 
   test("executes Firecrawl search successfully", async () => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "fc-test-key";
+    setKey("firecrawl", "fc-test-key");
     globalThis.fetch = (async () => {
       return new Response(
         JSON.stringify({
@@ -977,7 +938,7 @@ describe("web_search tool", () => {
 
   test("Firecrawl sends correct request format", async () => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "fc-test-key";
+    setKey("firecrawl", "fc-test-key");
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
@@ -1006,7 +967,7 @@ describe("web_search tool", () => {
 
   test("Firecrawl skips invalid freshness values", async () => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    setKey("firecrawl", "fc-key");
     let capturedBody: any = null;
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       capturedBody = JSON.parse(init?.body as string);
@@ -1025,7 +986,7 @@ describe("web_search tool", () => {
 
   test("Firecrawl returns no results message when response is empty", async () => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    setKey("firecrawl", "fc-key");
     globalThis.fetch = (async () => {
       return new Response(
         JSON.stringify({ success: true, data: { web: [] } }),
@@ -1043,7 +1004,7 @@ describe("web_search tool", () => {
 
   test.each([401, 403])("Firecrawl handles %d auth error", async (status) => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "bad-key";
+    setKey("firecrawl", "bad-key");
     globalThis.fetch = (async () => {
       return new Response("Auth error", { status });
     }) as any;
@@ -1055,7 +1016,7 @@ describe("web_search tool", () => {
 
   test("Firecrawl handles 429 rate limit after max retries", async () => {
     seedWebSearch("your-own", "firecrawl");
-    mockFirecrawlSecureKey = "fc-key";
+    setKey("firecrawl", "fc-key");
     let callCount = 0;
     globalThis.fetch = (async () => {
       callCount++;
@@ -1076,7 +1037,7 @@ describe("web_search tool", () => {
 
   test("executes fastCRW search against the cloud default base", async () => {
     seedWebSearch("your-own", "fastcrw");
-    mockFastcrwSecureKey = "crw_live_test";
+    setKey("fastcrw", "crw_live_test");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1106,7 +1067,7 @@ describe("web_search tool", () => {
 
   test("fastCRW uses a custom API base and accepts flat data arrays", async () => {
     seedWebSearch("your-own", "fastcrw", "http://localhost:3000/");
-    mockFastcrwSecureKey = "crw_live_test";
+    setKey("fastcrw", "crw_live_test");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1134,7 +1095,7 @@ describe("web_search tool", () => {
 
   test("fastCRW self-host with custom base runs without an API key", async () => {
     seedWebSearch("your-own", "fastcrw", "http://127.0.0.1:3000");
-    mockFastcrwSecureKey = undefined;
+    setKey("fastcrw", undefined);
     let capturedHeaders: any = null;
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       capturedHeaders = new Headers(init?.headers);
@@ -1204,7 +1165,7 @@ describe("web_search tool", () => {
 
   test("SearXNG maps freshness and sends an optional bearer token", async () => {
     seedWebSearch("your-own", "searxng", "http://searx.example.com");
-    mockSearxngSecureKey = "searx-token";
+    setKey("searxng", "searx-token");
     let capturedUrl = "";
     let capturedHeaders: any = null;
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
@@ -1263,7 +1224,7 @@ describe("web_search tool", () => {
 
   test("executes TinyFish search with X-API-Key and freshness", async () => {
     seedWebSearch("your-own", "tinyfish");
-    mockTinyfishSecureKey = "tf_test";
+    setKey("tinyfish", "tf_test");
     let capturedUrl = "";
     let capturedApiKey = "";
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
@@ -1306,7 +1267,7 @@ describe("web_search tool", () => {
 
   test("TinyFish uses a custom API base and trims to count", async () => {
     seedWebSearch("your-own", "tinyfish", "https://search.example.com/api/");
-    mockTinyfishSecureKey = "tf_test";
+    setKey("tinyfish", "tf_test");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1335,7 +1296,7 @@ describe("web_search tool", () => {
     "TinyFish handles %d access error",
     async (status) => {
       seedWebSearch("your-own", "tinyfish");
-      mockTinyfishSecureKey = "tf_test";
+      setKey("tinyfish", "tf_test");
       globalThis.fetch = (async () =>
         new Response(JSON.stringify({ error: "denied" }), { status })) as any;
 
@@ -1350,7 +1311,7 @@ describe("web_search tool", () => {
 
   test("Exa search posts the recommended request and maps freshness", async () => {
     seedWebSearch("your-own", "exa");
-    mockExaSecureKey = "exa_test";
+    setKey("exa", "exa_test");
     let capturedUrl = "";
     let capturedInit: RequestInit | undefined;
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
@@ -1399,7 +1360,7 @@ describe("web_search tool", () => {
 
   test("Exa omits the date filter without freshness and trims to count", async () => {
     seedWebSearch("your-own", "exa");
-    mockExaSecureKey = "exa_test";
+    setKey("exa", "exa_test");
     let capturedInit: RequestInit | undefined;
     globalThis.fetch = (async (_url: string, init?: RequestInit) => {
       capturedInit = init;
@@ -1427,7 +1388,7 @@ describe("web_search tool", () => {
 
   test.each([401, 402, 403])("Exa handles %d access error", async (status) => {
     seedWebSearch("your-own", "exa");
-    mockExaSecureKey = "exa_test";
+    setKey("exa", "exa_test");
     globalThis.fetch = (async () =>
       new Response(JSON.stringify({ error: "denied" }), { status })) as any;
 
@@ -1441,7 +1402,7 @@ describe("web_search tool", () => {
 
   test("Serply search sends the query form request and maps freshness", async () => {
     seedWebSearch("your-own", "serply");
-    mockSerplySecureKey = "serply_test";
+    setKey("serply", "serply_test");
     let capturedUrl = "";
     let capturedInit: RequestInit | undefined;
     globalThis.fetch = (async (url: string, init?: RequestInit) => {
@@ -1489,7 +1450,7 @@ describe("web_search tool", () => {
 
   test("Serply omits tbs without freshness, clamps num, and trims to count", async () => {
     seedWebSearch("your-own", "serply");
-    mockSerplySecureKey = "serply_test";
+    setKey("serply", "serply_test");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1524,7 +1485,7 @@ describe("web_search tool", () => {
     "Serply handles %d access error",
     async (status) => {
       seedWebSearch("your-own", "serply");
-      mockSerplySecureKey = "serply_test";
+      setKey("serply", "serply_test");
       globalThis.fetch = (async () =>
         new Response(JSON.stringify({ detail: "Invalid API key" }), {
           status,
@@ -1541,7 +1502,7 @@ describe("web_search tool", () => {
 
   test("falls back from perplexity to brave when perplexity has no key", async () => {
     seedWebSearch("your-own", "perplexity");
-    mockBraveSecureKey = "brave-fallback-key";
+    setKey("brave", "brave-fallback-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1558,7 +1519,7 @@ describe("web_search tool", () => {
 
   test("falls back from brave to perplexity when brave has no key", async () => {
     seedWebSearch("your-own", "brave");
-    mockPerplexitySecureKey = "pplx-fallback-key";
+    setKey("perplexity", "pplx-fallback-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string, _init?: RequestInit) => {
       capturedUrl = url;
@@ -1577,7 +1538,7 @@ describe("web_search tool", () => {
 
   test("falls back to tavily when earlier providers have no key", async () => {
     seedWebSearch("your-own", "perplexity");
-    mockTavilySecureKey = "tvly-fallback-key";
+    setKey("tavily", "tvly-fallback-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1594,7 +1555,7 @@ describe("web_search tool", () => {
 
   test("falls back to firecrawl when all earlier providers have no key", async () => {
     seedWebSearch("your-own", "perplexity");
-    mockFirecrawlSecureKey = "fc-fallback-key";
+    setKey("firecrawl", "fc-fallback-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1614,7 +1575,7 @@ describe("web_search tool", () => {
 
   test("falls back from tavily to perplexity when tavily has no key", async () => {
     seedWebSearch("your-own", "tavily");
-    mockPerplexitySecureKey = "pplx-fallback-key";
+    setKey("perplexity", "pplx-fallback-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1631,7 +1592,7 @@ describe("web_search tool", () => {
 
   test("maps inference-provider-native to perplexity", async () => {
     seedWebSearch("your-own", "inference-provider-native");
-    mockPerplexitySecureKey = "pplx-key";
+    setKey("perplexity", "pplx-key");
     let capturedUrl = "";
     globalThis.fetch = (async (url: string) => {
       capturedUrl = url;
@@ -1651,7 +1612,7 @@ describe("web_search tool", () => {
   // ---- Network errors -----------------------------------------------------
 
   test("handles fetch exceptions", async () => {
-    mockPerplexitySecureKey = "pplx-key";
+    setKey("perplexity", "pplx-key");
     globalThis.fetch = (async () => {
       throw new Error("Network error: connection refused");
     }) as any;

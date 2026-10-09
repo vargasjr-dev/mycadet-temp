@@ -28,22 +28,22 @@ mock.module(
 // in place; `beforeEach` restores the fields the tests touch. The workspace
 // config file itself is seeded once below (memory off, ingress base URL).
 
-// ── Credential mock (prevents real key lookups) ──────────────────────
+import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../security/credential-key.js";
 
-// Provider API keys resolve by default so telephony playability checks
-// (PCM-transport tests) can select providers; tests can narrow the
-// resolvable set. Reset to null (all resolve) in beforeEach.
-let mockResolvableProviderKeys: ((service: string) => string | null) | null =
-  null;
+// ── Credentials: the REAL secure-keys module pinned to a live memory backend ──
 
-mock.module("../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async () => null,
-  getSecureKey: () => null,
-  getProviderKeyAsync: async (service: string) =>
-    mockResolvableProviderKeys
-      ? mockResolvableProviderKeys(service)
-      : "test-key",
-}));
+// TTS provider API keys resolve by default so telephony playability checks
+// (PCM-transport tests) can select providers; tests narrow the seeded set by
+// clearing the store. Restore the full default set in beforeEach.
+const secureKeys = useMemorySecureKeyMap();
+const DEFAULT_RESOLVABLE_TTS_KEYS = ["fish-audio", "cadet", "xai", "deepgram", "elevenlabs"];
+function seedDefaultResolvableKeys(): void {
+  secureKeys.clear();
+  for (const service of DEFAULT_RESOLVABLE_TTS_KEYS) {
+    secureKeys.set(credentialKey(service, "api_key"), "test-key");
+  }
+}
 
 // Managed-speech defaulting reaches the platform client and the credential
 // store. The controller tests drive the bridge mock on a microtask budget, so
@@ -520,7 +520,7 @@ describe("call-controller", () => {
     // Schema default. The hold-replay wait is measured against it, so tests
     // that shrink it must not leak the change into the next one.
     cfg.calls.voice.utteranceEndMs = 1000;
-    mockResolvableProviderKeys = null;
+    seedDefaultResolvableKeys();
     // Reset TTS provider registry to ensure clean state
     registerTestTtsProviders();
   });
@@ -4096,8 +4096,8 @@ describe("call-controller", () => {
 
   test("PCM transport: when no playable fallback exists, failed segments are skipped and end-of-turn still fires", async () => {
     // Only fish-audio's key resolves, so the fallback scan finds nothing.
-    mockResolvableProviderKeys = (service) =>
-      service === "fish-audio" ? "test-key" : null;
+    secureKeys.clear();
+    secureKeys.set(credentialKey("fish-audio", "api_key"), "test-key");
     const { fishTexts, fallbackTexts } = registerPcmFallbackProviders();
     mockStartVoiceTurn.mockImplementation(
       createMockVoiceTurn(["First part is done. ", "Second part is done."]),

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { Services } from "../config/schemas/services.js";
 import { PLATFORM_PROVIDER_META } from "../providers/platform-proxy/constants.js";
 import { credentialKey } from "../security/credential-key.js";
+import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mock @google/genai to capture constructor arguments for Gemini base URL
@@ -97,10 +98,6 @@ mock.module("openai", () => {
 // This avoids mocking the context module directly and prevents mock conflicts
 // with context.test.ts (which also mocks these same underlying deps).
 // ---------------------------------------------------------------------------
-let mockPlatformBaseUrl = "";
-let mockPlatformAssistantId = "";
-let mockAssistantApiKey: string | null = null;
-let mockProviderKeys: Record<string, string> = {};
 const defaultWebSearchService: Services["web-search"] = {
   provider: "inference-provider-native",
 };
@@ -110,24 +107,9 @@ mock.module("../config/env.js", () => ({
   getPlatformAssistantId: () => mockPlatformAssistantId,
 }));
 
-mock.module("../security/secure-keys.js", () => ({
-  getSecureKeyAsync: async (key: string) => {
-    if (key === credentialKey("cadet", "platform_base_url")) {
-      return mockPlatformBaseUrl;
-    }
-    if (key === credentialKey("cadet", "assistant_api_key")) {
-      return mockAssistantApiKey;
-    }
-    if (key === credentialKey("cadet", "platform_assistant_id")) {
-      return mockPlatformAssistantId;
-    }
-    return mockProviderKeys[key] ?? null;
-  },
-  getProviderKeyAsync: async (provider: string) =>
-    mockProviderKeys[credentialKey(provider, "api_key")] ??
-    mockProviderKeys[provider] ??
-    undefined,
-}));
+// The REAL secure-keys module pinned to a live memory backend; managed
+// credentials are seeded under their real credentialKey lookups.
+const secureKeys = useMemorySecureKeyMap();
 
 mock.module("../platform/feature-gate.js", () => ({
   arePlatformFeaturesEnabled: () => true,
@@ -194,16 +176,26 @@ const MANAGED_FALLBACK_PROVIDERS: string[] = [
   "typesafe",
 ];
 
+let mockPlatformBaseUrl = "";
+let mockPlatformAssistantId = "";
+
 function enableManagedProxy() {
   mockPlatformBaseUrl = PLATFORM_BASE;
   mockPlatformAssistantId = PLATFORM_ASSISTANT_ID;
-  mockAssistantApiKey = MANAGED_API_KEY;
+  secureKeys.set(credentialKey("cadet", "platform_base_url"), PLATFORM_BASE);
+  secureKeys.set(
+    credentialKey("cadet", "platform_assistant_id"),
+    PLATFORM_ASSISTANT_ID,
+  );
+  secureKeys.set(credentialKey("cadet", "assistant_api_key"), MANAGED_API_KEY);
 }
 
 function disableManagedProxy() {
   mockPlatformBaseUrl = "";
   mockPlatformAssistantId = "";
-  mockAssistantApiKey = null;
+  secureKeys.delete(credentialKey("cadet", "platform_base_url"));
+  secureKeys.delete(credentialKey("cadet", "platform_assistant_id"));
+  secureKeys.delete(credentialKey("cadet", "assistant_api_key"));
 }
 
 type ProviderWithClientBaseUrl = Record<string, unknown> & {
@@ -221,11 +213,19 @@ function unwrapInnermostProvider(provider: unknown): ProviderWithClientBaseUrl {
 /**
  * Set mock secure keys with a user key for every provider in `names`.
  */
+let userKeyNames: string[] = [];
 function setUserKeysFor(...names: string[]): void {
-  mockProviderKeys = {};
   for (const n of names) {
-    mockProviderKeys[credentialKey(n, "api_key")] = `user-key-${n}`;
+    const key = credentialKey(n, "api_key");
+    secureKeys.set(key, `user-key-${n}`);
+    userKeyNames.push(key);
   }
+}
+function clearUserKeys(): void {
+  for (const key of userKeyNames) {
+    secureKeys.delete(key);
+  }
+  userKeyNames = [];
 }
 
 function userMsg(text: string): Message {
@@ -254,7 +254,7 @@ const sampleTools: ToolDefinition[] = [
 
 beforeEach(() => {
   disableManagedProxy();
-  mockProviderKeys = {};
+  clearUserKeys();
   lastGeminiConstructorOpts = null;
   lastGeminiGenerateContentStreamParams = null;
   lastOpenAIChatParams = null;
@@ -306,7 +306,7 @@ describe("managed proxy integration — credential precedence", () => {
       "%s routes via managed-proxy when no user key",
       async (provider: string) => {
         enableManagedProxy();
-        mockProviderKeys = {};
+        clearUserKeys();
         await initializeProviders(
           makeProvidersConfig("anthropic", "test-model"),
         );
@@ -317,7 +317,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed bootstrap registers every managed-routable catalog provider", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
       expect([...listProviders()].sort()).toEqual(
         [...MANAGED_FALLBACK_PROVIDERS].sort(),
@@ -330,7 +330,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed typesafe sends System One through the typesafe proxy path with the assistant key", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
 
       const provider = getProvider("typesafe");
@@ -368,7 +368,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed anthropic uses anthropic proxy path", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(
         makeProvidersConfig("anthropic", "claude-opus-4-6"),
       );
@@ -384,7 +384,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed openai uses openai proxy path", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(makeProvidersConfig("openai", "gpt-4o"));
 
       const provider = getProvider("openai");
@@ -398,7 +398,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed gemini uses gemini proxy path", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
 
       expect(lastGeminiConstructorOpts).toBeDefined();
@@ -411,7 +411,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed gemini receives attribution headers outside request JSON", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       setConfig("llm", {
         profiles: {
           // Complete (provider + model) so the override pin wins resolution.
@@ -468,7 +468,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("managed gemini omits attribution headers without callSite", async () => {
       enableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(
         makeProvidersConfig("gemini", "gemini-3.1-pro"),
       );
@@ -493,7 +493,7 @@ describe("managed proxy integration — credential precedence", () => {
       "%s is NOT registered when no user key and no managed context",
       async (provider: string) => {
         disableManagedProxy();
-        mockProviderKeys = {};
+        clearUserKeys();
         await initializeProviders(
           makeProvidersConfig("anthropic", "test-model"),
         );
@@ -504,7 +504,7 @@ describe("managed proxy integration — credential precedence", () => {
 
     test("registry is empty when no keys and no managed context (non-ollama primary)", async () => {
       disableManagedProxy();
-      mockProviderKeys = {};
+      clearUserKeys();
       await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
       expect(listProviders()).toEqual([]);
     });
@@ -550,7 +550,7 @@ describe("managed proxy integration — credential precedence", () => {
 describe("managed proxy integration — managed web search routing", () => {
   test("managed Fireworks/Kimi tool call completes through the platform Brave proxy", async () => {
     enableManagedProxy();
-    mockProviderKeys = {};
+    clearUserKeys();
     setConfig("services", { "web-search": MANAGED_NATIVE_WEB_SEARCH });
 
     const originalFetch = globalThis.fetch;
@@ -635,21 +635,23 @@ describe("managed proxy integration — managed web search routing", () => {
 describe("managed proxy integration — ollama exclusion", () => {
   test("ollama is never registered via managed proxy fallback", async () => {
     enableManagedProxy();
-    mockProviderKeys = {};
+    clearUserKeys();
     await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
     expect(listProviders()).not.toContain("ollama");
   });
 
   test("ollama registers only when explicitly configured as provider", async () => {
     enableManagedProxy();
-    mockProviderKeys = {};
+    clearUserKeys();
     await initializeProviders(makeProvidersConfig("ollama", "test-model"));
     expect(listProviders()).toContain("ollama");
   });
 
   test("ollama registers with explicit API key", async () => {
     enableManagedProxy();
-    mockProviderKeys = { [credentialKey("ollama", "api_key")]: "ollama-key" };
+    const ollamaKey = credentialKey("ollama", "api_key");
+    secureKeys.set(ollamaKey, "ollama-key");
+    userKeyNames.push(ollamaKey);
     await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
     expect(listProviders()).toContain("ollama");
   });
@@ -667,7 +669,7 @@ describe("config mode flip → provider reinit", () => {
     // Phase 1: managed mode without user key → gemini registered as managed-proxy.
     // This is the pre-patch state before PATCH /v1/config is called.
     enableManagedProxy();
-    mockProviderKeys = {};
+    clearUserKeys();
     await initializeProviders(makeProvidersConfig("gemini", "gemini-2.5-pro"));
     expect(getProviderRoutingSource("gemini")).toBe("managed-proxy");
 
@@ -683,7 +685,7 @@ describe("config mode flip → provider reinit", () => {
     // Demonstrates the bug: if initializeProviders is NOT called after saving
     // config, the routing source stays managed-proxy even after mode flip.
     enableManagedProxy();
-    mockProviderKeys = {};
+    clearUserKeys();
     await initializeProviders(makeProvidersConfig("gemini", "gemini-2.5-pro"));
     expect(getProviderRoutingSource("gemini")).toBe("managed-proxy");
 

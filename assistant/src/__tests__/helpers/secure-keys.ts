@@ -75,8 +75,10 @@ export function useMemorySecureKeyMap(
 export interface FaultableSecureKeys {
   /** Live credential store — seed or mutate freely. */
   store: Map<string, string>;
-  /** Make one account read as unreachable; `undefined` clears the fault. */
+  /** Make one account read as unreachable; `undefined` clears every fault. */
   setUnreachableKey(key: string | undefined): void;
+  /** Clear one account's unreachable fault (leaves other faults alone). */
+  clearUnreachableKey(key: string): void;
   /** Make every read unreachable (a dead vault). */
   setAllUnreachable(unreachable: boolean): void;
   /** Make writes fail (set returns false). */
@@ -128,6 +130,9 @@ export function useFaultableSecureKeyMap(
       } else {
         unreachableKeys.add(key);
       }
+    },
+    clearUnreachableKey(key) {
+      unreachableKeys.delete(key);
     },
     setAllUnreachable(unreachable) {
       state.allUnreachable = unreachable;

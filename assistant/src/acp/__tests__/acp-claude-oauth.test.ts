@@ -15,57 +15,26 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 // ---------------------------------------------------------------------------
 // Mocks — wired BEFORE importing the module via dynamic import.
 // ---------------------------------------------------------------------------
 
-let storeReturn = true;
-let deleteReturn: "deleted" | "not-found" | "error" = "not-found";
-let getReturn: string | undefined = undefined;
-const vault = new Map<string, string>();
+const { store: vault, setWritesFail } = useFaultableSecureKeyMap();
 const ACCESS_KEY = "credential/acp/claude_oauth_token";
 const REFRESH_KEY = "credential/acp/claude_oauth_refresh_token";
 const EXPIRES_KEY = "credential/acp/claude_oauth_expires_at";
 const DIGEST_KEY = "credential/acp/claude_oauth_access_digest";
 
-const setSecureKeyAsync = mock(async (account: string, value: string) => {
-  if (!storeReturn) {
-    return false;
-  }
-  vault.set(account, value);
-  return true;
-});
-const getSecureKeyAsync = mock(async (account: string) => {
-  if (vault.has(account)) {
-    return vault.get(account);
-  }
-  // Existing cases that only seed the access token keep using getReturn.
-  if (account === ACCESS_KEY) {
-    return getReturn;
-  }
-  return undefined;
-});
-const deleteSecureKeyAsync = mock(async (account: string) => {
-  if (deleteReturn === "error") {
-    return "error";
-  }
-  const existed = vault.delete(account);
-  return existed ? "deleted" : "not-found";
-});
+// Pass-through spies on the REAL module: they record the calls the SUT makes
+// while the real fns run against the pinned memory backend.
+const setSecureKeyAsync = spyOn(secureKeysModule, "setSecureKeyAsync");
+const getSecureKeyAsync = spyOn(secureKeysModule, "getSecureKeyAsync");
+const deleteSecureKeyAsync = spyOn(secureKeysModule, "deleteSecureKeyAsync");
 
-// Spread the real module rather than listing two exports. These cases reach
-// the marker tables, which pulls persistence into the graph, and anything in
-// there that imports another secure-keys export would fail to resolve against
-// a partial factory.
-const realSecureKeys = await import("../../security/secure-keys.js");
-mock.module("../../security/secure-keys.js", () => ({
-  ...realSecureKeys,
-  setSecureKeyAsync,
-  getSecureKeyAsync,
-  deleteSecureKeyAsync,
-}));
+import { useFaultableSecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
+import * as secureKeysModule from "../../security/secure-keys.js";
 
 const { _setMetadataPath, getCredentialMetadata, upsertCredentialMetadata } =
   await import("../../tools/credentials/metadata-store.js");
@@ -126,9 +95,7 @@ function oauthMetadata() {
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
   _setMetadataPath(join(TEST_DIR, "metadata.json"));
-  storeReturn = true;
-  deleteReturn = "not-found";
-  getReturn = undefined;
+  setWritesFail(false);
   vault.clear();
   setSecureKeyAsync.mockClear();
   getSecureKeyAsync.mockClear();
@@ -288,7 +255,7 @@ describe("storeAcpClaudeToken", () => {
       allowedTools: [ACP_SPAWN_TOOL],
       allowedDomains: ["api.anthropic.com"],
     });
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
     expect(await hasAcpClaudeToken()).toBe(false);
 
     await storeAcpClaudeToken("sk-ant-oat-token");
@@ -298,7 +265,7 @@ describe("storeAcpClaudeToken", () => {
   });
 
   test("throws when the secure store rejects the write", async () => {
-    storeReturn = false;
+    setWritesFail(true);
 
     await expect(storeAcpClaudeToken("sk-ant-oat-token")).rejects.toThrow(
       /Failed to store/,
@@ -313,7 +280,7 @@ describe("storeAcpClaudeToken", () => {
 
 describe("hasAcpClaudeToken", () => {
   test("reads credential/acp/claude_oauth_token and reports true when present", async () => {
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
 
     expect(await hasAcpClaudeToken()).toBe(true);
     expect(getSecureKeyAsync).toHaveBeenCalledWith(
@@ -322,17 +289,17 @@ describe("hasAcpClaudeToken", () => {
   });
 
   test("reports false when the vault field is absent", async () => {
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
     expect(await hasAcpClaudeToken()).toBe(false);
   });
 
   test("reports false for an empty stored value", async () => {
-    getReturn = "";
+    vault.set(ACCESS_KEY, "");
     expect(await hasAcpClaudeToken()).toBe(false);
   });
 
   test("reports false for a legacy Anthropic API key so Connect stays offered", async () => {
-    getReturn = "sk-ant-api03-legacy-bad-entry";
+    vault.set(ACCESS_KEY, "sk-ant-api03-legacy-bad-entry");
     expect(await hasAcpClaudeToken()).toBe(false);
   });
 
@@ -340,7 +307,7 @@ describe("hasAcpClaudeToken", () => {
     // One allow-state case: the full policy matrix is guarded by the parity
     // suite in prepare-agent-env.test.ts and the tool-policy unit tests.
     upsertCredentialMetadata(ACP_SERVICE, OAUTH_FIELD, { allowedTools: [] });
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
 
     expect(await hasAcpClaudeToken()).toBe(true);
   });
@@ -354,14 +321,14 @@ describe("hasAcpClaudeToken", () => {
       allowedTools: [ACP_SPAWN_TOOL],
       allowedDomains: ["api.anthropic.com"],
     });
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
 
     expect(await hasAcpClaudeToken()).toBe(false);
   });
 
   test("writes nothing to the metadata store (the status route is a GET)", async () => {
     upsertCredentialMetadata(ACP_SERVICE, OAUTH_FIELD, { allowedTools: [] });
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
     const before = oauthMetadata();
 
     await hasAcpClaudeToken();
@@ -370,7 +337,7 @@ describe("hasAcpClaudeToken", () => {
   });
 
   test("creates no metadata when there is none to begin with", async () => {
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
 
     await hasAcpClaudeToken();
 
@@ -574,7 +541,7 @@ describe("storeAcpClaudeToken: retiring the card registry", () => {
     });
     expect(acpSpawnCredentialDenialReason(OAUTH_FIELD)).toBeDefined();
     markAcpConnectCardRaised("conv-with-card");
-    getReturn = "sk-ant-oat-token";
+    vault.set(ACCESS_KEY, "sk-ant-oat-token");
 
     return storeAcpClaudeToken("sk-ant-oat-token")
       .then(settleNotification)
@@ -589,7 +556,7 @@ describe("storeAcpClaudeToken: retiring the card registry", () => {
     // keeps the card up for that reason, so forgetting the registry would open
     // the second prompt it exists to suppress.
     markAcpConnectCardRaised("conv-keeps-card");
-    getReturn = "sk-ant-api-key-shaped";
+    vault.set(ACCESS_KEY, "sk-ant-api-key-shaped");
 
     return storeAcpClaudeToken("sk-ant-api-key-shaped")
       .then(settleNotification)
@@ -607,7 +574,7 @@ describe("storeAcpClaudeToken: a re-written rejected token retires nothing", () 
     // stays up. Forgetting the entry would open a second prompt beside it.
     clearHistory();
     const token = "sk-ant-oat-still-rejected";
-    getReturn = token;
+    vault.set(ACCESS_KEY, token);
     insertHistoryRow({
       id: "run-still-rejected",
       parentConversationId: "conv-still-broken",
@@ -626,7 +593,7 @@ describe("storeAcpClaudeToken: a re-written rejected token retires nothing", () 
 
   test("drops it once a different token makes the marker stale", () => {
     clearHistory();
-    getReturn = "sk-ant-oat-replacement";
+    vault.set(ACCESS_KEY, "sk-ant-oat-replacement");
     insertHistoryRow({
       id: "run-repaired",
       parentConversationId: "conv-repaired",
@@ -648,7 +615,7 @@ describe("acpConnectCardStillWarranted", () => {
   test("a mid-run card stands while its marker names the credential in use", () => {
     clearHistory();
     const token = "sk-ant-oat-in-use";
-    getReturn = token;
+    vault.set(ACCESS_KEY, token);
     insertHistoryRow({
       id: "run-warranted",
       parentConversationId: "conv-warranted",
@@ -667,7 +634,7 @@ describe("acpConnectCardStillWarranted", () => {
     // configured token moves this answer too, which is why it is asked rather
     // than remembered.
     clearHistory();
-    getReturn = "sk-ant-oat-replacement";
+    vault.set(ACCESS_KEY, "sk-ant-oat-replacement");
     insertHistoryRow({
       id: "run-repaired",
       parentConversationId: "conv-repaired-warrant",
@@ -688,7 +655,7 @@ describe("acpConnectCardStillWarranted", () => {
     // absence of one says nothing; what keeps its card meaningful is that a
     // spawn still has nothing to authenticate with.
     clearHistory();
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
 
     return acpConnectCardStillWarranted("conv-no-token").then((warranted) => {
       expect(warranted).toBe(true);
@@ -697,7 +664,7 @@ describe("acpConnectCardStillWarranted", () => {
 
   test("a pre-spawn card falls once a usable token exists", () => {
     clearHistory();
-    getReturn = "sk-ant-oat-now-present";
+    vault.set(ACCESS_KEY, "sk-ant-oat-now-present");
 
     return acpConnectCardStillWarranted("conv-no-marker").then((warranted) => {
       expect(warranted).toBe(false);
@@ -711,7 +678,7 @@ describe("acpConnectCardStillWarranted: a pre-spawn card and configured tokens",
     // touches the vault, so asking the vault would call this card warranted
     // forever even though the next spawn authenticates fine.
     clearHistory();
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
     acpConfig.setConfig({
       agents: {
         claude: {
@@ -732,7 +699,7 @@ describe("acpConnectCardStillWarranted: a pre-spawn card and configured tokens",
 
   test("stands while neither config nor the vault offers one", () => {
     clearHistory();
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
     acpConfig.setConfig({ agents: {} });
     markAcpConnectCardRaised("conv-still-nothing", "claude");
 
@@ -752,7 +719,7 @@ describe("acpConnectCardStillWarranted: a resolved credential Claude already ref
     // the card and lets a second prompt open beside it.
     clearHistory();
     const token = "sk-ant-oat-config-refused";
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
     acpConfig.setConfig({
       agents: {
         claude: {
@@ -774,7 +741,7 @@ describe("acpConnectCardStillWarranted: a resolved credential Claude already ref
 
   test("falls once the resolved credential is one Claude has not refused", () => {
     clearHistory();
-    getReturn = undefined;
+    vault.delete(ACCESS_KEY); // absent field
     acpConfig.setConfig({
       agents: {
         claude: {

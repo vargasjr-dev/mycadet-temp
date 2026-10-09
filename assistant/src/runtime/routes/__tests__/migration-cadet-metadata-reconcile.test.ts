@@ -51,7 +51,6 @@ const CADET_FIELDS = [
 
 const upsertCalls: Array<{ service: string; field: string }> = [];
 let metadataStore: Map<string, MetadataRecord> = new Map();
-let cesValues: Map<string, string> = new Map();
 let upsertImpl: (service: string, field: string) => void = (service, field) => {
   const key = `${service}:${field}`;
   metadataStore.set(key, {
@@ -65,21 +64,11 @@ let upsertImpl: (service: string, field: string) => void = (service, field) => {
   });
 };
 
-mock.module("../../../security/secure-keys.js", () => ({
-  bulkSetSecureKeysAsync: async () => [],
-  deleteSecureKeyAsync: async () => "ok",
-  getActiveBackendName: () => "test",
-  getMaskedProviderKey: async () => null,
-  getProviderKeyAsync: async () => null,
-  getSecureKeyAsync: async (key: string) => cesValues.get(key) ?? null,
-  getSecureKeyResultAsync: async () => ({ ok: true, value: null }),
-  listSecureKeysAsync: async () => [],
-  onCesClientChanged: () => {},
-  setCesClient: () => {},
-  setCesReconnect: () => {},
-  setSecureKeyAsync: async () => true,
-  _resetBackend: () => {},
-}));
+// The REAL secure-keys module pinned to a live memory backend; the reconcile
+// reads getSecureKeyAsync(cadet credential keys), which the store serves.
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+
+const cesValues = useMemorySecureKeyMap();
 
 // Spread the real module so every export the reconcile handler's transitive
 // graph links (e.g. getCredentialMetadataById, listCredentialMetadata pulled in
@@ -112,7 +101,7 @@ const { reconcileCadetMetadataFromCes } =
 beforeEach(() => {
   upsertCalls.length = 0;
   metadataStore = new Map();
-  cesValues = new Map();
+  cesValues.clear();
   upsertImpl = (service, field) => {
     const key = `${service}:${field}`;
     metadataStore.set(key, {

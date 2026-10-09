@@ -1,20 +1,16 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+import { spyOn } from "bun:test";
 
-const mockGetSecureKey = mock<(key: string) => Promise<string | undefined>>(
-  async () => undefined,
-);
-const mockSetSecureKey = mock<(key: string, value: string) => Promise<boolean>>(
-  async () => true,
-);
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+import * as secureKeysModule from "../../../security/secure-keys.js";
 
-mock.module("../../../security/secure-keys.js", () => ({
-  getSecureKeyAsync: mockGetSecureKey,
-  setSecureKeyAsync: mockSetSecureKey,
-}));
+// The REAL secure-keys module pinned to a live memory backend; the set spy
+// is pass-through so the refresh write assertions observe real calls.
+const secureKeys = useMemorySecureKeyMap();
+const setSpy = spyOn(secureKeysModule, "setSecureKeyAsync");
 
 const mockRefreshOAuth2Token = mock<
   (...args: unknown[]) => Promise<{
@@ -48,7 +44,9 @@ const PREFIX = "credential/openai-codex";
 // ---------------------------------------------------------------------------
 
 function setSecureKeyMap(map: Record<string, string>): void {
-  mockGetSecureKey.mockImplementation(async (key: string) => map[key]);
+  for (const [key, value] of Object.entries(map)) {
+    secureKeys.set(key, value);
+  }
 }
 
 function futureTimestamp(secondsFromNow: number): string {
@@ -65,12 +63,11 @@ function pastTimestamp(secondsAgo: number): string {
 
 describe("getValidCodexAccessToken", () => {
   beforeEach(() => {
-    mockGetSecureKey.mockReset();
-    mockSetSecureKey.mockReset();
+    secureKeys.clear();
+    setSpy.mockClear();
     mockRefreshOAuth2Token.mockReset();
     _resetRefreshMutex();
 
-    mockSetSecureKey.mockImplementation(async () => true);
     mockRefreshOAuth2Token.mockImplementation(async () => ({
       accessToken: "new-access-token",
       refreshToken: "new-refresh-token",
@@ -126,16 +123,16 @@ describe("getValidCodexAccessToken", () => {
     );
 
     // Verify new tokens are stored
-    expect(mockSetSecureKey).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       `${PREFIX}/access_token`,
       "new-access-token",
     );
-    expect(mockSetSecureKey).toHaveBeenCalledWith(
+    expect(setSpy).toHaveBeenCalledWith(
       `${PREFIX}/refresh_token`,
       "new-refresh-token",
     );
     // expires_at should be stored as well
-    const expiresAtCall = mockSetSecureKey.mock.calls.find(
+    const expiresAtCall = setSpy.mock.calls.find(
       (c) => c[0] === `${PREFIX}/expires_at`,
     );
     expect(expiresAtCall).toBeDefined();

@@ -6,13 +6,12 @@
  * deprecated `providers connections` alias.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import { Command } from "commander";
 
 let ipcCalls: { method: string; params?: any }[] = [];
 let openedUrls: string[] = [];
-let storedSecrets: Array<{ key: string; value: string }> = [];
 let mockIpcResult: { ok: boolean; result?: unknown; error?: string } = {
   ok: true,
   result: {},
@@ -47,12 +46,13 @@ mock.module("../../../security/oauth2.js", () => ({
   },
 }));
 
-mock.module("../../../security/secure-keys.js", () => ({
-  setSecureKeyAsync: async (key: string, value: string) => {
-    storedSecrets.push({ key, value });
-    return true;
-  },
-}));
+import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
+import * as secureKeysModule from "../../../security/secure-keys.js";
+
+// The REAL secure-keys module pinned to a live memory backend; the spy is
+// pass-through so the assertion still observes which secrets were written.
+useMemorySecureKeyMap();
+const setSecureKeyAsync = spyOn(secureKeysModule, "setSecureKeyAsync");
 
 const { attachProvidersSubcommand } = await import("../inference-providers.js");
 const { applyCommandHelp } = await import("../../lib/cli-command-help.js");
@@ -73,7 +73,6 @@ function lastIpcCall(): { method: string; params?: any } | null {
 beforeEach(() => {
   ipcCalls = [];
   openedUrls = [];
-  storedSecrets = [];
   mockIpcResult = { ok: true, result: CONNECTION_RESULT };
   process.exitCode = 0;
 });
@@ -535,7 +534,7 @@ describe("providers login-chatgpt", () => {
     expect(openedUrls).toEqual([
       "https://auth.openai.com/oauth/authorize?state=test",
     ]);
-    expect(storedSecrets).toContainEqual({
+    expect(setSecureKeyAsync.mock.calls.map(([key, value]) => ({ key, value }))).toContainEqual({
       key: "credential/chatgpt/access_token",
       value: "test-access-token",
     });
