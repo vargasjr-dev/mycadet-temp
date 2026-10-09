@@ -27,44 +27,39 @@ import {
 
 import { getConfigDir, getConfigDirs } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
-import { isJsonObject } from "./json.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { z } from "zod";
 
-function isTokenExpiry(value: unknown): value is string | number {
-  return typeof value === "string" || typeof value === "number";
-}
+/**
+ * The guardian token fields as they arrive untrusted (gateway refresh/init
+ * responses, persisted token files). Every field is independently optional
+ * and independently caught: one malformed field must not invalidate the
+ * others — callers fall back per field.
+ */
+const GuardianTokenFieldsSchema = z
+  .object({
+    guardianPrincipalId: z.string().optional().catch(undefined),
+    accessToken: z.string().optional().catch(undefined),
+    accessTokenExpiresAt: z
+      .union([z.string(), z.number()])
+      .optional()
+      .catch(undefined),
+    refreshToken: z.string().optional().catch(undefined),
+    refreshTokenExpiresAt: z
+      .union([z.string(), z.number()])
+      .optional()
+      .catch(undefined),
+    refreshAfter: z.string().optional().catch(undefined),
+    isNew: z.boolean().optional().catch(undefined),
+    deviceId: z.string().optional().catch(undefined),
+  })
+  .catch({});
 
 /** Narrow untrusted JSON to the token fields whose values have the right
  * shape; fields absent or malformed come back undefined for callers to
  * fall back on or reject. */
 function parseGuardianTokenFields(value: unknown): Partial<GuardianTokenData> {
-  if (!isJsonObject(value)) return {};
-  const data: Partial<GuardianTokenData> = {};
-  if (typeof value.guardianPrincipalId === "string") {
-    data.guardianPrincipalId = value.guardianPrincipalId;
-  }
-  if (typeof value.accessToken === "string") {
-    data.accessToken = value.accessToken;
-  }
-  if (isTokenExpiry(value.accessTokenExpiresAt)) {
-    data.accessTokenExpiresAt = value.accessTokenExpiresAt;
-  }
-  if (typeof value.refreshToken === "string") {
-    data.refreshToken = value.refreshToken;
-  }
-  if (isTokenExpiry(value.refreshTokenExpiresAt)) {
-    data.refreshTokenExpiresAt = value.refreshTokenExpiresAt;
-  }
-  if (typeof value.refreshAfter === "string") {
-    data.refreshAfter = value.refreshAfter;
-  }
-  if (typeof value.isNew === "boolean") {
-    data.isNew = value.isNew;
-  }
-  if (typeof value.deviceId === "string") {
-    data.deviceId = value.deviceId;
-  }
-  return data;
+  return GuardianTokenFieldsSchema.parse(value);
 }
 
 const DEVICE_ID_SALT = "mycadet-host-id";
