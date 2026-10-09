@@ -111,10 +111,7 @@ export async function executeAcpStatus(
         };
       }
       const judged = (
-        await withCurrentAuthMarkers(
-          [snapshot],
-          resolvedClaudeCredentialDigest,
-        )
+        await withCurrentAuthMarkers([snapshot], resolvedClaudeCredentialDigest)
       )[0];
       if (!judged) {
         return {

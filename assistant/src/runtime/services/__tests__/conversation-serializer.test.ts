@@ -183,7 +183,9 @@ describe("serializeConversationSummary · title keys", () => {
   });
 
   test("passes a custom title through", () => {
-    const summary = serialize(makeConversationRow({ title: "Weekly planning" }));
+    const summary = serialize(
+      makeConversationRow({ title: "Weekly planning" }),
+    );
     expect(summary.title).toBe("Weekly planning");
   });
 });

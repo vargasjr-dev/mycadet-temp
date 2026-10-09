@@ -40,13 +40,7 @@ afterEach(() => {
 /** Build `<root>/<prefix>/node_modules/@mycadet/assistant/src/daemon`. */
 function seedInstalledLayout(options: { withBin: boolean }): string {
   const nodeModules = join(root, "cli", "latest", "node_modules");
-  const moduleDir = join(
-    nodeModules,
-    "@mycadet",
-    "assistant",
-    "src",
-    "daemon",
-  );
+  const moduleDir = join(nodeModules, "@mycadet", "assistant", "src", "daemon");
   mkdirSync(moduleDir, { recursive: true });
   writeFileSync(join(moduleDir, "..", "index.ts"), "#!/usr/bin/env bun\n");
 

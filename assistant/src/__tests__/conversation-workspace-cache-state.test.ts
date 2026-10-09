@@ -104,7 +104,6 @@ mock.module("../persistence/llm-usage-store.js", () => ({
   recordUsageEvent: () => ({ id: "usage-1", createdAt: Date.now() }),
 }));
 
-
 mock.module("../agent/loop.js", () => ({
   AgentLoop: class {
     compactionCircuit = new CompactionCircuit("test-conv");

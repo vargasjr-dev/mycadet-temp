@@ -53,9 +53,7 @@ const log = getLogger("slow-query");
 
 // Parsed once at module load; falls back below for any non-positive or
 // unparseable value.
-const configuredThresholdMs = Number(
-  process.env.CADET_SLOW_QUERY_THRESHOLD_MS,
-);
+const configuredThresholdMs = Number(process.env.CADET_SLOW_QUERY_THRESHOLD_MS);
 
 /**
  * Statement executions that block the event loop at least this long are logged.

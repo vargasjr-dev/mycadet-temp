@@ -107,9 +107,15 @@ describe("platform callback registration", () => {
   });
 
   test("resolves managed callback context from stored credentials", async () => {
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -123,9 +129,15 @@ describe("platform callback registration", () => {
 
   test("self-hosted assistant with stored credentials is enabled without IS_PLATFORM", async () => {
     mockIsPlatform = false;
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -189,9 +201,15 @@ describe("platform callback registration", () => {
   });
 
   test("registerCallbackRoute falls back to assistant API key auth", async () => {
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
 
     globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -234,9 +252,15 @@ describe("platform callback registration", () => {
     mockConfig = {
       ingress: { publicBaseUrl: "https://my-assistant.example.com" },
     };
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -273,9 +297,15 @@ describe("platform callback registration", () => {
     mockIsPlatform = false;
     mockConfig = {};
     setIngressPublicBaseUrl("https://detected.example.com/");
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -311,9 +341,15 @@ describe("platform callback registration", () => {
   test("self-hosted registerCallbackRoute omits callback_base_url when no ingress is available", async () => {
     mockIsPlatform = false;
     mockConfig = {};
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-self-hosted-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -350,9 +386,15 @@ describe("platform callback registration", () => {
   test("platform-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
     mockIsPlatform = true;
     mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
 
     globalThis.fetch = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -409,9 +451,15 @@ describe("resolveCallbackUrl resolution order", () => {
   }
 
   function seedPlatformCredentials(): void {
-    secureKeyStore.set(credentialKey("cadet", "platform_base_url"), "https://platform.example.com");
+    secureKeyStore.set(
+      credentialKey("cadet", "platform_base_url"),
+      "https://platform.example.com",
+    );
     mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
-    secureKeyStore.set(credentialKey("cadet", "assistant_api_key"), "ast-managed-key");
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
   }
 
   let registerCalls: number;

@@ -2,7 +2,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, test } from "bun:test";
 
-import { getAppDirPath, UNSUPPORTED_LEGACY_APP_HTML } from "../apps/app-store.js";
+import {
+  getAppDirPath,
+  UNSUPPORTED_LEGACY_APP_HTML,
+} from "../apps/app-store.js";
 import { seedApp } from "./helpers/seed-app.js";
 
 beforeAll(() => {

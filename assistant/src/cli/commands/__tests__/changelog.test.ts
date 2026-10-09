@@ -69,8 +69,7 @@ const REL_080_RC: FakeRelease = {
   name: "v0.8.0-rc.1",
   body: "Release candidate.",
   published_at: "2026-05-09T12:00:00Z",
-  html_url:
-    "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.8.0-rc.1",
+  html_url: "https://github.com/vargasjr-dev/mycadet/releases/tag/v0.8.0-rc.1",
   draft: false,
   prerelease: true,
 };

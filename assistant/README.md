@@ -70,9 +70,9 @@ bun run src/index.ts                # interactive CLI session
 
 | Command                                                    | Description                                      |
 | ---------------------------------------------------------- | ------------------------------------------------ |
-| `cadet wake`                                              | Start assistant + gateway from current checkout  |
-| `cadet sleep`                                             | Stop assistant + gateway processes               |
-| `cadet ps`                                                | List assistants and per-assistant process status |
+| `cadet wake`                                               | Start assistant + gateway from current checkout  |
+| `cadet sleep`                                              | Stop assistant + gateway processes               |
+| `cadet ps`                                                 | List assistants and per-assistant process status |
 | `assistant`                                                | Launch interactive CLI session                   |
 | `assistant conversations list\|search\|new\|export\|clear` | Manage conversations                             |
 | `assistant config set\|get\|list`                          | Manage configuration                             |

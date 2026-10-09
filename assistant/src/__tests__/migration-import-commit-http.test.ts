@@ -23,7 +23,14 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 
 /** Convert a Uint8Array to an ArrayBuffer for BodyInit compatibility. */
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {

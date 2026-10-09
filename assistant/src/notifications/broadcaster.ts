@@ -720,8 +720,7 @@ export class NotificationBroadcaster {
               assistantInitiatedThread.cadetSignal.conversationMetadata
                 ?.groupId,
             source:
-              assistantInitiatedThread.cadetSignal.conversationMetadata
-                ?.source,
+              assistantInitiatedThread.cadetSignal.conversationMetadata?.source,
             silent: resolveSilent(),
           };
 

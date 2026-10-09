@@ -232,13 +232,9 @@ function makeDeps(
     } as EventHandlerDeps["turnChannelContext"],
     turnInterfaceContext: {
       userMessageInterface:
-        assistantMessageChannel === "cadet"
-          ? "macos"
-          : assistantMessageChannel,
+        assistantMessageChannel === "cadet" ? "macos" : assistantMessageChannel,
       assistantMessageInterface:
-        assistantMessageChannel === "cadet"
-          ? "macos"
-          : assistantMessageChannel,
+        assistantMessageChannel === "cadet" ? "macos" : assistantMessageChannel,
     } as EventHandlerDeps["turnInterfaceContext"],
   } as EventHandlerDeps;
 }

@@ -29,7 +29,6 @@ const metadataByKey = new Map<
   }
 >();
 
-
 mock.module("../tools/credentials/metadata-store.js", () => ({
   assertMetadataWritable: () => {},
   upsertCredentialMetadata: (service: string, field: string) => {

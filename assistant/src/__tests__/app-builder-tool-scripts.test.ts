@@ -183,7 +183,10 @@ describe("app-builder skill tool scripts", () => {
 
       const result = await appOpenScript.run(
         {},
-        makeContext({ conversationId: "conv-open-1", proxyToolResolver: proxy }),
+        makeContext({
+          conversationId: "conv-open-1",
+          proxyToolResolver: proxy,
+        }),
       );
 
       expect(result.isError).toBe(false);
@@ -215,7 +218,10 @@ describe("app-builder skill tool scripts", () => {
 
       const result = await appOpenScript.run(
         {},
-        makeContext({ conversationId: "conv-open-none", proxyToolResolver: proxy }),
+        makeContext({
+          conversationId: "conv-open-none",
+          proxyToolResolver: proxy,
+        }),
       );
 
       expect(result.isError).toBe(true);

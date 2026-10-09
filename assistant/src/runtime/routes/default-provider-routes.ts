@@ -20,12 +20,12 @@ import {
   DefaultProviderSelectionSchema,
   setDefaultProvider,
 } from "../../config/default-provider.js";
-import {
-  getDefaultProviderFromConfig,
-  resolveDefaultConnectionName,
-} from "../../config/default-provider-resolution.js";
+import { resolveDefaultConnectionName } from "../../config/default-provider-resolution.js";
 import { getConfigReadOnly } from "../../config/loader.js";
-import { DEFAULT_PROVIDER_CHOICES } from "../../config/schemas/llm.js";
+import {
+  DEFAULT_PROVIDER_CHOICES,
+  isDefaultProviderChoice,
+} from "../../config/schemas/llm.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import {
   computeConnectionAvailability,
@@ -61,7 +61,13 @@ type DefaultProviderStatus = z.infer<typeof defaultProviderStatusSchema>;
 const SETTINGS_HINT = "in Settings → Models & Services";
 
 async function handleGetDefaultProvider(): Promise<DefaultProviderStatus> {
-  const dp = getDefaultProviderFromConfig(getConfigReadOnly());
+  const blob = getConfigReadOnly().llm.default;
+  const dp =
+    blob != null &&
+    blob.provider != null &&
+    isDefaultProviderChoice(blob.provider)
+      ? { provider: blob.provider, connectionName: blob.provider_connection }
+      : null;
   if (!dp) {
     return {
       provider: null,

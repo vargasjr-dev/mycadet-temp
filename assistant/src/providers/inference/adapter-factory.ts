@@ -23,7 +23,6 @@ import {
   FALLBACK_PROFILE_BY_KEY,
   isDefaultProfileKey,
 } from "../../config/default-profile-names.js";
-import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import {
   resolveCallSiteConfigWithProfile,
   selectWinningProfile,
@@ -384,7 +383,7 @@ export function createAdapterFromConnection(
         const backup = resolveDefaultProfileForProvider(
           llm.profiles,
           overrideProfile,
-          readDefaultProvider(llm.default),
+          llm.default,
         );
         if (backup?.model == null) {
           log.warn(

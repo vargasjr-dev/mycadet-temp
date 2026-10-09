@@ -2098,9 +2098,7 @@ describe("memory migration down() functions", () => {
       raw.exec(
         `CREATE TABLE guardian_action_deliveries (id TEXT PRIMARY KEY, destination_channel TEXT NOT NULL)`,
       );
-      raw.exec(
-        `INSERT INTO guardian_action_deliveries VALUES ('d1', 'cadet')`,
-      );
+      raw.exec(`INSERT INTO guardian_action_deliveries VALUES ('d1', 'cadet')`);
 
       downRenameChannelToCadet(db);
       downRenameChannelToCadet(db);

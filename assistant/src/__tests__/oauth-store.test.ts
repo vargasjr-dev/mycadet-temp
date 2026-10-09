@@ -1,4 +1,12 @@
-import { afterAll, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 
 import * as secureKeysModule from "../security/secure-keys.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
@@ -1494,9 +1502,7 @@ describe("app operations", () => {
 
       await deleteApp(app.id);
 
-      expect(deleteSecureKeyAsync).toHaveBeenCalledWith(
-        "custom/secret/path",
-      );
+      expect(deleteSecureKeyAsync).toHaveBeenCalledWith("custom/secret/path");
     });
 
     test("returns false for nonexistent id", async () => {

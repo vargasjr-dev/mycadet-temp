@@ -213,10 +213,10 @@ Each policy defines:
 
 | Strategy                         | Behavior                                                                                                                                                      | Used by                                                                                      |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `start_new_conversation`         | Pairs the delivery with a new or reused conversation, or appends to the producing one (see Conversation Pairing below).                                       | `cadet`                                                                                     |
+| `start_new_conversation`         | Pairs the delivery with a new or reused conversation, or appends to the producing one (see Conversation Pairing below).                                       | `cadet`                                                                                      |
 | `continue_existing_conversation` | Resolves the destination chat's home conversation, creating one on first delivery. The delivered post is written there only once the channel acknowledges it. | `telegram`, `slack`, `discord`, and the non-deliverable `whatsapp`, `email`, `a2a`, `plugin` |
-| `push_only`                      | Pairs nothing. The push deep-links through the cadet delivery's conversation.                                                                                | `platform`                                                                                   |
-| `not_deliverable`                | Channel cannot receive notifications. Pairing returns null IDs.                                                                                               | `phone`, `cadet-shared`                                                                     |
+| `push_only`                      | Pairs nothing. The push deep-links through the cadet delivery's conversation.                                                                                 | `platform`                                                                                   |
+| `not_deliverable`                | Channel cannot receive notifications. Pairing returns null IDs.                                                                                               | `phone`, `cadet-shared`                                                                      |
 
 ### Helper Functions
 
@@ -271,7 +271,7 @@ The conversation seed composer adapts verbosity to the delivery surface:
 
 | Channel    | Default Interface | Verbosity | Style                                          |
 | ---------- | ----------------- | --------- | ---------------------------------------------- |
-| `cadet`   | `macos`           | Rich      | 2-4 short sentences with context and next step |
+| `cadet`    | `macos`           | Rich      | 2-4 short sentences with context and next step |
 | `telegram` | `telegram`        | Compact   | 1-2 concise sentences                          |
 
 Interface inference strategy:
@@ -536,7 +536,7 @@ Where classification does not run, any other code-less reply falls through to th
 | `copy-composer.ts`              | Template-based fallback notification copy when LLM copy is unavailable                                     |
 | `conversation-seed-composer.ts` | Surface-aware conversation seed generation (richer than notification copy)                                 |
 | `destination-resolver.ts`       | Resolves per-channel endpoints (Telegram and Slack chat ID, Discord user ID)                               |
-| `adapters/macos.ts`             | Cadet adapter -- broadcasts `notification_intent` via SSE with deep-link metadata                         |
+| `adapters/macos.ts`             | Cadet adapter -- broadcasts `notification_intent` via SSE with deep-link metadata                          |
 | `adapters/platform.ts`          | Platform adapter: posts to the platform push-dispatch endpoint for native mobile push                      |
 | `adapters/telegram.ts`          | Telegram adapter: calls the Telegram Bot API through `messaging/providers/telegram-bot/send.ts`            |
 | `adapters/slack.ts`             | Slack adapter: posts to the guardian's DM through `messaging/providers/slack/send.ts`                      |

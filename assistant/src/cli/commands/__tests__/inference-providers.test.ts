@@ -5,7 +5,15 @@
  * forward to the connection route's `base_url` + `models` fields.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 
 import { Command } from "commander";
 
@@ -505,7 +513,9 @@ describe("providers login-chatgpt", () => {
     expect(openedUrls).toEqual([
       "https://auth.openai.com/oauth/authorize?state=test",
     ]);
-    expect(setSecureKeyAsync.mock.calls.map(([key, value]) => ({ key, value }))).toContainEqual({
+    expect(
+      setSecureKeyAsync.mock.calls.map(([key, value]) => ({ key, value })),
+    ).toContainEqual({
       key: "credential/chatgpt/access_token",
       value: "test-access-token",
     });

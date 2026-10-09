@@ -199,9 +199,8 @@ describe("avatar set", () => {
     // workspace at an ephemeral tempdir (required in test processes) holding
     // a real file.
     const originalWsDir = process.env.CADET_WORKSPACE_DIR;
-    const { mkdtempSync, rmSync, writeFileSync, existsSync } = await import(
-      "node:fs"
-    );
+    const { mkdtempSync, rmSync, writeFileSync, existsSync } =
+      await import("node:fs");
     const { resolve, join: joinPath } = await import("node:path");
     const { tmpdir } = await import("node:os");
     const wsRoot = mkdtempSync(joinPath(tmpdir(), "avatar-set-test-"));

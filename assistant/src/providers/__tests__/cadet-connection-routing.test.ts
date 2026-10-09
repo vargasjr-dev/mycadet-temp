@@ -56,25 +56,17 @@ describe("cadet connection routing", () => {
     // No `provider` override → the connection column is the routing
     // sentinel and must not build an adapter, even though Cadet-hosted
     // GPU models share this catalog id.
-    const adapter = createAdapterFromConnection(
-      cadetConnection,
-      resolvedAuth,
-      {
-        model: "accounts/fireworks/models/kimi-k2p5",
-      },
-    );
+    const adapter = createAdapterFromConnection(cadetConnection, resolvedAuth, {
+      model: "accounts/fireworks/models/kimi-k2p5",
+    });
     expect(adapter).toBeNull();
   });
 
   test("provider override routes the cadet connection to the real upstream", () => {
-    const adapter = createAdapterFromConnection(
-      cadetConnection,
-      resolvedAuth,
-      {
-        model: "accounts/fireworks/models/kimi-k2p5",
-        provider: "fireworks",
-      },
-    );
+    const adapter = createAdapterFromConnection(cadetConnection, resolvedAuth, {
+      model: "accounts/fireworks/models/kimi-k2p5",
+      provider: "fireworks",
+    });
     expect(adapter).not.toBeNull();
   });
 

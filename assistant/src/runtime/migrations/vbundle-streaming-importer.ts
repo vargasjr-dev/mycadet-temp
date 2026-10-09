@@ -2582,9 +2582,7 @@ const ImportMarkerSchema = z.object({
   /** Absolute path of the `.import-<uuid>` temp tree. */
   tempWorkspaceDir: z.string(),
   /** Preserved paths moved out of the live workspace pre-swap. */
-  carried: z.array(
-    z.object({ liveChild: z.string(), tempChild: z.string() }),
-  ),
+  carried: z.array(z.object({ liveChild: z.string(), tempChild: z.string() })),
   /**
    * Absolute path of the `${realWorkspaceDir}.pre-import-<ts>` backup dir
    * (optional — only present once the content-level swap phase has started).

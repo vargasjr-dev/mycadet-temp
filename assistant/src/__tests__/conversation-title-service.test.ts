@@ -516,7 +516,10 @@ describe("conversation-title-service", () => {
     });
 
     expect(provider.sendMessage).not.toHaveBeenCalled();
-    expect(result).toEqual({ title: MESSAGE_KEYS.CONVERSATION_TITLE_UNTITLED, updated: true });
+    expect(result).toEqual({
+      title: MESSAGE_KEYS.CONVERSATION_TITLE_UNTITLED,
+      updated: true,
+    });
     expect(mockUpdateConversationTitle).toHaveBeenCalledWith(
       "conv-1",
       MESSAGE_KEYS.CONVERSATION_TITLE_UNTITLED,

@@ -625,6 +625,21 @@ export const LLMDefaultConfigSchema = LLMConfigFragment.extend({
 });
 export type LLMDefaultConfig = z.infer<typeof LLMDefaultConfigSchema>;
 
+/**
+ * The default-provider selection fields of the `llm.default` blob as RAW
+ * config carries them, for readers that see config.json before the loader's
+ * schema parse (boot seed, ensure passes, wire overlays). Each field fails
+ * independently so a valid provider survives a bad pin, and a malformed blob
+ * reads as empty — both clamp to the managed column downstream via
+ * `isDefaultProviderChoice`.
+ */
+export const RawDefaultSelectionSchema = z
+  .object({
+    provider: z.string().min(1).optional().catch(undefined),
+    provider_connection: z.string().min(1).optional().catch(undefined),
+  })
+  .catch({});
+
 export const ProfileStatusSchema = z
   .enum(["active", "disabled"])
   .meta({ id: "ProfileStatus" });
@@ -740,8 +755,8 @@ type LLMCallSiteConfig = z.infer<typeof LLMCallSiteConfig>;
  * backs the workspace's default inference identity, plus the connection pin
  * for it. This is the RESOLVED view handed to the matrix resolvers — the
  * stored shape is the `llm.default` blob below, whose fields are all optional
- * and whose `provider` is the loose provider set; readers clamp both through
- * `isDefaultProviderChoice` (see `readDefaultProvider`).
+ * and whose `provider` is the loose provider set; readers clamp both via
+ * `isDefaultProviderChoice`.
  *
  * When `connectionName` is absent, `resolveDefaultConnectionName`
  * (`../default-provider.js`) supplies the convention. No
@@ -766,21 +781,15 @@ export type DefaultProviderConfig = {
  * and the schema must reject it rather than preserve a selection the picker
  * cannot show.
  *
- * Accepts an unknown value so the raw write paths (which validate on-disk
- * shapes without a full parse) can share the rule. A missing or malformed
- * value resolves to the managed column: the blob is optional, and a `provider`
- * with no matrix column (keyless ollama, user-endpoint openai-compatible) is
- * clamped to the managed column by resolution — see `readDefaultProvider` —
- * so backups resolve there too.
+ * A missing blob or a `provider` with no matrix column (keyless ollama,
+ * user-endpoint openai-compatible) clamps to the managed column via
+ * `isDefaultProviderChoice`, so backups resolve there too.
  */
 export function backupProfilesResolveUnderDefaultProvider(
-  llmDefault: unknown,
+  llmDefault: LLMDefaultConfig | undefined,
 ): boolean {
-  const provider =
-    llmDefault != null && typeof llmDefault === "object" && !Array.isArray(llmDefault)
-      ? (llmDefault as Record<string, unknown>).provider
-      : undefined;
-  if (typeof provider !== "string") {
+  const provider = llmDefault?.provider;
+  if (provider == null) {
     return true;
   }
   return !isDefaultProviderChoice(provider) || provider === "cadet";
@@ -886,8 +895,9 @@ export function collectFallbackProfileIssues(
   // so they are valid targets only under a managed `llm.default`.
   // A persisted managed stub for a backup name does not change that, see
   // `referenceableProfileKeys`.
-  const backupsResolve =
-    backupProfilesResolveUnderDefaultProvider(llmDefault);
+  const backupsResolve = backupProfilesResolveUnderDefaultProvider(
+    RawDefaultSelectionSchema.parse(llmDefault),
+  );
   const profileNames = new Set([
     ...referenceableProfileKeys(profiles, backupsResolve),
     ...DEFAULT_PROFILE_KEYS,

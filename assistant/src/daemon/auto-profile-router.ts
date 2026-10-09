@@ -17,7 +17,6 @@ import {
   type DefaultProfileKey,
   isDefaultProfileKey,
 } from "../config/default-profile-names.js";
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getConfig } from "../config/loader.js";
 import type { ProfileEntry } from "../config/schemas/llm.js";
 import { getMessagesPaginated } from "../persistence/conversation-crud.js";
@@ -405,7 +404,7 @@ export async function previewAutoProfile(args: {
   const { llm } = getConfig();
   const profiles = getConversationProfilesForProvider(
     llm.profiles,
-    readDefaultProvider(llm.default),
+    llm.default,
   );
   if (profiles[AUTO_PROFILE_KEY]?.source !== "managed") {
     return null;

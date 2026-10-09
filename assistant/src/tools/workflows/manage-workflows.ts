@@ -16,7 +16,6 @@
 import { z } from "zod";
 
 import { getConversationProfilesForProvider } from "../../config/default-profile-catalog.js";
-import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import { loadConfig } from "../../config/loader.js";
 import { callerOwnsWorkflowRun } from "../../workflows/capabilities.js";
 import type { WorkflowRun } from "../../workflows/journal-store.js";
@@ -204,7 +203,7 @@ export async function executeManageWorkflows(
       // which leaves out the managed Jev profile.
       const profiles = getConversationProfilesForProvider(
         llm?.profiles,
-        readDefaultProvider(llm?.default),
+        llm?.default,
       );
       return {
         content: JSON.stringify({

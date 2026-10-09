@@ -32,8 +32,11 @@ mock.module("../util/logger.js", () => ({
 
 // The REAL secure-keys module pinned to a faultable memory backend; per-key
 // unreachable faults simulate dead reads exactly as the old result matrix did.
-const { store: secureKeyValues, setUnreachableKey, clearUnreachableKey } =
-  useFaultableSecureKeyMap();
+const {
+  store: secureKeyValues,
+  setUnreachableKey,
+  clearUnreachableKey,
+} = useFaultableSecureKeyMap();
 
 mock.module("../telegram/bot-username.js", () => ({
   getTelegramBotUsername: () => telegramBotUsername,

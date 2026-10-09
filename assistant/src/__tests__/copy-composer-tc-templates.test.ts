@@ -108,9 +108,7 @@ describe("guardian_decision fallback copy", () => {
     });
 
     const deniedCopy = composeFallbackCopy(deniedSignal, ["cadet"]).cadet!;
-    const approvedCopy = composeFallbackCopy(approvedSignal, [
-      "cadet",
-    ]).cadet!;
+    const approvedCopy = composeFallbackCopy(approvedSignal, ["cadet"]).cadet!;
 
     expect(deniedCopy.body).toContain("denied");
     expect(deniedCopy.body).not.toContain("approved");

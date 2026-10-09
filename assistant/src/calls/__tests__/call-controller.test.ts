@@ -37,7 +37,13 @@ import { credentialKey } from "../../security/credential-key.js";
 // (PCM-transport tests) can select providers; tests narrow the seeded set by
 // clearing the store. Restore the full default set in beforeEach.
 const secureKeys = useMemorySecureKeyMap();
-const DEFAULT_RESOLVABLE_TTS_KEYS = ["fish-audio", "cadet", "xai", "deepgram", "elevenlabs"];
+const DEFAULT_RESOLVABLE_TTS_KEYS = [
+  "fish-audio",
+  "cadet",
+  "xai",
+  "deepgram",
+  "elevenlabs",
+];
 function seedDefaultResolvableKeys(): void {
   secureKeys.clear();
   for (const service of DEFAULT_RESOLVABLE_TTS_KEYS) {

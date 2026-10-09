@@ -12,7 +12,15 @@
  * conversation's earlier notifications from silencing later runs.
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 // Stub the shared runner so the execute path is observable without an LLM.
 let runBackgroundJobShouldFail = false;

@@ -330,9 +330,14 @@ describe("referential forking", () => {
         skipIndexing: true,
       },
     );
-    const remember = await addMessage(fork.id, "assistant", "remembered a fact", {
-      skipIndexing: true,
-    });
+    const remember = await addMessage(
+      fork.id,
+      "assistant",
+      "remembered a fact",
+      {
+        skipIndexing: true,
+      },
+    );
 
     const runRows = await loadRetrospectiveRunMessages(
       fork.id,

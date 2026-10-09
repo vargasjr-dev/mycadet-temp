@@ -236,9 +236,7 @@ describe("executeBrowserFillCredential", () => {
     const insertCall = sendCalls.find((c) => c.method === "Input.insertText")!;
     expect(insertCall.params).toEqual({ text: "super-secret-password" });
 
-    expect(getSpy).toHaveBeenCalledWith(
-      credentialKey("gmail", "password"),
-    );
+    expect(getSpy).toHaveBeenCalledWith(credentialKey("gmail", "password"));
 
     // CdpClient disposed in finally → session.detach called.
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -434,9 +432,7 @@ describe("executeBrowserFillCredential", () => {
         "gmail",
         "password",
       );
-      expect(getSpy).toHaveBeenCalledWith(
-        credentialKey("gmail", "password"),
-      );
+      expect(getSpy).toHaveBeenCalledWith(credentialKey("gmail", "password"));
     });
 
     test("returns tool policy denial with actionable message", async () => {

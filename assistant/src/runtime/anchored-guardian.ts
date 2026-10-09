@@ -70,10 +70,7 @@ export function resolveAnchoredGuardian(
       channelType: sourceGuardian.channelType,
       source: "source-channel-contact",
     };
-  } else if (
-    cadetGuardian &&
-    !(requireAnchorPrincipal && !anchorPrincipalId)
-  ) {
+  } else if (cadetGuardian && !(requireAnchorPrincipal && !anchorPrincipalId)) {
     // Source-channel resolution did not match the anchor → use the anchored
     // cadet identity.
     resolved = {

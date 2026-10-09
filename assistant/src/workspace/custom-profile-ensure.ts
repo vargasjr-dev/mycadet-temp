@@ -20,8 +20,8 @@ const log = getLogger("custom-profile-ensure");
 // are frozen self-contained snapshots that may not import it (see
 // workspace/migrations/AGENTS.md). Using the live helper keeps this pass and
 // the write-path normalization in `commitConfigWrite` identical by
-// construction. Running unconditionally each boot (the
-// `ensureDefaultProvider` pattern) also covers configs restored from backups
+// construction. Running
+// unconditionally each boot also covers configs restored from backups
 // and entries injected after the migration registry checkpoints — and it
 // completes before the first `loadConfig()`, so no resolution ever sees a
 // partial custom profile.

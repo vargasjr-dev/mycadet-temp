@@ -109,8 +109,7 @@ describe("rehydratePlatformCredentials", () => {
     mockSecureKeys[credentialKey("cadet", "platform_base_url")] = PROD_URL;
     mockSecureKeys[credentialKey("cadet", "platform_assistant_id")] =
       ASSISTANT_ID;
-    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] =
-      ORG_ID;
+    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] = ORG_ID;
     mockSecureKeys[credentialKey("cadet", "platform_user_id")] = USER_ID;
 
     await rehydratePlatformCredentials();
@@ -199,8 +198,7 @@ describe("rehydratePlatformCredentials", () => {
       "assistant-key";
     mockSecureKeys[credentialKey("cadet", "platform_assistant_id")] =
       ASSISTANT_ID;
-    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] =
-      ORG_ID;
+    mockSecureKeys[credentialKey("cadet", "platform_organization_id")] = ORG_ID;
     mockSecureKeys[credentialKey("cadet", "platform_user_id")] = USER_ID;
     fetchImpl = async () => {
       throw new Error("network down");

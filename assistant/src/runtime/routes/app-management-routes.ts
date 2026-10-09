@@ -76,11 +76,7 @@ const log = getLogger("app-management-routes");
 // ---------------------------------------------------------------------------
 
 function getSharedAppsDirs(): string[] {
-  const canonical = join(
-    getUserAppDataDir(),
-    "mycadet",
-    "shared-apps",
-  );
+  const canonical = join(getUserAppDataDir(), "mycadet", "shared-apps");
   const legacy = join(
     homedir(),
     "Library",

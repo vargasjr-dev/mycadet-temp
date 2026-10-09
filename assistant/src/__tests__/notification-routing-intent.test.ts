@@ -105,11 +105,7 @@ describe("routing intent enforcement", () => {
         connected,
       );
 
-      expect(enforced.selectedChannels).toEqual([
-        "cadet",
-        "telegram",
-        "slack",
-      ]);
+      expect(enforced.selectedChannels).toEqual(["cadet", "telegram", "slack"]);
       expect(enforced.reasoningSummary).toContain(
         "routing_intent=all_channels",
       );

@@ -84,5 +84,8 @@ await runIsolatedTests({
   bunTestArgs: EXCLUDE_EXPERIMENTAL
     ? ["--test-name-pattern", "^(?!.*\\[experimental\\])"]
     : [],
-  fixture: { script: "scripts/build-test-fixtures.ts", envVar: "CADET_TEST_FIXTURES_DIR" },
+  fixture: {
+    script: "scripts/build-test-fixtures.ts",
+    envVar: "CADET_TEST_FIXTURES_DIR",
+  },
 });

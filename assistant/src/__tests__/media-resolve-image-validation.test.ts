@@ -451,7 +451,9 @@ describe("resolveMediaReferences file workspace_ref stay-on-disk", () => {
     }
     expect(block.source.type).toBe("workspace_ref");
     expect(block.extracted_text).toBeUndefined();
-    expect(JSON.stringify(resolved)).not.toContain("this dump must not be resent");
+    expect(JSON.stringify(resolved)).not.toContain(
+      "this dump must not be resent",
+    );
     expect(JSON.stringify(resolved)).not.toContain("hello-over-cap");
   });
 

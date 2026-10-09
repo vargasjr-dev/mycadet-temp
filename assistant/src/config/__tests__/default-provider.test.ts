@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import {
   afterAll,
@@ -36,14 +42,12 @@ afterAll(() => {
 import { CADET_MANAGED_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import {
   DefaultProviderSelectionSchema,
-  getDefaultProvider,
   resolveDefaultConnectionName,
   setDefaultProvider,
 } from "../default-provider.js";
-import { readDefaultProvider } from "../default-provider-resolution.js";
 import { invalidateConfigCache, loadRawConfig } from "../loader.js";
 import { getSchemaAtPath } from "../schema-utils.js";
-import { LLMSchema } from "../schemas/llm.js";
+import { isDefaultProviderChoice, LLMSchema } from "../schemas/llm.js";
 
 function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -103,7 +107,7 @@ describe("LLMSchema.default (the base blob)", () => {
   // matrix column stays on disk (stripping it would drop the blob's other
   // fields), and the READ clamps it to null — resolution treats that as the
   // managed column.
-  test("a blob whose provider has no matrix column survives parse and reads as null", () => {
+  test("a blob whose provider has no matrix column survives parse and clamps", () => {
     const parsed = LLMSchema.parse({
       default: { provider: "openai-compatible", model: "gpt-x" },
     });
@@ -111,7 +115,8 @@ describe("LLMSchema.default (the base blob)", () => {
       provider: "openai-compatible",
       model: "gpt-x",
     });
-    expect(readDefaultProvider(parsed.default)).toBeNull();
+    const provider = parsed.default?.provider;
+    expect(provider != null && isDefaultProviderChoice(provider)).toBe(false);
   });
 
   test("a non-object blob fails the parse (the loader's leaf recovery strips it)", () => {
@@ -196,7 +201,7 @@ describe("resolveDefaultConnectionName", () => {
   });
 });
 
-describe("getDefaultProvider / setDefaultProvider", () => {
+describe("setDefaultProvider", () => {
   beforeEach(() => {
     ensureTestDir();
     if (existsSync(CONFIG_PATH)) {
@@ -209,17 +214,8 @@ describe("getDefaultProvider / setDefaultProvider", () => {
     invalidateConfigCache();
   });
 
-  test("getDefaultProvider returns null when absent", () => {
-    expect(getDefaultProvider()).toBeNull();
-  });
-
-  test("set/get round-trip through the raw config", () => {
+  test("set round-trips through the raw config", () => {
     setDefaultProvider({ provider: "openai", connectionName: "openai-work" });
-
-    expect(getDefaultProvider()).toEqual({
-      provider: "openai",
-      connectionName: "openai-work",
-    });
 
     const raw = loadRawConfig();
     const llm = raw.llm as Record<string, unknown>;
@@ -242,10 +238,9 @@ describe("getDefaultProvider / setDefaultProvider", () => {
     setDefaultProvider({ provider: "openai", connectionName: "openai-work" });
     setDefaultProvider({ provider: "openai" });
 
-    expect(getDefaultProvider()).toEqual({ provider: "openai" });
     const blob = (loadRawConfig().llm as Record<string, unknown>)
       .default as Record<string, unknown>;
-    expect(blob.provider_connection).toBeUndefined();
+    expect(blob).toEqual({ provider: "openai" });
   });
 
   test("setDefaultProvider preserves unrelated blob fields", () => {
@@ -264,19 +259,6 @@ describe("getDefaultProvider / setDefaultProvider", () => {
     const blob = (loadRawConfig().llm as Record<string, unknown>)
       .default as Record<string, unknown>;
     expect(blob).toEqual({ provider: "openai", model: "x" });
-  });
-
-  test("getDefaultProvider accepts a pre-loaded config without re-reading disk", () => {
-    setDefaultProvider({ provider: "gemini" });
-    const config = { llm: { default: { provider: "anthropic" } } };
-    // @ts-expect-error partial AssistantConfig stub for the pure-read path
-    expect(getDefaultProvider(config)).toEqual({ provider: "anthropic" });
-  });
-
-  test("a blob provider outside the matrix reads as null", () => {
-    const config = { llm: { default: { provider: "openai-compatible" } } };
-    // @ts-expect-error partial AssistantConfig stub for the pure-read path
-    expect(getDefaultProvider(config)).toBeNull();
   });
 
   test("writes invalidate the config cache so getConfigReadOnly sees the new value", () => {

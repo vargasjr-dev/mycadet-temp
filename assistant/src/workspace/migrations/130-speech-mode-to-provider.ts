@@ -90,8 +90,7 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
 
       // What a managed service had chosen for BYOK before is not
       // recoverable — it was overwritten on the way up.
-      service.mode =
-        service.provider === "cadet" ? "managed" : "your-own";
+      service.mode = service.provider === "cadet" ? "managed" : "your-own";
       changed = true;
     }
 

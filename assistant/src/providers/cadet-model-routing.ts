@@ -104,9 +104,7 @@ export function formatCadetModel(provider: string, model: string): string {
  * `managed:false` and never routes through a cadet connection, so the
  * collision is unreachable in practice; the guard here is belt-and-suspenders.
  */
-export function parseCadetModel(
-  routingString: string,
-): CadetModelRoute | null {
+export function parseCadetModel(routingString: string): CadetModelRoute | null {
   const slash = routingString.indexOf("/");
   if (slash <= 0) {
     return null;

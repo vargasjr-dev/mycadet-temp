@@ -230,10 +230,7 @@ describe("parsePluginIcon", () => {
     ["no icon field", { cadet: {} }],
     ["icon is empty", { cadet: { icon: "" } }],
     ["icon is whitespace-only", { cadet: { icon: "   " } }],
-    [
-      "icon is too long (>16 code points)",
-      { cadet: { icon: "x".repeat(17) } },
-    ],
+    ["icon is too long (>16 code points)", { cadet: { icon: "x".repeat(17) } }],
     ["icon is a number", { cadet: { icon: 42 } }],
     ["icon is an object", { cadet: { icon: {} } }],
     ["cadet is an array", { cadet: [] }],

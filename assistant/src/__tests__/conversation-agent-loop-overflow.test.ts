@@ -283,7 +283,6 @@ afterAll(() => {
   );
 });
 
-
 mock.module("../daemon/conversation-memory.js", () => ({
   prepareMemoryContext: async (
     _ctx: unknown,

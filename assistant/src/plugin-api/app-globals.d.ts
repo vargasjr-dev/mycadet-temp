@@ -71,10 +71,7 @@ export interface CadetBridge {
    * assistant's session/auth is attached — use this instead of the bare
    * global `fetch`, which fails from the sandboxed origin.
    */
-  fetch(
-    path: string,
-    options?: CadetFetchInit,
-  ): Promise<CadetFetchResponse>;
+  fetch(path: string, options?: CadetFetchInit): Promise<CadetFetchResponse>;
 }
 
 declare global {

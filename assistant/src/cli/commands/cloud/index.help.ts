@@ -262,8 +262,7 @@ Examples:
     },
     {
       name: "disconnect",
-      description:
-        "Disconnect from Cadet Cloud by removing stored credentials",
+      description: "Disconnect from Cadet Cloud by removing stored credentials",
       helpText: `
 Removes all stored cloud credentials from the assistant's secure
 credential store. After disconnecting, platform-managed features (managed

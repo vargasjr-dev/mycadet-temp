@@ -11,12 +11,10 @@
 import { z } from "zod";
 
 import { getEffectiveProfilesForProvider } from "../../config/default-profile-catalog.js";
-import {
-  getDefaultProviderFromConfig,
-  resolveDefaultConnectionName,
-} from "../../config/default-provider-resolution.js";
+import { resolveDefaultConnectionName } from "../../config/default-provider-resolution.js";
 import { getIsPlatform } from "../../config/env-registry.js";
 import { getConfigReadOnly } from "../../config/loader.js";
+import { isDefaultProviderChoice } from "../../config/schemas/llm.js";
 import { getDb } from "../../persistence/db-connection.js";
 import {
   CADET_MANAGED_PROVIDER,
@@ -630,7 +628,13 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // (protected above), so unrelated same-provider rows stay deletable. Legacy
   // managed rows are excluded from the count for the same reason the list
   // route hides them — they aren't user-manageable connections.
-  const dp = getDefaultProviderFromConfig(config);
+  const blob = config.llm.default;
+  const dp =
+    blob != null &&
+    blob.provider != null &&
+    isDefaultProviderChoice(blob.provider)
+      ? { provider: blob.provider, connectionName: blob.provider_connection }
+      : null;
   // A `cadet` default resolves to the canonical name, so this guard would
   // otherwise block deleting a row that merely claims that name. Deleting it
   // does not orphan the default: boot seeding writes the real managed
@@ -663,7 +667,10 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // the defaults can stamp is also caught by the `llm.default` pin guard
   // above; this keeps the scan a faithful backstop rather than one that
   // silently skips the defaults.
-  const profiles = getEffectiveProfilesForProvider(config.llm?.profiles, dp);
+  const profiles = getEffectiveProfilesForProvider(
+    config.llm?.profiles,
+    config.llm?.default,
+  );
   // A binding lives in `provider` (the entry name) under the entries model,
   // or in the legacy `provider_connection` field; both count, or deleting a
   // bound entry would dangle the profile behind selection's silent healing.

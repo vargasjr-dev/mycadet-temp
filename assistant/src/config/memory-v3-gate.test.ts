@@ -306,9 +306,9 @@ describe("skill improvement gate", () => {
     expect(isSkillImprovementActive(makeConfig(true, undefined, true))).toBe(
       true,
     );
-    expect(isSkillImprovementActive(makeConfig(undefined, undefined, true))).toBe(
-      true,
-    );
+    expect(
+      isSkillImprovementActive(makeConfig(undefined, undefined, true)),
+    ).toBe(true);
   });
 
   test("explicit opt-out disables skill improvement without disabling v3", () => {

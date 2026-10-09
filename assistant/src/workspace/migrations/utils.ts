@@ -24,6 +24,7 @@ export function getCadetRoot(): string {
   const dataHome =
     process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
   const rawEnv = process.env.CADET_ENVIRONMENT?.trim();
-  const dirName = !rawEnv || rawEnv === "production" ? "cadet" : `cadet-${rawEnv}`;
+  const dirName =
+    !rawEnv || rawEnv === "production" ? "cadet" : `cadet-${rawEnv}`;
   return join(dataHome, dirName);
 }

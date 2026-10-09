@@ -8,15 +8,16 @@ import {
   USER_PROFILE_TEMPLATES,
 } from "../config/default-profile-catalog.js";
 import type { DefaultProfileKey } from "../config/default-profile-names.js";
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getIsPlatform } from "../config/env-registry.js";
 import { invalidateConfigCache } from "../config/loader.js";
 import {
-  type DefaultProviderConfig,
   isByokDefaultProviderChoice,
+  isDefaultProviderChoice,
   LLMConfigBase,
+  type LLMDefaultConfig,
   type LLMProvider,
   type ProfileEntry,
+  RawDefaultSelectionSchema,
 } from "../config/schemas/llm.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import { getLogger } from "../util/logger.js";
@@ -56,8 +57,8 @@ const log = getLogger("byok-default-profile-ensure");
 // `materializeProfile(USER_PROFILE_TEMPLATES[...])`, which resolves the
 // current per-provider model intents, and migrations are frozen
 // self-contained snapshots that may not import it (see
-// workspace/migrations/AGENTS.md). Running unconditionally each boot (the
-// `ensureDefaultProvider` pattern) also covers configs restored from backups
+// workspace/migrations/AGENTS.md). Running
+// unconditionally each boot also covers configs restored from backups
 // and freshly-hatched installs whose seeder still wrote the legacy layout.
 //
 // Idempotent and write-avoidant: the file is rewritten only when at least one
@@ -273,10 +274,11 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   if (llm === null) {
     return;
   }
-  // The selection lives in the `llm.default` blob (the ensure pass before
-  // this one derives it from any retired `llm.defaultProvider` key).
-  const defaultProvider = readDefaultProvider(llm.default);
-  if (defaultProvider === null) {
+  // The selection lives in the `llm.default` blob; a value the matrix
+  // cannot implement reads as the managed column and converts nothing.
+  const blob = RawDefaultSelectionSchema.parse(llm.default);
+  const defaultProvider = blob.provider;
+  if (defaultProvider == null || !isDefaultProviderChoice(defaultProvider)) {
     return;
   }
   const profiles = readObject(llm.profiles);
@@ -308,11 +310,9 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   // The default provider on a BYOK default, or the uniform hatch provider
   // across the complete copy set on a routing-identity default (cadet,
   // chatgpt); null converts nothing.
-  const candidateProvider = ROUTING_IDENTITY_PROVIDERS.has(
-    defaultProvider.provider,
-  )
+  const candidateProvider = ROUTING_IDENTITY_PROVIDERS.has(defaultProvider)
     ? uniformCopyProvider(profiles)
-    : defaultProvider.provider;
+    : defaultProvider;
   const convertibleProvider =
     candidateProvider !== null && isByokDefaultProviderChoice(candidateProvider)
       ? candidateProvider
@@ -367,7 +367,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
     return;
   }
 
-  repairProfileSelections(llm, profiles, defaultProvider, carriedDisables);
+  repairProfileSelections(llm, profiles, blob, carriedDisables);
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
   // The lifecycle call site runs before the first loadConfig() of this boot;
@@ -640,14 +640,14 @@ const ADVISOR_FALLBACK_ORDER = [
 function repairProfileSelections(
   llm: Record<string, unknown>,
   profiles: Record<string, unknown>,
-  defaultProvider: DefaultProviderConfig,
+  defaultBlob: LLMDefaultConfig,
   carriedDisables: ReadonlySet<HatchEraProfileKey>,
 ): void {
   const effectiveEntry = (name: string): ProfileEntry | undefined =>
     resolveDefaultProfileForProvider(
       profiles as Record<string, ProfileEntry>,
       name,
-      defaultProvider,
+      defaultBlob,
     );
 
   const advisor = llm.advisorProfile;
@@ -679,7 +679,7 @@ function repairProfileSelections(
       return (
         workspace !== null &&
         workspace.source === "managed" &&
-        resolveDefaultProfileForProvider(undefined, key, defaultProvider)
+        resolveDefaultProfileForProvider(undefined, key, defaultBlob)
           ?.status !== "disabled"
       );
     });

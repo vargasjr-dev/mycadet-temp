@@ -43,7 +43,6 @@ import {
 } from "../../channels/types.js";
 import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
 import { getConversationProfilesForProvider } from "../../config/default-profile-catalog.js";
-import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { isModeSessionRecoveryHealthy } from "../../config/session-groups-gate.js";
@@ -1775,7 +1774,7 @@ export async function handleSendMessage(
     // profile whose model returns verdicts rather than text is not offered.
     const profiles = getConversationProfilesForProvider(
       llm.profiles,
-      readDefaultProvider(llm.default),
+      llm.default,
     );
     if (
       !Object.prototype.hasOwnProperty.call(profiles, requestedInferenceProfile)
@@ -3885,9 +3884,7 @@ export const ROUTES: RouteDefinition[] = [
       sourceChannel: z
         .string()
         .describe('Originating channel id (e.g. "cadet")'),
-      interface: z
-        .string()
-        .describe('Originating interface id (e.g. "cadet")'),
+      interface: z.string().describe('Originating interface id (e.g. "cadet")'),
       conversationType: z.string().optional(),
       slashCommand: z.string().optional(),
       clientTimezone: z.string().optional(),

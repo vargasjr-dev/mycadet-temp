@@ -14,13 +14,13 @@ import {
   MANAGED_PROFILE_NAMES,
   MANAGED_PROFILE_TEMPLATES,
 } from "./default-profile-catalog.js";
-import { readDefaultProvider } from "./default-provider-resolution.js";
 import { loadRawConfig, saveRawConfig } from "./loader.js";
 import { isDispatchableProfile } from "./profile-dispatchability.js";
 import {
-  type DefaultProviderConfig,
   isDefaultProviderChoice,
+  type LLMDefaultConfig,
   type ProfileEntry,
+  RawDefaultSelectionSchema,
 } from "./schemas/llm.js";
 
 const log = getLogger("seed-inference-profiles");
@@ -94,12 +94,8 @@ export function seedInferenceProfiles(
   //    default profiles to dispatch.
   let usableHatchProvider: string | undefined;
   if (options.isHatch && !isPlatform) {
-    // The hatch overlay writes `llm.default.provider` directly (CLIs from
-    // the retired `llm.defaultProvider` era wrote the key — read it as a
-    // version-skew fallback).
-    const hatchProvider =
-      readString(readObject(llm.default)?.provider) ??
-      readString(readObject(llm.defaultProvider)?.provider);
+    // The hatch overlay writes `llm.default.provider` directly.
+    const hatchProvider = readString(readObject(llm.default)?.provider);
     if (
       hatchProvider &&
       hatchProvider !== CADET_MANAGED_PROVIDER &&
@@ -142,7 +138,12 @@ export function seedInferenceProfiles(
   // 2. Default provider: hatch only, never overwritten once set. Always
   //    populated — even dangling, so later resolution can prompt the user
   //    for a key explainably rather than hitting an unset branch.
-  if (options.isHatch && readDefaultProvider(llm.default) === null) {
+  const blob = seedDefaultBlob(llm);
+  const blobProvider = blob.provider;
+  if (
+    options.isHatch &&
+    (blobProvider == null || !isDefaultProviderChoice(blobProvider))
+  ) {
     llm.default = {
       ...(readObject(llm.default) ?? {}),
       provider: resolveHatchDefaultProvider(
@@ -164,7 +165,7 @@ export function seedInferenceProfiles(
   // then repaired here rather than preserved as a dangling selection.
   const effectiveProfiles = getEffectiveProfilesForProvider(
     profiles as Record<string, ProfileEntry>,
-    seedResolutionDefaultProvider(llm),
+    seedDefaultBlob(llm),
   ) as Record<string, Record<string, unknown>>;
 
   // Active profile resolution.
@@ -253,28 +254,12 @@ export function seedInferenceProfiles(
 }
 
 /**
- * The `llm.default` blob's provider selection to resolve the effective
- * catalog against, read from RAW config. Only a value the matrix can
- * implement is used: a hand-edited or legacy provider outside
- * `DEFAULT_PROVIDER_CHOICES` has no column and no verified intent
- * resolution, so materializing against it could throw and fail the whole
- * boot seed. Such a value falls back to `null`, which resolves the managed
- * column. The retired `llm.defaultProvider` key is honored as a
- * version-skew fallback (the boot ensure pass derives the blob from it
- * later); it carries its pin under `connectionName` instead of the blob's
- * `provider_connection`.
+ * The `llm.default` blob as raw config carries it, for the catalog
+ * resolution below. A malformed blob reads as empty, which the catalog
+ * clamps to the managed column.
  */
-function seedResolutionDefaultProvider(
-  llm: Record<string, unknown>,
-): DefaultProviderConfig | null {
-  const raw = readObject(llm.default) ?? readObject(llm.defaultProvider);
-  const provider = readString(raw?.provider);
-  if (provider === undefined || !isDefaultProviderChoice(provider)) {
-    return null;
-  }
-  const connectionName =
-    readString(raw?.provider_connection) ?? readString(raw?.connectionName);
-  return { provider, ...(connectionName ? { connectionName } : {}) };
+function seedDefaultBlob(llm: Record<string, unknown>): LLMDefaultConfig {
+  return RawDefaultSelectionSchema.parse(llm.default);
 }
 
 export function readObject(value: unknown): Record<string, unknown> | null {

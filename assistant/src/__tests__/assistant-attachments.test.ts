@@ -816,16 +816,14 @@ describe("drainDirectiveDisplayBuffer", () => {
   });
 
   test("does not insert space when stripped directive already has trailing whitespace", () => {
-    const input =
-      'sentence. <cadet-attachment path="out.png" />Next sentence.';
+    const input = 'sentence. <cadet-attachment path="out.png" />Next sentence.';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("sentence. Next sentence.");
     expect(result.bufferedRemainder).toBe("");
   });
 
   test("does not insert space when stripped directive already has leading whitespace on next char", () => {
-    const input =
-      'sentence.<cadet-attachment path="out.png" /> Next sentence.';
+    const input = 'sentence.<cadet-attachment path="out.png" /> Next sentence.';
     const result = drainDirectiveDisplayBuffer(input);
     expect(result.emitText).toBe("sentence. Next sentence.");
     expect(result.bufferedRemainder).toBe("");

@@ -4,8 +4,9 @@ import type { ClientConnectionEventInput } from "../persistence/client-connectio
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 
 describe("AssistantEventHub connection history", () => {
-  const recorded: Array<Pick<ClientConnectionEventInput, "clientId" | "reason">> =
-    [];
+  const recorded: Array<
+    Pick<ClientConnectionEventInput, "clientId" | "reason">
+  > = [];
 
   beforeEach(() => {
     recorded.length = 0;
@@ -32,7 +33,10 @@ describe("AssistantEventHub connection history", () => {
 
     expect(recorded.map((row) => row.reason)).toEqual(["sse_open"]);
     sub.dispose();
-    expect(recorded.map((row) => row.reason)).toEqual(["sse_open", "sse_close"]);
+    expect(recorded.map((row) => row.reason)).toEqual([
+      "sse_open",
+      "sse_close",
+    ]);
   });
 
   test("records stale_replaced then sse_open on reconnect", () => {

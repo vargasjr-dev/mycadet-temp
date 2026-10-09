@@ -78,10 +78,7 @@ export function registerCloudCommand(program: Command): void {
 
       subcommand(platform, "status").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<CloudStatusResult>(
-            "platform_status",
-            {},
-          );
+          const r = await cliIpcCall<CloudStatusResult>("platform_status", {});
           if (!r.ok) {
             return exitFromIpcResult(
               { ok: false, error: r.error, statusCode: r.statusCode },

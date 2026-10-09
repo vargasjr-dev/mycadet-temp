@@ -13,7 +13,15 @@
  * user_token IS stored, neither route may put it on the wire.
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 
 import { seedApp } from "../../../../../__tests__/helpers/seed-app.js";
 import { credentialKey } from "../../../../../security/credential-key.js";

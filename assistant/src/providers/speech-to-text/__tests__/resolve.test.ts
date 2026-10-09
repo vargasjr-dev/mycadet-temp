@@ -42,7 +42,6 @@ mock.module("../../../util/logger.js", () => ({
 
 // -- Credential mock ------------------------------------------------------
 
-
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { credentialKey } from "../../../security/credential-key.js";
 
@@ -435,7 +434,10 @@ describe("resolveTelephonySttCapability", () => {
   });
 
   test("returns 'unconfigured' when provider is not in the catalog", async () => {
-    secureKeys.set(credentialKey("unknown-provider", "api_key"), "key-doesnt-matter");
+    secureKeys.set(
+      credentialKey("unknown-provider", "api_key"),
+      "key-doesnt-matter",
+    );
     applyConfig({ provider: "unknown-provider" as string });
 
     const result = await resolveTelephonySttCapability();
@@ -807,7 +809,10 @@ describe("resolveConversationStreamingSttCapability", () => {
   // -------------------------------------------------------------------------
 
   test("returns 'unconfigured' when provider is not in the catalog", async () => {
-    secureKeys.set(credentialKey("unknown-provider", "api_key"), "key-doesnt-matter");
+    secureKeys.set(
+      credentialKey("unknown-provider", "api_key"),
+      "key-doesnt-matter",
+    );
     applyConfig({ provider: "unknown-provider" as string });
 
     const result = await resolveConversationStreamingSttCapability();
@@ -1159,8 +1164,7 @@ describe("cadet-flux managed resolution", () => {
     await resolveStreamingTranscriber({ sampleRate: 16000 });
 
     expect(
-      (cadetFluxStreamCtorCalls[0]?.options as { language?: string })
-        ?.language,
+      (cadetFluxStreamCtorCalls[0]?.options as { language?: string })?.language,
     ).toBe("multi");
   });
 

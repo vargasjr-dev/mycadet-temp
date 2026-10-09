@@ -551,7 +551,6 @@ mock.module("../runtime/channel-reply-delivery.js", () => ({
   resolveTurnReplyMessageId: resolveTurnReplyMessageIdMock,
 }));
 
-
 mock.module("../daemon/conversation-memory.js", () => ({
   prepareMemoryContext: async (
     _ctx: unknown,

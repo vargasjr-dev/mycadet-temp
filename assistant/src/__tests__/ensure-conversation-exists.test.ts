@@ -69,10 +69,7 @@ describe("ensureConversationExists", () => {
 
     // A plain uuid-shaped id is still accepted.
     expect(
-      ensureConversationExists(
-        "0f9c1e2a-3b4d-5e6f-7a8b-9c0d1e2f3a4b",
-        "cadet",
-      ),
+      ensureConversationExists("0f9c1e2a-3b4d-5e6f-7a8b-9c0d1e2f3a4b", "cadet"),
     ).toBe(true);
   });
 });

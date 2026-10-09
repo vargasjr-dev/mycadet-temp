@@ -132,8 +132,7 @@ describe("parseDirectives", () => {
   });
 
   test("preserves non-self-closing tags as plain text", () => {
-    const text =
-      '<cadet-attachment path="file.txt">content</cadet-attachment>';
+    const text = '<cadet-attachment path="file.txt">content</cadet-attachment>';
     const result = parseDirectives(text);
 
     // The regex only matches self-closing tags, so non-self-closing is not matched

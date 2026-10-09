@@ -8,7 +8,6 @@
 import { z } from "zod";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
-import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import type { ResolutionFallbackReason } from "../../config/llm-resolver.js";
 import { selectWinningProfile } from "../../config/llm-resolver.js";
 import { getConfigReadOnly } from "../../config/loader.js";
@@ -45,7 +44,7 @@ async function handleInferenceSend({ body = {} }: RouteHandlerArgs) {
     const { llm } = getConfigReadOnly();
     const profiles = getUserSelectableProfilesForProvider(
       llm?.profiles,
-      readDefaultProvider(llm?.default),
+      llm?.default,
     );
     if (!Object.prototype.hasOwnProperty.call(profiles, profile)) {
       const available = Object.keys(profiles).sort();

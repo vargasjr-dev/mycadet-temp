@@ -457,7 +457,8 @@ async function handleReadSecret({ body }: RouteHandlerArgs) {
   try {
     let accountKey: string;
     let prefetchedResult:
-      Awaited<ReturnType<typeof getSecureKeyResultAsync>> | undefined;
+      | Awaited<ReturnType<typeof getSecureKeyResultAsync>>
+      | undefined;
 
     if (type === "api_key") {
       if (

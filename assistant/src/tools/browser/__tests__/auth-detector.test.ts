@@ -159,9 +159,7 @@ describe("isAuthUrl", () => {
   });
 
   it("does not treat regular github.com URLs as auth URLs", () => {
-    expect(isAuthUrl("https://github.com/vargasjr-dev/mycadet")).toBe(
-      false,
-    );
+    expect(isAuthUrl("https://github.com/vargasjr-dev/mycadet")).toBe(false);
     expect(isAuthUrl("https://github.com/pulls")).toBe(false);
     expect(isAuthUrl("https://github.com/")).toBe(false);
     expect(isAuthUrl("https://github.com/notifications")).toBe(false);

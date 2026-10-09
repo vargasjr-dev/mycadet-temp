@@ -548,9 +548,7 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.cadet?.title).toBe(
-      "Added the retry after an expired session.",
-    );
+    expect(copy.cadet?.title).toBe("Added the retry after an expired session.");
   });
 
   test("an authored title the normalizer rejects falls back to the derived one", () => {
@@ -561,9 +559,7 @@ describe("activity.complete copy", () => {
       }),
       CHANNELS,
     );
-    expect(copy.cadet?.title).toBe(
-      "Added the retry after an expired session.",
-    );
+    expect(copy.cadet?.title).toBe("Added the retry after an expired session.");
   });
 
   test("neither a title nor a summary still says something happened", () => {

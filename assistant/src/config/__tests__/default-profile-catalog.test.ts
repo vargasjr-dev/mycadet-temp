@@ -20,13 +20,12 @@ import {
   DEFAULT_PROFILE_PROVIDERS,
   OS_BETA_PROFILE_KEY,
 } from "../default-profile-names.js";
-import { readDefaultProvider } from "../default-provider-resolution.js";
 import {
   resolveCallSiteConfig,
   resolveDefaultProfileKey,
 } from "../llm-resolver.js";
 import {
-  type DefaultProviderConfig,
+  isDefaultProviderChoice,
   type LLMCallSite,
   LLMCallSiteEnum,
   LLMSchema,
@@ -71,12 +70,12 @@ describe("getEffectiveProfiles", () => {
       expectedProvider: "typesafe",
     });
     expect(
-      resolveDefaultProfileForProvider(undefined, "jev-managed", null),
+      resolveDefaultProfileForProvider(undefined, "jev-managed", undefined),
     ).toBeDefined();
     expect(
       resolveDefaultProfileForProvider(undefined, "jev-managed", {
         provider: "anthropic",
-        connectionName: "anthropic-personal",
+        provider_connection: "anthropic-personal",
       }),
     ).toBeUndefined();
   });
@@ -91,32 +90,32 @@ describe("getEffectiveProfiles", () => {
     // Not seeded unconditionally: the flag reconcile writes the stub.
     expect(Object.keys(MANAGED_PROFILE_TEMPLATES)).not.toContain("auto");
     expect(
-      resolveDefaultProfileForProvider(undefined, "auto", null),
+      resolveDefaultProfileForProvider(undefined, "auto", undefined),
     ).toBeUndefined();
     const stub: Record<string, ProfileEntry> = { auto: { source: "managed" } };
-    expect(resolveDefaultProfileForProvider(stub, "auto", null)?.model).toBe(
-      balanced.model,
-    );
+    expect(
+      resolveDefaultProfileForProvider(stub, "auto", undefined)?.model,
+    ).toBe(balanced.model);
     expect(
       resolveDefaultProfileForProvider(stub, "auto", {
         provider: "anthropic",
-        connectionName: "anthropic-personal",
+        provider_connection: "anthropic-personal",
       }),
     ).toBeUndefined();
     expect(
-      Object.keys(getConversationProfilesForProvider(stub, null)),
+      Object.keys(getConversationProfilesForProvider(stub, undefined)),
     ).toContain("auto");
   });
 
   test("the conversation view drops the managed Jev profile but keeps it selectable for call sites", () => {
     expect(
-      Object.keys(getConversationProfilesForProvider(undefined, null)),
+      Object.keys(getConversationProfilesForProvider(undefined, undefined)),
     ).not.toContain("jev-managed");
     expect(
-      Object.keys(getUserSelectableProfilesForProvider(undefined, null)),
+      Object.keys(getUserSelectableProfilesForProvider(undefined, undefined)),
     ).toContain("jev-managed");
     expect(
-      Object.keys(getConversationProfilesForProvider(undefined, null)),
+      Object.keys(getConversationProfilesForProvider(undefined, undefined)),
     ).toContain("balanced");
   });
 
@@ -448,18 +447,20 @@ describe("schema validation", () => {
     // the read clamps them to null — resolution treats that as the managed
     // column.
     for (const provider of ["openai-compatible", "ollama"]) {
+      const blobProvider = LLMSchema.parse({ default: { provider } }).default
+        ?.provider;
       expect(
-        readDefaultProvider(LLMSchema.parse({ default: { provider } }).default),
-      ).toBeNull();
+        blobProvider != null && isDefaultProviderChoice(blobProvider),
+      ).toBe(false);
     }
   });
 });
 
 describe("resolveDefaultProfileForProvider", () => {
-  const dp = (
-    provider: DefaultProviderConfig["provider"],
-    connectionName?: string,
-  ) => ({ provider, ...(connectionName ? { connectionName } : {}) });
+  const dp = (provider: string, provider_connection?: string) => ({
+    provider,
+    ...(provider_connection ? { provider_connection } : {}),
+  });
 
   test("every matrix column materializes every default profile key", () => {
     for (const provider of DEFAULT_PROFILE_PROVIDERS) {
@@ -645,9 +646,9 @@ describe("resolveDefaultProfileForProvider", () => {
 
   test("a null defaultProvider falls back to the cadet code bodies", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
-      expect(resolveDefaultProfileForProvider(undefined, key, null)).toEqual(
-        getEffectiveProfile(undefined, key) as ProfileEntry,
-      );
+      expect(
+        resolveDefaultProfileForProvider(undefined, key, undefined),
+      ).toEqual(getEffectiveProfile(undefined, key) as ProfileEntry);
     }
   });
 

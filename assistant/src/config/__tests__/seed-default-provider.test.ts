@@ -47,7 +47,6 @@ import {
 
 type RawLLM = Record<string, unknown> & {
   default?: { provider: string; provider_connection?: string };
-  defaultProvider?: { provider: string; connectionName?: string };
 };
 
 function writeConfig(obj: unknown): void {
@@ -169,33 +168,18 @@ describe("seedInferenceProfiles / llm.default", () => {
   test("a pre-existing selection survives a platform hatch untouched", () => {
     process.env.IS_PLATFORM = "true";
     const llm = seed(
-      {
-        llm: {
-          default: { provider: "anthropic" },
-          defaultProvider: { provider: "openai" },
-        },
-      },
+      { llm: { default: { provider: "anthropic" } } },
       { isHatch: true },
     );
-    // The seed never touches a usable blob, and the retired key's bytes are
-    // the ensure pass's business (it stamps the blob from them later in
-    // boot), not the seed's.
     expect(llm.default).toEqual({ provider: "anthropic" });
-    expect(llm.defaultProvider).toEqual({ provider: "openai" });
   });
 
   test("a pre-existing selection survives a BYOK hatch untouched", () => {
     const llm = seed(
-      {
-        llm: {
-          default: { provider: "anthropic" },
-          defaultProvider: { provider: "openai" },
-        },
-      },
+      { llm: { default: { provider: "anthropic" } } },
       { isHatch: true },
     );
     expect(llm.default).toEqual({ provider: "anthropic" });
-    expect(llm.defaultProvider).toEqual({ provider: "openai" });
   });
 
   test("a pre-existing selection survives a managed-connection hatch untouched", () => {
@@ -204,18 +188,16 @@ describe("seedInferenceProfiles / llm.default", () => {
         llm: {
           default: { provider: "anthropic" },
           activeProfile: "balanced",
-          defaultProvider: { provider: "openai" },
         },
       },
       { isHatch: true, preserveActiveProfile: true },
     );
     expect(llm.default).toEqual({ provider: "anthropic" });
-    expect(llm.defaultProvider).toEqual({ provider: "openai" });
   });
 
   test("non-hatch boot writes nothing", () => {
     const llm = seed({ llm: { default: { provider: "anthropic" } } }, {});
-    expect(llm.defaultProvider).toBeUndefined();
+    expect(llm.default).toEqual({ provider: "anthropic" });
   });
 
   test("seeded config round-trips through LLMSchema.parse with the field intact", () => {
@@ -249,12 +231,10 @@ describe("seedInferenceProfiles / llm.default", () => {
   test("hatch with the managed provider creates no personal connection", async () => {
     const { initializeDb } = await import("../../persistence/db-init.js");
     const { getDb } = await import("../../persistence/db-connection.js");
-    const { providerConnections } = await import(
-      "../../persistence/schema/inference.js"
-    );
-    const { getConnection } = await import(
-      "../../providers/inference/connections.js"
-    );
+    const { providerConnections } =
+      await import("../../persistence/schema/inference.js");
+    const { getConnection } =
+      await import("../../providers/inference/connections.js");
     await initializeDb();
     try {
       // A Cadet Cloud hatch: the modern overlay blob names the managed
@@ -277,22 +257,17 @@ describe("seedInferenceProfiles / llm.default", () => {
   test("BYOK hatch via the modern overlay key still creates the personal connection", async () => {
     const { initializeDb } = await import("../../persistence/db-init.js");
     const { getDb } = await import("../../persistence/db-connection.js");
-    const { providerConnections } = await import(
-      "../../persistence/schema/inference.js"
-    );
-    const { getConnection } = await import(
-      "../../providers/inference/connections.js"
-    );
+    const { providerConnections } =
+      await import("../../persistence/schema/inference.js");
+    const { getConnection } =
+      await import("../../providers/inference/connections.js");
     await initializeDb();
     try {
       const llm = seed(
-        { llm: { defaultProvider: { provider: "anthropic" } } },
+        { llm: { default: { provider: "anthropic" } } },
         { isHatch: true, db: getDb() },
       );
-      // Version-skew fixture: a #134-era CLI wrote the retired key. The
-      // seed reads it as a fallback for the personal connection and leaves
-      // the bytes for the ensure pass to stamp into the blob.
-      expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
+      expect(llm.default).toEqual({ provider: "anthropic" });
       const conn = getConnection(getDb(), "anthropic-personal");
       expect(conn?.name).toBe("anthropic-personal");
       expect(conn?.provider).toBe("anthropic");

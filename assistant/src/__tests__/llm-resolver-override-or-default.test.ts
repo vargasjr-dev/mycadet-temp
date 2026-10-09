@@ -28,8 +28,11 @@ const completeCustom = {
   openrouter: { only: [] as string[] },
 };
 
-const anthropicDp = { default: {
- provider: "anthropic" as const } };
+const anthropicDp = {
+  default: {
+    provider: "anthropic" as const,
+  },
+};
 
 type Fallback = {
   callSite: string;
@@ -444,7 +447,8 @@ describe("composition", () => {
         },
       },
       default: {
- provider: "cadet" },
+        provider: "cadet",
+      },
     });
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     // The tweak wins the fields it sets; the identity winner contributes its
@@ -460,7 +464,8 @@ describe("composition", () => {
         conversationSummarization: { model: "claude-haiku-4-5-20251001" },
       },
       default: {
- provider: "cadet" },
+        provider: "cadet",
+      },
     });
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     // provider "cadet" + the tweaked model is the complete dispatch shape:
@@ -591,7 +596,8 @@ describe("explicit default-profile references resolve through the default provid
     const llm = LLMSchema.parse({
       profiles: managedStubs,
       default: {
- provider: "cadet" },
+        provider: "cadet",
+      },
     });
     const pinned = resolveCallSiteConfig("mainAgent", llm, {
       overrideProfile: "cost-optimized",

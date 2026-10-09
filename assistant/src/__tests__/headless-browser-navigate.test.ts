@@ -898,9 +898,7 @@ describe("executeBrowserNavigate", () => {
     expect(result.isError).toBe(false);
     // --new-tab overrides the reuse path and opens a brand-new tab,
     // re-pinning the conversation to it.
-    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(
-      true,
-    );
+    expect(cdpSendCalls.some((c) => c.method === "Cadet.createTab")).toBe(true);
     expect(cdpSetSessionIdCalls).toContain("1001");
     expect(getPinnedTab(ctx.conversationId)).toBe("1001");
   });

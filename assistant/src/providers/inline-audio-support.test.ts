@@ -10,15 +10,15 @@ beforeEach(() => {
 
 describe("requestSupportsInlineAudio", () => {
   test("catalog audio models stay true without a profile override", () => {
-    expect(
-      requestSupportsInlineAudio("thinkingmachines/inkling"),
-    ).toBe(true);
+    expect(requestSupportsInlineAudio("thinkingmachines/inkling")).toBe(true);
   });
 
   test("unknown models fail closed unless a profile declares audio support", () => {
     expect(requestSupportsInlineAudio("qwen2.5-omni")).toBe(false);
 
-    const config = getConfig() as { llm: { profiles: Record<string, unknown> } };
+    const config = getConfig() as {
+      llm: { profiles: Record<string, unknown> };
+    };
     config.llm = {
       profiles: {
         gateway: {

@@ -36,9 +36,7 @@ describe("normalizeOpenAIAPIError", () => {
         detail: "Model 'MiniMax-M3' is not yet supported on Cadet.",
       }),
     );
-    expect(n.message).toBe(
-      "Model 'MiniMax-M3' is not yet supported on Cadet.",
-    );
+    expect(n.message).toBe("Model 'MiniMax-M3' is not yet supported on Cadet.");
     expect(formatNormalizedOpenAIAPIError("Together AI", 400, n)).toBe(
       "Together AI API error (400): Model 'MiniMax-M3' is not yet supported on Cadet.",
     );

@@ -151,10 +151,7 @@ describe("extractCredentialsFromBundle", () => {
 
   test("extracts cadet:-prefixed credentials (filtering happens in migration-routes)", () => {
     const entries = new Map<string, VBundleTarEntry>();
-    entries.set(
-      "credentials/cadet:assistant_api_key",
-      makeTarEntry("key-123"),
-    );
+    entries.set("credentials/cadet:assistant_api_key", makeTarEntry("key-123"));
     entries.set(
       "credentials/cadet:platform_assistant_id",
       makeTarEntry("asst-456"),

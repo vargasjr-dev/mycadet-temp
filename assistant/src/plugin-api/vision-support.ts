@@ -22,7 +22,6 @@
  */
 
 import { resolveDefaultProfileForProvider } from "../config/default-profile-catalog.js";
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import {
   catalogEntryFor,
   type InputModalities,
@@ -131,11 +130,10 @@ function modelVision(model: string): boolean | undefined {
  */
 function profileVision(profileKey: string): boolean | undefined {
   const { llm } = getConfig();
-  const defaultProvider = readDefaultProvider(llm.default);
   const entry = resolveDefaultProfileForProvider(
     llm.profiles,
     profileKey,
-    defaultProvider,
+    llm.default,
   );
   if (entry == null) {
     return undefined;
@@ -147,7 +145,7 @@ function profileVision(profileKey: string): boolean | undefined {
       const armEntry = resolveDefaultProfileForProvider(
         llm.profiles,
         arm.profile,
-        defaultProvider,
+        llm.default,
       );
       const armVision =
         armEntry == null ? undefined : resolveEntryVision(armEntry);

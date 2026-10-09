@@ -90,9 +90,9 @@ describe("offloadOversizedText", () => {
 
 describe("oversizedContentFilename", () => {
   test("embeds the given id", () => {
-    expect(oversizedContentFilename("11111111-1111-1111-1111-111111111111")).toBe(
-      "oversized-content-11111111-1111-1111-1111-111111111111.txt",
-    );
+    expect(
+      oversizedContentFilename("11111111-1111-1111-1111-111111111111"),
+    ).toBe("oversized-content-11111111-1111-1111-1111-111111111111.txt");
   });
 });
 

@@ -354,9 +354,7 @@ describe("notification decision strategy", () => {
 
       const copy = composeFallbackCopy(signal, channels);
       expect(copy.cadet).toBeDefined();
-      expect(copy.cadet!.body).toBe(
-        "A guardian question needs your attention",
-      );
+      expect(copy.cadet!.body).toBe("A guardian question needs your attention");
     });
   });
 

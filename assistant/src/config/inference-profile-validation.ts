@@ -1,4 +1,3 @@
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getConversationProfilesForProvider } from "./default-profile-catalog.js";
 import { getConfigReadOnly } from "./loader.js";
 
@@ -20,7 +19,7 @@ export function validateInferenceProfileKey(profile: string): string | null {
   const llm = getConfigReadOnly().llm;
   const profiles = getConversationProfilesForProvider(
     llm?.profiles,
-    readDefaultProvider(llm?.default),
+    llm?.default,
   );
   const entry = profiles[profile];
   if (entry === undefined) {

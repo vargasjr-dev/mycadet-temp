@@ -180,9 +180,7 @@ export async function withCurrentAuthMarkers<
       session.authErrorCredential,
       await resolve(session.agentId),
     );
-    judged.push(
-      current ? session : { ...session, authErrorCode: undefined },
-    );
+    judged.push(current ? session : { ...session, authErrorCode: undefined });
   }
   return judged;
 }

@@ -114,10 +114,7 @@ function resolveDb(database?: DrizzleDb): DrizzleDb | null {
   }
   // Namespace import so a test mock of db-connection that omits `isDbOpen`
   // still loads. Incomplete mocks skip the probe and try `getDb()`.
-  if (
-    typeof dbConnection.isDbOpen === "function" &&
-    !dbConnection.isDbOpen()
-  ) {
+  if (typeof dbConnection.isDbOpen === "function" && !dbConnection.isDbOpen()) {
     return null;
   }
   try {

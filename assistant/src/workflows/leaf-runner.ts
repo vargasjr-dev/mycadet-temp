@@ -44,7 +44,6 @@ import { z } from "zod";
 import { type AgentEvent, AgentLoop } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import { resolveDefaultProfileForProvider } from "../config/default-profile-catalog.js";
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled } from "../config/memory-v3-gate.js";
 import { isPersonalMemoryAllowed } from "../daemon/trust-context.js";
@@ -334,11 +333,7 @@ function validateProfile(profile: string): string {
 function profileExists(profile: string): boolean {
   const { llm } = getConfig();
   return (
-    resolveDefaultProfileForProvider(
-      llm.profiles,
-      profile,
-      readDefaultProvider(llm.default),
-    ) != null
+    resolveDefaultProfileForProvider(llm.profiles, profile, llm.default) != null
   );
 }
 

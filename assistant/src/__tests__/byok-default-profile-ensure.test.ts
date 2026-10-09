@@ -334,7 +334,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "fireworks" },
+          provider: "fireworks",
+        },
         activeProfile: "custom-balanced",
         advisorProfile: "custom-quality-optimized",
         profiles: {
@@ -376,7 +377,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "fireworks" },
+          provider: "fireworks",
+        },
         activeProfile: "custom-balanced",
         profiles: {
           "custom-balanced": eraHatchBody(
@@ -684,7 +686,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "fireworks" },
+          provider: "fireworks",
+        },
         activeProfile: "custom-cost-optimized",
         profiles: {
           "custom-cost-optimized": {
@@ -831,7 +834,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "openai" },
+          provider: "openai",
+        },
         profiles: {
           balanced: {
             source: "user",
@@ -856,7 +860,9 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "cadet", connectionName: "cadet" },
+          provider: "cadet",
+          connectionName: "cadet",
+        },
         activeProfile: "balanced",
         advisorProfile: "quality-optimized",
         profileOrder: [
@@ -951,7 +957,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "openai" },
+          provider: "openai",
+        },
         profiles: {
           balanced: {
             source: "managed",
@@ -975,7 +982,8 @@ describe("ensureByokDefaultProfiles", () => {
     writeConfig({
       llm: {
         default: {
- provider: "openai" },
+          provider: "openai",
+        },
         profiles: {
           "custom-balanced": hatchBody("balanced", "anthropic"),
         },

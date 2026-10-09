@@ -125,7 +125,7 @@ describe("managed-column-only scoping", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeDefined();
       expect(
-        resolveDefaultProfileForProvider(undefined, key, null),
+        resolveDefaultProfileForProvider(undefined, key, undefined),
       ).toBeDefined();
     }
   });

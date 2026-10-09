@@ -1,6 +1,5 @@
 import type { z } from "zod";
 
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import { PROVIDER_CATALOG } from "../providers/model-catalog.js";
 import { resolveDefaultProfileForProvider } from "./default-profile-catalog.js";
 import { selectWinningProfile } from "./llm-resolver.js";
@@ -58,7 +57,7 @@ function mixArms(
   const entry = resolveDefaultProfileForProvider(
     llm.profiles,
     profileKey,
-    readDefaultProvider(llm.default),
+    llm.default,
   );
   return entry?.mix?.map((arm) => arm.profile);
 }

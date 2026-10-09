@@ -11,7 +11,15 @@
  * forgets to pass something.
  */
 
-import { beforeEach, describe, expect, jest, mock, spyOn, test } from "bun:test";
+import {
+  beforeEach,
+  describe,
+  expect,
+  jest,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 
 import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 import * as secureKeysModule from "../../security/secure-keys.js";
@@ -27,7 +35,6 @@ const getSecureKeyAsync = spyOn(secureKeysModule, "getSecureKeyAsync");
 const getMcpHeaders = jest.fn(async (_serverId: string) => ({
   Authorization: "Bearer workspace-secret",
 }));
-
 
 mock.module("../mcp-header-store.js", () => ({
   getMcpHeaders,
@@ -118,12 +125,13 @@ describe("plugin-declared MCP servers", () => {
     const { McpClient } = await import("../client.js");
     const endpointA = "https://mcp.example.com/a";
     const endpointB = "https://mcp.example.com/b";
-    getSecureKeyAsync.mockImplementation(async (key: string): Promise<string | undefined> =>
-      key.endsWith("/tokens") &&
-      key.includes("mcp-plugin/") &&
-      getSecureKeyAsync.mock.calls.length === 1
-        ? "stored-oauth-token"
-        : undefined,
+    getSecureKeyAsync.mockImplementation(
+      async (key: string): Promise<string | undefined> =>
+        key.endsWith("/tokens") &&
+        key.includes("mcp-plugin/") &&
+        getSecureKeyAsync.mock.calls.length === 1
+          ? "stored-oauth-token"
+          : undefined,
     );
     const client = new McpClient("abcdabcdabcd", pluginHttpServer(endpointA));
     const providers: unknown[] = [];

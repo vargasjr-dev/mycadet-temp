@@ -91,10 +91,7 @@ describe("healGuardianBindingDrift", () => {
     // Gateway address matches the local channel address so the heal can resolve
     // its local write target; only the gateway principal has drifted.
     mockGuardians = [
-      gatewayGuardian(
-        "cadet-principal-gateway",
-        "cadet-principal-stale-local",
-      ),
+      gatewayGuardian("cadet-principal-gateway", "cadet-principal-stale-local"),
     ];
 
     const healed = await healGuardianBindingDrift("cadet-principal-jwt");

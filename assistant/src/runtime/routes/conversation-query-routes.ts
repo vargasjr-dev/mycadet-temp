@@ -36,7 +36,6 @@ import {
   validateChatSettingsWrite,
 } from "../../config/chat-settings.js";
 import { DefaultProviderSelectionSchema } from "../../config/default-provider.js";
-import { readDefaultProvider } from "../../config/default-provider-resolution.js";
 import {
   catalogEntryFor,
   type InputModalities,
@@ -64,10 +63,12 @@ import { getSchemaAtPath } from "../../config/schema-utils.js";
 import { AutoArchiveConfigSchema } from "../../config/schemas/conversations.js";
 import {
   collectFallbackProfileIssues,
+  isDefaultProviderChoice,
   LLMConfigBase,
   LLMConfigFragment,
   LLMDefaultConfigSchema,
   ProfileEntry,
+  RawDefaultSelectionSchema,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
 } from "../../config/schemas/llm.js";
@@ -968,9 +969,15 @@ function overlayDefaultProviderForWire(config: unknown): void {
   if (llm == null) {
     return;
   }
-  const dp = readDefaultProvider(llm.default);
-  if (dp) {
-    llm.defaultProvider = dp;
+  const blob = RawDefaultSelectionSchema.parse(llm.default);
+  const provider = blob.provider;
+  if (provider != null && isDefaultProviderChoice(provider)) {
+    llm.defaultProvider = {
+      provider,
+      ...(blob.provider_connection
+        ? { connectionName: blob.provider_connection }
+        : {}),
+    };
   } else {
     delete llm.defaultProvider;
   }
@@ -1010,7 +1017,7 @@ function overlayChatSettingsForWire(config: unknown): void {
  * resolve through the same column or honest round-trips are rejected.
  *
  * The selection deliberately comes from the parsed config, not the raw
- * object this function mutates: `readDefaultProvider`'s clamp shields the
+ * object this function mutates: the `isDefaultProviderChoice` clamp shields the
  * matrix lookup from a persisted value the matrix cannot implement, which a
  * raw read would feed straight into resolution. The raw profiles and the
  * cached parse cannot disagree on the selection — every write path that
@@ -1028,7 +1035,7 @@ function overlayEffectiveProfilesForWire(config: unknown): void {
   }
   llm.profiles = getUserSelectableProfilesForProvider(
     readPlainObject(llm.profiles) as Record<string, ProfileEntry> | undefined,
-    readDefaultProvider(getConfig().llm.default),
+    getConfig().llm.default,
   );
 }
 
@@ -1120,7 +1127,7 @@ export function normalizeManagedProfileWrites(patch: unknown): void {
       resolveDefaultProfileForProvider(
         currentProfiles,
         name,
-        readDefaultProvider(getConfig().llm.default),
+        getConfig().llm.default,
       ),
     );
     for (const key of Object.keys(entry)) {
@@ -1964,7 +1971,7 @@ async function handleReplaceInferenceProfile({
     const { llm: parsedLlm } = getConfig();
     const existingProfiles = getEffectiveProfilesForProvider(
       parsedLlm.profiles,
-      readDefaultProvider(parsedLlm.default),
+      parsedLlm.default,
     );
     parsed.data.mix.forEach((arm, index) => {
       if (arm.profile === name) {
@@ -2012,7 +2019,7 @@ async function handleReplaceInferenceProfile({
     const { llm: parsedLlm } = getConfig();
     const existingProfiles = getEffectiveProfilesForProvider(
       parsedLlm.profiles,
-      readDefaultProvider(parsedLlm.default),
+      parsedLlm.default,
     );
     const target = existingProfiles[fallback];
     if (target == null) {

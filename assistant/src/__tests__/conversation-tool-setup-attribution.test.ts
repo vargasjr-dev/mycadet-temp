@@ -37,7 +37,6 @@ mock.module("../tools/browser/browser-screencast.js", () => ({
   registerConversationSender: mock(() => {}),
 }));
 
-
 // Controls the conversation binding returned to the channel-permission
 // channel-ID population in createToolExecutor. Kept as a module mock so
 // these tests need no live external_conversation_bindings table.

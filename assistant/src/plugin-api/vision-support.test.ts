@@ -26,7 +26,7 @@ interface MockProfileEntry {
 }
 
 let mockProfiles: Record<string, MockProfileEntry> = {};
-let mockDefaultProvider: { provider: string; connectionName?: string } | null =
+let mockDefault: { provider: string; provider_connection?: string } | null =
   null;
 
 // Real model catalog — don't mock it, the test exercises real catalog lookups.
@@ -56,24 +56,22 @@ function applyConfig(): void {
   const config = getConfig() as { llm: unknown };
   config.llm = {
     profiles: mockProfiles,
-    ...(mockDefaultProvider != null
-      ? { default: mockDefaultProvider }
-      : {}),
+    ...(mockDefault != null ? { default: mockDefault } : {}),
   };
 }
 
 function setMockConfig(
   profiles: Record<string, MockProfileEntry>,
-  defaultProvider?: { provider: string; connectionName?: string }, // legacy key shape accepted by the mock seam
+  defaultBlob?: { provider: string; provider_connection?: string },
 ) {
   mockProfiles = profiles;
-  mockDefaultProvider = defaultProvider ?? null;
+  mockDefault = defaultBlob ?? null;
   applyConfig();
 }
 
 beforeEach(() => {
   mockProfiles = {};
-  mockDefaultProvider = null;
+  mockDefault = null;
   applyConfig();
 });
 

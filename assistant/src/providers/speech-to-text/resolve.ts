@@ -454,7 +454,8 @@ export async function resolveStreamingTranscriber(
   // change cannot pair one setting's old value with another's new value
   // (e.g. the old provider with the new language).
   const stt = getConfig().services.stt;
-  const provider = options.providerId ?? sttCatalogKeyForRole(stt, options.role);
+  const provider =
+    options.providerId ?? sttCatalogKeyForRole(stt, options.role);
   if (options.providerId === undefined) {
     logRoleSelection(options.role, provider, resolveSttCatalogKey(stt));
   }
@@ -797,8 +798,7 @@ export async function sttProviderKeyResolves(
 ): Promise<boolean> {
   // cadet has no stored API key — the cloud connection is the credential.
   if (credentialProviderName === "cadet") {
-    const { cadetManagedSpeechAvailable } =
-      await import("./cadet-managed.js");
+    const { cadetManagedSpeechAvailable } = await import("./cadet-managed.js");
     return cadetManagedSpeechAvailable();
   }
   return (await getProviderKeyAsync(credentialProviderName)) !== undefined;

@@ -14,7 +14,6 @@ import {
   isDefaultProfileKey,
   resolveDefaultProfileForProvider,
 } from "./default-profile-catalog.js";
-import { readDefaultProvider } from "./default-provider-resolution.js";
 import {
   type LLMCallSite,
   LLMConfigBase,
@@ -262,11 +261,10 @@ function providerAwareEntry(
   llm: z.infer<typeof LLMSchema>,
   name: string,
 ): ProfileEntry | undefined {
-  const defaultProvider = readDefaultProvider(llm.default);
   const entry = resolveDefaultProfileForProvider(
     llm.profiles,
     name,
-    defaultProvider,
+    llm.default,
   );
   if (!isDefaultProfileKey(name) || entry?.mix != null) {
     return entry;
@@ -283,7 +281,7 @@ function providerAwareEntry(
   if (workspace != null && workspace.source !== "managed") {
     return entry;
   }
-  return resolveDefaultProfileForProvider(undefined, name, defaultProvider);
+  return resolveDefaultProfileForProvider(undefined, name, llm.default);
 }
 
 /**
@@ -359,11 +357,10 @@ function usableDefaultIntent(
   opts: ResolveCallSiteOpts,
   report: (requested: string, reason: ResolutionFallbackReason) => void,
 ): ProfileEntry | undefined {
-  const defaultProvider = readDefaultProvider(llm.default);
   let entry = resolveDefaultProfileForProvider(
     llm.profiles,
     intent,
-    defaultProvider,
+    llm.default,
   );
   if (entry?.mix != null) {
     entry = resolveProfileFragment(intent, llm, opts, (n) =>
@@ -386,7 +383,7 @@ function usableDefaultIntent(
   const catalog = resolveDefaultProfileForProvider(
     undefined,
     intent,
-    defaultProvider,
+    llm.default,
   );
   if (catalog != null && catalog.provider != null && catalog.model != null) {
     return catalog;

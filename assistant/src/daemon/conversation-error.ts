@@ -404,8 +404,7 @@ function classifyCore(
   // this finer axis; every other branch keys off `isManagedRoute`. Routes that
   // predate per-request stamping collapse to the managed/personal split.
   const credentialSource: ProviderCredentialSource =
-    attribution.credentialSource ??
-    (isManagedRoute ? "cadet-managed" : "byok");
+    attribution.credentialSource ?? (isManagedRoute ? "cadet-managed" : "byok");
 
   // Prefer the semantic reason stamped by the provider layer, regardless of
   // HTTP status — statusless errors (e.g. SDK streaming failures) still carry a

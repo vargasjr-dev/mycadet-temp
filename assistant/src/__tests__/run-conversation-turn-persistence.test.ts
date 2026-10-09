@@ -167,9 +167,9 @@ function watchTurnPresence(seen: boolean[], conversationId?: string): void {
     const id =
       conversationId ??
       (
-        getSqlite()
-          .query("SELECT id FROM conversations LIMIT 1")
-          .get() as { id: string } | null
+        getSqlite().query("SELECT id FROM conversations LIMIT 1").get() as {
+          id: string;
+        } | null
       )?.id;
     const conversation = findConversation(id);
     if (conversation) {

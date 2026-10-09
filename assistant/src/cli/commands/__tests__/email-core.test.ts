@@ -61,7 +61,11 @@ describe("email register", () => {
     mockIpcCallFn = mock(() =>
       Promise.resolve({
         ok: true,
-        result: { address: "bot@mycadet.bot", id: "1", created_at: "2026-01-01" },
+        result: {
+          address: "bot@mycadet.bot",
+          id: "1",
+          created_at: "2026-01-01",
+        },
       }),
     );
 
@@ -102,7 +106,11 @@ describe("email register", () => {
     mockIpcCallFn = mock(() =>
       Promise.resolve({
         ok: true,
-        result: { address: "bot@mycadet.bot", id: "1", created_at: "2026-01-01" },
+        result: {
+          address: "bot@mycadet.bot",
+          id: "1",
+          created_at: "2026-01-01",
+        },
       }),
     );
 

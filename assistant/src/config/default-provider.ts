@@ -1,8 +1,8 @@
 /**
- * Loader-coupled default-provider accessors. The pure read/resolution logic
- * lives in `default-provider-resolution.ts`; import from there in code that
- * already has a config in hand (route handlers especially) so the module
- * graph stays free of write-side loader exports.
+ * Loader-coupled default-provider write accessors. The pure connection-name
+ * convention lives in `default-provider-resolution.ts`; import from there in
+ * code that already has a config in hand (route handlers especially) so the
+ * module graph stays free of write-side loader exports.
  *
  * The selection persists inside the `llm.default` blob: `provider` names the
  * matrix column and `provider_connection` pins the connection. The blob is a
@@ -11,9 +11,7 @@
  */
 import { z } from "zod";
 
-import { getDefaultProviderFromConfig } from "./default-provider-resolution.js";
 import {
-  getConfigReadOnly,
   invalidateConfigCache,
   loadRawConfig,
   saveRawConfig,
@@ -23,9 +21,19 @@ import {
   type DefaultProviderConfig,
   type LLMProvider,
 } from "./schemas/llm.js";
-import type { AssistantConfig } from "./types.js";
 
 export { resolveDefaultConnectionName } from "./default-provider-resolution.js";
+
+/**
+ * The blob as raw config carries it, for the re-save: only the selection
+ * fields are typed, every other stored field passes through untouched.
+ */
+const StoredDefaultBlobSchema = z
+  .looseObject({
+    provider: z.string().min(1).optional(),
+    provider_connection: z.string().min(1).optional(),
+  })
+  .catch({});
 
 /**
  * The strict write-side wire contract for the default provider selection:
@@ -41,29 +49,16 @@ export const DefaultProviderSelectionSchema = z.object({
   connectionName: z.string().min(1).optional(),
 });
 
-export function getDefaultProvider(
-  config?: AssistantConfig,
-): DefaultProviderConfig | null {
-  return getDefaultProviderFromConfig(config ?? getConfigReadOnly());
-}
-
 export function setDefaultProvider(value: DefaultProviderConfig): void {
   const parsed = DefaultProviderSelectionSchema.parse(value);
 
   const config = loadRawConfig();
-  if (config.llm == null || typeof config.llm !== "object") {
-    config.llm = {};
-  }
-  const llm = config.llm as Record<string, unknown>;
-  if (
-    llm.default == null ||
-    typeof llm.default !== "object" ||
-    Array.isArray(llm.default)
-  ) {
-    llm.default = {};
-  }
-  const blob = llm.default as Record<string, unknown>;
-  blob.provider = parsed.provider;
+  // A missing or non-object `llm` reads as empty.
+  const llm = z
+    .looseObject({ default: StoredDefaultBlobSchema.optional() })
+    .catch({})
+    .parse(config.llm);
+  const blob = { ...llm.default, provider: parsed.provider };
   if (parsed.connectionName != null) {
     blob.provider_connection = parsed.connectionName;
   } else {
@@ -71,6 +66,7 @@ export function setDefaultProvider(value: DefaultProviderConfig): void {
     // pin goes too, matching the connectionName-absent wire semantics.
     delete blob.provider_connection;
   }
+  config.llm = { ...llm, default: blob };
 
   saveRawConfig(config);
   invalidateConfigCache();

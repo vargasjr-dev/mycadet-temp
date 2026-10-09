@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import {
-  runCloud,
-  runCloudCaught,
-  setupCloudIpcMock,
-} from "./helpers.js";
+import { runCloud, runCloudCaught, setupCloudIpcMock } from "./helpers.js";
 
 // ---------------------------------------------------------------------------
 // Fixtures

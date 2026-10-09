@@ -270,7 +270,8 @@ async function resolveBackendAsync(
       }
     } else if (
       _cesReconnect &&
-      (_resolvedBackend.name === "ces-http" && _cesHttpUnreachable)
+      _resolvedBackend.name === "ces-http" &&
+      _cesHttpUnreachable
     ) {
       // CES RPC is the preferred backend. Attempt to reconnect when we have
       // no backend at all (CES startup failed), or when we're on ces-http

@@ -2531,7 +2531,11 @@ describe("POST /v1/plugins/:name/upgrade", () => {
 
   test("PluginNotFoundError → NotFoundError (404)", async () => {
     upgradeSpy.mockImplementation(async () => {
-      throw new PluginNotFoundError("level-up", "main", "vargasjr-dev/level-up");
+      throw new PluginNotFoundError(
+        "level-up",
+        "main",
+        "vargasjr-dev/level-up",
+      );
     });
 
     await expect(

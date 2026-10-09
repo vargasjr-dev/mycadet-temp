@@ -34,8 +34,14 @@ export function seedApp(
       ? { inheritedConversationIds: app.inheritedConversationIds }
       : {}),
   };
-  writeFileSync(join(appsDir, `${dirName}.json`), JSON.stringify(record, null, 2));
-  writeFileSync(join(appsDir, dirName, "index.html"), app.htmlDefinition ?? "<html></html>");
+  writeFileSync(
+    join(appsDir, `${dirName}.json`),
+    JSON.stringify(record, null, 2),
+  );
+  writeFileSync(
+    join(appsDir, dirName, "index.html"),
+    app.htmlDefinition ?? "<html></html>",
+  );
   if (app.preview !== undefined) {
     writeFileSync(join(appsDir, `${dirName}.preview`), app.preview);
   }

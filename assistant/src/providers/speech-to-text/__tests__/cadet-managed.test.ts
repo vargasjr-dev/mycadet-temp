@@ -46,9 +46,9 @@ describe("cadetManagedTranscribe", () => {
       ok: true,
       value: { text: "hello", durationSeconds: 2 },
     };
-    expect(
-      await cadetManagedTranscribe(Buffer.from([1]), "audio/wav"),
-    ).toEqual({ text: "hello" });
+    expect(await cadetManagedTranscribe(Buffer.from([1]), "audio/wav")).toEqual(
+      { text: "hello" },
+    );
   });
 
   test("throws a normalized SttError on failure", async () => {

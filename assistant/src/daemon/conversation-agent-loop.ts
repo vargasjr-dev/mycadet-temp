@@ -27,7 +27,6 @@ import type {
 } from "../channels/types.js";
 import { getConversationProfilesForProvider } from "../config/default-profile-catalog.js";
 import { AUTO_PROFILE_KEY } from "../config/default-profile-names.js";
-import { readDefaultProvider } from "../config/default-provider-resolution.js";
 import {
   contextWindowConfigFromEffective,
   type EffectiveContextWindow,
@@ -698,7 +697,7 @@ export async function runAgentLoopImpl(
       try {
         const profiles = getConversationProfilesForProvider(
           config.llm.profiles,
-          readDefaultProvider(config.llm.default),
+          config.llm.default,
         );
         if (profiles[AUTO_PROFILE_KEY]?.source !== "managed") {
           return null;

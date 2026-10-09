@@ -17,9 +17,7 @@ export function requestSupportsInlineAudio(modelId: string): boolean {
     if (entry?.model !== modelId) {
       continue;
     }
-    if (
-      resolveModalityOverride(entry.inputModalities?.audio, false) === true
-    ) {
+    if (resolveModalityOverride(entry.inputModalities?.audio, false) === true) {
       return true;
     }
   }

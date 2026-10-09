@@ -82,9 +82,7 @@ describe("requireBoundGuardian", () => {
   });
 
   test("denies a non-active (revoked) cadet row matching the actor", async () => {
-    mockGuardians = [
-      { ...guardian("cadet-principal-abc"), status: "revoked" },
-    ];
+    mockGuardians = [{ ...guardian("cadet-principal-abc"), status: "revoked" }];
     const result = await requireBoundGuardian(ctx("cadet-principal-abc"));
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);

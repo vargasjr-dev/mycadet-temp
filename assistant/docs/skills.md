@@ -116,10 +116,10 @@ Acceptance is idempotent and recorded in `trust.json`. The bundle does not inclu
 
 Tools can execute in two contexts:
 
-| Target    | Description                                                                              |
-| --------- | ---------------------------------------------------------------------------------------- |
+| Target    | Description                                                                             |
+| --------- | --------------------------------------------------------------------------------------- |
 | `sandbox` | Isolated execution within `$CADET_WORKSPACE_DIR` (Docker container or OS-level sandbox) |
-| `host`    | Direct execution on the host machine                                                     |
+| `host`    | Direct execution on the host machine                                                    |
 
 Trust rules can include an `executionTarget` field to bind the rule to a specific context. A rule without `executionTarget` matches both sandbox and host invocations.
 
