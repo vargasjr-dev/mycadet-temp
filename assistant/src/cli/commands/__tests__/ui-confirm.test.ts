@@ -537,6 +537,7 @@ describe("ui confirm — conversation ID", () => {
 
   test("errors when no conversation ID is available", async () => {
     delete process.env.__SKILL_CONTEXT_JSON;
+    delete process.env.__CONVERSATION_ID;
 
     const { exitCode, stdout } = await runCommand([
       "ui",
@@ -621,6 +622,7 @@ describe("ui confirm — timeout", () => {
 describe("ui confirm — conversation ID discovery hint", () => {
   test("error message mentions 'assistant conversations list'", async () => {
     delete process.env.__SKILL_CONTEXT_JSON;
+    delete process.env.__CONVERSATION_ID;
 
     const { exitCode, stdout } = await runCommand([
       "ui",

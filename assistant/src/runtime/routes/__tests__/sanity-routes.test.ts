@@ -1,10 +1,13 @@
 /**
  * Unit tests for sanity-routes.ts.
  *
- * Drives the handler functions directly (bypassing the router) and mocks
- * out secure-keys, the node:fs writes, and fetch so no real I/O occurs.
+ * Drives the handler functions directly (bypassing the router) with the real
+ * secure-keys memory backend; the sidecar write lands in the preload's real
+ * per-process workspace and is asserted by reading the file back. fetch is
+ * mocked at the network boundary.
  */
 
+import { readFileSync, rmSync } from "node:fs";
 import {
   afterAll,
   afterEach,
@@ -27,19 +30,8 @@ const secureKeys = useMemorySecureKeys();
 const SANITY_TOKEN = credentialKey("sanity", "api_token");
 
 // The preload's workspace is where route handlers build their paths.
-const FAKE_WORKSPACE = process.env.CADET_WORKSPACE_DIR!;
-
-const writtenFiles = new Map<string, string>();
-
-mock.module("node:fs", () => ({
-  mkdirSync: () => {},
-  writeFileSync: (path: string, content: string) => {
-    writtenFiles.set(path, content);
-  },
-  // Expose the rest of node:fs unchanged so other imports still work.
-  // Bun's mock.module replaces only what we return, and the module under
-  // test only imports mkdirSync and writeFileSync from node:fs.
-}));
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
+const SIDECAR_PATH = () => `${WORKSPACE_DIR}/data/sanity-connection.json`;
 
 // ---------------------------------------------------------------------------
 // Imports after mocks
@@ -95,7 +87,9 @@ function mockFetch(url: string | URL | Request): Promise<Response> {
 }
 
 beforeEach(() => {
-  writtenFiles.clear();
+  // The preload workspace is shared by the whole process; drop any sidecar
+  // a previous test wrote.
+  rmSync(SIDECAR_PATH(), { force: true });
   delete secureKeys[SANITY_TOKEN];
   mockFetchImpl = undefined;
 
@@ -216,9 +210,7 @@ describe("sanity_connect", () => {
 
     expect(result).toEqual({ ok: true });
 
-    const expectedPath = `${FAKE_WORKSPACE}/data/sanity-connection.json`;
-    expect(writtenFiles.has(expectedPath)).toBe(true);
-    const written = JSON.parse(writtenFiles.get(expectedPath)!);
+    const written = JSON.parse(readFileSync(SIDECAR_PATH(), "utf-8"));
     expect(written).toEqual({ projectId: "my-proj", dataset: "production" });
   });
 

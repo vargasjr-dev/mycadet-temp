@@ -1,68 +1,41 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-// ---------------------------------------------------------------------------
-// Mock state
-// ---------------------------------------------------------------------------
-
-const existsSyncFn = mock((_path: string): boolean => false);
-const readFileSyncFn = mock((_path: string, _encoding: string): string => "");
-const writeFileSyncFn = mock((_path: string, _data: string): void => undefined);
-
-// ---------------------------------------------------------------------------
-// Mock modules — before importing module under test
-// ---------------------------------------------------------------------------
-
-mock.module("node:fs", () => ({
-  existsSync: existsSyncFn,
-  readFileSync: readFileSyncFn,
-  writeFileSync: writeFileSyncFn,
-}));
-
-// Import after mocking
 import { extractCollectUsageDataMigration } from "../workspace/migrations/004-extract-collect-usage-data.js";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const WORKSPACE_DIR = "/tmp/test-workspace";
-const CONFIG_PATH = `${WORKSPACE_DIR}/config.json`;
+// Real fs: each test runs the migration against a fresh temp workspace and
+// asserts on the file state it leaves behind.
+let WORKSPACE_DIR: string;
+const CONFIG_PATH = () => join(WORKSPACE_DIR, "config.json");
 const FLAG_KEY = "feature_flags.collect-usage-data.enabled";
 
-function setupConfigExists(config: unknown) {
-  existsSyncFn.mockImplementation((path: string) => path === CONFIG_PATH);
-  readFileSyncFn.mockImplementation(() => JSON.stringify(config));
+function setupConfig(config: unknown): void {
+  writeFileSync(CONFIG_PATH(), JSON.stringify(config));
 }
 
-function getWrittenConfig(): Record<string, unknown> {
-  expect(writeFileSyncFn).toHaveBeenCalledTimes(1);
-  const [path, data] = writeFileSyncFn.mock.calls[0] as [string, string];
-  expect(path).toBe(CONFIG_PATH);
-  return JSON.parse(data) as Record<string, unknown>;
+function readConfig(): unknown {
+  return JSON.parse(readFileSync(CONFIG_PATH(), "utf-8"));
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe("004-extract-collect-usage-data migration", () => {
   beforeEach(() => {
-    existsSyncFn.mockClear();
-    readFileSyncFn.mockClear();
-    writeFileSyncFn.mockClear();
+    WORKSPACE_DIR = mkdtempSync(join(tmpdir(), "mig-004-"));
+  });
+
+  afterEach(() => {
+    rmSync(WORKSPACE_DIR, { recursive: true, force: true });
   });
 
   test("no-op when config.json is absent", () => {
-    existsSyncFn.mockImplementation(() => false);
-
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(readFileSyncFn).not.toHaveBeenCalled();
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(existsSync(CONFIG_PATH())).toBe(false);
   });
 
   test("no-op when flag not present in assistantFeatureFlagValues", () => {
-    setupConfigExists({
+    setupConfig({
       assistantFeatureFlagValues: {
         "feature_flags.some-other-flag.enabled": true,
       },
@@ -70,54 +43,46 @@ describe("004-extract-collect-usage-data migration", () => {
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(
+      (readConfig() as Record<string, unknown>).assistantFeatureFlagValues,
+    ).toEqual({ "feature_flags.some-other-flag.enabled": true });
   });
 
   test("false flag writes collectUsageData: false and removes flag entry", () => {
-    setupConfigExists({
-      assistantFeatureFlagValues: {
-        [FLAG_KEY]: false,
-      },
-    });
+    setupConfig({ assistantFeatureFlagValues: { [FLAG_KEY]: false } });
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = getWrittenConfig();
+    const written = readConfig() as Record<string, unknown>;
     expect(written.collectUsageData).toBe(false);
     expect(written.assistantFeatureFlagValues).toBeUndefined();
   });
 
   test("true flag only removes the flag entry (does not write collectUsageData)", () => {
-    setupConfigExists({
-      assistantFeatureFlagValues: {
-        [FLAG_KEY]: true,
-      },
-    });
+    setupConfig({ assistantFeatureFlagValues: { [FLAG_KEY]: true } });
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = getWrittenConfig();
+    const written = readConfig() as Record<string, unknown>;
     expect(written.collectUsageData).toBeUndefined();
     expect(written.assistantFeatureFlagValues).toBeUndefined();
   });
 
   test("empty assistantFeatureFlagValues is cleaned up after removing flag", () => {
-    setupConfigExists({
+    setupConfig({
       someSetting: "value",
-      assistantFeatureFlagValues: {
-        [FLAG_KEY]: true,
-      },
+      assistantFeatureFlagValues: { [FLAG_KEY]: true },
     });
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = getWrittenConfig();
+    const written = readConfig() as Record<string, unknown>;
     expect(written.assistantFeatureFlagValues).toBeUndefined();
     expect(written.someSetting).toBe("value");
   });
 
   test("other flags in assistantFeatureFlagValues are preserved", () => {
-    setupConfigExists({
+    setupConfig({
       assistantFeatureFlagValues: {
         [FLAG_KEY]: false,
         "feature_flags.some-other-flag.enabled": true,
@@ -126,7 +91,7 @@ describe("004-extract-collect-usage-data migration", () => {
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = getWrittenConfig();
+    const written = readConfig() as Record<string, unknown>;
     expect(written.collectUsageData).toBe(false);
     const remaining = written.assistantFeatureFlagValues as Record<
       string,
@@ -139,41 +104,38 @@ describe("004-extract-collect-usage-data migration", () => {
   });
 
   test("malformed config is handled gracefully", () => {
-    existsSyncFn.mockImplementation((path: string) => path === CONFIG_PATH);
-    readFileSyncFn.mockImplementation(() => "not valid json {{{");
+    writeFileSync(CONFIG_PATH(), "not valid json {{{");
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(readFileSync(CONFIG_PATH(), "utf-8")).toBe("not valid json {{{");
   });
 
   test("no-op when config is an array", () => {
-    setupConfigExists([1, 2, 3]);
+    setupConfig([1, 2, 3]);
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(readConfig()).toEqual([1, 2, 3]);
   });
 
   test("no-op when assistantFeatureFlagValues is not an object", () => {
-    setupConfigExists({
-      assistantFeatureFlagValues: "not-an-object",
-    });
+    setupConfig({ assistantFeatureFlagValues: "not-an-object" });
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(
+      (readConfig() as Record<string, unknown>).assistantFeatureFlagValues,
+    ).toBe("not-an-object");
   });
 
   test("no-op when flag value is not a boolean", () => {
-    setupConfigExists({
-      assistantFeatureFlagValues: {
-        [FLAG_KEY]: "string-value",
-      },
-    });
+    setupConfig({ assistantFeatureFlagValues: { [FLAG_KEY]: "string-value" } });
 
     extractCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(
+      (readConfig() as Record<string, unknown>).assistantFeatureFlagValues,
+    ).toEqual({ [FLAG_KEY]: "string-value" });
   });
 });

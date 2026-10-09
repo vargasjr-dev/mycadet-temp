@@ -1,128 +1,80 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-// ---------------------------------------------------------------------------
-// Mock state
-// ---------------------------------------------------------------------------
-
-const existsSyncFn = mock((_path: string): boolean => false);
-const renameSyncFn = mock(() => {});
-
-// ---------------------------------------------------------------------------
-// Mock modules — before importing module under test
-// ---------------------------------------------------------------------------
-
-mock.module("node:fs", () => ({
-  existsSync: existsSyncFn,
-  renameSync: renameSyncFn,
-}));
-
-// Import after mocking
 import { avatarRenameMigration } from "../workspace/migrations/001-avatar-rename.js";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// Real fs: each test runs the migration against a fresh temp workspace with
+// real avatar files on disk.
+let WORKSPACE_DIR: string;
+const OLD_IMAGE = () => join(WORKSPACE_DIR, "data/avatar/custom-avatar.png");
+const NEW_IMAGE = () => join(WORKSPACE_DIR, "data/avatar/avatar-image.png");
+const OLD_TRAITS = () =>
+  join(WORKSPACE_DIR, "data/avatar/avatar-components.json");
+const NEW_TRAITS = () =>
+  join(WORKSPACE_DIR, "data/avatar/character-traits.json");
 
-const WORKSPACE_DIR = "/tmp/test-workspace";
-const AVATAR_DIR = `${WORKSPACE_DIR}/data/avatar`;
-
-const OLD_IMAGE = `${AVATAR_DIR}/custom-avatar.png`;
-const NEW_IMAGE = `${AVATAR_DIR}/avatar-image.png`;
-const OLD_TRAITS = `${AVATAR_DIR}/avatar-components.json`;
-const NEW_TRAITS = `${AVATAR_DIR}/character-traits.json`;
-
-function setupExistsSync(mapping: Record<string, boolean>) {
-  existsSyncFn.mockImplementation((path: string) => mapping[path] ?? false);
+function seedFile(path: string): void {
+  mkdirSync(join(path, ".."), { recursive: true });
+  writeFileSync(path, "x");
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe("001-avatar-rename migration", () => {
   beforeEach(() => {
-    existsSyncFn.mockClear();
-    renameSyncFn.mockClear();
+    WORKSPACE_DIR = mkdtempSync(join(tmpdir(), "mig-001-"));
+  });
+
+  afterEach(() => {
+    rmSync(WORKSPACE_DIR, { recursive: true, force: true });
   });
 
   test("renames both files when old names exist", () => {
-    setupExistsSync({
-      [OLD_IMAGE]: true,
-      [NEW_IMAGE]: false,
-      [OLD_TRAITS]: true,
-      [NEW_TRAITS]: false,
-    });
+    seedFile(OLD_IMAGE());
+    seedFile(OLD_TRAITS());
 
     avatarRenameMigration.run(WORKSPACE_DIR);
 
-    expect(renameSyncFn).toHaveBeenCalledTimes(2);
-    expect(renameSyncFn.mock.calls[0] as unknown[]).toEqual([
-      OLD_IMAGE,
-      NEW_IMAGE,
-    ]);
-    expect(renameSyncFn.mock.calls[1] as unknown[]).toEqual([
-      OLD_TRAITS,
-      NEW_TRAITS,
-    ]);
+    expect(existsSync(NEW_IMAGE())).toBe(true);
+    expect(existsSync(NEW_TRAITS())).toBe(true);
+    expect(existsSync(OLD_IMAGE())).toBe(false);
+    expect(existsSync(OLD_TRAITS())).toBe(false);
   });
 
   test("no-op when new files already exist", () => {
-    setupExistsSync({
-      [OLD_IMAGE]: true,
-      [NEW_IMAGE]: true,
-      [OLD_TRAITS]: true,
-      [NEW_TRAITS]: true,
-    });
+    seedFile(OLD_IMAGE());
+    seedFile(NEW_IMAGE());
+    seedFile(OLD_TRAITS());
+    seedFile(NEW_TRAITS());
 
     avatarRenameMigration.run(WORKSPACE_DIR);
 
-    expect(renameSyncFn).not.toHaveBeenCalled();
+    expect(existsSync(NEW_IMAGE())).toBe(true);
+    expect(existsSync(NEW_TRAITS())).toBe(true);
   });
 
   test("no-op when no old files exist", () => {
-    setupExistsSync({
-      [OLD_IMAGE]: false,
-      [NEW_IMAGE]: false,
-      [OLD_TRAITS]: false,
-      [NEW_TRAITS]: false,
-    });
-
     avatarRenameMigration.run(WORKSPACE_DIR);
 
-    expect(renameSyncFn).not.toHaveBeenCalled();
+    expect(existsSync(NEW_IMAGE())).toBe(false);
+    expect(existsSync(NEW_TRAITS())).toBe(false);
   });
 
   test("partial rename — only image exists", () => {
-    setupExistsSync({
-      [OLD_IMAGE]: true,
-      [NEW_IMAGE]: false,
-      [OLD_TRAITS]: false,
-      [NEW_TRAITS]: false,
-    });
+    seedFile(OLD_IMAGE());
 
     avatarRenameMigration.run(WORKSPACE_DIR);
 
-    expect(renameSyncFn).toHaveBeenCalledTimes(1);
-    expect(renameSyncFn.mock.calls[0] as unknown[]).toEqual([
-      OLD_IMAGE,
-      NEW_IMAGE,
-    ]);
+    expect(existsSync(NEW_IMAGE())).toBe(true);
+    expect(existsSync(NEW_TRAITS())).toBe(false);
   });
 
   test("partial rename — only traits exist", () => {
-    setupExistsSync({
-      [OLD_IMAGE]: false,
-      [NEW_IMAGE]: false,
-      [OLD_TRAITS]: true,
-      [NEW_TRAITS]: false,
-    });
+    seedFile(OLD_TRAITS());
 
     avatarRenameMigration.run(WORKSPACE_DIR);
 
-    expect(renameSyncFn).toHaveBeenCalledTimes(1);
-    expect(renameSyncFn.mock.calls[0] as unknown[]).toEqual([
-      OLD_TRAITS,
-      NEW_TRAITS,
-    ]);
+    expect(existsSync(NEW_TRAITS())).toBe(true);
+    expect(existsSync(NEW_IMAGE())).toBe(false);
   });
 });
