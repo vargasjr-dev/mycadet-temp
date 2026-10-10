@@ -75,10 +75,7 @@ export type LlmProfilesListResult = z.infer<
 
 async function handleListProfiles(): Promise<LlmProfilesListResult> {
   const { llm } = loadConfig();
-  const profiles = getUserSelectableProfilesForProvider(
-    llm?.profiles,
-    llm?.default,
-  );
+  const profiles = getUserSelectableProfilesForProvider(llm);
   return {
     profiles: Object.keys(profiles).sort(),
     activeProfile:

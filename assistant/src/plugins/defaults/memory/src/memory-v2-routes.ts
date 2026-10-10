@@ -523,10 +523,7 @@ export async function handleSimulateRouter({
   // through (the resolver tolerates missing override-profile references by
   // design, but the playground wants the user to know they typo'd).
   if (profileOverride !== undefined) {
-    const profiles = getUserSelectableProfilesForProvider(
-      liveConfig.llm?.profiles,
-      liveConfig.llm?.default,
-    );
+    const profiles = getUserSelectableProfilesForProvider(liveConfig.llm);
     if (!Object.prototype.hasOwnProperty.call(profiles, profileOverride)) {
       const available = Object.keys(profiles).sort();
       const hint =

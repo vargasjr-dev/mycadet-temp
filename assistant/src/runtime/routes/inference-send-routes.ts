@@ -42,10 +42,7 @@ async function handleInferenceSend({ body = {} }: RouteHandlerArgs) {
   // Validate --profile against the configured profile catalog.
   if (profile !== undefined) {
     const { llm } = getConfigReadOnly();
-    const profiles = getUserSelectableProfilesForProvider(
-      llm?.profiles,
-      llm?.default,
-    );
+    const profiles = getUserSelectableProfilesForProvider(llm);
     if (!Object.prototype.hasOwnProperty.call(profiles, profile)) {
       const available = Object.keys(profiles).sort();
       const hint =

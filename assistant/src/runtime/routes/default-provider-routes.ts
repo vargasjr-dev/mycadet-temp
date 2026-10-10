@@ -22,10 +22,7 @@ import {
 } from "../../config/default-provider.js";
 import { resolveDefaultConnectionName } from "../../config/default-provider-resolution.js";
 import { getConfigReadOnly } from "../../config/loader.js";
-import {
-  DEFAULT_PROVIDER_CHOICES,
-  isDefaultProviderChoice,
-} from "../../config/schemas/llm.js";
+import { DEFAULT_PROVIDER_CHOICES } from "../../config/schemas/llm.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import {
   computeConnectionAvailability,
@@ -62,13 +59,9 @@ const SETTINGS_HINT = "in Settings → Models & Services";
 
 async function handleGetDefaultProvider(): Promise<DefaultProviderStatus> {
   const blob = getConfigReadOnly().llm.default;
-  const dp =
-    blob != null &&
-    blob.provider != null &&
-    isDefaultProviderChoice(blob.provider)
-      ? { provider: blob.provider, connectionName: blob.provider_connection }
-      : null;
-  if (!dp) {
+  const provider = blob?.provider;
+  const resolvedConnectionName = resolveDefaultConnectionName(blob);
+  if (provider == null || resolvedConnectionName == null) {
     return {
       provider: null,
       resolvedConnectionName: null,
@@ -78,13 +71,14 @@ async function handleGetDefaultProvider(): Promise<DefaultProviderStatus> {
       },
     };
   }
-  const resolvedConnectionName = resolveDefaultConnectionName(dp);
   return {
-    provider: dp.provider,
-    ...(dp.connectionName ? { connectionName: dp.connectionName } : {}),
+    provider,
+    ...(blob?.provider_connection
+      ? { connectionName: blob.provider_connection }
+      : {}),
     resolvedConnectionName,
     availability: await computeConnectionAvailability(
-      dp.provider,
+      provider,
       resolvedConnectionName,
     ),
   };

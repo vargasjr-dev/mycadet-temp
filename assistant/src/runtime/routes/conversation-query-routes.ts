@@ -68,7 +68,6 @@ import {
   LLMConfigFragment,
   LLMDefaultConfigSchema,
   ProfileEntry,
-  RawDefaultSelectionSchema,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
 } from "../../config/schemas/llm.js";
@@ -965,16 +964,22 @@ function handleGetConfig() {
  */
 function overlayDefaultProviderForWire(config: unknown): void {
   const root = readPlainObject(config);
-  const llm = readPlainObject(root?.llm);
+  if (root == null) {
+    return;
+  }
+  const llm = readPlainObject(root.llm);
   if (llm == null) {
     return;
   }
-  const blob = RawDefaultSelectionSchema.parse(llm.default);
-  const provider = blob.provider;
+  // The root config schema is the authority on what `llm.default` means; a
+  // config it cannot parse gets no derived field at all.
+  const parsed = AssistantConfigSchema.safeParse(root);
+  const blob = parsed.success ? parsed.data.llm.default : undefined;
+  const provider = blob?.provider;
   if (provider != null && isDefaultProviderChoice(provider)) {
     llm.defaultProvider = {
       provider,
-      ...(blob.provider_connection
+      ...(blob?.provider_connection
         ? { connectionName: blob.provider_connection }
         : {}),
     };
@@ -1033,10 +1038,12 @@ function overlayEffectiveProfilesForWire(config: unknown): void {
   if (!existingLlm) {
     root.llm = llm;
   }
-  llm.profiles = getUserSelectableProfilesForProvider(
-    readPlainObject(llm.profiles) as Record<string, ProfileEntry> | undefined,
-    getConfig().llm.default,
-  );
+  llm.profiles = getUserSelectableProfilesForProvider({
+    profiles: readPlainObject(llm.profiles) as
+      | Record<string, ProfileEntry>
+      | undefined,
+    default: getConfig().llm.default,
+  });
 }
 
 /**
@@ -1969,10 +1976,7 @@ async function handleReplaceInferenceProfile({
     // Validate arms against the effective view (matches the resolver and
     // `LLMSchema.superRefine`), not the raw workspace record.
     const { llm: parsedLlm } = getConfig();
-    const existingProfiles = getEffectiveProfilesForProvider(
-      parsedLlm.profiles,
-      parsedLlm.default,
-    );
+    const existingProfiles = getEffectiveProfilesForProvider(parsedLlm);
     parsed.data.mix.forEach((arm, index) => {
       if (arm.profile === name) {
         throw new BadRequestError(
@@ -2017,10 +2021,7 @@ async function handleReplaceInferenceProfile({
       );
     }
     const { llm: parsedLlm } = getConfig();
-    const existingProfiles = getEffectiveProfilesForProvider(
-      parsedLlm.profiles,
-      parsedLlm.default,
-    );
+    const existingProfiles = getEffectiveProfilesForProvider(parsedLlm);
     const target = existingProfiles[fallback];
     if (target == null) {
       throw new BadRequestError(

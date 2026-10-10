@@ -524,10 +524,7 @@ function assertSaneMaxTokens(
 
 async function handleListProfiles() {
   const config = getConfigReadOnly();
-  const effective = getUserSelectableProfilesForProvider(
-    config.llm.profiles,
-    config.llm.default,
-  );
+  const effective = getUserSelectableProfilesForProvider(config.llm);
   // Presentation order, the same one the pickers use, rather than the
   // on-disk insertion order of `llm.profiles`.
   const profiles = await Promise.all(
@@ -882,10 +879,7 @@ async function handleSetActiveProfile({ body = {} }: RouteHandlerArgs) {
   // is rejected here instead of silently stripped on the next config load —
   // which would reset the user's chat-model selection.
   const config = getConfigReadOnly();
-  const effective = getUserSelectableProfilesForProvider(
-    config.llm.profiles,
-    config.llm.default,
-  );
+  const effective = getUserSelectableProfilesForProvider(config.llm);
   const entry = effective[name] as Record<string, unknown> | undefined;
   if (!entry) {
     const valid = Object.keys(effective).sort().join(", ");

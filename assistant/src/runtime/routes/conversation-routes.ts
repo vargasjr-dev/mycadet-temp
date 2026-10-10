@@ -1772,10 +1772,7 @@ export async function handleSendMessage(
     const { llm } = getConfig();
     // The conversation view: a sticky pin runs the main agent's turns, so a
     // profile whose model returns verdicts rather than text is not offered.
-    const profiles = getConversationProfilesForProvider(
-      llm.profiles,
-      llm.default,
-    );
+    const profiles = getConversationProfilesForProvider(llm);
     if (
       !Object.prototype.hasOwnProperty.call(profiles, requestedInferenceProfile)
     ) {

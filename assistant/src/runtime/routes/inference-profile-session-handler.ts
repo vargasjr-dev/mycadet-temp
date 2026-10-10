@@ -157,10 +157,7 @@ export async function setInferenceProfileSession({
 
   // --- Validate profile ---
   const { llm } = loadConfig();
-  const profiles = getUserSelectableProfilesForProvider(
-    llm?.profiles,
-    llm?.default,
-  );
+  const profiles = getUserSelectableProfilesForProvider(llm);
   if (!Object.prototype.hasOwnProperty.call(profiles, profile)) {
     throw new BadRequestError(
       `Profile "${profile}" is not defined in llm.profiles`,

@@ -65,7 +65,7 @@ import {
   loadConfig,
   mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
-import { RawDefaultSelectionSchema } from "../config/schemas/llm.js";
+import { LLMSchema } from "../config/schemas/llm.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
 import type { DrizzleDb } from "../persistence/db-connection.js";
 import { migrateCreateProviderConnections } from "../persistence/migrations/243-provider-connections.js";
@@ -636,10 +636,7 @@ describe("loadConfig startup behavior", () => {
 
     // Resolution contract the hatch relies on: the defaults resolve active
     // through the hatch provider with the personal connection.
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     expect(effective.balanced?.provider).toBe("anthropic");
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
     expect(effective.balanced?.model).toBe("claude-sonnet-4-6");
@@ -730,10 +727,7 @@ describe("loadConfig startup behavior", () => {
     // No stubs under the default keys; content resolves through the new
     // default provider's matrix column.
     expect(raw.llm.profiles.balanced).toBeUndefined();
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     expect(effective.balanced?.provider).toBe("anthropic");
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
   });
@@ -886,10 +880,7 @@ describe("loadConfig startup behavior", () => {
 
     // The defaults resolve active through the openai column of the matrix,
     // stamped with the personal connection.
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     expect(effective.balanced?.provider).toBe("openai");
     expect(effective.balanced?.model).toBe("gpt-5.6-luna");
     expect(effective.balanced?.provider_connection).toBe("openai-personal");
@@ -927,10 +918,7 @@ describe("loadConfig startup behavior", () => {
     }
     expect(getConnection(db, "together-personal")).not.toBeNull();
 
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     for (const name of [
       "balanced",
       "quality-optimized",
@@ -974,10 +962,7 @@ describe("loadConfig startup behavior", () => {
     }
     expect(getConnection(db, "typesafe-personal")).not.toBeNull();
 
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     for (const name of [
       "balanced",
       "quality-optimized",
@@ -1414,10 +1399,7 @@ describe("loadConfig startup behavior", () => {
     for (const name of LEGACY_HATCH_PROFILE_NAMES) {
       expect(raw.llm.profiles[name]).toBeUndefined();
     }
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     expect(effective.balanced?.provider).toBe("anthropic");
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
   });
@@ -1573,10 +1555,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     // No workspace entries at all: no disabled stubs, no label suffixes, no
     // custom-* copies. The catalog serves the bare labels, active.
     expect(raw.llm.profiles).toEqual({});
-    const effective = getEffectiveProfilesForProvider(
-      raw.llm.profiles,
-      RawDefaultSelectionSchema.parse(raw.llm.default),
-    );
+    const effective = getEffectiveProfilesForProvider(LLMSchema.parse(raw.llm));
     expect(effective.balanced?.label).toBe("Balanced");
     expect(effective["quality-optimized"]?.label).toBe("Quality");
     expect(effective["cost-optimized"]?.label).toBe("Budget");

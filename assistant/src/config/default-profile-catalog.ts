@@ -883,19 +883,15 @@ function defaultProfileBodyForProvider(
   // provider, a keyless ollama, a user-endpoint openai-compatible — resolves
   // to the managed column, which is what the frozen bodies carry.
   const provider = defaultBlob?.provider;
-  const selection =
-    provider != null && isDefaultProviderChoice(provider)
-      ? { provider, connectionName: defaultBlob?.provider_connection }
-      : null;
-  if (selection == null) {
+  if (provider == null || !isDefaultProviderChoice(provider)) {
     return CODE_DEFAULT_PROFILE_ENTRIES[name];
   }
-  const impl = defaultProfileImplForProvider(name, selection.provider);
+  const impl = defaultProfileImplForProvider(name, provider);
   return clampMaxTokensToModelCap({
     ...materializeProfile(
       impl,
       impl.provider,
-      resolveDefaultConnectionName(selection),
+      resolveDefaultConnectionName(defaultBlob) ?? undefined,
     ),
     source: "managed",
   });
@@ -954,6 +950,12 @@ export function getEffectiveProfiles(
   return effective;
 }
 
+/** The slice of an `llm` block the listing functions read. */
+type LLMProfilesSource = {
+  profiles?: Record<string, ProfileEntry>;
+  default?: LLMDefaultConfig;
+};
+
 /**
  * Like `getEffectiveProfiles`, but resolves each default profile key through
  * the same `llm.default`-aware path the runtime resolver uses
@@ -963,17 +965,16 @@ export function getEffectiveProfiles(
  * A blob with no usable `default.provider` reduces to `getEffectiveProfiles`.
  */
 export function getEffectiveProfilesForProvider(
-  workspaceProfiles: Record<string, ProfileEntry> | undefined,
-  defaultBlob: LLMDefaultConfig | undefined,
+  llm: LLMProfilesSource | undefined,
 ): Record<string, ProfileEntry> {
   const effective: Record<string, ProfileEntry> = {
-    ...(workspaceProfiles ?? {}),
+    ...(llm?.profiles ?? {}),
   };
   for (const name of Object.keys(CODE_DEFAULT_PROFILE_ENTRIES)) {
     const entry = resolveDefaultProfileForProvider(
-      workspaceProfiles,
+      llm?.profiles,
       name,
-      defaultBlob,
+      llm?.default,
     );
     if (entry != null) {
       effective[name] = entry;
@@ -994,13 +995,9 @@ export function getEffectiveProfilesForProvider(
  * are internal routes rather than profiles a user can choose directly.
  */
 export function getUserSelectableProfilesForProvider(
-  workspaceProfiles: Record<string, ProfileEntry> | undefined,
-  defaultBlob: LLMDefaultConfig | undefined,
+  llm: LLMProfilesSource | undefined,
 ): Record<string, ProfileEntry> {
-  const selectable = getEffectiveProfilesForProvider(
-    workspaceProfiles,
-    defaultBlob,
-  );
+  const selectable = getEffectiveProfilesForProvider(llm);
   for (const name of BACKUP_PROFILE_KEYS) {
     delete selectable[name];
   }
@@ -1016,13 +1013,9 @@ export function getUserSelectableProfilesForProvider(
  * the wider selectable view, since the verdict sites are what Jev is for.
  */
 export function getConversationProfilesForProvider(
-  workspaceProfiles: Record<string, ProfileEntry> | undefined,
-  defaultBlob: LLMDefaultConfig | undefined,
+  llm: LLMProfilesSource | undefined,
 ): Record<string, ProfileEntry> {
-  const selectable = getUserSelectableProfilesForProvider(
-    workspaceProfiles,
-    defaultBlob,
-  );
+  const selectable = getUserSelectableProfilesForProvider(llm);
   for (const [name, entry] of Object.entries(selectable)) {
     if (!profileSupportsTextGeneration(entry, selectable)) {
       delete selectable[name];

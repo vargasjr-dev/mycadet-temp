@@ -201,10 +201,7 @@ export async function executeManageWorkflows(
       const { llm } = loadConfig();
       // A workflow leaf runs chat turns, so this is the conversation view,
       // which leaves out the managed Jev profile.
-      const profiles = getConversationProfilesForProvider(
-        llm?.profiles,
-        llm?.default,
-      );
+      const profiles = getConversationProfilesForProvider(llm);
       return {
         content: JSON.stringify({
           profiles: Object.keys(profiles).sort(),

@@ -156,7 +156,7 @@ describe("resolveDefaultConnectionName", () => {
     expect(
       resolveDefaultConnectionName({
         provider: "anthropic",
-        connectionName: "my-connection",
+        provider_connection: "my-connection",
       }),
     ).toBe("my-connection");
   });
@@ -195,7 +195,7 @@ describe("resolveDefaultConnectionName", () => {
     expect(
       resolveDefaultConnectionName({
         provider: "cadet",
-        connectionName: "pinned",
+        provider_connection: "pinned",
       }),
     ).toBe("pinned");
   });

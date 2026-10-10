@@ -103,19 +103,19 @@ describe("getEffectiveProfiles", () => {
       }),
     ).toBeUndefined();
     expect(
-      Object.keys(getConversationProfilesForProvider(stub, undefined)),
+      Object.keys(getConversationProfilesForProvider({ profiles: stub })),
     ).toContain("auto");
   });
 
   test("the conversation view drops the managed Jev profile but keeps it selectable for call sites", () => {
     expect(
-      Object.keys(getConversationProfilesForProvider(undefined, undefined)),
+      Object.keys(getConversationProfilesForProvider(undefined)),
     ).not.toContain("jev-managed");
     expect(
-      Object.keys(getUserSelectableProfilesForProvider(undefined, undefined)),
+      Object.keys(getUserSelectableProfilesForProvider(undefined)),
     ).toContain("jev-managed");
     expect(
-      Object.keys(getConversationProfilesForProvider(undefined, undefined)),
+      Object.keys(getConversationProfilesForProvider(undefined)),
     ).toContain("balanced");
   });
 
@@ -219,11 +219,11 @@ describe("getEffectiveProfiles", () => {
 
 describe("user-selectable profile view", () => {
   test("hides managed backups while retaining them in the fallback catalog", () => {
-    const effective = getEffectiveProfilesForProvider(undefined, {
-      provider: "cadet",
+    const effective = getEffectiveProfilesForProvider({
+      default: { provider: "cadet" },
     });
-    const selectable = getUserSelectableProfilesForProvider(undefined, {
-      provider: "cadet",
+    const selectable = getUserSelectableProfilesForProvider({
+      default: { provider: "cadet" },
     });
 
     for (const key of DEFAULT_PROFILE_KEYS) {
@@ -491,7 +491,9 @@ describe("resolveDefaultProfileForProvider", () => {
       "cost-optimized": "gpt-5.6-luna",
       "latency-optimized": "gpt-5.6-luna",
     };
-    const effective = getEffectiveProfilesForProvider(undefined, dp("chatgpt"));
+    const effective = getEffectiveProfilesForProvider({
+      default: dp("chatgpt"),
+    });
     for (const [key, model] of Object.entries(byKey)) {
       const entry = effective[key];
       expect(entry?.provider).toBe("chatgpt");

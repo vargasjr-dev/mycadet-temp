@@ -17,10 +17,7 @@ export function validateInferenceProfileKey(profile: string): string | null {
     return "inferenceProfile must be a non-empty string";
   }
   const llm = getConfigReadOnly().llm;
-  const profiles = getConversationProfilesForProvider(
-    llm?.profiles,
-    llm?.default,
-  );
+  const profiles = getConversationProfilesForProvider(llm);
   const entry = profiles[profile];
   if (entry === undefined) {
     const available = Object.keys(profiles).sort();

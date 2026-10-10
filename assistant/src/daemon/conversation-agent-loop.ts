@@ -695,10 +695,7 @@ export async function runAgentLoopImpl(
   const routeAutoProfileForTurn =
     async (): Promise<AutoProfileRoute | null> => {
       try {
-        const profiles = getConversationProfilesForProvider(
-          config.llm.profiles,
-          config.llm.default,
-        );
+        const profiles = getConversationProfilesForProvider(config.llm);
         if (profiles[AUTO_PROFILE_KEY]?.source !== "managed") {
           return null;
         }
