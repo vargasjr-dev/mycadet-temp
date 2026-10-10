@@ -37,7 +37,7 @@ let getSessionGates: Array<() => void> | null = null;
 let mockIsGatewayAuth = false;
 let mockIsLocalClient = false;
 let mockIsRemoteGatewayMode = false;
-let mockIsPlatformAuthMode = false;
+let mockIsCadetCloudRemote = false;
 // The assistant `getSelectedAssistant()` resolves; `undefined` means none selected.
 let mockSelectedAssistant: { assistantId: string; cloud: string } | undefined;
 // The entries `getLockfileAssistant(id)` resolves against.
@@ -232,7 +232,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
-  isCloudRemoteMode: () => mockIsPlatformAuthMode,
+  isCadetCloudRemote: () => mockIsCadetCloudRemote,
   getPlatformAssistants: () => mockPlatformAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,
@@ -471,7 +471,7 @@ beforeEach(() => {
   mockIsGatewayAuth = false;
   mockIsLocalClient = false;
   mockIsRemoteGatewayMode = false;
-  mockIsPlatformAuthMode = false;
+  mockIsCadetCloudRemote = false;
   mockSelectedAssistant = undefined;
   mockLockfileAssistants = [];
   mockPlatformAssistants = [];
@@ -581,9 +581,15 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().platformSession).toBe("absent");
   });
 
-  test("initSession in platform-auth mode registers the same-origin ingress without a gateway ping", async () => {
+  test("initSession in platform-auth mode registers no self-hosted connection and skips the gateway ping", async () => {
     mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+    mockIsCadetCloudRemote = true;
+    // A cloud-hosted cadet has no self-hosted connection to register — the
+    // bundle derives its API base from its own origin.
+    setSelfHostedConnection({
+      url: "https://stale-from-earlier-session.test",
+      token: "tok",
+    });
 
     await useAuthStore.getState().initSession();
 
@@ -593,13 +599,15 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().platformSession).toBe("present");
-    expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
-    expect(getSelfHostedActorToken()).toBeNull();
+    expect(getSelfHostedIngressUrl()).toBe(
+      "https://stale-from-earlier-session.test",
+    );
+    expect(getSelfHostedActorToken()).toBe("tok");
   });
 
   test("refreshSession in platform-auth mode re-probes the platform session instead of the gateway", async () => {
     mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+    mockIsCadetCloudRemote = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
     sessionUser = { id: "user-1", email: "user@example.com" };
 
@@ -612,13 +620,11 @@ describe("auth store onboarding flag reconciliation", () => {
 
   test("refreshSession in platform-auth mode ends the session when the platform probe rejects", async () => {
     mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+    mockIsCadetCloudRemote = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
     // sessionUser stays null, so the getSession probe settles negative.
 
-    await expect(
-      useAuthStore.getState().refreshSession(),
-    ).resolves.toBe(false);
+    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");

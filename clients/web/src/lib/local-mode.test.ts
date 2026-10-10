@@ -102,7 +102,7 @@ import {
   isLocalAssistant,
   isLocalGatewayAssistant,
   isPairedAssistant,
-  isCloudRemoteMode,
+  isCadetCloudRemote,
   isPlatformAssistant,
   isRemoteGatewayMode,
   isRetryablePairingFailure,
@@ -197,21 +197,27 @@ afterEach(() => {
 });
 
 describe("remote gateway mode", () => {
-  test("isRemoteGatewayMode and isCloudRemoteMode split on the remote value", () => {
-    // Shells serving the local cadet (desktop, dev server) inject no remote.
+  test("isRemoteGatewayMode and isCadetCloudRemote split on the remote value", () => {
+    // Shells serving the local cadet (desktop, dev server) inject no remote;
+    // the reader defaults it to "local".
     window.__CADET_CONFIG__ = {};
     expect(isRemoteGatewayMode()).toBe(false);
-    expect(isCloudRemoteMode()).toBe(false);
+    expect(isCadetCloudRemote()).toBe(false);
 
-    // Any non-cloud hatch remote is a self-hosted gateway.
-    window.__CADET_CONFIG__ = { remote: "docker" };
+    // A declared "local" remote behaves the same as an absent one.
+    window.__CADET_CONFIG__ = { remote: "local" };
+    expect(isRemoteGatewayMode()).toBe(false);
+    expect(isCadetCloudRemote()).toBe(false);
+
+    // A self-hosted edge is a remote gateway.
+    window.__CADET_CONFIG__ = { remote: "custom" };
     expect(isRemoteGatewayMode()).toBe(true);
-    expect(isCloudRemoteMode()).toBe(false);
+    expect(isCadetCloudRemote()).toBe(false);
 
     // The cloud remote is never a remote-gateway one.
     window.__CADET_CONFIG__ = { remote: "cloud" };
     expect(isRemoteGatewayMode()).toBe(false);
-    expect(isCloudRemoteMode()).toBe(true);
+    expect(isCadetCloudRemote()).toBe(true);
   });
 
   test("loads a synthetic active assistant without calling the local host", async () => {

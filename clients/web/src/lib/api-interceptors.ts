@@ -45,7 +45,7 @@ import { ApiError, toApiError } from "@/utils/api-errors";
 import {
   getSelectedAssistant,
   isLocalClient,
-  isCloudRemoteMode,
+  isCadetCloudRemote,
   isPlatformDisabled,
   isRemoteGatewayMode,
   primeLocalGatewayConnectionWithRepair,
@@ -160,8 +160,7 @@ const ASSISTANT_PATH_RE = /^\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
  * Same resource match as {@link ASSISTANT_PATH_RE}, but allows an ingress
  * path prefix (`/assistant-123/v1/assistants/...`).
  */
-const ASSISTANT_RESOURCE_RE =
-  /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
+const ASSISTANT_RESOURCE_RE = /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
 
 /**
  * First segments whose `/v1/assistants/{id}/` prefix is stripped before
@@ -478,7 +477,7 @@ export function assistantActivityResponseInterceptor(
  *
  * Counting happens once per request, after the routing decision, and this is
  * the single choke point on each client's chain. On the platform chain it is
- * additionally conditioned on {@link platformFeaturesGateDecision}, the gate
+ * additionally conditioned on {@link cloudFeaturesGateDecision}, the gate
  * registered downstream, so a request that gate aborts is never counted. The
  * auth chain reaches neither test: allauth endpoints live under `/_allauth/`
  * and are never daemon-bound.
@@ -502,8 +501,7 @@ function createInterceptor({
       return true;
     }
     return (
-      isDaemonBoundPath(url) &&
-      platformFeaturesGateDecision(outgoing) === "allow"
+      isDaemonBoundPath(url) && cloudFeaturesGateDecision(outgoing) === "allow"
     );
   }
 
@@ -1187,7 +1185,7 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
   // same-origin proxy, so a rejection from that path IS a platform session
   // rejection — the bearer-path exclusion below must not apply.
   const fromSelfHostedGateway =
-    !isCloudRemoteMode() &&
+    !isCadetCloudRemote() &&
     !!ingressUrl &&
     response.url.startsWith(ingressUrl);
 
@@ -1286,16 +1284,11 @@ installResumeRequestCounter();
 
 daemonClient.interceptors.request.use(daemonRequestInterceptor);
 daemonClient.interceptors.response.use(daemonUnreachableInterceptor);
-// The gateway-session recovery only applies when the bundle holds a
-// gateway-level session. For a cloud remote the same-origin proxy
-// authenticates every call with the platform session cookie and never
-// forwards gateway credentials, so there is no session this interceptor
-// could recover — a 401 from the proxied path is a platform session
-// rejection, claimed by platformAuthRecoveryInterceptor instead.
-if (!isCloudRemoteMode()) {
+if (!isCadetCloudRemote()) {
   daemonClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
+} else {
+  daemonClient.interceptors.response.use(platformAuthRecoveryInterceptor);
 }
-daemonClient.interceptors.response.use(platformAuthRecoveryInterceptor);
 daemonClient.interceptors.response.use(assistantActivityResponseInterceptor);
 daemonClient.interceptors.error.use(daemonErrorInterceptor);
 
@@ -1305,10 +1298,11 @@ daemonClient.interceptors.error.use(daemonErrorInterceptor);
 // in-place recovery applies. Gateway-only responses do not prove daemon readiness.
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
 gatewayClient.interceptors.response.use(daemonUnreachableInterceptor);
-if (!isCloudRemoteMode()) {
+if (!isCadetCloudRemote()) {
   gatewayClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
+} else {
+  gatewayClient.interceptors.response.use(platformAuthRecoveryInterceptor);
 }
-gatewayClient.interceptors.response.use(platformAuthRecoveryInterceptor);
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
 // Force JSON body parsing for all three generated clients. The default
@@ -1379,8 +1373,8 @@ const PLATFORM_GATE_DENIALS: Record<
  * {@link requestInterceptor}, so a self-hosted rewrite (gateway origin, bearer
  * auth) has already happened by the time it runs.
  */
-function platformFeaturesGateDecision(request: Request): PlatformGateDecision {
-  if (isCloudRemoteMode()) {
+function cloudFeaturesGateDecision(request: Request): PlatformGateDecision {
+  if (isCadetCloudRemote()) {
     // The platform session cookie authenticates platform-origin calls in
     // this mode; the bearer check below guards gateway-session bundles.
     return "allow";
@@ -1421,7 +1415,7 @@ function platformFeaturesGateDecision(request: Request): PlatformGateDecision {
  * Exported for direct unit testing.
  */
 export function platformFeaturesGate(request: Request): Request {
-  const decision = platformFeaturesGateDecision(request);
+  const decision = cloudFeaturesGateDecision(request);
   if (decision === "allow") {
     return request;
   }

@@ -39,6 +39,7 @@ import {
   normalizeHttpPublicBaseUrlWithoutTrailingSlash,
   trimmedNonEmptyString,
 } from "@mycadet/service-contracts/ingress";
+import { z } from "zod";
 
 import { isPlainObject } from "../util/object.js";
 import { truncate } from "../util/truncate.js";
@@ -81,16 +82,17 @@ const UNREADABLE_CONFIG_DETAIL = "no assistant config served";
 const UNMARKED_CONFIG_DETAIL = "not a pairing edge config";
 
 /**
- * The served config's `remote` field is stamped by the nginx pairing edge
- * and nothing else (`remoteWebIngressConfig` in `cli/src/lib/nginx-ingress.ts`)
- * with the cadet's `cadet hatch --remote` value — which is never `"cloud"` on
- * a self-hosted edge (that spelling is the platform's own serving, which is
- * not an edge). That makes the field the marker separating the edge from any
- * other JSON a live URL serves.
+ * The config a self-hosted edge serves (`remoteWebIngressConfig` in
+ * `cli/src/lib/nginx-ingress.ts`). The `remote` field is always stamped by
+ * that injector and never carries `"cloud"` — that spelling is the platform's
+ * own serving, which is not an edge — so the field is the marker separating
+ * the edge from any other JSON a live URL serves.
  */
-function isPairingEdgeRemote(value: unknown): boolean {
-  return typeof value === "string" && value !== "cloud";
-}
+const ServedConfigSchema = z.object({
+  remote: z.string(),
+  assistantId: z.string().optional(),
+  assistantName: z.string().optional(),
+});
 
 export async function probeTunnel(args: {
   publicBaseUrl: string;
@@ -246,18 +248,17 @@ async function readServedConfig(
   let detail = UNREADABLE_CONFIG_DETAIL;
   try {
     const body: unknown = await response.json();
-    if (isPlainObject(body)) {
-      if (isPairingEdgeRemote(body.remote)) {
-        return {
-          kind: "served",
-          config: {
-            assistantId: trimmedNonEmptyString(body.assistantId),
-            assistantName: trimmedNonEmptyString(body.assistantName),
-          },
-        };
-      }
-      detail = UNMARKED_CONFIG_DETAIL;
+    const parsed = ServedConfigSchema.safeParse(body);
+    if (parsed.success && parsed.data.remote !== "cloud") {
+      return {
+        kind: "served",
+        config: {
+          assistantId: trimmedNonEmptyString(parsed.data.assistantId),
+          assistantName: trimmedNonEmptyString(parsed.data.assistantName),
+        },
+      };
     }
+    detail = UNMARKED_CONFIG_DETAIL;
   } catch {
     /* an unparseable body is an edge answering with something else */
   }

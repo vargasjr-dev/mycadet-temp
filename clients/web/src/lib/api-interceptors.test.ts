@@ -33,9 +33,10 @@ const isPlatformDisabledMock = mock(() => false);
 const isRemoteGatewayModeMock = mock(
   () =>
     window.__CADET_CONFIG__?.remote !== undefined &&
+    window.__CADET_CONFIG__?.remote !== "local" &&
     window.__CADET_CONFIG__?.remote !== "cloud",
 );
-const isCloudRemoteModeMock = mock(() => false);
+const isCadetCloudRemoteMock = mock(() => false);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
 // The lockfile selection the recovery snapshots; a test moves it to model an
@@ -57,7 +58,7 @@ mock.module(
     isLocalClient: isLocalClientMock,
     isPlatformDisabled: isPlatformDisabledMock,
     isPlatformAssistant: () => false,
-    isCloudRemoteMode: isCloudRemoteModeMock,
+    isCadetCloudRemote: isCadetCloudRemoteMock,
     isRemoteGatewayMode: isRemoteGatewayModeMock,
     loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
     primeLocalGatewayConnection: async () => {},
@@ -2303,11 +2304,14 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   });
 
   test("platform-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
-    isCloudRemoteModeMock.mockImplementation(() => true);
+    isCadetCloudRemoteMock.mockImplementation(() => true);
     // The slot points at the platform's own same-origin proxy, whose URL
     // prefixes the platform URL exactly as /web/<v> does in production —
     // under the bearer-path exclusion this rejection would be skipped.
-    setSelfHostedConnection({ url: "https://platform.test", token: "tok" });
+    setSelfHostedConnection({
+      url: "https://test-cloud.mycadet.io",
+      token: "tok",
+    });
     const refreshSession = mock(async () => {
       mockAuthState.sessionStatus = "unauthenticated";
       return false;
@@ -2323,7 +2327,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     expect(hardNavigateMock.mock.calls[0][0].startsWith(LOGIN_PREFIX)).toBe(
       true,
     );
-    isCloudRemoteModeMock.mockImplementation(() => false);
+    isCadetCloudRemoteMock.mockImplementation(() => false);
   });
 
   test("403 that leaves the session live does not redirect and reopens the latch", async () => {
@@ -2900,7 +2904,9 @@ describe("daemon request activity", () => {
       try {
         respond(await start(), status);
         expect(useAssistantRequestActivity.getState().responded).toBe(false);
-        expect(event).toHaveBeenCalledTimes([502, 503, 504].includes(status) ? 1 : 0);
+        expect(event).toHaveBeenCalledTimes(
+          [502, 503, 504].includes(status) ? 1 : 0,
+        );
       } finally {
         unsubscribe();
       }
@@ -2915,7 +2921,9 @@ describe("daemon request activity", () => {
         method: kind === "OPTIONS" ? "OPTIONS" : "GET",
         signal: controller.signal,
       });
-      if (kind === "aborted") {controller.abort();}
+      if (kind === "aborted") {
+        controller.abort();
+      }
       assistantActivityResponseInterceptor(
         new Response(null, {
           headers:

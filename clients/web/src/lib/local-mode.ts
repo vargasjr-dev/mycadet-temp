@@ -84,56 +84,33 @@ const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export { getPlatformRuntimeUrl };
 
-type Remote = "local" | "docker" | "custom" | "cloud";
-
 function getInjectedConfig(): {
   disablePlatform?: boolean;
-  remote?: Remote;
+  remote: Remote;
   platformUrl?: string;
   assistantName?: string;
   hubUrl?: string;
 } {
-  return (
-    (
-      window as unknown as {
-        __CADET_CONFIG__?: {
-          disablePlatform?: boolean;
-          remote?: Remote;
-          platformUrl?: string;
-          assistantName?: string;
-          hubUrl?: string;
-        };
-      }
-    ).__CADET_CONFIG__ ?? {}
-  );
+  const injected = (
+    window as unknown as {
+      __CADET_CONFIG__?: {
+        disablePlatform?: boolean;
+        remote?: Remote;
+        platformUrl?: string;
+        assistantName?: string;
+        hubUrl?: string;
+      };
+    }
+  ).__CADET_CONFIG__;
+  return { remote: "local", ...injected };
 }
 
-/**
- * True when the bundle is served by a remote gateway it must hold a gateway
- * session with: the config's `remote` carries the same value `cadet hatch
- * --remote` records for the cadet, and any of those values except `"cloud"`
- * is a self-hosted gateway serving this bundle to a remote client. The
- * cloud-remote case (platform-served, platform-session-authenticated) is
- * `isCloudRemoteMode`, and shells serving the local cadet (desktop, dev
- * server) inject no `remote` at all.
- */
 export function isRemoteGatewayMode(): boolean {
   const remote = getInjectedConfig().remote;
-  return remote !== undefined && remote !== "cloud";
+  return remote !== "local" && remote !== "cloud";
 }
 
-/**
- * True when the loaded cadet is a cloud-hosted one: the config's
- * `remote: "cloud"` says where the cadet comes from — its runtime lives
- * behind the platform, and the platform's session is the authentication
- * surface (every API call is authenticated by that cookie; the proxy injects
- * the acting user per request and never forwards gateway credentials), so no
- * gateway-level session exists to mint, rotate, or recover. The local
- * remote-gateway session machinery — the boot ping, pairing, 401 re-priming,
- * scheduled refresh — must stay out of the way for a cloud remote, and a 401
- * from the proxied API path is a platform session rejection.
- */
-export function isCloudRemoteMode(): boolean {
+export function isCadetCloudRemote(): boolean {
   return getInjectedConfig().remote === "cloud";
 }
 

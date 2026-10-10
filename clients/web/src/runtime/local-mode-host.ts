@@ -144,11 +144,11 @@ export function requiresGuardianReprovision(error: unknown): boolean {
 const LOCAL_HOST_UNAVAILABLE_ERROR =
   "The local assistant host isn't available here.";
 
-function readInjectedConfig(): { remote?: string } | undefined {
+function readInjectedConfig(): { remote?: Remote } | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }
-  return (window as unknown as { __CADET_CONFIG__?: { remote?: string } })
+  return (window as unknown as { __CADET_CONFIG__?: { remote?: Remote } })
     .__CADET_CONFIG__;
 }
 
@@ -162,8 +162,8 @@ function readInjectedConfig(): { remote?: string } | undefined {
  *
  * Detected from the runtime config the capable hosts inject
  * (`window.__CADET_CONFIG__`), excluding served-remote configs — a declared
- * `remote` (a self-hosted gateway edge or the cloud proxy) means no local
- * host on this device.
+ * remote other than "local" (a self-hosted gateway edge or the cloud proxy)
+ * means no local host on this device.
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
@@ -173,7 +173,7 @@ export function isLocalModeHostAvailable(): boolean {
   if (!config) {
     return false;
   }
-  if (config.remote !== undefined) {
+  if (config.remote !== undefined && config.remote !== "local") {
     return false;
   }
   return true;

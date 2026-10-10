@@ -1,6 +1,13 @@
 /// <reference types="vite/client" />
 
 /**
+ * Where the cadet comes from — the same values `cadet hatch --remote` records.
+ * Shared between the runtime config contract (`__CADET_CONFIG__.remote`) and
+ * the loaders that read it.
+ */
+type Remote = "local" | "docker" | "custom" | "cloud";
+
+/**
  * Build-time environment variables exposed to the client bundle.
  *
  * All `VITE_*` vars are public and embedded in the JS bundle at build time.
@@ -63,12 +70,11 @@ interface Window {
   __CADET_CONFIG__?: {
     disablePlatform?: boolean;
     /**
-     * Where the cadet comes from — the same values `cadet hatch --remote`
-     * records (self-hosted gateways stamp their hatch value; the platform's
-     * same-origin proxy injects "cloud"). Shells serving the local cadet
-     * inject no `remote` at all.
+     * Where the cadet comes from (self-hosted gateways stamp "custom"; the
+     * platform's same-origin proxy injects "cloud"). Shells serving the
+     * local cadet inject no `remote` at all.
      */
-    remote?: "local" | "docker" | "custom" | "cloud";
+    remote?: Remote;
     platformUrl?: string;
     /** Serving assistant's display name (remote-web ingress configs only). */
     assistantName?: string;
