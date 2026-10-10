@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { getApexDomain } from "../../config/env.js";
 import {
+  getConfig,
   loadRawConfig,
   saveRawConfig,
   setNestedValue,
@@ -159,10 +160,8 @@ async function handleDomainStatus(_args: RouteHandlerArgs) {
     const first = domains[0];
     const sub = first.subdomain ?? first.domain?.replace(`.${apexDomain}`, "");
     if (sub) {
-      const raw = loadRawConfig();
-      const existing = (raw as Record<string, Record<string, unknown>>).platform
-        ?.subdomain;
-      if (existing !== sub) {
+      if (getConfig().platform.subdomain !== sub) {
+        const raw = loadRawConfig();
         setNestedValue(raw, "platform.subdomain", sub);
         saveRawConfig(raw);
       }

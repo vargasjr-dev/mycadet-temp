@@ -20,7 +20,11 @@ import {
   releasePhoneNumber,
   searchAvailableNumbers,
 } from "../../../calls/twilio-rest.js";
-import { loadRawConfig, saveRawConfig } from "../../../config/loader.js";
+import {
+  getConfig,
+  loadRawConfig,
+  saveRawConfig,
+} from "../../../config/loader.js";
 import { syncTwilioWebhooks } from "../../../daemon/handlers/config-ingress.js";
 import type { IngressConfig } from "../../../inbound/public-ingress-urls.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -107,9 +111,7 @@ async function handleGetTwilioConfig() {
   const accountSid = hasCredentials
     ? (await getTwilioCredentials()).accountSid
     : undefined;
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  const phoneNumber = (twilio.phoneNumber as string) ?? "";
+  const phoneNumber = getConfig().twilio.phoneNumber;
 
   return {
     success: true,

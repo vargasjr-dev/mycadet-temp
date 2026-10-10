@@ -4,7 +4,7 @@ import { z } from "zod";
 import { resolveTwilioPhoneNumber } from "../calls/twilio-config.js";
 import { hasTwilioCredentials } from "../calls/twilio-rest.js";
 import { CHANNEL_METADATA } from "../channels/types.js";
-import { getNestedValue, loadRawConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { hasWebhookRoutingConfigured } from "../config/webhook-routing.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -573,12 +573,9 @@ const slackProbe: ChannelProbe = {
           ),
         ];
       }
-      const raw = loadRawConfig();
-      const storedTeamId = getNestedValue(raw, "slack.teamId");
+      const storedTeamId = getConfig().slack.teamId;
       const teamMatches =
-        typeof storedTeamId !== "string" ||
-        storedTeamId.length === 0 ||
-        storedTeamId === data.team_id;
+        storedTeamId.length === 0 || storedTeamId === data.team_id;
       return [
         check(
           "auth_test",
