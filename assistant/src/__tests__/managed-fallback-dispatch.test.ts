@@ -254,7 +254,12 @@ beforeAll(async () => {
       return upstreamUnavailable();
     },
   });
-  setConfig("platform", { baseUrl: `http://127.0.0.1:${server.port}` });
+  // The production fallback resolver re-resolves auth through
+  // `getCloudBaseUrl()`, which reads the `cloud` config section (and then
+  // `CADET_PLATFORM_URL`, which the test preload pins to the hosted test
+  // cloud). Seed the mock server under the key the schema actually defines,
+  // so the backup adapter points at the mock instead of the real platform.
+  setConfig("cloud", { baseUrl: `http://127.0.0.1:${server.port}` });
   await setSecureKeyAsync(ASSISTANT_API_KEY, "test-assistant-key");
   await setSecureKeyAsync(BYOK_CREDENTIAL, "test-byok-key");
 });
