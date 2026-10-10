@@ -24,6 +24,11 @@
  * a real gateway socket. Call `mockGatewayIpc()` to configure specific
  * responses when the test cares about the IPC result.
  *
+ * For per-test request-matched registrations (params subsets, sequences,
+ * thrown errors, call history) use the requests-mock helper:
+ * `mockIpc("gateway").on(methodOrMatcher, response)` — consulted BEFORE the
+ * results map; unmatched calls fall through to the map/sentinel behavior.
+ *
  * Mocks `@mycadet/gateway-client/ipc-client` at the package level so the
  * assistant's thin wrapper in `ipc/gateway-client.ts` (which delegates to
  * the package) gets the fake implementation. Non-gateway IPC paths (e.g.
@@ -32,6 +37,8 @@
 
 import { EventEmitter } from "node:events";
 import { mock } from "bun:test";
+
+import { dispatchGatewayIpcRequest } from "./requests-mock.js";
 
 // ---------------------------------------------------------------------------
 // Configurable state
@@ -67,6 +74,13 @@ class FakePersistentIpcClient extends EventEmitter {
     _timeoutMs?: number,
   ): Promise<unknown> {
     persistentCallCounts[method] = (persistentCallCounts[method] ?? 0) + 1;
+    const dispatched = dispatchGatewayIpcRequest(method, _params);
+    if (dispatched.handled) {
+      if (dispatched.value instanceof Error) {
+        throw dispatched.value;
+      }
+      return dispatched.value;
+    }
     if (failFirstN > 0) {
       failFirstN--;
       if (failWithIpcCallError) {
@@ -171,8 +185,13 @@ export function installGatewayIpcMock(): void {
     ipcCall: async (
       _socketPath: string,
       method: string,
-      _params?: Record<string, unknown>,
+      params?: Record<string, unknown>,
     ): Promise<unknown> => {
+      const dispatched = dispatchGatewayIpcRequest(method, params);
+      if (dispatched.handled) {
+        // Real ipcCall returns undefined on failure — mirror that behavior.
+        return dispatched.value instanceof Error ? undefined : dispatched.value;
+      }
       if (simulateError) {
         // Real ipcCall returns undefined on failure — mirror that behavior.
         return undefined;
