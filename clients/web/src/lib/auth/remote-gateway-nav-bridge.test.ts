@@ -10,8 +10,10 @@ function setLocation(path: string): void {
   window.history.pushState(null, "", `http://localhost:3000${path}`);
 }
 
-function setMode(mode: string | undefined): void {
-  window.__CADET_CONFIG__ = mode ? { mode } : undefined;
+function setRemote(
+  remote: "local" | "docker" | "custom" | "cloud" | undefined,
+): void {
+  window.__CADET_CONFIG__ = remote ? { remote } : undefined;
 }
 
 /** Replaces window.parent with a capturing stub and returns its calls. */
@@ -41,20 +43,20 @@ afterEach(() => {
     value: REAL_PARENT,
     configurable: true,
   });
-  setMode(undefined);
+  setRemote(undefined);
   setLocation("/assistant/");
 });
 
 describe("remote-gateway nav bridge", () => {
   test("inactive outside remote-gateway mode", () => {
-    setMode(undefined);
+    setRemote(undefined);
     const original = window.history.pushState;
     setupRemoteGatewayNavBridge();
     expect(window.history.pushState).toBe(original);
   });
 
   test("emits push and replace navigations to the parent", () => {
-    setMode("remote-gateway");
+    setRemote("docker");
     const parent = captureParentFrame();
     setupRemoteGatewayNavBridge();
 
@@ -70,7 +72,7 @@ describe("remote-gateway nav bridge", () => {
   });
 
   test("applies parent-driven navigation without echoing it back", () => {
-    setMode("remote-gateway");
+    setRemote("docker");
     const parent = captureParentFrame();
     setupRemoteGatewayNavBridge();
 
@@ -82,7 +84,7 @@ describe("remote-gateway nav bridge", () => {
   });
 
   test("ignores parent messages that are not nav drives", () => {
-    setMode("remote-gateway");
+    setRemote("docker");
     const parent = captureParentFrame();
     setupRemoteGatewayNavBridge();
 

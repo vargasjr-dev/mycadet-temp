@@ -197,19 +197,25 @@ afterEach(() => {
 });
 
 describe("remote gateway mode", () => {
-  test("isCloudRemoteMode requires the remote cloud marker", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+  test("isRemoteGatewayMode and isCloudRemoteMode split on the remote value", () => {
+    // Shells serving the local cadet (desktop, dev server) inject no remote.
+    window.__CADET_CONFIG__ = {};
+    expect(isRemoteGatewayMode()).toBe(false);
     expect(isCloudRemoteMode()).toBe(false);
 
-    window.__CADET_CONFIG__ = { mode: "remote-gateway", remote: "cloud" };
-    expect(isCloudRemoteMode()).toBe(true);
+    // Any non-cloud hatch remote is a self-hosted gateway.
+    window.__CADET_CONFIG__ = { remote: "docker" };
+    expect(isRemoteGatewayMode()).toBe(true);
+    expect(isCloudRemoteMode()).toBe(false);
 
+    // The cloud remote is never a remote-gateway one.
     window.__CADET_CONFIG__ = { remote: "cloud" };
-    expect(isCloudRemoteMode()).toBe(false);
+    expect(isRemoteGatewayMode()).toBe(false);
+    expect(isCloudRemoteMode()).toBe(true);
   });
 
   test("loads a synthetic active assistant without calling the local host", async () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
 
     const lockfile = await loadLockfile();
 
@@ -231,7 +237,7 @@ describe("remote gateway mode", () => {
 
   test("names the synthetic assistant from the injected config when present", async () => {
     window.__CADET_CONFIG__ = {
-      mode: "remote-gateway",
+      remote: "docker",
       assistantName: "cadet-deep-hare-ww1iw1",
     };
 
@@ -249,7 +255,7 @@ describe("remote gateway mode", () => {
 describe("getRemoteAssistantDisplayName", () => {
   test("prefers the live identity-store name over the injected config", () => {
     window.__CADET_CONFIG__ = {
-      mode: "remote-gateway",
+      remote: "docker",
       assistantName: "cadet-deep-hare-ww1iw1",
     };
     useAssistantIdentityStore.getState().setIdentity("Credence", "1.0.0");
@@ -259,7 +265,7 @@ describe("getRemoteAssistantDisplayName", () => {
 
   test("falls back to the injected config for a whitespace-only live name", () => {
     window.__CADET_CONFIG__ = {
-      mode: "remote-gateway",
+      remote: "docker",
       assistantName: "cadet-deep-hare-ww1iw1",
     };
     useAssistantIdentityStore.getState().setIdentity("   ", "1.0.0");
@@ -268,7 +274,7 @@ describe("getRemoteAssistantDisplayName", () => {
   });
 
   test("is undefined when neither source carries a name", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
 
     expect(getRemoteAssistantDisplayName()).toBeUndefined();
   });
@@ -842,7 +848,7 @@ describe("renameLockfileAssistant", () => {
   });
 
   test("no-op (true) in remote-gateway mode", async () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
 
     await expect(renameLockfileAssistant("self", "Credence")).resolves.toBe(
       true,
@@ -1124,7 +1130,7 @@ describe("getPairedGatewayUrl", () => {
 
   test("is undefined in remote-gateway mode", () => {
     enableLocalMode();
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     expect(getPairedGatewayUrl(pairedEntry)).toBeUndefined();
   });
 });

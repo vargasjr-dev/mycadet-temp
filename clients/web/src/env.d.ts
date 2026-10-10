@@ -62,9 +62,13 @@ interface Window {
   /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
   __CADET_CONFIG__?: {
     disablePlatform?: boolean;
-    mode?: string;
-    /** Where the cadet comes from (platform-served same-origin proxies inject "cloud"). */
-    remote?: string;
+    /**
+     * Where the cadet comes from — the same values `cadet hatch --remote`
+     * records (self-hosted gateways stamp their hatch value; the platform's
+     * same-origin proxy injects "cloud"). Shells serving the local cadet
+     * inject no `remote` at all.
+     */
+    remote?: "local" | "docker" | "custom" | "cloud";
     platformUrl?: string;
     /** Serving assistant's display name (remote-web ingress configs only). */
     assistantName?: string;

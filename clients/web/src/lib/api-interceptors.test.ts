@@ -31,7 +31,9 @@ import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
 const isPlatformDisabledMock = mock(() => false);
 const isRemoteGatewayModeMock = mock(
-  () => window.__CADET_CONFIG__?.mode === "remote-gateway",
+  () =>
+    window.__CADET_CONFIG__?.remote !== undefined &&
+    window.__CADET_CONFIG__?.remote !== "cloud",
 );
 const isCloudRemoteModeMock = mock(() => false);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
@@ -860,7 +862,7 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
 
 describe("api-interceptors / remote gateway direct requests", () => {
   beforeEach(() => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
@@ -1064,7 +1066,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("aborts platform requests in remote-gateway mode", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     const input = new Request(
       `${window.location.origin}/v1/feature-flags/client-flag-values/`,
     );
@@ -1076,7 +1078,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("passes bearer-authenticated gateway requests in remote-gateway mode", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     const input = new Request(
       `${window.location.origin}/v1/assistants/self/events/`,
       { headers: { Authorization: `Bearer ${ACTOR_TOKEN}` } },
@@ -1368,7 +1370,9 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     });
     isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
     isRemoteGatewayModeMock.mockImplementation(
-      () => window.__CADET_CONFIG__?.mode === "remote-gateway",
+      () =>
+        window.__CADET_CONFIG__?.remote !== undefined &&
+        window.__CADET_CONFIG__?.remote !== "cloud",
     );
     setSelfHostedConnection(null);
     sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
@@ -2788,7 +2792,7 @@ describe("api-interceptors / post-resume request counting", () => {
   });
 
   test("does not count a platform request aborted in remote-gateway mode", async () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     const input = new Request(
       `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/conversations/`,
     );

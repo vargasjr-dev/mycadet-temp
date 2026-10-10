@@ -103,7 +103,7 @@ describe("remote web pairing route", () => {
   });
 
   test("uses the remote-gateway public path prefix as the router basename", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     window.history.pushState(
       null,
       "",
@@ -135,7 +135,7 @@ describe("credential entry route", () => {
   });
 
   test("matches under the remote-gateway public path prefix basename", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     window.history.pushState(
       null,
       "",

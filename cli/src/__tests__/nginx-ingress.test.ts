@@ -158,7 +158,7 @@ describe("buildIngressNginxConfig", () => {
     remoteWebIngress: {
       webDistDir: "/tmp/cadet web/dist",
       config: {
-        mode: "remote-gateway",
+        remote: "docker",
         apiBaseUrl: "/v1",
         platformDisabled: true,
       },
@@ -330,7 +330,7 @@ describe("buildIngressNginxConfig", () => {
     expect(remoteConf).toContain("default_type application/json;");
     expect(remoteConf).toContain('add_header Cache-Control "no-store";');
     expect(remoteConf).toContain(
-      'return 200 "{\\"mode\\":\\"remote-gateway\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true}";',
+      'return 200 "{\\"remote\\":\\"docker\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true}";',
     );
     expect(remoteConf).not.toContain("assistantId");
   });
@@ -347,7 +347,7 @@ describe("buildIngressNginxConfig", () => {
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"mode\\":\\"remote-gateway\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true,\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"platformDisabled\\":true,\\"disablePlatform\\":true,\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
     );
   });
 
@@ -447,7 +447,7 @@ describe("buildRemoteWebIndexHtml", () => {
     const html =
       '<html><head><script>window.__CADET_CONFIG__={"webUrl":"https://mycadet.ai"}</script></head><body></body></html>';
     const result = buildRemoteWebIndexHtml(html, {
-      mode: "remote-gateway",
+      remote: "docker",
       apiBaseUrl: "/v1",
       disablePlatform: true,
     });
@@ -456,10 +456,10 @@ describe("buildRemoteWebIndexHtml", () => {
       'window.__CADET_CONFIG__={"webUrl":"https://mycadet.ai"}',
     );
     expect(result).toContain(
-      'window.__CADET_CONFIG__={"mode":"remote-gateway","apiBaseUrl":"/v1","disablePlatform":true}',
+      'window.__CADET_CONFIG__={"remote":"docker","apiBaseUrl":"/v1","disablePlatform":true}',
     );
     expect(result.indexOf('"webUrl"')).toBeLessThan(
-      result.indexOf('"remote-gateway"'),
+      result.indexOf('"docker"'),
     );
   });
 
@@ -484,7 +484,7 @@ describe("buildRemoteWebIndexHtml", () => {
       "</head><body></body></html>",
     ].join("\n");
 
-    const result = buildRemoteWebIndexHtml(html, { mode: "remote-gateway" });
+    const result = buildRemoteWebIndexHtml(html, { remote: "docker" });
 
     expect(result.match(/rel="modulepreload"/g)).toHaveLength(4);
     expect(result).toContain('href="/assistant/assets/a-1.js"');
@@ -506,7 +506,7 @@ describe("buildRemoteWebIndexHtml", () => {
       "</head><body></body></html>",
     ].join("\n");
 
-    const result = buildRemoteWebIndexHtml(html, { mode: "remote-gateway" });
+    const result = buildRemoteWebIndexHtml(html, { remote: "docker" });
 
     expect(result).not.toContain("modulepreload");
     expect(result).not.toContain("/assistant/assets/chunk-0.js");
@@ -522,7 +522,7 @@ describe("buildRemoteWebIndexHtml", () => {
     );
     const html = `<html><head>${preloads.join("\n")}</head><body></body></html>`;
 
-    const result = buildRemoteWebIndexHtml(html, { mode: "remote-gateway" });
+    const result = buildRemoteWebIndexHtml(html, { remote: "docker" });
 
     expect(result.match(/rel="modulepreload"/g)).toHaveLength(
       MAX_PRESERVED_MODULE_PRELOADS,
@@ -862,7 +862,7 @@ function spaConfigHash(
       JSON.stringify({
         template: EDGE_TEMPLATE_VERSION,
         config: {
-          mode: "remote-gateway",
+          remote: "custom",
           apiBaseUrl: "/v1",
           platformDisabled: true,
           disablePlatform: true,
@@ -988,7 +988,7 @@ describe("startRemoteWebIngress", () => {
       join(ws, "data", "ingress", "assistant-index.html"),
       "utf-8",
     );
-    expect(indexHtml).toContain("remote-gateway");
+    expect(indexHtml).toContain('"remote":"custom"');
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
     // No assistant name was provided, so the served config omits the label.
     expect(indexHtml).not.toContain("assistantName");
@@ -1352,7 +1352,7 @@ describe("startRemoteWebIngress", () => {
         JSON.stringify({
           template: 1,
           config: {
-            mode: "remote-gateway",
+            remote: "custom",
             apiBaseUrl: "/v1",
             platformDisabled: true,
             disablePlatform: true,

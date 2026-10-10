@@ -81,11 +81,16 @@ const UNREADABLE_CONFIG_DETAIL = "no assistant config served";
 const UNMARKED_CONFIG_DETAIL = "not a pairing edge config";
 
 /**
- * Stamped into the served config by the nginx pairing edge and nothing else
- * (`remoteWebIngressConfig` in `cli/src/lib/nginx-ingress.ts`), which makes it
- * the marker that separates that edge from any other JSON a live URL serves.
+ * The served config's `remote` field is stamped by the nginx pairing edge
+ * and nothing else (`remoteWebIngressConfig` in `cli/src/lib/nginx-ingress.ts`)
+ * with the cadet's `cadet hatch --remote` value — which is never `"cloud"` on
+ * a self-hosted edge (that spelling is the platform's own serving, which is
+ * not an edge). That makes the field the marker separating the edge from any
+ * other JSON a live URL serves.
  */
-const PAIRING_EDGE_MODE = "remote-gateway";
+function isPairingEdgeRemote(value: unknown): boolean {
+  return typeof value === "string" && value !== "cloud";
+}
 
 export async function probeTunnel(args: {
   publicBaseUrl: string;
@@ -242,7 +247,7 @@ async function readServedConfig(
   try {
     const body: unknown = await response.json();
     if (isPlainObject(body)) {
-      if (body.mode === PAIRING_EDGE_MODE) {
+      if (isPairingEdgeRemote(body.remote)) {
         return {
           kind: "served",
           config: {

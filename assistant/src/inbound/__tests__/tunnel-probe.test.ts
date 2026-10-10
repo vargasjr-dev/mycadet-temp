@@ -21,8 +21,8 @@ import { probeTunnel } from "../tunnel-probe.js";
 
 const BASE = "https://edge.example";
 
-/** The marker the nginx pairing edge stamps into every config it serves. */
-const PAIRING_EDGE_MODE = "remote-gateway";
+/** The remote value the nginx pairing edge stamps into every config it serves. */
+const PAIRING_EDGE_REMOTE = "docker";
 
 type Route = { status?: number; body?: string; reject?: unknown };
 
@@ -68,7 +68,7 @@ function stubFetch(routes: { healthz?: Route; config?: Route }): {
     const route = isHealth
       ? (routes.healthz ?? { body: "ok" })
       : (routes.config ?? {
-          body: JSON.stringify({ mode: PAIRING_EDGE_MODE }),
+          body: JSON.stringify({ remote: PAIRING_EDGE_REMOTE }),
         });
     if (route.reject !== undefined) {
       throw route.reject;
@@ -85,7 +85,7 @@ function stubFetch(routes: { healthz?: Route; config?: Route }): {
 function configBody(config: Record<string, unknown>): Route {
   return {
     status: 200,
-    body: JSON.stringify({ mode: PAIRING_EDGE_MODE, ...config }),
+    body: JSON.stringify({ remote: PAIRING_EDGE_REMOTE, ...config }),
   };
 }
 
@@ -226,7 +226,7 @@ describe("probeTunnel", () => {
       config: {
         status: 200,
         body: JSON.stringify({
-          mode: PAIRING_EDGE_MODE,
+          remote: PAIRING_EDGE_REMOTE,
           apiBaseUrl: "/v1",
           platformDisabled: true,
           disablePlatform: true,
@@ -437,7 +437,7 @@ describe("probeTunnel", () => {
           },
         },
         json: async (): Promise<unknown> => ({
-          mode: PAIRING_EDGE_MODE,
+          remote: PAIRING_EDGE_REMOTE,
           assistantId: "asst_1",
         }),
       } as unknown as Response),

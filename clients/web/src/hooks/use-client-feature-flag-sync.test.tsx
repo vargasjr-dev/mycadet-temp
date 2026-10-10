@@ -131,7 +131,7 @@ describe("useClientFeatureFlagSync", () => {
   });
 
   test("does not fetch platform client flags in remote-gateway mode", async () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     const queryClient = freshQueryClient();
     renderHook(() => useClientFeatureFlagSync(true), {
       wrapper: createWrapper(queryClient),
@@ -144,7 +144,7 @@ describe("useClientFeatureFlagSync", () => {
   test("settles the store when no server values are coming", async () => {
     // Surfaces that wait for `hydrated` before acting on a default-off flag
     // would hang forever otherwise.
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
     const queryClient = freshQueryClient();
     renderHook(() => useClientFeatureFlagSync(true), {
       wrapper: createWrapper(queryClient),

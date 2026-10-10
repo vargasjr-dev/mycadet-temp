@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe("remote gateway mode", () => {
   test("is enabled but not active until an in-memory token exists", () => {
-    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    window.__CADET_CONFIG__ = { remote: "docker" };
 
     expect(isGatewayAuthEnabled()).toBe(true);
     expect(isGatewayAuthMode()).toBe(false);
