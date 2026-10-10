@@ -27,6 +27,7 @@ import {
   findAssistantByName,
   saveAssistantEntry,
 } from "../lib/assistant-config.js";
+import { z } from "zod";
 import { loadGuardianToken } from "../lib/guardian-token.js";
 
 const HOST = "https://host.example.ts.net";
@@ -69,6 +70,16 @@ function approvedBody(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** The commands always send flat string-keyed JSON bodies. */
+const JsonRecord = z.record(z.string(), z.unknown());
+
+/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
+function withPreconnect(
+  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+): typeof globalThis.fetch {
+  return Object.assign(impl, { preconnect: () => {} });
+}
+
 interface FetchCall {
   url: string;
   body: Record<string, unknown>;
@@ -79,17 +90,20 @@ function stubFetch(
   replies: (call: FetchCall, index: number) => Response,
 ): FetchCall[] {
   const calls: FetchCall[] = [];
-  globalThis.fetch = (async (url: string, init?: RequestInit) => {
-    const call = {
-      url,
-      body: JSON.parse((init?.body as string) ?? "{}") as Record<
-        string,
-        unknown
-      >,
-    };
-    calls.push(call);
-    return replies(call, calls.length - 1);
-  }) as unknown as typeof fetch;
+  globalThis.fetch = withPreconnect(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const call = {
+        url: String(input),
+        // The command always sends a JSON string body; anything else records
+        // as an empty record.
+        body: JsonRecord.parse(
+          JSON.parse(typeof init?.body === "string" ? init.body : "{}"),
+        ),
+      };
+      calls.push(call);
+      return replies(call, calls.length - 1);
+    },
+  );
   return calls;
 }
 
@@ -112,14 +126,16 @@ async function runExpectingExit(): Promise<{ exited: boolean; out: string }> {
   const logSpy = spyOn(console, "log").mockImplementation((...a: unknown[]) => {
     messages.push(a.join(" "));
   });
-  const exitSpy = spyOn(process, "exit").mockImplementation(((c?: number) => {
-    throw new Error(`exit:${c}`);
-  }) as never);
+  const exitSpy = spyOn(process, "exit").mockImplementation(
+    (c?: number | string | undefined): never => {
+      throw new Error(`exit:${c}`);
+    },
+  );
   let exited = false;
   try {
     await connectImport();
   } catch (e) {
-    exited = (e as Error).message === "exit:1";
+    exited = e instanceof Error && e.message === "exit:1";
   } finally {
     errSpy.mockRestore();
     logSpy.mockRestore();
@@ -144,10 +160,13 @@ describe("connect import", () => {
     // a multi-second cadence is exercised in full without being spent, and
     // both the cadence and the backoff are assertable rather than implicit.
     setSystemTime(new Date());
-    sleepSpy = spyOn(Bun, "sleep").mockImplementation((async (ms: number) => {
-      waits.push(ms);
-      setSystemTime(new Date(Date.now() + ms));
-    }) as never);
+    sleepSpy = spyOn(Bun, "sleep").mockImplementation(
+      async (ms: number | Date) => {
+        const waitMs = typeof ms === "number" ? ms : ms.getTime() - Date.now();
+        waits.push(waitMs);
+        setSystemTime(new Date(Date.now() + waitMs));
+      },
+    );
   });
 
   afterEach(() => {
@@ -312,10 +331,10 @@ describe("connect import", () => {
       "http://insecure.example.com",
     ];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -333,10 +352,10 @@ describe("connect import", () => {
       "https://127.0.0.1:7830",
     ];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -361,10 +380,10 @@ describe("connect import", () => {
       "legacy-box",
     ];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
     const { logs, restore } = captureLogs();
     try {
       await connectImport();
@@ -385,10 +404,10 @@ describe("connect import", () => {
   test("a string that is neither an address nor a bundle keeps the address error", async () => {
     process.argv = ["bun", "cadet", "connect", "import", "not-a-url"];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -410,7 +429,8 @@ describe("connect import", () => {
       "flaky-box",
     ];
     let attempt = 0;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
       if (url === CHALLENGE_URL) {
         return jsonResponse(challengeBody());
       }
@@ -420,7 +440,7 @@ describe("connect import", () => {
         throw new Error("connect ECONNRESET");
       }
       return jsonResponse(approvedBody());
-    }) as unknown as typeof fetch;
+    });
     const { logs, restore } = captureLogs();
     try {
       await connectImport();
@@ -448,7 +468,8 @@ describe("connect import", () => {
       "repairing-box",
     ];
     let attempt = 0;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
       if (url === CHALLENGE_URL) {
         return jsonResponse(challengeBody());
       }
@@ -459,7 +480,7 @@ describe("connect import", () => {
         return jsonResponse({ error: "guardian repair required" }, 503);
       }
       return jsonResponse(approvedBody());
-    }) as unknown as typeof fetch;
+    });
     const { logs, restore } = captureLogs();
     try {
       await connectImport();
@@ -477,7 +498,8 @@ describe("connect import", () => {
   test("reports expiry once transient failures outlast the code", async () => {
     process.argv = ["bun", "cadet", "connect", "import", HOST];
     let exchanges = 0;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
       if (url === CHALLENGE_URL) {
         return jsonResponse(
           challengeBody({
@@ -488,7 +510,7 @@ describe("connect import", () => {
       }
       exchanges += 1;
       throw new Error("connect ECONNREFUSED");
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -507,10 +529,10 @@ describe("connect import", () => {
     // ten-minute TTL.
     process.argv = ["bun", "cadet", "connect", "import", PAIRING_LINK];
     let attempts = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       attempts += 1;
       throw new Error("connect ECONNREFUSED");
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -532,10 +554,10 @@ describe("connect import", () => {
   test("rejects an unknown --flag instead of pairing against it", async () => {
     process.argv = ["bun", "cadet", "connect", "import", "--qr", HOST];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 
@@ -560,10 +582,10 @@ describe("connect import", () => {
       "--frobnicate",
     ];
     let fetched = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       fetched = true;
       return jsonResponse({});
-    }) as unknown as typeof fetch;
+    });
 
     const { exited, out } = await runExpectingExit();
 

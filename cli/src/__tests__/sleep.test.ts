@@ -7,6 +7,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import type { GuardianTokenData } from "../lib/guardian-token.js";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -47,12 +48,27 @@ mock.module("../lib/drain.js", () => ({
   drainAssistant: drainAssistantMock,
 }));
 
+function makeGuardianTokenData(
+  over: Partial<GuardianTokenData> = {},
+): GuardianTokenData {
+  return {
+    guardianPrincipalId: "principal-1",
+    accessToken: "local-token",
+    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    refreshToken: "refresh-token",
+    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
+    isNew: false,
+    deviceId: "device-1",
+    leasedAt: new Date().toISOString(),
+    ...over,
+  };
+}
+
 const realGuardianToken = { ...(await import("../lib/guardian-token.js")) };
 const loadGuardianTokenMock = mock(
-  (_assistantId: string) =>
-    ({ accessToken: "test-guardian-token" }) as unknown as ReturnType<
-      typeof realGuardianToken.loadGuardianToken
-    >,
+  (_assistantId: string): GuardianTokenData | null =>
+    makeGuardianTokenData({ accessToken: "test-guardian-token" }),
 );
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
@@ -153,9 +169,9 @@ describe("sleep command", () => {
     drainAssistantMock.mockReset();
     drainAssistantMock.mockResolvedValue("drained");
     loadGuardianTokenMock.mockReset();
-    loadGuardianTokenMock.mockReturnValue({
-      accessToken: "test-guardian-token",
-    } as unknown as ReturnType<typeof realGuardianToken.loadGuardianToken>);
+    loadGuardianTokenMock.mockReturnValue(
+      makeGuardianTokenData({ accessToken: "test-guardian-token" }),
+    );
     resolveFreshBearerTokenMock.mockReset();
     resolveFreshBearerTokenMock.mockImplementation(
       async (_url, _id, bearerToken, _cloud) => bearerToken,
@@ -180,11 +196,11 @@ describe("sleep command", () => {
     process.argv = ["bun", "cadet", "sleep", "sleep-test"];
 
     const consoleError = spyOn(console, "error").mockImplementation(() => {});
-    const exitMock = mock((code?: number) => {
+    const exitMock = mock((code?: number | string | undefined): never => {
       throw new Error(`process.exit:${code}`);
     });
     const originalExit = process.exit;
-    process.exit = exitMock as unknown as typeof process.exit;
+    process.exit = exitMock;
 
     try {
       await expect(sleep()).rejects.toThrow("process.exit:1");
@@ -300,11 +316,11 @@ describe("sleep command", () => {
       process.argv = ["bun", "cadet", "sleep", "sleep-test", "--wait"];
 
       const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-      const exitMock = mock((code?: number) => {
+      const exitMock = mock((code?: number | string | undefined): never => {
         throw new Error(`process.exit:${code}`);
       });
       const originalExit = process.exit;
-      process.exit = exitMock as unknown as typeof process.exit;
+      process.exit = exitMock;
       try {
         await expect(sleep()).rejects.toThrow("process.exit:130");
       } finally {
@@ -350,11 +366,11 @@ describe("sleep command", () => {
       process.argv = ["bun", "cadet", "sleep", "sleep-test", "--wait=abc"];
 
       const consoleError = spyOn(console, "error").mockImplementation(() => {});
-      const exitMock = mock((code?: number) => {
+      const exitMock = mock((code?: number | string | undefined): never => {
         throw new Error(`process.exit:${code}`);
       });
       const originalExit = process.exit;
-      process.exit = exitMock as unknown as typeof process.exit;
+      process.exit = exitMock;
       try {
         await expect(sleep()).rejects.toThrow("process.exit:1");
         expect(consoleError).toHaveBeenCalledWith(
@@ -484,11 +500,11 @@ describe("sleep command", () => {
       process.argv = ["bun", "cadet", "sleep", "--all"];
 
       const consoleError = spyOn(console, "error").mockImplementation(() => {});
-      const exitMock = mock((code?: number) => {
+      const exitMock = mock((code?: number | string | undefined): never => {
         throw new Error(`process.exit:${code}`);
       });
       const originalExit = process.exit;
-      process.exit = exitMock as unknown as typeof process.exit;
+      process.exit = exitMock;
 
       try {
         await expect(sleep()).rejects.toThrow("process.exit:1");
@@ -511,11 +527,11 @@ describe("sleep command", () => {
       process.argv = ["bun", "cadet", "sleep", "--all"];
 
       const consoleError = spyOn(console, "error").mockImplementation(() => {});
-      const exitMock = mock((code?: number) => {
+      const exitMock = mock((code?: number | string | undefined): never => {
         throw new Error(`process.exit:${code}`);
       });
       const originalExit = process.exit;
-      process.exit = exitMock as unknown as typeof process.exit;
+      process.exit = exitMock;
 
       try {
         await expect(sleep()).rejects.toThrow("process.exit:1");
@@ -532,11 +548,11 @@ describe("sleep command", () => {
       process.argv = ["bun", "cadet", "sleep", "sleep-test", "--all"];
 
       const consoleError = spyOn(console, "error").mockImplementation(() => {});
-      const exitMock = mock((code?: number) => {
+      const exitMock = mock((code?: number | string | undefined): never => {
         throw new Error(`process.exit:${code}`);
       });
       const originalExit = process.exit;
-      process.exit = exitMock as unknown as typeof process.exit;
+      process.exit = exitMock;
 
       try {
         await expect(sleep()).rejects.toThrow("process.exit:1");
