@@ -764,15 +764,15 @@ const MemoryWireConfigSchema = z
  */
 const ConfigGetResponseSchema = z
   .object({
-    // A malformed or absent stored chat-settings subtree reads as absent so
-    // one bad leaf can't fail the whole wire parse (which would strip every
-    // derived field from the response); the chat-settings read overlay
-    // refills both from the effective config.
+    // A malformed or absent stored chat-settings subtree falls back to its
+    // schema defaults so one bad leaf can't fail the whole wire parse (which
+    // would strip every derived field from the response); the chat-settings
+    // read overlay refills both from the effective config.
     conversations: z
       .object({
-        autoArchive: AutoArchiveConfigSchema.passthrough()
-          .optional()
-          .catch(undefined),
+        autoArchive: AutoArchiveConfigSchema.passthrough().catch(
+          AutoArchiveConfigSchema.parse({}),
+        ),
       })
       .passthrough()
       .optional(),

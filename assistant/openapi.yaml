@@ -39199,6 +39199,9 @@ components:
           type: object
           properties:
             autoArchive:
+              default:
+                enabled: false
+                afterDays: 7
               type: object
               properties:
                 enabled:
@@ -39218,6 +39221,8 @@ components:
                 - enabled
                 - afterDays
               additionalProperties: {}
+          required:
+            - autoArchive
           additionalProperties: {}
         notifications:
           type: object
