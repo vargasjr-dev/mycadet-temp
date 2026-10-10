@@ -44,7 +44,7 @@ mock.module("../skills/catalog-install.js", () => ({
   getRepoSkillsDir: () => mockRepoSkillsDir,
 }));
 
-let mockCloudBaseUrl = "https://platform.test";
+let mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
 mock.module("../config/env.ts", () => ({
   getCloudBaseUrl: () => mockCloudBaseUrl,
 }));

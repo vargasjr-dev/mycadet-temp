@@ -1,4 +1,4 @@
-import { getPlatformAssistantId } from "../config/env.js";
+import { getCloudAssistantId } from "../config/env.js";
 import type { AssistantConfig } from "../config/schema.js";
 import { resolveManagedProxyContext } from "../providers/platform-proxy/context.js";
 import {
@@ -82,7 +82,7 @@ function startCesProcess(config: AssistantConfig): CesStartupResult {
       if (abortController.signal.aborted) {
         return undefined;
       }
-      const assistantId = getPlatformAssistantId();
+      const assistantId = getCloudAssistantId();
       handshake = {
         ...(proxyCtx.assistantApiKey
           ? { assistantApiKey: proxyCtx.assistantApiKey }

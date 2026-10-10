@@ -128,13 +128,7 @@ export function isNonSecretPlatformField(
   service: string,
   field: string,
 ): boolean {
-  return (
-    service === "cadet" &&
-    (field === "platform_assistant_id" ||
-      field === "platform_organization_id" ||
-      field === "platform_user_id" ||
-      field === "platform_base_url")
-  );
+  return service === "cadet" && field === "platform_assistant_id";
 }
 
 /**

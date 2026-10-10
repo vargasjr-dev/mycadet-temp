@@ -186,8 +186,8 @@ describe("which deployment the roadmap calls reach", () => {
       _init?: RequestInit,
     ): Promise<Response> => {
       // The item is published. Only now is the assistant repointed at a
-      // platform with no roadmap deployment, as a concurrent
-      // `platform_base_url` write would do.
+      // platform with no roadmap deployment, as a concurrent cloud base
+      // URL change would do.
       cloudBaseUrl = "https://platform.self-hosted.example";
       return new Response(
         JSON.stringify({

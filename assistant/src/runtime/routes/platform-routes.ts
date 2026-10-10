@@ -40,16 +40,16 @@ import {
 import { z } from "zod";
 
 import {
+  resolveCloudOrganizationId,
+  resolveCloudUserId,
+} from "../../config/cloud-identity.js";
+import {
+  getCloudBaseUrl,
   setCloudAssistantId,
-  setCloudBaseUrl,
   setCloudOrganizationId,
   setCloudUserId,
 } from "../../config/env.js";
 import { isPlatformRemote } from "../../config/env-registry.js";
-import {
-  resolvePlatformOrganizationId,
-  resolvePlatformUserId,
-} from "../../config/platform-identity.js";
 import {
   registerCallbackRoute,
   resolvePlatformCallbackRegistrationContext,
@@ -75,11 +75,8 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 // ---------------------------------------------------------------------------
 
 const CREDENTIAL_KEYS = {
-  baseUrl: { service: "cadet", field: "platform_base_url" },
   apiKey: { service: "cadet", field: "assistant_api_key" },
   assistantId: { service: "cadet", field: "platform_assistant_id" },
-  organizationId: { service: "cadet", field: "platform_organization_id" },
-  userId: { service: "cadet", field: "platform_user_id" },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -305,8 +302,8 @@ async function handlePlatformStatus(
   const context = await resolvePlatformCallbackRegistrationContext();
 
   const [organizationId, userId, webhookSecretRaw] = await Promise.all([
-    resolvePlatformOrganizationId(),
-    resolvePlatformUserId(),
+    resolveCloudOrganizationId(),
+    resolveCloudUserId(),
     getSecureKeyAsync(credentialKey("cadet", "webhook_secret")),
   ]);
 
@@ -329,20 +326,9 @@ async function handlePlatformConnect(
   _args: RouteHandlerArgs,
 ): Promise<PlatformConnectResponse> {
   // Check if already connected
-  const [existingUrl, existingApiKey] = await Promise.all([
-    getSecureKeyAsync(
-      credentialKey(
-        CREDENTIAL_KEYS.baseUrl.service,
-        CREDENTIAL_KEYS.baseUrl.field,
-      ),
-    ),
-    getSecureKeyAsync(
-      credentialKey(
-        CREDENTIAL_KEYS.apiKey.service,
-        CREDENTIAL_KEYS.apiKey.field,
-      ),
-    ),
-  ]);
+  const existingApiKey = await getSecureKeyAsync(
+    credentialKey(CREDENTIAL_KEYS.apiKey.service, CREDENTIAL_KEYS.apiKey.field),
+  );
 
   // Stored credentials only count as a connection while they still
   // authenticate. Answering "already connected" for a key the platform has
@@ -355,12 +341,12 @@ async function handlePlatformConnect(
   // stored credentials counting as a connection, so a network problem never
   // strands a working install by reporting it disconnected.
   let credentialRejected = false;
-  if (existingUrl && existingApiKey) {
+  if (existingApiKey) {
     const verified = await verifyStoredCredential();
     if (verified !== "rejected") {
       return {
         alreadyConnected: true,
-        baseUrl: existingUrl,
+        baseUrl: getCloudBaseUrl(),
       };
     }
     credentialRejected = true;
@@ -423,22 +409,11 @@ async function handlePlatformDisconnect(
   }
 
   // Check if connected
-  const [baseUrl, apiKey] = await Promise.all([
-    getSecureKeyAsync(
-      credentialKey(
-        CREDENTIAL_KEYS.baseUrl.service,
-        CREDENTIAL_KEYS.baseUrl.field,
-      ),
-    ),
-    getSecureKeyAsync(
-      credentialKey(
-        CREDENTIAL_KEYS.apiKey.service,
-        CREDENTIAL_KEYS.apiKey.field,
-      ),
-    ),
-  ]);
+  const apiKey = await getSecureKeyAsync(
+    credentialKey(CREDENTIAL_KEYS.apiKey.service, CREDENTIAL_KEYS.apiKey.field),
+  );
 
-  if (!baseUrl && !apiKey) {
+  if (!apiKey) {
     throw new UnprocessableEntityError(
       "Not connected to a platform. Nothing to disconnect.\n\n" +
         "Run 'assistant cloud status' to check connection state.",
@@ -447,11 +422,8 @@ async function handlePlatformDisconnect(
 
   // Delete all cloud credentials
   const keysToDelete = [
-    CREDENTIAL_KEYS.baseUrl,
     CREDENTIAL_KEYS.apiKey,
     CREDENTIAL_KEYS.assistantId,
-    CREDENTIAL_KEYS.organizationId,
-    CREDENTIAL_KEYS.userId,
   ] as const;
 
   const failedKeys: string[] = [];
@@ -470,7 +442,6 @@ async function handlePlatformDisconnect(
     );
   }
 
-  setCloudBaseUrl(undefined);
   setCloudAssistantId(undefined);
   setCloudOrganizationId(undefined);
   setCloudUserId(undefined);
@@ -480,7 +451,7 @@ async function handlePlatformDisconnect(
 
   return {
     disconnected: true,
-    previousBaseUrl: baseUrl ?? null,
+    previousBaseUrl: null,
   };
 }
 

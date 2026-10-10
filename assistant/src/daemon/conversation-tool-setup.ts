@@ -463,7 +463,7 @@ export function createToolExecutor(
       // offered on a gated cleanup turn is not refused at execution.
       sendUserMessageActive: resolveSendUserMessageActive(ctx),
       toolUseId,
-      isPlatformHosted: getIsCloud(),
+      isCloudHosted: getIsCloud(),
       ...resolveTurnClientOs(ctx),
       overrideProfile: ctx.currentTurnOverrideProfile,
       cronRunId: ctx.currentTurnCronRunId,

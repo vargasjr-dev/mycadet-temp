@@ -198,23 +198,6 @@ describe("secrets_add credential transcript scrub", () => {
     expect(scrubbedValues).toEqual([CREDENTIAL_VALUE]);
   });
 
-  test("non-secret platform fields are not scrubbed", async () => {
-    const result = await addRoute.handler({
-      body: {
-        type: "credential",
-        name: "cadet:platform_base_url",
-        value: "0198f4c2-1111-2222-3333-444455556666",
-      },
-    });
-    expect(result).toEqual(expect.objectContaining({ success: true }));
-
-    expect(secureStore.size).toBe(1);
-    expect(secureStore.get(credentialKey("cadet", "platform_base_url"))).toBe(
-      "0198f4c2-1111-2222-3333-444455556666",
-    );
-    expect(scrubbedValues).toEqual([]);
-  });
-
   test("an unknown cadet credential is rejected and never triggers a scrub", async () => {
     await expect(
       addRoute.handler({

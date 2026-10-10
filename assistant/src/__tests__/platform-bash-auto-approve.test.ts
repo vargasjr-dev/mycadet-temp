@@ -154,7 +154,7 @@ describe("platform-hosted bash auto-approval", () => {
     const result = await executor.execute(
       "bash",
       { command: "echo hello" },
-      makeContext({ isPlatformHosted: true, trustClass: "guardian" }),
+      makeContext({ isCloudHosted: true, trustClass: "guardian" }),
     );
 
     expect(promptCalled).toBe(false);
@@ -179,7 +179,7 @@ describe("platform-hosted bash auto-approval", () => {
     await executor.execute(
       "host_bash",
       { command: "echo hello" },
-      makeContext({ isPlatformHosted: true, trustClass: "guardian" }),
+      makeContext({ isCloudHosted: true, trustClass: "guardian" }),
     );
 
     expect(promptCalled).toBe(true);
@@ -204,7 +204,7 @@ describe("platform-hosted bash auto-approval", () => {
       "bash",
       { command: "echo hello" },
       makeContext({
-        isPlatformHosted: false,
+        isCloudHosted: false,
         trustClass: "guardian",
         requireFreshApproval: true,
       }),
@@ -230,7 +230,7 @@ describe("platform-hosted bash auto-approval", () => {
       "bash",
       { command: "echo hello" },
       makeContext({
-        isPlatformHosted: true,
+        isCloudHosted: true,
         trustClass: "trusted_contact",
         requireFreshApproval: true,
       }),
@@ -261,7 +261,7 @@ describe("platform-hosted bash auto-approval", () => {
       "bash",
       { command: "echo hello" },
       makeContext({
-        isPlatformHosted: true,
+        isCloudHosted: true,
         trustClass: "guardian",
         requireFreshApproval: true,
       }),
@@ -278,7 +278,7 @@ describe("platform-hosted bash auto-approval", () => {
       "bash",
       { command: "rm -rf /" },
       makeContext({
-        isPlatformHosted: true,
+        isCloudHosted: true,
         trustClass: "guardian",
         requireFreshApproval: true,
       }),
@@ -307,7 +307,7 @@ describe("platform-hosted bash auto-approval", () => {
     const result = await executor.execute(
       "bash",
       { command: "rm -rf /tmp/stuff" },
-      makeContext({ isPlatformHosted: true, trustClass: "guardian" }),
+      makeContext({ isCloudHosted: true, trustClass: "guardian" }),
     );
 
     expect(promptCalled).toBe(false);
@@ -333,7 +333,7 @@ describe("platform-hosted bash auto-approval", () => {
       "file_write",
       { path: "/tmp/test.txt", content: "hello" },
       makeContext({
-        isPlatformHosted: true,
+        isCloudHosted: true,
         trustClass: "guardian",
         requireFreshApproval: true,
       }),

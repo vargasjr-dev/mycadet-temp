@@ -104,8 +104,8 @@ export async function hasWebhookRoutingConfigured(
   configured: boolean;
   usesManagedCallbacks: boolean;
 }> {
-  const platformManaged = allowManagedCallbacks && getIsCloud();
-  if (platformManaged && !isTunnelWebhooksEnabled()) {
+  const cloudManaged = allowManagedCallbacks && getIsCloud();
+  if (cloudManaged && !isTunnelWebhooksEnabled()) {
     return { configured: true, usesManagedCallbacks: true };
   }
 
@@ -113,7 +113,7 @@ export async function hasWebhookRoutingConfigured(
     return { configured: true, usesManagedCallbacks: false };
   }
 
-  if (platformManaged) {
+  if (cloudManaged) {
     return { configured: true, usesManagedCallbacks: true };
   }
 

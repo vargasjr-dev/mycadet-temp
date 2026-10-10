@@ -104,7 +104,7 @@ const defaultWebSearchService: Services["web-search"] = {
 
 mock.module("../config/env.js", () => ({
   getCloudBaseUrl: () => mockCloudBaseUrl,
-  getPlatformAssistantId: () => mockPlatformAssistantId,
+  getCloudAssistantId: () => mockCloudAssistantId,
 }));
 
 // The REAL secure-keys module pinned to a live memory backend; managed
@@ -177,12 +177,11 @@ const MANAGED_FALLBACK_PROVIDERS: string[] = [
 ];
 
 let mockCloudBaseUrl = "";
-let mockPlatformAssistantId = "";
+let mockCloudAssistantId = "";
 
 function enableManagedProxy() {
   mockCloudBaseUrl = PLATFORM_BASE;
-  mockPlatformAssistantId = PLATFORM_ASSISTANT_ID;
-  secureKeys.set(credentialKey("cadet", "platform_base_url"), PLATFORM_BASE);
+  mockCloudAssistantId = PLATFORM_ASSISTANT_ID;
   secureKeys.set(
     credentialKey("cadet", "platform_assistant_id"),
     PLATFORM_ASSISTANT_ID,
@@ -192,8 +191,7 @@ function enableManagedProxy() {
 
 function disableManagedProxy() {
   mockCloudBaseUrl = "";
-  mockPlatformAssistantId = "";
-  secureKeys.delete(credentialKey("cadet", "platform_base_url"));
+  mockCloudAssistantId = "";
   secureKeys.delete(credentialKey("cadet", "platform_assistant_id"));
   secureKeys.delete(credentialKey("cadet", "assistant_api_key"));
 }

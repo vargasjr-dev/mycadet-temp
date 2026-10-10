@@ -15,8 +15,8 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
+import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
 import { getConfig } from "../config/loader.js";
-import { rehydrateCloudCredentials } from "../config/platform-rehydration.js";
 import { resetDb } from "../persistence/db-connection.js";
 import { startConsentRefresh } from "../platform/consent-cache.js";
 import { disableStreamSeqStamping } from "../runtime/assistant-stream-state.js";

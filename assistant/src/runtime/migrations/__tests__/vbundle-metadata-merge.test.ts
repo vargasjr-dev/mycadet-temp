@@ -59,10 +59,9 @@ function keys(records: Record[]): Set<string> {
 }
 
 const CADET_FIELDS = [
-  "platform_base_url",
+  "webhook_secret",
   "assistant_api_key",
   "platform_assistant_id",
-  "webhook_secret",
 ] as const;
 
 function cadetRecords(): Record[] {
@@ -103,9 +102,9 @@ describe("mergeMetadataPreservingCadet", () => {
       mergeMetadataPreservingCadet(file(bundle), file(target)),
     );
 
-    // 4 cadet + 3 user = 7 total.
-    expect(merged.credentials.length).toBe(7);
-    expect(keys(merged.credentials).size).toBe(7);
+    // 3 cadet + 3 user = 6 total.
+    expect(merged.credentials.length).toBe(6);
+    expect(keys(merged.credentials).size).toBe(6);
 
     // Target's credentialIds for cadet are preserved (not the bundle's).
     for (const r of merged.credentials) {
@@ -128,7 +127,7 @@ describe("mergeMetadataPreservingCadet", () => {
       }),
       record({
         service: "cadet",
-        field: "platform_base_url",
+        field: "webhook_secret",
         credentialId: "source-rogue-url",
       }),
       record({ service: "telegram", field: "bot_token" }),
@@ -141,7 +140,7 @@ describe("mergeMetadataPreservingCadet", () => {
     const cadetRecordsOut = merged.credentials.filter(
       (r) => r.service === "cadet",
     );
-    expect(cadetRecordsOut.length).toBe(4);
+    expect(cadetRecordsOut.length).toBe(3);
     for (const r of cadetRecordsOut) {
       expect(r.credentialId.startsWith("target-")).toBe(true);
     }

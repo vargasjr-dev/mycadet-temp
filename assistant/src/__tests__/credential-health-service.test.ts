@@ -773,7 +773,7 @@ describe("credential-health-service", () => {
 
   describe("managed assistant credential", () => {
     const KEY = "credential/cadet/assistant_api_key";
-    const BASE_URL = "credential/cadet/platform_base_url";
+    const ASSISTANT_ID = "credential/cadet/platform_assistant_id";
 
     // Checked directly rather than through `checkAllCredentials`: the managed
     // credential is not enrolled in the heartbeat pass yet, because the alert
@@ -786,7 +786,7 @@ describe("credential-health-service", () => {
     });
 
     test("is missing_token when a platform identity exists without a key", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
 
       const result = await assistantKeyResult();
       expect(result!.status).toBe("missing_token");
@@ -794,7 +794,7 @@ describe("credential-health-service", () => {
     });
 
     test("is healthy when the platform accepts the stored key", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "valid";
 
@@ -802,7 +802,7 @@ describe("credential-health-service", () => {
     });
 
     test("is revoked when the platform rejects the stored key", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "rejected";
 
@@ -818,7 +818,7 @@ describe("credential-health-service", () => {
     // error, transport failure) must degrade to `unreachable`, which the
     // heartbeat drops before notifying.
     test("an unsettled platform answer is unreachable, never revoked", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "unknown";
 
@@ -826,14 +826,14 @@ describe("credential-health-service", () => {
     });
 
     test("an unreadable credential store is unreachable, never revoked", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       markUnreachable(KEY);
 
       expect((await assistantKeyResult())!.status).toBe("unreachable");
     });
 
     test("is unreachable when the platform client cannot be built", async () => {
-      secureKeyValues.set(BASE_URL, "https://platform.example");
+      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       platformClientAvailable = false;
 

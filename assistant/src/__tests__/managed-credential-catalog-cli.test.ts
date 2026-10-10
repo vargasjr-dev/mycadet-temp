@@ -12,7 +12,7 @@ const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 // ---------------------------------------------------------------------------
 
 let mockCloudBaseUrl = "";
-let mockPlatformAssistantId = "";
+let mockCloudAssistantId = "";
 
 /** Simulated platform catalog responses keyed by URL. */
 let mockFetchResponses: Map<string, { status: number; body: unknown }> =
@@ -20,7 +20,7 @@ let mockFetchResponses: Map<string, { status: number; body: unknown }> =
 
 mock.module("../config/env.js", () => ({
   getCloudBaseUrl: () => mockCloudBaseUrl,
-  getPlatformAssistantId: () => mockPlatformAssistantId,
+  getCloudAssistantId: () => mockCloudAssistantId,
 }));
 
 // Mock global fetch
@@ -65,7 +65,7 @@ describe("fetchManagedCatalog", () => {
   beforeEach(() => {
     mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
-    mockPlatformAssistantId = "";
+    mockCloudAssistantId = "";
     mockFetchResponses = new Map();
   });
 
@@ -100,7 +100,7 @@ describe("fetchManagedCatalog", () => {
   test("returns empty descriptors when assistant ID is missing", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "";
+    mockCloudAssistantId = "";
 
     const result = await fetchManagedCatalog();
     expect(result.ok).toBe(true);
@@ -110,7 +110,7 @@ describe("fetchManagedCatalog", () => {
   test("parses platform catalog response into descriptors with correct handles", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
       "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
@@ -158,7 +158,7 @@ describe("fetchManagedCatalog", () => {
   test("handles empty connections list from platform", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
       "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
@@ -176,7 +176,7 @@ describe("fetchManagedCatalog", () => {
   test("handles platform returning HTTP error gracefully", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
       "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
@@ -195,7 +195,7 @@ describe("fetchManagedCatalog", () => {
   test("handles platform returning unexpected format gracefully", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
       "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
@@ -213,7 +213,7 @@ describe("fetchManagedCatalog", () => {
   test("defaults missing optional fields in catalog entries", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
       "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
@@ -244,7 +244,7 @@ describe("fetchManagedCatalog", () => {
   test("error messages never contain sensitive details", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-super-secret-key-12345");
-    mockPlatformAssistantId = "ast-uuid-1234";
+    mockCloudAssistantId = "ast-uuid-1234";
 
     // Simulate a network error whose message contains sensitive data
     const savedFetch = globalThis.fetch;

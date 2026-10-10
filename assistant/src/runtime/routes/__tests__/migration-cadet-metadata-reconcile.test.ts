@@ -2,15 +2,13 @@
  * Tests for the post-import cadet metadata reconciliation helper.
  *
  * After every bundle import, `reconcileCadetMetadataFromCes` walks the
- * platform-identity fields the gateway requires and, for each one that
+ * cloud-identity fields the gateway requires and, for each one that
  * CES already holds a value for, ensures `metadata.json` lists a
  * matching entry. This closes the race where a provisioning write to
  * CES completes successfully but its metadata upsert gets clobbered by
  * the import's in-place clear or atomic swap. The reconciled set covers
- * both the Django-provisioned fields (assistant_api_key,
- * platform_assistant_id, platform_base_url, webhook_secret) and the
- * client-injected identity fields (platform_organization_id,
- * platform_user_id).
+ * the Django-provisioned fields (assistant_api_key, platform_assistant_id,
+ * webhook_secret).
  *
  * We test the reconcile logic in isolation by mocking the secure-keys
  * and metadata-store modules — the real migration handler wires the
@@ -41,11 +39,8 @@ type MetadataRecord = {
 };
 
 const CADET_FIELDS = [
-  "platform_base_url",
   "assistant_api_key",
   "platform_assistant_id",
-  "platform_organization_id",
-  "platform_user_id",
   "webhook_secret",
 ] as const;
 
@@ -143,7 +138,7 @@ describe("reconcileCadetMetadataFromCes", () => {
   test("CES holds all, metadata has 2 → only the missing ones upserted", async () => {
     seedAllInCes();
     // Pre-populate metadata for 2 of the fields.
-    const prepopulated = ["platform_base_url", "assistant_api_key"] as const;
+    const prepopulated = ["assistant_api_key", "webhook_secret"] as const;
     for (const field of prepopulated) {
       metadataStore.set(`cadet:${field}`, {
         credentialId: `id-cadet:${field}`,
@@ -174,14 +169,10 @@ describe("reconcileCadetMetadataFromCes", () => {
     await reconcileCadetMetadataFromCes(sink);
 
     const reconciled = new Set(upsertCalls.map((c) => c.field));
-    // Django-provisioned quartet.
-    expect(reconciled).toContain("platform_base_url");
+    // Django-provisioned trio.
     expect(reconciled).toContain("assistant_api_key");
     expect(reconciled).toContain("platform_assistant_id");
     expect(reconciled).toContain("webhook_secret");
-    // Client-injected identity fields (onboarding / teleport / transfer).
-    expect(reconciled).toContain("platform_organization_id");
-    expect(reconciled).toContain("platform_user_id");
   });
 
   test("CES empty → nothing upserted", async () => {

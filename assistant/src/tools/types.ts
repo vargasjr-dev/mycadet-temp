@@ -443,7 +443,7 @@ export interface ToolContext {
    * True when the assistant is running as a platform-managed remote instance. Used to auto-approve sandboxed bash tools.
    * @legacy
    */
-  isPlatformHosted?: boolean;
+  isCloudHosted?: boolean;
   /**
    * The interface ID of the connected client driving the current turn (e.g.
    * "macos", "chrome-extension"). Browser backend policy uses this to decide

@@ -26,7 +26,7 @@
  * flush is skipped and retried next cycle.
  */
 
-import { getPlatformOrganizationId, getPlatformUserId } from "../config/env.js";
+import { getCloudOrganizationId, getCloudUserId } from "../config/env.js";
 import { CadetPlatformClient } from "../platform/client.js";
 import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
@@ -501,8 +501,8 @@ export class UsageTelemetryReporter {
       // the server would silently drop; the batch is POSTed unchanged.
       validateWireEvents(typedEvents, log);
 
-      const organizationId = getPlatformOrganizationId() || undefined;
-      const userId = getPlatformUserId() || undefined;
+      const organizationId = getCloudOrganizationId() || undefined;
+      const userId = getCloudUserId() || undefined;
       const payload = {
         device_id: getDeviceId(),
         assistant_version: APP_VERSION,

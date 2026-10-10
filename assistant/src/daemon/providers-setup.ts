@@ -1,5 +1,5 @@
+import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
 import { maybeDefaultSpeechToManaged } from "../config/managed-speech-defaults.js";
-import { rehydrateCloudCredentials } from "../config/platform-rehydration.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getMcpServerManager } from "../mcp/manager.js";
 import { startConfiguredMcpServers } from "../mcp/startup.js";

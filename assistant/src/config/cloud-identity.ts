@@ -4,7 +4,7 @@
  * Django maps an assistant API key to these ids via
  * `POST /v1/internal/assistants/validate/`. Process startup rehydrates from
  * that endpoint into the in-memory overrides. Resolution reads those
- * overrides (and `PLATFORM_ORGANIZATION_ID` / `PLATFORM_USER_ID` when set).
+ * overrides (and `CLOUD_ORGANIZATION_ID` / `CLOUD_USER_ID` when set).
  * When the in-memory assistant id is empty, the next resolve retries
  * validate (single-flight, with a cooldown after a failed attempt that holds
  * only while the same API key and base URL are stored).
@@ -14,24 +14,23 @@ import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import {
+  getCloudAssistantId,
   getCloudBaseUrl,
-  getPlatformAssistantId,
-  getPlatformOrganizationId,
-  getPlatformUserId,
+  getCloudOrganizationId,
+  getCloudUserId,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
 } from "./env.js";
 
-const log = getLogger("platform-identity");
+const log = getLogger("cloud-identity");
 
-export const PLATFORM_IDENTITY_VALIDATE_PATH =
-  "/v1/internal/assistants/validate/";
+export const CLOUD_IDENTITY_VALIDATE_PATH = "/v1/internal/assistants/validate/";
 
 const VALIDATE_TIMEOUT_MS = 5_000;
 const ENSURE_COOLDOWN_MS = 10_000;
 
-export type PlatformIdentityIds = {
+export type CloudIdentityIds = {
   assistantId: string;
   organizationId: string;
   userId: string;
@@ -45,7 +44,7 @@ function asNonEmptyString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function applyPlatformIdentityIds(ids: PlatformIdentityIds): void {
+export function applyCloudIdentityIds(ids: CloudIdentityIds): void {
   if (ids.assistantId) {
     setCloudAssistantId(ids.assistantId);
   }
@@ -63,11 +62,11 @@ export function applyPlatformIdentityIds(ids: PlatformIdentityIds): void {
  * Returns null when the platform is unreachable, refuses the key, or the
  * body has no ids. Never throws.
  */
-export async function fetchPlatformIdentityIds(
+export async function fetchCloudIdentityIds(
   baseUrl: string,
   apiKey: string,
-): Promise<PlatformIdentityIds | null> {
-  const url = `${baseUrl.replace(/\/+$/, "")}${PLATFORM_IDENTITY_VALIDATE_PATH}`;
+): Promise<CloudIdentityIds | null> {
+  const url = `${baseUrl.replace(/\/+$/, "")}${CLOUD_IDENTITY_VALIDATE_PATH}`;
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -146,8 +145,8 @@ export function _resetPlatformIdentityEnsureForTests(): void {
  * attempt used and that attempt is still inside the cooldown window.
  * Concurrent callers share one in-flight request.
  */
-export async function ensurePlatformIdentityIds(): Promise<void> {
-  if (getPlatformAssistantId()?.trim()) {
+export async function ensureCloudIdentityIds(): Promise<void> {
+  if (getCloudAssistantId()?.trim()) {
     return;
   }
   if (!ensureInFlight) {
@@ -165,13 +164,13 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
         ) {
           return;
         }
-        const ids = await fetchPlatformIdentityIds(baseUrl, apiKey);
+        const ids = await fetchCloudIdentityIds(baseUrl, apiKey);
         if (!ids) {
           failedFingerprint = fingerprint;
           nextEnsureAttemptAt = Date.now() + ENSURE_COOLDOWN_MS;
           return;
         }
-        applyPlatformIdentityIds(ids);
+        applyCloudIdentityIds(ids);
         failedFingerprint = null;
         nextEnsureAttemptAt = 0;
         log.info("Loaded platform identity from platform validate");
@@ -183,36 +182,34 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
   await ensureInFlight;
 }
 
-export async function resolvePlatformAssistantId(): Promise<string> {
-  const existing = getPlatformAssistantId()?.trim() ?? "";
+export async function resolveCloudAssistantId(): Promise<string> {
+  const existing = getCloudAssistantId()?.trim() ?? "";
   if (existing) {
     return existing;
   }
-  await ensurePlatformIdentityIds();
-  return getPlatformAssistantId()?.trim() ?? "";
+  await ensureCloudIdentityIds();
+  return getCloudAssistantId()?.trim() ?? "";
 }
 
-export async function resolvePlatformAssistantIdOrNull(): Promise<
-  string | null
-> {
-  const id = await resolvePlatformAssistantId();
+export async function resolveCloudAssistantIdOrNull(): Promise<string | null> {
+  const id = await resolveCloudAssistantId();
   return id || null;
 }
 
-export async function resolvePlatformOrganizationId(): Promise<string> {
-  const existing = getPlatformOrganizationId()?.trim() ?? "";
+export async function resolveCloudOrganizationId(): Promise<string> {
+  const existing = getCloudOrganizationId()?.trim() ?? "";
   if (existing) {
     return existing;
   }
-  await ensurePlatformIdentityIds();
-  return getPlatformOrganizationId()?.trim() ?? "";
+  await ensureCloudIdentityIds();
+  return getCloudOrganizationId()?.trim() ?? "";
 }
 
-export async function resolvePlatformUserId(): Promise<string> {
-  const existing = getPlatformUserId()?.trim() ?? "";
+export async function resolveCloudUserId(): Promise<string> {
+  const existing = getCloudUserId()?.trim() ?? "";
   if (existing) {
     return existing;
   }
-  await ensurePlatformIdentityIds();
-  return getPlatformUserId()?.trim() ?? "";
+  await ensureCloudIdentityIds();
+  return getCloudUserId()?.trim() ?? "";
 }

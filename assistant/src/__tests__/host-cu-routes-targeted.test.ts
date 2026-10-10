@@ -38,11 +38,11 @@ mock.module("../config/env.js", () => ({
   setCloudBaseUrl: () => {},
   getAssistantDomain: () => "example.com",
   setCloudAssistantId: () => {},
-  getPlatformAssistantId: () => "test-assistant-id",
+  getCloudAssistantId: () => "test-assistant-id",
   setCloudOrganizationId: () => {},
-  getPlatformOrganizationId: () => "test-org-id",
+  getCloudOrganizationId: () => "test-org-id",
   setCloudUserId: () => {},
-  getPlatformUserId: () => "test-user-id",
+  getCloudUserId: () => "test-user-id",
   validateEnv: () => {},
 }));
 

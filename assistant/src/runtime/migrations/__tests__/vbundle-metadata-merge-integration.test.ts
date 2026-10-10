@@ -48,10 +48,9 @@ interface Record {
 }
 
 const CADET_FIELDS = [
-  "platform_base_url",
+  "webhook_secret",
   "assistant_api_key",
   "platform_assistant_id",
-  "webhook_secret",
 ] as const;
 
 function record(service: string, field: string, prefix = "id"): Record {
@@ -180,7 +179,7 @@ describe("commitImport — credential metadata merge", () => {
     const metadataPath = seedTargetMetadata(workspaceDir, cadetRecords());
     const bundleMetadata = metadataJson([
       record("cadet", "assistant_api_key", "source-rogue"),
-      record("cadet", "platform_base_url", "source-rogue"),
+      record("cadet", "webhook_secret", "source-rogue"),
       record("telegram", "bot_token", "source"),
     ]);
     const { archive } = buildVBundle({
@@ -207,7 +206,7 @@ describe("commitImport — credential metadata merge", () => {
 
     const merged = readMetadata(metadataPath);
     const legacyRows = merged.credentials.filter((r) => r.service === "cadet");
-    expect(legacyRows.length).toBe(4);
+    expect(legacyRows.length).toBe(3);
     for (const r of legacyRows) {
       expect(r.credentialId.startsWith("target-")).toBe(true);
     }

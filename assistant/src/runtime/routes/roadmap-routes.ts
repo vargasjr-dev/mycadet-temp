@@ -117,10 +117,10 @@ interface RoadmapEndpoints {
  *
  * Each handler resolves this once and carries the result through both the
  * request and the response mapping. Resolving again while rendering the reply
- * would reintroduce the failure this ordering exists to prevent: a
- * `platform_base_url` write landing mid-flight could make a create throw after
- * the item was already published, or stamp a link from a deployment other than
- * the one that answered.
+ * would reintroduce the failure this ordering exists to prevent: a config
+ * write landing mid-flight could make a create throw after the item was
+ * already published, or stamp a link from a deployment other than the one
+ * that answered.
  */
 function resolveEndpoints(): RoadmapEndpoints {
   const deployment = resolveDeployment();

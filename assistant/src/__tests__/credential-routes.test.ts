@@ -624,11 +624,6 @@ describe("credentials routes", () => {
        * transcripts; scrubbing them would redact ordinary conversation
        * content. Shares the exemption with the /v1/secrets credential branch
        * via isNonSecretPlatformField.
-       *
-       * `platform_base_url` carries the same exemption but is not settable
-       * here: it decides which host receives the platform API key, so the
-       * credentials API refuses it (see the platform-managed suite).
-       */
       for (const field of [
         "platform_assistant_id",
         "platform_organization_id",
@@ -856,7 +851,6 @@ describe("credentials routes", () => {
 
   describe("platform-managed credentials", () => {
     const PLATFORM_KEY = "vk-platform-provisioned-key";
-    const PLATFORM_BASE_URL = "https://platform.example";
 
     /**
      * The platform provisions the pod's own credentials by POSTing them to
@@ -884,7 +878,6 @@ describe("credentials routes", () => {
     test("the listing omits cloud credentials and keeps the user's own", async () => {
       // GIVEN the platform's provisioned credentials alongside a user's
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
@@ -932,73 +925,65 @@ describe("credentials routes", () => {
 
     test("inspect refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          inspectRoute!.handler({
-            body: { service: "cadet", field },
-          }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        inspectRoute!.handler({
+          body: { service: "cadet", field: "assistant_api_key" },
+        }),
+      ).rejects.toThrow(ForbiddenError);
     });
 
     test("set refuses cloud credentials", async () => {
       /**
-       * A write is a read by another name: repointing `platform_base_url`
-       * sends the next platform call, bearing the API key, to a host the
+       * The managed key is owned by the platform's own provisioning; a
+       * hand-set key would spend Cadet's inference budget on a caller the
        * writer chose. The platform's own provisioning does not come through
        * this route; it writes over `POST /v1/secrets`.
        */
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          setRoute!.handler({
-            body: { service: "cadet", field, value: "https://attacker.test" },
-          }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        setRoute!.handler({
+          body: {
+            service: "cadet",
+            field: "assistant_api_key",
+            value: "attacker-key",
+          },
+        }),
+      ).rejects.toThrow(ForbiddenError);
 
       expect(secureStore.has(seedKey("cadet", "assistant_api_key"))).toBe(
-        false,
-      );
-      expect(secureStore.has(seedKey("cadet", "platform_base_url"))).toBe(
         false,
       );
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
+      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         setRoute!.handler({
           body: {
             service: "cadet",
-            field: "platform_base_url",
-            value: "https://attacker.test",
+            field: "assistant_api_key",
+            value: "attacker-key",
           },
         }),
       ).rejects.toThrow(/owned by Cadet Cloud/);
 
-      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
-        PLATFORM_BASE_URL,
+      expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(
+        PLATFORM_KEY,
       );
     });
 
     test("delete refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          deleteRoute!.handler({ body: { service: "cadet", field } }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        deleteRoute!.handler({
+          body: { service: "cadet", field: "assistant_api_key" },
+        }),
+      ).rejects.toThrow(ForbiddenError);
 
       expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(
         PLATFORM_KEY,
-      );
-      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
-        PLATFORM_BASE_URL,
       );
     });
 
@@ -1039,7 +1024,6 @@ describe("credentials routes", () => {
 
   describe("platform-managed credentials", () => {
     const PLATFORM_KEY = "vk-platform-provisioned-key";
-    const PLATFORM_BASE_URL = "https://platform.example";
 
     /**
      * The platform provisions the pod's own credentials by POSTing them to
@@ -1067,7 +1051,6 @@ describe("credentials routes", () => {
     test("the listing omits cloud credentials and keeps the user's own", async () => {
       // GIVEN the platform's provisioned credentials alongside a user's
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
@@ -1115,73 +1098,65 @@ describe("credentials routes", () => {
 
     test("inspect refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          inspectRoute!.handler({
-            body: { service: "cadet", field },
-          }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        inspectRoute!.handler({
+          body: { service: "cadet", field: "assistant_api_key" },
+        }),
+      ).rejects.toThrow(ForbiddenError);
     });
 
     test("set refuses cloud credentials", async () => {
       /**
-       * A write is a read by another name: repointing `platform_base_url`
-       * sends the next platform call, bearing the API key, to a host the
+       * The managed key is owned by the platform's own provisioning; a
+       * hand-set key would spend Cadet's inference budget on a caller the
        * writer chose. The platform's own provisioning does not come through
        * this route; it writes over `POST /v1/secrets`.
        */
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          setRoute!.handler({
-            body: { service: "cadet", field, value: "https://attacker.test" },
-          }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        setRoute!.handler({
+          body: {
+            service: "cadet",
+            field: "assistant_api_key",
+            value: "attacker-key",
+          },
+        }),
+      ).rejects.toThrow(ForbiddenError);
 
       expect(secureStore.has(seedKey("cadet", "assistant_api_key"))).toBe(
-        false,
-      );
-      expect(secureStore.has(seedKey("cadet", "platform_base_url"))).toBe(
         false,
       );
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
+      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         setRoute!.handler({
           body: {
             service: "cadet",
-            field: "platform_base_url",
-            value: "https://attacker.test",
+            field: "assistant_api_key",
+            value: "attacker-key",
           },
         }),
       ).rejects.toThrow(/owned by Cadet Cloud/);
 
-      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
-        PLATFORM_BASE_URL,
+      expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(
+        PLATFORM_KEY,
       );
     });
 
     test("delete refuses cloud credentials", async () => {
       seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
-      seedPlatformCredential("platform_base_url", PLATFORM_BASE_URL);
 
-      for (const field of ["assistant_api_key", "platform_base_url"]) {
-        await expect(
-          deleteRoute!.handler({ body: { service: "cadet", field } }),
-        ).rejects.toThrow(ForbiddenError);
-      }
+      await expect(
+        deleteRoute!.handler({
+          body: { service: "cadet", field: "assistant_api_key" },
+        }),
+      ).rejects.toThrow(ForbiddenError);
 
       expect(secureStore.get(seedKey("cadet", "assistant_api_key"))).toBe(
         PLATFORM_KEY,
-      );
-      expect(secureStore.get(seedKey("cadet", "platform_base_url"))).toBe(
-        PLATFORM_BASE_URL,
       );
     });
 

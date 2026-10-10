@@ -12,9 +12,9 @@
 
 import { writeFileSync } from "node:fs";
 
+import { rehydrateCloudCredentials } from "../../../config/cloud-rehydration.js";
 import { getConfig } from "../../../config/loader.js";
 import { isMemoryEnabled } from "../../../config/memory-v3-gate.js";
-import { rehydrateCloudCredentials } from "../../../config/platform-rehydration.js";
 import { startConversationEvictor } from "../../../daemon/conversation-evictor.js";
 import {
   startWorkspaceSkillMdMtimePoll,

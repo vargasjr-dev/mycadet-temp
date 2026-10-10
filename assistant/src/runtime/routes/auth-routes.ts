@@ -7,10 +7,10 @@
 import { z } from "zod";
 
 import {
+  getCloudAssistantId,
   getCloudBaseUrl,
-  getPlatformAssistantId,
-  getPlatformOrganizationId,
-  getPlatformUserId,
+  getCloudOrganizationId,
+  getCloudUserId,
 } from "../../config/env.js";
 import { resolveManagedProxyContext } from "../../providers/platform-proxy/context.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -31,9 +31,9 @@ async function handleAuthInfo(
   const ctx = await resolveManagedProxyContext();
 
   const platformUrl = getCloudBaseUrl();
-  const assistantId = getPlatformAssistantId();
-  const organizationId = getPlatformOrganizationId();
-  const userId = getPlatformUserId();
+  const assistantId = getCloudAssistantId();
+  const organizationId = getCloudOrganizationId();
+  const userId = getCloudUserId();
   const authenticated = ctx.enabled;
 
   const result: AuthInfoResult = {

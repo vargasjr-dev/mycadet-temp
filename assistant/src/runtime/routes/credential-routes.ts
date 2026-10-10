@@ -208,8 +208,8 @@ function resolveCredentialLookup(
  * Refuse any use of a credential the platform provisions for itself, whatever
  * the calling principal. Reads are refused because the API key spends
  * inference on Cadet's account. Writes are refused because they are a read
- * by another name: repointing `cadet:platform_base_url` sends the next
- * platform call, bearing that same key, to a host of the writer's choosing.
+ * they are owned by the platform's own provisioning; a hand-set key or
+ * identity id would silently misroute or impersonate every platform call.
  *
  * The platform's own provisioning does not come through here. It writes over
  * `POST /v1/secrets` (Django to vembda to the pod), as does the CLI and the

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { BackgroundWakeIntent } from "./next-wake.js";
 
-let mockPlatformAssistantId: string;
+let mockCloudAssistantId: string;
 let mockClientFetch: ReturnType<typeof mock>;
 let mockCreateClient: ReturnType<typeof mock>;
 
@@ -23,10 +23,10 @@ const NOW = 1_800_000_000_000;
 
 describe("background wake platform client", () => {
   beforeEach(() => {
-    mockPlatformAssistantId = "asst-123";
+    mockCloudAssistantId = "asst-123";
     mockClientFetch = mock(async () => new Response('{"status":"stored"}'));
     mockCreateClient = mock(async () => ({
-      platformAssistantId: mockPlatformAssistantId,
+      platformAssistantId: mockCloudAssistantId,
       fetch: mockClientFetch,
     }));
   });
@@ -108,7 +108,7 @@ describe("background wake platform client", () => {
   test("clears wake intent with the last computed snapshot when available", async () => {
     mockClientFetch = mock(async () => new Response('{"status":"cleared"}'));
     mockCreateClient = mock(async () => ({
-      platformAssistantId: mockPlatformAssistantId,
+      platformAssistantId: mockCloudAssistantId,
       fetch: mockClientFetch,
     }));
 
@@ -243,7 +243,7 @@ describe("background wake platform client", () => {
   test("treats Django disabled no-op responses as success", async () => {
     mockClientFetch = mock(async () => new Response('{"status":"disabled"}'));
     mockCreateClient = mock(async () => ({
-      platformAssistantId: mockPlatformAssistantId,
+      platformAssistantId: mockCloudAssistantId,
       fetch: mockClientFetch,
     }));
 
@@ -280,7 +280,7 @@ describe("background wake platform client", () => {
       async () => new Response("bad gateway", { status: 502 }),
     );
     mockCreateClient = mock(async () => ({
-      platformAssistantId: mockPlatformAssistantId,
+      platformAssistantId: mockCloudAssistantId,
       fetch: mockClientFetch,
     }));
 

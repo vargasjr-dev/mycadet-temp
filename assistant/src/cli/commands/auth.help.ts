@@ -31,8 +31,8 @@ Examples:
 Fields:
   platformUrl         The Cadet Cloud base URL this assistant connects to
   assistantId         This assistant's platform UUID
-  organizationId      The organization this assistant belongs to (from PLATFORM_ORGANIZATION_ID)
-  userId              The user who owns this assistant (from PLATFORM_USER_ID)
+  organizationId      The organization this assistant belongs to (from CLOUD_ORGANIZATION_ID)
+  userId              The user who owns this assistant (from CLOUD_USER_ID)
   authenticated       Whether all prerequisites for platform authentication are met
                       (platform URL and assistant API key both present)
 

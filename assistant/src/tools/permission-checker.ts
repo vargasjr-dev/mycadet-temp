@@ -274,7 +274,7 @@ export class PermissionChecker {
       // is preserved as a belt-and-suspenders guard.
       if (
         result.decision === "prompt" &&
-        context.isPlatformHosted &&
+        context.isCloudHosted &&
         name === "bash" &&
         resolveCapabilities(context.trustClass).canSelfApproveTools &&
         !context.requireFreshApproval

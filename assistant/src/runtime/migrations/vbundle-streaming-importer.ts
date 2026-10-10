@@ -1062,8 +1062,8 @@ export async function streamCommitImport(
 
   // Preserve the target's `cadet:*` credential metadata entries across
   // the swap. Django's post-hatch provisioning on the platform writes
-  // `cadet:platform_base_url` / `assistant_api_key` / `platform_assistant_id`
-  // / `webhook_secret` via POST /v1/secrets, which upserts into the live
+  // `cadet:assistant_api_key` / `platform_assistant_id` / `webhook_secret`
+  // via POST /v1/secrets, which upserts into the live
   // workspace's `data/credentials/metadata.json`. Without this merge the
   // swap would replace that file with the source's copy (which has no
   // cadet entries on local sources), and the gateway's

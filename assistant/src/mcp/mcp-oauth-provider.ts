@@ -29,7 +29,7 @@ import type {
 } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { buildMcpOAuthClientMetadata } from "@mycadet/service-contracts/mcp-oauth";
 
-import { getPlatformAssistantId } from "../config/env.js";
+import { getCloudAssistantId } from "../config/env.js";
 import { getAssistantName } from "../daemon/identity-helpers.js";
 import {
   deleteSecureKeyAsync,
@@ -143,7 +143,7 @@ export class McpOAuthProvider implements OAuthClientProvider {
    */
   get clientMetadata(): OAuthClientMetadata {
     const assistantName = getAssistantName();
-    const assistantId = getPlatformAssistantId().trim();
+    const assistantId = getCloudAssistantId().trim();
     return buildMcpOAuthClientMetadata({
       clientName: assistantName ?? "Cadet Assistant",
       redirectUris: this._redirectUrl ? [this._redirectUrl] : [],

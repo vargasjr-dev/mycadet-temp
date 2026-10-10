@@ -331,7 +331,7 @@ export interface ToolContext {
    */
   hostFileProxy?: unknown;
   /** True when the assistant is running as a platform-managed remote instance. Used to auto-approve sandboxed bash tools. */
-  isPlatformHosted?: boolean;
+  isCloudHosted?: boolean;
   /**
    * CES RPC client for credential execution operations. Held as `unknown`
    * here; the assistant narrows to the concrete `CesClient` class.

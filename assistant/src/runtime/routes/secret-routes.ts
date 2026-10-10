@@ -15,7 +15,7 @@ import {
   assertAcpCredentialFormat,
 } from "../../acp/acp-credentials.js";
 import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
-import { getPlatformAssistantId, setCloudBaseUrl } from "../../config/env.js";
+import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { maybeDefaultSpeechToManaged } from "../../config/managed-speech-defaults.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
@@ -77,7 +77,6 @@ const CES_READY_POLL_TIMEOUT_MS = 30_000;
 const WRITABLE_CADET_CREDENTIAL_FIELDS = [
   "assistant_api_key",
   "webhook_secret",
-  "platform_base_url",
 ] as const;
 
 function isWritableCadetCredentialField(field: string): boolean {
@@ -145,7 +144,7 @@ async function queueApiKeyPropagation(
       try {
         await cesClient.updateAssistantApiKey(
           apiKey,
-          getPlatformAssistantId() || undefined,
+          getCloudAssistantId() || undefined,
         );
         log.info(
           "Notified CES of the queued assistant API key after handshake completed (ack only; CES reads the durable value from the credential store)",
@@ -186,7 +185,7 @@ export async function notifyCesOfAssistantApiKeyUpdate(
     try {
       await cesClient.updateAssistantApiKey(
         value,
-        getPlatformAssistantId() || undefined,
+        getCloudAssistantId() || undefined,
       );
       logger.info(
         "Notified CES of the updated assistant API key (ack only; CES reads the durable value from the credential store)",
@@ -364,9 +363,6 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         }
         assertMetadataWritable();
         await persistCredential(service, field, value);
-        if (field === "platform_base_url") {
-          setCloudBaseUrl(value);
-        }
         if (isPlatformManagedCredential(service, field)) {
           await refreshProvidersAfterSecretChange();
           // Close the first-boot race where the startup capability seed ran before
@@ -379,10 +375,10 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         } else {
           await refreshProvidersForRotatedCredential(service, field);
         }
-        if (field === "assistant_api_key" || field === "platform_base_url") {
-          // Managed-speech availability needs the API key, the assistant ID,
-          // and the base URL. Fire on each write that completes a piece of
-          // that set; the hook no-ops until the connection is complete.
+        if (field === "assistant_api_key") {
+          // Managed-speech availability needs the API key and the assistant
+          // ID. Fire on each write that completes a piece of that set; the
+          // hook no-ops until the connection is complete.
           // Detached, must not block the response.
           void maybeDefaultSpeechToManaged();
           // Same last-write-wins shape: the startup syncs no-op before live

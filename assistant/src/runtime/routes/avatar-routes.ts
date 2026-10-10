@@ -32,9 +32,6 @@ import {
   ensureAvatarRasterPath,
 } from "../../avatar/ensure-raster.js";
 import type { CharacterTraits } from "../../avatar/traits-png-sync.js";
-import { setCloudBaseUrl } from "../../config/env.js";
-import { credentialKey } from "../../security/credential-key.js";
-import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { detectMediaType } from "../../tools/shared/filesystem/image-read.js";
 import { generateAvatarImage } from "../../tools/system/avatar-generator.js";
 import { getLogger } from "../../util/logger.js";
@@ -176,17 +173,6 @@ async function handleGenerateAvatar({ body, headers }: RouteHandlerArgs) {
   const description = typeof raw === "string" ? raw.trim() : "";
   if (!description) {
     throw new BadRequestError("description is required");
-  }
-
-  // Rehydrate platform base URL from credential store
-  try {
-    const key = credentialKey("cadet", "platform_base_url");
-    const persisted = await getSecureKeyAsync(key);
-    if (persisted) {
-      setCloudBaseUrl(persisted);
-    }
-  } catch {
-    // Non-fatal
   }
 
   const result = await generateAvatarImage(description);

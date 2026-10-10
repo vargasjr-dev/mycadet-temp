@@ -32,7 +32,7 @@ mock.module("../providers/platform-proxy/context.js", () => ({
 const actualEnv = await import("../config/env.js");
 mock.module("../config/env.js", () => ({
   ...actualEnv,
-  getPlatformAssistantId: () => mockAssistantId,
+  getCloudAssistantId: () => mockAssistantId,
 }));
 
 mock.module("../security/credential-key.js", () => ({
@@ -108,7 +108,7 @@ describe("CadetPlatformClient", () => {
       expect(client!.baseUrl).toBe("https://platform.example.com");
     });
 
-    test("falls back to credential store values when managed context is not rehydrated", async () => {
+    test("returns null when managed context is not rehydrated, even with stored credentials", async () => {
       mockManagedProxyCtx = {
         enabled: false,
         cloudBaseUrl: "",
@@ -116,17 +116,16 @@ describe("CadetPlatformClient", () => {
       };
       mockAssistantId = "stored-assistant-id";
       reseedMemorySecureKeys(mockSecureKeys, {
-        "cadet:platform_base_url": "https://stored-platform.example.com/",
         "cadet:assistant_api_key": "stored-api-key",
         "cadet:platform_assistant_id": " vault-assistant-id ",
       });
 
+      // The base URL resolves from config or CADET_PLATFORM_URL only — the
+      // credential store never carried it — so a disabled context has no
+      // target to send the key to.
       const client = await CadetPlatformClient.create();
 
-      expect(client).not.toBeNull();
-      expect(client!.baseUrl).toBe("https://stored-platform.example.com");
-      expect(client!.assistantApiKey).toBe("stored-api-key");
-      expect(client!.platformAssistantId).toBe("stored-assistant-id");
+      expect(client).toBeNull();
     });
   });
 

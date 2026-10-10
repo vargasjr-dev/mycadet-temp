@@ -253,7 +253,7 @@ export function commitImport(options: ImportCommitOptions): ImportCommitResult {
   // Capture the target's credential metadata BEFORE the workspace clear
   // runs. Step 1b wipes `data/credentials/`, so reading live metadata
   // later (during the per-file write loop) would always miss. The merge
-  // helper needs this content to preserve the target's platform-identity
+  // helper needs this content to preserve the target's cloud-identity
   // (`cadet:*`) entries across the overwrite.
   let liveCredentialMetadataJson: string | null = null;
   const credentialMetadataDiskPath = pathResolver.resolve(

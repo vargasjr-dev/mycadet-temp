@@ -2,7 +2,7 @@
  * Tests for platform credential filtering during bundle import.
  *
  * `migration-routes.ts` pushes every bundle credential through a filter that
- * must exclude platform-identity (`cadet:*`) entries so they can't overwrite
+ * must exclude cloud-identity (`cadet:*`) entries so they can't overwrite
  * the target's own Django-provisioned identity. The filter runs against the
  * raw CES account format — `credential/{service}/{field}` — produced by
  * `credentialKey()`, which is what `listSecureKeysAsync()` returns and what
@@ -111,9 +111,6 @@ describe("migration import credential filtering", () => {
     const cadetFields = [
       "assistant_api_key",
       "platform_assistant_id",
-      "platform_base_url",
-      "platform_organization_id",
-      "platform_user_id",
       "webhook_secret",
     ] as const;
     const cadetPaths = cadetFields.map((f) =>
@@ -166,7 +163,7 @@ describe("migration import credential filtering", () => {
 
   test("mixed bundle with both platform and user credentials correctly splits", () => {
     const cadetApiKey = credentialKey("cadet", "assistant_api_key");
-    const cadetUserId = credentialKey("cadet", "platform_user_id");
+    const cadetUserId = credentialKey("cadet", "platform_assistant_id");
     const openaiKey = credentialKey("openai", "api_key");
     const anthropicKey = credentialKey("anthropic", "api_key");
     const githubToken = credentialKey("github", "api_token");
@@ -206,19 +203,19 @@ describe("migration import credential filtering", () => {
 
   test("skippedPlatform count is accurate with mixed credentials", () => {
     const cadetApiKey = credentialKey("cadet", "assistant_api_key");
-    const cadetBaseUrl = credentialKey("cadet", "platform_base_url");
+    const cadetAssistantId = credentialKey("cadet", "platform_assistant_id");
     const cadetWebhook = credentialKey("cadet", "webhook_secret");
     const userKey = credentialKey("github", "api_token");
 
     const entries = new Map<string, VBundleTarEntry>();
     entries.set(bundlePathFor(cadetApiKey), makeTarEntry("v1"));
-    entries.set(bundlePathFor(cadetBaseUrl), makeTarEntry("v2"));
+    entries.set(bundlePathFor(cadetAssistantId), makeTarEntry("v2"));
     entries.set(bundlePathFor(cadetWebhook), makeTarEntry("v3"));
     entries.set(bundlePathFor(userKey), makeTarEntry("user-val"));
 
     const manifest = makeManifest([
       bundlePathFor(cadetApiKey),
-      bundlePathFor(cadetBaseUrl),
+      bundlePathFor(cadetAssistantId),
       bundlePathFor(cadetWebhook),
       bundlePathFor(userKey),
     ]);

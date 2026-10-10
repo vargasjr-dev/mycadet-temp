@@ -10,7 +10,7 @@ import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 let mockIsPlatform = true;
 let mockTunnelWebhooksEnabled = false;
 let mockCloudBaseUrl = "";
-let mockPlatformAssistantId = "";
+let mockCloudAssistantId = "";
 let mockConfig: { ingress?: { publicBaseUrl?: string; enabled?: boolean } } =
   {};
 
@@ -50,7 +50,7 @@ const actualEnv = await import("../config/env.js");
 mock.module("../config/env.js", () => ({
   ...actualEnv,
   getCloudBaseUrl: () => mockCloudBaseUrl,
-  getPlatformAssistantId: () => mockPlatformAssistantId,
+  getCloudAssistantId: () => mockCloudAssistantId,
 }));
 
 const actualGatewayClient = await import("../ipc/gateway-client.js");
@@ -88,7 +88,7 @@ describe("platform callback registration", () => {
   beforeEach(() => {
     mockIsPlatform = true;
     mockCloudBaseUrl = "";
-    mockPlatformAssistantId = "";
+    mockCloudAssistantId = "";
     secureKeyStore.clear();
     setAllUnreachable(false);
     mockConfig = {};
@@ -107,11 +107,8 @@ describe("platform callback registration", () => {
   });
 
   test("resolves managed callback context from stored credentials", async () => {
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-managed-key",
@@ -129,11 +126,8 @@ describe("platform callback registration", () => {
 
   test("self-hosted assistant with stored credentials is enabled without IS_PLATFORM", async () => {
     mockIsPlatform = false;
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-self-hosted-key",
@@ -152,7 +146,7 @@ describe("platform callback registration", () => {
   test("uses ASSISTANT_API_KEY env fallback when stored credential is missing", async () => {
     process.env.ASSISTANT_API_KEY = "env-key";
     mockCloudBaseUrl = "https://platform.example.com";
-    mockPlatformAssistantId = "33333333-4444-4555-8666-777777777777";
+    mockCloudAssistantId = "33333333-4444-4555-8666-777777777777";
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -165,7 +159,7 @@ describe("platform callback registration", () => {
 
   test("reports the key as missing when the store answers and holds none", async () => {
     mockCloudBaseUrl = "https://platform.example.com";
-    mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -179,7 +173,7 @@ describe("platform callback registration", () => {
     // "none" by a daemon whose store did not answer.
     setAllUnreachable(true);
     mockCloudBaseUrl = "https://platform.example.com";
-    mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -192,7 +186,7 @@ describe("platform callback registration", () => {
     setAllUnreachable(true);
     process.env.ASSISTANT_API_KEY = "env-key";
     mockCloudBaseUrl = "https://platform.example.com";
-    mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
@@ -201,11 +195,8 @@ describe("platform callback registration", () => {
   });
 
   test("registerCallbackRoute falls back to assistant API key auth", async () => {
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-managed-key",
@@ -252,11 +243,8 @@ describe("platform callback registration", () => {
     mockConfig = {
       ingress: { publicBaseUrl: "https://my-assistant.example.com" },
     };
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-self-hosted-key",
@@ -297,11 +285,8 @@ describe("platform callback registration", () => {
     mockIsPlatform = false;
     mockConfig = {};
     setIngressPublicBaseUrl("https://detected.example.com/");
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-self-hosted-key",
@@ -341,11 +326,8 @@ describe("platform callback registration", () => {
   test("self-hosted registerCallbackRoute omits callback_base_url when no ingress is available", async () => {
     mockIsPlatform = false;
     mockConfig = {};
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "22222222-3333-4444-8555-666666666666";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-self-hosted-key",
@@ -386,11 +368,8 @@ describe("platform callback registration", () => {
   test("platform-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
     mockIsPlatform = true;
     mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-managed-key",
@@ -451,11 +430,8 @@ describe("resolveCallbackUrl resolution order", () => {
   }
 
   function seedPlatformCredentials(): void {
-    secureKeyStore.set(
-      credentialKey("cadet", "platform_base_url"),
-      "https://platform.example.com",
-    );
-    mockPlatformAssistantId = "11111111-2222-4333-8444-555555555555";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
     secureKeyStore.set(
       credentialKey("cadet", "assistant_api_key"),
       "ast-managed-key",
@@ -468,7 +444,7 @@ describe("resolveCallbackUrl resolution order", () => {
     mockIsPlatform = false;
     mockTunnelWebhooksEnabled = false;
     mockCloudBaseUrl = "";
-    mockPlatformAssistantId = "";
+    mockCloudAssistantId = "";
     secureKeyStore.clear();
     setAllUnreachable(false);
     mockConfig = {};

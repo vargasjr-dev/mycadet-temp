@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // Mocks, set up before importing the module under test
 // ---------------------------------------------------------------------------
 
-let mockPlatformAssistantId: string | null;
+let mockCloudAssistantId: string | null;
 let mockResponse: { ok: boolean; status: number; body: unknown };
 let mockFetchThrows: boolean;
 let mockCreateThrows: boolean;
@@ -27,7 +27,7 @@ mock.module("../platform/client.js", () => ({
 }));
 
 const clientStub = () => ({
-  platformAssistantId: mockPlatformAssistantId,
+  platformAssistantId: mockCloudAssistantId,
   fetch: async (_path: string) => {
     fetchCallCount += 1;
     if (mockFetchThrows) {
@@ -66,7 +66,7 @@ async function testClient(): Promise<CadetPlatformClient> {
 
 describe("resolveRegisteredInbox", () => {
   beforeEach(() => {
-    mockPlatformAssistantId = "assistant-test-id";
+    mockCloudAssistantId = "assistant-test-id";
     mockResponse = { ok: true, status: 200, body: { count: 0, results: [] } };
     mockFetchThrows = false;
     mockCreateThrows = false;
@@ -110,7 +110,7 @@ describe("resolveRegisteredInbox", () => {
   });
 
   test("no_platform when platform credentials are missing", async () => {
-    mockPlatformAssistantId = null;
+    mockCloudAssistantId = null;
 
     const state = await resolveRegisteredInbox();
 
@@ -205,7 +205,7 @@ describe("resolveRegisteredInbox", () => {
 
 describe("listEmailAddresses", () => {
   beforeEach(() => {
-    mockPlatformAssistantId = "assistant-test-id";
+    mockCloudAssistantId = "assistant-test-id";
     mockResponse = { ok: true, status: 200, body: { count: 0, results: [] } };
     mockFetchThrows = false;
     mockCreateThrows = false;

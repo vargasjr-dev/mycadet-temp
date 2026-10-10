@@ -18,16 +18,13 @@
  * the platform can register a route that points at this instance.
  */
 
+import { resolveCloudAssistantId } from "../config/cloud-identity.js";
 import { getCloudBaseUrl } from "../config/env.js";
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
-import { resolvePlatformAssistantId } from "../config/platform-identity.js";
 import { ipcRegisterWebhookRoute } from "../ipc/gateway-client.js";
 import { credentialKey } from "../security/credential-key.js";
-import {
-  getSecureKeyAsync,
-  getSecureKeyResultAsync,
-} from "../security/secure-keys.js";
+import { getSecureKeyResultAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import { resolveClaimedPodWebhookUrl } from "./pod-webhook-claim.js";
 import {
@@ -55,15 +52,12 @@ export interface PlatformCallbackRegistrationContext {
 
 export async function resolvePlatformCallbackRegistrationContext(): Promise<PlatformCallbackRegistrationContext> {
   const platform = getIsCloud();
-  const [storedBaseUrlRaw, storedAssistantApiKey, assistantId] =
-    await Promise.all([
-      getSecureKeyAsync(credentialKey("cadet", "platform_base_url")),
-      getSecureKeyResultAsync(credentialKey("cadet", "assistant_api_key")),
-      resolvePlatformAssistantId(),
-    ]);
+  const [storedAssistantApiKey, assistantId] = await Promise.all([
+    getSecureKeyResultAsync(credentialKey("cadet", "assistant_api_key")),
+    resolveCloudAssistantId(),
+  ]);
 
-  const storedBaseUrl = storedBaseUrlRaw?.trim();
-  const cloudBaseUrl = (storedBaseUrl || getCloudBaseUrl()).replace(/\/+$/, "");
+  const cloudBaseUrl = getCloudBaseUrl().replace(/\/+$/, "");
   const envAssistantCredential = process.env.ASSISTANT_API_KEY?.trim();
   const assistantCredential =
     storedAssistantApiKey.value?.trim() || envAssistantCredential || undefined;

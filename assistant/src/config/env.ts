@@ -134,12 +134,6 @@ export function getOllamaBaseUrlEnv(): string | undefined {
 
 // ── Platform ─────────────────────────────────────────────────────────────────
 
-let _cloudBaseUrlOverride: string | undefined;
-
-export function setCloudBaseUrl(value: string | undefined): void {
-  _cloudBaseUrlOverride = value;
-}
-
 export function getCloudBaseUrl(): string {
   let configUrl: string | undefined;
   try {
@@ -167,12 +161,7 @@ export function getCloudBaseUrl(): string {
   } else {
     defaultUrl = "https://dev-cloud.mycadet.ai";
   }
-  return (
-    configUrl ||
-    str("CADET_PLATFORM_URL") ||
-    _cloudBaseUrlOverride ||
-    defaultUrl
-  );
+  return configUrl || str("CADET_PLATFORM_URL") || defaultUrl;
 }
 
 /**
@@ -232,7 +221,7 @@ export function setCloudAssistantId(value: string | undefined): void {
  * rehydration via platform validate, or by secret-routes when the
  * platform pushes the value).
  */
-export function getPlatformAssistantId(): string {
+export function getCloudAssistantId(): string {
   return _platformAssistantIdOverride ?? "";
 }
 
@@ -243,13 +232,11 @@ export function setCloudOrganizationId(value: string | undefined): void {
 }
 
 /**
- * PLATFORM_ORGANIZATION_ID — UUID of the organization this assistant belongs to.
+ * CLOUD_ORGANIZATION_ID — UUID of the organization this assistant belongs to.
  * Used for platform tagging and API calls.
  */
-export function getPlatformOrganizationId(): string {
-  return (
-    str("PLATFORM_ORGANIZATION_ID") ?? _platformOrganizationIdOverride ?? ""
-  );
+export function getCloudOrganizationId(): string {
+  return str("CLOUD_ORGANIZATION_ID") ?? _platformOrganizationIdOverride ?? "";
 }
 
 let _platformUserIdOverride: string | undefined;
@@ -259,11 +246,11 @@ export function setCloudUserId(value: string | undefined): void {
 }
 
 /**
- * PLATFORM_USER_ID — UUID of the user who owns this assistant.
+ * CLOUD_USER_ID — UUID of the user who owns this assistant.
  * Used for telemetry and platform API calls.
  */
-export function getPlatformUserId(): string {
-  return str("PLATFORM_USER_ID") ?? _platformUserIdOverride ?? "";
+export function getCloudUserId(): string {
+  return str("CLOUD_USER_ID") ?? _platformUserIdOverride ?? "";
 }
 
 // ── Startup validation ──────────────────────────────────────────────────────

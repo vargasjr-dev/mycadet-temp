@@ -22,7 +22,6 @@ let avatarSyncCalls = 0;
 
 const CLOUD_BASE_URL = "https://platform.example.com";
 const ASSISTANT_API_KEY_PATH = credentialKey("cadet", "assistant_api_key");
-const CLOUD_BASE_URL_PATH = credentialKey("cadet", "platform_base_url");
 const MANAGED_PROVIDERS = [
   "anthropic",
   "openai",
@@ -32,7 +31,6 @@ const MANAGED_PROVIDERS = [
   "typesafe",
 ] as const;
 
-let cloudBaseUrlOverride: string | undefined;
 let platformAssistantIdOverride: string | undefined;
 let platformOrganizationIdOverride: string | undefined;
 let platformUserIdOverride: string | undefined;
@@ -62,10 +60,7 @@ mock.module("@google/genai", () => ({
 
 mock.module("../config/env.js", () => ({
   getCloudBaseUrl: () => CLOUD_BASE_URL,
-  getPlatformAssistantId: () => platformAssistantIdOverride,
-  setCloudBaseUrl: (value: string | undefined) => {
-    cloudBaseUrlOverride = value;
-  },
+  getCloudAssistantId: () => platformAssistantIdOverride,
   setCloudAssistantId: (value: string | undefined) => {
     platformAssistantIdOverride = value;
   },
@@ -181,7 +176,6 @@ describe("secret routes managed proxy registry sync", () => {
     metadataUpserts.length = 0;
     metadataDeletes.length = 0;
     lastGeminiConstructorOpts = null;
-    cloudBaseUrlOverride = undefined;
     platformAssistantIdOverride = undefined;
     platformOrganizationIdOverride = undefined;
     platformUserIdOverride = undefined;
@@ -259,14 +253,11 @@ describe("secret routes managed proxy registry sync", () => {
 
   test("deleting a cadet credential is rejected without touching the vault", async () => {
     secureKeyStore.set(ASSISTANT_API_KEY_PATH, "ast-managed-key");
-    secureKeyStore.set(CLOUD_BASE_URL_PATH, "https://managed.example.com");
-    cloudBaseUrlOverride = "https://managed.example.com";
     platformAssistantIdOverride = "asst-1";
     await initializeProviders(getConfig());
 
     for (const name of [
       "cadet:assistant_api_key",
-      "cadet:platform_base_url",
       "cadet:webhook_secret",
       "cadet:platform_assistant_id",
     ]) {
@@ -276,10 +267,6 @@ describe("secret routes managed proxy registry sync", () => {
     }
 
     expect(secureKeyStore.get(ASSISTANT_API_KEY_PATH)).toBe("ast-managed-key");
-    expect(secureKeyStore.get(CLOUD_BASE_URL_PATH)).toBe(
-      "https://managed.example.com",
-    );
-    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
     expect(platformAssistantIdOverride).toBe("asst-1");
     expect(metadataDeletes).toEqual([]);
     expect(providerRefreshCalls).toBe(0);
@@ -333,13 +320,10 @@ describe("secret routes managed proxy registry sync", () => {
   });
 
   test("storing a platform registration credential enqueues name and avatar syncs", async () => {
-    for (const name of ["cadet:assistant_api_key", "cadet:platform_base_url"]) {
-      identitySyncCalls = 0;
-      avatarSyncCalls = 0;
-      await addCredential(name, "value");
-      expect(identitySyncCalls).toBe(1);
-      expect(avatarSyncCalls).toBe(1);
-    }
+    await addCredential("cadet:assistant_api_key", "value");
+
+    expect(identitySyncCalls).toBe(1);
+    expect(avatarSyncCalls).toBe(1);
   });
 
   test("unrelated credentials do not enqueue platform syncs", async () => {
@@ -353,7 +337,7 @@ describe("secret routes managed proxy registry sync", () => {
     setWritesFail(true);
 
     await expect(
-      addCredential("cadet:platform_base_url", "https://managed.example.com"),
+      addCredential("cadet:assistant_api_key", "ast-managed-key"),
     ).rejects.toThrow("Failed to store credential");
 
     expect(identitySyncCalls).toBe(0);
@@ -374,6 +358,9 @@ describe("secret routes managed proxy registry sync", () => {
     await expect(
       addCredential("cadet:platform_user_id", "user-1"),
     ).rejects.toThrow("Unknown cadet credential: platform_user_id");
+    await expect(
+      addCredential("cadet:platform_base_url", "https://managed.example.com"),
+    ).rejects.toThrow("Unknown cadet credential: platform_base_url");
 
     expect(
       secureKeyStore.get(credentialKey("cadet", "platform_assistant_id")),
@@ -383,6 +370,9 @@ describe("secret routes managed proxy registry sync", () => {
     ).toBeUndefined();
     expect(
       secureKeyStore.get(credentialKey("cadet", "platform_user_id")),
+    ).toBeUndefined();
+    expect(
+      secureKeyStore.get(credentialKey("cadet", "platform_base_url")),
     ).toBeUndefined();
     expect(metadataUpserts).toEqual([]);
     expect(platformAssistantIdOverride).toBe("existing-asst");
@@ -408,29 +398,8 @@ describe("secret routes managed proxy registry sync", () => {
     expect(avatarSyncCalls).toBe(0);
   });
 
-  test("storing cadet:platform_base_url sets override and triggers initializeProviders", async () => {
-    await addCredential(
-      "cadet:platform_base_url",
-      "https://managed.example.com",
-    );
-
-    expect(secureKeyStore.get(CLOUD_BASE_URL_PATH)).toBe(
-      "https://managed.example.com",
-    );
-    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
-    expect(metadataUpserts).toEqual([
-      { service: "cadet", field: "platform_base_url" },
-    ]);
-  });
-
-  test("storing both cadet:platform_base_url and cadet:assistant_api_key enables managed proxy", async () => {
+  test("storing cadet:assistant_api_key enables managed proxy", async () => {
     expect(listProviders()).toEqual([]);
-
-    await addCredential(
-      "cadet:platform_base_url",
-      "https://managed.example.com",
-    );
-    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
 
     await addCredential("cadet:assistant_api_key", "ast-managed-key");
 

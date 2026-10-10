@@ -674,10 +674,10 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
     // A workspace that was never connected to the platform has no managed
     // credential and is not unhealthy. Only an install that already carries
     // the rest of a platform identity is missing something.
-    const baseUrl = await getSecureKeyAsync(
-      credentialKey("cadet", "platform_base_url"),
+    const assistantId = await getSecureKeyAsync(
+      credentialKey("cadet", "platform_assistant_id"),
     );
-    if (!baseUrl) {
+    if (!assistantId) {
       return null;
     }
     return {

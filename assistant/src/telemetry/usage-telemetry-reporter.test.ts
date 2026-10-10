@@ -75,8 +75,8 @@ const mockGetPlatformUserId = mock(() => "");
 
 mock.module("../config/env.js", () => ({
   getCloudBaseUrl: mockGetCloudBaseUrl,
-  getPlatformOrganizationId: mockGetPlatformOrganizationId,
-  getPlatformUserId: mockGetPlatformUserId,
+  getCloudOrganizationId: mockGetPlatformOrganizationId,
+  getCloudUserId: mockGetPlatformUserId,
   // Re-export anything else the module might import transitively
   str: () => undefined,
   num: () => undefined,

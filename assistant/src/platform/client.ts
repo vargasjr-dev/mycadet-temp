@@ -7,7 +7,7 @@
 
 import type { PlatformCredentialVerificationStatus } from "@mycadet/service-contracts/platform-credential";
 
-import { resolvePlatformAssistantId } from "../config/platform-identity.js";
+import { resolveCloudAssistantId } from "../config/cloud-identity.js";
 import { resolveManagedProxyContext } from "../providers/platform-proxy/context.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -61,16 +61,11 @@ async function resolvePlatformClientConfig(): Promise<PlatformClientConfig | nul
 
   const ctx = await resolveManagedProxyContext();
 
-  let baseUrl = ctx.enabled ? ctx.cloudBaseUrl : "";
+  const baseUrl = ctx.enabled ? ctx.cloudBaseUrl : "";
   let apiKey = ctx.enabled ? ctx.assistantApiKey : "";
-  const assistantId = await resolvePlatformAssistantId();
+  const assistantId = await resolveCloudAssistantId();
 
   // Fall back to credential store for values not yet rehydrated (standalone CLI).
-  if (!baseUrl) {
-    baseUrl =
-      (await getSecureKeyAsync(credentialKey("cadet", "platform_base_url"))) ??
-      "";
-  }
   if (!apiKey) {
     apiKey =
       (await getSecureKeyAsync(credentialKey("cadet", "assistant_api_key"))) ??

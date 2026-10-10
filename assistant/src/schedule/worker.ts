@@ -17,8 +17,8 @@ import {
   initFeatureFlagOverrides,
   refreshOverridesFromGateway,
 } from "../config/assistant-feature-flags.js";
+import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
 import { getConfig } from "../config/loader.js";
-import { rehydrateCloudCredentials } from "../config/platform-rehydration.js";
 import { startConversationEvictor } from "../daemon/conversation-evictor.js";
 import { stopMcpServerManager } from "../mcp/manager.js";
 import { MCP_RELOAD_SIGNAL_FILE } from "../mcp/reload-signal.js";

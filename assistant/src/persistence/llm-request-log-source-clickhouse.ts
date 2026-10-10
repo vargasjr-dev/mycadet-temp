@@ -15,7 +15,7 @@
  * than the local source. Acceptable for the "internal use while we
  * finetune prompts" use case; revisit when mirror updates are added.
  */
-import { resolvePlatformAssistantIdOrNull } from "../config/platform-identity.js";
+import { resolveCloudAssistantIdOrNull } from "../config/cloud-identity.js";
 import type { LlmRequestLogsClickHouseConfig } from "../config/schemas/llm-request-logs.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -139,7 +139,7 @@ export class ClickHouseLlmRequestLogSource implements LlmRequestLogSource {
       deps.resolvePassword ??
       (() => readCredentialOrNull("clickhouse", "password"));
     this.resolveAssistantId =
-      deps.resolveAssistantId ?? resolvePlatformAssistantIdOrNull;
+      deps.resolveAssistantId ?? resolveCloudAssistantIdOrNull;
     this.resolveTurnMessageIds =
       deps.resolveTurnMessageIds ?? getAssistantMessageIdsInTurn;
     this.resolveMessage = deps.resolveMessage ?? getMessageById;

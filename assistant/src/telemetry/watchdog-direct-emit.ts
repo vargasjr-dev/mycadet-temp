@@ -18,7 +18,7 @@
 
 import { v4 as uuid } from "uuid";
 
-import { getPlatformOrganizationId, getPlatformUserId } from "../config/env.js";
+import { getCloudOrganizationId, getCloudUserId } from "../config/env.js";
 import { CadetPlatformClient } from "../platform/client.js";
 import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
@@ -77,8 +77,8 @@ export async function emitWatchdogEventDirect(
     // would silently drop the event; the POST proceeds unchanged.
     validateWireEvents([event], log);
 
-    const organizationId = getPlatformOrganizationId() || undefined;
-    const userId = getPlatformUserId() || undefined;
+    const organizationId = getCloudOrganizationId() || undefined;
+    const userId = getCloudUserId() || undefined;
     const resp = await client.fetch(TELEMETRY_INGEST_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

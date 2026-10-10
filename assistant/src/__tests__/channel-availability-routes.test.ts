@@ -23,7 +23,7 @@ import {
 // Mock state — flipped per-test
 // ---------------------------------------------------------------------------
 
-let mockPlatformAssistantId: string | null = "assistant-test-id";
+let mockCloudAssistantId: string | null = "assistant-test-id";
 let mockEmailAddressesResponse: {
   ok: boolean;
   status: number;
@@ -39,7 +39,7 @@ const mockSecureKeys = useMemorySecureKeys();
 mock.module("../platform/client.js", () => ({
   CadetPlatformClient: {
     create: async () => ({
-      platformAssistantId: mockPlatformAssistantId,
+      platformAssistantId: mockCloudAssistantId,
       fetch: async (_path: string) => {
         if (mockFetchThrows) {
           throw new Error("platform unreachable");
@@ -82,7 +82,7 @@ interface HandlerResult {
 
 describe("channels/available", () => {
   beforeEach(() => {
-    mockPlatformAssistantId = "assistant-test-id";
+    mockCloudAssistantId = "assistant-test-id";
     mockEmailAddressesResponse = {
       ok: true,
       status: 200,
@@ -172,7 +172,7 @@ describe("channels/available", () => {
   });
 
   test("base list only when no platformAssistantId on client", async () => {
-    mockPlatformAssistantId = null;
+    mockCloudAssistantId = null;
 
     const result = (await handler({})) as HandlerResult;
 

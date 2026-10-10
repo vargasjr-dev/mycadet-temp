@@ -23,8 +23,8 @@ import { PassThrough, Readable } from "node:stream";
 import { GatewayDebugExportIpcResponseSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 import { z } from "zod";
 
+import { resolveCloudAssistantId } from "../../config/cloud-identity.js";
 import { invalidateConfigCache } from "../../config/loader.js";
-import { resolvePlatformAssistantId } from "../../config/platform-identity.js";
 import { trackDaemonActivity } from "../../daemon/activity-trail.js";
 import { getAssistantName } from "../../daemon/identity-helpers.js";
 import { ipcCallPersistent } from "../../ipc/gateway-client.js";
@@ -108,7 +108,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 import { RouteResponse } from "./types.js";
 
 /**
- * CES account prefix for platform-identity (`cadet:*`) credentials. Entries
+ * CES account prefix for cloud-identity (`cadet:*`) credentials. Entries
  * with an account that starts with this string are filtered out of any
  * imported bundle so they don't overwrite the target's own Django-provisioned
  * platform identity (most notably `assistant_api_key`).
@@ -121,21 +121,16 @@ const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
 /**
  * Platform-identity fields that the managed runtime expects to see in CES.
  * On a managed assistant the platform provisions these after hatch (most via
- * `POST /v1/secrets`), including `platform_organization_id` and
- * `platform_user_id`, which it resolves from the hatching user and
- * organization. A signed-in client may additionally (re)assert some of them
- * on teleport / local→managed transfer. Either set of writes can race with
+ * `POST /v1/secrets`). A signed-in client may additionally (re)assert some of
+ * them on teleport / local→managed transfer. Either set of writes can race with
  * the import — the CES write survives (separate volume), but the metadata
  * upsert may be clobbered by the in-place clear / atomic swap. After every
  * import we reconcile metadata.json against CES so any field CES already holds
  * a value for gets a matching metadata entry.
  */
 const CADET_PLATFORM_IDENTITY_FIELDS = [
-  "platform_base_url",
   "assistant_api_key",
   "platform_assistant_id",
-  "platform_organization_id",
-  "platform_user_id",
   "webhook_secret",
 ] as const;
 
@@ -244,7 +239,7 @@ interface ExportManifestInputs {
  * `DAEMON_INTERNAL_ASSISTANT_ID` rather than the empty string.
  */
 async function resolveAssistantId(): Promise<string> {
-  const resolved = await resolvePlatformAssistantId();
+  const resolved = await resolveCloudAssistantId();
   if (resolved) {
     return resolved;
   }
@@ -2108,7 +2103,7 @@ interface CredentialWarningSink {
 }
 
 /**
- * Filter platform-identity (cadet:*) credentials out of the bundle, push
+ * Filter cloud-identity (cadet:*) credentials out of the bundle, push
  * user credentials into CES via `bulkSetSecureKeysAsync`, and return a
  * structured summary. Never throws — CES failures become report warnings.
  */
@@ -2116,7 +2111,7 @@ async function importBundleCredentialsIntoCes(
   bundleCredentials: Array<{ account: string; value: string }>,
   warningSink: CredentialWarningSink,
 ): Promise<CredentialImportSummary | undefined> {
-  // Filter out platform-identity credentials (cadet:*) — these are
+  // Filter out cloud-identity credentials (cadet:*) — these are
   // environment-specific and must not overwrite the target's own identity.
   const userCredentials = bundleCredentials.filter(
     (c) => !c.account.startsWith(PLATFORM_CREDENTIAL_PREFIX),

@@ -29,8 +29,8 @@
  * Writes are best-effort: a ClickHouse outage logs and is swallowed so it
  * can never abort a turn.
  */
+import { resolveCloudAssistantIdOrNull } from "../config/cloud-identity.js";
 import { getConfigReadOnly } from "../config/loader.js";
-import { resolvePlatformAssistantIdOrNull } from "../config/platform-identity.js";
 import type { LlmRequestLogsClickHouseConfig } from "../config/schemas/llm-request-logs.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -99,7 +99,7 @@ export class ClickHouseLlmRequestLogSink implements LlmRequestLogWriter {
       deps.resolvePassword ??
       (() => readCredentialOrNull("clickhouse", "password"));
     this.resolveAssistantId =
-      deps.resolveAssistantId ?? resolvePlatformAssistantIdOrNull;
+      deps.resolveAssistantId ?? resolveCloudAssistantIdOrNull;
     this.fetchImpl = deps.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
