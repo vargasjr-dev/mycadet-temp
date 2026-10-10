@@ -31,17 +31,12 @@ jobs:
       is_staging: ${{ steps.detect-staging.outputs.is_staging }}
       docker_environment: ${{ steps.finalize.outputs.docker_environment }}
       chrome_extension_changed: ${{ steps.detect-extension-changes.outputs.changed }}
+    permissions:
+      contents: read
+      actions: write # cancel-run API (Cancel run if release already published)
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Extract version from branch name
@@ -81,7 +76,7 @@ jobs:
         # a failed publish step on an already-shipped version).
         if: ${{ github.event_name == 'push' }}
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           BASE_VERSION="${{ steps.extract.outputs.base_version }}"
           HTTP_STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" \
@@ -407,18 +402,10 @@ jobs:
           chrome-webstore-upload publish \
             --extension-id "$EXTENSION_ID"
 
-  # ── Docker Images ──────────────────────────────────────────────────────
-  # One pipeline, mirroring dev-release.yaml: build per-platform by digest,
-  # then assemble and push the multi-platform manifest to Docker Hub — the
-  # registry the platform pulls from. Production runs add `:latest`. The
-  # digest split (per-platform builds, manifest second) replaces the old GCR
-  # push + second full Docker Hub rebuild: one build, one registry of truth.
 
   push-assistant-image:
     needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
     runs-on: ubuntu-latest
-    # 2-core ubuntu-latest builds the assistant image slower than the
-    # 8-core runner this repo no longer has access to.
     timeout-minutes: 60
     permissions:
       contents: read
@@ -448,7 +435,7 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp dev version into package.json
+      - name: Stamp release version into package.json
         run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
 
       - name: Sync feature flag registry for Docker context
@@ -591,7 +578,7 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp dev version into package.json
+      - name: Stamp release version into package.json
         run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
 
       - name: Sync feature flag registry for Docker context
@@ -733,7 +720,7 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp dev version into package.json
+      - name: Stamp release version into package.json
         run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
 
       - name: Build and push by digest
@@ -840,36 +827,8 @@ jobs:
           path: /tmp/manifest-digest/*
           retention-days: 1
 
-  # ── Web SPA (dev bucket) ─────────────────────────────────────────────
-  # The platform SPA ships to the dev GCS bucket with every dev release,
-  # not on merge to main; staging/production deploys live in release.yml.
-  #
-  # ci-web is the only hard gate: a dev release must always get the web changes
-  # onto the dev instance, even when the backend half of the release does not
-  # land. The push-*-manifest jobs stay in `needs` purely for *ordering* — when
-  # the backend images do ship, the SPA still publishes after them, so the dev
-  # UI is never pushed ahead of a backend that shipped in the same run. But the
-  # `if` deliberately uses a status function, which drops the implicit
-  # success() check on every `needs` entry: a failed or skipped manifest push
-  # (backend CI red, a Docker build failure) no longer strands green web
-  # commits outside dev until the next run happens to be fully green.
-  #
-  # The platform learns about dev releases by pulling from Docker Hub itself;
-  # this workflow no longer registers anything with the platform API.
-  #
-  # The trade-off is accepted on dev only: a dev SPA can briefly run against the
-  # previously-released dev backend. Staging and production keep the strict
-  # gating in release.yml, where a UI ahead of its backend actually matters.
-  #
-  # !cancelled() (rather than always()) keeps this quiet when a run is
-  # superseded by the next release via concurrency.cancel-in-progress.
 
   tag-staging-release:
-    # Anchors the staging version with a git tag (vX.Y.Z-staging.N) — the
-    # next staging run's suffix walk (extract-version) and staging QA both
-    # key off it. Production tags are cut by the `release` job instead. The
-    # platform itself learns about releases by pulling from Docker Hub, so
-    # there is no registration API call here (a dev-release learning).
     needs:
       [extract-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
     if: >-
@@ -882,18 +841,11 @@ jobs:
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write # push the vX.Y.Z-staging.N tag
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Tag staging release
         run: |
@@ -958,7 +910,7 @@ jobs:
   publish-npm-prod:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     strategy:
       matrix:
         package: [assistant, cli, credential-executor, gateway]
@@ -1049,7 +1001,7 @@ jobs:
   publish-plugin-api-prod:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1131,7 +1083,7 @@ jobs:
 
   trigger-platform-qa:
     needs: [extract-version, pack-cli]
-    if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
+    if: ${{ false }} # offline until the cadet automation app exists; bring back online by deleting this marker
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1208,7 +1160,7 @@ jobs:
   publish-npm-staging:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     strategy:
       matrix:
         package: [assistant, cli, credential-executor, gateway]
@@ -1297,7 +1249,7 @@ jobs:
   publish-plugin-api-staging:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1394,7 +1346,7 @@ jobs:
   publish-web-staging:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1432,7 +1384,7 @@ jobs:
   publish-meta-staging:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -1472,18 +1424,6 @@ jobs:
           npm publish --tag staging --access public
 
   # ── Web SPA (staging/production buckets) ──────────────────────────────
-  # The platform SPA ships with releases: staging bucket on every staging
-  # release, production bucket when a release goes live. The dev bucket is
-  # deployed by dev-release.yaml. Both jobs gate with explicit status
-  # functions (a dev-release learning): always()-gated dependencies never
-  # block via implicit success() — every required result is spelled out.
-  #
-  # Ordering convention (backend first, UI last): the production SPA ships
-  # only after the `release` job — which transitively requires the image
-  # manifests, the npm/web/meta/plugin-api publishes, and the Electron
-  # build — so a failed go-live never leaves the prod UI ahead of the
-  # backend. A failed SPA upload after release is retryable and surfaced
-  # by notify-release.
   deploy-web-spa-staging:
     name: Deploy Web SPA (staging)
     needs:
@@ -1613,7 +1553,7 @@ jobs:
   publish-web-prod:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -1654,7 +1594,7 @@ jobs:
   publish-meta-prod:
     permissions:
       contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+     
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -1954,16 +1894,7 @@ jobs:
           rm -rf ~/.private_keys 2>/dev/null || true
 
 
-  # ── Upload Electron update artifacts to the sandbox updates store ─────
-  # Push per-arch update feeds (manifest + ZIP + blockmap) so electron-updater
-  # can pull delta updates. Each environment+arch gets its own path:
-  # mac-electron/{environment}/{arch}/.
   upload-electron-updates:
-    # Gate the update-feed publish (an external side effect) on the channel's
-    # meta publish: never offer an auto-update for a release that didn't
-    # publish. Best-effort by design: a failed feed upload must not block the
-    # release — the DMGs still attach to the GitHub Release, and clients stay
-    # on their current version until the feed lands (notify-release reports it).
     needs:
       [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
     # always() disables the implicit success(): publish-meta-prod/-staging is
@@ -2025,11 +1956,7 @@ jobs:
             done
           done
 
-  # ── Dev npm publishing ─────────────────────────────────────────────────
   release:
-    # The update-feed upload is best-effort (continue-on-error) and is
-    # deliberately absent from these hard needs — the DMGs are the desktop
-    # release; the feed is an optimization.
     needs:
       [
         extract-version,
@@ -2046,17 +1973,11 @@ jobs:
     if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.build-electron.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: write # tag + GitHub Release
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Tag release
@@ -2094,9 +2015,6 @@ jobs:
           path: chrome-extension-artifacts
 
       # Electron is a hard release dependency: the `release` job only runs when
-      # build-electron succeeded (the update-feed upload is best-effort and does
-      # not gate), so these artifacts are guaranteed present. A download failure
-      # here fails the release rather than silently shipping without Electron assets.
       - name: Download Electron DMG artifact (arm64)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -2111,7 +2029,7 @@ jobs:
 
       - name: Create GitHub Releases
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
           VERSION_TAG="v${VERSION}"
@@ -2172,24 +2090,19 @@ jobs:
     timeout-minutes: 5
     outputs:
       outcome: ${{ steps.merge.outcome }}
+    permissions:
+      contents: write # merge the release branch back to main
+      pull-requests: write
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Merge release branch and delete
         id: merge
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
           BRANCH="release/v$VERSION"
@@ -2224,7 +2137,7 @@ jobs:
 
   update-platform:
     needs: [extract-version, publish-npm-prod]
-    if: ${{ needs.extract-version.outputs.is_staging != 'true' }}
+    if: ${{ false }} # offline until the cadet automation app exists; bring back online by deleting this marker
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -2292,19 +2205,7 @@ jobs:
         push-credential-executor-manifest,
         build-chrome-extension,
       ]
-    if: >-
-      ${{
-        always() && !cancelled()
-        && needs.extract-version.result == 'success'
-        && needs.push-assistant-manifest.result == 'success'
-        && needs.push-gateway-manifest.result == 'success'
-        && needs.push-credential-executor-manifest.result == 'success'
-        && (needs.build-chrome-extension.result == 'success' || needs.build-chrome-extension.result == 'skipped')
-        && (needs.publish-npm-prod.result == 'success' || needs.publish-npm-prod.result == 'skipped')
-        && (needs.publish-web-prod.result == 'success' || needs.publish-web-prod.result == 'skipped')
-        && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-prod.result == 'skipped')
-        && (needs.publish-plugin-api-prod.result == 'success' || needs.publish-plugin-api-prod.result == 'skipped')
-      }}
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
@@ -2325,23 +2226,7 @@ jobs:
         push-credential-executor-manifest,
         build-chrome-extension,
       ]
-    if: >-
-      ${{
-        (
-          (needs.extract-version.outputs.is_staging == 'true' && vars.ANDROID_STAGING_RELEASE_ENABLED == 'true')
-          || (needs.extract-version.outputs.is_staging != 'true' && vars.ANDROID_PRODUCTION_RELEASE_ENABLED == 'true')
-        )
-        && always() && !cancelled()
-        && needs.extract-version.result == 'success'
-        && needs.push-assistant-manifest.result == 'success'
-        && needs.push-gateway-manifest.result == 'success'
-        && needs.push-credential-executor-manifest.result == 'success'
-        && (needs.build-chrome-extension.result == 'success' || needs.build-chrome-extension.result == 'skipped')
-        && (needs.publish-npm-prod.result == 'success' || needs.publish-npm-prod.result == 'skipped')
-        && (needs.publish-web-prod.result == 'success' || needs.publish-web-prod.result == 'skipped')
-        && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-prod.result == 'skipped')
-        && (needs.publish-plugin-api-prod.result == 'success' || needs.publish-plugin-api-prod.result == 'skipped')
-      }}
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     permissions:
       contents: read
       id-token: write
@@ -2353,6 +2238,7 @@ jobs:
 
   build-windows:
     needs: [extract-version]
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml
@@ -2374,16 +2260,7 @@ jobs:
         push-gateway-manifest,
         push-credential-executor-manifest,
       ]
-    if: >-
-      ${{
-        always() && !cancelled()
-        && needs.build-windows.result == 'success'
-        && needs.extract-version.result == 'success'
-        && needs.push-assistant-manifest.result == 'success'
-        && needs.push-gateway-manifest.result == 'success'
-        && needs.push-credential-executor-manifest.result == 'success'
-        && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success')
-      }}
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     permissions:
       contents: read
       id-token: write
@@ -2392,9 +2269,6 @@ jobs:
       environment: ${{ needs.extract-version.outputs.is_staging == 'true' && 'staging' || 'production' }}
     secrets: inherit
 
-  # The split CI jobs (a dev-release.yaml learning) gate the release pipeline:
-  # push-assistant-image needs all three assistant legs — a failure blocks the
-  # Docker build, and with it npm publish, the macOS DMG, and the GitHub Release.
   ci-assistant-lint:
     needs: extract-version
     runs-on: ubuntu-latest
@@ -2629,7 +2503,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 1-based: run-isolated-tests.ts parses "i/N" with 1 <= i <= N.
         shard: ["1", "2", "3", "4"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -2652,7 +2525,6 @@ jobs:
         env:
           TEST_SHARD: ${{ matrix.shard }}/4
 
-  # ── Docker Images ──────────────────────────────────────────────────────
   notify-release:
     name: Slack Notification (Release)
     if: ${{ always() && !cancelled() }}
@@ -2699,16 +2571,9 @@ jobs:
     timeout-minutes: 5
     continue-on-error: true
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - name: Build Slack payload
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           SLACK_USER_ID: ${{ inputs.slack_user_id }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
@@ -2807,8 +2672,6 @@ jobs:
           # Build CI status icons
           ci_icon() { if [ "$1" = "success" ]; then printf '✅'; elif [ "$1" = "skipped" ]; then printf '⏭️'; else printf '❌'; fi; }
 
-          # Aggregate the split CI legs into one icon per service: the worst
-          # leg decides (failure > cancelled > skipped > success).
           worst() {
             if [ "$2" = "failure" ] || [ "$3" = "failure" ] || [ "$4" = "failure" ]; then echo failure
             elif [ "$2" = "cancelled" ] || [ "$3" = "cancelled" ] || [ "$4" = "cancelled" ]; then echo cancelled
