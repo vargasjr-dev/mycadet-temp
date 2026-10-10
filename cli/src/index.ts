@@ -23,11 +23,13 @@ import { flags } from "./commands/flags";
 import { gateway } from "./commands/gateway";
 import { hatch } from "./commands/hatch";
 import { login, logout, whoami } from "./commands/login";
+import { logs } from "./commands/logs";
 import { message } from "./commands/message";
 import { pair } from "./commands/pair";
 import { ps } from "./commands/ps";
 import { restore } from "./commands/restore";
 import { retire } from "./commands/retire";
+import { restart } from "./commands/restart";
 import { rollback } from "./commands/rollback";
 import { setup } from "./commands/setup";
 import { sleep } from "./commands/sleep";
@@ -61,12 +63,14 @@ const commands = {
   gateway,
   hatch,
   login,
+  logs,
   logout,
   message,
   pair,
   ps,
   restore,
   retire,
+  restart,
   rollback,
   setup,
   sleep,

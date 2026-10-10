@@ -1,12 +1,12 @@
 /**
- * `cadet terminal` — Interactive shell into an assistant container.
+ * `cadet terminal` — Interactive shell into an assistant.
  *
  * Dispatches by cloud type: a platform terminal session (K8s exec) for
  * managed assistants, `docker exec` for docker assistants, `gcloud compute
  * ssh` for GCP, raw ssh for custom hosts, and the container management
  * socket for apple-container assistants.
  *
- * Subcommands (managed assistants only):
+ * Subcommands:
  *   cadet terminal                     — Interactive shell
  *   cadet terminal attach <name>       — Attach to a tmux session
  *   cadet terminal list                — List tmux sessions
