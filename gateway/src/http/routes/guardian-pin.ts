@@ -47,11 +47,11 @@ const TUNNEL_ACTOR_HEADER = "x-tunnel-actor";
 
 /**
  * True when the gateway runs in managed/cloud mode (vembda + tunnel ingress).
- * Mirrors the `IS_PLATFORM` check used by the gateway's HTTP edge auth
+ * Mirrors the `IS_CLOUD` check used by the gateway's HTTP edge auth
  * (`src/http/middleware/auth.ts`) and feature-flag resolver.
  */
 export function isPlatformManaged(): boolean {
-  const v = process.env.IS_PLATFORM?.trim().toLowerCase();
+  const v = process.env.IS_CLOUD?.trim().toLowerCase();
   return v === "1" || v === "true";
 }
 

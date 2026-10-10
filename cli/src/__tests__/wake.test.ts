@@ -24,6 +24,7 @@ import * as ngrok from "../lib/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };
 const realDocker = { ...docker };
@@ -61,11 +62,15 @@ const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(
   realDocker.dockerResourceNames,
 );
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
+const recreateDockerContainersMock = mock<typeof docker.recreateDockerContainers>(
+  async () => {},
+);
 
 mock.module("../lib/docker.js", () => ({
   ...realDocker,
   dockerResourceNames: dockerResourceNamesMock,
   wakeContainers: wakeContainersMock,
+  recreateDockerContainers: recreateDockerContainersMock,
 }));
 
 const seedGuardianTokenFromSiblingEnvMock = mock<
@@ -73,18 +78,14 @@ const seedGuardianTokenFromSiblingEnvMock = mock<
 >(() => false);
 // Default: a token exists, so the re-provision recovery path is skipped. Tests
 // that exercise recovery override loadGuardianToken to return null.
-const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(
-  () =>
-    ({ accessToken: "existing" }) as ReturnType<
-      typeof guardianToken.loadGuardianToken
-    >,
+const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(() =>
+  makeGuardianTokenData({ accessToken: "existing" }),
 );
 const resetGuardianBootstrapMock = mock<
   typeof guardianToken.resetGuardianBootstrap
 >(async () => {});
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
-  async () =>
-    ({}) as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>,
+  async () => makeGuardianTokenData(),
 );
 
 mock.module("../lib/guardian-token.js", () => ({
@@ -288,15 +289,13 @@ beforeEach(() => {
   seedGuardianTokenFromSiblingEnvMock.mockReset();
   seedGuardianTokenFromSiblingEnvMock.mockReturnValue(false);
   loadGuardianTokenMock.mockReset();
-  loadGuardianTokenMock.mockReturnValue({
-    accessToken: "existing",
-  } as ReturnType<typeof guardianToken.loadGuardianToken>);
+  loadGuardianTokenMock.mockReturnValue(
+    makeGuardianTokenData({ accessToken: "existing" }),
+  );
   resetGuardianBootstrapMock.mockReset();
   resetGuardianBootstrapMock.mockResolvedValue(undefined);
   leaseGuardianTokenMock.mockReset();
-  leaseGuardianTokenMock.mockResolvedValue(
-    {} as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>,
-  );
+  leaseGuardianTokenMock.mockResolvedValue(makeGuardianTokenData());
   maybeStartNgrokTunnelMock.mockReset();
   maybeStartNgrokTunnelMock.mockResolvedValue(null);
   loadRawConfigMock.mockReset();
@@ -819,11 +818,11 @@ describe("cadet wake: daemon startup failure", () => {
     // AND a foreign listener on the runtime HTTP port answers readiness in
     // the dead daemon's place
     probeDaemonReadinessWithRetryMock.mockResolvedValue("ready");
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`process.exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`process.exit:${code}`);
+      },
+    );
 
     // WHEN wake runs
     const result = wake();
@@ -945,7 +944,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -971,6 +970,48 @@ describe("cadet wake — tunnel edge restore", () => {
     }
   });
 
+  test("a migrated docker assistant (containers never created) is recreated from the entry", async () => {
+    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
+    const migratedEntry = {
+      assistantId: "docker-1",
+      runtimeUrl: "http://localhost:7930",
+      cloud: "docker" as const,
+      containerInfo: {
+        assistantImage: "mycadet/mycadet-assistant:v0.12.7",
+        gatewayImage: "mycadet/mycadet-gateway:v0.12.7",
+        cesImage: "mycadet/mycadet-credential-executor:v0.12.7",
+      },
+    };
+    resolveTargetAssistantMock.mockReturnValue(migratedEntry);
+    loadRawConfigMock.mockReturnValue(enabledConfig);
+    // The v0.0.10 run feedback: the containers were never created —
+    // `docker start` answers "No such container".
+    wakeContainersMock.mockImplementation(async () => {
+      throw new Error(
+        "Error response from daemon: No such container: docker-1-assistant",
+      );
+    });
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
+
+    try {
+      await wake();
+
+      expect(recreateDockerContainersMock).toHaveBeenCalledWith(migratedEntry);
+      expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
+      expect(logSpy).toHaveBeenCalledWith("Wake complete.");
+    } finally {
+      wakeContainersMock.mockImplementation(async () => {});
+      if (originalWorkspaceDir === undefined) {
+        delete process.env.CADET_WORKSPACE_DIR;
+      } else {
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
+      }
+      rmSync(defaultWorkspace, { recursive: true, force: true });
+    }
+  });
+
   test("a docker wake leaves an edge fronting another container alone", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
@@ -980,7 +1021,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -1014,7 +1055,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
@@ -1061,7 +1102,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error("nginx is not installed."),
@@ -1098,14 +1139,14 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://other.example.com",
-    } as AssistantEntry);
+    });
     loadAllAssistantsMock.mockReturnValue([
       {
         assistantId: "docker-2",
         runtimeUrl: "http://localhost:8030",
         cloud: "docker",
         ingressUrl: "https://assistant.example.com",
-      } as AssistantEntry,
+      },
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
@@ -1135,7 +1176,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1163,7 +1204,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     waitForDaemonReadyMock.mockImplementation(async () => false);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1194,7 +1235,7 @@ describe("cadet wake — tunnel edge restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-    } as AssistantEntry);
+    });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -1222,13 +1263,13 @@ describe("cadet wake — tunnel edge restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-    } as AssistantEntry);
+    });
     loadAllAssistantsMock.mockReturnValue([
       {
         assistantId: "docker-1",
         runtimeUrl: "http://localhost:7930",
         cloud: "docker",
-      } as AssistantEntry,
+      },
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
@@ -1260,14 +1301,14 @@ describe("cadet wake — tunnel edge restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-    } as AssistantEntry);
+    });
     loadAllAssistantsAcrossEnvsMock.mockReturnValue([
       {
         assistantId: "docker-2",
         runtimeUrl: "http://localhost:8030",
         cloud: "docker",
         ingressUrl: "https://assistant.example.com",
-      } as AssistantEntry,
+      },
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(false);
@@ -1296,7 +1337,7 @@ describe("cadet wake — tunnel edge restore", () => {
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
       ingressUrl: "https://assistant.example.com",
-    } as AssistantEntry);
+    });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {

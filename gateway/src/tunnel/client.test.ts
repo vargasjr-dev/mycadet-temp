@@ -629,7 +629,7 @@ describe("TunnelClient", () => {
   test("awaits validate before rejecting a mismatched registration", async () => {
     const sockets: FakeWebSocket[] = [];
     process.env.ASSISTANT_API_KEY = "api-key-123";
-    process.env.CADET_PLATFORM_URL = "https://platform.example.com";
+    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
     fetchImplFn = async () =>
       new Response(
         JSON.stringify({

@@ -22,8 +22,8 @@ mock.module("../../../util/process-tree.js", () => ({
   },
   buildProcessTree: (_procs: ProcInfo[], rootPid: number): ProcTreeNode => ({
     pid: rootPid,
-    name: "assistant.ts",
-    command: "bun run assistant.ts",
+    name: "daemon-main",
+    command: "bun run /app/daemon/main.ts",
     origin: "workspace",
     children: [
       {
@@ -81,7 +81,9 @@ describe("ps route handler", () => {
 
     expect(processes).toHaveLength(1);
     const root = processes[0];
-    expect(root.name).toBe("assistant.ts");
+    // The route must surface the daemon's node as "assistant", not the
+    // entry-script name the tree builder derives ("daemon-main").
+    expect(root.name).toBe("assistant");
     expect(root.status).toBe("running");
     expect(root.info).toBe(`pid ${process.pid}`);
     expect(root.children).toHaveLength(2);

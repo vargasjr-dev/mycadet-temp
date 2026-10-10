@@ -5,43 +5,15 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { mockIpc } from "../../../__tests__/requests-mock.js";
 import { createApp, getAppDirPath } from "../../../apps/app-store.js";
 import { writeAppSourceFingerprint } from "../../../apps/source-fingerprint.js";
 import { getWorkspacePluginsDir } from "../../../util/platform.js";
 import { runCliCommand } from "./cli-test-harness.js";
 
-let lastIpcCall: {
-  method: string;
-  params?: Record<string, unknown>;
-} | null = null;
-
-let mockIpcResult: {
-  ok: boolean;
-  result?: unknown;
-  error?: string;
-  statusCode?: number;
-} = { ok: true, result: { ok: true, compiled: true } };
-
-mock.module("../../../ipc/cli-client.js", () => ({
-  cliIpcCall: async (method: string, params?: Record<string, unknown>) => {
-    lastIpcCall = { method, params };
-    return mockIpcResult;
-  },
-  exitCodeFromIpcResult: (r: { statusCode?: number }) => {
-    if (r.statusCode === undefined) {
-      return 10;
-    }
-    if (r.statusCode >= 500) {
-      return 3;
-    }
-    if (r.statusCode >= 400) {
-      return 2;
-    }
-    return 1;
-  },
-}));
+const ipc = await mockIpc("cli");
 
 const { registerAppsCommand } = await import("../apps.js");
 
@@ -63,17 +35,13 @@ beforeEach(() => {
   previousWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
   workspaceDir = freshWorkspace();
   process.env.CADET_WORKSPACE_DIR = workspaceDir;
-  lastIpcCall = null;
-  mockIpcResult = {
+  ipc.on("apps_refresh", {
     ok: true,
-    result: {
-      ok: true,
-      appId: "app-1",
-      name: "Budget",
-      compiled: true,
-      compile_duration_ms: 12,
-    },
-  };
+    appId: "app-1",
+    name: "Budget",
+    compiled: true,
+    compile_duration_ms: 12,
+  });
 });
 
 afterEach(() => {
@@ -179,7 +147,7 @@ describe("assistant apps refresh", () => {
     ]);
 
     expect(result.exitCode).toBe(0);
-    expect(lastIpcCall).toEqual({
+    expect(ipc.lastCall("apps_refresh")).toEqual({
       method: "apps_refresh",
       params: { pathParams: { id: created.id } },
     });
@@ -206,7 +174,7 @@ describe("assistant apps refresh", () => {
     ]);
 
     expect(result.exitCode).toBe(0);
-    expect(lastIpcCall).toEqual({
+    expect(ipc.lastCall("apps_refresh")).toEqual({
       method: "apps_refresh",
       params: { pathParams: { id: `plugins~${pluginName}~viewer` } },
     });
@@ -219,17 +187,14 @@ describe("assistant apps refresh", () => {
       schemaJson: "{}",
       htmlDefinition: "<h1>Budget</h1>",
     });
-    mockIpcResult = {
+    ipc.on("apps_refresh", {
       ok: true,
-      result: {
-        ok: true,
-        appId: created.id,
-        name,
-        compiled: false,
-        compile_duration_ms: 8,
-        compile_errors: [{ text: "Could not resolve foo" }],
-      },
-    };
+      appId: created.id,
+      name,
+      compiled: false,
+      compile_duration_ms: 8,
+      compile_errors: [{ text: "Could not resolve foo" }],
+    });
 
     const result = await runCliCommand(registerAppsCommand, [
       "apps",

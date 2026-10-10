@@ -11,10 +11,10 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
 let localClient = false;
-let remoteGatewayMode = false;
+let servedGatewayRuntime = false;
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => localClient,
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isServedGatewayRuntime: () => servedGatewayRuntime,
   isLocalAssistant: (a: { cloud?: string }) =>
     a.cloud === "local" || a.cloud === "docker",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
@@ -31,12 +31,10 @@ mock.module("@/stores/auth-store", () => ({
   useHasPlatformSession: () => hasPlatformSession,
 }));
 
-const { useResolvedAssistantsStore } = await import(
-  "@/stores/resolved-assistants-store"
-);
-const { useSwitchableAssistants } = await import(
-  "@/assistant/use-switchable-assistants"
-);
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
+const { useSwitchableAssistants } =
+  await import("@/assistant/use-switchable-assistants");
 
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 
@@ -62,7 +60,7 @@ function run() {
 
 beforeEach(() => {
   localClient = false;
-  remoteGatewayMode = false;
+  servedGatewayRuntime = false;
   organizationId = "org-1";
   hasPlatformSession = true;
   seed([]);
@@ -79,8 +77,8 @@ describe("useSwitchableAssistants gate", () => {
     expect(run().canSwitch).toBe(true);
   });
 
-  test("remote-gateway mode closes it", () => {
-    remoteGatewayMode = true;
+  test("served-gateway runtime closes it", () => {
+    servedGatewayRuntime = true;
     seed([platform("a1"), platform("a2")]);
 
     expect(run().canSwitch).toBe(false);

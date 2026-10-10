@@ -1,13 +1,14 @@
 /**
- * Resolve the platform base URL from the `CADET_PLATFORM_URL` environment
- * variable. Returns `undefined` when unset.
+ * Resolve the cloud base URL from the `CADET_PLATFORM_URL` environment
+ * variable, defaulting to `https://cloud.mycadet.ai`.
  *
  * The returned URL is trimmed and has any trailing slashes removed so callers
  * can safely append path segments.
  */
-export function getCloudBaseUrl(): string | undefined {
-  const url = (
-    process.env.CADET_PLATFORM_URL?.trim() || ""
-  ).replace(/\/+$/, "");
-  return url || undefined;
+export function getCloudBaseUrl(): string {
+  const url = (process.env.CADET_PLATFORM_URL?.trim() || "").replace(
+    /\/+$/,
+    "",
+  );
+  return url || "https://cloud.mycadet.ai";
 }

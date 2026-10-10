@@ -4,7 +4,8 @@
  * This function fills the bot-username gap when the token was configured
  * without a `getMe` call (e.g. via `credential set` or ingress secret
  * redirect). Each branch is exercised in isolation by controlling the
- * mutable mock variables below.
+ * bot-username mock and registering the fetch responses each test assumes
+ * (requests-mock).
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -12,6 +13,7 @@ import { loadRawConfig } from "../config/loader.js";
 import { credentialKey } from "../security/credential-key.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
+import { type HttpMockController, mockHttp } from "./requests-mock.js";
 
 // The REAL secure-keys module pinned to a live memory backend, seeded under
 // the credential key the telegram transport reads.
@@ -41,16 +43,11 @@ function readResolvedBotUsername(): unknown {
 }
 
 // ---------------------------------------------------------------------------
-// Global fetch mock — swapped per test
+// HTTP mock — per-test requests-mock registrations; the preload's afterEach
+// restores the real fetch after every test
 // ---------------------------------------------------------------------------
 
-let mockFetchResponse: {
-  ok: boolean;
-  status: number;
-  json: () => Promise<unknown>;
-};
-let mockFetchThrows: Error | undefined;
-let fetchCallCount = 0;
+let http: HttpMockController;
 
 beforeEach(() => {
   mockBotUsername = undefined;
@@ -58,21 +55,11 @@ beforeEach(() => {
   // Clear any username a prior test persisted; all tests share one workspace
   // config.json, and the file is the write target under test.
   setConfig("telegram", {});
-  mockFetchThrows = undefined;
-  mockFetchResponse = {
-    ok: true,
+  http = mockHttp();
+  http.on("GET", "api.telegram.org", {
     status: 200,
-    json: async () => ({ ok: true, result: { username: "ResolvedBot" } }),
-  };
-  fetchCallCount = 0;
-
-  globalThis.fetch = (async (..._args: unknown[]) => {
-    fetchCallCount++;
-    if (mockFetchThrows) {
-      throw mockFetchThrows;
-    }
-    return mockFetchResponse;
-  }) as typeof globalThis.fetch;
+    body: { ok: true, result: { username: "ResolvedBot" } },
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -93,63 +80,60 @@ describe("ensureTelegramBotUsernameResolved", () => {
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(0);
+    expect(http.callCount()).toBe(0);
     expect(readResolvedBotUsername()).toBeUndefined();
   });
 
   test("(b) fetches getMe and writes username to config on success", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-123");
-    mockFetchResponse = {
-      ok: true,
+    http.on("GET", "api.telegram.org", {
       status: 200,
-      json: async () => ({ ok: true, result: { username: "MyNewBot" } }),
-    };
+      body: { ok: true, result: { username: "MyNewBot" } },
+    });
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBe("MyNewBot");
   });
 
   test("(c) handles non-200 response gracefully without writing to config", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-123");
-    mockFetchResponse = {
-      ok: false,
+    http.on("GET", "api.telegram.org", {
       status: 401,
-      json: async () => ({ ok: false, description: "Unauthorized" }),
-    };
+      body: { ok: false, description: "Unauthorized" },
+    });
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBeUndefined();
   });
 
   test("(d) handles missing username in response gracefully", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-123");
-    mockFetchResponse = {
-      ok: true,
+    http.on("GET", "api.telegram.org", {
       status: 200,
-      json: async () => ({ ok: true, result: {} }),
-    };
+      body: { ok: true, result: {} },
+    });
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBeUndefined();
   });
 
   test("(e) handles network errors (fetch throws) gracefully", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-123");
-    mockFetchThrows = new Error("ECONNREFUSED");
+    http.on("GET", "api.telegram.org", new Error("ECONNREFUSED"));
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBeUndefined();
   });
 
@@ -159,37 +143,35 @@ describe("ensureTelegramBotUsernameResolved", () => {
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(0);
+    expect(http.callCount()).toBe(0);
     expect(readResolvedBotUsername()).toBeUndefined();
   });
 
   test("writes to config when bot username not in config", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-123");
-    mockFetchResponse = {
-      ok: true,
+    http.on("GET", "api.telegram.org", {
       status: 200,
-      json: async () => ({ ok: true, result: { username: "FreshBot" } }),
-    };
+      body: { ok: true, result: { username: "FreshBot" } },
+    });
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBe("FreshBot");
   });
 
   test("writes to config when bot username resolved from API", async () => {
     mockBotUsername = undefined;
     secureKeys.set(TELEGRAM_BOT_TOKEN, "bot-token-456");
-    mockFetchResponse = {
-      ok: true,
+    http.on("GET", "api.telegram.org", {
       status: 200,
-      json: async () => ({ ok: true, result: { username: "AnotherBot" } }),
-    };
+      body: { ok: true, result: { username: "AnotherBot" } },
+    });
 
     await ensureTelegramBotUsernameResolved();
 
-    expect(fetchCallCount).toBe(1);
+    expect(http.callCount()).toBe(1);
     expect(readResolvedBotUsername()).toBe("AnotherBot");
   });
 });

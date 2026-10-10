@@ -102,9 +102,8 @@ import {
   isLocalAssistant,
   isLocalGatewayAssistant,
   isPairedAssistant,
-  isCloudRemoteMode,
+  isCadetCloudRemote,
   isPlatformAssistant,
-  isRemoteGatewayMode,
   isRetryablePairingFailure,
   loadLockfile,
   LOCAL_GATEWAY_STARTUP_RETRY,
@@ -197,21 +196,25 @@ afterEach(() => {
 });
 
 describe("remote gateway mode", () => {
-  test("isRemoteGatewayMode and isCloudRemoteMode split on the remote value", () => {
-    // Shells serving the local cadet (desktop, dev server) inject no remote.
+  test("isCadetCloudRemote splits cloud from the gateway-auth remotes", () => {
+    // Shells serving the local cadet (desktop, dev server) inject no remote;
+    // the reader defaults it to "local".
     window.__CADET_CONFIG__ = {};
-    expect(isRemoteGatewayMode()).toBe(false);
-    expect(isCloudRemoteMode()).toBe(false);
+    expect(isCadetCloudRemote()).toBe(false);
 
-    // Any non-cloud hatch remote is a self-hosted gateway.
+    // A declared "local" remote behaves the same as an absent one.
+    window.__CADET_CONFIG__ = { remote: "local" };
+    expect(isCadetCloudRemote()).toBe(false);
+
+    // A self-hosted edge and a docker cadet share the gateway-token scheme.
+    window.__CADET_CONFIG__ = { remote: "custom" };
+    expect(isCadetCloudRemote()).toBe(false);
     window.__CADET_CONFIG__ = { remote: "docker" };
-    expect(isRemoteGatewayMode()).toBe(true);
-    expect(isCloudRemoteMode()).toBe(false);
+    expect(isCadetCloudRemote()).toBe(false);
 
-    // The cloud remote is never a remote-gateway one.
+    // The cloud remote is the only one behind the platform cookie scheme.
     window.__CADET_CONFIG__ = { remote: "cloud" };
-    expect(isRemoteGatewayMode()).toBe(false);
-    expect(isCloudRemoteMode()).toBe(true);
+    expect(isCadetCloudRemote()).toBe(true);
   });
 
   test("loads a synthetic active assistant without calling the local host", async () => {
@@ -219,7 +222,7 @@ describe("remote gateway mode", () => {
 
     const lockfile = await loadLockfile();
 
-    expect(isRemoteGatewayMode()).toBe(true);
+    expect(isCadetCloudRemote()).toBe(false);
     expect(loadLockfileHost).not.toHaveBeenCalled();
     expect(lockfile.activeAssistant).toBe("self");
     expect(lockfile.assistants).toEqual([

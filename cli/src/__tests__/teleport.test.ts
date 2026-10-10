@@ -8,6 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import type { Mock } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -47,6 +48,7 @@ import * as teleportBackup from "../lib/teleport-backup.js";
 // how Bun's loader treats namespace bindings post-mock.
 const realAssistantConfig = { ...assistantConfig };
 const realGuardianToken = { ...guardianToken };
+
 const realPlatformClient = { ...platformClient };
 const realLocalRuntimeClient = { ...localRuntimeClient };
 const realBackupOps = { ...backupOps };
@@ -73,22 +75,19 @@ mock.module("../lib/assistant-config.js", () => ({
   removeAssistantEntry: removeAssistantEntryMock,
 }));
 
-const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(
-  () =>
-    ({
-      accessToken: "local-token",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    }) as unknown as ReturnType<typeof guardianToken.loadGuardianToken>,
+const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(() =>
+  makeGuardianTokenData({
+    accessToken: "local-token",
+    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+  }),
 );
 
 const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
   async () =>
-    ({
+    makeGuardianTokenData({
       accessToken: "leased-token",
       accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    }) as unknown as Awaited<
-      ReturnType<typeof guardianToken.leaseGuardianToken>
-    >,
+    }),
 );
 
 const computeDeviceIdMock = mock<typeof guardianToken.computeDeviceId>(
@@ -154,7 +153,7 @@ const platformImportBundleFromGcsMock = mock<
       files_skipped: 0,
       backups_created: 1,
     },
-  } as Record<string, unknown>,
+  },
 }));
 
 const platformImportPreflightFromGcsMock = mock<
@@ -169,7 +168,7 @@ const platformImportPreflightFromGcsMock = mock<
       files_unchanged: 0,
       total_files: 3,
     },
-  } as Record<string, unknown>,
+  },
 }));
 
 const checkExistingPlatformAssistantMock = mock<
@@ -178,35 +177,27 @@ const checkExistingPlatformAssistantMock = mock<
 
 const ensureSelfHostedLocalRegistrationMock = mock<
   typeof platformClient.ensureSelfHostedLocalRegistration
->(
-  async () =>
-    ({
-      assistant: { id: "platform-assistant-1", name: "my-assistant" },
-      registration: {
-        client_installation_id: "device-id-123",
-        runtime_assistant_id: "target-local",
-        client_platform: "cli",
-      },
-      assistant_api_key: "api-key-123",
-      webhook_secret: "webhook-secret-123",
-    }) as unknown as Awaited<
-      ReturnType<typeof platformClient.ensureSelfHostedLocalRegistration>
-    >,
-);
+>(async () => ({
+  assistant: { id: "platform-assistant-1", name: "my-assistant" },
+  registration: {
+    client_installation_id: "device-id-123",
+    runtime_assistant_id: "target-local",
+    client_platform: "cli",
+  },
+  assistant_api_key: "api-key-123",
+  webhook_secret: "webhook-secret-123",
+}));
 
 const injectCredentialsIntoAssistantMock = mock<
   typeof platformClient.injectCredentialsIntoAssistant
 >(async () => true);
 
 const fetchCurrentUserMock = mock<typeof platformClient.fetchCurrentUser>(
-  async () =>
-    ({
-      id: "user-1",
-      email: "test@example.com",
-      display: "Test",
-    }) as unknown as Awaited<
-      ReturnType<typeof platformClient.fetchCurrentUser>
-    >,
+  async () => ({
+    id: "user-1",
+    email: "test@example.com",
+    display: "Test",
+  }),
 );
 
 const fetchOrganizationIdMock = mock<typeof platformClient.fetchOrganizationId>(
@@ -383,6 +374,8 @@ import {
   resolveOrHatchTarget,
 } from "../commands/teleport.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { withPreconnect } from "./helpers/http.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -408,7 +401,7 @@ afterAll(() => {
 });
 
 let originalArgv: string[];
-let exitMock: ReturnType<typeof mock>;
+let exitMock: Mock<(code?: number | string | undefined) => never>;
 let originalExit: typeof process.exit;
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
@@ -455,10 +448,12 @@ beforeEach(() => {
   removeAssistantEntryMock.mockImplementation(() => {});
 
   loadGuardianTokenMock.mockReset();
-  loadGuardianTokenMock.mockReturnValue({
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-  } as unknown as ReturnType<typeof guardianToken.loadGuardianToken>);
+  loadGuardianTokenMock.mockReturnValue(
+    makeGuardianTokenData({
+      accessToken: "local-token",
+      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    }),
+  );
   leaseGuardianTokenMock.mockReset();
 
   readPlatformTokenMock.mockReset();
@@ -597,11 +592,11 @@ beforeEach(() => {
   stopProcessByPidFileMock.mockResolvedValue(true);
 
   // Mock process.exit to throw so we can catch it
-  exitMock = mock((code?: number) => {
+  exitMock = mock((code?: number | string | undefined): never => {
     throw new Error(`process.exit:${code}`);
   });
   originalExit = process.exit;
-  process.exit = exitMock as unknown as typeof process.exit;
+  process.exit = exitMock;
 
   consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
   consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -638,13 +633,13 @@ function makeEntry(
  */
 function installTrackingFetch(): () => void {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = mock(
-    async (url: string | URL | Request, init?: RequestInit) => {
-      const urlStr = typeof url === "string" ? url : url.toString();
+  globalThis.fetch = withPreconnect(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = String(input);
       fetchCalls.push({ url: urlStr, body: init?.body });
       return new Response("not found", { status: 404 });
     },
-  ) as unknown as typeof globalThis.fetch;
+  );
   return () => {
     globalThis.fetch = originalFetch;
   };
@@ -1015,8 +1010,7 @@ describe("unified GCS flow — four directions", () => {
       // No download-URL request on the import side (platform target pulls
       // directly from GCS).
       const downloadOps = platformRequestSignedUrlMock.mock.calls.filter(
-        (call: unknown[]) =>
-          (call[0] as { operation: string }).operation === "download",
+        (call) => call[0].operation === "download",
       );
       expect(downloadOps.length).toBe(0);
     } finally {
@@ -1750,7 +1744,7 @@ describe("VersionMismatchError handling", () => {
 
       // Terminal: no retry of the download signed-URL request.
       const downloadCalls = platformRequestSignedUrlMock.mock.calls.filter(
-        (c) => (c[0] as { operation: string }).operation === "download",
+        (c) => c[0].operation === "download",
       );
       expect(downloadCalls).toHaveLength(1);
 
@@ -1889,7 +1883,7 @@ describe("target runtime version fetch", () => {
       await teleport();
 
       const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
-        (c) => (c[0] as { operation: string }).operation === "download",
+        (c) => c[0].operation === "download",
       );
       expect(downloadCall).toBeDefined();
       expect(downloadCall![0]).toMatchObject({
@@ -1954,7 +1948,7 @@ describe("target runtime version fetch", () => {
 
       // No download signed-URL request was made — we aborted before that.
       const downloadCalls = platformRequestSignedUrlMock.mock.calls.filter(
-        (c) => (c[0] as { operation: string }).operation === "download",
+        (c) => c[0].operation === "download",
       );
       expect(downloadCalls).toHaveLength(0);
       expect(localRuntimeImportFromGcsMock).not.toHaveBeenCalled();
@@ -2639,12 +2633,9 @@ describe("auth + transient-error resilience", () => {
     }));
 
     // Ensure the refresh path returns a distinguishable token.
-    leaseGuardianTokenMock.mockResolvedValueOnce({
-      accessToken: "refreshed-token",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    } as unknown as Awaited<
-      ReturnType<typeof guardianToken.leaseGuardianToken>
-    >);
+    leaseGuardianTokenMock.mockResolvedValueOnce(
+      makeGuardianTokenData({ accessToken: "refreshed-token" }),
+    );
 
     const restoreFetch = installTrackingFetch();
     try {
@@ -2697,12 +2688,9 @@ describe("auth + transient-error resilience", () => {
       jobId: "local-import-after-refresh",
     }));
 
-    leaseGuardianTokenMock.mockResolvedValueOnce({
-      accessToken: "refreshed-import-token",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    } as unknown as Awaited<
-      ReturnType<typeof guardianToken.leaseGuardianToken>
-    >);
+    leaseGuardianTokenMock.mockResolvedValueOnce(
+      makeGuardianTokenData({ accessToken: "refreshed-import-token" }),
+    );
 
     const restoreFetch = installTrackingFetch();
     try {
@@ -2770,12 +2758,9 @@ describe("auth + transient-error resilience", () => {
       },
     );
 
-    leaseGuardianTokenMock.mockResolvedValueOnce({
-      accessToken: "poll-refreshed-token",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    } as unknown as Awaited<
-      ReturnType<typeof guardianToken.leaseGuardianToken>
-    >);
+    leaseGuardianTokenMock.mockResolvedValueOnce(
+      makeGuardianTokenData({ accessToken: "poll-refreshed-token" }),
+    );
 
     const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
     const restoreFetch = installTrackingFetch();
@@ -3007,8 +2992,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
 
       // Signed-URL upload request must not have happened.
       const uploadCalls = platformRequestSignedUrlMock.mock.calls.filter(
-        (call: unknown[]) =>
-          (call[0] as { operation: string }).operation === "upload",
+        (call) => call[0].operation === "upload",
       );
       expect(uploadCalls.length).toBe(0);
 

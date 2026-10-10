@@ -111,7 +111,8 @@ mock.module("@/lib/auth/gateway-session", () => ({
 }));
 
 const isLocalClientMock = mock(() => false);
-const isRemoteGatewayModeMock = mock(() => false);
+const isCadetCloudRemoteMock = mock(() => false);
+const isServedGatewayRuntimeMock = mock(() => false);
 const getSelectedAssistantMock = mock(
   (): { assistantId: string } | undefined => undefined,
 );
@@ -138,7 +139,8 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
   isPlatformAssistant: () => false,
   isPlatformDisabled: () => false,
-  isRemoteGatewayMode: isRemoteGatewayModeMock,
+  isCadetCloudRemote: isCadetCloudRemoteMock,
+  isServedGatewayRuntime: isServedGatewayRuntimeMock,
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
   primeLocalGatewayConnection: async () => {},
   primeLocalGatewayConnectionWithRepair: async () => {},
@@ -166,7 +168,6 @@ const getLocalAssistantStatusHostMock = mock(
 mock.module("@/runtime/local-mode-host", () => ({
   getLocalAssistantStatusHost: getLocalAssistantStatusHostMock,
 }));
-
 
 mock.module("@/assistant/lifecycle", () => ({
   buildInitializingTimeoutError,
@@ -210,7 +211,8 @@ beforeEach(() => {
   // tests will silently inherit the previous test's stub.
   isGatewayAuthModeMock.mockImplementation(() => false);
   isLocalClientMock.mockImplementation(() => false);
-  isRemoteGatewayModeMock.mockImplementation(() => false);
+  isCadetCloudRemoteMock.mockImplementation(() => false);
+  isServedGatewayRuntimeMock.mockImplementation(() => false);
   refreshRemoteGatewaySessionMock.mockClear();
   getSelectedAssistantMock.mockImplementation(() => undefined);
   getLocalGatewayUrlMock.mockImplementation(() => undefined);
@@ -571,7 +573,7 @@ describe("lifecycleService — bootstrap branches", () => {
 
   test("remote gateway short-circuit preserves a public path prefix", async () => {
     isGatewayAuthModeMock.mockImplementation(() => true);
-    isRemoteGatewayModeMock.mockImplementation(() => true);
+    isServedGatewayRuntimeMock.mockImplementation(() => true);
     window.history.pushState(
       null,
       "",
@@ -1148,7 +1150,7 @@ describe("lifecycleService — local health heartbeat", () => {
 
   test("remote gateway heartbeat does not call host local status fallback", async () => {
     isGatewayAuthModeMock.mockImplementation(() => true);
-    isRemoteGatewayModeMock.mockImplementation(() => true);
+    isServedGatewayRuntimeMock.mockImplementation(() => true);
     getAssistantHealthzMock.mockImplementation(async () => ({
       ok: false,
       status: 503,
@@ -1313,8 +1315,8 @@ describe("lifecycleService — local health heartbeat", () => {
     }
   });
 
-  test("a 401 healthz in remote-gateway mode nudges the session refresh", async () => {
-    isRemoteGatewayModeMock.mockImplementation(() => true);
+  test("a 401 healthz on the gateway scheme nudges the session refresh", async () => {
+    isCadetCloudRemoteMock.mockImplementation(() => false);
     await driveHealthyThenProbe(async () => ({ ok: false, status: 401 }));
 
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalled();

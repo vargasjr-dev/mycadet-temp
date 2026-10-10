@@ -449,7 +449,7 @@ describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => 
   const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
 
   afterEach(() => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   });
 
   const managedUpgrade = ({
@@ -466,9 +466,9 @@ describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => 
     tunnelBaseUrl?: string;
   }) => {
     if (managed) {
-      process.env.IS_PLATFORM = "true";
+      process.env.IS_CLOUD = "true";
     } else {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
     const headers = new Headers({
       upgrade: "websocket",

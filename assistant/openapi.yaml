@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Cadet Assistant API
-  version: 0.12.6
+  version: 0.12.7
   description: Auto-generated OpenAPI specification for the Cadet Assistant runtime HTTP server.
 servers:
   - url: http://127.0.0.1:7821

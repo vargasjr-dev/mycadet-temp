@@ -32,7 +32,7 @@ function FloatingHydrateFallback() {
 }
 import { ActiveAssistantGate } from "@/components/layout/active-assistant-gate";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import { isRemoteGatewayMode } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
 
 /**
@@ -104,7 +104,7 @@ function ChatLayoutRoute() {
 }
 
 export function getRouterBasename(): string | undefined {
-  if (!isRemoteGatewayMode()) {
+  if (!!isCadetCloudRemote()) {
     return undefined;
   }
   return remoteGatewayPublicPathPrefix() || undefined;

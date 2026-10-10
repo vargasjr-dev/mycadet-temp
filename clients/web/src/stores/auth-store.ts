@@ -44,19 +44,15 @@ import {
   getGatewayToken,
   getLocalTokenUrl,
 } from "@/lib/auth/gateway-session";
-import {
-  refreshRemoteGatewaySession,
-  remoteGatewayPublicPathPrefix,
-} from "@/lib/auth/remote-gateway-session";
+import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
-  isRemoteGatewayMode,
   getLockfileAssistant,
   getPlatformAssistants,
   getLocalAssistants,
   getSelectedAssistant,
   isPairedAssistant,
-  isCloudRemoteMode,
+  isCadetCloudRemote,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
@@ -989,27 +985,21 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   // deliberate sign-in: a decision, which the guard exists to protect, rather
   // than an observation the guard should be able to discard.
   initSession: async () => {
-    if (isCloudRemoteMode()) {
-      // The platform session cookie authenticates every same-origin call:
-      // the serving proxy injects the acting user per request and never
-      // forwards gateway credentials. There is no gateway session to
-      // establish or rotate, so skip the pairing handshake and register
-      // the same-origin ingress for request rewriting; a 401 from this
-      // path is a platform session rejection, recovered by the platform
-      // interceptor. Trusting the platform here is sound: the user only
-      // reached this page through its server-side session gate.
-      setSelfHostedConnection({
-        url: `${window.location.origin}${remoteGatewayPublicPathPrefix()}`,
-        token: null,
-      });
+    // Cloud remote: the platform session cookie is the credential — no
+    // gateway session exists to establish or rotate.
+    if (isCadetCloudRemote()) {
       set({ ...authenticatedLocalUser(), platformSession: "present" });
       return;
     }
-    if (isRemoteGatewayMode()) {
-      if (await hasRemoteGatewaySessionAfterRefresh()) {
-        set({ ...authenticatedLocalUser(), platformSession: "absent" });
-      } else {
-        await endSession(set);
+    // Gateway-token JWT scheme — refresh what we hold, else prime below.
+    if (await hasRemoteGatewaySessionAfterRefresh()) {
+      set({ ...authenticatedLocalUser(), platformSession: "absent" });
+      // A local client may also hold a platform session (logged in through
+      // the platform login flow) — keep probing for it; it settles async. A
+      // served-gateway browser shares no platform cookie space, so it never
+      // probes.
+      if (isLocalClient()) {
+        probePlatformSessionIfReachable(set);
       }
       return;
     }
@@ -1245,7 +1235,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // branch below, so no caller reads an abandoned refresh as a verdict.
     const abandon = (): boolean => isAuthenticated(get().sessionStatus);
 
-    if (isCloudRemoteMode()) {
+    if (isCadetCloudRemote()) {
       // The platform cookie is the only credential here: re-verify it
       // authoritatively instead of pinging a gateway session that does
       // not exist. A settled rejection ends the session (the recovery
@@ -1266,16 +1256,15 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       await endSession(set);
       return false;
     }
-    if (isRemoteGatewayMode()) {
-      if (await hasRemoteGatewaySessionAfterRefresh()) {
-        if (supersededByLogout()) {
-          return abandon();
-        }
-        set({ ...authenticatedLocalUser(), platformSession: "absent" });
-        return true;
+    if (await hasRemoteGatewaySessionAfterRefresh()) {
+      if (supersededByLogout()) {
+        return abandon();
       }
-      await endSession(set);
-      return false;
+      set({ ...authenticatedLocalUser(), platformSession: "absent" });
+      if (isLocalClient()) {
+        probePlatformSessionIfReachable(set, { clearOnFailure: true });
+      }
+      return true;
     }
 
     if (isGatewayAuthMode()) {

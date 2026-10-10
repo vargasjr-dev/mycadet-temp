@@ -65,12 +65,12 @@ const { createInviteNative, createContactsControlPlaneProxyHandler } =
 const { seedContact } = await import("./helpers/contact-fixtures.js");
 
 const API_KEY_KEY = credentialKey("cadet", "assistant_api_key");
-const PLATFORM_URL = "https://platform.example.com";
+const CLOUD_URL = "https://test-cloud.mycadet.ai";
 const API_KEY = "vak_test_key";
 const CONTACT_ID = "contact-alice";
 
 function withPlatformCredentials(): void {
-  process.env.CADET_PLATFORM_URL = PLATFORM_URL;
+  process.env.CADET_PLATFORM_URL = CLOUD_URL;
   storedCredentials = {
     [API_KEY_KEY]: { value: API_KEY, unreachable: false },
   };
@@ -102,7 +102,7 @@ beforeEach(() => {
   trustedContactsEnabled = true;
   withPlatformCredentials();
   delete process.env.CADET_DISABLE_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
   delete process.env.ASSISTANT_API_KEY;
 });
 
@@ -117,7 +117,7 @@ describe("cadet-shared invite registration", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe(`${PLATFORM_URL}/v1/internal/shared-invites/`);
+    expect(url).toBe(`${CLOUD_URL}/v1/internal/shared-invites/`);
     expect(init?.method).toBe("POST");
     const headers = init?.headers as Record<string, string>;
     expect(headers.Authorization).toBe(`Api-Key ${API_KEY}`);
@@ -150,7 +150,7 @@ describe("cadet-shared invite registration", () => {
 
   test("falls back to the environment for platform credentials", async () => {
     storedCredentials = {};
-    process.env.CADET_PLATFORM_URL = PLATFORM_URL;
+    process.env.CADET_PLATFORM_URL = CLOUD_URL;
     process.env.ASSISTANT_API_KEY = "vak_env_key";
 
     await createInviteNative({
@@ -159,7 +159,7 @@ describe("cadet-shared invite registration", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe(`${PLATFORM_URL}/v1/internal/shared-invites/`);
+    expect(url).toBe(`${CLOUD_URL}/v1/internal/shared-invites/`);
     expect((init?.headers as Record<string, string>).Authorization).toBe(
       "Api-Key vak_env_key",
     );

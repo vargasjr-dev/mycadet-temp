@@ -36,8 +36,7 @@ let getSessionGates: Array<() => void> | null = null;
 
 let mockIsGatewayAuth = false;
 let mockIsLocalClient = false;
-let mockIsRemoteGatewayMode = false;
-let mockIsPlatformAuthMode = false;
+let mockIsCadetCloudRemote = false;
 // The assistant `getSelectedAssistant()` resolves; `undefined` means none selected.
 let mockSelectedAssistant: { assistantId: string; cloud: string } | undefined;
 // The entries `getLockfileAssistant(id)` resolves against.
@@ -228,11 +227,10 @@ mock.module("@/lib/auth/remote-gateway-session", () => ({
 
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => mockIsLocalClient,
-  isRemoteGatewayMode: () => mockIsRemoteGatewayMode,
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
-  isCloudRemoteMode: () => mockIsPlatformAuthMode,
+  isCadetCloudRemote: () => mockIsCadetCloudRemote,
   getPlatformAssistants: () => mockPlatformAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,
@@ -470,8 +468,7 @@ beforeEach(() => {
   localStorage.removeItem("device:diagnostics_reporting");
   mockIsGatewayAuth = false;
   mockIsLocalClient = false;
-  mockIsRemoteGatewayMode = false;
-  mockIsPlatformAuthMode = false;
+  mockIsCadetCloudRemote = false;
   mockSelectedAssistant = undefined;
   mockLockfileAssistants = [];
   mockPlatformAssistants = [];
@@ -541,7 +538,6 @@ afterEach(() => {
 
 describe("auth store onboarding flag reconciliation", () => {
   test("initSession treats remote-gateway mode as an authenticated local session", async () => {
-    mockIsRemoteGatewayMode = true;
     refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
 
     await useAuthStore.getState().initSession();
@@ -555,7 +551,6 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("refreshSession keeps remote-gateway mode authenticated without minting a local token", async () => {
-    mockIsRemoteGatewayMode = true;
     mockIsGatewayAuth = true;
     refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
 
@@ -571,8 +566,6 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("initSession leaves remote-gateway mode unauthenticated when cookie refresh fails and no token exists", async () => {
-    mockIsRemoteGatewayMode = true;
-
     await useAuthStore.getState().initSession();
 
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
@@ -581,9 +574,14 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().platformSession).toBe("absent");
   });
 
-  test("initSession in platform-auth mode registers the same-origin ingress without a gateway ping", async () => {
-    mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+  test("initSession in platform-auth mode registers no self-hosted connection and skips the gateway ping", async () => {
+    mockIsCadetCloudRemote = true;
+    // A cloud-hosted cadet has no self-hosted connection to register — the
+    // bundle derives its API base from its own origin.
+    setSelfHostedConnection({
+      url: "https://stale-from-earlier-session.test",
+      token: "tok",
+    });
 
     await useAuthStore.getState().initSession();
 
@@ -593,13 +591,14 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().platformSession).toBe("present");
-    expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
-    expect(getSelfHostedActorToken()).toBeNull();
+    expect(getSelfHostedIngressUrl()).toBe(
+      "https://stale-from-earlier-session.test",
+    );
+    expect(getSelfHostedActorToken()).toBe("tok");
   });
 
   test("refreshSession in platform-auth mode re-probes the platform session instead of the gateway", async () => {
-    mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+    mockIsCadetCloudRemote = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
     sessionUser = { id: "user-1", email: "user@example.com" };
 
@@ -611,21 +610,17 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("refreshSession in platform-auth mode ends the session when the platform probe rejects", async () => {
-    mockIsRemoteGatewayMode = true;
-    mockIsPlatformAuthMode = true;
+    mockIsCadetCloudRemote = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
     // sessionUser stays null, so the getSession probe settles negative.
 
-    await expect(
-      useAuthStore.getState().refreshSession(),
-    ).resolves.toBe(false);
+    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
   test("refreshSession ends remote-gateway sessions when refresh fails and no token exists", async () => {
-    mockIsRemoteGatewayMode = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
@@ -637,7 +632,6 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("refreshSession keeps remote-gateway sessions when refresh throws but a token is still valid", async () => {
-    mockIsRemoteGatewayMode = true;
     mockGatewayToken = "access-token";
     refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => {
       throw new TypeError("Failed to fetch");
@@ -1888,7 +1882,6 @@ describe("iOS widget snapshot on session end", () => {
   });
 
   test("a failed remote-gateway refresh drops the widget snapshot", async () => {
-    mockIsRemoteGatewayMode = true;
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
@@ -2247,7 +2240,7 @@ describe("platform session probe resolution", () => {
   test("a re-run gateway probe retains the last status until it settles", async () => {
     mockIsGatewayAuth = true;
     mockGatewayToken = "access-token";
-    mockIsLocalClient = false;
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ platformSession: "absent" });
 
@@ -2273,7 +2266,7 @@ describe("platform session probe resolution", () => {
   test("a stale probe completing after a newer one does not change status", async () => {
     mockIsGatewayAuth = true;
     mockGatewayToken = "access-token";
-    mockIsLocalClient = false;
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ platformSession: "absent" });
 
@@ -2925,7 +2918,7 @@ describe("paired selection in the gateway-auth session paths", () => {
     expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
   });
 
-  test("refreshSession still mints through the local token URL for a local selection", async () => {
+  test("refreshSession rotates a local selection's gateway JWT without re-minting", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
     mockGatewayToken = "access-token";
@@ -2933,8 +2926,10 @@ describe("paired selection in the gateway-auth session paths", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    expect(ensureGatewayTokenMock).toHaveBeenCalledTimes(1);
-    expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
+    // The gateway-JWT rotation covers the refresh; the token-URL mint only
+    // runs when no session exists to rotate.
+    expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
+    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
 

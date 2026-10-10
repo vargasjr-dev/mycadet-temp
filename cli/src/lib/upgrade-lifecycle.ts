@@ -869,8 +869,6 @@ export async function performDockerRollback(
     );
 
     // Capture new digests from the rolled-back containers
-    const newDigests = await captureImageRefs(res);
-
     // Swap current/previous state to enable "rollback the rollback"
     const updatedEntry: AssistantEntry = {
       ...entry,
@@ -878,10 +876,6 @@ export async function performDockerRollback(
         assistantImage: targetImageTags.assistant,
         gatewayImage: targetImageTags.gateway,
         cesImage: targetImageTags["credential-executor"],
-        assistantDigest: newDigests?.assistant,
-        gatewayDigest: newDigests?.gateway,
-        cesDigest: newDigests?.["credential-executor"],
-        networkName: res.network,
         assistantPort,
       },
       previousContainerInfo: entry.containerInfo,
@@ -1030,7 +1024,6 @@ export async function performDockerRollback(
           }
 
           // Restore lockfile state
-          const revertDigests = await captureImageRefs(res);
           const revertedEntry: AssistantEntry = {
             ...entry,
             containerInfo: {
@@ -1042,13 +1035,6 @@ export async function performDockerRollback(
               cesImage:
                 entry.containerInfo?.cesImage ??
                 currentImageRefs["credential-executor"],
-              assistantDigest:
-                revertDigests?.assistant ?? currentImageRefs.assistant,
-              gatewayDigest: revertDigests?.gateway ?? currentImageRefs.gateway,
-              cesDigest:
-                revertDigests?.["credential-executor"] ??
-                currentImageRefs["credential-executor"],
-              networkName: res.network,
               assistantPort,
             },
             previousContainerInfo: undefined,

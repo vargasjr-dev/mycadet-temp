@@ -16,6 +16,8 @@ import { guardianTokenPath, resolveConfigDir } from "@mycadet/local-mode";
 import {
   getOrCreatePersistedDeviceId,
   guardianTokenDueForRenewal,
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
   refreshGuardianTokenResult,
@@ -25,6 +27,7 @@ import {
 } from "../lib/guardian-token.js";
 import { getConfigDir } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { withPreconnect } from "./helpers/http.js";
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();
@@ -286,19 +289,21 @@ describe("refreshGuardianToken", () => {
   test("refreshes, persists the rotated token, sends an abort signal, releases the lock", async () => {
     seed(future());
     let sawSignal = false;
-    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
-      sawSignal = init?.signal instanceof AbortSignal;
-      return new Response(
-        JSON.stringify({
-          accessToken: "new-acc",
-          refreshToken: "new-ref",
-          accessTokenExpiresAt: future(),
-          refreshTokenExpiresAt: future(),
-          refreshAfter: "",
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, init?: RequestInit) => {
+        sawSignal = init?.signal instanceof AbortSignal;
+        return new Response(
+          JSON.stringify({
+            accessToken: "new-acc",
+            refreshToken: "new-ref",
+            accessTokenExpiresAt: future(),
+            refreshTokenExpiresAt: future(),
+            refreshAfter: "",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await refreshGuardianToken("https://gw.example.com", "px");
 
@@ -311,13 +316,81 @@ describe("refreshGuardianToken", () => {
     expect(existsSync(lockPath("px"))).toBe(false); // lock released
   });
 
+  test("leases against the gateway's real init shape — refreshAfter arrives as a number", async () => {
+    // The gateway's GuardianBootstrapResult serializes refreshAfter as a
+    // NUMBER of ms (mintRefreshToken), and the strict lease check rejects a
+    // response missing any field. A string-only schema read that number as
+    // malformed, so every real hatch failed its lease while the ISO-string
+    // test doubles here stayed green.
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/readyz")) {
+        return new Response("", { status: 404 }); // no starting gate — proceed
+      }
+      return new Response(
+        JSON.stringify({
+          guardianPrincipalId: "principal-lease",
+          accessToken: "access-lease",
+          accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+          refreshToken: "refresh-lease",
+          refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+          refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
+          isNew: true,
+          mintedOverPriorEvidence: false,
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+
+    const leased = await leaseGuardianToken("https://gw.example.com", "px");
+
+    expect(leased.accessToken).toBe("access-lease");
+    expect(leased.refreshAfter).toBeDefined();
+    const stored = loadGuardianToken("px");
+    expect(stored?.accessToken).toBe("access-lease");
+    expect(stored?.refreshAfter).toBe(leased.refreshAfter);
+  });
+
+  test("a malformed 200 names the unusable fields and is not retried", async () => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/readyz")) {
+        return new Response("", { status: 404 });
+      }
+      return new Response(
+        JSON.stringify({
+          guardianPrincipalId: "principal-lease",
+          accessToken: 42,
+          refreshToken: "refresh-lease",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+
+    const err = await leaseGuardianToken("https://gw.example.com", "px").then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    if (!(err instanceof GuardianLeasePermanentError)) {
+      throw new Error(
+        `expected GuardianLeasePermanentError, got ${String(err)}`,
+      );
+    }
+    expect(err.message).toContain("(200)");
+    expect(err.message).toContain("accessToken arrived as number");
+    expect(err.message).toContain("refreshTokenExpiresAt arrived as absent");
+  });
+
   test("returns null without calling the gateway when the refresh token is expired", async () => {
     seed(new Date(Date.now() - 1000).toISOString());
     let called = false;
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      called = true;
-      return new Response("", { status: 200 });
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        called = true;
+        return new Response("", { status: 200 });
+      },
+    );
 
     expect(
       await refreshGuardianToken("https://gw.example.com", "px"),
@@ -327,10 +400,12 @@ describe("refreshGuardianToken", () => {
 
   test("returns null when there is no stored token", async () => {
     let called = false;
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      called = true;
-      return new Response("", { status: 200 });
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        called = true;
+        return new Response("", { status: 200 });
+      },
+    );
 
     expect(
       await refreshGuardianToken("https://gw.example.com", "missing"),
@@ -348,11 +423,13 @@ describe("refreshGuardianToken", () => {
     const old = new Date(Date.now() - 60_000);
     utimesSync(lp, old, old);
 
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) =>
-      new Response(JSON.stringify({ accessToken: "new-acc" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) =>
+        new Response(JSON.stringify({ accessToken: "new-acc" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
 
     const result = await refreshGuardianToken("https://gw.example.com", "px");
     expect(result?.accessToken).toBe("new-acc");
@@ -371,13 +448,15 @@ describe("refreshGuardianToken", () => {
     ]) {
       seed(future());
       let called = false;
-      globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-        called = true;
-        return new Response(JSON.stringify({ accessToken: "new-acc" }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }) as typeof fetch;
+      globalThis.fetch = withPreconnect(
+        async (_url: unknown, _init?: RequestInit) => {
+          called = true;
+          return new Response(JSON.stringify({ accessToken: "new-acc" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        },
+      );
 
       expect(await refreshGuardianToken(url, "px")).not.toBeNull();
       expect(called).toBe(true); // loopback http is allowed
@@ -387,10 +466,12 @@ describe("refreshGuardianToken", () => {
   test("refuses a non-loopback plaintext http URL: no fetch, returns null, warns", async () => {
     seed(future());
     let called = false;
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      called = true;
-      return new Response("", { status: 200 });
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        called = true;
+        return new Response("", { status: 200 });
+      },
+    );
 
     const origWarn = console.warn;
     let warned = false;
@@ -411,10 +492,12 @@ describe("refreshGuardianToken", () => {
   test("refuses a malformed gateway URL: no fetch, returns null", async () => {
     seed(future());
     let called = false;
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      called = true;
-      return new Response("", { status: 200 });
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        called = true;
+        return new Response("", { status: 200 });
+      },
+    );
 
     const origWarn = console.warn;
     console.warn = () => {};
@@ -428,11 +511,13 @@ describe("refreshGuardianToken", () => {
 
   test("an unreachable gateway is a 503, not a 401", async () => {
     seed(future());
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      throw Object.assign(new TypeError("fetch failed"), {
-        cause: { code: "ECONNREFUSED" },
-      });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        throw Object.assign(new TypeError("fetch failed"), {
+          cause: { code: "ECONNREFUSED" },
+        });
+      },
+    );
 
     const result = await refreshGuardianTokenResult(
       "http://127.0.0.1:59999",
@@ -451,8 +536,10 @@ describe("refreshGuardianToken", () => {
 
   test("an HTTP 401 from the gateway is a spent credential", async () => {
     seed(future());
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) =>
-      new Response("", { status: 401 })) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) =>
+        new Response("", { status: 401 }),
+    );
 
     expect(
       await refreshGuardianTokenResult("https://gw.example.com", "px"),
@@ -465,8 +552,10 @@ describe("refreshGuardianToken", () => {
 
   test("an HTTP 403 from the refresh route is a spent credential, not a loopback refusal", async () => {
     seed(future());
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) =>
-      new Response("", { status: 403 })) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) =>
+        new Response("", { status: 403 }),
+    );
 
     expect(
       await refreshGuardianTokenResult("https://gw.example.com", "px"),
@@ -480,10 +569,12 @@ describe("refreshGuardianToken", () => {
   test("an insecure gateway URL is a local 403, not a spent credential", async () => {
     seed(future());
     let called = false;
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) => {
-      called = true;
-      return new Response("", { status: 200 });
-    }) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) => {
+        called = true;
+        return new Response("", { status: 200 });
+      },
+    );
 
     const origWarn = console.warn;
     console.warn = () => {};
@@ -503,8 +594,10 @@ describe("refreshGuardianToken", () => {
 
   test("an HTTP 503 from a still-starting gateway is retryable", async () => {
     seed(future());
-    globalThis.fetch = (async (_url: unknown, _init?: RequestInit) =>
-      new Response("", { status: 503 })) as typeof fetch;
+    globalThis.fetch = withPreconnect(
+      async (_url: unknown, _init?: RequestInit) =>
+        new Response("", { status: 503 }),
+    );
 
     const result = await refreshGuardianTokenResult(
       "https://gw.example.com",

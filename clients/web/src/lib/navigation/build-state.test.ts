@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 // pulls in stays available; override only the hosting-mode flags build-state
 // branches on.
 let mockIsLocalClient = true;
-let mockIsRemoteGatewayMode = false;
+let mockIsCloudRemote = false;
 
 const localModeActual = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: () => mockIsLocalClient,
-  isRemoteGatewayMode: () => mockIsRemoteGatewayMode,
+  isCadetCloudRemote: () => mockIsCloudRemote,
 }));
 
 const gatewaySessionActual = await import("@/lib/auth/gateway-session");
@@ -33,15 +33,14 @@ const { useAuthStore } = await import("@/stores/auth-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
-const { clearSelectedAssistantId, writeSelectedAssistantId } = await import(
-  "@/assistant/selected-assistant-storage"
-);
+const { clearSelectedAssistantId, writeSelectedAssistantId } =
+  await import("@/assistant/selected-assistant-storage");
 
 const initialAuthState = useAuthStore.getState();
 
 beforeEach(() => {
   mockIsLocalClient = true;
-  mockIsRemoteGatewayMode = false;
+  mockIsCloudRemote = false;
   useAuthStore.setState(initialAuthState, true);
   useOrganizationStore.setState({
     currentOrganizationId: null,

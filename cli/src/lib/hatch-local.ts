@@ -32,7 +32,10 @@ import {
 } from "./local.js";
 
 import { generateInstanceName } from "./random-name.js";
-import { leaseGuardianToken } from "./guardian-token.js";
+import {
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
+} from "./guardian-token.js";
 import { archiveLogFile, resetLogFile } from "./xdg-log.js";
 import {
   consoleLifecycleReporter,
@@ -185,8 +188,6 @@ export interface HatchLocalResult {
   guardianAccessToken?: string;
 }
 
-
-
 export async function hatchLocal(
   params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
@@ -199,8 +200,7 @@ export async function hatchLocal(
   } = params;
   const reporter = params.reporter ?? consoleLifecycleReporter;
   const verbose = params.verbose ?? false;
-  const setupProviderCredentials =
-    params.setupProviderCredentials !== false;
+  const setupProviderCredentials = params.setupProviderCredentials !== false;
   setStartupLogging(verbose);
   let provider = setupProviderCredentials
     ? resolveHatchProvider(configValues)
@@ -226,12 +226,7 @@ export async function hatchLocal(
 
       const resources = await allocateLocalResources(instanceName);
 
-      const logsDir = join(
-        resources.instanceDir,
-        "workspace",
-        "data",
-        "logs",
-      );
+      const logsDir = join(resources.instanceDir, "workspace", "data", "logs");
       archiveLogFile("hatch.log", logsDir);
       resetLogFile("hatch.log");
 
@@ -276,9 +271,7 @@ export async function hatchLocal(
               reporter.warn(
                 `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
               );
-              reporter.warn(
-                "   You can retry later with `cadet login`.",
-              );
+              reporter.warn("   You can retry later with `cadet login`.");
             }
           }
         }
@@ -380,7 +373,10 @@ export async function hatchLocal(
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {
-      if (attempt < maxLeaseAttempts) {
+      if (
+        attempt < maxLeaseAttempts &&
+        !(err instanceof GuardianLeasePermanentError)
+      ) {
         const delayMs = 2000 * 2 ** (attempt - 1);
         reporter.error(
           `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
@@ -388,9 +384,9 @@ export async function hatchLocal(
         await new Promise((r) => setTimeout(r, delayMs));
       } else {
         reporter.error(
-          `⚠️  Guardian token lease failed after ${maxLeaseAttempts} attempts: ${err}\n` +
+          `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? " (not retrying — a malformed 200 will not fix itself)" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
             `   The assistant is running but guardian-token.json was not written.\n` +
-            `   If the desktop app loses its stored credentials, re-hatch to recover.`,
+            `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
         );
       }
     }

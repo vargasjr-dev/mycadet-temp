@@ -39,11 +39,13 @@ import type {
 
 const actualLocalMode = await import("@/lib/local-mode");
 let localClient = false;
-let remoteGatewayMode = false;
+let cloudRemote = false;
+let servedGatewayRuntime = false;
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
   isLocalClient: () => localClient,
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isCadetCloudRemote: () => cloudRemote,
+  isServedGatewayRuntime: () => servedGatewayRuntime,
 }));
 
 let gatewayAuthEnabled = false;
@@ -269,7 +271,8 @@ async function settle(): Promise<void> {
 
 beforeEach(() => {
   localClient = false;
-  remoteGatewayMode = false;
+  cloudRemote = true;
+  servedGatewayRuntime = false;
   gatewayAuthEnabled = false;
   selfHostedIngressUrl = null;
   orgReady = true;
@@ -322,7 +325,7 @@ describe("canFetchRowAvatarViaPlatformProxy", () => {
 
   test.each([
     ["local client", () => (localClient = true)],
-    ["remote-gateway mode", () => (remoteGatewayMode = true)],
+    ["served-gateway runtime", () => (servedGatewayRuntime = true)],
     ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
@@ -346,7 +349,7 @@ describe("canFetchRowAvatarViaPlatformProxy", () => {
 describe("useChooserRowAvatar", () => {
   test.each([
     ["local client", () => (localClient = true)],
-    ["remote-gateway mode", () => (remoteGatewayMode = true)],
+    ["served-gateway runtime", () => (servedGatewayRuntime = true)],
     ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
@@ -387,7 +390,7 @@ describe("useChooserRowAvatar", () => {
 
     test.each([
       ["local client", () => (localClient = true)],
-      ["remote-gateway mode", () => (remoteGatewayMode = true)],
+      ["served-gateway runtime", () => (servedGatewayRuntime = true)],
       ["gateway auth", () => (gatewayAuthEnabled = true)],
     ])(
       "renders a non-connected platform row's avatarUrl under %s with zero SDK calls",

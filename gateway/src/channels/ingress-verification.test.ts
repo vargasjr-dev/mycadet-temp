@@ -666,7 +666,7 @@ describe("HMAC URL and form payloads", () => {
 
   it("verifies against the platform-injected URL first", () => {
     const injected =
-      "https://platform.example.test/v1/gateway/callbacks/abc123";
+      "https://test-cloud.mycadet.ai.test/v1/gateway/callbacks/abc123";
     const result = verify(
       URL_AND_FORM_HMAC,
       {

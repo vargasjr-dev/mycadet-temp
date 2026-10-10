@@ -14,7 +14,6 @@ import {
   isLocalClient,
   isLocalGatewayAssistant,
   isPlatformDisabled,
-  isRemoteGatewayMode,
   primeLocalGatewayConnectionWithRepair,
   updateLockfileAssistant,
   type LockfileAssistant,
@@ -120,12 +119,7 @@ export async function resolveLocalAssistantPlatformIdentity(
   assistantId: string,
   options: ResolveLocalAssistantPlatformIdentityOptions = {},
 ): Promise<string> {
-  if (
-    !isLocalClient() ||
-    isRemoteGatewayMode() ||
-    isPlatformDisabled() ||
-    isUuid(assistantId)
-  ) {
+  if (!isLocalClient() || isPlatformDisabled() || isUuid(assistantId)) {
     return assistantId;
   }
 
@@ -228,13 +222,7 @@ function recoverableLocalAssistant(
   assistantId?: string,
 ): LockfileAssistant | null {
   const target = assistantId ?? getSelectedAssistant()?.assistantId;
-  if (
-    !target ||
-    !isLocalClient() ||
-    isRemoteGatewayMode() ||
-    isPlatformDisabled() ||
-    isUuid(target)
-  ) {
+  if (!target || !isLocalClient() || isPlatformDisabled() || isUuid(target)) {
     return null;
   }
   return resolveLocalAssistant(target, isLocalGatewayAssistant);
@@ -350,7 +338,7 @@ export function bootstrapLocalAssistantPlatformIdentity(
   assistantId?: string,
   options: BootstrapLocalAssistantPlatformIdentityOptions = {},
 ): void {
-  if (!isLocalClient() || isRemoteGatewayMode() || isPlatformDisabled()) {
+  if (!isLocalClient() || isPlatformDisabled()) {
     return;
   }
 

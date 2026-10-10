@@ -1032,7 +1032,7 @@ export function mintAndRecordBrowserTokenPair(params: {
 /**
  * Attempt to fetch the assistant owner's display name from the platform.
  *
- * Only runs when IS_PLATFORM=true. Reads the assistant API key from the
+ * Only runs when IS_CLOUD=true. Reads the assistant API key from the
  * credential store, resolves the base URL from CADET_PLATFORM_URL, then calls
  * GET /v1/internal/gateway/guardian/ with a 5-second timeout.
  * Returns null on any missing credential, timeout, or network/parse failure —
@@ -1047,8 +1047,8 @@ async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
   }
 
   const isPlatform =
-    process.env.IS_PLATFORM?.trim().toLowerCase() === "true" ||
-    process.env.IS_PLATFORM?.trim() === "1";
+    process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
+    process.env.IS_CLOUD?.trim() === "1";
   if (!isPlatform) return null;
 
   const assistantApiKey = await readCredential(

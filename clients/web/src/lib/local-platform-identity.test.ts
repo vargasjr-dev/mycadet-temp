@@ -24,7 +24,6 @@ let activeAssistant = {
 };
 let isLocalClientValue = true;
 let isPlatformDisabledValue = false;
-let isRemoteGatewayModeValue = false;
 let selfHostedIngressUrl: string | null = GATEWAY_URL;
 let selfHostedActorToken: string | null = "actor-token";
 let browserDeviceId: string | null = null;
@@ -70,7 +69,6 @@ mock.module("@/lib/local-mode", () => ({
   isLocalGatewayAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local" || assistant?.cloud === "docker",
   isPlatformDisabled: () => isPlatformDisabledValue,
-  isRemoteGatewayMode: () => isRemoteGatewayModeValue,
   primeLocalGatewayConnectionWithRepair:
     primeLocalGatewayConnectionWithRepairMock,
   updateLockfileAssistant: updateLockfileAssistantMock,
@@ -119,15 +117,12 @@ mock.module("@/stores/organization-store", () => ({
   },
 }));
 
-const { MIN_VERSION: VERIFY_ROUTE_MIN_VERSION } = await import(
-  "@/lib/backwards-compat/credential-verification"
-);
-const { VERSION_RESOLUTION_TIMEOUT_MS } = await import(
-  "@/lib/backwards-compat/utils"
-);
-const { useAssistantIdentityStore } = await import(
-  "@/stores/assistant-identity-store"
-);
+const { MIN_VERSION: VERIFY_ROUTE_MIN_VERSION } =
+  await import("@/lib/backwards-compat/credential-verification");
+const { VERSION_RESOLUTION_TIMEOUT_MS } =
+  await import("@/lib/backwards-compat/utils");
+const { useAssistantIdentityStore } =
+  await import("@/stores/assistant-identity-store");
 const {
   bootstrapLocalAssistantPlatformIdentity,
   canRecoverLocalAssistantPlatformCredential,
@@ -173,7 +168,6 @@ beforeEach(() => {
   };
   isLocalClientValue = true;
   isPlatformDisabledValue = false;
-  isRemoteGatewayModeValue = false;
   selfHostedIngressUrl = GATEWAY_URL;
   selfHostedActorToken = "actor-token";
   browserDeviceId = null;
@@ -423,11 +417,11 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
     expect(
       canRecoverLocalAssistantPlatformCredential(RUNTIME_ASSISTANT_ID),
     ).toBe(true);
-    isRemoteGatewayModeValue = true;
+    isLocalClientValue = false;
     expect(
       canRecoverLocalAssistantPlatformCredential(RUNTIME_ASSISTANT_ID),
     ).toBe(false);
-    isRemoteGatewayModeValue = false;
+    isLocalClientValue = true;
     isPlatformDisabledValue = true;
     expect(
       canRecoverLocalAssistantPlatformCredential(RUNTIME_ASSISTANT_ID),

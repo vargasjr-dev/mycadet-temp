@@ -20,6 +20,8 @@ import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import * as platformClient from "../lib/platform-client.js";
+import { withPreconnect } from "./helpers/http.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const resolveTargetMock = spyOn(
   assistantConfig,
@@ -46,23 +48,25 @@ const pollMock = spyOn(
   jobId: "job-1",
   type: "export",
   status: "complete",
-} as unknown as Awaited<
-  ReturnType<typeof localRuntimeClient.localRuntimePollJobStatus>
->);
+});
 const loadGuardianTokenSpy = spyOn(
   guardianToken,
   "loadGuardianToken",
-).mockReturnValue({
-  accessToken: "local-token",
-  accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-} as unknown as ReturnType<typeof guardianToken.loadGuardianToken>);
+).mockReturnValue(
+  makeGuardianTokenData({
+    accessToken: "local-token",
+    accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+  }),
+);
 const leaseGuardianTokenSpy = spyOn(
   guardianToken,
   "leaseGuardianToken",
-).mockResolvedValue({
-  accessToken: "leased-token",
-  accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-} as unknown as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>);
+).mockResolvedValue(
+  makeGuardianTokenData({
+    accessToken: "leased-token",
+    accessTokenExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+  }),
+);
 
 const { debug } = await import("../commands/debug.js");
 
@@ -75,7 +79,7 @@ const LOCAL_ENTRY = {
   platformAssistantId: "11111111-2222-3333-4444-555555555555",
   platformBaseUrl: "https://cloud.mycadet.ai",
   platformOrganizationId: "org-1",
-} as unknown as assistantConfig.AssistantEntry;
+} satisfies assistantConfig.AssistantEntry;
 
 let originalFetch: typeof globalThis.fetch;
 let originalExit: typeof process.exit;
@@ -86,12 +90,12 @@ beforeEach(() => {
   process.argv = ["bun", "cadet", "debug"];
   originalFetch = globalThis.fetch;
   originalExit = process.exit;
-  process.exit = mock((code?: number) => {
+  process.exit = mock((code?: number | string | undefined): never => {
     throw new Error(`process.exit:${code}`);
-  }) as unknown as typeof process.exit;
+  });
   fetchCalls = [];
   uploadUrlStatus = 201;
-  globalThis.fetch = mock(
+  globalThis.fetch = withPreconnect(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       fetchCalls.push({ url: String(input), init });
       return new Response(
@@ -102,7 +106,7 @@ beforeEach(() => {
         },
       );
     },
-  ) as unknown as typeof globalThis.fetch;
+  );
   resolveTargetMock.mockReset();
   resolveTargetMock.mockReturnValue(LOCAL_ENTRY);
   identityMock.mockReset();
@@ -140,9 +144,7 @@ describe("cadet debug", () => {
     );
     expect(fetchCalls[0].init?.method).toBe("POST");
     expect(
-      (fetchCalls[0].init?.headers as Record<string, string>)[
-        "Cadet-Organization-Id"
-      ],
+      new Headers(fetchCalls[0].init?.headers).get("Cadet-Organization-Id"),
     ).toBe("org-1");
 
     expect(exportMock).toHaveBeenCalledTimes(1);
@@ -196,9 +198,7 @@ describe("cadet debug", () => {
         jobId: "job-1",
         type: "export",
         status: "complete",
-      } as unknown as Awaited<
-        ReturnType<typeof localRuntimeClient.localRuntimePollJobStatus>
-      >;
+      };
     });
 
     await debug();
@@ -226,7 +226,7 @@ describe("cadet debug", () => {
     resolveTargetMock.mockReturnValue({
       ...LOCAL_ENTRY,
       cloud: "cadet",
-    } as unknown as assistantConfig.AssistantEntry);
+    });
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     try {
       await expect(debug()).rejects.toThrow("process.exit:1");
@@ -240,7 +240,7 @@ describe("cadet debug", () => {
     resolveTargetMock.mockReturnValue({
       ...LOCAL_ENTRY,
       platformAssistantId: undefined,
-    } as unknown as assistantConfig.AssistantEntry);
+    });
     const errors: string[] = [];
     const errorSpy = spyOn(console, "error").mockImplementation((msg) => {
       errors.push(String(msg));

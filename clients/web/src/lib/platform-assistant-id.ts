@@ -1,6 +1,6 @@
 import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import { PlatformIdentityInjectionError } from "@/lib/platform-identity-errors";
-import { isRemoteGatewayMode } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import {
   fetchPlatformStatus,
   isUuid,
@@ -43,7 +43,7 @@ export async function resolvePlatformAssistantId(
   if (paired && isUuid(paired)) {
     return paired;
   }
-  if (isRemoteGatewayMode()) {
+  if (!isCadetCloudRemote()) {
     try {
       const status = await fetchPlatformStatus(
         {

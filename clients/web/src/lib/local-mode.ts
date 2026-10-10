@@ -3,6 +3,7 @@ import {
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
+import { getInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
@@ -84,56 +85,7 @@ const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export { getPlatformRuntimeUrl };
 
-type Remote = "local" | "docker" | "custom" | "cloud";
-
-function getInjectedConfig(): {
-  disablePlatform?: boolean;
-  remote?: Remote;
-  platformUrl?: string;
-  assistantName?: string;
-  hubUrl?: string;
-} {
-  return (
-    (
-      window as unknown as {
-        __CADET_CONFIG__?: {
-          disablePlatform?: boolean;
-          remote?: Remote;
-          platformUrl?: string;
-          assistantName?: string;
-          hubUrl?: string;
-        };
-      }
-    ).__CADET_CONFIG__ ?? {}
-  );
-}
-
-/**
- * True when the bundle is served by a remote gateway it must hold a gateway
- * session with: the config's `remote` carries the same value `cadet hatch
- * --remote` records for the cadet, and any of those values except `"cloud"`
- * is a self-hosted gateway serving this bundle to a remote client. The
- * cloud-remote case (platform-served, platform-session-authenticated) is
- * `isCloudRemoteMode`, and shells serving the local cadet (desktop, dev
- * server) inject no `remote` at all.
- */
-export function isRemoteGatewayMode(): boolean {
-  const remote = getInjectedConfig().remote;
-  return remote !== undefined && remote !== "cloud";
-}
-
-/**
- * True when the loaded cadet is a cloud-hosted one: the config's
- * `remote: "cloud"` says where the cadet comes from — its runtime lives
- * behind the platform, and the platform's session is the authentication
- * surface (every API call is authenticated by that cookie; the proxy injects
- * the acting user per request and never forwards gateway credentials), so no
- * gateway-level session exists to mint, rotate, or recover. The local
- * remote-gateway session machinery — the boot ping, pairing, 401 re-priming,
- * scheduled refresh — must stay out of the way for a cloud remote, and a 401
- * from the proxied API path is a platform session rejection.
- */
-export function isCloudRemoteMode(): boolean {
+export function isCadetCloudRemote(): boolean {
   return getInjectedConfig().remote === "cloud";
 }
 
@@ -163,6 +115,19 @@ export function getRemoteAssistantDisplayName(): string | undefined {
  */
 export function getRemoteGatewayHubUrl(): string | undefined {
   return nonEmptyString(getInjectedConfig().hubUrl);
+}
+
+/**
+ * Whether this bundle is served by a cadet's gateway itself (a self-hosted
+ * edge or a docker cadet) rather than running beside a local host or on the
+ * cloud platform. The serving gateway synthesizes the single "self" assistant
+ * for the chooser and owns the lockfile view. This is a topology fact —
+ * distinct from the auth-scheme question (`isCadetCloudRemote`) — and it is
+ * the only place the `remote` value selects a code path.
+ */
+export function isServedGatewayRuntime(): boolean {
+  const remote = getInjectedConfig().remote;
+  return remote === "docker" || remote === "custom";
 }
 
 function getRemoteGatewayLockfile(): Lockfile {
@@ -223,7 +188,7 @@ export function isPlatformDisabled(): boolean {
 }
 
 export async function loadLockfile(): Promise<Lockfile> {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     const lockfile = getRemoteGatewayLockfile();
     commitLockfile(lockfile);
     return lockfile;
@@ -242,7 +207,7 @@ export async function loadLockfile(): Promise<Lockfile> {
 }
 
 export function getLockfile(): Lockfile {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     const lockfile = getRemoteGatewayLockfile();
     setCachedLockfile(lockfile);
     return lockfile;
@@ -359,7 +324,7 @@ export async function renameLockfileAssistant(
     // Fresh assistants report "": never write an empty name.
     return true;
   }
-  if (isRemoteGatewayMode() || !isLocalModeHostAvailable()) {
+  if (!isLocalModeHostAvailable()) {
     return true;
   }
   const entry = getLockfileAssistant(assistantId);
@@ -390,7 +355,7 @@ export async function markLockfileAssistantOnboarded(
   assistantId: string,
   onboardedAt: string,
 ): Promise<void> {
-  if (isRemoteGatewayMode() || !isLocalModeHostAvailable()) {
+  if (!isLocalModeHostAvailable()) {
     return;
   }
   const entry = getLockfileAssistant(assistantId);
@@ -416,7 +381,7 @@ export async function markLockfileAssistantOnboarded(
 export async function setActiveLockfileAssistant(
   assistantId: string,
 ): Promise<void> {
-  if (isRemoteGatewayMode()) {
+  if (!isLocalModeHostAvailable()) {
     return;
   }
 
@@ -851,7 +816,7 @@ function expectsLocalGateway(
   return (
     !!assistant &&
     isLocalClient() &&
-    !isRemoteGatewayMode() &&
+    !isServedGatewayRuntime() &&
     isLocalGatewayAssistant(assistant)
   );
 }
@@ -883,7 +848,7 @@ export function getLocalGatewayUrl(
  */
 function expectsPairedGateway(assistant: LockfileAssistant): boolean {
   return (
-    isLocalClient() && !isRemoteGatewayMode() && isPairedAssistant(assistant)
+    isLocalClient() && !isServedGatewayRuntime() && isPairedAssistant(assistant)
   );
 }
 

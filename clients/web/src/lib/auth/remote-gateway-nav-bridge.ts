@@ -16,7 +16,7 @@
  *     reload. The applied navigation is suppressed on the outbound side so
  *     it never echoes back and grows the parent's history.
  */
-import { isRemoteGatewayMode } from "@/lib/local-mode";
+import { isServedGatewayRuntime } from "@/lib/local-mode";
 
 const NAV_SOURCE = "mycadet-web-nav";
 const PARENT_NAV_SOURCE = "mycadet-web-parent-nav";
@@ -44,7 +44,7 @@ function emitToParent(nav: "push" | "replace" | "pop"): void {
 }
 
 export function setupRemoteGatewayNavBridge(): void {
-  if (!isRemoteGatewayMode()) {
+  if (!isServedGatewayRuntime()) {
     return;
   }
 
@@ -72,10 +72,7 @@ export function setupRemoteGatewayNavBridge(): void {
     if (!data || data.source !== PARENT_NAV_SOURCE) {
       return;
     }
-    if (
-      typeof data.path !== "string" ||
-      !data.path.startsWith("/")
-    ) {
+    if (typeof data.path !== "string" || !data.path.startsWith("/")) {
       return;
     }
     if (data.path === currentPath()) {

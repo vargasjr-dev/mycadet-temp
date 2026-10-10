@@ -1,7 +1,7 @@
 import { afterEach, expect, mock, test } from "bun:test";
 
 let exportRequested = false;
-const originalIsPlatform = process.env.IS_PLATFORM;
+const originalIsPlatform = process.env.IS_CLOUD;
 
 mock.module("../config-file-utils.js", () => ({
   readConfigFileOrEmpty: () => ({
@@ -23,15 +23,15 @@ mock.module("../fetch.js", () => ({
 
 afterEach(() => {
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
   mock.restore();
 });
 
 test("platform mode disables the backup worker", async () => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   const { startBackupWorker } = await import("../backup/backup-worker.js");
 
   const worker = startBackupWorker({

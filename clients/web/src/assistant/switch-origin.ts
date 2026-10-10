@@ -6,7 +6,7 @@
  */
 
 import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
-import { isRemoteGatewayMode } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import { isNativeMobile } from "@/runtime/platform-detection";
 import {
   nativeSwitchToOrigin,
@@ -95,7 +95,7 @@ export async function switchToOrigin(
  * comparison includes it.
  */
 export function isCurrentOrigin(origin: RememberedOrigin): boolean {
-  const currentBase = isRemoteGatewayMode()
+  const currentBase = !isCadetCloudRemote()
     ? remoteGatewayPublicBaseUrl()
     : window.location.origin;
   return normalizeOriginUrl(currentBase) === origin.url;

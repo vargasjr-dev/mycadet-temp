@@ -1819,7 +1819,8 @@ describe("HMAC URL and form-encoded inbound", () => {
     // Twilio signed the platform callback URL; the gateway sees localhost.
     // The proxy injects the original URL it handed the vendor, and the
     // signature covers that spelling rather than the one on the wire here.
-    const injected = "https://platform.example.test/v1/gateway/callbacks/cb-1";
+    const injected =
+      "https://test-cloud.mycadet.ai.test/v1/gateway/callbacks/cb-1";
     const params: Record<string, string> = {
       MessageSid: "SM9004",
       From: "+15555550101",

@@ -21,7 +21,7 @@ import {
 import {
   getRemoteGatewayAssistantName,
   getRemoteGatewayHubUrl,
-  isRemoteGatewayMode,
+  isCadetCloudRemote,
 } from "@/lib/local-mode";
 import { isNativePlatform } from "@/runtime/native-auth";
 import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
@@ -242,7 +242,7 @@ export function RemoteWebPairingPage() {
   const { t } = useTranslation("remote-web");
   const location = useLocation();
   const navigate = useNavigate();
-  const enabled = isRemoteGatewayMode();
+  const enabled = !isCadetCloudRemote();
   const returnTo = useMemo(() => {
     const value = new URLSearchParams(location.search).get("returnTo");
     return sanitizeReturnTo(value, routes.assistant);

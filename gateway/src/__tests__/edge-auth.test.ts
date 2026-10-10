@@ -4,14 +4,14 @@
  *
  * Two auth modes (mirrors `requireEdgeGuardianAuth`):
  *
- *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_PLATFORM=true): identity
+ *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_CLOUD=true): identity
  *     asserted via `X-Cadet-User-Id` header cross-referenced against the
  *     stored `cadet:platform_user_id` credential. Scope authorization is
  *     delegated to the upstream platform proxy.
  *  2. Default: edge JWT validated; scoped guard additionally checks the
  *     scope_profile claim.
  *
- * Importantly, DISABLE_HTTP_AUTH alone (without IS_PLATFORM) does NOT
+ * Importantly, DISABLE_HTTP_AUTH alone (without IS_CLOUD) does NOT
  * bypass JWT validation — protects against accidental misconfig.
  */
 
@@ -101,17 +101,17 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.DISABLE_HTTP_AUTH;
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 });
 
 // =========================================================================
 // requireEdgeAuth — platform bypass active
 // =========================================================================
 
-describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
+describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
   beforeEach(() => {
     process.env.DISABLE_HTTP_AUTH = "true";
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
   });
 
   test("401 when X-Cadet-User-Id header is missing", async () => {
@@ -194,17 +194,17 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
 // =========================================================================
 
 describe("requireEdgeAuth — DISABLE_HTTP_AUTH alone is insufficient", () => {
-  test("DISABLE_HTTP_AUTH=true without IS_PLATFORM still runs JWT validation", async () => {
+  test("DISABLE_HTTP_AUTH=true without IS_CLOUD still runs JWT validation", async () => {
     process.env.DISABLE_HTTP_AUTH = "true";
-    // IS_PLATFORM intentionally NOT set
+    // IS_CLOUD intentionally NOT set
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(makeReq());
     // No bearer token + no bypass → 401, NOT a free pass
     expect(res?.status).toBe(401);
   });
 
-  test("IS_PLATFORM=true without DISABLE_HTTP_AUTH still runs JWT validation", async () => {
-    process.env.IS_PLATFORM = "true";
+  test("IS_CLOUD=true without DISABLE_HTTP_AUTH still runs JWT validation", async () => {
+    process.env.IS_CLOUD = "true";
     // DISABLE_HTTP_AUTH intentionally NOT set
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(makeReq());
@@ -315,10 +315,10 @@ describe("requireEdgeAuth — JWT mode", () => {
 // requireEdgeAuthWithScope — same bypass model + scope check on JWT path
 // =========================================================================
 
-describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_PLATFORM", () => {
+describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
   beforeEach(() => {
     process.env.DISABLE_HTTP_AUTH = "true";
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
   });
 
   test("uses platform header check; no scope check on bypass path", async () => {
@@ -665,7 +665,7 @@ describe("requireEdgeAuth — trustProxy loopback fallback", () => {
 
   test("platform bypass short-circuits before the fallback regardless of trustProxy", async () => {
     process.env.DISABLE_HTTP_AUTH = "true";
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     const { requireEdgeAuth } = makeMiddleware(true);
     // Missing X-Cadet-User-Id, loopback socket, trustProxy on: still the
     // platform 401 (missing user header), NOT a loopback free pass.

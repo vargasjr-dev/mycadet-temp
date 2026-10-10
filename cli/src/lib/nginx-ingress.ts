@@ -23,6 +23,7 @@ import {
   lookupAssistantByIdentifier,
   type AssistantEntry,
 } from "./assistant-config.js";
+import type { RemoteHost } from "./constants.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
@@ -138,11 +139,6 @@ export interface RemoteWebIngressOptions {
   webDistDir: string;
   indexHtmlPath?: string;
   config?: Record<string, unknown>;
-  /** The cadet's `cadet hatch --remote` value, stamped into the served
-   *  config so the bundle knows where the cadet comes from. Any value but
-   *  "cloud" turns on the bundle's remote-gateway machinery; "cloud" is
-   *  never stamped here (the platform serves its own bundles). */
-  remote?: string;
   /** Serving assistant's display name, stamped into the served config so
    *  remote clients can label this origin. Absent in older served configs. */
   assistantName?: string;
@@ -164,14 +160,20 @@ export function cloudWebHubUrl(env: string | undefined): string {
   return cloudAssistantHubUrl(env);
 }
 
+// The edge serves remote browsers, so the bundle's remote-gateway machinery
+// must always run: it is reached through this self-hosted edge however the
+// cadet itself is hosted. "cloud" is never stamped (the platform serves its
+// own bundles).
+const EDGE_SERVED_REMOTE: RemoteHost = "custom";
+
 function remoteWebIngressConfig(
   opts: Pick<
     RemoteWebIngressOptions,
-    "remote" | "config" | "assistantName" | "assistantId" | "hubUrl"
+    "config" | "assistantName" | "assistantId" | "hubUrl"
   >,
 ): Record<string, unknown> {
   return {
-    remote: opts.remote ?? "custom",
+    remote: EDGE_SERVED_REMOTE,
     apiBaseUrl: "/v1",
     platformDisabled: true,
     disablePlatform: true,
@@ -828,13 +830,6 @@ export async function startRemoteWebIngress(opts: {
    */
   includeWebApp?: boolean;
   /**
-   * The cadet's `cadet hatch --remote` value, stamped into the served
-   * remote-web config (`__CADET_CONFIG__.remote`) so the bundle keys its
-   * remote-gateway machinery off the cadet's actual remote. Omitted when
-   * unknown; the injector falls back to "custom".
-   */
-  remote?: string;
-  /**
    * Serving assistant's display name, stamped into the served remote-web
    * config (`__CADET_CONFIG__.assistantName`) so remote clients can label
    * this origin. Omitted when unknown; consumers tolerate its absence.
@@ -875,7 +870,6 @@ export async function startRemoteWebIngress(opts: {
   const spaOptions = includeWebApp
     ? {
         hubUrl: cloudWebHubUrl(getCurrentEnvironment().name),
-        ...(opts.remote ? { remote: opts.remote } : {}),
         ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
       }
@@ -1007,16 +1001,6 @@ function lockfileAssistantName(assistantId: string): string | undefined {
     : undefined;
 }
 
-/**
- * `cadet hatch --remote` value recorded for the assistant in the CLI
- * lockfile; undefined when no entry matches, so the served config omits it
- * and the injector falls back to "custom".
- */
-function lockfileAssistantRemote(assistantId: string): string | undefined {
-  const result = lookupAssistantByIdentifier(assistantId);
-  return result.status === "found" ? result.entry.cloud : undefined;
-}
-
 /** User-facing label for the edge mode, shared by every edge status line. */
 export function formatEdgeMode(includesWebApp: boolean): string {
   return includesWebApp ? "remote web + webhooks" : "webhooks only";
@@ -1104,15 +1088,10 @@ export async function ensureTunnelEdge(opts: {
   const assistantName = opts.assistantId
     ? lockfileAssistantName(opts.assistantId)
     : undefined;
-  const remote = opts.assistantId
-    ? lockfileAssistantRemote(opts.assistantId)
-    : undefined;
-
   const result = await startRemoteWebIngress({
     workspaceDir: opts.workspaceDir,
     gatewayPort: opts.gatewayPort,
     includeWebApp: true,
-    ...(remote ? { remote } : {}),
     ...(assistantName ? { assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.onStarting ? { onStarting: opts.onStarting } : {}),

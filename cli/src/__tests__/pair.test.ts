@@ -20,14 +20,7 @@ const originalEnvironment = process.env.CADET_ENVIRONMENT;
 process.env.CADET_ENVIRONMENT = "production";
 
 import { buildAppConnectUrl, pair } from "../commands/pair.js";
-
-// bun-types' global fetch carries a `preconnect` member; these mocks only need
-// the call shape, so hand the assignment a member-complete callable.
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof fetch {
-  return Object.assign(impl, { preconnect: () => {} });
-}
+import { withPreconnect } from "./helpers/http.js";
 
 // Distinct loopback (mint) vs reachable (advertised) URLs to verify the split.
 const LOCAL_URL = "http://127.0.0.1:7830";

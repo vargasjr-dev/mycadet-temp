@@ -17,7 +17,7 @@
 
 import { useMemo } from "react";
 
-import { isLocalClient, isRemoteGatewayMode } from "@/lib/local-mode";
+import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
 import { useHasPlatformSession } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
@@ -52,6 +52,6 @@ export function useSwitchableAssistants(): SwitchableAssistants {
 
   return {
     assistants,
-    canSwitch: !isRemoteGatewayMode() && assistants.length >= 2,
+    canSwitch: !isServedGatewayRuntime() && assistants.length >= 2,
   };
 }

@@ -23,7 +23,7 @@ mock.module("@/lib/local-mode", () => ({
     resources?: { gatewayPort?: number };
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
   isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
-  isRemoteGatewayMode: () => false,
+  isCadetCloudRemote: () => false,
 }));
 
 // Drive the non-reactive gateway token off a flag.

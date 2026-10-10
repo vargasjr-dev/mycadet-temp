@@ -208,7 +208,7 @@ async function resolveExpectedTelegramWebhookUrl(
   // resolver declines makes setup report success while setWebhook never runs
   // (LUM-2899).
   //
-  //   1. Platform pods (`IS_PLATFORM`) with `tunnel-webhooks` off always use
+  //   1. Platform pods (`IS_CLOUD`) with `tunnel-webhooks` off always use
   //      the managed callback route and never consult ingress at all. A pod's
   //      `ingress.publicBaseUrl` is written by the Tunnel client, not by
   //      a user, and that address is only live while the tunnel is:
@@ -371,7 +371,7 @@ async function reconcileTelegramWebhookNow(
   // ingress does not lose queued messages.
   //
   // Platform pods are exempt: `hasWebhookRoutingConfigured` resolves the
-  // IS_PLATFORM tier ahead of the explicit-disable check because a pod has no
+  // IS_CLOUD tier ahead of the explicit-disable check because a pod has no
   // self-owned ingress to disable, so honoring a stray flag here would delete
   // the pod's only delivery path while the daemon still reports the channel
   // as configured (the LUM-2899 divergence in mirror image).

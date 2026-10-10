@@ -30,6 +30,7 @@ import { ps } from "./commands/ps";
 import { recover } from "./commands/recover";
 import { restore } from "./commands/restore";
 import { roadmap } from "./commands/roadmap";
+import { restart } from "./commands/restart";
 import { retire } from "./commands/retire";
 import { rollback } from "./commands/rollback";
 import { setup } from "./commands/setup";
@@ -74,6 +75,7 @@ const commands = {
   recover,
   restore,
   retire,
+  restart,
   roadmap,
   rollback,
   setup,

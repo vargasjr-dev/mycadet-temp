@@ -53,7 +53,7 @@ afterEach(() => {
   claimedRoutes = [];
   claimError = undefined;
   delete process.env.IS_CONTAINERIZED;
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
   delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
   _resetCloudIdentityForTests();
@@ -134,13 +134,13 @@ function makeCaches(
 }
 
 const PLATFORM_ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
-const MANAGED_CALLBACK_URL = `https://platform.example.com/v1/gateway/callbacks/${PLATFORM_ASSISTANT_ID}/webhooks/telegram/`;
+const MANAGED_CALLBACK_URL = `https://test-cloud.mycadet.ai/v1/gateway/callbacks/${PLATFORM_ASSISTANT_ID}/webhooks/telegram/`;
 
 /** Caches for a pod holding platform credentials, with the published URL varied. */
 function makePlatformCaches(ingressUrl: string | undefined) {
   return makeCaches({
     ingressUrl,
-    platformBaseUrl: "https://platform.example.com",
+    platformBaseUrl: "https://test-cloud.mycadet.ai",
     assistantApiKey: "ast-managed-key",
     platformAssistantId: PLATFORM_ASSISTANT_ID,
   });
@@ -353,7 +353,7 @@ describe("reconcileTelegramWebhook", () => {
     process.env.IS_CONTAINERIZED = "true";
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -368,14 +368,14 @@ describe("reconcileTelegramWebhook", () => {
               : input.url;
         if (
           url ===
-          "https://platform.example.com/v1/internal/gateway/callback-routes/register/"
+          "https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/"
         ) {
           const body = init?.body ? JSON.parse(init.body as string) : null;
           calls.push({ method: "registerCallbackRoute", body });
           return new Response(
             JSON.stringify({
               callback_url:
-                "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+                "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
             }),
             {
               status: 201,
@@ -412,7 +412,7 @@ describe("reconcileTelegramWebhook", () => {
     expect(calls[1].method).toBe("getWebhookInfo");
     expect(calls[2].method).toBe("setWebhook");
     expect((calls[2].body as any).url).toBe(
-      "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
     );
     expect((calls[2].body as any).secret_token).toBe("test-webhook-secret");
   });
@@ -424,7 +424,7 @@ describe("reconcileTelegramWebhook", () => {
     // callback mode that `hasWebhookRoutingConfigured` reports as configured.
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -439,14 +439,14 @@ describe("reconcileTelegramWebhook", () => {
               : input.url;
         if (
           url ===
-          "https://platform.example.com/v1/internal/gateway/callback-routes/register/"
+          "https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/"
         ) {
           const body = init?.body ? JSON.parse(init.body as string) : null;
           calls.push({ method: "registerCallbackRoute", body });
           return new Response(
             JSON.stringify({
               callback_url:
-                "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+                "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
             }),
             {
               status: 201,
@@ -478,18 +478,18 @@ describe("reconcileTelegramWebhook", () => {
     expect(calls[1].method).toBe("getWebhookInfo");
     expect(calls[2].method).toBe("setWebhook");
     expect((calls[2].body as any).url).toBe(
-      "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
     );
     expect((calls[2].body as any).secret_token).toBe("test-webhook-secret");
   });
 
   test("includes callback_base_url when a platform pod has an ingress URL in config", async () => {
     const calls: { method: string; body: unknown }[] = [];
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     process.env.IS_CONTAINERIZED = "true";
     const caches = makeCaches({
       ingressUrl: "https://tunnel.example.com",
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -504,14 +504,14 @@ describe("reconcileTelegramWebhook", () => {
               : input.url;
         if (
           url ===
-          "https://platform.example.com/v1/internal/gateway/callback-routes/register/"
+          "https://test-cloud.mycadet.ai/v1/internal/gateway/callback-routes/register/"
         ) {
           const body = init?.body ? JSON.parse(init.body as string) : null;
           calls.push({ method: "registerCallbackRoute", body });
           return new Response(
             JSON.stringify({
               callback_url:
-                "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+                "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
             }),
             {
               status: 201,
@@ -546,7 +546,7 @@ describe("reconcileTelegramWebhook", () => {
       callback_base_url: "https://tunnel.example.com",
     });
     expect((calls[2].body as { url: string }).url).toBe(
-      "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
     );
   });
 
@@ -555,7 +555,7 @@ describe("reconcileTelegramWebhook", () => {
     const caches = makeCaches({
       ingressUrl: undefined,
       ingressEnabled: false,
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -609,11 +609,11 @@ describe("reconcileTelegramWebhook", () => {
 
   test("ignores ingress.enabled false on platform pods and registers the managed callback route", async () => {
     const calls: string[] = [];
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     const caches = makeCaches({
       ingressUrl: undefined,
       ingressEnabled: false,
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -630,7 +630,7 @@ describe("reconcileTelegramWebhook", () => {
         return new Response(
           JSON.stringify({
             callback_url:
-              "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+              "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
           }),
           { status: 201, headers: { "content-type": "application/json" } },
         );
@@ -666,7 +666,7 @@ describe("reconcileTelegramWebhook", () => {
   test("prefers the managed callback route over the Tunnel ingress URL on platform pods", async () => {
     const calls: string[] = [];
     let registeredUrl: string | undefined;
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     // A platform pod always has an `ingress.publicBaseUrl`: the Tunnel
     // client publishes one at boot. It must not win over the managed callback
     // route — the Tunnel address dies with the tunnel, and the daemon's
@@ -674,7 +674,7 @@ describe("reconcileTelegramWebhook", () => {
     const caches = makeCaches({
       ingressUrl:
         "https://tunnel.mycadet.ai/11111111-2222-4333-8444-555555555555",
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
       platformAssistantId: "11111111-2222-4333-8444-555555555555",
     });
@@ -692,7 +692,7 @@ describe("reconcileTelegramWebhook", () => {
           return new Response(
             JSON.stringify({
               callback_url:
-                "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+                "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
             }),
             { status: 201, headers: { "content-type": "application/json" } },
           );
@@ -725,13 +725,13 @@ describe("reconcileTelegramWebhook", () => {
       "setWebhook",
     ]);
     expect(registeredUrl).toBe(
-      "https://platform.example.com/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
     );
     expect(claimedRoutes).toEqual([]);
   });
 
   test("points a pod at its published Tunnel URL and claims the path first when the flag is on", async () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
     const { calls, result } = mockReconcileFetch();
 
@@ -753,7 +753,7 @@ describe("reconcileTelegramWebhook", () => {
   });
 
   test("falls back to the managed callback route when the path claim fails", async () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
     claimError = new Error("database disk image is malformed");
     const { calls, result } = mockReconcileFetch({
@@ -775,7 +775,7 @@ describe("reconcileTelegramWebhook", () => {
   });
 
   test("falls back to the managed callback route when the flag is on but no URL is published", async () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
     const { calls, result } = mockReconcileFetch({
       callbackUrl: MANAGED_CALLBACK_URL,
@@ -1017,7 +1017,7 @@ const TUNNEL_WEBHOOK_URL = `${TUNNEL_BASE_URL}/webhooks/telegram`;
  * rather than the value that was current when it was queued.
  */
 function makeLivePlatformCaches(readIngressUrl: () => string | undefined) {
-  process.env.CADET_PLATFORM_URL = "https://platform.example.com";
+  process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: "test-bot-token",
     [credentialKey("telegram", "webhook_secret")]: "test-webhook-secret",
@@ -1063,7 +1063,7 @@ async function waitFor(condition: () => boolean): Promise<void> {
 
 describe("reconcileTelegramWebhook serialization", () => {
   test("a reconcile latched behind a slow one settles on the newer address", async () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
 
     // The tunnel clears its published URL and republishes it moments later.

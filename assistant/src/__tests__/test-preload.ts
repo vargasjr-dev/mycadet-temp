@@ -20,9 +20,10 @@
 import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll } from "bun:test";
+import { afterAll, afterEach } from "bun:test";
 
 import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
+import { resetRequestMockChannels } from "./requests-mock.js";
 
 // --- Phase 1: env override (zero source-module imports above this point) ---
 
@@ -70,6 +71,12 @@ delete process.env.CES_CREDENTIAL_URL;
 // retry loop in `initFeatureFlagOverrides()`. Tests that need specific IPC
 // responses use `mockGatewayIpc()` / `resetMockGatewayIpc()`.
 installGatewayIpcMock();
+
+// requests-mock channels (mockIpc/mockHttp) are per-test by construction:
+// clear registrations + history and restore fetch after every test.
+afterEach(() => {
+  resetRequestMockChannels();
+});
 
 afterAll(() => {
   process.exitCode = 0;

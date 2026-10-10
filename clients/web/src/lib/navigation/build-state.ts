@@ -5,7 +5,7 @@ import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session
 import {
   isLocalClient,
   isPlatformDisabled,
-  isRemoteGatewayMode,
+  isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import {
   readTosAccepted,
@@ -55,7 +55,7 @@ export function buildNavigationState(
   // The persisted key rather than the store slice: this runs inside route
   // middleware, before the store has necessarily reconciled a selection.
   const selectedAssistantId = readSelectedAssistantId();
-  const isRemoteGateway = isRemoteGatewayMode();
+  const isRemoteGateway = isServedGatewayRuntime();
   return {
     isLocalClient: isLocalClient(),
     isPlatformDisabled: isPlatformDisabled(),

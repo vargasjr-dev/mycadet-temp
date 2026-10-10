@@ -34,7 +34,7 @@ export const loopbackFallbackCountTracker = new AuthFallbackCountTracker();
 type GetClientIp = () => string;
 
 // ---------------------------------------------------------------------------
-// Platform-managed auth bypass — DISABLE_HTTP_AUTH + IS_PLATFORM
+// Platform-managed auth bypass — DISABLE_HTTP_AUTH + IS_CLOUD
 // ---------------------------------------------------------------------------
 //
 // Both flags must be set together to disable JWT validation. DISABLE_HTTP_AUTH
@@ -51,9 +51,9 @@ export function isHttpAuthDisabled(): boolean {
   return process.env.DISABLE_HTTP_AUTH?.trim().toLowerCase() === "true";
 }
 
-/** True when IS_PLATFORM is set (vembda-managed deployment). */
+/** True when IS_CLOUD is set (vembda-managed deployment). */
 function isPlatformManaged(): boolean {
-  const v = process.env.IS_PLATFORM?.trim();
+  const v = process.env.IS_CLOUD?.trim();
   return v === "1" || v?.toLowerCase() === "true";
 }
 
@@ -75,13 +75,13 @@ export function logAuthBypassState(): void {
   }
   if (isPlatformManaged()) {
     log.info(
-      "DISABLE_HTTP_AUTH + IS_PLATFORM both set: JWT validation bypassed; " +
+      "DISABLE_HTTP_AUTH + IS_CLOUD both set: JWT validation bypassed; " +
         "X-Cadet-User-Id is cross-checked against the bound platform user id",
     );
   } else {
     log.warn(
-      "DISABLE_HTTP_AUTH is set but IS_PLATFORM is NOT — bypass is INACTIVE. " +
-        "JWT validation runs as normal. Set IS_PLATFORM=true to opt into the " +
+      "DISABLE_HTTP_AUTH is set but IS_CLOUD is NOT — bypass is INACTIVE. " +
+        "JWT validation runs as normal. Set IS_CLOUD=true to opt into the " +
         "platform-managed auth model.",
     );
   }
@@ -233,7 +233,7 @@ export function createAuthMiddleware(
    *
    * Two auth modes:
    *
-   *   1. Platform-managed (DISABLE_HTTP_AUTH + IS_PLATFORM): caller's identity
+   *   1. Platform-managed (DISABLE_HTTP_AUTH + IS_CLOUD): caller's identity
    *      is asserted via X-Cadet-User-Id cross-checked against the bound
    *      platform user id.
    *   2. Default: validate the edge JWT, require an actor principal, assert it

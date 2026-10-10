@@ -44,7 +44,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 });
 
 /**
@@ -158,9 +158,9 @@ describe("authorizeGuardianStream: the tunnel-attested managed path", () => {
     tunnelBaseUrl?: string;
   }) => {
     if (managed) {
-      process.env.IS_PLATFORM = "true";
+      process.env.IS_CLOUD = "true";
     } else {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
     const headers = new Headers({
       "x-tunnel-user-id": userId,

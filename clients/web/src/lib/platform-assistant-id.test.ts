@@ -11,7 +11,7 @@ const resolvePairedAssistantPlatformIdMock = mock(
 const fetchPlatformStatusMock = mock(
   async (): Promise<{ assistantId: string } | null> => null,
 );
-let remoteGatewayMode = false;
+let cloudRemote = false;
 let remoteGatewayBaseUrl = "https://gateway.example.com";
 
 mock.module("@/lib/auth/remote-gateway-session", () => ({
@@ -30,18 +30,17 @@ mock.module("@/lib/paired-platform-identity", () => ({
   resolvePairedAssistantPlatformId: resolvePairedAssistantPlatformIdMock,
 }));
 mock.module("@/lib/local-mode", () => ({
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isCadetCloudRemote: () => cloudRemote,
 }));
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedActorToken: () => "actor-token",
 }));
 
-const { resolvePlatformAssistantId } = await import(
-  "@/lib/platform-assistant-id"
-);
+const { resolvePlatformAssistantId } =
+  await import("@/lib/platform-assistant-id");
 
 beforeEach(() => {
-  remoteGatewayMode = false;
+  cloudRemote = false;
   remoteGatewayBaseUrl = "https://gateway.example.com";
   resolveLocalAssistantPlatformIdentityMock.mockClear();
   resolveLocalAssistantPlatformIdentityMock.mockImplementation(
@@ -83,9 +82,8 @@ describe("resolvePlatformAssistantId", () => {
   });
 
   test("takes the registered id off an injection failure", async () => {
-    const { PlatformIdentityInjectionError } = await import(
-      "@/lib/platform-identity-errors"
-    );
+    const { PlatformIdentityInjectionError } =
+      await import("@/lib/platform-identity-errors");
     resolveLocalAssistantPlatformIdentityMock.mockImplementationOnce(
       async () => {
         throw new PlatformIdentityInjectionError(
@@ -117,7 +115,6 @@ describe("resolvePlatformAssistantId", () => {
   });
 
   test("resolves remote-gateway 'self' through platform status", async () => {
-    remoteGatewayMode = true;
     fetchPlatformStatusMock.mockImplementationOnce(async () => ({
       assistantId: PLATFORM_ASSISTANT_ID,
     }));
@@ -139,7 +136,6 @@ describe("resolvePlatformAssistantId", () => {
   });
 
   test("probes platform status through a prefix-served remote-gateway base", async () => {
-    remoteGatewayMode = true;
     remoteGatewayBaseUrl = "https://gateway.example.com/assistant-123";
     fetchPlatformStatusMock.mockImplementationOnce(async () => ({
       assistantId: PLATFORM_ASSISTANT_ID,
@@ -158,7 +154,6 @@ describe("resolvePlatformAssistantId", () => {
   });
 
   test("returns null when no platform UUID can be resolved", async () => {
-    remoteGatewayMode = true;
     await expect(resolvePlatformAssistantId("self")).resolves.toBeNull();
   });
 });
