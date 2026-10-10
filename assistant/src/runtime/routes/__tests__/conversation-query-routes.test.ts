@@ -2208,16 +2208,19 @@ describe("persisted chat settings", () => {
     });
   });
 
-  test("sparse GET exposes effective defaults without materializing unrelated fields", async () => {
+  test("sparse GET returns the fully materialized typed config with effective chat settings", async () => {
     rawConfigFixture = {};
     seedRawConfig();
     invalidateConfigCache();
     const result = await getRoute.handler({});
     expect(result).toMatchObject({
-      conversations: { autoArchive: { enabled: false, afterDays: 7 } },
+      conversations: {
+        autoArchive: { enabled: false, afterDays: 7 },
+        skipAutoRetitling: false,
+      },
       notifications: { newMessageEnabled: true },
     });
-    expect(result).not.toHaveProperty("conversations.skipAutoRetitling");
+    // Materialization is wire-only: nothing is written back to disk.
     expect(loadRawConfig()).not.toHaveProperty("conversations");
     expect(loadRawConfig()).not.toHaveProperty("notifications");
   });
@@ -2237,9 +2240,9 @@ describe("persisted chat settings", () => {
       expect(result).toMatchObject({
         conversations: {
           skipAutoRetitling: true,
-          autoArchive: { enabled: true, afterDays: 30, futureOption: "keep" },
+          autoArchive: { enabled: true, afterDays: 30 },
         },
-        notifications: { newMessageEnabled: false, futureOption: "keep" },
+        notifications: { newMessageEnabled: false },
         maxStepsPerSession: 75,
       });
       expect(loadRawConfig()).toEqual({
@@ -2280,9 +2283,9 @@ describe("persisted chat settings", () => {
     expect(result).toMatchObject({
       conversations: {
         skipAutoRetitling: true,
-        autoArchive: { enabled: false, afterDays: 7, futureOption: "keep" },
+        autoArchive: { enabled: false, afterDays: 7 },
       },
-      notifications: { newMessageEnabled: true, futureOption: "keep" },
+      notifications: { newMessageEnabled: true },
     });
     expect(loadRawConfig()).toMatchObject({
       conversations: { autoArchive: { futureOption: "keep" } },

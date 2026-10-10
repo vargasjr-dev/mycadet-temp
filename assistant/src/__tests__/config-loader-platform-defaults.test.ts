@@ -39,6 +39,7 @@ afterAll(() => {
 });
 
 import { invalidateConfigCache, loadConfig } from "../config/loader.js";
+import { applyContextDefaultsToRawConfig } from "../runtime/routes/conversation-query-routes.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -369,5 +370,237 @@ describe("platform-managed config defaults", () => {
           .mode,
       ).toBe("managed");
     }
+  });
+});
+
+/**
+ * Regression guard for the `handleGetConfig` route handler in
+ * `assistant/src/runtime/routes/conversation-query-routes.ts`. That handler
+ * returns the raw on-disk JSON to clients (macOS, web, CLI) via
+ * `GET /v1/config`, but first layers deployment-context defaults on top
+ * via the `applyContextDefaultsToRawConfig` helper.
+ *
+ * macOS's `loadServiceModes(config:)` only updates `inferenceMode` when
+ * `services.inference.mode` is present in the response — without the fill
+ * pass, freshly-hatched platform-managed assistants would have no `services`
+ * key on disk (only `llm.profiles` from `seedInferenceProfiles`) and macOS
+ * would fall back to its `@Published` default of "your-own". The helper is
+ * also responsible for guarding against `loadRawConfig()` returning a
+ * non-object payload from a malformed-but-parseable `config.json`.
+ */
+describe("GET /v1/config handler — context-default fill on raw response", () => {
+  const originalIsPlatform = process.env.IS_PLATFORM;
+
+  afterEach(() => {
+    if (originalIsPlatform === undefined) {
+      delete process.env.IS_PLATFORM;
+    } else {
+      process.env.IS_PLATFORM = originalIsPlatform;
+    }
+  });
+
+  test("IS_PLATFORM=true, raw config has no services key → response includes managed defaults", () => {
+    process.env.IS_PLATFORM = "true";
+
+    // Mirrors the real-world fresh-hatch state: lifecycle wrote
+    // `llm.profiles` to disk, but never persisted any service modes.
+    const raw: Record<string, unknown> = {
+      llm: {
+        profiles: {
+          balanced: { provider: "anthropic", model: "claude-sonnet-4.5" },
+        },
+        activeProfile: "balanced",
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    const services = result["services"] as Record<
+      string,
+      { mode?: string; provider?: string }
+    >;
+    expect(services).toBeDefined();
+    for (const svc of MANAGED_SERVICES) {
+      expect(services[svc]!.mode).toBe("managed");
+    }
+    // image-generation is filled by provider, not mode.
+    expect(services["image-generation"]!.provider).toBe("cadet");
+    expect(services["image-generation"]!.mode).toBeUndefined();
+  });
+
+  test("IS_PLATFORM=true, raw config has explicit services.image-generation.mode='your-own' → preserved", () => {
+    process.env.IS_PLATFORM = "true";
+
+    // A legacy raw shape: mode with no provider leaf. Migration 134 rewrites
+    // it (pinning provider gemini) before any real request reaches this
+    // function, so the fill's only obligation here is to be non-destructive:
+    // existing keys pass through untouched, absent leaves get the platform
+    // default.
+    const raw: Record<string, unknown> = {
+      services: {
+        "image-generation": { mode: "your-own" },
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    const services = result["services"] as Record<
+      string,
+      { mode?: string; provider?: string }
+    >;
+    expect(services["image-generation"]!.mode).toBe("your-own");
+    expect(services["image-generation"]!.provider).toBe("cadet");
+    // web-search is not context-filled: a filled `mode` would override BYOK
+    // configs on every load.
+    expect(services["web-search"]).toBeUndefined();
+    // inference.mode is a legacy backwards-compat wire field — synthesized
+    // here for old macOS clients (SettingsStore.swift) that still read it.
+    expect(services["inference"]!.mode).toBe("managed");
+  });
+
+  test("IS_PLATFORM=false, raw config has no services key → response is unchanged", () => {
+    process.env.IS_PLATFORM = "false";
+
+    const raw: Record<string, unknown> = {
+      llm: {
+        profiles: {
+          balanced: { provider: "anthropic", model: "claude-sonnet-4.5" },
+        },
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    expect(result["services"]).toBeUndefined();
+  });
+
+  test("IS_PLATFORM=true, raw config has an explicit image-generation provider → preserved, no mode injected", () => {
+    process.env.IS_PLATFORM = "true";
+
+    // User set image-generation.provider explicitly. The fill targets that
+    // same leaf (`provider: "cadet"`), so the explicit value wins and no
+    // mode is injected.
+    const raw: Record<string, unknown> = {
+      services: {
+        "image-generation": { provider: "openai" },
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    const services = result["services"] as Record<
+      string,
+      { mode?: string; provider?: string }
+    >;
+    expect(services["image-generation"]!.provider).toBe("openai");
+    expect(services["image-generation"]!.mode).toBeUndefined();
+    // services.inference.mode is synthesized as a legacy wire-only field for
+    // older macOS clients during the rollout window (Phase 1.2 schema removal
+    // landed before the macOS Providers UI ships).
+    expect(services["inference"]!.mode).toBe("managed");
+  });
+
+  test("IS_PLATFORM=true, raw config has no inference subtree → synthesizes legacy mode='managed'", () => {
+    process.env.IS_PLATFORM = "true";
+
+    const raw: Record<string, unknown> = {
+      llm: {
+        profiles: {
+          balanced: { provider: "anthropic", model: "claude-sonnet-4.5" },
+        },
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    const services = result["services"] as Record<string, { mode: string }>;
+    expect(services["inference"]!.mode).toBe("managed");
+  });
+
+  test("IS_PLATFORM=true, raw config has explicit services.inference.mode='your-own' → preserved (legacy override)", () => {
+    process.env.IS_PLATFORM = "true";
+
+    // Pre-migration upgrade: workspace config still carries the legacy
+    // mode value. The synthesis only fills when absent, so an explicit
+    // disk value wins until migration 076 strips it.
+    const raw: Record<string, unknown> = {
+      services: {
+        inference: { mode: "your-own" },
+      },
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    const services = result["services"] as Record<string, { mode: string }>;
+    expect(services["inference"]!.mode).toBe("your-own");
+  });
+
+  test("IS_PLATFORM=false, raw config has no inference subtree → no synthesis", () => {
+    process.env.IS_PLATFORM = "false";
+
+    const raw: Record<string, unknown> = {
+      llm: {},
+    };
+
+    const result = applyContextDefaultsToRawConfig(raw) as Record<
+      string,
+      unknown
+    >;
+    expect(result["services"]).toBeUndefined();
+  });
+
+  // -------------------------------------------------------------------------
+  // Malformed-but-parseable config.json — must not 500 the GET endpoint.
+  //
+  // `loadRawConfig()` is typed `Record<string, unknown>` but `JSON.parse`
+  // will happily return `null`, primitives, or arrays for a syntactically
+  // valid file like `null` / `42` / `[]`. The helper must return those
+  // payloads unchanged rather than throwing inside
+  // `fillContextDefaultsForMissingKeys`.
+  // -------------------------------------------------------------------------
+
+  test("IS_PLATFORM=true, raw config is null → returned unchanged (no throw)", () => {
+    process.env.IS_PLATFORM = "true";
+    expect(applyContextDefaultsToRawConfig(null)).toBe(null);
+  });
+
+  test("IS_PLATFORM=true, raw config is a primitive number → returned unchanged (no throw)", () => {
+    process.env.IS_PLATFORM = "true";
+    expect(applyContextDefaultsToRawConfig(42)).toBe(42);
+  });
+
+  test("IS_PLATFORM=true, raw config is an array → returned unchanged (no throw)", () => {
+    process.env.IS_PLATFORM = "true";
+    const raw: unknown[] = [{ foo: "bar" }];
+    const result = applyContextDefaultsToRawConfig(raw);
+    expect(result).toBe(raw);
+    // No `services` key was synthesized onto the array.
+    expect((result as { services?: unknown }).services).toBeUndefined();
+  });
+
+  test("IS_PLATFORM=true, raw config is a string → returned unchanged (no throw)", () => {
+    process.env.IS_PLATFORM = "true";
+    expect(applyContextDefaultsToRawConfig("not-an-object")).toBe(
+      "not-an-object",
+    );
+  });
+
+  test("IS_PLATFORM=false, raw config is null → returned unchanged (no throw)", () => {
+    // Sanity check: when there are no context defaults to apply, the helper
+    // also short-circuits cleanly on non-object payloads.
+    process.env.IS_PLATFORM = "false";
+    expect(applyContextDefaultsToRawConfig(null)).toBe(null);
   });
 });

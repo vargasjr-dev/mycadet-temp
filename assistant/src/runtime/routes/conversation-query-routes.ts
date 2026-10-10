@@ -44,6 +44,7 @@ import {
 } from "../../config/input-modalities.js";
 import {
   deepMergeOverwrite,
+  fillContextDefaultsForMissingKeys,
   getConfig,
   getDeploymentContextDefaults,
   invalidateConfigCache,
@@ -57,7 +58,10 @@ import {
   completeCustomProfile,
   mergePreservingUnknownKeys,
 } from "../../config/profile-materialization.js";
-import { AssistantConfigSchema } from "../../config/schema.js";
+import {
+  type AssistantConfig,
+  AssistantConfigSchema,
+} from "../../config/schema.js";
 import { getSchemaAtPath } from "../../config/schema-utils.js";
 import { AutoArchiveConfigSchema } from "../../config/schemas/conversations.js";
 import {
@@ -526,6 +530,54 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
 }
 
 /**
+ * Apply deployment-context defaults to a raw config payload before it goes
+ * out over the wire from `GET /v1/config`. The in-memory `loadConfig()`
+ * already layers these defaults for daemon-internal consumers; the GET
+ * response needs the same treatment so external clients (macOS, web, CLI)
+ * see the effective value rather than `undefined` when the daemon hasn't
+ * persisted an explicit choice yet. For example, on a freshly-hatched
+ * platform-managed assistant, `services.image-generation.provider` may be
+ * absent from disk (only `llm.profiles` was written by
+ * `seedInferenceProfiles`); the fill pass ensures clients receive `"cadet"`
+ * rather than falling back to their own defaults.
+ *
+ * Guards against `loadRawConfig()` handing us a value that is technically
+ * valid JSON but not a plain object (e.g. literal `null`, a number, or an
+ * array). `loadRawConfig` is typed `Record<string, unknown>` but `JSON.parse`
+ * itself doesn't enforce that — a malformed-but-parseable `config.json`
+ * would blow up `fillContextDefaultsForMissingKeys` on its `target[key]` /
+ * `fileConfig[key]` accesses, turning `GET /v1/config` into a 500 where it
+ * used to succeed (returning the malformed payload as-is). When `raw` is
+ * not a plain object, we return it unchanged.
+ *
+ * Exported for direct unit testing.
+ */
+export function applyContextDefaultsToRawConfig(raw: unknown): unknown {
+  const contextDefaults = getDeploymentContextDefaults();
+  if (
+    Object.keys(contextDefaults).length === 0 ||
+    raw === null ||
+    typeof raw !== "object" ||
+    Array.isArray(raw)
+  ) {
+    return raw;
+  }
+  fillContextDefaultsForMissingKeys(
+    raw as Record<string, unknown>,
+    raw as Record<string, unknown>,
+    contextDefaults,
+  );
+  synthesizeLegacyInferenceModeForPlatform(raw as Record<string, unknown>);
+  return raw;
+}
+
+/**
+ * Backwards-compat wire field for `GET /v1/config`. PR removed
+ * `services.inference.mode` from the typed schema (routing is governed by
+ * `provider_connections` rows + per-profile `provider_connection`), but
+ * the macOS settings client (`SettingsStore.swift:loadServiceModes`) still
+
+/**
  * Backwards-compat wire field for `GET /v1/config`. PR removed
  * `services.inference.mode` from the typed schema (routing is governed by
  * `provider_connections` rows + per-profile `provider_connection`), but
@@ -798,8 +850,6 @@ const ConfigGetResponseSchema = z
   .passthrough()
   .meta({ id: "ConfigGetResponse" });
 
-type ConfigGetResponse = z.infer<typeof ConfigGetResponseSchema>;
-
 /**
  * Given a `z.object(...)` schema, returns a new schema where every property
  * is `.nullable().optional()`. Used to express PATCH body semantics where any
@@ -912,12 +962,16 @@ const ConfigPatchRequestSchema = z
 
 function handleGetConfig() {
   try {
-    // One zod pass shapes the response: ConfigGetResponseSchema is this
+    // One zod pass shapes the response: AssistantConfigSchema is this
     // route's wire contract, so the overlays stamp their derived fields on
-    // the parsed view instead of digging handles out of raw objects. A
-    // config the schema rejects gets no overlays and is served raw.
+    // the parsed view instead of digging handles out of raw objects. The
+    // context-defaults fill rides the parse input (fill-only — it never
+    // persists); a config the schema rejects gets nothing applied and is
+    // served raw.
     const config = loadRawConfig();
-    const parsed = ConfigGetResponseSchema.safeParse(config);
+    const parsed = AssistantConfigSchema.safeParse(
+      applyContextDefaultsToRawConfig(config),
+    );
     if (!parsed.success) {
       return config;
     }
@@ -947,10 +1001,18 @@ function handleGetConfig() {
  * a derived wire-compat view (readers of the config GET predate the blob) and
  * is never stored on disk — it is stamped here from the blob on every read.
  */
-function overlayDefaultProviderForWire(config: ConfigGetResponse): void {
-  if (!config.llm) {
-    return;
-  }
+/**
+ * Wire view of the parsed config: the fully materialized `AssistantConfig`
+ * plus the derived `llm.defaultProvider` field the overlays stamp on every
+ * read (never stored on disk).
+ */
+type ConfigWire = AssistantConfig & {
+  llm: AssistantConfig["llm"] & {
+    defaultProvider?: z.infer<typeof DefaultProviderSelectionSchema>;
+  };
+};
+
+function overlayDefaultProviderForWire(config: ConfigWire): void {
   const blob = config.llm.default;
   const provider = blob?.provider;
   if (provider != null && isDefaultProviderChoice(provider)) {
@@ -963,7 +1025,7 @@ function overlayDefaultProviderForWire(config: ConfigGetResponse): void {
   }
 }
 
-function overlayChatSettingsForWire(config: ConfigGetResponse): void {
+function overlayChatSettingsForWire(config: AssistantConfig): void {
   const effective = getConfig();
   config.conversations = {
     ...config.conversations,
@@ -996,10 +1058,7 @@ function overlayChatSettingsForWire(config: ConfigGetResponse): void {
  * shields the matrix lookup from a persisted value the matrix cannot
  * implement, which a raw read would feed straight into resolution.
  */
-function overlayEffectiveProfilesForWire(config: ConfigGetResponse): void {
-  if (!config.llm) {
-    config.llm = {};
-  }
+function overlayEffectiveProfilesForWire(config: AssistantConfig): void {
   const parsedLlm = LLMSchema.safeParse(config.llm);
   config.llm.profiles = getUserSelectableProfilesForProvider(
     parsedLlm.success ? parsedLlm.data : undefined,
