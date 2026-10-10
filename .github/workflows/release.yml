@@ -1840,8 +1840,11 @@ jobs:
     needs:
       [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
     # always() disables the implicit success(): publish-meta-prod/-staging is
-    # skipped on the other channel.
-    if: ${{ always() && !cancelled() && (needs.build-electron.result == 'success' || needs.build-electron.result == 'skipped') && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
+    # skipped on the other channel. build-electron must actually SUCCEED — when
+    # it is skipped (offline marker), there are no update artifacts to upload,
+    # so this job skips too (v0.12.7's run failed exactly here: the skipped
+    # tolerance made it run and die on "Artifact not found").
+    if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1938,6 +1941,12 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          # Optional: environments without the secret (production, for now)
+          # fall back to GitHub's auto-generated release notes.
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::warning::ANTHROPIC_API_KEY not set on this environment — skipping AI release notes, the release will use GitHub auto-notes"
+            exit 0
+          fi
           cd scripts && bun install && cd ..
           bun scripts/generate-release-notes.ts \
             --version "${{ needs.extract-version.outputs.version }}" \
@@ -1958,15 +1967,21 @@ jobs:
           name: chrome-extension-crx-zip
           path: chrome-extension-artifacts
 
-      # Electron is a hard release dependency: the `release` job only runs when
+      # Electron is offline for now (build-electron carries the `if: false`
+      # marker, same as the chrome-extension channel), so these downloads are
+      # tolerant and the release publishes without DMGs. Re-harden — drop
+      # continue-on-error here and restore the hard DMG requirement in the
+      # create-release step — when electron returns.
       - name: Download Electron DMG artifact (arm64)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        continue-on-error: true
         with:
           name: macos-build-electron
           path: electron-artifacts
 
       - name: Download Electron DMG artifact (x64)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        continue-on-error: true
         with:
           name: macos-build-electron-x64
           path: electron-artifacts-x64
@@ -1979,25 +1994,32 @@ jobs:
           VERSION_TAG="v${VERSION}"
           NOTES_FILE="/tmp/release-notes.md"
 
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES_ARGS=(--notes-file "$NOTES_FILE")
+          else
+            NOTES_ARGS=(--generate-notes)
+          fi
+
           ASSETS=()
 
-          # The Electron DMGs are required. A missing DMG here fails the
-          # release rather than publishing without it.
+          # Electron is offline for now (see the downloads above), so the DMGs
+          # are optional until the signing secrets return and build-electron
+          # comes back online.
           # The arm64 build is published under the canonical mycadet.dmg
           # name — the production desktop download URL and scripts/production-release.sh
           # both resolve the release asset by that exact name.
-          ELECTRON_DMG=$(find electron-artifacts -name "mycadet-electron.dmg" -type f | grep -m1 .)
-          if [ -z "$ELECTRON_DMG" ]; then
-            echo "::error::Electron arm64 DMG missing"
-            exit 1
+          ELECTRON_DMG=$(find electron-artifacts -name "mycadet-electron.dmg" -type f 2>/dev/null | grep -m1 . || true)
+          if [ -n "$ELECTRON_DMG" ]; then
+            ASSETS+=("$ELECTRON_DMG#mycadet.dmg")
+          else
+            echo "::warning::Electron arm64 DMG missing (electron offline) — releasing without it"
           fi
-          ASSETS+=("$ELECTRON_DMG#mycadet.dmg")
-          ELECTRON_X64_DMG=$(find electron-artifacts-x64 -name "mycadet-electron-x64.dmg" -type f | grep -m1 .)
-          if [ -z "$ELECTRON_X64_DMG" ]; then
-            echo "::error::Electron x64 DMG missing"
-            exit 1
+          ELECTRON_X64_DMG=$(find electron-artifacts-x64 -name "mycadet-electron-x64.dmg" -type f 2>/dev/null | grep -m1 . || true)
+          if [ -n "$ELECTRON_X64_DMG" ]; then
+            ASSETS+=("$ELECTRON_X64_DMG#mycadet-electron-x64.dmg")
+          else
+            echo "::warning::Electron x64 DMG missing (electron offline) — releasing without it"
           fi
-          ASSETS+=("$ELECTRON_X64_DMG#mycadet-electron-x64.dmg")
 
           INSTALL_SH="cli/src/adapters/install.sh"
           [ -f "$INSTALL_SH" ] && ASSETS+=("$INSTALL_SH#install.sh")
@@ -2018,7 +2040,7 @@ jobs:
               "${ASSETS[@]}" \
               --repo "${{ github.repository }}" \
               --title "Cadet $VERSION" \
-              --notes-file "$NOTES_FILE" \
+              "${NOTES_ARGS[@]}" \
               --latest
             echo "Release created at https://github.com/${{ github.repository }}/releases/tag/$VERSION_TAG"
           else
