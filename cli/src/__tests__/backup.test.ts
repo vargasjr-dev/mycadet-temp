@@ -5,6 +5,7 @@ import {
   describe,
   expect,
   mock,
+  type Mock,
   spyOn,
   test,
 } from "bun:test";
@@ -28,6 +29,7 @@ import * as fs from "node:fs";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as backupOps from "../lib/backup-ops.js";
 import * as guardianToken from "../lib/guardian-token.js";
+import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import { MigrationInProgressError } from "../lib/local-runtime-client.js";
 import * as platformClient from "../lib/platform-client.js";
@@ -79,6 +81,24 @@ const localRuntimePollJobStatusMock = spyOn(
   result: { manifest_sha256: "abc123def456" },
 });
 
+/** A complete-but-fake guardian token; the SUT only reads the fields it sets. */
+function makeGuardianTokenData(
+  over: Partial<GuardianTokenData> = {},
+): GuardianTokenData {
+  return {
+    guardianPrincipalId: "principal-1",
+    accessToken: "local-token",
+    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    refreshToken: "refresh-token",
+    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
+    isNew: false,
+    deviceId: "device-1",
+    leasedAt: new Date().toISOString(),
+    ...over,
+  };
+}
+
 // Mode 1 (runtime-direct local backup) uses guardian tokens. Don't exercise
 // it here, but the spies need to exist so the module under test can import
 // them without surprises. Saved to variables so afterAll can restore them —
@@ -87,31 +107,25 @@ const localRuntimePollJobStatusMock = spyOn(
 const loadGuardianTokenSpy = spyOn(
   guardianToken,
   "loadGuardianToken",
-).mockReturnValue({
-  accessToken: "local-token",
-  accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-} as unknown as ReturnType<typeof guardianToken.loadGuardianToken>);
+).mockReturnValue(makeGuardianTokenData({ accessToken: "local-token" }));
 const leaseGuardianTokenSpy = spyOn(
   guardianToken,
   "leaseGuardianToken",
-).mockResolvedValue({
-  accessToken: "leased-token",
-  accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-} as unknown as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>);
+).mockResolvedValue(makeGuardianTokenData({ accessToken: "leased-token" }));
 
 const getBackupsDirMock = spyOn(backupOps, "getBackupsDir").mockReturnValue(
   "/tmp/backups-default",
 );
 
 const mkdirSyncMock = spyOn(fs, "mkdirSync").mockImplementation(
-  (() => undefined) as never,
+  () => undefined,
 );
 const writeFileSyncMock = spyOn(fs, "writeFileSync").mockImplementation(
   () => undefined,
 );
 
 let originalFetch: typeof globalThis.fetch;
-let exitMock: ReturnType<typeof mock>;
+let exitMock: Mock<(code?: number | string | undefined) => never>;
 
 const CADET_ENTRY = {
   assistantId: "11111111-2222-3333-4444-555555555555",
@@ -126,10 +140,10 @@ function setArgv(...rest: string[]) {
 
 beforeEach(() => {
   originalFetch = globalThis.fetch;
-  exitMock = mock((code?: number) => {
+  exitMock = mock((code?: number | string | undefined): never => {
     throw new Error(`process.exit:${code}`);
   });
-  process.exit = exitMock as unknown as typeof process.exit;
+  process.exit = exitMock;
 
   findAssistantByNameMock.mockReset();
   findAssistantByNameMock.mockReturnValue(null);
@@ -162,17 +176,15 @@ beforeEach(() => {
   getBackupsDirMock.mockReset();
   getBackupsDirMock.mockReturnValue("/tmp/backups-default");
   loadGuardianTokenSpy.mockReset();
-  loadGuardianTokenSpy.mockReturnValue({
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-  } as unknown as ReturnType<typeof guardianToken.loadGuardianToken>);
+  loadGuardianTokenSpy.mockReturnValue(
+    makeGuardianTokenData({ accessToken: "local-token" }),
+  );
   leaseGuardianTokenSpy.mockReset();
-  leaseGuardianTokenSpy.mockResolvedValue({
-    accessToken: "leased-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-  } as unknown as Awaited<ReturnType<typeof guardianToken.leaseGuardianToken>>);
+  leaseGuardianTokenSpy.mockResolvedValue(
+    makeGuardianTokenData({ accessToken: "leased-token" }),
+  );
   mkdirSyncMock.mockReset();
-  mkdirSyncMock.mockImplementation((() => undefined) as never);
+  mkdirSyncMock.mockImplementation(() => undefined);
   writeFileSyncMock.mockReset();
   writeFileSyncMock.mockImplementation(() => undefined);
 });
@@ -204,16 +216,27 @@ import { backup } from "../commands/backup.js";
 // ---------------------------------------------------------------------------
 // Helper: simulated GCS download response
 // ---------------------------------------------------------------------------
-function mockGcsDownload(body: Uint8Array, ok = true, status = 200) {
-  globalThis.fetch = mock(async () => {
-    const responseBody: BodyInit = ok
-      ? new Blob([body as unknown as ArrayBuffer])
-      : "boom";
+/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
+function withPreconnect(
+  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+): typeof globalThis.fetch {
+  return Object.assign(impl, { preconnect: () => {} });
+}
+
+function mockGcsDownload(
+  body: Uint8Array<ArrayBuffer>,
+  ok = true,
+  status = 200,
+) {
+  const gcsFetch = mock(async () => {
+    const responseBody: BodyInit = ok ? new Blob([body]) : "boom";
     return new Response(responseBody, {
       status,
       statusText: ok ? "OK" : "Error",
     });
-  }) as unknown as typeof globalThis.fetch;
+  });
+  globalThis.fetch = withPreconnect(gcsFetch);
+  return gcsFetch;
 }
 
 describe("cadet backup <local>: guardian bootstrap secret", () => {
@@ -228,11 +251,9 @@ describe("cadet backup <local>: guardian bootstrap secret", () => {
     loadGuardianTokenSpy.mockReturnValue(null);
     setArgv("my-local", "--output", "/tmp/local-backup.vbundle");
 
-    globalThis.fetch = mock(async () => {
-      return new Response(new Uint8Array([1, 2, 3]), {
-        status: 200,
-      });
-    }) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = withPreconnect(
+      async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 }),
+    );
 
     await backup();
 
@@ -294,9 +315,9 @@ describe("cadet backup: --export-timeout flag", () => {
       "/tmp/local-backup.vbundle",
     );
 
-    globalThis.fetch = mock(async () => {
-      return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
-    }) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = withPreconnect(
+      async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 }),
+    );
 
     await backup();
 
@@ -313,7 +334,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     setArgv("my-platform");
 
     const bytes = new Uint8Array([1, 2, 3, 4]);
-    mockGcsDownload(bytes);
+    const gcsFetch = mockGcsDownload(bytes);
 
     await backup();
 
@@ -366,13 +387,12 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
       "https://cloud.mycadet.ai",
     );
     const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
-      (c) => (c[0] as { operation: string }).operation === "download",
+      (c) => c[0].operation === "download",
     );
     expect(downloadCall).toBeDefined();
     expect(downloadCall![0]).not.toHaveProperty("targetRuntimeVersion");
 
     // GCS fetch went directly to the signed download URL with no auth.
-    const gcsFetch = globalThis.fetch as unknown as ReturnType<typeof mock>;
     expect(gcsFetch).toHaveBeenCalledWith(
       "https://storage.googleapis.com/bucket/signed-download",
     );
@@ -382,7 +402,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     const [outputPath, written] = writeFileSyncMock.mock.calls[0]!;
     expect(written).toEqual(bytes);
     expect(typeof outputPath).toBe("string");
-    expect(outputPath as string).toMatch(
+    expect(outputPath).toMatch(
       /\/tmp\/backups-default\/my-platform-.*\.vbundle$/,
     );
     expect(mkdirSyncMock).toHaveBeenCalled();
@@ -411,10 +431,8 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     await backup();
 
     const [outputPath] = writeFileSyncMock.mock.calls[0]!;
-    expect(outputPath as string).toMatch(
-      /^\/tmp\/backups-default\/my-platform-/,
-    );
-    expect(outputPath as string).toMatch(/\.vbundle$/);
+    expect(outputPath).toMatch(/^\/tmp\/backups-default\/my-platform-/);
+    expect(outputPath).toMatch(/\.vbundle$/);
   });
 
   test("signed-URL requests target entry.runtimeUrl, not getPlatformUrl() — regression for staging/dev assistants", async () => {
@@ -502,10 +520,10 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // `platformToken` parameter instead of `exportPlatformToken`, a
     // future poll-loop refresh would silently break this invariant.
     const uploadCallToken = platformRequestSignedUrlMock.mock.calls.find(
-      (c) => (c[0] as { operation: string }).operation === "upload",
+      (c) => c[0].operation === "upload",
     )![1];
     const downloadCallToken = platformRequestSignedUrlMock.mock.calls.find(
-      (c) => (c[0] as { operation: string }).operation === "download",
+      (c) => c[0].operation === "download",
     )![1];
     expect(downloadCallToken).toBe(uploadCallToken);
     const kickoffToken = localRuntimeExportToGcsMock.mock.calls[0]![1];
