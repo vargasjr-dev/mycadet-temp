@@ -101,6 +101,16 @@ export default defineConfig(({ mode }) => {
       react(),
       isCloudServedBuild(env.VITE_CLOUD_MODE) ? null : localModePlugin(env),
     ].filter(Boolean),
+    define: {
+      // Account-subtree split (see src/build-flags.d.ts): the served cloud
+      // build drops /account and its flows — they belong to the desktop
+      // shell. A literal (not an import.meta.env read) so rollup folds the
+      // dead branch and tree-shakes the excluded route chunks out of the
+      // artifact entirely.
+      __INCLUDES_ACCOUNT__: JSON.stringify(
+        !isCloudServedBuild(env.VITE_CLOUD_MODE),
+      ),
+    },
     resolve: {
       alias: [
         {

@@ -23,8 +23,9 @@ import { setOnboardingWindow } from "@/runtime/main-window";
 const COMPACT_PATH_PREFIXES = [
   "/assistant/onboarding/",
   "/assistant/welcome",
-  "/assistant/select-assistant",
   "/assistant/review-terms",
+  // Covers the auth screens AND select-assistant, which moved under
+  // /account alongside them (account-level flows are shell territory).
   "/account",
 ];
 

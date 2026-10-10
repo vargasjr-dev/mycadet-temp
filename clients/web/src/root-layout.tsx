@@ -777,11 +777,14 @@ export function RootLayout() {
       />
 
       {/* Name-prompt for the tray "New Assistant…" command — hatches an
-          additional cloud assistant and switches to it. */}
-      <CreateAssistantDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-      />
+          additional cloud assistant and switches to it. Shell territory:
+          the served platform build drops it with the account subtree. */}
+      {__INCLUDES_ACCOUNT__ && (
+        <CreateAssistantDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
     </div>
   );
 }

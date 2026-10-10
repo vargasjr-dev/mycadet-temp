@@ -62,7 +62,7 @@ const RESEARCH_FUNNEL_URL =
 const HATCHING_FUNNEL_URL =
   "/assistant/onboarding/hatching?hosting=cadet-cloud&post_checkout=1";
 
-const CHOOSER = "/assistant/select-assistant";
+const CHOOSER = "/account/select-assistant";
 /** A platform account with nothing resolved: the chooser's empty state. */
 const NO_ASSISTANTS: Partial<NavigationState> = {
   isLocalClient: false,
@@ -169,7 +169,7 @@ describe("resolveNavigation", () => {
       expect(
         guard(
           s({ isAuthenticated: false, isLocalClient: true, hasAssistants: true }),
-          "/assistant/select-assistant",
+          "/account/select-assistant",
         ),
       ).toEqual(ALLOW);
     });
@@ -182,7 +182,7 @@ describe("resolveNavigation", () => {
             isLocalClient: true,
             hasAssistants: false,
           }),
-          "/assistant/select-assistant",
+          "/account/select-assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
     });
@@ -204,7 +204,7 @@ describe("resolveNavigation", () => {
         guard(
           s({ isAuthenticated: false, isLocalClient: true, hasAssistants: true }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/select-assistant" });
+      ).toEqual({ action: "redirect", to: "/account/select-assistant" });
     });
 
     // -- authenticated, onboarding routes ---------------------------------
@@ -259,7 +259,7 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: "/assistant" });
       expect(guard(state, "/assistant")).toEqual({
         action: "redirect",
-        to: "/assistant/select-assistant",
+        to: "/account/select-assistant",
       });
     });
 
@@ -301,7 +301,7 @@ describe("resolveNavigation", () => {
       expect(
         guard(
           s({ isLocalClient: true, hasAssistants: false }),
-          "/assistant/select-assistant",
+          "/account/select-assistant",
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
     });
@@ -336,7 +336,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
       });
       expect(
         guard(
@@ -349,7 +349,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
       });
     });
 
@@ -373,7 +373,7 @@ describe("resolveNavigation", () => {
         guard(s({ ...NO_ASSISTANTS, analyticsConsentCurrent: false }), CHOOSER),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
       });
       expect(
         guard(
@@ -382,7 +382,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
       });
       // Stale-looking flags that have not hydrated still wait rather than
       // bouncing a consented user off the chooser.
@@ -419,7 +419,7 @@ describe("resolveNavigation", () => {
         guard(s({ isLocalClient: false, isAuthenticated: false }), CHOOSER),
       ).toEqual({
         action: "redirect",
-        to: "/account/login?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/account/login?returnTo=%2Faccount%2Fselect-assistant",
       });
     });
 
@@ -435,7 +435,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/pair?returnTo=%2Fassistant%2Fselect-assistant",
+        to: "/assistant/pair?returnTo=%2Faccount%2Fselect-assistant",
       });
     });
 
@@ -1692,7 +1692,7 @@ describe("resolveNavigation", () => {
         postRetire(s({ hasAssistants: true, isLocalClient: true })),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/select-assistant",
+        to: "/account/select-assistant",
       });
     });
 
@@ -1961,7 +1961,7 @@ describe("resolveNavigation", () => {
     test("returns select-assistant from welcome when assistants exist", () => {
       expect(
         resolveLoginReturnTo(s({ hasAssistants: true }), "/assistant/welcome"),
-      ).toBe("/assistant/select-assistant");
+      ).toBe("/account/select-assistant");
     });
 
     test("returns hosting from welcome when no assistants", () => {
@@ -1974,8 +1974,8 @@ describe("resolveNavigation", () => {
     });
 
     test("appends fromLogin param when logging in from select-assistant", () => {
-      expect(resolveLoginReturnTo(s({}), "/assistant/select-assistant")).toBe(
-        "/assistant/select-assistant?fromLogin=1",
+      expect(resolveLoginReturnTo(s({}), "/account/select-assistant")).toBe(
+        "/account/select-assistant?fromLogin=1",
       );
     });
 

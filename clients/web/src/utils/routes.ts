@@ -171,7 +171,7 @@ export const routes = {
   },
 
   welcome: r("/assistant/welcome"),
-  selectAssistant: r("/assistant/select-assistant"),
+  selectAssistant: r("/account/select-assistant"),
   reviewTerms: r("/assistant/review-terms"),
 
   onboarding: {

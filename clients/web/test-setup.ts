@@ -18,6 +18,10 @@ import { initReactI18next } from "react-i18next";
 import { i18nextInitOptions } from "./src/i18n/config";
 import { FALLBACK_CATALOGS } from "./src/i18n/catalogs";
 
+// Build-split flag default for tests: no vite `define` runs here, so seed
+// the desktop shape (everything included) — what route-tree tests assert.
+(globalThis as Record<string, unknown>).__INCLUDES_ACCOUNT__ = true;
+
 GlobalRegistrator.register();
 
 // Vite asset-URL query suffixes (`?worker&url`, `?url`, `?worker`) aren't

@@ -209,7 +209,7 @@ describe("RemoteWebPairingPage", () => {
       // pairing guard, so cancelling must cross to the hub's own origin.
       await waitFor(() => {
         expect(assignMock.mock.calls[0]?.[0]).toBe(
-          "https://hub.example.com/assistant/select-assistant?noAutoSkip=1",
+          "https://hub.example.com/account/select-assistant?noAutoSkip=1",
         );
       });
     } finally {
@@ -246,7 +246,7 @@ describe("RemoteWebPairingPage", () => {
       await waitFor(() => {
         expect(nativeSwitchToOriginPathMock).toHaveBeenCalledWith(
           null,
-          "select-assistant?noAutoSkip=1",
+          "account/select-assistant?noAutoSkip=1",
         );
       });
       expect(assignMock).not.toHaveBeenCalled();
@@ -283,10 +283,10 @@ describe("RemoteWebPairingPage", () => {
       await waitFor(() => {
         expect(nativeSwitchToOriginPathMock).toHaveBeenCalledWith(
           null,
-          "select-assistant?noAutoSkip=1",
+          "account/select-assistant?noAutoSkip=1",
         );
         expect(assignMock.mock.calls[0]?.[0]).toBe(
-          "https://hub.example.com/assistant/select-assistant?noAutoSkip=1",
+          "https://hub.example.com/account/select-assistant?noAutoSkip=1",
         );
       });
     } finally {

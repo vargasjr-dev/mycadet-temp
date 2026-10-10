@@ -134,6 +134,11 @@ export function getRouterBasename(): string | undefined {
 export const routeTree = [
   // Account routes — standalone auth pages, no app chrome.
   // Lazy-loaded: only needed for unauthenticated flows.
+  // Desktop-shell territory: the served platform build drops the subtree
+  // entirely (`__INCLUDES_ACCOUNT__` is a vite define literal) so the
+  // iframed assistant surface neither ships nor reaches account flows.
+  ...(__INCLUDES_ACCOUNT__
+    ? [
   {
     path: "/account",
     ErrorBoundary: RouteErrorBoundary,
@@ -252,10 +257,25 @@ export const routeTree = [
                 ),
             },
           },
+          // Assistant selection: which assistant this device talks to. Was
+          // /assistant/select-assistant; account-level flows are shell
+          // territory, so it lives under /account now.
+          {
+            path: "select-assistant",
+            middleware: [authMiddleware],
+            lazy: {
+              Component: () =>
+                import("@/domains/onboarding/pages/select-assistant-screen").then(
+                  (m) => m.SelectAssistantScreen,
+                ),
+            },
+          },
         ],
       },
     ],
   },
+    ]
+    : []),
 
   // Logout — standalone page, no app chrome
   {
@@ -525,15 +545,6 @@ export const routeTree = [
               Component: () =>
                 import("@/domains/onboarding/pages/welcome-screen").then(
                   (m) => m.WelcomeScreen,
-                ),
-            },
-          },
-          {
-            path: "select-assistant",
-            lazy: {
-              Component: () =>
-                import("@/domains/onboarding/pages/select-assistant-screen").then(
-                  (m) => m.SelectAssistantScreen,
                 ),
             },
           },

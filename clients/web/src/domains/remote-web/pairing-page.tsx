@@ -418,7 +418,7 @@ export function RemoteWebPairingPage() {
 
   const cancelUrl = useMemo(() => hubChooserUrl(), []);
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(null, `select-assistant?noAutoSkip=1`).then(
+    void nativeSwitchToOriginPath(null, `account/select-assistant?noAutoSkip=1`).then(
       (switched) => {
         if (!switched && cancelUrl) {
           window.location.assign(cancelUrl);
