@@ -3,8 +3,8 @@
  *
  * All routes are served by both the HTTP server and the IPC server via the
  * shared ROUTES array. They are read/abort surfaces over the workflow run
- * manager and the saved-workflow library — a human (via the `cadet workflows`
- * CLI or the app) can inspect runs and abort an in-flight one.
+ * manager and the saved-workflow library — a human (via the app) can inspect
+ * runs and abort an in-flight one.
  */
 
 import { z } from "zod";
@@ -334,9 +334,9 @@ async function handleResumeRun(id: string) {
   // the side-effecting tools/host functions the original manifest granted. The
   // conversational `manage_workflows` resume path promotes such resumes to a
   // fresh interactive approval (executor.ts → requireFreshApproval); this
-  // HTTP/IPC route (and the `cadet workflows resume` CLI on top of it) has no
-  // prompt channel. At full-access posture the user has opted into
-  // auto-approving even high-risk tools, so the resume proceeds without a
+  // HTTP/IPC route has no prompt channel. At full-access posture the user has
+  // opted into auto-approving even high-risk tools, so the resume proceeds
+  // without a
   // prompt; otherwise it must not silently bypass consent — refuse and direct
   // the caller to the assistant. A read-only run (no declared tools/host
   // functions) resumes freely regardless of posture.

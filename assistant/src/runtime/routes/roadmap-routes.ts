@@ -1,10 +1,8 @@
 /**
  * Public Cadet roadmap, acted on as the assistant itself.
  *
- * Mirrors the surface of the user-facing `cadet roadmap` CLI
- * (`cli/src/commands/roadmap.ts`), but authenticates with the assistant's own
- * platform API key instead of the owner's session token, so items, upvotes and
- * comments are attributed to the assistant (`creator_kind: assistant`).
+ * Authenticates with the assistant's own platform API key, so items, upvotes
+ * and comments are attributed to the assistant (`creator_kind: assistant`).
  *
  * The key never leaves the daemon: it is read from the credential vault here
  * and used only in the `Authorization` header. Reads fall back to anonymous

@@ -1,7 +1,18 @@
 import { isManagedCloud } from "../lib/managed-cloud.js";
-import { existsSync, readFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+} from "fs";
+import { basename, dirname, join } from "path";
 
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
+import {
+  findAssistantByName,
+  saveAssistantEntry,
+} from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import {
   bundleFileSizeBytes,
@@ -16,6 +27,14 @@ import {
   leaseGuardianToken,
 } from "../lib/guardian-token.js";
 import {
+  generateLocalSigningKey,
+  startCes,
+  startLocalDaemon,
+  startGateway,
+} from "../lib/local.js";
+import { getArchivePath, getMetadataPath } from "../lib/retire-archive.js";
+import { exec } from "../lib/step-runner.js";
+import {
   readPlatformToken,
   rollbackPlatformAssistant,
   platformRequestSignedUrl,
@@ -29,10 +48,16 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 function printUsage(): void {
   console.log(
-    "Usage: cadet restore <name> --from <path> [--version <version>] [--dry-run]",
+    "Usage: cadet restore <name> [--from <path>] [--version <version>] [--dry-run]",
   );
   console.log("");
   console.log("Restore data from a .vbundle backup into an assistant.");
+  console.log(
+    "Without --from, recovers a retired assistant from its archive in",
+  );
+  console.log(
+    "$XDG_DATA_HOME/cadet/retired/ and starts it again.",
+  );
   console.log(
     "With --version, also rolls back to the specified version first.",
   );
@@ -50,6 +75,7 @@ function printUsage(): void {
   );
   console.log("");
   console.log("Examples:");
+  console.log("  cadet restore my-retired-assistant");
   console.log("  cadet restore my-assistant --from backup.vbundle");
   console.log(
     "  cadet restore my-assistant --from backup.vbundle --version v1.2.3",
@@ -515,6 +541,86 @@ async function restorePlatform(
   }
 }
 
+/**
+ * Recover a previously retired local assistant from its archive: extract the
+ * archived workspace data back to its original location, restore the lockfile
+ * entry, and start the assistant and gateway. Archives live in
+ * $XDG_DATA_HOME/cadet/retired/ (default: ~/.local/share/cadet/retired/).
+ */
+async function recoverFromArchive(name: string): Promise<void> {
+  const archivePath = getArchivePath(name);
+  const metadataPath = getMetadataPath(name);
+
+  // Verify the archive exists
+  if (!existsSync(archivePath) || !existsSync(metadataPath)) {
+    console.error(`No retired archive found for '${name}'.`);
+    process.exit(1);
+  }
+
+  // Read and validate metadata before any side effects
+  const entry: AssistantEntry = JSON.parse(readFileSync(metadataPath, "utf-8"));
+  if (!entry.resources) {
+    throw new Error(
+      `Retired assistant '${name}' is missing resource configuration. ` +
+        `Fix the archive metadata at ${metadataPath} and retry, ` +
+        `or run 'cadet hatch' to re-provision with proper resource allocation.`,
+    );
+  }
+
+  // Check that the recovering entry's own target directory is free.
+  const target = entry.resources.instanceDir;
+  if (existsSync(target)) {
+    console.error(
+      `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
+        `Retire the current assistant first.`,
+    );
+    process.exit(1);
+  }
+
+  // Extract and rename.
+  //
+  // retireLocal archives the full instanceDir. The directory is staged under
+  // `<archive>.staging` inside the retired dir before being packed with
+  // `tar -C <retiredDir> <stagingBasename>`, so the top-level entry inside
+  // the tarball is always `<name>.tar.gz.staging`.
+  //
+  // Correct restoration: extract to retiredDir, then rename the staging entry
+  // back to the original target path. Using homedir() as the -C target was
+  // wrong for any instance stored outside the home directory.
+  const targetDir = entry.resources.instanceDir;
+  const retiredDir = dirname(archivePath);
+  const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
+
+  await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
+  // Validate the staged identity before occupying the destination or updating
+  // the registry. A failed validation leaves the archive available for retry.
+  const signingKey = resolveExistingLocalSigningKey(
+    entry.resources,
+    extractedPath,
+  );
+  const bootstrapSecret =
+    entry.guardianBootstrapSecret ?? generateLocalSigningKey();
+  entry.resources = { ...entry.resources, signingKey };
+  entry.guardianBootstrapSecret = bootstrapSecret;
+  mkdirSync(dirname(targetDir), { recursive: true });
+  renameSync(extractedPath, targetDir);
+  saveAssistantEntry(entry);
+
+  // Start CES sibling + daemon + gateway in parallel, the way the
+  // Docker topology brings its sibling processes up together. startCes
+  // always launches the CES sibling.
+  await Promise.all([
+    startCes(false, entry.resources),
+    startLocalDaemon(false, entry.resources, { signingKey }),
+    startGateway(false, entry.resources, { signingKey, bootstrapSecret }),
+  ]);
+
+  unlinkSync(archivePath);
+  unlinkSync(metadataPath);
+
+  console.log(`✅ Recovered assistant '${name}'.`);
+}
+
 export const restore = Object.assign(
   async function restore(): Promise<void> {
   const { name, fromPath, version, dryRun, help } = parseArgs(process.argv);
@@ -540,11 +646,23 @@ export const restore = Object.assign(
     process.exit(1);
   }
 
-  if (!name || !fromPath) {
-    console.error("Error: Both <name> and --from <path> are required.");
+  if (!name) {
+    console.error("Error: <name> is required.");
     console.error("");
     printUsage();
     process.exit(1);
+  }
+
+  // Without --from: recover a retired assistant from its retire archive.
+  if (!fromPath) {
+    if (dryRun) {
+      console.error(
+        "Dry-run is only supported with --from. Recovery replays the retired assistant's archive directly.",
+      );
+      process.exit(1);
+    }
+    await recoverFromArchive(name);
+    return;
   }
 
   // Look up the instance
@@ -625,7 +743,7 @@ export const restore = Object.assign(
     }
   }
 },
-  { description: "Restore data (and optionally version) from a .vbundle backup" },
+  { description: "Restore a .vbundle backup, or recover a retired assistant" },
 );
 
 
