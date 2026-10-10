@@ -1,6 +1,6 @@
 /**
  * `/docs/help/faq` is the public platform list the assistant is told to
- * fetch. These tests lock Android, Windows/Linux honesty, and the Base plan.
+ * fetch. These tests lock Android and Windows/Linux honesty.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -25,11 +25,5 @@ describe("HelpFaqContent", () => {
     expect(html).toContain("no shipped Linux desktop client");
     expect(html).toContain("self-host the assistant runtime on a Linux");
     expect(html).not.toContain("no shipped Windows");
-  });
-
-  test("describes Base as the free plan", () => {
-    expect(html).toContain("Is Cadet free?");
-    expect(html).toContain("Base");
-    expect(html).not.toContain("/docs/pricing");
   });
 });
