@@ -1181,7 +1181,9 @@ jobs:
     needs:
       [
         extract-version,
-        ci-assistant,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
         ci-cli,
         ci-gateway,
         ci-credential-executor,
@@ -2279,7 +2281,6 @@ jobs:
 
   ci-web-lint:
     needs: extract-version
-    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -2304,7 +2305,6 @@ jobs:
 
   ci-web-types:
     needs: extract-version
-    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -2331,7 +2331,6 @@ jobs:
 
   ci-web-tests:
     needs: extract-version
-    needs: [compute-version]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

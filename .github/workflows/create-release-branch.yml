@@ -251,6 +251,18 @@ jobs:
           fi
           git push --no-verify origin "$BRANCH"
 
+      # Workflow-token pushes don't start runs (GitHub anti-recursion), so
+      # dispatch the release pipeline explicitly. Hotfix cuts skip it ([skip
+      # ci] semantics).
+      - name: Dispatch the release workflow
+        if: ${{ needs.compute-version.outputs.skip-ci != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+          gh workflow run release.yml --ref "release/v$VERSION"
+          echo "Dispatched release.yml at release/v$VERSION"
+
       # NEXT_RELEASE_BUMP is one-shot: a scheduled cut that consumed a
       # minor/major value resets it to patch so the next tick reverts to the
       # normal cadence. Requires the workflow token to have the Variables
