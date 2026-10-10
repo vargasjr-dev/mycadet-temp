@@ -1953,35 +1953,41 @@ jobs:
             --repo "${{ github.repository }}" \
             --output /tmp/release-notes.md
 
+      # The chrome-extension channel is offline (build-chrome-extension /
+      # publish-chrome-extension carry the `if: false` marker), so these
+      # downloads skip entirely — attempted downloads would just fail with
+      # "Artifact not found" error noise on every release. Delete these
+      # markers together with the jobs' markers to bring the channel back.
       - name: Download Chrome extension zip
+        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        continue-on-error: true
         with:
           name: chrome-extension-zip
           path: chrome-extension-artifacts
 
       - name: Download Chrome extension CRX (zipped)
+        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        continue-on-error: true
         with:
           name: chrome-extension-crx-zip
           path: chrome-extension-artifacts
 
       # Electron is offline for now (build-electron carries the `if: false`
-      # marker, same as the chrome-extension channel), so these downloads are
-      # tolerant and the release publishes without DMGs. Re-harden — drop
-      # continue-on-error here and restore the hard DMG requirement in the
-      # create-release step — when electron returns.
+      # marker, same as the chrome-extension channel), so these downloads skip
+      # entirely rather than fail-tolerantly with "Artifact not found" noise.
+      # When electron returns, delete these markers together with
+      # build-electron's and re-harden the DMG requirement in the
+      # create-release step.
       - name: Download Electron DMG artifact (arm64)
+        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        continue-on-error: true
         with:
           name: macos-build-electron
           path: electron-artifacts
 
       - name: Download Electron DMG artifact (x64)
+        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        continue-on-error: true
         with:
           name: macos-build-electron-x64
           path: electron-artifacts-x64
