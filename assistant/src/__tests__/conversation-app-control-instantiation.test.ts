@@ -33,6 +33,17 @@
 import { createRequire } from "node:module";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import {
+  ALL_REGISTRY_FLAG_KEYS,
+  setOverridesForTesting,
+} from "../__tests__/feature-flag-test-helpers.js";
+
+// Real flag cache seeded to mirror the former module mock: every declared
+// flag on, with "app-control" pinned per test.
+const ALL_ON = Object.fromEntries(
+  ALL_REGISTRY_FLAG_KEYS.map((k) => [k, true]),
+) as Record<string, boolean>;
+
 // Freeze the real node:fs exports before `mock.module("node:fs", ...)` below
 // registers. A live `import * as` namespace would be remapped to the mock
 // itself once the factory runs, turning the pass-through fallback into
@@ -52,16 +63,6 @@ import type { Tool } from "../tools/types.js";
 // Module mocks for the skill-projection layer
 // ---------------------------------------------------------------------------
 
-let appControlFlagEnabled = false;
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) => {
-    if (key === "app-control") {
-      return appControlFlagEnabled;
-    }
-    return true;
-  },
-  loadDefaultsRegistry: () => ({}),
-}));
 
 mock.module("../config/skill-state.js", () => ({
   skillFlagKey: (skill: { featureFlag?: string }) =>
@@ -336,11 +337,11 @@ function makeAppControlManifest(): SkillToolManifest {
 
 describe("HostAppControlProxy instantiation gate", () => {
   beforeEach(() => {
-    appControlFlagEnabled = false;
+    setOverridesForTesting({ ...ALL_ON, "app-control": false });
   });
 
   test("macOS client attaches HostAppControlProxy and preactivates app-control (flag off)", () => {
-    appControlFlagEnabled = false;
+    setOverridesForTesting({ ...ALL_ON, "app-control": false });
     const conv = makeFakeConversation();
 
     applyAppControlInstantiation(conv, "macos");
@@ -351,7 +352,7 @@ describe("HostAppControlProxy instantiation gate", () => {
   });
 
   test("macOS client attaches HostAppControlProxy and preactivates app-control (flag on)", () => {
-    appControlFlagEnabled = true;
+    setOverridesForTesting({ ...ALL_ON, "app-control": true });
     const conv = makeFakeConversation();
 
     applyAppControlInstantiation(conv, "macos");
@@ -361,7 +362,7 @@ describe("HostAppControlProxy instantiation gate", () => {
   });
 
   test("non-macOS client (slack) does not attach HostAppControlProxy nor preactivate app-control", () => {
-    appControlFlagEnabled = true;
+    setOverridesForTesting({ ...ALL_ON, "app-control": true });
     const conv = makeFakeConversation();
 
     applyAppControlInstantiation(conv, "slack");
@@ -371,7 +372,7 @@ describe("HostAppControlProxy instantiation gate", () => {
   });
 
   test("chrome-extension client does not attach HostAppControlProxy (host_app_control unsupported)", () => {
-    appControlFlagEnabled = true;
+    setOverridesForTesting({ ...ALL_ON, "app-control": true });
     const conv = makeFakeConversation();
     // Sanity check: chrome-extension supports host_browser, NOT host_app_control.
     expect(supportsHostProxy("chrome-extension", "host_app_control")).toBe(
@@ -399,7 +400,7 @@ describe("Skill projection — app-control feature-flag gating", () => {
   });
 
   test("flag off: app-control is filtered out of projected tools even when preactivated", () => {
-    appControlFlagEnabled = false;
+    setOverridesForTesting({ ...ALL_ON, "app-control": false });
 
     const sessionState = new Map<string, string>();
     const result = projectSkillTools([], {
@@ -412,7 +413,7 @@ describe("Skill projection — app-control feature-flag gating", () => {
   });
 
   test("flag on: app-control tools are projected when preactivated", () => {
-    appControlFlagEnabled = true;
+    setOverridesForTesting({ ...ALL_ON, "app-control": true });
 
     const sessionState = new Map<string, string>();
     const result = projectSkillTools([], {

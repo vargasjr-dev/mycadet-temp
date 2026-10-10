@@ -12,18 +12,14 @@
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 
 import type { Message } from "../providers/types.js";
+import { setAllFlagsOnForTesting } from "./feature-flag-test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be registered before importing the module under test
 // ---------------------------------------------------------------------------
 
-// Mock feature flags to avoid filesystem reads on CI.
-// The benchmark fixture treats every feature flag as enabled.
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-  loadDefaultsRegistry: () => ({}),
-  getFeatureFlagDefault: () => true,
-}));
+// Real flag resolution with every declared flag overridden on — the defaults
+// registry is never consulted, so there are no filesystem reads on CI.
 
 // Skill catalog: returns a configurable list of fake skills
 let catalogSkillIds: string[] = [];
@@ -271,6 +267,8 @@ function timeMs(fn: () => void): number {
 
 describe("Skill projection benchmark", () => {
   beforeAll(() => {
+  setAllFlagsOnForTesting();
+
     // Prime the real config loader and JIT the projection path once so the
     // first measured "cold" run reflects projection latency, not the one-time
     // loader/module warmup cost that a trivial config mock used to hide.

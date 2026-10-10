@@ -13,6 +13,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOffForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -30,9 +31,6 @@ mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => false,
-}));
 
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
@@ -357,6 +355,9 @@ function baseConversationRow(): Record<string, unknown> {
 
 describe("Conversation.summarizeUpToMessage", () => {
   beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOffForTesting();
+
     compactCalls = [];
     slackWatermarkCalls = [];
     mockCompactResult = makeNoopResult();

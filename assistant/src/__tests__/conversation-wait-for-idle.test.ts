@@ -8,8 +8,9 @@
  * whose persisted write throws (and therefore reverts) must NOT release
  * waiters.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -24,9 +25,6 @@ mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
@@ -146,6 +144,12 @@ mock.module("../agent/loop.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { Conversation } from "../daemon/conversation.js";
+
+beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+});
+
 
 // ---------------------------------------------------------------------------
 // Helpers

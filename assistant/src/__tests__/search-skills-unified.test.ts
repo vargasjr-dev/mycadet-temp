@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
+
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -102,9 +104,6 @@ mock.module("../skills/install-meta.js", () => ({
 }));
 
 // Stub remaining imports pulled in by skills.ts
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 mock.module("../config/skill-state.js", () => ({
   resolveSkillStates: () => [],
   skillFlagKey: () => null,
@@ -159,6 +158,9 @@ import { searchSkills } from "../daemon/handlers/skills.js";
 
 describe("searchSkills (unified)", () => {
   beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
     mockCatalogSkills.mockReset();
     mockClawhubSearch.mockReset();
     mockSkillsshSearch.mockReset();

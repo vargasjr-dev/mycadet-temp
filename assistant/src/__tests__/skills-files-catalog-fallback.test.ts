@@ -26,6 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import type { SlimSkillResponse } from "../daemon/message-types/skills.js";
 import type { SkillFileEntry } from "../skills/catalog-files.js";
@@ -94,9 +95,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: () => null,
@@ -247,6 +245,9 @@ function makeSummary(overrides: Partial<SkillSummary>): SkillSummary {
 
 describe("getSkillFiles — provider chain fallback", () => {
   beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
     mockResolvedStates = [];
     providerCalls.length = 0;
     mockCadetProvider = makeNoopProvider("cadet");

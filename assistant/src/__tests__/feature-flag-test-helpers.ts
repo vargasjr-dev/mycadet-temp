@@ -41,3 +41,109 @@ export function setOverridesForTesting(
   s.overrides = { ...overrides };
   s.fromGateway = true;
 }
+
+/**
+ * Registry keys whose `defaultEnabled` is `true`. Tests that previously mocked
+ * `isAssistantFeatureFlagEnabled` to a blanket `() => false` must override
+ * these explicitly — the real module resolves them to `true` otherwise.
+ */
+export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
+  "in-chat-onboarding-tour",
+  "vision-mode",
+  "assistant-initiated-threads",
+  "experiment-activation-flow-2026-06-03",
+  "channel-trust-floors",
+  "schedule-result-notify",
+  "assistant-reply-push",
+  "web-presence-suppression",
+  "plugin-schedules",
+  "experiment-activation-checklist-2026-09-10",
+];
+
+/**
+ * Equivalent of a blanket `isAssistantFeatureFlagEnabled: () => false` mock:
+ * every default-enabled key is overridden to `false`, so all flags resolve
+ * off through the real resolution path.
+ */
+export function setAllFlagsOffForTesting(): void {
+  setOverridesForTesting(
+    Object.fromEntries(DEFAULT_ENABLED_FLAG_KEYS.map((k) => [k, false])),
+  );
+}
+
+/** Every key declared in the feature-flag registry. */
+export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
+  "interrupt-on-send",
+  "in-chat-onboarding-tour",
+  "vision-mode",
+  "assistant-initiated-threads",
+  "experiment-activation-flow-2026-06-03",
+  "a2a-channel",
+  "settings-developer-nav",
+  "cadet-hosted-inference",
+  "developer-menu-items",
+  "multi-platform-assistant",
+  "quick-input",
+  "teach",
+  "quiet-turn-activity",
+  "inline-assistant-intermediates",
+  "fast-mode",
+  "apple-container",
+  "fork-from-message",
+  "internal-thread-actions",
+  "camera-gate-debug-hud",
+  "compaction-playground",
+  "app-control",
+  "velvet-theme",
+  "chat-pull-to-refresh-enabled",
+  "preview-channel",
+  "rollback-enabled",
+  "self-hosted-assistant",
+  "paired-devices-ui",
+  "settings-sleep-policy",
+  "velvet",
+  "memory-router-playground",
+  "self-intro-greeting",
+  "channel-trust-floors",
+  "mcp-add-server",
+  "mcp-catalog-qa-integrations",
+  "os-beta",
+  "auto-profile",
+  "new-thread-suggestions",
+  "account-mfa",
+  "chat-credential-reveal",
+  "marketing-pricing-takeover",
+  "schedule-result-notify",
+  "assistant-reply-push",
+  "activity-presence-suppression",
+  "web-presence-suppression",
+  "plugin-schedules",
+  "android-avatar-app-icon",
+  "push-avatar-sender",
+  "local-notification-avatar",
+  "channel-conversation-sidecar",
+  "monday-oauth",
+  "figma-oauth",
+  "quickbooks-oauth",
+  "shopify-oauth",
+  "chatgpt-device-code-login",
+  "model-first-profile-create",
+  "tunnel-webhooks",
+  "experiment-activation-checklist-2026-09-10",
+  "send-user-message",
+  "session-groups",
+  "assistant-desktop",
+  "sidebar-done",
+  "cadet-trusted-contacts",
+];
+
+/**
+ * Equivalent of a blanket `isAssistantFeatureFlagEnabled: () => true` mock for
+ * every declared registry key (undeclared keys still fail closed, matching the
+ * real resolution).
+ */
+export function setAllFlagsOnForTesting(): void {
+  setOverridesForTesting(
+    Object.fromEntries(ALL_REGISTRY_FLAG_KEYS.map((k) => [k, true])),
+  );
+}

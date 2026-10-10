@@ -144,13 +144,6 @@ function seedCleanup(
   });
 }
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  clearFeatureFlagOverridesCache: () => {},
-}));
-
-mock.module("../persistence/embeddings/embedding-backend.js", () => ({
-  clearEmbeddingBackendCache: () => {},
-}));
 
 mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},

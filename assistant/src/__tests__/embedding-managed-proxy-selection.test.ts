@@ -7,6 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { credentialKey } from "../security/credential-key.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
@@ -28,9 +29,6 @@ mock.module("../config/env.js", () => ({
 }));
 
 // Feature flag mock — always returns true (flag is GA'ed)
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 import type { AssistantConfig } from "../config/types.js";
 import {
@@ -88,6 +86,9 @@ function makeConfig(
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
   disableManagedProxy();
   secureKeys.clear(); // wipe provider keys; disableManagedProxy already cleared the assistant key
   clearEmbeddingBackendCache();

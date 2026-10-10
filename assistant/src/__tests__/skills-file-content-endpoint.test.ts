@@ -24,6 +24,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import type { SlimSkillResponse } from "../daemon/message-types/skills.js";
 import type { SkillFileEntry } from "../skills/catalog-files.js";
@@ -93,9 +94,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../skills/catalog-cache.js", () => ({
   getCatalog: async () => [],
@@ -332,6 +330,9 @@ function installedSkill(id: string, directoryPath: string) {
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
   originalFetch = globalThis.fetch;
   mockResolvedSkills = [];
   mockPlatformBaseUrl = "https://platform.test";

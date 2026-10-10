@@ -16,8 +16,9 @@
  * - ToolExecutor overhead < 20ms regardless of tool execution time
  */
 
-import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOffForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { installThresholdReaderMock } from "./gateway-threshold-reader-mock.js";
 
 // Local registry for ToolExecutor tests — the mock delegates to this map
@@ -38,9 +39,6 @@ mock.module("../tools/registry.js", () => ({
   },
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => false,
-}));
 
 mock.module("../config/env-registry.js", () => ({
   getIsContainerized: () => false,
@@ -102,6 +100,12 @@ import { RiskLevel } from "../permissions/types.js";
 import { scanText } from "../security/secret-scanner.js";
 import { ToolExecutor } from "../tools/executor.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
+
+beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOffForTesting();
+});
+
 
 // ---------------------------------------------------------------------------
 // Helpers

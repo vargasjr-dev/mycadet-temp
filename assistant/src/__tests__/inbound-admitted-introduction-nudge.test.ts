@@ -5,13 +5,19 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-process.env.DISABLE_HTTP_AUTH = "true";
+import {
+  DEFAULT_ENABLED_FLAG_KEYS,
+  setOverridesForTesting,
+} from "../__tests__/feature-flag-test-helpers.js";
 
-// Enable the channel-trust-floors flag so the admission-policy stage runs.
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) =>
-    key === "channel-trust-floors",
-}));
+// Real flag cache seeded to mirror the former module mock: every flag off
+// except channel-trust-floors, which gates the admission-policy stage.
+const FLAGS = {
+  ...Object.fromEntries(DEFAULT_ENABLED_FLAG_KEYS.map((k) => [k, false])),
+  "channel-trust-floors": true,
+} as Record<string, boolean>;
+
+process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../runtime/gateway-client.js", () => ({
   deliverChannelReply: async () => {},
@@ -179,6 +185,8 @@ function accessRequests() {
 
 describe("introduction nudge on first admit", () => {
   beforeEach(() => {
+  setOverridesForTesting(FLAGS);
+
     resetState();
     installNoopProcessor();
   });

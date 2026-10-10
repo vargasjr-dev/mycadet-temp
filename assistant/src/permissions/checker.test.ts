@@ -7,12 +7,11 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOffForTesting } from "../__tests__/feature-flag-test-helpers.js";
+
 // ── Module mocks ─────────────────────────────────────────────────────────────
 
 // Mock feature flags to return false by default.
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => false,
-}));
 
 // `buildPolicyContext` (used by the integration tests below) precomputes the
 // retrospective skill-improvement gate. Keep the v3 tier active while the
@@ -196,6 +195,9 @@ import { RiskLevel } from "./types.js";
 
 describe("Permission Checker (gateway IPC)", () => {
   beforeEach(() => {
+    // Real flag resolution with every default-enabled flag pinned off —
+    // replaces the former blanket `() => false` module mock.
+    setAllFlagsOffForTesting();
     mockIsContainerized = false;
     mockIpcClassifyRiskResult = undefined;
     lastClassifyRiskParams = undefined;

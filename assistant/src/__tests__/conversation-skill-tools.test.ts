@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary, SkillToolManifest } from "../config/skills.js";
 import { RiskLevel } from "../permissions/types.js";
 import type {
@@ -260,10 +261,6 @@ mock.module("../skills/version-hash.js", () => ({
   },
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-  loadDefaultsRegistry: () => ({}),
-}));
 
 mock.module("../config/skill-state.js", () => ({
   skillFlagKey: (skill: { featureFlag?: string }) =>
@@ -370,6 +367,9 @@ describe("projectSkillTools", () => {
   let sessionState: Map<string, string>;
 
   beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
     mockCatalog = [];
     mockManifests = {};
     mockRegisteredTools = new Map();

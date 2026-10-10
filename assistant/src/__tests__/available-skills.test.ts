@@ -6,6 +6,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import type { SkillInstallMeta } from "../skills/install-meta.js";
 import {
@@ -53,12 +54,10 @@ mock.module("../skills/catalog-cache.js", () => ({
   },
 }));
 
-// Deterministic flag resolution: only "on-flag" is enabled.
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (flagKey: string) => flagKey === "on-flag",
-}));
-
 beforeEach(() => {
+  // Real flag resolution: only the synthetic "on-flag" key is enabled.
+  setOverridesForTesting({ "on-flag": true });
+
   catalogFixture = [];
   remoteFixture = [];
   remoteError = null;

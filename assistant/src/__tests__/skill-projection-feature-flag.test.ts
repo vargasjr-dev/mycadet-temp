@@ -47,25 +47,6 @@ mock.module("../config/skill-state.js", () => ({
 // production's design: tests reach into `feature-flag-cache.ts` (or its
 // test-helper wrapper) to seed cached overrides, never through the
 // resolver module itself.
-let _mockOverrides: Record<string, boolean> = {};
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string, _config: unknown): boolean => {
-    const explicit = _mockOverrides[key];
-    if (typeof explicit === "boolean") {
-      return explicit;
-    }
-    return false; // undeclared flags default to disabled
-  },
-  clearFeatureFlagOverridesCache: () => {
-    _mockOverrides = {};
-  },
-  getAssistantFeatureFlagDefaults: () => ({}),
-}));
-mock.module("./feature-flag-test-helpers.js", () => ({
-  setOverridesForTesting: (overrides: Record<string, boolean>) => {
-    _mockOverrides = { ...overrides };
-  },
-}));
 
 mock.module("../skills/active-skill-tools.js", () => {
   const parseMarkers = (messages: Message[]) => {

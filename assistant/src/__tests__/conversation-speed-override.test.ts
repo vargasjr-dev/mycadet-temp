@@ -6,7 +6,9 @@
  * global config speed setting.
  */
 import { describe, expect, mock, test } from "bun:test";
+import { beforeEach } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent, AgentLoopConfig } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -39,16 +41,6 @@ function seedConfigSpeed(speed: "standard" | "fast"): void {
     },
   });
 }
-
-// Feature flag mock — fast-mode enabled for all tests in this file.
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) => {
-    if (key === "fast-mode") {
-      return true;
-    }
-    return true;
-  },
-}));
 
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
@@ -167,6 +159,13 @@ mock.module("../agent/loop.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { Conversation } from "../daemon/conversation.js";
+
+beforeEach(() => {
+  // Real flag resolution — fast-mode (and all registry flags) enabled,
+  // replacing the former blanket module mock.
+  setAllFlagsOnForTesting();
+});
+
 
 // ---------------------------------------------------------------------------
 // Helpers

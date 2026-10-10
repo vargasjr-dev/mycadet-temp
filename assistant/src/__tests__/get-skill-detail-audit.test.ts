@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
+
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -66,9 +68,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: mockReadInstallMeta,
@@ -190,6 +189,9 @@ import { getSkill } from "../daemon/handlers/skills.js";
 
 describe("getSkill — skillssh audit enrichment", () => {
   beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+
     mockResolveSkillStates.mockReset();
     mockReadInstallMeta.mockReset();
     mockFetchSkillAudits.mockReset();

@@ -12,8 +12,10 @@
  * tokenizer's post-compaction count so the web indicator matches the numbers
  * on the `/compact` result card.
  */
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach,
+   describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -57,9 +59,6 @@ setConfig("llm", {
 setConfig("memory", { v2: { enabled: false } });
 setConfig("timeouts", { permissionTimeoutSec: 1 });
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
@@ -549,6 +548,12 @@ describe("maybeCompact gate sizing", () => {
 // ---------------------------------------------------------------------------
 
 import { computeSummaryQualitySignals } from "../daemon/conversation-agent-loop.js";
+
+beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+});
+
 
 describe("computeSummaryQualitySignals", () => {
   test("counts `## ` headers at the start of lines", () => {

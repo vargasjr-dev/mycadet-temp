@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import {
   BadRequestError,
   ForbiddenError,
@@ -37,11 +38,6 @@ mock.module("../runtime/auth/route-policy.js", () => ({
   ACTOR_PRINCIPALS: [],
 }));
 
-let chatCredentialRevealFlag = false;
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) =>
-    key === "chat-credential-reveal" && chatCredentialRevealFlag,
-}));
 mock.module("../config/loader.js", () => ({
   getConfig: () => ({}),
 }));
@@ -203,7 +199,7 @@ describe("credentials routes", () => {
     liveRecordsUnreachable = false;
     _resetRevealSuccessRegistryForTest();
     resetForChatMintRegistryForTest();
-    chatCredentialRevealFlag = false;
+    setOverridesForTesting({ "chat-credential-reveal": false });
   });
 
   describe("credentials_reveal", () => {
@@ -341,7 +337,7 @@ describe("credentials routes", () => {
     });
 
     test("a direct local forChat reveal returns the sentinel, records the mint, and no plaintext proof", async () => {
-      chatCredentialRevealFlag = true;
+      setOverridesForTesting({ "chat-credential-reveal": true });
       secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
@@ -376,7 +372,7 @@ describe("credentials routes", () => {
     });
 
     test("a gateway-proxied forChat reveal returns the sentinel but records no mint", async () => {
-      chatCredentialRevealFlag = true;
+      setOverridesForTesting({ "chat-credential-reveal": true });
       secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
 
       const result = (await revealRoute!.handler({
@@ -400,7 +396,7 @@ describe("credentials routes", () => {
       // Direct terminal use (outside any conversation's tool shell) has no
       // nonce to forward. The reveal works, but neither registry records —
       // there is no conversation whose transcript could spend the record.
-      chatCredentialRevealFlag = true;
+      setOverridesForTesting({ "chat-credential-reveal": true });
       secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
       openRevealProofWindow();
       const watermark = currentRevealSuccessWatermark();
@@ -421,7 +417,7 @@ describe("credentials routes", () => {
     });
 
     test("a forChat reveal with no principal header records no mint (fails closed)", async () => {
-      chatCredentialRevealFlag = true;
+      setOverridesForTesting({ "chat-credential-reveal": true });
       secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
 
       const result = (await revealRoute!.handler({

@@ -3,8 +3,9 @@
  * catalog entry > SKILL.md frontmatter > "system" fallback.
  */
 import { join } from "node:path";
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import type { CatalogSkill } from "../skills/catalog-install.js";
 import type { SkillInstallMeta } from "../skills/install-meta.js";
@@ -27,9 +28,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-mock.module("../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-}));
 
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: () => mockInstallMeta,
@@ -119,6 +117,12 @@ mock.module("../daemon/handlers/shared.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { listSkills } from "../daemon/handlers/skills.js";
+
+beforeEach(() => {
+  // Real flag resolution replaces the former blanket module mock.
+  setAllFlagsOnForTesting();
+});
+
 
 // ---------------------------------------------------------------------------
 // Helpers
