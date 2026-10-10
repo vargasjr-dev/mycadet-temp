@@ -25,13 +25,7 @@ import {
 } from "../lib/guardian-token.js";
 import { getConfigDir } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-
-/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof globalThis.fetch {
-  return Object.assign(impl, { preconnect: () => {} });
-}
+import { withPreconnect } from "./helpers/http.js";
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();

@@ -18,33 +18,10 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import * as platformClient from "../lib/platform-client.js";
-
-/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof globalThis.fetch {
-  return Object.assign(impl, { preconnect: () => {} });
-}
-
-function makeGuardianTokenData(
-  over: Partial<GuardianTokenData> = {},
-): GuardianTokenData {
-  return {
-    guardianPrincipalId: "principal-1",
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    refreshToken: "refresh-token",
-    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
-    deviceId: "device-1",
-    leasedAt: new Date().toISOString(),
-    ...over,
-  };
-}
+import { withPreconnect } from "./helpers/http.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const resolveTargetMock = spyOn(
   assistantConfig,

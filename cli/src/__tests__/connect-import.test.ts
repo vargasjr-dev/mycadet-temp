@@ -29,6 +29,7 @@ import {
 } from "../lib/assistant-config.js";
 import { z } from "zod";
 import { loadGuardianToken } from "../lib/guardian-token.js";
+import { withPreconnect } from "./helpers/http.js";
 
 const HOST = "https://host.example.ts.net";
 const PAIRING_LINK = `${HOST}/assistant/pair#device_code=dev-code`;
@@ -72,13 +73,6 @@ function approvedBody(overrides: Record<string, unknown> = {}) {
 
 /** The commands always send flat string-keyed JSON bodies. */
 const JsonRecord = z.record(z.string(), z.unknown());
-
-/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof globalThis.fetch {
-  return Object.assign(impl, { preconnect: () => {} });
-}
 
 interface FetchCall {
   url: string;

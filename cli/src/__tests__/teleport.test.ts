@@ -38,7 +38,6 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as platformClient from "../lib/platform-client.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import * as backupOps from "../lib/backup-ops.js";
@@ -49,30 +48,6 @@ import * as teleportBackup from "../lib/teleport-backup.js";
 // how Bun's loader treats namespace bindings post-mock.
 const realAssistantConfig = { ...assistantConfig };
 const realGuardianToken = { ...guardianToken };
-
-/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof globalThis.fetch {
-  return Object.assign(impl, { preconnect: () => {} });
-}
-
-function makeGuardianTokenData(
-  over: Partial<GuardianTokenData> = {},
-): GuardianTokenData {
-  return {
-    guardianPrincipalId: "principal-1",
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    refreshToken: "refresh-token",
-    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
-    deviceId: "device-1",
-    leasedAt: new Date().toISOString(),
-    ...over,
-  };
-}
 
 const realPlatformClient = { ...platformClient };
 const realLocalRuntimeClient = { ...localRuntimeClient };
@@ -399,6 +374,8 @@ import {
   resolveOrHatchTarget,
 } from "../commands/teleport.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { withPreconnect } from "./helpers/http.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

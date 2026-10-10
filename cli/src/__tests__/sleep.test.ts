@@ -48,23 +48,6 @@ mock.module("../lib/drain.js", () => ({
   drainAssistant: drainAssistantMock,
 }));
 
-function makeGuardianTokenData(
-  over: Partial<GuardianTokenData> = {},
-): GuardianTokenData {
-  return {
-    guardianPrincipalId: "principal-1",
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    refreshToken: "refresh-token",
-    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
-    deviceId: "device-1",
-    leasedAt: new Date().toISOString(),
-    ...over,
-  };
-}
-
 const realGuardianToken = { ...(await import("../lib/guardian-token.js")) };
 const loadGuardianTokenMock = mock(
   (_assistantId: string): GuardianTokenData | null =>
@@ -108,6 +91,7 @@ import {
   DEFAULT_GATEWAY_PORT,
   DEFAULT_QDRANT_PORT,
 } from "../lib/constants.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 // Write a lockfile entry so the real resolveTargetAssistant() finds our test
 // assistant without needing to mock the entire assistant-config module.

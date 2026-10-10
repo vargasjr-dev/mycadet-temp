@@ -16,7 +16,6 @@ import { join } from "node:path";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as docker from "../lib/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
 import * as ingressConfig from "../lib/ingress-config.js";
 import * as local from "../lib/local.js";
@@ -25,26 +24,10 @@ import * as ngrok from "../lib/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };
 const realDocker = { ...docker };
-function makeGuardianTokenData(
-  over: Partial<GuardianTokenData> = {},
-): GuardianTokenData {
-  return {
-    guardianPrincipalId: "principal-1",
-    accessToken: "local-token",
-    accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    refreshToken: "refresh-token",
-    refreshTokenExpiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-    refreshAfter: new Date(Date.now() + 30_000).toISOString(),
-    isNew: false,
-    deviceId: "device-1",
-    leasedAt: new Date().toISOString(),
-    ...over,
-  };
-}
-
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
 const realNgrok = { ...ngrok };

@@ -31,6 +31,7 @@ import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tailscale-tunnel.js";
 import { getLogDir } from "../lib/xdg-log.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
 const realNgrok = { ...ngrok };
@@ -165,13 +166,6 @@ function writeLockfile(
       2,
     ),
   );
-}
-
-/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
-function withPreconnect(
-  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof globalThis.fetch {
-  return Object.assign(impl, { preconnect: () => {} });
 }
 
 const IngressTestConfigSchema = z.object({
