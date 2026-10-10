@@ -10,8 +10,7 @@ import {
   test,
 } from "bun:test";
 import * as childProcess from "node:child_process";
-import type { ChildProcess } from "node:child_process";
-import { EventEmitter } from "node:events";
+import type { ChildProcess, SpawnOptions } from "node:child_process";
 import {
   appendFileSync,
   mkdirSync,
@@ -24,6 +23,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
+import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/cloudflare-tunnel.js";
 import * as ngrok from "../lib/ngrok.js";
@@ -126,10 +126,7 @@ function writeEntryWorkspaceConfig(
   entry: AssistantEntry,
   config: Record<string, unknown>,
 ): string {
-  const workspaceDir = join(
-    entry.resources!.instanceDir,
-    "workspace",
-  );
+  const workspaceDir = join(entry.resources!.instanceDir, "workspace");
   mkdirSync(workspaceDir, { recursive: true });
   writeFileSync(
     join(workspaceDir, "config.json"),
@@ -158,7 +155,7 @@ function writeLockfile(
   process.env.CADET_LOCKFILE_DIR = lockfileDir;
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
-    join(lockfileDir, ".cadet.lock.json"),
+    join(lockfileDir, "lockfile.json"),
     JSON.stringify(
       {
         activeAssistant: activeAssistant ?? entries[0].assistantId,
@@ -169,6 +166,22 @@ function writeLockfile(
     ),
   );
 }
+
+/** bun-types' fetch requires a preconnect member; the SUT never calls it. */
+function withPreconnect(
+  impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+): typeof globalThis.fetch {
+  return Object.assign(impl, { preconnect: () => {} });
+}
+
+const IngressTestConfigSchema = z.object({
+  ingress: z
+    .looseObject({
+      publicBaseUrl: z.string().optional(),
+      ngrok: z.object({ domain: z.string().optional() }).optional(),
+    })
+    .optional(),
+});
 
 /** Run tunnel() expecting exit(1); returns the joined console.error output. */
 async function runTunnelExpectingExit1(): Promise<{
@@ -181,17 +194,17 @@ async function runTunnelExpectingExit1(): Promise<{
       errors.push(a.join(" "));
     },
   );
-  const exitSpy = spyOn(process, "exit").mockImplementation(((
-    code?: number,
-  ) => {
-    throw new Error(`exit:${code}`);
-  }) as never);
+  const exitSpy = spyOn(process, "exit").mockImplementation(
+    (code?: number | string | undefined): never => {
+      throw new Error(`exit:${code}`);
+    },
+  );
 
   let exited = false;
   try {
     await tunnel();
   } catch (e) {
-    exited = (e as Error).message === "exit:1";
+    exited = e instanceof Error && e.message === "exit:1";
   } finally {
     errSpy.mockRestore();
     exitSpy.mockRestore();
@@ -217,9 +230,9 @@ describe("tunnel edge targeting", () => {
   beforeEach(() => {
     process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
     writeLockfile(makeLocalEntry());
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       throw new Error("gateway unavailable");
-    }) as unknown as typeof globalThis.fetch;
+    });
     runCloudflareTunnelMock.mockReset();
     runCloudflareTunnelMock.mockResolvedValue(undefined);
     runNgrokTunnelMock.mockReset();
@@ -267,10 +280,7 @@ describe("tunnel edge targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    const workspaceDir = join(
-      entry.resources!.instanceDir,
-      "workspace",
-    );
+    const workspaceDir = join(entry.resources!.instanceDir, "workspace");
     expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
@@ -294,10 +304,7 @@ describe("tunnel edge targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    const workspaceDir = join(
-      local.resources!.instanceDir,
-      "workspace",
-    );
+    const workspaceDir = join(local.resources!.instanceDir, "workspace");
     expect(logs).toContain(
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'assistant-1' instead.",
@@ -419,14 +426,7 @@ describe("tunnel edge targeting", () => {
   test("a positional cloud assistant name errors without auto-fallback", async () => {
     const local = makeLocalEntry();
     writeLockfile([makeCloudEntry(), local], local.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "cloud-1",
-      "--provider",
-      "ngrok",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "cloud-1", "--provider", "ngrok"];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -449,10 +449,7 @@ describe("tunnel edge targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    const workspaceDir = join(
-      local.resources!.instanceDir,
-      "workspace",
-    );
+    const workspaceDir = join(local.resources!.instanceDir, "workspace");
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
@@ -476,10 +473,7 @@ describe("tunnel edge targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    const workspaceDir = join(
-      local.resources!.instanceDir,
-      "workspace",
-    );
+    const workspaceDir = join(local.resources!.instanceDir, "workspace");
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
@@ -491,14 +485,7 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile([local, makeAppleContainerEntry()], local.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "apple-1",
-      "--provider",
-      "ngrok",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "apple-1", "--provider", "ngrok"];
 
     await runTunnelCapturingLogs();
 
@@ -847,10 +834,7 @@ describe("tunnel edge targeting", () => {
   test("--clear-domain drops the saved domain and runs domainless", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = join(
-      entry.resources!.instanceDir,
-      "workspace",
-    );
+    const workspaceDir = join(entry.resources!.instanceDir, "workspace");
     mkdirSync(workspaceDir, { recursive: true });
     writeFileSync(
       join(workspaceDir, "config.json"),
@@ -868,9 +852,9 @@ describe("tunnel edge targeting", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(logs).toContain("Cleared the saved ngrok domain");
-    const config = JSON.parse(
-      readFileSync(join(workspaceDir, "config.json"), "utf-8"),
-    ) as { ingress?: { ngrok?: { domain?: string } } };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+    );
     expect(config.ingress?.ngrok).toBeUndefined();
     // The run proceeds domainless: no `domain` key reaches runNgrokTunnel.
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
@@ -945,7 +929,7 @@ describe("tunnel edge targeting", () => {
     try {
       await tunnel();
     } catch (e) {
-      err = e as Error;
+      err = e instanceof Error ? e : undefined;
     }
 
     expect(err?.message).toContain("is not yet implemented");
@@ -959,20 +943,26 @@ describe("tunnel edge targeting", () => {
 
 describe("ngrok --domain spawn args", () => {
   const originalContainerized = process.env.IS_CONTAINERIZED;
-  let lastChild: EventEmitter | null = null;
+  let lastChild: ChildProcess | null = null;
 
-  const spawnMock = mock((..._args: unknown[]) => {
-    const emitter = new EventEmitter();
-    lastChild = Object.assign(emitter, {
-      stdout: null,
-      stderr: null,
-      killed: false,
-      kill: () => true,
-      unref: () => {},
-      pid: 4242,
-    });
-    return lastChild as unknown as ChildProcess;
-  });
+  const spawnMock = mock(
+    (
+      _command: string,
+      _args: readonly string[],
+      _options?: SpawnOptions,
+    ): ChildProcess => {
+      const child = new realChildProcess.ChildProcess();
+      // kill() stays stubbed: the fake pid must never be signaled for real.
+      // stdout/stderr: the real class resolves them through a getter over the
+      // internal spawn handle, so null-shadow them via defineProperty — an
+      // Object.assign [[Set]] through the getter-only accessor throws.
+      Object.defineProperty(child, "stdout", { value: null });
+      Object.defineProperty(child, "stderr", { value: null });
+      const fake = Object.assign(child, { pid: 4242, kill: () => true });
+      lastChild = fake;
+      return fake;
+    },
+  );
   const execFileSyncMock = mock(() => "ngrok version 3.9.0");
 
   beforeAll(() => {
@@ -1021,22 +1011,20 @@ describe("ngrok --domain spawn args", () => {
   /** ngrok local API stub replaying one response per call, last one repeated. */
   function mockNgrokApiFetch(responses: { tunnels: StubTunnel[] }[]): void {
     let call = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = withPreconnect(async () => {
       const body = responses[Math.min(call, responses.length - 1)];
       call++;
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof globalThis.fetch;
+    });
   }
 
   function readIngress(ws: string): Record<string, unknown> {
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as {
-      ingress?: Record<string, unknown>;
-    };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
     return config.ingress ?? {};
   }
 
@@ -1048,7 +1036,7 @@ describe("ngrok --domain spawn args", () => {
     const lockfileDir = mkdtempSync(join(tmpdir(), "cadet-ngrok-lockfile-"));
     tempDirs.push(lockfileDir);
     writeFileSync(
-      join(lockfileDir, ".cadet.lock.json"),
+      join(lockfileDir, "lockfile.json"),
       JSON.stringify({
         activeAssistant: assistantId,
         assistants: [
@@ -1104,10 +1092,7 @@ describe("ngrok --domain spawn args", () => {
     }
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [cmd, args] = spawnMock.mock.calls[0] as unknown as [
-      string,
-      string[],
-    ];
+    const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
     expect(args).toEqual([
       "http",
@@ -1116,21 +1101,23 @@ describe("ngrok --domain spawn args", () => {
       "--domain=foo.ngrok.app",
     ]);
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress: { publicBaseUrl?: string; ngrok?: { domain?: string } } };
-    expect(config.ingress.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress.ngrok?.domain).toBe("foo.ngrok.app");
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
+    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
   });
 
   function mockTunnelListFetch(publicUrl: string, addr: string): void {
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          tunnels: [{ public_url: publicUrl, config: { addr } }],
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      )) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = withPreconnect(
+      async () =>
+        new Response(
+          JSON.stringify({
+            tunnels: [{ public_url: publicUrl, config: { addr } }],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    );
   }
 
   test("runNgrokTunnel rejects an existing tunnel that mismatches the requested domain", async () => {
@@ -1143,11 +1130,11 @@ describe("ngrok --domain spawn args", () => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     try {
       await expect(
@@ -1170,9 +1157,9 @@ describe("ngrok --domain spawn args", () => {
     expect(combined).toContain("Stop the existing ngrok agent");
     expect(spawnMock).not.toHaveBeenCalled();
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress?: { publicBaseUrl?: string; ngrok?: { domain?: string } } };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
     expect(config.ingress?.publicBaseUrl).toBeUndefined();
     expect(config.ingress?.ngrok).toBeUndefined();
   });
@@ -1189,6 +1176,8 @@ describe("ngrok --domain spawn args", () => {
     // The adopt path blocks until SIGINT/SIGTERM; pump SIGINT until the
     // listener is registered and the promise settles. Earlier tests leak
     // SIGINT handlers that call process.exit, so no-op it while pumping.
+    // LOAD-BEARING cast: a no-op exit can't honestly be typed `: never` — it
+    // must return so leaked SIGINT handlers can't crash the pump below.
     const exitSpy = spyOn(process, "exit").mockImplementation(
       (() => undefined) as never,
     );
@@ -1201,11 +1190,11 @@ describe("ngrok --domain spawn args", () => {
     }
 
     expect(spawnMock).not.toHaveBeenCalled();
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress: { publicBaseUrl?: string; ngrok?: { domain?: string } } };
-    expect(config.ingress.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress.ngrok?.domain).toBe("foo.ngrok.app");
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
+    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
   });
 
   test("maybeStartNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
@@ -1240,13 +1229,13 @@ describe("ngrok --domain spawn args", () => {
       "cadet tunnel --provider ngrok --domain foo.ngrok.app",
     );
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress: { publicBaseUrl?: string; ngrok?: { domain?: string } } };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
     // The mismatched tunnel is not blessed in config…
-    expect(config.ingress.publicBaseUrl).toBeUndefined();
+    expect(config.ingress?.publicBaseUrl).toBeUndefined();
     // …and the reserved domain stays saved as standing intent.
-    expect(config.ingress.ngrok?.domain).toBe("foo.ngrok.app");
+    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
   });
 
   test("an adopted automatic tunnel records the assistant it fronts", async () => {
@@ -1329,9 +1318,9 @@ describe("ngrok --domain spawn args", () => {
     expect(combined).toContain("not 18080");
     expect(combined).toContain("cadet tunnel --provider ngrok");
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress?: { publicBaseUrl?: string } };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
     expect(config.ingress?.publicBaseUrl).toBeUndefined();
   });
 
@@ -1345,11 +1334,11 @@ describe("ngrok --domain spawn args", () => {
         errors.push(a.join(" "));
       },
     );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      code?: number,
-    ) => {
-      throw new Error(`exit:${code}`);
-    }) as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     try {
       await expect(
@@ -1369,9 +1358,9 @@ describe("ngrok --domain spawn args", () => {
     expect(combined).toContain("Stop the existing ngrok agent");
     expect(spawnMock).not.toHaveBeenCalled();
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress?: { publicBaseUrl?: string } };
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
     expect(config.ingress?.publicBaseUrl).toBeUndefined();
   });
 
@@ -1397,10 +1386,7 @@ describe("ngrok --domain spawn args", () => {
 
     expect(child).not.toBeNull();
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [cmd, args] = spawnMock.mock.calls[0] as unknown as [
-      string,
-      string[],
-    ];
+    const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
     expect(args).toEqual([
       "http",
@@ -1409,10 +1395,10 @@ describe("ngrok --domain spawn args", () => {
       "--domain=foo.ngrok.app",
     ]);
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress: { publicBaseUrl?: string } };
-    expect(config.ingress.publicBaseUrl).toBe("https://foo.ngrok.app");
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
+    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
   });
 
   test("runNgrokTunnel without --domain reuses the saved domain and does not delete it", async () => {
@@ -1440,7 +1426,7 @@ describe("ngrok --domain spawn args", () => {
     }
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [, args] = spawnMock.mock.calls[0] as unknown as [string, string[]];
+    const [, args] = spawnMock.mock.calls[0];
     expect(args).toEqual([
       "http",
       "127.0.0.1:7831",
@@ -1448,11 +1434,11 @@ describe("ngrok --domain spawn args", () => {
       "--domain=foo.ngrok.app",
     ]);
 
-    const config = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as { ingress: { publicBaseUrl?: string; ngrok?: { domain?: string } } };
-    expect(config.ingress.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress.ngrok?.domain).toBe("foo.ngrok.app");
+    const config = IngressTestConfigSchema.parse(
+      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
+    );
+    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
   });
 });
 
@@ -1460,18 +1446,23 @@ describe("tunnel --detach", () => {
   const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
 
   function makeFakeChild(pid: number): ChildProcess {
-    const emitter = new EventEmitter();
-    return Object.assign(emitter, {
-      stdout: null,
-      stderr: null,
-      killed: false,
-      kill: () => true,
-      unref: () => {},
-      pid,
-    }) as unknown as ChildProcess;
+    const child = new realChildProcess.ChildProcess();
+    // kill() stays stubbed: the fake pid must never be signaled for real.
+    // stdout/stderr: the real class resolves them through a getter over the
+    // internal spawn handle, so null-shadow them via defineProperty — an
+    // Object.assign [[Set]] through the getter-only accessor throws.
+    Object.defineProperty(child, "stdout", { value: null });
+    Object.defineProperty(child, "stderr", { value: null });
+    return Object.assign(child, { pid, kill: () => true });
   }
 
-  const spawnMock = mock((..._args: unknown[]) => makeFakeChild(9999));
+  const spawnMock = mock(
+    (
+      _command: string,
+      _args: readonly string[],
+      _options?: SpawnOptions,
+    ): ChildProcess => makeFakeChild(9999),
+  );
 
   // spawnDetachedTunnel() scopes the log filename to its own (parent) pid,
   // which in-process is this test runner's pid.
@@ -1532,17 +1523,13 @@ describe("tunnel --detach", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [, args, opts] = spawnMock.mock.calls[0] as unknown as [
-      string,
-      string[],
-      Record<string, unknown>,
-    ];
+    const [, args, opts] = spawnMock.mock.calls[0];
     expect(args).toContain("tunnel");
     expect(args).toContain("--provider");
     expect(args).toContain("ngrok");
     expect(args).not.toContain("--detach");
     expect(args).not.toContain("-d");
-    expect(opts.detached).toBe(true);
+    expect(opts?.detached).toBe(true);
 
     expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
     expect(logs).toContain("Running in background (pid 9999)");
@@ -1566,7 +1553,7 @@ describe("tunnel --detach", () => {
 
     await runTunnelCapturingLogs();
 
-    const [, args] = spawnMock.mock.calls[0] as unknown as [string, string[]];
+    const [, args] = spawnMock.mock.calls[0];
     expect(args).not.toContain("-d");
     expect(args).not.toContain("--detach");
   });
@@ -1584,7 +1571,7 @@ describe("tunnel --detach", () => {
       const child = makeFakeChild(4242);
       // Listeners attach synchronously right after spawn() returns; defer the
       // exit so they're in place before it fires.
-      setTimeout(() => (child as unknown as EventEmitter).emit("exit", 1), 0);
+      setTimeout(() => child.emit("exit", 1), 0);
       return child;
     });
 
