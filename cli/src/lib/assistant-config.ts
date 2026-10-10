@@ -63,19 +63,11 @@ export type LocalInstanceResources = Omit<
   [key: string]: unknown;
 };
 
-/** Docker image metadata for the service group. Enables rollback to known-good digests. */
+/** Docker image metadata for the service group. Enables rollback to known-good refs. */
 export interface ContainerInfo {
   assistantImage: string;
   gatewayImage: string;
   cesImage: string;
-  /** sha256 digest of the assistant image at time of hatch/upgrade */
-  assistantDigest?: string;
-  /** sha256 digest of the gateway image at time of hatch/upgrade */
-  gatewayDigest?: string;
-  /** sha256 digest of the CES image at time of hatch/upgrade */
-  cesDigest?: string;
-  /** Docker network name for the service group */
-  networkName?: string;
   /**
    * Host-side port the assistant HTTP API is published on. Dynamically
    * allocated at hatch time so concurrent instances don't collide on the

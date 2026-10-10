@@ -82,11 +82,12 @@ describe("cadet uninstall", () => {
     warnSpy.mockRestore();
   });
 
-  test("refuses while assistants remain — retire them first", async () => {
+  test("warns and retires remaining assistants, then proceeds to the confirm gate", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      // A remaining assistant in the lockfile means there is data that
-      // should be retired (and archived) first.
+      // A remaining assistant is retired — with its data deleted — as part
+      // of the uninstall (v0.0.10 run feedback: the old hard refusal just
+      // blocked the uninstall; the fs sweep deletes the archives anyway).
       writeFileSync(
         join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
         JSON.stringify({ assistants: [makeEntry("test-assistant")] }) + "\n",
@@ -97,8 +98,16 @@ describe("cadet uninstall", () => {
         throw new Error(`process.exit:${code}`);
       });
       try {
+        // Non-interactive without --yes, the CONFIRM gate is what refuses —
+        // not an assistant guard.
         await expect(uninstall()).rejects.toThrow("process.exit:1");
-        expect(errorSpy).toHaveBeenCalledWith(
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("1 assistant(s) still exist"),
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("will be retired now"),
+        );
+        expect(errorSpy).not.toHaveBeenCalledWith(
           expect.stringContaining("Retire them first"),
         );
       } finally {

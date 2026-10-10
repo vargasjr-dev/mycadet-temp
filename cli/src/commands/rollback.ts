@@ -7,7 +7,6 @@ import {
   type AssistantEntry,
 } from "../lib/assistant-config";
 import {
-  captureImageRefs,
   GATEWAY_INTERNAL_PORT,
   ASSISTANT_INTERNAL_PORT,
   dockerResourceNames,
@@ -273,21 +272,23 @@ export const rollback = Object.assign(
     process.exit(1);
   }
 
-  // Verify all three digest fields are present
+  // Roll back to the previous images. Older entries recorded per-service
+  // digests (the image sha captured at upgrade time) — those are gone from
+  // the contract now; the recorded image refs are the rollback target.
   const prev = entry.previousContainerInfo;
-  if (!prev.assistantDigest || !prev.gatewayDigest || !prev.cesDigest) {
+  if (!prev.assistantImage || !prev.gatewayImage || !prev.cesImage) {
     const msg =
-      "Incomplete rollback state. Previous container digests are missing.";
+      "Incomplete rollback state. Previous container image refs are missing.";
     console.error(msg);
     emitCliError("ROLLBACK_NO_STATE", msg);
     process.exit(1);
   }
 
-  // Build image refs from the previous digests
+  // Build image refs from the previous record
   const previousImageRefs: Record<ServiceName, string> = {
-    assistant: prev.assistantDigest,
-    "credential-executor": prev.cesDigest,
-    gateway: prev.gatewayDigest,
+    assistant: prev.assistantImage,
+    "credential-executor": prev.cesImage,
+    gateway: prev.gatewayImage,
   };
 
   const instanceName = entry.assistantId;
@@ -398,9 +399,6 @@ export const rollback = Object.assign(
     const ready = await waitForReady(entry.runtimeUrl);
 
     if (ready) {
-      // Capture new digests from the rolled-back containers
-      const newDigests = await captureImageRefs(res);
-
       // Swap current/previous state to enable "rollback the rollback"
       const updatedEntry: AssistantEntry = {
         ...entry,
@@ -408,10 +406,6 @@ export const rollback = Object.assign(
           assistantImage: prev.assistantImage ?? previousImageRefs.assistant,
           gatewayImage: prev.gatewayImage ?? previousImageRefs.gateway,
           cesImage: prev.cesImage ?? previousImageRefs["credential-executor"],
-          assistantDigest: newDigests?.assistant,
-          gatewayDigest: newDigests?.gateway,
-          cesDigest: newDigests?.["credential-executor"],
-          networkName: res.network,
           assistantPort,
         },
         previousContainerInfo: entry.containerInfo,

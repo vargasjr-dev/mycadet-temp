@@ -12,7 +12,12 @@ import {
   saveAssistantEntry,
 } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
-import { dockerResourceNames, wakeContainers } from "../lib/docker.js";
+import {
+  dockerResourceNames,
+  isNoSuchContainerError,
+  recreateDockerContainers,
+  wakeContainers,
+} from "../lib/docker.js";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -213,7 +218,19 @@ async function wakeAssistant(
       );
     }
     const res = dockerResourceNames(entry.assistantId);
-    await wakeContainers(res);
+    try {
+      await wakeContainers(res);
+    } catch (err) {
+      // A migrated install has data in the volumes but containers that were
+      // never created (v0.0.10 run feedback: "No such container"). Recreate
+      // the service group from the entry's recorded images; anything else
+      // is a real wake failure.
+      if (!isNoSuchContainerError(err)) throw err;
+      console.log(
+        `Containers for '${entry.assistantId}' don't exist yet — recreating from the recorded images...`,
+      );
+      await recreateDockerContainers(entry);
+    }
     console.log("Docker containers started.");
     await restoreContainerTunnelEdge(entry, DOCKER_GATEWAY_READY_TIMEOUT_MS);
     console.log("Wake complete.");

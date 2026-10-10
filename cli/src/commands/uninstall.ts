@@ -2,11 +2,16 @@ import { existsSync, readFileSync, renameSync, rmSync, unlinkSync } from "fs";
 import { basename, dirname, join } from "path";
 import { fileURLToPath } from "url";
 
-import { loadAllAssistants } from "../lib/assistant-config.js";
+import {
+  getDaemonPidPath,
+  loadAllAssistants,
+  type AssistantEntry,
+} from "../lib/assistant-config.js";
 import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
+import { retireDocker } from "../lib/docker.js";
 import {
   getConfigDirs,
   getInputHistoryPath,
@@ -14,6 +19,28 @@ import {
   getStateDir,
 } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { stopProcessByPidFile } from "../lib/process";
+
+/**
+ * The per-assistant teardown uninstall performs before deleting the data:
+ * docker assistants keep containers, volumes, and a network in docker that
+ * the filesystem sweep never reaches, and local assistants keep processes.
+ * Everything on-disk is deleted by the sweep regardless — this is the part
+ * uninstall could NOT do before it refused.
+ */
+async function retireAssistantData(entry: AssistantEntry): Promise<void> {
+  if (entry.cloud === "docker") {
+    await retireDocker(entry.assistantId);
+    return;
+  }
+  const resources = entry.resources;
+  if (!resources) return;
+  await stopProcessByPidFile(
+    join(resources.instanceDir, "gateway.pid"),
+    "gateway",
+  );
+  await stopProcessByPidFile(getDaemonPidPath(resources), "assistant");
+}
 
 /** A directory (or file) scheduled for deletion, with what it holds. */
 interface DeleteTarget {
@@ -169,13 +196,34 @@ export const uninstall = Object.assign(
     }
     const yes = args.includes("--yes");
 
-    // Retire tears down an assistant AND archives its data. Uninstall assumes
-    // an empty rack: retiring first is the way to keep an archive.
-    if (loadAllAssistants().length > 0) {
-      console.error(
-        "Error: You still have assistants. Retire them first (`cadet retire <name>`) — retiring archives their data before removing it.",
+    // Assistants still on the rack are retired — with their data deleted —
+    // as part of the uninstall. Uninstall deletes every location cadet uses
+    // INCLUDING the retired archives, so retiring first (which archives)
+    // only matters for the teardown it performs: docker assistants keep
+    // containers, volumes, and a network in docker that the filesystem
+    // sweep below never reaches. A warning, not a refusal (v0.0.10 run
+    // feedback: the hard error just blocked the uninstall).
+    const existing = loadAllAssistants();
+    if (existing.length > 0) {
+      console.warn(
+        `\n⚠️  ${existing.length} assistant(s) still exist: ${existing.map((a) => a.assistantId).join(", ")}`,
       );
-      process.exit(1);
+      console.warn(
+        "   They will be retired now — their data (and any retired archives) will be permanently deleted by this uninstall.",
+      );
+      for (const entry of existing) {
+        if (entry.cloud === "apple-container" || entry.cloud === "paired") {
+          console.log(`   Skipping '${entry.assistantId}' (${entry.cloud}) — its lifecycle is managed elsewhere.`);
+          continue;
+        }
+        try {
+          await retireAssistantData(entry);
+        } catch (err) {
+          console.error(
+            `   Warning: could not fully retire '${entry.assistantId}': ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
     }
 
     const env = getCurrentEnvironment();
