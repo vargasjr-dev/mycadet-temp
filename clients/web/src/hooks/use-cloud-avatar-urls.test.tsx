@@ -58,8 +58,8 @@ const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const {
-  platformAvatarUrlsQueryKey,
-  supersedePlatformAvatar,
+  cloudAvatarUrlsQueryKey,
+  supersedeCloudAvatar,
   suppressPlatformAvatarUrl,
   useCloudAvatarUrls,
 } = await import("@/hooks/use-cloud-avatar-urls");
@@ -199,7 +199,7 @@ describe("useCloudAvatarUrls", () => {
 
     listAssistants.mockRejectedValueOnce(new Error("offline"));
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(2);
     await settle();
@@ -326,7 +326,7 @@ describe("suppressPlatformAvatarUrl", () => {
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
     expect(
-      queryClient.getQueryState(platformAvatarUrlsQueryKey("user-1", null))
+      queryClient.getQueryState(cloudAvatarUrlsQueryKey("user-1", null))
         ?.status,
     ).toBe("success");
   });
@@ -348,7 +348,7 @@ describe("suppressPlatformAvatarUrl", () => {
     });
 
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(2);
     await settle();
@@ -356,7 +356,7 @@ describe("suppressPlatformAvatarUrl", () => {
 
     setSystemTime(new Date(Date.now() + AVATAR_SUPERSEDE_WINDOW_MS));
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(3);
     await waitFor(() => {
@@ -365,7 +365,7 @@ describe("suppressPlatformAvatarUrl", () => {
   });
 });
 
-describe("supersedePlatformAvatar", () => {
+describe("supersedeCloudAvatar", () => {
   const PAIRED_UUID = "11111111-2222-4333-8444-555555555555";
 
   test("a paired row without a persisted UUID is suppressed under the UUID the daemon answers", async () => {
@@ -384,10 +384,10 @@ describe("supersedePlatformAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
-    act(() => supersedePlatformAvatar(queryClient, "paired-slug"));
+    act(() => supersedeCloudAvatar(queryClient, "paired-slug"));
 
     await waitFor(() => {
       expect(resolvePairedAssistantCloudId).toHaveBeenCalledWith(
@@ -415,10 +415,10 @@ describe("supersedePlatformAvatar", () => {
       ],
     });
     const queryClient = new QueryClient();
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
-    supersedePlatformAvatar(queryClient, "paired-slug");
+    supersedeCloudAvatar(queryClient, "paired-slug");
 
     expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     expect(

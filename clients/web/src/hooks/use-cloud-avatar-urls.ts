@@ -14,25 +14,25 @@ import {
   useResolvedAssistantsStore,
 } from "@/stores/resolved-assistants-store";
 
-export type PlatformAvatarUrls = ReadonlyMap<string, string>;
+export type CloudAvatarUrls = ReadonlyMap<string, string>;
 
-const EMPTY_AVATAR_URLS: PlatformAvatarUrls = new Map();
+const EMPTY_AVATAR_URLS: CloudAvatarUrls = new Map();
 
 /** Matches the row-level avatar clocks so a re-synced thumbnail shows within a minute. */
-export const PLATFORM_AVATAR_URLS_STALE_TIME_MS = 60_000;
+export const CLOUD_AVATAR_URLS_STALE_TIME_MS = 60_000;
 
 /**
  * Keyed by user and organization: a sign-out never serves another account's
  * thumbnails, and an org switch rescopes the list with the request header.
  */
-export function platformAvatarUrlsQueryKey(
+export function cloudAvatarUrlsQueryKey(
   userId: string | null,
   organizationId: string | null,
 ) {
-  return ["platformAvatarUrls", userId, organizationId] as const;
+  return ["cloudAvatarUrls", userId, organizationId] as const;
 }
 
-const PLATFORM_AVATAR_URLS_KEY_PREFIX = ["platformAvatarUrls"] as const;
+const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
 
 /**
  * Drops one platform id from every cached map without refetching and marks
@@ -47,8 +47,8 @@ export function suppressPlatformAvatarUrl(
   cloudAssistantId: string,
 ): void {
   markAvatarSuperseded(cloudAssistantId);
-  queryClient.setQueriesData<PlatformAvatarUrls>(
-    { queryKey: PLATFORM_AVATAR_URLS_KEY_PREFIX },
+  queryClient.setQueriesData<CloudAvatarUrls>(
+    { queryKey: CLOUD_AVATAR_URLS_KEY_PREFIX },
     (urls) => {
       if (!urls?.has(cloudAssistantId)) {
         return urls;
@@ -66,7 +66,7 @@ export function suppressPlatformAvatarUrl(
  * by its local slug is also suppressed under its platform UUID once the
  * paired daemon answers, since that is the key the list carries.
  */
-export function supersedePlatformAvatar(
+export function supersedeCloudAvatar(
   queryClient: QueryClient,
   assistantId: string,
 ): void {
@@ -95,7 +95,7 @@ export function supersedePlatformAvatar(
  * poll; with no prior data the hook reads that as an empty map, and a
  * chooser row falls back to its other sources, never an error.
  */
-async function fetchPlatformAvatarUrls(): Promise<PlatformAvatarUrls> {
+async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
   const result = await listAssistants();
   if (!result.ok) {
     throw new Error(`Failed to list assistants (${result.status})`);
@@ -118,20 +118,20 @@ async function fetchPlatformAvatarUrls(): Promise<PlatformAvatarUrls> {
  * store: `reloadCloudAssistants` deliberately skips those modes so the
  * API list cannot clobber their rows, and this lookup keeps that contract.
  */
-export function useCloudAvatarUrls(): PlatformAvatarUrls {
+export function useCloudAvatarUrls(): CloudAvatarUrls {
   const hasCloudSession = useHasCloudSession();
   const userId = useAuthStore.use.user()?.id ?? null;
   const isOrgReady = useIsOrgReady();
   const organizationId = useRequestOrganizationId();
-  const query = useQuery<PlatformAvatarUrls>({
-    queryKey: platformAvatarUrlsQueryKey(userId, organizationId),
-    queryFn: fetchPlatformAvatarUrls,
+  const query = useQuery<CloudAvatarUrls>({
+    queryKey: cloudAvatarUrlsQueryKey(userId, organizationId),
+    queryFn: fetchCloudAvatarUrls,
     enabled: hasCloudSession && isOrgReady && !isCadetCloudRemote(),
-    staleTime: PLATFORM_AVATAR_URLS_STALE_TIME_MS,
+    staleTime: CLOUD_AVATAR_URLS_STALE_TIME_MS,
     // staleTime alone never refetches a chooser that stays mounted, and a
     // sibling's change on another client sends no event here; poll while
     // the window is in the foreground.
-    refetchInterval: PLATFORM_AVATAR_URLS_STALE_TIME_MS,
+    refetchInterval: CLOUD_AVATAR_URLS_STALE_TIME_MS,
     refetchIntervalInBackground: false,
     retry: false,
   });

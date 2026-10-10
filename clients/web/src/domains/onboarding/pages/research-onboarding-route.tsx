@@ -68,7 +68,7 @@ import {
   writeResearchSnapshot,
   type ResearchStep,
 } from "@/domains/onboarding/research-onboarding-persistence";
-import { stampAssistantOnboarded } from "@/domains/onboarding/stamp-assistant-onboarded";
+import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { shouldSkipOnboardingResearch } from "@/domains/onboarding/should-skip-onboarding-research";
 import {
   emitResearchOnboardingStepCompleted,
@@ -796,7 +796,9 @@ export function ResearchOnboardingRoute() {
     // resume snapshot so a later visit starts clean instead of resuming this one.
     clearResearchSnapshot(userId);
     // The completion record this assistant is judged by from here on.
-    stampAssistantOnboarded(hatchedAssistantId);
+    if (hatchedAssistantId) {
+      markAssistantOnboarded(hatchedAssistantId);
+    }
 
     const { firstName, lastName, role, hobbies } = values;
     const fullName = [firstName.trim(), lastName.trim()]
@@ -1340,7 +1342,9 @@ export function ResearchOnboardingRoute() {
           );
           clearResearchSnapshot(userId);
           // Keeping an established assistant settles its onboarding too.
-          stampAssistantOnboarded(hatchedAssistantId);
+          if (hatchedAssistantId) {
+            markAssistantOnboarded(hatchedAssistantId);
+          }
           // Pin the selection to the adopted assistant, then enter the app —
           // with no pre-chat context, kickoff, or persona write of any kind.
           void lifecycleService

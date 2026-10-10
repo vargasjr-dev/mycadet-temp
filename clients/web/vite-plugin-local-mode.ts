@@ -214,7 +214,7 @@ function loopbackCallbackMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     if (req.url?.startsWith("/callback")) {
       const qs = req.url.slice("/callback".length);
-      res.writeHead(302, { Location: `/account/platform-callback${qs}` });
+      res.writeHead(302, { Location: `/account/cloud-callback${qs}` });
       res.end();
       return;
     }

@@ -91,7 +91,7 @@ describe("account route compact-window grouping", () => {
     "/account/oauth/popup-complete",
     "/account/oauth/complete",
     "/account/oauth/desktop-complete",
-    "/account/platform-callback",
+    "/account/cloud-callback",
   ])("%s is NOT sized by AccountLayout", (path) => {
     expect(isUnderComponent(path, "AccountLayout")).toBe(false);
   });

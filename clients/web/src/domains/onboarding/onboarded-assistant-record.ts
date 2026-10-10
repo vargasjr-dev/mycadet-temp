@@ -8,8 +8,8 @@
  *
  * Deliberately depends on nothing but `typed-storage`: the resolved-assistants
  * store reads this module, so pulling `local-mode` in here would drag the
- * lockfile transport into the store's import graph. The lockfile mirror lives
- * in `stamp-assistant-onboarded.ts` instead.
+ * lockfile transport into the store's import graph. Hatch call sites guard the
+ * dead-hatch (null id) case themselves rather than routing through a wrapper.
  */
 
 import { createStorageAccessor } from "@/utils/typed-storage";

@@ -183,7 +183,7 @@ const initialAuthState = useAuthStore.getState();
 const initialOrganizationState = useOrganizationStore.getState();
 const { chooserRowAvatarCacheQueryKey, persistLastSeenAvatar } =
   await import("@/lib/persist-last-seen-avatar");
-const { platformAvatarUrlsQueryKey } =
+const { cloudAvatarUrlsQueryKey } =
   await import("@/hooks/use-cloud-avatar-urls");
 const { resetAvatarSupersedeForTests } = await import("@/lib/avatar-supersede");
 
@@ -644,7 +644,7 @@ describe("useChooserRowAvatar", () => {
         queryClient
           .getQueryData<
             Map<string, string>
-          >(platformAvatarUrlsQueryKey("user-1", "org-1"))
+          >(cloudAvatarUrlsQueryKey("user-1", "org-1"))
           ?.has("uuid-other"),
       ).toBe(false);
       await waitFor(() => {
@@ -687,7 +687,7 @@ describe("useChooserRowAvatar", () => {
         queryClient
           .getQueryData<
             Map<string, string>
-          >(platformAvatarUrlsQueryKey("user-1", "org-1"))
+          >(cloudAvatarUrlsQueryKey("user-1", "org-1"))
           ?.has("other"),
       ).toBe(false);
       await waitFor(() => {

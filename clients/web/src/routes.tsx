@@ -244,11 +244,11 @@ export const routeTree = [
             Component: OAuthDesktopCompleteRedirect,
           },
           {
-            path: "platform-callback",
+            path: "cloud-callback",
             lazy: {
               Component: () =>
                 import("@/domains/account/pages/cloud-loopback-page").then(
-                  (m) => m.PlatformLoopbackPage,
+                  (m) => m.CloudLoopbackPage,
                 ),
             },
           },

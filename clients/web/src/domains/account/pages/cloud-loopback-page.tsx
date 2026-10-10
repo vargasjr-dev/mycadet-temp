@@ -25,7 +25,7 @@ const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
  *      server (which authenticates its cloud proxy with it — no browser
  *      cookie), checks for existing assistants, and navigates accordingly
  */
-export function PlatformLoopbackPage() {
+export function CloudLoopbackPage() {
   const { t } = useTranslation("account");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

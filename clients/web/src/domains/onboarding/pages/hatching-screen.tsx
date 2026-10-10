@@ -31,7 +31,7 @@ import {
   NEW_ASSISTANT_PARAM,
   shouldSkipResearchAfterHatch,
 } from "@/domains/onboarding/onboarding-destination";
-import { stampAssistantOnboarded } from "@/domains/onboarding/stamp-assistant-onboarded";
+import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { ATTRIBUTED_PLUGIN_PARAM } from "@/domains/onboarding/plugin-attribution";
 import {
   awaitPurchasedProvisioning,
@@ -320,7 +320,9 @@ export function HatchingScreen() {
           // bypasses the research route, so it is the terminal that has to
           // record the completion itself.
           if (shouldSkipResearchAfterHatch(searchParams)) {
-            stampAssistantOnboarded(readyAssistantId);
+            if (readyAssistantId) {
+              markAssistantOnboarded(readyAssistantId);
+            }
             void navigate(`${routes.assistant}?onboarding=1`, {
               replace: true,
             });

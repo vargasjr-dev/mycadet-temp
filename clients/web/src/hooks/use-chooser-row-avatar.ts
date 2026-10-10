@@ -454,12 +454,12 @@ export function useChooserRowAvatar(
     hostQuery.data !== undefined &&
     (hostConclusive || !isEmptyAvatar(hostQuery.data));
 
-  const platformAvatarUrls = useCloudAvatarUrls();
+  const cloudAvatarUrls = useCloudAvatarUrls();
   const canLookUp = canLookUpRowAvatarByCloudId(assistant);
   const lookupId = usePlatformLookupId(assistant, canLookUp);
   const lookupCandidate =
     canLookUp && lookupId !== null
-      ? (platformAvatarUrls.get(lookupId) ?? null)
+      ? (cloudAvatarUrls.get(lookupId) ?? null)
       : null;
   const lookupUrl =
     lookupCandidate !== failedCloudUrl ? lookupCandidate : null;

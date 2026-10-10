@@ -4,7 +4,7 @@
  * Mirrors the CLI's `cadet login` browser flow: navigates to the
  * platform's login page, which authenticates via WorkOS and redirects
  * back to `http://localhost:{port}/callback?state=...&session_token=...`.
- * The local web server forwards `/callback` to the SPA's `PlatformLoopbackPage`,
+ * The local web server forwards `/callback` to the SPA's `CloudLoopbackPage`,
  * which validates the state and registers the token with the local server so
  * its cloud proxy can authenticate — no browser session cookie is used.
  */
