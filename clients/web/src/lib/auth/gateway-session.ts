@@ -3,7 +3,7 @@ import {
   getLocalGatewayUrl,
   getPairedGatewayUrl,
   getSelectedAssistant,
-  isRemoteGatewayMode,
+  isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
@@ -60,7 +60,7 @@ let remoteGatewayToken: string | null = null;
 let remoteGatewayExpiresAt: number = 0;
 
 export function isGatewayAuthEnabled(): boolean {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     return true;
   }
   if (!isLocalClient()) {
@@ -76,7 +76,7 @@ export function isGatewayAuthMode(): boolean {
   if (!isGatewayAuthEnabled()) {
     return false;
   }
-  if (!isRemoteGatewayMode()) {
+  if (!isServedGatewayRuntime()) {
     const selectedAssistant = getSelectedAssistant();
     const pairedGatewayUrl = getPairedGatewayUrl(selectedAssistant);
     if (pairedGatewayUrl != null) {
@@ -110,7 +110,7 @@ export function setRemoteGatewayToken(params: {
 }
 
 export function getGatewayToken(): string | null {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     if (remoteGatewayToken && !isTokenExpired(remoteGatewayExpiresAt)) {
       return remoteGatewayToken;
     }

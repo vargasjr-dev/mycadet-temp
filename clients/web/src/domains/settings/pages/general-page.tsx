@@ -44,7 +44,7 @@ import {
   getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,
-  isRemoteGatewayMode,
+  isCadetCloudRemote,
 } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
@@ -80,7 +80,7 @@ export function GeneralPage() {
   const showAssistantSwitcherCard =
     isLocalClient() ||
     isAuthenticated ||
-    isRemoteGatewayMode() ||
+    !isCadetCloudRemote() ||
     isNativeMobile;
   const navigate = useNavigate();
   const platformGate = usePlatformGate();
@@ -113,7 +113,7 @@ export function GeneralPage() {
   const hasSelectedLocalAssistant =
     isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
   const canRetireLocally = hasSelectedLocalAssistant;
-  const canUpgradeLocally = hasSelectedLocalAssistant && !isRemoteGatewayMode();
+  const canUpgradeLocally = hasSelectedLocalAssistant && !!isCadetCloudRemote();
   // Whether an upgrade panel (platform or local) is on screen. Both panels
   // render the "Current" version line that carries the 7-tap developer-mode
   // unlock, so when neither shows we must render a standalone version line to
@@ -141,7 +141,7 @@ export function GeneralPage() {
 
   const openAssistantChooser = () => {
     const hubUrl = getRemoteGatewayHubUrl();
-    if (isRemoteGatewayMode() && !isNativeMobile && hubUrl) {
+    if (!isCadetCloudRemote() && !isNativeMobile && hubUrl) {
       // Self-registration handoff: landing on the hub chooser records this
       // origin in the hub's remembered list. `hubUrl` is the hub SPA's
       // assistant root (`<origin>/assistant`), so the absolute chooser route

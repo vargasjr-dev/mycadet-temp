@@ -14,7 +14,7 @@ import { parseRemoteWebPairingParams } from "@mycadet/service-contracts/remote-w
 
 import type { RemoteWebPairingTokenResult } from "@/lib/auth/remote-gateway-session";
 
-let remoteGatewayMode = false;
+let cloudRemote = false;
 let injectedAssistantName: string | undefined;
 let injectedHubUrl: string | undefined;
 let nativePlatform = false;
@@ -24,7 +24,7 @@ const nativeSwitchToOriginPathMock = mock(
 );
 
 mock.module("@/lib/local-mode", () => ({
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isCadetCloudRemote: () => cloudRemote,
   getRemoteGatewayAssistantName: () => injectedAssistantName,
   getRemoteGatewayHubUrl: () => injectedHubUrl,
 }));
@@ -135,7 +135,7 @@ const { RemoteWebPairingPage } =
 
 afterEach(() => {
   cleanup();
-  remoteGatewayMode = false;
+  cloudRemote = false;
   injectedAssistantName = undefined;
   injectedHubUrl = undefined;
   nativePlatform = false;
@@ -149,7 +149,9 @@ afterEach(() => {
 });
 
 describe("RemoteWebPairingPage", () => {
-  test("renders NotFound outside remote-gateway mode", () => {
+  test("renders NotFound on a cloud remote", () => {
+    cloudRemote = true;
+
     render(
       <MemoryRouter
         initialEntries={["/assistant/pair?deviceCode=device-1&userCode=ABCD"]}
@@ -164,8 +166,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("polls for a token in remote-gateway mode", async () => {
-    remoteGatewayMode = true;
-
     render(
       <MemoryRouter
         initialEntries={["/assistant/pair?deviceCode=device-1&userCode=ABCD"]}
@@ -185,7 +185,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("cancel leaves the origin for the hub chooser", async () => {
-    remoteGatewayMode = true;
     injectedHubUrl = "https://hub.example.com/assistant";
     const assignMock = mock((_url: string) => {});
     const originalAssign = window.location.assign;
@@ -222,7 +221,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("cancel uses the native origin switch when available", async () => {
-    remoteGatewayMode = true;
     injectedHubUrl = "https://hub.example.com/assistant";
     nativePlatform = true;
     nativeSwitchToOriginPathMock.mockResolvedValueOnce(true);
@@ -261,7 +259,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("cancel falls back when the native shell lacks path switching", async () => {
-    remoteGatewayMode = true;
     injectedHubUrl = "https://hub.example.com/assistant";
     nativePlatform = true;
     const assignMock = mock((_url: string) => {});
@@ -301,7 +298,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("cancel is hidden when the served config names no hub", async () => {
-    remoteGatewayMode = true;
     injectedHubUrl = undefined;
 
     render(
@@ -317,7 +313,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("shows progress state while creating a challenge", () => {
-    remoteGatewayMode = true;
     createRemoteWebPairingChallengeMock.mockImplementationOnce(
       async () => new Promise<never>(() => {}),
     );
@@ -337,8 +332,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("creates a challenge when opened without a device code", async () => {
-    remoteGatewayMode = true;
-
     render(
       <MemoryRouter initialEntries={["/assistant/pair"]}>
         <RemoteWebPairingPage />
@@ -359,7 +352,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("surfaces guardian-repair guidance on a repair-required exchange failure", async () => {
-    remoteGatewayMode = true;
     exchangeRemoteWebPairingTokenMock.mockImplementationOnce(async () => {
       throw new MockRemoteWebPairingError(
         503,
@@ -383,7 +375,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("keeps new-pairing guidance for other exchange failures", async () => {
-    remoteGatewayMode = true;
     exchangeRemoteWebPairingTokenMock.mockImplementationOnce(async () => {
       throw new MockRemoteWebPairingError(
         503,
@@ -405,7 +396,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("goes straight to paired for a pre-approved code, without flashing the approval code", async () => {
-    remoteGatewayMode = true;
     exchangeRemoteWebPairingTokenMock.mockImplementationOnce(
       async () => APPROVED_RESULT,
     );
@@ -429,7 +419,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("still shows the waiting state and code when the code is not yet approved", async () => {
-    remoteGatewayMode = true;
     // Default mock returns pending — the not-pre-approved device-code path.
 
     render(
@@ -446,7 +435,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("clears the device-code fragment from the URL after a successful exchange", async () => {
-    remoteGatewayMode = true;
     exchangeRemoteWebPairingTokenMock.mockImplementationOnce(
       async () => APPROVED_RESULT,
     );
@@ -482,7 +470,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("offers the app handoff for a device code in an iOS browser without burning the code", async () => {
-    remoteGatewayMode = true;
     setUserAgent(IPHONE_USER_AGENT);
 
     render(
@@ -513,7 +500,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("offers the same app handoff in an Android browser", async () => {
-    remoteGatewayMode = true;
     setUserAgent(ANDROID_USER_AGENT);
 
     render(
@@ -543,7 +529,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("the app handoff url carries the assistant name from the served config", async () => {
-    remoteGatewayMode = true;
     injectedAssistantName = "My Homelab";
     setUserAgent(IPHONE_USER_AGENT);
 
@@ -568,7 +553,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("the Android app handoff url carries the assistant name too", async () => {
-    remoteGatewayMode = true;
     injectedAssistantName = "My Homelab";
     setUserAgent(ANDROID_USER_AGENT);
 
@@ -588,7 +572,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("the app handoff url keeps a served path prefix", async () => {
-    remoteGatewayMode = true;
     setUserAgent(IPHONE_USER_AGENT);
     // The real window location carries the served path in production; the
     // in-memory router below only controls the route, not window.location.
@@ -615,7 +598,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("the Android app handoff url preserves encoded codes", async () => {
-    remoteGatewayMode = true;
     setUserAgent(ANDROID_USER_AGENT);
     const deviceCode = "code & # / 🚀";
     const pairingQuery = new URLSearchParams({
@@ -640,7 +622,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("exchanges immediately for a device code in a desktop browser", async () => {
-    remoteGatewayMode = true;
     // The default happy-dom user agent is a desktop browser.
 
     render(
@@ -662,7 +643,6 @@ describe("RemoteWebPairingPage", () => {
   });
 
   test("keeps browser pairing available when an app handoff fails", async () => {
-    remoteGatewayMode = true;
     setUserAgent(ANDROID_USER_AGENT);
     window.history.pushState(
       null,
@@ -711,7 +691,6 @@ describe("RemoteWebPairingPage", () => {
   ] as const)(
     "skips the app handoff inside the native %s shell",
     async (_, platform, userAgent) => {
-      remoteGatewayMode = true;
       setUserAgent(userAgent);
       nativePlatform = true;
       nativePlatformName = platform;

@@ -12,12 +12,12 @@ import type { PlatformSessionStatus } from "@/stores/session-status";
 
 // Mode predicates that select whether the load runs.
 let mockIsLocalClient = false;
-let mockIsRemoteGatewayMode = false;
+let mockIsCloudRemote = true;
 let mockIsGatewayAuthEnabled = false;
 
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => mockIsLocalClient,
-  isRemoteGatewayMode: () => mockIsRemoteGatewayMode,
+  isCadetCloudRemote: () => mockIsCloudRemote,
 }));
 
 mock.module("@/lib/auth/gateway-session", () => ({
@@ -139,7 +139,7 @@ afterAll(() => {
 beforeEach(() => {
   advance(60_000);
   mockIsLocalClient = false;
-  mockIsRemoteGatewayMode = false;
+  mockIsCloudRemote = true;
   mockIsGatewayAuthEnabled = false;
   mockListAssistantsResult = { ok: true, status: 200, data: [] };
   mockListAssistantsError = null;
@@ -316,8 +316,8 @@ describe("reloadPlatformAssistants", () => {
     expect(markHydratedMock).not.toHaveBeenCalled();
   });
 
-  test("early-returns in remote-gateway mode", async () => {
-    mockIsRemoteGatewayMode = true;
+  test("early-returns on a non-cloud remote", async () => {
+    mockIsCloudRemote = false;
 
     await reloadPlatformAssistants();
 

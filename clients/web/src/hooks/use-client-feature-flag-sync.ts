@@ -13,7 +13,7 @@ import {
 import { useClientFlagQueryFreshness } from "@/lib/backwards-compat/flag-query-freshness";
 import { featureFlagsClientFlagValuesRetrieveQueryKey } from "@/generated/api/@tanstack/react-query.gen";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
-import { isRemoteGatewayMode } from "@/lib/local-mode";
+import { isServedGatewayRuntime } from "@/lib/local-mode";
 
 const VALID_BOOL_KEYS = new Set(Object.keys(CLIENT_FLAG_DEFAULTS));
 const VALID_STRING_KEYS = new Set(Object.keys(CLIENT_STRING_FLAG_DEFAULTS));
@@ -73,7 +73,7 @@ export function useClientFeatureFlagSync(
   // below is about. Captured here rather than read in the effect, which runs
   // after a scope change may already have claimed a different one.
   const claimedScopeKey = useClientFeatureFlagStore.use.scopeKey();
-  const modeAllowsFetch = enabled && !isRemoteGatewayMode();
+  const modeAllowsFetch = enabled && !isServedGatewayRuntime();
   const shouldFetch = modeAllowsFetch && orgReadiness === "ready";
   const { data, isError } = useQuery({
     queryKey: featureFlagsClientFlagValuesRetrieveQueryKey(),

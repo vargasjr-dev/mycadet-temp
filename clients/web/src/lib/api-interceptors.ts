@@ -47,7 +47,7 @@ import {
   isLocalClient,
   isCadetCloudRemote,
   isPlatformDisabled,
-  isRemoteGatewayMode,
+  isServedGatewayRuntime,
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
 import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
@@ -231,7 +231,7 @@ function isPlatformPushPath(url: string): boolean {
  * relocate the resource under that prefix before authorizing.
  */
 function relocateRemoteGatewayPushRequest(request: Request): Request {
-  if (!isRemoteGatewayMode()) {
+  if (!isServedGatewayRuntime()) {
     return request;
   }
   const ingressUrl = getSelfHostedIngressUrl();
@@ -324,7 +324,7 @@ export async function rewriteForSelfHostedIngress(
   const headers = new Headers(request.headers);
   headers.delete("X-CSRFToken");
   headers.delete("Cadet-Organization-Id");
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     // Ngrok free tunnels return an HTML interstitial to browser-shaped API
     // requests unless this bypass header is present.
     headers.set(NGROK_SKIP_BROWSER_WARNING_HEADER, "true");
@@ -377,7 +377,7 @@ export async function rewriteForSelfHostedIngress(
 export function authorizeRemoteGatewayRequest(
   request: Request,
 ): Request | null {
-  if (!isRemoteGatewayMode()) {
+  if (!isServedGatewayRuntime()) {
     return null;
   }
 
@@ -836,7 +836,7 @@ async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
 
 function recoverGatewaySessionInPlace(): Promise<boolean> {
   gw401RecoveryInFlight ??= (
-    isRemoteGatewayMode()
+    isServedGatewayRuntime()
       ? recoverRemoteGatewaySessionInPlace()
       : recoverLocalGatewaySessionInPlace()
   ).finally(() => {
@@ -1185,7 +1185,7 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
   // same-origin proxy, so a rejection from that path IS a platform session
   // rejection — the bearer-path exclusion below must not apply.
   const fromSelfHostedGateway =
-    !isCadetCloudRemote() &&
+    !isServedGatewayRuntime() &&
     !!ingressUrl &&
     response.url.startsWith(ingressUrl);
 
@@ -1379,7 +1379,9 @@ function cloudFeaturesGateDecision(request: Request): PlatformGateDecision {
     // this mode; the bearer check below guards gateway-session bundles.
     return "allow";
   }
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
+    // A served-gateway browser holds the gateway JWT as its credential:
+    // platform-bound calls ride it as the bearer or are refused.
     const hasBearer =
       request.headers
         .get("Authorization")

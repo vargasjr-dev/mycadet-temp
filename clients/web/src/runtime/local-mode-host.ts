@@ -19,6 +19,7 @@ import type {
   LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 
+import { readInjectedConfig } from "@/lib/injected-config";
 import { isElectron } from "@/runtime/is-electron";
 
 /**
@@ -144,14 +145,6 @@ export function requiresGuardianReprovision(error: unknown): boolean {
 const LOCAL_HOST_UNAVAILABLE_ERROR =
   "The local assistant host isn't available here.";
 
-function readInjectedConfig(): { remote?: Remote } | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-  return (window as unknown as { __CADET_CONFIG__?: { remote?: Remote } })
-    .__CADET_CONFIG__;
-}
-
 /**
  * Whether a local-mode host (the Electron IPC bridge, the Vite dev server, or
  * the `cadet client` CLI server) backs this runtime and can serve
@@ -161,9 +154,9 @@ function readInjectedConfig(): { remote?: Remote } | undefined {
  * action (wake / hatch / retire).
  *
  * Detected from the runtime config the capable hosts inject
- * (`window.__CADET_CONFIG__`), excluding served-remote configs — a declared
- * remote other than "local" (a self-hosted gateway edge or the cloud proxy)
- * means no local host on this device.
+ * (`window.__CADET_CONFIG__`): nothing injected (or a "local" remote) means a
+ * local host; a served-remote config (a self-hosted gateway edge or the cloud
+ * proxy) means none on this device.
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
@@ -173,10 +166,7 @@ export function isLocalModeHostAvailable(): boolean {
   if (!config) {
     return false;
   }
-  if (config.remote !== undefined && config.remote !== "local") {
-    return false;
-  }
-  return true;
+  return config.remote === undefined || config.remote === "local";
 }
 
 /**

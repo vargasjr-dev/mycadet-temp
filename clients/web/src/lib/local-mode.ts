@@ -3,6 +3,7 @@ import {
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
+import { getInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
@@ -84,32 +85,6 @@ const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export { getPlatformRuntimeUrl };
 
-function getInjectedConfig(): {
-  disablePlatform?: boolean;
-  remote: Remote;
-  platformUrl?: string;
-  assistantName?: string;
-  hubUrl?: string;
-} {
-  const injected = (
-    window as unknown as {
-      __CADET_CONFIG__?: {
-        disablePlatform?: boolean;
-        remote?: Remote;
-        platformUrl?: string;
-        assistantName?: string;
-        hubUrl?: string;
-      };
-    }
-  ).__CADET_CONFIG__;
-  return { remote: "local", ...injected };
-}
-
-export function isRemoteGatewayMode(): boolean {
-  const remote = getInjectedConfig().remote;
-  return remote !== "local" && remote !== "cloud";
-}
-
 export function isCadetCloudRemote(): boolean {
   return getInjectedConfig().remote === "cloud";
 }
@@ -140,6 +115,19 @@ export function getRemoteAssistantDisplayName(): string | undefined {
  */
 export function getRemoteGatewayHubUrl(): string | undefined {
   return nonEmptyString(getInjectedConfig().hubUrl);
+}
+
+/**
+ * Whether this bundle is served by a cadet's gateway itself (a self-hosted
+ * edge or a docker cadet) rather than running beside a local host or on the
+ * cloud platform. The serving gateway synthesizes the single "self" assistant
+ * for the chooser and owns the lockfile view. This is a topology fact —
+ * distinct from the auth-scheme question (`isCadetCloudRemote`) — and it is
+ * the only place the `remote` value selects a code path.
+ */
+export function isServedGatewayRuntime(): boolean {
+  const remote = getInjectedConfig().remote;
+  return remote === "docker" || remote === "custom";
 }
 
 function getRemoteGatewayLockfile(): Lockfile {
@@ -200,7 +188,7 @@ export function isPlatformDisabled(): boolean {
 }
 
 export async function loadLockfile(): Promise<Lockfile> {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     const lockfile = getRemoteGatewayLockfile();
     commitLockfile(lockfile);
     return lockfile;
@@ -219,7 +207,7 @@ export async function loadLockfile(): Promise<Lockfile> {
 }
 
 export function getLockfile(): Lockfile {
-  if (isRemoteGatewayMode()) {
+  if (isServedGatewayRuntime()) {
     const lockfile = getRemoteGatewayLockfile();
     setCachedLockfile(lockfile);
     return lockfile;
@@ -336,7 +324,7 @@ export async function renameLockfileAssistant(
     // Fresh assistants report "": never write an empty name.
     return true;
   }
-  if (isRemoteGatewayMode() || !isLocalModeHostAvailable()) {
+  if (!isLocalModeHostAvailable()) {
     return true;
   }
   const entry = getLockfileAssistant(assistantId);
@@ -367,7 +355,7 @@ export async function markLockfileAssistantOnboarded(
   assistantId: string,
   onboardedAt: string,
 ): Promise<void> {
-  if (isRemoteGatewayMode() || !isLocalModeHostAvailable()) {
+  if (!isLocalModeHostAvailable()) {
     return;
   }
   const entry = getLockfileAssistant(assistantId);
@@ -393,7 +381,7 @@ export async function markLockfileAssistantOnboarded(
 export async function setActiveLockfileAssistant(
   assistantId: string,
 ): Promise<void> {
-  if (isRemoteGatewayMode()) {
+  if (!isLocalModeHostAvailable()) {
     return;
   }
 
@@ -828,7 +816,7 @@ function expectsLocalGateway(
   return (
     !!assistant &&
     isLocalClient() &&
-    !isRemoteGatewayMode() &&
+    !isServedGatewayRuntime() &&
     isLocalGatewayAssistant(assistant)
   );
 }
@@ -860,7 +848,7 @@ export function getLocalGatewayUrl(
  */
 function expectsPairedGateway(assistant: LockfileAssistant): boolean {
   return (
-    isLocalClient() && !isRemoteGatewayMode() && isPairedAssistant(assistant)
+    isLocalClient() && !isServedGatewayRuntime() && isPairedAssistant(assistant)
   );
 }
 

@@ -26,11 +26,11 @@ import type { Assistant } from "@/generated/api";
 
 const actualLocalMode = await import("@/lib/local-mode");
 let localClient = false;
-let remoteGatewayMode = false;
+let cloudRemote = false;
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
   isLocalClient: () => localClient,
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isCadetCloudRemote: () => cloudRemote,
 }));
 
 let gatewayAuthEnabled = false;
@@ -113,7 +113,7 @@ function signIn(userId = "user-1"): void {
 
 beforeEach(() => {
   localClient = true;
-  remoteGatewayMode = false;
+  cloudRemote = true;
   gatewayAuthEnabled = false;
   orgReady = true;
   resetAvatarSupersedeForTests();
@@ -141,10 +141,10 @@ describe("usePlatformAvatarUrls", () => {
   test.each([
     ["local client", () => (localClient = true)],
     [
-      "remote-gateway mode",
+      "remote-gateway mode (non-cloud)",
       () => {
         localClient = false;
-        remoteGatewayMode = true;
+        cloudRemote = false;
       },
     ],
   ])("maps id to a non-empty avatar_url under %s", async (_l, arrange) => {

@@ -30,13 +30,11 @@ import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
 const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
 const isPlatformDisabledMock = mock(() => false);
-const isRemoteGatewayModeMock = mock(
-  () =>
-    window.__CADET_CONFIG__?.remote !== undefined &&
-    window.__CADET_CONFIG__?.remote !== "local" &&
-    window.__CADET_CONFIG__?.remote !== "cloud",
-);
 const isCadetCloudRemoteMock = mock(() => false);
+const servedGatewayRuntimeFromConfig = (): boolean =>
+  window.__CADET_CONFIG__?.remote === "docker" ||
+  window.__CADET_CONFIG__?.remote === "custom";
+const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
 // The lockfile selection the recovery snapshots; a test moves it to model an
@@ -59,7 +57,7 @@ mock.module(
     isPlatformDisabled: isPlatformDisabledMock,
     isPlatformAssistant: () => false,
     isCadetCloudRemote: isCadetCloudRemoteMock,
-    isRemoteGatewayMode: isRemoteGatewayModeMock,
+    isServedGatewayRuntime: isServedGatewayRuntimeMock,
     loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
     primeLocalGatewayConnection: async () => {},
     primeLocalGatewayConnectionWithRepair: primeGatewayWithRepairMock,
@@ -1370,10 +1368,9 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       value: originalReload,
     });
     isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
-    isRemoteGatewayModeMock.mockImplementation(
-      () =>
-        window.__CADET_CONFIG__?.remote !== undefined &&
-        window.__CADET_CONFIG__?.remote !== "cloud",
+    isCadetCloudRemoteMock.mockImplementation(() => false);
+    isServedGatewayRuntimeMock.mockImplementation(
+      servedGatewayRuntimeFromConfig,
     );
     setSelfHostedConnection(null);
     sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
@@ -1489,7 +1486,8 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
      */
 
     // GIVEN remote-gateway mode and a refresh that lands a new token
-    isRemoteGatewayModeMock.mockImplementation(() => true);
+    isCadetCloudRemoteMock.mockImplementation(() => false);
+    isServedGatewayRuntimeMock.mockImplementation(() => true);
     refreshRemoteGatewaySessionImpl = async () => {
       setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
       return true;
@@ -1803,8 +1801,9 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
      * left, and it is budgeted like every other attempt.
      */
 
-    // GIVEN remote-gateway mode and a rejected refresh
-    isRemoteGatewayModeMock.mockImplementation(() => true);
+    // GIVEN the gateway-token scheme and a rejected refresh
+    isCadetCloudRemoteMock.mockImplementation(() => false);
+    isServedGatewayRuntimeMock.mockImplementation(() => true);
     refreshRemoteGatewaySessionImpl = async () => false;
     seedGatewayTokens();
 

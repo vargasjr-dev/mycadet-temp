@@ -7,7 +7,7 @@ import {
   isAvatarSuperseded,
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
-import { isLocalClient, isRemoteGatewayMode } from "@/lib/local-mode";
+import { isLocalClient, isCadetCloudRemote } from "@/lib/local-mode";
 import { useAuthStore, useHasPlatformSession } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
@@ -97,7 +97,7 @@ export function supersedePlatformAvatar(
  * Gateway auth has no platform list at all.
  */
 export function isLockfileDrivenStore(): boolean {
-  return (isLocalClient() || isRemoteGatewayMode()) && !isGatewayAuthEnabled();
+  return (isLocalClient() || !isCadetCloudRemote()) && !isGatewayAuthEnabled();
 }
 
 /**

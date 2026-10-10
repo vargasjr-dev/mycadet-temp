@@ -15,7 +15,7 @@
 import { listAssistants } from "@/assistant/api";
 import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import { subscribe } from "@/lib/event-bus";
-import { isLocalClient, isRemoteGatewayMode } from "@/lib/local-mode";
+import { isLocalClient, isCadetCloudRemote } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOrganizationStore } from "@/stores/organization-store";
@@ -55,7 +55,7 @@ let inflightReload: Promise<void> | null = null;
  * skipping the write there is correct.
  */
 export function reloadPlatformAssistants(): Promise<void> {
-  if (isLocalClient() || isRemoteGatewayMode() || isGatewayAuthEnabled()) {
+  if (isLocalClient() || !isCadetCloudRemote() || isGatewayAuthEnabled()) {
     return Promise.resolve();
   }
   const run = runReload();

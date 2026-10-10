@@ -54,7 +54,8 @@ import {
   getAuthGatewayIngressUrl,
   getPairedGatewayUrl,
   getSelectedAssistant,
-  isRemoteGatewayMode,
+  isCadetCloudRemote,
+  isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import { getLocalAssistantStatusHost } from "@/runtime/local-mode-host";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
@@ -634,7 +635,7 @@ class AssistantLifecycleService {
     let ingressUrl = window.location.origin;
     let resolvedAssistantId = "self";
     let rendererToken = getGatewayToken();
-    if (isRemoteGatewayMode()) {
+    if (isServedGatewayRuntime()) {
       ingressUrl = getRemoteGatewayIngressUrl();
     } else {
       const assistant = getSelectedAssistant();
@@ -723,7 +724,7 @@ class AssistantLifecycleService {
         ? (getSelectedAssistant()?.assistantId ?? assistantId)
         : assistantId;
       let localStatus =
-        !isRemoteGatewayMode() && isLocalLifecycleState
+        !isServedGatewayRuntime() && isLocalLifecycleState
           ? await getLocalAssistantStatusHost(localStatusAssistantId).catch(
               () => null,
             )
@@ -747,7 +748,7 @@ class AssistantLifecycleService {
             (healthz.status === 401 || healthz.status === 403)
           ) {
             this.probeFailureStreak = 0;
-            if (isRemoteGatewayMode()) {
+            if (!isCadetCloudRemote()) {
               void refreshRemoteGatewaySession();
             }
             return;
@@ -758,7 +759,11 @@ class AssistantLifecycleService {
           health = "unreachable";
         }
       }
-      if (health === "unreachable" && !localStatus && !isRemoteGatewayMode()) {
+      if (
+        health === "unreachable" &&
+        !localStatus &&
+        !isServedGatewayRuntime()
+      ) {
         localStatus = await getLocalAssistantStatusHost(
           localStatusAssistantId,
         ).catch(() => null);

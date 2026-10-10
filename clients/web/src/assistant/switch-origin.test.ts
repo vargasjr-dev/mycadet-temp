@@ -30,9 +30,9 @@ mock.module("@/runtime/self-hosted-servers", () => ({
   nativeSwitchToOriginPath: nativeSwitchToOriginPathMock,
 }));
 
-let remoteGatewayMode = false;
+let cloudRemote = false;
 mock.module("@/lib/local-mode", () => ({
-  isRemoteGatewayMode: () => remoteGatewayMode,
+  isCadetCloudRemote: () => cloudRemote,
 }));
 
 let publicBaseUrl = "https://gateway.example/assistant-1";
@@ -78,7 +78,7 @@ function isShellRoutePath(path: string): boolean {
 beforeEach(() => {
   isNativeMobileValue = false;
   nativeSwitchAccepts = true;
-  remoteGatewayMode = false;
+  cloudRemote = false;
   publicBaseUrl = "https://gateway.example/assistant-1";
   assignMock.mockClear();
   nativeSwitchToOriginMock.mockClear();
@@ -180,14 +180,14 @@ describe("switchToOrigin", () => {
 });
 
 describe("isCurrentOrigin", () => {
-  test("compares against the running deployment's base", () => {
+  test("cloud remote compares against the running deployment's base", () => {
+    cloudRemote = true;
+
     expect(isCurrentOrigin(origin("https://app.example"))).toBe(true);
     expect(isCurrentOrigin(origin("https://elsewhere.example"))).toBe(false);
   });
 
-  test("remote-gateway mode compares against the public path prefix", () => {
-    remoteGatewayMode = true;
-
+  test("the gateway-token scheme compares against the public path prefix", () => {
     expect(isCurrentOrigin(origin("https://gateway.example/assistant-1"))).toBe(
       true,
     );
@@ -195,7 +195,6 @@ describe("isCurrentOrigin", () => {
   });
 
   test("normalizes the running base, since stored urls are already canonical", () => {
-    remoteGatewayMode = true;
     publicBaseUrl = "https://Gateway.Example/assistant-1/";
 
     expect(isCurrentOrigin(origin("https://gateway.example/assistant-1"))).toBe(

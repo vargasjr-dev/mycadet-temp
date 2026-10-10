@@ -104,7 +104,6 @@ import {
   isPairedAssistant,
   isCadetCloudRemote,
   isPlatformAssistant,
-  isRemoteGatewayMode,
   isRetryablePairingFailure,
   loadLockfile,
   LOCAL_GATEWAY_STARTUP_RETRY,
@@ -197,26 +196,24 @@ afterEach(() => {
 });
 
 describe("remote gateway mode", () => {
-  test("isRemoteGatewayMode and isCadetCloudRemote split on the remote value", () => {
+  test("isCadetCloudRemote splits cloud from the gateway-auth remotes", () => {
     // Shells serving the local cadet (desktop, dev server) inject no remote;
     // the reader defaults it to "local".
     window.__CADET_CONFIG__ = {};
-    expect(isRemoteGatewayMode()).toBe(false);
     expect(isCadetCloudRemote()).toBe(false);
 
     // A declared "local" remote behaves the same as an absent one.
     window.__CADET_CONFIG__ = { remote: "local" };
-    expect(isRemoteGatewayMode()).toBe(false);
     expect(isCadetCloudRemote()).toBe(false);
 
-    // A self-hosted edge is a remote gateway.
+    // A self-hosted edge and a docker cadet share the gateway-token scheme.
     window.__CADET_CONFIG__ = { remote: "custom" };
-    expect(isRemoteGatewayMode()).toBe(true);
+    expect(isCadetCloudRemote()).toBe(false);
+    window.__CADET_CONFIG__ = { remote: "docker" };
     expect(isCadetCloudRemote()).toBe(false);
 
-    // The cloud remote is never a remote-gateway one.
+    // The cloud remote is the only one behind the platform cookie scheme.
     window.__CADET_CONFIG__ = { remote: "cloud" };
-    expect(isRemoteGatewayMode()).toBe(false);
     expect(isCadetCloudRemote()).toBe(true);
   });
 
@@ -225,7 +222,7 @@ describe("remote gateway mode", () => {
 
     const lockfile = await loadLockfile();
 
-    expect(isRemoteGatewayMode()).toBe(true);
+    expect(isCadetCloudRemote()).toBe(false);
     expect(loadLockfileHost).not.toHaveBeenCalled();
     expect(lockfile.activeAssistant).toBe("self");
     expect(lockfile.assistants).toEqual([

@@ -125,7 +125,6 @@ mock.module("@mycadet/design-library/components/progress-bar", () => ({
   ),
 }));
 
-
 mock.module("@/domains/onboarding/prefs", () => ({
   readPrivacyConsent: () => true,
   readSelectedVersion: () => null,
@@ -160,7 +159,8 @@ mock.module("@/runtime/native-auth", () => ({
 
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => isLocalClientValue,
-  isRemoteGatewayMode: () => false,
+  isCadetCloudRemote: () => false,
+  isServedGatewayRuntime: () => false,
   isLocalAssistant: () => false,
   isPlatformAssistant: () => false,
   isPlatformDisabled: () => false,
