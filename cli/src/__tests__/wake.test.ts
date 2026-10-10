@@ -62,11 +62,15 @@ const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(
   realDocker.dockerResourceNames,
 );
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
+const recreateDockerContainersMock = mock<typeof docker.recreateDockerContainers>(
+  async () => {},
+);
 
 mock.module("../lib/docker.js", () => ({
   ...realDocker,
   dockerResourceNames: dockerResourceNamesMock,
   wakeContainers: wakeContainersMock,
+  recreateDockerContainers: recreateDockerContainersMock,
 }));
 
 const seedGuardianTokenFromSiblingEnvMock = mock<
@@ -957,6 +961,48 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(maybeStartNgrokTunnelMock).not.toHaveBeenCalled();
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
+      if (originalWorkspaceDir === undefined) {
+        delete process.env.CADET_WORKSPACE_DIR;
+      } else {
+        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
+      }
+      rmSync(defaultWorkspace, { recursive: true, force: true });
+    }
+  });
+
+  test("a migrated docker assistant (containers never created) is recreated from the entry", async () => {
+    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
+    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
+    const migratedEntry = {
+      assistantId: "docker-1",
+      runtimeUrl: "http://localhost:7930",
+      cloud: "docker" as const,
+      containerInfo: {
+        assistantImage: "mycadet/mycadet-assistant:v0.12.7",
+        gatewayImage: "mycadet/mycadet-gateway:v0.12.7",
+        cesImage: "mycadet/mycadet-credential-executor:v0.12.7",
+      },
+    };
+    resolveTargetAssistantMock.mockReturnValue(migratedEntry);
+    loadRawConfigMock.mockReturnValue(enabledConfig);
+    // The v0.0.10 run feedback: the containers were never created —
+    // `docker start` answers "No such container".
+    wakeContainersMock.mockImplementation(async () => {
+      throw new Error(
+        "Error response from daemon: No such container: docker-1-assistant",
+      );
+    });
+    process.argv = ["bun", "cadet", "wake", "docker-1"];
+
+    try {
+      await wake();
+
+      expect(recreateDockerContainersMock).toHaveBeenCalledWith(migratedEntry);
+      expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
+      expect(logSpy).toHaveBeenCalledWith("Wake complete.");
+    } finally {
+      wakeContainersMock.mockImplementation(async () => {});
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;
       } else {

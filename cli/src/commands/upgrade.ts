@@ -502,17 +502,12 @@ async function upgradeDocker(
   const ready = await waitForReady(entry.runtimeUrl);
   if (ready) {
     // Update lockfile with new service group topology
-    const newDigests = await captureImageRefs(res);
     const updatedEntry: AssistantEntry = {
       ...entry,
       containerInfo: {
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
         cesImage: imageTags["credential-executor"],
-        assistantDigest: newDigests?.assistant,
-        gatewayDigest: newDigests?.gateway,
-        cesDigest: newDigests?.["credential-executor"],
-        networkName: res.network,
         assistantPort,
       },
       previousContainerInfo: entry.containerInfo,
@@ -668,13 +663,9 @@ async function upgradeDocker(
             );
           }
 
-          // Capture fresh digests from the now-running rolled-back containers.
-          const rollbackDigests = await captureImageRefs(res);
-
           // Restore previous container info in lockfile after rollback.
-          // The *Image fields hold human-readable image:tag names from the
-          // pre-upgrade containerInfo; *Digest fields get fresh values from
-          // the running containers (or fall back to previousImageRefs).
+          // The recorded image refs are the rollback record now (digests are
+          // gone from the contract).
           const rolledBackEntry: AssistantEntry = {
             ...entry,
             containerInfo: {
@@ -686,14 +677,6 @@ async function upgradeDocker(
               cesImage:
                 entry.containerInfo?.cesImage ??
                 previousImageRefs["credential-executor"],
-              assistantDigest:
-                rollbackDigests?.assistant ?? previousImageRefs.assistant,
-              gatewayDigest:
-                rollbackDigests?.gateway ?? previousImageRefs.gateway,
-              cesDigest:
-                rollbackDigests?.["credential-executor"] ??
-                previousImageRefs["credential-executor"],
-              networkName: res.network,
               assistantPort,
             },
             previousContainerInfo: undefined,

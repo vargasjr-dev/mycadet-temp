@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  dropProcessTableSelfRows,
   parsePsProcessTable,
   parseWindowsProcessTable,
 } from "../process-table.js";
@@ -62,5 +63,51 @@ describe("parseWindowsProcessTable", () => {
         }),
       ),
     ).toEqual([{ pid: 100, ppid: 4, command: "worker.exe" }]);
+  });
+});
+
+describe("dropProcessTableSelfRows", () => {
+  test("drops the ps enumeration's own row", () => {
+    const rows = [
+      { pid: 1, ppid: 0, command: "/sbin/launchd" },
+      { pid: 100, ppid: 42, command: "ps -A -ww -o pid=,ppid=,command=" },
+      { pid: 101, ppid: 42, command: "bun run /app/daemon/main.ts" },
+    ];
+    expect(dropProcessTableSelfRows(rows)).toEqual([
+      { pid: 1, ppid: 0, command: "/sbin/launchd" },
+      { pid: 101, ppid: 42, command: "bun run /app/daemon/main.ts" },
+    ]);
+  });
+
+  test("drops the PowerShell enumeration's own row case-insensitively", () => {
+    const rows = [
+      {
+        pid: 50,
+        ppid: 4,
+        command: "C:\\Program Files\\Bun\\bun.exe worker.ts",
+      },
+      {
+        pid: 51,
+        ppid: 50,
+        command:
+          "PowerShell.exe -NoProfile -NonInteractive -Command Get-CimInstance Win32_Process | ConvertTo-Json",
+      },
+    ];
+    expect(dropProcessTableSelfRows(rows)).toEqual([
+      {
+        pid: 50,
+        ppid: 4,
+        command: "C:\\Program Files\\Bun\\bun.exe worker.ts",
+      },
+    ]);
+  });
+
+  test("keeps ordinary processes — a bare ps invocation without the enumeration args is a real process", () => {
+    const rows = [
+      { pid: 60, ppid: 4, command: "ps" },
+      { pid: 61, ppid: 4, command: "ps aux" },
+      { pid: 62, ppid: 4, command: "qdrant" },
+    ];
+    expect(dropProcessTableSelfRows(rows)).toEqual(rows);
   });
 });

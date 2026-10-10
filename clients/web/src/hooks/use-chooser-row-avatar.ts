@@ -23,7 +23,11 @@ import { versionSupportsAvatarStateManifest } from "@/lib/backwards-compat/avata
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { lastSeenAvatarGenerations } from "@/lib/avatar-last-seen-cache";
 import { createGenerationGuard } from "@/lib/generation-guard";
-import { isLocalClient, isCadetCloudRemote } from "@/lib/local-mode";
+import {
+  isCadetCloudRemote,
+  isLocalClient,
+  isServedGatewayRuntime,
+} from "@/lib/local-mode";
 import { resolvePairedAssistantPlatformId } from "@/lib/paired-platform-identity";
 import {
   chooserRowAvatarCacheQueryKey,
@@ -165,7 +169,7 @@ export function canFetchRowAvatarViaPlatformProxy(
 ): boolean {
   return (
     !isLocalClient() &&
-    !!isCadetCloudRemote() &&
+    !isServedGatewayRuntime() &&
     !isGatewayAuthEnabled() &&
     getSelfHostedIngressUrl() === null &&
     row.isPlatformHosted

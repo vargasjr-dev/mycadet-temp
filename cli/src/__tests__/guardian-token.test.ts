@@ -16,6 +16,8 @@ import { guardianTokenPath, resolveConfigDir } from "@mycadet/local-mode";
 import {
   getOrCreatePersistedDeviceId,
   guardianTokenDueForRenewal,
+  GuardianLeasePermanentError,
+  leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
   refreshGuardianTokenResult,
@@ -312,6 +314,72 @@ describe("refreshGuardianToken", () => {
     );
     expect(sawSignal).toBe(true); // fetch carries a timeout AbortSignal
     expect(existsSync(lockPath("px"))).toBe(false); // lock released
+  });
+
+  test("leases against the gateway's real init shape — refreshAfter arrives as a number", async () => {
+    // The gateway's GuardianBootstrapResult serializes refreshAfter as a
+    // NUMBER of ms (mintRefreshToken), and the strict lease check rejects a
+    // response missing any field. A string-only schema read that number as
+    // malformed, so every real hatch failed its lease while the ISO-string
+    // test doubles here stayed green.
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/readyz")) {
+        return new Response("", { status: 404 }); // no starting gate — proceed
+      }
+      return new Response(
+        JSON.stringify({
+          guardianPrincipalId: "principal-lease",
+          accessToken: "access-lease",
+          accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+          refreshToken: "refresh-lease",
+          refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+          refreshAfter: Date.now() + 48 * 60 * 60 * 1000,
+          isNew: true,
+          mintedOverPriorEvidence: false,
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+
+    const leased = await leaseGuardianToken("https://gw.example.com", "px");
+
+    expect(leased.accessToken).toBe("access-lease");
+    expect(leased.refreshAfter).toBeDefined();
+    const stored = loadGuardianToken("px");
+    expect(stored?.accessToken).toBe("access-lease");
+    expect(stored?.refreshAfter).toBe(leased.refreshAfter);
+  });
+
+  test("a malformed 200 names the unusable fields and is not retried", async () => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/readyz")) {
+        return new Response("", { status: 404 });
+      }
+      return new Response(
+        JSON.stringify({
+          guardianPrincipalId: "principal-lease",
+          accessToken: 42,
+          refreshToken: "refresh-lease",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+
+    const err = await leaseGuardianToken("https://gw.example.com", "px").then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    if (!(err instanceof GuardianLeasePermanentError)) {
+      throw new Error(
+        `expected GuardianLeasePermanentError, got ${String(err)}`,
+      );
+    }
+    expect(err.message).toContain("(200)");
+    expect(err.message).toContain("accessToken arrived as number");
+    expect(err.message).toContain("refreshTokenExpiresAt arrived as absent");
   });
 
   test("returns null without calling the gateway when the refresh token is expired", async () => {

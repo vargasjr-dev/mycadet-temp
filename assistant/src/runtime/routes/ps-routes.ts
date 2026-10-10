@@ -82,6 +82,10 @@ async function getProcessStatus() {
   try {
     const procs = await listProcesses();
     entry = toEntry(buildProcessTree(procs, process.pid));
+    // The daemon's own node derives its name from the entry script
+    // (`daemon-main`); callers know this process as the assistant itself —
+    // the fallback branch below already reports that name.
+    entry.name = "assistant";
   } catch (err) {
     // Enumeration failed (no /proc and `ps` unavailable). Still report the
     // daemon itself so the endpoint stays useful for liveness.
