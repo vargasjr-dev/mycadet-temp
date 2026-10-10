@@ -822,6 +822,7 @@ jobs:
           retention-days: 1
 
   publish-npm-prod:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -913,6 +914,7 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-prod:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1050,6 +1052,7 @@ jobs:
           retention-days: 1
 
   publish-npm-staging:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1139,6 +1142,7 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-staging:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1238,6 +1242,7 @@ jobs:
           retention-days: 1
 
   publish-web-staging:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1276,6 +1281,7 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --tag staging --access public
 
   publish-meta-staging:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1445,6 +1451,7 @@ jobs:
           retention-days: 1
 
   publish-web-prod:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
@@ -1486,6 +1493,7 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --access public
 
   publish-meta-prod:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
      
