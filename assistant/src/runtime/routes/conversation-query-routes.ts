@@ -44,7 +44,6 @@ import {
 } from "../../config/input-modalities.js";
 import {
   deepMergeOverwrite,
-  fillContextDefaultsForMissingKeys,
   getConfig,
   getDeploymentContextDefaults,
   invalidateConfigCache,
@@ -527,48 +526,6 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
 }
 
 /**
- * Apply deployment-context defaults to a raw config payload before it goes
- * out over the wire from `GET /v1/config`. The in-memory `loadConfig()`
- * already layers these defaults for daemon-internal consumers; the GET
- * response needs the same treatment so external clients (macOS, web, CLI)
- * see the effective value rather than `undefined` when the daemon hasn't
- * persisted an explicit choice yet. For example, on a freshly-hatched
- * platform-managed assistant, `services.image-generation.provider` may be
- * absent from disk (only `llm.profiles` was written by
- * `seedInferenceProfiles`); the fill pass ensures clients receive `"cadet"`
- * rather than falling back to their own defaults.
- *
- * Guards against `loadRawConfig()` handing us a value that is technically
- * valid JSON but not a plain object (e.g. literal `null`, a number, or an
- * array). `loadRawConfig` is typed `Record<string, unknown>` but `JSON.parse`
- * itself doesn't enforce that — a malformed-but-parseable `config.json`
- * would blow up `fillContextDefaultsForMissingKeys` on its `target[key]` /
- * `fileConfig[key]` accesses, turning `GET /v1/config` into a 500 where it
- * used to succeed (returning the malformed payload as-is). When `raw` is
- * not a plain object, we return it unchanged.
- *
- * Exported for direct unit testing.
- */
-export function applyContextDefaultsToRawConfig(raw: unknown): unknown {
-  const contextDefaults = getDeploymentContextDefaults();
-  if (
-    Object.keys(contextDefaults).length === 0 ||
-    raw === null ||
-    typeof raw !== "object" ||
-    Array.isArray(raw)
-  ) {
-    return raw;
-  }
-  fillContextDefaultsForMissingKeys(
-    raw as Record<string, unknown>,
-    raw as Record<string, unknown>,
-    contextDefaults,
-  );
-  synthesizeLegacyInferenceModeForPlatform(raw as Record<string, unknown>);
-  return raw;
-}
-
-/**
  * Backwards-compat wire field for `GET /v1/config`. PR removed
  * `services.inference.mode` from the typed schema (routing is governed by
  * `provider_connections` rows + per-profile `provider_connection`), but
@@ -955,11 +912,11 @@ const ConfigPatchRequestSchema = z
 
 function handleGetConfig() {
   try {
-    const config = applyContextDefaultsToRawConfig(loadRawConfig());
     // One zod pass shapes the response: ConfigGetResponseSchema is this
     // route's wire contract, so the overlays stamp their derived fields on
     // the parsed view instead of digging handles out of raw objects. A
     // config the schema rejects gets no overlays and is served raw.
+    const config = loadRawConfig();
     const parsed = ConfigGetResponseSchema.safeParse(config);
     if (!parsed.success) {
       return config;
@@ -971,6 +928,12 @@ function handleGetConfig() {
     enrichProfilesForWire(wire);
     overlayDefaultProviderForWire(wire);
     overlayChatSettingsForWire(wire);
+    // macOS wire shim (see its docblock) — gated the same way the old fill
+    // gated it: deployment-context defaults are non-empty only on
+    // IS_PLATFORM=true.
+    if (Object.keys(getDeploymentContextDefaults()).length > 0) {
+      synthesizeLegacyInferenceModeForPlatform(wire);
+    }
     return wire;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
