@@ -168,7 +168,7 @@ jobs:
 
   build-chrome-extension:
     needs: [extract-version]
-    if: needs.extract-version.outputs.chrome_extension_changed == 'true'
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -255,10 +255,7 @@ jobs:
         push-gateway-manifest,
         push-credential-executor-manifest,
       ]
-    if: >-
-      needs.extract-version.outputs.chrome_extension_changed == 'true'
-      && needs.extract-version.outputs.is_staging == 'false'
-      && vars.CWS_PUBLISH_ENABLED == 'true'
+    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
@@ -386,7 +383,10 @@ jobs:
           retention-days: 1
 
   push-assistant-manifest:
-    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    # The image job MUST be a direct need: needs.<job>.result only resolves
+    # for jobs in this list, and the if below reads it. #143's port dropped
+    # it, so every manifest silently skipped and nothing downstream ran.
+    needs: [extract-version, push-assistant-image]
     if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
@@ -529,7 +529,8 @@ jobs:
           retention-days: 1
 
   push-gateway-manifest:
-    needs: [extract-version, ci-gateway]
+    # Direct need on the image job — see push-assistant-manifest above.
+    needs: [extract-version, push-gateway-image]
     if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
@@ -668,7 +669,8 @@ jobs:
           retention-days: 1
 
   push-credential-executor-manifest:
-    needs: [extract-version, ci-credential-executor]
+    # Direct need on the image job — see push-assistant-manifest above.
+    needs: [extract-version, push-credential-executor-image]
     if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
@@ -1897,6 +1899,10 @@ jobs:
           done
 
   release:
+    # build-electron + build-chrome-extension are out of the release gate:
+    # electron is slow and independent of the tag/GitHub Release, and the
+    # chrome-extension channel is offline for now (both jobs carry the
+    # offline marker). Re-add them here when either returns.
     needs:
       [
         extract-version,
@@ -1904,13 +1910,11 @@ jobs:
         publish-web-prod,
         publish-meta-prod,
         publish-plugin-api-prod,
-        build-electron,
         push-assistant-manifest,
         push-gateway-manifest,
         push-credential-executor-manifest,
-        build-chrome-extension,
       ]
-    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && (needs.build-electron.result == 'success' || needs.build-electron.result == 'skipped') }}
+    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
