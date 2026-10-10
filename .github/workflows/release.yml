@@ -1563,6 +1563,12 @@ jobs:
   # notarizes, and uploads as release assets. A failure on either arch fails
   # this job and blocks the release.
   build-electron:
+    # DISABLED for now: the Apple signing material (DEVID_CERTIFICATE_P12 /
+    # DEVID_CERTIFICATE_PASSWORD) is only configured on the `dev` environment,
+    # not on staging/production, so the macOS codesign step fails on release
+    # runs. Re-enable by deleting this line once the signing secrets are added
+    # to the release environments.
+    if: false
     # No publish dep: the bundled CLI floats to the `staging`/`latest` dist-tag at runtime.
     needs: [extract-version]
     runs-on: macos-26
@@ -1833,7 +1839,7 @@ jobs:
       [extract-version, build-electron, publish-meta-prod, publish-meta-staging]
     # always() disables the implicit success(): publish-meta-prod/-staging is
     # skipped on the other channel.
-    if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
+    if: ${{ always() && !cancelled() && (needs.build-electron.result == 'success' || needs.build-electron.result == 'skipped') && (needs.publish-meta-prod.result == 'success' || needs.publish-meta-staging.result == 'success') }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1904,7 +1910,7 @@ jobs:
         push-credential-executor-manifest,
         build-chrome-extension,
       ]
-    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && needs.build-electron.result == 'success' }}
+    if: ${{ always() && !cancelled() && needs.extract-version.outputs.is_staging != 'true' && needs.extract-version.result == 'success' && needs.publish-npm-prod.result == 'success' && needs.publish-web-prod.result == 'success' && needs.publish-meta-prod.result == 'success' && needs.publish-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' && (needs.build-electron.result == 'success' || needs.build-electron.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

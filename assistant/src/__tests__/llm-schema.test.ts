@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test";
 import { ModelPricingOverrideSchema } from "../config/schemas/inference.js";
 import { LLMConfigBase, LLMSchema } from "../config/schemas/llm.js";
 
-// A legacy `llm.default` blob as older configs persisted it. The schema has
-// no `default` field, so Zod strips the key at parse time — configs carrying
-// it must still load, with the blob ignored.
+// The `llm.default` blob as configs persist it. Since #139 it is a real
+// schema field (a partial fragment, all leaves optional — parsing must not
+// inject schema defaults onto disk), so a parse preserves it verbatim.
 const legacyDefaultBlob = {
   provider: "anthropic" as const,
   model: "claude-opus-4-7",
@@ -31,7 +31,7 @@ const legacyDefaultBlob = {
 };
 
 describe("LLMSchema", () => {
-  test("valid full config parses successfully; a legacy `default` blob is ignored", () => {
+  test("valid full config parses successfully and preserves the `default` blob verbatim", () => {
     const parsed = LLMSchema.parse({
       default: legacyDefaultBlob,
       profiles: {
@@ -51,17 +51,17 @@ describe("LLMSchema", () => {
         },
       ],
     });
-    // The schema has no `default` field; Zod strips the unknown key.
-    expect("default" in parsed).toBe(false);
+    // The blob is a partial fragment: preserved verbatim, no defaults injected.
+    expect(parsed.default).toEqual(legacyDefaultBlob);
     expect(parsed.profiles["fast"]?.speed).toBe("fast");
     expect(parsed.profileOrder).toEqual([]);
     expect(parsed.callSites.mainAgent?.profile).toBe("thorough");
     expect(parsed.pricingOverrides).toHaveLength(1);
   });
 
-  test("a config carrying only a legacy `llm.default` blob parses with the key dropped", () => {
+  test("a config carrying only the `llm.default` blob parses with it preserved", () => {
     const parsed = LLMSchema.parse({ default: legacyDefaultBlob });
-    expect("default" in parsed).toBe(false);
+    expect(parsed.default).toEqual(legacyDefaultBlob);
     expect(parsed.profiles).toEqual({});
     expect(parsed.profileOrder).toEqual([]);
     expect(parsed.callSites).toEqual({});

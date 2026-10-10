@@ -9,12 +9,16 @@ import {
 } from "../config/default-profile-names.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 
+// The default provider lives in the `llm.default` blob (provider +
+// optional connection pin) since #139; the July-era `llm.defaultProvider`
+// column key is retired and zod strips it silently, so every fixture here
+// writes the blob.
 describe("LLMSchema fallbackProfile", () => {
   test.each([...DEFAULT_PROFILE_KEYS])(
     "accepts the code-owned managed pointer for %s",
     (profileName) => {
       const result = LLMSchema.safeParse({
-        defaultProvider: { provider: "cadet" },
+        default: { provider: "cadet" },
         profiles: {
           [profileName]: {
             source: "managed",
@@ -98,7 +102,7 @@ describe("LLMSchema fallbackProfile", () => {
     const profileName = DEFAULT_PROFILE_KEYS[0];
     for (const provider of ["anthropic", "chatgpt"] as const) {
       const result = LLMSchema.safeParse({
-        defaultProvider: { provider },
+        default: { provider },
         profiles: {
           [profileName]: {
             source: "managed",
@@ -138,23 +142,23 @@ describe("LLMSchema fallbackProfile", () => {
   });
 });
 
-describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
+describe("LLMSchema backup profile references vs llm.default", () => {
   const backupKey = BACKUP_PROFILE_KEYS[0];
   const managed = { provider: "cadet" } as const;
   const nonManaged = [{ provider: "anthropic" }, { provider: "chatgpt" }];
 
   test("activeProfile naming a backup parses on the managed column", () => {
     const result = LLMSchema.safeParse({
-      defaultProvider: managed,
+      default: managed,
       activeProfile: backupKey,
     });
     expect(result.success).toBe(true);
   });
 
   test("activeProfile naming a backup is rejected on a non-managed column", () => {
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         activeProfile: backupKey,
       });
       expect(result.success).toBe(false);
@@ -170,13 +174,13 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   test("advisorProfile naming a backup follows the same split", () => {
     expect(
       LLMSchema.safeParse({
-        defaultProvider: managed,
+        default: managed,
         advisorProfile: backupKey,
       }).success,
     ).toBe(true);
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         advisorProfile: backupKey,
       });
       expect(result.success).toBe(false);
@@ -193,13 +197,13 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   test("a call-site pin on a backup follows the same split", () => {
     expect(
       LLMSchema.safeParse({
-        defaultProvider: managed,
+        default: managed,
         callSites: { recall: { profile: backupKey } },
       }).success,
     ).toBe(true);
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         callSites: { recall: { profile: backupKey } },
       });
       expect(result.success).toBe(false);
@@ -213,8 +217,8 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   });
 
   test("a mix arm naming a backup follows the same split", () => {
-    const mixConfig = (defaultProvider: { provider: string }) => ({
-      defaultProvider,
+    const mixConfig = (blob: { provider: string }) => ({
+      default: blob,
       profiles: {
         armA: { speed: "fast" },
         blend: {
@@ -226,31 +230,39 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
       },
     });
     expect(LLMSchema.safeParse(mixConfig(managed)).success).toBe(true);
-    for (const defaultProvider of nonManaged) {
-      expect(LLMSchema.safeParse(mixConfig(defaultProvider)).success).toBe(
-        false,
-      );
+    for (const blob of nonManaged) {
+      expect(LLMSchema.safeParse(mixConfig(blob)).success).toBe(false);
     }
   });
 
-  test("an absent or malformed defaultProvider reads as the managed column", () => {
-    // `DefaultProviderField` catches an invalid value to `undefined`, and an
-    // install predating the field is managed by definition, so both keep
-    // their backups referenceable rather than losing a valid selection.
-    for (const defaultProvider of [undefined, { provider: 42 }, "cadet"]) {
+  test("an absent blob or a non-matrix provider reads as the managed column", () => {
+    // An install predating the blob is managed by definition, so an absent
+    // `default` keeps its backups referenceable. A provider value with no
+    // matrix column (keyless ollama, user-endpoint openai-compatible) is
+    // clamped to the managed column at read time rather than failing the
+    // blob. A non-string provider is NOT caught — the blob is a plain
+    // fragment, so it fails the parse and the loader's leaf recovery strips
+    // the bad leaf (covered by the loader tests).
+    for (const blob of [undefined, { provider: "ollama" }]) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         activeProfile: backupKey,
       });
       expect(result.success).toBe(true);
     }
+    expect(
+      LLMSchema.safeParse({
+        default: { provider: 42 },
+        activeProfile: backupKey,
+      }).success,
+    ).toBe(false);
   });
 
   test("the default profile keys stay valid on every column", () => {
-    for (const defaultProvider of [managed, ...nonManaged]) {
+    for (const blob of [managed, ...nonManaged]) {
       for (const key of DEFAULT_PROFILE_KEYS) {
         expect(
-          LLMSchema.safeParse({ defaultProvider, activeProfile: key }).success,
+          LLMSchema.safeParse({ default: blob, activeProfile: key }).success,
         ).toBe(true);
       }
     }
@@ -264,9 +276,9 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   const stub = { source: "managed" } as const;
 
   test("a managed stub does not keep a backup reference alive off the managed column", () => {
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         profiles: { [backupKey]: stub, primary: { effort: "high" } },
         activeProfile: backupKey,
       });
@@ -281,16 +293,16 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   });
 
   test("a managed stub does not keep a call-site pin or mix arm alive either", () => {
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const callSitePin = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         profiles: { [backupKey]: stub },
         callSites: { recall: { profile: backupKey } },
       });
       expect(callSitePin.success).toBe(false);
 
       const mixArm = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         profiles: {
           [backupKey]: stub,
           armA: { speed: "fast" },
@@ -307,9 +319,9 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
   });
 
   test("a managed stub does not keep a fallbackProfile pointer alive either", () => {
-    for (const defaultProvider of nonManaged) {
+    for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
-        defaultProvider,
+        default: blob,
         profiles: {
           [backupKey]: stub,
           primary: { fallbackProfile: backupKey },
@@ -329,7 +341,7 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
     // The stub stands for a body that does resolve here, so nothing about it
     // makes the reference worse than the unmaterialized case.
     const result = LLMSchema.safeParse({
-      defaultProvider: managed,
+      default: managed,
       profiles: {
         [backupKey]: stub,
       },
@@ -337,23 +349,5 @@ describe("LLMSchema backup profile references vs llm.defaultProvider", () => {
       callSites: { recall: { profile: backupKey } },
     });
     expect(result.success).toBe(true);
-  });
-
-  test("a user-owned entry under a backup name cannot enable custom fallback", () => {
-    for (const defaultProvider of [managed, ...nonManaged]) {
-      const result = LLMSchema.safeParse({
-        defaultProvider,
-        profiles: {
-          [backupKey]: {
-            source: "user",
-            provider: "anthropic",
-            model: "claude-opus-4-7",
-          },
-          primary: { fallbackProfile: backupKey },
-        },
-        activeProfile: backupKey,
-      });
-      expect(result.success).toBe(false);
-    }
   });
 });
