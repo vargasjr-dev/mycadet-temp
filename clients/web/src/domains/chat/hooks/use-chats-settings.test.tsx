@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
+import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import {
   QueryClient,
@@ -19,6 +20,8 @@ let organizationId = "org-1";
 let loadFailure = false;
 let saveFailure = false;
 let savedConfig: ConfigGetResponse;
+/** Raw wire payload override — simulates a version-skewed sparse response. */
+let sparseConfig: unknown;
 let finishSave: (() => void) | undefined;
 let deferSave = false;
 let finishLoad: (() => void) | undefined;
@@ -32,7 +35,7 @@ const getConfig = mock(async (_assistantId: string) => {
   if (loadFailure) {
     throw new Error("Load failed");
   }
-  return savedConfig;
+  return sparseConfig ?? savedConfig;
 });
 const patchConfig = mock(async (_options: ConfigPatchData) => {
   if (deferSave) {
@@ -58,7 +61,9 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
   getOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
 }));
-mock.module("@/lib/error-reporting/capture-error", () => ({ captureError: () => {} }));
+mock.module("@/lib/error-reporting/capture-error", () => ({
+  captureError: () => {},
+}));
 mock.module("@/stores/organization-store", () => ({
   getActiveOrganizationIdForRequests: () => organizationId,
 }));
@@ -93,10 +98,16 @@ beforeEach(() => {
   finishSave = undefined;
   deferLoad = false;
   finishLoad = undefined;
-  savedConfig = {
-    conversations: { autoArchive: { enabled: false, afterDays: 7 } },
+  sparseConfig = undefined;
+  savedConfig = makeConfigFixture({
+    conversations: {
+      autoArchive: { enabled: false, afterDays: 7 },
+      skipAutoRetitling: false,
+      backgroundInjection: "",
+      resumeProcessingOnStartup: false,
+    },
     notifications: { newMessageEnabled: true },
-  };
+  });
   getConfig.mockClear();
   patchConfig.mockClear();
   onSaved.mockClear();
@@ -232,7 +243,7 @@ test("load failures can retry without exposing editable defaults", async () => {
   await waitFor(() => expect(hook.result.current.state.status).toBe("ready"));
 });
 test("a supported response missing settings is an error", async () => {
-  savedConfig = {};
+  sparseConfig = {};
   const hook = mount();
   await waitFor(() => expect(hook.result.current.state.status).toBe("error"));
   await act(() => hook.result.current.save(changes));

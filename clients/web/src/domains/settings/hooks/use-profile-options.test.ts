@@ -21,7 +21,10 @@ const llm: LlmConfig = {
     // offering it would produce a selection that silently does nothing.
     extra: {},
   },
-} as LlmConfig;
+  callSites: {},
+  profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+  pricingOverrides: [],
+};
 
 // 0.10.8+ bakes blank profile fields at write time; older assistants
 // live-inherit them, so a sparse profile dispatches there.

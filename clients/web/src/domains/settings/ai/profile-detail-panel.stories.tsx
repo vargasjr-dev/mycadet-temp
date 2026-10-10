@@ -6,10 +6,10 @@ import {
   inferenceProviderconnectionsGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import type {
-  ConfigGetResponse,
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
 import { createStoryQueryClient } from "@/lib/story-query-cache";
+import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 
 import { ProfileDetailPanel } from "./profile-detail-panel";
 
@@ -25,7 +25,7 @@ const CONNECTIONS: ProviderConnection[] = [
   } as unknown as ProviderConnection,
 ];
 
-const CONFIG: ConfigGetResponse = {
+const CONFIG = makeConfigFixture({
   llm: {
     profiles: {
       balanced: {
@@ -45,8 +45,10 @@ const CONFIG: ConfigGetResponse = {
     profileOrder: ["balanced", "my-custom"],
     activeProfile: "balanced",
     callSites: {},
+    profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+    pricingOverrides: [],
   },
-};
+});
 
 function seededClient() {
   return createStoryQueryClient((client) => {

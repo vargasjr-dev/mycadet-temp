@@ -61,6 +61,7 @@ const HostBrowserCdpInspectConfigSchema = z
       .string({ error: "hostBrowser.cdpInspect.host must be a string" })
       .transform((v) => v || "localhost")
       .default("localhost")
+      .pipe(z.string())
       .describe(
         "Host name or IP address where the host Chrome instance exposes its remote debugging endpoint.",
       ),

@@ -733,7 +733,16 @@ export const ProfileEntry = LLMConfigFragment.extend({
    * not supported.
    */
   fallbackProfile: z.string().min(1).optional().meta({ readOnly: true }),
-});
+  /**
+   * Wire-only capability flags: stamped onto config-read responses by
+   * `enrichProfilesForWire` and stripped from incoming writes by
+   * `stripWireOnlyProfileKeys` (conversation-query-routes), so they never
+   * persist. Declared here so the wire contract (AssistantConfig → SDK
+   * types) describes the enriched profile shape clients consume.
+   */
+  supportsVision: z.boolean().optional(),
+  invariant: z.boolean().optional(),
+}).meta({ id: "ProfileEntry" });
 export type ProfileEntry = z.infer<typeof ProfileEntry>;
 
 /**

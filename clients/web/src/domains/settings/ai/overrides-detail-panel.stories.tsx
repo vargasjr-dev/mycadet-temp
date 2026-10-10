@@ -11,6 +11,7 @@ import type {
   ConfigLlmCallsitesGetResponse,
 } from "@/generated/daemon/types.gen";
 import { createStoryQueryClient } from "@/lib/story-query-cache";
+import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 import { OverridesDetailPanel } from "@/domains/settings/ai/overrides-detail-panel";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
@@ -49,7 +50,7 @@ const CATALOG: ConfigLlmCallsitesGetResponse = {
 
 // The three managed defaults a stock install ships with, hence
 // `provider: "cadet"` on each.
-const CONFIG: ConfigGetResponse = {
+const CONFIG = makeConfigFixture({
   llm: {
     profiles: {
       "quality-optimized": {
@@ -78,8 +79,10 @@ const CONFIG: ConfigGetResponse = {
     activeProfile: "balanced",
     advisorProfile: "quality-optimized",
     callSites: {},
+    profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+    pricingOverrides: [],
   },
-};
+});
 
 /**
  * Wraps a story in a provider seeded with `config`.
@@ -148,7 +151,7 @@ export const Default: Story = {};
 // A config carrying every state the picker has to judge. Only the two
 // healthy profiles and the sound mix are dispatchable; the rest are what the
 // resolver would skip.
-const MIXED_HEALTH_CONFIG: ConfigGetResponse = {
+const MIXED_HEALTH_CONFIG = makeConfigFixture({
   llm: {
     profiles: {
       balanced: {
@@ -206,8 +209,10 @@ const MIXED_HEALTH_CONFIG: ConfigGetResponse = {
     // render blank with no way out.
     advisorProfile: "half-made",
     callSites: {},
+    profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+    pricingOverrides: [],
   },
-};
+});
 
 /**
  * What the pickers hide and what they keep.

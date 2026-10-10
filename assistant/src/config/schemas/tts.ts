@@ -52,6 +52,7 @@ function languageVoicesSchema(providerId: string, valuesDescription: string) {
       }
       return Object.fromEntries(normalized);
     })
+    .pipe(z.record(z.string(), z.string()))
     .optional()
     .describe(
       "Per-language voice overrides for live voice. Keys are normalized on " +
@@ -70,6 +71,7 @@ export const TtsElevenLabsProviderConfigSchema = z
       })
       .transform((v) => v || DEFAULT_ELEVENLABS_VOICE_ID)
       .default(DEFAULT_ELEVENLABS_VOICE_ID)
+      .pipe(z.string())
       .describe("ElevenLabs voice ID for text-to-speech"),
     voiceModelId: z
       .string({
@@ -194,6 +196,7 @@ export const TtsDeepgramProviderConfigSchema = z
       })
       .transform((v) => v || "aura-asteria-en")
       .default("aura-asteria-en")
+      .pipe(z.string())
       .describe("Deepgram TTS model identifier"),
     format: z
       .enum(["mp3", "wav", "opus"], {
@@ -221,6 +224,7 @@ export const TtsXaiProviderConfigSchema = z
       })
       .transform((v) => v || "eve")
       .default("eve")
+      .pipe(z.string())
       .describe(
         "xAI voice ID — one of: eve, ara, rex, sal, leo (case-insensitive)",
       ),
@@ -230,6 +234,7 @@ export const TtsXaiProviderConfigSchema = z
       })
       .transform((v) => v || "auto")
       .default("auto")
+      .pipe(z.string())
       .describe(
         "BCP-47 language code (e.g. 'en-US') or 'auto' for auto-detection",
       ),

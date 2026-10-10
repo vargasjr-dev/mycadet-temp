@@ -33,7 +33,8 @@ function timezoneConfigField(path: string) {
         return z.NEVER;
       }
       return canonical;
-    });
+    })
+    .pipe(z.string());
 }
 
 export const CloudConfigSchema = z

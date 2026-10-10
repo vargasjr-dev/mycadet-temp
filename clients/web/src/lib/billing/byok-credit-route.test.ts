@@ -74,14 +74,30 @@ function classify(
   return defaultChatRouteBurnsManagedCredits(evidence(overrides));
 }
 
+/**
+ * Fills the config GET response's materialized llm keys so fixtures state
+ * only what the test is about (profileSession numbers mirror the daemon's
+ * schema defaults).
+ */
+function llmSection(over: Partial<LlmConfig> = {}): LlmConfig {
+  return {
+    profiles: {},
+    profileOrder: [],
+    callSites: {},
+    profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+    pricingOverrides: [],
+    ...over,
+  };
+}
+
 describe("route classification through the active profile", () => {
   test("cadet-provider profile burns credits regardless of connections", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: { p: { provider: "cadet", model: "claude" } },
-        },
+        }),
       }),
     ).toBe(true);
   });
@@ -89,7 +105,7 @@ describe("route classification through the active profile", () => {
   test("profile bound to the managed sentinel connection burns credits", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: {
             p: {
@@ -98,7 +114,7 @@ describe("route classification through the active profile", () => {
               provider_connection: "cadet",
             },
           },
-        },
+        }),
         connections: [MANAGED_SENTINEL],
       }),
     ).toBe(true);
@@ -109,7 +125,7 @@ describe("route classification through the active profile", () => {
     // platform auth regardless, so the row's BYOK auth must not win here.
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: {
             p: {
@@ -118,7 +134,7 @@ describe("route classification through the active profile", () => {
               provider_connection: "cadet",
             },
           },
-        },
+        }),
         connections: [conn({ name: "cadet" })],
       }),
     ).toBe(true);
@@ -127,7 +143,7 @@ describe("route classification through the active profile", () => {
   test("profile bound to a platform-auth connection burns credits", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: {
             p: {
@@ -136,7 +152,7 @@ describe("route classification through the active profile", () => {
               provider_connection: "managed-anthropic",
             },
           },
-        },
+        }),
         connections: [PLATFORM_ANTHROPIC],
       }),
     ).toBe(true);
@@ -145,7 +161,7 @@ describe("route classification through the active profile", () => {
   test("profile bound to an api-key connection is BYOK", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: {
             p: {
@@ -154,7 +170,7 @@ describe("route classification through the active profile", () => {
               provider_connection: "my-anthropic",
             },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC, MANAGED_SENTINEL],
       }),
     ).toBe(false);
@@ -163,7 +179,7 @@ describe("route classification through the active profile", () => {
   test("bound connection missing from the list is unknown", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: {
             p: {
@@ -172,7 +188,7 @@ describe("route classification through the active profile", () => {
               provider_connection: "gone",
             },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBeNull();
@@ -181,10 +197,10 @@ describe("route classification through the active profile", () => {
   test("unbound profile burns credits when its provider has a platform-auth connection", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: { p: { provider: "anthropic", model: "claude" } },
-        },
+        }),
         connections: [BYOK_ANTHROPIC, PLATFORM_ANTHROPIC],
       }),
     ).toBe(true);
@@ -195,10 +211,10 @@ describe("route classification through the active profile", () => {
     // unbound anthropic profile's provider-scoped fallback dispatch.
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: { p: { provider: "anthropic", model: "claude" } },
-        },
+        }),
         connections: [BYOK_ANTHROPIC, MANAGED_SENTINEL],
       }),
     ).toBe(false);
@@ -206,7 +222,7 @@ describe("route classification through the active profile", () => {
 });
 
 describe("the BYOK proof standard (connection availability)", () => {
-  const BYOK_LLM: LlmConfig = {
+  const BYOK_LLM: LlmConfig = llmSection({
     activeProfile: "p",
     profiles: {
       p: {
@@ -215,7 +231,7 @@ describe("the BYOK proof standard (connection availability)", () => {
         provider_connection: "my-anthropic",
       },
     },
-  };
+  });
 
   test("a BYOK verdict without an ok availability is unknown", () => {
     // A failing credential soft-falls back to the default transport at
@@ -249,10 +265,10 @@ describe("the BYOK proof standard (connection availability)", () => {
   test("a managed verdict needs no availability proof", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           profiles: { p: { provider: "cadet", model: "claude" } },
-        },
+        }),
         profileAvailability: new Map(),
       }),
     ).toBe(true);
@@ -263,7 +279,7 @@ describe("resolver-chain fallthrough", () => {
   test("a disabled active profile falls through to the mainAgent call-site pin", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "off",
           callSites: { mainAgent: { profile: "pinned" } },
           profiles: {
@@ -275,7 +291,7 @@ describe("resolver-chain fallthrough", () => {
             },
             pinned: { provider: "cadet", model: "claude" },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(true);
@@ -284,7 +300,7 @@ describe("resolver-chain fallthrough", () => {
   test("the mainAgent call-site pin wins when no active profile is set", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           callSites: { mainAgent: { profile: "pinned" } },
           profiles: {
             pinned: {
@@ -293,8 +309,8 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "cadet" },
-        },
+          default: { provider: "cadet" },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(false);
@@ -306,7 +322,7 @@ describe("resolver-chain fallthrough", () => {
     // classified.
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "incomplete",
           profiles: {
             incomplete: {
@@ -314,8 +330,8 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "cadet" },
-        },
+          default: { provider: "cadet" },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(true);
@@ -324,7 +340,7 @@ describe("resolver-chain fallthrough", () => {
   test("a managed conversation override outranks a BYOK active profile", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "byok",
           profiles: {
             byok: {
@@ -334,7 +350,7 @@ describe("resolver-chain fallthrough", () => {
             },
             pinned: { provider: "cadet", model: "claude" },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
         overrideProfile: "pinned",
       }),
@@ -344,7 +360,7 @@ describe("resolver-chain fallthrough", () => {
   test("an unusable conversation override falls through to the active profile", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "byok",
           profiles: {
             byok: {
@@ -353,7 +369,7 @@ describe("resolver-chain fallthrough", () => {
               provider_connection: "my-anthropic",
             },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
         overrideProfile: "gone",
       }),
@@ -365,7 +381,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
   test("mix burns credits when any usable arm does", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "mixed",
           profiles: {
             mixed: {
@@ -381,7 +397,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
             },
             managed: { provider: "cadet", model: "claude" },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(true);
@@ -390,7 +406,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
   test("mix of only usable BYOK arms is BYOK", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "mixed",
           profiles: {
             mixed: { mix: [{ profile: "byok", weight: 1 }] },
@@ -400,7 +416,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
               provider_connection: "my-anthropic",
             },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(false);
@@ -413,7 +429,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
     // BYOK.
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "mixed",
           callSites: { mainAgent: { profile: "pinned" } },
           profiles: {
@@ -435,7 +451,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
             },
             pinned: { provider: "cadet", model: "claude" },
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(true);
@@ -444,13 +460,13 @@ describe("mix rungs (per-conversation seeded pick)", () => {
   test("a mix arm that is itself a mix counts as unusable, not a cycle", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "a",
           profiles: {
             a: { mix: [{ profile: "b", weight: 1 }] },
             b: { mix: [{ profile: "a", weight: 1 }] },
           },
-        },
+        }),
       }),
     ).toBeNull();
   });
@@ -464,17 +480,18 @@ describe("mainAgent call-site tweak composition", () => {
 
   const BYOK_WINNER_LLM = (
     callSites: NonNullable<LlmConfig>["callSites"],
-  ): LlmConfig => ({
-    activeProfile: "p",
-    callSites,
-    profiles: {
-      p: {
-        provider: "anthropic",
-        model: ANTHROPIC_MODEL,
-        provider_connection: "my-anthropic",
+  ): LlmConfig =>
+    llmSection({
+      activeProfile: "p",
+      callSites,
+      profiles: {
+        p: {
+          provider: "anthropic",
+          model: ANTHROPIC_MODEL,
+          provider_connection: "my-anthropic",
+        },
       },
-    },
-  });
+    });
 
   test("a model tweak served by the winner's provider keeps the BYOK verdict", () => {
     expect(
@@ -534,7 +551,7 @@ describe("mainAgent call-site tweak composition", () => {
     ).toBeNull();
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           callSites: { mainAgent: { provider: "openai" } },
           profiles: {
@@ -544,7 +561,7 @@ describe("mainAgent call-site tweak composition", () => {
               provider_connection: "managed-anthropic",
             },
           },
-        },
+        }),
         connections: [PLATFORM_ANTHROPIC],
       }),
     ).toBe(true);
@@ -553,11 +570,11 @@ describe("mainAgent call-site tweak composition", () => {
   test("a cadet winner keeps managed routing under a concrete provider tweak", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "p",
           callSites: { mainAgent: { provider: "anthropic" } },
           profiles: { p: { provider: "cadet", model: ANTHROPIC_MODEL } },
-        },
+        }),
       }),
     ).toBe(true);
   });
@@ -566,7 +583,7 @@ describe("mainAgent call-site tweak composition", () => {
 describe("stale managed default stubs", () => {
   // The wire marks managed-source code-default entries `invariant`; a stale
   // unusable stub of one is ignored by the daemon (`providerAwareEntry`) and
-  // resolves the pure catalog body through `llm.defaultProvider`, so it must
+  // resolves the pure catalog body through `llm.default`, so it must
   // classify as that route instead of falling through the chain.
   const STALE_BALANCED = {
     source: "managed",
@@ -577,7 +594,7 @@ describe("stale managed default stubs", () => {
   test("a stale invariant stub classifies as the default-provider route, not the next rung", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "balanced",
           callSites: { mainAgent: { profile: "byok-pin" } },
           profiles: {
@@ -588,8 +605,8 @@ describe("stale managed default stubs", () => {
               provider_connection: "my-anthropic",
             },
           },
-          defaultProvider: { provider: "cadet" },
-        },
+          default: { provider: "cadet" },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(true);
@@ -598,10 +615,10 @@ describe("stale managed default stubs", () => {
   test("a stale invariant stub with no default provider is managed (catalog cadet column)", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "balanced",
           profiles: { balanced: STALE_BALANCED },
-        },
+        }),
       }),
     ).toBe(true);
   });
@@ -609,14 +626,14 @@ describe("stale managed default stubs", () => {
   test("a stale invariant stub follows a BYOK default provider", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "balanced",
           profiles: { balanced: STALE_BALANCED },
-          defaultProvider: {
+          default: {
             provider: "anthropic",
-            connectionName: "my-anthropic",
+            provider_connection: "my-anthropic",
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
       }),
     ).toBe(false);
@@ -625,7 +642,7 @@ describe("stale managed default stubs", () => {
   test("a disabled user-owned shadow still falls through the chain", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "shadow",
           callSites: { mainAgent: { profile: "pinned" } },
           profiles: {
@@ -637,7 +654,7 @@ describe("stale managed default stubs", () => {
             },
             pinned: { provider: "cadet", model: "claude" },
           },
-        },
+        }),
       }),
     ).toBe(true);
   });
@@ -645,48 +662,53 @@ describe("stale managed default stubs", () => {
   test("a stale invariant stub named as a mix arm resolves the default-provider route", () => {
     expect(
       classify({
-        llm: {
+        llm: llmSection({
           activeProfile: "mixed",
           profiles: {
             mixed: { mix: [{ profile: "balanced", weight: 1 }] },
             balanced: STALE_BALANCED,
           },
-          defaultProvider: { provider: "cadet" },
-        },
+          default: { provider: "cadet" },
+        }),
       }),
     ).toBe(true);
   });
 });
 
 describe("anchor fallbacks", () => {
-  test("the legacy top-level llm.default is never consulted", () => {
-    // The daemon's mainAgent resolver no longer reads `llm.default`; a stale
-    // managed value must not defeat a genuine BYOK default-provider verdict.
+  test("the anchor reads the llm.default blob", () => {
+    // The daemon's mainAgent resolver resolves through the `llm.default`
+    // blob: a managed provider dispatches managed, a BYOK provider +
+    // connection dispatches BYOK, no blob = unknown.
     expect(
       classify({
-        llm: {
-          default: { provider: "cadet", model: "claude" },
-          defaultProvider: {
+        llm: llmSection({ default: { provider: "cadet", model: "claude" } }),
+        connections: [BYOK_ANTHROPIC],
+        defaultProviderAvailability: "ok",
+      }),
+    ).toBe(true);
+    expect(
+      classify({
+        llm: llmSection({
+          default: {
             provider: "anthropic",
-            connectionName: "my-anthropic",
+            provider_connection: "my-anthropic",
           },
-        },
+        }),
         connections: [BYOK_ANTHROPIC],
         defaultProviderAvailability: "ok",
       }),
     ).toBe(false);
-    expect(
-      classify({ llm: { default: { provider: "cadet", model: "claude" } } }),
-    ).toBeNull();
+    expect(classify({ llm: llmSection() })).toBeNull();
   });
 
-  test("an unset connectionName binds through the resolved conventional connection", () => {
+  test("an unset provider_connection binds through the resolved conventional connection", () => {
     // The daemon stamps `resolveDefaultConnectionName` onto default bodies;
     // without it the anchor would misread as unbound and a coexisting
     // platform-auth row for the provider would classify the route managed.
     expect(
       classify({
-        llm: { defaultProvider: { provider: "anthropic" } },
+        llm: llmSection({ default: { provider: "anthropic" } }),
         connections: [BYOK_ANTHROPIC, PLATFORM_ANTHROPIC],
         defaultProviderAvailability: "ok",
         defaultProviderResolvedConnection: "my-anthropic",
@@ -695,12 +717,12 @@ describe("anchor fallbacks", () => {
   });
 
   test("defaultProvider proves BYOK only with an ok availability", () => {
-    const llm: LlmConfig = {
-      defaultProvider: {
+    const llm: LlmConfig = llmSection({
+      default: {
         provider: "anthropic",
-        connectionName: "my-anthropic",
+        provider_connection: "my-anthropic",
       },
-    };
+    });
     expect(
       classify({
         llm,
@@ -718,7 +740,6 @@ describe("anchor fallbacks", () => {
   });
 
   test("no default route at all is unknown", () => {
-    expect(classify({ llm: {} })).toBeNull();
-    expect(classify({ llm: undefined })).toBeNull();
+    expect(classify({ llm: llmSection() })).toBeNull();
   });
 });

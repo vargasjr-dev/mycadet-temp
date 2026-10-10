@@ -35,7 +35,6 @@ import {
   scrubNulledChatSettings,
   validateChatSettingsWrite,
 } from "../../config/chat-settings.js";
-import { DefaultProviderSelectionSchema } from "../../config/default-provider.js";
 import {
   catalogEntryFor,
   type InputModalities,
@@ -44,10 +43,9 @@ import {
 } from "../../config/input-modalities.js";
 import {
   deepMergeOverwrite,
-  fillContextDefaultsForMissingKeys,
   getConfig,
-  getDeploymentContextDefaults,
   invalidateConfigCache,
+  loadConfig,
   loadRawConfig,
   saveRawConfig,
   setNestedValue,
@@ -63,20 +61,16 @@ import {
   AssistantConfigSchema,
 } from "../../config/schema.js";
 import { getSchemaAtPath } from "../../config/schema-utils.js";
-import { AutoArchiveConfigSchema } from "../../config/schemas/conversations.js";
 import {
   collectFallbackProfileIssues,
-  isDefaultProviderChoice,
   LLMConfigBase,
   LLMConfigFragment,
-  LLMDefaultConfigSchema,
   LLMSchema,
   ProfileEntry,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
 } from "../../config/schemas/llm.js";
 import { VALID_MEMORY_EMBEDDING_PROVIDERS } from "../../config/schemas/memory-storage.js";
-import { NotificationsConfigSchema } from "../../config/schemas/notifications.js";
 import { ServiceModeSchema } from "../../config/schemas/services.js";
 import { isSidebarDoneEnabled } from "../../config/sidebar-done-gate.js";
 import {
@@ -529,91 +523,6 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
   }
 }
 
-/**
- * Apply deployment-context defaults to a raw config payload before it goes
- * out over the wire from `GET /v1/config`. The in-memory `loadConfig()`
- * already layers these defaults for daemon-internal consumers; the GET
- * response needs the same treatment so external clients (macOS, web, CLI)
- * see the effective value rather than `undefined` when the daemon hasn't
- * persisted an explicit choice yet. For example, on a freshly-hatched
- * platform-managed assistant, `services.image-generation.provider` may be
- * absent from disk (only `llm.profiles` was written by
- * `seedInferenceProfiles`); the fill pass ensures clients receive `"cadet"`
- * rather than falling back to their own defaults.
- *
- * Guards against `loadRawConfig()` handing us a value that is technically
- * valid JSON but not a plain object (e.g. literal `null`, a number, or an
- * array). `loadRawConfig` is typed `Record<string, unknown>` but `JSON.parse`
- * itself doesn't enforce that — a malformed-but-parseable `config.json`
- * would blow up `fillContextDefaultsForMissingKeys` on its `target[key]` /
- * `fileConfig[key]` accesses, turning `GET /v1/config` into a 500 where it
- * used to succeed (returning the malformed payload as-is). When `raw` is
- * not a plain object, we return it unchanged.
- *
- * Exported for direct unit testing.
- */
-export function applyContextDefaultsToRawConfig(raw: unknown): unknown {
-  const contextDefaults = getDeploymentContextDefaults();
-  if (
-    Object.keys(contextDefaults).length === 0 ||
-    raw === null ||
-    typeof raw !== "object" ||
-    Array.isArray(raw)
-  ) {
-    return raw;
-  }
-  fillContextDefaultsForMissingKeys(
-    raw as Record<string, unknown>,
-    raw as Record<string, unknown>,
-    contextDefaults,
-  );
-  synthesizeLegacyInferenceModeForPlatform(raw as Record<string, unknown>);
-  return raw;
-}
-
-/**
- * Backwards-compat wire field for `GET /v1/config`. PR removed
- * `services.inference.mode` from the typed schema (routing is governed by
- * `provider_connections` rows + per-profile `provider_connection`), but
- * the macOS settings client (`SettingsStore.swift:loadServiceModes`) still
-
-/**
- * Backwards-compat wire field for `GET /v1/config`. PR removed
- * `services.inference.mode` from the typed schema (routing is governed by
- * `provider_connections` rows + per-profile `provider_connection`), but
- * the macOS settings client (`SettingsStore.swift:loadServiceModes`) still
- * reads this field and falls back to its `@Published` default of "your-own"
- * when absent. On a platform-managed assistant served by a newer daemon and
- * an older macOS client, that fallback would show the wrong mode in the UI
- * until the user explicitly saved. Synthesize the value here so the wire
- * shape stays compatible during the rollout window. Remove once the macOS
- * Providers UI (the follow-up PR that retires this field on the client) has
- * shipped to the majority of installs.
- *
- * The synthesis is wire-only: it never persists to disk and never reaches
- * the typed `AssistantConfig` consumed by daemon-internal code. The on-disk
- * config is stripped of `mode` by workspace migration 076.
- *
- * Only runs when this function is reached, which is guarded by
- * `getDeploymentContextDefaults()` returning non-empty (IS_PLATFORM=true).
- */
-function synthesizeLegacyInferenceModeForPlatform(
-  root: Record<string, unknown>,
-): void {
-  const services = readPlainObject(root.services);
-  if (!services) {
-    return;
-  }
-  let inference = readPlainObject(services.inference);
-  if (!inference) {
-    inference = {};
-    services.inference = inference;
-  }
-  if (inference.mode === undefined) {
-    inference.mode = "managed";
-  }
-}
-
 function readPlainObject(value: unknown): Record<string, unknown> | undefined {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return undefined;
@@ -741,13 +650,6 @@ function nestPath(path: string, value: unknown): unknown {
   return current;
 }
 
-const WireProfileEntry = ProfileEntry.extend({
-  supportsVision: z.boolean().optional(),
-  invariant: z.boolean().optional(),
-})
-  .passthrough()
-  .meta({ id: "ProfileEntry" });
-
 /**
  * Wire shape of the `memory` section in config responses. Passthrough
  * preserves fields beyond `enabled` and `v2` so the client doesn't strip
@@ -760,95 +662,6 @@ const MemoryWireConfigSchema = z
   })
   .passthrough()
   .meta({ id: "MemoryConfig" });
-
-/**
- * Response schema for `GET /v1/config`.
- *
- * Describes the wire shape of the raw `settings.json` response after
- * context-default filling and vision-flag enrichment. Chat settings include
- * effective defaults. Fields remain optional for older assistants and sparse
- * on-disk config. Additional top-level sections are preserved via
- * passthrough. This schema types the fields that web/macOS clients consume
- * without restricting the full config surface.
- */
-const ConfigGetResponseSchema = z
-  .object({
-    // A malformed or absent stored chat-settings subtree falls back to its
-    // schema defaults so one bad leaf can't fail the whole wire parse (which
-    // would strip every derived field from the response); the chat-settings
-    // read overlay refills both from the effective config.
-    conversations: z
-      .object({
-        autoArchive: AutoArchiveConfigSchema.passthrough().catch(
-          AutoArchiveConfigSchema.parse({}),
-        ),
-      })
-      .passthrough()
-      .optional(),
-    notifications: NotificationsConfigSchema.passthrough()
-      .optional()
-      .catch(undefined),
-    llm: z
-      .object({
-        default: LLMDefaultConfigSchema.optional(),
-        // Wire-compat view of the default provider, derived from `default`
-        // by the read overlay (the key is never stored anymore).
-        defaultProvider: DefaultProviderSelectionSchema.optional(),
-        profiles: z.record(z.string(), WireProfileEntry).optional(),
-        profileOrder: z.array(z.string()).optional(),
-        activeProfile: z.string().optional(),
-        // The profile the advisor consults; excluded from chat-profile pickers.
-        advisorProfile: z.string().optional(),
-        callSites: z
-          .record(
-            z.string(),
-            LLMConfigFragment.extend({
-              profile: z.string().optional(),
-            }).nullable(),
-          )
-          .optional(),
-        profileSession: z
-          .object({
-            defaultTtlSeconds: z.number().optional(),
-            maxTtlSeconds: z.number().optional(),
-          })
-          .optional(),
-        pricingOverrides: z.array(z.unknown()).optional(),
-      })
-      .passthrough()
-      .optional(),
-    memory: MemoryWireConfigSchema.optional(),
-    services: z
-      .object({
-        "web-search": z
-          .object({
-            provider: z.string().optional(),
-          })
-          .passthrough()
-          .optional(),
-        "web-fetch": z
-          .object({
-            provider: z.string().optional(),
-          })
-          .passthrough()
-          .optional(),
-        "image-generation": z
-          .object({
-            provider: z.string().optional(),
-            model: z.string().optional(),
-          })
-          .passthrough()
-          .optional(),
-        inference: z
-          .object({ mode: ServiceModeSchema.optional() })
-          .passthrough()
-          .optional(),
-      })
-      .passthrough()
-      .optional(),
-  })
-  .passthrough()
-  .meta({ id: "ConfigGetResponse" });
 
 /**
  * Given a `z.object(...)` schema, returns a new schema where every property
@@ -887,7 +700,7 @@ const CallSiteOverrideDraftSchema = nullablePartial(
  *
  * Mirrors the response shape but every field is `.nullable().optional()`:
  * omitted keys are left unchanged by the daemon's deep-merge, `null` values
- * delete the key. Uses the same Zod enums as `ConfigGetResponseSchema` so
+ * delete the key. Uses the same Zod enums as `AssistantConfigSchema` so
  * the generated SDK produces literal-union types — no hand-written patch
  * types needed downstream.
  */
@@ -962,66 +775,16 @@ const ConfigPatchRequestSchema = z
 
 function handleGetConfig() {
   try {
-    // One zod pass shapes the response: AssistantConfigSchema is this
-    // route's wire contract, so the overlays stamp their derived fields on
-    // the parsed view instead of digging handles out of raw objects. The
-    // context-defaults fill rides the parse input (fill-only — it never
-    // persists); a config the schema rejects gets nothing applied and is
-    // served raw.
-    const config = loadRawConfig();
-    const parsed = AssistantConfigSchema.safeParse(
-      applyContextDefaultsToRawConfig(config),
-    );
-    if (!parsed.success) {
-      return config;
-    }
-    const wire = parsed.data;
-    overlayWorkspaceMcpForConfigRead(wire);
-    sanitizeMcpTransportHeadersForSettingsRead(wire);
-    overlayEffectiveProfilesForWire(wire);
-    enrichProfilesForWire(wire);
-    overlayDefaultProviderForWire(wire);
-    overlayChatSettingsForWire(wire);
-    // macOS wire shim (see its docblock) — gated the same way the old fill
-    // gated it: deployment-context defaults are non-empty only on
-    // IS_PLATFORM=true.
-    if (Object.keys(getDeploymentContextDefaults()).length > 0) {
-      synthesizeLegacyInferenceModeForPlatform(wire);
-    }
-    return wire;
+    const config = loadConfig();
+    overlayWorkspaceMcpForConfigRead(config);
+    sanitizeMcpTransportHeadersForSettingsRead(config);
+    overlayEffectiveProfilesForWire(config);
+    enrichProfilesForWire(config);
+    overlayChatSettingsForWire(config);
+    return config;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new InternalError(`Failed to read config: ${message}`);
-  }
-}
-
-/**
- * Surface the default-provider selection on config reads. The selection lives
- * in the `llm.default` blob; the dedicated `defaultProvider` response field is
- * a derived wire-compat view (readers of the config GET predate the blob) and
- * is never stored on disk — it is stamped here from the blob on every read.
- */
-/**
- * Wire view of the parsed config: the fully materialized `AssistantConfig`
- * plus the derived `llm.defaultProvider` field the overlays stamp on every
- * read (never stored on disk).
- */
-type ConfigWire = AssistantConfig & {
-  llm: AssistantConfig["llm"] & {
-    defaultProvider?: z.infer<typeof DefaultProviderSelectionSchema>;
-  };
-};
-
-function overlayDefaultProviderForWire(config: ConfigWire): void {
-  const blob = config.llm.default;
-  const provider = blob?.provider;
-  if (provider != null && isDefaultProviderChoice(provider)) {
-    config.llm.defaultProvider = {
-      provider,
-      connectionName: blob?.provider_connection,
-    };
-  } else {
-    delete config.llm.defaultProvider;
   }
 }
 
@@ -2537,7 +2300,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Get full config",
     description: "Return the raw settings.json configuration object.",
     tags: ["config"],
-    responseBody: ConfigGetResponseSchema,
+    responseBody: AssistantConfigSchema,
     handler: handleGetConfig,
   },
   {
@@ -2553,7 +2316,7 @@ export const ROUTES: RouteDefinition[] = [
       "Deep-merge a partial JSON object into the settings.json configuration.",
     tags: ["config"],
     requestBody: ConfigPatchRequestSchema,
-    responseBody: ConfigGetResponseSchema,
+    responseBody: AssistantConfigSchema,
     handler: handlePatchConfig,
   },
   {

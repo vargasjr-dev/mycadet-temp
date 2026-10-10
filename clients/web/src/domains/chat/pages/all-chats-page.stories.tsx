@@ -19,6 +19,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { SubagentAvatarChip } from "@/components/avatar/subagent-avatar-chip";
+import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 import { ChatsSettingsDialog } from "@/domains/chat/components/chats-settings-dialog";
 import type { ChatsSettingsChanges } from "@/domains/chat/components/chats-settings-modal";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
@@ -168,17 +169,20 @@ const SETTINGS_ASSISTANT_ID = "story-assistant";
 function settingsFixture(
   context: StoryContext<AllChatsPageProps>,
 ): ConfigGetResponse {
-  return {
+  return makeConfigFixture({
     conversations: {
       autoArchive: {
         enabled: context.parameters.autoArchiveEnabled === true,
         afterDays: 7,
       },
+      skipAutoRetitling: false,
+      backgroundInjection: "",
+      resumeProcessingOnStartup: false,
     },
     notifications: {
       newMessageEnabled: context.parameters.notificationsOff !== true,
     },
-  };
+  });
 }
 
 function withSidebarDoneFlag(context: StoryContext<AllChatsPageProps>) {
@@ -196,15 +200,16 @@ function withSidebarDoneFlag(context: StoryContext<AllChatsPageProps>) {
     }
     if (request.method === "PATCH") {
       const changes = (await request.json()) as ChatsSettingsChanges;
-      config = {
+      config = makeConfigFixture({
         conversations: {
+          ...config.conversations!,
           autoArchive: {
             ...config.conversations!.autoArchive,
             ...changes?.conversations?.autoArchive,
           },
         },
         notifications: { ...config.notifications!, ...changes?.notifications },
-      };
+      });
     }
     return Response.json(config);
   });

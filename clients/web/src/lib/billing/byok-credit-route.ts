@@ -32,7 +32,7 @@ export interface ChatRouteEvidence {
    */
   profileAvailability: ReadonlyMap<string, AvailabilityStatus>;
   /**
-   * Availability of the `llm.defaultProvider` anchor route from
+   * Availability of the `llm.default` anchor route from
    * `GET /config/llm/default-provider`, when known.
    */
   defaultProviderAvailability?: DefaultProviderAvailabilityStatus;
@@ -214,7 +214,7 @@ function composedMainAgentRoute(
  * Mirrors the daemon's `mainAgent` single-winner selection
  * (`selectWinningProfile` in assistant/src/config/llm-resolver.ts): the
  * conversation `inferenceProfile` pin, then `llm.activeProfile`, then the
- * `llm.callSites.mainAgent.profile` pin, then the `llm.defaultProvider`
+ * `llm.callSites.mainAgent.profile` pin, then the `llm.default`
  * anchor. A rung naming a missing, disabled, or incomplete (no own
  * provider+model) profile falls through, exactly as the daemon skips
  * unusable rungs. A mix rung follows the daemon's per-conversation seeded
@@ -296,7 +296,7 @@ export function defaultChatRouteBurnsManagedCredits(
       // marks those `invariant`) does NOT fall through: the daemon's
       // `providerAwareEntry` ignores the stale stub (defaults cannot be
       // disabled through any write path) and resolves the pure catalog body
-      // through `llm.defaultProvider`, so this rung classifies as that
+      // through `llm.default`, so this rung classifies as that
       // route instead.
       if (entry.invariant === true) {
         return classifyStaleDefaultStub(evidence);
@@ -310,23 +310,23 @@ export function defaultChatRouteBurnsManagedCredits(
 }
 
 /**
- * The billing route of the `llm.defaultProvider` anchor: the explicit
- * `connectionName` when set, else the conventionally resolved connection the
- * daemon stamps onto default bodies (`resolvedConnectionName` from the
+ * The billing route of the `llm.default` anchor: the explicit
+ * `provider_connection` when set, else the conventionally resolved connection
+ * the daemon stamps onto default bodies (`resolvedConnectionName` from the
  * default-provider status), so an unset name doesn't misread as unbound
  * dispatch. Null when no default provider is configured.
  */
-function defaultProviderRouteEntry(
+function defaultRouteEntry(
   evidence: ChatRouteEvidence,
 ): CreditRouteEntry | null {
-  const defaultProvider = evidence.llm?.defaultProvider;
-  if (!defaultProvider) {
+  const defaultBlob = evidence.llm?.default;
+  if (!defaultBlob?.provider) {
     return null;
   }
   return {
-    provider: defaultProvider.provider,
+    provider: defaultBlob.provider,
     provider_connection:
-      defaultProvider.connectionName ??
+      defaultBlob.provider_connection ??
       evidence.defaultProviderResolvedConnection ??
       undefined,
   };
@@ -334,11 +334,11 @@ function defaultProviderRouteEntry(
 
 /**
  * The route a stale (unusable) managed default stub actually resolves to:
- * the pure catalog body through `llm.defaultProvider`'s column, or the
+ * the pure catalog body through `llm.default`'s column, or the
  * catalog's own cadet column (managed) when no default provider is set.
  */
 function classifyStaleDefaultStub(evidence: ChatRouteEvidence): boolean | null {
-  const entry = defaultProviderRouteEntry(evidence);
+  const entry = defaultRouteEntry(evidence);
   if (!entry) {
     return true;
   }
@@ -374,13 +374,12 @@ function classifyDispatched(
 
 /**
  * The code-owned bottom of the chain: the shipped intent rungs all resolve
- * their billing route through `llm.defaultProvider`. The legacy top-level
- * `llm.default` body is deliberately NOT consulted: the daemon's `mainAgent`
- * resolver never reads it, so a stale value must not defeat a genuine BYOK
- * default-provider verdict.
+ * their billing route through the `llm.default` anchor — the same blob the
+ * daemon's `mainAgent` resolver falls back to, so a stale value here is
+ * exactly the stale value the daemon dispatches on.
  */
 function classifyAnchor(evidence: ChatRouteEvidence): boolean | null {
-  const entry = defaultProviderRouteEntry(evidence);
+  const entry = defaultRouteEntry(evidence);
   if (!entry) {
     return null;
   }

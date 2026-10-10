@@ -41,6 +41,14 @@ const MemoryJobsConfigInputSchema = z.object({
     ),
 });
 
+const MemoryJobsConfigOutputSchema = z.object({
+  workerConcurrency: positiveInt("workerConcurrency"),
+  stalledJobTimeoutMs: positiveInt("stalledJobTimeoutMs"),
+  slowLlmConcurrency: positiveInt("slowLlmConcurrency"),
+  fastConcurrency: positiveInt("fastConcurrency"),
+  embedConcurrency: positiveInt("embedConcurrency"),
+});
+
 export const MemoryJobsConfigSchema = MemoryJobsConfigInputSchema.transform(
   (input) => {
     // When `workerConcurrency` is explicitly set but lane caps are not,
@@ -76,7 +84,9 @@ export const MemoryJobsConfigSchema = MemoryJobsConfigInputSchema.transform(
       embedConcurrency,
     };
   },
-).describe("Memory background job processing configuration");
+)
+  .pipe(MemoryJobsConfigOutputSchema)
+  .describe("Memory background job processing configuration");
 
 export const MemoryRetentionConfigSchema = z
   .object({

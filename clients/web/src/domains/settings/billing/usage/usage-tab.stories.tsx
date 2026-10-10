@@ -289,7 +289,12 @@ const IDLE_USAGE: UsageFixture = {
 };
 
 const NO_SCHEDULES: SchedulesGetResponse = { schedules: [] };
-const EMPTY_CONFIG: ConfigGetResponse = {};
+/**
+ * Deliberately sparse: simulates a version-skewed wire payload the
+ * materialized config contract no longer produces, exercising the tab's
+ * graceful empty-profile-metadata path.
+ */
+const EMPTY_CONFIG = {};
 
 /**
  * Answers the daemon reads the tab makes for whichever assistant the request
@@ -321,7 +326,7 @@ async function usageFetch(request: Request): Promise<Response> {
     return Response.json(CALL_SITES satisfies ConfigLlmCallsitesGetResponse);
   }
   if (pathname.endsWith("/config")) {
-    return Response.json(EMPTY_CONFIG satisfies ConfigGetResponse);
+    return Response.json(EMPTY_CONFIG);
   }
   if (pathname.endsWith("/schedules")) {
     return Response.json(NO_SCHEDULES satisfies SchedulesGetResponse);

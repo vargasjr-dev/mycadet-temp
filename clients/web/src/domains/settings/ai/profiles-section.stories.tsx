@@ -6,9 +6,9 @@ import {
   inferenceProfilesGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import type {
-  ConfigGetResponse,
   InferenceProfileSummary,
 } from "@/generated/daemon/types.gen";
+import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 import { withQueryCache } from "@/lib/story-query-cache";
 
 const ASSISTANT_ID = "story-assistant";
@@ -63,7 +63,7 @@ const PROFILES: InferenceProfileSummary[] = [
   }),
 ];
 
-const CONFIG: ConfigGetResponse = {
+const CONFIG = makeConfigFixture({
   llm: {
     profiles: {
       balanced: { label: "Balanced", provider: "cadet", model: "glm-5.2" },
@@ -84,8 +84,10 @@ const CONFIG: ConfigGetResponse = {
     profileOrder: ["balanced", "my-custom", "retired", "byok", "half-made"],
     activeProfile: "balanced",
     callSites: {},
+    profileSession: { defaultTtlSeconds: 1800, maxTtlSeconds: 43200 },
+    pricingOverrides: [],
   },
-};
+});
 
 const meta: Meta<typeof ProfilesSection> = {
   title: "Settings/AI/ProfilesSection",
