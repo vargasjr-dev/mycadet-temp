@@ -2,12 +2,11 @@ import { type QueryClient, useQuery } from "@tanstack/react-query";
 
 import { listAssistants } from "@/assistant/api";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import {
   isAvatarSuperseded,
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
-import { isLocalClient, isCadetCloudRemote } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import { useAuthStore, useHasPlatformSession } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
@@ -92,15 +91,6 @@ export function supersedePlatformAvatar(
 }
 
 /**
- * Modes where the resolved store is lockfile-driven, so its rows never carry
- * `avatarUrl` and the platform list is only reachable through a side query.
- * Gateway auth has no platform list at all.
- */
-export function isLockfileDrivenStore(): boolean {
-  return (isLocalClient() || !isCadetCloudRemote()) && !isGatewayAuthEnabled();
-}
-
-/**
  * Throws on failure so React Query keeps the last good map through a failed
  * poll; with no prior data the hook reads that as an empty map, and a
  * chooser row falls back to its other sources, never an error.
@@ -122,11 +112,11 @@ async function fetchPlatformAvatarUrls(): Promise<PlatformAvatarUrls> {
 /**
  * Platform `avatar_url` by assistant id, read-only. One shared query feeds
  * every chooser row, so the list is fetched once per stale window however
- * many rows mount. Enabled only when a live platform session exists in a
- * lockfile-driven mode; elsewhere the resolved store already carries
+ * many rows mount. Enabled only when a live platform session exists outside
+ * the cloud-remote bundle; elsewhere the resolved store already carries
  * `avatarUrl` and this resolves to an empty map. Never writes the resolved
- * store: `reloadPlatformAssistants` deliberately skips these modes so the
- * API list cannot clobber lockfile rows, and this lookup keeps that contract.
+ * store: `reloadPlatformAssistants` deliberately skips those modes so the
+ * API list cannot clobber their rows, and this lookup keeps that contract.
  */
 export function usePlatformAvatarUrls(): PlatformAvatarUrls {
   const hasPlatformSession = useHasPlatformSession();
@@ -136,7 +126,7 @@ export function usePlatformAvatarUrls(): PlatformAvatarUrls {
   const query = useQuery<PlatformAvatarUrls>({
     queryKey: platformAvatarUrlsQueryKey(userId, organizationId),
     queryFn: fetchPlatformAvatarUrls,
-    enabled: hasPlatformSession && isOrgReady && isLockfileDrivenStore(),
+    enabled: hasPlatformSession && isOrgReady && !isCadetCloudRemote(),
     staleTime: PLATFORM_AVATAR_URLS_STALE_TIME_MS,
     // staleTime alone never refetches a chooser that stays mounted, and a
     // sibling's change on another client sends no event here; poll while

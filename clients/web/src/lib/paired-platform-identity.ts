@@ -2,7 +2,6 @@ import { fetchPlatformStatus, isUuid } from "@/lib/local-platform-identity";
 import {
   getLockfileAssistant,
   getPairedGatewayUrl,
-  updateLockfileAssistant,
 } from "@/lib/local-mode";
 
 /**
@@ -80,11 +79,6 @@ async function fetchAndPersistPairedPlatformId(
     current.runtimeUrl !== entry.runtimeUrl
   ) {
     return null;
-  }
-  try {
-    await updateLockfileAssistant({ ...current, platformAssistantId });
-  } catch (error) {
-    console.warn("paired assistant cloud lockfile update failed", error);
   }
   return platformAssistantId;
 }

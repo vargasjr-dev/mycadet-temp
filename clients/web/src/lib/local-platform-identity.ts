@@ -15,7 +15,6 @@ import {
   isLocalGatewayAssistant,
   isPlatformDisabled,
   primeLocalGatewayConnectionWithRepair,
-  updateLockfileAssistant,
   type LockfileAssistant,
 } from "@/lib/local-mode";
 import {
@@ -453,15 +452,6 @@ async function ensureLocalAssistantPlatformIdentity(
     status.hasAssistantApiKey !== false &&
     !repairRequested
   ) {
-    const statusOrganizationId =
-      status.organizationId ?? assistant.platformOrganizationId ?? null;
-    if (statusOrganizationId) {
-      await persistPlatformRegistrationMetadata(assistant, {
-        platformAssistantId: statusPlatformAssistantId,
-        platformBaseUrl: status.baseUrl ?? getPlatformRuntimeUrl(),
-        organizationId: statusOrganizationId,
-      });
-    }
     // The registration is known but the daemon could not read its store, so
     // whether it holds a key is not. Settling here would end a bootstrap that
     // may still have a provisioned key to store, so this fails with the id
@@ -557,11 +547,6 @@ async function ensureLocalAssistantPlatformIdentity(
       webhookSecret: stringValue(registration.webhook_secret),
     });
     unstoredProvisionedKeys.delete(assistant.assistantId);
-    await persistPlatformRegistrationMetadata(assistant, {
-      platformAssistantId,
-      platformBaseUrl,
-      organizationId,
-    });
   } catch (error) {
     // The registration is real even though the local side is not finished;
     // hand its id to callers that only need the platform to know the
@@ -570,24 +555,6 @@ async function ensureLocalAssistantPlatformIdentity(
   }
 
   return platformAssistantId;
-}
-
-async function persistPlatformRegistrationMetadata(
-  assistant: LockfileAssistant,
-  params: {
-    platformAssistantId: string;
-    platformBaseUrl: string;
-    organizationId: string;
-  },
-): Promise<void> {
-  await updateLockfileAssistant({
-    ...assistant,
-    platformAssistantId: params.platformAssistantId,
-    platformBaseUrl: params.platformBaseUrl,
-    platformOrganizationId: params.organizationId,
-  }).catch((error: unknown) => {
-    console.warn("local assistant cloud lockfile update failed", error);
-  });
 }
 
 async function ensureGatewayAccess(

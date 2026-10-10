@@ -756,7 +756,7 @@ graph TB
     USAGE["llm_usage_events<br/>call_site = workflowLeaf"]
     HUB["assistant event hub<br/>workflow_progress / _completed"]
     WAKE["Conversation wake<br/>completion summary"]
-    ROUTES["GET /v1/workflows*<br/>+ cadet workflows CLI"]
+    ROUTES["GET /v1/workflows*"]
 
     TOOL --> GATE
     SCHED --> RM
@@ -779,7 +779,6 @@ graph TB
 
 - **Tables** (migration 284): `workflow_runs` (one row per run — status, agent/token counts, script source/hash, capabilities, originating conversation) and `workflow_journal` (append-only `(run_id, seq)` leaf-call log). Scheduled workflows persist their manifest in `cron_jobs.capabilities_json` (migration 290). Leaf cost is attributed in `llm_usage_events` under `call_site = 'workflowLeaf'`.
 - **Routes** (read/abort/resume surfaces): `GET /v1/workflows`, `GET /v1/workflows/runs`, `GET /v1/workflows/runs/:id`, `POST /v1/workflows/runs/:id/abort`, `POST /v1/workflows/runs/:id/resume` (the resume route refuses a side-effecting run in normal posture and proceeds at full access).
-- **CLI**: `cadet workflows list | runs | show <id> | abort <id> | resume <id>`.
 - **Config** (`workflows.*`): `maxAgentsPerRun` (500), `maxConcurrentLeaves` (6), `maxConcurrentRuns` (3), `journalRetentionDays` (30).
 
 ## Dictation

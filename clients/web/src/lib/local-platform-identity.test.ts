@@ -52,8 +52,6 @@ const buildCadetMutatingHeadersMock = mock(
 );
 const primeLocalGatewayConnectionWithRepairMock = mock(async () => {});
 const fetchOrganizationsMock = mock(async () => {});
-const updateLockfileAssistantMock = mock(async (_assistant: unknown) => {});
-
 mock.module("@/lib/auth/request-headers", () => ({
   buildCadetMutatingHeaders: buildCadetMutatingHeadersMock,
 }));
@@ -71,7 +69,6 @@ mock.module("@/lib/local-mode", () => ({
   isPlatformDisabled: () => isPlatformDisabledValue,
   primeLocalGatewayConnectionWithRepair:
     primeLocalGatewayConnectionWithRepairMock,
-  updateLockfileAssistant: updateLockfileAssistantMock,
 }));
 
 mock.module("@/lib/self-hosted/connection", () => ({
@@ -197,7 +194,6 @@ beforeEach(() => {
   buildCadetMutatingHeadersMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
   fetchOrganizationsMock.mockClear();
-  updateLockfileAssistantMock.mockClear();
   resetLocalPlatformIdentityCacheForTesting();
   useAssistantIdentityStore
     .getState()
@@ -298,12 +294,6 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
 
     expect(platformAssistantId).toBe(PLATFORM_ASSISTANT_ID);
     expect(requestNames()).toEqual(["status"]);
-    expect(updateLockfileAssistantMock).toHaveBeenCalledWith({
-      ...activeAssistant,
-      platformAssistantId: PLATFORM_ASSISTANT_ID,
-      platformBaseUrl: STATUS_PLATFORM_BASE_URL,
-      platformOrganizationId: ORGANIZATION_ID,
-    });
   });
 
   test("falls back to the configured platform URL when status omits its base URL", async () => {
@@ -318,12 +308,6 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
       await resolveLocalAssistantPlatformIdentity(RUNTIME_ASSISTANT_ID);
 
     expect(platformAssistantId).toBe(PLATFORM_ASSISTANT_ID);
-    expect(updateLockfileAssistantMock).toHaveBeenCalledWith({
-      ...activeAssistant,
-      platformAssistantId: PLATFORM_ASSISTANT_ID,
-      platformBaseUrl: CONFIG_PLATFORM_BASE_URL,
-      platformOrganizationId: ORGANIZATION_ID,
-    });
   });
 
   /** The incident shape: a key IS stored, so every presence check reads
@@ -618,12 +602,6 @@ describe("resolveLocalAssistantPlatformIdentity", () => {
       type: "credential",
       name: "cadet:platform_base_url",
       value: STATUS_PLATFORM_BASE_URL,
-    });
-    expect(updateLockfileAssistantMock).toHaveBeenCalledWith({
-      ...activeAssistant,
-      platformAssistantId: PLATFORM_ASSISTANT_ID,
-      platformBaseUrl: STATUS_PLATFORM_BASE_URL,
-      platformOrganizationId: ORGANIZATION_ID,
     });
   });
 

@@ -3,11 +3,9 @@ import { useSearchParams, useNavigate } from "react-router";
 
 import { useTranslation } from "@/i18n";
 import { listAssistants } from "@/assistant/api";
-import { syncPlatformAssistantsToLockfile } from "@/lib/local-mode";
 import { registerLocalPlatformSession } from "@/runtime/local-mode-host";
 import { setMenuPlatformSession } from "@/runtime/menu";
 import { useAuthStore } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { routes } from "@/utils/routes";
 
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
@@ -80,10 +78,6 @@ export function PlatformLoopbackPage() {
       try {
         const result = await listAssistants();
         if (result.ok && result.data.length > 0) {
-          await syncPlatformAssistantsToLockfile(
-            result.data,
-            useOrganizationStore.getState().currentOrganizationId ?? undefined,
-          );
           void navigate(routes.assistant, { replace: true });
           return;
         }

@@ -273,7 +273,18 @@ describe("approve", () => {
       refresh: () => {},
       pollIntervalMs: 10,
     });
-    await new Promise((done) => setTimeout(done, 40));
+    // The watcher polls every 10ms, so the retry normally lands in tens of
+    // milliseconds — but a fixed sleep races the poll under CI contention
+    // and starves it. Wait on a deadline instead: exit as soon as the routes
+    // appear, and let the assertion below name the failure if the watcher
+    // genuinely never reclaims them.
+    const retryDeadline = Date.now() + 5_000;
+    while (
+      listWebhookIngressRoutes().length === 0 &&
+      Date.now() < retryDeadline
+    ) {
+      await new Promise((done) => setTimeout(done, 5));
+    }
     unwatch();
 
     expect(

@@ -19,11 +19,9 @@ const pairedEntry: LockfileAssistant = {
 let lockfileEntry: LockfileAssistant | undefined = pairedEntry;
 let pairedGatewayUrl: string | undefined =
   "/assistant/__gateway-paired/paired-remote";
-const updateLockfileAssistant = mock(async (_a: LockfileAssistant) => {});
 mock.module("@/lib/local-mode", () => ({
   getLockfileAssistant: () => lockfileEntry,
   getPairedGatewayUrl: () => pairedGatewayUrl,
-  updateLockfileAssistant,
 }));
 
 const fetchPlatformStatus = mock(
@@ -46,13 +44,11 @@ beforeEach(() => {
   lockfileEntry = pairedEntry;
   pairedGatewayUrl = "/assistant/__gateway-paired/paired-remote";
   fetchPlatformStatus.mockResolvedValue({ assistantId: UUID });
-  updateLockfileAssistant.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   resetPairedPlatformIdentityCacheForTesting();
   fetchPlatformStatus.mockReset();
-  updateLockfileAssistant.mockReset();
 });
 
 describe("resolvePairedAssistantPlatformId", () => {
@@ -67,10 +63,6 @@ describe("resolvePairedAssistantPlatformId", () => {
       },
       "paired-remote",
     );
-    expect(updateLockfileAssistant).toHaveBeenCalledWith({
-      ...pairedEntry,
-      platformAssistantId: UUID,
-    });
   });
 
   test("a re-pair to another gateway probes again", async () => {
@@ -84,7 +76,6 @@ describe("resolvePairedAssistantPlatformId", () => {
     await resolvePairedAssistantPlatformId("paired-remote");
     await resolvePairedAssistantPlatformId("paired-remote");
     expect(fetchPlatformStatus).toHaveBeenCalledTimes(1);
-    expect(updateLockfileAssistant).toHaveBeenCalledTimes(1);
   });
 
   test("a miss is not cached, so a recovered daemon is asked again", async () => {
@@ -92,7 +83,6 @@ describe("resolvePairedAssistantPlatformId", () => {
     await expect(
       resolvePairedAssistantPlatformId("paired-remote"),
     ).resolves.toBeNull();
-    expect(updateLockfileAssistant).not.toHaveBeenCalled();
     await expect(
       resolvePairedAssistantPlatformId("paired-remote"),
     ).resolves.toBe(UUID);
@@ -131,10 +121,9 @@ describe("resolvePairedAssistantPlatformId", () => {
     await expect(
       resolvePairedAssistantPlatformId("paired-remote"),
     ).resolves.toBeNull();
-    expect(updateLockfileAssistant).not.toHaveBeenCalled();
   });
 
-  test("a rename during the request keeps the new name and gains the UUID", async () => {
+  test("resolves the UUID even when a rename lands mid-request", async () => {
     fetchPlatformStatus.mockImplementation(async () => {
       lockfileEntry = { ...pairedEntry, name: "Renamed" };
       return { assistantId: UUID };
@@ -142,11 +131,6 @@ describe("resolvePairedAssistantPlatformId", () => {
     await expect(
       resolvePairedAssistantPlatformId("paired-remote"),
     ).resolves.toBe(UUID);
-    expect(updateLockfileAssistant).toHaveBeenCalledWith({
-      ...pairedEntry,
-      name: "Renamed",
-      platformAssistantId: UUID,
-    });
   });
 
   test.each([
@@ -163,24 +147,13 @@ describe("resolvePairedAssistantPlatformId", () => {
           runtimeUrl: "https://other.example",
         }),
     ],
-  ])(
-    "skips the write and resolves null when the entry is %s mid-request",
-    async (_l, arrange) => {
-      fetchPlatformStatus.mockImplementation(async () => {
-        arrange();
-        return { assistantId: UUID };
-      });
-      await expect(
-        resolvePairedAssistantPlatformId("paired-remote"),
-      ).resolves.toBeNull();
-      expect(updateLockfileAssistant).not.toHaveBeenCalled();
-    },
-  );
-
-  test("a failed lockfile write still returns the UUID", async () => {
-    updateLockfileAssistant.mockRejectedValue(new Error("disk"));
+  ])("resolves null when the entry is %s mid-request", async (_l, arrange) => {
+    fetchPlatformStatus.mockImplementation(async () => {
+      arrange();
+      return { assistantId: UUID };
+    });
     await expect(
       resolvePairedAssistantPlatformId("paired-remote"),
-    ).resolves.toBe(UUID);
+    ).resolves.toBeNull();
   });
 });

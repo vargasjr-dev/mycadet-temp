@@ -1,9 +1,10 @@
 /**
- * `cadet terminal` — Interactive shell into a managed assistant container.
+ * `cadet terminal` — Interactive shell into an assistant.
  *
- * Bridges the local tty to a platform terminal session (K8s exec) so the
- * user can interact with their assistant's sandbox from iTerm2 or any
- * local terminal emulator.
+ * Dispatches by cloud type: a platform terminal session (K8s exec) for
+ * managed assistants, `docker exec` for docker assistants, `gcloud compute
+ * ssh` for GCP, raw ssh for custom hosts, and the container management
+ * socket for apple-container assistants.
  *
  * Subcommands:
  *   cadet terminal                     — Interactive shell
@@ -11,6 +12,13 @@
  *   cadet terminal list                — List tmux sessions
  */
 
+import { isManagedCloud } from "../lib/managed-cloud.js";
+import { spawn } from "child_process";
+
+import { extractHostFromUrl, resolveAssistant } from "../lib/assistant-config";
+import { dockerResourceNames } from "../lib/docker";
+import { getPlatformUrl, readPlatformToken } from "../lib/platform-client";
+import { sshAppleContainer } from "../lib/ssh-apple-container";
 import {
   closeTerminalSession,
   createTerminalSession,
@@ -22,6 +30,18 @@ import {
   resolveManagedAssistant,
 } from "../lib/terminal-session.js";
 import type { ResolvedManagedAssistant } from "../lib/terminal-session.js";
+import type { ChildProcess } from "child_process";
+
+const SSH_OPTS = [
+  "-o",
+  "StrictHostKeyChecking=no",
+  "-o",
+  "UserKnownHostsFile=/dev/null",
+  "-o",
+  "ConnectTimeout=10",
+  "-o",
+  "LogLevel=ERROR",
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,9 +50,15 @@ import type { ResolvedManagedAssistant } from "../lib/terminal-session.js";
 function printHelp(): void {
   console.log("Usage: cadet terminal [subcommand] [options]");
   console.log("");
+  console.log("Open an interactive terminal session into an assistant.");
+  console.log("");
   console.log(
-    "Open an interactive terminal session into a managed assistant container.",
+    "Managed (cloud-hosted) assistants get a platform terminal session; docker",
   );
+  console.log(
+    "assistants shell in via docker exec, GCP assistants via gcloud, custom",
+  );
+  console.log("hosts via ssh, and apple-container assistants via their management socket.");
   console.log("");
   console.log("Subcommands:");
   console.log("  (none)              Interactive shell");
@@ -56,6 +82,19 @@ function printHelp(): void {
   console.log("  cadet terminal attach my-session");
   console.log("  cadet terminal list");
   console.log("  cadet terminal --assistant my-assistant");
+}
+
+function waitForExit(child: ChildProcess): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`terminal exited with code ${code}`));
+      }
+    });
+    child.on("error", reject);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -200,10 +239,9 @@ export const terminal = Object.assign(
     }
   }
 
-  const assistant = resolveManagedAssistant(assistantName);
-
+  // tmux subcommands are managed-cloud features
   if (subcommand === "list") {
-    await listTmuxSessions(assistant);
+    await listTmuxSessions(resolveManagedAssistant(assistantName));
     return;
   }
 
@@ -217,13 +255,115 @@ export const terminal = Object.assign(
     }
     // Shell-escape the session name to handle spaces/metacharacters
     const escaped = tmuxSessionName.replace(/'/g, "'\\''");
-    await interactiveSession(assistant, `tmux attach -t '${escaped}'`);
+    await interactiveSession(
+      resolveManagedAssistant(assistantName),
+      `tmux attach -t '${escaped}'`,
+    );
     return;
   }
 
-  // Default: interactive shell
-  await interactiveSession(assistant);
-},
-  { description: "Open a terminal into a managed assistant container" },
-);
+  // Default: interactive shell, dispatched by the assistant's cloud type.
+  const entry = resolveAssistant(assistantName);
 
+  if (!entry) {
+    if (assistantName) {
+      console.error(`No assistant instance found with name '${assistantName}'.`);
+    } else {
+      console.error("No assistant instance found. Run `cadet hatch` first.");
+    }
+    process.exit(1);
+  }
+
+  const cloud = entry.cloud;
+
+  if (cloud === "local") {
+    console.error(
+      "Cannot open a terminal into a local assistant. Local assistants run directly on this machine.\n" +
+        `Use 'cadet ps ${entry.assistantId}' to check its processes instead.`,
+    );
+    process.exit(1);
+  }
+
+  if (cloud === "aws") {
+    console.error("Terminals on AWS instances are not yet supported.");
+    process.exit(1);
+  }
+
+  // Apple container: connect to the management socket for an interactive shell.
+  if (cloud === "apple-container") {
+    await sshAppleContainer(entry);
+    return;
+  }
+
+  if (cloud === "docker") {
+    const res = dockerResourceNames(entry.assistantId);
+    console.log(`🔗 Connecting to ${entry.assistantId} via docker exec...\n`);
+
+    const child = spawn(
+      "docker",
+      ["exec", "-it", res.assistantContainer, "/bin/sh"],
+      { stdio: "inherit", windowsHide: true },
+    );
+    await waitForExit(child);
+    return;
+  }
+
+  if (cloud === "gcp") {
+    const project = entry.project;
+    const zone = entry.zone;
+    if (!project || !zone) {
+      console.error("Error: GCP project and zone not found in assistant config.");
+      process.exit(1);
+    }
+
+    const sshTarget = entry.sshUser
+      ? `${entry.sshUser}@${entry.assistantId}`
+      : entry.assistantId;
+
+    console.log(`🔗 Connecting to ${entry.assistantId} via gcloud...\n`);
+
+    const child = spawn(
+      "gcloud",
+      ["compute", "ssh", sshTarget, `--project=${project}`, `--zone=${zone}`],
+      { stdio: "inherit", windowsHide: true },
+    );
+    await waitForExit(child);
+    return;
+  }
+
+  if (isManagedCloud(cloud)) {
+    const token = readPlatformToken();
+    if (!token) {
+      console.error(
+        "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+      );
+      process.exit(1);
+    }
+    await interactiveSession({
+      assistantId: entry.assistantId,
+      token,
+      platformUrl: getPlatformUrl(),
+    });
+    return;
+  }
+
+  if (cloud === "custom") {
+    const host = extractHostFromUrl(entry.runtimeUrl);
+    const sshUser = entry.sshUser ?? "root";
+    const sshTarget = `${sshUser}@${host}`;
+
+    console.log(`🔗 Connecting to ${entry.assistantId} via ssh...\n`);
+
+    const child = spawn("ssh", [...SSH_OPTS, sshTarget], {
+      stdio: "inherit",
+      windowsHide: true,
+    });
+    await waitForExit(child);
+    return;
+  }
+
+  console.error(`Error: Unknown cloud type '${cloud}'.`);
+  process.exit(1);
+},
+  { description: "Open a terminal into an assistant" },
+);

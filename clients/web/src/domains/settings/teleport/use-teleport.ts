@@ -23,11 +23,8 @@ import {
 } from "@/generated/api/sdk.gen";
 import {
   getLocalAssistants,
-  getPlatformRuntimeUrl,
   getSelectedAssistant,
   loadLockfile,
-  saveLockfileAssistant,
-  setActiveLockfileAssistant,
 } from "@/lib/local-mode";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import { hatchLocalAssistant } from "@/runtime/local-mode-host";
@@ -314,7 +311,9 @@ async function teleportToPlatform(
   const bundle = await exportLocalBundle(source, setProgress);
 
   setStep(t("settings:teleportCard.stepResolvingOrganization"));
-  const organizationId = await resolveOrganizationId();
+  // Still resolves and validates the org even though the bundle no longer
+  // stamps it anywhere: exactly one org must be reachable before the upload.
+  await resolveOrganizationId();
 
   // Pre-check before the expensive upload: block if a platform assistant
   // already exists for this account. Query the platform directly rather than
@@ -360,18 +359,6 @@ async function teleportToPlatform(
     );
   }
   const managedId = hatch.data.id;
-  await saveLockfileAssistant({
-    assistantId: managedId,
-    name: hatch.data.name,
-    cloud: "cadet",
-    runtimeUrl: getPlatformRuntimeUrl(),
-    hatchedAt: hatch.data.created ?? new Date().toISOString(),
-    organizationId,
-  });
-  // `saveLockfileAssistant` marks the new entry active; keep the source active
-  // until the user confirms the switch so a cancel/restart never lands on the
-  // half-built target.
-  await setActiveLockfileAssistant(source.assistantId);
 
   // Record the target now (not just at the end) so a failure during the
   // remaining steps cleans up this freshly-hatched managed assistant.
@@ -465,9 +452,6 @@ async function teleportToLocal(
   setStep(t("settings:teleportCard.stepImporting"));
   await importWithRetry(local, bundle);
 
-  // Hatching/waking the local target may have flipped the active assistant;
-  // keep the source active until the user confirms the switch.
-  await setActiveLockfileAssistant(source.assistantId);
 }
 
 /**
@@ -516,9 +500,6 @@ async function cleanupFreshTarget(
     if (!result.ok) {
       captureError(new Error(result.error), { context });
     }
-  }
-  if (original) {
-    await setActiveLockfileAssistant(original.id);
   }
 }
 

@@ -4,39 +4,9 @@ import { parseLockfile } from "@mycadet/local-mode/contract";
 
 import * as localModeHost from "@/runtime/local-mode-host";
 
-const replacePlatformAssistantsHost = mock(
-  async (
-    _entries: Array<Record<string, unknown>>,
-    _organizationId?: string,
-  ): Promise<localModeHost.LockfileWriteResult> => ({
-    ok: true as const,
-    lockfile: { assistants: [], activeAssistant: null },
-  }),
-);
-
 const loadLockfileHost = mock(async (): Promise<localModeHost.Lockfile> => {
   throw new Error("host down");
 });
-
-const saveLockfileAssistantHost = mock(
-  async (
-    _assistant: Record<string, unknown>,
-    _activeId?: string,
-  ): Promise<localModeHost.LockfileWriteResult> => ({
-    ok: true as const,
-    lockfile: { assistants: [], activeAssistant: null },
-  }),
-);
-
-const renameLockfileAssistantHost = mock(
-  async (
-    _assistantId: string,
-    _name: string,
-  ): Promise<localModeHost.LockfileWriteResult> => ({
-    ok: true as const,
-    lockfile: { assistants: [], activeAssistant: null },
-  }),
-);
 
 const fetchGuardianTokenHost = mock(async (_id: string) => "guardian-tok");
 
@@ -73,10 +43,7 @@ const pairingCancelHost = mock(async (_handle: string): Promise<void> => {});
 
 mock.module("@/runtime/local-mode-host", () => ({
   ...localModeHost,
-  replacePlatformAssistantsHost,
   loadLockfileHost,
-  renameLockfileAssistantHost,
-  saveLockfileAssistantHost,
   fetchGuardianTokenHost,
   unpairAssistantHost,
   pairingStartHost,
@@ -92,7 +59,6 @@ import {
   getLockfile,
   getPairedGatewayUrl,
   getPlatformAssistants,
-  getPlatformRuntimeUrl,
   getRemoteAssistantDisplayName,
   getSelectedAssistant,
   cancelAssistantPairing,
@@ -111,10 +77,6 @@ import {
   primeLocalGatewayConnectionWithStartupRetry,
   reconcileSelectedAssistant,
   removePairedAssistantFromLockfile,
-  removePlatformAssistantFromLockfile,
-  renameLockfileAssistant,
-  saveManagedLockfileAssistant,
-  syncPlatformAssistantsToLockfile,
   UnresolvedLocalGatewayError,
   UnresolvedPairedGatewayError,
 } from "@/lib/local-mode";
@@ -181,10 +143,7 @@ afterEach(() => {
   useLockfileStore.setState({ lockfile: null, committed: false });
   localStorage.removeItem(LOCKFILE_STORAGE_KEY);
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
-  replacePlatformAssistantsHost.mockClear();
   loadLockfileHost.mockClear();
-  renameLockfileAssistantHost.mockClear();
-  saveLockfileAssistantHost.mockClear();
   fetchGuardianTokenHost.mockClear();
   unpairAssistantHost.mockClear();
   pairingStartHost.mockClear();
@@ -280,177 +239,6 @@ describe("getRemoteAssistantDisplayName", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
 
     expect(getRemoteAssistantDisplayName()).toBeUndefined();
-  });
-});
-
-describe("syncPlatformAssistantsToLockfile", () => {
-  const remote = {
-    id: "platform-a",
-    name: "A",
-    is_local: false,
-    created: "2026-01-01",
-  };
-
-  test("skips the host replace when the org is unresolved (no wipe)", async () => {
-    await syncPlatformAssistantsToLockfile([remote], undefined);
-    await syncPlatformAssistantsToLockfile([remote]);
-
-    expect(replacePlatformAssistantsHost).not.toHaveBeenCalled();
-  });
-
-  test("runs the host replace when an org is provided", async () => {
-    await syncPlatformAssistantsToLockfile([remote], "org-1");
-
-    expect(replacePlatformAssistantsHost).toHaveBeenCalledTimes(1);
-    const [entries, org] = replacePlatformAssistantsHost.mock.calls[0]!;
-    expect(org).toBe("org-1");
-    expect(entries).toEqual([
-      expect.objectContaining({
-        assistantId: "platform-a",
-        organizationId: "org-1",
-      }),
-    ]);
-  });
-
-  test("backs out before the host replace when shouldApply is false", async () => {
-    await syncPlatformAssistantsToLockfile([remote], "org-1", () => false);
-
-    expect(replacePlatformAssistantsHost).not.toHaveBeenCalled();
-  });
-
-  test("skips the commit when shouldApply flips false during the replace", async () => {
-    let fresh = true;
-    replacePlatformAssistantsHost.mockImplementationOnce(async () => {
-      fresh = false;
-      return {
-        ok: true as const,
-        lockfile: { assistants: [], activeAssistant: null },
-      };
-    });
-
-    await syncPlatformAssistantsToLockfile([remote], "org-1", () => fresh);
-
-    expect(replacePlatformAssistantsHost).toHaveBeenCalledTimes(1);
-    expect(useLockfileStore.getState().lockfile).toBeNull();
-    expect(localStorage.getItem(LOCKFILE_STORAGE_KEY)).toBeNull();
-  });
-});
-
-describe("removePlatformAssistantFromLockfile", () => {
-  const platformA: LockfileAssistant = {
-    assistantId: "platform-a",
-    cloud: "cadet",
-    organizationId: "org-1",
-  } as LockfileAssistant;
-
-  const platformB: LockfileAssistant = {
-    assistantId: "platform-b",
-    cloud: "cadet",
-    organizationId: "org-1",
-  } as LockfileAssistant;
-
-  const platformOtherOrg: LockfileAssistant = {
-    assistantId: "platform-c",
-    cloud: "cadet",
-    organizationId: "org-2",
-  } as LockfileAssistant;
-
-  test("rewrites the remaining platform entries scoped to the entry's org and commits", async () => {
-    setLockfile({
-      assistants: [localA, platformA, platformB, platformOtherOrg],
-      activeAssistant: "local-a",
-    });
-    const resulting = {
-      assistants: [localA, platformB, platformOtherOrg],
-      activeAssistant: "local-a",
-    };
-    replacePlatformAssistantsHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: resulting,
-    });
-
-    const result = await removePlatformAssistantFromLockfile("platform-a");
-
-    expect(result.ok).toBe(true);
-    expect(replacePlatformAssistantsHost).toHaveBeenCalledTimes(1);
-    const [entries, org] = replacePlatformAssistantsHost.mock.calls[0]!;
-    expect(org).toBe("org-1");
-    // Other orgs' entries stay out of the payload so the host preserves
-    // their on-disk records raw instead of replacing them with the
-    // renderer's parsed copies.
-    expect(entries).toEqual([
-      expect.objectContaining({ assistantId: "platform-b" }),
-    ]);
-    expect(useLockfileStore.getState().lockfile).toEqual(resulting);
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("a legacy org-less entry removes via the unscoped replace", async () => {
-    setLockfile({ assistants: [platform, platformB], activeAssistant: null });
-    replacePlatformAssistantsHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: { assistants: [platformB], activeAssistant: null },
-    });
-
-    const result = await removePlatformAssistantFromLockfile("platform-a");
-
-    expect(result.ok).toBe(true);
-    const [entries, org] = replacePlatformAssistantsHost.mock.calls[0]!;
-    expect(org).toBeUndefined();
-    expect(entries).toEqual([
-      expect.objectContaining({ assistantId: "platform-b" }),
-    ]);
-  });
-
-  test("refuses a local assistant without touching the host", async () => {
-    setLockfile({
-      assistants: [localA, platformA],
-      activeAssistant: "local-a",
-    });
-
-    const result = await removePlatformAssistantFromLockfile("local-a");
-
-    expect(result.ok).toBe(false);
-    expect(replacePlatformAssistantsHost).not.toHaveBeenCalled();
-  });
-
-  test("refuses an unknown id without touching the host", async () => {
-    setLockfile({ assistants: [platformA], activeAssistant: null });
-
-    const result = await removePlatformAssistantFromLockfile("nope");
-
-    expect(result.ok).toBe(false);
-    expect(replacePlatformAssistantsHost).not.toHaveBeenCalled();
-  });
-
-  test("surfaces a host failure without committing", async () => {
-    setLockfile({ assistants: [platformA, platformB], activeAssistant: null });
-    replacePlatformAssistantsHost.mockResolvedValueOnce({
-      ok: false,
-      error: "disk unavailable",
-    });
-
-    const result = await removePlatformAssistantFromLockfile("platform-a");
-
-    expect(result).toEqual({ ok: false, error: "disk unavailable" });
-    expect(useLockfileStore.getState().committed).toBe(false);
-    expect(localStorage.getItem(LOCKFILE_STORAGE_KEY)).toBeNull();
-  });
-
-  test("clears a selection that pointed at the removed entry", async () => {
-    setLockfile({
-      assistants: [localA, platformA],
-      activeAssistant: "local-a",
-    });
-    setSelected("platform-a");
-    replacePlatformAssistantsHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: { assistants: [localA], activeAssistant: "local-a" },
-    });
-
-    await removePlatformAssistantFromLockfile("platform-a");
-
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
   });
 });
 
@@ -737,143 +525,6 @@ describe("assistant pairing", () => {
 
   test("a host too old to name a reason ends the attempt", () => {
     expect(isRetryablePairingFailure({ ok: false, error: "no" })).toBe(false);
-  });
-});
-
-describe("saveManagedLockfileAssistant", () => {
-  test("writes the platform entry every managed hatch shares", async () => {
-    await saveManagedLockfileAssistant("ast-1", "Research", "org-1");
-
-    expect(saveLockfileAssistantHost).toHaveBeenCalledTimes(1);
-    const [entry, activeId] = saveLockfileAssistantHost.mock.calls[0]!;
-    // The written entry also becomes the lockfile's active assistant.
-    expect(activeId).toBe("ast-1");
-    expect(entry).toMatchObject({
-      assistantId: "ast-1",
-      name: "Research",
-      cloud: "cadet",
-      runtimeUrl: getPlatformRuntimeUrl(),
-      organizationId: "org-1",
-    });
-    expect(Number.isNaN(Date.parse(entry.hatchedAt as string))).toBe(false);
-  });
-
-  test("omits an unresolved organization", async () => {
-    await saveManagedLockfileAssistant("ast-1", undefined, undefined);
-
-    const [entry] = saveLockfileAssistantHost.mock.calls[0]!;
-    expect(entry.organizationId).toBeUndefined();
-    expect(entry.name).toBeUndefined();
-  });
-});
-
-describe("renameLockfileAssistant", () => {
-  const named: LockfileAssistant = {
-    assistantId: "local-a",
-    cloud: "local",
-    name: "Old Name",
-    resources: { gatewayPort: 7830 },
-  } as LockfileAssistant;
-
-  // A non-remote injected config marks the local-mode host as available.
-  function enableLocalHost(): void {
-    window.__CADET_CONFIG__ = {};
-  }
-
-  test("routes the trimmed rename through the host rename op and commits", async () => {
-    enableLocalHost();
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-    const resulting = {
-      assistants: [{ ...named, name: "Credence" }],
-      activeAssistant: "local-a",
-    };
-    renameLockfileAssistantHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: resulting,
-    });
-
-    await expect(
-      renameLockfileAssistant("local-a", "  Credence  "),
-    ).resolves.toBe(true);
-
-    expect(renameLockfileAssistantHost).toHaveBeenCalledTimes(1);
-    expect(renameLockfileAssistantHost.mock.calls[0]).toEqual([
-      "local-a",
-      "Credence",
-    ]);
-    // Never the upsert path: a stale cache must not re-create an entry.
-    expect(saveLockfileAssistantHost).not.toHaveBeenCalled();
-    expect(useLockfileStore.getState().lockfile).toEqual(resulting);
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("no-op (true) when the lockfile has no entry for the id", async () => {
-    enableLocalHost();
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-
-    await expect(renameLockfileAssistant("nope", "Credence")).resolves.toBe(
-      true,
-    );
-
-    expect(renameLockfileAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("no-op (true) when the entry already carries the trimmed name", async () => {
-    enableLocalHost();
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-
-    await expect(
-      renameLockfileAssistant("local-a", "  Old Name  "),
-    ).resolves.toBe(true);
-
-    expect(renameLockfileAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("no-op (true) on an empty or whitespace-only name", async () => {
-    enableLocalHost();
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-
-    await expect(renameLockfileAssistant("local-a", "")).resolves.toBe(true);
-    await expect(renameLockfileAssistant("local-a", "   ")).resolves.toBe(true);
-
-    expect(renameLockfileAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("no-op (true) when no local-mode host backs this runtime", async () => {
-    // Default test env: no injected config, not Electron.
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-
-    await expect(renameLockfileAssistant("local-a", "Credence")).resolves.toBe(
-      true,
-    );
-
-    expect(renameLockfileAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("no-op (true) in remote-gateway mode", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-
-    await expect(renameLockfileAssistant("self", "Credence")).resolves.toBe(
-      true,
-    );
-
-    expect(renameLockfileAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("resolves false without committing on a host refusal or write failure", async () => {
-    enableLocalHost();
-    setLockfile({ assistants: [named], activeAssistant: "local-a" });
-    renameLockfileAssistantHost.mockResolvedValueOnce({
-      ok: false,
-      error: "No lockfile entry for this assistant",
-    });
-
-    await expect(renameLockfileAssistant("local-a", "Credence")).resolves.toBe(
-      false,
-    );
-
-    expect(renameLockfileAssistantHost).toHaveBeenCalledTimes(1);
-    expect(useLockfileStore.getState().lockfile?.assistants).toEqual([named]);
   });
 });
 

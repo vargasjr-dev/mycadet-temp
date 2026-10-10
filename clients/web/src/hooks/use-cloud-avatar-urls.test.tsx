@@ -25,17 +25,10 @@ import type * as AssistantApi from "@/assistant/api";
 import type { Assistant } from "@/generated/api";
 
 const actualLocalMode = await import("@/lib/local-mode");
-let localClient = false;
 let cloudRemote = false;
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
-  isLocalClient: () => localClient,
   isCadetCloudRemote: () => cloudRemote,
-}));
-
-let gatewayAuthEnabled = false;
-mock.module("@/lib/auth/gateway-session", () => ({
-  isGatewayAuthEnabled: () => gatewayAuthEnabled,
 }));
 
 let orgReady = true;
@@ -69,7 +62,7 @@ const {
   supersedePlatformAvatar,
   suppressPlatformAvatarUrl,
   usePlatformAvatarUrls,
-} = await import("@/hooks/use-platform-avatar-urls");
+} = await import("@/hooks/use-cloud-avatar-urls");
 const { AVATAR_SUPERSEDE_WINDOW_MS, resetAvatarSupersedeForTests } =
   await import("@/lib/avatar-supersede");
 
@@ -112,9 +105,7 @@ function signIn(userId = "user-1"): void {
 }
 
 beforeEach(() => {
-  localClient = true;
-  cloudRemote = true;
-  gatewayAuthEnabled = false;
+  cloudRemote = false;
   orgReady = true;
   resetAvatarSupersedeForTests();
   resolvePairedAssistantPlatformId.mockClear();
@@ -138,17 +129,7 @@ afterEach(() => {
 });
 
 describe("usePlatformAvatarUrls", () => {
-  test.each([
-    ["local client", () => (localClient = true)],
-    [
-      "remote-gateway mode (non-cloud)",
-      () => {
-        localClient = false;
-        cloudRemote = false;
-      },
-    ],
-  ])("maps id to a non-empty avatar_url under %s", async (_l, arrange) => {
-    arrange();
+  test("maps id to a non-empty avatar_url", async () => {
     const { result } = renderHook(() => usePlatformAvatarUrls(), {
       wrapper: createWrapper(),
     });
@@ -169,8 +150,7 @@ describe("usePlatformAvatarUrls", () => {
       "an unsettled platform session",
       () => useAuthStore.setState({ platformSession: "unknown" }),
     ],
-    ["pure cloud mode", () => (localClient = false)],
-    ["gateway auth", () => (gatewayAuthEnabled = true)],
+    ["pure cloud mode", () => (cloudRemote = true)],
     ["an unready org header", () => (orgReady = false)],
   ])("stays idle with %s", async (_l, arrange) => {
     arrange();

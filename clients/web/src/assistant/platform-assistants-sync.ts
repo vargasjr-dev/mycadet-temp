@@ -7,15 +7,13 @@
  * `"present"` when they confirm a session, so one subscription repopulates the
  * list on every path.
  *
- * Pure platform/cloud only. Local mode drives the resolved store from the
- * lockfile subscription (see resolved-assistants-store.ts), and the gateway /
- * remote-gateway modes have no platform assistants list, so the load
- * early-returns in those modes and never overwrites the lockfile-driven list.
+ * Cloud-remote only: the cloud web app's store is platform-driven, while the
+ * single-assistant bundle served everywhere else configures its one assistant
+ * at load and has no platform list to fetch.
  */
 import { listAssistants } from "@/assistant/api";
-import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import { subscribe } from "@/lib/event-bus";
-import { isLocalClient, isCadetCloudRemote } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOrganizationStore } from "@/stores/organization-store";
@@ -43,10 +41,10 @@ let inflightReload: Promise<void> | null = null;
 /**
  * Load the platform assistants list into the resolved-assistants store.
  *
- * No-ops outside pure platform/cloud mode: local mode's list is lockfile-driven
- * and the gateway modes have none, so writing the resolved store there would
- * clobber correct state. On failure it marks the list hydrated so the route
- * guard's hydration wait can't stall navigation forever.
+ * No-ops outside cloud-remote: the bundle served everywhere else has no
+ * platform list, so writing the resolved store there would clobber correct
+ * state. On failure it marks the list hydrated so the route guard's hydration
+ * wait can't stall navigation forever.
  *
  * Every write to the resolved store is gated on the reload still being current:
  * the same session (`platformSession` still `"present"`, same `user.id`) and
@@ -55,7 +53,7 @@ let inflightReload: Promise<void> | null = null;
  * skipping the write there is correct.
  */
 export function reloadPlatformAssistants(): Promise<void> {
-  if (isLocalClient() || !isCadetCloudRemote() || isGatewayAuthEnabled()) {
+  if (!isCadetCloudRemote()) {
     return Promise.resolve();
   }
   const run = runReload();
@@ -110,7 +108,7 @@ async function runReload(): Promise<void> {
  * absent until a reload or re-auth. Called on app resume and on chooser mount,
  * the moments a user would look for the new assistant. Session and mode guards
  * live here and in `reloadPlatformAssistants`, so this is a no-op for
- * logged-out hubs and non-platform modes. A reload already in flight is
+ * logged-out hubs and non-cloud modes. A reload already in flight is
  * awaited instead of duplicated; direct `reloadPlatformAssistants` callers
  * (auth transitions, account switches) keep their latest-wins start.
  */

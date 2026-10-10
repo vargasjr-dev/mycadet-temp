@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { supersedePlatformAvatar } from "@/hooks/use-platform-avatar-urls";
+import { supersedePlatformAvatar } from "@/hooks/use-cloud-avatar-urls";
 import {
   deleteLastSeenAvatar,
   lastSeenAvatarGenerations,

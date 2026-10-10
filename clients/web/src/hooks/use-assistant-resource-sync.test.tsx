@@ -32,7 +32,7 @@ import { useAssistantResourceSync } from "@/hooks/use-assistant-resource-sync";
 import { assistantIdentityQueryKey } from "@/hooks/use-assistant-identity-init";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
-import { platformAvatarUrlsQueryKey } from "@/hooks/use-platform-avatar-urls";
+import { platformAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";

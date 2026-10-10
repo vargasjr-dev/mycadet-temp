@@ -10,18 +10,11 @@ import {
 
 import type { PlatformSessionStatus } from "@/stores/session-status";
 
-// Mode predicates that select whether the load runs.
-let mockIsLocalClient = false;
+// Mode predicate that selects whether the load runs.
 let mockIsCloudRemote = true;
-let mockIsGatewayAuthEnabled = false;
 
 mock.module("@/lib/local-mode", () => ({
-  isLocalClient: () => mockIsLocalClient,
   isCadetCloudRemote: () => mockIsCloudRemote,
-}));
-
-mock.module("@/lib/auth/gateway-session", () => ({
-  isGatewayAuthEnabled: () => mockIsGatewayAuthEnabled,
 }));
 
 // The platform assistants fetch. Default to a well-formed empty ok result;
@@ -138,9 +131,7 @@ afterAll(() => {
 
 beforeEach(() => {
   advance(60_000);
-  mockIsLocalClient = false;
   mockIsCloudRemote = true;
-  mockIsGatewayAuthEnabled = false;
   mockListAssistantsResult = { ok: true, status: 200, data: [] };
   mockListAssistantsError = null;
   listAssistantsGates = null;
@@ -305,29 +296,8 @@ describe("refreshPlatformAssistantsIfStale", () => {
 });
 
 describe("reloadPlatformAssistants", () => {
-  test("early-returns in local mode without touching the resolved store", async () => {
-    mockIsLocalClient = true;
-
-    await reloadPlatformAssistants();
-
-    expect(fetchOrganizationsMock).not.toHaveBeenCalled();
-    expect(listAssistantsMock).not.toHaveBeenCalled();
-    expect(setFromApiMock).not.toHaveBeenCalled();
-    expect(markHydratedMock).not.toHaveBeenCalled();
-  });
-
   test("early-returns on a non-cloud remote", async () => {
     mockIsCloudRemote = false;
-
-    await reloadPlatformAssistants();
-
-    expect(listAssistantsMock).not.toHaveBeenCalled();
-    expect(setFromApiMock).not.toHaveBeenCalled();
-    expect(markHydratedMock).not.toHaveBeenCalled();
-  });
-
-  test("early-returns when gateway auth is enabled", async () => {
-    mockIsGatewayAuthEnabled = true;
 
     await reloadPlatformAssistants();
 

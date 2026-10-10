@@ -27,15 +27,12 @@ import { logs } from "./commands/logs";
 import { message } from "./commands/message";
 import { pair } from "./commands/pair";
 import { ps } from "./commands/ps";
-import { recover } from "./commands/recover";
 import { restore } from "./commands/restore";
-import { roadmap } from "./commands/roadmap";
-import { restart } from "./commands/restart";
 import { retire } from "./commands/retire";
+import { restart } from "./commands/restart";
 import { rollback } from "./commands/rollback";
 import { setup } from "./commands/setup";
 import { sleep } from "./commands/sleep";
-import { ssh } from "./commands/ssh";
 import { debug } from "./commands/debug";
 import { teleport } from "./commands/teleport";
 import { terminal } from "./commands/terminal";
@@ -46,7 +43,6 @@ import { upgrade } from "./commands/upgrade";
 import { use } from "./commands/use";
 import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
-import { workflows } from "./commands/workflows";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { loadGuardianToken } from "./lib/guardian-token";
@@ -67,20 +63,17 @@ const commands = {
   gateway,
   hatch,
   login,
-  logout,
   logs,
+  logout,
   message,
   pair,
   ps,
-  recover,
   restore,
   retire,
   restart,
-  roadmap,
   rollback,
   setup,
   sleep,
-  ssh,
   teleport,
   terminal,
   tunnel,
@@ -91,7 +84,6 @@ const commands = {
   voice,
   wake,
   whoami,
-  workflows,
 };
 
 type CommandName = keyof typeof commands;

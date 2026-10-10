@@ -61,7 +61,7 @@ afterAll(() => {
   mock.module("../lib/step-runner.js", () => ({ exec: realExec }));
 });
 
-import { recover } from "../commands/recover.js";
+import { restore } from "../commands/restore.js";
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
@@ -175,18 +175,19 @@ afterAll(() => {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("recover --help", () => {
+describe("restore --help", () => {
   test("prints usage, description, and examples then exits 0", async () => {
-    process.argv = ["bun", "cadet", "recover", "--help"];
-    await expect(recover()).rejects.toThrow("process.exit(0)");
+    process.argv = ["bun", "cadet", "restore", "--help"];
+    await expect(restore()).rejects.toThrow("process.exit(0)");
     const output = consoleLogSpy.mock.calls.flat().join("\n");
-    expect(output).toContain("Usage: cadet recover <name>");
+    expect(output).toContain("Usage: cadet restore <name>");
+    expect(output).toContain("recovers a retired assistant");
     expect(output).toContain("Examples:");
-    expect(output).toContain("cadet recover");
+    expect(output).toContain("cadet restore");
   });
 });
 
-describe("recover error cases", () => {
+describe("restore error cases", () => {
   for (const failure of ["missing", "conflict"] as const) {
     test(`recovery ${failure} leaves destination and registry untouched and permits retry`, async () => {
       const name = `retry-${failure}`;
@@ -211,8 +212,8 @@ describe("recover error cases", () => {
       }
       const registry = resolveLockfilePaths(process.env)[0]!;
       const before = readFileSync(registry, "utf8");
-      process.argv = ["bun", "cadet", "recover", name];
-      await expect(recover()).rejects.toThrow(`signing key ${failure}`);
+      process.argv = ["bun", "cadet", "restore", name];
+      await expect(restore()).rejects.toThrow(`signing key ${failure}`);
       expect(existsSync(instanceDir)).toBe(false);
       expect(readFileSync(registry, "utf8")).toBe(before);
       expect(existsSync(archivePath)).toBe(true);
@@ -222,7 +223,7 @@ describe("recover error cases", () => {
       // Restore the authoritative identity in the archive metadata and retry.
       entry.resources!.signingKey = "ab".repeat(32);
       writeFileSync(metadataPath, JSON.stringify(entry));
-      await recover();
+      await restore();
       expect(existsSync(instanceDir)).toBe(true);
       expect(existsSync(archivePath)).toBe(false);
       expect(startGatewayMock).toHaveBeenCalledTimes(1);
@@ -241,8 +242,8 @@ describe("recover error cases", () => {
       join(dir, "actor-token-signing-key"),
       Buffer.from("cd".repeat(32), "hex"),
     );
-    process.argv = ["bun", "cadet", "recover", name];
-    await recover();
+    process.argv = ["bun", "cadet", "restore", name];
+    await restore();
     expect(startGatewayMock).toHaveBeenCalledWith(
       false,
       expect.objectContaining({ signingKey: "cd".repeat(32) }),
@@ -256,8 +257,8 @@ describe("recover error cases", () => {
     const entry = makeEntry(name, join(testDir, "cadet", "assistants", name));
     delete entry.resources!.signingKey;
     const { archivePath, metadataPath } = writeArchiveFixtures(name, entry);
-    process.argv = ["bun", "cadet", "recover", name];
-    await expect(recover()).rejects.toThrow("signing key missing");
+    process.argv = ["bun", "cadet", "restore", name];
+    await expect(restore()).rejects.toThrow("signing key missing");
     expect(existsSync(archivePath)).toBe(true);
     expect(existsSync(metadataPath)).toBe(true);
     expect(startLocalDaemonMock).not.toHaveBeenCalled();
@@ -265,14 +266,14 @@ describe("recover error cases", () => {
   });
 
   test("exits 1 when no name is given", async () => {
-    process.argv = ["bun", "cadet", "recover"];
-    await expect(recover()).rejects.toThrow("process.exit(1)");
-    expect(consoleErrorSpy.mock.calls[0][0]).toContain("Usage:");
+    process.argv = ["bun", "cadet", "restore"];
+    await expect(restore()).rejects.toThrow("process.exit(1)");
+    expect(consoleErrorSpy.mock.calls[0][0]).toContain("<name> is required");
   });
 
   test("exits 1 when archive is missing", async () => {
-    process.argv = ["bun", "cadet", "recover", "ghost-assistant"];
-    await expect(recover()).rejects.toThrow("process.exit(1)");
+    process.argv = ["bun", "cadet", "restore", "ghost-assistant"];
+    await expect(restore()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain(
       "No retired archive found for 'ghost-assistant'",
     );
@@ -292,8 +293,8 @@ describe("recover error cases", () => {
       join(retiredDir, `${name}.json`),
       JSON.stringify(entry, null, 2) + "\n",
     );
-    process.argv = ["bun", "cadet", "recover", name];
-    await expect(recover()).rejects.toThrow("missing resource configuration");
+    process.argv = ["bun", "cadet", "restore", name];
+    await expect(restore()).rejects.toThrow("missing resource configuration");
   });
 
   test("exits 1 when target .cadet/ already exists", async () => {
@@ -303,13 +304,13 @@ describe("recover error cases", () => {
     writeArchiveFixtures(name, entry);
     // Pre-create the collision path that recover checks
     mkdirSync(join(instanceDir, ".cadet"), { recursive: true });
-    process.argv = ["bun", "cadet", "recover", name];
-    await expect(recover()).rejects.toThrow("process.exit(1)");
+    process.argv = ["bun", "cadet", "restore", name];
+    await expect(restore()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain("already exists");
   });
 });
 
-describe("recover extraction path — named instance (instanceDir !== homedir())", () => {
+describe("archive-recovery extraction path — named instance (instanceDir !== homedir())", () => {
   test("extracts to retiredDir and renames staging dir to instanceDir directly", async () => {
     const name = "named-instance";
     const instanceDir = join(testDir, "custom-location", name);
@@ -321,8 +322,8 @@ describe("recover extraction path — named instance (instanceDir !== homedir())
     // Parent dir must exist for renameSync
     mkdirSync(join(testDir, "custom-location"), { recursive: true });
 
-    process.argv = ["bun", "cadet", "recover", name];
-    await recover();
+    process.argv = ["bun", "cadet", "restore", name];
+    await restore();
 
     // exec must have been called with -C retiredDir
     expect(execMock).toHaveBeenCalledTimes(1);
@@ -355,8 +356,8 @@ describe("recover extraction path — named instance (instanceDir !== homedir())
     const entry = makeEntry(name, instanceDir);
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
-    process.argv = ["bun", "cadet", "recover", name];
-    await recover();
+    process.argv = ["bun", "cadet", "restore", name];
+    await restore();
 
     expect(existsSync(extractedPath)).toBe(false);
     expect(existsSync(instanceDir)).toBe(true);

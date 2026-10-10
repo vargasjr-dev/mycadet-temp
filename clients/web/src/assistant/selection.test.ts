@@ -35,11 +35,9 @@ mock.module("@/stores/resolved-assistants-store", () => ({
     }),
   },
 }));
-const setActiveLockfileAssistantMock = mock(async (_id: string) => {});
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeLocal,
   isLocalClient: () => false,
-  setActiveLockfileAssistant: setActiveLockfileAssistantMock,
 }));
 // Cut the real organization-store off the module graph: it drags in the
 // auth store and the lifecycle service, which subscribe to stores this file
@@ -79,7 +77,6 @@ beforeEach(() => {
   assistantsHydrated = true;
   activeLocal = undefined;
   storeSetSelectedAssistantMock.mockClear();
-  setActiveLockfileAssistantMock.mockClear();
 });
 
 describe("resolveSelectedAssistantId", () => {
@@ -146,17 +143,15 @@ describe("resolveSelectedAssistantId", () => {
 });
 
 describe("setSelectedAssistant", () => {
-  test("an id records the selection and mirrors it into the lockfile", async () => {
+  test("an id records the selection", async () => {
     await setSelectedAssistant("asst-1");
 
     expect(storeSetSelectedAssistantMock).toHaveBeenCalledWith("asst-1");
-    expect(setActiveLockfileAssistantMock).toHaveBeenCalledWith("asst-1");
   });
 
-  test("null clears the selection and skips the lockfile mirror", async () => {
+  test("null clears the selection", async () => {
     await setSelectedAssistant(null);
 
     expect(storeSetSelectedAssistantMock).toHaveBeenCalledWith(null);
-    expect(setActiveLockfileAssistantMock).not.toHaveBeenCalled();
   });
 });

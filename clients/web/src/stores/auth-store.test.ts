@@ -169,9 +169,6 @@ const fetchOrganizationsMock = mock(async () => {
   }
   return mockOrgFetchOutcome;
 });
-const syncPlatformAssistantsToLockfileMock = mock(
-  async (_list: unknown, _orgId?: string) => {},
-);
 const bootstrapLocalAssistantPlatformIdentityMock = mock(
   (_assistantId?: string) => {},
 );
@@ -241,7 +238,6 @@ mock.module("@/lib/local-mode", () => ({
     primeLocalGatewayConnectionWithStartupRetryMock,
   primeLocalGatewayConnectionWithRepair:
     primeLocalGatewayConnectionWithRepairMock,
-  syncPlatformAssistantsToLockfile: syncPlatformAssistantsToLockfileMock,
 }));
 
 mock.module("@/lib/local-platform-identity", () => ({
@@ -523,7 +519,6 @@ beforeEach(() => {
   mockOrgFetchOutcome = { ok: true };
   mockOrgFetchError = null;
   fetchOrganizationsMock.mockClear();
-  syncPlatformAssistantsToLockfileMock.mockClear();
   bootstrapLocalAssistantPlatformIdentityMock.mockClear();
   resetAuthStore();
   // Reset the lifecycle and resolved-assistants stores so each test starts from
@@ -1664,38 +1659,9 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
+    // The list fetch is the settled-rejection evidence probe; the bundle no
+    // longer mirrors platform assistants into any lockfile.
     expect(listAssistantsMock).toHaveBeenCalled();
-    expect(syncPlatformAssistantsToLockfileMock).toHaveBeenCalledWith(
-      [
-        {
-          id: "assistant-3",
-          name: "My Assistant",
-          is_local: false,
-          created: "2026-06-05T00:00:00Z",
-        },
-      ],
-      "org-test",
-      // The shared reconcile helper forwards its staleness predicate; the
-      // refresh path has none.
-      undefined,
-    );
-  });
-
-  test("refreshSession skips lockfile sync outside local mode", async () => {
-    // Platform mode has no lockfile host — the sync must not run there.
-    mockIsLocalClient = false;
-    sessionUser = { id: "user-4", email: "user@example.com" };
-    mockListAssistantsResult = {
-      ok: true,
-      status: 200,
-      data: [
-        { id: "assistant-4", is_local: false, created: "2026-06-05T00:00:00Z" },
-      ],
-    };
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
-
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
   });
 
   test("logout does not clear consent flags (durable device keys survive)", async () => {
@@ -2319,7 +2285,6 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     expect(bootstrapLocalAssistantPlatformIdentityMock).not.toHaveBeenCalled();
     // The evidence check short-circuits before the assistants call and sync.
     expect(listAssistantsMock).not.toHaveBeenCalled();
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
   });
 
   test("a session rejection clears a previously persisted snapshot", async () => {
@@ -2350,7 +2315,6 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     expect(useAuthStore.getState().platformSession).toBe("absent");
     expect(useAuthStore.getState().user?.kind).toBe("local");
     expect(bootstrapLocalAssistantPlatformIdentityMock).not.toHaveBeenCalled();
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // The org fetch succeeded, so the rejected account's org state must be
     // cleared here or its Cadet-Organization-Id keeps stamping requests.
     expect(clearOrganizationMock).toHaveBeenCalled();
@@ -2494,7 +2458,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().user?.kind).toBe("local");
     // No snapshot may be re-persisted for the rejected session.
     expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(fetchConsentMock).not.toHaveBeenCalled();
   });
@@ -2514,7 +2477,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
 
     expect(useAuthStore.getState().platformSession).toBe("absent");
     expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
   });
 
   test("refreshSession ends a half-dead session whose assistants are platform-hosted", async () => {
@@ -2593,7 +2555,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().platformSession).toBe("absent");
     expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(fetchConsentMock).not.toHaveBeenCalled();
   });
@@ -2607,7 +2568,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(syncPlatformAssistantsToLockfileMock).not.toHaveBeenCalled();
   });
 
   test("initSession with platform assistants keeps the session on a transport-failed sync", async () => {

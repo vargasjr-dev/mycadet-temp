@@ -205,16 +205,6 @@ const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
   assistantId: "local-1",
 }));
 
-const saveLockfileAssistantMock = mock(
-  async (_entry: {
-    assistantId: string;
-    cloud: string;
-    name?: string;
-    runtimeUrl?: string;
-    hatchedAt?: string;
-    organizationId?: string;
-  }) => {},
-);
 const clearGatewayTokenMock = mock(() => {});
 const setSelfHostedConnectionMock = mock((_connection: unknown) => {});
 
@@ -315,22 +305,6 @@ mock.module("@/lib/local-mode", () => ({
   loadLockfile: async () => {},
   primeLocalGatewayConnection: async () => {},
   probeLocalGatewayReady: async () => true,
-  // Stands in for the real helper (whose payload `local-mode.test.ts` pins) so
-  // the lockfile entry the hatch writes stays visible to the assertions below.
-  saveManagedLockfileAssistant: async (
-    assistantId: string,
-    name: string | undefined,
-    organizationId: string | undefined,
-  ): Promise<void> => {
-    await saveLockfileAssistantMock({
-      assistantId,
-      name,
-      cloud: "cadet",
-      runtimeUrl: "https://runtime.example",
-      hatchedAt: new Date().toISOString(),
-      organizationId,
-    });
-  },
 }));
 
 mock.module("@/lib/auth/gateway-session", () => ({
@@ -453,7 +427,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     hatchLocalAssistantMock.mockClear();
     applyPendingProviderKeyMock.mockClear();
     applyPendingProviderKeyMock.mockImplementation(async () => {});
-    saveLockfileAssistantMock.mockClear();
     clearGatewayTokenMock.mockClear();
     setSelfHostedConnectionMock.mockClear();
     searchParams = new URLSearchParams();
@@ -967,11 +940,11 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     });
   }, 20000);
 
-  test("a managed hatch never adopts or reclassifies the gateway-selected local assistant", async () => {
+  test("a managed hatch drops the gateway session and routes to the platform", async () => {
     // Under gateway auth `getAssistant()` answers from the selected lockfile
     // entry. That entry is self-hosted, so it is never mistaken for the
-    // managed assistant being hatched: the hatch still runs, and the only
-    // lockfile write names the managed id.
+    // managed assistant being hatched: the hatch still runs and the lockfile
+    // is never touched on the way through.
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=cadet-cloud");
     preflightGatewaySelectedLocal = true;
@@ -984,11 +957,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     });
 
     expect(hatchAssistantMock).toHaveBeenCalled();
-    const savedIds = saveLockfileAssistantMock.mock.calls.map(
-      ([entry]) => entry.assistantId,
-    );
-    expect(savedIds).not.toContain(GATEWAY_SELECTED_LOCAL_ID);
-    expect(savedIds).toEqual(["asst-1"]);
     // The local gateway is dropped up front so the hatch, its polls and its
     // healthz probes address the platform.
     expect(clearGatewayTokenMock).toHaveBeenCalled();

@@ -63,9 +63,6 @@ mock.module(
     primeLocalGatewayConnectionWithRepair: primeGatewayWithRepairMock,
     reconcileSelectedAssistant: () => {},
     retireLocalAssistant: async () => ({ ok: false }),
-    saveLockfileAssistant: async () => {},
-    setActiveLockfileAssistant: async () => {},
-    syncPlatformAssistantsToLockfile: async () => {},
   }),
 );
 

@@ -24,12 +24,10 @@ import {
   getLockfileAssistant,
   isLocalClient,
   probeLocalGatewayReady,
-  saveManagedLockfileAssistant,
 } from "@/lib/local-mode";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import {
-  getActiveOrganizationIdForRequests,
   useOrganizationStore,
 } from "@/stores/organization-store";
 import { extractErrorMessage } from "@/utils/api-errors";
@@ -378,15 +376,6 @@ export function useBackgroundHatch({
           if (state.kind === "active" && result.ok) {
             activeAssistantId = result.data.id;
             setAssistantId(activeAssistantId);
-            // Desktop-only: the list and switcher read the lockfile. An adopted
-            // assistant is already the hatching screen's own write.
-            if (!adoptExisting && isLocalClient()) {
-              void saveManagedLockfileAssistant(
-                activeAssistantId,
-                result.data.name,
-                getActiveOrganizationIdForRequests() ?? undefined,
-              );
-            }
             break;
           }
           if (state.kind === "error") {

@@ -1,9 +1,9 @@
 /**
  * Shared terminal session primitives for managed (cloud-hosted) assistants.
  *
- * Extracted from commands/terminal.ts so that ssh.ts, exec.ts, and
- * terminal.ts can all use the same interactive session and assistant
- * resolver without cross-importing commands (per cli/CONTRIBUTING.md).
+ * Extracted from commands/terminal.ts so that exec.ts and terminal.ts can
+ * use the same interactive session and assistant resolver without
+ * cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
 import { isManagedCloud } from "./managed-cloud.js";
@@ -58,7 +58,7 @@ export function resolveManagedAssistant(
       );
     } else if (cloud === "docker") {
       console.error(
-        `Use 'cadet exec -it -- /bin/bash' or 'cadet ssh' for ${cloud} instances.`,
+        `Use 'cadet exec -it -- /bin/bash' or 'cadet terminal' for ${cloud} instances.`,
       );
     } else {
       console.error(
