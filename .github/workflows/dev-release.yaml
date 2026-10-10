@@ -1171,6 +1171,10 @@ jobs:
           fi
       - name: Strip bundled deps from the manifest
         run: bun scripts/strip-bundled-deps.mjs "${{ matrix.package }}"
+      - name: Rename the cli bin for the dev channel
+        if: matrix.package == 'cli'
+        run: |
+          jq '.bin = { "cadet-dev": .bin.cadet }' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
       - name: Pack tarball
         run: |
           cd "${{ matrix.package }}"
@@ -1422,6 +1426,7 @@ jobs:
           cd meta
           jq --arg v "$VERSION" '
             .version = $v |
+            .bin = { "cadet-dev": .bin.cadet, "mycadet": .bin.mycadet, "assistant": .bin.assistant, "gateway": .bin.gateway } |
             .dependencies["@mycadet/assistant"] = $v |
             .dependencies["@mycadet/cli"] = $v |
             .dependencies["@mycadet/credential-executor"] = $v |
