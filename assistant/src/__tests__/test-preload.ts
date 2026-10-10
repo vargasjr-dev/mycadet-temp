@@ -22,8 +22,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach } from "bun:test";
 
-import { installGatewayIpcMock } from "./mock-gateway-ipc.js";
-import { resetRequestMockChannels } from "./requests-mock.js";
+import {
+  installGatewayIpcMock,
+  resetRequestMockChannels,
+} from "./requests-mock.js";
 
 // --- Phase 1: env override (zero source-module imports above this point) ---
 
@@ -67,9 +69,10 @@ delete process.env.CES_CREDENTIAL_URL;
 // --- Phase 2: install the IPC mock (no source-module imports) ---
 
 // Mock gateway IPC so no test accidentally connects to a real gateway socket.
-// The mock returns a sentinel for `get_feature_flags` to short-circuit the
-// retry loop in `initFeatureFlagOverrides()`. Tests that need specific IPC
-// responses use `mockGatewayIpc()` / `resetMockGatewayIpc()`.
+// The transport answers a sentinel for `get_feature_flags` to short-circuit
+// the retry loop in `initFeatureFlagOverrides()`. Tests that need specific
+// IPC behavior use `mockIpc("gateway")` (`.on`, `.setDefaults`,
+// `.failConnect`, `.failFirstN`).
 installGatewayIpcMock();
 
 // requests-mock channels (mockIpc/mockHttp) are per-test by construction:
