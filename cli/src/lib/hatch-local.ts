@@ -33,8 +33,8 @@ import {
 
 import { generateInstanceName } from "./random-name.js";
 import {
+  GuardianLeasePermanentError,
   leaseGuardianToken,
-  resetGuardianBootstrap,
 } from "./guardian-token.js";
 import { archiveLogFile, resetLogFile } from "./xdg-log.js";
 import {
@@ -373,30 +373,20 @@ export async function hatchLocal(
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {
-      if (attempt < maxLeaseAttempts) {
+      if (
+        attempt < maxLeaseAttempts &&
+        !(err instanceof GuardianLeasePermanentError)
+      ) {
         const delayMs = 2000 * 2 ** (attempt - 1);
         reporter.error(
           `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
         );
-        // A failed attempt can still have consumed the single-use bootstrap
-        // secret gateway-side (the gateway marks it consumed as soon as the
-        // mint succeeds, before the CLI persists the token), which would
-        // leave the retries dead on 403. Hatch owns the secret it just
-        // minted — reset the gateway's bootstrap state so the retry can
-        // actually re-lease.
-        try {
-          await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
-        } catch {
-          // Best-effort; the retry reports its own failure.
-        }
         await new Promise((r) => setTimeout(r, delayMs));
       } else {
         reporter.error(
-          `⚠️  Guardian token lease failed after ${maxLeaseAttempts} attempts: ${err}\n` +
+          `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? " (not retrying — a malformed 200 will not fix itself)" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
             `   The assistant is running but guardian-token.json was not written.\n` +
-            `   Run \`cadet wake ${JSON.stringify(instanceName)} --repair-guardian\` to reset the\n` +
-            `   gateway's bootstrap state and re-lease a token — re-hatching would\n` +
-            `   create a new assistant, not recover this one.`,
+            `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
         );
       }
     }

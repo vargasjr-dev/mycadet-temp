@@ -14,6 +14,7 @@ import {
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import { dockerResourceNames, wakeContainers } from "../lib/docker.js";
 import {
+  GuardianLeasePermanentError,
   leaseGuardianToken,
   resetGuardianBootstrap,
   seedGuardianTokenFromSiblingEnv,
@@ -545,11 +546,14 @@ async function wakeAssistant(
         console.log("   Re-provisioned guardian token.");
         break;
       } catch (err) {
-        if (attempt < maxAttempts) {
+        if (
+          attempt < maxAttempts &&
+          !(err instanceof GuardianLeasePermanentError)
+        ) {
           await new Promise((r) => setTimeout(r, 2000 * 2 ** (attempt - 1)));
         } else {
           console.warn(
-            `   Guardian token re-provision failed after ${maxAttempts} attempts: ${err}`,
+            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ? " (not retrying — a malformed 200 will not fix itself)" : ` after ${maxAttempts} attempts`}: ${err}`,
           );
           // The user explicitly confirmed this destructive repair — a
           // success exit here would make callers (the web recovery flow)

@@ -49,12 +49,6 @@ const GuardianTokenFieldsSchema = z
       .union([z.string(), z.number()])
       .optional()
       .catch(undefined),
-    // The gateway mints refreshAfter as a NUMBER of ms (mintRefreshToken:
-    // now + ACCESS_TOKEN_TTL_MS * REFRESH_AFTER_FRACTION), unlike the ISO
-    // strings some clients persist. Normalize numbers to ISO strings so the
-    // persisted token keeps the string shape GuardianTokenData declares —
-    // a string-only schema turned the gateway's number into undefined, and
-    // the strict init check then rejected every real lease as "malformed".
     refreshAfter: z
       .union([z.string(), z.number()])
       .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
@@ -600,6 +594,20 @@ async function waitForGatewayReady(gatewayUrl: string): Promise<void> {
   }
 }
 
+export class GuardianLeasePermanentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GuardianLeasePermanentError";
+  }
+}
+
+function describeJsonType(value: unknown): string {
+  if (value === undefined) return "absent";
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
 export async function leaseGuardianToken(
   gatewayUrl: string,
   assistantId: string,
@@ -631,7 +639,8 @@ export async function leaseGuardianToken(
     throw new Error(`guardian/init failed (${response.status}): ${body}`);
   }
 
-  const parsed = parseGuardianTokenFields(await response.json());
+  const rawBody: unknown = await response.json();
+  const parsed = parseGuardianTokenFields(rawBody);
   if (
     parsed.guardianPrincipalId == null ||
     parsed.accessToken == null ||
@@ -641,8 +650,21 @@ export async function leaseGuardianToken(
     parsed.refreshAfter == null ||
     parsed.isNew == null
   ) {
-    throw new Error(
-      `guardian/init returned a malformed token response (${response.status})`,
+    const raw = z.record(z.string(), z.unknown()).catch({}).parse(rawBody);
+    const requiredFields: (keyof typeof parsed)[] = [
+      "guardianPrincipalId",
+      "accessToken",
+      "accessTokenExpiresAt",
+      "refreshToken",
+      "refreshTokenExpiresAt",
+      "refreshAfter",
+      "isNew",
+    ];
+    const unusable = requiredFields
+      .filter((field) => parsed[field] == null)
+      .map((field) => `${field} arrived as ${describeJsonType(raw[field])}`);
+    throw new GuardianLeasePermanentError(
+      `guardian/init returned a malformed token response (${response.status}) — ${unusable.join(", ")}`,
     );
   }
   const tokenData: GuardianTokenData = {

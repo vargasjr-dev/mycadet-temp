@@ -16,6 +16,7 @@ import { guardianTokenPath, resolveConfigDir } from "@mycadet/local-mode";
 import {
   getOrCreatePersistedDeviceId,
   guardianTokenDueForRenewal,
+  GuardianLeasePermanentError,
   leaseGuardianToken,
   loadGuardianToken,
   refreshGuardianToken,
@@ -354,6 +355,37 @@ describe("refreshGuardianToken", () => {
     const stored = loadGuardianToken("px");
     expect(stored?.accessToken).toBe("access-lease");
     expect(stored?.refreshAfter).toBe(leased.refreshAfter);
+  });
+
+  test("a malformed 200 names the unusable fields and is not retried", async () => {
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/readyz")) {
+        return new Response("", { status: 404 });
+      }
+      return new Response(
+        JSON.stringify({
+          guardianPrincipalId: "principal-lease",
+          accessToken: 42,
+          refreshToken: "refresh-lease",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+
+    const err = await leaseGuardianToken("https://gw.example.com", "px").then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    if (!(err instanceof GuardianLeasePermanentError)) {
+      throw new Error(
+        `expected GuardianLeasePermanentError, got ${String(err)}`,
+      );
+    }
+    expect(err.message).toContain("(200)");
+    expect(err.message).toContain("accessToken arrived as number");
+    expect(err.message).toContain("refreshTokenExpiresAt arrived as absent");
   });
 
   test("returns null without calling the gateway when the refresh token is expired", async () => {
