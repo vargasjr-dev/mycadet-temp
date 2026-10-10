@@ -1228,15 +1228,3 @@ export const LLMSchema = z
   });
 
 export type LLMConfig = z.infer<typeof LLMSchema>;
-
-/**
- * The slice of an `llm` block the profile listings read, kept free of
- * LLMSchema's cross-field `activeProfile` check: the seeder exists to repair
- * configs that check rejects, so it parses this slice instead.
- */
-export const LLMProfilesSourceSchema = z.object({
-  profiles: LLMSchema.shape.profiles,
-  default: LLMSchema.shape.default,
-});
-
-export type LLMProfilesSource = z.input<typeof LLMProfilesSourceSchema>;

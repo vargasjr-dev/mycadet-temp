@@ -100,7 +100,9 @@ describe("cross-provider rule", () => {
 
 describe("managed-column-only scoping", () => {
   test("the managed column materializes the backups after the primaries", () => {
-    const effective = getEffectiveProfilesForProvider({ default: cadet });
+    const effective = getEffectiveProfilesForProvider(
+      LLMSchema.parse({ default: cadet }),
+    );
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeDefined();
       expect(effective[key]?.provider).toBe("cadet");
@@ -128,9 +130,11 @@ describe("managed-column-only scoping", () => {
 
   test("a BYOK default provider materializes no backups and no pointers", () => {
     for (const provider of ["anthropic", "openai", "gemini"] as const) {
-      const effective = getEffectiveProfilesForProvider({
-        default: { provider },
-      });
+      const effective = getEffectiveProfilesForProvider(
+        LLMSchema.parse({
+          default: { provider },
+        }),
+      );
       for (const key of BACKUP_PROFILE_KEYS) {
         expect(effective[key]).toBeUndefined();
       }
@@ -141,9 +145,11 @@ describe("managed-column-only scoping", () => {
   });
 
   test("the chatgpt column materializes no backups and no pointers", () => {
-    const effective = getEffectiveProfilesForProvider({
-      default: { provider: "chatgpt" },
-    });
+    const effective = getEffectiveProfilesForProvider(
+      LLMSchema.parse({
+        default: { provider: "chatgpt" },
+      }),
+    );
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeUndefined();
     }
@@ -164,10 +170,12 @@ describe("managed-column-only scoping", () => {
       "balanced-backup": { source: "managed" },
     };
     for (const provider of ["anthropic", "chatgpt"] as const) {
-      const effective = getEffectiveProfilesForProvider({
-        profiles: workspace,
-        default: { provider },
-      });
+      const effective = getEffectiveProfilesForProvider(
+        LLMSchema.parse({
+          profiles: workspace,
+          default: { provider },
+        }),
+      );
       expect(effective["balanced-backup"]).toBeUndefined();
       expect(
         resolveDefaultProfileForProvider(workspace, "balanced-backup", {
@@ -177,9 +185,9 @@ describe("managed-column-only scoping", () => {
     }
     // The managed column still has a body for the stub to stand for.
     expect(
-      getEffectiveProfilesForProvider({ profiles: workspace, default: cadet })[
-        "balanced-backup"
-      ]?.model,
+      getEffectiveProfilesForProvider(
+        LLMSchema.parse({ profiles: workspace, default: cadet }),
+      )["balanced-backup"]?.model,
     ).toBe(CODE_DEFAULT_PROFILE_ENTRIES["balanced-backup"]?.model);
   });
 
@@ -193,10 +201,12 @@ describe("managed-column-only scoping", () => {
         model: "claude-opus-4-7",
       },
     };
-    const effective = getEffectiveProfilesForProvider({
-      profiles: workspace,
-      default: { provider: "anthropic" },
-    });
+    const effective = getEffectiveProfilesForProvider(
+      LLMSchema.parse({
+        profiles: workspace,
+        default: { provider: "anthropic" },
+      }),
+    );
     expect(effective["balanced-backup"]?.model).toBe("claude-opus-4-7");
   });
 });
@@ -207,7 +217,7 @@ describe("effective-profile machinery", () => {
     // reference, no mix target, single hop) against the real entries.
     for (const profiles of [
       getEffectiveProfiles(undefined),
-      getEffectiveProfilesForProvider({ default: cadet }),
+      getEffectiveProfilesForProvider(LLMSchema.parse({ default: cadet })),
     ]) {
       const parsed = LLMSchema.parse({
         profiles,

@@ -39218,8 +39218,6 @@ components:
                 - enabled
                 - afterDays
               additionalProperties: {}
-          required:
-            - autoArchive
           additionalProperties: {}
         notifications:
           type: object

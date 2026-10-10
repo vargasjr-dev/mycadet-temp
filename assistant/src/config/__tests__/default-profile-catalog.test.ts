@@ -103,7 +103,9 @@ describe("getEffectiveProfiles", () => {
       }),
     ).toBeUndefined();
     expect(
-      Object.keys(getConversationProfilesForProvider({ profiles: stub })),
+      Object.keys(
+        getConversationProfilesForProvider(LLMSchema.parse({ profiles: stub })),
+      ),
     ).toContain("auto");
   });
 
@@ -219,12 +221,16 @@ describe("getEffectiveProfiles", () => {
 
 describe("user-selectable profile view", () => {
   test("hides managed backups while retaining them in the fallback catalog", () => {
-    const effective = getEffectiveProfilesForProvider({
-      default: { provider: "cadet" },
-    });
-    const selectable = getUserSelectableProfilesForProvider({
-      default: { provider: "cadet" },
-    });
+    const effective = getEffectiveProfilesForProvider(
+      LLMSchema.parse({
+        default: { provider: "cadet" },
+      }),
+    );
+    const selectable = getUserSelectableProfilesForProvider(
+      LLMSchema.parse({
+        default: { provider: "cadet" },
+      }),
+    );
 
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(selectable[key]).toBeDefined();
@@ -491,9 +497,11 @@ describe("resolveDefaultProfileForProvider", () => {
       "cost-optimized": "gpt-5.6-luna",
       "latency-optimized": "gpt-5.6-luna",
     };
-    const effective = getEffectiveProfilesForProvider({
-      default: dp("chatgpt"),
-    });
+    const effective = getEffectiveProfilesForProvider(
+      LLMSchema.parse({
+        default: dp("chatgpt"),
+      }),
+    );
     for (const [key, model] of Object.entries(byKey)) {
       const entry = effective[key];
       expect(entry?.provider).toBe("chatgpt");

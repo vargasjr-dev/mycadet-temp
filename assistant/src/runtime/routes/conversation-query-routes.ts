@@ -67,7 +67,7 @@ import {
   LLMConfigBase,
   LLMConfigFragment,
   LLMDefaultConfigSchema,
-  LLMProfilesSourceSchema,
+  LLMSchema,
   ProfileEntry,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
@@ -764,11 +764,21 @@ const MemoryWireConfigSchema = z
  */
 const ConfigGetResponseSchema = z
   .object({
+    // A malformed or absent stored chat-settings subtree reads as absent so
+    // one bad leaf can't fail the whole wire parse (which would strip every
+    // derived field from the response); the chat-settings read overlay
+    // refills both from the effective config.
     conversations: z
-      .object({ autoArchive: AutoArchiveConfigSchema.passthrough() })
+      .object({
+        autoArchive: AutoArchiveConfigSchema.passthrough()
+          .optional()
+          .catch(undefined),
+      })
       .passthrough()
       .optional(),
-    notifications: NotificationsConfigSchema.passthrough().optional(),
+    notifications: NotificationsConfigSchema.passthrough()
+      .optional()
+      .catch(undefined),
     llm: z
       .object({
         default: LLMDefaultConfigSchema.optional(),
@@ -830,6 +840,8 @@ const ConfigGetResponseSchema = z
   })
   .passthrough()
   .meta({ id: "ConfigGetResponse" });
+
+type ConfigGetResponse = z.infer<typeof ConfigGetResponseSchema>;
 
 /**
  * Given a `z.object(...)` schema, returns a new schema where every property
@@ -944,13 +956,22 @@ const ConfigPatchRequestSchema = z
 function handleGetConfig() {
   try {
     const config = applyContextDefaultsToRawConfig(loadRawConfig());
-    overlayWorkspaceMcpForConfigRead(config);
-    sanitizeMcpTransportHeadersForSettingsRead(config);
-    overlayEffectiveProfilesForWire(config);
-    enrichProfilesForWire(config);
-    overlayDefaultProviderForWire(config);
-    overlayChatSettingsForWire(config);
-    return config;
+    // One zod pass shapes the response: ConfigGetResponseSchema is this
+    // route's wire contract, so the overlays stamp their derived fields on
+    // the parsed view instead of digging handles out of raw objects. A
+    // config the schema rejects gets no overlays and is served raw.
+    const parsed = ConfigGetResponseSchema.safeParse(config);
+    if (!parsed.success) {
+      return config;
+    }
+    const wire = parsed.data;
+    overlayWorkspaceMcpForConfigRead(wire);
+    sanitizeMcpTransportHeadersForSettingsRead(wire);
+    overlayEffectiveProfilesForWire(wire);
+    enrichProfilesForWire(wire);
+    overlayDefaultProviderForWire(wire);
+    overlayChatSettingsForWire(wire);
+    return wire;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new InternalError(`Failed to read config: ${message}`);
@@ -963,45 +984,33 @@ function handleGetConfig() {
  * a derived wire-compat view (readers of the config GET predate the blob) and
  * is never stored on disk — it is stamped here from the blob on every read.
  */
-function overlayDefaultProviderForWire(config: unknown): void {
-  // The root config schema is the authority on what `llm.default` means; a
-  // config it cannot parse gets no derived field at all.
-  const parsed = AssistantConfigSchema.safeParse(config);
-  if (!parsed.success) {
+function overlayDefaultProviderForWire(config: ConfigGetResponse): void {
+  if (!config.llm) {
     return;
   }
-  const llm = readPlainObject(readPlainObject(config)?.llm);
-  if (llm == null) {
-    return;
-  }
-  const blob = parsed.data.llm.default;
+  const blob = config.llm.default;
   const provider = blob?.provider;
   if (provider != null && isDefaultProviderChoice(provider)) {
-    llm.defaultProvider = {
+    config.llm.defaultProvider = {
       provider,
       connectionName: blob?.provider_connection,
     };
   } else {
-    delete llm.defaultProvider;
+    delete config.llm.defaultProvider;
   }
 }
 
-function overlayChatSettingsForWire(config: unknown): void {
-  const root = readPlainObject(config);
-  if (!root) {
-    return;
-  }
+function overlayChatSettingsForWire(config: ConfigGetResponse): void {
   const effective = getConfig();
-  const conversations = readPlainObject(root.conversations);
-  root.conversations = {
-    ...conversations,
+  config.conversations = {
+    ...config.conversations,
     autoArchive: {
-      ...readPlainObject(conversations?.autoArchive),
+      ...config.conversations?.autoArchive,
       ...effective.conversations.autoArchive,
     },
   };
-  root.notifications = {
-    ...readPlainObject(root.notifications),
+  config.notifications = {
+    ...config.notifications,
     newMessageEnabled: effective.notifications.newMessageEnabled,
   };
 }
@@ -1019,24 +1028,17 @@ function overlayChatSettingsForWire(config: unknown): void {
  * `config set` round-trip never persists catalog content — the two must
  * resolve through the same column or honest round-trips are rejected.
  *
- * The profiles and the selection both come from one schema parse of the
- * config being served, not from the raw object this function mutates: the
- * `isDefaultProviderChoice` clamp shields the matrix lookup from a persisted
- * value the matrix cannot implement, which a raw read would feed straight
- * into resolution.
+ * The profiles come from one schema parse of the `llm` block being served
+ * through the real `LLMSchema`, whose `isDefaultProviderChoice` clamp
+ * shields the matrix lookup from a persisted value the matrix cannot
+ * implement, which a raw read would feed straight into resolution.
  */
-function overlayEffectiveProfilesForWire(config: unknown): void {
-  const root = readPlainObject(config);
-  if (root == null) {
-    return;
+function overlayEffectiveProfilesForWire(config: ConfigGetResponse): void {
+  if (!config.llm) {
+    config.llm = {};
   }
-  const existingLlm = readPlainObject(root.llm);
-  const llm = existingLlm ?? {};
-  if (!existingLlm) {
-    root.llm = llm;
-  }
-  const parsedLlm = LLMProfilesSourceSchema.safeParse(llm);
-  llm.profiles = getUserSelectableProfilesForProvider(
+  const parsedLlm = LLMSchema.safeParse(config.llm);
+  config.llm.profiles = getUserSelectableProfilesForProvider(
     parsedLlm.success ? parsedLlm.data : undefined,
   );
 }
