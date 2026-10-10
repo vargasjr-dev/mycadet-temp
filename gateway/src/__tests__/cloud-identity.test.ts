@@ -46,20 +46,14 @@ const {
 } = await import("../cloud-identity.js");
 const { credentialKey } = await import("../credential-key.js");
 
-const BASE_URL = "https://platform.example.com";
+const BASE_URL = "https://test-cloud.mycadet.ai";
 const ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
 const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";
 const API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
-const USER_ID_ACCOUNT = credentialKey("cadet", "platform_user_id");
-const ASSISTANT_ID_ACCOUNT = credentialKey("cadet", "platform_assistant_id");
-const ORG_ID_ACCOUNT = credentialKey("cadet", "platform_organization_id");
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
 const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
-const originalCloudAssistantId = process.env.CLOUD_ASSISTANT_ID;
-const originalCloudOrgId = process.env.CLOUD_ORGANIZATION_ID;
-const originalCloudUserId = process.env.CLOUD_USER_ID;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -91,18 +85,12 @@ beforeEach(() => {
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
   delete process.env.CADET_PLATFORM_URL;
-  delete process.env.CLOUD_ASSISTANT_ID;
-  delete process.env.CLOUD_ORGANIZATION_ID;
-  delete process.env.CLOUD_USER_ID;
   _resetCloudIdentityForTests();
 });
 
 afterEach(() => {
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
   restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
-  restoreEnv("CLOUD_ASSISTANT_ID", originalCloudAssistantId);
-  restoreEnv("CLOUD_ORGANIZATION_ID", originalCloudOrgId);
-  restoreEnv("CLOUD_USER_ID", originalCloudUserId);
   _resetCloudIdentityForTests();
 });
 
@@ -389,8 +377,14 @@ describe("readStoredCloudUserId", () => {
 
     await readStoredCloudUserId();
 
-    expect(credentialReads).not.toContain(USER_ID_ACCOUNT);
-    expect(credentialReads).not.toContain(ASSISTANT_ID_ACCOUNT);
-    expect(credentialReads).not.toContain(ORG_ID_ACCOUNT);
+    expect(credentialReads).not.toContain(
+      credentialKey("cadet", "platform_user_id"),
+    );
+    expect(credentialReads).not.toContain(
+      credentialKey("cadet", "platform_assistant_id"),
+    );
+    expect(credentialReads).not.toContain(
+      credentialKey("cadet", "platform_organization_id"),
+    );
   });
 });

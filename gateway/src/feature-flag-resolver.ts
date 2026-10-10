@@ -41,7 +41,7 @@ export function isFeatureFlagEnabled(key: string): boolean {
 }
 
 export function isPlatformMode(): boolean {
-  const v = process.env.IS_PLATFORM?.trim().toLowerCase();
+  const v = process.env.IS_CLOUD?.trim().toLowerCase();
   return v === "true" || v === "1";
 }
 

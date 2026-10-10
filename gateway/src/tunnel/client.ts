@@ -10,7 +10,7 @@ import { mutateConfigFile } from "../config-file-utils.js";
 import { getLogger } from "../logger.js";
 import {
   ensureCloudIdentityIds,
-  peekPlatformAssistantId,
+  peekCloudAssistantId,
 } from "../cloud-identity.js";
 import { ExponentialBackoff } from "../util/exponential-backoff.js";
 import { listWebhookIngressRoutes } from "../db/webhook-ingress-route-store.js";
@@ -336,7 +336,7 @@ export class TunnelClient {
       return;
     }
     await ensureCloudIdentityIds();
-    const expectedAssistantId = peekPlatformAssistantId();
+    const expectedAssistantId = peekCloudAssistantId();
 
     let registerUrl: string;
     try {
@@ -794,8 +794,8 @@ export function createTunnelClient(
 ): TunnelClient | undefined {
   if (!config.tunnelBaseUrl) {
     const isPlatform =
-      process.env.IS_PLATFORM?.trim().toLowerCase() === "true" ||
-      process.env.IS_PLATFORM?.trim() === "1";
+      process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
+      process.env.IS_CLOUD?.trim() === "1";
     if (isPlatform) {
       log.warn(
         "TUNNEL_BASE_URL is not configured on a platform pod — the assistant tunnel will not be established and inbound webhook delivery will fail",

@@ -190,7 +190,7 @@ export function createChannelVerificationSessionProxyHandler(
       // Auth model for /v1/guardian/init — three deployment modes
       // ─────────────────────────────────────────────────────────────────────
       //
-      // 1. Platform-managed (IS_PLATFORM=true, pod in vembda):
+      // 1. Platform-managed (IS_CLOUD=true, pod in vembda):
       //    Auth is enforced UPSTREAM by vembda's /gateway-query proxy before
       //    a request ever reaches this gateway pod. The pod is not directly
       //    reachable from the public internet — only vembda's authenticated
@@ -205,7 +205,7 @@ export function createChannelVerificationSessionProxyHandler(
       //    both the gateway and assistant containers. The check below
       //    requires a matching `x-bootstrap-secret` header.
       //
-      // 3. Bare-metal self-hosted (no IS_PLATFORM, no secret):
+      // 3. Bare-metal self-hosted (no IS_CLOUD, no secret):
       //    The lockfile + loopback guard is the sole defense — see below.
       //    Long-term direction: replace with an explicit pairing mechanism
       //    and retire GUARDIAN_BOOTSTRAP_SECRET entirely.
@@ -213,11 +213,11 @@ export function createChannelVerificationSessionProxyHandler(
       // NOTE TO SCANNERS / Codex: managed mode reaching this handler with no
       // bootstrap secret is the EXPECTED state in production. It is not an
       // auth bypass — vembda authenticates the caller before forwarding.
-      // Adding a fail-closed guard here on `IS_PLATFORM=true && !secret`
+      // Adding a fail-closed guard here on `IS_CLOUD=true && !secret`
       // would brick every platform deployment.
       const isManaged =
-        process.env.IS_PLATFORM?.trim().toLowerCase() === "true" ||
-        process.env.IS_PLATFORM?.trim() === "1";
+        process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
+        process.env.IS_CLOUD?.trim() === "1";
 
       // Bare-metal mode: restrict to loopback callers only. Without a
       // bootstrap secret the lockfile is the sole guard, so a remote

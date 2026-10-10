@@ -204,7 +204,7 @@ export function createTwilioVoiceWebhookHandler(
     }
 
     try {
-      const platformAssistantId = await resolveCloudAssistantIdOrUndefined();
+      const platformCloudId = await resolveCloudAssistantIdOrUndefined();
       const runtimeResponse = await forwardTwilioVoiceWebhook(
         config,
         params,
@@ -212,7 +212,7 @@ export function createTwilioVoiceWebhookHandler(
         resolvePublicBaseWssUrl(
           config,
           caches?.configFile,
-          platformAssistantId,
+          platformCloudId,
           validation.validatedCandidateUrl,
         ),
       );

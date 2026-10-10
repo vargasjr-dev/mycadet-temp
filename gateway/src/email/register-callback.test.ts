@@ -48,10 +48,6 @@ function makeCaches(opts: {
       opts.assistantApiKey,
     );
   if (opts.platformAssistantId) {
-    store.set(
-      credentialKey("cadet", "platform_assistant_id"),
-      opts.platformAssistantId,
-    );
     applyCloudIdentityIds({
       assistantId: opts.platformAssistantId,
       organizationId: "org-abc",
@@ -92,13 +88,13 @@ describe("registerEmailCallbackRoute", () => {
 
   test("registers callback route with platform via credential cache", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
       platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     const callbackUrl =
-      "https://platform.example.com/v1/gateway/callbacks/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/webhooks/email/";
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/webhooks/email/";
 
     mockFetch(
       "callback-routes/register",
@@ -158,7 +154,7 @@ describe("registerEmailCallbackRoute", () => {
 
   test("throws on non-ok response", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
       platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
@@ -176,7 +172,7 @@ describe("registerEmailCallbackRoute", () => {
 
   test("throws when response has no callback_url", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
       platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
@@ -197,7 +193,7 @@ describe("registerEmailCallbackRoute", () => {
 
   test("sends callback_base_url when ingress URL is configured (self-hosted)", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "vak_selfhosted",
       platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
       ingressUrl: "https://my-assistant.example.com",
@@ -232,13 +228,13 @@ describe("registerEmailCallbackRoute", () => {
 
   test("omits callback_base_url when no ingress URL is configured (platform-managed)", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://platform.example.com",
+      platformBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "vak_managed",
       platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     const callbackUrl =
-      "https://platform.example.com/v1/gateway/callbacks/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/webhooks/email/";
+      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/webhooks/email/";
 
     mockFetch(
       "callback-routes/register",

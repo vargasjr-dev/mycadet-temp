@@ -34,13 +34,12 @@ mock.module("../fetch.js", () => ({
 let testAssistantDb: Database | null = null;
 
 mock.module("../db/assistant-db-proxy.js", () => ({
-   
   async assistantDbQuery(sql: string, bind?: any[]) {
     if (!testAssistantDb) throw new Error("test assistant DB not initialized");
     const stmt = testAssistantDb.prepare(sql);
     return bind ? stmt.all(...bind) : stmt.all();
   },
-   
+
   async assistantDbRun(sql: string, bind?: any[]) {
     if (!testAssistantDb) throw new Error("test assistant DB not initialized");
     const stmt = testAssistantDb.prepare(sql);
@@ -738,7 +737,7 @@ describe("guardian/reset-bootstrap", () => {
 describe("guardian/init bare-metal loopback gating", () => {
   test("rejects non-loopback clients in bare-metal mode", async () => {
     delete process.env.GUARDIAN_BOOTSTRAP_SECRET;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     const handler = createChannelVerificationSessionProxyHandler(makeConfig());
     const res = await handler.handleGuardianInit(
       new Request("http://localhost:7830/v1/guardian/init", {
@@ -756,7 +755,7 @@ describe("guardian/init bare-metal loopback gating", () => {
 
   test("allows loopback clients in bare-metal mode", async () => {
     delete process.env.GUARDIAN_BOOTSTRAP_SECRET;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     const handler = createChannelVerificationSessionProxyHandler(makeConfig());
     const res = await handler.handleGuardianInit(
       new Request("http://localhost:7830/v1/guardian/init", {
@@ -792,9 +791,9 @@ describe("guardian/init bare-metal loopback gating", () => {
     expect(body.accessToken).toBeTruthy();
   });
 
-  test("skips loopback check in platform-managed mode (IS_PLATFORM=true)", async () => {
+  test("skips loopback check in platform-managed mode (IS_CLOUD=true)", async () => {
     delete process.env.GUARDIAN_BOOTSTRAP_SECRET;
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     try {
       const handler =
         createChannelVerificationSessionProxyHandler(makeConfig());
@@ -814,7 +813,7 @@ describe("guardian/init bare-metal loopback gating", () => {
       const body = await res.json();
       expect(body.accessToken).toBeTruthy();
     } finally {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
   });
 });

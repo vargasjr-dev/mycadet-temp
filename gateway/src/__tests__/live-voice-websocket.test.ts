@@ -273,13 +273,13 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
   const TEST_TOKEN = mintEdgeToken();
   // TUNNEL_USER_ID is declared at module scope (shared with the credential mock).
   const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
-  const originalIsPlatform = process.env.IS_PLATFORM;
+  const originalIsPlatform = process.env.IS_CLOUD;
 
   function setPlatform(on: boolean) {
     if (on) {
-      process.env.IS_PLATFORM = "true";
+      process.env.IS_CLOUD = "true";
     } else {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
   }
 
@@ -302,9 +302,9 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   afterEach(() => {
     if (originalIsPlatform === undefined) {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     } else {
-      process.env.IS_PLATFORM = originalIsPlatform;
+      process.env.IS_CLOUD = originalIsPlatform;
     }
   });
 
@@ -455,7 +455,7 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   /**
    * A locally hosted assistant reaches the mobile app through a tunnel
-   * with IS_PLATFORM unset. The attestation arrives through the same bridge
+   * with IS_CLOUD unset. The attestation arrives through the same bridge
    * as on a managed pod, so the tunnel, not the env var, is what admits it.
    */
   test("a locally hosted gateway with a tunnel trusts an attested caller with bridge proof", async () => {

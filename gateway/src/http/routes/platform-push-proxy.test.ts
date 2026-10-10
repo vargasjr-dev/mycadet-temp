@@ -30,7 +30,7 @@ const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
   await import("../../cloud-identity.js");
 
 const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
-const PLATFORM_BASE_URL = "https://platform.example.com";
+const PLATFORM_BASE_URL = "https://test-cloud.mycadet.ai";
 const ASSISTANT_API_KEY = "assistant-api-key-123";
 
 function makeKeyedCredentials(
@@ -50,7 +50,6 @@ function registeredCredentials(): CredentialCache {
   process.env.CADET_PLATFORM_URL = PLATFORM_BASE_URL;
   return makeKeyedCredentials({
     [credentialKey("cadet", "assistant_api_key")]: ASSISTANT_API_KEY,
-    [credentialKey("cadet", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
   });
 }
 

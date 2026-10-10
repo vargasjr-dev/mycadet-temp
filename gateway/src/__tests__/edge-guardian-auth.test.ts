@@ -1,7 +1,7 @@
 /**
  * Tests for the `requireEdgeGuardianAuth` middleware — both modes:
  *
- *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_PLATFORM=true): identity
+ *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_CLOUD=true): identity
  *     asserted via `X-Cadet-User-Id` header cross-referenced against the
  *     stored `cadet:platform_user_id` credential.
  *  2. Default (laptop / docker / bare-metal): edge JWT validated, then
@@ -87,17 +87,17 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.DISABLE_HTTP_AUTH;
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 });
 
 // =========================================================================
-// Platform-managed mode (DISABLE_HTTP_AUTH=true + IS_PLATFORM=true)
+// Platform-managed mode (DISABLE_HTTP_AUTH=true + IS_CLOUD=true)
 // =========================================================================
 
 describe("requireEdgeGuardianAuth — platform header mode", () => {
   beforeEach(() => {
     process.env.DISABLE_HTTP_AUTH = "true";
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
   });
 
   test("returns 401 when X-Cadet-User-Id header is missing", async () => {
@@ -176,10 +176,10 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
-  test("falls through to JWT mode when IS_PLATFORM is false (rejects missing bearer token)", async () => {
-    // DISABLE_HTTP_AUTH=true but IS_PLATFORM=false → should use JWT path, not
+  test("falls through to JWT mode when IS_CLOUD is false (rejects missing bearer token)", async () => {
+    // DISABLE_HTTP_AUTH=true but IS_CLOUD=false → should use JWT path, not
     // platform header path. No JWT provided, so expect 401.
-    process.env.IS_PLATFORM = "false";
+    process.env.IS_CLOUD = "false";
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(
       makeReq({ "x-cadet-user-id": PLATFORM_USER_ID }),

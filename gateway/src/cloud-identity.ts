@@ -2,9 +2,9 @@
  * Bound platform identity (assistant, organization, user).
  *
  * Django maps an assistant API key to these ids via
- * `POST /v1/internal/assistants/validate/`. Resolution reads in-memory
- * overrides (and `PLATFORM_ASSISTANT_ID` / `PLATFORM_ORGANIZATION_ID` /
- * `PLATFORM_USER_ID` when set). When the bound ids are empty, or the
+ * `POST /v1/internal/assistants/validate/`. Resolution reads the in-memory
+ * overrides the validate response populates — nothing else. When the bound
+ * ids are empty, or the
  * API key / platform base URL that produced them has changed, the next
  * resolve retries validate (single-flight, with a cooldown after a failed
  * validate attempt for the same credentials).
@@ -23,8 +23,7 @@ import { getLogger } from "./logger.js";
 
 const log = getLogger("cloud-identity");
 
-export const CLOUD_IDENTITY_VALIDATE_PATH =
-  "/v1/internal/assistants/validate/";
+export const CLOUD_IDENTITY_VALIDATE_PATH = "/v1/internal/assistants/validate/";
 
 const VALIDATE_TIMEOUT_MS = 5_000;
 const ENSURE_COOLDOWN_MS = 10_000;
@@ -65,19 +64,15 @@ function envTrim(name: string): string {
 }
 
 function getCloudAssistantId(): string {
-  return (
-    platformAssistantIdOverride || envTrim("CLOUD_ASSISTANT_ID")
-  ).trim();
+  return (platformAssistantIdOverride ?? "").trim();
 }
 
 function getCloudOrganizationId(): string {
-  return (
-    platformOrganizationIdOverride || envTrim("CLOUD_ORGANIZATION_ID")
-  ).trim();
+  return (platformOrganizationIdOverride ?? "").trim();
 }
 
 function getCloudUserId(): string {
-  return (platformUserIdOverride || envTrim("CLOUD_USER_ID")).trim();
+  return (platformUserIdOverride ?? "").trim();
 }
 
 function hasBoundIdentity(): boolean {
@@ -294,7 +289,7 @@ export async function resolvePlatformAssistantId(): Promise<string> {
   return getCloudAssistantId();
 }
 
-export function peekPlatformAssistantId(): string | undefined {
+export function peekCloudAssistantId(): string | undefined {
   const id = getCloudAssistantId();
   return id || undefined;
 }
