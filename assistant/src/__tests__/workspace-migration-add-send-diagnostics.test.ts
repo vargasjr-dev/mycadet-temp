@@ -1,59 +1,36 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-// ---------------------------------------------------------------------------
-// Mock state
-// ---------------------------------------------------------------------------
-
-const existsSyncFn = mock((_path: string): boolean => false);
-const readFileSyncFn = mock((_path: string, _encoding: string): string => "");
-const writeFileSyncFn = mock((_path: string, _data: string): void => undefined);
-
-// ---------------------------------------------------------------------------
-// Mock modules — before importing module under test
-// ---------------------------------------------------------------------------
-
-mock.module("node:fs", () => ({
-  existsSync: existsSyncFn,
-  readFileSync: readFileSyncFn,
-  writeFileSync: writeFileSyncFn,
-}));
-
-// Import after mocking
 import { addSendDiagnosticsMigration } from "../workspace/migrations/005-add-send-diagnostics.js";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const WORKSPACE_DIR = "/tmp/test-workspace";
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+// Real fs: each test runs the migration against a fresh temp workspace.
+let WORKSPACE_DIR: string;
+const CONFIG_PATH = () => join(WORKSPACE_DIR, "config.json");
 
 describe("005-add-send-diagnostics migration", () => {
   beforeEach(() => {
-    existsSyncFn.mockClear();
-    readFileSyncFn.mockClear();
-    writeFileSyncFn.mockClear();
+    WORKSPACE_DIR = mkdtempSync(join(tmpdir(), "mig-005-"));
+  });
+
+  afterEach(() => {
+    rmSync(WORKSPACE_DIR, { recursive: true, force: true });
   });
 
   test("runs without error when config.json is absent", () => {
-    existsSyncFn.mockImplementation(() => false);
-
     addSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(existsSync(CONFIG_PATH())).toBe(false);
   });
 
   test("runs without error on existing config (no-op)", () => {
-    existsSyncFn.mockImplementation(() => true);
-    readFileSyncFn.mockImplementation(() =>
-      JSON.stringify({ sendDiagnostics: true }),
-    );
+    writeFileSync(CONFIG_PATH(), JSON.stringify({ sendDiagnostics: true }));
 
     addSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    expect(writeFileSyncFn).not.toHaveBeenCalled();
+    expect(
+      JSON.parse(readFileSync(CONFIG_PATH(), "utf-8")),
+    ).toEqual({ sendDiagnostics: true });
   });
 });

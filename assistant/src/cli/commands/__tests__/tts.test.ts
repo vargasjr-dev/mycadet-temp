@@ -10,6 +10,10 @@
  *   - No text provided exits with code 1 without calling IPC
  */
 
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
@@ -36,9 +40,6 @@ let ipcResponders: Record<
   { ok: boolean; result?: unknown; error?: string }
 > = {};
 
-/** Captured writeFileSync calls. */
-let writeFileCalls: Array<{ path: string; data: Buffer }> = [];
-
 /** Controls whether stdin mock returns text or throws. */
 let stdinReturnsText = false;
 
@@ -55,14 +56,6 @@ mock.module("../../../ipc/cli-client.js", () => ({
   exitFromIpcResult: (r: any) => {
     process.exitCode = 1;
     throw new Error(r.error ?? "ipc error");
-  },
-}));
-
-mock.module("node:fs", () => ({
-  existsSync: () => true,
-  mkdirSync: () => {},
-  writeFileSync: (path: string, data: Buffer) => {
-    writeFileCalls.push({ path, data });
   },
 }));
 
@@ -165,7 +158,6 @@ beforeEach(() => {
     ok: true,
     result: { audioBase64: "dGVzdA==", contentType: "audio/mpeg" },
   };
-  writeFileCalls = [];
   stdinReturnsText = false;
   process.exitCode = 0;
 });
@@ -317,18 +309,20 @@ describe("tts synthesize — base64 round-trip", () => {
       result: { audioBase64, contentType: "audio/mpeg" },
     };
 
+    const outPath = join(tmpdir(), `tts-test-${randomUUID()}.mp3`);
+
     const { exitCode } = await runCommand([
       "tts",
       "synthesize",
       "--text",
       "hi",
+      "--output",
+      outPath,
     ]);
 
     expect(exitCode).toBe(0);
-    expect(writeFileCalls.length).toBe(1);
-    expect(Buffer.from(writeFileCalls[0].data).equals(originalBytes)).toBe(
-      true,
-    );
+    // Real fs: read the written file back and compare bytes.
+    expect(readFileSync(outPath).equals(originalBytes)).toBe(true);
   });
 });
 

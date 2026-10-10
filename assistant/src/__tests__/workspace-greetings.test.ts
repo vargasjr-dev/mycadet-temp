@@ -2,33 +2,27 @@
  * Unit tests for workspace-authored greeting parsing.
  */
 
-import { afterEach, describe, expect, mock, test } from "bun:test";
-
-const workspaceFiles: Record<string, string> = {};
-
-mock.module("node:fs", () => ({
-  existsSync: (path: string) => {
-    const name = path.split("/").pop() ?? "";
-    return name in workspaceFiles;
-  },
-  readFileSync: (path: string, _encoding: string) => {
-    const name = path.split("/").pop() ?? "";
-    if (name in workspaceFiles) {
-      return workspaceFiles[name];
-    }
-    throw new Error(`ENOENT: ${path}`);
-  },
-}));
+import { rmSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, test } from "bun:test";
 
 import {
   parseGreetingsSection,
   readWorkspaceGreetings,
 } from "../runtime/routes/workspace-greetings.js";
+import { getWorkspacePromptPath } from "../util/platform.js";
+
+// Real SOUL.md in the preload's per-process workspace; dropped after each
+// test so absence assertions are honest.
+const SOUL_PATH = getWorkspacePromptPath("SOUL.md");
+
+function setWorkspaceFiles(files: Record<string, string>): void {
+  for (const [name, content] of Object.entries(files)) {
+    writeFileSync(getWorkspacePromptPath(name), content);
+  }
+}
 
 afterEach(() => {
-  for (const key of Object.keys(workspaceFiles)) {
-    delete workspaceFiles[key];
-  }
+  rmSync(SOUL_PATH, { force: true });
 });
 
 describe("parseGreetingsSection", () => {
@@ -133,18 +127,17 @@ describe("parseGreetingsSection", () => {
 
 describe("readWorkspaceGreetings", () => {
   test("reads greetings from SOUL.md", () => {
-    workspaceFiles["SOUL.md"] = [
-      "# Soul",
-      "## Greetings",
-      "- Hey!",
-      "- What's up?",
-    ].join("\n");
+    setWorkspaceFiles({
+      "SOUL.md": ["# Soul", "## Greetings", "- Hey!", "- What's up?"].join(
+        "\n",
+      ),
+    });
 
     expect(readWorkspaceGreetings()).toEqual(["Hey!", "What's up?"]);
   });
 
   test("returns null when SOUL.md has no greetings section", () => {
-    workspaceFiles["SOUL.md"] = "# Soul\nBe friendly.";
+    setWorkspaceFiles({ "SOUL.md": "# Soul\nBe friendly." });
     expect(readWorkspaceGreetings()).toBeNull();
   });
 

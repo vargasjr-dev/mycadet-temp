@@ -34,11 +34,6 @@ mock.module("../../../../persistence/jobs-store.js", () => ({
 }));
 
 // ── Stub fs / platform (used by remember handler, not our handlers) ────────────
-mock.module("node:fs", () => ({
-  appendFileSync: () => {},
-  existsSync: () => false,
-  mkdirSync: () => {},
-}));
 
 mock.module("../v1/jobs/embed-pkb-file.js", () => ({
   enqueuePkbIndexJob: () => {},

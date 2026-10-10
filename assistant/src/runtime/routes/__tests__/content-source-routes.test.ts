@@ -1,38 +1,24 @@
 /**
  * Unit tests for content-source-routes.ts.
  *
- * Drives the handler function directly (bypassing the router) and mocks
- * out node:fs writes so no real I/O occurs.
+ * Drives the handler function directly (bypassing the router); sidecar
+ * writes land in the preload's real per-process workspace and are asserted
+ * by reading the file back.
  */
 
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-
-// ---------------------------------------------------------------------------
-// Module mocks — must appear before any imports of the module under test
-// ---------------------------------------------------------------------------
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { beforeEach, describe, expect, test } from "bun:test";
 
 // The preload's workspace is where route handlers build sidecar paths.
-const FAKE_WORKSPACE = process.env.CADET_WORKSPACE_DIR!;
-
-const writtenFiles = new Map<string, string>();
-
-mock.module("node:fs", () => ({
-  mkdirSync: () => {},
-  writeFileSync: (path: string, content: string) => {
-    writtenFiles.set(path, content);
-  },
-}));
+const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
+const SIDECAR_PATH = () => `${WORKSPACE_DIR}/data/content-source.json`;
 
 // ---------------------------------------------------------------------------
-// Imports after mocks
+// Imports
 // ---------------------------------------------------------------------------
 
 import { ROUTES } from "../content-source-routes.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
-
-afterAll(() => {
-  mock.restore();
-});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,7 +39,9 @@ function makeArgs(body?: Record<string, unknown>): RouteHandlerArgs {
 const handler = findHandler("content_source_set");
 
 beforeEach(() => {
-  writtenFiles.clear();
+  // The preload workspace is shared by the whole process; drop any sidecar
+  // a previous test wrote so absence assertions are honest.
+  rmSync(SIDECAR_PATH(), { force: true });
 });
 
 // ---------------------------------------------------------------------------
@@ -65,9 +53,8 @@ describe("content_source_set — URL validation", () => {
     const result = handler(makeArgs({ url: "https://myblog.com/posts" }));
     expect(result).toEqual({ ok: true });
 
-    const expectedPath = `${FAKE_WORKSPACE}/data/content-source.json`;
-    expect(writtenFiles.has(expectedPath)).toBe(true);
-    const written = JSON.parse(writtenFiles.get(expectedPath)!);
+    expect(existsSync(SIDECAR_PATH())).toBe(true);
+    const written = JSON.parse(readFileSync(SIDECAR_PATH(), "utf-8"));
     expect(written.url).toBe("https://myblog.com/posts");
   });
 
@@ -80,39 +67,38 @@ describe("content_source_set — URL validation", () => {
     const result = handler(makeArgs({ url: "  https://blog.example.com  " }));
     expect(result).toEqual({ ok: true });
 
-    const expectedPath = `${FAKE_WORKSPACE}/data/content-source.json`;
-    const written = JSON.parse(writtenFiles.get(expectedPath)!);
+    const written = JSON.parse(readFileSync(SIDECAR_PATH(), "utf-8"));
     expect(written.url).toBe("https://blog.example.com/");
   });
 
   test("bare hostname without protocol returns invalid_url", () => {
     const result = handler(makeArgs({ url: "myblog.com" }));
     expect(result).toEqual({ ok: false, error: "invalid_url" });
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 
   test("ftp:// URL is rejected", () => {
     const result = handler(makeArgs({ url: "ftp://files.example.com" }));
     expect(result).toEqual({ ok: false, error: "invalid_url" });
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 
   test("empty string returns invalid_url", () => {
     const result = handler(makeArgs({ url: "" }));
     expect(result).toEqual({ ok: false, error: "invalid_url" });
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 
   test("whitespace-only string returns invalid_url", () => {
     const result = handler(makeArgs({ url: "   " }));
     expect(result).toEqual({ ok: false, error: "invalid_url" });
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 
   test("javascript: URL is rejected", () => {
     const result = handler(makeArgs({ url: "javascript:alert(1)" }));
     expect(result).toEqual({ ok: false, error: "invalid_url" });
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 
   test("missing url field returns invalid_url", () => {
@@ -129,16 +115,13 @@ describe("content_source_set — sidecar contents", () => {
   test("writes url to data/content-source.json", () => {
     handler(makeArgs({ url: "https://example.com/blog" }));
 
-    const expectedPath = `${FAKE_WORKSPACE}/data/content-source.json`;
-    expect(writtenFiles.has(expectedPath)).toBe(true);
-
-    const written = JSON.parse(writtenFiles.get(expectedPath)!);
+    const written = JSON.parse(readFileSync(SIDECAR_PATH(), "utf-8"));
     expect(Object.keys(written)).toEqual(["url"]);
   });
 
   test("no sidecar written on invalid URL", () => {
     handler(makeArgs({ url: "not-a-url" }));
-    expect(writtenFiles.size).toBe(0);
+    expect(existsSync(SIDECAR_PATH())).toBe(false);
   });
 });
 
