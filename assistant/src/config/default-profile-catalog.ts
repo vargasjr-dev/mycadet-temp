@@ -31,6 +31,7 @@ import {
   DEFAULT_PROVIDER_CHOICES,
   isDefaultProviderChoice,
   type LLMDefaultConfig,
+  type LLMProfilesSource,
   type ProfileEntry,
 } from "./schemas/llm.js";
 
@@ -949,12 +950,6 @@ export function getEffectiveProfiles(
   }
   return effective;
 }
-
-/** The slice of an `llm` block the listing functions read. */
-type LLMProfilesSource = {
-  profiles?: Record<string, ProfileEntry>;
-  default?: LLMDefaultConfig;
-};
 
 /**
  * Like `getEffectiveProfiles`, but resolves each default profile key through

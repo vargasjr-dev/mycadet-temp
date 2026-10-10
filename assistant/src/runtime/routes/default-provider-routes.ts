@@ -73,9 +73,7 @@ async function handleGetDefaultProvider(): Promise<DefaultProviderStatus> {
   }
   return {
     provider,
-    ...(blob?.provider_connection
-      ? { connectionName: blob.provider_connection }
-      : {}),
+    connectionName: blob?.provider_connection,
     resolvedConnectionName,
     availability: await computeConnectionAvailability(
       provider,

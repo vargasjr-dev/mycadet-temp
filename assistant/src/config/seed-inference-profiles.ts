@@ -19,7 +19,7 @@ import { isDispatchableProfile } from "./profile-dispatchability.js";
 import {
   isDefaultProviderChoice,
   type LLMDefaultConfig,
-  type ProfileEntry,
+  LLMProfilesSourceSchema,
   RawDefaultSelectionSchema,
 } from "./schemas/llm.js";
 
@@ -163,10 +163,10 @@ export function seedInferenceProfiles(
   // available only on the managed column, matching what the schema accepts
   // as a reference: an `activeProfile` naming a backup on a BYOK install is
   // then repaired here rather than preserved as a dangling selection.
-  const effectiveProfiles = getEffectiveProfilesForProvider({
-    profiles: profiles as Record<string, ProfileEntry>,
-    default: seedDefaultBlob(llm),
-  }) as Record<string, Record<string, unknown>>;
+  const parsedLlm = LLMProfilesSourceSchema.safeParse(llm);
+  const effectiveProfiles = getEffectiveProfilesForProvider(
+    parsedLlm.success ? parsedLlm.data : undefined,
+  );
 
   // Active profile resolution.
   const requestedActiveProfile = readString(llm.activeProfile);

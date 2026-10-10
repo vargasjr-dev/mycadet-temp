@@ -67,6 +67,7 @@ import {
   LLMConfigBase,
   LLMConfigFragment,
   LLMDefaultConfigSchema,
+  LLMProfilesSourceSchema,
   ProfileEntry,
   routingIdentityModelIssue,
   unknownLlmProviderIssue,
@@ -963,25 +964,22 @@ function handleGetConfig() {
  * is never stored on disk — it is stamped here from the blob on every read.
  */
 function overlayDefaultProviderForWire(config: unknown): void {
-  const root = readPlainObject(config);
-  if (root == null) {
+  // The root config schema is the authority on what `llm.default` means; a
+  // config it cannot parse gets no derived field at all.
+  const parsed = AssistantConfigSchema.safeParse(config);
+  if (!parsed.success) {
     return;
   }
-  const llm = readPlainObject(root.llm);
+  const llm = readPlainObject(readPlainObject(config)?.llm);
   if (llm == null) {
     return;
   }
-  // The root config schema is the authority on what `llm.default` means; a
-  // config it cannot parse gets no derived field at all.
-  const parsed = AssistantConfigSchema.safeParse(root);
-  const blob = parsed.success ? parsed.data.llm.default : undefined;
+  const blob = parsed.data.llm.default;
   const provider = blob?.provider;
   if (provider != null && isDefaultProviderChoice(provider)) {
     llm.defaultProvider = {
       provider,
-      ...(blob?.provider_connection
-        ? { connectionName: blob.provider_connection }
-        : {}),
+      connectionName: blob?.provider_connection,
     };
   } else {
     delete llm.defaultProvider;
@@ -1021,16 +1019,15 @@ function overlayChatSettingsForWire(config: unknown): void {
  * `config set` round-trip never persists catalog content — the two must
  * resolve through the same column or honest round-trips are rejected.
  *
- * The selection deliberately comes from the parsed config, not the raw
- * object this function mutates: the `isDefaultProviderChoice` clamp shields the
- * matrix lookup from a persisted value the matrix cannot implement, which a
- * raw read would feed straight into resolution. The raw profiles and the
- * cached parse cannot disagree on the selection — every write path that
- * touches it invalidates the config cache.
+ * The profiles and the selection both come from one schema parse of the
+ * config being served, not from the raw object this function mutates: the
+ * `isDefaultProviderChoice` clamp shields the matrix lookup from a persisted
+ * value the matrix cannot implement, which a raw read would feed straight
+ * into resolution.
  */
 function overlayEffectiveProfilesForWire(config: unknown): void {
   const root = readPlainObject(config);
-  if (!root) {
+  if (root == null) {
     return;
   }
   const existingLlm = readPlainObject(root.llm);
@@ -1038,12 +1035,10 @@ function overlayEffectiveProfilesForWire(config: unknown): void {
   if (!existingLlm) {
     root.llm = llm;
   }
-  llm.profiles = getUserSelectableProfilesForProvider({
-    profiles: readPlainObject(llm.profiles) as
-      | Record<string, ProfileEntry>
-      | undefined,
-    default: getConfig().llm.default,
-  });
+  const parsedLlm = LLMProfilesSourceSchema.safeParse(llm);
+  llm.profiles = getUserSelectableProfilesForProvider(
+    parsedLlm.success ? parsedLlm.data : undefined,
+  );
 }
 
 /**
