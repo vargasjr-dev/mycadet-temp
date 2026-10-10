@@ -11,10 +11,10 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
 let localClient = false;
-let cloudRemote = false;
+let servedGatewayRuntime = false;
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => localClient,
-  isCadetCloudRemote: () => cloudRemote,
+  isServedGatewayRuntime: () => servedGatewayRuntime,
   isLocalAssistant: (a: { cloud?: string }) =>
     a.cloud === "local" || a.cloud === "docker",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
@@ -60,7 +60,7 @@ function run() {
 
 beforeEach(() => {
   localClient = false;
-  cloudRemote = false;
+  servedGatewayRuntime = false;
   organizationId = "org-1";
   hasPlatformSession = true;
   seed([]);
@@ -77,8 +77,8 @@ describe("useSwitchableAssistants gate", () => {
     expect(run().canSwitch).toBe(true);
   });
 
-  test("cloud remote closes it", () => {
-    cloudRemote = true;
+  test("served-gateway runtime closes it", () => {
+    servedGatewayRuntime = true;
     seed([platform("a1"), platform("a2")]);
 
     expect(run().canSwitch).toBe(false);
