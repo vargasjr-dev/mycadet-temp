@@ -49,7 +49,17 @@ const GuardianTokenFieldsSchema = z
       .union([z.string(), z.number()])
       .optional()
       .catch(undefined),
-    refreshAfter: z.string().optional().catch(undefined),
+    // The gateway mints refreshAfter as a NUMBER of ms (mintRefreshToken:
+    // now + ACCESS_TOKEN_TTL_MS * REFRESH_AFTER_FRACTION), unlike the ISO
+    // strings some clients persist. Normalize numbers to ISO strings so the
+    // persisted token keeps the string shape GuardianTokenData declares —
+    // a string-only schema turned the gateway's number into undefined, and
+    // the strict init check then rejected every real lease as "malformed".
+    refreshAfter: z
+      .union([z.string(), z.number()])
+      .transform((v) => (typeof v === "number" ? new Date(v).toISOString() : v))
+      .optional()
+      .catch(undefined),
     isNew: z.boolean().optional().catch(undefined),
     deviceId: z.string().optional().catch(undefined),
   })

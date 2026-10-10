@@ -179,14 +179,48 @@ async function runProcessTableCommandAsync(
   return parser(stdout);
 }
 
+/**
+ * The enumeration subprocess appears in its own snapshot: `ps -A` lists every
+ * process on the machine — including the `ps` child this module just spawned
+ * (parented to the caller) — and the PowerShell Win32_Process query includes
+ * the powershell.exe running it. Drop those self rows so a tree built from
+ * the table does not report the enumerator as one of the caller's subsystems.
+ */
+export function dropProcessTableSelfRows(
+  rows: ProcessTableRow[],
+): ProcessTableRow[] {
+  return rows.filter((row) => !isProcessTableSelfRow(row.command));
+}
+
+function isProcessTableSelfRow(command: string): boolean {
+  const normalized = command.toLowerCase();
+  return (
+    (normalized.startsWith("ps ") && normalized.includes("pid=,ppid=")) ||
+    (normalized.includes("powershell") && normalized.includes("win32_process"))
+  );
+}
+
+function parsePsProcessTableWithoutSelfRows(output: string): ProcessTableRow[] {
+  return dropProcessTableSelfRows(parsePsProcessTable(output));
+}
+
+function parseWindowsProcessTableWithoutSelfRows(
+  output: string,
+): ProcessTableRow[] {
+  return dropProcessTableSelfRows(parseWindowsProcessTable(output));
+}
+
 function listProcessesFromPs(): ProcessTableRow[] {
-  return runProcessTableCommand(PS_PROCESS_TABLE_COMMAND, parsePsProcessTable);
+  return runProcessTableCommand(
+    PS_PROCESS_TABLE_COMMAND,
+    parsePsProcessTableWithoutSelfRows,
+  );
 }
 
 function listProcessesFromPowerShell(): ProcessTableRow[] {
   return runProcessTableCommand(
     WINDOWS_PROCESS_TABLE_COMMAND,
-    parseWindowsProcessTable,
+    parseWindowsProcessTableWithoutSelfRows,
   );
 }
 
@@ -212,7 +246,7 @@ export async function listProcessTableAsync(
   if (platform === "win32") {
     return runProcessTableCommandAsync(
       WINDOWS_PROCESS_TABLE_COMMAND,
-      parseWindowsProcessTable,
+      parseWindowsProcessTableWithoutSelfRows,
     );
   }
   if (platform === "linux") {
@@ -221,13 +255,13 @@ export async function listProcessTableAsync(
     } catch {
       return runProcessTableCommandAsync(
         PS_PROCESS_TABLE_COMMAND,
-        parsePsProcessTable,
+        parsePsProcessTableWithoutSelfRows,
       );
     }
   }
   return runProcessTableCommandAsync(
     PS_PROCESS_TABLE_COMMAND,
-    parsePsProcessTable,
+    parsePsProcessTableWithoutSelfRows,
   );
 }
 

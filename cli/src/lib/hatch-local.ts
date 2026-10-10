@@ -32,7 +32,10 @@ import {
 } from "./local.js";
 
 import { generateInstanceName } from "./random-name.js";
-import { leaseGuardianToken } from "./guardian-token.js";
+import {
+  leaseGuardianToken,
+  resetGuardianBootstrap,
+} from "./guardian-token.js";
 import { archiveLogFile, resetLogFile } from "./xdg-log.js";
 import {
   consoleLifecycleReporter,
@@ -185,8 +188,6 @@ export interface HatchLocalResult {
   guardianAccessToken?: string;
 }
 
-
-
 export async function hatchLocal(
   params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
@@ -199,8 +200,7 @@ export async function hatchLocal(
   } = params;
   const reporter = params.reporter ?? consoleLifecycleReporter;
   const verbose = params.verbose ?? false;
-  const setupProviderCredentials =
-    params.setupProviderCredentials !== false;
+  const setupProviderCredentials = params.setupProviderCredentials !== false;
   setStartupLogging(verbose);
   let provider = setupProviderCredentials
     ? resolveHatchProvider(configValues)
@@ -226,12 +226,7 @@ export async function hatchLocal(
 
       const resources = await allocateLocalResources(instanceName);
 
-      const logsDir = join(
-        resources.instanceDir,
-        "workspace",
-        "data",
-        "logs",
-      );
+      const logsDir = join(resources.instanceDir, "workspace", "data", "logs");
       archiveLogFile("hatch.log", logsDir);
       resetLogFile("hatch.log");
 
@@ -276,9 +271,7 @@ export async function hatchLocal(
               reporter.warn(
                 `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
               );
-              reporter.warn(
-                "   You can retry later with `cadet login`.",
-              );
+              reporter.warn("   You can retry later with `cadet login`.");
             }
           }
         }
@@ -385,12 +378,25 @@ export async function hatchLocal(
         reporter.error(
           `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
         );
+        // A failed attempt can still have consumed the single-use bootstrap
+        // secret gateway-side (the gateway marks it consumed as soon as the
+        // mint succeeds, before the CLI persists the token), which would
+        // leave the retries dead on 403. Hatch owns the secret it just
+        // minted — reset the gateway's bootstrap state so the retry can
+        // actually re-lease.
+        try {
+          await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
+        } catch {
+          // Best-effort; the retry reports its own failure.
+        }
         await new Promise((r) => setTimeout(r, delayMs));
       } else {
         reporter.error(
           `⚠️  Guardian token lease failed after ${maxLeaseAttempts} attempts: ${err}\n` +
             `   The assistant is running but guardian-token.json was not written.\n` +
-            `   If the desktop app loses its stored credentials, re-hatch to recover.`,
+            `   Run \`cadet wake ${JSON.stringify(instanceName)} --repair-guardian\` to reset the\n` +
+            `   gateway's bootstrap state and re-lease a token — re-hatching would\n` +
+            `   create a new assistant, not recover this one.`,
         );
       }
     }
