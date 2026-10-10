@@ -191,11 +191,11 @@ import {
 } from "./http/routes/channel-permission-overrides.js";
 import { getLogger, initLogger } from "./logger.js";
 import {
-  bindPlatformIdentityCredentialCache,
-  ensurePlatformIdentityIds,
-  resolvePlatformAssistantIdOrUndefined,
-} from "./platform-identity.js";
-import { getPlatformBaseUrl } from "./platform-url.js";
+  bindCloudIdentityCredentialCache,
+  ensureCloudIdentityIds,
+  resolveCloudAssistantIdOrUndefined,
+} from "./cloud-identity.js";
+import { getCloudBaseUrl } from "./cloud-url.js";
 import { CircuitBreakerOpenError, uploadAttachment } from "./runtime/client.js";
 import {
   appendFailedAttachmentNotice,
@@ -444,8 +444,8 @@ async function main() {
   // Handlers read dynamic credentials and config.json values from these
   // caches at call time, with automatic TTL refresh.
   const credentialCache = new CredentialCache();
-  bindPlatformIdentityCredentialCache(credentialCache);
-  void ensurePlatformIdentityIds();
+  bindCloudIdentityCredentialCache(credentialCache);
+  void ensureCloudIdentityIds();
   const configFileCache = new ConfigFileCache();
   const tunnelClient = createTunnelClient(config, {
     credentials: credentialCache,
@@ -2509,13 +2509,11 @@ async function main() {
     lastRecordActivityTs = now;
 
     try {
-      const [platformBaseUrl, assistantApiKey, assistantId] = await Promise.all(
-        [
-          getPlatformBaseUrl(credentialCache),
-          credentialCache.get(credentialKey("cadet", "assistant_api_key")),
-          resolvePlatformAssistantIdOrUndefined(),
-        ],
-      );
+      const [assistantApiKey, assistantId] = await Promise.all([
+        credentialCache.get(credentialKey("cadet", "assistant_api_key")),
+        resolveCloudAssistantIdOrUndefined(),
+      ]);
+      const platformBaseUrl = getCloudBaseUrl();
 
       if (!platformBaseUrl || !assistantApiKey || !assistantId) return;
 
@@ -2877,13 +2875,11 @@ async function main() {
     );
 
     const cadetCreds = event.credentials.get("cadet");
-    cadetReady = !!(
-      cadetCreds?.platform_base_url && cadetCreds?.assistant_api_key
-    );
+    cadetReady = !!cadetCreds?.assistant_api_key;
     if (cadetReady) {
       // Re-run validate when the API key / base URL change so a warm-pool
       // claim does not keep the previous assistant's bound owner ids.
-      void ensurePlatformIdentityIds();
+      void ensureCloudIdentityIds();
     }
     const twilioCreds = event.credentials.get("twilio");
 

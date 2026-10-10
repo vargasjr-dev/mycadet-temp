@@ -16,8 +16,8 @@ import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
-import { resolvePlatformAssistantIdOrUndefined } from "../../platform-identity.js";
-import { getPlatformBaseUrl } from "../../platform-url.js";
+import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
+import { getCloudBaseUrl } from "../../cloud-url.js";
 import { errorResponse } from "../loopback-guard.js";
 
 const log = getLogger("platform-push-proxy");
@@ -32,13 +32,12 @@ interface PlatformTarget {
 
 export function createPlatformPushProxyHandler(credentials: CredentialCache) {
   async function resolvePlatformTarget(): Promise<PlatformTarget | Response> {
-    const [platformBaseUrl, assistantApiKeyRaw, assistantId] =
-      await Promise.all([
-        getPlatformBaseUrl(credentials),
-        credentials.get(credentialKey("cadet", "assistant_api_key")),
-        resolvePlatformAssistantIdOrUndefined(),
-      ]);
+    const [assistantApiKeyRaw, assistantId] = await Promise.all([
+      credentials.get(credentialKey("cadet", "assistant_api_key")),
+      resolveCloudAssistantIdOrUndefined(),
+    ]);
 
+    const platformBaseUrl = getCloudBaseUrl();
     const assistantApiKey = assistantApiKeyRaw?.trim() || undefined;
 
     if (!platformBaseUrl || !assistantApiKey || !assistantId) {

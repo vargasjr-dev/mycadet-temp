@@ -404,7 +404,7 @@ export const DISCORD_CHANNEL_CREDENTIAL_SPEC: ServiceCredentialSpec = {
 
 export const CADET_CREDENTIAL_SPEC: ServiceCredentialSpec = {
   service: "cadet",
-  requiredFields: ["platform_base_url", "assistant_api_key", "webhook_secret"],
+  requiredFields: ["assistant_api_key", "webhook_secret"],
 } as const;
 
 export const ALL_CREDENTIAL_SPECS: readonly ServiceCredentialSpec[] = [

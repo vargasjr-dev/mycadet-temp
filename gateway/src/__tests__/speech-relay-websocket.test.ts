@@ -74,7 +74,7 @@ function makeKeyedCredentials(
 }
 
 describe("tunnel origin derivation", () => {
-  // getPlatformBaseUrl falls back to this env var; pin it absent so the
+  // getCloudBaseUrl falls back to this env var; pin it absent so the
   // missing-credential cases below are deterministic on dev machines.
   const savedPlatformUrl = process.env.CADET_PLATFORM_URL;
   beforeAll(() => {
@@ -104,16 +104,15 @@ describe("tunnel origin derivation", () => {
     ).toBeNull();
   });
 
-  test("derives the tunnel origin from the stored platform base URL when TUNNEL_BASE_URL is unset", async () => {
+  test("derives the tunnel origin from CADET_PLATFORM_URL when TUNNEL_BASE_URL is unset", async () => {
     const server = makeFakeServer();
+    process.env.CADET_PLATFORM_URL = "https://staging-cloud.mycadet.ai";
     const handler = createSpeechRelayUpgradeHandler(
       makeConfig({ tunnelBaseUrl: undefined }),
       "stt",
       {
         credentials: makeKeyedCredentials({
           "credential/cadet/assistant_api_key": "vk-1",
-          "credential/cadet/platform_base_url":
-            "https://staging-cloud.mycadet.ai",
         }),
       },
     );
@@ -139,13 +138,17 @@ describe("tunnel origin derivation", () => {
       undefined,
     ]) {
       const server = makeFakeServer();
+      if (platformBaseUrl === undefined) {
+        delete process.env.CADET_PLATFORM_URL;
+      } else {
+        process.env.CADET_PLATFORM_URL = platformBaseUrl;
+      }
       const handler = createSpeechRelayUpgradeHandler(
         makeConfig({ tunnelBaseUrl: undefined }),
         "stt",
         {
           credentials: makeKeyedCredentials({
             "credential/cadet/assistant_api_key": "vk-1",
-            "credential/cadet/platform_base_url": platformBaseUrl,
           }),
         },
       );
@@ -162,13 +165,12 @@ describe("tunnel origin derivation", () => {
     }
   });
 
-  test("an explicit TUNNEL_BASE_URL wins over the stored platform base URL", async () => {
+  test("an explicit TUNNEL_BASE_URL wins over CADET_PLATFORM_URL", async () => {
     const server = makeFakeServer();
+    process.env.CADET_PLATFORM_URL = "https://staging-cloud.mycadet.ai";
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "stt", {
       credentials: makeKeyedCredentials({
         "credential/cadet/assistant_api_key": "vk-1",
-        "credential/cadet/platform_base_url":
-          "https://staging-cloud.mycadet.ai",
       }),
     });
     const req = new Request(

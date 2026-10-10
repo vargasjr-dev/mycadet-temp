@@ -30,7 +30,7 @@ import type { GatewayConfig } from "../../config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
-import { getPlatformBaseUrl } from "../../platform-url.js";
+import { getCloudBaseUrl } from "../../cloud-url.js";
 import { TUNNEL_FORWARDED_HEADER } from "../../tunnel/bridge-utils.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 
@@ -172,14 +172,11 @@ export function tunnelOriginForPlatformHost(host: string): string | null {
  * assistant's key is presented to its own environment's tunnel rather than
  * prod (which would reject it with `invalid_key`).
  */
-async function resolveTunnelBaseUrl(
-  config: GatewayConfig,
-  deps: SpeechRelayDeps,
-): Promise<string> {
+async function resolveTunnelBaseUrl(config: GatewayConfig): Promise<string> {
   if (config.tunnelBaseUrl) {
     return config.tunnelBaseUrl;
   }
-  const platformBaseUrl = await getPlatformBaseUrl(deps.credentials);
+  const platformBaseUrl = getCloudBaseUrl();
   if (platformBaseUrl) {
     try {
       const derived = tunnelOriginForPlatformHost(
@@ -320,7 +317,7 @@ export function createSpeechRelayUpgradeHandler(
       }
     }
     const { wsUrl, httpUrl } = tunnelSpeechUrls(
-      await resolveTunnelBaseUrl(config, deps),
+      await resolveTunnelBaseUrl(config),
       operation,
       params,
       version,

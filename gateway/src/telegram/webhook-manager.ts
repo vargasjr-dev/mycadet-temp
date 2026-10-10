@@ -13,7 +13,7 @@ import {
 } from "../feature-flag-resolver.js";
 import { callTelegramApi } from "./api.js";
 import { getLogger } from "../logger.js";
-import { resolvePlatformAssistantIdOrUndefined } from "../platform-identity.js";
+import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 
 const log = getLogger("webhook-manager");
 const TELEGRAM_CALLBACK_PATH = "webhooks/telegram";
@@ -53,19 +53,14 @@ async function registerManagedTelegramCallbackRoute(
     return undefined;
   }
 
-  const [platformBaseUrlRaw, assistantApiKeyRaw] = caches?.credentials
-    ? await Promise.all([
-        caches.credentials.get(credentialKey("cadet", "platform_base_url")),
-        caches.credentials.get(credentialKey("cadet", "assistant_api_key")),
-      ])
-    : [undefined, undefined];
+  const assistantApiKeyRaw = caches?.credentials
+    ? await caches.credentials.get(credentialKey("cadet", "assistant_api_key"))
+    : undefined;
 
-  // Fall back to env vars when managed pod credentials are not yet cached,
-  // matching the daemon's resolvePlatformCallbackRegistrationContext().
+  // The base URL resolves from the environment only — the credential store
+  // never carries it.
   const platformBaseUrl = (
-    platformBaseUrlRaw?.trim() ||
-    process.env.CADET_PLATFORM_URL?.trim() ||
-    ""
+    process.env.CADET_PLATFORM_URL?.trim() || ""
   ).replace(/\/+$/, "");
 
   const assistantCredential =
@@ -73,7 +68,7 @@ async function registerManagedTelegramCallbackRoute(
     process.env.ASSISTANT_API_KEY?.trim() ||
     undefined;
 
-  const assistantId = await resolvePlatformAssistantIdOrUndefined();
+  const assistantId = await resolveCloudAssistantIdOrUndefined();
 
   if (!platformBaseUrl || !assistantCredential || !assistantId) {
     log.debug(

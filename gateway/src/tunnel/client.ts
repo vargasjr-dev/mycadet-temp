@@ -9,9 +9,9 @@ import { credentialKey } from "../credential-key.js";
 import { mutateConfigFile } from "../config-file-utils.js";
 import { getLogger } from "../logger.js";
 import {
-  ensurePlatformIdentityIds,
+  ensureCloudIdentityIds,
   peekPlatformAssistantId,
-} from "../platform-identity.js";
+} from "../cloud-identity.js";
 import { ExponentialBackoff } from "../util/exponential-backoff.js";
 import { listWebhookIngressRoutes } from "../db/webhook-ingress-route-store.js";
 import {
@@ -335,7 +335,7 @@ export class TunnelClient {
       this.scheduleReconnect();
       return;
     }
-    await ensurePlatformIdentityIds();
+    await ensureCloudIdentityIds();
     const expectedAssistantId = peekPlatformAssistantId();
 
     let registerUrl: string;

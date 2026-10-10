@@ -38,7 +38,7 @@ mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
 }));
 mock.module("../platform-user-id.js", () => ({
-  readStoredPlatformUserId: async () => {
+  readStoredCloudUserId: async () => {
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
     }

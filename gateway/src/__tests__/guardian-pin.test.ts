@@ -24,7 +24,7 @@ let mockReadCredential = mock(
   async (_key: string): Promise<string | undefined> => TUNNEL_USER_ID,
 );
 mock.module("../platform-user-id.js", () => ({
-  readStoredPlatformUserId: async () => ({
+  readStoredCloudUserId: async () => ({
     userId: await mockReadCredential("cadet:platform_user_id"),
     unreachable: false,
   }),

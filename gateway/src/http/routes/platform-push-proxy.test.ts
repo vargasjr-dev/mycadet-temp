@@ -26,8 +26,8 @@ mock.module("../../fetch.js", () => ({
 
 const { createPlatformPushProxyHandler } =
   await import("./platform-push-proxy.js");
-const { applyPlatformIdentityIds, _resetPlatformIdentityForTests } =
-  await import("../../platform-identity.js");
+const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
+  await import("../../cloud-identity.js");
 
 const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
 const PLATFORM_BASE_URL = "https://platform.example.com";
@@ -42,13 +42,13 @@ function makeKeyedCredentials(
 }
 
 function registeredCredentials(): CredentialCache {
-  applyPlatformIdentityIds({
+  applyCloudIdentityIds({
     assistantId: PLATFORM_ASSISTANT_ID,
     organizationId: "",
     userId: "",
   });
+  process.env.CADET_PLATFORM_URL = PLATFORM_BASE_URL;
   return makeKeyedCredentials({
-    [credentialKey("cadet", "platform_base_url")]: PLATFORM_BASE_URL,
     [credentialKey("cadet", "assistant_api_key")]: ASSISTANT_API_KEY,
     [credentialKey("cadet", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
   });
@@ -100,7 +100,7 @@ describe("platform push proxy", () => {
 
   afterEach(() => {
     fetchMock = mock(async () => new Response());
-    _resetPlatformIdentityForTests();
+    _resetCloudIdentityForTests();
   });
 
   test("returns 503 and does not fetch when platform credentials are missing", async () => {

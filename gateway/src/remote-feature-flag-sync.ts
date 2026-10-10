@@ -336,24 +336,22 @@ export class RemoteFeatureFlagSync {
     // Wrap credential reads so transient failures (CES unreachable, keychain
     // errors) are treated as retriable errors with backoff, not as "missing
     // credentials" which would pause polling indefinitely.
-    let platformUrlRaw: string | undefined;
     let assistantApiKeyRaw: string | undefined;
     try {
-      [platformUrlRaw, assistantApiKeyRaw] = await Promise.all([
-        this.credentials.get(credentialKey("cadet", "platform_base_url")),
-        this.credentials.get(credentialKey("cadet", "assistant_api_key")),
-      ]);
+      assistantApiKeyRaw = await this.credentials.get(
+        credentialKey("cadet", "assistant_api_key"),
+      );
     } catch (err) {
       log.warn({ err }, "Failed to read credentials — will retry on next poll");
       return { status: "error" };
     }
 
-    // Fall back to env vars when managed pod credentials are not yet cached.
-    const platformUrl = (
-      platformUrlRaw?.trim() ||
-      process.env.CADET_PLATFORM_URL?.trim() ||
-      ""
-    ).replace(/\/+$/, "");
+    // The base URL resolves from the environment only — the credential store
+    // never carries it.
+    const platformUrl = (process.env.CADET_PLATFORM_URL?.trim() || "").replace(
+      /\/+$/,
+      "",
+    );
 
     const assistantCredential =
       assistantApiKeyRaw?.trim() ||

@@ -39,7 +39,7 @@ import { authorizeRuntimeAudioStream } from "./runtime-audio-stream.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
-import { readStoredPlatformUserId } from "../../platform-user-id.js";
+import { readStoredCloudUserId } from "../../platform-user-id.js";
 
 const TUNNEL_USER_ID_HEADER = "x-tunnel-user-id";
 const TUNNEL_ORG_ID_HEADER = "x-tunnel-org-id";
@@ -112,7 +112,7 @@ export async function requireManagedGuardian(
   let storedUserId: string | undefined;
   let unreachable = false;
   try {
-    const result = await readStoredPlatformUserId();
+    const result = await readStoredCloudUserId();
     storedUserId = result.userId;
     unreachable = result.unreachable;
   } catch (err) {

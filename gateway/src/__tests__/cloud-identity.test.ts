@@ -37,13 +37,13 @@ mock.module("../fetch.js", () => ({
 }));
 
 const {
-  _resetPlatformIdentityForTests,
-  applyPlatformIdentityIds,
-  fetchPlatformIdentityIds,
-  PLATFORM_IDENTITY_VALIDATE_PATH,
-  readStoredPlatformUserId,
+  _resetCloudIdentityForTests,
+  applyCloudIdentityIds,
+  fetchCloudIdentityIds,
+  CLOUD_IDENTITY_VALIDATE_PATH,
+  readStoredCloudUserId,
   resolvePlatformAssistantId,
-} = await import("../platform-identity.js");
+} = await import("../cloud-identity.js");
 const { credentialKey } = await import("../credential-key.js");
 
 const BASE_URL = "https://platform.example.com";
@@ -51,16 +51,15 @@ const ASSISTANT_ID = "11111111-2222-4333-8444-555555555555";
 const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";
 const API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
-const BASE_URL_ACCOUNT = credentialKey("cadet", "platform_base_url");
 const USER_ID_ACCOUNT = credentialKey("cadet", "platform_user_id");
 const ASSISTANT_ID_ACCOUNT = credentialKey("cadet", "platform_assistant_id");
 const ORG_ID_ACCOUNT = credentialKey("cadet", "platform_organization_id");
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
 const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
-const originalPlatformAssistantId = process.env.PLATFORM_ASSISTANT_ID;
-const originalPlatformOrgId = process.env.PLATFORM_ORGANIZATION_ID;
-const originalPlatformUserId = process.env.PLATFORM_USER_ID;
+const originalCloudAssistantId = process.env.CLOUD_ASSISTANT_ID;
+const originalCloudOrgId = process.env.CLOUD_ORGANIZATION_ID;
+const originalCloudUserId = process.env.CLOUD_USER_ID;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -92,34 +91,34 @@ beforeEach(() => {
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
   delete process.env.CADET_PLATFORM_URL;
-  delete process.env.PLATFORM_ASSISTANT_ID;
-  delete process.env.PLATFORM_ORGANIZATION_ID;
-  delete process.env.PLATFORM_USER_ID;
-  _resetPlatformIdentityForTests();
+  delete process.env.CLOUD_ASSISTANT_ID;
+  delete process.env.CLOUD_ORGANIZATION_ID;
+  delete process.env.CLOUD_USER_ID;
+  _resetCloudIdentityForTests();
 });
 
 afterEach(() => {
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
   restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
-  restoreEnv("PLATFORM_ASSISTANT_ID", originalPlatformAssistantId);
-  restoreEnv("PLATFORM_ORGANIZATION_ID", originalPlatformOrgId);
-  restoreEnv("PLATFORM_USER_ID", originalPlatformUserId);
-  _resetPlatformIdentityForTests();
+  restoreEnv("CLOUD_ASSISTANT_ID", originalCloudAssistantId);
+  restoreEnv("CLOUD_ORGANIZATION_ID", originalCloudOrgId);
+  restoreEnv("CLOUD_USER_ID", originalCloudUserId);
+  _resetCloudIdentityForTests();
 });
 
-describe("fetchPlatformIdentityIds", () => {
+describe("fetchCloudIdentityIds", () => {
   test("returns the three ids from a successful validate response", async () => {
     fetchImplFn = async () => validateResponse();
 
     await expect(
-      fetchPlatformIdentityIds(BASE_URL, "assistant-key"),
+      fetchCloudIdentityIds(BASE_URL, "assistant-key"),
     ).resolves.toEqual({
       assistantId: ASSISTANT_ID,
       organizationId: ORG_ID,
       userId: USER_ID,
     });
     expect(fetchCalls[0]?.url).toBe(
-      `${BASE_URL}${PLATFORM_IDENTITY_VALIDATE_PATH}`,
+      `${BASE_URL}${CLOUD_IDENTITY_VALIDATE_PATH}`,
     );
     expect(fetchCalls[0]?.init?.method).toBe("POST");
     const headers = new Headers(fetchCalls[0]?.init?.headers);
@@ -128,16 +127,16 @@ describe("fetchPlatformIdentityIds", () => {
 
   test("strips a trailing slash from the base URL", async () => {
     fetchImplFn = async () => validateResponse();
-    await fetchPlatformIdentityIds(`${BASE_URL}/`, "assistant-key");
+    await fetchCloudIdentityIds(`${BASE_URL}/`, "assistant-key");
     expect(fetchCalls[0]?.url).toBe(
-      `${BASE_URL}${PLATFORM_IDENTITY_VALIDATE_PATH}`,
+      `${BASE_URL}${CLOUD_IDENTITY_VALIDATE_PATH}`,
     );
   });
 
   test("returns null on 401 without throwing", async () => {
     fetchImplFn = async () => new Response("no", { status: 401 });
     await expect(
-      fetchPlatformIdentityIds(BASE_URL, "assistant-key"),
+      fetchCloudIdentityIds(BASE_URL, "assistant-key"),
     ).resolves.toBeNull();
   });
 
@@ -146,14 +145,14 @@ describe("fetchPlatformIdentityIds", () => {
       throw new Error("network down");
     };
     await expect(
-      fetchPlatformIdentityIds(BASE_URL, "assistant-key"),
+      fetchCloudIdentityIds(BASE_URL, "assistant-key"),
     ).resolves.toBeNull();
   });
 });
 
 describe("resolvePlatformAssistantId", () => {
   test("returns the in-memory override without calling validate", async () => {
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId: ASSISTANT_ID,
       organizationId: ORG_ID,
       userId: USER_ID,
@@ -176,7 +175,7 @@ describe("resolvePlatformAssistantId", () => {
     await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0]?.url).toBe(
-      `${BASE_URL}${PLATFORM_IDENTITY_VALIDATE_PATH}`,
+      `${BASE_URL}${CLOUD_IDENTITY_VALIDATE_PATH}`,
     );
   });
 
@@ -196,7 +195,7 @@ describe("resolvePlatformAssistantId", () => {
     fetchImplFn = async () => new Response("down", { status: 503 });
 
     await expect(resolvePlatformAssistantId()).resolves.toBe("");
-    _resetPlatformIdentityForTests();
+    _resetCloudIdentityForTests();
     fetchImplFn = async () => validateResponse();
 
     await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
@@ -229,14 +228,14 @@ describe("resolvePlatformAssistantId", () => {
   });
 });
 
-describe("readStoredPlatformUserId", () => {
+describe("readStoredCloudUserId", () => {
   test("returns a live owner id from in-memory identity", async () => {
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId: ASSISTANT_ID,
       organizationId: ORG_ID,
       userId: USER_ID,
     });
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -248,13 +247,13 @@ describe("readStoredPlatformUserId", () => {
     process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
 
     fetchImplFn = async () => new Response("down", { status: 503 });
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -266,7 +265,7 @@ describe("readStoredPlatformUserId", () => {
       value: undefined,
       unreachable: true,
     });
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: true,
     });
@@ -278,25 +277,21 @@ describe("readStoredPlatformUserId", () => {
       value: "assistant-key",
       unreachable: false,
     });
-    credentialResults.set(BASE_URL_ACCOUNT, {
-      value: BASE_URL,
-      unreachable: false,
-    });
     fetchImplFn = async () => new Response("no", { status: 401 });
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: false,
     });
   });
 
-  test("reports unreachable when the API key is present but the base URL vault is down", async () => {
-    process.env.ASSISTANT_API_KEY = "assistant-key";
-    credentialResults.set(BASE_URL_ACCOUNT, {
+  test("reports unreachable when the API key vault is down", async () => {
+    delete process.env.ASSISTANT_API_KEY;
+    credentialResults.set(API_KEY_ACCOUNT, {
       value: undefined,
       unreachable: true,
     });
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: true,
     });
@@ -305,11 +300,8 @@ describe("readStoredPlatformUserId", () => {
 
   test("reports a miss when the API key is present and the base URL is unset", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    credentialResults.set(BASE_URL_ACCOUNT, {
-      value: undefined,
-      unreachable: false,
-    });
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    delete process.env.CADET_PLATFORM_URL;
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: false,
     });
@@ -323,7 +315,7 @@ describe("readStoredPlatformUserId", () => {
     process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -336,7 +328,7 @@ describe("readStoredPlatformUserId", () => {
         userId: nextUserId,
       });
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: nextUserId,
       unreachable: false,
     });
@@ -351,7 +343,7 @@ describe("readStoredPlatformUserId", () => {
     process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -359,7 +351,7 @@ describe("readStoredPlatformUserId", () => {
     process.env.ASSISTANT_API_KEY = "next-assistant-key";
     fetchImplFn = async () => new Response("no", { status: 401 });
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: false,
     });
@@ -371,7 +363,7 @@ describe("readStoredPlatformUserId", () => {
     process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -383,7 +375,7 @@ describe("readStoredPlatformUserId", () => {
     });
     fetchImplFn = async () => new Response("down", { status: 503 });
 
-    await expect(readStoredPlatformUserId()).resolves.toEqual({
+    await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: USER_ID,
       unreachable: false,
     });
@@ -395,7 +387,7 @@ describe("readStoredPlatformUserId", () => {
     process.env.CADET_PLATFORM_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await readStoredPlatformUserId();
+    await readStoredCloudUserId();
 
     expect(credentialReads).not.toContain(USER_ID_ACCOUNT);
     expect(credentialReads).not.toContain(ASSISTANT_ID_ACCOUNT);

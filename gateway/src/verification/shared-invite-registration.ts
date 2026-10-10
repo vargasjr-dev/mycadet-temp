@@ -40,7 +40,7 @@ export type SharedInviteRegistrationResult =
  * set only when the store could not be read and no fallback exists.
  */
 async function readPlatformCredential(
-  field: "platform_base_url" | "assistant_api_key",
+  field: "assistant_api_key",
   envName: string,
 ): Promise<{ value: string; unreachable: boolean }> {
   const stored = await readCredentialResult(credentialKey("cadet", field));
@@ -68,23 +68,28 @@ export async function registerSharedInvite(params: {
     return { status: "skipped" };
   }
 
-  const [baseUrl, apiKey] = await Promise.all([
-    readPlatformCredential("platform_base_url", "CADET_PLATFORM_URL"),
+  const [platformBaseUrl, apiKey] = await Promise.all([
+    Promise.resolve(
+      (process.env.CADET_PLATFORM_URL?.trim() || "").replace(/\/+$/, ""),
+    ),
     readPlatformCredential("assistant_api_key", "ASSISTANT_API_KEY"),
   ]);
-  if (baseUrl.unreachable || apiKey.unreachable) {
+  if (apiKey.unreachable) {
     log.warn("Shared invite registration: credential store unreachable");
     return { status: "unavailable" };
   }
-  if (!baseUrl.value || !apiKey.value) {
+  if (!platformBaseUrl || !apiKey.value) {
     log.debug(
-      { hasPlatformBaseUrl: !!baseUrl.value, hasApiKey: !!apiKey.value },
+      {
+        hasPlatformBaseUrl: !!platformBaseUrl,
+        hasApiKey: !!apiKey.value,
+      },
       "Shared invite registration skipped: no cloud credentials",
     );
     return { status: "skipped" };
   }
 
-  const url = `${baseUrl.value.replace(/\/+$/, "")}${SHARED_INVITE_REGISTRATION_PATH}`;
+  const url = `${platformBaseUrl}${SHARED_INVITE_REGISTRATION_PATH}`;
   let response: Response;
   try {
     response = await fetchImpl(url, {

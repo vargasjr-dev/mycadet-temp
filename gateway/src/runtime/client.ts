@@ -476,14 +476,14 @@ export function resolvePublicBaseWssUrl(
 export async function resolvePublicHttpBaseUrl(
   config: GatewayConfig,
   configFile?: ConfigFileCache,
-  getPlatformAssistantId?: () => Promise<string | undefined>,
+  getCloudAssistantId?: () => Promise<string | undefined>,
 ): Promise<string | undefined> {
   const resolved =
     normalizeHttpPublicBaseUrl(
       configFile?.getString("ingress", "publicBaseUrl"),
     ) ??
     normalizeHttpPublicBaseUrl(
-      await resolveTunnelHttpFallback(config, getPlatformAssistantId),
+      await resolveTunnelHttpFallback(config, getCloudAssistantId),
     );
 
   // Drop a root-path trailing slash so callers can append `/…` without
@@ -498,10 +498,10 @@ export async function resolvePublicHttpBaseUrl(
  */
 async function resolveTunnelHttpFallback(
   config: GatewayConfig,
-  getPlatformAssistantId?: () => Promise<string | undefined>,
+  getCloudAssistantId?: () => Promise<string | undefined>,
 ): Promise<string | undefined> {
-  if (!config.tunnelBaseUrl || !getPlatformAssistantId) return undefined;
-  const platformAssistantId = await getPlatformAssistantId();
+  if (!config.tunnelBaseUrl || !getCloudAssistantId) return undefined;
+  const platformAssistantId = await getCloudAssistantId();
   if (!platformAssistantId) return undefined;
   return config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
 }

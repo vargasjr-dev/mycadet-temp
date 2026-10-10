@@ -64,15 +64,14 @@ const { createInviteNative, createContactsControlPlaneProxyHandler } =
   await import("../http/routes/contacts-control-plane-proxy.js");
 const { seedContact } = await import("./helpers/contact-fixtures.js");
 
-const BASE_URL_KEY = credentialKey("cadet", "platform_base_url");
 const API_KEY_KEY = credentialKey("cadet", "assistant_api_key");
 const PLATFORM_URL = "https://platform.example.com";
 const API_KEY = "vak_test_key";
 const CONTACT_ID = "contact-alice";
 
 function withPlatformCredentials(): void {
+  process.env.CADET_PLATFORM_URL = PLATFORM_URL;
   storedCredentials = {
-    [BASE_URL_KEY]: { value: `${PLATFORM_URL}/`, unreachable: false },
     [API_KEY_KEY]: { value: API_KEY, unreachable: false },
   };
 }
@@ -104,7 +103,6 @@ beforeEach(() => {
   withPlatformCredentials();
   delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
-  delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
 });
 
@@ -223,20 +221,6 @@ describe("registration is skipped", () => {
     expect(activeInviteRows()).toHaveLength(1);
   });
 
-  test("when only the base URL is configured", async () => {
-    storedCredentials = {
-      [BASE_URL_KEY]: { value: PLATFORM_URL, unreachable: false },
-    };
-
-    await createInviteNative({
-      contactId: CONTACT_ID,
-      sourceChannel: "cadet-shared",
-    });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(activeInviteRows()).toHaveLength(1);
-  });
-
   test("when the trusted-contacts flag is off", async () => {
     trustedContactsEnabled = false;
 
@@ -298,8 +282,7 @@ describe("a failed registration leaves no invite", () => {
 
   test("an unreachable credential store surfaces as 503 without calling the platform", async () => {
     storedCredentials = {
-      [BASE_URL_KEY]: { value: undefined, unreachable: true },
-      [API_KEY_KEY]: { value: API_KEY, unreachable: false },
+      [API_KEY_KEY]: { value: undefined, unreachable: true },
     };
     await expectCreateRejected(503, "INVITE_REGISTRATION_UNAVAILABLE");
     expect(fetchMock).not.toHaveBeenCalled();

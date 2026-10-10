@@ -81,8 +81,8 @@ const {
 } = await import("./allowed-paths.js");
 const { TunnelClient, createTunnelClient, enablePublicIngress } =
   await import("./client.js");
-const { applyPlatformIdentityIds, _resetPlatformIdentityForTests } =
-  await import("../platform-identity.js");
+const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
+  await import("../cloud-identity.js");
 
 const WS_OPEN = WebSocket.OPEN;
 const WS_CLOSED = WebSocket.CLOSED;
@@ -91,7 +91,7 @@ function makeCredentials(values: Record<string, string | undefined>) {
   const assistantId =
     values[credentialKey("cadet", "platform_assistant_id")]?.trim();
   if (assistantId) {
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId,
       organizationId: "",
       userId: "",
@@ -271,9 +271,9 @@ async function flushPromises(): Promise<void> {
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
 const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
-const originalPlatformAssistantId = process.env.PLATFORM_ASSISTANT_ID;
-const originalPlatformOrgId = process.env.PLATFORM_ORGANIZATION_ID;
-const originalPlatformUserId = process.env.PLATFORM_USER_ID;
+const originalCloudAssistantId = process.env.CLOUD_ASSISTANT_ID;
+const originalCloudOrgId = process.env.CLOUD_ORGANIZATION_ID;
+const originalCloudUserId = process.env.CLOUD_USER_ID;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -292,20 +292,20 @@ beforeEach(() => {
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
   delete process.env.CADET_PLATFORM_URL;
-  delete process.env.PLATFORM_ASSISTANT_ID;
-  delete process.env.PLATFORM_ORGANIZATION_ID;
-  delete process.env.PLATFORM_USER_ID;
-  _resetPlatformIdentityForTests();
+  delete process.env.CLOUD_ASSISTANT_ID;
+  delete process.env.CLOUD_ORGANIZATION_ID;
+  delete process.env.CLOUD_USER_ID;
+  _resetCloudIdentityForTests();
 });
 
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
   restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
-  restoreEnv("PLATFORM_ASSISTANT_ID", originalPlatformAssistantId);
-  restoreEnv("PLATFORM_ORGANIZATION_ID", originalPlatformOrgId);
-  restoreEnv("PLATFORM_USER_ID", originalPlatformUserId);
-  _resetPlatformIdentityForTests();
+  restoreEnv("CLOUD_ASSISTANT_ID", originalCloudAssistantId);
+  restoreEnv("CLOUD_ORGANIZATION_ID", originalCloudOrgId);
+  restoreEnv("CLOUD_USER_ID", originalCloudUserId);
+  _resetCloudIdentityForTests();
 });
 
 describe("enablePublicIngress", () => {
@@ -785,7 +785,7 @@ describe("TunnelClient", () => {
       resolveFirstApiKeyRead = resolve;
     });
     let useFreshCredentials = false;
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId: "asst-123",
       organizationId: "",
       userId: "",

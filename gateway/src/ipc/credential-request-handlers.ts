@@ -20,7 +20,7 @@ import {
   MAX_ACTIVE_CREDENTIAL_REQUESTS,
 } from "../db/credential-request-store.js";
 import { getLogger } from "../logger.js";
-import { resolvePlatformAssistantIdOrUndefined } from "../platform-identity.js";
+import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 import { resolvePublicHttpBaseUrl } from "../runtime/client.js";
 import type { IpcRoute } from "./server.js";
 
@@ -76,7 +76,7 @@ export interface CreateCredentialRequestDeps {
    * Tunnel fallback, so a config-resolved (self-hosted/manual) URL never
    * loads identity.
    */
-  getPlatformAssistantId?: () => Promise<string | undefined>;
+  getCloudAssistantId?: () => Promise<string | undefined>;
   /**
    * Enable public ingress (if disabled) and start the Tunnel so the
    * minted link is actually reachable. Wired by the gateway entrypoint, which
@@ -97,7 +97,7 @@ export function createCredentialRequestIpcRoutes(
       handler: async (params?: Record<string, unknown>) => {
         const parsed = CreateCredentialRequestSchema.parse(params ?? {});
         return createCredentialRequest(config, configFile, parsed, {
-          getPlatformAssistantId: () => resolvePlatformAssistantIdOrUndefined(),
+          getCloudAssistantId: () => resolveCloudAssistantIdOrUndefined(),
           ensurePublicIngressLive,
         });
       },
@@ -114,7 +114,7 @@ export async function createCredentialRequest(
   const publicBaseUrl = await resolvePublicHttpBaseUrl(
     config,
     configFile,
-    deps.getPlatformAssistantId,
+    deps.getCloudAssistantId,
   );
   if (!publicBaseUrl) {
     return { ok: false, error: "no_public_base_url" };

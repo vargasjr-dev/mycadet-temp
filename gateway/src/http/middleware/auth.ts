@@ -13,7 +13,7 @@ import { AuthFallbackCountTracker } from "../../auth-fallback-count-tracker.js";
 import { AuthFallbackLogThrottle } from "../../auth-fallback-log-throttle.js";
 import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
 import { getLogger } from "../../logger.js";
-import { readStoredPlatformUserId } from "../../platform-user-id.js";
+import { readStoredCloudUserId } from "../../platform-user-id.js";
 import { isLoopbackPeer } from "../../util/is-loopback-address.js";
 import { requestArrivedViaEdgeProxy } from "../edge-forwarded-header.js";
 
@@ -134,7 +134,7 @@ export function createAuthMiddleware(
     let storedUserId: string | undefined;
     let unreachable = false;
     try {
-      const result = await readStoredPlatformUserId();
+      const result = await readStoredCloudUserId();
       storedUserId = result.userId;
       unreachable = result.unreachable;
     } catch (err) {

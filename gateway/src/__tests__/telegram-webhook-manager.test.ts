@@ -44,8 +44,8 @@ mock.module("../feature-flag-resolver.js", () => ({
 
 const { reconcileTelegramWebhook } =
   await import("../telegram/webhook-manager.js");
-const { applyPlatformIdentityIds, _resetPlatformIdentityForTests } =
-  await import("../platform-identity.js");
+const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
+  await import("../cloud-identity.js");
 
 afterEach(() => {
   fetchMock = mock(async () => new Response());
@@ -56,7 +56,7 @@ afterEach(() => {
   delete process.env.IS_PLATFORM;
   delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
-  _resetPlatformIdentityForTests();
+  _resetCloudIdentityForTests();
 });
 
 function makeTelegramResponse(result: unknown) {
@@ -97,10 +97,10 @@ function makeCaches(
     "platformAssistantId" in opts
       ? (opts.platformAssistantId ?? undefined)
       : undefined;
+  if (platformBaseUrl) process.env.CADET_PLATFORM_URL = platformBaseUrl;
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: botToken,
     [credentialKey("telegram", "webhook_secret")]: webhookSecret,
-    [credentialKey("cadet", "platform_base_url")]: platformBaseUrl,
     [credentialKey("cadet", "assistant_api_key")]: assistantApiKey,
     [credentialKey("cadet", "platform_assistant_id")]: platformAssistantId,
   };
@@ -109,7 +109,7 @@ function makeCaches(
     invalidate: () => {},
   } as unknown as CredentialCache;
   if (platformAssistantId) {
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId: platformAssistantId,
       organizationId: "",
       userId: "",
@@ -886,7 +886,7 @@ describe("reconcileTelegramWebhook", () => {
     );
   });
 
-  test("credential cache for assistant ID, base URL, and auth key", async () => {
+  test("credential cache for assistant ID and auth key; base URL rides the env", async () => {
     const calls: {
       method: string;
       body: unknown;
@@ -897,7 +897,6 @@ describe("reconcileTelegramWebhook", () => {
 
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: "https://cache-platform.example.com",
       assistantApiKey: "cache-api-key",
       platformAssistantId: "cache-assistant-id",
     });
@@ -917,7 +916,7 @@ describe("reconcileTelegramWebhook", () => {
           return new Response(
             JSON.stringify({
               callback_url:
-                "https://cache-platform.example.com/v1/gateway/callbacks/cache-assistant-id/webhooks/telegram/",
+                "https://env-platform.example.com/v1/gateway/callbacks/cache-assistant-id/webhooks/telegram/",
             }),
             {
               status: 201,
@@ -946,16 +945,17 @@ describe("reconcileTelegramWebhook", () => {
 
     expect(calls).toHaveLength(3);
     expect(calls[0].method).toBe("registerCallbackRoute");
-    // platform_base_url: credential cache takes precedence over env var
+    // The base URL resolves from the environment only; ids and the API key
+    // come from the credential cache.
     expect(calls[0].body).toEqual({
       assistant_id: "cache-assistant-id",
       callback_path: "webhooks/telegram",
       type: "telegram",
     });
     expect(calls[0].headers?.Authorization).toBe("Api-Key cache-api-key");
-    // Registration URL should use cache platform URL
+    // Registration URL should use the env platform URL
     expect((calls[2].body as any).url).toBe(
-      "https://cache-platform.example.com/v1/gateway/callbacks/cache-assistant-id/webhooks/telegram/",
+      "https://env-platform.example.com/v1/gateway/callbacks/cache-assistant-id/webhooks/telegram/",
     );
   });
 
@@ -1017,15 +1017,14 @@ const TUNNEL_WEBHOOK_URL = `${TUNNEL_BASE_URL}/webhooks/telegram`;
  * rather than the value that was current when it was queued.
  */
 function makeLivePlatformCaches(readIngressUrl: () => string | undefined) {
+  process.env.CADET_PLATFORM_URL = "https://platform.example.com";
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: "test-bot-token",
     [credentialKey("telegram", "webhook_secret")]: "test-webhook-secret",
-    [credentialKey("cadet", "platform_base_url")]:
-      "https://platform.example.com",
     [credentialKey("cadet", "assistant_api_key")]: "ast-managed-key",
     [credentialKey("cadet", "platform_assistant_id")]: PLATFORM_ASSISTANT_ID,
   };
-  applyPlatformIdentityIds({
+  applyCloudIdentityIds({
     assistantId: PLATFORM_ASSISTANT_ID,
     organizationId: "",
     userId: "",

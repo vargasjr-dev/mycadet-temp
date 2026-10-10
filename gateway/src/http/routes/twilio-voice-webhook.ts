@@ -2,7 +2,7 @@ import { LOCAL_ASSISTANT_ID } from "../../assistant-id.js";
 import type { ConfigFileCache } from "../../config-file-cache.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
-import { resolvePlatformAssistantIdOrUndefined } from "../../platform-identity.js";
+import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import { resolveAdmissionPolicy } from "../../risk/admission-policy-cache.js";
 import {
   CircuitBreakerOpenError,
@@ -204,7 +204,7 @@ export function createTwilioVoiceWebhookHandler(
     }
 
     try {
-      const platformAssistantId = await resolvePlatformAssistantIdOrUndefined();
+      const platformAssistantId = await resolveCloudAssistantIdOrUndefined();
       const runtimeResponse = await forwardTwilioVoiceWebhook(
         config,
         params,

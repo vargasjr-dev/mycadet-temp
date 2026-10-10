@@ -14,7 +14,7 @@
 
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
-import { resolvePlatformAssistantIdOrUndefined } from "../../platform-identity.js";
+import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import {
   CircuitBreakerOpenError,
   forwardTwilioVoiceWebhook,
@@ -239,7 +239,7 @@ async function forwardToAssistant(
   caches?: TwilioValidationCaches,
 ): Promise<Response> {
   try {
-    const platformAssistantId = await resolvePlatformAssistantIdOrUndefined();
+    const platformAssistantId = await resolveCloudAssistantIdOrUndefined();
     const runtimeResponse = await forwardTwilioVoiceWebhook(
       config,
       params,

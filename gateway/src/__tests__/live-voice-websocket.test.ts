@@ -46,7 +46,7 @@ mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
 }));
 mock.module("../platform-user-id.js", () => ({
-  readStoredPlatformUserId: async () => {
+  readStoredCloudUserId: async () => {
     const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
   },

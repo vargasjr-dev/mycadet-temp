@@ -125,7 +125,7 @@ describe("credential-request mint (IPC)", () => {
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
       {
-        getPlatformAssistantId: async () => "assistant-123",
+        getCloudAssistantId: async () => "assistant-123",
         ensurePublicIngressLive,
       },
     );
@@ -150,15 +150,15 @@ describe("credential-request mint (IPC)", () => {
   });
 
   test("does not read the platform assistant id when the config URL resolves", async () => {
-    const getPlatformAssistantId = mock(async () => "assistant-123");
+    const getCloudAssistantId = mock(async () => "assistant-123");
     const result = await createCredentialRequest(
       fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
       fakeConfigFile("https://assistant.example.com"),
       { service: "github", field: "api_token" },
-      { getPlatformAssistantId },
+      { getCloudAssistantId },
     );
     expect(result.ok).toBe(true);
-    expect(getPlatformAssistantId).not.toHaveBeenCalled();
+    expect(getCloudAssistantId).not.toHaveBeenCalled();
   });
 
   test("falls back to TUNNEL_BASE_URL + platform assistant id when the config URL is empty", async () => {
@@ -168,7 +168,7 @@ describe("credential-request mint (IPC)", () => {
       fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
-      { getPlatformAssistantId: async () => "assistant-123" },
+      { getCloudAssistantId: async () => "assistant-123" },
     );
 
     if (!result.ok) throw new Error(`mint failed: ${result.error}`);

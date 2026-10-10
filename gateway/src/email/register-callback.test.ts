@@ -8,9 +8,9 @@ import {
   resetMockFetch,
 } from "../__tests__/mock-fetch.js";
 import {
-  applyPlatformIdentityIds,
-  _resetPlatformIdentityForTests,
-} from "../platform-identity.js";
+  applyCloudIdentityIds,
+  _resetCloudIdentityForTests,
+} from "../cloud-identity.js";
 import {
   registerEmailCallbackRoute,
   EMAIL_CALLBACK_PATH,
@@ -20,7 +20,7 @@ afterEach(() => {
   resetMockFetch();
   delete process.env.CADET_PLATFORM_URL;
   delete process.env.ASSISTANT_API_KEY;
-  _resetPlatformIdentityForTests();
+  _resetCloudIdentityForTests();
 });
 
 function makeConfigFile(
@@ -41,10 +41,7 @@ function makeCaches(opts: {
 }): { credentials: CredentialCache; configFile?: ConfigFileCache } {
   const store = new Map<string, string>();
   if (opts.platformBaseUrl)
-    store.set(
-      credentialKey("cadet", "platform_base_url"),
-      opts.platformBaseUrl,
-    );
+    process.env.CADET_PLATFORM_URL = opts.platformBaseUrl;
   if (opts.assistantApiKey)
     store.set(
       credentialKey("cadet", "assistant_api_key"),
@@ -55,7 +52,7 @@ function makeCaches(opts: {
       credentialKey("cadet", "platform_assistant_id"),
       opts.platformAssistantId,
     );
-    applyPlatformIdentityIds({
+    applyCloudIdentityIds({
       assistantId: opts.platformAssistantId,
       organizationId: "org-abc",
       userId: "user-123",

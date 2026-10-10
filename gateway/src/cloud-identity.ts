@@ -21,24 +21,23 @@ import { readCredentialResult } from "./credential-reader.js";
 import { fetchImpl } from "./fetch.js";
 import { getLogger } from "./logger.js";
 
-const log = getLogger("platform-identity");
+const log = getLogger("cloud-identity");
 
-export const PLATFORM_IDENTITY_VALIDATE_PATH =
+export const CLOUD_IDENTITY_VALIDATE_PATH =
   "/v1/internal/assistants/validate/";
 
 const VALIDATE_TIMEOUT_MS = 5_000;
 const ENSURE_COOLDOWN_MS = 10_000;
 
 const ASSISTANT_API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
-const PLATFORM_BASE_URL_ACCOUNT = credentialKey("cadet", "platform_base_url");
 
-export type PlatformIdentityIds = {
+export type CloudIdentityIds = {
   assistantId: string;
   organizationId: string;
   userId: string;
 };
 
-export type StoredPlatformUserId = {
+export type StoredCloudUserId = {
   userId: string | undefined;
   unreachable: boolean;
 };
@@ -65,37 +64,37 @@ function envTrim(name: string): string {
   return process.env[name]?.trim() ?? "";
 }
 
-function getPlatformAssistantId(): string {
+function getCloudAssistantId(): string {
   return (
-    platformAssistantIdOverride || envTrim("PLATFORM_ASSISTANT_ID")
+    platformAssistantIdOverride || envTrim("CLOUD_ASSISTANT_ID")
   ).trim();
 }
 
-function getPlatformOrganizationId(): string {
+function getCloudOrganizationId(): string {
   return (
-    platformOrganizationIdOverride || envTrim("PLATFORM_ORGANIZATION_ID")
+    platformOrganizationIdOverride || envTrim("CLOUD_ORGANIZATION_ID")
   ).trim();
 }
 
-function getPlatformUserId(): string {
-  return (platformUserIdOverride || envTrim("PLATFORM_USER_ID")).trim();
+function getCloudUserId(): string {
+  return (platformUserIdOverride || envTrim("CLOUD_USER_ID")).trim();
 }
 
 function hasBoundIdentity(): boolean {
-  return Boolean(getPlatformAssistantId() && getPlatformUserId());
+  return Boolean(getCloudAssistantId() && getCloudUserId());
 }
 
 function identityFingerprint(apiKey: string, baseUrl: string): string {
   return `${baseUrl}\0${apiKey}`;
 }
 
-function clearPlatformIdentityOverrides(): void {
+function clearCloudIdentityOverrides(): void {
   platformAssistantIdOverride = undefined;
   platformOrganizationIdOverride = undefined;
   platformUserIdOverride = undefined;
 }
 
-export function applyPlatformIdentityIds(ids: PlatformIdentityIds): void {
+export function applyCloudIdentityIds(ids: CloudIdentityIds): void {
   if (ids.assistantId) {
     platformAssistantIdOverride = ids.assistantId;
   }
@@ -111,14 +110,14 @@ export function applyPlatformIdentityIds(ids: PlatformIdentityIds): void {
  * Use the gateway credential cache for API key / base URL lookups so a
  * vault outage can still retry validate with last-good secrets.
  */
-export function bindPlatformIdentityCredentialCache(
+export function bindCloudIdentityCredentialCache(
   cache: CredentialCache | undefined,
 ): void {
   credentialCache = cache;
 }
 
 /** @internal Test-only: drop in-memory identity and in-flight ensure state. */
-export function _resetPlatformIdentityForTests(): void {
+export function _resetCloudIdentityForTests(): void {
   platformAssistantIdOverride = undefined;
   platformOrganizationIdOverride = undefined;
   platformUserIdOverride = undefined;
@@ -132,7 +131,7 @@ export function _resetPlatformIdentityForTests(): void {
 
 /** @internal Alias so existing auth tests can reset the bound owner id. */
 export function _resetLastKnownPlatformUserIdForTest(): void {
-  _resetPlatformIdentityForTests();
+  _resetCloudIdentityForTests();
 }
 
 /**
@@ -141,11 +140,11 @@ export function _resetLastKnownPlatformUserIdForTest(): void {
  * Returns null when the platform is unreachable, refuses the key, or the
  * body has no ids. Never throws.
  */
-export async function fetchPlatformIdentityIds(
+export async function fetchCloudIdentityIds(
   baseUrl: string,
   apiKey: string,
-): Promise<PlatformIdentityIds | null> {
-  const url = `${baseUrl.replace(/\/+$/, "")}${PLATFORM_IDENTITY_VALIDATE_PATH}`;
+): Promise<CloudIdentityIds | null> {
+  const url = `${baseUrl.replace(/\/+$/, "")}${CLOUD_IDENTITY_VALIDATE_PATH}`;
   try {
     const res = await fetchImpl(url, {
       method: "POST",
@@ -213,18 +212,16 @@ async function readAuthPrerequisites(): Promise<{
   const envKey = envTrim("ASSISTANT_API_KEY");
   const envUrl = envTrim("CADET_PLATFORM_URL").replace(/\/+$/, "");
 
-  const [apiKeyRead, baseUrlRead] = await Promise.all([
-    readCredentialOrEnv(ASSISTANT_API_KEY_ACCOUNT, envKey),
-    readCredentialOrEnv(PLATFORM_BASE_URL_ACCOUNT, envUrl),
-  ]);
+  const apiKeyRead = await readCredentialOrEnv(
+    ASSISTANT_API_KEY_ACCOUNT,
+    envKey,
+  );
 
-  const apiKey = apiKeyRead.value;
-  const baseUrl = baseUrlRead.value.replace(/\/+$/, "");
-  const unreachable =
-    (!apiKey && apiKeyRead.unreachable) ||
-    (!baseUrl && baseUrlRead.unreachable);
-
-  return { apiKey, baseUrl, unreachable };
+  return {
+    apiKey: apiKeyRead.value,
+    baseUrl: envUrl,
+    unreachable: !apiKeyRead.value && apiKeyRead.unreachable,
+  };
 }
 
 /**
@@ -236,7 +233,7 @@ async function readAuthPrerequisites(): Promise<{
  * validate for the same credentials is still inside the cooldown window.
  * Concurrent callers share one in-flight request.
  */
-export async function ensurePlatformIdentityIds(): Promise<void> {
+export async function ensureCloudIdentityIds(): Promise<void> {
   if (!ensureInFlight) {
     ensureInFlight = (async () => {
       try {
@@ -258,7 +255,7 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
           identityBoundToFingerprint !== undefined &&
           identityBoundToFingerprint !== fingerprint
         ) {
-          clearPlatformIdentityOverrides();
+          clearCloudIdentityOverrides();
           identityBoundToFingerprint = undefined;
         }
         if (
@@ -268,19 +265,19 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
           return;
         }
         lastAttemptFingerprint = fingerprint;
-        const ids = await fetchPlatformIdentityIds(baseUrl, apiKey);
+        const ids = await fetchCloudIdentityIds(baseUrl, apiKey);
         if (!ids) {
           nextEnsureAttemptAt = Date.now() + ENSURE_COOLDOWN_MS;
           return;
         }
-        applyPlatformIdentityIds(ids);
+        applyCloudIdentityIds(ids);
         identityBoundToFingerprint = fingerprint;
         nextEnsureAttemptAt = 0;
         log.info(
           {
-            hasAssistantId: Boolean(getPlatformAssistantId()),
-            hasOrganizationId: Boolean(getPlatformOrganizationId()),
-            hasUserId: Boolean(getPlatformUserId()),
+            hasAssistantId: Boolean(getCloudAssistantId()),
+            hasOrganizationId: Boolean(getCloudOrganizationId()),
+            hasUserId: Boolean(getCloudUserId()),
           },
           "Loaded platform identity from platform validate",
         );
@@ -293,16 +290,16 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
 }
 
 export async function resolvePlatformAssistantId(): Promise<string> {
-  await ensurePlatformIdentityIds();
-  return getPlatformAssistantId();
+  await ensureCloudIdentityIds();
+  return getCloudAssistantId();
 }
 
 export function peekPlatformAssistantId(): string | undefined {
-  const id = getPlatformAssistantId();
+  const id = getCloudAssistantId();
   return id || undefined;
 }
 
-export async function resolvePlatformAssistantIdOrUndefined(): Promise<
+export async function resolveCloudAssistantIdOrUndefined(): Promise<
   string | undefined
 > {
   const id = await resolvePlatformAssistantId();
@@ -310,8 +307,8 @@ export async function resolvePlatformAssistantIdOrUndefined(): Promise<
 }
 
 export async function resolvePlatformUserId(): Promise<string> {
-  await ensurePlatformIdentityIds();
-  return getPlatformUserId();
+  await ensureCloudIdentityIds();
+  return getCloudUserId();
 }
 
 /**
@@ -322,7 +319,7 @@ export async function resolvePlatformUserId(): Promise<string> {
  * prior successful resolve is cached. A cached owner is returned with
  * `unreachable: false` so callers keep treating the assistant as reachable.
  */
-export async function readStoredPlatformUserId(): Promise<StoredPlatformUserId> {
+export async function readStoredCloudUserId(): Promise<StoredCloudUserId> {
   const userId = await resolvePlatformUserId();
   if (userId) {
     return { userId, unreachable: false };
