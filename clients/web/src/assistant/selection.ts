@@ -15,7 +15,6 @@
 import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import {
   getActiveAssistant,
-  setActiveLockfileAssistant,
 } from "@/lib/local-mode";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
@@ -105,7 +104,4 @@ export function useGatedSelectedAssistantId(): string | null {
  */
 export async function setSelectedAssistant(id: string | null): Promise<void> {
   useResolvedAssistantsStore.getState().setSelectedAssistant(id);
-  if (id !== null) {
-    await setActiveLockfileAssistant(id);
-  }
 }

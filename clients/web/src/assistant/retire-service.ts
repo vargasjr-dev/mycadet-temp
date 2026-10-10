@@ -1,7 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
-  listAssistants,
   type RetireAssistantOptions,
   retireAssistantById,
 } from "@/assistant/api";
@@ -12,7 +11,6 @@ import {
   isLocalClient,
   isPairedAssistant,
   retireLocalAssistant,
-  syncPlatformAssistantsToLockfile,
 } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
@@ -20,7 +18,6 @@ import { forgetAssistantOnboarded } from "@/domains/onboarding/onboarded-assista
 import { clearResearchSnapshot } from "@/domains/onboarding/research-onboarding-persistence";
 import { removeLocalSetting } from "@/utils/local-settings";
 import { useAuthStore } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 
@@ -107,20 +104,6 @@ export async function retireAssistant(
             ? result.error.detail
             : "Failed to retire assistant.";
         return { ok: false, error: detail };
-      }
-      if (isLocalClient()) {
-        try {
-          const remaining = await listAssistants();
-          if (remaining.ok) {
-            await syncPlatformAssistantsToLockfile(
-              remaining.data,
-              useOrganizationStore.getState().currentOrganizationId ??
-                undefined,
-            );
-          }
-        } catch {
-          // Best-effort sync — the retire itself already succeeded.
-        }
       }
     }
 

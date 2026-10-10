@@ -3,7 +3,7 @@ import {
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
-import { getInjectedConfig } from "@/lib/injected-config";
+import { readInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
@@ -30,17 +30,12 @@ import { useLockfileStore } from "@/stores/lockfile-store";
 import {
   fetchGuardianTokenHost,
   GuardianTokenError,
-  isLocalModeHostAvailable,
   loadLockfileHost,
   pairingCancelHost,
   pairingPollHost,
   pairingStartHost,
   parseLockfile,
-  replacePlatformAssistantsHost,
   retireLocalAssistantHost,
-  renameLockfileAssistantHost,
-  saveLockfileAssistantHost,
-  stampLockfileAssistantOnboardedHost,
   unpairAssistantHost,
   wakeLocalAssistantHost,
 } from "@/runtime/local-mode-host";
@@ -86,7 +81,7 @@ const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 export { getPlatformRuntimeUrl };
 
 export function isCadetCloudRemote(): boolean {
-  return getInjectedConfig().remote === "cloud";
+  return readInjectedConfig().remote === "cloud";
 }
 
 function nonEmptyString(value: string | undefined): string | undefined {
@@ -99,7 +94,7 @@ function nonEmptyString(value: string | undefined): string | undefined {
  * `undefined`.
  */
 export function getRemoteGatewayAssistantName(): string | undefined {
-  return nonEmptyString(getInjectedConfig().assistantName);
+  return nonEmptyString(readInjectedConfig().assistantName);
 }
 
 /** Live persona name when hydrated, else the (possibly stale) name the edge injected at tunnel start. */
@@ -114,7 +109,7 @@ export function getRemoteAssistantDisplayName(): string | undefined {
  * callers must tolerate `undefined`.
  */
 export function getRemoteGatewayHubUrl(): string | undefined {
-  return nonEmptyString(getInjectedConfig().hubUrl);
+  return nonEmptyString(readInjectedConfig().hubUrl);
 }
 
 /**
@@ -126,7 +121,7 @@ export function getRemoteGatewayHubUrl(): string | undefined {
  * the only place the `remote` value selects a code path.
  */
 export function isServedGatewayRuntime(): boolean {
-  const remote = getInjectedConfig().remote;
+  const remote = readInjectedConfig().remote;
   return remote === "docker" || remote === "custom";
 }
 
@@ -173,8 +168,8 @@ export function isLocalClient(): boolean {
 }
 
 export function isPlatformDisabled(): boolean {
-  const config = getInjectedConfig();
-  if (config?.disablePlatform != null) {
+  const config = readInjectedConfig();
+  if (config.disablePlatform != null) {
     return !!config.disablePlatform;
   }
 
@@ -235,255 +230,6 @@ export function getLockfile(): Lockfile {
   const empty = { ...EMPTY_LOCKFILE };
   setCachedLockfile(empty, false);
   return empty;
-}
-
-// ---------------------------------------------------------------------------
-// Lockfile mutation
-// ---------------------------------------------------------------------------
-
-/**
- * Write an assistant entry to the lockfile on disk and refresh the cache,
- * making it the active assistant. Silently no-ops on a write failure: the
- * cache only advances once the on-disk write succeeds.
- */
-export async function saveLockfileAssistant(assistant: {
-  assistantId: string;
-  name?: string;
-  cloud: string;
-  runtimeUrl: string;
-  hatchedAt: string;
-  organizationId?: string;
-  platformAssistantId?: string;
-  platformBaseUrl?: string;
-  platformOrganizationId?: string;
-}): Promise<void> {
-  const result = await saveLockfileAssistantHost(
-    assistant,
-    assistant.assistantId,
-  );
-  if (result.ok) {
-    commitLockfile(result.lockfile);
-  }
-}
-
-/**
- * Record a managed (platform) assistant in the lockfile. The desktop build's
- * assistant list and switcher are lockfile-driven, so every managed hatch —
- * foreground hatching screen or headless background hatch — registers its
- * assistant here, stamped with the org whose session hatched it.
- *
- * The org id is a parameter because the organization store imports back through
- * the auth store into this module; reading it here would cycle.
- */
-export async function saveManagedLockfileAssistant(
-  assistantId: string,
-  name: string | undefined,
-  organizationId: string | undefined,
-): Promise<void> {
-  await saveLockfileAssistant({
-    assistantId,
-    name,
-    cloud: "cadet",
-    runtimeUrl: getPlatformRuntimeUrl(),
-    hatchedAt: new Date().toISOString(),
-    organizationId,
-  });
-}
-
-/**
- * Update an existing assistant entry without changing the lockfile's active
- * assistant pointer.
- */
-export async function updateLockfileAssistant(
-  assistant: LockfileAssistant,
-): Promise<void> {
-  const result = await saveLockfileAssistantHost({ ...assistant }, undefined);
-  if (result.ok) {
-    commitLockfile(result.lockfile);
-  }
-}
-
-/**
- * Rename an existing assistant entry without touching its other fields or the
- * active assistant pointer. Runs through the host's rename-if-present
- * operation, which decides against the on-disk registry and refuses missing
- * entries and unreadable files instead of upserting, so a stale renderer
- * cache can never resurrect a retired assistant. The renderer-side guards
- * below are cheap early-outs, not the safety boundary.
- *
- * Resolves `true` when there is nothing left to do (converged, no-op guard,
- * or a successful write); `false` when the host write failed or refused, so
- * callers can retry.
- */
-export async function renameLockfileAssistant(
-  assistantId: string,
-  name: string,
-): Promise<boolean> {
-  const trimmed = name.trim();
-  if (!trimmed) {
-    // Fresh assistants report "": never write an empty name.
-    return true;
-  }
-  if (!isLocalModeHostAvailable()) {
-    return true;
-  }
-  const entry = getLockfileAssistant(assistantId);
-  if (!entry || entry.name === trimmed) {
-    // Rename-only: never create an entry, never write redundantly.
-    return true;
-  }
-  const result = await renameLockfileAssistantHost(assistantId, trimmed);
-  if (result.ok) {
-    commitLockfile(result.lockfile);
-    return true;
-  }
-  return false;
-}
-
-/**
- * Stamp `onboardedAt` on an existing entry so the CLI and tray see that this
- * assistant finished first-run onboarding. Runs through the host's
- * stamp-if-present operation for the same reason the rename above does: the
- * host decides against the on-disk registry, so a completion racing a retire
- * cannot re-create the entry from a stale renderer snapshot. The guards below
- * are cheap early-outs, not the safety boundary.
- *
- * A cloud-only assistant simply has no lockfile entry; the device-scoped
- * record in `onboarded-assistant-record.ts` is what covers it.
- */
-export async function markLockfileAssistantOnboarded(
-  assistantId: string,
-  onboardedAt: string,
-): Promise<void> {
-  if (!isLocalModeHostAvailable()) {
-    return;
-  }
-  const entry = getLockfileAssistant(assistantId);
-  if (!entry || entry.onboardedAt) {
-    return;
-  }
-  const result = await stampLockfileAssistantOnboardedHost(
-    assistantId,
-    onboardedAt,
-  );
-  if (result.ok) {
-    commitLockfile(result.lockfile);
-  }
-}
-
-/**
- * Mark an already-known assistant as the lockfile's active assistant, leaving
- * its other fields untouched. Used when switching managed assistants so the
- * lockfile `activeAssistant` — read by the macOS tray, the CLI, and the native
- * client — tracks the in-app selection. No-ops in the browser (no lockfile
- * host) and when the id isn't a known entry.
- */
-export async function setActiveLockfileAssistant(
-  assistantId: string,
-): Promise<void> {
-  if (!isLocalModeHostAvailable()) {
-    return;
-  }
-
-  const entry = getLockfile().assistants.find(
-    (a) => a.assistantId === assistantId,
-  );
-  if (!entry) {
-    return;
-  }
-  const result = await saveLockfileAssistantHost({ ...entry }, assistantId);
-  if (result.ok) {
-    commitLockfile(result.lockfile);
-  }
-}
-
-/**
- * Replace all platform-hosted assistant entries in the lockfile with the
- * current set from the API. Removes stale entries and adds new ones atomically.
- *
- * `organizationId` is stamped onto every platform entry so the host proxy can
- * scope requests without guessing. The caller passes the active org: the API
- * list is org-scoped by the `Cadet-Organization-Id` header, so every assistant
- * in `assistants` belongs to that org.
- */
-export async function syncPlatformAssistantsToLockfile(
-  assistants: Array<{
-    id: string;
-    name?: string;
-    is_local: boolean;
-    created: string;
-  }>,
-  organizationId?: string,
-  shouldApply: () => boolean = () => true,
-): Promise<void> {
-  // Without a resolved org we can't scope the replace; a full wipe here would
-  // drop other orgs' platform entries. Skip — a later sync re-runs with the org.
-  if (organizationId == null) {
-    return;
-  }
-  // `shouldApply` lets a superseded caller (e.g. an out-of-date session probe)
-  // back out before the host replace, and again before committing the result.
-  if (!shouldApply()) {
-    return;
-  }
-
-  const platformAssistants = assistants
-    .filter((a) => !a.is_local)
-    .map((a) => ({
-      assistantId: a.id,
-      ...(a.name != null && { name: a.name }),
-      cloud: "cadet",
-      runtimeUrl: getPlatformRuntimeUrl(),
-      hatchedAt: a.created,
-      ...(organizationId != null && { organizationId }),
-    }));
-
-  const result = await replacePlatformAssistantsHost(
-    platformAssistants,
-    organizationId,
-  );
-  if (result.ok && shouldApply()) {
-    commitLockfile(result.lockfile);
-  }
-}
-
-/**
- * Remove a platform-hosted assistant's lockfile entry: a device-local
- * "forget" that never touches the assistant itself. Rides the platform-replace
- * host channel scoped to the entry's org: the remaining platform entries are
- * written back minus the target, so local entries and other orgs' platform
- * entries are untouched. A platform sync while logged in re-adds the
- * assistant, so this only affects what the device lists while logged out.
- */
-export async function removePlatformAssistantFromLockfile(
-  assistantId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const entry = getLockfileAssistant(assistantId);
-  if (!entry || !isPlatformAssistant(entry)) {
-    return { ok: false, error: "This assistant isn't in the local list." };
-  }
-  // Only the target org's entries ride the replace payload: the host treats
-  // every supplied id as replaced-by-payload, and the renderer's parsed copies
-  // drop host-only fields, so other orgs' on-disk records must stay out of the
-  // payload to survive raw. A legacy org-less entry can't be scoped; its
-  // unscoped replace resends every platform entry (minus the target).
-  const remaining = getPlatformAssistants()
-    .filter((a) => a.assistantId !== assistantId)
-    .filter(
-      (a) =>
-        entry.organizationId == null ||
-        a.organizationId === entry.organizationId,
-    )
-    .map((a) => ({ ...a }));
-  const result = await replacePlatformAssistantsHost(
-    remaining,
-    entry.organizationId,
-  );
-  if (!result.ok) {
-    return { ok: false, error: result.error || "Failed to remove assistant." };
-  }
-  commitLockfile(result.lockfile);
-  return { ok: true };
 }
 
 /**

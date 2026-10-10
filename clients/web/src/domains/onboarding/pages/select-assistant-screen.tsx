@@ -28,7 +28,6 @@ import {
 import {
   isCliWakeableAssistant,
   isLocalClient,
-  removePlatformAssistantFromLockfile,
   UnresolvedLocalGatewayError,
 } from "@/lib/local-mode";
 import { AddRemoteOriginDialog } from "@/domains/onboarding/components/add-remote-origin-dialog";
@@ -519,29 +518,17 @@ export function SelectAssistantScreen() {
       setRemovePending(false);
       return;
     }
-    try {
-      const result = await removePlatformAssistantFromLockfile(removeTarget.id);
-      if (result.ok) {
-        // The lockfile subscription reconciles the list and the selection,
-        // but not the lifecycle's active id: without this, navigating back
-        // to /assistant could admit the removed assistant with no
-        // connection behind it.
-        const resolvedStore = useResolvedAssistantsStore.getState();
-        if (resolvedStore.activeAssistantId === removeTarget.id) {
-          resolvedStore.setActiveAssistantId(null);
-        }
-        // Same cleanup as the paired path: a later login re-adds this id,
-        // and a stale last-seen entry or query would render the old avatar.
-        forgetAssistantAvatar(queryClient, removeTarget.id);
-        removedThisVisitRef.current = true;
-        setRemoveTarget(null);
-      } else {
-        setRemoveError(result.error ?? "Failed to remove. Please try again.");
-      }
-    } catch (err) {
-      console.error("selectAssistant.removeFromDevice failed", err);
-      setRemoveError("Failed to remove. Please try again.");
+    // A later login re-adds a forgotten id, and a stale last-seen entry or
+    // query would render the old avatar. Clearing the lifecycle's active id
+    // matters too: without it, navigating back to /assistant could admit the
+    // removed assistant with no connection behind it.
+    const resolvedStore = useResolvedAssistantsStore.getState();
+    if (resolvedStore.activeAssistantId === removeTarget.id) {
+      resolvedStore.setActiveAssistantId(null);
     }
+    forgetAssistantAvatar(queryClient, removeTarget.id);
+    removedThisVisitRef.current = true;
+    setRemoveTarget(null);
     setRemovePending(false);
   };
 

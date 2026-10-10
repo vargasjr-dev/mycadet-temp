@@ -154,19 +154,20 @@ const LOCAL_HOST_UNAVAILABLE_ERROR =
  * action (wake / hatch / retire).
  *
  * Detected from the runtime config the capable hosts inject
- * (`window.__CADET_CONFIG__`): nothing injected (or a "local" remote) means a
- * local host; a served-remote config (a self-hosted gateway edge or the cloud
- * proxy) means none on this device.
+ * (`window.__CADET_CONFIG__`): a "local" remote means a host on this device;
+ * a served-remote config (a self-hosted gateway edge or the cloud proxy)
+ * means none. The managed web build injects nothing at all and has no host
+ * either — which is why absence is checked on the raw window instead of
+ * through {@link readInjectedConfig}'s local default.
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
     return true;
   }
-  const config = readInjectedConfig();
-  if (!config) {
+  if (window.__CADET_CONFIG__ === undefined) {
     return false;
   }
-  return config.remote === undefined || config.remote === "local";
+  return readInjectedConfig().remote === "local";
 }
 
 /**
@@ -260,116 +261,6 @@ export async function loadLockfileHost(): Promise<Lockfile> {
     throw new Error(`lockfile fetch failed: ${res.status}`);
   }
   return res.json() as Promise<Lockfile>;
-}
-
-/**
- * Insert or update one assistant in the lockfile and optionally set the active
- * assistant. Resolves with the updated lockfile or a `{ ok: false, error }`
- * failure rather than throwing, matching `hatchLocalAssistant`.
- */
-export async function saveLockfileAssistantHost(
-  assistant: Record<string, unknown>,
-  activeAssistant: string | undefined,
-): Promise<LockfileWriteResult> {
-  if (isElectron()) {
-    return window.cadet!.localMode.saveLockfileAssistant(
-      assistant,
-      activeAssistant,
-    );
-  }
-
-  return postLocalCommand<LockfileWriteResult>(
-    "/assistant/__local/lockfile",
-    { assistant, activeAssistant },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Rename an existing lockfile entry through the host's rename-if-present
- * operation. Unlike {@link saveLockfileAssistantHost}'s upsert, the host
- * decides against its current on-disk registry and refuses when the entry is
- * missing or the file is unreadable, so a stale renderer cache can never
- * resurrect a retired assistant or replace a registry the host could not
- * read. Older Electron hosts that predate the IPC channel degrade to a
- * structured failure rather than falling back to the upsert (which would
- * reintroduce the hazard); the name sync simply waits for the app update.
- */
-export async function renameLockfileAssistantHost(
-  assistantId: string,
-  name: string,
-): Promise<LockfileWriteResult> {
-  if (isElectron()) {
-    const rename = window.cadet!.localMode.renameLockfileAssistant;
-    if (!rename) {
-      return {
-        ok: false,
-        error: "Renaming is not supported by this app version",
-      };
-    }
-    return rename(assistantId, name);
-  }
-
-  return postLocalCommand<LockfileWriteResult>(
-    "/assistant/__local/lockfile",
-    { rename: { assistantId, name } },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Stamp `onboardedAt` on an existing lockfile entry through the host's
- * update-only operation, for the same reason {@link renameLockfileAssistantHost}
- * exists: a completion racing a retire must not resurrect the entry from a
- * stale renderer snapshot. Older Electron hosts that predate the channel
- * degrade to a structured failure; the stamp still lands in the renderer's
- * device-scoped record, which is what the routing guards read.
- */
-export async function stampLockfileAssistantOnboardedHost(
-  assistantId: string,
-  onboardedAt: string,
-): Promise<LockfileWriteResult> {
-  if (isElectron()) {
-    const stamp = window.cadet!.localMode.stampLockfileAssistantOnboarded;
-    if (!stamp) {
-      return {
-        ok: false,
-        error: "Recording onboarding is not supported by this app version",
-      };
-    }
-    return stamp(assistantId, onboardedAt);
-  }
-
-  return postLocalCommand<LockfileWriteResult>(
-    "/assistant/__local/lockfile",
-    { onboarded: { assistantId, onboardedAt } },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
-}
-
-/**
- * Replace the platform (`cloud === "cadet"`) assistants in the lockfile with
- * the provided set, preserving local assistants. When `organizationId` is
- * given, only that org's platform entries are replaced — other orgs' entries
- * are preserved; omitting it does the legacy full replace. Same never-throw
- * contract as `saveLockfileAssistantHost`.
- */
-export async function replacePlatformAssistantsHost(
-  platformAssistants: Array<Record<string, unknown>>,
-  organizationId?: string,
-): Promise<LockfileWriteResult> {
-  if (isElectron()) {
-    return window.cadet!.localMode.replacePlatformAssistants(
-      platformAssistants,
-      organizationId,
-    );
-  }
-
-  return postLocalCommand<LockfileWriteResult>(
-    "/assistant/__local/lockfile",
-    { syncPlatform: true, platformAssistants, organizationId },
-    LOCAL_HOST_UNAVAILABLE_ERROR,
-  );
 }
 
 /**

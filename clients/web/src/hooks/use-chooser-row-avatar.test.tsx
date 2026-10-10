@@ -182,7 +182,7 @@ const initialOrganizationState = useOrganizationStore.getState();
 const { chooserRowAvatarCacheQueryKey, persistLastSeenAvatar } =
   await import("@/lib/persist-last-seen-avatar");
 const { platformAvatarUrlsQueryKey } =
-  await import("@/hooks/use-platform-avatar-urls");
+  await import("@/hooks/use-cloud-avatar-urls");
 const { resetAvatarSupersedeForTests } = await import("@/lib/avatar-supersede");
 
 /** Past the window a bare avatar stays fresh for. */
@@ -572,7 +572,7 @@ describe("useChooserRowAvatar", () => {
       });
 
     beforeEach(() => {
-      localClient = true;
+      cloudRemote = false;
       signInToPlatform();
       listAssistants.mockResolvedValue({
         ok: true,
@@ -774,13 +774,8 @@ describe("useChooserRowAvatar", () => {
       });
     });
 
-    test.each([
-      ["pure cloud", () => (localClient = false)],
-      ["gateway auth", () => (gatewayAuthEnabled = true)],
-    ])(
-      "a platform row under %s never consults the map",
-      async (_l, arrange) => {
-        arrange();
+    test("a platform row never consults the map in cloud-remote mode", async () => {
+        cloudRemote = true;
         const { result } = renderHook(
           () => useChooserRowAvatar(platformRow("other", { cloud: "cadet" })),
           { wrapper: createWrapper() },
@@ -907,7 +902,6 @@ describe("useChooserRowAvatar", () => {
   });
 
   test("connected row delegates to useAssistantAvatar even when the gate is closed", async () => {
-    localClient = true;
     const { result } = renderHook(
       () => useChooserRowAvatar(platformRow("active", { isLocal: true })),
       { wrapper: createWrapper() },

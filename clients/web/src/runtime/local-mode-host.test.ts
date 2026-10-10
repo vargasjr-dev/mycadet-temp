@@ -10,9 +10,6 @@ const {
   GuardianTokenError,
   hatchLocalAssistant,
   loadLockfileHost,
-  renameLockfileAssistantHost,
-  saveLockfileAssistantHost,
-  replacePlatformAssistantsHost,
   retireLocalAssistantHost,
   unpairAssistantHost,
   pairingStartHost,
@@ -34,7 +31,7 @@ const realFetch = globalThis.fetch;
 
 type WindowWithConfig = {
   cadet?: unknown;
-  __CADET_CONFIG__?: { mode?: string };
+  __CADET_CONFIG__?: { remote?: "local" | "docker" | "custom" | "cloud" };
 };
 
 beforeEach(() => {
@@ -174,161 +171,6 @@ describe("loadLockfileHost", () => {
 
     expect(await loadLockfileHost()).toEqual(lockfile);
     expect(readLockfile).toHaveBeenCalledTimes(1);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("saveLockfileAssistantHost", () => {
-  test("web/dev host POSTs the assistant and active id to the lockfile middleware", async () => {
-    const fetchMock = mock(async () => ({
-      json: async () => ({ ok: true, lockfile: {} }),
-    }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await saveLockfileAssistantHost({ assistantId: "a-1" }, "a-1");
-
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/assistant/__local/lockfile");
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({
-      assistant: { assistantId: "a-1" },
-      activeAssistant: "a-1",
-    });
-  });
-
-  test("Electron host writes through the bridge and never touches fetch", async () => {
-    const saveLockfileAssistant = mock(async () => ({
-      ok: true,
-      lockfile: {},
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ saveLockfileAssistant });
-
-    await saveLockfileAssistantHost({ assistantId: "a-1" }, "a-1");
-
-    expect(saveLockfileAssistant).toHaveBeenCalledWith(
-      { assistantId: "a-1" },
-      "a-1",
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("renameLockfileAssistantHost", () => {
-  test("web/dev host POSTs the rename body shape to the lockfile middleware", async () => {
-    const lockfile = { assistants: [], activeAssistant: null };
-    const fetchMock = mock(async () => ({
-      json: async () => ({ ok: true, lockfile }),
-    }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    const result = await renameLockfileAssistantHost("a-1", "Credence");
-
-    expect(result).toEqual({ ok: true, lockfile });
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/assistant/__local/lockfile");
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({
-      rename: { assistantId: "a-1", name: "Credence" },
-    });
-  });
-
-  test("web/dev host surfaces the host's structured refusal", async () => {
-    globalThis.fetch = mock(async () => ({
-      json: async () => ({ ok: false, error: "No lockfile entry" }),
-    })) as unknown as typeof fetch;
-
-    const result = await renameLockfileAssistantHost("gone", "Credence");
-
-    expect(result).toEqual({ ok: false, error: "No lockfile entry" });
-  });
-
-  test("Electron host renames through the bridge and never touches fetch", async () => {
-    const renameLockfileAssistant = mock(async () => ({
-      ok: true,
-      lockfile: {},
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ renameLockfileAssistant });
-
-    await renameLockfileAssistantHost("a-1", "Credence");
-
-    expect(renameLockfileAssistant).toHaveBeenCalledWith("a-1", "Credence");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("older Electron shell without the channel refuses without falling back to the upsert", async () => {
-    const saveLockfileAssistant = mock(async () => ({
-      ok: true,
-      lockfile: {},
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ saveLockfileAssistant });
-
-    const result = await renameLockfileAssistantHost("a-1", "Credence");
-
-    expect(result).toEqual({
-      ok: false,
-      error: "Renaming is not supported by this app version",
-    });
-    expect(saveLockfileAssistant).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("replacePlatformAssistantsHost", () => {
-  test("web/dev host POSTs the platform set and active org with the syncPlatform flag", async () => {
-    const fetchMock = mock(async () => ({
-      json: async () => ({ ok: true, lockfile: {} }),
-    }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await replacePlatformAssistantsHost([{ assistantId: "p-1" }], "org-1");
-
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [
-      string,
-      RequestInit,
-    ];
-    expect(url).toBe("/assistant/__local/lockfile");
-    expect(JSON.parse(init.body as string)).toEqual({
-      syncPlatform: true,
-      platformAssistants: [{ assistantId: "p-1" }],
-      organizationId: "org-1",
-    });
-  });
-
-  test("Electron host replaces through the bridge with the active org and never touches fetch", async () => {
-    const replacePlatformAssistants = mock(async () => ({
-      ok: true,
-      lockfile: {},
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ replacePlatformAssistants });
-
-    await replacePlatformAssistantsHost([{ assistantId: "p-1" }], "org-1");
-
-    expect(replacePlatformAssistants).toHaveBeenCalledWith(
-      [{ assistantId: "p-1" }],
-      "org-1",
-    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
@@ -1023,8 +865,8 @@ describe("isLocalModeHostAvailable", () => {
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 
-  test("false in remote-gateway mode — the ingress 404s /assistant/__local/*", () => {
-    (window as WindowWithConfig).__CADET_CONFIG__ = { mode: "remote-gateway" };
+  test("false for a served remote — the ingress 404s /assistant/__local/*", () => {
+    (window as WindowWithConfig).__CADET_CONFIG__ = { remote: "docker" };
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 });

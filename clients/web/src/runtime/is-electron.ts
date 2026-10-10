@@ -263,22 +263,6 @@ declare global {
         }>;
         listDevices?(assistantId: string): Promise<LocalListDevicesResult>;
         readLockfile(): Promise<Lockfile>;
-        saveLockfileAssistant(
-          assistant: Record<string, unknown>,
-          activeAssistant?: string,
-        ): Promise<LockfileWriteResult>;
-        renameLockfileAssistant?(
-          assistantId: string,
-          name: string,
-        ): Promise<LockfileWriteResult>;
-        stampLockfileAssistantOnboarded?(
-          assistantId: string,
-          onboardedAt: string,
-        ): Promise<LockfileWriteResult>;
-        replacePlatformAssistants(
-          platformAssistants: Array<Record<string, unknown>>,
-          organizationId?: string,
-        ): Promise<LockfileWriteResult>;
         retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
         revokeDevice?(
           assistantId: string,

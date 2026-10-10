@@ -2,13 +2,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
-import { hatchAssistant, listAssistants } from "@/assistant/api";
+import { hatchAssistant } from "@/assistant/api";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { DetailCard } from "@/components/detail-card";
-import {
-  isLocalClient,
-  syncPlatformAssistantsToLockfile,
-} from "@/lib/local-mode";
 import {
   assistantsListOptions,
   assistantsRetrieveOptions,
@@ -16,7 +12,6 @@ import {
 import type { Assistant } from "@/generated/api/types.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { Tag } from "@mycadet/design-library/components/tag";
@@ -53,27 +48,6 @@ export function AssistantLifecyclePanel() {
       // existing assistant — the button then looked like a no-op.
       const result = await hatchAssistant(undefined, "create");
       if (result.ok) {
-        // Mirror the freshly hatched assistant into the lockfile so the macOS
-        // tray and CLI pick it up immediately. Unlike onboarding / the tray
-        // "New Assistant" flow, this developer button is otherwise the one
-        // managed-assistant creation path that never reconciled the lockfile —
-        // newly hatched assistants stayed invisible to the tray until the next
-        // session refresh. Best-effort and local-mode only; the hatch already
-        // succeeded regardless of the sync outcome.
-        if (isLocalClient()) {
-          try {
-            const list = await listAssistants();
-            if (list.ok) {
-              await syncPlatformAssistantsToLockfile(
-                list.data,
-                useOrganizationStore.getState().currentOrganizationId ??
-                  undefined,
-              );
-            }
-          } catch {
-            // Sync failed — the assistant was still created.
-          }
-        }
         // 201 = newly created; 200 = server returned the existing assistant
         // (multi-assistant hatching disabled / deduped). Report honestly
         // instead of always claiming a new one was made.

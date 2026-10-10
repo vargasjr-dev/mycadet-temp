@@ -56,7 +56,6 @@ import {
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
-  syncPlatformAssistantsToLockfile,
 } from "@/lib/local-mode";
 import { bootstrapLocalAssistantPlatformIdentity } from "@/lib/local-platform-identity";
 import { listAssistants } from "@/assistant/api";
@@ -697,8 +696,8 @@ async function syncUserScopedState(nextUserId: string | null): Promise<void> {
 }
 
 /**
- * Reconcile the lockfile's managed-assistant mirror and report whether the
- * platform API conclusively rejected the session (a settled 401/403/410 from
+ * Probe the platform assistants endpoint and report whether the platform API
+ * conclusively rejected the session (a settled 401/403/410 from
  * the org or assistants call). Only that settled evidence may end a platform
  * session; transport failures and other errors prove nothing (LUM-2412) and
  * leave cached lockfile data standing. Cloud mode loads assistants via
@@ -733,13 +732,6 @@ async function reconcilePlatformAssistants(
         useOrganizationStore.getState().clearOrganization();
       }
       return true;
-    }
-    if ((syncIsCurrent?.() ?? true) && apiAssistants.ok) {
-      await syncPlatformAssistantsToLockfile(
-        apiAssistants.data,
-        useOrganizationStore.getState().currentOrganizationId ?? undefined,
-        syncIsCurrent,
-      );
     }
   } catch {
     // A throw is non-settled evidence: continue with cached lockfile data.

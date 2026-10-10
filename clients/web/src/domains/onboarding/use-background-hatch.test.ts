@@ -78,29 +78,10 @@ const getLockfileAssistantMock = mock(
 );
 // The desktop (Electron) build reports local mode even for a managed hatch.
 let localMode = false;
-const saveLockfileAssistantMock = mock(
-  async (_entry: unknown): Promise<void> => undefined,
-);
 mock.module("@/lib/local-mode", () => ({
   probeLocalGatewayReady: probeLocalGatewayReadyMock,
   getLockfileAssistant: getLockfileAssistantMock,
   isLocalClient: () => localMode,
-  // Surfaces the written entry to the assertions below; payload pinned by
-  // `local-mode.test.ts`.
-  saveManagedLockfileAssistant: async (
-    assistantId: string,
-    name: string | undefined,
-    organizationId: string | undefined,
-  ): Promise<void> => {
-    await saveLockfileAssistantMock({
-      assistantId,
-      name,
-      cloud: "cadet",
-      runtimeUrl: "https://runtime.example",
-      hatchedAt: new Date().toISOString(),
-      organizationId,
-    });
-  },
 }));
 const fetchOrganizationsMock = mock(async (): Promise<void> => undefined);
 mock.module("@/stores/organization-store", () => ({
@@ -214,7 +195,6 @@ beforeEach(() => {
   provisioningGate = null;
   orgReadiness = "ready";
   fetchOrganizationsMock.mockClear();
-  saveLockfileAssistantMock.mockClear();
   hatchAssistantMock.mockClear();
   getAssistantMock.mockClear();
   getAssistantHealthzMock.mockClear();
@@ -577,7 +557,6 @@ describe("useBackgroundHatch", () => {
     await expect(
       until(() => getAssistantMock.mock.calls.length > callsAtUnmount),
     ).rejects.toThrow();
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
   });
 
   test("unmounting during the initial hatch never settles", async () => {
@@ -662,9 +641,10 @@ describe("useBackgroundHatch", () => {
     expect(resolved).toBeUndefined();
   });
 
-  test("a managed hatch in local mode records the assistant in the lockfile", async () => {
-    // The desktop build's assistant list and switcher are lockfile-driven, so
-    // a headless managed hatch has to register there like the foreground one.
+  test("a managed hatch in local mode writes no lockfile entry", async () => {
+    // The desktop build's assistant list and switcher are the wrapping
+    // client's responsibility now; the hatch flow itself only drives the
+    // platform API and settles ready.
     localMode = true;
 
     const { result } = renderHook(() => useBackgroundHatch());
@@ -674,18 +654,7 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(saveLockfileAssistantMock).toHaveBeenCalledTimes(1);
-    expect(saveLockfileAssistantMock.mock.calls[0][0]).toMatchObject({
-      assistantId: "ast-research",
-      name: "Research",
-      cloud: "cadet",
-      runtimeUrl: "https://runtime.example",
-      organizationId: "org-1",
-    });
 
-    // Adopting a foreground-hatched assistant is the hatching screen's own
-    // write; the background hatch must not duplicate it.
-    saveLockfileAssistantMock.mockClear();
     const adopt = renderHook(() => useBackgroundHatch({ adoptExisting: true }));
 
     act(() => {
@@ -693,18 +662,6 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(adopt.result.current.ready).toBe(true));
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
-  });
-
-  test("a non-local build writes no lockfile entry", async () => {
-    const { result } = renderHook(() => useBackgroundHatch());
-
-    act(() => {
-      result.current.start();
-    });
-
-    await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
   });
 
   // -- local gateway routing ------------------------------------------------

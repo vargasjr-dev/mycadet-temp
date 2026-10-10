@@ -22,7 +22,6 @@ mock.module("@/lib/local-mode", () => ({
     cloud?: string;
     resources?: { gatewayPort?: number };
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
-  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isCadetCloudRemote: () => false,
 }));
 

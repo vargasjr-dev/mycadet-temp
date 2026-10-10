@@ -38,9 +38,6 @@ mock.module("@/assistant/api", () => ({
 }));
 
 const retireLocalAssistantMock = mock(async (_id: string) => retireLocalResult);
-const syncPlatformAssistantsToLockfileMock = mock(
-  async (_a: unknown, _orgId?: string) => {},
-);
 mock.module("@/lib/local-mode", () => ({
   getLockfile: () => ({
     assistants: lockfileAssistants,
@@ -50,7 +47,6 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => isLocalClientValue,
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   retireLocalAssistant: retireLocalAssistantMock,
-  syncPlatformAssistantsToLockfile: syncPlatformAssistantsToLockfileMock,
 }));
 const forgetAssistantAvatarMock = mock((_qc: QueryClient, _id: string) => {});
 mock.module("@/hooks/use-chooser-row-avatar", () => ({
@@ -138,7 +134,6 @@ beforeEach(() => {
   listAssistantsMock.mockClear();
   retireLocalAssistantMock.mockClear();
   forgetAssistantAvatarMock.mockClear();
-  syncPlatformAssistantsToLockfileMock.mockClear();
   removeMock.mockClear();
   clearResearchSnapshotMock.mockClear();
 });
@@ -276,13 +271,9 @@ describe("retireAssistant", () => {
     // WHEN retiring the platform target
     const outcome = await retireAssistant(queryClient, "p1");
 
-    // THEN it uses the platform delete (not local) and re-syncs the lockfile
+    // THEN it uses the platform delete (not local)
     expect(retireAssistantByIdMock).toHaveBeenCalledWith("p1", {});
     expect(retireLocalAssistantMock).not.toHaveBeenCalled();
-    expect(syncPlatformAssistantsToLockfileMock).toHaveBeenCalledWith(
-      [{ id: "p1", is_local: false, created: "" }],
-      "org-test",
-    );
     expect(outcome.ok).toBe(true);
   });
 

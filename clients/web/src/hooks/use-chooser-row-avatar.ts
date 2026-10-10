@@ -13,10 +13,7 @@ import {
 } from "@/hooks/use-assistant-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import {
-  isLockfileDrivenStore,
-  usePlatformAvatarUrls,
-} from "@/hooks/use-platform-avatar-urls";
+import { usePlatformAvatarUrls } from "@/hooks/use-cloud-avatar-urls";
 import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import {
   deleteLastSeenAvatar,
@@ -186,15 +183,15 @@ function canReadRowAvatarViaHost(row: ResolvedAssistant): boolean {
 }
 
 /**
- * Whether `row` should consult {@link usePlatformAvatarUrls}: the store is
- * lockfile-driven, so no row kind carries `avatarUrl` (platform-hosted rows
+ * Whether `row` should consult {@link usePlatformAvatarUrls}: outside the
+ * cloud-remote bundle no row kind carries `avatarUrl` (platform-hosted rows
  * included, since `reloadPlatformAssistants` skips the API write there) and
  * the thumbnail is only reachable by platform id. A row that does carry one
- * renders it directly. Pure cloud mode never gets here: the lookup query is
- * disabled and the map stays empty.
+ * renders it directly. The cloud-remote bundle never gets here: the lookup
+ * query is disabled and the map stays empty.
  */
 function canLookUpRowAvatarByPlatformId(row: ResolvedAssistant): boolean {
-  return !row.avatarUrl && isLockfileDrivenStore();
+  return !row.avatarUrl && !isCadetCloudRemote();
 }
 
 /** Under the row prefix so `forgetAssistantAvatar` drops it with the rest. */

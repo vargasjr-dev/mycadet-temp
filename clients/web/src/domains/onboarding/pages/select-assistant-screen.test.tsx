@@ -55,12 +55,6 @@ const removePairedAssistantFromLockfileMock = mock(
     ok: true,
   }),
 );
-const removePlatformAssistantFromLockfileMock = mock(
-  async (_id: string): Promise<{ ok: boolean; error?: string }> => ({
-    ok: true,
-  }),
-);
-
 const connectPairedAssistantMock = mock(async (_id: string) => {});
 const connectLocalAssistantMock = mock(async (_id: string) => {});
 const connectPlatformAssistantMock = mock(async (_id: string) => {});
@@ -150,7 +144,6 @@ mock.module("@/lib/local-mode", () => ({
   isPairedAssistant: (a: { cloud?: string }) => a?.cloud === "paired",
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
   removePairedAssistantFromLockfile: removePairedAssistantFromLockfileMock,
-  removePlatformAssistantFromLockfile: removePlatformAssistantFromLockfileMock,
   UnresolvedLocalGatewayError: MockUnresolvedLocalGatewayError,
 }));
 
@@ -565,10 +558,6 @@ beforeEach(() => {
   removePairedAssistantFromLockfileMock.mockImplementation(async () => ({
     ok: true,
   }));
-  removePlatformAssistantFromLockfileMock.mockClear();
-  removePlatformAssistantFromLockfileMock.mockImplementation(async () => ({
-    ok: true,
-  }));
   forgetAssistantAvatarMock.mockClear();
   activeAssistantIdValue = null;
   setActiveAssistantIdMock.mockClear();
@@ -739,7 +728,6 @@ describe("SelectAssistantScreen paired assistants", () => {
         PAIRED_ID,
       ),
     );
-    expect(removePlatformAssistantFromLockfileMock).not.toHaveBeenCalled();
   });
 
   test("removing the lifecycle-active paired entry clears the active id", async () => {
@@ -1001,28 +989,6 @@ describe("SelectAssistantScreen paired assistants", () => {
     );
   });
 
-  test("confirming a locked platform removal still calls removePlatformAssistantFromLockfile", async () => {
-    localModeHostAvailableValue = true;
-    assistantsValue = [makePlatformAssistant()];
-
-    render(<SelectAssistantScreen />);
-
-    fireEvent.click(screen.getByText("Remove from this device…"));
-
-    expect(
-      screen.getByText(/It only removes it from this device/),
-    ).toBeTruthy();
-
-    fireEvent.click(screen.getByText("Confirm remove"));
-
-    await waitFor(() =>
-      expect(removePlatformAssistantFromLockfileMock).toHaveBeenCalledWith(
-        PLATFORM_ID,
-      ),
-    );
-    expect(removePairedAssistantFromLockfileMock).not.toHaveBeenCalled();
-  });
-
   test("a successful platform removal forgets the assistant's avatar", async () => {
     localModeHostAvailableValue = true;
     assistantsValue = [makePlatformAssistant()];
@@ -1040,24 +1006,6 @@ describe("SelectAssistantScreen paired assistants", () => {
     );
   });
 
-  test("a failed platform removal leaves the avatar caches alone", async () => {
-    localModeHostAvailableValue = true;
-    assistantsValue = [makePlatformAssistant()];
-    removePlatformAssistantFromLockfileMock.mockImplementation(async () => ({
-      ok: false,
-      error: "nope",
-    }));
-
-    render(<SelectAssistantScreen />);
-
-    fireEvent.click(screen.getByText("Remove from this device…"));
-    fireEvent.click(screen.getByText("Confirm remove"));
-
-    await waitFor(() =>
-      expect(removePlatformAssistantFromLockfileMock).toHaveBeenCalled(),
-    );
-    expect(forgetAssistantAvatarMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("SelectAssistantScreen remembered origins", () => {

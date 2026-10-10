@@ -1,7 +1,5 @@
-import { hatchAssistant, listAssistants } from "@/assistant/api";
+import { hatchAssistant } from "@/assistant/api";
 import { setSelectedAssistant } from "@/assistant/selection";
-import { syncPlatformAssistantsToLockfile } from "@/lib/local-mode";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { extractErrorMessage } from "@/utils/api-errors";
 
 export type CreatePlatformAssistantResult =
@@ -32,20 +30,6 @@ export async function createPlatformAssistant(
         "Failed to create assistant.",
       ),
     };
-  }
-
-  // Best-effort: refresh the lockfile so the new assistant shows up for the
-  // tray/CLI. The assistant was created regardless of whether this succeeds.
-  try {
-    const remaining = await listAssistants();
-    if (remaining.ok) {
-      await syncPlatformAssistantsToLockfile(
-        remaining.data,
-        useOrganizationStore.getState().currentOrganizationId ?? undefined,
-      );
-    }
-  } catch {
-    // non-fatal
   }
 
   await setSelectedAssistant(result.data.id);

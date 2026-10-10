@@ -22,16 +22,16 @@ export const InjectedConfigSchema = z.object({
 
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
 
-/** The parsed injected config; undefined when nothing was injected (SSR) or it doesn't parse. */
-export function readInjectedConfig(): InjectedConfig | undefined {
+/**
+ * The parsed injected config, with the remote defaulted: nothing injected
+ * (SSR) or a config that doesn't parse means the local cadet.
+ */
+export function readInjectedConfig(): InjectedConfig & { remote: Remote } {
   if (typeof window === "undefined") {
-    return undefined;
+    return { remote: "local" };
   }
   const parsed = InjectedConfigSchema.safeParse(window.__CADET_CONFIG__);
-  return parsed.success ? parsed.data : undefined;
-}
-
-/** The injected config with the remote defaulted: no injection means the local cadet. */
-export function getInjectedConfig(): InjectedConfig & { remote: Remote } {
-  return { remote: "local", ...readInjectedConfig() };
+  return parsed.success
+    ? { remote: "local", ...parsed.data }
+    : { remote: "local" };
 }

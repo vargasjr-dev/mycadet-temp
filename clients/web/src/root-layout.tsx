@@ -87,7 +87,6 @@ import { useElectronIconSync } from "@/hooks/use-electron-icon-sync";
 import { useIslandAvatarSource } from "@/hooks/use-island-avatar-source";
 import { useNotificationAvatarSync } from "@/hooks/use-notification-avatar-sync";
 import { useElectronIdentitySync } from "@/hooks/use-electron-identity-sync";
-import { useLockfileIdentitySync } from "@/hooks/use-lockfile-identity-sync";
 import { useElectronStatusSync } from "@/hooks/use-electron-status-sync";
 import { useElectronFeatureFlagBridge } from "@/runtime/electron-feature-flags";
 import { subscribeAndroidBackButtonSource } from "@/runtime/event-sources/android-back-button";
@@ -342,7 +341,6 @@ export function RootLayout() {
   );
   useElectronStatusSync();
   useElectronIdentitySync(companionReady);
-  useLockfileIdentitySync();
   useElectronFeatureFlagBridge();
 
   // Size the Electron main window to the onboarding layout (440×630

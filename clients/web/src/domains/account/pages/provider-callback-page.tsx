@@ -15,10 +15,8 @@ import {
 import { classifyCallbackFlows } from "@/domains/account/social-auth";
 import {
   isLocalClient,
-  syncPlatformAssistantsToLockfile,
 } from "@/lib/local-mode";
 import { useAuthStore } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { routes } from "@/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";
@@ -76,11 +74,6 @@ export function ProviderCallbackPage() {
               try {
                 const assistants = await listAssistants();
                 if (assistants.ok && assistants.data.length > 0) {
-                  await syncPlatformAssistantsToLockfile(
-                    assistants.data,
-                    useOrganizationStore.getState().currentOrganizationId ??
-                      undefined,
-                  );
                   if (!returnTo) {
                     navigate(routes.assistant, { replace: true });
                     break;

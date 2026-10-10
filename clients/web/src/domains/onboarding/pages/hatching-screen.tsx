@@ -44,7 +44,6 @@ import {
   loadLockfile,
   primeLocalGatewayConnection,
   probeLocalGatewayReady,
-  saveManagedLockfileAssistant,
 } from "@/lib/local-mode";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
@@ -58,7 +57,6 @@ import { isElectron } from "@/runtime/is-electron";
 import { useDesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { setSelectedAssistant } from "@/assistant/selection";
 import { useAuthStore } from "@/stores/auth-store";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { isSessionSettled } from "@/stores/session-status";
 import type { CharacterTraits } from "@/types/avatar";
@@ -378,13 +376,6 @@ export function HatchingScreen() {
           const existing = await getAssistant();
           const preflightState = resolveAssistantLifecycleState(existing);
           if (!cancelled && existing.ok && preflightState.kind === "active") {
-            if (isLocalClient()) {
-              void saveManagedLockfileAssistant(
-                existing.data.id,
-                existing.data.name,
-                getActiveOrganizationIdForRequests() ?? undefined,
-              );
-            }
             // Route the reload path through the same provisioning wait as the
             // polled-active path so a purchased resize is never skipped.
             await finishActiveHatch(existing.data.id);
@@ -703,13 +694,6 @@ export function HatchingScreen() {
             void setSelectedAssistant(assistantId);
             if (createdFreshAssistant || preflightFoundNoAssistant) {
               void persistHatchAvatar(assistantId);
-            }
-            if (isLocalClient()) {
-              void saveManagedLockfileAssistant(
-                assistantId,
-                result.data.name,
-                getActiveOrganizationIdForRequests() ?? undefined,
-              );
             }
 
             // Wait for healthz, then hold for the purchased resize before
