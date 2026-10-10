@@ -63,10 +63,7 @@ export async function resolvePlatformCallbackRegistrationContext(): Promise<Plat
     ]);
 
   const storedBaseUrl = storedBaseUrlRaw?.trim();
-  const cloudBaseUrl = (storedBaseUrl || getCloudBaseUrl()).replace(
-    /\/+$/,
-    "",
-  );
+  const cloudBaseUrl = (storedBaseUrl || getCloudBaseUrl()).replace(/\/+$/, "");
   const envAssistantCredential = process.env.ASSISTANT_API_KEY?.trim();
   const assistantCredential =
     storedAssistantApiKey.value?.trim() || envAssistantCredential || undefined;
@@ -88,9 +85,7 @@ export async function resolvePlatformCallbackRegistrationContext(): Promise<Plat
     // Does NOT require IS_PLATFORM — self-hosted assistants with stored
     // credentials can also register routes.
     enabled:
-      cloudBaseUrl.length > 0 &&
-      assistantId.length > 0 &&
-      authHeader !== null,
+      cloudBaseUrl.length > 0 && assistantId.length > 0 && authHeader !== null,
   };
 }
 

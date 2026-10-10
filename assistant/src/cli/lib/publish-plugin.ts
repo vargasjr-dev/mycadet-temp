@@ -357,8 +357,7 @@ export async function resolvePlatformDeps(): Promise<PublishDeps | null> {
   // privately, so we use its fetch method directly.
   return {
     fetch: globalThis.fetch.bind(globalThis),
-    cloudBaseUrl: (client as unknown as { cloudBaseUrl: string })
-      .cloudBaseUrl,
+    cloudBaseUrl: (client as unknown as { cloudBaseUrl: string }).cloudBaseUrl,
     apiKey: (client as unknown as { apiKey: string }).apiKey,
   };
 }
