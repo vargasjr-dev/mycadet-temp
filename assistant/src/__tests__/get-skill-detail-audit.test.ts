@@ -68,7 +68,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: mockReadInstallMeta,
 }));
@@ -189,8 +188,8 @@ import { getSkill } from "../daemon/handlers/skills.js";
 
 describe("getSkill — skillssh audit enrichment", () => {
   beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
+    // Real flag resolution replaces the former blanket module mock.
+    setAllFlagsOnForTesting();
 
     mockResolveSkillStates.mockReset();
     mockReadInstallMeta.mockReset();

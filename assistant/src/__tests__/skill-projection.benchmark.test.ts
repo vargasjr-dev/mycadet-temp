@@ -267,7 +267,7 @@ function timeMs(fn: () => void): number {
 
 describe("Skill projection benchmark", () => {
   beforeAll(() => {
-  setAllFlagsOnForTesting();
+    setAllFlagsOnForTesting();
 
     // Prime the real config loader and JIT the projection path once so the
     // first measured "cold" run reflects projection latency, not the one-time

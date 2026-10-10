@@ -36,7 +36,6 @@ mock.module("../security/secure-keys.js", () => ({
     }),
 }));
 
-
 mock.module("../config/loader.js", () => ({
   getConfig: () => ({}),
 }));

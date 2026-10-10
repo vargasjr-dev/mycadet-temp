@@ -25,7 +25,6 @@ mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));
 
-
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
 }));
@@ -149,7 +148,6 @@ beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
   setAllFlagsOnForTesting();
 });
-
 
 // ---------------------------------------------------------------------------
 // Helpers

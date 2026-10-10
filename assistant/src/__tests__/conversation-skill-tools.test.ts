@@ -261,7 +261,6 @@ mock.module("../skills/version-hash.js", () => ({
   },
 }));
 
-
 mock.module("../config/skill-state.js", () => ({
   skillFlagKey: (skill: { featureFlag?: string }) =>
     skill.featureFlag || undefined,
@@ -367,8 +366,8 @@ describe("projectSkillTools", () => {
   let sessionState: Map<string, string>;
 
   beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
+    // Real flag resolution replaces the former blanket module mock.
+    setAllFlagsOnForTesting();
 
     mockCatalog = [];
     mockManifests = {};

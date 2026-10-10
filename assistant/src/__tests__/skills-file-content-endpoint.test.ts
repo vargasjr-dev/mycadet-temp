@@ -94,7 +94,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-
 mock.module("../skills/catalog-cache.js", () => ({
   getCatalog: async () => [],
 }));

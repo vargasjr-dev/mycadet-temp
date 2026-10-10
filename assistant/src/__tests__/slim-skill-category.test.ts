@@ -28,7 +28,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: () => mockInstallMeta,
 }));
@@ -122,7 +121,6 @@ beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
   setAllFlagsOnForTesting();
 });
-
 
 // ---------------------------------------------------------------------------
 // Helpers

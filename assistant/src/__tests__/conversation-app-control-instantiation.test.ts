@@ -63,7 +63,6 @@ import type { Tool } from "../tools/types.js";
 // Module mocks for the skill-projection layer
 // ---------------------------------------------------------------------------
 
-
 mock.module("../config/skill-state.js", () => ({
   skillFlagKey: (skill: { featureFlag?: string }) =>
     skill.featureFlag ?? undefined,

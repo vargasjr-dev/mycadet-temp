@@ -95,7 +95,6 @@ mock.module("../config/skill-state.js", () => ({
   skillFlagKey: () => null,
 }));
 
-
 mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: () => null,
 }));
@@ -245,8 +244,8 @@ function makeSummary(overrides: Partial<SkillSummary>): SkillSummary {
 
 describe("getSkillFiles — provider chain fallback", () => {
   beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
+    // Real flag resolution replaces the former blanket module mock.
+    setAllFlagsOnForTesting();
 
     mockResolvedStates = [];
     providerCalls.length = 0;

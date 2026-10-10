@@ -144,7 +144,6 @@ function seedCleanup(
   });
 }
 
-
 mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));

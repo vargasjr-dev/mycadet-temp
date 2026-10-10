@@ -31,7 +31,6 @@ mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));
 
-
 mock.module("../prompts/system-prompt.js", () => ({
   buildSystemPrompt: () => "system prompt",
 }));
@@ -355,8 +354,8 @@ function baseConversationRow(): Record<string, unknown> {
 
 describe("Conversation.summarizeUpToMessage", () => {
   beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOffForTesting();
+    // Real flag resolution replaces the former blanket module mock.
+    setAllFlagsOffForTesting();
 
     compactCalls = [];
     slackWatermarkCalls = [];

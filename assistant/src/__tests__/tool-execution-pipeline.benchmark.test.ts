@@ -39,7 +39,6 @@ mock.module("../tools/registry.js", () => ({
   },
 }));
 
-
 mock.module("../config/env-registry.js", () => ({
   getIsContainerized: () => false,
 }));
@@ -105,7 +104,6 @@ beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
   setAllFlagsOffForTesting();
 });
-
 
 // ---------------------------------------------------------------------------
 // Helpers

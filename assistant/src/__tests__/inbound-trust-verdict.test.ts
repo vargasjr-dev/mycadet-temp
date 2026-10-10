@@ -123,7 +123,7 @@ function memberVerdict(
 
 describe("inbound trust verdict → TrustContext", () => {
   beforeEach(() => {
-  setOverridesForTesting(FLAGS);
+    setOverridesForTesting(FLAGS);
 
     resetTables();
     setAdapterProcessMessage(undefined);

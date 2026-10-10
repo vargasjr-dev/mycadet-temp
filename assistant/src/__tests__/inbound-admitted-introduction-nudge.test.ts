@@ -185,7 +185,7 @@ function accessRequests() {
 
 describe("introduction nudge on first admit", () => {
   beforeEach(() => {
-  setOverridesForTesting(FLAGS);
+    setOverridesForTesting(FLAGS);
 
     resetState();
     installNoopProcessor();

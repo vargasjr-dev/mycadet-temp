@@ -24,7 +24,6 @@ mock.module("../providers/registry.js", () => ({
   initializeProviders: async () => {},
 }));
 
-
 // The builder under the conversation's control: records the options each
 // build receives and can be made to throw, which is what a wake's prompt
 // sync swallows before running on the previous prompt.

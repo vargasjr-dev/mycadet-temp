@@ -158,8 +158,8 @@ import { searchSkills } from "../daemon/handlers/skills.js";
 
 describe("searchSkills (unified)", () => {
   beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
+    // Real flag resolution replaces the former blanket module mock.
+    setAllFlagsOnForTesting();
 
     mockCatalogSkills.mockReset();
     mockClawhubSearch.mockReset();
