@@ -1541,4 +1541,173 @@ describe("cadet wake — tunnel edge restore", () => {
       "local-assistant",
     );
   });
+
+  describe("--all", () => {
+    function makeAllEntry(
+      assistantId: string,
+      instanceDir: string,
+    ): AssistantEntry {
+      return {
+        assistantId,
+        runtimeUrl: "http://127.0.0.1:7830",
+        cloud: "local",
+        resources: {
+          instanceDir,
+          daemonPort: 7821,
+          gatewayPort: 7830,
+          qdrantPort: 6333,
+          cesPort: 7822,
+          signingKey: "ab".repeat(32),
+        },
+      };
+    }
+
+    function makeAllEntries(): AssistantEntry[] {
+      mkdirSync(join(tempDir, "instance-1"), { recursive: true });
+      mkdirSync(join(tempDir, "instance-2"), { recursive: true });
+      return [
+        makeAllEntry("wake-all-1", join(tempDir, "instance-1")),
+        makeAllEntry("wake-all-2", join(tempDir, "instance-2")),
+      ];
+    }
+
+    // Cold-start both assistants so each wake's starts are observable.
+    function mockColdStart(): void {
+      resolveProcessStateMock.mockImplementation(async () => ({
+        status: "needs_start",
+        pid: null,
+      }));
+      isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
+    }
+
+    test("starts every assistant in the lockfile", async () => {
+      mockColdStart();
+      loadAllAssistantsMock.mockReturnValue(makeAllEntries());
+      process.argv = ["bun", "cadet", "wake", "--all"];
+
+      await wake();
+
+      expect(startCesMock).toHaveBeenCalledTimes(2);
+      expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
+      expect(startGatewayMock).toHaveBeenCalledTimes(2);
+    });
+
+    test("skips assistants whose lifecycle is managed elsewhere", async () => {
+      mockColdStart();
+      const entries = makeAllEntries();
+      entries[1] = {
+        assistantId: "paired-one",
+        runtimeUrl: "http://127.0.0.1:1",
+        cloud: "paired",
+      };
+      loadAllAssistantsMock.mockReturnValue(entries);
+      process.argv = ["bun", "cadet", "wake", "--all"];
+
+      await wake();
+
+      expect(startCesMock).toHaveBeenCalledTimes(1);
+      expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
+      expect(startGatewayMock).toHaveBeenCalledTimes(1);
+      expect(logSpy.mock.calls.flat().join("\n")).toContain(
+        "Skipping 'paired-one' (paired) — its lifecycle is managed elsewhere.",
+      );
+    });
+
+    test("continues past a failing assistant and exits 1", async () => {
+      mockColdStart();
+      loadAllAssistantsMock.mockReturnValue([
+        // Missing resources is a deliberate refusal for this entry.
+        {
+          assistantId: "wake-all-1",
+          runtimeUrl: "http://127.0.0.1:7830",
+          cloud: "local",
+        },
+        makeAllEntry("wake-all-2", join(tempDir, "instance-2")),
+      ]);
+      mkdirSync(join(tempDir, "instance-2"), { recursive: true });
+      process.argv = ["bun", "cadet", "wake", "--all"];
+
+      const exitSpy = spyOn(process, "exit").mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
+
+      try {
+        await expect(wake()).rejects.toThrow("process.exit:1");
+        expect(errorSpy.mock.calls.flat().join("\n")).toContain(
+          "failed to wake 'wake-all-1'",
+        );
+      } finally {
+        exitSpy.mockRestore();
+      }
+
+      // The healthy assistant was still started.
+      expect(startCesMock).toHaveBeenCalledTimes(1);
+      expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
+      expect(startGatewayMock).toHaveBeenCalledTimes(1);
+    });
+
+    test("exits 1 when there is nothing to start", async () => {
+      loadAllAssistantsMock.mockReturnValue([]);
+      process.argv = ["bun", "cadet", "wake", "--all"];
+
+      const exitSpy = spyOn(process, "exit").mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
+
+      try {
+        await expect(wake()).rejects.toThrow("process.exit:1");
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining("no assistants found"),
+        );
+      } finally {
+        exitSpy.mockRestore();
+      }
+    });
+
+    test("refuses --all combined with a name", async () => {
+      process.argv = ["bun", "cadet", "wake", "local-assistant", "--all"];
+
+      const exitSpy = spyOn(process, "exit").mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
+
+      try {
+        await expect(wake()).rejects.toThrow("process.exit:1");
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining("--all cannot be combined"),
+        );
+      } finally {
+        exitSpy.mockRestore();
+      }
+    });
+
+    test("refuses --all with --foreground and --repair-guardian", async () => {
+      const exitSpy = spyOn(process, "exit").mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
+
+      try {
+        for (const flag of ["--foreground", "--repair-guardian"]) {
+          process.argv = ["bun", "cadet", "wake", "--all", flag];
+          await expect(wake()).rejects.toThrow("process.exit:1");
+        }
+      } finally {
+        exitSpy.mockRestore();
+      }
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "--all cannot be combined with --foreground or --repair-guardian",
+        ),
+      );
+    });
+  });
 });

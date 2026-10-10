@@ -7,9 +7,11 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  loadAllAssistants,
   resolveTargetAssistant,
   saveAssistantEntry,
 } from "../lib/assistant-config.js";
+import type { AssistantEntry } from "../lib/assistant-config.js";
 import { dockerResourceNames, wakeContainers } from "../lib/docker.js";
 import {
   leaseGuardianToken,
@@ -45,7 +47,7 @@ export const wake = Object.assign(
   async function wake(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet wake [<name>] [options]");
+    console.log("Usage: cadet wake [<name> | --all] [options]");
     console.log("");
     console.log("Start the assistant and gateway processes.");
     console.log("");
@@ -55,6 +57,9 @@ export const wake = Object.assign(
     );
     console.log("");
     console.log("Options:");
+    console.log(
+      "  --all          Start every assistant across all remotes instead of one",
+    );
     console.log(
       "  --watch        Run assistant and gateway in watch mode (hot reload on source changes)",
     );
@@ -80,7 +85,122 @@ export const wake = Object.assign(
   // recovered deliberately via `cadet wake <id> --repair-guardian`.
   const repairGuardian = args.includes("--repair-guardian");
   const nameArg = args.find((a) => !a.startsWith("-"));
+  const all = args.includes("--all");
+
+  if (all && nameArg) {
+    console.error("Error: --all cannot be combined with an assistant name.");
+    process.exit(1);
+  }
+  if (all && (foreground || repairGuardian)) {
+    console.error(
+      "Error: --all cannot be combined with --foreground or --repair-guardian.",
+    );
+    process.exit(1);
+  }
+
+  if (all) {
+    await wakeAll({ watch });
+    return;
+  }
+
   const entry = resolveTargetAssistant(nameArg);
+  try {
+    await wakeAssistant(entry, { watch, foreground, repairGuardian });
+  } catch (err) {
+    if (err instanceof WakeExit) {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+
+  // Foreground blocking is a single-assistant concern (--all refuses the
+  // flag), and the docker path already warned that foreground is ignored.
+  if (foreground && entry.cloud !== "docker") {
+    console.log("Running in foreground (Ctrl+C to stop)...\n");
+    // Block forever — the daemon is running with inherited stdio so its
+    // output streams to this terminal. When the user hits Ctrl+C, SIGINT
+    // propagates to the daemon child and both exit.
+    await new Promise<void>((resolve) => {
+      process.on("SIGINT", () => {
+        console.log("\nShutting down...");
+        resolve();
+      });
+      process.on("SIGTERM", () => resolve());
+    });
+  }
+},
+  { description: "Start the assistant and gateway" },
+);
+
+/**
+ * Start every assistant this CLI's environment knows about — `--all`. The
+ * CLI only ever reaches one environment, so this is the current env's
+ * lockfile. Same per-assistant wake as the single path, but one assistant's
+ * failure never blocks the others; failures only decide the exit code.
+ */
+async function wakeAll(opts: { watch: boolean }): Promise<void> {
+  const entries = loadAllAssistants();
+  if (entries.length === 0) {
+    console.error("Error: no assistants found. Run 'cadet hatch' first.");
+    process.exit(1);
+  }
+
+  let failures = 0;
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (seen.has(entry.assistantId)) continue;
+    seen.add(entry.assistantId);
+    if (entry.cloud === "apple-container" || entry.cloud === "paired") {
+      console.log(
+        `Skipping '${entry.assistantId}' (${entry.cloud}) — its lifecycle is managed elsewhere.`,
+      );
+      continue;
+    }
+    try {
+      await wakeAssistant(entry, {
+        watch: opts.watch,
+        foreground: false,
+        repairGuardian: false,
+      });
+    } catch (err) {
+      failures++;
+      console.error(
+        `Error: failed to wake '${entry.assistantId}': ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+  if (failures > 0) {
+    process.exit(1);
+  }
+}
+
+type WakeAssistantOptions = {
+  watch: boolean;
+  foreground: boolean;
+  repairGuardian: boolean;
+};
+
+/**
+ * Marks a deliberate per-assistant refusal (an unmanageable runtime, missing
+ * resources, a daemon that died during startup). The single-assistant path
+ * renders it as the same "Error: …" + exit 1 the command always printed;
+ * `--all` treats it as one entry's failure and keeps waking the rest.
+ */
+class WakeExit extends Error {}
+
+/**
+ * Start one assistant and its gateway. Throws WakeExit on deliberate
+ * refusals so the caller decides between exiting (single path) and
+ * continuing to the next entry (`--all`).
+ */
+async function wakeAssistant(
+  entry: AssistantEntry,
+  opts: WakeAssistantOptions,
+): Promise<void> {
+  const { watch, foreground, repairGuardian } = opts;
 
   if (entry.cloud === "docker") {
     if (watch || foreground) {
@@ -100,31 +220,27 @@ export const wake = Object.assign(
   }
 
   if (entry.cloud === "apple-container") {
-    console.error(
-      `Error: '${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to start it.`,
+    throw new WakeExit(
+      `'${entry.assistantId}' uses the Apple Containers runtime. Its lifecycle is managed by the macOS app — use the app to start it.`,
     );
-    process.exit(1);
   }
 
   if (entry.cloud === "paired") {
-    console.error(
-      `Error: '${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
+    throw new WakeExit(
+      `'${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
     );
-    process.exit(1);
   }
 
   if (entry.cloud && entry.cloud !== "local") {
-    console.error(
-      `Error: 'cadet wake' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
+    throw new WakeExit(
+      `'cadet wake' only works with local and docker assistants. '${entry.assistantId}' is a ${entry.cloud} instance.`,
     );
-    process.exit(1);
   }
 
   if (!entry.resources) {
-    console.error(
-      `Error: Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
+    throw new WakeExit(
+      `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
-    process.exit(1);
   }
   const resources = entry.resources;
   let signingKey: string;
@@ -275,10 +391,9 @@ export const wake = Object.assign(
     // first and fail the command instead of reporting a successful wake for
     // an assistant that is not running.
     if (!isProcessAlive(pidFile).alive) {
-      console.error(
-        `Error: the assistant exited during startup and is not running. Its runtime HTTP port ${resources.daemonPort} may be held by another process (check \`lsof -i :${resources.daemonPort}\`); the daemon log records the startup error it reported.`,
+      throw new WakeExit(
+        `the assistant exited during startup and is not running. Its runtime HTTP port ${resources.daemonPort} may be held by another process (check \`lsof -i :${resources.daemonPort}\`); the daemon log records the startup error it reported.`,
       );
-      process.exit(1);
     }
     // startLocalDaemon's post-spawn wait is bounded (60s), and a longer
     // migration outlives it. Classify the fresh spawn the same way the
@@ -469,21 +584,5 @@ export const wake = Object.assign(
     );
   }
   console.log("Wake complete.");
-
-  if (foreground) {
-    console.log("Running in foreground (Ctrl+C to stop)...\n");
-    // Block forever — the daemon is running with inherited stdio so its
-    // output streams to this terminal. When the user hits Ctrl+C, SIGINT
-    // propagates to the daemon child and both exit.
-    await new Promise<void>((resolve) => {
-      process.on("SIGINT", () => {
-        console.log("\nShutting down...");
-        resolve();
-      });
-      process.on("SIGTERM", () => resolve());
-    });
-  }
-},
-  { description: "Start the assistant and gateway" },
-);
+}
 
