@@ -5,12 +5,6 @@ on:
     branches:
       - "release/v*"
   workflow_dispatch:
-    inputs:
-      slack_user_id:
-        description: "Slack user ID of the person who triggered the release (e.g. U01ABCDEF)"
-        required: false
-        type: string
-        default: ""
 
 concurrency:
   group: release
