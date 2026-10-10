@@ -40,10 +40,12 @@ import type {
 const actualLocalMode = await import("@/lib/local-mode");
 let localClient = false;
 let cloudRemote = false;
+let servedGatewayRuntime = false;
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
   isLocalClient: () => localClient,
   isCadetCloudRemote: () => cloudRemote,
+  isServedGatewayRuntime: () => servedGatewayRuntime,
 }));
 
 let gatewayAuthEnabled = false;
@@ -270,6 +272,7 @@ async function settle(): Promise<void> {
 beforeEach(() => {
   localClient = false;
   cloudRemote = true;
+  servedGatewayRuntime = false;
   gatewayAuthEnabled = false;
   selfHostedIngressUrl = null;
   orgReady = true;
@@ -317,14 +320,12 @@ afterEach(() => {
 
 describe("canFetchRowAvatarViaPlatformProxy", () => {
   test("is open for a platform row in pure cloud mode", () => {
-    cloudRemote = true;
-
     expect(canFetchRowAvatarViaPlatformProxy(platformRow("a"))).toBe(true);
   });
 
   test.each([
     ["local client", () => (localClient = true)],
-    ["non-cloud remote", () => (cloudRemote = false)],
+    ["served-gateway runtime", () => (servedGatewayRuntime = true)],
     ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
@@ -348,7 +349,7 @@ describe("canFetchRowAvatarViaPlatformProxy", () => {
 describe("useChooserRowAvatar", () => {
   test.each([
     ["local client", () => (localClient = true)],
-    ["non-cloud remote", () => (cloudRemote = false)],
+    ["served-gateway runtime", () => (servedGatewayRuntime = true)],
     ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
@@ -389,7 +390,7 @@ describe("useChooserRowAvatar", () => {
 
     test.each([
       ["local client", () => (localClient = true)],
-      ["non-cloud remote", () => (cloudRemote = false)],
+      ["served-gateway runtime", () => (servedGatewayRuntime = true)],
       ["gateway auth", () => (gatewayAuthEnabled = true)],
     ])(
       "renders a non-connected platform row's avatarUrl under %s with zero SDK calls",
@@ -412,8 +413,6 @@ describe("useChooserRowAvatar", () => {
     );
 
     test("skips the platform-proxy fetch in pure cloud mode", async () => {
-      cloudRemote = true;
-
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(platformRow("other", { avatarUrl: SYNCED_URL })),

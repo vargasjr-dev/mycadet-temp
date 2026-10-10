@@ -34,7 +34,7 @@ const realFetch = globalThis.fetch;
 
 type WindowWithConfig = {
   cadet?: unknown;
-  __CADET_CONFIG__?: { mode?: string };
+  __CADET_CONFIG__?: { remote?: "local" | "docker" | "custom" | "cloud" };
 };
 
 beforeEach(() => {
@@ -1023,8 +1023,8 @@ describe("isLocalModeHostAvailable", () => {
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 
-  test("false in remote-gateway mode — the ingress 404s /assistant/__local/*", () => {
-    (window as WindowWithConfig).__CADET_CONFIG__ = { mode: "remote-gateway" };
+  test("false in served-gateway mode — the ingress 404s /assistant/__local/*", () => {
+    (window as WindowWithConfig).__CADET_CONFIG__ = { remote: "docker" };
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 });
