@@ -32,19 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
-      pull-requests: read
+      contents: write # push the cherry-pick branch
+      pull-requests: write # open + comment on the cherry-pick PR
     steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Determine latest release branch
@@ -72,14 +64,14 @@ jobs:
       - name: Cherry-pick and create PR
         id: cherry-pick
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
-          git config user.name "cadet-automation[bot]"
-          git config user.email "192048195+cadet-automation[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Use a deterministic branch name based only on the release branch
           # so that multiple cherry-picks accumulate on a single branch.
@@ -138,40 +130,4 @@ jobs:
             echo "release_branch=${RELEASE_BRANCH}" >> "$GITHUB_OUTPUT"
             echo "::warning::Cherry-pick of #${PR_NUMBER} to ${RELEASE_BRANCH} failed due to conflicts. Commented on the original PR."
           fi
-
-      - name: Notify Slack of cherry-pick conflict
-        if: steps.cherry-pick.outputs.status == 'conflict'
-        continue-on-error: true
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_RELEASES_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            unfurl_links: false
-            unfurl_media: false
-            blocks:
-              - type: header
-                text:
-                  type: plain_text
-                  text: "\U000026A0\uFE0F Cherry-pick Conflict"
-              - type: section
-                text:
-                  type: mrkdwn
-                  text: "*PR:* <${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|#${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}>\n*Target branch:* `${{ steps.cherry-pick.outputs.release_branch }}`\n*Merge commit:* `${{ github.event.pull_request.merge_commit_sha }}`"
-              - type: section
-                text:
-                  type: mrkdwn
-                  text: "Automated cherry-pick failed due to merge conflicts. A comment with manual resolution steps has been posted on the PR."
-              - type: actions
-                elements:
-                  - type: button
-                    text:
-                      type: plain_text
-                      text: "View PR"
-                    url: "${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
-                  - type: button
-                    text:
-                      type: plain_text
-                      text: "View Workflow Run"
-                    url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
