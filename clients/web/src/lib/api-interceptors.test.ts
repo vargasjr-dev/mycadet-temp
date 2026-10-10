@@ -33,6 +33,7 @@ const isPlatformDisabledMock = mock(() => false);
 const isRemoteGatewayModeMock = mock(
   () => window.__CADET_CONFIG__?.mode === "remote-gateway",
 );
+const isPlatformAuthModeMock = mock(() => false);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
 // The lockfile selection the recovery snapshots; a test moves it to model an
@@ -54,6 +55,7 @@ mock.module(
     isLocalClient: isLocalClientMock,
     isPlatformDisabled: isPlatformDisabledMock,
     isPlatformAssistant: () => false,
+    isPlatformAuthMode: isPlatformAuthModeMock,
     isRemoteGatewayMode: isRemoteGatewayModeMock,
     loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
     primeLocalGatewayConnection: async () => {},
@@ -2294,6 +2296,30 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     expect(hardNavigateMock.mock.calls[0][0].startsWith(LOGIN_PREFIX)).toBe(
       true,
     );
+  });
+
+  test("platform-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
+    isPlatformAuthModeMock.mockImplementation(() => true);
+    // The slot points at the platform's own same-origin proxy, whose URL
+    // prefixes the platform URL exactly as /web/<v> does in production —
+    // under the bearer-path exclusion this rejection would be skipped.
+    setSelfHostedConnection({ url: "https://platform.test", token: "tok" });
+    const refreshSession = mock(async () => {
+      mockAuthState.sessionStatus = "unauthenticated";
+      return false;
+    });
+    mockAuthState.refreshSession = refreshSession;
+
+    const response = makeResponse(401, PLATFORM_URL);
+    expect(platformAuthRecoveryInterceptor(response)).toBe(response);
+    await flush();
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(hardNavigateMock).toHaveBeenCalledTimes(1);
+    expect(hardNavigateMock.mock.calls[0][0].startsWith(LOGIN_PREFIX)).toBe(
+      true,
+    );
+    isPlatformAuthModeMock.mockImplementation(() => false);
   });
 
   test("403 that leaves the session live does not redirect and reopens the latch", async () => {

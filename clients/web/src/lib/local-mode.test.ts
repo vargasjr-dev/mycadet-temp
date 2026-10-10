@@ -102,6 +102,7 @@ import {
   isLocalAssistant,
   isLocalGatewayAssistant,
   isPairedAssistant,
+  isPlatformAuthMode,
   isPlatformAssistant,
   isRemoteGatewayMode,
   isRetryablePairingFailure,
@@ -196,6 +197,17 @@ afterEach(() => {
 });
 
 describe("remote gateway mode", () => {
+  test("isPlatformAuthMode requires the platform auth marker", () => {
+    window.__CADET_CONFIG__ = { mode: "remote-gateway" };
+    expect(isPlatformAuthMode()).toBe(false);
+
+    window.__CADET_CONFIG__ = { mode: "remote-gateway", auth: "platform" };
+    expect(isPlatformAuthMode()).toBe(true);
+
+    window.__CADET_CONFIG__ = { auth: "platform" };
+    expect(isPlatformAuthMode()).toBe(false);
+  });
+
   test("loads a synthetic active assistant without calling the local host", async () => {
     window.__CADET_CONFIG__ = { mode: "remote-gateway" };
 

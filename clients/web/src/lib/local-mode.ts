@@ -87,6 +87,7 @@ export { getPlatformRuntimeUrl };
 function getInjectedConfig(): {
   disablePlatform?: boolean;
   mode?: string;
+  auth?: string;
   platformUrl?: string;
   assistantName?: string;
   hubUrl?: string;
@@ -97,6 +98,7 @@ function getInjectedConfig(): {
         __CADET_CONFIG__?: {
           disablePlatform?: boolean;
           mode?: string;
+          auth?: string;
           platformUrl?: string;
           assistantName?: string;
           hubUrl?: string;
@@ -108,6 +110,20 @@ function getInjectedConfig(): {
 
 export function isRemoteGatewayMode(): boolean {
   return getInjectedConfig().mode === "remote-gateway";
+}
+
+/**
+ * True when the serving platform has flagged its same-origin proxy as the
+ * authentication surface: every API call is authenticated by the platform's
+ * session cookie (the proxy injects the acting user per request and never
+ * forwards gateway credentials), so no gateway-level session exists to mint,
+ * rotate, or recover. The remote-gateway session machinery — the boot ping,
+ * pairing, 401 re-priming, scheduled refresh — must stay out of the way in
+ * this mode, and a 401 from the proxied API path is a platform session
+ * rejection.
+ */
+export function isPlatformAuthMode(): boolean {
+  return isRemoteGatewayMode() && getInjectedConfig().auth === "platform";
 }
 
 function nonEmptyString(value: string | undefined): string | undefined {
