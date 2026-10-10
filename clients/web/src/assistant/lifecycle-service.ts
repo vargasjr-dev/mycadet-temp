@@ -54,7 +54,7 @@ import {
   getAuthGatewayIngressUrl,
   getPairedGatewayUrl,
   getSelectedAssistant,
-  isPlatformAuthMode,
+  isCloudRemoteMode,
   isRemoteGatewayMode,
 } from "@/lib/local-mode";
 import { getLocalAssistantStatusHost } from "@/runtime/local-mode-host";
@@ -748,10 +748,10 @@ class AssistantLifecycleService {
             (healthz.status === 401 || healthz.status === 403)
           ) {
             this.probeFailureStreak = 0;
-            // Platform-auth bundles hold no gateway session to rotate — the
+            // Cloud-remote bundles hold no gateway session to rotate — the
             // platform cookie authenticates these calls — so the nudge only
             // applies to genuine gateway sessions.
-            if (isRemoteGatewayMode() && !isPlatformAuthMode()) {
+            if (isRemoteGatewayMode() && !isCloudRemoteMode()) {
               void refreshRemoteGatewaySession();
             }
             return;

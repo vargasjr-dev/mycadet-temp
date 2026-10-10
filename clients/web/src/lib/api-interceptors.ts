@@ -45,7 +45,7 @@ import { ApiError, toApiError } from "@/utils/api-errors";
 import {
   getSelectedAssistant,
   isLocalClient,
-  isPlatformAuthMode,
+  isCloudRemoteMode,
   isPlatformDisabled,
   isRemoteGatewayMode,
   primeLocalGatewayConnectionWithRepair,
@@ -1183,11 +1183,11 @@ async function recoverFromPlatformSessionRejection(): Promise<void> {
  */
 export function platformAuthRecoveryInterceptor(response: Response): Response {
   const ingressUrl = getSelfHostedIngressUrl();
-  // In platform-auth mode the self-hosted slot points at the platform's own
+  // For a cloud remote the self-hosted slot points at the platform's own
   // same-origin proxy, so a rejection from that path IS a platform session
   // rejection — the bearer-path exclusion below must not apply.
   const fromSelfHostedGateway =
-    !isPlatformAuthMode() &&
+    !isCloudRemoteMode() &&
     !!ingressUrl &&
     response.url.startsWith(ingressUrl);
 
@@ -1287,12 +1287,12 @@ installResumeRequestCounter();
 daemonClient.interceptors.request.use(daemonRequestInterceptor);
 daemonClient.interceptors.response.use(daemonUnreachableInterceptor);
 // The gateway-session recovery only applies when the bundle holds a
-// gateway-level session. In platform-auth mode the same-origin proxy
+// gateway-level session. For a cloud remote the same-origin proxy
 // authenticates every call with the platform session cookie and never
 // forwards gateway credentials, so there is no session this interceptor
 // could recover — a 401 from the proxied path is a platform session
 // rejection, claimed by platformAuthRecoveryInterceptor instead.
-if (!isPlatformAuthMode()) {
+if (!isCloudRemoteMode()) {
   daemonClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 }
 daemonClient.interceptors.response.use(platformAuthRecoveryInterceptor);
@@ -1305,7 +1305,7 @@ daemonClient.interceptors.error.use(daemonErrorInterceptor);
 // in-place recovery applies. Gateway-only responses do not prove daemon readiness.
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
 gatewayClient.interceptors.response.use(daemonUnreachableInterceptor);
-if (!isPlatformAuthMode()) {
+if (!isCloudRemoteMode()) {
   gatewayClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 }
 gatewayClient.interceptors.response.use(platformAuthRecoveryInterceptor);
@@ -1380,7 +1380,7 @@ const PLATFORM_GATE_DENIALS: Record<
  * auth) has already happened by the time it runs.
  */
 function platformFeaturesGateDecision(request: Request): PlatformGateDecision {
-  if (isPlatformAuthMode()) {
+  if (isCloudRemoteMode()) {
     // The platform session cookie authenticates platform-origin calls in
     // this mode; the bearer check below guards gateway-session bundles.
     return "allow";

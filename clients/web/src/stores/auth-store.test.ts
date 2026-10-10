@@ -232,7 +232,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
-  isPlatformAuthMode: () => mockIsPlatformAuthMode,
+  isCloudRemoteMode: () => mockIsPlatformAuthMode,
   getPlatformAssistants: () => mockPlatformAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,

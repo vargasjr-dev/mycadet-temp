@@ -112,7 +112,7 @@ mock.module("@/lib/auth/gateway-session", () => ({
 
 const isLocalClientMock = mock(() => false);
 const isRemoteGatewayModeMock = mock(() => false);
-const isPlatformAuthModeMock = mock(() => false);
+const isCloudRemoteModeMock = mock(() => false);
 const getSelectedAssistantMock = mock(
   (): { assistantId: string } | undefined => undefined,
 );
@@ -139,7 +139,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
   isPlatformAssistant: () => false,
   isPlatformDisabled: () => false,
-  isPlatformAuthMode: isPlatformAuthModeMock,
+  isCloudRemoteMode: isCloudRemoteModeMock,
   isRemoteGatewayMode: isRemoteGatewayModeMock,
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
   primeLocalGatewayConnection: async () => {},
@@ -213,7 +213,7 @@ beforeEach(() => {
   isGatewayAuthModeMock.mockImplementation(() => false);
   isLocalClientMock.mockImplementation(() => false);
   isRemoteGatewayModeMock.mockImplementation(() => false);
-  isPlatformAuthModeMock.mockImplementation(() => false);
+  isCloudRemoteModeMock.mockImplementation(() => false);
   refreshRemoteGatewaySessionMock.mockClear();
   getSelectedAssistantMock.mockImplementation(() => undefined);
   getLocalGatewayUrlMock.mockImplementation(() => undefined);
@@ -1330,7 +1330,7 @@ describe("lifecycleService — local health heartbeat", () => {
 
   test("a 401 healthz in platform-auth mode leaves the gateway session machinery alone", async () => {
     isRemoteGatewayModeMock.mockImplementation(() => true);
-    isPlatformAuthModeMock.mockImplementation(() => true);
+    isCloudRemoteModeMock.mockImplementation(() => true);
     await driveHealthyThenProbe(async () => ({ ok: false, status: 401 }));
 
     expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();

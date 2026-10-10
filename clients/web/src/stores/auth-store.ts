@@ -56,7 +56,7 @@ import {
   getLocalAssistants,
   getSelectedAssistant,
   isPairedAssistant,
-  isPlatformAuthMode,
+  isCloudRemoteMode,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
@@ -990,7 +990,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   // than an observation the guard should be able to discard.
   initSession: async () => {
     if (isRemoteGatewayMode()) {
-      if (isPlatformAuthMode()) {
+      if (isCloudRemoteMode()) {
         // The platform session cookie authenticates every same-origin call:
         // the serving proxy injects the acting user per request and never
         // forwards gateway credentials. There is no gateway session to
@@ -1246,7 +1246,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     const abandon = (): boolean => isAuthenticated(get().sessionStatus);
 
     if (isRemoteGatewayMode()) {
-      if (isPlatformAuthMode()) {
+      if (isCloudRemoteMode()) {
         // The platform cookie is the only credential here: re-verify it
         // authoritatively instead of pinging a gateway session that does
         // not exist. A settled rejection ends the session (the recovery

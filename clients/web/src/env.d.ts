@@ -63,8 +63,8 @@ interface Window {
   __CADET_CONFIG__?: {
     disablePlatform?: boolean;
     mode?: string;
-    /** Auth surface flag (platform-served same-origin proxies inject "platform"). */
-    auth?: string;
+    /** Where the cadet comes from (platform-served same-origin proxies inject "cloud"). */
+    remote?: string;
     platformUrl?: string;
     /** Serving assistant's display name (remote-web ingress configs only). */
     assistantName?: string;

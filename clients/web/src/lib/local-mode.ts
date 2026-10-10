@@ -87,7 +87,7 @@ export { getPlatformRuntimeUrl };
 function getInjectedConfig(): {
   disablePlatform?: boolean;
   mode?: string;
-  auth?: string;
+  remote?: string;
   platformUrl?: string;
   assistantName?: string;
   hubUrl?: string;
@@ -98,7 +98,7 @@ function getInjectedConfig(): {
         __CADET_CONFIG__?: {
           disablePlatform?: boolean;
           mode?: string;
-          auth?: string;
+          remote?: string;
           platformUrl?: string;
           assistantName?: string;
           hubUrl?: string;
@@ -113,17 +113,18 @@ export function isRemoteGatewayMode(): boolean {
 }
 
 /**
- * True when the serving platform has flagged its same-origin proxy as the
- * authentication surface: every API call is authenticated by the platform's
- * session cookie (the proxy injects the acting user per request and never
- * forwards gateway credentials), so no gateway-level session exists to mint,
- * rotate, or recover. The remote-gateway session machinery — the boot ping,
- * pairing, 401 re-priming, scheduled refresh — must stay out of the way in
- * this mode, and a 401 from the proxied API path is a platform session
- * rejection.
+ * True when the loaded cadet is a cloud-hosted one: the config's
+ * `remote: "cloud"` says where the cadet comes from — its runtime lives
+ * behind the platform, and the platform's session is the authentication
+ * surface (every API call is authenticated by that cookie; the proxy injects
+ * the acting user per request and never forwards gateway credentials), so no
+ * gateway-level session exists to mint, rotate, or recover. The local
+ * remote-gateway session machinery — the boot ping, pairing, 401 re-priming,
+ * scheduled refresh — must stay out of the way for a cloud remote, and a 401
+ * from the proxied API path is a platform session rejection.
  */
-export function isPlatformAuthMode(): boolean {
-  return isRemoteGatewayMode() && getInjectedConfig().auth === "platform";
+export function isCloudRemoteMode(): boolean {
+  return isRemoteGatewayMode() && getInjectedConfig().remote === "cloud";
 }
 
 function nonEmptyString(value: string | undefined): string | undefined {
