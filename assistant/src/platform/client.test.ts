@@ -11,7 +11,7 @@ import {
 
 let mockManagedProxyCtx = {
   enabled: false,
-  platformBaseUrl: "",
+  cloudBaseUrl: "",
   assistantApiKey: "",
 };
 let mockAssistantId = "";
@@ -60,7 +60,7 @@ describe("CadetPlatformClient", () => {
     originalFetch = globalThis.fetch;
     mockManagedProxyCtx = {
       enabled: true,
-      platformBaseUrl: "https://platform.example.com",
+      cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "sk-test-key",
     };
     mockAssistantId = "asst-123";
@@ -85,7 +85,7 @@ describe("CadetPlatformClient", () => {
     test("returns null when managed proxy is not enabled", async () => {
       mockManagedProxyCtx = {
         enabled: false,
-        platformBaseUrl: "",
+        cloudBaseUrl: "",
         assistantApiKey: "",
       };
 
@@ -102,7 +102,7 @@ describe("CadetPlatformClient", () => {
     });
 
     test("strips trailing slash from platform base URL", async () => {
-      mockManagedProxyCtx.platformBaseUrl = "https://platform.example.com///";
+      mockManagedProxyCtx.cloudBaseUrl = "https://platform.example.com///";
 
       const client = await CadetPlatformClient.create();
       expect(client!.baseUrl).toBe("https://platform.example.com");
@@ -111,7 +111,7 @@ describe("CadetPlatformClient", () => {
     test("falls back to credential store values when managed context is not rehydrated", async () => {
       mockManagedProxyCtx = {
         enabled: false,
-        platformBaseUrl: "",
+        cloudBaseUrl: "",
         assistantApiKey: "",
       };
       mockAssistantId = "stored-assistant-id";
@@ -144,7 +144,7 @@ describe("CadetPlatformClient", () => {
     test("false when auth prerequisites are missing", async () => {
       mockManagedProxyCtx = {
         enabled: false,
-        platformBaseUrl: "",
+        cloudBaseUrl: "",
         assistantApiKey: "",
       };
 
@@ -277,7 +277,7 @@ describe("CadetPlatformClient", () => {
       // flight's cached `true`.
       mockManagedProxyCtx = {
         enabled: false,
-        platformBaseUrl: "",
+        cloudBaseUrl: "",
         assistantApiKey: "",
       };
       releaseFirstHang();

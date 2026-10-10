@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
-import { getPlatformBaseUrl } from "../config/env.js";
+import { getCloudBaseUrl } from "../config/env.js";
 import { getLogger } from "../util/logger.js";
 import { getRepoSkillsDir } from "./catalog-install.js";
 
@@ -21,7 +21,7 @@ let cachedCategories: SkillCategoryDef[] | null = null;
 let cacheTimestamp = 0;
 
 async function fetchCategories(): Promise<SkillCategoryDef[]> {
-  const platformUrl = getPlatformBaseUrl();
+  const platformUrl = getCloudBaseUrl();
   const url = `${platformUrl}/v1/skills/categories/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(10000),

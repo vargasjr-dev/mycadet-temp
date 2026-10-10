@@ -9,7 +9,7 @@
  * base URL instead of calling the upstream provider directly.
  */
 
-import { getPlatformBaseUrl } from "../../config/env.js";
+import { getCloudBaseUrl } from "../../config/env.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { PLATFORM_PROVIDER_META } from "./constants.js";
@@ -24,7 +24,7 @@ export interface ManagedProxyContext {
   /** Whether managed proxy prerequisites are satisfied. */
   enabled: boolean;
   /** Platform base URL (without trailing slash), or empty string if unavailable. */
-  platformBaseUrl: string;
+  cloudBaseUrl: string;
   /** Assistant API key for authenticating with the managed proxy, or empty string if unavailable. */
   assistantApiKey: string;
 }
@@ -44,13 +44,13 @@ let _managedProxyEnabled = false;
  * the assistant API key are present. Otherwise returns a disabled context.
  */
 export async function resolveManagedProxyContext(): Promise<ManagedProxyContext> {
-  const platformBaseUrl = getPlatformBaseUrl().replace(/\/+$/, "");
+  const cloudBaseUrl = getCloudBaseUrl().replace(/\/+$/, "");
   const assistantApiKey =
     (await getSecureKeyAsync(ASSISTANT_API_KEY_STORAGE_KEY)) ?? "";
-  const enabled = !!platformBaseUrl && !!assistantApiKey;
+  const enabled = !!cloudBaseUrl && !!assistantApiKey;
   _managedProxyEnabled = enabled;
 
-  return { enabled, platformBaseUrl, assistantApiKey };
+  return { enabled, cloudBaseUrl, assistantApiKey };
 }
 
 /**
@@ -80,7 +80,7 @@ export async function buildManagedBaseUrl(
     return undefined;
   }
 
-  return `${ctx.platformBaseUrl}${meta.proxyPath}`;
+  return `${ctx.cloudBaseUrl}${meta.proxyPath}`;
 }
 
 /**

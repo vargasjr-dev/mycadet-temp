@@ -1413,6 +1413,22 @@ export function setNestedValue(
 }
 
 /**
+ * Typed section-level write: replaces one parsed config section with the
+ * given value while leaving every other section's raw bytes untouched, so
+ * route handlers never need the raw-config API for writes. The raw base is
+ * preserved exactly like a surgical setNestedValue/saveRawConfig pair, but
+ * callers stay on the zod-inferred types.
+ */
+export function setConfigSection<K extends keyof AssistantConfig>(
+  section: K,
+  value: AssistantConfig[K],
+): void {
+  const raw = loadRawConfig();
+  raw[section] = value;
+  saveRawConfig(raw);
+}
+
+/**
  * Test-only alias for `writeQuarantineNotice`. Exists so the sentinel write
  * (and its overwrite/idempotency semantics) can be exercised directly with a
  * deterministic quarantine path without widening the runtime surface. Not for

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { UnprocessableEntityError } from "../errors.js";
 
-let platformBaseUrl = "https://platform.test";
+let cloudBaseUrl = "https://platform.test";
 let authHeader: string | null = "Api-Key test";
 
 // Spread the real module: replacing it wholesale breaks unrelated importers
@@ -19,11 +19,11 @@ mock.module("../../../inbound/platform-callback-registration.js", () => ({
   ...actualRegistration,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform: false,
-    platformBaseUrl,
+    cloudBaseUrl,
     assistantId: "assistant-123",
     hasAssistantApiKey: !!authHeader,
     authHeader,
-    enabled: !!(platformBaseUrl && authHeader),
+    enabled: !!(cloudBaseUrl && authHeader),
   }),
 }));
 
@@ -84,7 +84,7 @@ function stubFetch(
 }
 
 beforeEach(() => {
-  platformBaseUrl = "https://platform.test";
+  cloudBaseUrl = "https://platform.test";
   authHeader = "Api-Key test";
   fetchedUrls = [];
 });

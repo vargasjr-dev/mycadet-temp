@@ -787,7 +787,7 @@ async function platformLoginPresence(): Promise<
   if (ctx.enabled) {
     return "ok";
   }
-  if (!ctx.platformBaseUrl) {
+  if (!ctx.cloudBaseUrl) {
     return "unauthenticated";
   }
   const presence = await checkCredentialPresence(

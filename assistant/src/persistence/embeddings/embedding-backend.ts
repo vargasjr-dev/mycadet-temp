@@ -534,7 +534,7 @@ async function tryGetManagedGeminiBackend(
   if (!proxyCtx.enabled || !meta?.managed || !meta.proxyPath) {
     return undefined;
   }
-  const managedBaseUrl = `${proxyCtx.platformBaseUrl}${meta.proxyPath}`;
+  const managedBaseUrl = `${proxyCtx.cloudBaseUrl}${meta.proxyPath}`;
   return getCachedOrCreate(
     "gemini",
     config.memory.embeddings.geminiModel,

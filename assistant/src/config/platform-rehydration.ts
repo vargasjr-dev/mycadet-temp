@@ -1,11 +1,11 @@
 /**
  * Rehydrate the in-memory platform identity/URL overrides at process startup.
  *
- * These overrides (`setPlatformBaseUrl` and the platform ID setters in
+ * These overrides (`setCloudBaseUrl` and the platform ID setters in
  * `config/env.ts`) are normally only populated at runtime by the secret-routes
  * handlers when the platform pushes values. Any standalone process that talks
  * to the platform — the daemon and the schedule worker — must rehydrate them
- * before its first request, otherwise `getPlatformBaseUrl()` falls back to the
+ * before its first request, otherwise `getCloudBaseUrl()` falls back to the
  * environment default (e.g. dev-platform) while the credential store holds the
  * real production values, and requests are sent to the wrong environment.
  *
@@ -18,7 +18,7 @@
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
-import { setPlatformBaseUrl } from "./env.js";
+import { setCloudBaseUrl } from "./env.js";
 import { ensurePlatformIdentityIds } from "./platform-identity.js";
 
 const log = getLogger("platform-rehydration");
@@ -52,7 +52,7 @@ export async function rehydratePlatformCredentials(): Promise<void> {
   // the correct environment for every request that follows.
   await rehydrateField(
     "platform_base_url",
-    setPlatformBaseUrl,
+    setCloudBaseUrl,
     "platform base URL",
   );
 

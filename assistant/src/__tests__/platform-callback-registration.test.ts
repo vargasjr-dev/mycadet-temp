@@ -9,7 +9,7 @@ import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 let mockIsPlatform = true;
 let mockTunnelWebhooksEnabled = false;
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 let mockPlatformAssistantId = "";
 let mockConfig: { ingress?: { publicBaseUrl?: string; enabled?: boolean } } =
   {};
@@ -49,7 +49,7 @@ mock.module("../inbound/tunnel-webhooks-gate.js", () => ({
 const actualEnv = await import("../config/env.js");
 mock.module("../config/env.js", () => ({
   ...actualEnv,
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
   getPlatformAssistantId: () => mockPlatformAssistantId,
 }));
 
@@ -87,7 +87,7 @@ const { PublicIngressDisabledError } =
 describe("platform callback registration", () => {
   beforeEach(() => {
     mockIsPlatform = true;
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     mockPlatformAssistantId = "";
     secureKeyStore.clear();
     setAllUnreachable(false);
@@ -121,7 +121,7 @@ describe("platform callback registration", () => {
 
     expect(context.enabled).toBe(true);
     expect(context.isPlatform).toBe(true);
-    expect(context.platformBaseUrl).toBe("https://platform.example.com");
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
     expect(context.assistantId).toBe("11111111-2222-4333-8444-555555555555");
     expect(context.hasAssistantApiKey).toBe(true);
     expect(context.authHeader).toBe("Api-Key ast-managed-key");
@@ -143,7 +143,7 @@ describe("platform callback registration", () => {
 
     expect(context.enabled).toBe(true);
     expect(context.isPlatform).toBe(false);
-    expect(context.platformBaseUrl).toBe("https://platform.example.com");
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
     expect(context.assistantId).toBe("22222222-3333-4444-8555-666666666666");
     expect(context.hasAssistantApiKey).toBe(true);
     expect(context.authHeader).toBe("Api-Key ast-self-hosted-key");
@@ -151,20 +151,20 @@ describe("platform callback registration", () => {
 
   test("uses ASSISTANT_API_KEY env fallback when stored credential is missing", async () => {
     process.env.ASSISTANT_API_KEY = "env-key";
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "33333333-4444-4555-8666-777777777777";
 
     const context = await resolvePlatformCallbackRegistrationContext();
 
     expect(context.enabled).toBe(true);
-    expect(context.platformBaseUrl).toBe("https://platform.example.com");
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
     expect(context.assistantId).toBe("33333333-4444-4555-8666-777777777777");
     expect(context.hasAssistantApiKey).toBe(true);
     expect(context.authHeader).toBe("Api-Key env-key");
   });
 
   test("reports the key as missing when the store answers and holds none", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
@@ -178,7 +178,7 @@ describe("platform callback registration", () => {
     // A client that provisions a key when it sees none must not be told
     // "none" by a daemon whose store did not answer.
     setAllUnreachable(true);
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
@@ -191,7 +191,7 @@ describe("platform callback registration", () => {
   test("an environment key counts as present even when the store did not answer", async () => {
     setAllUnreachable(true);
     process.env.ASSISTANT_API_KEY = "env-key";
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     mockPlatformAssistantId = "44444444-5555-4666-8777-888888888888";
 
     const context = await resolvePlatformCallbackRegistrationContext();
@@ -467,7 +467,7 @@ describe("resolveCallbackUrl resolution order", () => {
   beforeEach(() => {
     mockIsPlatform = false;
     mockTunnelWebhooksEnabled = false;
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     mockPlatformAssistantId = "";
     secureKeyStore.clear();
     setAllUnreachable(false);

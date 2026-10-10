@@ -11,13 +11,13 @@ const secureKeys = useMemorySecureKeyMap();
 // Module mocks — must appear before importing the module under test
 // ---------------------------------------------------------------------------
 
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 let mockAssistantApiKey = "";
 
 mock.module("../providers/platform-proxy/context.js", () => ({
   resolveManagedProxyContext: async () => ({
-    enabled: !!mockPlatformBaseUrl && !!mockAssistantApiKey,
-    platformBaseUrl: mockPlatformBaseUrl,
+    enabled: !!mockCloudBaseUrl && !!mockAssistantApiKey,
+    cloudBaseUrl: mockCloudBaseUrl,
     assistantApiKey: mockAssistantApiKey,
   }),
 }));
@@ -31,13 +31,13 @@ import {
 describe("resolveImageGenCredentials", () => {
   beforeEach(() => {
     secureKeys.clear(); // no provider keys configured
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     mockAssistantApiKey = "";
   });
 
   describe("managed mode", () => {
     test("returns managed-proxy credentials when context is enabled", async () => {
-      mockPlatformBaseUrl = "https://platform.example.com";
+      mockCloudBaseUrl = "https://platform.example.com";
       mockAssistantApiKey = "sk-assistant-key";
 
       const result = await resolveImageGenCredentials({
@@ -54,7 +54,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns errorHint mentioning 'log in to Cadet' when platform URL is missing", async () => {
-      mockPlatformBaseUrl = "";
+      mockCloudBaseUrl = "";
       mockAssistantApiKey = "sk-assistant-key";
 
       const result = await resolveImageGenCredentials({
@@ -68,7 +68,7 @@ describe("resolveImageGenCredentials", () => {
     });
 
     test("returns errorHint when assistant API key is empty (TOCTOU-safe)", async () => {
-      mockPlatformBaseUrl = "https://platform.example.com";
+      mockCloudBaseUrl = "https://platform.example.com";
       mockAssistantApiKey = "";
 
       const result = await resolveImageGenCredentials({
@@ -240,7 +240,7 @@ describe("resolveImageGenRouting", () => {
       credentialKey("gemini", "api_key"),
       "gemini-key-should-not-be-used",
     );
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
 
     const routing = resolveImageGenRouting({
       provider: "cadet",

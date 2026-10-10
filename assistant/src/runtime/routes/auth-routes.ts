@@ -7,8 +7,8 @@
 import { z } from "zod";
 
 import {
+  getCloudBaseUrl,
   getPlatformAssistantId,
-  getPlatformBaseUrl,
   getPlatformOrganizationId,
   getPlatformUserId,
 } from "../../config/env.js";
@@ -30,7 +30,7 @@ async function handleAuthInfo(
 ): Promise<AuthInfoResult> {
   const ctx = await resolveManagedProxyContext();
 
-  const platformUrl = getPlatformBaseUrl();
+  const platformUrl = getCloudBaseUrl();
   const assistantId = getPlatformAssistantId();
   const organizationId = getPlatformOrganizationId();
   const userId = getPlatformUserId();

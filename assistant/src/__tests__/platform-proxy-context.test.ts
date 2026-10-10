@@ -8,10 +8,10 @@ const secureKeys = useMemorySecureKeyMap();
 const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 
 // Mutable state for env stubs
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 
 import {
@@ -23,21 +23,21 @@ import {
 
 describe("resolveManagedProxyContext", () => {
   beforeEach(() => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
   });
 
   test("returns disabled when platform URL is empty", async () => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.enabled).toBe(false);
-    expect(ctx.platformBaseUrl).toBe("");
+    expect(ctx.cloudBaseUrl).toBe("");
   });
 
   test("returns disabled when assistant API key is missing", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.delete(ASSISTANT_API_KEY);
 
     const ctx = await resolveManagedProxyContext();
@@ -51,27 +51,27 @@ describe("resolveManagedProxyContext", () => {
   });
 
   test("returns enabled when both platform URL and API key are present", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com/";
+    mockCloudBaseUrl = "https://platform.example.com/";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
     expect(ctx.enabled).toBe(true);
-    expect(ctx.platformBaseUrl).toBe("https://platform.example.com");
+    expect(ctx.cloudBaseUrl).toBe("https://platform.example.com");
     expect(ctx.assistantApiKey).toBe("sk-test-key");
   });
 
   test("strips trailing slashes from platform URL", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com///";
+    mockCloudBaseUrl = "https://platform.example.com///";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const ctx = await resolveManagedProxyContext();
-    expect(ctx.platformBaseUrl).toBe("https://platform.example.com");
+    expect(ctx.cloudBaseUrl).toBe("https://platform.example.com");
   });
 });
 
 describe("hasManagedProxyPrereqs", () => {
   beforeEach(() => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
   });
 
@@ -80,7 +80,7 @@ describe("hasManagedProxyPrereqs", () => {
   });
 
   test("returns true when prerequisites are satisfied", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     expect(await hasManagedProxyPrereqs()).toBe(true);
   });
@@ -88,7 +88,7 @@ describe("hasManagedProxyPrereqs", () => {
 
 describe("buildManagedBaseUrl", () => {
   beforeEach(() => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
@@ -120,7 +120,7 @@ describe("buildManagedBaseUrl", () => {
   });
 
   test("returns undefined when prerequisites are missing", async () => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
     expect(await buildManagedBaseUrl("anthropic")).toBeUndefined();
     expect(await buildManagedBaseUrl("gemini")).toBeUndefined();
@@ -130,7 +130,7 @@ describe("buildManagedBaseUrl", () => {
 
 describe("managedFallbackEnabledFor", () => {
   beforeEach(() => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
   });
 
@@ -149,7 +149,7 @@ describe("managedFallbackEnabledFor", () => {
   });
 
   test("returns false when prerequisites are missing", async () => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
     expect(await managedFallbackEnabledFor("anthropic")).toBe(false);
     expect(await managedFallbackEnabledFor("gemini")).toBe(false);

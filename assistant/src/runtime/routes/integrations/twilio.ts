@@ -20,13 +20,9 @@ import {
   releasePhoneNumber,
   searchAvailableNumbers,
 } from "../../../calls/twilio-rest.js";
-import {
-  getConfig,
-  loadRawConfig,
-  saveRawConfig,
-} from "../../../config/loader.js";
+import { getConfig, setConfigSection } from "../../../config/loader.js";
+import type { TwilioConfig } from "../../../config/schemas/channels.js";
 import { syncTwilioWebhooks } from "../../../daemon/handlers/config-ingress.js";
-import type { IngressConfig } from "../../../inbound/public-ingress-urls.js";
 import { credentialKey } from "../../../security/credential-key.js";
 import {
   deleteSecureKeyAsync,
@@ -81,14 +77,12 @@ const TwilioNumberMutationResultSchema = z.object({
 
 /** Helper to clear stale assistant phone number mappings. */
 function pruneAssistantPhoneNumbers(
-  twilio: Record<string, unknown>,
+  twilio: TwilioConfig,
   keepNumber: string,
   mode: "keep" | "remove",
 ): void {
-  const mappings = twilio.assistantPhoneNumbers as
-    | Record<string, string>
-    | undefined;
-  if (mappings && typeof mappings === "object") {
+  const mappings = twilio.assistantPhoneNumbers;
+  if (mappings) {
     for (const [key, value] of Object.entries(mappings)) {
       const shouldDelete =
         mode === "keep" ? value !== keepNumber : value === keepNumber;
@@ -174,11 +168,11 @@ export async function handleSetTwilioCredentials({
     throw new InternalError("Failed to store Auth Token in secure storage");
   }
 
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  twilio.accountSid = accountSid;
-  twilio.setupStarted = true;
-  saveRawConfig({ ...raw, twilio });
+  setConfigSection("twilio", {
+    ...getConfig().twilio,
+    accountSid,
+    setupStarted: true,
+  });
 
   upsertCredentialMetadata("twilio", "account_sid", {
     allowedTools: ["bash"],
@@ -224,10 +218,7 @@ export async function handleClearTwilioCredentials() {
     );
   }
 
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  delete twilio.accountSid;
-  saveRawConfig({ ...raw, twilio });
+  setConfigSection("twilio", { ...getConfig().twilio, accountSid: "" });
 
   deleteCredentialMetadata("twilio", "account_sid");
   deleteCredentialMetadata("twilio", "auth_token");
@@ -284,18 +275,16 @@ export async function handleProvisionTwilioNumber({ body }: RouteHandlerArgs) {
     available[0].phoneNumber,
   );
 
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  twilio.phoneNumber = purchased.phoneNumber;
+  const twilio = { ...getConfig().twilio, phoneNumber: purchased.phoneNumber };
   pruneAssistantPhoneNumbers(twilio, purchased.phoneNumber, "keep");
-  saveRawConfig({ ...raw, twilio });
+  setConfigSection("twilio", twilio);
 
   // Best-effort webhook configuration
   const webhookResult = await syncTwilioWebhooks(
     purchased.phoneNumber,
     accountSid,
     authToken,
-    loadRawConfig() as IngressConfig,
+    { ingress: getConfig().ingress },
   );
 
   return {
@@ -315,11 +304,9 @@ export async function handleAssignTwilioNumber({
     throw new BadRequestError("phoneNumber is required");
   }
 
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  twilio.phoneNumber = phoneNumber;
+  const twilio = { ...getConfig().twilio, phoneNumber };
   pruneAssistantPhoneNumbers(twilio, phoneNumber, "keep");
-  saveRawConfig({ ...raw, twilio });
+  setConfigSection("twilio", twilio);
 
   // Best-effort webhook configuration when credentials are available
   let webhookWarning: string | undefined;
@@ -330,7 +317,7 @@ export async function handleAssignTwilioNumber({
       phoneNumber,
       acctSid,
       acctToken,
-      loadRawConfig() as IngressConfig,
+      { ingress: getConfig().ingress },
     );
     webhookWarning = webhookResult.warning;
   }
@@ -357,9 +344,8 @@ async function handleReleaseTwilioNumber({ body }: RouteHandlerArgs) {
   const { phoneNumber: requestedNumber } = body as {
     phoneNumber?: string;
   };
-  const raw = loadRawConfig();
-  const twilio = (raw?.twilio ?? {}) as Record<string, unknown>;
-  const phoneNumber = requestedNumber || (twilio.phoneNumber as string) || "";
+  const twilio = { ...getConfig().twilio };
+  const phoneNumber = requestedNumber || twilio.phoneNumber || "";
 
   if (!phoneNumber) {
     throw new BadRequestError(
@@ -372,10 +358,10 @@ async function handleReleaseTwilioNumber({ body }: RouteHandlerArgs) {
   await releasePhoneNumber(accountSid, authToken, phoneNumber);
 
   if (twilio.phoneNumber === phoneNumber) {
-    delete twilio.phoneNumber;
+    twilio.phoneNumber = "";
   }
   pruneAssistantPhoneNumbers(twilio, phoneNumber, "remove");
-  saveRawConfig({ ...raw, twilio });
+  setConfigSection("twilio", twilio);
 
   return {
     success: true,

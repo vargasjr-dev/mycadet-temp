@@ -55,7 +55,7 @@ mock.module("../../../inbound/platform-callback-registration.js", () => ({
   registerLocalWebhookRoute: registerLocalWebhookRouteMock,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform,
-    platformBaseUrl: "https://cloud.mycadet.ai",
+    cloudBaseUrl: "https://cloud.mycadet.ai",
     assistantId: platformContextEnabled ? "assistant-123" : "",
     hasAssistantApiKey: platformContextEnabled,
     authHeader: platformContextEnabled ? "Api-Key secret" : null,

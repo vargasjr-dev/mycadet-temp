@@ -1376,6 +1376,7 @@ describe("twilio webhook routes", () => {
       expect(result.hasCredentials).toBe(true);
       expect((loadRawConfig() as Record<string, unknown>).twilio).toEqual({
         accountSid: "AC_new_credentials",
+        phoneNumber: "",
         setupStarted: true,
       });
     });

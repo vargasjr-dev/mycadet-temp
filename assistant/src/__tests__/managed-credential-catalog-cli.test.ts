@@ -11,7 +11,7 @@ const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 // Mutable state for mocks
 // ---------------------------------------------------------------------------
 
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 let mockPlatformAssistantId = "";
 
 /** Simulated platform catalog responses keyed by URL. */
@@ -19,7 +19,7 @@ let mockFetchResponses: Map<string, { status: number; body: unknown }> =
   new Map();
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
   getPlatformAssistantId: () => mockPlatformAssistantId,
 }));
 
@@ -63,14 +63,14 @@ import {
 
 describe("fetchManagedCatalog", () => {
   beforeEach(() => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
     mockPlatformAssistantId = "";
     mockFetchResponses = new Map();
   });
 
   test("returns empty descriptors when managed proxy prerequisites are missing", async () => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.delete(ASSISTANT_API_KEY);
 
     const result = await fetchManagedCatalog();
@@ -80,7 +80,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("returns empty descriptors when platform URL is missing", async () => {
-    mockPlatformBaseUrl = "";
+    mockCloudBaseUrl = "";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
 
     const result = await fetchManagedCatalog();
@@ -89,7 +89,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("returns empty descriptors when API key is missing", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.delete(ASSISTANT_API_KEY);
 
     const result = await fetchManagedCatalog();
@@ -98,7 +98,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("returns empty descriptors when assistant ID is missing", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "";
 
@@ -108,7 +108,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("parses platform catalog response into descriptors with correct handles", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "ast-uuid-1234";
 
@@ -156,7 +156,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("handles empty connections list from platform", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "ast-uuid-1234";
 
@@ -174,7 +174,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("handles platform returning HTTP error gracefully", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "ast-uuid-1234";
 
@@ -193,7 +193,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("handles platform returning unexpected format gracefully", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "ast-uuid-1234";
 
@@ -211,7 +211,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("defaults missing optional fields in catalog entries", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockPlatformAssistantId = "ast-uuid-1234";
 
@@ -242,7 +242,7 @@ describe("fetchManagedCatalog", () => {
   });
 
   test("error messages never contain sensitive details", async () => {
-    mockPlatformBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://platform.example.com";
     secureKeys.set(ASSISTANT_API_KEY, "sk-super-secret-key-12345");
     mockPlatformAssistantId = "ast-uuid-1234";
 

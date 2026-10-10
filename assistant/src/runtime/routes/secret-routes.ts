@@ -15,10 +15,7 @@ import {
   assertAcpCredentialFormat,
 } from "../../acp/acp-credentials.js";
 import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
-import {
-  getPlatformAssistantId,
-  setPlatformBaseUrl,
-} from "../../config/env.js";
+import { getPlatformAssistantId, setCloudBaseUrl } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { maybeDefaultSpeechToManaged } from "../../config/managed-speech-defaults.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
@@ -368,7 +365,7 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         assertMetadataWritable();
         await persistCredential(service, field, value);
         if (field === "platform_base_url") {
-          setPlatformBaseUrl(value);
+          setCloudBaseUrl(value);
         }
         if (isPlatformManagedCredential(service, field)) {
           await refreshProvidersAfterSecretChange();

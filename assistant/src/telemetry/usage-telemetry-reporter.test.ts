@@ -68,13 +68,13 @@ mock.module("../platform/client.js", () => ({
   },
 }));
 
-const mockGetPlatformBaseUrl = mock(() => "https://cloud.mycadet.ai");
+const mockGetCloudBaseUrl = mock(() => "https://cloud.mycadet.ai");
 
 const mockGetPlatformOrganizationId = mock(() => "");
 const mockGetPlatformUserId = mock(() => "");
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: mockGetPlatformBaseUrl,
+  getCloudBaseUrl: mockGetCloudBaseUrl,
   getPlatformOrganizationId: mockGetPlatformOrganizationId,
   getPlatformUserId: mockGetPlatformUserId,
   // Re-export anything else the module might import transitively
@@ -364,7 +364,7 @@ beforeEach(() => {
   getTelemetryDb()!.delete(telemetryEvents).run();
   delete process.env.CADET_DISABLE_PLATFORM;
   delete process.env.IS_PLATFORM;
-  mockGetPlatformBaseUrl.mockReset();
+  mockGetCloudBaseUrl.mockReset();
   mockGetDeviceId.mockReset();
   mockGetDeviceId.mockReturnValue("test-device-id");
   mockGetPlatformOrganizationId.mockReset();
@@ -374,7 +374,7 @@ beforeEach(() => {
 
   // Defaults
   mockGetFlushCheckpoint.mockReturnValue(null);
-  mockGetPlatformBaseUrl.mockReturnValue("https://cloud.mycadet.ai");
+  mockGetCloudBaseUrl.mockReturnValue("https://cloud.mycadet.ai");
 
   mockFetch = mock(() =>
     Promise.resolve(new Response('{"accepted":0}', { status: 200 })),

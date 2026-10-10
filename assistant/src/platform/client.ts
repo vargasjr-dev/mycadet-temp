@@ -61,7 +61,7 @@ async function resolvePlatformClientConfig(): Promise<PlatformClientConfig | nul
 
   const ctx = await resolveManagedProxyContext();
 
-  let baseUrl = ctx.enabled ? ctx.platformBaseUrl : "";
+  let baseUrl = ctx.enabled ? ctx.cloudBaseUrl : "";
   let apiKey = ctx.enabled ? ctx.assistantApiKey : "";
   const assistantId = await resolvePlatformAssistantId();
 
@@ -200,16 +200,16 @@ export async function isPlatformClientConfigured(): Promise<boolean> {
 }
 
 export class CadetPlatformClient {
-  private readonly platformBaseUrl: string;
+  private readonly cloudBaseUrl: string;
   private readonly apiKey: string;
   private readonly assistantId: string;
 
   private constructor(
-    platformBaseUrl: string,
+    cloudBaseUrl: string,
     apiKey: string,
     assistantId: string,
   ) {
-    this.platformBaseUrl = platformBaseUrl.replace(/\/+$/, "");
+    this.cloudBaseUrl = cloudBaseUrl.replace(/\/+$/, "");
     this.apiKey = apiKey;
     this.assistantId = assistantId;
   }
@@ -236,11 +236,11 @@ export class CadetPlatformClient {
   /**
    * Authenticated fetch against the platform API.
    *
-   * Prepends `platformBaseUrl` to `path` and injects the `Api-Key` auth header.
+   * Prepends `cloudBaseUrl` to `path` and injects the `Api-Key` auth header.
    * Callers handle response parsing and domain-specific error mapping.
    */
   async fetch(path: string, init?: RequestInit): Promise<Response> {
-    const url = `${this.platformBaseUrl}${path}`;
+    const url = `${this.cloudBaseUrl}${path}`;
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Api-Key ${this.apiKey}`);
 
@@ -356,7 +356,7 @@ export class CadetPlatformClient {
   }
 
   get baseUrl(): string {
-    return this.platformBaseUrl;
+    return this.cloudBaseUrl;
   }
 
   get assistantApiKey(): string {

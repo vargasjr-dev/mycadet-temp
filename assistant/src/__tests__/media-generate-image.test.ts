@@ -85,7 +85,7 @@ mock.module("../media/image-service.js", () => ({
 let mockManagedBaseUrl: string | undefined;
 let mockManagedProxyContext = {
   enabled: false,
-  platformBaseUrl: "",
+  cloudBaseUrl: "",
   assistantApiKey: "",
 };
 
@@ -146,7 +146,7 @@ beforeEach(() => {
   mockManagedBaseUrl = undefined;
   mockManagedProxyContext = {
     enabled: false,
-    platformBaseUrl: "",
+    cloudBaseUrl: "",
     assistantApiKey: "",
   };
   fakeContext = makeContext();
@@ -175,7 +175,7 @@ describe("image-studio skill script wrapper", () => {
     mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
     mockManagedProxyContext = {
       enabled: true,
-      platformBaseUrl: "https://platform.example.com",
+      cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
     };
 
@@ -195,7 +195,7 @@ describe("image-studio skill script wrapper", () => {
     seedImageGenService({ provider: "cadet" });
     mockManagedProxyContext = {
       enabled: true,
-      platformBaseUrl: "https://platform.example.com",
+      cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
     };
 
@@ -214,7 +214,7 @@ describe("image-studio skill script wrapper", () => {
     seedImageGenService({ provider: "cadet", model: "gpt-image-2" });
     mockManagedProxyContext = {
       enabled: true,
-      platformBaseUrl: "https://platform.example.com",
+      cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
     };
 
@@ -259,7 +259,7 @@ describe("image-studio skill script wrapper", () => {
     mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
     mockManagedProxyContext = {
       enabled: true,
-      platformBaseUrl: "https://platform.example.com",
+      cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
     };
 

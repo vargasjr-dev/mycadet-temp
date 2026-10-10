@@ -22,7 +22,7 @@
 import { type EnvironmentDefinition, SEEDS } from "@mycadet/environments";
 import { z } from "zod";
 
-import { getPlatformBaseUrl } from "../../config/env.js";
+import { getCloudBaseUrl } from "../../config/env.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -72,7 +72,7 @@ function hostnameOf(url: string): string | undefined {
  * authenticates against.
  *
  * `CADET_ENVIRONMENT` cannot answer this. Unset, it means dev to
- * `getPlatformBaseUrl` and local to every launcher, but it would have to mean
+ * `getCloudBaseUrl` and local to every launcher, but it would have to mean
  * production for a roadmap default to be safe, and it is blind to the config
  * file and `CADET_PLATFORM_URL`, either of which can point a differently
  * labelled assistant at production. The platform base URL is the one signal
@@ -83,7 +83,7 @@ function hostnameOf(url: string): string | undefined {
  * which is not production and whose roadmap and web origins must be named.
  */
 function resolveDeployment(): EnvironmentDefinition | undefined {
-  const host = hostnameOf(getPlatformBaseUrl());
+  const host = hostnameOf(getCloudBaseUrl());
   if (!host) {
     return undefined;
   }
@@ -129,14 +129,14 @@ function resolveEndpoints(): RoadmapEndpoints {
 
   if (!apiOverride && deployment?.name !== "production") {
     throw new UnprocessableEntityError(
-      `The Cadet roadmap has no deployment for a ${getPlatformBaseUrl()} assistant. Set CADET_MARKETING_URL to the roadmap service for this environment.`,
+      `The Cadet roadmap has no deployment for a ${getCloudBaseUrl()} assistant. Set CADET_MARKETING_URL to the roadmap service for this environment.`,
     );
   }
 
   const web = webOverride || deployment?.webUrl;
   if (!web) {
     throw new UnprocessableEntityError(
-      `No web origin is known for a ${getPlatformBaseUrl()} assistant, so roadmap item links cannot be built. Set CADET_WEB_URL to the site that renders this environment's roadmap.`,
+      `No web origin is known for a ${getCloudBaseUrl()} assistant, so roadmap item links cannot be built. Set CADET_WEB_URL to the site that renders this environment's roadmap.`,
     );
   }
 

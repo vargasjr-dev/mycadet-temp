@@ -16,7 +16,7 @@
 
 import { z } from "zod";
 
-import { getPlatformBaseUrl } from "../../config/env.js";
+import { getCloudBaseUrl } from "../../config/env.js";
 import { getLogger } from "../../util/logger.js";
 import {
   type MarketplaceEntry,
@@ -64,7 +64,7 @@ export async function fetchPluginCatalogFromPlatform(
   deps: SearchPluginsDeps,
   opts?: { ref?: string },
 ): Promise<PluginCatalog> {
-  const url = `${getPlatformBaseUrl().replace(/\/+$/, "")}/v1/plugins/`;
+  const url = `${getCloudBaseUrl().replace(/\/+$/, "")}/v1/plugins/`;
 
   let res: Response;
   try {

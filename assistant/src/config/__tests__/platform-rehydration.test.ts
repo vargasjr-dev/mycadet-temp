@@ -19,11 +19,11 @@ mock.module("../../security/secure-keys.js", () => ({
 
 const {
   getPlatformAssistantId,
-  getPlatformBaseUrl,
+  getCloudBaseUrl,
   getPlatformOrganizationId,
   getPlatformUserId,
   setPlatformAssistantId,
-  setPlatformBaseUrl,
+  setCloudBaseUrl,
   setPlatformOrganizationId,
   setPlatformUserId,
 } = await import("../env.js");
@@ -70,7 +70,7 @@ describe("rehydratePlatformCredentials", () => {
     delete process.env.PLATFORM_USER_ID;
     delete process.env.ASSISTANT_API_KEY;
     // Reset in-memory overrides between tests.
-    setPlatformBaseUrl(undefined);
+    setCloudBaseUrl(undefined);
     setPlatformAssistantId(undefined);
     setPlatformOrganizationId(undefined);
     setPlatformUserId(undefined);
@@ -99,7 +99,7 @@ describe("rehydratePlatformCredentials", () => {
     } else {
       process.env.ASSISTANT_API_KEY = originalAssistantApiKeyEnv;
     }
-    setPlatformBaseUrl(undefined);
+    setCloudBaseUrl(undefined);
     setPlatformAssistantId(undefined);
     setPlatformOrganizationId(undefined);
     setPlatformUserId(undefined);
@@ -114,7 +114,7 @@ describe("rehydratePlatformCredentials", () => {
 
     await rehydratePlatformCredentials();
 
-    expect(getPlatformBaseUrl()).toBe(PROD_URL);
+    expect(getCloudBaseUrl()).toBe(PROD_URL);
     expect(getPlatformAssistantId()).toBe("");
     expect(getPlatformOrganizationId()).toBe("");
     expect(getPlatformUserId()).toBe("");
@@ -126,7 +126,7 @@ describe("rehydratePlatformCredentials", () => {
 
     await rehydratePlatformCredentials();
 
-    expect(getPlatformBaseUrl()).toBe(PROD_URL);
+    expect(getCloudBaseUrl()).toBe(PROD_URL);
   });
 
   test("leaves overrides untouched when nothing is stored", async () => {

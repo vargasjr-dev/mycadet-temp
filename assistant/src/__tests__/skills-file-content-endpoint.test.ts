@@ -263,12 +263,12 @@ mock.module("../providers/provider-send-message.js", () => ({
 // Real isTextMimeType — we want actual classification here.
 // No mock needed; let it fall through to the real implementation.
 
-let mockPlatformBaseUrl = "https://platform.test";
+let mockCloudBaseUrl = "https://platform.test";
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 mock.module("../config/env.ts", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 
 mock.module("../daemon/handlers/shared.js", () => ({
@@ -334,7 +334,7 @@ function installedSkill(id: string, directoryPath: string) {
 beforeEach(() => {
   originalFetch = globalThis.fetch;
   mockResolvedSkills = [];
-  mockPlatformBaseUrl = "https://platform.test";
+  mockCloudBaseUrl = "https://platform.test";
   providerReadCalls.length = 0;
   mockCadetProvider = makeNoopProvider("cadet");
   mockSkillsshProvider = makeNoopProvider("skillssh");

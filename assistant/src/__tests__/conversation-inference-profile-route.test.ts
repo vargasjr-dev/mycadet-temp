@@ -7,7 +7,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 mock.module("../providers/platform-proxy/context.js", () => ({
   resolveManagedProxyContext: async () => ({
     enabled: true,
-    platformBaseUrl: "https://platform.example",
+    cloudBaseUrl: "https://platform.example",
     assistantApiKey: "key",
   }),
 }));

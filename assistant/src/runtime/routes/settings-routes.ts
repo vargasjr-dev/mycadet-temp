@@ -9,14 +9,12 @@ import { basename, join } from "node:path";
 import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
-import {
-  getPlatformBaseUrl,
-  setIngressPublicBaseUrl,
-} from "../../config/env.js";
+import { getCloudBaseUrl, setIngressPublicBaseUrl } from "../../config/env.js";
 import {
   getConfig,
   loadRawConfig,
   saveRawConfig,
+  setConfigSection,
 } from "../../config/loader.js";
 import { loadSkillCatalog } from "../../config/skills.js";
 import { getGuardianDelivery } from "../../contacts/guardian-delivery-reader.js";
@@ -794,26 +792,23 @@ function handleEnvVars() {
 }
 
 // ---------------------------------------------------------------------------
-// Platform config
+// Cloud config
 // ---------------------------------------------------------------------------
 
-function handleGetPlatformConfig() {
-  const baseUrl = getConfig().platform.baseUrl || getPlatformBaseUrl();
+function handleGetCloudConfig() {
+  const baseUrl = getConfig().cloud.baseUrl || getCloudBaseUrl();
   return { baseUrl, success: true };
 }
 
-function handleUpdatePlatformConfig({ body = {} }: RouteHandlerArgs) {
+function handleUpdateCloudConfig({ body = {} }: RouteHandlerArgs) {
   try {
     const { baseUrl: rawBaseUrl } = body as { baseUrl?: string };
     const value = normalizePublicBaseUrl(rawBaseUrl);
-    const raw = loadRawConfig();
-    const platform = (raw?.platform ?? {}) as Record<string, unknown>;
-    platform.baseUrl = value;
-    saveRawConfig({ ...raw, platform });
+    setConfigSection("cloud", { ...getConfig().cloud, baseUrl: value ?? "" });
     return { baseUrl: value ?? "", success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    log.error({ err }, "Failed to update platform config");
+    log.error({ err }, "Failed to update cloud config");
     throw new InternalError(message);
   }
 }
@@ -1051,37 +1046,37 @@ export const ROUTES: RouteDefinition[] = [
     handler: () => handleEnvVars(),
   },
   {
-    operationId: "config_platform_get",
-    endpoint: "config/platform",
+    operationId: "config_cloud_get",
+    endpoint: "config/cloud",
     method: "GET",
     policy: {
       requiredScopes: ["settings.read"],
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
-    summary: "Get platform config",
+    summary: "Get cloud config",
     description: "Return the platform base URL configuration.",
     tags: ["config"],
     responseBody: z.object({
       baseUrl: z.string(),
       success: z.boolean(),
     }),
-    handler: () => handleGetPlatformConfig(),
+    handler: () => handleGetCloudConfig(),
   },
   {
-    operationId: "config_platform_put",
-    endpoint: "config/platform",
+    operationId: "config_cloud_put",
+    endpoint: "config/cloud",
     method: "PUT",
     policy: {
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
-    summary: "Update platform config",
+    summary: "Update cloud config",
     description: "Set the platform base URL.",
     tags: ["config"],
     requestBody: z.object({
       baseUrl: z.string(),
     }),
-    handler: handleUpdatePlatformConfig,
+    handler: handleUpdateCloudConfig,
   },
   {
     operationId: "integrations_ingress_config_get",

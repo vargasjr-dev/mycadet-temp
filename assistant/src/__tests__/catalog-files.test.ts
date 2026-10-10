@@ -44,12 +44,12 @@ mock.module("../skills/catalog-install.js", () => ({
   getRepoSkillsDir: () => mockRepoSkillsDir,
 }));
 
-let mockPlatformBaseUrl = "https://platform.test";
+let mockCloudBaseUrl = "https://platform.test";
 mock.module("../config/env.ts", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
 }));
 
 // ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@ beforeEach(() => {
   fetchCalls = [];
   mockCatalog = [];
   mockRepoSkillsDir = undefined;
-  mockPlatformBaseUrl = "https://platform.test";
+  mockCloudBaseUrl = "https://platform.test";
 });
 
 afterEach(() => {

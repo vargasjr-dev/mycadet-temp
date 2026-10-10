@@ -16,7 +16,7 @@ let managedProxyBaseUrl = "https://platform.example";
 mock.module("../../../providers/platform-proxy/context.js", () => ({
   resolveManagedProxyContext: async () => ({
     enabled: managedProxyEnabled,
-    platformBaseUrl: managedProxyBaseUrl,
+    cloudBaseUrl: managedProxyBaseUrl,
     assistantApiKey: managedProxyEnabled ? "key" : "",
   }),
 }));

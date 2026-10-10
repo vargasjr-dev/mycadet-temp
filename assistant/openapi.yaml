@@ -5557,6 +5557,49 @@ paths:
       responses:
         "200":
           description: Successful response
+  /v1/config/cloud:
+    get:
+      operationId: config_cloud_get
+      summary: Get cloud config
+      description: Return the platform base URL configuration.
+      tags:
+        - config
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  baseUrl:
+                    type: string
+                  success:
+                    type: boolean
+                required:
+                  - baseUrl
+                  - success
+                additionalProperties: false
+    put:
+      operationId: config_cloud_put
+      summary: Update cloud config
+      description: Set the platform base URL.
+      tags:
+        - config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                baseUrl:
+                  type: string
+              required:
+                - baseUrl
+      responses:
+        "200":
+          description: Successful response
   /v1/config/embeddings:
     get:
       operationId: config_embeddings_get
@@ -5927,49 +5970,6 @@ paths:
                   readOnly: true
                   type: string
                   minLength: 1
-      responses:
-        "200":
-          description: Successful response
-  /v1/config/platform:
-    get:
-      operationId: config_platform_get
-      summary: Get platform config
-      description: Return the platform base URL configuration.
-      tags:
-        - config
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  baseUrl:
-                    type: string
-                  success:
-                    type: boolean
-                required:
-                  - baseUrl
-                  - success
-                additionalProperties: false
-    put:
-      operationId: config_platform_put
-      summary: Update platform config
-      description: Set the platform base URL.
-      tags:
-        - config
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                baseUrl:
-                  type: string
-              required:
-                - baseUrl
       responses:
         "200":
           description: Successful response

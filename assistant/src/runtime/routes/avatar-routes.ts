@@ -32,7 +32,7 @@ import {
   ensureAvatarRasterPath,
 } from "../../avatar/ensure-raster.js";
 import type { CharacterTraits } from "../../avatar/traits-png-sync.js";
-import { setPlatformBaseUrl } from "../../config/env.js";
+import { setCloudBaseUrl } from "../../config/env.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { detectMediaType } from "../../tools/shared/filesystem/image-read.js";
@@ -183,7 +183,7 @@ async function handleGenerateAvatar({ body, headers }: RouteHandlerArgs) {
     const key = credentialKey("cadet", "platform_base_url");
     const persisted = await getSecureKeyAsync(key);
     if (persisted) {
-      setPlatformBaseUrl(persisted);
+      setCloudBaseUrl(persisted);
     }
   } catch {
     // Non-fatal

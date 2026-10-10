@@ -103,7 +103,7 @@ const defaultWebSearchService: Services["web-search"] = {
 };
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
   getPlatformAssistantId: () => mockPlatformAssistantId,
 }));
 
@@ -176,11 +176,11 @@ const MANAGED_FALLBACK_PROVIDERS: string[] = [
   "typesafe",
 ];
 
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 let mockPlatformAssistantId = "";
 
 function enableManagedProxy() {
-  mockPlatformBaseUrl = PLATFORM_BASE;
+  mockCloudBaseUrl = PLATFORM_BASE;
   mockPlatformAssistantId = PLATFORM_ASSISTANT_ID;
   secureKeys.set(credentialKey("cadet", "platform_base_url"), PLATFORM_BASE);
   secureKeys.set(
@@ -191,7 +191,7 @@ function enableManagedProxy() {
 }
 
 function disableManagedProxy() {
-  mockPlatformBaseUrl = "";
+  mockCloudBaseUrl = "";
   mockPlatformAssistantId = "";
   secureKeys.delete(credentialKey("cadet", "platform_base_url"));
   secureKeys.delete(credentialKey("cadet", "platform_assistant_id"));

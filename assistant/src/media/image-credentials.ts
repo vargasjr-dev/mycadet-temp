@@ -86,7 +86,7 @@ export async function resolveImageGenCredentials(opts: {
       credentials: {
         type: "managed-proxy",
         assistantApiKey: ctx.assistantApiKey,
-        baseUrl: `${ctx.platformBaseUrl}${meta.proxyPath}`,
+        baseUrl: `${ctx.cloudBaseUrl}${meta.proxyPath}`,
       },
     };
   }

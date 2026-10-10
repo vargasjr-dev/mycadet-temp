@@ -25,7 +25,7 @@ import sharp from "sharp";
 mock.module("../config/env.js", () => ({
   isHttpAuthDisabled: () => true,
   hasUngatedHttpAuthDisabled: () => false,
-  getPlatformBaseUrl: () => "https://platform.example.com",
+  getCloudBaseUrl: () => "https://platform.example.com",
   getGatewayInternalBaseUrl: () => "http://localhost:8080",
   getIngressPublicBaseUrl: () => undefined,
   setIngressPublicBaseUrl: () => {},
@@ -35,7 +35,7 @@ mock.module("../config/env.js", () => ({
   getQdrantHttpPortEnv: () => undefined,
   getQdrantReadyzTimeoutMs: () => undefined,
   getOllamaBaseUrlEnv: () => undefined,
-  setPlatformBaseUrl: () => {},
+  setCloudBaseUrl: () => {},
   getAssistantDomain: () => "example.com",
   setPlatformAssistantId: () => {},
   getPlatformAssistantId: () => "test-assistant-id",

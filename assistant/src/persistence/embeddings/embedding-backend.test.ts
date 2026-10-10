@@ -31,7 +31,7 @@ function setKey(provider: string, value: string | undefined): void {
 
 const DISABLED_PROXY_CONTEXT = {
   enabled: false,
-  platformBaseUrl: "",
+  cloudBaseUrl: "",
   assistantApiKey: "",
 };
 const resolveManagedProxyContextMock = mock(async () => DISABLED_PROXY_CONTEXT);
@@ -274,7 +274,7 @@ const GEMINI_CONFIG = {
 
 const ENABLED_PROXY_CONTEXT = {
   enabled: true,
-  platformBaseUrl: "https://proxy.example.com",
+  cloudBaseUrl: "https://proxy.example.com",
   assistantApiKey: "stale-platform-key",
 };
 

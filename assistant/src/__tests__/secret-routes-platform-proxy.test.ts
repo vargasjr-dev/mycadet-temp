@@ -20,9 +20,9 @@ let providerRefreshCalls = 0;
 let identitySyncCalls = 0;
 let avatarSyncCalls = 0;
 
-const PLATFORM_BASE_URL = "https://platform.example.com";
+const CLOUD_BASE_URL = "https://platform.example.com";
 const ASSISTANT_API_KEY_PATH = credentialKey("cadet", "assistant_api_key");
-const PLATFORM_BASE_URL_PATH = credentialKey("cadet", "platform_base_url");
+const CLOUD_BASE_URL_PATH = credentialKey("cadet", "platform_base_url");
 const MANAGED_PROVIDERS = [
   "anthropic",
   "openai",
@@ -32,7 +32,7 @@ const MANAGED_PROVIDERS = [
   "typesafe",
 ] as const;
 
-let platformBaseUrlOverride: string | undefined;
+let cloudBaseUrlOverride: string | undefined;
 let platformAssistantIdOverride: string | undefined;
 let platformOrganizationIdOverride: string | undefined;
 let platformUserIdOverride: string | undefined;
@@ -61,10 +61,10 @@ mock.module("@google/genai", () => ({
 }));
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => PLATFORM_BASE_URL,
+  getCloudBaseUrl: () => CLOUD_BASE_URL,
   getPlatformAssistantId: () => platformAssistantIdOverride,
-  setPlatformBaseUrl: (value: string | undefined) => {
-    platformBaseUrlOverride = value;
+  setCloudBaseUrl: (value: string | undefined) => {
+    cloudBaseUrlOverride = value;
   },
   setPlatformAssistantId: (value: string | undefined) => {
     platformAssistantIdOverride = value;
@@ -181,7 +181,7 @@ describe("secret routes managed proxy registry sync", () => {
     metadataUpserts.length = 0;
     metadataDeletes.length = 0;
     lastGeminiConstructorOpts = null;
-    platformBaseUrlOverride = undefined;
+    cloudBaseUrlOverride = undefined;
     platformAssistantIdOverride = undefined;
     platformOrganizationIdOverride = undefined;
     platformUserIdOverride = undefined;
@@ -259,8 +259,8 @@ describe("secret routes managed proxy registry sync", () => {
 
   test("deleting a cadet credential is rejected without touching the vault", async () => {
     secureKeyStore.set(ASSISTANT_API_KEY_PATH, "ast-managed-key");
-    secureKeyStore.set(PLATFORM_BASE_URL_PATH, "https://managed.example.com");
-    platformBaseUrlOverride = "https://managed.example.com";
+    secureKeyStore.set(CLOUD_BASE_URL_PATH, "https://managed.example.com");
+    cloudBaseUrlOverride = "https://managed.example.com";
     platformAssistantIdOverride = "asst-1";
     await initializeProviders(getConfig());
 
@@ -276,10 +276,10 @@ describe("secret routes managed proxy registry sync", () => {
     }
 
     expect(secureKeyStore.get(ASSISTANT_API_KEY_PATH)).toBe("ast-managed-key");
-    expect(secureKeyStore.get(PLATFORM_BASE_URL_PATH)).toBe(
+    expect(secureKeyStore.get(CLOUD_BASE_URL_PATH)).toBe(
       "https://managed.example.com",
     );
-    expect(platformBaseUrlOverride).toBe("https://managed.example.com");
+    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
     expect(platformAssistantIdOverride).toBe("asst-1");
     expect(metadataDeletes).toEqual([]);
     expect(providerRefreshCalls).toBe(0);
@@ -414,10 +414,10 @@ describe("secret routes managed proxy registry sync", () => {
       "https://managed.example.com",
     );
 
-    expect(secureKeyStore.get(PLATFORM_BASE_URL_PATH)).toBe(
+    expect(secureKeyStore.get(CLOUD_BASE_URL_PATH)).toBe(
       "https://managed.example.com",
     );
-    expect(platformBaseUrlOverride).toBe("https://managed.example.com");
+    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
     expect(metadataUpserts).toEqual([
       { service: "cadet", field: "platform_base_url" },
     ]);
@@ -430,7 +430,7 @@ describe("secret routes managed proxy registry sync", () => {
       "cadet:platform_base_url",
       "https://managed.example.com",
     );
-    expect(platformBaseUrlOverride).toBe("https://managed.example.com");
+    expect(cloudBaseUrlOverride).toBe("https://managed.example.com");
 
     await addCredential("cadet:assistant_api_key", "ast-managed-key");
 

@@ -30,7 +30,7 @@ mock.module("../platform-proxy/context.js", () => ({
     enabled: platformLoggedIn,
     // Base URL configured: an unauthenticated result must come from the
     // credential probe, so CES outages stay distinguishable.
-    platformBaseUrl: "https://platform",
+    cloudBaseUrl: "https://platform",
     assistantApiKey: platformLoggedIn ? "key" : "",
   }),
 }));

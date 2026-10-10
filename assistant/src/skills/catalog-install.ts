@@ -20,7 +20,7 @@ import {
   MALFORMED_USTAR_SIZE,
   parseUstarSizeField,
 } from "../archive/ustar-size.js";
-import { getPlatformBaseUrl } from "../config/env.js";
+import { getCloudBaseUrl } from "../config/env.js";
 import { loadSkillCatalog } from "../config/skills.js";
 import { isBunVirtualPath } from "../util/bundled-asset.js";
 import { getLogger } from "../util/logger.js";
@@ -244,7 +244,7 @@ function normalizeCatalogEntry(raw: unknown): CatalogSkill | null {
 }
 
 export async function fetchCatalog(): Promise<CatalogSkill[]> {
-  const platformUrl = getPlatformBaseUrl();
+  const platformUrl = getCloudBaseUrl();
   const url = `${platformUrl}/v1/skills/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(10000),
@@ -398,7 +398,7 @@ async function fetchAndExtractSkill(
   skillId: string,
   destDir: string,
 ): Promise<void> {
-  const platformUrl = getPlatformBaseUrl();
+  const platformUrl = getCloudBaseUrl();
   const url = `${platformUrl}/v1/skills/${encodeURIComponent(skillId)}/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(15000),

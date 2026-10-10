@@ -18,12 +18,12 @@ const secureKeys = useMemorySecureKeyMap();
 // ---------------------------------------------------------------------------
 
 // Mutable state for managed proxy context
-let mockPlatformBaseUrl = "";
+let mockCloudBaseUrl = "";
 // Managed + provider keys live in the real backend's store now.
 const ASSISTANT_API_KEY = credentialKey("cadet", "assistant_api_key");
 
 mock.module("../config/env.js", () => ({
-  getPlatformBaseUrl: () => mockPlatformBaseUrl,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
   getOllamaBaseUrlEnv: () => "",
 }));
 
@@ -47,12 +47,12 @@ const PLATFORM_BASE = "https://platform.example.com";
 const MANAGED_API_KEY = "ast-managed-key-123";
 
 function enableManagedProxy() {
-  mockPlatformBaseUrl = PLATFORM_BASE;
+  mockCloudBaseUrl = PLATFORM_BASE;
   secureKeys.set(ASSISTANT_API_KEY, MANAGED_API_KEY);
 }
 
 function disableManagedProxy() {
-  mockPlatformBaseUrl = "";
+  mockCloudBaseUrl = "";
   secureKeys.delete(ASSISTANT_API_KEY);
 }
 

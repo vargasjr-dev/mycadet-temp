@@ -16,7 +16,7 @@ mock.module("../platform/feature-gate.js", () => ({
 mock.module("../providers/platform-proxy/context.js", () => ({
   resolveManagedProxyContext: async () => ({
     enabled: true,
-    platformBaseUrl: "https://platform.test/",
+    cloudBaseUrl: "https://platform.test/",
     assistantApiKey: "assistant-key",
   }),
 }));

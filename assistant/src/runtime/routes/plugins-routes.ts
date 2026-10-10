@@ -93,7 +93,7 @@ import {
   PluginNotUpgradableError,
   upgradePlugin,
 } from "../../cli/lib/upgrade-plugin.js";
-import { getPlatformBaseUrl } from "../../config/env.js";
+import { getCloudBaseUrl } from "../../config/env.js";
 import { isPluginDisabled } from "../../plugins/disabled-state.js";
 import { ensurePluginApiShim } from "../../plugins/ensure-plugin-api-shim.js";
 import {
@@ -796,7 +796,7 @@ function logPluginCatalogUnavailable(
       err,
       operation,
       upstreamStatus: err.status,
-      platformBaseUrl: getPlatformBaseUrl(),
+      cloudBaseUrl: getCloudBaseUrl(),
     },
     "Platform plugin catalog unavailable",
   );
@@ -984,7 +984,7 @@ export async function loadCategoryMapBounded(
       // categories rather than stalling. Non-fatal, but log it so a slow
       // marketplace is diagnosable and not silently invisible.
       log.warn(
-        { timeoutMs, platformBaseUrl: getPlatformBaseUrl() },
+        { timeoutMs, cloudBaseUrl: getCloudBaseUrl() },
         "Plugin catalog lookup timed out; listing without categories",
       );
       return new Map();
@@ -998,7 +998,7 @@ export async function loadCategoryMapBounded(
     log.warn(
       {
         err,
-        platformBaseUrl: getPlatformBaseUrl(),
+        cloudBaseUrl: getCloudBaseUrl(),
         ...(err instanceof PluginCatalogUnavailableError
           ? { upstreamStatus: err.status }
           : {}),

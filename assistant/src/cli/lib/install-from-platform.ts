@@ -33,7 +33,7 @@ import {
   MALFORMED_USTAR_SIZE,
   parseUstarSizeField,
 } from "../../archive/ustar-size.js";
-import { getPlatformBaseUrl } from "../../config/env.js";
+import { getCloudBaseUrl } from "../../config/env.js";
 import { getExistingDeviceId } from "../../util/device-id.js";
 import { getWorkspacePluginsDir } from "../../util/platform.js";
 import { getPluginManifestInstallAction } from "../../util/plugin-manifest.js";
@@ -125,7 +125,7 @@ export interface InstallFromPlatformDeps {
   /** HTTP client. Production callers pass `globalThis.fetch.bind(globalThis)`. */
   readonly fetch: FetchLike;
   /** Platform base URL (no trailing slash required). */
-  readonly platformBaseUrl: string;
+  readonly cloudBaseUrl: string;
   /** Assistant API key. When present the install is attributed to the real user/org. */
   readonly apiKey?: string;
   /** Override the workspace plugins directory. Falls back to {@link getWorkspacePluginsDir}. */
@@ -252,7 +252,7 @@ export async function installPluginViaPlatform(
   opts: { name: string; force?: boolean; conversationId?: string },
   deps: { fetch: FetchLike; confirmStaged?: ConfirmStagedInstall },
 ): Promise<InstallPluginResult> {
-  const platformBaseUrl = getPlatformBaseUrl();
+  const cloudBaseUrl = getCloudBaseUrl();
   const apiKey = await resolveAssistantApiKey();
   const installationId = getExistingDeviceId() ?? undefined;
 
@@ -266,7 +266,7 @@ export async function installPluginViaPlatform(
     },
     {
       fetch: deps.fetch,
-      platformBaseUrl,
+      cloudBaseUrl,
       ...(apiKey ? { apiKey } : {}),
       ...(deps.confirmStaged ? { confirmStaged: deps.confirmStaged } : {}),
     },
@@ -297,7 +297,7 @@ async function downloadInstallArchive(
   opts: InstallFromPlatformOptions,
   deps: InstallFromPlatformDeps,
 ): Promise<{ body: Buffer; meta: InstallResponseMeta }> {
-  const url = buildInstallUrl(deps.platformBaseUrl, name, opts);
+  const url = buildInstallUrl(deps.cloudBaseUrl, name, opts);
   const headers: Record<string, string> = {
     // The platform (Django) 406s a specific `application/gzip` Accept, so ask
     // for anything and sniff the body ourselves (see extractPluginTarball).
@@ -375,11 +375,11 @@ function retryDelayMs(res: Response, attempt: number): number {
 
 /** Build the install URL, appending optional attribution query params. */
 function buildInstallUrl(
-  platformBaseUrl: string,
+  cloudBaseUrl: string,
   name: string,
   opts: InstallFromPlatformOptions,
 ): string {
-  const base = platformBaseUrl.replace(/\/+$/, "");
+  const base = cloudBaseUrl.replace(/\/+$/, "");
   const url = new URL(
     `${base}/v1/plugins/${encodeURIComponent(name)}/install/`,
   );

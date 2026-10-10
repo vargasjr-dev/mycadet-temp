@@ -8,12 +8,7 @@
 import { z } from "zod";
 
 import { getApexDomain } from "../../config/env.js";
-import {
-  getConfig,
-  loadRawConfig,
-  saveRawConfig,
-  setNestedValue,
-} from "../../config/loader.js";
+import { getConfig, setConfigSection } from "../../config/loader.js";
 import { CadetPlatformClient } from "../../platform/client.js";
 import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
@@ -140,9 +135,10 @@ async function handleDomainRegister({ body = {} }: RouteHandlerArgs) {
   const registeredSubdomain =
     data.subdomain ?? data.domain?.replace(`.${apexDomain}`, "") ?? subdomain;
   if (registeredSubdomain) {
-    const raw = loadRawConfig();
-    setNestedValue(raw, "platform.subdomain", registeredSubdomain);
-    saveRawConfig(raw);
+    setConfigSection("cloud", {
+      ...getConfig().cloud,
+      subdomain: registeredSubdomain,
+    });
   }
 
   return data;
@@ -160,10 +156,8 @@ async function handleDomainStatus(_args: RouteHandlerArgs) {
     const first = domains[0];
     const sub = first.subdomain ?? first.domain?.replace(`.${apexDomain}`, "");
     if (sub) {
-      if (getConfig().platform.subdomain !== sub) {
-        const raw = loadRawConfig();
-        setNestedValue(raw, "platform.subdomain", sub);
-        saveRawConfig(raw);
+      if (getConfig().cloud.subdomain !== sub) {
+        setConfigSection("cloud", { ...getConfig().cloud, subdomain: sub });
       }
     }
   }

@@ -23,6 +23,11 @@ import {
   TwilioConfigSchema,
   WhatsAppConfigSchema,
 } from "./schemas/channels.js";
+import {
+  CloudConfigSchema,
+  DaemonConfigSchema,
+  UiConfigSchema,
+} from "./schemas/cloud.js";
 import { CompactionConfigSchema } from "./schemas/compaction.js";
 import { CompactionLogsConfigSchema } from "./schemas/compaction-logs.js";
 import { ConversationsConfigSchema } from "./schemas/conversations.js";
@@ -42,11 +47,6 @@ import { MemoryConfigSchema } from "./schemas/memory.js";
 import { MigrationsConfigSchema } from "./schemas/migrations.js";
 import { MonitoringConfigSchema } from "./schemas/monitoring.js";
 import { NotificationsConfigSchema } from "./schemas/notifications.js";
-import {
-  DaemonConfigSchema,
-  PlatformConfigSchema,
-  UiConfigSchema,
-} from "./schemas/platform.js";
 import { PluginUpdatesConfigSchema } from "./schemas/plugin-updates.js";
 import { SecretDetectionConfigSchema } from "./schemas/security.js";
 import { ServicesSchema } from "./schemas/services.js";
@@ -122,7 +122,7 @@ export const AssistantConfigSchema = z.object({
   discord: DiscordConfigSchema.default(DiscordConfigSchema.parse({})),
   a2a: A2AConfigSchema.default(A2AConfigSchema.parse({})),
   ingress: IngressConfigSchema,
-  platform: PlatformConfigSchema.default(PlatformConfigSchema.parse({})),
+  cloud: CloudConfigSchema.default(CloudConfigSchema.parse({})),
   daemon: DaemonConfigSchema.default(DaemonConfigSchema.parse({})),
   notifications: NotificationsConfigSchema.default(
     NotificationsConfigSchema.parse({}),

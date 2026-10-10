@@ -141,7 +141,7 @@ async function main(): Promise<void> {
 
   // Rehydrate the platform base URL and IDs from the credential store before
   // the first tick. The daemon does this in initializeProvidersAndTools(); this
-  // standalone process must do it itself so getPlatformBaseUrl() resolves to
+  // standalone process must do it itself so getCloudBaseUrl() resolves to
   // the persisted platform environment instead of the CADET_ENVIRONMENT
   // default — otherwise valid credentials are sent to the wrong platform and
   // rejected for both inference and background-wake requests.

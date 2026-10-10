@@ -75,7 +75,7 @@ export interface PublishResult {
 
 export interface PublishDeps {
   fetch: typeof globalThis.fetch;
-  platformBaseUrl: string;
+  cloudBaseUrl: string;
   apiKey: string;
 }
 
@@ -324,7 +324,7 @@ export async function postPublishRequest(
   deps: PublishDeps,
 ): Promise<PublishResult> {
   const resp = await deps.fetch(
-    `${deps.platformBaseUrl.replace(/\/+$/, "")}/v1/plugins/publish/`,
+    `${deps.cloudBaseUrl.replace(/\/+$/, "")}/v1/plugins/publish/`,
     {
       method: "POST",
       headers: {
@@ -357,8 +357,8 @@ export async function resolvePlatformDeps(): Promise<PublishDeps | null> {
   // privately, so we use its fetch method directly.
   return {
     fetch: globalThis.fetch.bind(globalThis),
-    platformBaseUrl: (client as unknown as { platformBaseUrl: string })
-      .platformBaseUrl,
+    cloudBaseUrl: (client as unknown as { cloudBaseUrl: string })
+      .cloudBaseUrl,
     apiKey: (client as unknown as { apiKey: string }).apiKey,
   };
 }

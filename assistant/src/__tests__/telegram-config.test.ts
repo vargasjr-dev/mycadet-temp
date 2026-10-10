@@ -34,7 +34,7 @@ mock.module("../inbound/platform-callback-registration.js", () => ({
   registerCallbackRoute: registerCallbackRouteMock,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform: false,
-    platformBaseUrl: platformContextEnabled ? "https://cloud.mycadet.ai" : "",
+    cloudBaseUrl: platformContextEnabled ? "https://cloud.mycadet.ai" : "",
     assistantId: platformContextEnabled ? "assistant-123" : "",
     hasAssistantApiKey: platformContextEnabled,
     authHeader: platformContextEnabled ? "Api-Key secret" : null,

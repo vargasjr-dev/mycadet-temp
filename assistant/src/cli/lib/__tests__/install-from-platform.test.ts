@@ -167,7 +167,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -219,7 +219,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "openseo" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -262,7 +262,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "foreign-plugin" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -294,7 +294,7 @@ describe("installPluginFromPlatform — success", () => {
         { name: "invalid-standard" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
         },
       ),
@@ -321,7 +321,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -346,7 +346,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         apiKey: "secret-key",
         workspacePluginsDir: pluginsDir,
       },
@@ -373,7 +373,7 @@ describe("installPluginFromPlatform — success", () => {
       },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -397,7 +397,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -418,7 +418,7 @@ describe("installPluginFromPlatform — success", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -446,7 +446,7 @@ describe("installPluginFromPlatform — integrity", () => {
         { name: "reading-pal" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
         },
       ),
@@ -477,7 +477,7 @@ describe("installPluginFromPlatform - staged-install consent", () => {
         { name: "reading-pal" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
           confirmStaged: async (staged) => {
             stagingDirs.push(staged.stagingDir);
@@ -539,7 +539,7 @@ describe("installPluginFromPlatform — HTTP errors", () => {
         { name: "missing" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
         },
       ),
@@ -553,7 +553,7 @@ describe("installPluginFromPlatform — HTTP errors", () => {
         { name: "huge" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
         },
       ),
@@ -573,7 +573,7 @@ describe("installPluginFromPlatform — HTTP errors", () => {
         { name: "spammy" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
           maxAttempts: 3,
           sleep: noSleep,
@@ -599,7 +599,7 @@ describe("installPluginFromPlatform — HTTP errors", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
         sleep: noSleep,
       },
@@ -621,7 +621,7 @@ describe("installPluginFromPlatform — HTTP errors", () => {
         { name: "flaky" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
           maxAttempts: 2,
           sleep: noSleep,
@@ -643,7 +643,7 @@ describe("installPluginFromPlatform — force", () => {
       { name: "reading-pal" },
       {
         fetch: fetchFn,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -652,7 +652,7 @@ describe("installPluginFromPlatform — force", () => {
         { name: "reading-pal" },
         {
           fetch: fetchFn,
-          platformBaseUrl: PLATFORM,
+          cloudBaseUrl: PLATFORM,
           workspacePluginsDir: pluginsDir,
         },
       ),
@@ -667,7 +667,7 @@ describe("installPluginFromPlatform — force", () => {
       { name: "reading-pal" },
       {
         fetch: first,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );
@@ -678,7 +678,7 @@ describe("installPluginFromPlatform — force", () => {
       { name: "reading-pal", force: true },
       {
         fetch: second,
-        platformBaseUrl: PLATFORM,
+        cloudBaseUrl: PLATFORM,
         workspacePluginsDir: pluginsDir,
       },
     );

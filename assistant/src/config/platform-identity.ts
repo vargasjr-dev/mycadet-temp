@@ -14,8 +14,8 @@ import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
 import {
+  getCloudBaseUrl,
   getPlatformAssistantId,
-  getPlatformBaseUrl,
   getPlatformOrganizationId,
   getPlatformUserId,
   setPlatformAssistantId,
@@ -154,7 +154,7 @@ export async function ensurePlatformIdentityIds(): Promise<void> {
     ensureInFlight = (async () => {
       try {
         const apiKey = await readAssistantApiKey();
-        const baseUrl = (getPlatformBaseUrl() ?? "").replace(/\/+$/, "");
+        const baseUrl = (getCloudBaseUrl() ?? "").replace(/\/+$/, "");
         if (!apiKey || !baseUrl) {
           return;
         }

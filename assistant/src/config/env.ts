@@ -134,25 +134,25 @@ export function getOllamaBaseUrlEnv(): string | undefined {
 
 // ── Platform ─────────────────────────────────────────────────────────────────
 
-let _platformBaseUrlOverride: string | undefined;
+let _cloudBaseUrlOverride: string | undefined;
 
-export function setPlatformBaseUrl(value: string | undefined): void {
-  _platformBaseUrlOverride = value;
+export function setCloudBaseUrl(value: string | undefined): void {
+  _cloudBaseUrlOverride = value;
 }
 
-export function getPlatformBaseUrl(): string {
+export function getCloudBaseUrl(): string {
   let configUrl: string | undefined;
   try {
-    const val = getConfig().platform.baseUrl;
+    const val = getConfig().cloud.baseUrl;
     if (val) {
       configUrl = val;
     }
   } catch {
     // Config not yet available (early bootstrap) — fall through
   }
-  // Resolve the default platform URL from CADET_ENVIRONMENT.
+  // Resolve the default cloud URL from CADET_ENVIRONMENT.
   // `production`, `staging`, and `test` map to their respective hosted
-  // platforms, `local` points at a developer's locally running platform,
+  // platforms, `local` points at a developer's locally running cloud,
   // and everything else (including unset) falls back to dev-platform.
   const env = str("CADET_ENVIRONMENT")?.trim();
   let defaultUrl: string;
@@ -170,7 +170,7 @@ export function getPlatformBaseUrl(): string {
   return (
     configUrl ||
     str("CADET_PLATFORM_URL") ||
-    _platformBaseUrlOverride ||
+    _cloudBaseUrlOverride ||
     defaultUrl
   );
 }
@@ -182,7 +182,7 @@ export function getPlatformBaseUrl(): string {
  */
 export function getApexDomain(): string {
   try {
-    const url = getPlatformBaseUrl();
+    const url = getCloudBaseUrl();
     const host = new URL(url).hostname;
 
     if (host.endsWith("cloud.mycadet.ai")) {
@@ -207,7 +207,7 @@ export function getApexDomain(): string {
 export function getAssistantDomain(): string {
   const subdomain = (() => {
     try {
-      return getConfig().platform?.subdomain;
+      return getConfig().cloud?.subdomain;
     } catch {
       return undefined;
     }

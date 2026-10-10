@@ -77,7 +77,7 @@ export async function cadetConnectionAvailability(): Promise<ConnectionAvailabil
   if (ctx.enabled) {
     return { status: "ok" };
   }
-  if (!ctx.platformBaseUrl) {
+  if (!ctx.cloudBaseUrl) {
     return {
       status: "cadet_unauthenticated",
       message: "Not signed in to Cadet — the platform URL is not configured.",

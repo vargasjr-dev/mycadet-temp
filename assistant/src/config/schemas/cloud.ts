@@ -36,18 +36,18 @@ function timezoneConfigField(path: string) {
     });
 }
 
-export const PlatformConfigSchema = z
+export const CloudConfigSchema = z
   .object({
     baseUrl: z
-      .string({ error: "platform.baseUrl must be a string" })
+      .string({ error: "cloud.baseUrl must be a string" })
       .refine(
         (val) => val === "" || /^https?:\/\//i.test(val),
-        "platform.baseUrl must be an absolute URL starting with http:// or https://",
+        "cloud.baseUrl must be an absolute URL starting with http:// or https://",
       )
       .default("")
       .describe("Base URL of the Cadet Cloud API"),
     subdomain: z
-      .string({ error: "platform.subdomain must be a string" })
+      .string({ error: "cloud.subdomain must be a string" })
       .default("")
       .describe(
         "Registered subdomain on mycadet.bot (e.g. 'apollobot' → apollobot.mycadet.bot). Set automatically by 'assistant domain register'.",
@@ -55,7 +55,7 @@ export const PlatformConfigSchema = z
   })
   .describe("Cadet Cloud connection settings");
 
-export type PlatformConfig = z.infer<typeof PlatformConfigSchema>;
+export type CloudConfig = z.infer<typeof CloudConfigSchema>;
 
 export const DaemonConfigSchema = z
   .object({

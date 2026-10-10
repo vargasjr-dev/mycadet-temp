@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { UiConfigSchema } from "../config/schemas/platform.js";
+import { UiConfigSchema } from "../config/schemas/cloud.js";
 import {
   canonicalizeTimeZone,
   extractUserTimeZoneFromRecall,

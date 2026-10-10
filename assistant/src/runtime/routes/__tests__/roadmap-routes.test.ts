@@ -9,14 +9,14 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { UnprocessableEntityError } from "../errors.js";
 import type { RouteDefinition } from "../types.js";
 
-let platformBaseUrl = "https://cloud.mycadet.ai";
+let cloudBaseUrl = "https://cloud.mycadet.ai";
 
 // Spread the real module: replacing it wholesale strips the other exports the
 // route graph pulls in.
 const actualEnv = await import("../../../config/env.js");
 mock.module("../../../config/env.js", () => ({
   ...actualEnv,
-  getPlatformBaseUrl: () => platformBaseUrl,
+  getCloudBaseUrl: () => cloudBaseUrl,
 }));
 
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
@@ -90,7 +90,7 @@ const UPSTREAM_ITEM = {
 
 beforeEach(() => {
   secureKeys[ASSISTANT_API_KEY] = "assistant-key";
-  platformBaseUrl = "https://cloud.mycadet.ai";
+  cloudBaseUrl = "https://cloud.mycadet.ai";
   calls = [];
   process.env.CADET_MARKETING_URL = "https://marketing.test";
   process.env.CADET_WEB_URL = "https://web.test";
@@ -114,7 +114,7 @@ describe("which deployment the roadmap calls reach", () => {
   });
 
   // The deployment is judged by the platform that issued the key, never by
-  // CADET_ENVIRONMENT: unset, that variable means dev to getPlatformBaseUrl
+  // CADET_ENVIRONMENT: unset, that variable means dev to getCloudBaseUrl
   // and local to every launcher, so trusting it would let exactly the assistant
   // with no label post to the real roadmap.
   test.each([
@@ -124,7 +124,7 @@ describe("which deployment the roadmap calls reach", () => {
   ])(
     "an unconfigured %s assistant refuses to touch the public roadmap",
     async (baseUrl) => {
-      platformBaseUrl = baseUrl;
+      cloudBaseUrl = baseUrl;
       delete process.env.CADET_MARKETING_URL;
       delete process.env.CADET_ENVIRONMENT;
       stubFetch({ items: [], total: 0 });
@@ -135,7 +135,7 @@ describe("which deployment the roadmap calls reach", () => {
   );
 
   test("CADET_ENVIRONMENT=production does not by itself unlock the real roadmap", async () => {
-    platformBaseUrl = "https://dev-cloud.mycadet.ai";
+    cloudBaseUrl = "https://dev-cloud.mycadet.ai";
     delete process.env.CADET_MARKETING_URL;
     process.env.CADET_ENVIRONMENT = "production";
     stubFetch({ items: [], total: 0 });
@@ -160,7 +160,7 @@ describe("which deployment the roadmap calls reach", () => {
   // A self-hosted platform is not in the seed table, so nothing is known about
   // it: naming its roadmap API says nothing about where its items are rendered.
   test("a self-hosted deployment must name its web origin too", async () => {
-    platformBaseUrl = "https://platform.self-hosted.example";
+    cloudBaseUrl = "https://platform.self-hosted.example";
     delete process.env.CADET_WEB_URL;
     stubFetch({ items: [], total: 0 });
 
@@ -169,7 +169,7 @@ describe("which deployment the roadmap calls reach", () => {
   });
 
   test("a self-hosted deployment works once both endpoints are named", async () => {
-    platformBaseUrl = "https://platform.self-hosted.example";
+    cloudBaseUrl = "https://platform.self-hosted.example";
     stubFetch({ items: [UPSTREAM_ITEM], total: 1 });
 
     const result = (await list({})) as { items: { url: string }[] };
@@ -188,7 +188,7 @@ describe("which deployment the roadmap calls reach", () => {
       // The item is published. Only now is the assistant repointed at a
       // platform with no roadmap deployment, as a concurrent
       // `platform_base_url` write would do.
-      platformBaseUrl = "https://platform.self-hosted.example";
+      cloudBaseUrl = "https://platform.self-hosted.example";
       return new Response(
         JSON.stringify({
           slug: "dark-mode",
@@ -207,7 +207,7 @@ describe("which deployment the roadmap calls reach", () => {
   });
 
   test("a named endpoint is honored on any deployment", async () => {
-    platformBaseUrl = "https://dev-cloud.mycadet.ai";
+    cloudBaseUrl = "https://dev-cloud.mycadet.ai";
     stubFetch({ items: [], total: 0 });
 
     await list({});

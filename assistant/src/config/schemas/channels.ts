@@ -14,8 +14,16 @@ export const TwilioConfigSchema = z
       .boolean({ error: "twilio.setupStarted must be a boolean" })
       .default(false)
       .describe("Whether Twilio setup has ever been started"),
+    assistantPhoneNumbers: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "Per-assistant phone number assignments (assistant id to Twilio number)",
+      ),
   })
   .describe("Twilio account configuration");
+
+export type TwilioConfig = z.infer<typeof TwilioConfigSchema>;
 
 export const WhatsAppConfigSchema = z
   .object({
