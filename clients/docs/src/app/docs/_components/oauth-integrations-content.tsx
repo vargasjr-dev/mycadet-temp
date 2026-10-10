@@ -368,15 +368,7 @@ export function OauthIntegrationsContent() {
             Most integrations (GitHub, Notion, Linear, Google, Discord, Asana, Outlook,
             Todoist, and HubSpot) are managed OAuth with no additional cost. Only Twitter (X)
             managed OAuth incurs per-call billing through Cadet credits. BYOK is for
-            advanced cases where you bring your own API keys or enterprise OAuth apps. For
-            details on credit denominations and usage, see the{" "}
-            <Link
-              href="/docs/pricing"
-              className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-            >
-              pricing page
-            </Link>
-            .
+            advanced cases where you bring your own API keys or enterprise OAuth apps.
           </p>
         </section>
 

@@ -57,15 +57,8 @@ export function HelpFaqContent() {
             <strong>Base</strong> plan, and you can also run Cadet locally with your own
             model API key at no cost beyond that API usage. Paid{" "}
             <strong>Pro</strong> packages add a larger machine, more storage, and included
-            monthly credits. See{" "}
-            <Link
-              href="/docs/pricing"
-              className="font-semibold text-emerald-700 underline hover:text-emerald-800"
-            >
-              Pricing
-            </Link>{" "}
-            for the current plans. For this assistant&apos;s live plan and credit balance,
-            ask it here rather than guessing from the docs page.
+            monthly credits. For this assistant&apos;s live plan and credit balance,
+            ask it here rather than guessing from a docs page.
           </p>
 
           <SectionHeading id="why-does-it-cost-money-when-im-not-using-it" level={3}>

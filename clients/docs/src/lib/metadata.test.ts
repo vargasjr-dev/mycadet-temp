@@ -6,25 +6,25 @@ import { createMetadata } from "@/lib/metadata";
 describe("createMetadata", () => {
   test("builds the canonical URL from SITE_URL and path", () => {
     const metadata = createMetadata({
-      title: "Pricing",
-      description: "Cadet pricing",
-      path: "/docs/pricing",
+      title: "Releases",
+      description: "Cadet releases",
+      path: "/docs/releases",
     });
 
     expect(metadata.alternates?.canonical).toBe(
-      "https://www.mycadet.ai/docs/pricing",
+      "https://www.mycadet.ai/docs/releases",
     );
   });
 
   test("adds a .md markdown alternate for a docs page", () => {
     const metadata = createMetadata({
-      title: "Pricing",
-      description: "Cadet pricing",
-      path: "/docs/pricing",
+      title: "Releases",
+      description: "Cadet releases",
+      path: "/docs/releases",
     });
 
     expect(metadata.alternates?.types).toEqual({
-      "text/markdown": "https://www.mycadet.ai/docs/pricing.md",
+      "text/markdown": "https://www.mycadet.ai/docs/releases.md",
     });
   });
 
@@ -43,9 +43,9 @@ describe("createMetadata", () => {
 
   test("uses the static docs OG image for OG and Twitter cards", () => {
     const metadata = createMetadata({
-      title: "Pricing",
-      description: "Cadet pricing",
-      path: "/docs/pricing",
+      title: "Releases",
+      description: "Cadet releases",
+      path: "/docs/releases",
     });
 
     expect(metadata.openGraph?.images).toEqual([
@@ -53,13 +53,13 @@ describe("createMetadata", () => {
         url: "https://www.mycadet.ai/docs/og.png",
         width: 1200,
         height: 630,
-        alt: "Pricing",
+        alt: "Releases",
       },
     ]);
     expect(metadata.twitter?.images).toEqual([
       {
         url: "https://www.mycadet.ai/docs/og.png",
-        alt: "Pricing",
+        alt: "Releases",
       },
     ]);
   });

@@ -177,7 +177,7 @@ describe("next config rewrite sources", () => {
   });
 
   test("docsPathForSource rejects unrecognized sources", () => {
-    expect(() => docsPathForSource("/docs/:path*", "/docs/pricing")).toThrow(
+    expect(() => docsPathForSource("/docs/:path*", "/docs/releases")).toThrow(
       "Unsupported docs markdown rewrite source"
     );
   });
@@ -218,7 +218,7 @@ describe("next config redirects", () => {
 describe("next config .md URL-suffix rewrites", () => {
   test.each([
     ["/docs/index.md", "/docs/_md"],
-    ["/docs/pricing.md", "/docs/_md/pricing"],
+    ["/docs/releases.md", "/docs/_md/releases"],
     ["/docs/getting-started.md", "/docs/_md/getting-started"],
     ["/docs/skills-reference/browser.md", "/docs/_md/skills-reference/browser"],
   ])("maps %s to %s", async (pathname, destination) => {
@@ -266,36 +266,36 @@ describe("next config docs Markdown content negotiation", () => {
   test("matches text/markdown anywhere in the Accept header", async () => {
     await expect(
       resolveBeforeFilesRewrite(
-        "/docs/pricing",
+        "/docs/releases",
         "application/json;q=0.9, text/markdown;q=0.8"
       )
-    ).resolves.toBe("/docs/_md/pricing");
+    ).resolves.toBe("/docs/_md/releases");
   });
 
   test("does not rewrite when markdown is explicitly unacceptable (q=0)", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/pricing", "text/html, text/markdown;q=0")
+      resolveBeforeFilesRewrite("/docs/releases", "text/html, text/markdown;q=0")
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/pricing", "text/markdown;q=0.0")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;q=0.0")
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/pricing", "text/markdown; q=0, */*")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown; q=0, */*")
     ).resolves.toBeNull();
     await expect(
       resolveBeforeFilesRewrite(
-        "/docs/pricing",
+        "/docs/releases",
         "text/markdown;charset=utf-8;q=0"
       )
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/pricing", "text/markdown;level=1;q=0")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;level=1;q=0")
     ).resolves.toBeNull();
   });
 
   test("serves HTML (no rewrite) to browsers", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/pricing", "text/html,application/xhtml+xml")
+      resolveBeforeFilesRewrite("/docs/releases", "text/html,application/xhtml+xml")
     ).resolves.toBeNull();
     await expect(resolveBeforeFilesRewrite("/docs")).resolves.toBeNull();
   });
@@ -329,10 +329,10 @@ describe("next config docs Markdown content negotiation", () => {
 
   test("does not re-enter the mirror route itself", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/_md/pricing", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/_md/releases", "text/markdown")
     ).resolves.toBeNull();
     await expect(
-      markdownRewriteDestinationsFor("/docs/_md/pricing")
+      markdownRewriteDestinationsFor("/docs/_md/releases")
     ).resolves.toEqual([]);
     await expect(
       resolveBeforeFilesRewrite("/docs/_md", "text/markdown")

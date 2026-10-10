@@ -62,7 +62,6 @@ describe("discoverDocsRoutes", () => {
 
   test("includes known routes at every depth", () => {
     expect(routes).toContain("/docs");
-    expect(routes).toContain("/docs/pricing");
     expect(routes).toContain("/docs/releases");
     expect(routes).toContain("/docs/skills-reference/computer-use");
     expect(routes).toContain("/docs/key-concepts/web-search/perplexity");

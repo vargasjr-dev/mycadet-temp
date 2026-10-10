@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Rocket, BookOpen, Shield, CreditCard, Globe } from "lucide-react";
+import { Search, Rocket, BookOpen, Shield, Globe } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
@@ -44,12 +44,6 @@ const SUGGESTED_SECTIONS = [
     description: "Compare local, Apple Container, and GCP hosting choices",
     url: "/docs/hosting-options",
     icon: Globe,
-  },
-  {
-    label: "Pricing",
-    description: "Understand credits, usage, and how to add credits",
-    url: "/docs/pricing",
-    icon: CreditCard,
   },
 ] as const;
 

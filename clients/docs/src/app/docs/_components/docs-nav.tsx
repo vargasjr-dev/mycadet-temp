@@ -259,7 +259,6 @@ const NAV_ITEMS: DocsNavItem[] = [
       },
     ],
   },
-  { label: "Pricing", href: "/docs/pricing", icon: icon(Scale) },
   {
     label: "Skills Reference",
     href: "/docs/skills-reference",

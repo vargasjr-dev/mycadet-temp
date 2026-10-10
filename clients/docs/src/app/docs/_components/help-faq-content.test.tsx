@@ -27,9 +27,9 @@ describe("HelpFaqContent", () => {
     expect(html).not.toContain("no shipped Windows");
   });
 
-  test("describes Base as the free plan and points at Pricing", () => {
+  test("describes Base as the free plan", () => {
     expect(html).toContain("Is Cadet free?");
     expect(html).toContain("Base");
-    expect(html).toContain("/docs/pricing");
+    expect(html).not.toContain("/docs/pricing");
   });
 });

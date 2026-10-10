@@ -466,16 +466,6 @@ export function WebSearchContent() {
               up or proxy these requests.
             </li>
           </ul>
-          <p className="mb-0 text-stone-600 dark:text-stone-400">
-            For pricing details and credit denominations, see the{" "}
-            <Link
-              href="/docs/pricing"
-              className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-            >
-              pricing page
-            </Link>
-            .
-          </p>
         </section>
 
         {/* ------------------------------------------------------------------ */}

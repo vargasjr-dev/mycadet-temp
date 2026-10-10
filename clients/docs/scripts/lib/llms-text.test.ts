@@ -6,9 +6,9 @@ describe("buildLlmsText", () => {
   test("lists pages sorted by route with .md URLs and descriptions", () => {
     const text = buildLlmsText([
       {
-        route: "/docs/pricing",
-        title: "Pricing",
-        description: "Cadet pricing",
+        route: "/docs/releases",
+        title: "Releases",
+        description: "Cadet releases",
       },
       {
         route: "/docs/getting-started",
@@ -22,7 +22,7 @@ describe("buildLlmsText", () => {
       .filter((line) => line.startsWith("- "));
     expect(bullets).toEqual([
       "- [Getting Started](https://www.mycadet.ai/docs/getting-started.md): Install Cadet",
-      "- [Pricing](https://www.mycadet.ai/docs/pricing.md): Cadet pricing",
+      "- [Releases](https://www.mycadet.ai/docs/releases.md): Cadet releases",
     ]);
   });
 
