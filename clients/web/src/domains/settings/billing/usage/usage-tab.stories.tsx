@@ -16,7 +16,6 @@ import { UsageTab } from "@/domains/settings/billing/usage/usage-tab";
 import { client } from "@/generated/daemon/client.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
 import type {
-  ConfigGetResponse,
   ConfigLlmCallsitesGetResponse,
   SchedulesGetResponse,
   UsageBreakdownGetResponse,
