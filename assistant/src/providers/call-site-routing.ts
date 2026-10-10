@@ -41,7 +41,7 @@ import {
   ConnectionResolutionError,
   dispatchProviderResolvable,
   expectedVendorProvider,
-  isManagedConnectionRoute,
+  isCloudConnectionRoute,
   resolveEntryConnectionName,
   resolveEntryProviderKind,
   resolveRoutingIdentity,
@@ -64,7 +64,7 @@ interface SelectedProviderRoute {
   provider: Provider;
   connectionName?: string;
   profileName?: string;
-  isManagedRoute?: boolean;
+  isCloudRoute?: boolean;
 }
 
 export class CallSiteRoutingProvider implements Provider {
@@ -151,8 +151,8 @@ export class CallSiteRoutingProvider implements Provider {
             ...(selectedRoute.profileName
               ? { profileName: selectedRoute.profileName }
               : {}),
-            ...(selectedRoute.isManagedRoute !== undefined
-              ? { isManagedRoute: selectedRoute.isManagedRoute }
+            ...(selectedRoute.isCloudRoute !== undefined
+              ? { isCloudRoute: selectedRoute.isCloudRoute }
               : {}),
           });
         }
@@ -237,7 +237,7 @@ export class CallSiteRoutingProvider implements Provider {
    *   3. No `provider_connection` → auto-resolve a connection for the
    *      resolved provider and route through it. This runs even when the
    *      provider matches the default's name: the default transport may
-   *      ride the managed (platform-billed) connection while the profile's
+   *      ride the cloud (platform-billed) connection while the profile's
    *      intent is the user's own key, so a bare name match must not stand
    *      in for connection resolution.
    *   4. No connection exists for the provider and it matches the
@@ -299,7 +299,7 @@ export class CallSiteRoutingProvider implements Provider {
 
     // When no connection is set, auto-resolve one for the resolved provider —
     // including when the provider matches the default's name. The default
-    // transport may ride the managed (platform-billed) connection, so reusing
+    // transport may ride the cloud (platform-billed) connection, so reusing
     // it on a bare name match would silently bill managed credits for a
     // profile whose intent is the user's own key. Mirrors
     // `resolveConfiguredProvider`, which never takes a name shortcut; when no
@@ -338,9 +338,9 @@ export class CallSiteRoutingProvider implements Provider {
           connectionName:
             connectionProvider.routeAttribution?.connectionName ??
             connectionName,
-          isManagedRoute:
-            connectionProvider.routeAttribution?.isManagedRoute ??
-            isManagedConnectionRoute(connectionName),
+          isCloudRoute:
+            connectionProvider.routeAttribution?.isCloudRoute ??
+            isCloudConnectionRoute(connectionName),
         };
         // The connection whose credential the call authenticates with is only
         // known here, and diagnostics for a failed request are unactionable
@@ -358,7 +358,7 @@ export class CallSiteRoutingProvider implements Provider {
       }
       // Soft credential failure: the routed connection yielded no usable
       // adapter and dispatch is landing on the default transport, which may
-      // be the platform-billed route. Keep every such degradation
+      // be the cloud-billed route. Keep every such degradation
       // observable. The reason is "no adapter", not a proven credential miss:
       // adapter construction can also fail for dispatch bugs.
       log.warn(

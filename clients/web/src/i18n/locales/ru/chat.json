@@ -1145,7 +1145,7 @@
     "doneSaved": "Навык сохранён",
     "recommended": "Рекомендуем"
   },
-  "restoreManagedCredentialButton": {
+  "restoreCloudCredentialButton": {
     "restore": "Восстановить доступ",
     "restoring": "Восстановление...",
     "restored": "Восстановлено. Модели под управлением Cadet снова работают.",

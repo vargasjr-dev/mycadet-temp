@@ -24,7 +24,7 @@ import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
-import { fetchReleases, resolveImageRefs } from "./platform-releases.js";
+import { fetchReleases, resolveImageRefs } from "./cloud-releases.js";
 import { z } from "zod";
 
 const GatewayHealthSchema = z.object({
@@ -332,7 +332,7 @@ export async function fetchAssistantIngressUrl(
         publicBaseUrl?: string;
         managedCallbacks?: boolean;
       };
-      // Ignore managed-callback URLs — those belong to the platform, not the
+      // Ignore managed-callback URLs — those belong to the cloud, not the
       // self-hosted assistant's own ingress.
       if (body.managedCallbacks) return undefined;
       return body.publicBaseUrl || undefined;
@@ -348,7 +348,7 @@ export async function fetchAssistantIngressUrl(
  *
  * Checks (in order):
  *  1. `entry.previousVersion` (saved by the upgrade flow from health).
- *  2. The releases list from the platform API — finds the version
+ *  2. The releases list from the cloud API — finds the version
  *     immediately before `currentVersion`.
  *
  * Returns `undefined` when neither source yields a result.

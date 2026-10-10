@@ -5,7 +5,7 @@ import type { WorkspaceMigration } from "./types.js";
 
 // Backfill `llm.defaultProvider` for installs that never ran the hatch flow
 // (which sets it directly) from deterministic, synchronously-readable
-// signals: `IS_PLATFORM`, a legacy `llm.default.provider`, or a personal
+// signals: `IS_CLOUD`, a legacy `llm.default.provider`, or a personal
 // `custom-*` profile's provider.
 //
 // Platform installs resolve to "cadet" before the legacy field is
@@ -16,7 +16,7 @@ import type { WorkspaceMigration } from "./types.js";
 // value). This mirrors the hatch precedence, where platform outranks the
 // BYOK provider signal.
 //
-// The same schema-default echo affects the off-platform legacy read:
+// The same schema-default echo affects the off-cloud legacy read:
 // `LLMConfigBase.provider` defaults to "anthropic" and the first-launch
 // seed persists it, so a bare "anthropic" is ambiguous. Disambiguating it
 // requires an async vault read that this sync migration cannot perform, so
@@ -115,10 +115,10 @@ function isValidDefaultProvider(value: unknown): boolean {
   );
 }
 
-// Frozen copy of config/env-registry.ts's IS_PLATFORM read — migration
+// Frozen copy of config/env-registry.ts's IS_CLOUD read — migration
 // modules must not import from config modules (workspace/migrations/AGENTS.md).
 function isPlatform(): boolean {
-  return process.env.IS_PLATFORM === "true" || process.env.IS_PLATFORM === "1";
+  return process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
 }
 
 function resolveProviderSignal(

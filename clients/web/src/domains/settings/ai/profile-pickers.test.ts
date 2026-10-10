@@ -401,7 +401,7 @@ describe("assistants older than complete-profile-snapshots (0.10.8)", () => {
 });
 
 describe("managedProfileModelName", () => {
-  test("names the model a managed profile currently pins", () => {
+  test("names the model a cloud profile currently pins", () => {
     expect(
       managedProfileModelName({
         name: "balanced",
@@ -435,7 +435,7 @@ describe("managedProfileModelName", () => {
     ).toBeNull();
   });
 
-  test("a managed mix names nothing: its arm is picked at dispatch", () => {
+  test("a cloud mix names nothing: its arm is picked at dispatch", () => {
     expect(
       managedProfileModelName({
         name: "ab",
@@ -448,7 +448,7 @@ describe("managedProfileModelName", () => {
     ).toBeNull();
   });
 
-  test("a managed profile carrying no model names nothing", () => {
+  test("a cloud profile carrying no model names nothing", () => {
     expect(
       managedProfileModelName({ name: "half", source: "managed" }),
     ).toBeNull();

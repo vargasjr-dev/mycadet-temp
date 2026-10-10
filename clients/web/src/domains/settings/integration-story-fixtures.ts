@@ -1,7 +1,7 @@
 import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
 import type { OAuthConnection } from "@/generated/api/types.gen";
-import type { PlatformGateState } from "@/hooks/use-platform-gate";
+import type { CloudGateState } from "@/hooks/use-cloud-gate";
 
 import {
   buildConnectPlan,
@@ -37,7 +37,7 @@ export function oauthProvider(
     client_id_placeholder: null,
     requires_client_secret: true,
     logo_url: null,
-    supports_managed_mode: true,
+    supports_cloud_mode: true,
     managed_service_is_paid: false,
     feature_flag: null,
     category,
@@ -112,7 +112,7 @@ export function planFor({
   connections = [],
   servers = [],
   definitions = [],
-  platformGate = "full",
+  cloudGate = "full",
   ownOAuthAvailable = false,
   mcpServersLoaded = true,
 }: {
@@ -120,7 +120,7 @@ export function planFor({
   connections?: OAuthConnection[];
   servers?: McpServerEntry[];
   definitions?: McpPluginDefinition[];
-  platformGate?: PlatformGateState;
+  cloudGate?: CloudGateState;
   ownOAuthAvailable?: boolean;
   /** A fixture has its servers in hand, so the list counts as read. */
   mcpServersLoaded?: boolean;
@@ -137,7 +137,7 @@ export function planFor({
   );
   const plan = item
     ? buildConnectPlan(item, {
-        platformGate,
+        cloudGate,
         ownOAuthAvailable,
         mcpServersLoaded,
       })

@@ -3,9 +3,9 @@
 // ---------------------------------------------------------------------------
 //
 // The workspace is a git repo with an auto-committing heartbeat, and `skills/`
-// is tracked, so every managed-skill write already has its prior content
+// is tracked, so every cloud-skill write already has its prior content
 // retained. This module reads that history rather than storing a second copy:
-// `createManagedSkill` writes through an atomic rename and keeps no version of
+// `createCloudSkill` writes through an atomic rename and keeps no version of
 // its own, but the commit underneath it does.
 //
 // A revision here is ONE UPDATE TO THE WHOLE SKILL, not a per-file log. A
@@ -43,7 +43,7 @@
 import { getLogger } from "../util/logger.js";
 import { getWorkspaceDir } from "../util/platform.js";
 import { getWorkspaceGitService } from "../workspace/git-service.js";
-import { validateManagedSkillId } from "./managed-store.js";
+import { validateCloudSkillId } from "./cloud-store.js";
 
 const log = getLogger("skill-history");
 
@@ -128,7 +128,7 @@ export async function getSkillHistory(
   skillId: string,
   options: { limit?: number } = {},
 ): Promise<SkillHistory> {
-  const invalid = validateManagedSkillId(skillId);
+  const invalid = validateCloudSkillId(skillId);
   if (invalid) {
     throw new Error(`Invalid skill id: ${invalid}`);
   }

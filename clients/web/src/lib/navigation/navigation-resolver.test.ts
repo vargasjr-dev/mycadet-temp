@@ -18,15 +18,15 @@ import {
 
 const base: NavigationState = {
   isLocalClient: false,
-  isPlatformDisabled: false,
+  isCloudDisabled: false,
   isRemoteGateway: false,
   remoteGatewayPublicPathPrefix: "",
   isGatewayAuth: false,
   hasAssistants: true,
-  hasPlatformHostedAssistant: true,
+  hasCloudHostedAssistant: true,
   sessionSettled: true,
   isAuthenticated: true,
-  platformSession: "present",
+  cloudSession: "present",
   tosAccepted: true,
   privacyConsent: true,
   analyticsConsentCurrent: true,
@@ -53,7 +53,7 @@ function redirectPath(decision: NavigationDecision): string | null {
 }
 
 // The two provisioning funnel entries a paid return can name. Both carry the
-// managed-hatch marker, so a local-mode client provisions on the platform
+// managed-hatch marker, so a local-mode client provisions on the cloud
 // instead of letting its own gateway answer for the assistant and skipping the
 // purchased-provisioning wait, plus the post-checkout marker that tells that
 // wait a still-base subscription read is a lagging webhook, not a free org.
@@ -67,7 +67,7 @@ const CHOOSER = "/assistant/select-assistant";
 const NO_ASSISTANTS: Partial<NavigationState> = {
   isLocalClient: false,
   hasAssistants: false,
-  hasPlatformHostedAssistant: false,
+  hasCloudHostedAssistant: false,
 };
 
 const ALLOW: NavigationDecision = { action: "allow" };
@@ -76,7 +76,7 @@ const WAIT: NavigationDecision = { action: "wait" };
 // tag is part of the contract, not a label.
 const WAIT_FOR_PLATFORM_SESSION: NavigationDecision = {
   action: "wait",
-  waitFor: "platform-session",
+  waitFor: "cloud-session",
 };
 
 describe("resolveNavigation", () => {
@@ -319,7 +319,7 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: "/assistant" });
     });
 
-    // The platform build hosts the hub chooser: the route admits a settled
+    // The cloud build hosts the hub chooser: the route admits a settled
     // authenticated user in every mode.
     test("allows a consented authenticated non-local user on select-assistant", () => {
       expect(guard(s({ isLocalClient: false }), CHOOSER)).toEqual(ALLOW);
@@ -400,13 +400,13 @@ describe("resolveNavigation", () => {
 
     // The local chooser is an onboarding surface reachable before there is a
     // session to gate on, so it short-circuits ahead of the assistant and
-    // consent gates that bind on the platform hub.
+    // consent gates that bind on the cloud hub.
     test("keeps the local chooser open ahead of the consent gate", () => {
       expect(
         guard(
           s({
             isLocalClient: true,
-            platformSession: "present",
+            cloudSession: "present",
             analyticsConsentCurrent: false,
           }),
           CHOOSER,
@@ -533,7 +533,7 @@ describe("resolveNavigation", () => {
           s({
             isLocalClient: true,
             hasAssistants: false,
-            platformSession: "unknown",
+            cloudSession: "unknown",
           }),
         ),
       ).toEqual(WAIT_FOR_PLATFORM_SESSION);
@@ -545,7 +545,7 @@ describe("resolveNavigation", () => {
           s({
             isLocalClient: true,
             hasAssistants: false,
-            platformSession: "present",
+            cloudSession: "present",
           }),
         ),
       ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
@@ -557,7 +557,7 @@ describe("resolveNavigation", () => {
           s({
             isLocalClient: true,
             hasAssistants: false,
-            platformSession: "absent",
+            cloudSession: "absent",
           }),
         ),
       ).toEqual({ action: "redirect", to: "/assistant/welcome" });
@@ -612,7 +612,7 @@ describe("resolveNavigation", () => {
 
     // -- hydration gating ---------------------------------------------------
 
-    test("waits (not privacy) for a platform user when the assistants list has not hydrated", () => {
+    test("waits (not privacy) for a cloud user when the assistants list has not hydrated", () => {
       // Boot race: assistants and consent both start empty/false. Deciding
       // here would dump an established user into the onboarding funnel.
       expect(
@@ -630,7 +630,7 @@ describe("resolveNavigation", () => {
       ).toEqual(WAIT);
     });
 
-    test("waits for a platform user when assistants hydrated but consent has not", () => {
+    test("waits for a cloud user when assistants hydrated but consent has not", () => {
       expect(
         guard(
           s({
@@ -686,13 +686,13 @@ describe("resolveNavigation", () => {
     });
 
     test("local mode ignores hydration flags (lockfile-driven list, sync consent)", () => {
-      // The no-assistants fork keys off the platform probe, not hydration...
+      // The no-assistants fork keys off the cloud probe, not hydration...
       expect(
         guard(
           s({
             isLocalClient: true,
             hasAssistants: false,
-            platformSession: "absent",
+            cloudSession: "absent",
             assistantsHydrated: false,
             consentHydrated: false,
           }),
@@ -705,7 +705,7 @@ describe("resolveNavigation", () => {
           s({
             isLocalClient: true,
             hasAssistants: true,
-            platformSession: "present",
+            cloudSession: "present",
             tosAccepted: false,
             privacyConsent: false,
             consentHydrated: false,
@@ -751,15 +751,15 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("redirects local-mode user with a platform session and stale consent to review-terms", () => {
-      // Consent is gated on the platform session, NOT isLocalClient: a local-mode
-      // client logged into the platform still re-reviews stale terms.
+    test("redirects local-mode user with a cloud session and stale consent to review-terms", () => {
+      // Consent is gated on the cloud session, NOT isLocalClient: a local-mode
+      // client logged into the cloud still re-reviews stale terms.
       expect(
         guard(
           s({
             isLocalClient: true,
             hasAssistants: true,
-            platformSession: "present",
+            cloudSession: "present",
             tosAccepted: false,
             privacyConsent: false,
           }),
@@ -770,12 +770,12 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("does not enforce consent when the platform session is absent", () => {
+    test("does not enforce consent when the cloud session is absent", () => {
       expect(
         guard(
           s({
             hasAssistants: true,
-            platformSession: "absent",
+            cloudSession: "absent",
             tosAccepted: false,
             privacyConsent: false,
             analyticsConsentCurrent: false,
@@ -785,13 +785,13 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("does not enforce consent when the platform is disabled", () => {
+    test("does not enforce consent when the cloud is disabled", () => {
       expect(
         guard(
           s({
-            isPlatformDisabled: true,
+            isCloudDisabled: true,
             hasAssistants: true,
-            platformSession: "present",
+            cloudSession: "present",
             tosAccepted: false,
             privacyConsent: false,
           }),
@@ -884,7 +884,7 @@ describe("resolveNavigation", () => {
     // -- post-checkout return with nothing the plan can apply to -----------
     //
     // The marketing pricing funnel has a brand-new user pay BEFORE an
-    // assistant exists, and the platform hardcodes the non-native Stripe
+    // assistant exists, and the cloud hardcodes the non-native Stripe
     // `success_url` to `/assistant/settings/billing?session_id=…`. Every
     // billing surface mounts under `ActiveAssistantGate`, which spins on
     // "Connecting to your assistant…" forever for a no-assistant org — so the
@@ -902,15 +902,15 @@ describe("resolveNavigation", () => {
     // A brand-new org: nothing resolved at all.
     const EMPTY_ORG = {
       hasAssistants: false,
-      hasPlatformHostedAssistant: false,
+      hasCloudHostedAssistant: false,
     } as const;
 
     // An org whose resolved entries are all local / Docker / another
-    // organization's. `hasAssistants` is satisfied; a managed plan still has
+    // organization's. `hasAssistants` is satisfied; a cloud plan still has
     // no target.
     const NO_MANAGED_ASSISTANT = {
       hasAssistants: true,
-      hasPlatformHostedAssistant: false,
+      hasCloudHostedAssistant: false,
     } as const;
 
     test("funnels a no-assistant post-checkout return into the research onboarding", () => {
@@ -919,7 +919,7 @@ describe("resolveNavigation", () => {
       );
     });
 
-    // The decision is "does a managed plan have a target", not "is the list
+    // The decision is "does a cloud plan have a target", not "is the list
     // empty": in a self-hosted-only org the purchase has nothing to apply to.
     test("funnels a return whose only assistants are self-hosted", () => {
       expect(guard(s(NO_MANAGED_ASSISTANT), POST_CHECKOUT_BILLING)).toEqual(
@@ -935,11 +935,11 @@ describe("resolveNavigation", () => {
 
     test("leaves an existing-assistant post-checkout return on billing", () => {
       expect(
-        guard(s({ hasPlatformHostedAssistant: true }), POST_CHECKOUT_BILLING),
+        guard(s({ hasCloudHostedAssistant: true }), POST_CHECKOUT_BILLING),
       ).toEqual(ALLOW);
       expect(
         guard(
-          s({ hasPlatformHostedAssistant: true }),
+          s({ hasCloudHostedAssistant: true }),
           "/assistant/settings/usage?tab=billing&session_id=cs_test_123",
         ),
       ).toEqual(ALLOW);
@@ -973,17 +973,17 @@ describe("resolveNavigation", () => {
     });
 
     // A local-mode client is "authenticated" on its gateway session alone, so
-    // the platform session is decided separately — and the managed hatch the
+    // the cloud session is decided separately — and the cloud hatch the
     // funnel starts needs one. The probe boots "unknown". The wait names the
     // probe because the org already has an assistant here, so nothing else
     // tells the middleware to await it.
-    test("waits for the local-mode platform-session probe before funneling", () => {
+    test("waits for the local-mode cloud-session probe before funneling", () => {
       expect(
         guard(
           s({
             isGatewayAuth: true,
             isLocalClient: true,
-            platformSession: "unknown",
+            cloudSession: "unknown",
             ...NO_MANAGED_ASSISTANT,
           }),
           POST_CHECKOUT_BILLING,
@@ -991,7 +991,7 @@ describe("resolveNavigation", () => {
       ).toEqual(WAIT_FOR_PLATFORM_SESSION);
     });
 
-    // Signed out of the platform there is no account to provision into. The
+    // Signed out of the cloud there is no account to provision into. The
     // return stays on billing, whose login notice carries `session_id` through
     // sign-in and lands back here.
     test("leaves a local-mode return with no platform session on billing", () => {
@@ -1000,7 +1000,7 @@ describe("resolveNavigation", () => {
           s({
             isGatewayAuth: true,
             isLocalClient: true,
-            platformSession: "absent",
+            cloudSession: "absent",
             ...NO_MANAGED_ASSISTANT,
           }),
           POST_CHECKOUT_BILLING,
@@ -1014,7 +1014,7 @@ describe("resolveNavigation", () => {
           s({
             isGatewayAuth: true,
             isLocalClient: true,
-            hasPlatformHostedAssistant: true,
+            hasCloudHostedAssistant: true,
           }),
           POST_CHECKOUT_BILLING,
         ),
@@ -1080,9 +1080,9 @@ describe("resolveNavigation", () => {
       });
     });
 
-    // The platform assistants list boots empty, so deciding before it hydrates
+    // The cloud assistants list boots empty, so deciding before it hydrates
     // would funnel an established user out of their own billing page.
-    test("waits for the platform assistants list before funneling", () => {
+    test("waits for the cloud assistants list before funneling", () => {
       expect(
         guard(
           s({ ...EMPTY_ORG, assistantsHydrated: false }),
@@ -1348,11 +1348,11 @@ describe("resolveNavigation", () => {
     // consent step runs, so the paid funnel entries suspend that bypass —
     // otherwise an Electron paid return starts the purchased hatch with no
     // consent recorded. The Electron desktop shape: gateway auth against a
-    // local assistant, with a platform session to provision into.
+    // local assistant, with a cloud session to provision into.
     const ELECTRON_PAID = {
       isGatewayAuth: true,
       isLocalClient: true,
-      platformSession: "present",
+      cloudSession: "present",
       ...NO_MANAGED_ASSISTANT,
     } as const;
 
@@ -1720,7 +1720,7 @@ describe("resolveNavigation", () => {
           s({
             hasAssistants: false,
             isLocalClient: true,
-            platformSession: "present",
+            cloudSession: "present",
           }),
         ),
       ).toEqual({
@@ -1735,7 +1735,7 @@ describe("resolveNavigation", () => {
           s({
             hasAssistants: false,
             isLocalClient: true,
-            platformSession: "absent",
+            cloudSession: "absent",
           }),
         ),
       ).toEqual({

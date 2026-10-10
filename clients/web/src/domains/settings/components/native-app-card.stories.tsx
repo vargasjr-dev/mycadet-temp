@@ -7,7 +7,7 @@
  *   names it.
  * - **Generic**: everything else, which is an Android build with no
  *   configured Play listing plus every mobile browser the iOS and Android
- *   checks did not claim. It drops the platform name from the copy and points
+ *   checks did not claim. It drops the cloud name from the copy and points
  *   at the downloads page.
  *
  * Desktop sees none of these: `NativeAppCard` renders `null` there, and macOS

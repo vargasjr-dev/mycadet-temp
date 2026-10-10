@@ -115,7 +115,7 @@ mock.module("../../lib/confirm-prompt.js", () => ({
 }));
 
 const realGithub = await import("../../lib/install-from-github.js");
-const realPlatform = await import("../../lib/install-from-platform.js");
+const realPlatform = await import("../../lib/install-from-cloud.js");
 const realInspect = await import("../../lib/inspect-plugin.js");
 const realUpgrade = await import("../../lib/upgrade-plugin.js");
 const realCliClient = await import("../../../ipc/cli-client.js");
@@ -165,7 +165,7 @@ mock.module("../../lib/install-from-github.js", () => ({
   },
 }));
 
-mock.module("../../lib/install-from-platform.js", () => ({
+mock.module("../../lib/install-from-cloud.js", () => ({
   ...realPlatform,
   installPluginViaPlatform: async (
     opts: { name: string; force?: boolean },
@@ -273,8 +273,8 @@ function runCommand(args: string[]): Promise<CliCommandRunResult> {
   return runCliCommand(registerPluginsCommand, args);
 }
 
-const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
-const savedIsPlatform = process.env.IS_PLATFORM;
+const savedDisablePlatform = process.env.CADET_DISABLE_CLOUD;
+const savedIsPlatform = process.env.IS_CLOUD;
 
 beforeEach(() => {
   confirmCalls = [];
@@ -293,8 +293,8 @@ beforeEach(() => {
   installTarget = null;
   // Platform features on by default, so a plain name install takes the
   // platform-tarball branch.
-  delete process.env.CADET_DISABLE_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  delete process.env.CADET_DISABLE_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
@@ -303,14 +303,14 @@ afterEach(() => {
   }
   installTargetDirs.length = 0;
   if (savedDisablePlatform === undefined) {
-    delete process.env.CADET_DISABLE_PLATFORM;
+    delete process.env.CADET_DISABLE_CLOUD;
   } else {
-    process.env.CADET_DISABLE_PLATFORM = savedDisablePlatform;
+    process.env.CADET_DISABLE_CLOUD = savedDisablePlatform;
   }
   if (savedIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = savedIsPlatform;
+    process.env.IS_CLOUD = savedIsPlatform;
   }
 });
 
@@ -451,7 +451,7 @@ describe("plugins install - declared-schedules consent", () => {
   });
 
   test("a bundled-catalog install (platform disabled) is gated too", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
     stageFixture = writeScheduleFixture;
     confirmResults = ["confirmed"];
 
@@ -465,7 +465,7 @@ describe("plugins install - declared-schedules consent", () => {
     expect(r.exitCode).toBe(0);
   });
 
-  test("a local catalog source bypasses the platform installer", async () => {
+  test("a local catalog source bypasses the cloud installer", async () => {
     catalogMatches = [
       {
         name: "fathom",
@@ -491,7 +491,7 @@ describe("plugins install - declared-schedules consent", () => {
     expect(r.exitCode).toBe(0);
   });
 
-  test("falls back to the platform installer when catalog discovery fails", async () => {
+  test("falls back to the cloud installer when catalog discovery fails", async () => {
     catalogError = new Error("catalog unavailable");
 
     const r = await runCommand(["plugins", "install", "example"]);

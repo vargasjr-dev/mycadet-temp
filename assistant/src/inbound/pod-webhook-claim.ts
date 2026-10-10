@@ -1,11 +1,11 @@
 /**
- * The platform-pod tier of webhook URL resolution, shared by the two seams that
+ * The cloud-pod tier of webhook URL resolution, shared by the two seams that
  * resolve callback URLs: `resolveCallbackUrl` and the `webhooks_register` route
  * handler.
  *
  * A pod's Tunnel only forwards subpaths the gateway has claimed, so the
  * published ingress URL is handed out only once the claim succeeds. Anything
- * else leaves the caller to register with the platform instead.
+ * else leaves the caller to register with the cloud instead.
  */
 
 /**

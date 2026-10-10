@@ -52,7 +52,7 @@ describe("getEffectiveProfiles", () => {
     }
   });
 
-  test("every cadet-column body translates to a managed dispatch target", () => {
+  test("every cadet-column body translates to a cloud dispatch target", () => {
     for (const key of [...DEFAULT_PROFILE_KEYS, OS_BETA_PROFILE_KEY]) {
       const body = CODE_DEFAULT_PROFILE_ENTRIES[key];
       const identity = resolveRoutingIdentity(body.provider, body.model);
@@ -61,7 +61,7 @@ describe("getEffectiveProfiles", () => {
     }
   });
 
-  test("the managed Jev profile routes jev-latest through TypeSafe and is managed-only", () => {
+  test("the cloud Jev profile routes jev-latest through TypeSafe and is managed-only", () => {
     const jev = CODE_DEFAULT_PROFILE_ENTRIES["jev-managed"];
     expect(jev.model).toBe("jev-latest");
     expect(jev.provider_connection).toBeUndefined();
@@ -80,7 +80,7 @@ describe("getEffectiveProfiles", () => {
     ).toBeUndefined();
   });
 
-  test("the Auto profile is the managed Balanced body relabeled, managed-only, and flag-gated", () => {
+  test("the Auto profile is the cloud Balanced body relabeled, managed-only, and flag-gated", () => {
     const auto = CODE_DEFAULT_PROFILE_ENTRIES.auto;
     const balanced = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
     expect(auto.label).toBe("Auto");
@@ -109,7 +109,7 @@ describe("getEffectiveProfiles", () => {
     ).toContain("auto");
   });
 
-  test("the conversation view drops the managed Jev profile but keeps it selectable for call sites", () => {
+  test("the conversation view drops the cloud Jev profile but keeps it selectable for call sites", () => {
     expect(
       Object.keys(getConversationProfilesForProvider(undefined)),
     ).not.toContain("jev-managed");
@@ -121,7 +121,7 @@ describe("getEffectiveProfiles", () => {
     ).toContain("balanced");
   });
 
-  test("the managed Balanced profile routes GLM 5.3 Flash through Fireworks", () => {
+  test("the cloud Balanced profile routes GLM 5.3 Flash through Fireworks", () => {
     const balanced = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
     expect(balanced.model).toBe("accounts/fireworks/models/glm-5p3-flash");
     expect(resolveRoutingIdentity(balanced.provider, balanced.model)).toEqual({
@@ -130,7 +130,7 @@ describe("getEffectiveProfiles", () => {
     });
   });
 
-  test("the managed Quality profile routes GPT-5.6 Sol through OpenAI", () => {
+  test("the cloud Quality profile routes GPT-5.6 Sol through OpenAI", () => {
     const quality = CODE_DEFAULT_PROFILE_ENTRIES["quality-optimized"];
     expect(quality.model).toBe("gpt-5.6-sol");
     expect(resolveRoutingIdentity(quality.provider, quality.model)).toEqual({
@@ -150,7 +150,7 @@ describe("getEffectiveProfiles", () => {
     expect(getEffectiveProfile({}, OS_BETA_PROFILE_KEY)).toBeUndefined();
   });
 
-  test("a managed-source entry resolves to the code body with only label/status/topP from disk", () => {
+  test("a cloud-source entry resolves to the code body with only label/status/topP from disk", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
         source: "managed",
@@ -355,7 +355,7 @@ describe("resolver integration", () => {
     ).not.toThrow();
   });
 
-  test("a user profile cannot shadow a managed backup profile", () => {
+  test("a user profile cannot shadow a cloud backup profile", () => {
     // Every backup is code-owned for the same reason `latency-optimized` is:
     // a backup earns its place by pinning a different upstream than the
     // primary it backs, and a user shadow can repoint it at the primary's
@@ -381,7 +381,7 @@ describe("resolver integration", () => {
       expect(effective?.model).not.toBe("claude-opus-4-6");
       expect(String(effective?.provider)).toBe("cadet");
       expect(effective?.provider_connection).toBeUndefined();
-      // Resolution through the managed column agrees with the listing.
+      // Resolution through the cloud column agrees with the listing.
       const resolved = resolveDefaultProfileForProvider(llm.profiles, key, {
         provider: "cadet",
       });
@@ -450,7 +450,7 @@ describe("schema validation", () => {
     // User-endpoint and keyless providers have no code-resolvable default
     // profile implementation. The blob is a partial fragment (stripping the
     // provider would drop the blob's other fields), so they stay on disk and
-    // the read clamps them to null — resolution treats that as the managed
+    // the read clamps them to null — resolution treats that as the cloud
     // column.
     for (const provider of ["openai-compatible", "ollama"]) {
       const blobProvider = LLMSchema.parse({ default: { provider } }).default
@@ -569,7 +569,7 @@ describe("resolveDefaultProfileForProvider", () => {
     expect(entry?.model).toBe(resolveModelIntent("anthropic", "balanced"));
   });
 
-  test("the cadet column keeps its underlying dispatch provider and managed connection", () => {
+  test("the cadet column keeps its underlying dispatch provider and cloud connection", () => {
     const entry = resolveDefaultProfileForProvider(
       undefined,
       "balanced",
@@ -631,7 +631,7 @@ describe("resolveDefaultProfileForProvider", () => {
     }
   });
 
-  test("a managed-source stub contributes only label/status/topP over the provider-resolved body", () => {
+  test("a cloud-source stub contributes only label/status/topP over the provider-resolved body", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
         source: "managed",

@@ -372,13 +372,13 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
     mockIsPlatform = false;
   });
 
-  test("allows localhost when not platform-hosted", async () => {
+  test("allows localhost when not cloud-hosted", async () => {
     /**
      * Self-hosted users run LM Studio / vLLM / text-generation-webui on
      * their own machine. localhost is the expected target.
      */
 
-    // GIVEN a self-hosted daemon (IS_PLATFORM=false)
+    // GIVEN a self-hosted daemon (IS_CLOUD=false)
     // WHEN creating a connection with a localhost base_url
     const result = await handleCreate({
       body: {
@@ -397,12 +397,12 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
     );
   });
 
-  test("allows private IP (192.168.x.x) when not platform-hosted", async () => {
+  test("allows private IP (192.168.x.x) when not cloud-hosted", async () => {
     /**
      * Self-hosted users may run model servers on LAN machines.
      */
 
-    // GIVEN a self-hosted daemon (IS_PLATFORM=false)
+    // GIVEN a self-hosted daemon (IS_CLOUD=false)
     // WHEN creating a connection with a private IP base_url
     const result = await handleCreate({
       body: {
@@ -421,12 +421,12 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
     );
   });
 
-  test("allows 127.0.0.1 when not platform-hosted", async () => {
+  test("allows 127.0.0.1 when not cloud-hosted", async () => {
     /**
      * Loopback address variant of localhost.
      */
 
-    // GIVEN a self-hosted daemon (IS_PLATFORM=false)
+    // GIVEN a self-hosted daemon (IS_CLOUD=false)
     // WHEN creating a connection with a 127.0.0.1 base_url
     const result = await handleCreate({
       body: {

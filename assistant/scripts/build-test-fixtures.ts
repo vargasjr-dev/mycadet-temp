@@ -43,7 +43,7 @@ async function buildMigratedFixture(outWorkspaceDir: string): Promise<void> {
   const buildWorkspace = join(buildRoot, "workspace");
   mkdirSync(buildWorkspace);
   process.env.CADET_WORKSPACE_DIR = buildWorkspace;
-  process.env.CADET_PLATFORM_URL ??= "https://test-cloud.mycadet.ai";
+  process.env.CADET_CLOUD_URL ??= "https://test-cloud.mycadet.ai";
   // Match the preload's env hygiene so migrations never route through a live
   // credential store while building the fixture.
   delete process.env.IS_CONTAINERIZED;

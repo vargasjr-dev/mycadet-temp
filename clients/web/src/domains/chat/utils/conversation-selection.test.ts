@@ -276,7 +276,7 @@ describe("shouldMintNewChatDraft", () => {
     ).toBe(false);
   });
 
-  test("does not mint when the platform does not start in a new chat", () => {
+  test("does not mint when the cloud does not start in a new chat", () => {
     expect(
       shouldMintNewChatDraft({
         platformStartsInNewChat: false,

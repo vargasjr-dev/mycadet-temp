@@ -8,7 +8,7 @@ import {
 
 const ENV_VARS_TO_SAVE = [
   "CADET_ENVIRONMENT",
-  "CADET_PLATFORM_URL",
+  "CADET_CLOUD_URL",
   "CADET_ASSISTANT_PLATFORM_URL",
   "CADET_LOCKFILE_DIR",
 ] as const;
@@ -37,33 +37,33 @@ describe("getCurrentEnvironment", () => {
   test("returns production seed when no override, no env var", () => {
     const env = getCurrentEnvironment();
     expect(env.name).toBe("production");
-    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+    expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
   });
 
   test("returns dev seed when CADET_ENVIRONMENT=dev", () => {
     process.env.CADET_ENVIRONMENT = "dev";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
-    expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
+    expect(env.cloudUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("returns staging seed when CADET_ENVIRONMENT=staging", () => {
     process.env.CADET_ENVIRONMENT = "staging";
-    expect(getCurrentEnvironment().platformUrl).toBe(
+    expect(getCurrentEnvironment().cloudUrl).toBe(
       "https://staging-cloud.mycadet.ai",
     );
   });
 
   test("returns local seed with localhost URL", () => {
     process.env.CADET_ENVIRONMENT = "local";
-    expect(getCurrentEnvironment().platformUrl).toBe("http://localhost:8000");
+    expect(getCurrentEnvironment().cloudUrl).toBe("http://localhost:8000");
   });
 
   test("override argument takes priority over CADET_ENVIRONMENT env var", () => {
     process.env.CADET_ENVIRONMENT = "staging";
     const env = getCurrentEnvironment("dev");
     expect(env.name).toBe("dev");
-    expect(env.platformUrl).toBe("https://dev-cloud.mycadet.ai");
+    expect(env.cloudUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("empty override argument falls through to env var", () => {
@@ -85,7 +85,7 @@ describe("getCurrentEnvironment", () => {
     try {
       const env = getCurrentEnvironment("no-such-env");
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+      expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "no-such-env"'),
       );
@@ -105,7 +105,7 @@ describe("getCurrentEnvironment", () => {
     try {
       const env = getCurrentEnvironment();
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+      expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "nope"'),
       );
@@ -128,49 +128,49 @@ describe("getCurrentEnvironment", () => {
     }
   });
 
-  test("CADET_PLATFORM_URL overrides platformUrl on the resolved definition", () => {
+  test("CADET_CLOUD_URL overrides cloudUrl on the resolved definition", () => {
     process.env.CADET_ENVIRONMENT = "dev";
-    process.env.CADET_PLATFORM_URL = "https://custom.example.com";
+    process.env.CADET_CLOUD_URL = "https://custom.example.com";
     const env = getCurrentEnvironment();
     expect(env.name).toBe("dev");
-    expect(env.platformUrl).toBe("https://custom.example.com");
+    expect(env.cloudUrl).toBe("https://custom.example.com");
   });
 
-  test("CADET_PLATFORM_URL override does not affect the seed table", () => {
-    process.env.CADET_PLATFORM_URL = "https://custom.example.com";
+  test("CADET_CLOUD_URL override does not affect the seed table", () => {
+    process.env.CADET_CLOUD_URL = "https://custom.example.com";
     getCurrentEnvironment();
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
     const env = getCurrentEnvironment();
-    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+    expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("CADET_ASSISTANT_PLATFORM_URL overrides assistantPlatformUrl", () => {
+  test("CADET_ASSISTANT_PLATFORM_URL overrides assistantCloudUrl", () => {
     process.env.CADET_ASSISTANT_PLATFORM_URL =
       "http://host.docker.internal:8000";
     const env = getCurrentEnvironment();
-    expect(env.assistantPlatformUrl).toBe("http://host.docker.internal:8000");
+    expect(env.assistantCloudUrl).toBe("http://host.docker.internal:8000");
   });
 
-  test("CADET_ASSISTANT_PLATFORM_URL does not shadow platformUrl", () => {
+  test("CADET_ASSISTANT_PLATFORM_URL does not shadow cloudUrl", () => {
     process.env.CADET_ASSISTANT_PLATFORM_URL = "http://override";
     const env = getCurrentEnvironment();
-    expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+    expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("does not auto-materialize a new environment from CADET_PLATFORM_URL alone", () => {
+  test("does not auto-materialize a new environment from CADET_CLOUD_URL alone", () => {
     // Unknown env names fall back to production (parity with daemon + Swift).
-    // The per-field CADET_PLATFORM_URL override is intentionally dropped on
+    // The per-field CADET_CLOUD_URL override is intentionally dropped on
     // the fallback path — fallback returns a pristine production seed so a
     // typo'd env var can't accidentally stitch together a new environment.
     process.env.CADET_ENVIRONMENT = "my-custom";
-    process.env.CADET_PLATFORM_URL = "https://my-custom.example.com";
+    process.env.CADET_CLOUD_URL = "https://my-custom.example.com";
     const stderr = spyOn(process.stderr, "write").mockImplementation(
       () => true,
     );
     try {
       const env = getCurrentEnvironment();
       expect(env.name).toBe("production");
-      expect(env.platformUrl).toBe("https://cloud.mycadet.ai");
+      expect(env.cloudUrl).toBe("https://cloud.mycadet.ai");
       expect(stderr).toHaveBeenCalledWith(
         expect.stringContaining('unknown environment "my-custom"'),
       );
@@ -232,7 +232,7 @@ describe("getSeed", () => {
     const seed = getSeed("dev");
     expect(seed).toBeDefined();
     expect(seed?.name).toBe("dev");
-    expect(seed?.platformUrl).toBe("https://dev-cloud.mycadet.ai");
+    expect(seed?.cloudUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("returns undefined for an unknown name", () => {
@@ -242,10 +242,10 @@ describe("getSeed", () => {
   test("returned seed is a copy — mutations do not affect the table", () => {
     const seed = getSeed("dev");
     if (seed) {
-      seed.platformUrl = "mutated";
+      seed.cloudUrl = "mutated";
     }
     const second = getSeed("dev");
-    expect(second?.platformUrl).toBe("https://dev-cloud.mycadet.ai");
+    expect(second?.cloudUrl).toBe("https://dev-cloud.mycadet.ai");
   });
 
   test("all five canonical seeds exist", () => {

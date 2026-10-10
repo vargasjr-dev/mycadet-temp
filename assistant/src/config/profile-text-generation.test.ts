@@ -15,7 +15,7 @@ describe("profileSupportsTextGeneration", () => {
     ).toBe(false);
   });
 
-  test("false for the managed Jev profile shape", () => {
+  test("false for the cloud Jev profile shape", () => {
     expect(
       profileSupportsTextGeneration(
         { provider: "cadet", model: "jev-latest" },

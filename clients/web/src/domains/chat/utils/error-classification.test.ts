@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   getChatBillingBannerDecision,
   isCreditsExhaustedProviderError,
-  isManagedCredentialChatError,
+  isCloudCredentialChatError,
   resolveComposerBillingBanner,
   shouldShowGenericChatErrorNotice,
   shouldSuppressGenericChatErrorNotice,
@@ -99,7 +99,7 @@ describe("chat error classification", () => {
       errorCategory: "managed_key_invalid",
     };
 
-    expect(isManagedCredentialChatError(error)).toBe(true);
+    expect(isCloudCredentialChatError(error)).toBe(true);
     expect(shouldSuppressGenericChatErrorNotice(error)).toBe(false);
     expect(shouldShowGenericChatErrorNotice(error)).toBe(true);
   });

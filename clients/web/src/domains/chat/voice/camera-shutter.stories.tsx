@@ -67,7 +67,7 @@ export const Sending: Story = {
 
 /**
  * Streaming. The core shrinks past its target and settles back, which is the
- * record-button language every camera on the platform already uses: a crimson
+ * record-button language every camera on the cloud already uses: a crimson
  * dot that says "running, tap to stop" rather than "tap to take one".
  *
  * Flip the `mode` control to watch the morph both ways, which is the part the

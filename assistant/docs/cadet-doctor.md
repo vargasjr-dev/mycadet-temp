@@ -1,8 +1,8 @@
 # Cadet Doctor
 
-Cadet Doctor is a platform-hosted diagnostic tool for investigating problems with a Cadet assistant.
+Cadet Doctor is a cloud-hosted diagnostic tool for investigating problems with a Cadet assistant.
 
-> **Status:** Beta. Cadet Doctor is available in the web client for platform-hosted assistants; it is not available for self-hosted assistants.
+> **Status:** Beta. Cadet Doctor is available in the web client for cloud-hosted assistants; it is not available for self-hosted assistants.
 
 ## What it does
 
@@ -79,7 +79,7 @@ A persisted session includes:
 - Tool calls and tool results.
 - Approval, backup, feedback, status, and error entries.
 - Message timestamps and counts.
-- Token and estimated-cost totals returned by the platform API.
+- Token and estimated-cost totals returned by the cloud API.
 
 The **Copy Session** action serializes the visible session into text. Doctor's idle panel also warns that Doctor logs may be temporarily stored, so guardians should avoid entering secrets that are not necessary for diagnosis.
 
@@ -91,7 +91,7 @@ Sharing feedback is separate from approving a Doctor operation. A guardian can c
 
 ## API reference
 
-The platform API exposes Doctor under the assistant-scoped routes below. Requests use the same authentication options as the surrounding platform API.
+The cloud API exposes Doctor under the assistant-scoped routes below. Requests use the same authentication options as the surrounding platform API.
 
 | Operation        | Route                                                                           | Purpose                                                    |
 | ---------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -164,15 +164,15 @@ Doctor cannot start without an active assistant. Hatch or select an assistant, t
 
 ### Doctor is unavailable
 
-Doctor is platform-hosted. Self-hosted assistants do not expose the Doctor tab or the `/doctor` command.
+Doctor is cloud-hosted. Self-hosted assistants do not expose the Doctor tab or the `/doctor` command.
 
 ### Monthly session limit
 
-The platform can reject session creation when the available Doctor sessions for the month have been used. The web client tells the guardian to try again next month.
+The cloud can reject session creation when the available Doctor sessions for the month have been used. The web client tells the guardian to try again next month.
 
 ### Service or connection failure
 
-Session creation, message delivery, and event streaming can fail when the Doctor service or platform proxy is unavailable. The panel surfaces the returned error and ends the session when it cannot recover.
+Session creation, message delivery, and event streaming can fail when the Doctor service or cloud proxy is unavailable. The panel surfaces the returned error and ends the session when it cannot recover.
 
 The event stream retries recoverable interruptions with a bounded reconnect policy. If the session has expired, its event history cannot be replayed, or the stream remains idle, the panel asks the guardian to start a new session.
 

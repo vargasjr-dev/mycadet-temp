@@ -3,7 +3,7 @@
  * SQLite database via IPC. Gateway one-time data migrations (m0002, m0010,
  * m0014, et al.) need raw read/drop access to the assistant DB on first boot
  * of upgraded installs, and direct cross-container file access corrupts the
- * DB on platform pods (fcntl locks are not shared across mount namespaces +
+ * DB on cloud pods (fcntl locks are not shared across mount namespaces +
  * a SQLite WAL-reset bug in ≤3.51.2) — so migrations reach the assistant DB
  * only through this route.
  *

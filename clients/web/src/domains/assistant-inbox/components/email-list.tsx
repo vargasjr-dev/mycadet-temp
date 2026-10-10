@@ -30,9 +30,9 @@ interface EmailListRowProps {
  * then three stacked lines, who, the subject, and when, with hover and
  * selection as washes rather than rules between rows. Inbound rows lead with
  * who wrote; outbound rows lead with who it went to, since the sender is
- * always the assistant. No preview line: the platform's list carries none.
+ * always the assistant. No preview line: the cloud's list carries none.
  * A received row not yet opened here carries a dot on its trailing edge and
- * the emphasised name; the platform keeps no read state, so the mark is
+ * the emphasised name; the cloud keeps no read state, so the mark is
  * this device's memory of what was opened (see `useReadEmails`).
  *
  * The disc shares its cell with the row's checkbox. Under a mouse the box

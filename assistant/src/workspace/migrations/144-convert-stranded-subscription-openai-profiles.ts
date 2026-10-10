@@ -34,7 +34,7 @@ const log = getLogger("migration-144");
  * `llm.defaultProvider` of "openai" converts the same way: it anchors the
  * code-owned default profiles and background call sites, which are equally
  * stranded. Fragments with a `provider_connection` pin, a pinned
- * defaultProvider connectionName, any other provider, or a managed source
+ * defaultProvider connectionName, any other provider, or a cloud source
  * are left untouched. `llm.default` is not swept: migration 133 drops that
  * legacy blob and runs earlier in the chain.
  */

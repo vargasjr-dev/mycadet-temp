@@ -63,8 +63,8 @@ describe("133-collapse-provider-connections migration", () => {
     );
   });
 
-  test("rewrites the managed triple to identity shape", () => {
-    // The managed shape this migration rewrites: concrete upstream + cadet
+  test("rewrites the cloud triple to identity shape", () => {
+    // The cloud shape this migration rewrites: concrete upstream + cadet
     // connection on the profile, defaultProvider pinning the cadet
     // connection by name.
     writeConfig({
@@ -357,7 +357,7 @@ describe("133-collapse-provider-connections migration", () => {
   test("a schema-dead cadet connection on a call site is dropped, never a rewrite signal", () => {
     // The parsed call-site schema has no provider_connection field — a raw
     // value is invisible to the resolver. Flipping the provider from it
-    // would move a BYOK call site onto the managed route, so it is removed
+    // would move a BYOK call site onto the cloud route, so it is removed
     // verbatim.
     writeConfig({
       llm: {

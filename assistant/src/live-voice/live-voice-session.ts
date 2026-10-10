@@ -392,7 +392,7 @@ export interface LiveVoiceSessionOptions {
   metricsClock?: VoiceMetricsClock;
   /**
    * Mirrors phase changes to the iOS Live Activity. Injectable so tests can
-   * assert what a session reports without reaching the platform.
+   * assert what a session reports without reaching the cloud.
    */
   liveActivityReporter?: LiveActivityReporter;
   createTurnId?: () => string;
@@ -1223,7 +1223,7 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
   // that can point at the screen. Cleared when the share ends.
   private shareTargets: ShareTargetSnapshot | null = null;
   /**
-   * Mirrors phase changes to the iOS Live Activity through the platform, for
+   * Mirrors phase changes to the iOS Live Activity through the cloud, for
    * the case the client cannot cover: an app backgrounded long enough for iOS
    * to suspend the web layer that would otherwise push them.
    */
@@ -8326,7 +8326,7 @@ async function defaultResolveStreamingTranscriber(
   options: ResolveStreamingTranscriberOptions,
 ): Promise<StreamingTranscriber | null> {
   const { resolveEffectiveSpeechProviders } =
-    await import("../config/managed-speech-defaults.js");
+    await import("../config/cloud-speech-defaults.js");
   const { resolveStreamingTranscriber } =
     await import("../providers/speech-to-text/resolve.js");
   const { stt } = await resolveEffectiveSpeechProviders(undefined, {

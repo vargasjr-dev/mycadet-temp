@@ -4,7 +4,7 @@ import { describe, expect, mock, test } from "bun:test";
 // startGatewayCallback() dynamically imports these to resolve the public
 // callback URL. Stub them so the gateway flow runs without platform infra.
 
-mock.module("../../inbound/platform-callback-registration.js", () => ({
+mock.module("../../inbound/cloud-callback-registration.js", () => ({
   resolveCallbackUrl: async () =>
     "https://platform.example/v1/gateway/callbacks/abc/webhooks/oauth/callback/",
 }));

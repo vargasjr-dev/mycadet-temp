@@ -228,8 +228,8 @@ describe("probeTunnel", () => {
         body: JSON.stringify({
           remote: PAIRING_EDGE_REMOTE,
           apiBaseUrl: "/v1",
-          platformDisabled: true,
-          disablePlatform: true,
+          cloudDisabled: true,
+          disableCloud: true,
           assistantName: "Ada",
           assistantId: "asst_1",
           hubUrl: "https://mycadet.ai",

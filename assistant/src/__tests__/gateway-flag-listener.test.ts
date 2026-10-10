@@ -54,7 +54,7 @@ mock.module("../runtime/sync/sync-publisher.js", () => ({
 // ---------------------------------------------------------------------------
 // Track reconcileFlagGatedProfiles calls and let each test control whether it
 // reports a config change, so we can assert the listener broadcasts only when
-// the managed profile set actually changes.
+// the cloud profile set actually changes.
 // ---------------------------------------------------------------------------
 let reconcileCallCount = 0;
 let reconcileReturns = false;

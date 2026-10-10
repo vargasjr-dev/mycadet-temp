@@ -2,7 +2,7 @@
  * Tests for `useChooserRowAvatar`: the transport gate that decides whether a
  * per-row SDK fetch is addressable, connected-row delegation to
  * `useAssistantAvatar`, per-row manifest-vs-legacy path selection, the
- * host-bridge disk read for local rows, the platform id lookup for paired and
+ * host-bridge disk read for local rows, the cloud id lookup for paired and
  * local rows, the last-seen cache as the final fallback, and the
  * failure-to-nulls contract. The resolved-assistants and auth stores are real;
  * the environment probes, the avatar and assistants APIs, the host bridge, and
@@ -64,11 +64,11 @@ mock.module("@/hooks/use-is-org-ready", () => ({
 }));
 
 // A paired daemon registered under the row's own id, until a test says otherwise.
-const resolvePairedAssistantPlatformId = mock(
+const resolvePairedAssistantCloudId = mock(
   async (id: string): Promise<string | null> => id,
 );
-mock.module("@/lib/paired-platform-identity", () => ({
-  resolvePairedAssistantPlatformId,
+mock.module("@/lib/paired-cloud-identity", () => ({
+  resolvePairedAssistantCloudId,
 }));
 
 type HostAvatarResult = LocalReadAssistantAvatarResult;
@@ -172,7 +172,7 @@ const { useAssistantIdentityStore } =
 const { MIN_VERSION } =
   await import("@/lib/backwards-compat/avatar-state-manifest");
 const {
-  canFetchRowAvatarViaPlatformProxy,
+  canFetchRowAvatarViaCloudProxy,
   chooserRowAvatarQueryKeyPrefix,
   forgetAssistantAvatar,
   useChooserRowAvatar,
@@ -202,13 +202,13 @@ const noneState: AvatarState = {
   accent: null,
 };
 
-const platformRow = (
+const cloudRow = (
   id: string,
   overrides: Partial<ResolvedAssistant> = {},
 ): ResolvedAssistant => ({
   id,
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
   runtimeVersion: "0.9.0",
   ...overrides,
@@ -218,9 +218,9 @@ const localRow = (
   id: string,
   overrides: Partial<ResolvedAssistant> = {},
 ): ResolvedAssistant =>
-  platformRow(id, {
+  cloudRow(id, {
     isLocal: true,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     cloud: "local",
     ...overrides,
   });
@@ -240,7 +240,7 @@ function createWrapper(
 /** A signed-in platform account on this device, the state a `cadet login` leaves. */
 function signInToPlatform(): void {
   useAuthStore.setState({
-    platformSession: "present",
+    cloudSession: "present",
     user: {
       kind: "platform",
       id: "user-1",
@@ -306,8 +306,8 @@ afterEach(() => {
   readAssistantAvatarHost.mockReset();
   listAssistants.mockReset();
   listAssistants.mockResolvedValue({ ok: true, status: 200, data: [] });
-  resolvePairedAssistantPlatformId.mockReset();
-  resolvePairedAssistantPlatformId.mockImplementation(async (id) => id);
+  resolvePairedAssistantCloudId.mockReset();
+  resolvePairedAssistantCloudId.mockImplementation(async (id) => id);
   useAuthStore.setState(initialAuthState, true);
   useOrganizationStore.setState(initialOrganizationState, true);
   readAssistantAvatarHost.mockResolvedValue({ ok: true, avatar: null });
@@ -318,9 +318,9 @@ afterEach(() => {
   fetchCharacterComponents.mockResolvedValue(components);
 });
 
-describe("canFetchRowAvatarViaPlatformProxy", () => {
-  test("is open for a platform row in pure cloud mode", () => {
-    expect(canFetchRowAvatarViaPlatformProxy(platformRow("a"))).toBe(true);
+describe("canFetchRowAvatarViaCloudProxy", () => {
+  test("is open for a cloud row in pure cloud mode", () => {
+    expect(canFetchRowAvatarViaCloudProxy(cloudRow("a"))).toBe(true);
   });
 
   test.each([
@@ -333,14 +333,14 @@ describe("canFetchRowAvatarViaPlatformProxy", () => {
     ],
   ])("is closed under %s", (_label, arrange) => {
     arrange();
-    expect(canFetchRowAvatarViaPlatformProxy(platformRow("a"))).toBe(false);
+    expect(canFetchRowAvatarViaCloudProxy(cloudRow("a"))).toBe(false);
   });
 
   test.each([
-    ["local", { isLocal: true, isPlatformHosted: false }],
-    ["paired", { isPaired: true, isPlatformHosted: false }],
+    ["local", { isLocal: true, isCloudHosted: false }],
+    ["paired", { isPaired: true, isCloudHosted: false }],
   ])("is closed for a %s row", (_label, overrides) => {
-    expect(canFetchRowAvatarViaPlatformProxy(platformRow("a", overrides))).toBe(
+    expect(canFetchRowAvatarViaCloudProxy(cloudRow("a", overrides))).toBe(
       false,
     );
   });
@@ -360,7 +360,7 @@ describe("useChooserRowAvatar", () => {
     async (_l, arrange) => {
       arrange();
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other")),
+        () => useChooserRowAvatar(cloudRow("other")),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -370,13 +370,13 @@ describe("useChooserRowAvatar", () => {
   );
 
   test.each([
-    ["local", { isLocal: true, isPlatformHosted: false }],
-    ["paired", { isPaired: true, isPlatformHosted: false }],
+    ["local", { isLocal: true, isCloudHosted: false }],
+    ["paired", { isPaired: true, isCloudHosted: false }],
   ])(
     "issues zero SDK calls for a non-connected %s row",
     async (_l, overrides) => {
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", overrides)),
+        () => useChooserRowAvatar(cloudRow("other", overrides)),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -399,7 +399,7 @@ describe("useChooserRowAvatar", () => {
         const { result } = renderHook(
           () =>
             useChooserRowAvatar(
-              platformRow("other", { avatarUrl: SYNCED_URL }),
+              cloudRow("other", { avatarUrl: SYNCED_URL }),
             ),
           { wrapper: createWrapper() },
         );
@@ -412,10 +412,10 @@ describe("useChooserRowAvatar", () => {
       },
     );
 
-    test("skips the platform-proxy fetch in pure cloud mode", async () => {
+    test("skips the cloud-proxy fetch in pure cloud mode", async () => {
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("other", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("other", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -430,7 +430,7 @@ describe("useChooserRowAvatar", () => {
     test("connected row prefers its live read over avatarUrl", async () => {
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("active", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("active", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -445,7 +445,7 @@ describe("useChooserRowAvatar", () => {
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("active", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("active", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       // The live read retries once (1s backoff) before it settles.
@@ -463,7 +463,7 @@ describe("useChooserRowAvatar", () => {
       fetchAvatarState.mockResolvedValue(noneState);
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("active", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("active", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -471,7 +471,7 @@ describe("useChooserRowAvatar", () => {
     });
 
     test("persisting the connected row's live avatar drops its synced avatarUrl", async () => {
-      const row = platformRow("active", { avatarUrl: SYNCED_URL });
+      const row = cloudRow("active", { avatarUrl: SYNCED_URL });
       useResolvedAssistantsStore.setState({ assistants: [row] });
       renderHook(() => useChooserRowAvatar(row), { wrapper: createWrapper() });
       await waitFor(() => {
@@ -488,7 +488,7 @@ describe("useChooserRowAvatar", () => {
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("other", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("other", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -510,7 +510,7 @@ describe("useChooserRowAvatar", () => {
       const NEXT_URL = "https://cdn.example/avatars/other-2.png";
       const { result, rerender } = renderHook(
         ({ url }: { url: string }) =>
-          useChooserRowAvatar(platformRow("other", { avatarUrl: url })),
+          useChooserRowAvatar(cloudRow("other", { avatarUrl: url })),
         { wrapper: createWrapper(), initialProps: { url: SYNCED_URL } },
       );
       await settle();
@@ -530,7 +530,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       const { result } = renderHook(
         () =>
-          useChooserRowAvatar(platformRow("other", { avatarUrl: SYNCED_URL })),
+          useChooserRowAvatar(cloudRow("other", { avatarUrl: SYNCED_URL })),
         { wrapper: createWrapper() },
       );
       await settle();
@@ -548,7 +548,7 @@ describe("useChooserRowAvatar", () => {
 
     test("a null avatarUrl falls through to the proxy fetch", async () => {
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { avatarUrl: null })),
+        () => useChooserRowAvatar(cloudRow("other", { avatarUrl: null })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -564,9 +564,9 @@ describe("useChooserRowAvatar", () => {
       id: string,
       overrides: Partial<ResolvedAssistant> = {},
     ) =>
-      platformRow(id, {
+      cloudRow(id, {
         isPaired: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         ...overrides,
       });
 
@@ -608,7 +608,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            localRow("other", { platformAssistantId: "uuid-other" }),
+            localRow("other", { cloudAssistantId: "uuid-other" }),
           ),
         { wrapper: createWrapper() },
       );
@@ -617,13 +617,13 @@ describe("useChooserRowAvatar", () => {
       });
     });
 
-    test("persisting live evidence by row id drops the platform id entry", async () => {
+    test("persisting live evidence by row id drops the cloud id entry", async () => {
       listAssistants.mockResolvedValue({
         ok: true,
         status: 200,
         data: [apiAssistant("uuid-other", LOOKUP_URL)],
       });
-      const row = localRow("other", { platformAssistantId: "uuid-other" });
+      const row = localRow("other", { cloudAssistantId: "uuid-other" });
       useResolvedAssistantsStore.setState({ assistants: [row] });
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
@@ -652,7 +652,7 @@ describe("useChooserRowAvatar", () => {
       });
     });
 
-    test("an id the platform does not list falls through to the cache", async () => {
+    test("an id the cloud does not list falls through to the cache", async () => {
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("unlisted")),
@@ -698,7 +698,7 @@ describe("useChooserRowAvatar", () => {
     });
 
     test("a paired row resolves its platform id from the paired daemon first", async () => {
-      resolvePairedAssistantPlatformId.mockResolvedValue("uuid-other");
+      resolvePairedAssistantCloudId.mockResolvedValue("uuid-other");
       listAssistants.mockResolvedValue({
         ok: true,
         status: 200,
@@ -713,8 +713,8 @@ describe("useChooserRowAvatar", () => {
       });
       rerender();
       await settle();
-      expect(resolvePairedAssistantPlatformId).toHaveBeenCalledTimes(1);
-      expect(resolvePairedAssistantPlatformId).toHaveBeenCalledWith("other");
+      expect(resolvePairedAssistantCloudId).toHaveBeenCalledTimes(1);
+      expect(resolvePairedAssistantCloudId).toHaveBeenCalledWith("other");
     });
 
     test("a paired row that already carries its platform id skips the daemon", async () => {
@@ -726,18 +726,18 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            pairedRow("other", { platformAssistantId: "uuid-other" }),
+            pairedRow("other", { cloudAssistantId: "uuid-other" }),
           ),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
         expect(result.current.imageUrl).toBe(LOOKUP_URL);
       });
-      expect(resolvePairedAssistantPlatformId).not.toHaveBeenCalled();
+      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     });
 
     test("a paired row with no resolvable platform id falls through to the cache", async () => {
-      resolvePairedAssistantPlatformId.mockResolvedValue(null);
+      resolvePairedAssistantCloudId.mockResolvedValue(null);
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
@@ -751,21 +751,21 @@ describe("useChooserRowAvatar", () => {
 
     test("a lockfile-managed platform row resolves through the lookup", async () => {
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { cloud: "cadet" })),
+        () => useChooserRowAvatar(cloudRow("other", { cloud: "cadet" })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
         expect(result.current.imageUrl).toBe(LOOKUP_URL);
       });
-      expect(resolvePairedAssistantPlatformId).not.toHaveBeenCalled();
+      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     });
 
-    test("a platform row that carries avatarUrl renders it, not the lookup", async () => {
+    test("a cloud row that carries avatarUrl renders it, not the lookup", async () => {
       const SYNCED = "https://cdn.example/avatars/other-api.png";
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", { cloud: "cadet", avatarUrl: SYNCED }),
+            cloudRow("other", { cloud: "cadet", avatarUrl: SYNCED }),
           ),
         { wrapper: createWrapper() },
       );
@@ -774,21 +774,21 @@ describe("useChooserRowAvatar", () => {
       });
     });
 
-    test("a platform row never consults the map in cloud-remote mode", async () => {
+    test("a cloud row never consults the map in cloud-remote mode", async () => {
         cloudRemote = true;
         const { result } = renderHook(
-          () => useChooserRowAvatar(platformRow("other", { cloud: "cadet" })),
+          () => useChooserRowAvatar(cloudRow("other", { cloud: "cadet" })),
           { wrapper: createWrapper() },
         );
         await settle();
         expect(result.current.imageUrl).not.toBe(LOOKUP_URL);
         expect(listAssistants).not.toHaveBeenCalled();
-        expect(resolvePairedAssistantPlatformId).not.toHaveBeenCalled();
+        expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
       },
     );
 
     test("a signed-out device keeps the glyph", async () => {
-      useAuthStore.setState({ platformSession: "absent", user: null });
+      useAuthStore.setState({ cloudSession: "absent", user: null });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
         { wrapper: createWrapper() },
@@ -796,7 +796,7 @@ describe("useChooserRowAvatar", () => {
       await settle();
       expect(result.current.imageUrl).not.toBe(LOOKUP_URL);
       expect(listAssistants).not.toHaveBeenCalled();
-      expect(resolvePairedAssistantPlatformId).not.toHaveBeenCalled();
+      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     });
 
     test("the connected row prefers its live read over the lookup", async () => {
@@ -882,10 +882,10 @@ describe("useChooserRowAvatar", () => {
     });
   });
 
-  test("waits for org readiness before the first platform-proxy fetch", async () => {
+  test("waits for org readiness before the first cloud-proxy fetch", async () => {
     orgReady = false;
     const { result, rerender } = renderHook(
-      () => useChooserRowAvatar(platformRow("other")),
+      () => useChooserRowAvatar(cloudRow("other")),
       { wrapper: createWrapper() },
     );
     await settle();
@@ -903,7 +903,7 @@ describe("useChooserRowAvatar", () => {
 
   test("connected row delegates to useAssistantAvatar even when the gate is closed", async () => {
     const { result } = renderHook(
-      () => useChooserRowAvatar(platformRow("active", { isLocal: true })),
+      () => useChooserRowAvatar(cloudRow("active", { isLocal: true })),
       { wrapper: createWrapper() },
     );
     await waitFor(() => {
@@ -917,14 +917,14 @@ describe("useChooserRowAvatar", () => {
 
   test("connected row reuses the useAssistantAvatar cache across consumers", async () => {
     const wrapper = createWrapper();
-    const first = renderHook(() => useChooserRowAvatar(platformRow("active")), {
+    const first = renderHook(() => useChooserRowAvatar(cloudRow("active")), {
       wrapper,
     });
     await waitFor(() => {
       expect(first.result.current.traits).toEqual(traits);
     });
     const second = renderHook(
-      () => useChooserRowAvatar(platformRow("active")),
+      () => useChooserRowAvatar(cloudRow("active")),
       { wrapper },
     );
     await waitFor(() => {
@@ -936,7 +936,7 @@ describe("useChooserRowAvatar", () => {
 
   test("manifest-capable platform row reads /avatar/state and skips components", async () => {
     const { result } = renderHook(
-      () => useChooserRowAvatar(platformRow("other")),
+      () => useChooserRowAvatar(cloudRow("other")),
       { wrapper: createWrapper() },
     );
     await waitFor(() => {
@@ -951,7 +951,7 @@ describe("useChooserRowAvatar", () => {
     fetchAvatarState.mockResolvedValue(imageState);
     fetchAvatarImageUrlResult.mockResolvedValue(found("blob:row-image"));
     const { result } = renderHook(
-      () => useChooserRowAvatar(platformRow("other")),
+      () => useChooserRowAvatar(cloudRow("other")),
       { wrapper: createWrapper() },
     );
     await waitFor(() => {
@@ -965,7 +965,7 @@ describe("useChooserRowAvatar", () => {
     const { result } = renderHook(
       () =>
         useChooserRowAvatar(
-          platformRow("other", {
+          cloudRow("other", {
             runtimeVersion: undefined,
             currentReleaseVersion: "0.8.6",
           }),
@@ -985,7 +985,7 @@ describe("useChooserRowAvatar", () => {
     const { result } = renderHook(
       () =>
         useChooserRowAvatar(
-          platformRow("other", {
+          cloudRow("other", {
             runtimeVersion: undefined,
             currentReleaseVersion: null,
           }),
@@ -1002,7 +1002,7 @@ describe("useChooserRowAvatar", () => {
   test("failures resolve to nulls, never an error", async () => {
     fetchAvatarState.mockRejectedValue(new Error("boom"));
     const { result } = renderHook(
-      () => useChooserRowAvatar(platformRow("other")),
+      () => useChooserRowAvatar(cloudRow("other")),
       { wrapper: createWrapper() },
     );
     await waitFor(() => {
@@ -1016,7 +1016,7 @@ describe("useChooserRowAvatar", () => {
     fetchCharacterTraitsResult.mockResolvedValue(found(traits));
     const { result, rerender } = renderHook(
       (version: string) =>
-        useChooserRowAvatar(platformRow("other", { runtimeVersion: version })),
+        useChooserRowAvatar(cloudRow("other", { runtimeVersion: version })),
       { wrapper: createWrapper(), initialProps: "0.8.6" },
     );
     await waitFor(() => {
@@ -1040,7 +1040,7 @@ describe("useChooserRowAvatar", () => {
       defaultOptions: { queries: { retry: false } },
     });
     const { result } = renderHook(
-      () => useChooserRowAvatar(platformRow("other")),
+      () => useChooserRowAvatar(cloudRow("other")),
       { wrapper: createWrapper(queryClient) },
     );
     await waitFor(() => {
@@ -1061,7 +1061,7 @@ describe("useChooserRowAvatar", () => {
 
   test("an empty legacy result goes stale so a later mount refetches it", async () => {
     const wrapper = createWrapper();
-    const row = platformRow("other", { runtimeVersion: "0.8.6" });
+    const row = cloudRow("other", { runtimeVersion: "0.8.6" });
     const first = renderHook(() => useChooserRowAvatar(row), { wrapper });
     await waitFor(() => {
       expect(fetchCharacterTraitsResult).toHaveBeenCalledTimes(1);
@@ -1084,7 +1084,7 @@ describe("useChooserRowAvatar", () => {
 
   test("a populated legacy result stays cached past the empty stale window", async () => {
     const wrapper = createWrapper();
-    const row = platformRow("other", { runtimeVersion: "0.8.6" });
+    const row = cloudRow("other", { runtimeVersion: "0.8.6" });
     fetchCharacterTraitsResult.mockResolvedValue(found(traits));
     const first = renderHook(() => useChooserRowAvatar(row), { wrapper });
     await waitFor(() => {
@@ -1112,7 +1112,7 @@ describe("useChooserRowAvatar", () => {
 
     const { result, rerender } = renderHook(
       (version: string) =>
-        useChooserRowAvatar(platformRow("other", { runtimeVersion: version })),
+        useChooserRowAvatar(cloudRow("other", { runtimeVersion: version })),
       { wrapper: createWrapper(), initialProps: "0.8.6" },
     );
     await waitFor(() => {
@@ -1135,10 +1135,10 @@ describe("useChooserRowAvatar", () => {
 
   test("keys the fetch per row id", async () => {
     const wrapper = createWrapper();
-    const a = renderHook(() => useChooserRowAvatar(platformRow("a")), {
+    const a = renderHook(() => useChooserRowAvatar(cloudRow("a")), {
       wrapper,
     });
-    const b = renderHook(() => useChooserRowAvatar(platformRow("b")), {
+    const b = renderHook(() => useChooserRowAvatar(cloudRow("b")), {
       wrapper,
     });
     await waitFor(() => {
@@ -1302,10 +1302,10 @@ describe("useChooserRowAvatar", () => {
     });
 
     test.each([
-      ["platform", platformRow("other")],
+      ["platform", cloudRow("other")],
       [
         "paired",
-        platformRow("other", { isPaired: true, isPlatformHosted: false }),
+        cloudRow("other", { isPaired: true, isCloudHosted: false }),
       ],
       ["docker", localRow("other", { cloud: "docker" })],
     ])("issues no host call for a %s row", async (_l, row) => {
@@ -1469,7 +1469,7 @@ describe("useChooserRowAvatar", () => {
     test("revokes the live and cached object urls held for a removed assistant", async () => {
       fetchAvatarState.mockResolvedValue(imageState);
       fetchAvatarImageUrlResult.mockResolvedValue(found("blob:row-image"));
-      const live = renderHook(() => useChooserRowAvatar(platformRow("other")), {
+      const live = renderHook(() => useChooserRowAvatar(cloudRow("other")), {
         wrapper: createWrapper(),
       });
       await waitFor(() => {
@@ -1545,7 +1545,7 @@ describe("useChooserRowAvatar", () => {
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
       });
-      renderHook(() => useChooserRowAvatar(platformRow("other")), {
+      renderHook(() => useChooserRowAvatar(cloudRow("other")), {
         wrapper: createWrapper(queryClient),
       });
       await waitFor(() => {
@@ -1568,9 +1568,9 @@ describe("useChooserRowAvatar", () => {
   });
 
   describe("last-seen cache", () => {
-    test("writes a character entry after a live platform-proxy resolution", async () => {
+    test("writes a character entry after a live cloud-proxy resolution", async () => {
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other")),
+        () => useChooserRowAvatar(cloudRow("other")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1595,7 +1595,7 @@ describe("useChooserRowAvatar", () => {
       try {
         fetchAvatarState.mockResolvedValue(imageState);
         fetchAvatarImageUrlResult.mockResolvedValue(found("blob:row-image"));
-        renderHook(() => useChooserRowAvatar(platformRow("other")), {
+        renderHook(() => useChooserRowAvatar(cloudRow("other")), {
           wrapper: createWrapper(),
         });
         await waitFor(() => {
@@ -1612,7 +1612,7 @@ describe("useChooserRowAvatar", () => {
     });
 
     test("writes the connected row's live avatar", async () => {
-      renderHook(() => useChooserRowAvatar(platformRow("active")), {
+      renderHook(() => useChooserRowAvatar(cloudRow("active")), {
         wrapper: createWrapper(),
       });
       await waitFor(() => {
@@ -1627,7 +1627,7 @@ describe("useChooserRowAvatar", () => {
     test("deletes the entry when a live source resolves kind none", async () => {
       fetchAvatarState.mockResolvedValue(noneState);
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other")),
+        () => useChooserRowAvatar(cloudRow("other")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1647,7 +1647,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", { runtimeVersion: "0.8.6" }),
+            cloudRow("other", { runtimeVersion: "0.8.6" }),
           ),
         { wrapper: createWrapper() },
       );
@@ -1668,7 +1668,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", { runtimeVersion: "0.8.6" }),
+            cloudRow("other", { runtimeVersion: "0.8.6" }),
           ),
         { wrapper: createWrapper() },
       );
@@ -1691,7 +1691,7 @@ describe("useChooserRowAvatar", () => {
         blob: new Blob(["png"]),
       });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other")),
+        () => useChooserRowAvatar(cloudRow("other")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1715,7 +1715,7 @@ describe("useChooserRowAvatar", () => {
         blob: new Blob(["png"]),
       });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("active")),
+        () => useChooserRowAvatar(cloudRow("active")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1733,7 +1733,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", {
+            cloudRow("other", {
               runtimeVersion: undefined,
               currentReleaseVersion: null,
             }),
@@ -1753,7 +1753,7 @@ describe("useChooserRowAvatar", () => {
       const { result } = renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", {
+            cloudRow("other", {
               runtimeVersion: undefined,
               currentReleaseVersion: null,
             }),
@@ -1777,7 +1777,7 @@ describe("useChooserRowAvatar", () => {
       renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", {
+            cloudRow("other", {
               runtimeVersion: undefined,
               currentReleaseVersion: null,
             }),
@@ -1798,7 +1798,7 @@ describe("useChooserRowAvatar", () => {
       renderHook(
         () =>
           useChooserRowAvatar(
-            platformRow("other", { runtimeVersion: "0.8.6" }),
+            cloudRow("other", { runtimeVersion: "0.8.6" }),
           ),
         { wrapper: createWrapper() },
       );
@@ -1824,7 +1824,7 @@ describe("useChooserRowAvatar", () => {
           defaultOptions: { queries: { retry: false } },
         });
         const { result } = renderHook(
-          () => useChooserRowAvatar(platformRow("other")),
+          () => useChooserRowAvatar(cloudRow("other")),
           { wrapper: createWrapper(queryClient) },
         );
         await waitFor(() => {
@@ -1858,7 +1858,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { isPaired: true })),
+        () => useChooserRowAvatar(cloudRow("other", { isPaired: true })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1896,7 +1896,7 @@ describe("useChooserRowAvatar", () => {
         blob: new Blob(["png"]),
       });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { isPaired: true })),
+        () => useChooserRowAvatar(cloudRow("other", { isPaired: true })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1909,7 +1909,7 @@ describe("useChooserRowAvatar", () => {
       fetchAvatarState.mockRejectedValue(new Error("boom"));
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other")),
+        () => useChooserRowAvatar(cloudRow("other")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1923,7 +1923,7 @@ describe("useChooserRowAvatar", () => {
       fetchCharacterComponents.mockRejectedValue(new Error("offline"));
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("active")),
+        () => useChooserRowAvatar(cloudRow("active")),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1936,7 +1936,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { isPaired: true })),
+        () => useChooserRowAvatar(cloudRow("other", { isPaired: true })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {
@@ -1951,7 +1951,7 @@ describe("useChooserRowAvatar", () => {
       localClient = true;
       readLastSeenAvatar.mockRejectedValue(new Error("idb"));
       const { result } = renderHook(
-        () => useChooserRowAvatar(platformRow("other", { isPaired: true })),
+        () => useChooserRowAvatar(cloudRow("other", { isPaired: true })),
         { wrapper: createWrapper() },
       );
       await waitFor(() => {

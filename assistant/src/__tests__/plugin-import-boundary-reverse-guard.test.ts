@@ -114,7 +114,7 @@ const BASELINE: Record<string, readonly string[]> = {
     "src/runtime/routes/retrospective-routes.ts",
     "src/runtime/routes/secret-routes.ts",
     "src/schedule/scheduler.ts",
-    "src/skills/managed-store.ts",
+    "src/skills/cloud-store.ts",
     "src/skills/uninstall.ts",
     "src/tools/filesystem/write.ts",
     "src/tools/skills/find-similar-skills.ts",

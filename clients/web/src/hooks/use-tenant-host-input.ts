@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 /** What a per-tenant provider asks the user for before a connect can start. */
 export interface TenantHostRequirement {
-  /** Validation pattern, mirrored from the platform's provider registry. */
+  /** Validation pattern, mirrored from the cloud's provider registry. */
   pattern: string;
   label: string;
   placeholder: string;
@@ -20,11 +20,11 @@ export interface TenantHostInput {
 }
 
 /**
- * Local state for the host a per-tenant provider needs before a managed
+ * Local state for the host a per-tenant provider needs before a cloud
  * connect can start. Shopify's OAuth endpoints live on the merchant's own
  * `*.myshopify.com`, so there is nothing to open until the user says which.
  *
- * Validation uses the pattern the platform applies server-side, so a typo is
+ * Validation uses the pattern the cloud applies server-side, so a typo is
  * caught here rather than by an authorization window opening onto an error.
  * With no `requirement` the input is inert: `valid` is true and `normalized`
  * is `undefined`, so callers pass the result straight through for every

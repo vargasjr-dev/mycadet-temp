@@ -43,12 +43,12 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }

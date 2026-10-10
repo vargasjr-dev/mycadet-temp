@@ -12,14 +12,14 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
 const loader = await import("../config/loader.js");
 const registration =
-  await import("../inbound/platform-callback-registration.js");
+  await import("../inbound/cloud-callback-registration.js");
 const { resolveWebhookUrl } = await import("../plugin-api/webhook-url.js");
 const { runInPluginContext } =
   await import("../plugins/plugin-execution-context.js");
 
 describe("resolveWebhookUrl", () => {
   afterEach(() => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   });
   test("composes the plugin's namespaced path and delegates the tier choice", async () => {
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(
@@ -79,7 +79,7 @@ describe("resolveWebhookUrl", () => {
   });
 
   test("gives routes that share a slug distinct registration types", async () => {
-    // The platform keys a callback route by type, so a collision has the
+    // The cloud keys a callback route by type, so a collision has the
     // second registration replace the first. `events-v1` and `events_v1`
     // slugify identically.
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(
@@ -153,7 +153,7 @@ describe("resolveWebhookUrl", () => {
     // The Tunnel forwards the request path verbatim and the gateway
     // admits it only when it matches a claimed path byte for byte. A trailing
     // slash on this URL would be rejected before the gateway ever saw it.
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     const configSpy = spyOn(loader, "getConfig").mockReturnValue({
       ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-abc" },
     } as ReturnType<typeof loader.getConfig>);

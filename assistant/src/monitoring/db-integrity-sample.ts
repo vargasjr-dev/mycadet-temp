@@ -1,6 +1,6 @@
 /**
  * Periodic database integrity sample, reported as a `db_integrity` watchdog
- * event so the platform can read corruption prevalence across the fleet.
+ * event so the cloud can read corruption prevalence across the fleet.
  *
  * The `PRAGMA quick_check` itself runs in a short-lived subprocess
  * (`db-integrity-check.ts`) — bun:sqlite's page walk is synchronous, and a
@@ -18,7 +18,7 @@
 import { existsSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import { getLogger } from "../util/logger.js";
 import { getDbPath, getMonitoringDataDir } from "../util/platform.js";

@@ -482,7 +482,7 @@ describe("ProviderCreateForm submit sequence", () => {
     });
   });
 
-  test("platform-hosted assistants ignore an Ollama default provider seed", () => {
+  test("cloud-hosted assistants ignore an Ollama default provider seed", () => {
     useAssistantLifecycleStore.setState({
       assistantState: { kind: "active", isLocal: false },
     });
@@ -498,10 +498,10 @@ describe("ProviderCreateForm submit sequence", () => {
       </ModalWrapper>,
     );
 
-    // Ollama isn't selectable on platform-hosted assistants, so the picker
+    // Ollama isn't selectable on cloud-hosted assistants, so the picker
     // falls back to the first selectable provider: a keyed one, so the API
     // key field renders (adding a provider always means your own key;
-    // platform-managed routing is the Cadet row, not a per-provider choice).
+    // cloud-managed routing is the Cadet row, not a per-provider choice).
     expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
 
     // It stays on the menu, disabled and stating why, so the restriction

@@ -176,11 +176,11 @@ async function resolveTunnelBaseUrl(config: GatewayConfig): Promise<string> {
   if (config.tunnelBaseUrl) {
     return config.tunnelBaseUrl;
   }
-  const platformBaseUrl = getCloudBaseUrl();
-  if (platformBaseUrl) {
+  const cloudBaseUrl = getCloudBaseUrl();
+  if (cloudBaseUrl) {
     try {
       const derived = tunnelOriginForPlatformHost(
-        new URL(platformBaseUrl).hostname,
+        new URL(cloudBaseUrl).hostname,
       );
       if (derived) {
         return derived;
@@ -331,7 +331,7 @@ export function createSpeechRelayUpgradeHandler(
         return jsonError(
           401,
           "missing_platform_connection",
-          "no Cadet assistant API key is stored — connect the platform account",
+          "no Cadet assistant API key is stored — connect the cloud account",
         );
       }
       const rejection = await probeTunnel(
@@ -405,7 +405,7 @@ export function getSpeechRelayWebsocketHandlers() {
         sendRelayError(
           ws,
           "missing_platform_connection",
-          "no Cadet assistant API key is stored — connect the platform account",
+          "no Cadet assistant API key is stored — connect the cloud account",
         );
         ws.close(1011, "missing_platform_connection");
         return;

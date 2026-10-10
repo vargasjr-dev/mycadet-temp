@@ -41,7 +41,7 @@ mock.module("@/domains/chat/voice/live-voice/pcm-capture", () => ({
 }));
 
 /**
- * The tunnel token mint, stood in for so the managed path can be exercised
+ * The tunnel token mint, stood in for so the cloud path can be exercised
  * without an HTTP round trip.
  *
  * Only the mint is replaced. Everything else in the connection module — both
@@ -54,7 +54,7 @@ const realConnection =
 
 /** Assistant ids the mint was called for, in order. */
 let mintCalls: string[] = [];
-/** Set to null to make the platform refuse the mint. */
+/** Set to null to make the cloud refuse the mint. */
 let mintedToken: string | null = "tunnel-token";
 /** Held open by a test that needs a press to land mid-mint. */
 let mintGate: Promise<void> | null = null;
@@ -638,15 +638,15 @@ describe("counting the session's captures", () => {
 });
 
 /**
- * The managed transport, which is the one most users are on.
+ * The cloud transport, which is the one most users are on.
  *
- * A managed assistant has no ingress of its own to dial, so the session goes
+ * A cloud assistant has no ingress of its own to dial, so the session goes
  * through tunnel with a minted token instead — the same route, reached the
  * other way. The gateway admits only the guardian on either path, so what
  * these cases pin is that the press reaches a socket at all, and that a start
  * which cannot get a token leaves nothing behind.
  */
-describe("a watch session on a managed assistant", () => {
+describe("a watch session on a cloud assistant", () => {
   /**
    * Resolve once the mint has actually been entered, so a case that means to
    * interrupt it interrupts it rather than something earlier.
@@ -688,7 +688,7 @@ describe("a watch session on a managed assistant", () => {
     expect(useWatchStore.getState().watching).toBe(true);
   });
 
-  test("opens nothing when the platform refuses the mint", async () => {
+  test("opens nothing when the cloud refuses the mint", async () => {
     managed();
     mintedToken = null;
 

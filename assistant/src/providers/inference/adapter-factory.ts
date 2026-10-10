@@ -35,10 +35,10 @@ import { AtlasCloudProvider } from "../atlascloud/client.js";
 import { BasetenProvider } from "../baseten/client.js";
 import { CadetProvider } from "../cadet/client.js";
 import {
-  CADET_MANAGED_PROVIDER,
-  getManagedUpstream,
-  isCadetManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CADET_CLOUD_PROVIDER,
+  CLOUD_ROUTABLE_PROVIDERS,
+  getCloudUpstream,
+  isCadetCloudConnection,
 } from "../cadet-model-routing.js";
 import { FireworksProvider } from "../fireworks/client.js";
 import { GeminiProvider } from "../gemini/client.js";
@@ -70,7 +70,7 @@ export interface AdapterCreateOpts {
   apiKey: string;
   model: string;
   streamTimeoutMs: number;
-  /** Set when an explicit base URL override or managed proxy is in play. */
+  /** Set when an explicit base URL override or cloud proxy is in play. */
   baseURL?: string;
   /** Forwarded to providers that wire native provider-side web search. */
   useNativeWebSearch: boolean;
@@ -126,8 +126,8 @@ const ADAPTER_FACTORIES: Record<string, AdapterFactory> = {
   gemini: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
     new GeminiProvider(apiKey, model, {
       streamTimeoutMs,
-      // Gemini routes managed proxies through `managedBaseUrl`, not `baseURL`.
-      ...(baseURL ? { managedBaseUrl: baseURL } : {}),
+      // Gemini routes managed proxies through `cloudBaseUrl`, not `baseURL`.
+      ...(baseURL ? { cloudBaseUrl: baseURL } : {}),
     }),
   ollama: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
     new OllamaProvider(model, {
@@ -280,7 +280,7 @@ export function createAdapterFromConnection(
     useNativeWebSearch?: boolean;
     /**
      * Effective upstream provider to build the adapter for. Defaults to
-     * `connection.provider`. The provider-agnostic Cadet-managed connection
+     * `connection.provider`. The provider-agnostic Cadet Cloud connection
      * passes the resolved profile's provider here, since its own row carries
      * only the `cadet` sentinel.
      */
@@ -294,7 +294,7 @@ export function createAdapterFromConnection(
   }
 
   /**
-   * Re-read the managed credential after an auth rejection and rebuild the
+   * Re-read the cloud credential after an auth rejection and rebuild the
    * adapter around it, so a key rotated out-of-band is picked up without a
    * restart. Returns `null` when the store hands back the same credential
    * that just failed — otherwise a proxy 401 from any other cause (platform
@@ -338,7 +338,7 @@ export function createAdapterFromConnection(
    * (call site consumed, wire params resolved from the backup profile, usage
    * attribution headers stamped). A second `RetryProvider` in between would
    * re-normalize that call-site-less config and strip those headers, leaving
-   * degraded traffic unattributed on the platform's billing events.
+   * degraded traffic unattributed on the cloud's billing events.
    *
    * Never throws: a broken backup lookup must surface the original provider
    * error, not a new one.
@@ -378,7 +378,7 @@ export function createAdapterFromConnection(
         }
         const overrideProfile = expectedFallback;
         // Resolved the provider-aware way the runtime resolver resolves every
-        // profile name: the backups are companions of the managed column and
+        // profile name: the backups are companions of the cloud column and
         // must not materialize under a BYOK or ChatGPT default provider.
         const backup = resolveDefaultProfileForProvider(
           llm.profiles,
@@ -412,21 +412,21 @@ export function createAdapterFromConnection(
         }
         // The model the adapter serves must be the model the fallback send
         // carries, so it comes from the same forced-profile resolution.
-        // This callback authenticates the backup with the managed connection
+        // This callback authenticates the backup with the cloud connection
         // it was built for, so it can only serve a backup that routes through
-        // the managed column. Refusing any other route keeps managed billing
+        // the cloud column. Refusing any other route keeps managed billing
         // and credentials from being applied to user-owned traffic.
         // Keyed on the connection, not the provider: a call-site fragment that
-        // pins a concrete upstream over a managed winner keeps the managed
+        // pins a concrete upstream over a cloud winner keeps the cloud
         // routing and is stamped with this connection's name by the resolver
         // (see `llm-resolver.ts`), so a concrete `provider` here is still
         // managed traffic. Only a profile that names a different connection,
-        // or a concrete provider carrying no managed connection at all (a BYOK
+        // or a concrete provider carrying no cloud connection at all (a BYOK
         // winner), routes somewhere this callback cannot authenticate.
         const backupConnection = resolvedBackup.provider_connection;
         const routesThroughThisConnection =
           backupConnection === undefined
-            ? resolvedBackup.provider === CADET_MANAGED_PROVIDER
+            ? resolvedBackup.provider === CADET_CLOUD_PROVIDER
             : backupConnection === connection.name;
         if (!routesThroughThisConnection) {
           log.warn(
@@ -436,7 +436,7 @@ export function createAdapterFromConnection(
               backupProvider: resolvedBackup.provider,
               backupConnection,
             },
-            "Backup profile routes outside the managed connection; keeping the original error",
+            "Backup profile routes outside the cloud connection; keeping the original error",
           );
           return null;
         }
@@ -448,15 +448,15 @@ export function createAdapterFromConnection(
         // and the `isCadet && !expectedProvider` branch). Deriving it from the
         // model here regardless would send a provider-pinned call-site fragment
         // to a different upstream than a primary send of the same resolution,
-        // and would refuse a managed model the catalog does not list yet even
-        // though normal dispatch serves it. A provider the managed proxy cannot
+        // and would refuse a cloud model the catalog does not list yet even
+        // though normal dispatch serves it. A provider the cloud proxy cannot
         // front (a non-routable id, or another routing identity such as
         // `chatgpt`) is refused rather than routed.
         const declaredProvider = resolvedBackup.provider;
         const upstream =
-          declaredProvider === CADET_MANAGED_PROVIDER
-            ? getManagedUpstream(resolvedBackup.model)
-            : MANAGED_ROUTABLE_PROVIDERS.has(declaredProvider)
+          declaredProvider === CADET_CLOUD_PROVIDER
+            ? getCloudUpstream(resolvedBackup.model)
+            : CLOUD_ROUTABLE_PROVIDERS.has(declaredProvider)
               ? declaredProvider
               : null;
         if (upstream === null) {
@@ -467,11 +467,11 @@ export function createAdapterFromConnection(
               backupProvider: declaredProvider,
               backupModel: resolvedBackup.model,
             },
-            "Backup profile does not resolve to a managed upstream; keeping the original error",
+            "Backup profile does not resolve to a cloud upstream; keeping the original error",
           );
           return null;
         }
-        // Re-resolve auth for the BACKUP upstream: the managed proxy's base URL
+        // Re-resolve auth for the BACKUP upstream: the cloud proxy's base URL
         // is per-upstream, so the primary's resolved auth cannot be reused.
         const backupAuth = await resolveAuth(
           effectiveConnectionAuth(connection),
@@ -495,7 +495,7 @@ export function createAdapterFromConnection(
         return {
           provider: backupAdapter,
           overrideProfile,
-          // Always true: this callback is wired only on the managed proxy, so
+          // Always true: this callback is wired only on the cloud proxy, so
           // the backup route runs through it too and its `X-Cadet-*` billing
           // metadata reaches our own backend, never a third party.
           forwardUsageAttributionHeaders: true,
@@ -511,17 +511,17 @@ export function createAdapterFromConnection(
   }
 
   // Usage-attribution headers (`X-Cadet-*`) are only meaningful when the
-  // request is routed through the Cadet-managed proxy. They carry billing
+  // request is routed through the Cadet Cloud proxy. They carry billing
   // metadata for our own backend. Forwarding them to a third-party endpoint
-  // would leak internal Cadet metadata, so gate on the managed connection
+  // would leak internal Cadet metadata, so gate on the cloud connection
   // identity, the only route that flows through our proxy.
-  const isManagedProxy = isCadetManagedConnection(connection);
+  const isCloudProxy = isCadetCloudConnection(connection);
   const effectiveAuth = effectiveConnectionAuth(connection);
   const tracked = new UsageTrackingProvider(
     new RetryProvider(adapter, {
-      forwardUsageAttributionHeaders: isManagedProxy,
-      credentialSource: isManagedProxy
-        ? "cadet-managed"
+      forwardUsageAttributionHeaders: isCloudProxy,
+      credentialSource: isCloudProxy
+        ? "cadet-cloud"
         : effectiveAuth.type === "api_key"
           ? "byok"
           : effectiveAuth.type === "oauth_subscription"
@@ -530,11 +530,11 @@ export function createAdapterFromConnection(
               ? "no-auth"
               : undefined,
       connectionName: connection.name,
-      // Both escalations are managed-route only. A BYOK, oauth-subscription,
+      // Both escalations are cloud-route only. A BYOK, oauth-subscription,
       // or no-auth connection must never fall back: the install may hold no
-      // credential for the backup profile's provider, and only the managed
+      // credential for the backup profile's provider, and only the cloud
       // column carries `fallbackProfile` pointers in the first place.
-      ...(isManagedProxy
+      ...(isCloudProxy
         ? {
             refreshCredentialProvider: makeCredentialRefresher(),
             resolveFallbackRoute: makeFallbackRouteResolver(),
@@ -569,7 +569,7 @@ function buildConnectionAdapter(
   // only when the caller names an upstream, including Cadet-hosted GPU
   // models whose catalog id is also `cadet`.
   if (
-    connection.provider === CADET_MANAGED_PROVIDER &&
+    connection.provider === CADET_CLOUD_PROVIDER &&
     opts.provider === undefined
   ) {
     return null;

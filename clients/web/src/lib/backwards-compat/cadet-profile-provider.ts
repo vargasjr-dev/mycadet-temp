@@ -2,7 +2,7 @@
  * Backwards-compat gate: the wire payload for Cadet-picker profiles.
  *
  * Daemons at `MIN_VERSION` and later store and dispatch
- * `provider: "cadet"` profiles (the routing identity: the managed
+ * `provider: "cadet"` profiles (the routing identity: the cloud
  * upstream derives from the model per-request, no connection binding).
  * Older daemons reject the value at the profile write route, so the
  * editor writes the legacy wire shape instead — the model's managed

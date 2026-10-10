@@ -9,7 +9,7 @@ describe("platformOriginFromDevUrl", () => {
     ).toBe("https://dev.mycadet.ai");
   });
 
-  test("rejects URLs that cannot serve the platform API", () => {
+  test("rejects URLs that cannot serve the cloud API", () => {
     expect(() => platformOriginFromDevUrl("file:///tmp/assistant")).toThrow(
       "CADET_DEV_URL must use http or https",
     );

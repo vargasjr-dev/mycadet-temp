@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { ConsentState } from "../cloud/consent-cache.js";
 import { memoryTier } from "../config/memory-tier.js";
 import type { AssistantConfig } from "../config/schema.js";
-import type { ConsentState } from "../platform/consent-cache.js";
 import type { MemoryCorpusSize } from "./memory-corpus-size.js";
 import type { WatchdogEventRecord } from "./watchdog-events-store.js";
 
@@ -36,7 +36,7 @@ mock.module("./memory-corpus-size.js", () => ({
     return corpus;
   },
 }));
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => consent,
 }));
 mock.module("../config/loader.js", () => ({

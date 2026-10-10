@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CADET_CLOUD_CONNECTION_NAME,
+  CLOUD_ROUTABLE_PROVIDERS,
 } from "../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import {
@@ -435,14 +435,14 @@ function resolveOverrideOrDefault(
     if (implied !== undefined) {
       tweak.provider = implied;
       // A provider-specific connection must not pin a mismatch onto the
-      // implied provider — but the provider-agnostic Cadet managed
+      // implied provider — but the provider-agnostic Cadet Cloud
       // connection routes any managed-routable upstream and must survive,
       // or platform installs lose their only connection.
       if (
         !(
           winnerFragment.provider_connection ===
-            CADET_MANAGED_CONNECTION_NAME &&
-          MANAGED_ROUTABLE_PROVIDERS.has(implied)
+            CADET_CLOUD_CONNECTION_NAME &&
+          CLOUD_ROUTABLE_PROVIDERS.has(implied)
         )
       ) {
         delete winnerFragment.provider_connection;
@@ -457,19 +457,19 @@ function resolveOverrideOrDefault(
   );
   // A cadet winner's managed routing survives a concrete-provider tweak:
   // call-site fragments carry no connection, so a tweak pinning e.g.
-  // anthropic over a managed default would otherwise resolve to a
+  // anthropic over a cloud default would otherwise resolve to a
   // connection-less concrete provider — stranded on platform installs with
   // no BYOK row. The tweak keeps every field it sets; the winner contributes
-  // its routing via the provider-agnostic managed connection, which serves
+  // its routing via the provider-agnostic cloud connection, which serves
   // any managed-routable upstream.
   if (
     winnerFragment.provider === "cadet" &&
     typeof merged.provider === "string" &&
     merged.provider !== "cadet" &&
     merged.provider_connection == null &&
-    MANAGED_ROUTABLE_PROVIDERS.has(merged.provider)
+    CLOUD_ROUTABLE_PROVIDERS.has(merged.provider)
   ) {
-    merged.provider_connection = CADET_MANAGED_CONNECTION_NAME;
+    merged.provider_connection = CADET_CLOUD_CONNECTION_NAME;
   }
   return finalize(merged);
 }

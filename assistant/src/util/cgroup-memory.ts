@@ -1,5 +1,5 @@
 /**
- * Container memory accounting read from cgroup files (and the platform
+ * Container memory accounting read from cgroup files (and the cloud
  * `CADET_MEMORY_LIMIT` override).
  *
  * Shared by the `/v1/health` identity handler (which reports current + max) and
@@ -36,7 +36,7 @@ function readCgroupInt(path: string): number | null {
  * by the StatefulSet template to the exact K8s memory limit (e.g. "3Gi").
  */
 export function getContainerMemoryLimitBytes(): number | null {
-  // 1. Prefer the explicit env var set by the platform StatefulSet template.
+  // 1. Prefer the explicit env var set by the cloud StatefulSet template.
   try {
     const envLimit = process.env.CADET_MEMORY_LIMIT;
     if (envLimit) {

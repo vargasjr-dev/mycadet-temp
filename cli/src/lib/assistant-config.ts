@@ -151,7 +151,7 @@ export type AssistantLookupResult =
 interface LockfileData {
   assistants?: Record<string, unknown>[];
   activeAssistant?: string;
-  platformBaseUrl?: string;
+  cloudBaseUrl?: string;
   [key: string]: unknown;
 }
 
@@ -738,13 +738,14 @@ export async function allocateLocalResources(
 }
 
 /**
- * Return `platformBaseUrl` from the lockfile, if set. This is the value
+ * Return `cloudBaseUrl` from the lockfile, if set. This is the value
  * persisted by {@link syncConfigToLockfile} the last time the active
  * assistant was hatched/waked, and is the source of truth for "which
  * platform does the currently-active assistant target".
  */
 export function getLockfilePlatformBaseUrl(): string | undefined {
-  const url = readLockfile().platformBaseUrl;
+  const lockfile = readLockfile();
+  const url = lockfile.cloudBaseUrl ?? lockfile.platformBaseUrl;
   if (typeof url === "string" && url.trim()) return url.trim();
   return undefined;
 }

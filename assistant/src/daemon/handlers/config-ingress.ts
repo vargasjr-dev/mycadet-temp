@@ -17,7 +17,7 @@ import {
 } from "../../config/env.js";
 import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig } from "../../config/loader.js";
-import { resolveCallbackUrl } from "../../inbound/platform-callback-registration.js";
+import { resolveCallbackUrl } from "../../inbound/cloud-callback-registration.js";
 import {
   getTwilioStatusCallbackUrl,
   getTwilioVoiceWebhookUrl,
@@ -142,7 +142,7 @@ export function getIngressConfigResult(): {
   managedCallbacks: boolean;
   success: boolean;
 } {
-  // Platform-managed assistants don't configure ingress.publicBaseUrl —
+  // Cloud assistants don't configure ingress.publicBaseUrl —
   // they receive webhooks through platform callback routing. Surface the
   // platform callback URL and flag managedCallbacks so consumers (including
   // the assistant LLM) don't mistakenly try to set up ngrok or a tunnel.

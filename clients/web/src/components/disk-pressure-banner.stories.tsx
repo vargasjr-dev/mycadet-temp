@@ -73,7 +73,7 @@ export default meta;
 type Story = StoryObj<typeof DiskPressureBanner>;
 
 /**
- * The chat mount on a platform-hosted assistant: **Manage Storage** to free
+ * The chat mount on a cloud-hosted assistant: **Manage Storage** to free
  * space, **Upgrade** to buy more, plus the dismiss affordances.
  */
 export const WarningWithUpgrade: Story = {

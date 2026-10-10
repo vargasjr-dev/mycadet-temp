@@ -8,9 +8,9 @@ export const telemetryHelp: CliCommandHelp = {
   subcommands: [
     {
       name: "flush",
-      description: "Force-flush all pending telemetry events to the platform",
+      description: "Force-flush all pending telemetry events to the cloud",
       helpText: `
-Reports how many events reached the platform: 'sent' (POSTed), 'persisted'
+Reports how many events reached the cloud: 'sent' (POSTed), 'persisted'
 (confirmed written), and 'dropped' (sent - persisted — server-side drops plus
 events skipped at ingest validation). When nothing ships, prints why (e.g.
 nothing pending, opted out, not signed in).

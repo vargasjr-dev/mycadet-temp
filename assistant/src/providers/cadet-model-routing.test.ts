@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  CLOUD_ROUTABLE_PROVIDERS,
   formatCadetModel,
-  getManagedUpstream,
-  MANAGED_ROUTABLE_PROVIDERS,
+  getCloudUpstream,
   parseCadetModel,
 } from "./cadet-model-routing.js";
 
@@ -26,7 +26,7 @@ describe("cadet-model-routing", () => {
     });
   });
 
-  test("format rejects a non-managed provider", () => {
+  test("format rejects a non-cloud provider", () => {
     expect(() => formatCadetModel("openrouter", "x")).toThrow();
     expect(() => formatCadetModel("fireworks", "")).toThrow();
   });
@@ -39,35 +39,35 @@ describe("cadet-model-routing", () => {
     expect(parseCadetModel("/foo")).toBeNull(); // empty provider
   });
 
-  test("getManagedUpstream resolves a bare catalog id to its owner", () => {
-    expect(getManagedUpstream("claude-fable-5")).toBe("anthropic");
-    expect(getManagedUpstream("qwen/qwen3-8b")).toBe("cadet");
+  test("getCloudUpstream resolves a bare catalog id to its owner", () => {
+    expect(getCloudUpstream("claude-fable-5")).toBe("anthropic");
+    expect(getCloudUpstream("qwen/qwen3-8b")).toBe("cadet");
   });
 
-  test("getManagedUpstream resolves a routing string by its prefix", () => {
+  test("getCloudUpstream resolves a routing string by its prefix", () => {
     expect(
-      getManagedUpstream("fireworks/accounts/fireworks/models/minimax-m3"),
+      getCloudUpstream("fireworks/accounts/fireworks/models/minimax-m3"),
     ).toBe("fireworks");
   });
 
-  test("getManagedUpstream returns null for non-managed owners", () => {
-    expect(getManagedUpstream("MiniMax-M3")).toBeNull(); // minimax, not managed
-    expect(getManagedUpstream("openrouter/whatever")).toBeNull();
+  test("getCloudUpstream returns null for non-managed owners", () => {
+    expect(getCloudUpstream("MiniMax-M3")).toBeNull(); // minimax, not managed
+    expect(getCloudUpstream("openrouter/whatever")).toBeNull();
   });
 
-  test("getManagedUpstream returns null for unknown models", () => {
-    expect(getManagedUpstream("not-a-real-model")).toBeNull();
-    expect(getManagedUpstream("")).toBeNull();
+  test("getCloudUpstream returns null for unknown models", () => {
+    expect(getCloudUpstream("not-a-real-model")).toBeNull();
+    expect(getCloudUpstream("")).toBeNull();
   });
 
-  test("getManagedUpstream rejects managed-prefixed strings whose model is not cataloged under that provider", () => {
-    expect(getManagedUpstream("anthropic/definitely-not-a-model")).toBeNull();
-    expect(getManagedUpstream("openai/accounts/foo/bar")).toBeNull();
+  test("getCloudUpstream rejects managed-prefixed strings whose model is not cataloged under that provider", () => {
+    expect(getCloudUpstream("anthropic/definitely-not-a-model")).toBeNull();
+    expect(getCloudUpstream("openai/accounts/foo/bar")).toBeNull();
   });
 
-  test("managed set matches the platform proxy table", () => {
+  test("managed set matches the cloud proxy table", () => {
     // Guards against drift if PLATFORM_PROVIDER_META changes.
-    expect([...MANAGED_ROUTABLE_PROVIDERS].sort()).toEqual([
+    expect([...CLOUD_ROUTABLE_PROVIDERS].sort()).toEqual([
       "anthropic",
       "cadet",
       "fireworks",

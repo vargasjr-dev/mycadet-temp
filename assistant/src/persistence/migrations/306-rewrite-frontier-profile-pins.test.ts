@@ -96,7 +96,7 @@ describe("migration 306: rewrite frontier profile pins", () => {
     expect(pin(sqlite, "conversations", "c1")).toBe("frontier");
   });
 
-  test("rewrites pins when frontier is the managed profile in config", () => {
+  test("rewrites pins when frontier is the cloud profile in config", () => {
     writeWorkspaceConfig({
       llm: { profiles: { frontier: { source: "managed" } } },
     });

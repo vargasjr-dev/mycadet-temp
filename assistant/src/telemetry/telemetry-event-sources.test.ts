@@ -155,7 +155,7 @@ describe("onboarding_research source: flushes via the default outbox source", ()
 
   test("ships pending rows regardless of diagnostics consent, like every other outbox event", () => {
     // No flush-time diagnostics gate: the daemon rides `share_analytics`
-    // only and leaves the diagnostics decision to the platform's
+    // only and leaves the diagnostics decision to the cloud's
     // authoritative server-side ingest gate. Diagnostics off (and even a
     // stale accepted version) must not hold the row back.
     setShareDiagnostics(false, "2000-01-01");
@@ -190,7 +190,7 @@ describe("orphan-drain source", () => {
 
   test("drains rows for a type no longer in the wire contract, then self-heals on ack", () => {
     // A row whose name isn't a current outbox event type — e.g. recorded before
-    // the platform removed the type. No per-type source queries it.
+    // the cloud removed the type. No per-type source queries it.
     const orphanName = "removed_legacy_event";
     insertOutboxRow(orphanName, "orphan-row-1");
 

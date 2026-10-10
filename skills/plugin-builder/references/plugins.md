@@ -143,7 +143,7 @@ Values, not just types, that a plugin consumes at module-load or init time. A bo
 
 #### Public URLs
 
-Both resolve through the same host logic, which decides between a managed
+Both resolve through the same host logic, which decides between a cloud
 platform callback route and a configured public ingress. Both throw when the
 assistant has neither, since no URL would work in that case and a plausible
 one produces a registration that silently receives nothing.

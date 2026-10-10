@@ -9,7 +9,7 @@ import type { ApprovalMode, ApprovalReason } from "./types.js";
  *   "allow"                 — auto-allowed by policy (sandbox, trust rule, or threshold)
  *   "deny"                  — user denied via interactive prompt
  *   "denied"                — system denied (no interactive client, or trust rule deny)
- *   "platform_auto_approve" — guardian bash in platform-hosted session
+ *   "platform_auto_approve" — guardian bash in cloud-hosted session
  *   "guardian_auto_approve" — non-interactive guardian session within background threshold
  */
 export function mapApprovalProvenance(

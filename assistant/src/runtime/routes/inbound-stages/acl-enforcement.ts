@@ -128,7 +128,7 @@ export interface AclEnforcementParams {
    */
   isCallbackInteraction: boolean;
   /**
-   * The platform named no actor for this event (the id is a channel's
+   * The cloud named no actor for this event (the id is a channel's
    * synthetic system identity). There is no identity claim to enforce, so
    * the ACL neither resolves a member nor denies: the family stage that
    * consumes such an event applies it only to a row the daemon already

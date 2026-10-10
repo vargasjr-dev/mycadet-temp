@@ -85,7 +85,7 @@ export function __resetDiskUsageCacheForTests(): void {
  *   usage is measured with `du` and the effective capacity is current usage
  *   plus the host's remaining headroom.
  * - `none`: statfsSync already reports the volume accurately (bare metal, or
- *   a platform-managed instance on a CSI-backed PVC), so use it directly.
+ *   a cloud-managed instance on a CSI-backed PVC), so use it directly.
  */
 type WorkspaceVolumeReporting =
   | { kind: "none" }
@@ -101,7 +101,7 @@ type WorkspaceVolumeReporting =
 function classifyWorkspaceVolume(
   fsTotalBytes: number,
 ): WorkspaceVolumeReporting {
-  // Minikube mode: the platform passes the PVC storage size so we can report
+  // Minikube mode: the cloud passes the PVC storage size so we can report
   // accurate capacity. Detect the hostPath case by comparing filesystem size
   // against the PVC size — if the filesystem is larger, statfsSync is seeing
   // the host disk and we should measure the directory instead.

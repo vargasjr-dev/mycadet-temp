@@ -40,7 +40,7 @@ export function upsertContactChannel(params: {
   userFileOnCreate?: string | null;
   /** Refresh the contact display name from the supplied identity even when a
    *  contactId is given. Used by the inbound identity-seed mirror, whose intent
-   *  is to keep the mirror name in sync with the platform profile. Defaults to
+   *  is to keep the mirror name in sync with the cloud profile. Defaults to
    *  false: the invite-binding path preserves the guardian-curated name. */
   refreshDisplayName?: boolean;
   /** Reparent a conflicting existing channel (same (type,address) owned by a

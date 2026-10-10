@@ -152,7 +152,7 @@ export const DEFAULT_REMOTE_WEB_PAIRING_PLATFORM: RemoteWebPairingPlatform =
 
 /**
  * A requested platform coerced to a known value. The pairing-token route is
- * publicly reachable and the platform renders verbatim in the host's
+ * publicly reachable and the cloud renders verbatim in the host's
  * paired-devices list, so an unrecognized value never reaches the DB.
  */
 export function resolveRemoteWebPairingPlatform(

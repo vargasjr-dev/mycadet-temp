@@ -81,7 +81,7 @@ afterEach(() => {
 });
 
 describe("fetchCompactionTrail", () => {
-  test("calls the assistant route with the platform path + query params", async () => {
+  test("calls the assistant route with the cloud path + query params", async () => {
     await fetchCompactionTrail("assistant-1", "conv-abc", "call-32", undefined);
 
     expect(captured).not.toBeNull();

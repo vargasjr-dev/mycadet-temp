@@ -2,7 +2,7 @@
  * Regression tests for the SSE registration dev-bypass actor principal
  * translation.
  *
- * In `DISABLE_HTTP_AUTH=true` (platform-managed) deployments the synthetic
+ * In `DISABLE_HTTP_AUTH=true` (cloud-managed) deployments the synthetic
  * dev-bypass `AuthContext` injects `actorPrincipalId="dev-bypass"` for every
  * request. Trust resolution still resolves to the real local guardian's
  * principalId via `resolveLocalPrincipalTrustContext`. Without translation,
@@ -14,7 +14,7 @@
  *
  * The events-routes handler translates `"dev-bypass"` to the real guardian's
  * principalId at registration time so both sides agree. This keeps targeted
- * host proxy execution working on Docker / platform-managed deployments.
+ * host proxy execution working on Docker / cloud-managed deployments.
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 

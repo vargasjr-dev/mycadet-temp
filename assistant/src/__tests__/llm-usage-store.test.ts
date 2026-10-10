@@ -2152,7 +2152,7 @@ describe("recordUsageEvent — assistantVersion stamping", () => {
     // inserting one through recordUsageEvent and then nulling the
     // column out. This mirrors what production rows look like before
     // the migration backfills `null`s; the reporter must accept them
-    // and let the platform fall back to the envelope's version.
+    // and let the cloud fall back to the envelope's version.
     insertEventAt(1000);
     const db = getDb();
     db.run(`UPDATE llm_usage_events SET assistant_version = NULL`);

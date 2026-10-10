@@ -28,7 +28,7 @@ const runDeterministicChecksMock = mock();
 const createEventMock = mock();
 const setEventDedupeKeyMock = mock();
 const dispatchDecisionMock = mock();
-const isPlatformClientConfiguredMock = mock();
+const isCloudClientConfiguredMock = mock();
 const writeHomeFeedItemForSignalMock = mock(
   async (..._args: unknown[]) => null,
 );
@@ -113,15 +113,15 @@ mock.module("../notifications/runtime-dispatch.js", () => ({
   dispatchDecision: (...args: unknown[]) => dispatchDecisionMock(...args),
 }));
 
-mock.module("../platform/client.js", () => ({
+mock.module("../cloud/client.js", () => ({
   // The adapter import graph needs the class symbol; nothing in these tests
   // dispatches through it.
-  CadetPlatformClient: class {
+  CadetCloudClient: class {
     static async create(): Promise<null> {
       return null;
     }
   },
-  isPlatformClientConfigured: () => isPlatformClientConfiguredMock(),
+  isCloudClientConfigured: () => isCloudClientConfiguredMock(),
 }));
 
 import {
@@ -141,7 +141,7 @@ beforeEach(() => {
   createEventMock.mockReset();
   setEventDedupeKeyMock.mockReset();
   dispatchDecisionMock.mockReset();
-  isPlatformClientConfiguredMock.mockReset();
+  isCloudClientConfiguredMock.mockReset();
 
   createEventMock.mockReturnValue({ id: "evt-1" });
   runDeterministicChecksMock.mockResolvedValue({ passed: true });
@@ -150,7 +150,7 @@ beforeEach(() => {
     reason: "ok",
     deliveryResults: [],
   });
-  isPlatformClientConfiguredMock.mockResolvedValue(true);
+  isCloudClientConfiguredMock.mockResolvedValue(true);
   enforceRoutingIntentMock.mockImplementation((decision: unknown) => decision);
 });
 
@@ -827,8 +827,8 @@ describe("high/critical urgency channel force", () => {
     expect(dispatched.selectedChannels).toEqual(["telegram"]);
   });
 
-  test("forces only cadet when the platform client is not configured", async () => {
-    isPlatformClientConfiguredMock.mockResolvedValue(false);
+  test("forces only cadet when the cloud client is not configured", async () => {
+    isCloudClientConfiguredMock.mockResolvedValue(false);
     evaluateSignalMock.mockResolvedValue(makeDecision({}));
 
     await emitWithUrgency("high");
@@ -1106,7 +1106,7 @@ describe("emitNotificationSignal From me push defaults", () => {
     "cadet_allowlist",
   ])("respects %s policy without adding platform", async (scenario) => {
     assistantInitiatedCandidate = scenario !== "noncandidate";
-    isPlatformClientConfiguredMock.mockResolvedValue(
+    isCloudClientConfiguredMock.mockResolvedValue(
       scenario !== "unconfigured",
     );
     evaluateSignalMock.mockResolvedValue({
@@ -1139,23 +1139,23 @@ describe("emitNotificationSignal From me push defaults", () => {
       contextPayload: { quiet: true },
     });
     expect(result.selectedChannels).toEqual(["cadet", "platform", "telegram"]);
-    expect(isPlatformClientConfiguredMock).not.toHaveBeenCalled();
+    expect(isCloudClientConfiguredMock).not.toHaveBeenCalled();
     expect(dispatchDecisionMock.mock.calls[0]?.[3]).toMatchObject({
       assistantInitiatedThread: { platformAdded: false },
     });
   });
 
   test("probes an unbound platform once across urgency and From me policy", async () => {
-    isPlatformClientConfiguredMock.mockResolvedValue(false);
+    isCloudClientConfiguredMock.mockResolvedValue(false);
     const result = await emitNotificationSignal({
       ...params,
       attentionHints: { ...params.attentionHints, urgency: "high" },
     });
     expect(result.selectedChannels).toEqual(["cadet"]);
-    expect(isPlatformClientConfiguredMock).toHaveBeenCalledTimes(1);
+    expect(isCloudClientConfiguredMock).toHaveBeenCalledTimes(1);
   });
 
-  test("preserves preferred external selections while adding the platform default", async () => {
+  test("preserves preferred external selections while adding the cloud default", async () => {
     evaluateSignalMock.mockResolvedValue(decision(["cadet", "telegram"]));
     const result = await emitNotificationSignal(params);
     expect(result.selectedChannels).toEqual(["cadet", "telegram", "platform"]);

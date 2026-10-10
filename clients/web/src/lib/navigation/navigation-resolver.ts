@@ -1,4 +1,4 @@
-import type { PlatformSessionStatus } from "@/stores/session-status";
+import type { CloudSessionStatus } from "@/stores/session-status";
 import { sanitizeReturnTo } from "@/domains/account/return-to";
 import {
   isNewAssistantFunnel,
@@ -13,24 +13,24 @@ import { routes } from "@/utils/routes";
 
 export interface NavigationState {
   isLocalClient: boolean;
-  isPlatformDisabled: boolean;
+  isCloudDisabled: boolean;
   isRemoteGateway: boolean;
   remoteGatewayPublicPathPrefix: string;
   isGatewayAuth: boolean;
   hasAssistants: boolean;
   /**
-   * Whether the active organization has a **platform-hosted** assistant — the
-   * only kind a managed plan can apply to.
+   * Whether the active organization has a **cloud-hosted** assistant — the
+   * only kind a cloud plan can apply to.
    *
    * Strictly narrower than `hasAssistants`, which counts every resolved entry
    * regardless of hosting or owning org: a local, Docker, or
    * other-organization assistant satisfies `hasAssistants` while leaving this
    * org with nothing the purchased plan can be applied to.
    */
-  hasPlatformHostedAssistant: boolean;
+  hasCloudHostedAssistant: boolean;
   sessionSettled: boolean;
   isAuthenticated: boolean;
-  platformSession: PlatformSessionStatus;
+  cloudSession: CloudSessionStatus;
   tosAccepted: boolean;
   privacyConsent: boolean;
   analyticsConsentCurrent: boolean;
@@ -97,7 +97,7 @@ export type NavigationDecision =
    * surrounding state — guessing wrong re-resolves on unchanged state and
    * spins.
    */
-  | { action: "wait"; waitFor?: "platform-session" };
+  | { action: "wait"; waitFor?: "cloud-session" };
 
 // ---------------------------------------------------------------------------
 // Shared predicates & helpers
@@ -141,7 +141,7 @@ function onboardingEntrypoint(isLocalClient: boolean): string {
 }
 
 /**
- * The two paths a finished Stripe Checkout can land on: the platform's
+ * The two paths a finished Stripe Checkout can land on: the cloud's
  * hardcoded non-native `success_url` (`/assistant/settings/billing`, which
  * `BillingRedirectPage` forwards) and the Billing tab's own path, which the
  * native deep-link return and `usageBillingCheckout()` build directly.
@@ -157,7 +157,7 @@ const POST_CHECKOUT_LANDING_PATHS: ReadonlySet<string> = new Set([
  * page.
  *
  * `destination` is a path with its query: the route guard asks about the
- * location it is deciding on, and `requiresPlatformSession` asks about a
+ * location it is deciding on, and `requiresCloudSession` asks about a
  * `returnTo`. Both put the same question to the same URL shape, so they share
  * this answer.
  */
@@ -187,15 +187,15 @@ export function isPostCheckoutReturn(destination: string): boolean {
 export const POST_CHECKOUT_HATCH_PARAM = "post_checkout";
 
 /**
- * The provisioning funnel entry for a purchase with no managed assistant to
+ * The provisioning funnel entry for a purchase with no cloud assistant to
  * apply to.
  *
  * `hosting=cadet-cloud` is the onboarding flow's managed-hatch marker (see
- * `adopt-existing-assistant`): it names a managed hatch even in a local-mode
+ * `adopt-existing-assistant`): it names a cloud hatch even in a local-mode
  * build, where the client would otherwise let the local gateway answer for the
  * assistant and skip the purchased-provisioning wait. Carrying it onto the
  * research entry is load-bearing on Electron for exactly that reason —
- * `shouldAdoptExistingAssistant` reads it to force the managed hatch instead of
+ * `shouldAdoptExistingAssistant` reads it to force the cloud hatch instead of
  * adopting a local gateway assistant.
  *
  * {@link POST_CHECKOUT_HATCH_PARAM} adds the narrower fact that money has
@@ -205,7 +205,7 @@ export const POST_CHECKOUT_HATCH_PARAM = "post_checkout";
 function managedProvisioningDestination(): string {
   // The headless research entry runs the purchased-provisioning wait behind
   // the onboarding form. `isLocalHatch` is false by construction —
-  // `hosting=cadet-cloud` forces the managed hatch on every client.
+  // `hosting=cadet-cloud` forces the cloud hatch on every client.
   const route = onboardingDestinationAfterConsent({
     isLocalHatch: false,
   });
@@ -374,7 +374,7 @@ function waitForSession(state: NavigationState): NavigationDecision | null {
  * plan can apply to.
  *
  * The marketing pricing funnel has a brand-new user pay BEFORE anything is
- * provisioned, and the platform hardcodes the non-native `success_url` to the
+ * provisioned, and the cloud hardcodes the non-native `success_url` to the
  * billing landing. Every billing surface mounts under `ActiveAssistantGate`,
  * which renders a "Connecting to your assistant…" placeholder for as long as
  * no assistant resolves — so the paid return dead-ends on a spinner. Send it
@@ -382,21 +382,21 @@ function waitForSession(state: NavigationState): NavigationDecision | null {
  * applies the purchased specs.
  *
  * The destination is {@link managedProvisioningDestination}: its marker is what
- * makes a local-mode client provision on the platform and hold for the
+ * makes a local-mode client provision on the cloud and hold for the
  * purchased machine and storage instead of letting its own gateway answer for
  * the assistant.
  *
- * The decision is `hasPlatformHostedAssistant`, not `hasAssistants`: a managed
- * plan is only expressible on a platform-hosted assistant, so an org whose
+ * The decision is `hasCloudHostedAssistant`, not `hasAssistants`: a cloud
+ * plan is only expressible on a cloud-hosted assistant, so an org whose
  * only entries are local, Docker, or another organization's needs the same
  * provisioning funnel. Hatching is additive — the lockfile keeps every
  * existing entry and they stay reachable from the assistant switcher — so a
- * self-hosted user who buys managed hosting ends up holding both.
+ * self-hosted user who buys cloud hosting ends up holding both.
  *
  * The predicate is org membership rather than the active assistant because the
  * purchase applies to the org: `BillingTab` opens the org-scoped pro onboarding
  * wizard on `session_id` whichever assistant is selected, and hatching a second
- * managed assistant for an org that already has one provisions a machine nobody
+ * cloud assistant for an org that already has one provisions a machine nobody
  * bought.
  *
  * `session_id` is deliberately dropped: the hatch reads the purchased ceiling
@@ -420,10 +420,10 @@ function requirePostCheckoutProvisioning(
   _path: string,
   pathnameWithSearch: string,
 ): NavigationDecision | null {
-  // An org with a platform-hosted assistant has a target for the purchase, so
+  // An org with a cloud-hosted assistant has a target for the purchase, so
   // the return stays on billing and the pro onboarding wizard consumes
   // `session_id` there.
-  if (state.hasPlatformHostedAssistant) {
+  if (state.hasCloudHostedAssistant) {
     return null;
   }
   if (!isPostCheckoutReturn(pathnameWithSearch)) {
@@ -435,7 +435,7 @@ function requirePostCheckoutProvisioning(
   if (!state.isAuthenticated) {
     return null;
   }
-  // The platform assistants list boots empty and loads asynchronously, so
+  // The cloud assistants list boots empty and loads asynchronously, so
   // deciding on that default would funnel an established user out of their own
   // billing page. Local mode is excluded for the same reason as in
   // `requireAssistant` — its list is lockfile-driven.
@@ -443,16 +443,16 @@ function requirePostCheckoutProvisioning(
     return { action: "wait" };
   }
   // A local-mode client reaches "authenticated" on its gateway session alone,
-  // so the platform session is a separate question — and the managed hatch this
+  // so the cloud session is a separate question — and the cloud hatch this
   // redirect starts needs one for the org header and the purchased ceiling. The
   // probe boots `"unknown"`, so hold until it settles. When it settles absent
   // there is no account to provision into: fall through to billing, whose login
   // notice carries `session_id` through sign-in and lands back here.
   if (state.isLocalClient) {
-    if (state.platformSession === "unknown") {
-      return { action: "wait", waitFor: "platform-session" };
+    if (state.cloudSession === "unknown") {
+      return { action: "wait", waitFor: "cloud-session" };
     }
-    if (state.platformSession !== "present") {
+    if (state.cloudSession !== "present") {
       return null;
     }
   }
@@ -527,7 +527,7 @@ function requireRemoteGatewayPairing(
  *
  * Deciding either way is what keeps the local chooser short-circuiting ahead of
  * the assistant and consent gates: it is itself an onboarding surface,
- * reachable before there is a platform session to gate on.
+ * reachable before there is a cloud session to gate on.
  */
 function localChooserDecision(state: NavigationState): NavigationDecision {
   if (!state.hasAssistants) {
@@ -573,7 +573,7 @@ function enforceModeBoundary(
   path: string,
 ): NavigationDecision | null {
   // The chooser is reachable in every mode: local clients keep their
-  // lockfile-driven picker, and the platform build hosts the hub chooser. The
+  // lockfile-driven picker, and the cloud build hosts the hub chooser. The
   // non-local case falls through rather than allowing, so `requireConsent`
   // below still binds on this route; `requireAssistant` exempts it on purpose
   // (see NO_ASSISTANT_EXEMPT_PATHS).
@@ -714,8 +714,8 @@ function enforceFunnelConsent(
   if (
     path === routes.onboarding.research &&
     postCheckoutHatchReturnTo(pathnameWithSearch) &&
-    !state.isPlatformDisabled &&
-    state.platformSession === "present" &&
+    !state.isCloudDisabled &&
+    state.cloudSession === "present" &&
     !consentIsCurrent(state)
   ) {
     const returnTo = encodeURIComponent(pathnameWithSearch);
@@ -762,10 +762,10 @@ function requireAssistant(
   }
 
   if (state.isLocalClient) {
-    if (state.platformSession === "unknown") {
-      return { action: "wait", waitFor: "platform-session" };
+    if (state.cloudSession === "unknown") {
+      return { action: "wait", waitFor: "cloud-session" };
     }
-    if (state.platformSession === "present") {
+    if (state.cloudSession === "present") {
       return { action: "redirect", to: routes.onboarding.hosting };
     }
     return { action: "redirect", to: routes.welcome };
@@ -799,14 +799,14 @@ function requireConsent(
   _path: string,
   pathnameWithSearch: string,
 ): NavigationDecision | null {
-  // Consent is a platform-account concern: only enforce it when there is a
+  // Consent is a cloud-account concern: only enforce it when there is a
   // live platform session to consent against. A disabled platform or an
   // absent/unknown session has no server consent record to gate on. Note this
-  // is NOT gated on isLocalClient — a local-mode client with a platform session
+  // is NOT gated on isLocalClient — a local-mode client with a cloud session
   // still re-reviews stale terms.
   if (
-    state.isPlatformDisabled ||
-    state.platformSession !== "present" ||
+    state.isCloudDisabled ||
+    state.cloudSession !== "present" ||
     consentIsCurrent(state)
   ) {
     return null;
@@ -814,7 +814,7 @@ function requireConsent(
 
   // The flags boot false and hydrate asynchronously — a redirect decided
   // before hydration would bounce a fully consented user to review-terms.
-  // Local mode decides immediately: its platform-session paths that enforce
+  // Local mode decides immediately: its cloud-session paths that enforce
   // consent hydrate synchronously during session init, and the gateway-probe
   // path never hydrates, so waiting there would hang navigation.
   if (!state.consentHydrated && !state.isLocalClient) {
@@ -977,7 +977,7 @@ function resolvePostRetire(state: NavigationState): NavigationDecision {
   if (!state.isLocalClient) {
     return { action: "redirect", to: routes.onboarding.privacy };
   }
-  if (state.platformSession === "present") {
+  if (state.cloudSession === "present") {
     return { action: "redirect", to: routes.onboarding.hosting };
   }
   return { action: "redirect", to: routes.welcome };

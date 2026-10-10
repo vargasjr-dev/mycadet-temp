@@ -28,7 +28,7 @@ export const APP_VERSION: string = resolveVersion();
 
 /**
  * Header name for the assistant version returned in every gateway response.
- * Allows the platform to trace which build handled a request.
+ * Allows the cloud to trace which build handled a request.
  */
 export const VERSION_HEADER_NAME = "X-Cadet-Assistant-Version";
 

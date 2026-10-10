@@ -16,7 +16,7 @@ let shareAnalytics = true;
 let shareDiagnostics = true;
 let analyticsConsentCurrent = true;
 let diagnosticsConsentCurrent = true;
-// Whether the platform holds ANY consent record for this user. Independent of
+// Whether the cloud holds ANY consent record for this user. Independent of
 // the two legal flags above, which carry version CURRENCY only — both go false
 // for a never-consented user AND for an established user whose acceptances
 // predate both current required versions.
@@ -61,7 +61,7 @@ mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
     use: { user: () => ({ id: "user-1" }), logout: () => mock(async () => {}) },
   },
-  useHasPlatformSession: () => true,
+  useHasCloudSession: () => true,
 }));
 
 // Light passthroughs for layout/design-library so the screen renders in happy-dom.

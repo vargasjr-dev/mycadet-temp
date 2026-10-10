@@ -413,7 +413,7 @@ const VALID_SKILL_SLUG = /^[a-z0-9][a-z0-9._-]*$/;
 
 /**
  * Validate that a skill slug is safe for use in filesystem paths.
- * Follows the same pattern as `validateManagedSkillId` in managed-store.ts.
+ * Follows the same pattern as `validateCloudSkillId` in cloud-store.ts.
  */
 export function validateSkillSlug(slug: string): void {
   if (!slug || typeof slug !== "string") {

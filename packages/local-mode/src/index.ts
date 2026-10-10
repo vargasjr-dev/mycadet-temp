@@ -47,7 +47,7 @@ export {
   stampLockfileAssistantOnboardedIfPresent,
   upsertLockfileAssistant,
   upsertRendererLockfileAssistant,
-  replacePlatformAssistants,
+  replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
 } from "./lockfile";

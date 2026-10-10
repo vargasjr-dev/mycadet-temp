@@ -18,7 +18,7 @@ import { getMemoryConfig } from "../plugins/defaults/memory/config.js";
 import { getWorkspaceConfigPath } from "../util/platform.js";
 
 const configPath = getWorkspaceConfigPath();
-const savedIsPlatform = process.env.IS_PLATFORM;
+const savedIsPlatform = process.env.IS_CLOUD;
 
 function writeConfig(value: unknown): void {
   writeFileSync(configPath, JSON.stringify(value, null, 2));
@@ -26,7 +26,7 @@ function writeConfig(value: unknown): void {
 
 function resetState(): void {
   rmSync(configPath, { force: true });
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 }
 
 /** Assert the plugin resolution deep-equals the host loader's slice. */
@@ -41,7 +41,7 @@ describe("memory config file parity", () => {
   afterEach(() => {
     resetState();
     if (savedIsPlatform !== undefined) {
-      process.env.IS_PLATFORM = savedIsPlatform;
+      process.env.IS_CLOUD = savedIsPlatform;
     }
   });
 
@@ -88,14 +88,14 @@ describe("memory config file parity", () => {
   });
 
   test("platform deployment fill applies when the leaf is absent on disk", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     writeConfig({ memory: {} });
     const memory = expectParity();
     expect(memory.embeddings.provider).toBe("gemini");
   });
 
-  test("an explicit on-disk provider beats the platform fill", () => {
-    process.env.IS_PLATFORM = "true";
+  test("an explicit on-disk provider beats the cloud fill", () => {
+    process.env.IS_CLOUD = "true";
     writeConfig({ memory: { embeddings: { provider: "openai" } } });
     const memory = expectParity();
     expect(memory.embeddings.provider).toBe("openai");

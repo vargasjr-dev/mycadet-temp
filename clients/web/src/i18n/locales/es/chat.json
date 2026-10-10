@@ -2118,7 +2118,7 @@
     "doneSaved": "Habilidad guardada",
     "recommended": "Recomendado"
   },
-  "restoreManagedCredentialButton": {
+  "restoreCloudCredentialButton": {
     "restore": "Restaurar acceso",
     "restoring": "Restaurando...",
     "restored": "Restaurado. Los modelos gestionados por Cadet vuelven a funcionar.",

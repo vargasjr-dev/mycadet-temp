@@ -55,7 +55,7 @@ export interface CustomPlanSeed {
   storageTier: StorageTierEnum;
   creditTier: CreditTierEnum | null;
   /**
-   * Whether the seeded sub already bills the platform fee. A custom plan
+   * Whether the seeded sub already bills the cloud fee. A custom plan
    * always carries it, so a fee-less (Mighty) seed reads the fee row as an
    * addition and prices the previous total without it. Absent means the fee
    * is already billed.

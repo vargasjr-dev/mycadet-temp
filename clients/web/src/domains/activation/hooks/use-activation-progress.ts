@@ -9,7 +9,7 @@
  *
  * The read is gated three ways, so a client that cannot use the feature never
  * asks for it: the flag arm must select a list, the daemon must carry the
- * routes, and the org header must be ready (a platform-mode read without it is
+ * routes, and the org header must be ready (a cloud-mode read without it is
  * rejected, and the rejection would be cached). The first two are
  * `useActivationEnabledListId`, the shared leaf gate; the route half of it is
  * scoped to the active assistant, so a version still held for the assistant

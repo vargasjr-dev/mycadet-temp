@@ -103,7 +103,7 @@ export function resolveAssistantAvatarOwnerScopeId(
   if (!assistant) {
     return null;
   }
-  return assistant.isPlatformHosted
+  return assistant.isCloudHosted
     ? resolveNotificationIdentityScope({
         kind: "account",
         accountId: platformAccountId,
@@ -116,14 +116,14 @@ export function resolveAssistantAvatarOwnerScopeId(
       });
 }
 
-/** Resolve the platform UUID shared by remote and local sender identities. */
-export function resolveAssistantNotificationPlatformId(
+/** Resolve the cloud UUID shared by remote and local sender identities. */
+export function resolveAssistantNotificationCloudId(
   assistant: ResolvedAssistant | null | undefined,
 ): string | null {
-  if (assistant?.platformAssistantId && isUuid(assistant.platformAssistantId)) {
-    return assistant.platformAssistantId;
+  if (assistant?.cloudAssistantId && isUuid(assistant.cloudAssistantId)) {
+    return assistant.cloudAssistantId;
   }
-  return assistant?.isPlatformHosted && isUuid(assistant.id)
+  return assistant?.isCloudHosted && isUuid(assistant.id)
     ? assistant.id
     : null;
 }
@@ -228,7 +228,7 @@ export interface AssistantAvatarOptions {
   /**
    * `false` skips the fetch and hands consumers the null avatar, for siblings
    * whose transport cannot be addressed by id (see
-   * `canFetchRowAvatarViaPlatformProxy` in `use-chooser-row-avatar`).
+   * `canFetchRowAvatarViaCloudProxy` in `use-chooser-row-avatar`).
    */
   enabled?: boolean;
 }

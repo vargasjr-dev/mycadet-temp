@@ -146,8 +146,8 @@ function expectSecondRunNoop(): void {
 
 beforeEach(() => {
   freshWorkspace();
-  originalIsPlatform = process.env.IS_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  originalIsPlatform = process.env.IS_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
@@ -155,9 +155,9 @@ afterEach(() => {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
 });
 
@@ -423,7 +423,7 @@ describe("ensureByokDefaultProfiles", () => {
       string,
       Record<string, unknown>
     >;
-    // Migration 097 / repairAdaptiveThinkingOnManagedProfiles stamp thinking
+    // Migration 097 / repairAdaptiveThinkingOnCloudProfiles stamp thinking
     // onto the anthropic-backed managed entries; live BYOK stubs carry it on
     // balanced and quality-optimized (confirmed on a real workspace).
     profs["balanced"].thinking = { enabled: true, streamThinking: true };
@@ -733,7 +733,7 @@ describe("ensureByokDefaultProfiles", () => {
   });
 
   test("no-op on platform installs", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     writeConfig(uneditedByokConfig());
     const before = readFileSync(configPath(), "utf-8");
 
@@ -953,7 +953,7 @@ describe("ensureByokDefaultProfiles", () => {
     expectSecondRunNoop();
   });
 
-  test("a managed-source default entry with body keys is left alone", () => {
+  test("a cloud-source default entry with body keys is left alone", () => {
     writeConfig({
       llm: {
         default: {

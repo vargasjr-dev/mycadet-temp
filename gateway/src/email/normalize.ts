@@ -24,7 +24,7 @@ export interface EmailAttachment {
  * Shape of a normalized inbound email event as sent by the Cadet
  * platform (or any upstream caller).
  *
- * The platform is responsible for provider-specific parsing (e.g.
+ * The cloud is responsible for provider-specific parsing (e.g.
  * Mailgun multipart → JSON). By the time the payload reaches the
  * gateway it should already be in this canonical shape.
  */
@@ -47,15 +47,15 @@ export interface CadetEmailPayload {
   inReplyTo?: string;
   /** Space-separated chain of ancestor Message-IDs (References header). */
   references?: string;
-  /** Stable conversation/thread identifier derived by the platform. */
+  /** Stable conversation/thread identifier derived by the cloud. */
   conversationId: string;
   /** ISO 8601 timestamp of the original email. */
   timestamp?: string;
   /**
-   * Whether the platform authenticated the sender's `From:` address against
+   * Whether the cloud authenticated the sender's `From:` address against
    * the message's SPF/DKIM/DMARC results. `true` when authentication passed,
    * `false` when it was evaluated and failed (spoofable sender), omitted when
-   * the platform could not evaluate (no auth-results header). The gateway
+   * the cloud could not evaluate (no auth-results header). The gateway
    * downgrades an unauthenticated sender so a forged `From:` cannot inherit
    * guardian/trusted_contact trust.
    */

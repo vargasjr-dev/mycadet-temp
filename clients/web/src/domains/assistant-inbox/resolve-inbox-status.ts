@@ -1,4 +1,4 @@
-import type { PlatformGateStateWithPending } from "@/hooks/use-platform-gate";
+import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
 
 /**
  * What the Assistant Inbox shows for this assistant.
@@ -19,9 +19,9 @@ export type InboxStatus =
 
 export interface InboxStatusInputs {
   /** The pending-aware gate: `pending` is not yet an answer. */
-  gate: PlatformGateStateWithPending;
-  /** The platform assistant id resolved, or `null` while it has not. */
-  platformAssistantId: string | null;
+  gate: CloudGateStateWithPending;
+  /** The cloud assistant id resolved, or `null` while it has not. */
+  cloudAssistantId: string | null;
   /** `undefined` until the subscription has been read once. */
   entitlements: Record<string, unknown> | undefined;
   /** The subscription read failed and nothing is cached. */
@@ -58,7 +58,7 @@ export function resolveInboxStatus(inputs: InboxStatusInputs): InboxStatus {
   } else if (!inputs.subscriptionFailed) {
     return "loading";
   }
-  if (!inputs.platformAssistantId || inputs.addressCount === undefined) {
+  if (!inputs.cloudAssistantId || inputs.addressCount === undefined) {
     return "loading";
   }
   if (inputs.addressCount > 0) {

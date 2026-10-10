@@ -149,7 +149,7 @@ describe("credential-request mint (IPC)", () => {
     expect(ensurePublicIngressLive).not.toHaveBeenCalled();
   });
 
-  test("does not read the platform assistant id when the config URL resolves", async () => {
+  test("does not read the cloud assistant id when the config URL resolves", async () => {
     const getCloudAssistantId = mock(async () => "assistant-123");
     const result = await createCredentialRequest(
       fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),

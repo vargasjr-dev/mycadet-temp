@@ -1,7 +1,7 @@
 /**
  * The inbox route as the wizard lands on it after an upgrade: entitled, with
  * no address and no domain, it is the setup card with the handle open; once
- * Confirm registers the address, it is the mailbox. The platform is
+ * Confirm registers the address, it is the mailbox. The cloud is
  * mocked at the generated SDK, the hooks that reach the session and the
  * daemon at their module boundaries.
  */
@@ -24,7 +24,7 @@ import type {
 } from "@/generated/api/types.gen";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
-import * as platformGate from "@/hooks/use-platform-gate";
+import * as cloudGate from "@/hooks/use-cloud-gate";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 const ASSISTANT_ID = "assistant-1";
@@ -35,19 +35,19 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGate,
-  usePlatformGate: () => "full",
-  usePlatformGateWithPending: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGate,
+  useCloudGate: () => "full",
+  useCloudGateWithPending: () => "full",
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => true,
 }));
 
-mock.module("@/hooks/use-platform-assistant-id", () => ({
-  usePlatformAssistantId: () => ({
-    platformAssistantId: PLATFORM_ASSISTANT_ID,
+mock.module("@/hooks/use-cloud-assistant-id", () => ({
+  useCloudAssistantId: () => ({
+    cloudAssistantId: PLATFORM_ASSISTANT_ID,
     isLoading: false,
     error: null,
   }),

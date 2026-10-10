@@ -67,7 +67,7 @@ function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 }
 
-/** Stash and restore IS_PLATFORM across each test. */
+/** Stash and restore IS_CLOUD across each test. */
 let originalIsPlatform: string | undefined;
 
 // ---------------------------------------------------------------------------
@@ -91,27 +91,27 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     ensureTestDir();
     invalidateConfigCache();
 
-    originalIsPlatform = process.env.IS_PLATFORM;
-    delete process.env.IS_PLATFORM;
+    originalIsPlatform = process.env.IS_CLOUD;
+    delete process.env.IS_CLOUD;
   });
 
   afterEach(() => {
     invalidateConfigCache();
 
     if (originalIsPlatform !== undefined) {
-      process.env.IS_PLATFORM = originalIsPlatform;
+      process.env.IS_CLOUD = originalIsPlatform;
     } else {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
   });
 
-  test("IS_PLATFORM=true fills provider=gemini in memory without persisting it", () => {
+  test("IS_CLOUD=true fills provider=gemini in memory without persisting it", () => {
     writeConfig({});
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     const config = loadConfig();
 
-    // In-memory effective config reflects the platform intent.
+    // In-memory effective config reflects the cloud intent.
     expect(config.memory.embeddings.provider).toBe("gemini");
     // geminiModel carries its own schema default — not forced here.
     expect(config.memory.embeddings.geminiModel).toBe("gemini-embedding-2");
@@ -130,20 +130,20 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     expect(qdrantRaw.vectorSize).toBeUndefined();
   });
 
-  test("first launch (no config.json) persists managed service modes but not the platform embedding provider", () => {
+  test("first launch (no config.json) persists cloud service modes but not the cloud embedding provider", () => {
     // No config.json on disk: this is the first-launch SEED path that writes a
     // default config so the file exists for users to edit.
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     const config = loadConfig();
 
-    // In-memory effective config still reflects the platform intent.
+    // In-memory effective config still reflects the cloud intent.
     expect(config.memory.embeddings.provider).toBe("gemini");
 
-    // The seeded config.json persists the managed service modes (for
+    // The seeded config.json persists the cloud service modes (for
     // discoverability) but OMITS the embedding provider entirely — not even the
     // schema default "auto". Persisting any value would be read back on the next
     // load as an explicit user choice and permanently suppress re-applying the
@@ -168,7 +168,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     expect(webSearchRaw.mode).not.toBe("managed");
 
     // image-generation's managed axis is its provider: the seeded value is
-    // the platform fill "cadet", never an injected managed mode.
+    // the cloud fill "cadet", never an injected managed mode.
     const imageGenRaw = (servicesRaw["image-generation"] ?? {}) as Record<
       string,
       unknown
@@ -177,42 +177,42 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     expect(imageGenRaw.mode).not.toBe("managed");
 
     // Regression guard: on the NEXT load (config.json now exists with the
-    // provider leaf absent), the platform default re-applies in memory rather
+    // provider leaf absent), the cloud default re-applies in memory rather
     // than being lost to a persisted "auto" read back as an explicit choice.
     invalidateConfigCache();
     expect(loadConfig().memory.embeddings.provider).toBe("gemini");
   });
 
-  test("IS_PLATFORM='1' also fills provider=gemini in memory", () => {
+  test("IS_CLOUD='1' also fills provider=gemini in memory", () => {
     writeConfig({});
-    process.env.IS_PLATFORM = "1";
+    process.env.IS_CLOUD = "1";
 
     const config = loadConfig();
 
     expect(config.memory.embeddings.provider).toBe("gemini");
   });
 
-  test("explicit provider on disk wins over the platform default", () => {
+  test("explicit provider on disk wins over the cloud default", () => {
     writeConfig({
       memory: { embeddings: { provider: "local" } },
     });
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     const config = loadConfig();
 
     expect(config.memory.embeddings.provider).toBe("local");
     expect(config.memory.qdrant.vectorSize).toBe(384);
 
-    // On-disk value is preserved exactly; the platform default does not bleed in.
+    // On-disk value is preserved exactly; the cloud default does not bleed in.
     const raw = readConfig();
     const memoryRaw = raw.memory as Record<string, unknown>;
     const embeddingsRaw = memoryRaw.embeddings as Record<string, unknown>;
     expect(embeddingsRaw.provider).toBe("local");
   });
 
-  test("provider stays auto when IS_PLATFORM is unset", () => {
+  test("provider stays auto when IS_CLOUD is unset", () => {
     writeConfig({});
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
 
     const config = loadConfig();
 
@@ -224,7 +224,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
 
     const config = loadConfig();
 
@@ -251,7 +251,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
 
     loadConfig();
     enableMemoryV3LiveForNewWorkspacesMigration.run(WORKSPACE_DIR, {

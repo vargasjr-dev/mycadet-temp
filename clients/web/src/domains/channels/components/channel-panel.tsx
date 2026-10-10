@@ -128,7 +128,7 @@ export function ChannelPanel({
   // their card chrome, so it returns bare (the parent skips the DetailCard). The
   // cards stack at natural height and the parent section owns the vertical
   // scroll, so no min-h-0/flex-1 fill here.
-  // Email's setup is address and domain management on the platform plus a
+  // Email's setup is address and domain management on the cloud plus a
   // bring-your-own provider key, not a credential wizard, so its section owns
   // the whole surface across connected and unconfigured states. Like Slack it
   // returns bare (the parent skips the DetailCard) because its cards carry

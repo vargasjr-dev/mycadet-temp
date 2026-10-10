@@ -9,7 +9,7 @@ import { ContextWindowIndicator } from "./context-window-indicator";
  * Preferences, so every story enables the preference first.
  *
  * The ring reveals its detail on hover under a mouse and opens a bottom sheet
- * under a thumb: the input-capability axis, per `docs/PLATFORM_ADAPTATION.md`.
+ * under a thumb: the input-capability axis, per `docs/CLOUD_ADAPTATION.md`.
  * Switch the emulated pointer (DevTools → Rendering → "Emulate CSS media
  * feature pointer") and reload to compare the two presentations; the sheet is
  * the only branch carrying "Clear Context".

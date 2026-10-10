@@ -2,7 +2,7 @@
  * Sync cloud-managed (platform) assistants into the local lockfile.
  *
  * - Adds new platform assistants that aren't in the lockfile yet.
- * - Removes lockfile entries whose IDs are no longer returned by the platform
+ * - Removes lockfile entries whose IDs are no longer returned by the cloud
  *   (e.g. retired assistants).
  *
  * Used by both `cadet login` and `cadet ps` to keep the lockfile fresh.
@@ -10,10 +10,10 @@
  * **Contract:** callers must verify the user is logged in (i.e. a non-empty
  * platform token exists) before invoking this helper. The "is there a token?"
  * decision belongs at the command level so commands can render the right
- * "Platform: …" status without ever entering the platform fetch path.
+ * "Platform: …" status without ever entering the cloud fetch path.
  */
 
-import { isManagedCloud } from "./managed-cloud.js";
+import { isCloudHome } from "./cloud-values.js";
 import {
   loadAllAssistants,
   removeAssistantEntry,
@@ -21,9 +21,9 @@ import {
 } from "./assistant-config.js";
 import {
   fetchCurrentUser,
-  fetchPlatformAssistants,
-  getPlatformUrl,
-} from "./platform-client.js";
+  fetchCloudAssistants,
+  getCloudUrl,
+} from "./cloud-client.js";
 
 export type SyncLogger = (message: string) => void;
 
@@ -58,12 +58,12 @@ export async function syncCloudAssistants(
 ): Promise<SyncResult | null> {
   if (!token) {
     throw new Error(
-      "syncCloudAssistants called without a token. Callers must check `readPlatformToken()` first.",
+      "syncCloudAssistants called without a token. Callers must check `readCloudToken()` first.",
     );
   }
   const log = options?.log;
-  const platformUrl = getPlatformUrl();
-  log?.(`Platform URL: ${platformUrl}`);
+  const cloudUrl = getCloudUrl();
+  log?.(`Platform URL: ${cloudUrl}`);
   log?.(`Token found (${token.length} chars, prefix: ${token.slice(0, 6)}…)`);
 
   // Fetch user info for the login status line
@@ -83,12 +83,12 @@ export async function syncCloudAssistants(
     }
   }
 
-  let platformAssistants: { id: string; name: string; status: string }[];
+  let cloudAssistants: { id: string; name: string; status: string }[];
   try {
     log?.("Fetching Cadet Cloud assistants…");
-    platformAssistants = await fetchPlatformAssistants(token);
+    cloudAssistants = await fetchCloudAssistants(token);
     log?.(
-      `Cadet Cloud returned ${platformAssistants.length} assistant(s): ${platformAssistants.map((a) => a.name || a.id).join(", ") || "(none)"}`,
+      `Cadet Cloud returned ${cloudAssistants.length} assistant(s): ${cloudAssistants.map((a) => a.name || a.id).join(", ") || "(none)"}`,
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -101,17 +101,17 @@ export async function syncCloudAssistants(
     return null;
   }
 
-  if (platformAssistants.length === 0) {
+  if (cloudAssistants.length === 0) {
     log?.(
       "Cadet Cloud returned 0 assistants — this may mean the API returned a non-ok status (check token validity)",
     );
   }
 
-  const platformIds = new Set(platformAssistants.map((a) => a.id));
+  const platformIds = new Set(cloudAssistants.map((a) => a.id));
 
   // Add new platform assistants not yet in the lockfile
   const existingCloudEntries = loadAllAssistants().filter((a) =>
-    isManagedCloud(a.cloud),
+    isCloudHome(a.cloud),
   );
   const existingCloudById = new Map(
     existingCloudEntries.map((a) => [a.assistantId, a]),
@@ -123,7 +123,7 @@ export async function syncCloudAssistants(
 
   let added = 0;
   let updated = 0;
-  for (const pa of platformAssistants) {
+  for (const pa of cloudAssistants) {
     const existing = existingCloudById.get(pa.id);
     const assistantName = pa.name.trim();
     const nameFields = assistantName ? { name: assistantName } : {};
@@ -132,7 +132,7 @@ export async function syncCloudAssistants(
       saveAssistantEntry({
         assistantId: pa.id,
         ...nameFields,
-        runtimeUrl: getPlatformUrl(),
+        runtimeUrl: getCloudUrl(),
         cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       });
@@ -147,7 +147,7 @@ export async function syncCloudAssistants(
     }
   }
 
-  // Remove stale lockfile entries that the platform no longer knows about
+  // Remove stale lockfile entries that the cloud no longer knows about
   let removed = 0;
   for (const id of existingCloudIds) {
     if (!platformIds.has(id)) {

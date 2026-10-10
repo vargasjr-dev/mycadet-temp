@@ -29,11 +29,11 @@ let probeRevalidationPending = false;
  * The timeout decides on a forced `"absent"`, which is the right fallback for
  * an org with no platform account and the wrong one for an org whose probe was
  * merely slow — a paid checkout return is then admitted to billing, which has
- * no managed assistant to apply the purchase to and no way out. Nothing else
+ * no cloud assistant to apply the purchase to and no way out. Nothing else
  * re-runs middleware on a store change, so the correction has to be driven
  * from here.
  *
- * `platformSession` leaves `"unknown"` at most once (re-probes keep the last
+ * `cloudSession` leaves `"unknown"` at most once (re-probes keep the last
  * settled value), the subscription is one-shot, and the re-run reads a settled
  * session — so it never waits on the probe, never times out, and never arms
  * another re-run.
@@ -44,7 +44,7 @@ function revalidateWhenPlatformProbeSettles(): void {
   }
   probeRevalidationPending = true;
   const unsubscribe = useAuthStore.subscribe((state) => {
-    if (state.platformSession === "unknown") {
+    if (state.cloudSession === "unknown") {
       return;
     }
     unsubscribe();
@@ -93,7 +93,7 @@ const resolveWithGuard = async (
   // as "no platform account", so forcing it can only turn a non-decision into
   // that documented fallback. A result that lands after the timeout re-runs the
   // guard (see `revalidateWhenPlatformProbeSettles`), so a slow-but-successful
-  // probe still reaches its platform-session destination.
+  // probe still reaches its cloud-session destination.
   //
   // Forcing `consentHydrated` hides that the consent flags underneath it are
   // still their boot `false`, so the forcing itself is reported too: a step
@@ -107,7 +107,7 @@ const resolveWithGuard = async (
       ? { consentHydrated: true, consentHydrationTimedOut: true }
       : {}),
     ...(timedOut.assistantsHydration ? { assistantsHydrated: true } : {}),
-    ...(timedOut.platformProbe ? { platformSession: "absent" as const } : {}),
+    ...(timedOut.platformProbe ? { cloudSession: "absent" as const } : {}),
   });
 
   const decision = resolveNavigation(state, {
@@ -119,7 +119,7 @@ const resolveWithGuard = async (
     await whenStoreState(useAuthStore, (s) =>
       isSessionSettled(s.sessionStatus),
     );
-    // Two local-mode cases hang on the platform probe: the cold boot with an
+    // Two local-mode cases hang on the cloud probe: the cold boot with an
     // empty lockfile, and any step that names the signal on its wait — a
     // checkout return whose org already has a self-hosted assistant reaches
     // the latter with `hasAssistants()` already true.
@@ -127,15 +127,15 @@ const resolveWithGuard = async (
     if (
       !timedOut.platformProbe &&
       isLocalClient() &&
-      (!hasAssistants() || decision.waitFor === "platform-session")
+      (!hasAssistants() || decision.waitFor === "cloud-session")
     ) {
       await whenStoreState(
         useAuthStore,
-        (s) => s.platformSession !== "unknown",
+        (s) => s.cloudSession !== "unknown",
         { timeoutMs: PLATFORM_SESSION_PROBE_TIMEOUT_MS },
       );
       platformProbeStillUnknown =
-        useAuthStore.getState().platformSession === "unknown";
+        useAuthStore.getState().cloudSession === "unknown";
       if (platformProbeStillUnknown) {
         revalidateWhenPlatformProbeSettles();
       }

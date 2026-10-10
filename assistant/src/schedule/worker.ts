@@ -139,7 +139,7 @@ async function main(): Promise<void> {
     );
   }
 
-  // Rehydrate the platform base URL and IDs from the credential store before
+  // Rehydrate the cloud base URL and IDs from the credential store before
   // the first tick. The daemon does this in initializeProvidersAndTools(); this
   // standalone process must do it itself so getCloudBaseUrl() resolves to
   // the persisted platform environment instead of the CADET_ENVIRONMENT
@@ -264,7 +264,7 @@ async function main(): Promise<void> {
 
   // This process outlives any single flag value, so poll the gateway instead of
   // holding whatever was cached at startup. The daemon's gateway flag listener
-  // is not reusable here: it also reconciles managed profiles and broadcasts
+  // is not reusable here: it also reconciles cloud profiles and broadcasts
   // sync events, both of which belong to the daemon alone. The refresh swaps the
   // cache atomically, so a tick reading a flag mid-refresh still sees the last
   // known values. Unref'd so the tick interval above stays the one thing

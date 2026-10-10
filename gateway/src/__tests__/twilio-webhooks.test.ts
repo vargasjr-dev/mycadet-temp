@@ -780,16 +780,16 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
 
     const handler = createTwilioVoiceWebhookHandler(makeConfig(), makeCaches());
 
-    // The platform callback URL is what Twilio signs against — it includes
+    // The cloud callback URL is what Twilio signs against — it includes
     // the /v1/gateway/callbacks/{assistantId}/ prefix that the gateway
     // never sees in the request path.
     const platformCallbackUrl =
       "https://cloud.mycadet.ai/v1/gateway/callbacks/abc123/webhooks/twilio/voice";
     const localUrl =
-      "http://localhost:7830/webhooks/twilio/voice?callSessionId=platform-proxy-test";
-    const params = { CallSid: "CA-platform-proxy" };
+      "http://localhost:7830/webhooks/twilio/voice?callSessionId=cloud-proxy-test";
+    const params = { CallSid: "CA-cloud-proxy" };
 
-    // Sign against the platform callback URL (as Twilio would)
+    // Sign against the cloud callback URL (as Twilio would)
     const signature = computeSignature(platformCallbackUrl, params, AUTH_TOKEN);
     const req = new Request(localUrl, {
       method: "POST",
@@ -863,7 +863,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     expect(body).not.toContain("staging-cloud.mycadet.ai");
   });
 
-  test("platform proxy URL takes priority over configured ingress", async () => {
+  test("cloud proxy URL takes priority over configured ingress", async () => {
     fetchMock = mock(
       async () =>
         new Response('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
@@ -884,7 +884,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
       "http://localhost:7830/webhooks/twilio/voice?callSessionId=priority-test";
     const params = { CallSid: "CA-priority" };
 
-    // Sign against the platform callback URL
+    // Sign against the cloud callback URL
     const signature = computeSignature(platformCallbackUrl, params, AUTH_TOKEN);
     const req = new Request(localUrl, {
       method: "POST",

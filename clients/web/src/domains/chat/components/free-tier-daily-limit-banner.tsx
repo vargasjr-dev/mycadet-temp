@@ -8,7 +8,7 @@ import { dailyResetTimePhrase } from "@/utils/daily-reset-time";
 import { routes } from "@/utils/routes";
 
 /**
- * Composer banner for the platform's free-tier daily usage-credit cap: the
+ * Composer banner for the cloud's free-tier daily usage-credit cap: the
  * daily counterpart of the credits-exhausted wall, worded so "daily" is
  * unmistakable. Unlike `DailyLimitBanner` there is no setting to raise and
  * no skip: the cap lifts at the UTC reset, on upgrade, or with extra credits,

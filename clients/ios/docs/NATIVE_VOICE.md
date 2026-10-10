@@ -225,7 +225,7 @@ It is an attribute rather than content for two reasons: it is fixed for the
 activity's lifetime, and being an attribute is what keeps a server-driven push
 (which replaces the content state wholesale) from touching it. Stamping it
 natively also puts it on the same clock as the device rendering it, which a
-timestamp composed on the platform would not be.
+timestamp composed on the cloud would not be.
 
 Everything phase-derived (label, glyph, the activity line, and the timer)
 drops when `context.isStale` goes true. Identity (avatar, name, accent) stays: that a
@@ -508,7 +508,7 @@ what a future button has to satisfy too.
 
 ### 1. Live Activity updates come from two drivers
 
-The app process issues `Activity.update` locally, **and** the platform pushes
+The app process issues `Activity.update` locally, **and** the cloud pushes
 the same content state over APNs. Both drive the same activity; they are not
 alternatives.
 
@@ -553,7 +553,7 @@ Three rules fall out of this:
 
 - **The server never invents phase wording.** The reason the native side owns
   no copy — the shell ships on App Store cadence while the web bundle deploys
-  continuously — applies to the platform too, one layer further out. The client
+  continuously — applies to the cloud too, one layer further out. The client
   registers a phase→label map and dispatch only ever looks a phase up in it,
   skipping a phase it has no label for.
 - **Nor does it invent the rest of the content state.** A push replaces
@@ -582,7 +582,7 @@ checking; the horizon does not make it correct, only honest about not knowing.
 
 **Both drivers must use the same horizon**, since either can deliver the state
 whose staleness is being judged. They are two constants in two repos
-(`VoiceLiveActivityPlugin.contentStaleAfter` and the platform's
+(`VoiceLiveActivityPlugin.contentStaleAfter` and the cloud's
 `STALE_AFTER_SECONDS`), and they had already drifted (120 against 45) once.
 The client's 120 is the correct one: a quiet call emits no frames, so nothing
 dispatches, and a 45-second horizon would strip the phase off a perfectly
@@ -688,7 +688,7 @@ platform composes server-driven pushes from the fields registered on the token
 row, which has neither, so an island being driven by APNs shows the assistant as
 audible and offers no approval buttons. The wait itself still shows, because the
 daemon words it into `detail`, which *is* on the push path. Registering the two
-fields is the fix and it is a platform-side change — though for approvals the
+fields is the fix and it is a cloud-side change — though for approvals the
 gap is close to moot: a suspended web layer is precisely the state in which no
 press could be acted on anyway.
 

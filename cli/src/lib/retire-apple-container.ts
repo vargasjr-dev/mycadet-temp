@@ -7,7 +7,7 @@ import type { AssistantEntry } from "./assistant-config.js";
  * Retire an Apple Container assistant by sending a retire command to the
  * macOS app via the management socket. The app handles the full lifecycle:
  * stop the pod, archive the instance directory, remove the guardian token,
- * deregister from the platform, and remove the lockfile entry.
+ * deregister from the cloud, and remove the lockfile entry.
  */
 export async function retireAppleContainer(
   name: string,

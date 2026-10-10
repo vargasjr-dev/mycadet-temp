@@ -1,4 +1,4 @@
-import type { PlatformGateState } from "@/hooks/use-platform-gate";
+import type { CloudGateState } from "@/hooks/use-cloud-gate";
 
 /**
  * Whether the URL carries "billing intent" — a signal that the viewer arrived
@@ -26,14 +26,14 @@ export function hasBillingIntent(searchParams: URLSearchParams): boolean {
  *   - `"full"` (signed in): always shown.
  *   - `"disabled"` (platform reachable, no session): normally hidden — a
  *     signed-out viewer has no billing to manage — but kept reachable when the
- *     URL carries billing intent, so `BillingTab`'s `PlatformLoginNotice` can
+ *     URL carries billing intent, so `BillingTab`'s `CloudLoginNotice` can
  *     carry those params (e.g. a Stripe `?session_id`) through sign-in and the
  *     viewer can finish the upgrade / post-checkout flow.
- *   - `"gated"` (local mode with the platform API off): never shown — there is
+ *   - `"gated"` (local mode with the cloud API off): never shown — there is
  *     no platform to log in to.
  */
 export function shouldShowBillingTab(
-  gate: PlatformGateState,
+  gate: CloudGateState,
   searchParams: URLSearchParams,
 ): boolean {
   if (gate === "full") {

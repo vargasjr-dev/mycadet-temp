@@ -11,7 +11,7 @@ import {
 } from "@/assistant/api";
 import { seedHatchAvatar } from "@/assistant/seed-hatch-avatar";
 import {
-  isPlatformHostedDisabled,
+  isCloudHostedDisabled,
   PLATFORM_HOSTED_DISABLED_MESSAGE,
   resolveAssistantLifecycleState,
   shouldRecoverFromHatchFailure,
@@ -176,7 +176,7 @@ export function HatchingScreen() {
   const electron = isElectron();
   const useLocalHatch =
     isLocalClient() && hostingParam !== null && hostingParam !== "cadet-cloud";
-  // `hosting=cadet-cloud` names a managed hatch even in a local-mode build
+  // `hosting=cadet-cloud` names a cloud hatch even in a local-mode build
   // (see `adopt-existing-assistant`): the assistant is provisioned on the
   // platform, so its purchased machine and storage are waited for.
   const managedHatch = hostingParam === "cadet-cloud";
@@ -212,7 +212,7 @@ export function HatchingScreen() {
   }, [hatchTraits]);
   const [phase, setPhase] = useState<HatchPhase>("initializing");
   const [error, setError] = useState<string | null>(null);
-  const [platformHostedDisabled, setPlatformHostedDisabled] = useState(false);
+  const [cloudHostedDisabled, setCloudHostedDisabled] = useState(false);
   // The provider rejected the entered API key (daemon-side validation). The
   // error screen swaps its retry for an "Update API key" path back to the
   // key screen; the hatch guards stay held so the corrected pass reuses the
@@ -254,7 +254,7 @@ export function HatchingScreen() {
       return;
     }
 
-    // A managed hatch in a local-mode build must address the platform, not the
+    // A managed hatch in a local-mode build must address the cloud, not the
     // machine's own gateway: `getAssistant()` answers from the selected
     // lockfile entry while a gateway token is held, and daemon SDK calls (the
     // healthz probes below) rewrite to the local gateway while a self-hosted
@@ -265,7 +265,7 @@ export function HatchingScreen() {
       setSelfHostedConnection(null);
     }
 
-    setPlatformHostedDisabled(false);
+    setCloudHostedDisabled(false);
     setApiKeyRejected(false);
 
     let cancelled = false;
@@ -328,13 +328,13 @@ export function HatchingScreen() {
           }
           // A local hatch feeds the research/personality flow. The assistant is
           // live, so the research route adopts it (its background hatch resolves
-          // the existing local assistant instead of provisioning a managed one).
+          // the existing local assistant instead of provisioning a cloud one).
           // Any non-local hatch that lands here falls through to the same
           // research route below.
           if (useLocalHatch) {
             // Carry the hosting choice through so the research route's
             // background hatch ADOPTS this just-hatched local assistant instead
-            // of running a managed hatch (see `adoptExisting` there), and the
+            // of running a cloud hatch (see `adoptExisting` there), and the
             // assistant id so it adopts exactly this one — not whatever a stale
             // selection or leftover lockfile entry resolves to.
             const researchParams = new URLSearchParams();
@@ -560,9 +560,9 @@ export function HatchingScreen() {
             status: result.status,
             error: result.error,
           });
-          if (isPlatformHostedDisabled(result.status, result.error)) {
+          if (isCloudHostedDisabled(result.status, result.error)) {
             setError(PLATFORM_HOSTED_DISABLED_MESSAGE);
-            setPlatformHostedDisabled(true);
+            setCloudHostedDisabled(true);
             return;
           }
           if (shouldRecoverFromHatchFailure(result.status)) {
@@ -601,7 +601,7 @@ export function HatchingScreen() {
     // purchased resize, then complete. Sharing this tail keeps a reload from
     // skipping the provisioning wait.
     const finishActiveHatch = async (assistantId: string): Promise<void> => {
-      // The platform may report "active" before the pod is ready to serve, so
+      // The cloud may report "active" before the pod is ready to serve, so
       // wait for the daemon to answer healthz before holding for the resize.
       transitionPhase("connecting");
       while (!cancelled) {
@@ -796,7 +796,7 @@ export function HatchingScreen() {
           >
             {error}
           </p>
-          {platformHostedDisabled && (
+          {cloudHostedDisabled && (
             <div className="mt-6 flex w-full max-w-sm flex-col items-center gap-3">
               <p className="text-body-medium-default text-[var(--content-default)]">
                 {t("hatchingScreen.localFallbackPitch")}
@@ -853,7 +853,7 @@ export function HatchingScreen() {
                   setDisplayProgress(0);
                   setAnimationEpoch((n) => n + 1);
                   setError(null);
-                  setPlatformHostedDisabled(false);
+                  setCloudHostedDisabled(false);
                   setAttempt((n) => n + 1);
                 }}
               >

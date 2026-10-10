@@ -211,7 +211,7 @@ function ollamaOption(): HTMLElement {
 /**
  * Every supported provider offered as an unconnected row, in picker order.
  * Custom endpoints are reached through "+ Create new provider", so they do not
- * appear here. Ollama is listed for every assistant; a platform-hosted one
+ * appear here. Ollama is listed for every assistant; a cloud-hosted one
  * sees it disabled with the self-hosted-only reason.
  */
 const UNCONNECTED_PROVIDER_LABELS = [
@@ -344,7 +344,7 @@ function renderEdit(
   );
 }
 
-/** Render the editor in view mode for a managed (platform-seeded) profile. */
+/** Render the editor in view mode for a cloud (platform-seeded) profile. */
 function renderView(
   initialValues: Record<string, unknown>,
   onSave: (
@@ -610,11 +610,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
   });
 
-  test("the Cadet-managed connection leads, with the unconnected providers behind it", () => {
-    // A platform-hosted user's only connection is the single provider-agnostic
-    // `cadet` connection. It leads the list as one entry (never the managed
+  test("the Cadet Cloud connection leads, with the unconnected providers behind it", () => {
+    // A cloud-hosted user's only connection is the single provider-agnostic
+    // `cadet` connection. It leads the list as one entry (never the cloud
     // upstreams it routes to); BYOK providers follow as connect-me entries.
-    renderCreate([makeConnection("cadet-managed", "cadet")]);
+    renderCreate([makeConnection("cadet-cloud", "cadet")]);
     fireEvent.click(providerTrigger());
     expect(optionRows()[0]).toEqual({ label: "Cadet", meta: "Managed" });
     expect(optionLabels()).toEqual([
@@ -624,13 +624,13 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     ]);
   });
 
-  test("selecting Cadet saves the model's managed upstream bound to the cadet connection", async () => {
+  test("selecting Cadet saves the model's cloud upstream bound to the cadet connection", async () => {
     const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
     const onSave = (name: string, entry: unknown) => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
       return Promise.resolve();
     };
-    renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
+    renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
     selectProvider("Cadet");
     selectModel("Claude Opus 4.8");
@@ -645,7 +645,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
     // Legacy wire shape: upstream derived from the model, cadet binding.
     expect(saveCalls[0].entry.provider).toBe("anthropic");
-    expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet-cloud");
   });
 
   test("a Cadet fireworks-hosted model derives the fireworks upstream", async () => {
@@ -654,7 +654,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
       return Promise.resolve();
     };
-    renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
+    renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
     selectProvider("Cadet");
     selectModel("GLM 5.3");
@@ -668,7 +668,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       expect(saveCalls.length).toBe(1);
     });
     expect(saveCalls[0].entry.provider).toBe("fireworks");
-    expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
+    expect(saveCalls[0].entry.provider_connection).toBe("cadet-cloud");
   });
 
   test("catalog providers show no connection field, even with multiple keys", async () => {
@@ -746,7 +746,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         saveCalls.push({ name, entry: entry as Record<string, unknown> });
         return Promise.resolve();
       };
-      renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
+      renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
       selectProvider("Cadet");
       selectModel("Claude Opus 4.8");
@@ -777,7 +777,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         saveCalls.push({ name, entry: entry as Record<string, unknown> });
         return Promise.resolve();
       };
-      renderCreate([makeConnection("cadet-managed", "cadet")], onSave);
+      renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
       selectProvider("Cadet");
       selectModel("Claude Opus 4.8");
@@ -792,7 +792,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       });
       expect(saveCalls[0].entry.provider).toBe("anthropic");
       expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
-      expect(saveCalls[0].entry.provider_connection).toBe("cadet-managed");
+      expect(saveCalls[0].entry.provider_connection).toBe("cadet-cloud");
     } finally {
       useAssistantIdentityStore.getState().clearIdentity();
     }
@@ -837,8 +837,8 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
   });
 
-  test("a legacy-shape managed profile presents as Cadet in edit mode", async () => {
-    // Managed profiles store their real upstream (anthropic) bound to the
+  test("a legacy-shape cloud profile presents as Cadet in edit mode", async () => {
+    // Cloud profiles store their real upstream (anthropic) bound to the
     // cadet connection; the editor must present them as "Cadet".
     render(
       <Wrapper>
@@ -1043,7 +1043,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
   });
 
   test("Cadet hides the Connection sub-dropdown", () => {
-    renderCreate([makeConnection("cadet-managed", "cadet")]);
+    renderCreate([makeConnection("cadet-cloud", "cadet")]);
     selectProvider("Cadet");
     expect(document.body.textContent).not.toContain("Connection (optional)");
     expect(
@@ -1109,7 +1109,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe("Mistral");
   });
 
-  test("platform-hosted assistants offer Ollama disabled with the reason", () => {
+  test("cloud-hosted assistants offer Ollama disabled with the reason", () => {
     // Hiding it entirely reads as missing support; the row states the
     // restriction instead and refuses selection.
     useAssistantLifecycleStore.setState({
@@ -1474,8 +1474,8 @@ describe("ProfileEditorModal edit mode — catalog-absent bound model", () => {
     expect(getSaveBtn().disabled).toBe(false);
   });
 
-  test("treats the cadet connection as available for a managed-routable provider (no stale-clear)", () => {
-    // A managed profile keeps its real provider (fireworks) but binds to the
+  test("treats the cadet connection as available for a cloud-routable provider (no stale-clear)", () => {
+    // A cloud profile keeps its real provider (fireworks) but binds to the
     // provider-agnostic `cadet` connection, whose own provider is the `cadet`
     // sentinel. The editor must recognize that binding for managed-routable
     // providers instead of flagging it "not found" and auto-clearing it on save.
@@ -1885,8 +1885,8 @@ describe("ProfileEditorModal — Top P wiring", () => {
 // Invariant (managed) profiles — server-stamped `invariant: true`
 // ---------------------------------------------------------------------------
 
-describe("ProfileEditorModal — invariant managed profiles in view mode", () => {
-  // A server-stamped managed profile. Anthropic opus → visibility.topP is
+describe("ProfileEditorModal — invariant cloud profiles in view mode", () => {
+  // A server-stamped cloud profile. Anthropic opus → visibility.topP is
   // true, so the Top P control renders and we can assert it is locked.
   const invariantProfile = {
     name: "default-a",
@@ -2329,7 +2329,7 @@ describe("entries wire shape", () => {
       await waitFor(() => {
         expect(saveCalls.length).toBe(1);
       });
-      // "cadet" as a provider value would flip the profile to the managed
+      // "cadet" as a provider value would flip the profile to the cloud
       // identity, so the binding stays in the legacy field.
       expect(saveCalls[0].entry.provider).toBe("anthropic");
       expect(saveCalls[0].entry.provider_connection).toBe("cadet");

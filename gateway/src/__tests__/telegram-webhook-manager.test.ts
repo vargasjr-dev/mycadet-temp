@@ -54,7 +54,7 @@ afterEach(() => {
   claimError = undefined;
   delete process.env.IS_CONTAINERIZED;
   delete process.env.IS_CLOUD;
-  delete process.env.CADET_PLATFORM_URL;
+  delete process.env.CADET_CLOUD_URL;
   delete process.env.ASSISTANT_API_KEY;
   _resetCloudIdentityForTests();
 });
@@ -74,9 +74,9 @@ function makeCaches(
     webhookSecret?: string | null;
     ingressUrl?: string | null;
     ingressEnabled?: boolean;
-    platformBaseUrl?: string | null;
+    cloudBaseUrl?: string | null;
     assistantApiKey?: string | null;
-    platformAssistantId?: string | null;
+    cloudAssistantId?: string | null;
   } = {},
 ) {
   const botToken =
@@ -89,28 +89,28 @@ function makeCaches(
     "ingressUrl" in opts
       ? (opts.ingressUrl ?? undefined)
       : "https://example.ngrok.io";
-  const platformBaseUrl =
-    "platformBaseUrl" in opts ? (opts.platformBaseUrl ?? undefined) : undefined;
+  const cloudBaseUrl =
+    "cloudBaseUrl" in opts ? (opts.cloudBaseUrl ?? undefined) : undefined;
   const assistantApiKey =
     "assistantApiKey" in opts ? (opts.assistantApiKey ?? undefined) : undefined;
-  const platformAssistantId =
-    "platformAssistantId" in opts
-      ? (opts.platformAssistantId ?? undefined)
+  const cloudAssistantId =
+    "cloudAssistantId" in opts
+      ? (opts.cloudAssistantId ?? undefined)
       : undefined;
-  if (platformBaseUrl) process.env.CADET_PLATFORM_URL = platformBaseUrl;
+  if (cloudBaseUrl) process.env.CADET_CLOUD_URL = cloudBaseUrl;
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: botToken,
     [credentialKey("telegram", "webhook_secret")]: webhookSecret,
     [credentialKey("cadet", "assistant_api_key")]: assistantApiKey,
-    [credentialKey("cadet", "platform_assistant_id")]: platformAssistantId,
+    [credentialKey("cadet", "platform_assistant_id")]: cloudAssistantId,
   };
   const credentials = {
     get: async (key: string) => credentialMap[key],
     invalidate: () => {},
   } as unknown as CredentialCache;
-  if (platformAssistantId) {
+  if (cloudAssistantId) {
     applyCloudIdentityIds({
-      assistantId: platformAssistantId,
+      assistantId: cloudAssistantId,
       organizationId: "",
       userId: "",
     });
@@ -140,9 +140,9 @@ const MANAGED_CALLBACK_URL = `https://test-cloud.mycadet.ai/v1/gateway/callbacks
 function makePlatformCaches(ingressUrl: string | undefined) {
   return makeCaches({
     ingressUrl,
-    platformBaseUrl: "https://test-cloud.mycadet.ai",
+    cloudBaseUrl: "https://test-cloud.mycadet.ai",
     assistantApiKey: "ast-managed-key",
-    platformAssistantId: PLATFORM_ASSISTANT_ID,
+    cloudAssistantId: PLATFORM_ASSISTANT_ID,
   });
 }
 
@@ -348,14 +348,14 @@ describe("reconcileTelegramWebhook", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("registers a managed callback route when ingress URL is not configured", async () => {
+  test("registers a cloud callback route when ingress URL is not configured", async () => {
     const calls: { method: string; body: unknown }[] = [];
     process.env.IS_CONTAINERIZED = "true";
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(
@@ -417,16 +417,16 @@ describe("reconcileTelegramWebhook", () => {
     expect((calls[2].body as any).secret_token).toBe("test-webhook-secret");
   });
 
-  test("registers a managed callback route without IS_CONTAINERIZED when platform credentials are present (LUM-2899)", async () => {
+  test("registers a cloud callback route without IS_CONTAINERIZED when platform credentials are present (LUM-2899)", async () => {
     const calls: { method: string; body: unknown }[] = [];
-    // IS_CONTAINERIZED deliberately unset: a platform-connected local
-    // assistant must complete the setWebhook handshake for the managed
+    // IS_CONTAINERIZED deliberately unset: a cloud-connected local
+    // assistant must complete the setWebhook handshake for the cloud
     // callback mode that `hasWebhookRoutingConfigured` reports as configured.
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(
@@ -483,15 +483,15 @@ describe("reconcileTelegramWebhook", () => {
     expect((calls[2].body as any).secret_token).toBe("test-webhook-secret");
   });
 
-  test("includes callback_base_url when a platform pod has an ingress URL in config", async () => {
+  test("includes callback_base_url when a cloud pod has an ingress URL in config", async () => {
     const calls: { method: string; body: unknown }[] = [];
     process.env.IS_CLOUD = "true";
     process.env.IS_CONTAINERIZED = "true";
     const caches = makeCaches({
       ingressUrl: "https://tunnel.example.com",
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(
@@ -550,14 +550,14 @@ describe("reconcileTelegramWebhook", () => {
     );
   });
 
-  test("deregisters the webhook instead of using the managed callback fallback when ingress is explicitly disabled", async () => {
+  test("deregisters the webhook instead of using the cloud callback fallback when ingress is explicitly disabled", async () => {
     const calls: string[] = [];
     const caches = makeCaches({
       ingressUrl: undefined,
       ingressEnabled: false,
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(async (input: string | URL | Request) => {
@@ -607,15 +607,15 @@ describe("reconcileTelegramWebhook", () => {
     expect(calls).toEqual(["deleteWebhook"]);
   });
 
-  test("ignores ingress.enabled false on platform pods and registers the managed callback route", async () => {
+  test("ignores ingress.enabled false on cloud pods and registers the cloud callback route", async () => {
     const calls: string[] = [];
     process.env.IS_CLOUD = "true";
     const caches = makeCaches({
       ingressUrl: undefined,
       ingressEnabled: false,
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(async (input: string | URL | Request) => {
@@ -663,20 +663,20 @@ describe("reconcileTelegramWebhook", () => {
     ]);
   });
 
-  test("prefers the managed callback route over the Tunnel ingress URL on platform pods", async () => {
+  test("prefers the cloud callback route over the Tunnel ingress URL on cloud pods", async () => {
     const calls: string[] = [];
     let registeredUrl: string | undefined;
     process.env.IS_CLOUD = "true";
     // A platform pod always has an `ingress.publicBaseUrl`: the Tunnel
-    // client publishes one at boot. It must not win over the managed callback
+    // client publishes one at boot. It must not win over the cloud callback
     // route — the Tunnel address dies with the tunnel, and the daemon's
     // `hasWebhookRoutingConfigured` reports this pod as managed-callback mode.
     const caches = makeCaches({
       ingressUrl:
         "https://tunnel.mycadet.ai/11111111-2222-4333-8444-555555555555",
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "ast-managed-key",
-      platformAssistantId: "11111111-2222-4333-8444-555555555555",
+      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
     });
 
     fetchMock = mock(
@@ -752,7 +752,7 @@ describe("reconcileTelegramWebhook", () => {
     );
   });
 
-  test("falls back to the managed callback route when the path claim fails", async () => {
+  test("falls back to the cloud callback route when the path claim fails", async () => {
     process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
     claimError = new Error("database disk image is malformed");
@@ -774,7 +774,7 @@ describe("reconcileTelegramWebhook", () => {
     expect(result.registeredUrl).toBe(MANAGED_CALLBACK_URL);
   });
 
-  test("falls back to the managed callback route when the flag is on but no URL is published", async () => {
+  test("falls back to the cloud callback route when the flag is on but no URL is published", async () => {
     process.env.IS_CLOUD = "true";
     tunnelWebhooksEnabled = true;
     const { calls, result } = mockReconcileFetch({
@@ -820,14 +820,14 @@ describe("reconcileTelegramWebhook", () => {
       headers?: Record<string, string>;
     }[] = [];
     process.env.IS_CONTAINERIZED = "true";
-    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_CLOUD_URL = "https://env-platform.example.com";
     process.env.ASSISTANT_API_KEY = "env-key";
 
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: undefined,
+      cloudBaseUrl: undefined,
       assistantApiKey: undefined,
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     fetchMock = mock(
@@ -893,12 +893,12 @@ describe("reconcileTelegramWebhook", () => {
       headers?: Record<string, string>;
     }[] = [];
     process.env.IS_CONTAINERIZED = "true";
-    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_CLOUD_URL = "https://env-platform.example.com";
 
     const caches = makeCaches({
       ingressUrl: undefined,
       assistantApiKey: "cache-api-key",
-      platformAssistantId: "cache-assistant-id",
+      cloudAssistantId: "cache-assistant-id",
     });
 
     fetchMock = mock(
@@ -964,9 +964,9 @@ describe("reconcileTelegramWebhook", () => {
 
     const caches = makeCaches({
       ingressUrl: undefined,
-      platformBaseUrl: undefined,
+      cloudBaseUrl: undefined,
       assistantApiKey: undefined,
-      platformAssistantId: undefined,
+      cloudAssistantId: undefined,
     });
 
     fetchMock = mock(async () => new Response("", { status: 200 }));
@@ -1017,7 +1017,7 @@ const TUNNEL_WEBHOOK_URL = `${TUNNEL_BASE_URL}/webhooks/telegram`;
  * rather than the value that was current when it was queued.
  */
 function makeLivePlatformCaches(readIngressUrl: () => string | undefined) {
-  process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+  process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
   const credentialMap: Record<string, string | undefined> = {
     [credentialKey("telegram", "bot_token")]: "test-bot-token",
     [credentialKey("telegram", "webhook_secret")]: "test-webhook-secret",
@@ -1067,7 +1067,7 @@ describe("reconcileTelegramWebhook serialization", () => {
     tunnelWebhooksEnabled = true;
 
     // The tunnel clears its published URL and republishes it moments later.
-    // The first reconcile sees the cleared state and resolves the managed
+    // The first reconcile sees the cleared state and resolves the cloud
     // callback route; the second must win with the Tunnel URL.
     const published: { ingressUrl?: string } = {};
     const { caches, refreshes } = makeLivePlatformCaches(
@@ -1126,7 +1126,7 @@ describe("reconcileTelegramWebhook serialization", () => {
     releaseFirstSetWebhook();
     await Promise.all([first, second]);
 
-    // The managed registration is the stale one, so it must not be what
+    // The cloud registration is the stale one, so it must not be what
     // Telegram is left pointed at.
     expect(registeredUrls).toEqual([MANAGED_CALLBACK_URL, TUNNEL_WEBHOOK_URL]);
     expect(claimedRoutes).toEqual([

@@ -2,7 +2,7 @@
  * Unit test for `hatchAssistant`'s `mode` passthrough.
  *
  * The developer "Hatch New Assistant" button needs `mode=create` to actually
- * provision an additional assistant; omitting it lets the platform default to
+ * provision an additional assistant; omitting it lets the cloud default to
  * `ensure` and hand back the existing one. This pins that the query param is
  * sent only when a mode is given (so the auto-hatch callers stay on `ensure`).
  */

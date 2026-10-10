@@ -38,10 +38,10 @@ mock.module("../../inbound/tunnel-webhooks-gate.js", () => ({
 }));
 
 const actualRegistration =
-  await import("../../inbound/platform-callback-registration.js");
-mock.module("../../inbound/platform-callback-registration.js", () => ({
+  await import("../../inbound/cloud-callback-registration.js");
+mock.module("../../inbound/cloud-callback-registration.js", () => ({
   ...actualRegistration,
-  resolvePlatformCallbackRegistrationContext: async () => ({
+  resolveCloudCallbackRegistrationContext: async () => ({
     isPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
     assistantId: cloudContextEnabled ? "assistant-123" : "",
@@ -62,27 +62,27 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     cloudContextEnabled = false;
   });
 
-  // ── Tier 1: platform pods ────────────────────────────────────────────────
+  // ── Tier 1: cloud pods ────────────────────────────────────────────────
 
-  test("platform pods use managed callbacks", async () => {
+  test("cloud pods use managed callbacks", async () => {
     isPlatform = true;
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
-  test("platform pods report managed even with an ingress URL configured", async () => {
+  test("cloud pods report managed even with an ingress URL configured", async () => {
     isPlatform = true;
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
-    // `handleWebhooksRegister` registers with the platform gateway before it
+    // `handleWebhooksRegister` registers with the cloud gateway before it
     // ever reads the ingress config on a pod, so reporting the ingress URL
     // here would name a URL no webhook is actually registered against.
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
@@ -93,7 +93,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
@@ -103,7 +103,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
@@ -116,22 +116,22 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     // must not lose webhooks entirely.
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
   // ── Tier 2: a configured ingress wins ────────────────────────────────────
 
-  test("ingress beats the platform-connected fallback", async () => {
+  test("ingress beats the cloud-connected fallback", async () => {
     cloudContextEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
     // Any logged-in local assistant holds platform credentials for the LLM
     // proxy, so credential presence must not reroute an explicitly configured
-    // self-hosted webhook through the platform.
+    // self-hosted webhook through the cloud.
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
@@ -141,7 +141,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true, { twilio: true })).toEqual({
       configured: true,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
@@ -150,20 +150,20 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true, { twilio: true })).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
   // ── Tier 3: platform-connected fallback ──────────────────────────────────
 
-  test("a platform-connected assistant with no ingress uses managed callbacks", async () => {
+  test("a cloud-connected assistant with no ingress uses managed callbacks", async () => {
     cloudContextEnabled = true;
 
-    // The LUM-2882 case: `webhooks register` hands back a platform callback
+    // The LUM-2882 case: `webhooks register` hands back a cloud callback
     // URL here, so the status surfaces must not report missing ingress.
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
@@ -173,7 +173,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
-      usesManagedCallbacks: true,
+      usesCloudCallbacks: true,
     });
   });
 
@@ -182,10 +182,10 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     rawConfig = { ingress: { enabled: false } };
 
     // Opting out is a decision not to accept inbound webhooks at all, not an
-    // invitation to route them through the platform instead.
+    // invitation to route them through the cloud instead.
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: false,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
@@ -197,7 +197,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: false,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
@@ -206,38 +206,38 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   test("no ingress and no platform connectivity is not configured", async () => {
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: false,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
-  // ── allowManagedCallbacks gating ─────────────────────────────────────────
+  // ── allowCloudCallbacks gating ─────────────────────────────────────────
 
-  test("allowManagedCallbacks false hides the platform-connected fallback", async () => {
+  test("allowCloudCallbacks false hides the cloud-connected fallback", async () => {
     cloudContextEnabled = true;
 
     // Channels that can only be served by a self-hosted ingress pass `false`
-    // and must never be told a managed route stands in for one.
+    // and must never be told a cloud route stands in for one.
     expect(await hasWebhookRoutingConfigured(false)).toEqual({
       configured: false,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
-  test("allowManagedCallbacks false hides the platform-pod tier", async () => {
+  test("allowCloudCallbacks false hides the cloud-pod tier", async () => {
     isPlatform = true;
 
     expect(await hasWebhookRoutingConfigured(false)).toEqual({
       configured: false,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 
-  test("allowManagedCallbacks false still honors a configured ingress", async () => {
+  test("allowCloudCallbacks false still honors a configured ingress", async () => {
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
     expect(await hasWebhookRoutingConfigured(false)).toEqual({
       configured: true,
-      usesManagedCallbacks: false,
+      usesCloudCallbacks: false,
     });
   });
 });

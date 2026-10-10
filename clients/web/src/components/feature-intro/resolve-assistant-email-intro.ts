@@ -10,7 +10,7 @@ export interface AssistantEmailIntroInputs {
    */
   onboardingBusy: boolean;
   /**
-   * When the platform made the assistant, or `null` while unknown. Only an
+   * When the cloud made the assistant, or `null` while unknown. Only an
    * assistant from before the intro shipped is owed it; a newer one meets
    * email as part of the app.
    */

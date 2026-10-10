@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-import type { ConsentState } from "../platform/consent-cache.js";
+import type { ConsentState } from "../cloud/consent-cache.js";
 
 // Toggle for the share_analytics consent the real store consults. The store
 // module is intentionally NOT mocked here — it has its own DB-backed tests, and
@@ -9,12 +9,12 @@ import type { ConsentState } from "../platform/consent-cache.js";
 // auth-fallback test order-independent.
 let shareAnalytics: ConsentState = true;
 
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => shareAnalytics,
 }));
 
 // The watchdog relay must go through the direct (unbuffered) emit; capture the
-// forwarded arguments instead of POSTing to the platform.
+// forwarded arguments instead of POSTing to the cloud.
 const emitCalls: {
   checkName: string;
   detail: Record<string, unknown> | null;

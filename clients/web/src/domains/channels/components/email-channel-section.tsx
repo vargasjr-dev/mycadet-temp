@@ -6,15 +6,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { useInboxPitchCopy } from "@/domains/assistant-inbox/hooks/use-inbox-pitch-copy";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import {
   assistantsListOptions,
   organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
@@ -35,7 +35,7 @@ import type { EmailByoProvider } from "@/lib/provider-catalogs";
 import { EMAIL_BYO_PROVIDERS } from "@/lib/provider-catalogs";
 import { parseServiceMode } from "@/domains/channels/service-mode";
 import type { ServiceMode } from "@/generated/daemon/types.gen";
-import { EmailManagedContent } from "@/domains/channels/components/email-managed-content";
+import { EmailCloudContent } from "@/domains/channels/components/email-cloud-content";
 
 export function EmailChannelSection() {
   const { t } = useTranslation("channels");
@@ -50,10 +50,10 @@ export function EmailChannelSection() {
   const assistantHandle = assistantList?.results?.[0]?.handle;
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
 
   const [mode, setMode] = useState<ServiceMode>(() => {
-    if (platformGate === "gated") {
+    if (cloudGate === "gated") {
       return "your-own";
     }
     return parseServiceMode(
@@ -68,18 +68,18 @@ export function EmailChannelSection() {
     },
   );
 
-  // Managed email lives on the platform API, whose assistant routes key on
-  // the platform UUID — the local-mode lockfile id is a slug that no
-  // platform route matches. Resolve the platform id before rendering the
+  // Managed email lives on the cloud API, whose assistant routes key on
+  // the cloud UUID — the local-mode lockfile id is a slug that no
+  // platform route matches. Resolve the cloud id before rendering the
   // managed form; on resolution failure fall back to the raw id so the
   // platform can still answer with a real per-request error.
-  const { platformAssistantId, error: platformAssistantIdError } =
-    usePlatformAssistantId(
+  const { cloudAssistantId, error: cloudAssistantIdError } =
+    useCloudAssistantId(
       assistantId,
-      platformGate === "full" && mode === "managed",
+      cloudGate === "full" && mode === "managed",
     );
   const managedAssistantId =
-    platformAssistantId ?? (platformAssistantIdError ? assistantId : null);
+    cloudAssistantId ?? (cloudAssistantIdError ? assistantId : null);
 
   // -- BYO credential check (your-own mode) ----------------------------------
   const byoCredentialQuery = useQuery({
@@ -92,7 +92,7 @@ export function EmailChannelSection() {
       });
       return data;
     },
-    enabled: mode === "your-own" || platformGate === "gated",
+    enabled: mode === "your-own" || cloudGate === "gated",
     staleTime: 60_000,
     retry: shouldRetryDaemonError,
     meta: { errorContext: "byo_email_credential_check" },
@@ -111,20 +111,20 @@ export function EmailChannelSection() {
   const byoConfigured = byoCredentialQuery.data?.hasSecret === true;
 
   // -- Inbox pitch header ----------------------------------------------------
-  /* An org without managed email sees the inbox's pitch in the managed
+  /* An org without managed email sees the inbox's pitch in the cloud
      body, and this header carries the pitch's
      title and line in place of the section's own, so the pitch is introduced
      once rather than by a settings heading and then a card heading. The
-     subscription is the same cached query `EmailManagedContent` reads, and
+     subscription is the same cached query `EmailCloudContent` reads, and
      only an explicit denial counts, as it does there. */
   const assistantName = useAssistantIdentityStore.use.name();
   const pitchCopy = useInboxPitchCopy(assistantName ?? "");
   const { data: subscription } = useQuery({
     ...organizationsBillingSubscriptionRetrieveOptions(),
-    enabled: isOrgReady && platformGate === "full",
+    enabled: isOrgReady && cloudGate === "full",
   });
   const showInboxPitch =
-    platformGate === "full" &&
+    cloudGate === "full" &&
     mode === "managed" &&
     managedAssistantId !== null &&
     !!subscription?.entitlements &&
@@ -245,7 +245,7 @@ export function EmailChannelSection() {
     </div>
   );
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return (
       <ByoServiceCard
         id="email"
@@ -269,17 +269,17 @@ export function EmailChannelSection() {
     >
       {mode === "managed" ? (
         <div className="space-y-4">
-          {platformGate === "disabled" ? (
-            <PlatformLoginNotice>
+          {cloudGate === "disabled" ? (
+            <CloudLoginNotice>
               {t("emailChannelSection.platformLoginNotice")}
-            </PlatformLoginNotice>
+            </CloudLoginNotice>
           ) : managedAssistantId === null ? (
             <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("emailChannelSection.connecting")}
             </div>
           ) : (
-            <EmailManagedContent
+            <EmailCloudContent
               assistantId={managedAssistantId}
               assistantHandle={assistantHandle}
               emailRootDomain={emailRootDomain}

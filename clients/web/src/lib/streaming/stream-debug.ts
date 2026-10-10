@@ -71,7 +71,7 @@ export interface SseDebugClient {
   /**
    * Median gap in ms between the last up-to-20 keepalive comments. ~7000
    * implicates nothing (the daemon heartbeat is healthy end to end); ~10000
-   * means the daemon heartbeat is lost and the platform proxy's injector is
+   * means the daemon heartbeat is lost and the cloud proxy's injector is
    * carrying the stream. The daemon heartbeat interval is 7s (see
    * `assistant/src/runtime/routes/events-routes.ts`); the proxy injects
    * keepalives at 10s.

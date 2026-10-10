@@ -178,7 +178,7 @@ describe("buildSystemPrompt — default persona trust-class guardrail", () => {
   test("gates off for an unresolved local build when HTTP auth is disabled", () => {
     // Initial-prompt warming, home generation, and btw sidechains build
     // prompts with NO trustContext on behalf of the owner. In an auth-disabled
-    // (local / platform-managed) deployment that unresolved actor is the
+    // (local / cloud-managed) deployment that unresolved actor is the
     // guardian, so the guardrail must not render into those guardian-facing
     // prompts (fail-stranger would stonewall the owner about their own data).
     process.env.DISABLE_HTTP_AUTH = "true";

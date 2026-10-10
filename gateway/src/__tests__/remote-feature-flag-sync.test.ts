@@ -116,16 +116,16 @@ function defaultCredentials(): Record<string, string> {
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
-const savedCadetPlatformUrl = process.env.CADET_PLATFORM_URL;
+const savedCadetCloudUrl = process.env.CADET_CLOUD_URL;
 const savedAssistantCredential = process.env.ASSISTANT_API_KEY;
-const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
+const savedDisablePlatform = process.env.CADET_DISABLE_CLOUD;
 
 beforeEach(() => {
   // Clear env vars that the production code falls back to, so tests remain
   // deterministic unless they explicitly set them.
-  process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+  process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.CADET_DISABLE_PLATFORM;
+  delete process.env.CADET_DISABLE_CLOUD;
   mkdirSync(protectedDir, { recursive: true });
   // Write the test registry and point resolution at it
   writeFileSync(testRegistryPath, JSON.stringify(TEST_REGISTRY, null, 2));
@@ -145,9 +145,9 @@ afterEach(() => {
       process.env[key] = saved;
     }
   };
-  restoreEnv("CADET_PLATFORM_URL", savedCadetPlatformUrl);
+  restoreEnv("CADET_CLOUD_URL", savedCadetCloudUrl);
   restoreEnv("ASSISTANT_API_KEY", savedAssistantCredential);
-  restoreEnv("CADET_DISABLE_PLATFORM", savedDisablePlatform);
+  restoreEnv("CADET_DISABLE_CLOUD", savedDisablePlatform);
   try {
     rmSync(protectedDir, { recursive: true, force: true });
     mkdirSync(protectedDir, { recursive: true });
@@ -166,7 +166,7 @@ afterEach(() => {
 describe("RemoteFeatureFlagSync", () => {
   test("skips sync when platform features are disabled", async () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(defaultCredentials()),
@@ -181,7 +181,7 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
 
     const creds = defaultCredentials();
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
 
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -193,9 +193,9 @@ describe("RemoteFeatureFlagSync", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("uses the CADET_PLATFORM_URL env var", async () => {
+  test("uses the CADET_CLOUD_URL env var", async () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
-    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_CLOUD_URL = "https://env-platform.example.com";
 
     const creds = defaultCredentials();
 
@@ -231,10 +231,10 @@ describe("RemoteFeatureFlagSync", () => {
     expect(headers.Accept).toBe("application/json");
   });
 
-  test("syncs when only platformUrl and assistantApiKey are present", async () => {
+  test("syncs when only cloudUrl and assistantApiKey are present", async () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
 
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     const creds = {
       "credential/cadet/assistant_api_key": "test-api-key",
     };
@@ -252,7 +252,7 @@ describe("RemoteFeatureFlagSync", () => {
     fetchMock = mock(async () => Response.json({ flags: { ff1: true } }));
     process.env.ASSISTANT_API_KEY = "env-key";
 
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     const creds = {};
 
     const sync = new RemoteFeatureFlagSync({
@@ -294,7 +294,7 @@ describe("RemoteFeatureFlagSync", () => {
     // with the NEW api key and overwrite the cached per-assistant flag values
     // immediately, rather than serving the previous identity's (or registry
     // default) values until the next ~5-min poll.
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     const cache = fakeCredentialCache({
       "credential/cadet/assistant_api_key": "old-assistant-key",
     });
@@ -312,7 +312,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     // Warm-pool claim: credentials now belong to the newly-assigned assistant,
     // whose flag evaluation returns self-intro-greeting ON.
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     cache._setValues({
       "credential/cadet/assistant_api_key": "new-assistant-key",
     });
@@ -341,7 +341,7 @@ describe("RemoteFeatureFlagSync", () => {
     // second syncNow() arriving while it is in flight must NOT be dropped by
     // the re-entrancy guard — it must trigger one more fetch so the final
     // identity's flags are cached, not the stale ones.
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     const cache = fakeCredentialCache({
       "credential/cadet/assistant_api_key": "old-assistant-key",
     });
@@ -370,7 +370,7 @@ describe("RemoteFeatureFlagSync", () => {
 
     // Warm-pool claim: identity changes, then a second syncNow arrives while
     // the first fetch is still in flight.
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     cache._setValues({
       "credential/cadet/assistant_api_key": "new-assistant-key",
     });
@@ -486,7 +486,7 @@ describe("RemoteFeatureFlagSync", () => {
   test("constructs correct URL from platform base URL", async () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
 
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     const creds = { ...defaultCredentials() };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -565,7 +565,7 @@ describe("RemoteFeatureFlagSync", () => {
   test("strips trailing slashes from platform URL", async () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
 
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai///";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai///";
     const creds = { ...defaultCredentials() };
     const sync = new RemoteFeatureFlagSync({
       credentials: fakeCredentialCache(creds),
@@ -581,7 +581,7 @@ describe("RemoteFeatureFlagSync", () => {
   });
 
   test("normalizes remote false for GA flags (defaultEnabled: true in registry)", async () => {
-    // The platform sends false for all flags it knows about (blanket-deny).
+    // The cloud sends false for all flags it knows about (blanket-deny).
     // GA flags (defaultEnabled: true in the registry) should not be disabled
     // by remote overrides — only local persisted overrides can do that.
     // Uses the test-local registry which defines test-ga-flag as GA
@@ -716,7 +716,7 @@ describe("RemoteFeatureFlagSync", () => {
   test("trims whitespace from credential values", async () => {
     fetchMock = mock(async () => Response.json({ flags: {} }));
 
-    process.env.CADET_PLATFORM_URL = "  https://test-cloud.mycadet.ai  ";
+    process.env.CADET_CLOUD_URL = "  https://test-cloud.mycadet.ai  ";
     const creds = {
       "credential/cadet/assistant_api_key": "  trimmed-key  ",
     };
@@ -897,7 +897,7 @@ describe("RemoteFeatureFlagSync", () => {
       initialPollIntervalMs: 50,
     });
     // Missing platform URL from the start — polling should pause
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
     await sync.start();
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -906,8 +906,8 @@ describe("RemoteFeatureFlagSync", () => {
     await new Promise((r) => setTimeout(r, 200));
     expect(fetchMock).not.toHaveBeenCalled();
 
-    // Simulate the platform URL becoming available
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    // Simulate the cloud URL becoming available
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     creds._invalidate();
 
     // Wait for syncNow to complete (async, fire-and-forget from callback)

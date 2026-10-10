@@ -8,7 +8,7 @@ import { getSqliteFrom } from "../db-connection.js";
  *   script's stdout to an agent turn instead of only recording it on the run
  *   row. Defaults to 0 so every pre-existing script schedule keeps its
  *   no-LLM behaviour.
- * - `skill_id` — the managed skill whose `scripts/` the command invokes. NULL
+ * - `skill_id` — the cloud skill whose `scripts/` the command invokes. NULL
  *   (all pre-existing rows) means the schedule is not bound to a skill.
  * - `skill_version_hash` — the skill's content hash at creation time,
  *   re-checked before each firing so a rewritten script cannot keep running

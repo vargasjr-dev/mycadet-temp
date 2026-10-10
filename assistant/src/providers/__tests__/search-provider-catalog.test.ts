@@ -37,7 +37,7 @@ describe("search-provider-catalog", () => {
     }
   });
 
-  test("managed providers omit BYOK-only fields", () => {
+  test("cloud providers omit BYOK-only fields", () => {
     const managed = SEARCH_PROVIDER_CATALOG.filter((p) => p.kind === "managed");
     for (const provider of managed) {
       expect(provider.envVar).toBeUndefined();
@@ -75,7 +75,7 @@ describe("search-provider-catalog", () => {
     expect(SEARCH_PROVIDER_FALLBACK_ORDER).toEqual(sorted);
   });
 
-  test("cadet is a managed provider outside the BYOK fallback chain", () => {
+  test("cadet is a cloud provider outside the BYOK fallback chain", () => {
     expect(getSearchProvider("cadet")?.kind).toBe("managed");
     expect(BYOK_SEARCH_PROVIDERS.map((p) => p.id)).not.toContain("cadet");
     expect(SEARCH_PROVIDER_FALLBACK_ORDER).not.toContain("cadet");

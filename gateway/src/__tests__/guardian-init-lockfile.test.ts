@@ -791,7 +791,7 @@ describe("guardian/init bare-metal loopback gating", () => {
     expect(body.accessToken).toBeTruthy();
   });
 
-  test("skips loopback check in platform-managed mode (IS_CLOUD=true)", async () => {
+  test("skips loopback check in cloud-managed mode (IS_CLOUD=true)", async () => {
     delete process.env.GUARDIAN_BOOTSTRAP_SECRET;
     process.env.IS_CLOUD = "true";
     try {

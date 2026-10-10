@@ -33,7 +33,7 @@ let healthzResult: GetHealthzResult = {
 };
 
 // Local-gateway routing state. A managed hatch drops both before it POSTs so
-// discovery, healthz and the onboarding writes address the platform.
+// discovery, healthz and the onboarding writes address the cloud.
 const clearGatewayTokenMock = mock(() => {});
 const setSelfHostedConnectionMock = mock((_connection: unknown) => {});
 mock.module("@/lib/auth/gateway-session", () => ({
@@ -76,7 +76,7 @@ let lockfileEntries: Record<string, { assistantId: string }> = {};
 const getLockfileAssistantMock = mock(
   (id: string): { assistantId: string } | undefined => lockfileEntries[id],
 );
-// The desktop (Electron) build reports local mode even for a managed hatch.
+// The desktop (Electron) build reports local mode even for a cloud hatch.
 let localMode = false;
 mock.module("@/lib/local-mode", () => ({
   probeLocalGatewayReady: probeLocalGatewayReadyMock,
@@ -90,7 +90,7 @@ mock.module("@/stores/organization-store", () => ({
     getState: () => ({ fetchOrganizations: fetchOrganizationsMock }),
   },
 }));
-// Whether the `Cadet-Organization-Id` source can answer yet. The managed hatch
+// Whether the `Cadet-Organization-Id` source can answer yet. The cloud hatch
 // holds its platform sequence on this; a warm store (the default) is ready on
 // the first synchronous check and adds no delay.
 let orgReadiness: OrgHeaderReadiness = "ready";
@@ -267,7 +267,7 @@ describe("useBackgroundHatch", () => {
     // The hatching screen provisioned this assistant in the foreground and
     // verified gateway readiness before handing off, so a live lockfile entry
     // for the handed-off id is adopted as ready outright — no managed hatch,
-    // no getAssistant poll (which could wedge on the platform when the gateway
+    // no getAssistant poll (which could wedge on the cloud when the gateway
     // token isn't observable yet), no readyz probe, no "Waking up" gate.
     lockfileEntries["ast-research"] = { assistantId: "ast-research" };
 
@@ -641,7 +641,7 @@ describe("useBackgroundHatch", () => {
     expect(resolved).toBeUndefined();
   });
 
-  test("a managed hatch in local mode writes no lockfile entry", async () => {
+  test("a cloud hatch in local mode writes no lockfile entry", async () => {
     // The desktop build's assistant list and switcher are the wrapping
     // client's responsibility now; the hatch flow itself only drives the
     // platform API and settles ready.
@@ -667,12 +667,12 @@ describe("useBackgroundHatch", () => {
   // -- local gateway routing ------------------------------------------------
   //
   // The paid funnel routes an org whose only assistants are local/self-hosted
-  // to the managed hatch (`hosting=cadet-cloud`), so `adoptExisting` is false
+  // to the cloud hatch (`hosting=cadet-cloud`), so `adoptExisting` is false
   // while the desktop build still holds a live gateway token and a primed
   // self-hosted connection. Both would rewrite discovery, healthz and the
   // onboarding writes to the old local gateway.
 
-  test("a managed hatch in local mode drops the local gateway before the hatch POST", async () => {
+  test("a cloud hatch in local mode drops the local gateway before the hatch POST", async () => {
     localMode = true;
 
     const { result } = renderHook(() => useBackgroundHatch());
@@ -755,10 +755,10 @@ describe("useBackgroundHatch", () => {
   //
   // Every platform call here is scoped by `Cadet-Organization-Id`, sourced
   // from a store that hydrates after auth. A checkout deep link can relaunch
-  // the app straight into this hook before that lands, so the managed sequence
+  // the app straight into this hook before that lands, so the cloud sequence
   // holds until the header source can answer.
 
-  test("a warm org store costs the managed hatch no delay", async () => {
+  test("a warm org store costs the cloud hatch no delay", async () => {
     // Microtasks only — no timer elapses — so a POST here proves the wait
     // short-circuits on its first synchronous check.
     const { result } = renderHook(() => useBackgroundHatch());
@@ -771,7 +771,7 @@ describe("useBackgroundHatch", () => {
     await waitFor(() => expect(result.current.ready).toBe(true));
   });
 
-  test("the managed hatch holds its POST until the org header resolves", async () => {
+  test("the cloud hatch holds its POST until the org header resolves", async () => {
     orgReadiness = "resolving";
 
     const { result } = renderHook(() => useBackgroundHatch());
@@ -780,7 +780,7 @@ describe("useBackgroundHatch", () => {
       result.current.start();
     });
 
-    // Nothing may address the platform while the header source is unresolved.
+    // Nothing may address the cloud while the header source is unresolved.
     // Sampled well inside the wait's ceiling, so the absence is the hold rather
     // than a hatch that already gave up.
     await expect(
@@ -808,7 +808,7 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.error).toBe(ORG_HEADER_MESSAGE));
-    // A header-less hatch would be rejected by the platform, so none is sent.
+    // A header-less hatch would be rejected by the cloud, so none is sent.
     expect(hatchAssistantMock).not.toHaveBeenCalled();
     expect(result.current.ready).toBe(false);
     await waitFor(() => expect(rejection?.message).toBe(ORG_HEADER_MESSAGE));

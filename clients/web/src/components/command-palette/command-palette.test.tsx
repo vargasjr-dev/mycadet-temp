@@ -382,7 +382,7 @@ describe("CommandPalette", () => {
  * The container is the window-size question and the keyboard hints are the
  * input-capability one, so the cases that matter are the two where the axes
  * disagree: a roomy tablet, and a desktop window narrowed past the breakpoint.
- * See `docs/PLATFORM_ADAPTATION.md`.
+ * See `docs/CLOUD_ADAPTATION.md`.
  */
 describe("CommandPalette keyboard hints", () => {
   const viewport = viewportAxesStub();

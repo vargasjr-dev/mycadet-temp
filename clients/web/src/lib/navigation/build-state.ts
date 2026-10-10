@@ -4,7 +4,7 @@ import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
-  isPlatformDisabled,
+  isCloudDisabled,
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import {
@@ -28,28 +28,28 @@ import {
 import type { NavigationState } from "./navigation-resolver";
 
 /**
- * Whether the active organization has a platform-hosted assistant — the only
- * kind a managed plan can apply to.
+ * Whether the active organization has a cloud-hosted assistant — the only
+ * kind a cloud plan can apply to.
  *
  * The org narrows the list only once it resolves. Before that every resolved
  * assistant counts: narrowing against an unresolved org would read an
- * established user's own managed assistant as absent (lockfile entries carry
+ * established user's own cloud assistant as absent (lockfile entries carry
  * an `organizationId`, and `assistantsValidForOrg` drops those that name a
  * different one).
  */
-function hasPlatformHostedAssistant(assistants: ResolvedAssistant[]): boolean {
+function hasCloudHostedAssistant(assistants: ResolvedAssistant[]): boolean {
   const activeOrganizationId = getActiveOrganizationIdForRequests();
   const scoped =
     activeOrganizationId == null
       ? assistants
       : assistantsValidForOrg(assistants, activeOrganizationId);
-  return scoped.some((assistant) => assistant.isPlatformHosted);
+  return scoped.some((assistant) => assistant.isCloudHosted);
 }
 
 export function buildNavigationState(
   overrides?: Partial<NavigationState>,
 ): NavigationState {
-  const { sessionStatus, platformSession } = useAuthStore.getState();
+  const { sessionStatus, cloudSession } = useAuthStore.getState();
   const { assistants, assistantsHydrated } =
     useResolvedAssistantsStore.getState();
   // The persisted key rather than the store slice: this runs inside route
@@ -58,22 +58,22 @@ export function buildNavigationState(
   const isRemoteGateway = isServedGatewayRuntime();
   return {
     isLocalClient: isLocalClient(),
-    isPlatformDisabled: isPlatformDisabled(),
+    isCloudDisabled: isCloudDisabled(),
     isRemoteGateway,
     remoteGatewayPublicPathPrefix: isRemoteGateway
       ? remoteGatewayPublicPathPrefix()
       : "",
     isGatewayAuth: isGatewayAuthMode(),
     hasAssistants: assistants.length > 0,
-    hasPlatformHostedAssistant: hasPlatformHostedAssistant(assistants),
+    hasCloudHostedAssistant: hasCloudHostedAssistant(assistants),
     sessionSettled: isSessionSettled(sessionStatus),
     // `isAuthenticated` mirrors `sessionStatus`. The local gateway is the sole
     // session authority (#35152), so a reachable local user is already
-    // `"authenticated"` — a platform `getSession()` 401 drops only
-    // `platformSession`, never `sessionStatus` (see `probePlatformSession`).
+    // `"authenticated"` — a cloud `getSession()` 401 drops only
+    // `cloudSession`, never `sessionStatus` (see `probeCloudSession`).
     // Reading the one source keeps this from drifting from `useIsAuthenticated()`.
     isAuthenticated: isAuthenticated(sessionStatus),
-    platformSession,
+    cloudSession,
     tosAccepted: readTosAccepted(),
     privacyConsent: readPrivacyConsent(),
     analyticsConsentCurrent: readAnalyticsConsentCurrent(),

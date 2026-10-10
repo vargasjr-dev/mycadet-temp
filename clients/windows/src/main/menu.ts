@@ -35,7 +35,7 @@ interface WindowsMenuOptions {
   installCli?: () => void;
 }
 
-let hasPlatformSession = false;
+let hasCloudSession = false;
 
 // Same flag the macOS menu reads; the renderer publishes it over IPC.
 const isDeveloperMenuEnabled = (): boolean =>
@@ -86,7 +86,7 @@ export const buildWindowsMenu = ({
           ]
         : []),
       { type: "separator" },
-      hasPlatformSession
+      hasCloudSession
         ? commandItem("Log Out", { kind: "logout" })
         : commandItem("Log In", { kind: "login" }),
       { type: "separator" },
@@ -185,8 +185,8 @@ export const installWindowsMenu = (options: WindowsMenuOptions): void => {
   };
 
   options.handle(MENU_SET_PLATFORM_SESSION, z.tuple([z.boolean()]), ([has]) => {
-    if (hasPlatformSession !== has) {
-      hasPlatformSession = has;
+    if (hasCloudSession !== has) {
+      hasCloudSession = has;
       apply();
     }
   });

@@ -6,11 +6,11 @@ import type { WorkspaceMigration } from "./types.js";
 /**
  * Fold `services.stt.mode` / `services.tts.mode` into the provider field.
  *
- * Managed speech used to be a second axis: `mode: "managed"` routed to Cadet
+ * Cloud speech used to be a second axis: `mode: "managed"` routed to Cadet
  * while `provider` held the untouched BYOK choice. Provider is now the only
- * axis, with `"cadet"` meaning managed, so a managed service must be rewritten
+ * axis, with `"cadet"` meaning managed, so a cloud service must be rewritten
  * to `provider: "cadet"` before the new schema reads it — otherwise the
- * lingering BYOK provider would be taken at face value and a managed user would
+ * lingering BYOK provider would be taken at face value and a cloud user would
  * silently fall back to a provider they have no key for.
  *
  * Idempotent: a config with no `mode` key is left untouched.
@@ -88,7 +88,7 @@ export const speechModeToProviderMigration: WorkspaceMigration = {
         continue;
       }
 
-      // What a managed service had chosen for BYOK before is not
+      // What a cloud service had chosen for BYOK before is not
       // recoverable — it was overwritten on the way up.
       service.mode = service.provider === "cadet" ? "managed" : "your-own";
       changed = true;

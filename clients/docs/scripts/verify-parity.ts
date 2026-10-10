@@ -1,6 +1,6 @@
 /**
- * End-to-end parity verification for the docs app against the platform route
- * snapshot (scripts/platform-route-snapshot.json). Written for the Phase 1
+ * End-to-end parity verification for the docs app against the cloud route
+ * snapshot (scripts/cloud-route-snapshot.json). Written for the Phase 1
  * port sign-off and reusable for the Phase 3 production cutover: point it at
  * any running instance (local `next start`, the Docker image, or the deployed
  * backend).
@@ -28,7 +28,7 @@ import {
 import { agentMarkdownPathForPage } from "../src/lib/agent-markdown-paths";
 import { SITE_URL } from "../src/lib/metadata";
 import { routes as urlRegistry } from "../src/lib/routes";
-import snapshot from "./platform-route-snapshot.json";
+import snapshot from "./cloud-route-snapshot.json";
 
 const CONCURRENCY = 8;
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -105,7 +105,7 @@ function verifyRouteTree(): void {
   );
   check(
     extra.length === 0,
-    `route tree: routes absent from the platform snapshot: ${extra.join(", ")}`,
+    `route tree: routes absent from the cloud snapshot: ${extra.join(", ")}`,
   );
 }
 

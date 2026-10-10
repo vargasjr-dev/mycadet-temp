@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
 import {
@@ -23,7 +23,7 @@ import {
   fetchManagedPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
-import { readPlatformToken } from "../lib/platform-client";
+import { readCloudToken } from "../lib/cloud-client";
 import { dockerResourceNames } from "../lib/docker";
 import { existsSync } from "fs";
 import {
@@ -448,7 +448,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     return;
   }
 
-  if (isManagedCloud(cloud)) {
+  if (isCloudHome(cloud)) {
     console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
 
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
@@ -590,7 +590,7 @@ async function getAssistantListHealth(
       : { status: "unknown", detail: "no runtime URL" };
   }
 
-  if (isManagedCloud(entry.cloud)) {
+  if (isCloudHome(entry.cloud)) {
     return checkManagedHealth(entry.runtimeUrl, entry.assistantId);
   }
 
@@ -630,13 +630,13 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
   // Sync cloud assistants (when logged in) before listing. Login status has
   // its own command — `cadet whoami` — so ps stays silent about it.
-  const platformToken = readPlatformToken();
-  if (!platformToken) {
+  const cloudToken = readCloudToken();
+  if (!cloudToken) {
     log?.("No platform token found — skipping cloud sync");
   } else {
     // A failed sync (offline, expired token) just means cloud-managed
     // assistants may be stale — the local list still renders.
-    await syncCloudAssistants(platformToken, { log });
+    await syncCloudAssistants(cloudToken, { log });
   }
   console.log("");
 

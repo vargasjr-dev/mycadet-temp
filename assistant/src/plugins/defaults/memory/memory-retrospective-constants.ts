@@ -65,7 +65,7 @@ export const SKILL_CARD_MESSAGE_KIND = "skill-authored-card";
  * Request-origin tag the fork wake stamps onto `ToolContext.requestOrigin`
  * (via the wake's tool-context pin). The permission checker scopes its
  * non-interactive skill-authoring auto-grant to this origin, so a retrospective
- * pass can call `scaffold_managed_skill` / `find_similar_skills` /
+ * pass can call `scaffold_cloud_skill` / `find_similar_skills` /
  * `skill_load skill-management` without an interactive approval prompt. Matches
  * the `"memory_retrospective"` member of `TitleOrigin`.
  */
@@ -73,7 +73,7 @@ export const MEMORY_RETROSPECTIVE_ORIGIN = "memory_retrospective";
 
 /**
  * Bundled skill that provides the retrospective's authoring tools
- * (`find_similar_skills`, `scaffold_managed_skill`, and the `skill_load`
+ * (`find_similar_skills`, `scaffold_cloud_skill`, and the `skill_load`
  * target). Preactivated for the fork wake so those tools join the turn's active
  * set from turn 1, and matched by the permission checker's origin-scoped grant.
  */

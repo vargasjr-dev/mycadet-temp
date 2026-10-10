@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { createPlatformAssistant } from "@/assistant/create-platform-assistant";
+import { createCloudAssistant } from "@/assistant/create-cloud-assistant";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 import { Input } from "@mycadet/design-library/components/input";
@@ -14,7 +14,7 @@ interface CreateAssistantDialogProps {
 
 /**
  * Name-prompt dialog for the tray "New Assistant…" command. Mirrors the native
- * client: prompt for an optional name, hatch an *additional* managed assistant
+ * client: prompt for an optional name, hatch an *additional* cloud assistant
  * (`mode: "create"`), and switch to it. Hosted in RootLayout and opened by the
  * `createAssistant` command handler. (Electron disables `window.prompt`, so a
  * real dialog is required rather than a native prompt.)
@@ -29,7 +29,7 @@ export function CreateAssistantDialog({
 
   const handleCreate = async () => {
     setPending(true);
-    const result = await createPlatformAssistant(name.trim() || undefined);
+    const result = await createCloudAssistant(name.trim() || undefined);
     setPending(false);
     if (result.ok) {
       toast.success(t("createAssistantDialog.toastSuccess"));

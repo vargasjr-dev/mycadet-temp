@@ -528,7 +528,7 @@ async function importBundle(
   let bundleBytes: Uint8Array;
   const contentType = headers["content-type"] ?? "";
   if (contentType.includes("multipart/form-data")) {
-    // Reconstruct a Request to use the platform's multipart parser
+    // Reconstruct a Request to use the cloud's multipart parser
     const syntheticReq = new Request("http://localhost", {
       method: "POST",
       headers: { "content-type": contentType },

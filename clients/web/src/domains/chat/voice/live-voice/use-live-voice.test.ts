@@ -3218,7 +3218,7 @@ describe("reconnecting signal", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Initial-connect resilience (JARVIS-1282): a managed/hands-free session's
+// Initial-connect resilience (JARVIS-1282): a cloud/hands-free session's
 // first connect must not flash `failed` for a transient pre-`ready` failure
 // (cold tunnel, token-mint blip) while the room's avatar animates in.
 // ---------------------------------------------------------------------------

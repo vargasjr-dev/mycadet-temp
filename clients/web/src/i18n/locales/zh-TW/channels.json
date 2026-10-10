@@ -156,7 +156,7 @@
     "subtitle": "設定您的助理如何傳送及接收電子郵件",
     "title": "電子郵件"
   },
-  "emailManagedContent": {
+  "emailCloudContent": {
     "addressLabel": "地址",
     "checkingSubscription": "正在檢查訂閱…",
     "completeSetup": "完成網域設定",

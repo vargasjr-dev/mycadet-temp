@@ -64,7 +64,7 @@ These are the fields a tool definition can set. Names and types come from `ToolD
 | `requesterDisplayName`          | `string?`                                  | Preferred display name for the requester.                                                                                     |
 | `channelPermissionChannelId`    | `string?`                                  | Slack channel id for channel-scoped permission enforcement.                                                                   |
 | `toolUseId`                     | `string?`                                  | The tool_use block id from the LLM response, used to correlate confirmation prompts with invocations.                         |
-| `isPlatformHosted`              | `boolean?`                                 | True when the assistant runs as a platform-managed remote instance. Used to auto-approve sandboxed bash tools.                |
+| `isCloudHosted`              | `boolean?`                                 | True when the assistant runs as a cloud-managed remote instance. Used to auto-approve sandboxed bash tools.                |
 | `transportInterface`            | `InterfaceId?`                             | Interface id of the connected client driving the turn (for example macos, chrome-extension).                                  |
 | `overrideProfile`               | `string?`                                  | Per-turn inference-profile override, forwarded when spawning nested subagents.                                                |
 | `sourceActorPrincipalId`        | `string?`                                  | Canonical principal id of the actor on whose behalf the invocation runs.                                                      |

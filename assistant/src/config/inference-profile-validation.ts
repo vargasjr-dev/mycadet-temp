@@ -9,7 +9,7 @@ import { getConfigReadOnly } from "./loader.js";
  * Resolved through the `llm.default`-aware conversation view, since
  * every caller (schedules, subagent spawns, per-conversation pins) runs chat
  * turns on the result. Managed backup routes remain available to automatic
- * fallback resolution, and the managed Jev profile to the verdict call
+ * fallback resolution, and the cloud Jev profile to the verdict call
  * sites, but neither is reported as a selectable profile here.
  */
 export function validateInferenceProfileKey(profile: string): string | null {

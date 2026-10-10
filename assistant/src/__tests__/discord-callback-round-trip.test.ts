@@ -90,7 +90,7 @@ describe("a Discord reply reaches the Discord transport", () => {
   test("Discord declines streaming rather than faking it", () => {
     // No primitive exists, so the transport omits the method and the caller
     // sends the finished reply. An implementation here would be a repeated
-    // edit, which is the approach the platforms discourage.
+    // edit, which is the approach the clouds discourage.
     expect(getTransportForCallback(DISCORD_CALLBACK)?.streamReply).toBe(
       undefined,
     );

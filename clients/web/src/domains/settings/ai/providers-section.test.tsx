@@ -5,7 +5,7 @@
  * The Default chip tracks the resolved default connection and its kebab
  * hides Delete; Set as default PUTs the explicit provider + connectionName;
  * assistants without the default-provider routes get no marker UI and no
- * status query; the managed Cadet row pins first with a Managed chip and
+ * status query; the cloud Cadet row pins first with a Managed chip and
  * no edit affordance; delete guards (409) surface as user-facing toasts.
  */
 
@@ -299,7 +299,7 @@ describe("ProvidersSection - kebab actions", () => {
     expect(items).not.toContain("Delete");
   });
 
-  test("the managed row's kebab carries only Set as default", async () => {
+  test("the cloud row's kebab carries only Set as default", async () => {
     renderSection();
     await waitFor(() => {
       expect(rows().length).toBe(3);

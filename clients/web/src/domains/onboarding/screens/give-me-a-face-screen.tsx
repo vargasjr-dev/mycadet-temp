@@ -35,7 +35,7 @@ import {
   pickAssistantName,
   type AssistantNamingSource,
 } from "@/domains/onboarding/prechat-names";
-import { useUnscopedManagedVoices } from "@/lib/tts/use-managed-voices";
+import { useUnscopedCloudVoices } from "@/lib/tts/use-cloud-voices";
 import { randomCharacterTraits } from "@/utils/avatar-random";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import type { CharacterTraits } from "@/types/avatar";
@@ -46,9 +46,9 @@ export interface GiveMeAFaceValues {
   traits: CharacterTraits;
   name: string;
   /**
-   * The managed voice belonging to the chosen avatar: what the user auditioned,
+   * The cloud voice belonging to the chosen avatar: what the user auditioned,
    * so the assistant has to speak in it. Null when the catalog never loaded, in
-   * which case the assistant keeps the platform default.
+   * which case the assistant keeps the cloud default.
    */
   voiceModel: string | null;
   /**
@@ -153,9 +153,9 @@ export function GiveMeAFaceScreen({
   // Each avatar has its own voice (see onboarding-avatar-voices), auditioned
   // from the catalog's hosted sample. Samples are static provider-side assets,
   // so an audition costs no synthesis and no credits. The catalog comes
-  // straight from the platform, so the audition is live as soon as this step
+  // straight from the cloud, so the audition is live as soon as this step
   // is, independent of the assistant hatching in the background.
-  const { voices, loading: voicesLoading } = useUnscopedManagedVoices({
+  const { voices, loading: voicesLoading } = useUnscopedCloudVoices({
     enabled: canAuditionVoice,
   });
   const centeredVoice = useMemo(

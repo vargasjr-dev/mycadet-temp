@@ -9,7 +9,7 @@ import type { TurnTelemetryEvent } from "./types.js";
 
 // Runtime contract test: events constructed with the daemon's types (the
 // shared fixtures are annotated with them) must parse against the generated
-// wire schemas — the same validation the platform's ingest serializers
+// wire schemas — the same validation the cloud's ingest serializers
 // apply. A daemon type whose values can't round-trip through
 // `telemetryEventSchema` produces events the server silently drops.
 

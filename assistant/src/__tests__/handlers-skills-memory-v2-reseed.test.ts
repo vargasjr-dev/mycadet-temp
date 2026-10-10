@@ -120,10 +120,10 @@ mock.module("../skills/catalog-search.js", () => ({
   filterByQuery: () => [],
 }));
 
-mock.module("../skills/managed-store.js", () => ({
-  createManagedSkill: () => ({ created: true }),
-  deleteManagedSkill: () => ({ deleted: true }),
-  validateManagedSkillId: () => null,
+mock.module("../skills/cloud-store.js", () => ({
+  createCloudSkill: () => ({ created: true }),
+  deleteCloudSkill: () => ({ deleted: true }),
+  validateCloudSkillId: () => null,
 }));
 
 mock.module("../plugins/defaults/memory/graph/capability-seed.js", () => ({
@@ -203,7 +203,7 @@ describe("v2 skill refresh delegation in skill handlers", () => {
   });
 
   test("uninstall delegates to refresh helper", async () => {
-    const result = await uninstallSkill("managed-skill");
+    const result = await uninstallSkill("cloud-skill");
 
     expect(result.success).toBe(true);
     expect(mockRefreshSkillCapabilityMemories).toHaveBeenCalledTimes(1);

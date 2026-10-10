@@ -83,7 +83,7 @@
           ]
         }
       },
-      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step.",
+      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (cloud-hosted). Requires an Unstructured account to authorize during the OAuth step.",
       "updatedAt": "2026-07-13T20:48:26.000Z"
     },
     {
@@ -504,7 +504,7 @@
     {
       "id": "llm-cost-optimizer",
       "name": "llm-cost-optimizer",
-      "description": "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to managed profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults.",
+      "description": "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to cloud profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults.",
       "metadata": {
         "emoji": "💸",
         "cadet": {
@@ -578,7 +578,7 @@
           "display-name": "MCP Setup"
         }
       },
-      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Auth flow differs by environment.",
+      "compatibility": "Works on both the Cadet desktop app (local daemon) and the Cadet web app (cloud-hosted). Auth flow differs by environment.",
       "updatedAt": "2026-09-14T10:34:19.000Z"
     },
     {
@@ -781,7 +781,7 @@
             "ngrok tunnel setup for a non-managed assistant"
           ],
           "avoid-when": [
-            "Running in a platform-managed assistant with platform callback routing available"
+            "Running in a cloud-managed assistant with platform callback routing available"
           ]
         }
       },

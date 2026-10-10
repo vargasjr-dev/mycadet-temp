@@ -148,7 +148,7 @@ export function OauthIntegrationsContent() {
                       Posts and direct messages
                     </td>
                     <td className="py-3">
-                      Paid. Per-call billing through Cadet credits at the platform rate.
+                      Paid. Per-call billing through Cadet credits at the cloud rate.
                     </td>
                   </tr>
                   <tr>
@@ -271,7 +271,7 @@ export function OauthIntegrationsContent() {
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
               <strong>Local vault:</strong> Tokens are stored in your workspace&apos;s local
-              credential vault, not on Cadet&apos;s servers. The platform never sees them.
+              credential vault, not on Cadet&apos;s servers. The cloud never sees them.
             </li>
             <li>
               <strong>LLM isolation:</strong> The LLM never receives raw tokens. When a
@@ -330,7 +330,7 @@ export function OauthIntegrationsContent() {
               <tbody className="[&>tr:nth-child(even)]:bg-zinc-50 dark:[&>tr:nth-child(even)]:bg-moss-900/30">
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                    Managed OAuth (free)
+                    Cloud OAuth (free)
                   </td>
                   <td className="py-3 pr-4">
                     Services where Cadet manages the OAuth app registration (Discord, GitHub, Google, HubSpot, Linear, Asana, Notion, Outlook, Todoist)
@@ -341,13 +341,13 @@ export function OauthIntegrationsContent() {
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                    Managed OAuth (billed)
+                    Cloud OAuth (billed)
                   </td>
                   <td className="py-3 pr-4">
                     Twitter (X) — Cadet manages the OAuth app, but the underlying API usage is billed per call.
                   </td>
                   <td className="py-3">
-                    API calls are billed through Cadet credits at the platform rate.
+                    API calls are billed through Cadet credits at the cloud rate.
                   </td>
                 </tr>
                 <tr>
@@ -366,8 +366,8 @@ export function OauthIntegrationsContent() {
           </div>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             Most integrations (GitHub, Notion, Linear, Google, Discord, Asana, Outlook,
-            Todoist, and HubSpot) are managed OAuth with no additional cost. Only Twitter (X)
-            managed OAuth incurs per-call billing through Cadet credits. BYOK is for
+            Todoist, and HubSpot) are cloud OAuth with no additional cost. Only Twitter (X)
+            cloud OAuth incurs per-call billing through Cadet credits. BYOK is for
             advanced cases where you bring your own API keys or enterprise OAuth apps.
           </p>
         </section>

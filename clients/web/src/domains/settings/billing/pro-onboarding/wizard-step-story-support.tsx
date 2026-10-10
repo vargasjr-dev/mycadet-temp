@@ -10,7 +10,7 @@ import { Modal } from "@mycadet/design-library/components/modal";
 
 import type { Assistant } from "@/generated/api/types.gen";
 
-/** An assistant on Pro, as the platform serves it. */
+/** An assistant on Pro, as the cloud serves it. */
 export function makeStoryAssistant(id: string): Assistant {
   return {
     id,

@@ -295,13 +295,13 @@ describe("GeminiEmbeddingBackend", () => {
     });
   });
 
-  describe("managed proxy transport", () => {
-    test("routes through managed proxy base URL when managedBaseUrl is set", async () => {
+  describe("cloud proxy transport", () => {
+    test("routes through cloud proxy base URL when cloudBaseUrl is set", async () => {
       const backend = new GeminiEmbeddingBackend(
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          managedBaseUrl:
+          cloudBaseUrl:
             "https://platform.example.com/v1/runtime-proxy/gemini",
         },
       );
@@ -335,7 +335,7 @@ describe("GeminiEmbeddingBackend", () => {
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          managedBaseUrl:
+          cloudBaseUrl:
             "https://platform.example.com/v1/runtime-proxy/gemini",
           taskType: "RETRIEVAL_DOCUMENT",
           dimensions: 3072,
@@ -358,7 +358,7 @@ describe("GeminiEmbeddingBackend", () => {
       }
     });
 
-    test("uses direct Google API URL when managedBaseUrl is not set", async () => {
+    test("uses direct Google API URL when cloudBaseUrl is not set", async () => {
       const backend = new GeminiEmbeddingBackend("direct-key", "test-model");
       await backend.embed(["hello"]);
 
@@ -370,12 +370,12 @@ describe("GeminiEmbeddingBackend", () => {
       expect(headers["Authorization"]).toBeUndefined();
     });
 
-    test("includes outputDimensionality with managed proxy", async () => {
+    test("includes outputDimensionality with cloud proxy", async () => {
       const backend = new GeminiEmbeddingBackend(
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          managedBaseUrl:
+          cloudBaseUrl:
             "https://platform.example.com/v1/runtime-proxy/gemini",
           dimensions: 3072,
         },
@@ -475,11 +475,11 @@ describe("GeminiEmbeddingBackend: batched text inputs", () => {
     expect(vectors.map((v) => v[0])).toEqual(texts(250).map(textIndex));
   });
 
-  test("managed text inputs use single calls from the first request and preserve vector order", async () => {
+  test("cloud text inputs use single calls from the first request and preserve vector order", async () => {
     const fetchMock = routedFetch();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     const backend = new GeminiEmbeddingBackend("test-key", "test-model", {
-      managedBaseUrl: "https://proxy.example.com/v1/runtime-proxy/gemini",
+      cloudBaseUrl: "https://proxy.example.com/v1/runtime-proxy/gemini",
       interCallDelayMs: 0,
     });
 

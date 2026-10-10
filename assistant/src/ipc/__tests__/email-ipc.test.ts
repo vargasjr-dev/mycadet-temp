@@ -2,8 +2,8 @@
  * Behavioral parity tests for the email CLI commands.
  *
  * Exercises the full IPC round-trip using a real AssistantIpcServer with a
- * mocked CadetPlatformClient. Validates that each email subcommand:
- *   - sends the correct HTTP request to the platform API
+ * mocked CadetCloudClient. Validates that each email subcommand:
+ *   - sends the correct HTTP request to the cloud API
  *   - surfaces success responses to the CLI caller
  *   - surfaces platform errors to the CLI caller
  */
@@ -20,7 +20,7 @@ import { runAssistantCommandFull } from "../../cli/__tests__/run-assistant-comma
 import { AssistantIpcServer } from "../assistant-server.js";
 
 // ---------------------------------------------------------------------------
-// Mock state — set up a controllable CadetPlatformClient at module boundary
+// Mock state — set up a controllable CadetCloudClient at module boundary
 // ---------------------------------------------------------------------------
 
 let mockFetchFn: (
@@ -31,10 +31,10 @@ let mockFetchFn: (
 
 const mockAssistantId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
-mock.module("../../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => ({
-      platformAssistantId: mockAssistantId,
+      cloudAssistantId: mockAssistantId,
       fetch: (path: string, init?: RequestInit) => mockFetchFn(path, init),
     }),
   },
@@ -361,7 +361,7 @@ test("send --json returns delivery_id", async () => {
   expect(process.exitCode).toBe(0);
 });
 
-test("send --attach reads the file and forwards base64 attachments to the platform", async () => {
+test("send --attach reads the file and forwards base64 attachments to the cloud", async () => {
   const dir = mkdtempSync(join(tmpdir(), "email-attach-"));
   const filePath = join(dir, "report.pdf");
   const fileBytes = "pdf-bytes-here";
@@ -413,7 +413,7 @@ test("send --attach reads the file and forwards base64 attachments to the platfo
   }
 });
 
-test("send with a missing --attach path fails without calling the platform", async () => {
+test("send with a missing --attach path fails without calling the cloud", async () => {
   let sendCalled = false;
   mockFetchFn = async (path) => {
     if (path.includes("/email-addresses/")) {

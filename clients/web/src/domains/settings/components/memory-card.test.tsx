@@ -21,13 +21,13 @@ mock.module("@/domains/settings/components/assistant-status-panel", () => ({
   }),
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "hidden",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "hidden",
 }));
 
 // Stub the login hook so importing the page doesn't pull the auth-store →
 // assistant/api → daemon SDK chain into this unit test (the gate is mocked to
-// a non-"disabled" value, so PlatformLoginNotice never renders here anyway).
+// a non-"disabled" value, so CloudLoginNotice never renders here anyway).
 mock.module("@/hooks/use-onboarding-login", () => ({
   useOnboardingLogin: () => ({
     loading: false,

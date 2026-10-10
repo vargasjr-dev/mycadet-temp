@@ -11,11 +11,11 @@ export const cloudHelp: CliCommandHelp = {
   helpText: `
 The cloud subsystem manages the connection to Cadet Cloud. Use
 'connect', 'status', and 'disconnect' to manage cloud credentials.
-Any assistant using the managed LLM proxy can use these commands.
+Any assistant using the cloud LLM proxy can use these commands.
 
 External service callbacks (Telegram webhooks, Twilio webhooks, email,
-OAuth redirects) route through the platform's gateway proxy via
-'callback-routes'. Works for both platform-managed and self-hosted
+OAuth redirects) route through the cloud's gateway proxy via
+'callback-routes'. Works for both cloud-managed and self-hosted
 assistants.
 
 Examples:
@@ -52,16 +52,16 @@ Reads platform-related environment variables and stored credentials to report
 the current platform deployment context and connection state.
 
 Fields:
-  isPlatform          Whether IS_PLATFORM is set (boolean)
-  baseUrl             CADET_PLATFORM_URL — the platform gateway base URL
+  isPlatform          Whether IS_CLOUD is set (boolean)
+  baseUrl             CADET_CLOUD_URL — the cloud gateway base URL
   assistantId         This assistant's platform UUID
   hasAssistantApiKey  Whether a stored assistant API key is available; null
                       when the credential store could not be read
   hasWebhookSecret    Whether a stored webhook secret is available (needed
                       for email and other inbound webhook channels)
   available           Whether callback registration prerequisites are satisfied
-  organizationId      The platform organization ID (from stored credentials)
-  userId              The platform user ID (from stored credentials)
+  organizationId      The cloud organization ID (from stored credentials)
+  userId              The cloud user ID (from stored credentials)
 
 For the Tunnel state (only relevant for Twilio webhooks and live
 voice/audio), use 'assistant gateway status' instead.
@@ -76,7 +76,7 @@ Examples:
         "Show the organization's credit balance, plan-credit usage, and daily-limit state",
       helpText: `
 Fetches the org's credit balance, plan-included credit usage, extra credit,
-upcoming expiry, today's spend, and daily-limit state from the platform
+upcoming expiry, today's spend, and daily-limit state from the cloud
 billing summary.
 
 Fields:
@@ -103,14 +103,14 @@ Fields:
   credits_expiring_soon  Credit on grants expiring within 30 days, in USD
   next_credit_expiry_at  Earliest upcoming grant expiry (ISO 8601), or null
 
-Grant fields are null when the platform does not report grant figures. Plan
+Grant fields are null when the cloud does not report grant figures. Plan
 credit mixes grants with different lifetimes (only the Pro bundle turns over
 with the billing cycle), so it has no single reset date. next_credit_expiry_at
 is the earliest expiry across all grants, plan-included or not, and
 'assistant cloud subscription' gives the billing cycle boundary.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud credits
@@ -121,7 +121,7 @@ Examples:
       description:
         "Show the organization's current plan and subscription state",
       helpText: `
-Fetches the org's plan and subscription state from the platform. Answers
+Fetches the org's plan and subscription state from the cloud. Answers
 "what plan am I on?".
 
 Fields:
@@ -130,7 +130,7 @@ Fields:
                       null on the base plan
   renewalDate         When the current period ends / the plan renews (ISO
                       8601), or null on the base plan
-  currentPeriodEnd    Same as renewalDate; mirrors the platform field
+  currentPeriodEnd    Same as renewalDate; mirrors the cloud field
   cancelAtPeriodEnd   True when the subscription is set to cancel at period end
   cancelAt            When the subscription cancels (ISO 8601), or null
   selectedCreditTier  The selected Pro credit bundle tier, or null
@@ -142,7 +142,7 @@ For the credit balance (not the plan), use 'assistant cloud credits'. For
 plan pricing, use 'assistant cloud plans'.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud subscription
@@ -152,7 +152,7 @@ Examples:
       name: "plans",
       description: "Show the plan catalog with pricing",
       helpText: `
-Fetches the platform plan catalog. Answers "how much does each plan cost?".
+Fetches the cloud plan catalog. Answers "how much does each plan cost?".
 
 Returns a "plans" array. Each entry has an "id" ("base" or "pro"), "name",
 "billing_interval", and "included_features". The base plan carries
@@ -163,7 +163,7 @@ For the org's OWN plan (not the catalog), use 'assistant cloud
 subscription'. For the credit balance, use 'assistant cloud credits'.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud plans
@@ -173,17 +173,17 @@ Examples:
       name: "invoices",
       description: "Read the organization's Stripe invoice history",
       helpText: `
-Invoices are read from the platform's billing invoices endpoint using this
+Invoices are read from the cloud's billing invoices endpoint using this
 assistant's platform API key. Amounts are Stripe-scaled integers; see
 'assistant cloud invoices list --help' for the scaling rules. 'created'
 is a Unix timestamp in seconds.
 
-The platform returns one page of invoices at a time (newest first). When
+The cloud returns one page of invoices at a time (newest first). When
 the response's 'has_more' is true, pass the last invoice's id via
 --starting-after to fetch the next (older) page.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud invoices list --json
@@ -202,7 +202,7 @@ Examples:
             },
           ],
           helpText: `
-Fetches one page of the org's Stripe invoice history from the platform,
+Fetches one page of the org's Stripe invoice history from the cloud,
 newest first.
 
 Fields:
@@ -229,7 +229,7 @@ Fields:
                       fetch them with --starting-after
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud invoices list --json
@@ -246,13 +246,13 @@ Examples:
             },
           ],
           helpText: `
-The platform has no per-invoice endpoint, so the assistant pages through
+The cloud has no per-invoice endpoint, so the assistant pages through
 the org's invoice list (newest first) until the ID matches. The lookup
 searches the most recent 2,500 invoices (25 pages) and errors if the ID
 is not found within that range.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure CADET_PLATFORM_URL is set and credentials are stored).
+ensure CADET_CLOUD_URL is set and credentials are stored).
 
 Examples:
   $ assistant cloud invoices get in_1AbCdEfGh
@@ -265,8 +265,8 @@ Examples:
       description: "Disconnect from Cadet Cloud by removing stored credentials",
       helpText: `
 Removes all stored cloud credentials from the assistant's secure
-credential store. After disconnecting, platform-managed features (managed
-proxy, managed OAuth, callback routing) will no longer be available until
+credential store. After disconnecting, cloud-managed features (managed
+proxy, cloud OAuth, callback routing) will no longer be available until
 you reconnect with 'assistant cloud connect'.
 
 Use 'assistant cloud status' to check the current connection state
@@ -280,7 +280,7 @@ Examples:
       name: "callback-routes",
       description: "Manage platform callback route registrations",
       helpText: `
-Callback routes tell the platform gateway how to forward inbound provider
+Callback routes tell the cloud gateway how to forward inbound provider
 webhooks to the correct assistant instance. Each route maps a callback path
 and type to a stable external URL that external services (Telegram, Twilio,
 email, OAuth providers) should use.
@@ -293,7 +293,7 @@ Examples:
       subcommands: [
         {
           name: "register",
-          description: "Register a callback route with the platform gateway",
+          description: "Register a callback route with the cloud gateway",
           options: [
             {
               flags: "--path <path>",
@@ -309,14 +309,14 @@ Examples:
             },
           ],
           helpText: `
-Registers a callback route with the platform's internal gateway endpoint so
-the platform knows how to forward inbound provider webhooks to this
-platform-managed assistant instance.
+Registers a callback route with the cloud's internal gateway endpoint so
+the cloud knows how to forward inbound provider webhooks to this
+cloud assistant instance.
 
 Arguments:
   --path    The path portion after the ingress base URL. Leading/trailing
-            slashes are stripped by the platform.
-  --type    The route type identifier used by the platform to classify and
+            slashes are stripped by the cloud.
+  --type    The route type identifier used by the cloud to classify and
             route the callback.
 
 Known callback path/type combinations:
@@ -328,8 +328,8 @@ Known callback path/type combinations:
   --path webhooks/email             --type email
   --path oauth/callback             --type oauth
 
-Works for both platform-managed and self-hosted assistants. Requires
-CADET_PLATFORM_URL and a platform assistant ID. Returns the platform-provided
+Works for both cloud-managed and self-hosted assistants. Requires
+CADET_CLOUD_URL and a cloud assistant ID. Returns the cloud-provided
 stable callback URL that external services should use.
 
 Examples:
@@ -340,11 +340,11 @@ Examples:
           name: "list",
           description: "List registered callback routes for this assistant",
           helpText: `
-Lists all callback routes registered with the platform for this assistant.
+Lists all callback routes registered with the cloud for this assistant.
 Shows the route type, callback URL, and path for each registered webhook.
 
 Requires cloud credentials (run 'assistant cloud connect' first or
-ensure IS_PLATFORM and CADET_PLATFORM_URL are set and credentials are stored).
+ensure IS_CLOUD and CADET_CLOUD_URL are set and credentials are stored).
 
 Examples:
   $ assistant cloud callback-routes list

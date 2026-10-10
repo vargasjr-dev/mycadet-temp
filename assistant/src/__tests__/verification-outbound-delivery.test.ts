@@ -84,7 +84,7 @@ const { startOutbound, resendOutbound } =
 /**
  * A destination shaped the way each channel's own addresses are.
  *
- * Email is absent: its transport goes through the platform client, which is a
+ * Email is absent: its transport goes through the cloud client, which is a
  * heavier boundary than this file's concern. It reaches delivery through the
  * same shared path as the two spec-driven channels here, so that path is
  * covered.

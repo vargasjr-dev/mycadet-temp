@@ -1,4 +1,4 @@
-import type { UseManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import type { UseCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import type { UseSttLanguageSelection } from "@/components/speech/use-stt-language-selection";
 /**
  * The voice key card, on the desktop host that has a helper to watch it.
@@ -22,8 +22,8 @@ import { MemoryRouter } from "react-router";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "asst-test",
 }));
-mock.module("@/components/speech/use-managed-voice-selection", () => ({
-  useManagedVoiceSelection: (): UseManagedVoiceSelection => ({
+mock.module("@/components/speech/use-cloud-voice-selection", () => ({
+  useCloudVoiceSelection: (): UseCloudVoiceSelection => ({
     available: false,
     isByok: false,
     settled: true,

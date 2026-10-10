@@ -284,20 +284,20 @@ describe("Permission Checker", () => {
       expect(result.decision).toBe("prompt");
     });
 
-    test("scaffold_managed_skill high risk → prompt", async () => {
+    test("scaffold_cloud_skill high risk → prompt", async () => {
       mockRisk("high");
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "my-skill" },
         "/tmp",
       );
       expect(result.decision).toBe("prompt");
     });
 
-    test("delete_managed_skill high risk → prompt", async () => {
+    test("delete_cloud_skill high risk → prompt", async () => {
       mockRisk("high");
       const result = await check(
-        "delete_managed_skill",
+        "delete_cloud_skill",
         { skill_id: "my-skill" },
         "/tmp",
       );
@@ -531,9 +531,9 @@ describe("Permission Checker", () => {
   // High risk, requiring explicit high-risk approval. Reads remain Low.
 
   describe("skill source mutation risk escalation (PR 29)", () => {
-    // Ensure the managed skills directory exists so that symlink-resolved
+    // Ensure the cloud skills directory exists so that symlink-resolved
     // paths (e.g. /private/var on macOS) match between normalizeFilePath
-    // and getManagedSkillsRoot.
+    // and getCloudSkillsRoot.
     function ensureSkillsDir(): void {
       mkdirSync(join(checkerTestDir, "skills"), { recursive: true });
     }

@@ -49,7 +49,7 @@ describe("config-setting-events-store", () => {
     });
   });
 
-  test("clamps oversize key and value to the platform bounds", () => {
+  test("clamps oversize key and value to the cloud bounds", () => {
     recordConfigSettingEvent({
       configKey: "k".repeat(200),
       configValue: "v".repeat(300),

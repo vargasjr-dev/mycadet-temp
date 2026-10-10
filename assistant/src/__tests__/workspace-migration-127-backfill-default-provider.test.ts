@@ -40,8 +40,8 @@ let originalIsPlatform: string | undefined;
 
 beforeEach(() => {
   freshWorkspace();
-  originalIsPlatform = process.env.IS_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  originalIsPlatform = process.env.IS_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
@@ -49,9 +49,9 @@ afterEach(() => {
     rmSync(workspaceDir, { recursive: true, force: true });
   }
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
 });
 
@@ -113,8 +113,8 @@ describe("127-backfill-default-provider", () => {
     ).toBeUndefined();
   });
 
-  test("IS_PLATFORM outranks a legacy provider signal", () => {
-    process.env.IS_PLATFORM = "1";
+  test("IS_CLOUD outranks a legacy provider signal", () => {
+    process.env.IS_CLOUD = "1";
     writeConfig({ llm: { default: { provider: "anthropic" } } });
 
     backfillDefaultProviderMigration.run(workspaceDir);
@@ -122,8 +122,8 @@ describe("127-backfill-default-provider", () => {
     expect(defaultProvider()).toEqual({ provider: "cadet" });
   });
 
-  test("IS_PLATFORM backfills cadet with no other signals", () => {
-    process.env.IS_PLATFORM = "true";
+  test("IS_CLOUD backfills cadet with no other signals", () => {
+    process.env.IS_CLOUD = "true";
     writeConfig({ llm: { profiles: {} } });
 
     backfillDefaultProviderMigration.run(workspaceDir);
@@ -131,8 +131,8 @@ describe("127-backfill-default-provider", () => {
     expect(defaultProvider()).toEqual({ provider: "cadet" });
   });
 
-  test("IS_PLATFORM never overwrites an existing defaultProvider value", () => {
-    process.env.IS_PLATFORM = "1";
+  test("IS_CLOUD never overwrites an existing defaultProvider value", () => {
+    process.env.IS_CLOUD = "1";
     writeConfig({
       llm: { defaultProvider: { provider: "anthropic" } },
     });
@@ -169,7 +169,7 @@ describe("127-backfill-default-provider", () => {
   });
 
   test("an empty connectionName invalidates the persisted object", () => {
-    process.env.IS_PLATFORM = "1";
+    process.env.IS_CLOUD = "1";
     writeConfig({
       llm: {
         defaultProvider: { provider: "anthropic", connectionName: "" },

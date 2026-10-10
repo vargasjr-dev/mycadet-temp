@@ -156,8 +156,8 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
   POST_CHECKOUT_HATCH_PARAM: "post_checkout",
 }));
 
-let hasPlatformSession = true;
-let platformSessionSettled = true;
+let hasCloudSession = true;
+let cloudSessionSettled = true;
 
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
@@ -165,8 +165,8 @@ mock.module("@/stores/auth-store", () => ({
       user: () => ({ id: USER_ID, firstName: "Alice", lastName: "Example" }),
     },
   },
-  useHasPlatformSession: () => hasPlatformSession,
-  useIsPlatformSessionSettled: () => platformSessionSettled,
+  useHasCloudSession: () => hasCloudSession,
+  useIsCloudSessionSettled: () => cloudSessionSettled,
 }));
 
 mock.module("@/utils/routes", () => ({
@@ -462,8 +462,8 @@ beforeEach(() => {
   localStorage.clear();
   adoptExistingAssistant = false;
   desktopAppPlatform = "macos";
-  hasPlatformSession = true;
-  platformSessionSettled = true;
+  hasCloudSession = true;
+  cloudSessionSettled = true;
   researchStatus = "idle";
   installedPlugins = [];
   establishedResult = { established: false, assistantName: null };
@@ -1227,12 +1227,12 @@ describe("ResearchOnboardingRoute hatch retry", () => {
 });
 
 // The claim-credits step ("integration") promises managed free credits, which
-// only a platform account can hold: a self-hosted onboarding with no platform
+// only a cloud account can hold: a self-hosted onboarding with no platform
 // login skips it (LUM-3028).
 describe("ResearchOnboardingRoute claim-credits skip", () => {
-  test("self-hosted without a platform session skips the claim-credits step", async () => {
+  test("self-hosted without a cloud session skips the claim-credits step", async () => {
     adoptExistingAssistant = true;
-    hasPlatformSession = false;
+    hasCloudSession = false;
     writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
 
     render(<ResearchOnboardingRoute />);
@@ -1246,9 +1246,9 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
     expect(screen.queryByTestId("integration-step")).toBeNull();
   });
 
-  test("self-hosted WITH a platform session keeps the claim-credits step", async () => {
+  test("self-hosted WITH a cloud session keeps the claim-credits step", async () => {
     adoptExistingAssistant = true;
-    hasPlatformSession = true;
+    hasCloudSession = true;
     writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
 
     render(<ResearchOnboardingRoute />);
@@ -1259,10 +1259,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
     );
   });
 
-  test("an unsettled platform-session probe keeps the claim-credits step", async () => {
+  test("an unsettled cloud-session probe keeps the claim-credits step", async () => {
     adoptExistingAssistant = true;
-    hasPlatformSession = false;
-    platformSessionSettled = false;
+    hasCloudSession = false;
+    cloudSessionSettled = false;
     writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
 
     render(<ResearchOnboardingRoute />);
@@ -1277,8 +1277,8 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
 
   test("a probe settling absent moves an on-screen claim-credits step to the reveal", async () => {
     adoptExistingAssistant = true;
-    hasPlatformSession = false;
-    platformSessionSettled = false;
+    hasCloudSession = false;
+    cloudSessionSettled = false;
     writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
 
     const { rerender } = render(<ResearchOnboardingRoute />);
@@ -1286,7 +1286,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       expect(screen.getByTestId("integration-step")).toBeTruthy(),
     );
 
-    platformSessionSettled = true;
+    cloudSessionSettled = true;
     rerender(<ResearchOnboardingRoute />);
 
     await waitFor(() =>
@@ -1296,7 +1296,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
 
   test("a snapshot resuming onto the skipped claim-credits step remaps to the research reveal", async () => {
     adoptExistingAssistant = true;
-    hasPlatformSession = false;
+    hasCloudSession = false;
     writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
 
     render(<ResearchOnboardingRoute />);

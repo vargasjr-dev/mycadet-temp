@@ -282,12 +282,12 @@ function localNativeSenderId(scopeId: string, assistantId: string): string {
 export function createNotificationIdentity(
   scopeId: string,
   assistantId: string,
-  platformAssistantId?: string | null,
+  cloudAssistantId?: string | null,
 ): NotificationIdentity | null {
   const normalizedScopeId = boundedIdentityPart(scopeId);
   const normalizedAssistantId = boundedIdentityPart(assistantId);
-  const platformIdCandidate = platformAssistantId?.trim();
-  const normalizedPlatformId =
+  const platformIdCandidate = cloudAssistantId?.trim();
+  const normalizedCloudId =
     platformIdCandidate && isUuid(platformIdCandidate)
       ? platformIdCandidate
       : null;
@@ -298,7 +298,7 @@ export function createNotificationIdentity(
     scopeId: normalizedScopeId,
     assistantId: normalizedAssistantId,
     nativeSenderId:
-      normalizedPlatformId ??
+      normalizedCloudId ??
       localNativeSenderId(normalizedScopeId, normalizedAssistantId),
   };
 }

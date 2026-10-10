@@ -10,7 +10,7 @@
  *
  * The subscription is driven from the SDK boundary the way the panel tests
  * drive it. The wallet status and the classifier are mocked: the real hooks
- * need the platform gate, the org store, and five daemon queries that these
+ * need the cloud gate, the org store, and five daemon queries that these
  * tests do not stand up.
  */
 
@@ -67,7 +67,7 @@ mock.module("@/hooks/use-billing-balance-status", () => ({
   }),
 }));
 
-/** The free-tier daily cap, where the platform is enforcing one. */
+/** The free-tier daily cap, where the cloud is enforcing one. */
 let freeTierEnforced = false;
 let freeTierLimit: string | null = null;
 let freeTierSpend: string | null = null;
@@ -99,7 +99,7 @@ mock.module("@/hooks/use-byok-credit-banner-gate", () => ({
     return {
       suppress: false,
       settled: !candidate || classifierAnswered,
-      routeBurnsManaged: classifierAnswered,
+      routeBurnsCloud: classifierAnswered,
     };
   },
 }));

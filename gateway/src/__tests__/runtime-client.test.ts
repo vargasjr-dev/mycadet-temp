@@ -340,7 +340,7 @@ describe("resolvePublicHttpBaseUrl", () => {
     expect(result).toBe("https://assistant.example.com");
   });
 
-  test("does not read the platform assistant id when the config URL resolves", async () => {
+  test("does not read the cloud assistant id when the config URL resolves", async () => {
     const platformIdGetter = getId("assistant-123");
     await resolvePublicHttpBaseUrl(
       makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),

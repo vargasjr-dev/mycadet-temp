@@ -7,7 +7,7 @@ import {
 
 const BASE: InboxStatusInputs = {
   gate: "full",
-  platformAssistantId: "asst-platform",
+  cloudAssistantId: "asst-platform",
   entitlements: { managed_email: true },
   subscriptionFailed: false,
   addressCount: 1,
@@ -15,11 +15,11 @@ const BASE: InboxStatusInputs = {
 };
 
 describe("resolveInboxStatus", () => {
-  test("loads while the platform gate is still pending", () => {
+  test("loads while the cloud gate is still pending", () => {
     expect(resolveInboxStatus({ ...BASE, gate: "pending" })).toBe("loading");
   });
 
-  test("is unavailable off the platform, whatever else is known", () => {
+  test("is unavailable off the cloud, whatever else is known", () => {
     expect(resolveInboxStatus({ ...BASE, gate: "gated" })).toBe("unavailable");
     expect(resolveInboxStatus({ ...BASE, gate: "disabled" })).toBe(
       "unavailable",
@@ -49,8 +49,8 @@ describe("resolveInboxStatus", () => {
     ).toBe("ready");
   });
 
-  test("loads until the platform id and the address list are in", () => {
-    expect(resolveInboxStatus({ ...BASE, platformAssistantId: null })).toBe(
+  test("loads until the cloud id and the address list are in", () => {
+    expect(resolveInboxStatus({ ...BASE, cloudAssistantId: null })).toBe(
       "loading",
     );
     expect(resolveInboxStatus({ ...BASE, addressCount: undefined })).toBe(

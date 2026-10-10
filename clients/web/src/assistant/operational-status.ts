@@ -1,5 +1,5 @@
 /**
- * Operational-status polling for platform-hosted assistants.
+ * Operational-status polling for cloud-hosted assistants.
  *
  * Uses the generated platform SDK (`assistantsOperationalStatusDetailRead`)
  * for the HTTP call and `assistantsOperationalStatusDetailReadOptions()` for
@@ -23,9 +23,9 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { AssistantState } from "@/assistant/types";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { getSSEConnectedSnapshot } from "@/stores/sse-connected-store";
@@ -48,19 +48,19 @@ function clampPollMs(value: number | null | undefined): number {
 
 function canPollOperationalStatus({
   assistantState,
-  activeAssistantIsPlatformHosted,
-  targetIsKnownPlatformHostedAssistant,
+  activeAssistantIsCloudHosted,
+  targetIsKnownCloudHostedAssistant,
   targetIsLifecycleOperationAssistant,
 }: {
   assistantState: AssistantState;
-  activeAssistantIsPlatformHosted: boolean;
-  targetIsKnownPlatformHostedAssistant: boolean;
+  activeAssistantIsCloudHosted: boolean;
+  targetIsKnownCloudHostedAssistant: boolean;
   targetIsLifecycleOperationAssistant: boolean;
 }): boolean {
   return (
     targetIsLifecycleOperationAssistant ||
-    targetIsKnownPlatformHostedAssistant ||
-    (assistantState.kind === "active" && activeAssistantIsPlatformHosted)
+    targetIsKnownCloudHostedAssistant ||
+    (assistantState.kind === "active" && activeAssistantIsCloudHosted)
   );
 }
 
@@ -74,7 +74,7 @@ const lastStatusSignatureByAssistant = new Map<string, string>();
 /**
  * Record an operational-status transition into the durable lifecycle
  * diagnostics ring so the support-feedback export captures *why* the
- * banner changed — the platform only returns this over the wire, it is
+ * banner changed — the cloud only returns this over the wire, it is
  * never otherwise persisted client-side, and the assistant pod itself
  * has no knowledge of the control-plane → vembda status query.
  *
@@ -138,7 +138,7 @@ async function fetchOperationalStatus(
 
 export function useAssistantOperationalStatus(assistantId: string | null) {
   const hasResponded = useAssistantRespondedSinceStatus(assistantId);
-  const platformApiGate = usePlatformGate();
+  const platformApiGate = useCloudGate();
   const assistantState = useAssistantLifecycleStore.use.assistantState();
   const operationalStatusAssistantId =
     useAssistantLifecycleStore.use.operationalStatusAssistantId();
@@ -147,12 +147,12 @@ export function useAssistantOperationalStatus(assistantId: string | null) {
       ? state.assistants.find((assistant) => assistant.id === assistantId)
       : undefined,
   );
-  const activeAssistantIsPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const activeAssistantIsCloudHosted = useActiveAssistantIsCloudHosted();
   const isOrgReady = useIsOrgReady();
   const targetIsLifecycleOperationAssistant =
     Boolean(assistantId) && assistantId === operationalStatusAssistantId;
-  const targetIsKnownPlatformHostedAssistant =
-    targetAssistant?.isPlatformHosted === true &&
+  const targetIsKnownCloudHostedAssistant =
+    targetAssistant?.isCloudHosted === true &&
     targetAssistant.isLocal === false;
   const enabled =
     Boolean(assistantId) &&
@@ -160,8 +160,8 @@ export function useAssistantOperationalStatus(assistantId: string | null) {
     isOrgReady &&
     canPollOperationalStatus({
       assistantState,
-      activeAssistantIsPlatformHosted,
-      targetIsKnownPlatformHostedAssistant,
+      activeAssistantIsCloudHosted,
+      targetIsKnownCloudHostedAssistant,
       targetIsLifecycleOperationAssistant,
     });
 
@@ -212,7 +212,7 @@ export function isHealthyOperationalStatus(
 /**
  * Whether the daemon can serve requests in each operational state.
  *
- * Exhaustive over the generated enum, so a state added to the platform schema
+ * Exhaustive over the generated enum, so a state added to the cloud schema
  * is a compile error here rather than picking up a silent default. Which way a
  * new state goes is a real decision, and the two mistakes are not symmetric:
  * wrongly closing the gate blanks a working assistant's sidebar until the
@@ -250,7 +250,7 @@ const DAEMON_SERVES_IN_STATE: Record<OperationalStatusStateEnum, boolean> = {
  * run: either the pod is serving, or its health is not knowable from here.
  *
  * The distinction the caller needs is not "healthy" but "not known to be
- * down". Operational status is a platform-only signal: it is `null` for local
+ * down". Operational status is a cloud-only signal: it is `null` for local
  * and self-hosted assistants, for an org whose platform gate is not `"full"`,
  * and for any 403/404, and it is `undefined` until the first poll resolves.
  * Treating any of those as "not serving" would strand every assistant whose

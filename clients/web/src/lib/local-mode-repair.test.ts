@@ -93,7 +93,7 @@ beforeEach(() => {
 afterEach(() => {
   useLockfileStore.setState({ lockfile: null });
   localStorage.clear();
-  process.env.VITE_PLATFORM_MODE = "true";
+  process.env.VITE_CLOUD_MODE = "true";
 });
 
 describe("primeLocalGatewayConnectionWithRepair", () => {
@@ -120,7 +120,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     // binding backfill lands, so the mint answers 401 for a while. Waiting
     // heals it; a plain wake cannot re-lease the mint and would restart an
     // already-starting gateway.
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       if (mintAttempts++ < 2) {
@@ -135,7 +135,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   });
 
   test("a mint 401 that survives the ride-out surfaces without waking", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       mintAttempts++;
@@ -153,7 +153,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   });
 
   test("a transport error that later succeeds reconnects without waking", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       if (mintAttempts++ < 2) {
@@ -168,7 +168,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   });
 
   test("a transport error that survives the ride-out wakes once, then reconnects", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       mintAttempts++;
@@ -214,7 +214,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     // Wake is cloud:"local"-only (it refuses paired entries), so a paired
     // connect failure must propagate immediately instead of spawning a wake
     // that is guaranteed to refuse.
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     const paired: LockfileAssistant = {
       assistantId: "paired-a",
       cloud: "paired",
@@ -256,7 +256,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   test("recovers a portless legacy assistant: wakes, reloads the port, then retries", async () => {
     // The Swift→Electron import case: a legacy entry reaches the renderer with
     // no recorded gateway port, so the first prime can't resolve a gateway.
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     const portless: LockfileAssistant = {
       assistantId: "local-a",
       cloud: "local",
@@ -371,7 +371,7 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
 
 describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   test("rides out a still-starting gateway (503) without waking, then connects", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       if (mintAttempts++ < 2) {
@@ -392,7 +392,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
     // guardian-binding backfill lands, so the mint answers a transient 401 for a
     // few seconds. Boot must ride that out (never waking) so the persisted local
     // assistant restores itself instead of bouncing to the recovery controls.
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       if (mintAttempts++ < 2) {
@@ -407,7 +407,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   });
 
   test("does not ride out a 403 boundary refusal, surfaces immediately", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       mintAttempts++;
@@ -426,7 +426,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   });
 
   test("rides out a transport error (Login Item port not bound yet) without waking, then connects", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       if (mintAttempts++ < 2) {
@@ -445,7 +445,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
     // assistant look. Boot rides the budget (never waking) so a starting
     // gateway can bind its port. A stopped assistant still reaches the chooser
     // after the budget, where connect-with-repair may wake it.
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let mintAttempts = 0;
     ensureGatewayTokenImpl = async () => {
       mintAttempts++;
@@ -462,7 +462,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   });
 
   test("does not ride out a missing guardian token, surfaces immediately", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     fetchGuardianTokenHost = mock(async () => {
       throw new GuardianTokenError(404, "token gone");
     });
@@ -478,7 +478,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   });
 
   test("does not ride out a guardian 500 (malformed file, spawn, or timeout)", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     fetchGuardianTokenHost = mock(async () => {
       throw new GuardianTokenError(500, "Guardian token refresh timed out");
     });
@@ -494,7 +494,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   });
 
   test("rides out a guardian refresh 503 without waking, then connects", async () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     let fetches = 0;
     fetchGuardianTokenHost = mock(async (_id: string) => {
       fetches++;

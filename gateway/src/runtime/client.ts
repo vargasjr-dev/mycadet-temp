@@ -397,12 +397,12 @@ function extractPlatformCallbackAssistantId(
 
 function resolveTunnelBaseWssUrl(
   config: GatewayConfig,
-  platformAssistantId?: string,
+  cloudAssistantId?: string,
 ): string | undefined {
-  if (!config.tunnelBaseUrl || !platformAssistantId) return undefined;
+  if (!config.tunnelBaseUrl || !cloudAssistantId) return undefined;
 
   const withPath =
-    config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
+    config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + cloudAssistantId;
   const normalizedTunnelUrl = normalizePublicBaseUrl(withPath);
   return normalizedTunnelUrl
     ? toWebSocketBaseUrl(normalizedTunnelUrl)
@@ -418,7 +418,7 @@ function resolveTunnelBaseWssUrl(
  * 2. `ingress.publicBaseUrl` from the config file when it is a real public
  *    gateway base URL — written by Tunnel after tunnel registration, or set
  *    manually for self-hosted.
- * 3. `TUNNEL_BASE_URL` + the platform assistant ID from a configured callback
+ * 3. `TUNNEL_BASE_URL` + the cloud assistant ID from a configured callback
  *    URL or credential cache.
  *
  * Returns `undefined` when no source provides a value — the placeholder
@@ -428,7 +428,7 @@ function resolveTunnelBaseWssUrl(
 export function resolvePublicBaseWssUrl(
   config: GatewayConfig,
   configFile?: ConfigFileCache,
-  platformAssistantId?: string,
+  cloudAssistantId?: string,
   validatedPublicUrl?: string,
 ): string | undefined {
   const raw = configFile?.getString("ingress", "publicBaseUrl");
@@ -450,7 +450,7 @@ export function resolvePublicBaseWssUrl(
 
   return resolveTunnelBaseWssUrl(
     config,
-    configuredCallbackAssistantId ?? platformAssistantId,
+    configuredCallbackAssistantId ?? cloudAssistantId,
   );
 }
 
@@ -462,12 +462,12 @@ export function resolvePublicBaseWssUrl(
  * Sources (in priority order):
  * 1. `ingress.publicBaseUrl` from the config file — written by Tunnel after
  *    tunnel registration, or set manually for self-hosted.
- * 2. `TUNNEL_BASE_URL` + the platform assistant ID. This mirrors the Twilio
+ * 2. `TUNNEL_BASE_URL` + the cloud assistant ID. This mirrors the Twilio
  *    resolver's fallback and stays valid even while the tunnel is briefly
  *    disconnected (Tunnel clears the config value on every reconnect), so
  *    these links no longer break on a tunnel flap.
  *
- * The platform assistant ID is read through a lazy getter so callers that
+ * The cloud assistant ID is read through a lazy getter so callers that
  * resolve from the config value (self-hosted / manual URL) never load
  * identity. A transient credential-store outage must not fail those callers.
  *
@@ -492,8 +492,8 @@ export async function resolvePublicHttpBaseUrl(
 }
 
 /**
- * Build the `TUNNEL_BASE_URL/<platform-assistant-id>` fallback base URL. Only
- * reads the platform assistant ID (via the getter) when `tunnelBaseUrl` is
+ * Build the `TUNNEL_BASE_URL/<cloud-assistant-id>` fallback base URL. Only
+ * reads the cloud assistant ID (via the getter) when `tunnelBaseUrl` is
  * configured, so it's skipped entirely on self-hosted deployments.
  */
 async function resolveTunnelHttpFallback(
@@ -501,9 +501,9 @@ async function resolveTunnelHttpFallback(
   getCloudAssistantId?: () => Promise<string | undefined>,
 ): Promise<string | undefined> {
   if (!config.tunnelBaseUrl || !getCloudAssistantId) return undefined;
-  const platformAssistantId = await getCloudAssistantId();
-  if (!platformAssistantId) return undefined;
-  return config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + platformAssistantId;
+  const cloudAssistantId = await getCloudAssistantId();
+  if (!cloudAssistantId) return undefined;
+  return config.tunnelBaseUrl.replace(/\/+$/, "") + "/" + cloudAssistantId;
 }
 
 /**

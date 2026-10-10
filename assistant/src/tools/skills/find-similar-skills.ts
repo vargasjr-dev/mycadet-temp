@@ -2,16 +2,16 @@ import type { SkillSource } from "../../config/skills.js";
 import { loadSkillCatalog } from "../../config/skills.js";
 import { MEMORY_RETROSPECTIVE_ORIGIN } from "../../plugins/defaults/memory/memory-retrospective-constants.js";
 import { nearestExistingSkills } from "../../plugins/defaults/memory/v3/candidate-match.js";
-import { readInstallMeta } from "../../skills/install-meta.js";
-import {
-  getManagedSkillDir,
-  readStoredManagedSkill,
-  type StoredManagedSkill,
-} from "../../skills/managed-store.js";
 import {
   filterSkillsByPlatform,
   type SkillPlatform,
-} from "../../skills/platform-compatibility.js";
+} from "../../skills/cloud-compatibility.js";
+import {
+  getCloudSkillDir,
+  readStoredCloudSkill,
+  type StoredCloudSkill,
+} from "../../skills/cloud-store.js";
+import { readInstallMeta } from "../../skills/install-meta.js";
 import { throwIfCancelled } from "../shared/abort.js";
 import type { OwnerInfo, ToolContext, ToolExecutionResult } from "../types.js";
 
@@ -32,7 +32,7 @@ import type { OwnerInfo, ToolContext, ToolExecutionResult } from "../types.js";
  * refinement is a whole-file overwrite and the pass has no other read path:
  * its `skill_load` grant covers skill-management alone, and loading would
  * stamp `lastUsedAt` and count as usage. Fields are spelled as
- * `scaffold_managed_skill`'s own arguments so the pass carries forward what
+ * `scaffold_cloud_skill`'s own arguments so the pass carries forward what
  * it is not changing without translating names.
  */
 interface EnrichedHit {
@@ -45,7 +45,7 @@ interface EnrichedHit {
   current?: CurrentSkill;
 }
 
-/** The refinable skill's present content, in `scaffold_managed_skill` argument names. */
+/** The refinable skill's present content, in `scaffold_cloud_skill` argument names. */
 interface CurrentSkill {
   name: string;
   description: string;
@@ -79,7 +79,7 @@ export async function executeFindSimilarSkills(
       owner?: OwnerInfo;
       platforms?: SkillPlatform[];
     }[];
-    readStoredManagedSkill?: (skillId: string) => StoredManagedSkill | null;
+    readStoredCloudSkill?: (skillId: string) => StoredCloudSkill | null;
   } = {},
 ): Promise<ToolExecutionResult> {
   const goal = input.goal;
@@ -107,7 +107,7 @@ export async function executeFindSimilarSkills(
 
   const findNearest = deps.nearestExistingSkills ?? nearestExistingSkills;
   const loadCatalog = deps.loadCatalog ?? (() => loadSkillCatalog());
-  const readStored = deps.readStoredManagedSkill ?? readStoredManagedSkill;
+  const readStored = deps.readStoredCloudSkill ?? readStoredCloudSkill;
 
   const catalog = loadCatalog();
   const byId = new Map(catalog.map((s) => [s.id, s]));
@@ -163,7 +163,7 @@ export async function executeFindSimilarSkills(
     // meta read leaves `author` undefined rather than throwing.
     const author =
       skill.source === "managed"
-        ? readManagedSkillAuthor(hit.skillId)
+        ? readCloudSkillAuthor(hit.skillId)
         : undefined;
     // Only a refinable hit pays for the disk read, and a failed read drops
     // `current` rather than the hit: the pass can still skip a skill it
@@ -202,15 +202,15 @@ export async function executeFindSimilarSkills(
 }
 
 /**
- * Read a managed skill's install-meta author, if any. Best-effort: any failure
+ * Read a cloud skill's install-meta author, if any. Best-effort: any failure
  * (missing dir, malformed meta, untagged skill) resolves to undefined so the
  * enrichment loop never throws on a single bad hit.
  */
-function readManagedSkillAuthor(
+function readCloudSkillAuthor(
   skillId: string,
 ): "assistant" | "user" | undefined {
   try {
-    return readInstallMeta(getManagedSkillDir(skillId))?.author;
+    return readInstallMeta(getCloudSkillDir(skillId))?.author;
   } catch {
     return undefined;
   }

@@ -35,7 +35,7 @@ describe("FreeTierDailyLimitBanner", () => {
 
     expect(getByText("Daily free usage used up")).toBeTruthy();
     expect(getByText(/You've used today's free usage\./)).toBeTruthy();
-    // No skip and no settings: the cap is the platform's, not a setting.
+    // No skip and no settings: the cap is the cloud's, not a setting.
     expect(queryByText("Skip for today")).toBeNull();
     expect(queryByText("Settings")).toBeNull();
   });

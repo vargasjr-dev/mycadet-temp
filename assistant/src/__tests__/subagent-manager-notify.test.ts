@@ -38,8 +38,8 @@ import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.j
 import { SubagentManager } from "../subagent/manager.js";
 import type { SubagentState } from "../subagent/types.js";
 
-/** Minimal shape matching the private ManagedSubagent interface for test injection. */
-interface FakeManagedSubagent {
+/** Minimal shape matching the private CloudSubagent interface for test injection. */
+interface FakeCloudSubagent {
   runInFlight?: boolean;
   conversation: {
     abort: () => void;
@@ -73,10 +73,10 @@ interface FakeManagedSubagent {
 
 /** Type-safe accessor for SubagentManager's private internals via bracket notation. */
 interface ManagerInternals {
-  subagents: Map<string, FakeManagedSubagent>;
+  subagents: Map<string, FakeCloudSubagent>;
   parentToChildren: Map<string, Set<string>>;
   runSubagent: (subagentId: string, objective: string) => Promise<void>;
-  releaseConversation: (managed: FakeManagedSubagent) => void;
+  releaseConversation: (managed: FakeCloudSubagent) => void;
   stopSweep: () => void;
 }
 
@@ -94,7 +94,7 @@ function injectFakeSubagent(
   state: SubagentState,
   parentSendToClient?: (msg: AssistantEvent) => void,
 ): void {
-  const fakeSession: FakeManagedSubagent["conversation"] = {
+  const fakeSession: FakeCloudSubagent["conversation"] = {
     abort: () => {},
     dispose: () => {},
     messages: [],

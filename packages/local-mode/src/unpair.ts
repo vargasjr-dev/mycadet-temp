@@ -16,7 +16,7 @@ import { withLockfileLock } from "./lockfile-lock";
  * `cadet unpair`: the remote assistant itself is never touched (host-side
  * device revocation is `cadet devices`). Only pairing records
  * (`cloud: "paired"`, created by `cadet connect import`) are forgettable this
- * way; local and managed assistants go through retire.
+ * way; local and cloud assistants go through retire.
  */
 export function unpairAssistant(
   lockfilePaths: string[],
@@ -53,7 +53,7 @@ function unpairAssistantLocked(
       ok: false,
       status: 400,
       error:
-        "Only paired assistants can be unpaired. Use retire for local or managed assistants.",
+        "Only paired assistants can be unpaired. Use retire for local or cloud assistants.",
     };
   }
 

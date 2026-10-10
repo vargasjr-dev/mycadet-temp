@@ -5,7 +5,7 @@
  * POST /v1/internal/telemetry/auth-fallback — record aggregated counts of
  * requests served via the legacy loopback auth fallback. The gateway counts
  * fallbacks in memory and flushes them here per window; the usage telemetry
- * reporter ships the persisted rows to the platform.
+ * reporter ships the persisted rows to the cloud.
  *
  * POST /v1/internal/telemetry/watchdog — relay a gateway-origin watchdog
  * event straight to platform ingest via the direct (unbuffered) emit path,
@@ -16,7 +16,7 @@
 
 import { z } from "zod";
 
-import { getRawShareAnalytics } from "../../platform/consent-cache.js";
+import { getRawShareAnalytics } from "../../cloud/consent-cache.js";
 import {
   type AuthFallbackCount,
   recordAuthFallbackCounts,

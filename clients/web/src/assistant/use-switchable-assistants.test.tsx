@@ -18,7 +18,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalAssistant: (a: { cloud?: string }) =>
     a.cloud === "local" || a.cloud === "docker",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
-  isPlatformAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
+  isCloudAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
 }));
 
 let organizationId: string | null = "org-1";
@@ -26,9 +26,9 @@ mock.module("@/stores/organization-store", () => ({
   useRequestOrganizationId: () => organizationId,
 }));
 
-let hasPlatformSession = true;
+let hasCloudSession = true;
 mock.module("@/stores/auth-store", () => ({
-  useHasPlatformSession: () => hasPlatformSession,
+  useHasCloudSession: () => hasCloudSession,
 }));
 
 const { useResolvedAssistantsStore } =
@@ -45,7 +45,7 @@ const platform = (
   id,
   name: id,
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
   ...overrides,
 });
@@ -62,7 +62,7 @@ beforeEach(() => {
   localClient = false;
   servedGatewayRuntime = false;
   organizationId = "org-1";
-  hasPlatformSession = true;
+  hasCloudSession = true;
   seed([]);
 });
 
@@ -108,7 +108,7 @@ describe("useSwitchableAssistants list", () => {
       platform("a1"),
       platform("lo1", {
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         cloud: undefined,
         ingressUrl: null,
       }),
@@ -117,13 +117,13 @@ describe("useSwitchableAssistants list", () => {
     expect(run().assistants.map((a) => a.id)).toEqual(["a1"]);
   });
 
-  test("without a platform session only paired entries survive", () => {
-    hasPlatformSession = false;
+  test("without a cloud session only paired entries survive", () => {
+    hasCloudSession = false;
     seed([
       platform("a1"),
       platform("pr1", {
         isPaired: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         cloud: "paired",
       }),
     ]);
@@ -134,17 +134,17 @@ describe("useSwitchableAssistants list", () => {
   });
 
   test("local entries count only on a local client, with no org required", () => {
-    hasPlatformSession = false;
+    hasCloudSession = false;
     organizationId = null;
     const locals = [
       platform("lo1", {
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         cloud: "local",
       }),
       platform("lo2", {
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         cloud: "local",
       }),
     ];

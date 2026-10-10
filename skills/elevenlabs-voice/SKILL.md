@@ -18,17 +18,17 @@ ElevenLabs provides text-to-speech voices for both **in-app TTS** and **phone ca
 voice_config_update setting="tts_voice_id" value="<voice-id>"
 ```
 
-> **The voice lives under the _active_ provider, not always ElevenLabs.** The config key depends on `services.tts.provider`: `elevenlabs` → `services.tts.providers.elevenlabs.voiceId`, `cadet` (managed) → `services.tts.providers.cadet.model`, `deepgram` → `services.tts.providers.deepgram.model`. The `voice_config_update` tool (and the `assistant tts voice <id>` CLI command) handle this routing for you. **Do NOT `assistant config set services.tts.providers.elevenlabs.voiceId ...` blindly** — on a managed (`cadet`) assistant that field is ignored, so the write "succeeds" but the voice never changes. See [Setting the voice](#setting-the-voice) for the CLI fallback.
+> **The voice lives under the _active_ provider, not always ElevenLabs.** The config key depends on `services.tts.provider`: `elevenlabs` → `services.tts.providers.elevenlabs.voiceId`, `cadet` (managed) → `services.tts.providers.cadet.model`, `deepgram` → `services.tts.providers.deepgram.model`. The `voice_config_update` tool (and the `assistant tts voice <id>` CLI command) handle this routing for you. **Do NOT `assistant config set services.tts.providers.elevenlabs.voiceId ...` blindly** — on a cloud (`cadet`) assistant that field is ignored, so the write "succeeds" but the voice never changes. See [Setting the voice](#setting-the-voice) for the CLI fallback.
 >
-> **The tables below apply when the active provider is `elevenlabs` (BYO key) or managed `cadet`.** On managed assistants they are the _only_ ElevenLabs voices — the platform bills per rate-carded model and rejects anything else at synthesis (the write succeeds but the voice fails on the next turn), so don't offer library or cloned voices unless the `elevenlabs` provider is active with its own API key. With a BYO key ([setup below](#elevenlabs-api-key-setup)) and `elevenlabs` active, any voice id works. Other BYO TTS providers (`deepgram`, `xai`, `fish-audio`, …) use their own voice/model identifiers — never write an ElevenLabs voice id to them; see [Getting to an ElevenLabs voice from another provider](#getting-to-an-elevenlabs-voice-from-another-provider).
+> **The tables below apply when the active provider is `elevenlabs` (BYO key) or managed `cadet`.** On cloud assistants they are the _only_ ElevenLabs voices — the cloud bills per rate-carded model and rejects anything else at synthesis (the write succeeds but the voice fails on the next turn), so don't offer library or cloned voices unless the `elevenlabs` provider is active with its own API key. With a BYO key ([setup below](#elevenlabs-api-key-setup)) and `elevenlabs` active, any voice id works. Other BYO TTS providers (`deepgram`, `xai`, `fish-audio`, …) use their own voice/model identifiers — never write an ElevenLabs voice id to them; see [Getting to an ElevenLabs voice from another provider](#getting-to-an-elevenlabs-voice-from-another-provider).
 
 ## Getting to an ElevenLabs voice from another provider
 
 Check the active provider first: `assistant config get services.tts.provider`.
 
-- **Already on managed `cadet`?** No provider change needed. The managed platform supports **both ElevenLabs and Deepgram voices** — `services.tts.providers.cadet.model` accepts either an ElevenLabs voice id or an Aura model id, so switching between them is just another `voice_config_update` call.
+- **Already on managed `cadet`?** No provider change needed. The cloud platform supports **both ElevenLabs and Deepgram voices** — `services.tts.providers.cadet.model` accepts either an ElevenLabs voice id or an Aura model id, so switching between them is just another `voice_config_update` call.
 - **On a BYO provider (e.g. `deepgram`) and the user wants an ElevenLabs voice?** Two options — ask which they prefer. Switch with the `voice_config_update` tool, not raw `assistant config set` — the tool validates the switch (e.g. rejects `cadet` when no platform connection exists, which a raw config write would leave silently broken):
-  1. **Switch to managed `cadet`** (`voice_config_update setting="tts_provider" value="cadet"`) — no ElevenLabs key needed; requires a platform connection and bills managed credits. Bonus: they keep access to both the ElevenLabs and Deepgram catalogs.
+  1. **Switch to managed `cadet`** (`voice_config_update setting="tts_provider" value="cadet"`) — no ElevenLabs key needed; requires a cloud connection and bills managed credits. Bonus: they keep access to both the ElevenLabs and Deepgram catalogs.
   2. **Switch to BYO `elevenlabs`** (`voice_config_update setting="tts_provider" value="elevenlabs"`) — requires an ElevenLabs API key ([setup below](#elevenlabs-api-key-setup)); usage bills their ElevenLabs account directly.
 
 After either switch, set the voice with `voice_config_update` as usual.
@@ -75,7 +75,7 @@ assistant tts voice "<selected-voice-id>"
 
 Setting `services.tts.providers.elevenlabs.voiceId` directly while the active provider is `cadet` (or any non-elevenlabs provider) is the #1 cause of "I changed the voice but it didn't change" — that field is ignored by the active provider, so the write reports success but nothing changes. If you must use `config set`, first check `assistant config get services.tts.provider` and write the matching key (`cadet` → `services.tts.providers.cadet.model`, `deepgram` → `services.tts.providers.deepgram.model`).
 
-Verify it worked by reading back the key for the **active** provider, e.g. for a managed assistant:
+Verify it worked by reading back the key for the **active** provider, e.g. for a cloud assistant:
 
 ```bash
 assistant config get services.tts.providers.cadet.model
@@ -97,7 +97,7 @@ assistant credentials prompt --service elevenlabs --field api_key --label "Eleve
 
 ## Advanced Voice Selection (with API key)
 
-Users with an ElevenLabs API key can go beyond the curated list above — **only when the active provider is `elevenlabs` (BYO key)**. On managed `cadet`, stay with the curated voices: the platform only accepts its rate-carded subset, and an unoffered id is persisted successfully but fails on the next spoken turn.
+Users with an ElevenLabs API key can go beyond the curated list above — **only when the active provider is `elevenlabs` (BYO key)**. On managed `cadet`, stay with the curated voices: the cloud only accepts its rate-carded subset, and an unoffered id is persisted successfully but fails on the next spoken turn.
 
 ### Check for an existing key
 

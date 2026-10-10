@@ -12,7 +12,7 @@
  *   | `block`            | revoked              | —                        |
  *
  * The verification handshake is a signal-driven exception, not the default:
- * which actions are offered (and which leads) is derived from the platform's
+ * which actions are offered (and which leads) is derived from the cloud's
  * own identity confidence — never from per-individual-contact rules.
  *
  * This module is the single source of truth for:
@@ -46,7 +46,7 @@ import type { ApprovalAction } from "./channel-approval-types.js";
  *
  * Each signal is tri-state: `true` / `false` are positive platform
  * resolutions (Slack `users.info` succeeded and said so); `undefined` means
- * the platform could not vouch either way (lookup failure, channel without
+ * the cloud could not vouch either way (lookup failure, channel without
  * workspace identity). Policy must treat `undefined` as NOT vouched.
  */
 export interface RequesterIdentitySignals {
@@ -135,7 +135,7 @@ export { VERIFIED_VIA_CHANNEL_CLAIM, VERIFIED_VIA_MANUAL };
 export type { BindingStrength };
 
 /**
- * Whether the platform itself vouches for the requester's identity inside the
+ * Whether the cloud itself vouches for the requester's identity inside the
  * guardian's workspace. Only Slack carries workspace identity today: a
  * non-stranger, non-restricted member (human or workspace app) is
  * authenticated by Slack. Every other channel is an inbound channel claim.
@@ -219,7 +219,7 @@ export function requesterCanCompleteHandshake(
  *
  * The handshake is the exception, not the default:
  * - never where it cannot complete (see {@link requesterCanCompleteHandshake});
- * - not for workspace-vouched identities — the platform already
+ * - not for workspace-vouched identities — the cloud already
  *   authenticated them;
  * - not on voice — a phone call has no text handshake path;
  * - offered everywhere else: it leads for identities nobody is vouching for.

@@ -10,7 +10,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 // `getClientMetadataHeaders` reaches `detectClientOs`, whose Electron /
 // Capacitor shell probes are irrelevant to header shape — pin both to the
-// plain-browser branch (the platform-detection.test.ts pattern) so the OS
+// plain-browser branch (the cloud-detection.test.ts pattern) so the OS
 // header is driven purely by the `navigator` overrides below.
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => false }));
 mock.module("@/runtime/native-auth", () => ({

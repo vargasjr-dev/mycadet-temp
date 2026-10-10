@@ -14,8 +14,8 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 
 let selfHosted = false;
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
   useActiveAssistantIsSelfHosted: () => selfHosted,
 }));
 
@@ -81,7 +81,7 @@ afterEach(() => {
 
 describe("CallSiteOverrideRow provider picker", () => {
   test("a pin this assistant cannot select is shown as itself, marked unavailable", () => {
-    // `ollama` is local-only, so a platform-hosted assistant cannot pick it.
+    // `ollama` is local-only, so a cloud-hosted assistant cannot pick it.
     renderRow({ provider: "ollama", model: "llama3" });
 
     const labels = triggerLabels();
@@ -262,7 +262,7 @@ describe("CallSiteOverrideRow model picker under a ChatGPT subscription", () => 
     ).toBe(true);
   });
 
-  test("a cadet-managed connection lifts the restriction (openai routes through the managed proxy)", () => {
+  test("a cadet-cloud connection lifts the restriction (openai routes through the cloud proxy)", () => {
     renderRow({ provider: "openai", model: "gpt-5.6-luna" }, [
       SUBSCRIPTION_CONNECTION_366,
       CADET_CONNECTION,

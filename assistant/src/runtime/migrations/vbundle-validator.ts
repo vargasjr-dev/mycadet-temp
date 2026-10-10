@@ -348,7 +348,7 @@ function sha256Hex(data: Uint8Array | string): string {
 
 /**
  * Canonicalize a JSON object by sorting keys recursively, then SHA-256 hash it.
- * This matches the platform's canonicalization approach.
+ * This matches the cloud's canonicalization approach.
  */
 export function canonicalizeJson(obj: unknown): string {
   return JSON.stringify(obj, (_key, value) => {

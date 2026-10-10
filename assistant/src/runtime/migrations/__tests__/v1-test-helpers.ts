@@ -34,7 +34,7 @@ export interface DefaultV1Options {
  * Sensible defaults for the six caller-required v1 manifest options.
  *
  * `secretsRedacted` defaults to false to match the runtime's typical
- * "credentials included by design" path; tests that exercise the managed
+ * "credentials included by design" path; tests that exercise the cloud
  * cross-field refine override `origin.mode` and `secretsRedacted` directly.
  */
 export function defaultV1Options(): DefaultV1Options {

@@ -52,7 +52,7 @@ export function HostingOptionsCloudHostingContent() {
               cannot read other users&apos; data or infrastructure.
             </li>
             <li>
-              <strong>Managed model access.</strong> Cadet-managed API keys
+              <strong>Managed model access.</strong> Cadet Cloud API keys
               for the default model (Anthropic Claude) are included, so you
               don&apos;t have to bring your own to get started.
             </li>

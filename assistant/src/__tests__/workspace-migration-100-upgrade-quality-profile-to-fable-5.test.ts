@@ -82,7 +82,7 @@ describe("100-upgrade-quality-profile-to-fable-5 migration", () => {
     expect(profile.label).toBe("Quality");
   });
 
-  test("upgrades the managed profile but not the user-owned custom copy", () => {
+  test("upgrades the cloud profile but not the user-owned custom copy", () => {
     writeConfig({
       llm: {
         profiles: {

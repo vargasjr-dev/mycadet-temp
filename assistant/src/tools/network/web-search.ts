@@ -21,6 +21,7 @@ import type {
   ToolDefinition,
   ToolExecutionResult,
 } from "../types.js";
+import type { ManagedSearchProxyResult } from "./cloud-search-proxy.js";
 import { extractDomain } from "./domain-normalize.js";
 import {
   extractFirecrawlCompatSearchResults,
@@ -29,7 +30,6 @@ import {
   resolveProviderApiUrl,
   searchResultSnippet,
 } from "./firecrawl-compat.js";
-import type { ManagedSearchProxyResult } from "./managed-search-proxy.js";
 import {
   classifyWebSearchFailure,
   logWebSearchBackendFailure,
@@ -242,7 +242,7 @@ function getWebSearchProvider(): WebSearchProvider {
   // In Your Own mode, `inference-provider-native` is only executable when the
   // inference provider swaps this tool for a native hosted-search definition.
   // If this app-executed tool is still invoked, fall back to the existing BYOK
-  // provider chain. `cadet` short-circuits into the managed branch before
+  // provider chain. `cadet` short-circuits into the cloud branch before
   // this function runs, so its coercion here only satisfies the return type
   // and keeps an undefined WEB_SEARCH_ADAPTERS lookup unreachable.
   if (configured === "inference-provider-native" || configured === "cadet") {
@@ -1188,7 +1188,7 @@ async function executeManagedBraveSearch(
   freshness: string | undefined,
   signal?: AbortSignal,
 ): Promise<ToolExecutionResult> {
-  const { callManagedSearchProxy } = await import("./managed-search-proxy.js");
+  const { callManagedSearchProxy } = await import("./cloud-search-proxy.js");
   const startedAt = Date.now();
   const proxyResult = await callManagedSearchProxy(
     "brave",
@@ -1240,7 +1240,7 @@ async function executeManagedBraveSearch(
       query,
       "brave",
       startedAt,
-      "Managed Brave Search is not authenticated correctly. This is a Cadet Cloud configuration issue.",
+      "Cloud Brave Search is not authenticated correctly. This is a Cadet Cloud configuration issue.",
     );
   }
 
@@ -1254,8 +1254,8 @@ async function executeManagedBraveSearch(
         error: rawBodyDetail(proxyResult.body),
       },
       proxyResult.status === 429
-        ? "Managed Brave Search rate limit exceeded. Try again shortly."
-        : `Managed Brave Search provider returned status ${proxyResult.status}`,
+        ? "Cloud Brave Search rate limit exceeded. Try again shortly."
+        : `Cloud Brave Search provider returned status ${proxyResult.status}`,
     );
   }
 
@@ -1263,7 +1263,7 @@ async function executeManagedBraveSearch(
     query,
     "brave",
     startedAt,
-    `Managed Brave Search provider returned status ${proxyResult.status}`,
+    `Cloud Brave Search provider returned status ${proxyResult.status}`,
   );
 }
 
@@ -2497,7 +2497,7 @@ export const webSearchTool = {
       if (!apiKey) {
         // Provider Native reaches this app-executed path only when the
         // inference model had no hosted search of its own. The user's own keys
-        // win above; the platform proxy is the last resort, which is what
+        // win above; the cloud proxy is the last resort, which is what
         // `mode: "managed"` did for installs that never configured a search
         // key. Read the configured provider off config — the local `provider`
         // has already been coerced to "perplexity".
@@ -2506,7 +2506,7 @@ export const webSearchTool = {
           "inference-provider-native"
         ) {
           const { managedSearchAvailable } =
-            await import("./managed-search-proxy.js");
+            await import("./cloud-search-proxy.js");
           if (await managedSearchAvailable()) {
             return executeManagedSearch();
           }

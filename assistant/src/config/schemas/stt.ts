@@ -183,7 +183,7 @@ export { STT_ROLE_REQUIREMENTS, STT_ROLES, type SttRole };
 /**
  * Canonical STT service configuration.
  *
- * `provider` is the only axis: `"cadet"` transcribes through the platform,
+ * `provider` is the only axis: `"cadet"` transcribes through the cloud,
  * billed to Cadet credits; any other provider uses the user's own API key.
  */
 export const SttServiceSchema = z
@@ -204,7 +204,7 @@ export const SttServiceSchema = z
       .describe("Active STT provider used for speech-to-text transcription"),
     /**
      * Spoken-language selection, forwarded to providers whose adapters accept
-     * a language (Deepgram, xAI, and the managed relay).
+     * a language (Deepgram, xAI, and the cloud relay).
      *
      * `"multi"` selects Deepgram's nova-3 code-switching mode, which follows
      * a speaker moving between languages inside a single utterance (e.g.
@@ -220,7 +220,7 @@ export const SttServiceSchema = z
      * The default applies on load, not just at creation, so an existing
      * config that never set a language materializes `"multi"` on its next
      * start. That changes no behavior: `effectiveSttLanguage` already
-     * resolved unset to `"multi"` on Deepgram and the managed relay, and the
+     * resolved unset to `"multi"` on Deepgram and the cloud relay, and the
      * providers that detect natively ignore the field either way. It only
      * makes the value explicit. An assistant that has chosen a language
      * keeps it, since a default fills nothing that is already set.

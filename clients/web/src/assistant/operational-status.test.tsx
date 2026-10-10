@@ -49,7 +49,7 @@ const sdkMock = mock(
   }),
 );
 const isLocalClientMock = mock(() => false);
-const isPlatformDisabledMock = mock(() => false);
+const isCloudDisabledMock = mock(() => false);
 let isOrgReadyMock = true;
 const recordLifecycleDiagnosticMock = mock(
   (_kind: string, _details: Record<string, unknown>) => {},
@@ -70,7 +70,7 @@ mock.module("@/stores/sse-connected-store", () => ({
 
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
-  isPlatformDisabled: isPlatformDisabledMock,
+  isCloudDisabled: isCloudDisabledMock,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -125,12 +125,12 @@ beforeEach(() => {
   recordLifecycleDiagnosticMock.mockClear();
   sseConnectedSnapshotMock = false;
   isLocalClientMock.mockImplementation(() => false);
-  isPlatformDisabledMock.mockImplementation(() => false);
+  isCloudDisabledMock.mockImplementation(() => false);
   isOrgReadyMock = true;
   useAuthStore.setState(
     {
       ...initialAuthState,
-      platformSession: "present",
+      cloudSession: "present",
     },
     true,
   );
@@ -159,7 +159,7 @@ describe("useAssistantOperationalStatus", () => {
     expect(sdkMock).not.toHaveBeenCalled();
   });
 
-  test("fetches for active platform-hosted assistants", async () => {
+  test("fetches for active cloud-hosted assistants", async () => {
     setLifecycle({ kind: "active", isLocal: false });
 
     renderHook(() => useAssistantOperationalStatus("assistant-platform"), {
@@ -183,13 +183,13 @@ describe("useAssistantOperationalStatus", () => {
     });
   });
 
-  test("fetches for known platform-hosted assistants while lifecycle is loading", async () => {
+  test("fetches for known cloud-hosted assistants while lifecycle is loading", async () => {
     useResolvedAssistantsStore.setState({
       assistants: [
         {
           id: "assistant-platform",
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -306,7 +306,7 @@ describe("useAssistantOperationalStatus", () => {
  * The gate that decides whether daemon queries may run.
  *
  * "Not known to be down" rather than "healthy" is the question, because
- * operational status is a platform-only signal and is absent for every
+ * operational status is a cloud-only signal and is absent for every
  * assistant whose health lives somewhere else. A gate that read absence as
  * "down" would strand them behind a signal that never arrives.
  */
@@ -384,7 +384,7 @@ describe("useAssistantIsServing", () => {
     expect(result.current).toBe(true);
   });
 
-  test("closes while a platform-hosted pod is waking", async () => {
+  test("closes while a cloud-hosted pod is waking", async () => {
     setLifecycle({ kind: "active", isLocal: false });
     sdkMock.mockImplementation(async () => ({
       data: { state: "waking", detail_state: "pod_pending" },

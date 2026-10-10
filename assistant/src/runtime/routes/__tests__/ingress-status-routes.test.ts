@@ -83,7 +83,7 @@ describe("integrations_ingress_status route", () => {
     });
   });
 
-  test("reports unconfigured for a platform-hosted assistant", async () => {
+  test("reports unconfigured for a cloud-hosted assistant", async () => {
     ingressConfig = {
       ...ingressConfig,
       publicBaseUrl: "https://platform.example.com/gateway/callbacks/a-1",

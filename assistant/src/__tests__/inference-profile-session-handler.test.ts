@@ -25,13 +25,13 @@ mock.module("../runtime/assistant-event.js", () => ({
 }));
 
 // The default profiles used below (`balanced`, `cost-optimized`) route through
-// the Cadet-managed connection, and the handler's availability guard judges
+// the Cadet Cloud connection, and the handler's availability guard judges
 // that route for real. Stand in for a signed-in platform session so the pin
 // path under test is the healthy one; `managedProxyEnabled` is flipped by the
 // guard test.
 let managedProxyEnabled = true;
-mock.module("../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: managedProxyEnabled,
     cloudBaseUrl: "https://platform.example",
     assistantApiKey: managedProxyEnabled ? "key" : "",
@@ -66,7 +66,7 @@ import { setConfig } from "./helpers/set-config.js";
 
 await initializeDb();
 
-// The Cadet-managed connection row the default profiles resolve to.
+// The Cadet Cloud connection row the default profiles resolve to.
 getDb()
   .insert(providerConnections)
   .values({
@@ -426,9 +426,9 @@ describe("setInferenceProfileSession", () => {
     }
   });
 
-  test("BYOK default provider — pins a managed preset without a Cadet sign-in", async () => {
+  test("BYOK default provider — pins a cloud preset without a Cadet sign-in", async () => {
     const conv = createConversation("sess-handler-byok-preset");
-    // Signed out of Cadet, but llm.default points the managed
+    // Signed out of Cadet, but llm.default points the cloud
     // presets at the user's own anthropic connection — the pin must judge
     // that body, not the Cadet column.
     managedProxyEnabled = false;

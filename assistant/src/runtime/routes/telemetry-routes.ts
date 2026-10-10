@@ -228,13 +228,13 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Flush pending telemetry events",
     description:
-      "Force-flush the telemetry events owned by the assistant process (turn events) to the platform. Other event types are flushed on their own cycle by the resource monitor process.",
+      "Force-flush the telemetry events owned by the assistant process (turn events) to the cloud. Other event types are flushed on their own cycle by the resource monitor process.",
     tags: ["telemetry"],
     responseBody: z.union([
       z.object({
         flushed: z.literal(true),
-        sent: z.number().describe("Events POSTed to the platform"),
-        persisted: z.number().describe("Events the platform confirmed written"),
+        sent: z.number().describe("Events POSTed to the cloud"),
+        persisted: z.number().describe("Events the cloud confirmed written"),
         dropped: z
           .number()
           .describe("Events that did not land (sent - persisted)"),
@@ -256,7 +256,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Record an outbox-backed telemetry event",
     description:
-      "Record any outbox-backed telemetry event by its wire `type` + `fields`. For events a client observes and the daemon can't detect on its own (e.g. onboarding_research). The type must be an outbox-backed event — the watermark types (turn, llm_usage, tool_executed) have no variant — and the payload must pass the platform wire schema. Gated on share_analytics consent like every other outbox-backed event; the platform re-checks the owner's consent server-side at ingest.",
+      "Record any outbox-backed telemetry event by its wire `type` + `fields`. For events a client observes and the daemon can't detect on its own (e.g. onboarding_research). The type must be an outbox-backed event — the watermark types (turn, llm_usage, tool_executed) have no variant — and the payload must pass the cloud wire schema. Gated on share_analytics consent like every other outbox-backed event; the cloud re-checks the owner's consent server-side at ingest.",
     tags: ["telemetry"],
     requestBody: telemetryIngestRequestSchema,
     responseBody: z.union([

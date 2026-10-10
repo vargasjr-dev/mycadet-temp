@@ -58,7 +58,7 @@ function useUtcDay(): string {
  *
  * A caller making a positive claim needs the two facts `suppress` cannot
  * carry. `settled` is false while the classification may still change.
- * `routeBurnsManaged` is true only for a route derived as managed, which a
+ * `routeBurnsCloud` is true only for a route derived as managed, which a
  * fail-open null and a proven BYOK route both are not. Neither is the
  * negation of `suppress`, and reading them as one turns a missing answer into
  * an assertion.
@@ -66,7 +66,7 @@ function useUtcDay(): string {
 export interface ByokCreditRouteVerdict {
   suppress: boolean;
   settled: boolean;
-  routeBurnsManaged: boolean;
+  routeBurnsCloud: boolean;
 }
 
 /**
@@ -76,27 +76,27 @@ export interface ByokCreditRouteVerdict {
  * on. See {@link ByokCreditRouteVerdict} for why those are separate answers.
  *
  * A BYOK default profile makes an exhausted managed balance irrelevant to
- * chat: turns dispatch on the user's own key and never fail on the platform's
+ * chat: turns dispatch on the user's own key and never fail on the cloud's
  * wallet, so the credit wall would nag about credits the user isn't using.
- * Recent managed spend re-arms the banners: other surfaces (a managed profile
- * on another conversation, managed speech/search, background call-sites)
+ * Recent managed spend re-arms the banners: other surfaces (a cloud profile
+ * on another conversation, cloud speech/search, background call-sites)
  * still burn credits, and a burn inside the last 24 hours means the balance
  * is load-bearing again. The spend probe is day-granular (usage-totals
  * `from`/`to` are inclusive UTC dates), so "last 24 hours" is
  * yesterday-plus-today, which errs toward showing the banners.
  *
  * Fails open: suppression needs a positively derived BYOK route, so a
- * managed route, an underivable one (unknown binding, no resolved assistant),
+ * cloud route, an underivable one (unknown binding, no resolved assistant),
  * or a failed config/connections read all leave the banners up. The only
  * unresolved state that suppresses is the queries' initial in-flight load,
  * which keeps the banner from flashing at a BYOK user and merely delays it
- * for a managed one. All queries stay idle until `candidate` is true (a
+ * for a cloud one. All queries stay idle until `candidate` is true (a
  * banner would actually show), so the common healthy-balance path costs
  * nothing.
  *
  * @param conversationId The active conversation, when the caller has one.
  *   Its `inferenceProfile` pin outranks the global default in the daemon's
- *   resolver, so a managed pin on a BYOK-default assistant must keep the
+ *   resolver, so a cloud pin on a BYOK-default assistant must keep the
  *   banners up; the query shares its cache entry with
  *   `useActiveProfileModel`. Client-minted drafts have no server row and
  *   must pass null (a lookup would 404 and needlessly fail the gate open).
@@ -211,14 +211,14 @@ export function useByokCreditRouteVerdict(
     refetchInterval: 5 * 60_000,
   });
 
-  // Only a positively managed route. A null (a read missing or failed) is not
+  // Only a positively cloud route. A null (a read missing or failed) is not
   // one, and neither is a proven BYOK route whose banners the spend probe
   // re-arms: spend on another surface says nothing about where this
   // conversation's next turn dispatches.
-  const routeBurnsManaged = burnsManaged === true;
+  const routeBurnsCloud = burnsManaged === true;
 
   if (!candidate) {
-    return { suppress: false, settled: true, routeBurnsManaged };
+    return { suppress: false, settled: true, routeBurnsCloud };
   }
   // Idle and empty is "not asked yet", not "answered no": every route query
   // waits on a resolved assistant, so until one arrives the fail-open verdict
@@ -240,7 +240,7 @@ export function useByokCreditRouteVerdict(
     profilesQuery.isLoading ||
     defaultProviderQuery.isLoading
   ) {
-    return { suppress: true, settled: false, routeBurnsManaged };
+    return { suppress: true, settled: false, routeBurnsCloud };
   }
   if (burnsManaged !== false) {
     // Fail-open covers a genuine read failure as well as a missing assistant
@@ -248,7 +248,7 @@ export function useByokCreditRouteVerdict(
     return {
       suppress: false,
       settled: !cannotAskYet && !routeAwaitingAnswer,
-      routeBurnsManaged,
+      routeBurnsCloud,
     };
   }
   // Route proven BYOK: stay down only while the spend probe positively
@@ -256,7 +256,7 @@ export function useByokCreditRouteVerdict(
   // like every other unknown in this gate: a burn may have happened and the
   // banners must not stay hidden on missing data.
   if (totalsQuery.isError) {
-    return { suppress: false, settled: true, routeBurnsManaged };
+    return { suppress: false, settled: true, routeBurnsCloud };
   }
   const totals = totalsQuery.data;
   const burnedRecently = totals ? Number(totals.total_usd) > 0 : null;
@@ -264,6 +264,6 @@ export function useByokCreditRouteVerdict(
     suppress: burnedRecently !== true,
     settled:
       !cannotAskYet && !routeAwaitingAnswer && !awaitsAnswer(totalsQuery),
-    routeBurnsManaged,
+    routeBurnsCloud,
   };
 }

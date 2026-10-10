@@ -39,9 +39,9 @@ export interface TypesafeNoulResult {
 /**
  * The call site's provider when it resolves to TypeSafe, else null. Judged
  * on the dispatched adapter's name rather than the configured provider: a
- * managed profile is configured as `cadet` and only substitutes the
+ * cloud profile is configured as `cadet` and only substitutes the
  * TypeSafe upstream at dispatch, so the configured name alone would report
- * the managed Jev profile as unavailable.
+ * the cloud Jev profile as unavailable.
  */
 export async function resolveTypesafeProvider(
   callSite: LLMCallSite,

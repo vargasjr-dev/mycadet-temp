@@ -9,7 +9,7 @@ import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approv
 import { loadConfig } from "../config/loader.js";
 import { VALID_CALLER_IDENTITY_MODES } from "../config/schema.js";
 import type { AssistantConfig } from "../config/types.js";
-import { resolveCallbackUrl } from "../inbound/platform-callback-registration.js";
+import { resolveCallbackUrl } from "../inbound/cloud-callback-registration.js";
 import {
   getTwilioStatusCallbackUrl,
   getTwilioVoiceWebhookUrl,

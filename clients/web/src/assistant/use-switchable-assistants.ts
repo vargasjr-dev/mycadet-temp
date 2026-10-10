@@ -5,7 +5,7 @@
  * The list mirrors the chooser screen's derivation: org-valid entries with a
  * transport from this device, kept only where a switch can actually succeed
  * (a paired entry is session-free, a local entry needs a local client, and
- * everything else needs the platform session). The gate deliberately deviates
+ * everything else needs the cloud session). The gate deliberately deviates
  * from `useGatedSelectedAssistantId` twice: it closes only in remote-gateway
  * mode (a served single-assistant session, where the selection is not this
  * client's to change) rather than in every gateway-authenticated session,
@@ -18,7 +18,7 @@
 import { useMemo } from "react";
 
 import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   assistantsValidForOrg,
@@ -37,7 +37,7 @@ export interface SwitchableAssistants {
 export function useSwitchableAssistants(): SwitchableAssistants {
   const organizationId = useRequestOrganizationId();
   const allAssistants = useResolvedAssistantsStore.use.assistants();
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   const localClient = isLocalClient();
 
   const assistants = useMemo(
@@ -45,9 +45,9 @@ export function useSwitchableAssistants(): SwitchableAssistants {
       assistantsValidForOrg(allAssistants, organizationId)
         .filter(isConnectableFromThisDevice)
         .filter(
-          (a) => a.isPaired || (a.isLocal && localClient) || hasPlatformSession,
+          (a) => a.isPaired || (a.isLocal && localClient) || hasCloudSession,
         ),
-    [allAssistants, organizationId, localClient, hasPlatformSession],
+    [allAssistants, organizationId, localClient, hasCloudSession],
   );
 
   return {

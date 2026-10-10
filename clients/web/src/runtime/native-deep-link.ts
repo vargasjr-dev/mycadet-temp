@@ -55,7 +55,7 @@ const BILLING_CHECKOUT_COMPLETE_PATH_SEGMENT = "checkout-complete";
 
 /**
  * Stripe Checkout Session id shape (`cs_test_a1B2…` / `cs_live_…`). Mirrors
- * the platform's own check in `checkout_native_return.py` and the macOS main
+ * the cloud's own check in `checkout_native_return.py` and the macOS main
  * parser, so a malformed id never reaches the billing route.
  */
 const CHECKOUT_SESSION_ID_RE = /^cs_[A-Za-z0-9_]{1,255}$/;
@@ -66,7 +66,7 @@ export type BillingCheckoutCompleteDeepLinkPayload =
 
 /**
  * Parse a `cadet://billing/checkout-complete?status=…&session_id=…`
- * deep link, the hand-off the platform bounces a `return_target=native`
+ * deep link, the hand-off the cloud bounces a `return_target=native`
  * Checkout to (`checkout_native_return.py`). An optional `flow=top_up` marks
  * a credit top-up checkout; anything else is a subscription checkout.
  *

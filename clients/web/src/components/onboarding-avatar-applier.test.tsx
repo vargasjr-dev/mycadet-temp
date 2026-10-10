@@ -116,7 +116,7 @@ describe("OnboardingAvatarApplier", () => {
     await waitFor(() =>
       expect(useOnboardingFocusStore.getState().pendingAvatarTraits).toBeNull(),
     );
-    // Nothing to say beyond the platform default the assistant already has.
+    // Nothing to say beyond the cloud default the assistant already has.
     expect(configPatchCalls.length).toBe(0);
   });
 

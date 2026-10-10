@@ -197,10 +197,10 @@ export type {
 export { CredentialStoreError, storeCredential } from "./store-credential.js";
 // Resolve the public URL a third party should deliver to for one of the
 // plugin's own ingress routes. Which URL is correct depends on how the
-// assistant is reachable (a managed platform callback route, or a configured
+// assistant is reachable (a cloud platform callback route, or a configured
 // public ingress), and `ingress.publicBaseUrl` alone does not decide it. Uses
 // the same resolution as `webhooks register`, and registers the callback route
-// on the managed branches. The plugin defaults to the one in context.
+// on the cloud branches. The plugin defaults to the one in context.
 export { resolveWebhookUrl, type WebhookUrlOptions } from "./webhook-url.js";
 // Resolve the redirect URI an authorization server should send a user back
 // to after consent. One shared route serves every OAuth flow in the
@@ -209,12 +209,12 @@ export { resolveWebhookUrl, type WebhookUrlOptions } from "./webhook-url.js";
 // when it publishes something that has to name the redirect URI ahead of the
 // flow, such as a Client ID Metadata Document, whose `redirect_uris` an
 // authorization server matches exactly. Throws when no public ingress is
-// configured and the assistant is not connected to the platform, which is the
+// configured and the assistant is not connected to the cloud, which is the
 // case where no URL would work.
 export { resolveOauthCallbackUrl } from "../inbound/oauth-callback-url.js";
 // Resolve a provider for a call site (optionally overriding the profile) so a
 // plugin can run inference through the workspace's configured profiles and
-// credentials — managed-proxy or BYOK — without supplying its own API key.
+// credentials — cloud-proxy or BYOK — without supplying its own API key.
 // Pair with `getModelProfiles` to pick a profile. Returns `null` when no
 // provider is configured. By default `overrideProfile` layers below any
 // per-call-site config the workspace has pinned (e.g. a cheap `inference`

@@ -117,7 +117,7 @@ export interface DeepgramFluxRealtimeOptions {
   /** Inactivity timeout in milliseconds. Default: 30_000. */
   inactivityTimeoutMs?: number;
   /**
-   * WebSocket origin to dial. Defaults to Deepgram's own. The managed relay
+   * WebSocket origin to dial. Defaults to Deepgram's own. The cloud relay
    * points this at the gateway, which forwards to tunnel.
    */
   baseUrl?: string;
@@ -130,7 +130,7 @@ export interface DeepgramFluxRealtimeOptions {
    */
   queryAuth?: boolean;
   /**
-   * Omit `model` from the query. The managed relay derives the Flux model
+   * Omit `model` from the query. The cloud relay derives the Flux model
    * from the spoken language and prices it before dialing, so it rejects a
    * client-selected one.
    */
@@ -144,7 +144,7 @@ export interface DeepgramFluxRealtimeOptions {
   /**
    * Spoken language, forwarded to the relay so it can select the Flux model
    * and language hint. Deepgram's own endpoint takes no `language`, so this
-   * is only sent when set, which is the managed path.
+   * is only sent when set, which is the cloud path.
    */
   language?: string;
   /**
@@ -737,7 +737,7 @@ export class DeepgramFluxRealtimeTranscriber implements StreamingTranscriber {
    */
   private buildWebSocketUrl(): string {
     // Dialing Deepgram directly means choosing the model here. The relay
-    // derives it from the language instead, which is why the managed path
+    // derives it from the language instead, which is why the cloud path
     // sends neither.
     const selection = this.omitModelParam
       ? null

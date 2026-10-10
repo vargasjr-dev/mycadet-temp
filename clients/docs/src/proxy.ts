@@ -2,8 +2,8 @@ import { isbot } from "isbot";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Attribution-only port of the platform marketing proxy
- * (the platform repo `web/src/proxy.ts`): page_view logging, the
+ * Attribution-only port of the cloud marketing proxy
+ * (the cloud repo `web/src/proxy.ts`): page_view logging, the
  * `cadet_vid` visitor cookie, and UTM/click-ID capture. The page_view JSON
  * contract is parsed downstream (BigQuery log sink + dbt
  * `stg_marketing_events__page_views`); field names must not change.
@@ -22,7 +22,7 @@ function isCadetDomain(host: string): boolean {
 }
 
 const VID_COOKIE_NAME = "cadet_vid";
-const VID_MAX_AGE = 90 * 24 * 60 * 60; // 90 days, same as the platform proxy
+const VID_MAX_AGE = 90 * 24 * 60 * 60; // 90 days, same as the cloud proxy
 
 const UTM_PARAMS = [
   "utm_source",
@@ -94,7 +94,7 @@ const CLICK_ID_PARAMS: readonly string[] = PAID_CLICK_IDS.flatMap(
   (rule) => rule.params,
 );
 
-// Mirrors the platform's cap (_CLICK_ID_FIELD_MAX_LENGTHS in Django's
+// Mirrors the cloud's cap (_CLICK_ID_FIELD_MAX_LENGTHS in Django's
 // marketing_attribution middleware).
 const CLICK_ID_MAX_LENGTH = 512;
 

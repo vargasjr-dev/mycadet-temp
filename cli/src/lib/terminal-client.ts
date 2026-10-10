@@ -2,12 +2,12 @@
  * Platform terminal API client.
  *
  * Wraps the Django terminal session endpoints that proxy through vembda to
- * open K8s exec streams into managed assistant containers. Same transport
+ * open K8s exec streams into cloud assistant containers. Same transport
  * the web UI's xterm.js terminal uses.
  */
 
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { authHeaders, getPlatformUrl } from "./platform-client.js";
+import { authHeaders, getCloudUrl } from "./cloud-client.js";
 import { z } from "zod";
 
 const TerminalSessionResponseSchema = z.object({ session_id: z.string() });
@@ -29,10 +29,10 @@ export async function createTerminalSession(
   assistantId: string,
   cols: number,
   rows: number,
-  platformUrl?: string,
+  cloudUrl?: string,
   service?: string,
 ): Promise<{ session_id: string }> {
-  const baseUrl = platformUrl || getPlatformUrl();
+  const baseUrl = cloudUrl || getCloudUrl();
   const body: Record<string, unknown> = { cols, rows };
   if (service) {
     body.service = service;
@@ -41,7 +41,7 @@ export async function createTerminalSession(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/`,
     {
       method: "POST",
-      headers: await authHeaders(token, platformUrl),
+      headers: await authHeaders(token, cloudUrl),
       body: JSON.stringify(body),
     },
   );
@@ -62,14 +62,14 @@ export async function closeTerminalSession(
   token: string,
   assistantId: string,
   sessionId: string,
-  platformUrl?: string,
+  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = platformUrl || getPlatformUrl();
+  const baseUrl = cloudUrl || getCloudUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/`,
     {
       method: "DELETE",
-      headers: await authHeaders(token, platformUrl),
+      headers: await authHeaders(token, cloudUrl),
     },
   );
   // 404 = already closed, treat as success
@@ -89,14 +89,14 @@ export async function sendTerminalInput(
   assistantId: string,
   sessionId: string,
   data: string,
-  platformUrl?: string,
+  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = platformUrl || getPlatformUrl();
+  const baseUrl = cloudUrl || getCloudUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/input/`,
     {
       method: "POST",
-      headers: await authHeaders(token, platformUrl),
+      headers: await authHeaders(token, cloudUrl),
       body: JSON.stringify({ data }),
     },
   );
@@ -113,14 +113,14 @@ export async function resizeTerminalSession(
   sessionId: string,
   cols: number,
   rows: number,
-  platformUrl?: string,
+  cloudUrl?: string,
 ): Promise<void> {
-  const baseUrl = platformUrl || getPlatformUrl();
+  const baseUrl = cloudUrl || getCloudUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/resize/`,
     {
       method: "POST",
-      headers: await authHeaders(token, platformUrl),
+      headers: await authHeaders(token, cloudUrl),
       body: JSON.stringify({ cols, rows }),
     },
   );
@@ -143,14 +143,14 @@ export async function* subscribeTerminalEvents(
   token: string,
   assistantId: string,
   sessionId: string,
-  platformUrl?: string,
+  cloudUrl?: string,
   signal?: AbortSignal,
 ): AsyncGenerator<TerminalOutputEvent> {
-  const baseUrl = platformUrl || getPlatformUrl();
+  const baseUrl = cloudUrl || getCloudUrl();
   const response = await loopbackSafeFetch(
     `${baseUrl}/v1/assistants/${assistantId}/terminal/sessions/${sessionId}/events/`,
     {
-      headers: await authHeaders(token, platformUrl),
+      headers: await authHeaders(token, cloudUrl),
       signal,
     },
   );

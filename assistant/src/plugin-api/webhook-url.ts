@@ -3,10 +3,10 @@
  *
  * A plugin that receives third-party webhooks has to tell the vendor where to
  * deliver. Which URL is correct depends on how the assistant is reachable:
- * a platform pod and a platform-connected assistant are served through a
+ * a cloud pod and a cloud-connected assistant are served through a
  * managed callback route, while a self-hosted deployment is served through its
  * configured public ingress. `ingress.publicBaseUrl` alone does not decide it,
- * because on a platform-connected assistant that value holds the Tunnel
+ * because on a cloud-connected assistant that value holds the Tunnel
  * address, which is not where plugin routes are served.
  *
  * `resolveCallbackUrl` owns that decision for every caller in the codebase
@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 
 import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
-import { resolveCallbackUrl } from "../inbound/platform-callback-registration.js";
+import { resolveCallbackUrl } from "../inbound/cloud-callback-registration.js";
 import { getPublicBaseUrl } from "../inbound/public-ingress-urls.js";
 import { getCurrentPluginName } from "../plugins/plugin-execution-context.js";
 
@@ -72,16 +72,16 @@ export interface WebhookUrlOptions {
    * explicitly from a plugin route handler, where no context is established.
    */
   plugin?: string;
-  /** Human-readable label for the platform's admin display. */
+  /** Human-readable label for the cloud's admin display. */
   sourceIdentifier?: string;
 }
 
 /**
  * Registration type for one route.
  *
- * The platform keys a callback route by type, so two routes of one plugin need
+ * The cloud keys a callback route by type, so two routes of one plugin need
  * two types or the second registration replaces the first. The slug keeps the
- * type legible in the platform's admin display and the digest keeps it unique:
+ * type legible in the cloud's admin display and the digest keeps it unique:
  * `events-v1` and `events_v1` share a slug and differ here.
  */
 function registrationType(plugin: string, route: string): string {
@@ -91,7 +91,7 @@ function registrationType(plugin: string, route: string): string {
 }
 
 /**
- * Keep a trailing slash on a managed callback URL.
+ * Keep a trailing slash on a cloud callback URL.
  *
  * Django in front of managed callbacks canonicalizes onto `/`. A vendor given
  * the slashless spelling is 301'd, and clients that follow a 301 on POST
@@ -99,7 +99,7 @@ function registrationType(plugin: string, route: string): string {
  *
  * Query-bearing URLs are left alone: this resolver passes no query
  * parameters, and appending there would cut into the query rather than the
- * path. The callback path registered with the platform stays slashless. The
+ * path. The callback path registered with the cloud stays slashless. The
  * platform strips slashes on store, and Django's path converter typically
  * does not include the final `/` in the lookup key.
  */
@@ -113,12 +113,12 @@ function withTrailingSlash(url: string): string {
 /**
  * Resolve the public URL a third party should deliver to for `path`.
  *
- * On the managed branches this registers a callback route with the platform,
+ * On the cloud branches this registers a callback route with the cloud,
  * which is idempotent and matches what `assistant webhooks register` does.
  *
  * @throws when the plugin cannot be determined, when `path` is not one the
  *   gateway would serve, or when no ingress is configured and the assistant is
- *   not connected to the platform. That last case has no URL that would work,
+ *   not connected to the cloud. That last case has no URL that would work,
  *   and a plausible one would produce a vendor registration that silently
  *   receives nothing.
  */

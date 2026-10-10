@@ -251,7 +251,7 @@ declare global {
         reveal(id: string): Promise<void>;
       };
       menu: {
-        setPlatformSession(has: boolean): Promise<void>;
+        setCloudSession(has: boolean): Promise<void>;
         titles?(): Promise<Array<{ id: string; label: string }>>;
         popup?(id: string, x: number, y: number): Promise<void>;
       };

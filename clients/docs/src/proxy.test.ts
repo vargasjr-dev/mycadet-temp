@@ -307,8 +307,8 @@ describe("docs proxy UTM/click-ID capture", () => {
 });
 
 describe("docs proxy JSON log contract", () => {
-  // Key order copied from a platform page_view log line (the platform's
-  // emitPageViewLog in the platform repo web/src/proxy.ts); the
+  // Key order copied from a cloud page_view log line (the cloud's
+  // emitPageViewLog in the cloud repo web/src/proxy.ts); the
   // BigQuery sink + dbt stg_marketing_events__page_views parse this shape.
   const PLATFORM_FIXTURE = {
     source: "marketing",
@@ -322,7 +322,7 @@ describe("docs proxy JSON log contract", () => {
     utm_resolution: "referrer",
   };
 
-  test("attributed page_view lines match the platform key set and order", () => {
+  test("attributed page_view lines match the cloud key set and order", () => {
     proxy(
       request("https://www.mycadet.ai/docs", {
         referrer: "https://t.co/Xc0y1brRmQ",

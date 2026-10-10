@@ -63,7 +63,7 @@ export type ChannelReplySession = {
  *
  * Only the channel-level half is answered here, and only by asking whether
  * the transport implements the operation: implementing it is the whole of
- * declaring it. Whether THIS conversation can carry one is the platform's
+ * declaring it. Whether THIS conversation can carry one is the cloud's
  * own rule (Slack streams into a thread, Telegram only into a private chat),
  * so it is answered by the transport's own reply to `start` and reaches this
  * module as an ordinary not-ok, which falls back exactly like a failure.

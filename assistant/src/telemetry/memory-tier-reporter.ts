@@ -1,6 +1,6 @@
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { getConfigReadOnly } from "../config/loader.js";
 import { memoryTier } from "../config/memory-tier.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { getLogger } from "../util/logger.js";
 import { measureMemoryCorpusSize } from "./memory-corpus-size.js";
 import { recordWatchdogEvent } from "./watchdog-events-store.js";
@@ -10,7 +10,7 @@ const log = getLogger("memory-tier-reporter");
 /**
  * How often each assistant re-asserts its coarse memory tier as a
  * `memory_tier` watchdog event. Unlike the config-setting snapshot this emits
- * UNCONDITIONALLY every cycle (no memo): the platform-side query wants a
+ * UNCONDITIONALLY every cycle (no memo): the cloud-side query wants a
  * periodic per-assistant heartbeat of the current tier, so a gap in the series
  * is meaningful (assistant offline) rather than "value unchanged". Six-hourly
  * keeps the volume trivial while giving a same-day read on the fleet's tier
@@ -38,7 +38,7 @@ const BOOT_RETRY_INTERVAL_MS = 60_000;
  * Emit one `memory_tier` watchdog event for this assistant's current tier.
  *
  * Consent-gated like the config-setting snapshot but with NO memo: every
- * invocation emits, so the platform sees a periodic heartbeat of the current
+ * invocation emits, so the cloud sees a periodic heartbeat of the current
  * tier rather than only edges. An UNKNOWN consent state skips entirely
  * (consent resolves asynchronously after boot; the boot-retry loop re-invokes
  * once it lands) — deferring loses nothing since the tier is re-derivable

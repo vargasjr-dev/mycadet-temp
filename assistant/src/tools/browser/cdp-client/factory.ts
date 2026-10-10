@@ -1268,7 +1268,7 @@ function extractCdpError(
  * `BrowserBackend.send`. Converts thrown CdpErrors back into a
  * `CdpResult` envelope with an `error` payload so the manager does
  * not need to know about our thrown-error convention, then the
- * envelope is unwrapped again on the way out of the managed client.
+ * envelope is unwrapped again on the way out of the cloud client.
  *
  * The per-command `command.sessionId` (populated by the manager from
  * a session's opaque `targetId`) is intentionally not forwarded to

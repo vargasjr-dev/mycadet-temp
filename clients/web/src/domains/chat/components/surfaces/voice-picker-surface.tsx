@@ -16,7 +16,7 @@ import { useTranslation } from "@/i18n";
  *
  * Three states, not two, because most of the ways a picker fails to appear are
  * permanent rather than transient: no chrome at all while the daemon queries
- * are in flight, the picker once managed voice selection is available, and a
+ * are in flight, the picker once cloud voice selection is available, and a
  * pointer to where the voice actually lives for every settled state in between
  * (a daemon too old to select voices, a catalog that failed or came back empty,
  * no assistant). An empty bordered box is the one unacceptable outcome, since
@@ -24,11 +24,11 @@ import { useTranslation } from "@/i18n";
  */
 
 import { ByoVoiceNote } from "@/components/speech/byo-voice-note";
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { VoiceList } from "@/components/speech/voice-list";
 import { SurfaceContainer } from "@/domains/chat/components/surfaces/surface-container";
 import type { Surface } from "@/domains/chat/types/types";
-import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/managed-voice-catalog";
+import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/cloud-voice-catalog";
 
 const NOTE_CLASS = "text-body-small-default text-[var(--content-tertiary)]";
 
@@ -50,7 +50,7 @@ export function VoicePickerSurface({
   const { t } = useTranslation("chat");
   // Only the three flags that pick the state. `VoiceList` runs the same hook for
   // the data it renders; both calls share one set of React Query subscriptions.
-  const { available, isByok, settled } = useManagedVoiceSelection(assistantId);
+  const { available, isByok, settled } = useCloudVoiceSelection(assistantId);
 
   if (!settled) {
     return null;
@@ -72,7 +72,7 @@ export function VoicePickerSurface({
             // out of the card instead of scrolling the voices.
             listClassName="max-h-[22rem]"
           />
-          {/* Managed voices bill credits, and every surface that offers them
+          {/* Cloud voices bill credits, and every surface that offers them
               says so. This one is reached without opening Settings, so it
               carries the disclosure too. */}
           <p className={NOTE_CLASS}>{MANAGED_VOICE_CREDITS_NOTE}</p>

@@ -1079,7 +1079,7 @@ describe("useAssistantResourceSync", () => {
           {
             id: "asst-1",
             isLocal: false,
-            isPlatformHosted: true,
+            isCloudHosted: true,
             isPaired: false,
             avatarUrl: "https://cdn.example/a.png",
           },
@@ -1107,7 +1107,7 @@ describe("useAssistantResourceSync", () => {
     expect(avatarUrl()).toBe("https://cdn.example/a.png");
   });
 
-  test("avatar_updated drops the platform lookup entry without a refetch", async () => {
+  test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
     const key = platformAvatarUrlsQueryKey("user-1", null);
@@ -1142,10 +1142,10 @@ describe("useAssistantResourceSync", () => {
         {
           id: "asst-1",
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
           cloud: "local",
-          platformAssistantId: "uuid-1",
+          cloudAssistantId: "uuid-1",
         },
       ],
     });

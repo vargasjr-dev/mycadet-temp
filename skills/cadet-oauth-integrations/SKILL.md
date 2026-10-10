@@ -43,7 +43,7 @@ All providers support "your-own" mode and some support "managed" mode.
 
 "managed" mode relies on a first-class integration with Cadet Cloud. Managed mode is typically easier to set up and get going, often only requiring the user to log in with no additional configuration needed before they can begin using the integration. Managed mode is the recommended method for most users, especially those that are less technical or newer to their Cadet assistant.
 
-When a task needs a managed OAuth connection, present it in chat with `ui_show` using `surface_type: "oauth_connect"` instead of sending the user to Settings or trying to open the OAuth flow from shell. See [Connecting Accounts](references/CONNECTING_ACCOUNTS.md) for the exact surface shape.
+When a task needs a cloud OAuth connection, present it in chat with `ui_show` using `surface_type: "oauth_connect"` instead of sending the user to Settings or trying to open the OAuth flow from shell. See [Connecting Accounts](references/CONNECTING_ACCOUNTS.md) for the exact surface shape.
 
 Note that using managed mode:
 
@@ -68,12 +68,12 @@ Your-own mode is typically best if:
 **Default to managed mode whenever the provider supports it.** Check support with:
 
 ```bash
-assistant oauth providers get <provider-key> --json | jq -r '.managedServiceConfigKey'
+assistant oauth providers get <provider-key> --json | jq -r '.cloudServiceConfigKey'
 ```
 
 If this returns a non-null value, managed mode is supported and should be your starting recommendation. Only fall back to your-own mode if:
 
-- The provider does not support managed mode (`managedServiceConfigKey` is null), OR
+- The provider does not support managed mode (`cloudServiceConfigKey` is null), OR
 - The user explicitly wants their own OAuth app (e.g. they're running self-hosted, they're privacy-sensitive, they're configuring a per-assistant Slack app), OR
 - The user already has a working your-own connection — don't re-recommend managed mid-flow for already-connected providers.
 
@@ -114,7 +114,7 @@ If an API request returns a `403 Forbidden`, `401 Unauthorized`, or a message ab
 For detailed information on the following topics, see the reference files:
 
 - **[Registering New OAuth Providers](references/REGISTERING_PROVIDERS.md)** - How to register a new OAuth provider that doesn't come with Cadet's defaults
-- **[Configuring a New OAuth Application](references/CONFIGURING_APPLICATIONS.md)** - How to configure a user-managed OAuth Application for providers whose mode is set to "your-own"
+- **[Configuring a New OAuth Application](references/CONFIGURING_APPLICATIONS.md)** - How to configure a user-cloud OAuth Application for providers whose mode is set to "your-own"
 - **[Connecting Accounts](references/CONNECTING_ACCOUNTS.md)** - How to direct the user to log in and create a new OAuth connection
 - **[Updating Scopes](references/UPDATING_SCOPES.md)** - How to update the scopes on an existing connection when additional permissions are needed
 - **[Making Requests on Behalf of the User](references/MAKING_REQUESTS.md)** - How to make requests and take actions on behalf of the user once they have connected their account

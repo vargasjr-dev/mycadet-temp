@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
 mock.module("../avatar/sync-avatar.js", () => ({
-  syncAvatarToPlatform: () => {},
+  syncAvatarToCloud: () => {},
 }));
 mock.module("../telemetry/telemetry-events-outbox.js", () => ({
   recordTelemetryEvent: () => ({ id: "evt", createdAt: 0 }),

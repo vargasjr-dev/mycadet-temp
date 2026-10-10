@@ -392,7 +392,7 @@ describe("resolvePublicBaseWssUrl", () => {
     expect(resolvePublicBaseWssUrl(baseConfig)).toBeUndefined();
   });
 
-  test("uses tunnelBaseUrl + platformAssistantId when both are present", () => {
+  test("uses tunnelBaseUrl + cloudAssistantId when both are present", () => {
     const config = {
       ...baseConfig,
       tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
@@ -428,7 +428,7 @@ describe("resolvePublicBaseWssUrl", () => {
     );
   });
 
-  test("falls back to configFile publicBaseUrl when platformAssistantId is missing", () => {
+  test("falls back to configFile publicBaseUrl when cloudAssistantId is missing", () => {
     const config = {
       ...baseConfig,
       tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
@@ -483,7 +483,7 @@ describe("resolvePublicBaseWssUrl", () => {
     );
   });
 
-  test("does not use a platform callback URL as the websocket base", () => {
+  test("does not use a cloud callback URL as the websocket base", () => {
     const config = {
       ...baseConfig,
       tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",

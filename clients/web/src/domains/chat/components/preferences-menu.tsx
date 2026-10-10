@@ -30,7 +30,7 @@ import { usePreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage"
 import { useEffectiveActivationListId } from "@/hooks/use-activation-enabled";
 import { useBillingBalanceStatus } from "@/hooks/use-billing-balance-status";
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { displayedCreditsUsd } from "@/lib/billing/displayed-credits";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
@@ -302,7 +302,7 @@ function PreferencesMenuContent({
   const { t: tActivation } = useTranslation("activation");
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
   /* The Inspiration List entry rides the same gate as every other activation
      surface, resolved in the one place that owns it. */
   const activationListId = useEffectiveActivationListId();
@@ -362,7 +362,7 @@ function PreferencesMenuContent({
         />
       ) : null}
 
-      {(platformGate === "full" || isElectron()) && (
+      {(cloudGate === "full" || isElectron()) && (
         <PanelItem
           icon={MessageSquareText}
           label={t("preferencesMenu.shareFeedback")}

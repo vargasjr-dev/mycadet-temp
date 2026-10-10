@@ -17,9 +17,9 @@ import type { WorkspaceMigration } from "./types.js";
  * Fireworks latency-intent model.
  *
  * Provider guard: the stale ID belongs to the `fireworks` provider and
- * also appears in managed profiles stamped
+ * also appears in cloud profiles stamped
  * `provider: "cadet"` (which route Fireworks-account model IDs through
- * the managed proxy). A fragment is repaired when its `provider` is
+ * the cloud proxy). A fragment is repaired when its `provider` is
  * `"fireworks"`, `"cadet"`, or absent; an explicit other provider (e.g.
  * an `openai-compatible` endpoint serving a model by the same name) is
  * left untouched.

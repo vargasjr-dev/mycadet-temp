@@ -66,7 +66,7 @@ describe("113-swap-balanced-profile-to-glm-5p2 migration", () => {
     );
   });
 
-  test("swaps the managed balanced profile from Together MiniMax to GLM 5.2", () => {
+  test("swaps the cloud balanced profile from Together MiniMax to GLM 5.2", () => {
     writeConfig({
       llm: {
         profiles: {

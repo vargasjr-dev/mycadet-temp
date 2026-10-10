@@ -71,7 +71,7 @@ export function FeatureFlagsPanel() {
   // The panel renders under `ActiveAssistantGate` (routes.tsx), which defers
   // child rendering until an assistant is resolved — so the id is always
   // available here. Reading it from the resolved-assistants store (via
-  // `useActiveAssistantId`) rather than the platform `assistants/active` query
+  // `useActiveAssistantId`) rather than the cloud `assistants/active` query
   // is what makes assistant-scoped flag PATCHes work in local mode, where the
   // platform query has no id and the write was silently dropped. Live flag
   // updates are owned by the root-level `useAssistantFeatureFlagSync`.

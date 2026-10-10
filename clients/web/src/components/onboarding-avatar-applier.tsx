@@ -45,7 +45,7 @@ export function shouldDropAvatarHandoff(failedAttempts: number): boolean {
  * the same field every voice picker writes.
  *
  * A null voice is a no-op success: the catalog never loaded, so there is
- * nothing to say beyond the platform default the assistant already has.
+ * nothing to say beyond the cloud default the assistant already has.
  */
 async function saveAvatarVoice(
   assistantId: string,

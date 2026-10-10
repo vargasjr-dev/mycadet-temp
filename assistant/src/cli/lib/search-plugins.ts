@@ -70,7 +70,7 @@ export interface PluginSearchMatch {
   readonly description?: string;
   /**
    * Plugin icon: a curated emoji from the marketplace entry, or an icon URL
-   * served by the platform catalog when the plugin ships a bundled image.
+   * served by the cloud catalog when the plugin ships a bundled image.
    */
   readonly icon?: string;
   /**
@@ -149,7 +149,7 @@ export interface PluginCatalog {
  * Project a marketplace entry onto the catalog match shape, building a
  * a source-specific locator for display.
  *
- * Shared by the platform fetcher and bundled reader so all catalog sources
+ * Shared by the cloud fetcher and bundled reader so all catalog sources
  * project entries identically.
  */
 export function marketplaceMatch(entry: MarketplaceEntry): PluginSearchMatch {

@@ -444,8 +444,8 @@ export interface CadetBridge {
       assistantId: string,
       onboardedAt: string,
     ): Promise<LockfileWriteResult>;
-    replacePlatformAssistants(
-      platformAssistants: Array<Record<string, unknown>>,
+    replaceCloudAssistants(
+      cloudAssistants: Array<Record<string, unknown>>,
       organizationId?: string,
     ): Promise<LockfileWriteResult>;
     retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
@@ -505,7 +505,7 @@ export interface CadetBridge {
     ): Promise<LocalReadAssistantAvatarResult>;
   };
   menu: {
-    setPlatformSession(has: boolean): Promise<void>;
+    setCloudSession(has: boolean): Promise<void>;
     /**
      * The top-level application menus: stable ids plus the shell's own
      * labels. Windows only: the shell hides the native frame (and the menu

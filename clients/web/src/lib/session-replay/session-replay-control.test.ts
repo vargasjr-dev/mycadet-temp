@@ -64,8 +64,8 @@ interface MockUser {
   lastName?: string;
 }
 interface MockAuthState {
-  platformSession: string;
-  platformSessionRestoredOffline: boolean;
+  cloudSession: string;
+  cloudSessionRestoredOffline: boolean;
   user: MockUser | null;
 }
 
@@ -107,8 +107,8 @@ const CONFIG = {
 
 function authState(over: Partial<MockAuthState> = {}): MockAuthState {
   return {
-    platformSession: "present",
-    platformSessionRestoredOffline: false,
+    cloudSession: "present",
+    cloudSessionRestoredOffline: false,
     user: { id: "u1" },
     ...over,
   };
@@ -231,13 +231,13 @@ describe("installSessionReplayControlListeners", () => {
     stop();
   });
 
-  test("a platform-session transition re-syncs the client", () => {
+  test("a cloud-session transition re-syncs the client", () => {
     consentGranted = true;
     const stop = installSessionReplayControlListeners(CONFIG);
 
     authSubscriber?.(
-      authState({ platformSession: "present" }),
-      authState({ platformSession: "absent" }),
+      authState({ cloudSession: "present" }),
+      authState({ cloudSession: "absent" }),
     );
     expect(initMock).toHaveBeenCalledTimes(1);
 

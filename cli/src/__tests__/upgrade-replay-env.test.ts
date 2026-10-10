@@ -6,7 +6,7 @@ import { buildReplayEnv, buildReplayState } from "../lib/upgrade-lifecycle.js";
 import { snapshotEnv } from "./helpers/env.js";
 
 const restoreEnv = snapshotEnv([
-  "CADET_PLATFORM_URL",
+  "CADET_CLOUD_URL",
   "ANTHROPIC_API_KEY",
   "CADET_DEVICE_ID",
 ]);
@@ -24,33 +24,33 @@ describe("buildReplayEnv", () => {
       ACTOR_TOKEN_SIGNING_KEY: "s3",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
-      CADET_DISABLE_PLATFORM: "1",
+      CADET_DISABLE_CLOUD: "1",
       CADET_DEVICE_ID: "abc",
     };
 
     expect(buildReplayEnv(captured, "gateway")).toEqual({
-      CADET_DISABLE_PLATFORM: "1",
+      CADET_DISABLE_CLOUD: "1",
       CADET_DEVICE_ID: "abc",
     });
   });
 
-  test("gateway: captured CADET_PLATFORM_URL dropped when set on host", () => {
-    process.env.CADET_PLATFORM_URL = "https://host.example.com";
+  test("gateway: captured CADET_CLOUD_URL dropped when set on host", () => {
+    process.env.CADET_CLOUD_URL = "https://host.example.com";
     const replay = buildReplayEnv(
-      { CADET_PLATFORM_URL: "https://stale.example.com" },
+      { CADET_CLOUD_URL: "https://stale.example.com" },
       "gateway",
     );
     expect(replay).toEqual({});
   });
 
-  test("gateway: captured CADET_PLATFORM_URL kept when unset on host", () => {
-    delete process.env.CADET_PLATFORM_URL;
+  test("gateway: captured CADET_CLOUD_URL kept when unset on host", () => {
+    delete process.env.CADET_CLOUD_URL;
     const replay = buildReplayEnv(
-      { CADET_PLATFORM_URL: "https://stale.example.com" },
+      { CADET_CLOUD_URL: "https://stale.example.com" },
       "gateway",
     );
     expect(replay).toEqual({
-      CADET_PLATFORM_URL: "https://stale.example.com",
+      CADET_CLOUD_URL: "https://stale.example.com",
     });
   });
 
@@ -118,9 +118,9 @@ describe("buildReplayState", () => {
   });
 
   test("backfills CADET_DEVICE_ID on gateway replay env when absent", () => {
-    const state = buildReplayState({}, { CADET_DISABLE_PLATFORM: "1" });
+    const state = buildReplayState({}, { CADET_DISABLE_CLOUD: "1" });
     expect(state.extraGatewayEnv).toEqual({
-      CADET_DISABLE_PLATFORM: "1",
+      CADET_DISABLE_CLOUD: "1",
       CADET_DEVICE_ID: "host-device-id",
     });
   });

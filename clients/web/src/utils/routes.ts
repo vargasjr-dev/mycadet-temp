@@ -254,7 +254,7 @@ export const routes = {
   /**
    * The Assistant Inbox: the mail the assistant has received and sent at
    * its managed address, or the setup and upgrade cards that stand in for
-   * it. Off the platform the route redirects to chat.
+   * it. Off the cloud the route redirects to chat.
    */
   assistantInbox: r("/assistant/inbox"),
   /** The inbox open on one message: the folder it is in, and its id. */
@@ -320,12 +320,12 @@ export const routes = {
     usageBilling: `${SETTINGS_USAGE_PATH}?tab=billing`,
     // Lands on the daily credit limit card inside the Billing tab. The hash
     // must match `DAILY_CREDIT_LIMIT_ANCHOR_ID` in `daily-credit-limit-card.tsx`
-    // (guarded by that card's test); the platform's daily-limit email links
+    // (guarded by that card's test); the cloud's daily-limit email links
     // here via the `/assistant/settings/billing` redirect.
     usageBillingDailyLimit: `${SETTINGS_USAGE_PATH}?tab=billing#daily-credit-limit`,
     usageBillingConfigureTopUps: `${SETTINGS_USAGE_PATH}?tab=billing&configure_top_up=1`,
     // Post-Stripe-Checkout return. The Billing tab opens the Pro onboarding
-    // wizard while `session_id` is in the URL — the same param the platform's
+    // wizard while `session_id` is in the URL — the same param the cloud's
     // web `success_url` lands on `/assistant/settings/billing` with.
     usageBillingCheckout: (sessionId: string) => {
       const params = new URLSearchParams({
@@ -597,7 +597,7 @@ export function docsUrl(path: string): string {
   return `https://${WWW_DOMAIN}${path}`;
 }
 
-/** URL for the platform-hosted admin UI. */
+/** URL for the cloud-hosted admin UI. */
 export function adminUrl(): string {
   if (isElectron()) {
     const config = (

@@ -49,14 +49,14 @@ mock.module("@/stores/organization-store", () => ({
 const { resolveSelectedAssistantId, setSelectedAssistant } =
   await import("./selection");
 
-function platformAssistant(
+function cloudAssistant(
   id: string,
   organizationId?: string,
 ): ResolvedAssistant {
   return {
     id,
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     organizationId,
   };
@@ -81,7 +81,7 @@ beforeEach(() => {
 
 describe("resolveSelectedAssistantId", () => {
   test("valid selected id passes through", () => {
-    assistants = [platformAssistant("asst-1", ORG_A)];
+    assistants = [cloudAssistant("asst-1", ORG_A)];
     selectedAssistantId = "asst-1";
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
   });
@@ -89,21 +89,21 @@ describe("resolveSelectedAssistantId", () => {
   test("wrong-org selection is dropped and falls back", () => {
     // asst-b is owned by ORG_B; asst-a is the only valid one for ORG_A.
     assistants = [
-      platformAssistant("asst-b", ORG_B),
-      platformAssistant("asst-a", ORG_A),
+      cloudAssistant("asst-b", ORG_B),
+      cloudAssistant("asst-a", ORG_A),
     ];
     selectedAssistantId = "asst-b";
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-a");
   });
 
   test("empty selection falls back to lockfile activeAssistant when valid", () => {
-    assistants = [platformAssistant("asst-1", ORG_A)];
+    assistants = [cloudAssistant("asst-1", ORG_A)];
     activeLocal = lockfileAssistant("asst-1");
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
   });
 
   test("empty selection + stale active falls back to first valid assistant", () => {
-    assistants = [platformAssistant("asst-1", ORG_A)];
+    assistants = [cloudAssistant("asst-1", ORG_A)];
     // active id no longer resolves to a valid entry for this org.
     activeLocal = lockfileAssistant("asst-stale");
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
@@ -121,7 +121,7 @@ describe("resolveSelectedAssistantId", () => {
     // Regression for the ghost bug: a hydrated list that doesn't contain the
     // selection means it's genuinely gone — fall through, never return it.
     assistantsHydrated = true;
-    assistants = [platformAssistant("asst-1", ORG_A)];
+    assistants = [cloudAssistant("asst-1", ORG_A)];
     selectedAssistantId = "asst-unknown";
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
   });
@@ -136,7 +136,7 @@ describe("resolveSelectedAssistantId", () => {
   test("a stale lockfile active with no resolved entry is NOT passed through", () => {
     // Regression: the lockfile active must go through validation, not the
     // unknown-id pass-through — otherwise a stale active 404-loops forever.
-    assistants = [platformAssistant("asst-1", ORG_A)];
+    assistants = [cloudAssistant("asst-1", ORG_A)];
     activeLocal = lockfileAssistant("asst-stale");
     expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
   });

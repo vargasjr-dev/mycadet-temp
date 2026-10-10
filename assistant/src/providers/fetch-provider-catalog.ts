@@ -7,7 +7,7 @@
  * `clients/web/src/assistant/generated/web-fetch-provider-catalog.gen.ts`.
  *
  * Mirrors `search-provider-catalog.ts`. Where web-search distinguishes
- * `managed` (platform proxy) from `byok` (user key), web-fetch has no managed
+ * `managed` (cloud proxy) from `byok` (user key), web-fetch has no managed
  * proxy yet, so the two kinds are:
  *
  *   - `builtin` — the daemon's own HTTP fetch + extract path (`default`). No
@@ -58,8 +58,8 @@ export interface FetchProviderCatalogEntry {
 export const FETCH_PROVIDER_CATALOG: readonly FetchProviderCatalogEntry[] = [
   {
     id: "default",
-    // Display-only: fetching runs in the daemon, not through the platform
-    // proxy. The id stays `default` until a managed fetch route exists.
+    // Display-only: fetching runs in the daemon, not through the cloud
+    // proxy. The id stays `default` until a cloud fetch route exists.
     displayName: "Cadet",
     displayNameLong: "Cadet built-in fetcher",
     kind: "builtin",

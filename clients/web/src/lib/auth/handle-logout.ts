@@ -10,7 +10,7 @@ import {
 } from "@/lib/local-mode";
 import { clearCompanionWorking } from "@/runtime/companion-surface";
 import { setAssistantName } from "@/runtime/identity";
-import { setMenuPlatformSession } from "@/runtime/menu";
+import { setMenuCloudSession } from "@/runtime/menu";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 
@@ -18,12 +18,12 @@ export async function handleLogout(navigate: NavigateFunction): Promise<void> {
   if (isLocalClient()) {
     const active = getActiveAssistant();
     if (active && isLocalAssistant(active)) {
-      await setMenuPlatformSession(false);
-      useAuthStore.setState({ platformSession: "absent" });
+      await setMenuCloudSession(false);
+      useAuthStore.setState({ cloudSession: "absent" });
       return;
     }
 
-    await setMenuPlatformSession(false);
+    await setMenuCloudSession(false);
     await useAuthStore.getState().logout();
     // The same teardown the hosted path does below, and for the companion
     // surface it is not cosmetic: the published name is what tells main there

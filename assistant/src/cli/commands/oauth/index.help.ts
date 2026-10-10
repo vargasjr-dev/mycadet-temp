@@ -515,7 +515,7 @@ Arguments:
 
 Modes:
   managed    OAuth credentials are managed by Cadet Cloud. The
-             assistant connects via a platform-hosted authorization flow.
+             assistant connects via a cloud-hosted authorization flow.
              No local client ID or secret is needed.
   your-own   You supply your own OAuth app credentials (client ID and
              secret). The assistant runs the OAuth flow locally.
@@ -699,9 +699,9 @@ completion. Use --no-browser to print the URL instead (useful for headless
 or SSH sessions).
 
 Important for chat/UI turns: do not run this command just to let the user
-connect a managed provider. Render the first-class connect surface instead:
+connect a cloud provider. Render the first-class connect surface instead:
 call \`ui_show\` with surface_type "oauth_connect" and data.providerKey set to
-the provider (for example, "google"). That surface starts the managed OAuth UI
+the provider (for example, "google"). That surface starts the cloud OAuth UI
 and avoids pasting raw authorization links into the conversation. If the user
 needs non-default scopes, also pass data.requestedScopes as a full replacement
 set (list every scope the connection should keep, not just the new ones).
@@ -866,7 +866,7 @@ need direct access to the token (i.e. \`assistant oauth request\` is
 insufficient) and you are comfortable with the security implications.
 
 Token retrieval is only supported for providers with mode set to "your-own".
-Platform-managed providers handle tokens internally — use
+Cloud providers handle tokens internally — use
 'assistant oauth ping <provider>' to verify connectivity or
 'assistant oauth request --provider <provider> <url>' to make
 authenticated requests.
@@ -925,7 +925,7 @@ Environment variables (printed as \`export\` lines with --export):
 Use 'assistant oauth status <provider>' to find account identifiers for
 --account. Unlabeled connections can be selected by their connection ID.
 
-Managed connections forward Content-Type, Accept, User-Agent, and X-Request-Id.
+Cloud connections forward Content-Type, Accept, User-Agent, and X-Request-Id.
 Requests with unsupported headers, including If-Match and Idempotency-Key,
 are rejected before calling the provider. A connection using your own OAuth
 app can preserve those headers.

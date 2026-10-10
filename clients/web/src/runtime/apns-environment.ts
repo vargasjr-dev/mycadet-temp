@@ -2,7 +2,7 @@
  * Shared resolver for the APNs environment a push token must be tagged with.
  *
  * APNs rejects a token minted under one entitlement environment when it is
- * dispatched against the other, so the platform stores the environment
+ * dispatched against the other, so the cloud stores the environment
  * alongside every token and the value must match the running build. Two token
  * upserts depend on that tag, and both resolve it here so they can never
  * disagree: device push tokens (`runtime/push-registration.ts`) and

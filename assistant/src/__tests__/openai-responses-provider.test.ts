@@ -259,7 +259,7 @@ describe("OpenAIResponsesProvider", () => {
     new OpenAIResponsesProvider("sk-custom", "gpt-5.4", {
       baseURL: "https://proxy.example.com/v1",
       providerName: "openai-managed",
-      providerLabel: "Managed OpenAI",
+      providerLabel: "Cloud OpenAI",
     });
 
     expectOpenAIConstructorOptions({

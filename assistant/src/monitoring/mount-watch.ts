@@ -19,7 +19,7 @@ import { getLogger } from "../util/logger.js";
 
 const log = getLogger("mount-watch");
 
-/** Assistant-container PVC bind targets in the managed pod template. */
+/** Assistant-container PVC bind targets in the cloud pod template. */
 export const ASSISTANT_VOLUME_MOUNT_POINTS = ["/workspace", "/data"] as const;
 
 const VIRTIOFS_TYPES = new Set(["virtiofs", "fuse.virtiofs"]);

@@ -1,5 +1,5 @@
 /**
- * Circuit breaker for managed fallback routes.
+ * Circuit breaker for cloud fallback routes.
  *
  * Once a backup profile has served a request, the primary route is known to be
  * down. Paying the full retry budget on every later request only adds latency
@@ -17,7 +17,7 @@
  * - An upstream outage (5xx, 429, transport failure, a broken managed
  *   credential) indicts the whole provider, so it is remembered under the
  *   upstream name and every model on it skips the primary.
- * - A retired or renamed model (404, `model_not_found`, the managed proxy's
+ * - A retired or renamed model (404, `model_not_found`, the cloud proxy's
  *   preflight 400) indicts one model. Remembering it provider-wide would
  *   divert healthy profiles on the same upstream to their backups for the
  *   whole cooldown, and would let a probe of some other healthy model close a

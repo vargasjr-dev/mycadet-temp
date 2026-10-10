@@ -4,7 +4,7 @@
  *
  * The panel owns the settings-surface save path and its create success
  * toast (the composer quick-add surface owns its own, so exactly one toast
- * fires per create). Managed profiles render read-only with Save As New;
+ * fires per create). Cloud profiles render read-only with Save As New;
  * a complete custom profile opens in edit with its stored values.
  */
 
@@ -232,7 +232,7 @@ describe("ProfileDetailPanel - create flow", () => {
   });
 });
 
-describe("ProfileDetailPanel - managed profiles", () => {
+describe("ProfileDetailPanel - cloud profiles", () => {
   test("opens read-only with Save As New and no Delete", async () => {
     profilesState = {
       balanced: {

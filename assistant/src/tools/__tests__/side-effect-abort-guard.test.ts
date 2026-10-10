@@ -293,7 +293,7 @@ const SKILL_TOOLS: GuardedTool[] = [
   proxied("screen_point_at"),
 
   {
-    name: "scaffold_managed_skill",
+    name: "scaffold_cloud_skill",
     input: {
       skill_id: "guard-skill",
       name: "Guard Skill",
@@ -302,7 +302,7 @@ const SKILL_TOOLS: GuardedTool[] = [
       activation_hints: ["guard"],
     },
   },
-  { name: "delete_managed_skill", input: { skill_id: "guard-skill" } },
+  { name: "delete_cloud_skill", input: { skill_id: "guard-skill" } },
   { name: "find_similar_skills", input: { goal: "do a thing" } },
 
   {

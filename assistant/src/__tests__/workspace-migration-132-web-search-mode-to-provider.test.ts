@@ -86,7 +86,7 @@ describe("132-web-search-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed service to provider cadet", () => {
+  test("rewrites a cloud service to provider cadet", () => {
     writeConfig({
       services: { "web-search": { mode: "managed", provider: "brave" } },
     });
@@ -106,8 +106,8 @@ describe("132-web-search-mode-to-provider", () => {
     expect(webSearch(readConfig())).toEqual({ provider: "firecrawl" });
   });
 
-  // The platform default config. Provider Native is a distinct user-facing
-  // option (native hosted search with its own managed fallback), so it must
+  // The cloud default config. Provider Native is a distinct user-facing
+  // option (native hosted search with its own cloud fallback), so it must
   // survive managed mode verbatim rather than becoming cadet.
   test("preserves inference-provider-native under managed mode", () => {
     writeConfig({
@@ -163,7 +163,7 @@ describe("132-web-search-mode-to-provider", () => {
     ).not.toThrow();
   });
 
-  // The migrated shape is what the daemon actually parses, so a managed user
+  // The migrated shape is what the daemon actually parses, so a cloud user
   // must land on cadet rather than falling back to a keyless BYOK provider.
   test("migrated output parses to the cadet provider", () => {
     writeConfig({
@@ -177,7 +177,7 @@ describe("132-web-search-mode-to-provider", () => {
   });
 
   describe("down", () => {
-    test("round-trip restores the managed pair", () => {
+    test("round-trip restores the cloud pair", () => {
       writeConfig({
         services: { "web-search": { mode: "managed", provider: "brave" } },
       });
@@ -206,7 +206,7 @@ describe("132-web-search-mode-to-provider", () => {
       });
     });
 
-    // The managed pairing was erased on the way up, so Provider Native rolls
+    // The cloud pairing was erased on the way up, so Provider Native rolls
     // back to your-own even if it had been paired with managed mode.
     test("rolls inference-provider-native back to your-own", () => {
       writeConfig({

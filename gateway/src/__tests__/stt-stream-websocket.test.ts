@@ -435,7 +435,7 @@ describe("dictation is not a guardian-only surface", () => {
 });
 
 /**
- * The managed path, where tunnel validated the browser's own token and
+ * The cloud path, where tunnel validated the browser's own token and
  * attested the caller to the bridge. There is no edge JWT on it, so requiring
  * one rejected every managed caller: the socket opened at tunnel and closed at
  * the loopback with an open failure, which the browser saw as a 1014.
@@ -530,7 +530,7 @@ describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => 
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
-  /** A locally hosted gateway with a tunnel takes the tunnel path like a managed pod. */
+  /** A locally hosted gateway with a tunnel takes the tunnel path like a cloud pod. */
   test("admits an attested caller on a locally hosted gateway with a tunnel", () => {
     const { res, server } = managedUpgrade({
       managed: false,

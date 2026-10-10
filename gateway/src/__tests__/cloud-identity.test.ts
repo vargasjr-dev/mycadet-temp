@@ -42,7 +42,7 @@ const {
   fetchCloudIdentityIds,
   CLOUD_IDENTITY_VALIDATE_PATH,
   readStoredCloudUserId,
-  resolvePlatformAssistantId,
+  resolveCloudAssistantId,
 } = await import("../cloud-identity.js");
 const { credentialKey } = await import("../credential-key.js");
 
@@ -53,7 +53,7 @@ const USER_ID = "33333333-4444-4555-8666-777777777777";
 const API_KEY_ACCOUNT = credentialKey("cadet", "assistant_api_key");
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
-const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
+const originalCloudUrl = process.env.CADET_CLOUD_URL;
 
 function restoreEnv(name: string, value: string | undefined): void {
   if (value === undefined) {
@@ -84,13 +84,13 @@ beforeEach(() => {
   fetchCalls.length = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.CADET_PLATFORM_URL;
+  delete process.env.CADET_CLOUD_URL;
   _resetCloudIdentityForTests();
 });
 
 afterEach(() => {
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
-  restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
+  restoreEnv("CADET_CLOUD_URL", originalCloudUrl);
   _resetCloudIdentityForTests();
 });
 
@@ -138,7 +138,7 @@ describe("fetchCloudIdentityIds", () => {
   });
 });
 
-describe("resolvePlatformAssistantId", () => {
+describe("resolveCloudAssistantId", () => {
   test("returns the in-memory override without calling validate", async () => {
     applyCloudIdentityIds({
       assistantId: ASSISTANT_ID,
@@ -146,21 +146,21 @@ describe("resolvePlatformAssistantId", () => {
       userId: USER_ID,
     });
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
+    await expect(resolveCloudAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(0);
   });
 
   test("returns empty when the in-memory override is unset and there is no API key", async () => {
-    await expect(resolvePlatformAssistantId()).resolves.toBe("");
+    await expect(resolveCloudAssistantId()).resolves.toBe("");
     expect(fetchCalls).toHaveLength(0);
   });
 
   test("loads ids from validate when the in-memory override is empty", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
-    await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
+    await expect(resolveCloudAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0]?.url).toBe(
       `${BASE_URL}${CLOUD_IDENTITY_VALIDATE_PATH}`,
@@ -169,30 +169,30 @@ describe("resolvePlatformAssistantId", () => {
 
   test("does not retry validate during the cooldown after a failure", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => new Response("down", { status: 503 });
 
-    await expect(resolvePlatformAssistantId()).resolves.toBe("");
-    await expect(resolvePlatformAssistantId()).resolves.toBe("");
+    await expect(resolveCloudAssistantId()).resolves.toBe("");
+    await expect(resolveCloudAssistantId()).resolves.toBe("");
     expect(fetchCalls).toHaveLength(1);
   });
 
   test("retries validate after a failed attempt once the cooldown is cleared", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => new Response("down", { status: 503 });
 
-    await expect(resolvePlatformAssistantId()).resolves.toBe("");
+    await expect(resolveCloudAssistantId()).resolves.toBe("");
     _resetCloudIdentityForTests();
     fetchImplFn = async () => validateResponse();
 
-    await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
+    await expect(resolveCloudAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(2);
   });
 
   test("concurrent resolves share one in-flight validate", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     let release!: (value: Response) => void;
     let notifyFetchStarted!: () => void;
     const fetchStarted = new Promise<void>((resolve) => {
@@ -205,8 +205,8 @@ describe("resolvePlatformAssistantId", () => {
       });
     };
 
-    const first = resolvePlatformAssistantId();
-    const second = resolvePlatformAssistantId();
+    const first = resolveCloudAssistantId();
+    const second = resolveCloudAssistantId();
     await fetchStarted;
     expect(fetchCalls).toHaveLength(1);
     release(validateResponse());
@@ -232,7 +232,7 @@ describe("readStoredCloudUserId", () => {
 
   test("loads the owner id from validate and keeps it when validate later fails", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredCloudUserId()).resolves.toEqual({
@@ -288,7 +288,7 @@ describe("readStoredCloudUserId", () => {
 
   test("reports a miss when the API key is present and the base URL is unset", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
     await expect(readStoredCloudUserId()).resolves.toEqual({
       userId: undefined,
       unreachable: false,
@@ -300,7 +300,7 @@ describe("readStoredCloudUserId", () => {
     const nextAssistantId = "44444444-5555-4666-8777-888888888888";
     const nextUserId = "55555555-6666-4777-8888-999999999999";
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredCloudUserId()).resolves.toEqual({
@@ -320,7 +320,7 @@ describe("readStoredCloudUserId", () => {
       userId: nextUserId,
       unreachable: false,
     });
-    await expect(resolvePlatformAssistantId()).resolves.toBe(nextAssistantId);
+    await expect(resolveCloudAssistantId()).resolves.toBe(nextAssistantId);
     expect(fetchCalls).toHaveLength(2);
     const headers = new Headers(fetchCalls[1]?.init?.headers);
     expect(headers.get("Authorization")).toBe("Api-Key next-assistant-key");
@@ -328,7 +328,7 @@ describe("readStoredCloudUserId", () => {
 
   test("drops bound identity when credentials change and validate fails", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredCloudUserId()).resolves.toEqual({
@@ -348,7 +348,7 @@ describe("readStoredCloudUserId", () => {
 
   test("keeps bound identity when the vault is down and the new API key cannot be read", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await expect(readStoredCloudUserId()).resolves.toEqual({
@@ -372,7 +372,7 @@ describe("readStoredCloudUserId", () => {
 
   test("does not read platform identity ids from the credential store", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImplFn = async () => validateResponse();
 
     await readStoredCloudUserId();

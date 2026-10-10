@@ -19,7 +19,7 @@
  * Transport follows `live-voice/connection.ts` and the watch stream. A
  * self-hosted assistant is dialled straight at its gateway ingress with the
  * actor edge JWT in `?token=` (browser WebSockets can't set an `Authorization`
- * header); a managed one is reached through the platform's tunnel ingress with
+ * header); a cloud one is reached through the cloud's tunnel ingress with
  * a minted short-lived token. The mint is a round trip, so the socket is
  * resolved asynchronously and audio captured meanwhile is held until it opens,
  * which is what keeps the opening words of a dictation that begins the
@@ -382,7 +382,7 @@ export function startDictationStream(
       }
     },
     (err: unknown) => {
-      // A paired ingress, a token not yet provisioned, or a mint the platform
+      // A paired ingress, a token not yet provisioned, or a mint the cloud
       // refused. Each is a reason there is no stream, not a fault: batch
       // dictation still works, and only the live half is missing.
       console.info(

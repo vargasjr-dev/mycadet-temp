@@ -29,7 +29,7 @@ export const slackTransport: ChannelTransport = {
   /**
    * A chat is a channel or DM id, with `threadTs` naming the thread to post
    * under. Reaching a person who has not been named as a chat would mean
-   * opening the DM first (`conversations.open`), a platform call this
+   * opening the DM first (`conversations.open`), a cloud call this
    * resolution does not make.
    */
   addressFor(target) {

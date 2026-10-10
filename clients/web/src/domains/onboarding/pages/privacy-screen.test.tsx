@@ -81,7 +81,7 @@ mock.module("@/utils/native-anchor", () => ({
 }));
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: { use: { user: () => ({ id: "user-1" }) } },
-  useHasPlatformSession: () => false,
+  useHasCloudSession: () => false,
 }));
 mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {
@@ -247,7 +247,7 @@ describe("PrivacyScreen — Start navigation", () => {
             Date.now() - ONBOARDED_HATCH_AGE_MS,
           ).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -274,14 +274,14 @@ describe("PrivacyScreen — Start navigation", () => {
             Date.now() - ONBOARDED_HATCH_AGE_MS,
           ).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
         {
           id: "asst-new",
           hatchedAt: new Date().toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -547,7 +547,7 @@ describe("PrivacyScreen — Start navigation", () => {
   // A checkout return with nothing provisioned is funneled to the hatching
   // screen; an unconsented user is bounced here, and the funnel URL rides
   // along as `returnTo`. Start has to resume it — the standard onboarding step
-  // carries neither the managed-hatch nor the paid-return marker, so the
+  // carries neither the cloud-hatch nor the paid-return marker, so the
   // paying user would finish the hatch at the baseline plan.
   const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
 

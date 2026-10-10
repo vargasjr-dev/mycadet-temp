@@ -480,7 +480,7 @@ describe("recordSseTraffic connect-latency and keepalive cadence", () => {
   });
 
   test("reports the proxy injector cadence when the daemon heartbeat is lost", () => {
-    // GIVEN keepalives arriving only at the platform proxy's 10s injection
+    // GIVEN keepalives arriving only at the cloud proxy's 10s injection
     const id = registerSseClient(new AbortController().signal);
     replayKeepalives(id, [10_000, 10_000, 10_000]);
 

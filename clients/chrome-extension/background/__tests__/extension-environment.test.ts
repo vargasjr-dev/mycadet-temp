@@ -176,7 +176,7 @@ describe('createFirstAssistantUrl', () => {
     });
   }
 
-  test('points at the platform hatching route, not the local-only chooser create action', () => {
+  test('points at the cloud hatching route, not the local-only chooser create action', () => {
     expect(CREATE_ASSISTANT_WEB_PATH).toBe('/assistant/onboarding/hatching');
   });
 });

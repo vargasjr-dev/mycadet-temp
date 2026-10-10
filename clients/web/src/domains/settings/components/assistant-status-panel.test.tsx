@@ -250,7 +250,7 @@ describe("useAssistantWithHealthz", () => {
   });
 
   test("waits for the organization header rather than reporting no metrics", () => {
-    // GIVEN a platform session whose organization header has not resolved yet
+    // GIVEN a cloud session whose organization header has not resolved yet
     orgReadiness = "resolving";
 
     const { result } = renderHook(() => useAssistantWithHealthz(), { wrapper });

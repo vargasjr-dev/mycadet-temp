@@ -30,7 +30,7 @@ Do not offer the assistant's own email as an option unless the user specifically
 
 Reading, searching, or summarizing the user's inbox is a **messaging task** — use the messaging tools (or the Gmail connection flow below if nothing is connected). Never run `assistant channels` commands for a mailbox request: channels are the assistant's own inbound delivery routes, not the user's mailbox, and inspecting them sends you down the wrong path.
 
-When a platform is connected (auth test succeeds), always use the messaging API tools for that platform. Never fall back to browser automation, shell commands (bash, curl), or any other approach for operations that messaging tools can handle. The messaging tools handle authentication internally - never try to access tokens or call APIs directly. Browser automation is only appropriate for initial credential setup (OAuth consent screens), not for day-to-day messaging operations.
+When a cloud is connected (auth test succeeds), always use the messaging API tools for that platform. Never fall back to browser automation, shell commands (bash, curl), or any other approach for operations that messaging tools can handle. The messaging tools handle authentication internally - never try to access tokens or call APIs directly. Browser automation is only appropriate for initial credential setup (OAuth consent screens), not for day-to-day messaging operations.
 
 On Gmail and Outlook, `messaging_send` creates a real mailbox draft for review. It does not send. Recipients are optional on Outlook: if the user has not named a To address, still create the draft (use a non-email `conversation_id` such as `drafts`) and tell them only after the tool returns a draft ID. If draft creation fails or is interrupted, say so and offer the email copy in chat. Do not claim a draft exists until the tool succeeds.
 
@@ -38,11 +38,11 @@ On Gmail and Outlook, `messaging_send` creates a real mailbox draft for review. 
 
 ## Connection Setup
 
-Before using any messaging tool, verify that the platform is connected by calling `messaging_auth_test` with the appropriate `platform` parameter. If the call fails with a token/authorization error, follow the steps below.
+Before using any messaging tool, verify that the cloud is connected by calling `messaging_auth_test` with the appropriate `platform` parameter. If the call fails with a token/authorization error, follow the steps below.
 
 ### Public Ingress (required for Telegram)
 
-Telegram setup requires webhook routing, but it does **not** always require ngrok. Before suggesting public ingress for Telegram, check managed callback availability with `assistant cloud status --json`. If that reports `available: true` with a non-empty `assistantId`, use the platform callback route flow and do not prompt for ngrok; this applies to managed pods and platform-connected local assistants alike, so do not require `isPlatform: true`. Only use the **public-ingress** skill for local assistants that genuinely need a public gateway URL. Slack uses Socket Mode and does not require public ingress. Gmail/Outlook on the desktop app uses a loopback callback and does not require public ingress; the channel path (Path B in the cadet-oauth-integrations skill) handles public ingress internally when needed.
+Telegram setup requires webhook routing, but it does **not** always require ngrok. Before suggesting public ingress for Telegram, check managed callback availability with `assistant cloud status --json`. If that reports `available: true` with a non-empty `assistantId`, use the cloud callback route flow and do not prompt for ngrok; this applies to managed pods and platform-connected local assistants alike, so do not require `isPlatform: true`. Only use the **public-ingress** skill for local assistants that genuinely need a public gateway URL. Slack uses Socket Mode and does not require public ingress. Gmail/Outlook on the desktop app uses a loopback callback and does not require public ingress; the channel path (Path B in the cadet-oauth-integrations skill) handles public ingress internally when needed.
 
 ### Email Connection Flow
 
@@ -55,12 +55,12 @@ When the user asks to "connect my email", "set up email", "manage my email", or 
 ### Gmail
 
 1. **Check the connection.** Run `assistant oauth status google`. If a connection exists, the user is ready to go — proceed with their request.
-2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "google"`. That surface is always available — do **not** run `assistant channels`, `oauth providers get`, or load `cadet-oauth-integrations` just to display the button, and do **not** fall back to `assistant oauth connect`. Only load `cadet-oauth-integrations` when the managed-vs-your-own-credentials decision genuinely needs handling (e.g. a BYOK setup where the managed connect surface isn't available).
+2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "google"`. That surface is always available — do **not** run `assistant channels`, `oauth providers get`, or load `cadet-oauth-integrations` just to display the button, and do **not** fall back to `assistant oauth connect`. Only load `cadet-oauth-integrations` when the cloud-vs-your-own-credentials decision genuinely needs handling (e.g. a BYOK setup where the cloud connect surface isn't available).
 
 ### Outlook
 
 1. **Check the connection.** Run `assistant oauth status outlook`. If a connection exists, the user is ready to go — proceed with their request.
-2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "outlook"`. The same rules as Gmail apply — don't probe further or load a setup skill just to show the button; only load `cadet-oauth-integrations` when a managed-vs-your-own-credentials decision genuinely needs handling.
+2. **If no connections are found, render the connect button in one step:** call `ui_show` with `surface_type: "oauth_connect"` and `data.providerKey: "outlook"`. The same rules as Gmail apply — don't probe further or load a setup skill just to show the button; only load `cadet-oauth-integrations` when a cloud-vs-your-own-credentials decision genuinely needs handling.
 
 ### Slack
 
@@ -68,9 +68,9 @@ For Slack setup, load the **slack-app-setup** skill directly. `messaging_send` p
 
 ### Telegram
 
-Telegram uses a bot token (not OAuth). Load the **telegram-setup** skill, which uses a managed platform callback route on platform-connected assistants (managed pods and local assistants alike) and falls back to **public-ingress** for self-hosted setups when needed:
+Telegram uses a bot token (not OAuth). Load the **telegram-setup** skill, which uses a cloud platform callback route on platform-connected assistants (managed pods and local assistants alike) and falls back to **public-ingress** for self-hosted setups when needed:
 
-- First run `assistant cloud status --json`. If it shows managed callback routing is available, tell the user you will use the platform callback route and skip ngrok/public-ingress.
+- First run `assistant cloud status --json`. If it shows managed callback routing is available, tell the user you will use the cloud callback route and skip ngrok/public-ingress.
 - Call `skill_load` with `skill: "telegram-setup"` to load the dependency skill.
 - Tell the user: _"I've loaded a setup guide for Telegram. It will walk you through connecting a Telegram bot to your assistant."_
 
@@ -97,7 +97,7 @@ When a messaging tool fails with a token or authorization error:
 
 ## Platform Selection
 
-- If the user specifies a platform (e.g., "check my Slack"), pass it as the `platform` parameter.
+- If the user specifies a cloud (e.g., "check my Slack"), pass it as the `platform` parameter.
 - If only one platform is connected, it is auto-selected.
 - If multiple platforms are connected and the user doesn't specify, ask which platform they mean - or search across all of them.
 - **Be action-oriented with email.** When the user says "email" and wants to _do_ something (declutter, check, search, send), check what's connected first. If nothing is connected, ask which provider briefly and then go straight into setup - don't present menus, options lists, or explain the setup process. Just do it.

@@ -59,10 +59,10 @@ const DANIEL = {
 };
 let catalog: Array<typeof SARAH> = [];
 let voicesLoading = false;
-mock.module("@/lib/tts/use-managed-voices", () => ({
-  // The audition reads the platform directly, taking no assistant id, so it
+mock.module("@/lib/tts/use-cloud-voices", () => ({
+  // The audition reads the cloud directly, taking no assistant id, so it
   // does not wait on a hatch.
-  useUnscopedManagedVoices: () => ({
+  useUnscopedCloudVoices: () => ({
     voices: catalog,
     defaultModel: catalog[0]?.model ?? null,
     fetched: catalog.length > 0,
@@ -142,7 +142,7 @@ describe("GiveMeAFaceScreen voice audition", () => {
     expect(played).toEqual([]);
 
     fireEvent.click(hearButton());
-    // The first-centered avatar is paired with the platform default voice.
+    // The first-centered avatar is paired with the cloud default voice.
     await waitFor(() => expect(played).toEqual([SARAH.sampleUrl]));
   });
 

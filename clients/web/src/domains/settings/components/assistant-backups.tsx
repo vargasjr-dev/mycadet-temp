@@ -19,13 +19,13 @@ import {
   exportBundleFilename,
   exportManagedBundle,
   type ManagedExportStep,
-} from "@/domains/settings/teleport/managed-export";
-import { requestSignedDownloadUrl } from "@/domains/settings/teleport/platform-migration-client";
+} from "@/domains/settings/teleport/cloud-export";
+import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
 import { TeleportError } from "@/domains/settings/teleport/teleport-types";
 import {
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -101,9 +101,9 @@ export function AssistantBackups({ assistantId }: { assistantId: string }) {
   // shows while that assistant is still current and exportable, so a switch
   // or sign-out mid-dialog can never export a different assistant.
   const [exportTarget, setExportTarget] = useState<string | null>(null);
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  const canExport = isPlatformHosted && platformGate === "full";
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const canExport = isCloudHosted && cloudGate === "full";
   const confirmingExport = canExport && exportTarget === assistantId;
   if (exportTarget !== null && !confirmingExport) {
     setExportTarget(null);

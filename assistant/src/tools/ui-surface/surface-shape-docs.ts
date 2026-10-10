@@ -130,9 +130,9 @@ export const SURFACE_SHAPE_DOCS: Record<string, SurfaceShapeDoc> = {
         : "`data` must carry at least a summary, metrics, or sections",
   },
   oauth_connect: {
-    purpose: "managed OAuth connection button for an integration account",
+    purpose: "cloud OAuth connection button for an integration account",
     shape:
-      "{ providerKey, requestedScopes?, displayName?, description?, logoUrl? }: managed OAuth connection CTA; use when the task needs a managed integration account (Google, Linear, GitHub, ...) instead of settings or shell OAuth. requestedScopes is an optional FULL replacement set of OAuth scopes: when set, the connection is granted exactly these scopes instead of the platform defaults, so include every scope the connection should keep; omit it to use the platform's default scopes",
+      "{ providerKey, requestedScopes?, displayName?, description?, logoUrl? }: cloud OAuth connection CTA; use when the task needs a cloud integration account (Google, Linear, GitHub, ...) instead of settings or shell OAuth. requestedScopes is an optional FULL replacement set of OAuth scopes: when set, the connection is granted exactly these scopes instead of the cloud defaults, so include every scope the connection should keep; omit it to use the cloud's default scopes",
     missingContent: (data) =>
       isNonEmptyString(data.providerKey)
         ? null

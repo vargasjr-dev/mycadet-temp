@@ -614,7 +614,7 @@ describe("VoiceInputButton: mobile composer row chrome", () => {
       />,
     );
 
-    // THEN the press behaves as the platform intends
+    // THEN the press behaves as the cloud intends
     expect(
       fireEvent.mouseDown(
         screen.getByRole("button", { name: "Start voice input" }),

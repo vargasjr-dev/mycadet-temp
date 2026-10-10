@@ -225,7 +225,7 @@ describe("completion local delivery policy", () => {
   );
 
   test.each(["chat.assistant_reply", "schedule.result"])(
-    "%s retains the platform owner fallback when the guardian lookup is unavailable",
+    "%s retains the cloud owner fallback when the guardian lookup is unavailable",
     (sourceEventName) => {
       expect(
         isCompletionRecipientUnavailable(

@@ -4,8 +4,8 @@
  * GET    /v1/inference/provider-connections          — list all connections (optional ?provider= filter)
  * GET    /v1/inference/provider-connections/:name    — single connection by name
  * POST   /v1/inference/provider-connections          — create a new connection
- * PATCH  /v1/inference/provider-connections/:name    — update auth/label (cannot rename or change provider; auth is locked to platform for managed connections)
- * DELETE /v1/inference/provider-connections/:name    — delete (rejects if profiles or call sites reference it; rejects outright for managed connections)
+ * PATCH  /v1/inference/provider-connections/:name    — update auth/label (cannot rename or change provider; auth is locked to platform for cloud connections)
+ * DELETE /v1/inference/provider-connections/:name    — delete (rejects if profiles or call sites reference it; rejects outright for cloud connections)
  */
 
 import { z } from "zod";
@@ -16,8 +16,8 @@ import { getIsCloud } from "../../config/env-registry.js";
 import { getConfigReadOnly } from "../../config/loader.js";
 import { getDb } from "../../persistence/db-connection.js";
 import {
-  CADET_MANAGED_PROVIDER,
-  isCadetManagedConnection,
+  CADET_CLOUD_PROVIDER,
+  isCadetCloudConnection,
 } from "../../providers/cadet-model-routing.js";
 import {
   type Auth,
@@ -91,7 +91,7 @@ const savedConnectionResponseSchema = ProviderConnectionSchema.extend({
  * with a `base_url` pointing to their own server, which would redirect all
  * LLM calls (and the API key) to the attacker.
  *
- * Even for allowed providers, a platform-hosted daemon rejects `base_url`
+ * Even for allowed providers, a cloud-hosted daemon rejects `base_url`
  * values that point to private networks or cloud metadata endpoints
  * (SSRF protection). Self-hosted daemons allow those addresses because
  * localhost and LAN hosts are the expected target.
@@ -141,7 +141,7 @@ async function parseCustomProviderFields(
       }
 
       // SSRF protection: reject private IPs, localhost, cloud metadata
-      // endpoints — but only for platform-hosted daemons where the container
+      // endpoints — but only for cloud-hosted daemons where the container
       // runs on Cadet infrastructure. Self-hosted daemons run on the user's
       // own machine, so localhost/private addresses are the expected target
       // (e.g. LM Studio, vLLM, text-generation-webui).
@@ -212,20 +212,20 @@ function deriveConnectionAuth(provider: string, credential: unknown): Auth {
 }
 
 /**
- * Platform auth and `provider: "cadet"` record the same fact (the managed
+ * Platform auth and `provider: "cadet"` record the same fact (the cloud
  * route) in two columns, and derivation always sets them together. Only an
  * explicit `auth` object can split them, producing a row dispatch bills to
- * the platform while every provider-keyed check reads it as BYOK, or the
+ * the cloud while every provider-keyed check reads it as BYOK, or the
  * reverse.
  */
 function assertAuthMatchesProvider(provider: string, auth: Auth): void {
   const managedAuth = auth.type === "platform";
-  const managedProvider = provider === CADET_MANAGED_PROVIDER;
+  const managedProvider = provider === CADET_CLOUD_PROVIDER;
   if (managedAuth !== managedProvider) {
     throw new BadRequestError(
       managedAuth
-        ? `Auth type "platform" is only valid for provider "${CADET_MANAGED_PROVIDER}", not "${provider}". Cadet-managed routing is selected by the provider, so omit "auth" to derive it.`
-        : `Provider "${CADET_MANAGED_PROVIDER}" is always platform-authenticated; "${auth.type}" auth is not valid for it. Omit "auth" to derive it, or name a real provider for key-based auth.`,
+        ? `Auth type "platform" is only valid for provider "${CADET_CLOUD_PROVIDER}", not "${provider}". Cadet Cloud routing is selected by the provider, so omit "auth" to derive it.`
+        : `Provider "${CADET_CLOUD_PROVIDER}" is always cloud-authenticated; "${auth.type}" auth is not valid for it. Omit "auth" to derive it, or name a real provider for key-based auth.`,
     );
   }
   // Same rule for the subscription identity: provider "chatgpt" and
@@ -344,11 +344,11 @@ async function handleCreateConnection({ body = {} }: RouteHandlerArgs) {
   }
 
   // Canonical names belong to boot seeding, which skips a name already taken
-  // by a user-owned row, leaving the install with no managed connection and a
+  // by a user-owned row, leaving the install with no cloud connection and a
   // BYOK row that managed routing then ignores. Refuse the name up front.
   if (MANAGED_CONNECTION_NAMES.has(name)) {
     throw new BadRequestError(
-      `Connection name "${name}" is reserved for the Cadet-managed connection. Pick another name.`,
+      `Connection name "${name}" is reserved for the Cadet Cloud connection. Pick another name.`,
     );
   }
   // Provider ids and routing identities are labels in profile config, so an
@@ -597,21 +597,21 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
     throw new NotFoundError(`Connection "${name}" not found.`);
   }
 
-  // Managed connections are write-protected: `seedCanonicalConnections` would
+  // Cloud connections are write-protected: `seedCanonicalConnections` would
   // re-upsert them on the next daemon boot anyway, so a successful delete here
   // produces a confusing delete → reappear loop. Reject outright. Mirrors
-  // `rejectManagedProfileDeletion` for managed profiles (which are similarly
+  // `rejectCloudProfileDeletion` for cloud profiles (which are similarly
   // re-overlaid by `seed-inference-profiles.ts` on boot).
   //
   // Gated on the row, not the name: an install predating the reserved name can
   // hold a user-owned row here, which boot seeding refuses to overwrite and
   // managed routing ignores. That row must stay deletable, since deleting it
-  // is what lets boot seeding restore the real managed connection.
+  // is what lets boot seeding restore the real cloud connection.
   const claimsManagedName =
-    MANAGED_CONNECTION_NAMES.has(name) && !isCadetManagedConnection(existing);
+    MANAGED_CONNECTION_NAMES.has(name) && !isCadetCloudConnection(existing);
   if (MANAGED_CONNECTION_NAMES.has(name) && !claimsManagedName) {
     throw new BadRequestError(
-      `Cannot delete managed connection "${name}". This is a Cadet-managed connection that is re-seeded on every startup.`,
+      `Cannot delete cloud connection "${name}". This is a Cadet Cloud connection that is re-seeded on every startup.`,
     );
   }
 
@@ -805,7 +805,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Update a provider connection",
     description:
-      "Update an existing connection. Cannot rename or change the provider. Omitting auth keeps the stored auth; passing credential alone rotates the key via provider-derived api_key auth. An explicit auth object must agree with the connection's provider; platform auth belongs to cadet and only to cadet. For the Cadet-managed connection (cadet) the auth is locked to platform; label remains editable.",
+      "Update an existing connection. Cannot rename or change the provider. Omitting auth keeps the stored auth; passing credential alone rotates the key via provider-derived api_key auth. An explicit auth object must agree with the connection's provider; platform auth belongs to cadet and only to cadet. For the Cadet Cloud connection (cadet) the auth is locked to platform; label remains editable.",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Connection name" }],
     requestBody: z.object({
@@ -819,7 +819,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "Invalid auth schema, or attempt to change auth on a managed connection",
+          "Invalid auth schema, or attempt to change auth on a cloud connection",
       },
       "404": { description: "Connection not found" },
     },
@@ -835,14 +835,14 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Delete a provider connection",
     description:
-      "Delete a provider connection. Fails with 400 for the Cadet-managed connection (cadet) which is re-seeded on boot. Fails with 409 if any profile or call-site references the connection.",
+      "Delete a provider connection. Fails with 400 for the Cadet Cloud connection (cadet) which is re-seeded on boot. Fails with 409 if any profile or call-site references the connection.",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Connection name" }],
     responseBody: z.object({ ok: z.literal(true) }),
     additionalResponses: {
       "400": {
         description:
-          "Connection is a Cadet-managed connection and cannot be deleted",
+          "Connection is a Cadet Cloud connection and cannot be deleted",
       },
       "404": { description: "Connection not found" },
       "409": {

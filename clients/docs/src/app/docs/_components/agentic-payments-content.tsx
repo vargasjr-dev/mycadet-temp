@@ -164,7 +164,7 @@ export function AgenticPaymentsContent() {
             numbers.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            The connection runs through Cadet&apos;s managed OAuth, so it needs
+            The connection runs through Cadet&apos;s cloud OAuth, so it needs
             an assistant that is connected to Cadet Cloud. If yours is not,
             your assistant falls back to Link&apos;s own device login: it shows
             you a link and a short phrase, and you approve the connection in the

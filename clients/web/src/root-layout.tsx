@@ -33,7 +33,7 @@ import {
 import {
   useAuthStore,
   useIsSessionInitializing,
-  useHasPlatformSession,
+  useHasCloudSession,
 } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import {
@@ -42,7 +42,7 @@ import {
   isLocalClient,
 } from "@/lib/local-mode";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { setMenuPlatformSession } from "@/runtime/menu";
+import { setMenuCloudSession } from "@/runtime/menu";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { handleToggleWatchCommand } from "@/runtime/watch-command";
 
@@ -77,7 +77,7 @@ import { createDraftConversationId } from "@/domains/chat/utils/conversation-sel
 import { useViewerStore } from "@/stores/viewer-store";
 import {
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId,
+  resolveAssistantNotificationCloudId,
   useAssistantAvatar,
 } from "@/hooks/use-assistant-avatar";
 import { useAvatarAccentVar } from "@/hooks/use-avatar-accent-var";
@@ -159,16 +159,16 @@ export function RootLayout() {
   const queryClient = useQueryClient();
   const sessionStatus = useAuthStore.use.sessionStatus();
   const isSessionInitializing = useIsSessionInitializing();
-  const hasPlatformSession = useHasPlatformSession();
-  // Publish platform-session state to the Electron app menu from this
+  const hasCloudSession = useHasCloudSession();
+  // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
   // on non-chat routes (e.g. Settings) where ChatLayout isn't mounted.
   useEffect(() => {
-    void setMenuPlatformSession(hasPlatformSession);
-  }, [hasPlatformSession]);
+    void setMenuCloudSession(hasCloudSession);
+  }, [hasCloudSession]);
   useAssistantLifecycle({
     sessionStatus,
-    hasPlatformSession,
+    hasCloudSession,
   });
   useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
@@ -209,8 +209,8 @@ export function RootLayout() {
           connectionFallback,
         )
       : null;
-  const notificationPlatformAssistantId =
-    resolveAssistantNotificationPlatformId(activeAssistant);
+  const notificationCloudAssistantId =
+    resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
   const assistantStateKind = useAssistantLifecycleStore(
     (s) => s.assistantState.kind,
@@ -332,7 +332,7 @@ export function RootLayout() {
     avatar.accentHex,
     {
       scopeId: notificationScopeId,
-      platformAssistantId: notificationPlatformAssistantId,
+      cloudAssistantId: notificationCloudAssistantId,
       assistantName: notificationName?.name ?? null,
       assistantNameOwner: notificationName?.owner ?? null,
       avatarOwner: avatar.owner ?? null,
@@ -433,7 +433,7 @@ export function RootLayout() {
     selectAssistant: (command) => {
       if (command.kind === "selectAssistant") {
         // Paired-aware switch: paired entries connect through
-        // connectPairedAssistant, managed ones through the platform
+        // connectPairedAssistant, managed ones through the cloud
         // selection path (see switch-service).
         void switchToAssistant(command.assistantId).then((outcome) => {
           if (!outcome.ok) {
@@ -777,7 +777,7 @@ export function RootLayout() {
       />
 
       {/* Name-prompt for the tray "New Assistant…" command — hatches an
-          additional managed assistant and switches to it. */}
+          additional cloud assistant and switches to it. */}
       <CreateAssistantDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}

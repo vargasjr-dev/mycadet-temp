@@ -237,7 +237,7 @@ describe("re-seen identity", () => {
       status: "unverified",
     });
 
-    // The platform profile says "Alice Example", a DM supplies the chat id.
+    // The cloud profile says "Alice Example", a DM supplies the chat id.
     await upsertContactChannel({
       sourceChannel: "slack",
       externalUserId: SLACK_USER,

@@ -21,8 +21,8 @@ let cachedCategories: SkillCategoryDef[] | null = null;
 let cacheTimestamp = 0;
 
 async function fetchCategories(): Promise<SkillCategoryDef[]> {
-  const platformUrl = getCloudBaseUrl();
-  const url = `${platformUrl}/v1/skills/categories/`;
+  const cloudUrl = getCloudBaseUrl();
+  const url = `${cloudUrl}/v1/skills/categories/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(10000),
   });

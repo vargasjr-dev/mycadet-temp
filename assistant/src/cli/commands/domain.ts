@@ -70,7 +70,7 @@ Examples:
           return `
 Arguments:
   subdomain   The subdomain to register (e.g. "velly" → velly.${baseDomain}).
-              If omitted, the platform derives it from the assistant's name.
+              If omitted, the cloud derives it from the assistant's name.
 
 Options:
   --email-username <username>  Also register an email address for the domain

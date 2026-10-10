@@ -2,14 +2,14 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { fetchImpl } from "../fetch.js";
-import { arePlatformFeaturesEnabled } from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
 import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 
 const log = getLogger("email-callback");
 
 /**
- * The callback path registered with the platform for inbound email webhooks.
+ * The callback path registered with the cloud for inbound email webhooks.
  * Must match the gateway route path in index.ts ("/webhooks/email").
  */
 export const EMAIL_CALLBACK_PATH = "webhooks/email";
@@ -26,20 +26,20 @@ interface PlatformCallbackRouteResponse {
  * Follows the same pattern as Telegram's managed callback route registration
  * in `telegram/webhook-manager.ts`. Requires cloud credentials (base URL,
  * assistant API key, assistant ID). The base URL can fall back to
- * `CADET_PLATFORM_URL`; the key can fall back to `ASSISTANT_API_KEY`.
+ * `CADET_CLOUD_URL`; the key can fall back to `ASSISTANT_API_KEY`.
  *
  * Self-hosted assistants with a configured ``ingress.publicBaseUrl`` send
  * their own base URL so the callback route points directly at the gateway
- * rather than through the platform proxy.
+ * rather than through the cloud proxy.
  *
- * Returns the platform-assigned callback URL on success, or `undefined` if
+ * Returns the cloud-assigned callback URL on success, or `undefined` if
  * credentials are not available.
  */
 export async function registerEmailCallbackRoute(caches?: {
   credentials?: CredentialCache;
   configFile?: ConfigFileCache;
 }): Promise<string | undefined> {
-  if (!arePlatformFeaturesEnabled()) {
+  if (!areCloudFeaturesEnabled()) {
     log.debug(
       "Platform features disabled — skipping email callback registration",
     );
@@ -52,8 +52,8 @@ export async function registerEmailCallbackRoute(caches?: {
 
   // The base URL resolves from the environment only — the credential store
   // never carries it.
-  const platformBaseUrl = (
-    process.env.CADET_PLATFORM_URL?.trim() || ""
+  const cloudBaseUrl = (
+    process.env.CADET_CLOUD_URL?.trim() || ""
   ).replace(/\/+$/, "");
 
   const assistantCredential =
@@ -63,10 +63,10 @@ export async function registerEmailCallbackRoute(caches?: {
 
   const assistantId = await resolveCloudAssistantIdOrUndefined();
 
-  if (!platformBaseUrl || !assistantCredential || !assistantId) {
+  if (!cloudBaseUrl || !assistantCredential || !assistantId) {
     log.debug(
       {
-        hasPlatformBaseUrl: !!platformBaseUrl,
+        hasPlatformBaseUrl: !!cloudBaseUrl,
         hasApiKey: !!assistantCredential,
         hasAssistantId: !!assistantId,
       },
@@ -75,9 +75,9 @@ export async function registerEmailCallbackRoute(caches?: {
     return undefined;
   }
 
-  // Self-hosted assistants send their public ingress URL so the platform
+  // Self-hosted assistants send their public ingress URL so the cloud
   // registers a callback pointing directly at the gateway rather than
-  // routing through the platform proxy (matching Telegram's two-tier
+  // routing through the cloud proxy (matching Telegram's two-tier
   // pattern in telegram/webhook-manager.ts).
   const ingressUrl = caches?.configFile
     ?.getString("ingress", "publicBaseUrl")
@@ -101,7 +101,7 @@ export async function registerEmailCallbackRoute(caches?: {
   }
 
   const response = await fetchImpl(
-    `${platformBaseUrl}/v1/internal/gateway/callback-routes/register/`,
+    `${cloudBaseUrl}/v1/internal/gateway/callback-routes/register/`,
     {
       method: "POST",
       headers: {

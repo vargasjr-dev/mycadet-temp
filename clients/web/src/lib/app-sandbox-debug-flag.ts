@@ -24,7 +24,7 @@
  * installed by {@link @/domains/chat/utils/debug-api}.
  *
  * The flag ships in production builds. It exists to demo screen-capture
- * apps against platform-hosted assistants, which run production
+ * apps against cloud-hosted assistants, which run production
  * bundles, so it must not be compiled out.
  *
  * @see {@link @/components/app-viewer-container} for the consumer, which

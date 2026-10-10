@@ -20,16 +20,16 @@
  * processes open read-write; each instance only touches its own sources'
  * cursors, so the split shares no flush state.
  *
- * Authenticated-only: events are sent via the managed proxy context
+ * Authenticated-only: events are sent via the cloud proxy context
  * (Api-Key header). When no cloud credentials are available, or when
- * platform features are disabled (CADET_DISABLE_PLATFORM in local mode), the
+ * platform features are disabled (CADET_DISABLE_CLOUD in local mode), the
  * flush is skipped and retried next cycle.
  */
 
+import { CadetCloudClient } from "../cloud/client.js";
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
+import { areCloudFeaturesEnabled } from "../cloud/feature-gate.js";
 import { getCloudOrganizationId, getCloudUserId } from "../config/env.js";
-import { CadetPlatformClient } from "../platform/client.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
-import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
 import { getDeviceId } from "../util/device-id.js";
 import { getLogger } from "../util/logger.js";
 import { APP_VERSION } from "../version.js";
@@ -71,8 +71,8 @@ const TELEMETRY_PATH = "/v1/telemetry/ingest/";
 
 /**
  * Outcome of a {@link UsageTelemetryReporter.flush} call. `flushed: true` means
- * at least one batch reached the platform (2xx). `sent` is the count the daemon
- * POSTed; `persisted` is the count the platform confirmed written; `dropped` is
+ * at least one batch reached the cloud (2xx). `sent` is the count the daemon
+ * POSTed; `persisted` is the count the cloud confirmed written; `dropped` is
  * `sent - persisted` — folding server-side drops (opt-out, unauthenticated) and
  * events silently skipped at ingest validation (unknown/invalid type) into one
  * "did not land" number. `flushed: false` carries a kebab-case skip reason.
@@ -257,7 +257,7 @@ export class UsageTelemetryReporter {
 
   start(): void {
     // Delay the first flush to allow the credential infrastructure (CES
-    // handshake) to complete. Without this delay, CadetPlatformClient.create()
+    // handshake) to complete. Without this delay, CadetCloudClient.create()
     // returns null because the credential backend hasn't resolved yet, causing
     // the initial flush to be skipped (we send authenticated-only); the
     // delay lets credentials resolve so the first flush can actually ship.
@@ -338,12 +338,12 @@ export class UsageTelemetryReporter {
         }
       }
 
-      // Skip when platform features are disabled (CADET_DISABLE_PLATFORM in
-      // local mode; the flag is ignored when IS_PLATFORM is set, matching
-      // CadetPlatformClient.create()). Watermarks are NOT advanced here: this
+      // Skip when platform features are disabled (CADET_DISABLE_CLOUD in
+      // local mode; the flag is ignored when IS_CLOUD is set, matching
+      // CadetCloudClient.create()). Watermarks are NOT advanced here: this
       // is a deployment/local-mode toggle, not a privacy opt-out, so the unsent
       // backlog ships once the flag is cleared.
-      if (!arePlatformFeaturesEnabled()) {
+      if (!areCloudFeaturesEnabled()) {
         return settle("disabled");
       }
 
@@ -377,7 +377,7 @@ export class UsageTelemetryReporter {
         return settle("unknown-consent");
       }
 
-      // Respect a confirmed opt-out: if the platform owner declined
+      // Respect a confirmed opt-out: if the cloud owner declined
       // `share_analytics` consent, skip the flush and advance watermarks so
       // events recorded during the opt-out window are never sent
       // retroactively. The daemon runs the reporter even when opted out
@@ -468,7 +468,7 @@ export class UsageTelemetryReporter {
       // Resolve auth context. We send authenticated-only: if no platform
       // credentials are available yet, skip without advancing watermarks so the
       // backlog ships on a later cycle once credentials resolve.
-      const client = await CadetPlatformClient.create();
+      const client = await CadetCloudClient.create();
       if (!client) {
         log.debug(
           {

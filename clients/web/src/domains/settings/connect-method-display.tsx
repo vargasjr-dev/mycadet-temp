@@ -18,7 +18,7 @@ import type { ConnectMethod, ConnectMethodKind } from "./connect-plan";
 export const CONNECT_METHOD_ICONS: Record<ConnectMethodKind, LucideIcon> = {
   "mcp-oauth": Cable,
   "mcp-manual": Cable,
-  "managed-oauth": ShieldCheck,
+  "cloud-oauth": ShieldCheck,
   "own-oauth": KeyRound,
 };
 
@@ -41,7 +41,7 @@ export function useConnectMethodLabel(
           return t("connectMethod.mcp", { name });
         case "mcp-manual":
           return t("connectMethod.mcpManual");
-        case "managed-oauth":
+        case "cloud-oauth":
           return t("connectMethod.managed");
         case "own-oauth":
           return t("connectMethod.own");

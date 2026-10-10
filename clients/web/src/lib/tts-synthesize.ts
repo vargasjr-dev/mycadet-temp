@@ -2,7 +2,7 @@
  * Direct-from-browser TTS synthesis for the Text-to-Speech "Test" button on
  * the Models & Services settings page.
  *
- * The web client does not have a managed TTS backend endpoint (TTS runs
+ * The web client does not have a cloud TTS backend endpoint (TTS runs
  * inside the desktop daemon on macOS). To actually exercise the user's
  * configured provider + voice ID, we call each provider's public HTTPS API
  * directly from the browser using the BYO API key stored in localStorage.

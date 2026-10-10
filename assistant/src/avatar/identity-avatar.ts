@@ -21,7 +21,7 @@ export const AVATAR_IDENTITY_NOTE_MAX_CHARS = 240;
 
 /**
  * One line, at most {@link AVATAR_IDENTITY_NOTE_MAX_CHARS} long. A line break
- * would let a description carry its own `## Heading` out of the managed
+ * would let a description carry its own `## Heading` out of the cloud
  * Avatar section.
  */
 function toIdentityLine(text: string): string {

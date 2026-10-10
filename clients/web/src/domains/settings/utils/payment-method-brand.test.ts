@@ -1,6 +1,6 @@
 /**
  * Brand labelling is the one place a raw Stripe enum could reach the screen:
- * the platform passes `card.brand` through untouched, and Stripe sends values
+ * the cloud passes `card.brand` through untouched, and Stripe sends values
  * with no label of ours, so this pins that every one of them reads as no brand,
  * and that the display label falls back to the generic copy.
  */

@@ -320,7 +320,7 @@ function IntentMetrics({ intent }: { intent: CheckoutIntent }) {
 }
 
 /**
- * The full-bleed screen the billing wizard opens on while the platform rolls
+ * The full-bleed screen the billing wizard opens on while the cloud rolls
  * the purchased machine and storage out: the status copy in the serif, the
  * metrics of the change beneath it, and the character stream flowing past.
  * Where there is room beside the copy the stream goes around it and the

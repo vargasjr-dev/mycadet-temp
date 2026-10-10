@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-let platformHosted = true;
-let platformGate: "full" | "disabled" = "full";
+let cloudHosted = true;
+let cloudGate: "full" | "disabled" = "full";
 let exportFails = false;
 const calls: string[] = [];
 let toastErrors: string[] = [];
@@ -12,12 +12,12 @@ mock.module("@/assistant/api", () => ({
   restoreAssistantBackup: async () => ({ ok: true, status: 200, data: {} }),
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  useActiveAssistantIsPlatformHosted: () => platformHosted,
-  usePlatformGate: () => platformGate,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useActiveAssistantIsCloudHosted: () => cloudHosted,
+  useCloudGate: () => cloudGate,
 }));
 
-mock.module("@/domains/settings/teleport/managed-export", () => ({
+mock.module("@/domains/settings/teleport/cloud-export", () => ({
   exportBundleFilename: (label: string) => `${label}-2026-10-02.vbundle`,
   exportManagedBundle: async (
     assistantId: string,
@@ -37,7 +37,7 @@ mock.module("@/domains/settings/teleport/managed-export", () => ({
   },
 }));
 
-mock.module("@/domains/settings/teleport/platform-migration-client", () => ({
+mock.module("@/domains/settings/teleport/cloud-migration-client", () => ({
   requestSignedDownloadUrl: async (
     bundleKey: string,
     targetRuntimeVersion: string | undefined,
@@ -88,8 +88,8 @@ async function confirmExport() {
 
 describe("AssistantBackups export", () => {
   beforeEach(() => {
-    platformHosted = true;
-    platformGate = "full";
+    cloudHosted = true;
+    cloudGate = "full";
     exportFails = false;
     calls.length = 0;
     toastErrors = [];
@@ -139,15 +139,15 @@ describe("AssistantBackups export", () => {
   });
 
   test("a self-hosted assistant gets no Export button", async () => {
-    platformHosted = false;
+    cloudHosted = false;
     render(<AssistantBackups assistantId="ast-1" />);
 
     await screen.findByRole("button", { name: "Create Backup" });
     expect(screen.queryByRole("button", { name: "Export" })).toBeNull();
   });
 
-  test("without a platform session there is no Export button", async () => {
-    platformGate = "disabled";
+  test("without a cloud session there is no Export button", async () => {
+    cloudGate = "disabled";
     render(<AssistantBackups assistantId="ast-1" />);
 
     await screen.findByRole("button", { name: "Create Backup" });
@@ -165,16 +165,16 @@ describe("AssistantBackups export", () => {
     expect(calls).toEqual([]);
   });
 
-  test("losing the platform session closes an open confirmation", async () => {
+  test("losing the cloud session closes an open confirmation", async () => {
     const { rerender } = render(<AssistantBackups assistantId="ast-1" />);
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
     await screen.findByRole("dialog");
 
-    platformGate = "disabled";
+    cloudGate = "disabled";
     rerender(<AssistantBackups assistantId="ast-1" />);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
-    platformGate = "full";
+    cloudGate = "full";
     rerender(<AssistantBackups assistantId="ast-1" />);
     await screen.findByRole("button", { name: "Export" });
     expect(screen.queryByRole("dialog")).toBeNull();

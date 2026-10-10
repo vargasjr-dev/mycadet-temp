@@ -6,12 +6,12 @@
       "displayName": "Cadet",
       "subtitle": "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
       "setupMode": "cli",
-      "setupHint": "Connect your Cadet account to enable managed speech.",
+      "setupHint": "Connect your Cadet account to enable cloud speech.",
       "credentialMode": "credential",
       "credentialNamespace": "cadet",
       "supportsVoiceSelection": true,
       "credentialsGuide": {
-        "description": "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
+        "description": "Connect this assistant to your Cadet account; cloud speech uses that connection instead of a provider API key.",
         "url": "https://cloud.mycadet.ai/",
         "linkLabel": "Open Cadet Cloud"
       }

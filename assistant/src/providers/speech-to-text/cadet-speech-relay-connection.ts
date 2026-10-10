@@ -1,5 +1,5 @@
 /**
- * Shared plumbing for dialing the GATEWAY's managed speech relay
+ * Shared plumbing for dialing the GATEWAY's cloud speech relay
  * (`/v1/speech/{stt,tts}/stream`): connection resolution, and mapping the
  * relay's error contract onto SttError categories.
  *
@@ -71,7 +71,7 @@ export async function resolveSpeechRelayConnection(): Promise<SpeechRelayConnect
   } catch (err) {
     log.warn(
       { error: err instanceof Error ? err.message : String(err) },
-      "Managed speech relay unavailable: cannot mint a gateway service token",
+      "Cloud speech relay unavailable: cannot mint a gateway service token",
     );
     return null;
   }
@@ -110,30 +110,30 @@ export function mapTunnelError(error: TunnelErrorInfo): {
       return {
         category: "auth",
         message:
-          "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.",
+          "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.",
       };
     case "invalid_token":
       return {
         category: "auth",
         message:
-          "The assistant's managed-speech session was rejected by its gateway — the services may be out of sync; restart the assistant.",
+          "The assistant's cloud-speech session was rejected by its gateway — the services may be out of sync; restart the assistant.",
       };
     case "insufficient_balance":
       return {
         category: "provider-error",
         message:
-          "Managed speech is paused: your Cadet organization is out of credits. Top up credits to continue.",
+          "Cloud speech is paused: your Cadet organization is out of credits. Top up credits to continue.",
       };
     case "provider_unreachable":
     case "upstream_error":
       return {
         category: "provider-error",
-        message: `Managed speech relay could not reach the speech provider (${error.code}).`,
+        message: `Cloud speech relay could not reach the speech provider (${error.code}).`,
       };
     default:
       return {
         category: "provider-error",
-        message: `Managed speech relay error: ${error.code}${
+        message: `Cloud speech relay error: ${error.code}${
           error.detail ? ` — ${error.detail}` : ""
         }`,
       };

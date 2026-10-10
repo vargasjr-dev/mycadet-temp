@@ -48,13 +48,13 @@ type EnvironmentDefinition =
 
 const prod: EnvironmentDefinition = {
   name: "production",
-  platformUrl: "https://cloud.mycadet.ai",
+  cloudUrl: "https://cloud.mycadet.ai",
   webUrl: "https://mycadet.ai",
 };
 
 const dev: EnvironmentDefinition = {
   name: "dev",
-  platformUrl: "https://dev-cloud.mycadet.ai",
+  cloudUrl: "https://dev-cloud.mycadet.ai",
   webUrl: "https://dev.mycadet.ai",
 };
 

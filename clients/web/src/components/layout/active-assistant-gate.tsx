@@ -8,7 +8,7 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 /**
@@ -53,8 +53,8 @@ function ActiveAssistantPlaceholder() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   // Keep an auth escape hatch reachable while the assistant lifecycle is
-  // unresolved: Log Out with a platform session, Log In without one.
-  const hasPlatformSession = useHasPlatformSession();
+  // unresolved: Log Out with a cloud session, Log In without one.
+  const hasCloudSession = useHasCloudSession();
   const { login } = useOnboardingLogin();
 
   return (
@@ -67,7 +67,7 @@ function ActiveAssistantPlaceholder() {
       <Typography variant="body-medium-default">
         {t("activeAssistantGate.connecting")}
       </Typography>
-      {hasPlatformSession ? (
+      {hasCloudSession ? (
         <Button variant="ghost" onClick={() => void handleLogout(navigate)}>
           {t("activeAssistantGate.logOut")}
         </Button>

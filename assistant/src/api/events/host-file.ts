@@ -2,7 +2,7 @@
  * Host-file proxy SSE events (`host_file_request` / `host_file_cancel`).
  *
  * Server → client instructions that proxy file operations (read / write /
- * edit) to the desktop client when running as a managed assistant. The
+ * edit) to the desktop client when running as a cloud assistant. The
  * request is a discriminated union on `operation`; the client executes it
  * and POSTs the result back to `/v1/host-file-result`. `host_file_cancel`
  * withdraws an in-flight request.

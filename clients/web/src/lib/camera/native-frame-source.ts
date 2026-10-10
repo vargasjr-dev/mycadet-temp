@@ -171,7 +171,7 @@ export interface NativeFrameSourceOptions {
   readonly onDiagnostics?: (diagnostics: NativeFrameDiagnostics) => void;
   /** Gap between samples, defaulting to {@link NATIVE_FRAME_SAMPLE_INTERVAL_MS}. */
   readonly intervalMs?: number;
-  /** Decode step, defaulting to the platform image decoder. */
+  /** Decode step, defaulting to the cloud image decoder. */
   readonly decode?: FrameDecoder;
   /**
    * Monotonic clock the gate is stamped from, defaulting to `performance.now`.
@@ -220,7 +220,7 @@ export interface NativeFrameSource {
   stop(): void;
 }
 
-/** Decode JPEG bytes through the platform decoder. */
+/** Decode JPEG bytes through the cloud decoder. */
 async function decodeWithImageBitmap(blob: Blob): Promise<DecodedFrame | null> {
   const bitmap = await createImageBitmap(blob);
   return { image: bitmap, release: () => bitmap.close() };

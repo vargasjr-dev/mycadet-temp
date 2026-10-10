@@ -88,7 +88,7 @@ type ProviderRow = {
   pingBody: string | null;
   revokeUrl: string | null;
   revokeBodyTemplate: string | null;
-  managedServiceConfigKey: string | null;
+  cloudServiceConfigKey: string | null;
   displayLabel: string | null;
   description: string | null;
   dashboardUrl: string | null;
@@ -168,7 +168,7 @@ function makeProviderRow(
     pingBody: null,
     revokeUrl: null,
     revokeBodyTemplate: null,
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
     displayLabel: null,
     description: null,
     dashboardUrl: null,

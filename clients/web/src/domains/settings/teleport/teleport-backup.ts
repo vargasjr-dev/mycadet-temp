@@ -5,7 +5,7 @@
  * before any data leaves it. Any failure aborts the teleport: without a
  * restore point, retiring the source is not safe.
  *
- * - Managed (cloud) sources take a platform PVC snapshot through Django. The
+ * - Managed (cloud) sources take a cloud PVC snapshot through Django. The
  *   POST returns as soon as the snapshot object exists and it becomes
  *   restorable asynchronously, so the listing is polled until the new
  *   snapshot reports `ready_to_use`. A restorable snapshot younger than

@@ -3,7 +3,7 @@
  *
  * Resolution rules:
  *   - api_key              → fetch credential from vault → inject as bearer header
- *   - platform             → build managed proxy URL and fetch the platform API key
+ *   - platform             → build cloud proxy URL and fetch the cloud API key
  *   - none                 → pass through with no auth headers
  *   - oauth_subscription   → fetch OAuth token from vault (with auto-refresh) → inject as bearer header
  *   - service_account      → sign JWT and exchange for bearer token at token_uri (Google Vertex AI)
@@ -12,9 +12,9 @@
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { getLogger } from "../../util/logger.js";
 import {
-  buildManagedBaseUrl,
-  resolveManagedProxyContext,
-} from "../platform-proxy/context.js";
+  buildCloudBaseUrl,
+  resolveCloudProxyContext,
+} from "../cloud-proxy/context.js";
 import {
   type Auth,
   PROVIDERS_ALLOWING_CUSTOM_BASE_URL,
@@ -68,17 +68,17 @@ export async function resolveAuth(
     }
 
     case "platform": {
-      const managedBaseUrl = await buildManagedBaseUrl(provider);
-      if (!managedBaseUrl) {
+      const cloudBaseUrl = await buildCloudBaseUrl(provider);
+      if (!cloudBaseUrl) {
         return { ok: false, error: { code: "platform_unavailable" } };
       }
-      const ctx = await resolveManagedProxyContext();
+      const ctx = await resolveCloudProxyContext();
       return {
         ok: true,
         resolved: {
           kind: "header",
           headers: { Authorization: `Bearer ${ctx.assistantApiKey}` },
-          baseUrl: managedBaseUrl,
+          baseUrl: cloudBaseUrl,
         },
       };
     }

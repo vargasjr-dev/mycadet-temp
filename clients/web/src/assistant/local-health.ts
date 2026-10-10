@@ -44,7 +44,7 @@ export function deriveLocalAssistantHealth(
  * the lifecycle service's healthz heartbeat against the daemon's own
  * health-check API (`/v1/assistants/{id}/healthz`, routed to the user's
  * gateway by the request interceptor). Returns `null` while the signal
- * is unknown — the assistant is platform-hosted (the centralized
+ * is unknown — the assistant is cloud-hosted (the centralized
  * operational-status API is its health surface), or the first probe
  * hasn't completed yet.
  */

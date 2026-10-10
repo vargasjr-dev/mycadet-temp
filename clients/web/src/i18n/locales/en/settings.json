@@ -613,7 +613,7 @@
     "searchPlaceholder": "Search credentials",
     "segmentManaged": "Managed",
     "segmentYourOwn": "Your own",
-    "subtitleManaged": "Provided through your Cadet-managed integrations. These are read-only here.",
+    "subtitleManaged": "Provided through your Cadet Cloud integrations. These are read-only here.",
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
   },
@@ -1736,7 +1736,7 @@
     "localTag": "Local",
     "localTagTitle": "Runs models on this machine.",
     "managedTag": "Managed",
-    "managedTagTitle": "Runs on Cadet's managed credentials.",
+    "managedTagTitle": "Runs on Cadet's cloud credentials.",
     "openProviderAriaLabel": "Open provider {displayName}",
     "setAsDefault": "Set as default"
   },
@@ -1961,7 +1961,7 @@
     "dockerDescriptionLinux": "Run your assistant in a Docker container on this computer.",
     "dockerDescriptionMacos": "Run your assistant in a Docker container on this Mac.",
     "dockerDescriptionWindows": "Run your assistant in a Docker container on this PC.",
-    "existingPlatformAssistant": "You already have a platform assistant “{id}”. Retire it first, then retry the teleport.",
+    "existingCloudAssistant": "You already have a cloud assistant “{id}”. Retire it first, then retry the teleport.",
     "exportTimedOut": "Export timed out.",
     "importFailed": "Import failed.",
     "importFailedHttp": "Import failed (HTTP {status}).",

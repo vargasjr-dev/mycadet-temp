@@ -236,7 +236,7 @@ export class HeartbeatService {
     return countCompletedRunsToday() >= config.maxDailyRuns;
   }
 
-  async runManagedWakeIfDue(
+  async runCloudWakeIfDue(
     options: ManagedWakeHeartbeatRunOptions = {},
   ): Promise<ManagedWakeHeartbeatRunResult> {
     const now = options.now ?? Date.now();

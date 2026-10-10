@@ -1,6 +1,6 @@
 /**
- * `retireAssistantById` forwards an optional successor to the platform so the
- * retiring assistant's managed OAuth connections move rather than being
+ * `retireAssistantById` forwards an optional successor to the cloud so the
+ * retiring assistant's cloud OAuth connections move rather than being
  * revoked with it.
  */
 
@@ -47,7 +47,7 @@ describe("retireAssistantById", () => {
       successorAssistantId: "succ",
     });
 
-    // THEN the platform delete carries it as successor_assistant_id
+    // THEN the cloud delete carries it as successor_assistant_id
     expect(result.ok).toBe(true);
     expect(retireDetail.mock.calls[0]?.[0]).toMatchObject({
       path: { id: "src" },

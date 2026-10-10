@@ -14,7 +14,7 @@
         "url": "https://console.anthropic.com/settings/keys",
         "linkLabel": "Open Anthropic Console"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "claude-opus-4-8",
       "models": [
         {
@@ -280,7 +280,7 @@
         "url": "https://platform.openai.com/api-keys",
         "linkLabel": "Open OpenAI Platform"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "gpt-5.5",
       "models": [
         {
@@ -593,7 +593,7 @@
         "url": "https://aistudio.google.com/apikey",
         "linkLabel": "Open Google AI Studio"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "gemini-2.5-flash",
       "models": [
         {
@@ -861,7 +861,7 @@
         "url": "https://ollama.com/download",
         "linkLabel": "Download Ollama"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "llama3.2",
       "models": [
         {
@@ -903,7 +903,7 @@
         "url": "https://fireworks.ai/account/api-keys",
         "linkLabel": "Open Fireworks Dashboard"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "accounts/fireworks/models/deepseek-v4p1-flash",
       "models": [
         {
@@ -1009,7 +1009,7 @@
         "url": "https://api.together.ai/settings/api-keys",
         "linkLabel": "Open Together Dashboard"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "MiniMaxAI/MiniMax-M3",
       "models": [
         {
@@ -1044,7 +1044,7 @@
         "url": "https://openrouter.ai/keys",
         "linkLabel": "Open OpenRouter"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "x-ai/grok-4.20",
       "models": [
         {
@@ -2174,7 +2174,7 @@
         "url": "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys&title=AI+Gateway+API+Keys",
         "linkLabel": "Open Vercel Dashboard"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "anthropic/claude-sonnet-4.6",
       "models": [
         {
@@ -2483,7 +2483,7 @@
         "url": "https://docs.litellm.ai/docs/proxy/quick_start",
         "linkLabel": "LiteLLM Proxy Quick Start"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "anthropic/claude-sonnet-4.6",
       "models": [
         {
@@ -2520,7 +2520,7 @@
         "url": "https://opencode.ai",
         "linkLabel": "OpenCode"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "muse-spark-1.3-contributor-free",
       "models": [
         {
@@ -2547,7 +2547,7 @@
       "setupMode": "api-key",
       "setupHint": "Enter the base URL of your endpoint and at least one model identifier.",
       "apiKeyPlaceholder": "Your provider's API key",
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "",
       "models": []
     },
@@ -2564,7 +2564,7 @@
         "url": "https://platform.minimax.io/",
         "linkLabel": "Open MiniMax Dashboard"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "MiniMax-M2.7",
       "models": [
         {
@@ -2606,7 +2606,7 @@
         "url": "https://www.atlascloud.ai/console",
         "linkLabel": "Open Atlas Cloud Console"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "deepseek-ai/deepseek-v4-pro",
       "models": [
         {
@@ -2636,7 +2636,7 @@
         "url": "https://app.baseten.co/settings/api_keys",
         "linkLabel": "Open Baseten Dashboard"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "thinkingmachines/inkling",
       "models": [
         {
@@ -2671,7 +2671,7 @@
         "url": "https://io.net/docs/guides/intelligence/api-keys-and-secrets",
         "linkLabel": "Open io.net"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "meta-llama/Llama-3.3-70B-Instruct",
       "models": [
         {
@@ -2708,7 +2708,7 @@
         "url": "https://poolside.ai",
         "linkLabel": "Open Poolside"
       },
-      "supportsPlatformAuth": false,
+      "supportsCloudAuth": false,
       "defaultModel": "poolside/laguna-s-2.1",
       "models": [
         {
@@ -2750,7 +2750,7 @@
         "url": "https://typesafe.ai",
         "linkLabel": "Open TypeSafe"
       },
-      "supportsPlatformAuth": true,
+      "supportsCloudAuth": true,
       "defaultModel": "jev-latest",
       "models": [
         {
@@ -2775,10 +2775,10 @@
     {
       "id": "cadet",
       "displayName": "Cadet",
-      "subtitle": "Models served on Cadet GPU nodes through the managed connection.",
+      "subtitle": "Models served on Cadet GPU nodes through the cloud connection.",
       "setupMode": "api-key",
-      "setupHint": "Uses the assistant API key through the Cadet managed connection. These models cannot use a bring-your-own key.",
-      "supportsPlatformAuth": true,
+      "setupHint": "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",
+      "supportsCloudAuth": true,
       "featureFlag": "cadet-hosted-inference",
       "defaultModel": "qwen/qwen3-8b",
       "models": [

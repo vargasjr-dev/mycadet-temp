@@ -1,5 +1,5 @@
 import {
-  isVirtualDesktopPlatform,
+  isVirtualDesktopCloud,
   shouldUseVirtualDesktop,
 } from "../../desktop/virtual-desktop-feature.js";
 import type { ExecutionTarget } from "../tool-types.js";
@@ -13,7 +13,7 @@ export function computerUseTarget(
     input.target ??
     (input.target_client_id === undefined &&
     context &&
-    shouldUseVirtualDesktop(context, isVirtualDesktopPlatform())
+    shouldUseVirtualDesktop(context, isVirtualDesktopCloud())
       ? "assistant-desktop"
       : "connected-computer");
   if (target !== "connected-computer" && target !== "assistant-desktop") {

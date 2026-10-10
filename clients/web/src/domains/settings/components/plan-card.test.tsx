@@ -137,7 +137,7 @@ mock.module("@/runtime/browser", () => ({
 }));
 
 // The wallet behind the grants. The real hook reads the billing summary
-// through the platform gate and the org store, neither of which these tests
+// through the cloud gate and the org store, neither of which these tests
 // drive; every tile reads its bar off the usage-grant figures and asks the
 // wallet only whether anything is left behind them.
 let walletBalance: string | null = null;
@@ -146,7 +146,7 @@ let walletBalance: string | null = null;
 let byokSuppressed = false;
 let availableUsageBalance: string | null = null;
 let totalUsageBalance: string | null = null;
-/** The free-tier daily cap, where the platform is enforcing one. */
+/** The free-tier daily cap, where the cloud is enforcing one. */
 let freeTierEnforced = false;
 let freeTierLimit: string | null = null;
 let freeTierSpend: string | null = null;
@@ -1463,7 +1463,7 @@ describe("PlanCard usage balance", () => {
 
   test("a BYOK org with an empty wallet still gets the strip", async () => {
     // The hook holds `isExhausted` down for a provably BYOK chat route, where
-    // a turn never spends the managed wallet. This surface reports the wallet
+    // a turn never spends the cloud wallet. This surface reports the wallet
     // itself, so an empty one alarms regardless of how chat dispatches.
     totalUsageBalance = "25.00";
     availableUsageBalance = "0.00";

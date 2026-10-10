@@ -7,7 +7,7 @@ import { isPointerCoarse, usePointerCoarse } from "./pointer";
 
 // Both forms answer `(pointer: coarse)`, so drive them the way every other
 // platform-adaptation suite does: by stubbing `window.matchMedia` for a device
-// shape. See `docs/PLATFORM_ADAPTATION.md`.
+// shape. See `docs/CLOUD_ADAPTATION.md`.
 const viewport = viewportAxesStub();
 
 afterEach(() => {

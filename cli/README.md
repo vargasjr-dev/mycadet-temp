@@ -83,7 +83,7 @@ To self-host on a cloud VM (AWS, GCP, or any other provider), SSH into the machi
 
 ### `terminal`
 
-Open an interactive shell into a managed assistant container. Useful for debugging, inspecting state, or working alongside the assistant in a shared `tmux` session.
+Open an interactive shell into a cloud assistant container. Useful for debugging, inspecting state, or working alongside the assistant in a shared `tmux` session.
 
 ```bash
 cadet terminal [name] [options]
@@ -91,7 +91,7 @@ cadet terminal attach <session> [name] [options]
 cadet terminal list [name] [options]
 ```
 
-Only available for managed assistants (those running in a Cadet Cloud container). Local assistants don't have a container to terminal into.
+Only available for cloud assistants (those running in a Cadet Cloud container). Local assistants don't have a container to terminal into.
 
 #### Subcommands
 

@@ -443,7 +443,7 @@ describe("RetryProvider — callSite resolution", () => {
     // The profile declares `provider: "cadet"` (the provider-agnostic managed
     // sentinel) and the real upstream comes from the model id, so the stub is
     // named for that resolved upstream rather than the sentinel, matching what
-    // `createAdapterFromConnection` builds for a managed route.
+    // `createAdapterFromConnection` builds for a cloud route.
     setLlmConfig({});
 
     const expected = CODE_DEFAULT_PROFILE_ENTRIES["latency-optimized"];

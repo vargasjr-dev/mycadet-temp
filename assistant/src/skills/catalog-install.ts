@@ -25,14 +25,14 @@ import { loadSkillCatalog } from "../config/skills.js";
 import { isBunVirtualPath } from "../util/bundled-asset.js";
 import { getLogger } from "../util/logger.js";
 import { addToPathEnv, getWorkspaceSkillsDir } from "../util/platform.js";
-import { computeSkillHash, writeInstallMeta } from "./install-meta.js";
 import {
-  isSkillCompatibleWithPlatform,
+  isSkillCompatibleWithCloud,
   normalizeSkillPlatforms,
   SKILL_PLATFORM_VALUES,
   type SkillPlatform,
   skillPlatformUnavailableMessage,
-} from "./platform-compatibility.js";
+} from "./cloud-compatibility.js";
+import { computeSkillHash, writeInstallMeta } from "./install-meta.js";
 
 const log = getLogger("catalog-install");
 
@@ -139,7 +139,7 @@ export function getRepoSkillsDir(): string | undefined {
 // ─── Catalog operations ──────────────────────────────────────────────────────
 
 /**
- * Raw skill entry as returned by the platform `/v1/skills/` API. The platform
+ * Raw skill entry as returned by the cloud `/v1/skills/` API. The cloud
  * serializer flattens the skill's metadata into top-level fields
  * (`category`, `display_name`, `icon`) rather than the nested
  * `metadata.cadet.*` shape used by the local `catalog.json`. Both shapes are
@@ -191,9 +191,9 @@ function asStr(value: unknown): string | undefined {
 }
 
 /**
- * Normalize a platform API entry into a canonical {@link CatalogSkill}.
+ * Normalize a cloud API entry into a canonical {@link CatalogSkill}.
  *
- * The platform flattens `category`, `display_name`, and `icon` to the top
+ * The cloud flattens `category`, `display_name`, and `icon` to the top
  * level, so re-nest them under `metadata.cadet` to match the local catalog
  * shape that the rest of the daemon reads (`metadata.cadet.category`,
  * `metadata.cadet["display-name"]`). Existing nested values take precedence
@@ -244,8 +244,8 @@ function normalizeCatalogEntry(raw: unknown): CatalogSkill | null {
 }
 
 export async function fetchCatalog(): Promise<CatalogSkill[]> {
-  const platformUrl = getCloudBaseUrl();
-  const url = `${platformUrl}/v1/skills/`;
+  const cloudUrl = getCloudBaseUrl();
+  const url = `${cloudUrl}/v1/skills/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(10000),
   });
@@ -398,8 +398,8 @@ async function fetchAndExtractSkill(
   skillId: string,
   destDir: string,
 ): Promise<void> {
-  const platformUrl = getCloudBaseUrl();
-  const url = `${platformUrl}/v1/skills/${encodeURIComponent(skillId)}/`;
+  const cloudUrl = getCloudBaseUrl();
+  const url = `${cloudUrl}/v1/skills/${encodeURIComponent(skillId)}/`;
   const response = await fetch(url, {
     signal: AbortSignal.timeout(15000),
   });
@@ -721,7 +721,7 @@ export async function autoInstallFromCatalog(
   if (!entry) {
     return false;
   }
-  if (!isSkillCompatibleWithPlatform(entry)) {
+  if (!isSkillCompatibleWithCloud(entry)) {
     throw new Error(skillPlatformUnavailableMessage(skillId, entry));
   }
 

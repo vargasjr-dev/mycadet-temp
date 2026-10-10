@@ -11,9 +11,9 @@
 
 import { ConfigError } from "../util/errors.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  CADET_MANAGED_PROVIDER,
-  getManagedUpstream,
+  CADET_CLOUD_CONNECTION_NAME,
+  CADET_CLOUD_PROVIDER,
+  getCloudUpstream,
 } from "./cadet-model-routing.js";
 import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "./inference/auth.js";
 import { isCodexSubscriptionModel } from "./openai/codex-models.js";
@@ -53,11 +53,11 @@ export class ConnectionResolutionError extends ConfigError {
 
 /**
  * Translate a routing-identity provider into its dispatch target. "cadet"
- * derives the managed upstream from the model and routes through the
+ * derives the cloud upstream from the model and routes through the
  * canonical cadet connection; "chatgpt" routes through the
  * chatgpt-subscription connection with an openai upstream. Returns null for
  * real providers. Throws `unroutable_managed_model` when a cadet model has
- * no managed upstream, and `model_incompatible` when a chatgpt model is
+ * no cloud upstream, and `model_incompatible` when a chatgpt model is
  * outside the Codex subscription set — loud and explainable, never a soft
  * fall-through to the (possibly platform-billed) default transport.
  */
@@ -65,18 +65,18 @@ export function resolveRoutingIdentity(
   provider: string | undefined,
   model: string | undefined,
 ): { connectionName: string; expectedProvider: string } | null {
-  if (provider === CADET_MANAGED_PROVIDER) {
-    const upstream = model ? getManagedUpstream(model) : null;
+  if (provider === CADET_CLOUD_PROVIDER) {
+    const upstream = model ? getCloudUpstream(model) : null;
     if (!upstream) {
       throw new ConnectionResolutionError(
-        CADET_MANAGED_CONNECTION_NAME,
+        CADET_CLOUD_CONNECTION_NAME,
         "unroutable_managed_model",
-        `provider "cadet" cannot route model "${model ?? "<unset>"}" — no managed upstream serves it. Pick a model from the Cadet catalog or set a concrete provider.`,
+        `provider "cadet" cannot route model "${model ?? "<unset>"}" — no cloud upstream serves it. Pick a model from the Cadet catalog or set a concrete provider.`,
         { model },
       );
     }
     return {
-      connectionName: CADET_MANAGED_CONNECTION_NAME,
+      connectionName: CADET_CLOUD_CONNECTION_NAME,
       expectedProvider: upstream,
     };
   }

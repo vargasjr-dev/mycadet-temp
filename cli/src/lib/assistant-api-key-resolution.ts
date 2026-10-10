@@ -8,8 +8,8 @@
 import {
   readGatewayCredential,
   reprovisionAssistantApiKey,
-  verifyGatewayManagedCredential,
-} from "./platform-client.js";
+  verifyGatewayCloudCredential,
+} from "./cloud-client.js";
 
 /** Where the key came from, so callers can report what they did. */
 export type AssistantApiKeySource =
@@ -39,13 +39,13 @@ export interface ResolvedAssistantApiKey {
  * Three steps, in order: the key the registration just issued, the key the
  * assistant already holds, then a rotation.
  *
- * A stored key the platform has rejected is skipped, because reinjecting it
+ * A stored key the cloud has rejected is skipped, because reinjecting it
  * repairs nothing while looking like a repair. The verdict is asked for
  * before the key is read, so the key returned is one the verdict covers: a
  * repair that lands between the two requests is then read, not overwritten
  * by the value it replaced. Rotation is still withheld when the gateway is
  * merely unreachable: rotating without being able to store the replacement
- * would start the platform's grace clock on a key the assistant still needs,
+ * would start the cloud's grace clock on a key the assistant still needs,
  * with nothing to hand it in exchange.
  */
 export async function resolveAssistantApiKeyForInjection(
@@ -55,7 +55,7 @@ export async function resolveAssistantApiKeyForInjection(
     return { apiKey: args.registrationApiKey, source: "registration" };
   }
 
-  const status = await verifyGatewayManagedCredential(
+  const status = await verifyGatewayCloudCredential(
     args.runtimeUrl,
     args.bearerToken,
   );

@@ -9,7 +9,7 @@ import type { GatewayRouteDefinition } from "./types.js";
  * scripts/generate-openapi.ts). Unlike the neighbouring channel APIs there
  * are no assistant-scoped `/v1/assistants/{assistant_id}/...` variants: the
  * guardian reaches these flat paths directly rather than through the
- * platform proxy.
+ * cloud proxy.
  *
  * The handlers live in `channel-ingress.ts`; that module imports
  * `ApproveChannelIngressRequestSchema` so wire validation and the published

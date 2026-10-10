@@ -854,7 +854,7 @@
     "apiKeyRequired": "測試前請為此供應商儲存 API 金鑰。",
     "chooseFromCatalog": "從目錄中選擇",
     "customVoiceIdAriaLabel": "自訂語音 ID",
-    "noManagedVoices": "目前沒有可用的受管理語音。",
+    "noCloudVoices": "目前沒有可用的受管理語音。",
     "provider": "供應商",
     "providerAriaLabel": "TTS 供應商",
     "saveFailed": "儲存語音轉文字設定失敗",

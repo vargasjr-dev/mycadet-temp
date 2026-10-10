@@ -8,8 +8,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
   useActiveAssistantIsSelfHosted: () => false,
 }));
 

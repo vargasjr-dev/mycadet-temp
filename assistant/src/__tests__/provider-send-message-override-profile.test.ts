@@ -264,13 +264,13 @@ describe("SendMessageOptions.config.overrideProfile", () => {
     const altProvider = makeThrowingProvider("openai", providerError);
     altProvider.routeAttribution = {
       connectionName: "openai-recovered",
-      isManagedRoute: false,
+      isCloudRoute: false,
     };
     const wrapped = new CallSiteRoutingProvider(
       defaultProvider,
       async (connectionName) =>
         connectionName === "openai-conn" ? altProvider : null,
-      { connectionName: "cadet", isManagedRoute: true },
+      { connectionName: "cadet", isCloudRoute: true },
     );
 
     await expect(
@@ -281,7 +281,7 @@ describe("SendMessageOptions.config.overrideProfile", () => {
     expect(providerError.routeAttribution).toEqual({
       connectionName: "openai-recovered",
       profileName: "fast",
-      isManagedRoute: false,
+      isCloudRoute: false,
     });
   });
 
@@ -305,7 +305,7 @@ describe("SendMessageOptions.config.overrideProfile", () => {
     const defaultProvider = makeThrowingProvider("anthropic", providerError);
     defaultProvider.routeAttribution = {
       connectionName: "anthropic-default",
-      isManagedRoute: false,
+      isCloudRoute: false,
     };
     const wrapped = new CallSiteRoutingProvider(
       defaultProvider,
@@ -321,7 +321,7 @@ describe("SendMessageOptions.config.overrideProfile", () => {
     expect(providerError.routeAttribution).toEqual({
       connectionName: "anthropic-default",
       profileName: "fast",
-      isManagedRoute: false,
+      isCloudRoute: false,
     });
   });
 

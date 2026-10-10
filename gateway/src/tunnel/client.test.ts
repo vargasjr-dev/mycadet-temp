@@ -270,7 +270,7 @@ async function flushPromises(): Promise<void> {
 }
 
 const originalAssistantApiKey = process.env.ASSISTANT_API_KEY;
-const originalPlatformUrl = process.env.CADET_PLATFORM_URL;
+const originalCloudUrl = process.env.CADET_CLOUD_URL;
 const originalCloudAssistantId = process.env.CLOUD_ASSISTANT_ID;
 const originalCloudOrgId = process.env.CLOUD_ORGANIZATION_ID;
 const originalCloudUserId = process.env.CLOUD_USER_ID;
@@ -291,7 +291,7 @@ beforeEach(() => {
   webhookRouteReads = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
-  delete process.env.CADET_PLATFORM_URL;
+  delete process.env.CADET_CLOUD_URL;
   delete process.env.CLOUD_ASSISTANT_ID;
   delete process.env.CLOUD_ORGANIZATION_ID;
   delete process.env.CLOUD_USER_ID;
@@ -301,7 +301,7 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(workspaceDir, { recursive: true, force: true });
   restoreEnv("ASSISTANT_API_KEY", originalAssistantApiKey);
-  restoreEnv("CADET_PLATFORM_URL", originalPlatformUrl);
+  restoreEnv("CADET_CLOUD_URL", originalCloudUrl);
   restoreEnv("CLOUD_ASSISTANT_ID", originalCloudAssistantId);
   restoreEnv("CLOUD_ORGANIZATION_ID", originalCloudOrgId);
   restoreEnv("CLOUD_USER_ID", originalCloudUserId);
@@ -368,7 +368,7 @@ describe("TunnelClient", () => {
     await client.stop();
   });
 
-  test("opens a socket and registers when the platform assistant ID is missing", async () => {
+  test("opens a socket and registers when the cloud assistant ID is missing", async () => {
     const sockets: FakeWebSocket[] = [];
     const reconnectDelays: number[] = [];
     writeConfig({
@@ -629,7 +629,7 @@ describe("TunnelClient", () => {
   test("awaits validate before rejecting a mismatched registration", async () => {
     const sockets: FakeWebSocket[] = [];
     process.env.ASSISTANT_API_KEY = "api-key-123";
-    process.env.CADET_PLATFORM_URL = "https://test-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://test-cloud.mycadet.ai";
     fetchImplFn = async () =>
       new Response(
         JSON.stringify({

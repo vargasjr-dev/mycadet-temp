@@ -1,7 +1,7 @@
 ---
 name: chat-complex-documents
 description: Chat with and search your complex documents — ask questions, extract tables and fields, and get answers grounded in the source. Connects the hosted Unstructured Transform MCP server to parse, structure, and enrich PDFs, Word/Excel/PowerPoint, images, scanned files, emails, and 60+ other formats into clean, AI-ready text for search, Q&A, and summarization without building a custom parsing pipeline.
-compatibility: "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Requires an Unstructured account to authorize during the OAuth step."
+compatibility: "Works on both the Cadet desktop app (local daemon) and the Cadet web app (cloud-hosted). Requires an Unstructured account to authorize during the OAuth step."
 metadata:
   icon: assets/icon.svg
   emoji: "📄"
@@ -56,7 +56,7 @@ USE THIS SKILL WHEN:
 Determine which command tool to use for every command in this skill:
 
 - If `host_bash` is available → you are on the **desktop app**. Use `host_bash` for all commands (the `auth` step opens your local browser).
-- If it is unavailable → you are on the **web app**. Use `bash` for all commands (the platform handles the browser redirect).
+- If it is unavailable → you are on the **web app**. Use `bash` for all commands (the cloud handles the browser redirect).
 
 ### Step 2 — Add the server
 
@@ -77,7 +77,7 @@ assistant mcp auth unstructured-transform
 This opens Unstructured's authorization page. After sign-in, the assistant handles the callback and caches the tokens.
 
 - On **desktop** → run via `host_bash` (opens your local browser).
-- On **web app** → run via `bash` (the platform handles the redirect).
+- On **web app** → run via `bash` (the cloud handles the redirect).
 
 ### Step 4 — Verify
 

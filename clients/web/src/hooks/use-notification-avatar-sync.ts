@@ -41,7 +41,7 @@ export type NotificationAvatarScope = NotificationIdentityScopeInput;
 
 export interface NotificationAvatarSyncOptions {
   scopeId: string | null;
-  platformAssistantId?: string | null;
+  cloudAssistantId?: string | null;
   assistantName?: string | null;
   assistantNameOwner?: NotificationIdentityOwner | null;
   avatarOwner?: NotificationIdentityOwner | null;
@@ -113,10 +113,10 @@ export function useNotificationAvatarSync(
         ? createNotificationIdentity(
             scopeId,
             assistantId,
-            options?.platformAssistantId,
+            options?.cloudAssistantId,
           )
         : null,
-    [assistantId, options?.platformAssistantId, scopeId],
+    [assistantId, options?.cloudAssistantId, scopeId],
   );
   const identityKey = identity
     ? JSON.stringify([

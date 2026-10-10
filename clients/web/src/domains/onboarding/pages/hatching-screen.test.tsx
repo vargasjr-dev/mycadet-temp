@@ -144,7 +144,7 @@ const hatchAssistantMock = mock(async () => ({
 // always succeed. Infinity = never succeeds.
 let ensureProvisionedFailFirstN = 0;
 // How many leading reconcile calls answer with a race body: a 200 that queues
-// nothing because the platform cannot see the entitlement yet, or has no
+// nothing because the cloud cannot see the entitlement yet, or has no
 // settled assistant to provision.
 let ensureProvisionedRaceFirstN = 0;
 let ensureProvisionedRaceReason = "no_active_pro";
@@ -241,7 +241,7 @@ mock.module("@/assistant/seed-hatch-avatar", () => ({
 }));
 
 mock.module("@/assistant/lifecycle", () => ({
-  isPlatformHostedDisabled: () => false,
+  isCloudHostedDisabled: () => false,
   PLATFORM_HOSTED_DISABLED_MESSAGE: "disabled",
   shouldRecoverFromHatchFailure: () => true,
   resolveAssistantLifecycleState: (result: {
@@ -251,7 +251,7 @@ mock.module("@/assistant/lifecycle", () => ({
   }) => {
     if (result?.ok && result.data?.status === "active") {
       // Mirrors the real projection: an active assistant flagged `is_local`
-      // is self-hosted, never the managed `active` the hatch is waiting for.
+      // is self-hosted, never the cloud `active` the hatch is waiting for.
       return result.data.is_local
         ? { kind: "self_hosted" }
         : { kind: "active" };
@@ -895,8 +895,8 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
   test("a local-mode preflight-active reload completes without provisioning", async () => {
     // A local-mode session with no hosting param makes useLocalHatch false, so
-    // a reload onto an already-active assistant flows through the platform
-    // preflight path into finishActiveHatch. Without the managed marker the
+    // a reload onto an already-active assistant flows through the cloud
+    // preflight path into finishActiveHatch. Without the cloud marker the
     // provisioning wait short-circuits — no billing reads, no resize wait.
     isLocalClientValue = true;
     preflightActive = true;
@@ -915,11 +915,11 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   // -- managed hatch in a local-mode build --------------------------------
   //
   // The post-checkout funnel sends a local-mode client here with
-  // `hosting=cadet-cloud`: the plan was bought for a managed assistant the
-  // org does not have yet, so the assistant is provisioned on the platform and
+  // `hosting=cadet-cloud`: the plan was bought for a cloud assistant the
+  // org does not have yet, so the assistant is provisioned on the cloud and
   // the purchased machine and storage must land before the screen completes.
 
-  test("a managed hatch in local mode waits for the purchased provisioning", async () => {
+  test("a cloud hatch in local mode waits for the purchased provisioning", async () => {
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=cadet-cloud");
     subscriptionPlanId = "pro";
@@ -940,10 +940,10 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     });
   }, 20000);
 
-  test("a managed hatch drops the gateway session and routes to the platform", async () => {
+  test("a cloud hatch drops the gateway session and routes to the cloud", async () => {
     // Under gateway auth `getAssistant()` answers from the selected lockfile
     // entry. That entry is self-hosted, so it is never mistaken for the
-    // managed assistant being hatched: the hatch still runs and the lockfile
+    // cloud assistant being hatched: the hatch still runs and the lockfile
     // is never touched on the way through.
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=cadet-cloud");
@@ -958,7 +958,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
     expect(hatchAssistantMock).toHaveBeenCalled();
     // The local gateway is dropped up front so the hatch, its polls and its
-    // healthz probes address the platform.
+    // healthz probes address the cloud.
     expect(clearGatewayTokenMock).toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).toHaveBeenCalledWith(null);
   });
@@ -1063,7 +1063,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
       timeout: 5000,
     });
-    // The local hatch's own handoff re-primes the connection; the managed
+    // The local hatch's own handoff re-primes the connection; the cloud
     // teardown must not have run ahead of it.
     expect(setSelfHostedConnectionMock).not.toHaveBeenCalled();
   });
@@ -1148,7 +1148,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
   });
 
-  test("a managed hatch without the post-checkout marker completes on the first non-pro read", async () => {
+  test("a cloud hatch without the post-checkout marker completes on the first non-pro read", async () => {
     // Picking Cadet Cloud is not a purchase: a free managed hatch must never
     // be parked on the post-checkout wait.
     isLocalClientValue = true;

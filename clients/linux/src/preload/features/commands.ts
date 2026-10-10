@@ -19,7 +19,7 @@ const commandsFeature: CapabilityModule<
   install: (registry) => {
     registry.contribute("hotkeys", createHotkeysBridge(ipcRenderer));
     registry.contribute("menu", {
-      setPlatformSession: (has) =>
+      setCloudSession: (has) =>
         ipcRenderer.invoke(MENU_SET_PLATFORM_SESSION, has) as Promise<void>,
       titles: () =>
         ipcRenderer.invoke(MENU_TITLES) as Promise<

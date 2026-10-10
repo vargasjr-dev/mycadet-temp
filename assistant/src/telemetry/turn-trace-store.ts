@@ -345,9 +345,9 @@ export function assembleTurnTrace(boundary: TurnTraceBoundary): TurnTrace {
 }
 
 /**
- * Maximum serialized size of a trace the platform will accept (it drops traces
+ * Maximum serialized size of a trace the cloud will accept (it drops traces
  * whose JSON exceeds ~256 KiB). Keep the daemon-side cap a touch under that so
- * we never ship a trace the platform will silently drop. A trace over the cap
+ * we never ship a trace the cloud will silently drop. A trace over the cap
  * is omitted entirely (the trace-free turn row still flushes).
  */
 export const MAX_TRACE_SERIALIZED_BYTES = 256 * 1024;

@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { type Assistant, getAssistant } from "@/assistant/api";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { RecoveryModeControls } from "@/domains/settings/components/recovery-mode-controls";
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { isCadetStaff } from "@/lib/auth/staff";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -21,7 +21,7 @@ export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
   const showInternalControls = isCadetStaff(user);
 
   const [assistant, setAssistant] = useState<Assistant | null>(null);
@@ -132,12 +132,12 @@ export function DebugControlsPanel() {
             </div>
           )}
 
-          {platformGate === "disabled" && (
-            <PlatformLoginNotice>
+          {cloudGate === "disabled" && (
+            <CloudLoginNotice>
               {t("debugControlsPanel.loginNotice")}
-            </PlatformLoginNotice>
+            </CloudLoginNotice>
           )}
-          {platformGate !== "disabled" && (
+          {cloudGate !== "disabled" && (
             <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
               <div className="mb-3 flex items-center gap-2">
                 <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />

@@ -59,7 +59,7 @@ interface CreditRouteEntry {
  * Whether an entry's turns spend managed Cadet credits, mirroring the
  * daemon's dispatch rules (`effectiveConnectionAuth` in
  * assistant/src/providers/inference/auth.ts): the `cadet` provider IS the
- * managed route, a bound connection bills by its own auth type, and an
+ * cloud route, a bound connection bills by its own auth type, and an
  * unbound entry falls back to a connection of its provider. `null` when the
  * question can't be settled from the loaded data (e.g. the bound connection
  * isn't in the list).
@@ -74,7 +74,7 @@ function entryBurnsManagedCredits(
   if (entry.provider_connection) {
     // The canonical connection name is managed regardless of the stored row:
     // the daemon ignores a user-owned row claiming "cadet" and resolves the
-    // route through platform auth anyway (`isManagedConnectionRoute` in
+    // route through platform auth anyway (`isCloudConnectionRoute` in
     // assistant/src/providers/connection-resolution.ts).
     if (entry.provider_connection === "cadet") {
       return true;
@@ -108,7 +108,7 @@ function anyBurns(results: Array<boolean | null>): boolean | null {
  * (`selectProvider` in assistant/src/providers/call-site-routing.ts), so a
  * BYOK entry whose availability isn't a proven "ok" can still burn managed
  * credits and must classify as unknown. Managed verdicts need no proof: a
- * managed route stays managed regardless of credential health.
+ * cloud route stays managed regardless of credential health.
  */
 function classifyEntry(
   entry: CreditRouteEntry,
@@ -122,7 +122,7 @@ function classifyEntry(
   return burns;
 }
 
-const MANAGED_ROUTABLE = new Set<string>(CADET_SERVED_PROVIDERS);
+const CLOUD_ROUTABLE = new Set<string>(CADET_SERVED_PROVIDERS);
 
 /** The provider whose catalog owns a model id, mirroring the daemon's lookup. */
 function catalogProviderForModel(model: string): string | undefined {
@@ -141,7 +141,7 @@ function catalogProviderForModel(model: string): string | undefined {
  * explicit tweak provider replaces the winner's while keeping its binding; a
  * tweak model the winner's provider does not serve stamps the model's
  * catalog owner and drops the binding (the provider-agnostic managed
- * connection survives); and a cadet winner re-gains the managed connection
+ * connection survives); and a cadet winner re-gains the cloud connection
  * under a concrete managed-routable provider. The shipped mainAgent
  * call-site default carries only a profile intent, so the workspace entry is
  * the only route-affecting tweak source.
@@ -184,7 +184,7 @@ function composedMainAgentRoute(
       if (implied && implied !== entry.provider) {
         const managedConnectionSurvives =
           entry.provider_connection === "cadet" &&
-          MANAGED_ROUTABLE.has(implied);
+          CLOUD_ROUTABLE.has(implied);
         route = {
           provider: implied,
           ...(managedConnectionSurvives
@@ -200,7 +200,7 @@ function composedMainAgentRoute(
     route.provider &&
     route.provider !== "cadet" &&
     !route.provider_connection &&
-    MANAGED_ROUTABLE.has(route.provider)
+    CLOUD_ROUTABLE.has(route.provider)
   ) {
     route = { ...route, provider_connection: "cadet" };
     altered = true;

@@ -8,7 +8,7 @@ import {
 } from "./map-email-message";
 
 describe("mapEmailMessage", () => {
-  test("carries the platform row's fields and leaves the rest unset", () => {
+  test("carries the cloud row's fields and leaves the rest unset", () => {
     const row = mapEmailMessage({
       id: "m1",
       direction: "inbound",

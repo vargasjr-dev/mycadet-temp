@@ -1,7 +1,7 @@
 /**
  * Tests for {@link getPluginCatalog}.
  *
- * Exercises the gate between the platform fetcher and the bundled reader plus
+ * Exercises the gate between the cloud fetcher and the bundled reader plus
  * the per-ref TTL cache. Platform paths drive a fake `deps.fetch` returning a
  * `/v1/plugins/` payload (no real network); the offline path reads the bundled
  * manifest and must touch the network zero times.
@@ -69,16 +69,16 @@ function failingFetch(): { fetch: FetchLike; calls: () => number } {
 }
 
 const ORIGINAL_ENV = {
-  IS_PLATFORM: process.env.IS_PLATFORM,
-  CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
+  IS_CLOUD: process.env.IS_CLOUD,
+  CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
 };
 
 describe("getPluginCatalog", () => {
   beforeEach(() => {
     invalidatePluginCatalogCache();
     // Default: platform features enabled (neither flag set).
-    delete process.env.IS_PLATFORM;
-    delete process.env.CADET_DISABLE_PLATFORM;
+    delete process.env.IS_CLOUD;
+    delete process.env.CADET_DISABLE_CLOUD;
   });
 
   afterEach(() => {
@@ -92,8 +92,8 @@ describe("getPluginCatalog", () => {
     }
   });
 
-  test("fetches from the platform once, then serves cache within the TTL", async () => {
-    // GIVEN platform features enabled and a platform fetcher returning ["a"]
+  test("fetches from the cloud once, then serves cache within the TTL", async () => {
+    // GIVEN platform features enabled and a cloud fetcher returning ["a"]
     const { fetch, calls } = platformFetch(["a"]);
     const deps: SearchPluginsDeps = { fetch };
 
@@ -101,7 +101,7 @@ describe("getPluginCatalog", () => {
     const first = await getPluginCatalog("main", deps);
     const second = await getPluginCatalog("main", deps);
 
-    // THEN the platform is fetched exactly once — the second call is cached
+    // THEN the cloud is fetched exactly once — the second call is cached
     expect(calls()).toBe(1);
     expect(first).toEqual(second);
     expect(githubNames(first)).toEqual(["a"]);
@@ -118,7 +118,7 @@ describe("getPluginCatalog", () => {
     invalidatePluginCatalogCache();
     await getPluginCatalog("main", deps);
 
-    // THEN the platform is fetched a second time
+    // THEN the cloud is fetched a second time
     expect(calls()).toBe(2);
   });
 
@@ -133,7 +133,7 @@ describe("getPluginCatalog", () => {
     setSystemTime(new Date(BASE_TIME_MS + PLUGIN_CATALOG_CACHE_TTL_MS + 1));
     await getPluginCatalog("main", deps);
 
-    // THEN the platform is fetched again
+    // THEN the cloud is fetched again
     expect(calls()).toBe(2);
   });
 
@@ -158,8 +158,8 @@ describe("getPluginCatalog", () => {
 
   test("reads the bundled catalog with zero network when platform is disabled", async () => {
     // GIVEN platform features disabled (offline / self-hosted)
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
 
     const { fetch, calls } = platformFetch(["ignored"]);
     const deps: SearchPluginsDeps = {
@@ -179,8 +179,8 @@ describe("getPluginCatalog", () => {
   });
 
   test("applies feature-flag visibility to bundled catalog entries", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
 
     const { fetch } = platformFetch(["ignored"]);
     const result = await getPluginCatalog("main", {
@@ -193,8 +193,8 @@ describe("getPluginCatalog", () => {
   });
 
   test("preserves hidden entries for installed-plugin metadata", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
 
     const { fetch } = platformFetch(["ignored"]);
     const result = await getPluginCatalogForInstalledMetadata("main", {
@@ -206,7 +206,7 @@ describe("getPluginCatalog", () => {
 });
 
 describe("mergePlatformCatalogWithBundledLocals", () => {
-  test("adds local packages while keeping a platform row on name collision", () => {
+  test("adds local packages while keeping a cloud row on name collision", () => {
     const platform: PluginCatalog = {
       ref: "main",
       matches: [
@@ -258,7 +258,7 @@ describe("mergePlatformCatalogWithBundledLocals", () => {
     expect(merged.matches[1]?.source.kind).toBe("local");
     expect(merged.ref).toBe("main");
   });
-  test("keeps the bundled integration when a platform row without one shadows it", () => {
+  test("keeps the bundled integration when a cloud row without one shadows it", () => {
     const integration = {
       kind: "mcp",
       displayName: "Fathom",

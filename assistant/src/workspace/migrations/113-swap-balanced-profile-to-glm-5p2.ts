@@ -5,18 +5,18 @@ import type { WorkspaceMigration } from "./types.js";
 
 // Bring an existing workspace's managed `balanced` profile in line with the
 // current code template: it now runs GLM 5.2 (Fireworks) at effort `high`,
-// taking over the model the managed `quality-optimized` profile used to serve.
+// taking over the model the cloud `quality-optimized` profile used to serve.
 // The slot keeps its own `label` and `description`.
 //
-// A migration is needed even though the seeder reconciles managed-profile
+// A migration is needed even though the seeder reconciles cloud-profile
 // content from the templates on every boot, because the seeder only consults a
 // template when it reseeds that profile. Off-platform installs reseed every
-// boot, but a platform workspace keeps the profile it was hatched with (the
+// boot, but a cloud workspace keeps the profile it was hatched with (the
 // seeder skips overlay-supplied profiles, and the overlay is consumed once). A
 // platform workspace whose `balanced` profile still resolves to Together
 // MiniMax M3 therefore relies on this migration to move it to GLM 5.2.
 //
-// Scope: only the managed `balanced` profile is rewritten. `balanced` is a
+// Scope: only the cloud `balanced` profile is rewritten. `balanced` is a
 // canonical name reserved since migration 052, which seeded it source-less, so
 // absent `source` means legacy managed — treat it as ours. An explicit
 // `source: "user"` (a profile the user took ownership of) or one whose model the
@@ -43,7 +43,7 @@ const SEEDED_TOP_P = 0.95;
 
 export const swapBalancedProfileToGlm52Migration: WorkspaceMigration = {
   id: "113-swap-balanced-profile-to-glm-5p2",
-  description: "Set the managed balanced profile to GLM 5.2 (Fireworks)",
+  description: "Set the cloud balanced profile to GLM 5.2 (Fireworks)",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {

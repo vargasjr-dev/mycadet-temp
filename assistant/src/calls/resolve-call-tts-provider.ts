@@ -7,8 +7,8 @@
  * native-vs-synthesized strategy decision stay in one implementation.
  */
 
+import { resolveEffectiveSpeechProviders } from "../config/cloud-speech-defaults.js";
 import { loadConfig } from "../config/loader.js";
-import { resolveEffectiveSpeechProviders } from "../config/managed-speech-defaults.js";
 import {
   getCatalogProvider,
   getTtsProvider,
@@ -74,9 +74,9 @@ export interface ResolveCallTtsOptions {
 /**
  * Resolve the active TTS provider via the global provider abstraction.
  *
- * The provider is the effective one after managed-speech defaulting
+ * The provider is the effective one after cloud-speech defaulting
  * ({@link resolveEffectiveSpeechProviders}): a configured BYOK provider
- * whose credential does not resolve is stood in for by managed speech
+ * whose credential does not resolve is stood in for by cloud speech
  * while the cloud connection is usable, the same substitution live
  * voice makes, so a fresh Cadet connection speaks on the phone with zero
  * TTS configuration.
@@ -185,9 +185,9 @@ export async function resolveCallTtsProvider(
 }
 
 /**
- * The TTS provider the call actually uses after managed-speech defaulting.
- * A failure inside the managed lookup (platform client, credential store)
- * keeps the configured provider: a managed-speech hiccup must not demote a
+ * The TTS provider the call actually uses after cloud-speech defaulting.
+ * A failure inside the cloud lookup (platform client, credential store)
+ * keeps the configured provider: a cloud-speech hiccup must not demote a
  * working BYOK provider, and the outer resolver's own fallback is the
  * silent native path.
  */

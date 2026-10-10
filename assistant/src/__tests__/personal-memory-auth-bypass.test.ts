@@ -4,7 +4,7 @@
  *
  * `isPersonalMemoryAllowed` derives trust from `resolveTrustClass`, which only
  * elevates an *unresolved* actor to guardian under DISABLE_HTTP_AUTH (the
- * standing config in platform-managed deployments). A resolved non-guardian
+ * standing config in cloud-managed deployments). A resolved non-guardian
  * channel actor must therefore be denied personal memory even with auth
  * disabled — otherwise the guardian's memory leaks to Slack/phone contacts in
  * the cloud. See LUM-2669. These cases fail on the pre-fix behavior.

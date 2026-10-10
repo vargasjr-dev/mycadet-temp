@@ -15,7 +15,7 @@ import { useSupportsPluginIcons } from "@/lib/backwards-compat/use-supports-plug
  * bypass that interceptor and only load in same-origin platform deployments.
  * The bytes are held as an object URL and revoked on change/unmount, mirroring
  * `attachment-preview-modal`. Because the rendered `<img src>` is a `blob:` URL,
- * any Content-Security-Policy on the platform gateway (in mycadet-platform)
+ * any Content-Security-Policy on the cloud gateway (in mycadet-platform)
  * must permit `img-src blob:`, or the icon silently falls back to the emoji/glyph.
  */
 export function usePluginIconSrc(

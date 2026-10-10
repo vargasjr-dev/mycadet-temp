@@ -60,18 +60,18 @@ import {
   clawhubUpdate,
 } from "../../skills/clawhub.js";
 import { createClawhubProvider } from "../../skills/clawhub-files.js";
-import type { SkillInstallMeta } from "../../skills/install-meta.js";
-import { readInstallMeta } from "../../skills/install-meta.js";
-import {
-  createManagedSkill,
-  deleteManagedSkill,
-  validateManagedSkillId,
-} from "../../skills/managed-store.js";
 import {
   filterSkillsByPlatform,
-  isSkillCompatibleWithPlatform,
+  isSkillCompatibleWithCloud,
   skillPlatformUnavailableMessage,
-} from "../../skills/platform-compatibility.js";
+} from "../../skills/cloud-compatibility.js";
+import {
+  createCloudSkill,
+  deleteCloudSkill,
+  validateCloudSkillId,
+} from "../../skills/cloud-store.js";
+import type { SkillInstallMeta } from "../../skills/install-meta.js";
+import { readInstallMeta } from "../../skills/install-meta.js";
 import type { SkillFileProvider } from "../../skills/skill-file-provider.js";
 import { createSkillsShProvider } from "../../skills/skillssh-files.js";
 import type { SkillAuditData } from "../../skills/skillssh-registry.js";
@@ -1239,7 +1239,7 @@ export async function installSkill(spec: {
     const config = getConfig();
     const catalogSkill = catalog.find((s) => s.id === spec.slug);
     if (catalogSkill) {
-      if (!isSkillCompatibleWithPlatform(catalogSkill)) {
+      if (!isSkillCompatibleWithCloud(catalogSkill)) {
         return {
           success: false,
           error: skillPlatformUnavailableMessage(spec.slug, catalogSkill),
@@ -1282,7 +1282,7 @@ export async function installSkill(spec: {
       return { success: true, skillId: spec.slug };
     }
 
-    // Check the Cadet catalog (first-party skills hosted on the platform).
+    // Check the Cadet catalog (first-party skills hosted on the cloud).
     // Skip when the caller explicitly specified a community origin — this
     // prevents slug collisions where a catalog skill shadows a community
     // skill the user selected from search results.
@@ -1291,7 +1291,7 @@ export async function installSkill(spec: {
         const cadetCatalog = await getCatalog();
         const catalogEntry = cadetCatalog.find((s) => s.id === spec.slug);
         if (catalogEntry) {
-          if (!isSkillCompatibleWithPlatform(catalogEntry)) {
+          if (!isSkillCompatibleWithCloud(catalogEntry)) {
             return {
               success: false,
               error: skillPlatformUnavailableMessage(spec.slug, catalogEntry),
@@ -1401,10 +1401,10 @@ export async function uninstallSkill(
   }
 
   try {
-    // Use shared managed-store logic for simple managed skill IDs
-    const isManagedId = !validateManagedSkillId(skillId);
+    // Use shared cloud-store logic for simple managed skill IDs
+    const isManagedId = !validateCloudSkillId(skillId);
     if (isManagedId) {
-      const result = deleteManagedSkill(skillId);
+      const result = deleteCloudSkill(skillId);
       if (!result.deleted) {
         return {
           success: false,
@@ -1419,7 +1419,7 @@ export async function uninstallSkill(
       }
       rmSync(skillDir, { recursive: true });
       // Best-effort cleanup of capability memory for uninstalled skill
-      // (managed path handles this internally via deleteManagedSkill)
+      // (managed path handles this internally via deleteCloudSkill)
       deleteSkillCapabilityNode(skillId);
     }
 
@@ -1724,7 +1724,7 @@ export async function draftSkill(params: {
           const { signal, cleanup } = createTimeout(LLM_DRAFT_TIMEOUT_MS);
           try {
             const prompt = [
-              "Given the following skill body text, generate metadata for a managed skill.",
+              "Given the following skill body text, generate metadata for a cloud skill.",
               `Return ONLY valid JSON with these fields: ${missing.join(
                 ", ",
               )}.`,
@@ -1811,7 +1811,7 @@ export async function draftSkill(params: {
       }
     }
 
-    // Normalize skillId to valid managed-skill slug format
+    // Normalize skillId to valid cloud-skill slug format
     const originalId = skillId!;
     skillId = toSkillSlug(originalId);
     if (!skillId) {
@@ -1822,7 +1822,7 @@ export async function draftSkill(params: {
     }
 
     // Final validation pass
-    const validationError = validateManagedSkillId(skillId);
+    const validationError = validateCloudSkillId(skillId);
     if (validationError) {
       skillId =
         toSkillSlug(skillId.replace(/[^a-z0-9]/g, "-")) || "untitled-skill";
@@ -1863,7 +1863,7 @@ export async function createSkill(
   params: CreateSkillParams,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const result = createManagedSkill({
+    const result = createCloudSkill({
       id: params.skillId,
       name: params.name,
       description: params.description,

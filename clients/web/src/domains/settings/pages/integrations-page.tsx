@@ -25,11 +25,11 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
+import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import {
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTenantHostRequirement } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
@@ -42,7 +42,7 @@ import { routes } from "@/utils/routes";
 import { IntegrationConnectModal } from "../components/integration-connect-modal";
 import { IntegrationRow } from "../components/integration-row";
 import { IntegrationTile } from "../components/integration-tile";
-import { ManagedConnectController } from "../components/managed-connect-controller";
+import { ManagedConnectController } from "../components/cloud-connect-controller";
 import { YourOwnTab } from "../components/your-own-oauth-tab";
 import {
   buildConnectPlan,
@@ -133,8 +133,8 @@ function IntegrationsPanelInner({
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const platformGate = usePlatformGate();
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const cloudGate = useCloudGate();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const allowAdd = useAssistantFeatureFlagStore.use.mcpAddServer();
   const flagsHydrated = useAssistantFeatureFlagStore.use.hasHydrated();
   const [assistant, setAssistant] = useState<Assistant | null>(null);
@@ -168,7 +168,7 @@ function IntegrationsPanelInner({
     };
   }, [mcpAssistantId]);
 
-  // The same login PlatformLoginNotice offers, returning to this page with
+  // The same login CloudLoginNotice offers, returning to this page with
   // its query intact so a deep-linked provider survives the round trip.
   const { login } = useOnboardingLogin(
     `${location.pathname}${location.search}${location.hash}`,
@@ -207,10 +207,10 @@ function IntegrationsPanelInner({
   ]);
 
   const {
-    platformAssistantId,
-    isLoading: platformAssistantIdLoading,
-    error: platformAssistantIdError,
-  } = usePlatformAssistantId(assistant?.id, platformGate === "full");
+    cloudAssistantId,
+    isLoading: cloudAssistantIdLoading,
+    error: cloudAssistantIdError,
+  } = useCloudAssistantId(assistant?.id, cloudGate === "full");
   const providers = useQuery({
     ...oauthProvidersGetOptions({
       path: { assistant_id: assistant?.id ?? "" },
@@ -220,9 +220,9 @@ function IntegrationsPanelInner({
   });
   const connections = useQuery({
     ...assistantsOauthConnectionsListOptions({
-      path: { assistant_id: platformAssistantId ?? "" },
+      path: { assistant_id: cloudAssistantId ?? "" },
     }),
-    enabled: Boolean(platformAssistantId) && platformGate === "full",
+    enabled: Boolean(cloudAssistantId) && cloudGate === "full",
   });
 
   useEffect(() => {
@@ -254,12 +254,12 @@ function IntegrationsPanelInner({
   const oauthUnavailable =
     providers.isError ||
     connections.isError ||
-    Boolean(platformAssistantIdError) ||
+    Boolean(cloudAssistantIdError) ||
     (!assistantLoading && !assistant);
   const oauthReady =
     !oauthUnavailable &&
     Boolean(providers.data) &&
-    (platformGate !== "full" || Boolean(connections.data));
+    (cloudGate !== "full" || Boolean(connections.data));
   const allItems = useMemo(
     () =>
       buildIntegrationItems(
@@ -319,8 +319,8 @@ function IntegrationsPanelInner({
         continue;
       }
       const plan = buildConnectPlan(item, {
-        platformGate,
-        ownOAuthAvailable: !isPlatformHosted,
+        cloudGate,
+        ownOAuthAvailable: !isCloudHosted,
         mcpServersLoaded: mcp.list.isSuccess,
       });
       if (plan) {
@@ -328,7 +328,7 @@ function IntegrationsPanelInner({
       }
     }
     return byItemId;
-  }, [allItems, isPlatformHosted, mcp.list.isSuccess, platformGate]);
+  }, [allItems, isCloudHosted, mcp.list.isSuccess, cloudGate]);
   // A tile is for what is still to connect, plus whatever is being connected
   // right now with no dialog of its own to report it: a plugin counts as
   // configured the moment it installs, and an integration must not change
@@ -352,17 +352,17 @@ function IntegrationsPanelInner({
     assistantLoading ||
     providers.isLoading ||
     connections.isLoading ||
-    platformAssistantIdLoading ||
+    cloudAssistantIdLoading ||
     mcp.list.isLoading ||
     ((plugins.isLoading || plugins.catalogLoading) && allItems.length === 0);
-  // One attempt at a time, on every surface: a managed authorization is just
+  // One attempt at a time, on every surface: a cloud authorization is just
   // as exclusive as an MCP one, and the rows and cards that predate the tiles
   // only knew about the MCP machine.
   const authBusy = mcp.auth.isBusy || connect.managed !== null;
   const oauthDisabled =
     assistantLoading ||
     !assistant ||
-    (platformGate === "full" && !platformAssistantId);
+    (cloudGate === "full" && !cloudAssistantId);
   // The attempt is drawn inside the tile, or in the connect modal over it,
   // only while that surface is on screen. A search that filters the owning
   // integration out leaves the page-level notice as the one place with a
@@ -435,7 +435,7 @@ function IntegrationsPanelInner({
 
   const disconnectIntegration = useIntegrationDisconnect({
     assistantId: mcpAssistantId,
-    platformAssistantId,
+    cloudAssistantId,
     onStopAuth: (connection) => {
       const waitingOn = mcp.auth.attempt?.serverId;
       if (!waitingOn) {
@@ -477,10 +477,10 @@ function IntegrationsPanelInner({
           // The choice between the provider's own server, Cadet's hosted
           // sign-in, and your own OAuth app is only a real one on a
           // self-hosted assistant.
-          showAlternatives={!isPlatformHosted}
+          showAlternatives={!isCloudHosted}
           disabled={
             connect.isBusyElsewhere(item.id) ||
-            (plan.primary.kind === "managed-oauth" && oauthDisabled)
+            (plan.primary.kind === "cloud-oauth" && oauthDisabled)
           }
           onConnect={(method) => connect.start(item, plan, method)}
           onLogin={startLogin}

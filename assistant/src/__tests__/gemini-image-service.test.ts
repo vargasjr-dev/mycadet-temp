@@ -295,9 +295,9 @@ describe("mapGeminiError", () => {
     expect(msg).not.toContain("Please try again");
   });
 
-  test("maps a managed-proxy 402 failure (plain Error) to out-of-credits message", () => {
+  test("maps a cloud-proxy 402 failure (plain Error) to out-of-credits message", () => {
     const msg = mapGeminiError(
-      new Error("Managed proxy request failed (402): insufficient credits"),
+      new Error("Cloud proxy request failed (402): insufficient credits"),
     );
     expect(msg).toContain("out of credits");
   });

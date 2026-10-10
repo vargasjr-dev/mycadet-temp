@@ -441,13 +441,13 @@ export const subagentSpawnDetail: ToolDetailPayload = payload({
 // ---------------------------------------------------------------------------
 
 /**
- * A managed workspace tool (`scaffold_managed_skill`). Nothing
+ * A managed workspace tool (`scaffold_cloud_skill`). Nothing
  * distinguishes it from a native tool in the panel; it is here because its
  * nested-object input is the shape that reads worst as raw JSON.
  */
 export const managedWorkspaceDetail: ToolDetailPayload = payload({
   toolCallId: "tc-managed-1",
-  toolName: "scaffold_managed_skill",
+  toolName: "scaffold_cloud_skill",
   title: "Building a skill",
   activity: "Scaffolding the standup skill",
   input: {

@@ -2,14 +2,14 @@
  * Shared credential resolver for image-generation call sites (image-studio
  * tool, CLI `image-generation` command, app-icon generator).
  *
- * Each call site picks between the managed-proxy path (routes through the
+ * Each call site picks between the cloud-proxy path (routes through the
  * platform) and the "your own" path (direct provider API key). This module
  * resolves either path and returns a provider-aware error hint when
  * credentials are unavailable.
  */
 
-import { PLATFORM_PROVIDER_META } from "../providers/platform-proxy/constants.js";
-import { resolveManagedProxyContext } from "../providers/platform-proxy/context.js";
+import { PLATFORM_PROVIDER_META } from "../providers/cloud-proxy/constants.js";
+import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
 import { getProviderKeyAsync } from "../security/secure-keys.js";
 import type { ImageGenCredentials, ImageGenProvider } from "./types.js";
 import { providerForImageModelPrefix, providerForModel } from "./types.js";
@@ -19,7 +19,7 @@ import { providerForImageModelPrefix, providerForModel } from "./types.js";
  *
  * `cadet` is unconditionally managed and carries no backend of its own: the
  * backend derives from the model prefix (`gpt-*`/`dall-e-*` proxy OpenAI,
- * anything else proxies Gemini), so one managed provider spans both runtime
+ * anything else proxies Gemini), so one cloud provider spans both runtime
  * proxies. Managed routing never falls back to a stored BYOK key, and a BYOK
  * provider never falls back to the proxy — billing follows the explicit
  * provider choice. Other providers use the caller's key, with an explicit
@@ -52,7 +52,7 @@ export function resolveImageGenRouting(
 /**
  * Resolve credentials for an image-generation request.
  *
- * - `managed`: returns managed-proxy credentials when the platform URL and
+ * - `managed`: returns cloud-proxy credentials when the cloud URL and
  *   assistant API key are both configured, otherwise a hint telling the
  *   user to log in.
  * - otherwise: returns direct credentials when the provider API key is
@@ -70,7 +70,7 @@ export async function resolveImageGenCredentials(opts: {
     // baseUrl and assistantApiKey can't diverge if the credential is cleared
     // between lookups.
     const meta = PLATFORM_PROVIDER_META[provider];
-    const ctx = await resolveManagedProxyContext();
+    const ctx = await resolveCloudProxyContext();
     if (
       !meta?.managed ||
       !meta.proxyPath ||
@@ -79,12 +79,12 @@ export async function resolveImageGenCredentials(opts: {
     ) {
       return {
         errorHint:
-          "Managed proxy is not available. Please log in to Cadet or switch to Your Own mode.",
+          "Cloud proxy is not available. Please log in to Cadet or switch to Your Own mode.",
       };
     }
     return {
       credentials: {
-        type: "managed-proxy",
+        type: "cloud-proxy",
         assistantApiKey: ctx.assistantApiKey,
         baseUrl: `${ctx.cloudBaseUrl}${meta.proxyPath}`,
       },

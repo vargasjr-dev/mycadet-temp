@@ -9,7 +9,7 @@
  * damage it is reporting, and the store's `recordWatchdogEvent` drags the whole
  * `db-connection` graph in behind it.
  *
- * This helper POSTs the event straight to the platform ingest instead. It is
+ * This helper POSTs the event straight to the cloud ingest instead. It is
  * best-effort: opt-out, missing credentials (early boot, before the CES
  * handshake), platform-disabled, and HTTP failures all no-op. No retry — a lost
  * event is acceptable for a rare, high-signal check. Deduped downstream on
@@ -18,10 +18,10 @@
 
 import { v4 as uuid } from "uuid";
 
+import { CadetCloudClient } from "../cloud/client.js";
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
+import { areCloudFeaturesEnabled } from "../cloud/feature-gate.js";
 import { getCloudOrganizationId, getCloudUserId } from "../config/env.js";
-import { CadetPlatformClient } from "../platform/client.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
-import { arePlatformFeaturesEnabled } from "../platform/feature-gate.js";
 import { getDeviceId } from "../util/device-id.js";
 import { getLogger } from "../util/logger.js";
 import { APP_VERSION } from "../version.js";
@@ -34,7 +34,7 @@ const log = getLogger("watchdog-direct-emit");
 const TELEMETRY_INGEST_PATH = "/v1/telemetry/ingest/";
 
 /**
- * POST one `watchdog` event directly to the platform, bypassing the SQLite
+ * POST one `watchdog` event directly to the cloud, bypassing the SQLite
  * buffer. Honors a confirmed `share_analytics` opt-out and the
  * platform-features gate. An unknown consent state emits: this path reports
  * SQLite corruption and has no outbox to defer into, and platform ingest
@@ -52,13 +52,13 @@ export async function emitWatchdogEventDirect(
     if (getRawShareAnalytics() === false) {
       return;
     }
-    if (!arePlatformFeaturesEnabled()) {
+    if (!areCloudFeaturesEnabled()) {
       return;
     }
 
     // Authenticated-only. Null before the CES handshake resolves credentials;
     // the event is simply dropped (no durable backlog to retry from).
-    const client = await CadetPlatformClient.create();
+    const client = await CadetCloudClient.create();
     if (!client) {
       return;
     }

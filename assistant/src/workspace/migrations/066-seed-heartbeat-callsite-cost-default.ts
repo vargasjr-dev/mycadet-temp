@@ -7,7 +7,7 @@ import type { WorkspaceMigration } from "./types.js";
  * Seed a cheap, bounded default for the `heartbeatAgent` LLM call site.
  *
  * Heartbeats are default-on and now run frequently, so they should not inherit
- * the workspace's active chat profile. The default managed profile is Sonnet
+ * the workspace's active chat profile. The default cloud profile is Sonnet
  * with high effort and thinking enabled, which is appropriate for interactive
  * chat but too expensive for a periodic background triage pass.
  *

@@ -59,14 +59,14 @@ describe("useSignupAvailability", () => {
     expect(result.current).toBe("pending");
   });
 
-  test("closes when the platform reports signups are not open", async () => {
+  test("closes when the cloud reports signups are not open", async () => {
     authConfig.result = configReporting(false);
     const { result } = renderHook(() => useSignupAvailability());
 
     await waitFor(() => expect(result.current).toBe("closed"));
   });
 
-  test("opens when the platform reports signups are open", async () => {
+  test("opens when the cloud reports signups are open", async () => {
     authConfig.result = configReporting(true);
     const { result } = renderHook(() => useSignupAvailability());
 

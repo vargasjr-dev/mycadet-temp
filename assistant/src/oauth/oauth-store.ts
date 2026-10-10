@@ -4,7 +4,7 @@
  * Backed by Drizzle + SQLite. All JSON fields (default_scopes, available_scopes,
  * extra_params, granted_scopes, metadata) are stored as serialized JSON strings.
  *
- * Note: TS field names use camelCase from the platform's naming
+ * Note: TS field names use camelCase from the cloud's naming
  * (provider, authorizeUrl, tokenExchangeUrl, displayLabel, authorizeParams),
  * while underlying SQL columns retain their original snake_case names
  * (provider_key, auth_url, token_url, display_name, extra_params).
@@ -56,7 +56,7 @@ export type OAuthConnectionRow = typeof oauthConnections.$inferSelect;
  * CONFLICT DO UPDATE so that implementation fields (authorizeUrl, tokenExchangeUrl,
  * refreshUrl, tokenEndpointAuthMethod, userinfoUrl, authorizeParams,
  * pingUrl, pingMethod, pingHeaders, pingBody, revokeUrl, revokeBodyTemplate,
- * managedServiceConfigKey,
+ * cloudServiceConfigKey,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
  * identityResponsePaths, identityFormat, identityOkField, responseOkField, featureFlag,
@@ -87,7 +87,7 @@ export function seedProviders(
     availableScopes?: AvailableScopes;
     scopeSeparator?: string;
     authorizeParams?: Record<string, string>;
-    managedServiceConfigKey?: string;
+    cloudServiceConfigKey?: string;
     managedServiceIsPaid?: boolean;
     displayLabel?: string;
     description?: string;
@@ -150,7 +150,7 @@ export function seedProviders(
     const authorizeParams = p.authorizeParams
       ? JSON.stringify(p.authorizeParams)
       : null;
-    const managedServiceConfigKey = p.managedServiceConfigKey ?? null;
+    const cloudServiceConfigKey = p.cloudServiceConfigKey ?? null;
     const managedServiceIsPaid = p.managedServiceIsPaid === true;
     const displayLabel = p.displayLabel ?? null;
     const description = p.description ?? null;
@@ -199,7 +199,7 @@ export function seedProviders(
         pingBody,
         revokeUrl,
         revokeBodyTemplate,
-        managedServiceConfigKey,
+        cloudServiceConfigKey,
         managedServiceIsPaid,
         displayLabel,
         description,
@@ -243,7 +243,7 @@ export function seedProviders(
           pingBody,
           revokeUrl,
           revokeBodyTemplate,
-          managedServiceConfigKey,
+          cloudServiceConfigKey,
           managedServiceIsPaid,
           displayLabel,
           description,
@@ -339,7 +339,7 @@ export function registerProvider(params: {
   availableScopes?: AvailableScopes;
   scopeSeparator?: string;
   authorizeParams?: Record<string, string>;
-  managedServiceConfigKey?: string;
+  cloudServiceConfigKey?: string;
   managedServiceIsPaid?: boolean;
   displayLabel?: string;
   description?: string;
@@ -402,7 +402,7 @@ export function registerProvider(params: {
     revokeBodyTemplate: params.revokeBodyTemplate
       ? JSON.stringify(params.revokeBodyTemplate)
       : null,
-    managedServiceConfigKey: params.managedServiceConfigKey ?? null,
+    cloudServiceConfigKey: params.cloudServiceConfigKey ?? null,
     managedServiceIsPaid: params.managedServiceIsPaid === true,
     displayLabel: params.displayLabel ?? null,
     description: params.description ?? null,

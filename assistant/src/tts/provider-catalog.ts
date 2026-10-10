@@ -54,7 +54,7 @@ const DEFINITIONS = {
 /**
  * Definitions in display order (e.g. settings dropdowns).
  */
-// cadet leads: it is the managed option, selected like any other provider.
+// cadet leads: it is the cloud option, selected like any other provider.
 const CATALOG: readonly TtsProviderDefinition[] = [
   DEFINITIONS.cadet,
   DEFINITIONS.elevenlabs,

@@ -35,11 +35,11 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   ToastContent: () => null,
 }));
 
-// These tests exercise the subscription entitlement gate, not the platform
-// gate. Mock usePlatformGate to always return "full" so the managed email
+// These tests exercise the subscription entitlement gate, not the cloud
+// gate. Mock useCloudGate to always return "full" so the cloud email
 // form renders and the entitlement logic is reachable.
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
 }));
 
 let nativeAndroid = false;
@@ -61,11 +61,11 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 }));
 
 // Platform-id resolution is effect-driven and never settles under
-// renderToStaticMarkup; resolve it synchronously so the managed form
+// renderToStaticMarkup; resolve it synchronously so the cloud form
 // (and the entitlement gate under test) renders.
-mock.module("@/hooks/use-platform-assistant-id", () => ({
-  usePlatformAssistantId: () => ({
-    platformAssistantId: ASSISTANT_ID,
+mock.module("@/hooks/use-cloud-assistant-id", () => ({
+  useCloudAssistantId: () => ({
+    cloudAssistantId: ASSISTANT_ID,
     isLoading: false,
     error: null,
   }),
@@ -116,7 +116,7 @@ function renderCard(subscription: SubscriptionResponse): string {
 }
 
 describe("EmailChannelSection managed-email gate", () => {
-  test("Base org without the managed_email entitlement sees the upgrade pitch", () => {
+  test("Base org without the cloud_email entitlement sees the upgrade pitch", () => {
     const html = renderCard(makeSubscription(false, "base"));
     expect(html).toContain("Upgrade to Super");
     expect(html).toContain("A real address on");
@@ -124,7 +124,7 @@ describe("EmailChannelSection managed-email gate", () => {
     expect(html).not.toContain("Set up email in the Assistant Inbox");
   });
 
-  test("Base org WITH the managed_email entitlement sees the way into setup, not the pitch", () => {
+  test("Base org WITH the cloud_email entitlement sees the way into setup, not the pitch", () => {
     // plan_id stays "base" — only the entitlement (admin override) is true.
     const html = renderCard(makeSubscription(true, "base"));
     expect(html).not.toContain("Upgrade to Super");

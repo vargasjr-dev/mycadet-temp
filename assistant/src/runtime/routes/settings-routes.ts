@@ -1054,7 +1054,7 @@ export const ROUTES: RouteDefinition[] = [
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
     summary: "Get cloud config",
-    description: "Return the platform base URL configuration.",
+    description: "Return the cloud base URL configuration.",
     tags: ["config"],
     responseBody: z.object({
       baseUrl: z.string(),
@@ -1071,7 +1071,7 @@ export const ROUTES: RouteDefinition[] = [
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
     summary: "Update cloud config",
-    description: "Set the platform base URL.",
+    description: "Set the cloud base URL.",
     tags: ["config"],
     requestBody: z.object({
       baseUrl: z.string(),

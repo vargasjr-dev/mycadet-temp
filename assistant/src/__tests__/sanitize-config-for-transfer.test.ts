@@ -68,7 +68,7 @@ describe("sanitizeConfigForTransfer", () => {
     /**
      * The schema default for `desktopAuto.enabled` is `true`, so
      * unconditionally stripping the subobject would silently re-enable
-     * auto-attach after a platform→local teleport for users who
+     * auto-attach after a cloud→local teleport for users who
      * deliberately turned it off. Preserve explicit opt-outs.
      */
     const input = {

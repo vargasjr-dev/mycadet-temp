@@ -14,7 +14,7 @@
  *
  * Best-effort throughout: a missing raster, an undecodable upload, a missing
  * native rasterizer, or a render too heavy to fit the cap yields null so
- * callers keep whatever the platform already holds rather than blanking it.
+ * callers keep whatever the cloud already holds rather than blanking it.
  * A WebP upload is transcoded to PNG first, since resvg has no decoder for it,
  * and that transcode needs sharp, whose native binary an install can be
  * missing even though the package itself is a plain dependency.
@@ -171,7 +171,7 @@ async function toResvgSource(bytes: Buffer): Promise<ResvgSource | null> {
 /**
  * Whether a disc can be drawn for `raster` right now: the native rasterizer is
  * present and the source is one it can decode, directly or through a
- * transcode. Answered without rendering, so the platform sync can fold it into
+ * transcode. Answered without rendering, so the cloud sync can fold it into
  * a dedupe key and re-upload once a missing rasterizer or codec appears
  * instead of latching the sync that shipped no disc.
  */

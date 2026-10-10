@@ -1,5 +1,5 @@
 /**
- * Log export HTTP endpoint for the CES managed service.
+ * Log export HTTP endpoint for the CES cloud service.
  *
  * Exposes a single `GET /v1/logs/export` endpoint that collects CES log
  * files, archives them as a tar.gz, and returns the archive. The gateway

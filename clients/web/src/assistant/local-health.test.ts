@@ -78,7 +78,7 @@ describe("useLocalAssistantHealth", () => {
     expect(useLocalAssistantHealth()).toBeNull();
   });
 
-  test("returns null for platform-hosted assistants even with health set", () => {
+  test("returns null for cloud-hosted assistants even with health set", () => {
     assistantStateMock = { kind: "active", isLocal: false, health: "healthy" };
     expect(useLocalAssistantHealth()).toBeNull();
   });

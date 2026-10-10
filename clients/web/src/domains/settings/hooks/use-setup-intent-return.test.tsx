@@ -9,7 +9,7 @@
  * saved-card sync so the confirm endpoint is not called, and mock the
  * org-readiness gate so a test can hold the resolution the way a hydrating org
  * store does (with a short settle ceiling, so the bounded wait is observable).
- * The platform-session half of that gate is driven through the real auth
+ * The cloud-session half of that gate is driven through the real auth
  * store. The real `setupIntentIdFromClientSecret` is kept, so the id the sync
  * is handed is parsed the way it is in the app.
  */
@@ -169,11 +169,11 @@ beforeEach(() => {
     currentOrganizationId: null,
     persistedOrganizationId: null,
   });
-  // Settled by default: the resolution holds until the platform-session probe
+  // Settled by default: the resolution holds until the cloud-session probe
   // has answered, the way it does on a warm app. The identity half is reset
   // too, so a test that switches users mid-resolution leaves no scope behind.
   useAuthStore.setState({
-    platformSession: "absent",
+    cloudSession: "absent",
     sessionStatus: "initializing",
     user: null,
   });
@@ -297,13 +297,13 @@ describe("useSetupIntentReturn", () => {
     expect(syncCalls).toEqual([{ setupIntentId: "seti_1" }]);
   });
 
-  test("holds the resolution until the platform-session probe settles", async () => {
+  test("holds the resolution until the cloud-session probe settles", async () => {
     // The confirm writes through the QueryClient captured when the resolution
     // started, and that client is keyed on the signed-in user: a full page load
     // authenticates a placeholder user before the probe swaps in the real one,
     // so confirming in that window writes the saved card into a client that is
     // about to be discarded.
-    useAuthStore.setState({ platformSession: "unknown" });
+    useAuthStore.setState({ cloudSession: "unknown" });
     renderAt(RETURN_SEARCH);
     await flushResolution();
 
@@ -312,7 +312,7 @@ describe("useSetupIntentReturn", () => {
     expect(pending()).toBe(true);
 
     act(() => {
-      useAuthStore.setState({ platformSession: "present" });
+      useAuthStore.setState({ cloudSession: "present" });
     });
     await waitForOutcome();
 
@@ -323,11 +323,11 @@ describe("useSetupIntentReturn", () => {
     });
   });
 
-  test("gives the platform-session wait its own ceiling", async () => {
+  test("gives the cloud-session wait its own ceiling", async () => {
     // Under one shared budget a slow org header starves the probe, and the wait
     // gives up and confirms through the client that is about to be discarded.
     orgReadiness = "resolving";
-    useAuthStore.setState({ platformSession: "unknown" });
+    useAuthStore.setState({ cloudSession: "unknown" });
 
     renderAt(RETURN_SEARCH);
 
@@ -341,18 +341,18 @@ describe("useSetupIntentReturn", () => {
     expect(pending()).toBe(true);
 
     act(() => {
-      useAuthStore.setState({ platformSession: "present" });
+      useAuthStore.setState({ cloudSession: "present" });
     });
     await waitForOutcome();
 
     expect(syncCalls).toEqual([{ setupIntentId: "seti_1" }]);
   });
 
-  test("stops waiting on a platform session that never settles", async () => {
+  test("stops waiting on a cloud session that never settles", async () => {
     // Same ceiling as the org header: a probe that never answers must not leave
     // the return pending (and the add-a-card actions disabled) for the rest of
     // the visit.
-    useAuthStore.setState({ platformSession: "unknown" });
+    useAuthStore.setState({ cloudSession: "unknown" });
 
     renderAt(RETURN_SEARCH);
     await waitForOutcome();

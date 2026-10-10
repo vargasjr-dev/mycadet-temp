@@ -32,12 +32,12 @@ const PLATFORM_ASSISTANT_ID = "00000000-0000-4000-8000-000000000001";
 function identity(
   assistantId: string,
   scopeId = "connection:one",
-  platformAssistantId?: string,
+  cloudAssistantId?: string,
 ): NotificationIdentity {
   const result = createNotificationIdentity(
     scopeId,
     assistantId,
-    platformAssistantId,
+    cloudAssistantId,
   );
   if (!result) {
     throw new Error("test identity must be valid");

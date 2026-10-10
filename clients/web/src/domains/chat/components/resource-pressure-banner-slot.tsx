@@ -54,7 +54,7 @@ export interface ResourcePressureBannerSlotProps {
   assistantId: string | null;
   /** Display name for the banner title; null falls back to generic copy. */
   assistantName: string | null;
-  /** `"active"` for platform-hosted assistants that have an upgrade path. */
+  /** `"active"` for cloud-hosted assistants that have an upgrade path. */
   assistantStateKind: string;
   /**
    * Render nothing while true (disk-pressure precedence). The slot stays

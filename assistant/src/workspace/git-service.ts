@@ -1743,14 +1743,14 @@ export class WorkspaceGitService {
   }
 
   /**
-   * Drop tracked files matched by the Cadet-managed ignore rules from the
+   * Drop tracked files matched by the Cadet Cloud ignore rules from the
    * index (working tree untouched). Ignore rules only affect untracked
    * paths, so committed runtime state (e.g. embedding-models/) stays in the
    * index — and churns every commit — until explicitly removed here. The
    * staged deletions ride along with the next commit. Best-effort: failures
    * are logged, never block init. Must be called with the mutex lock held.
    *
-   * Deliberately matches against the Cadet-managed rules only — not the
+   * Deliberately matches against the Cadet Cloud rules only — not the
    * workspace .gitignore (which may carry user-authored rules whose matches
    * are force-added on purpose) and not --exclude-standard (the user's
    * global/local exclude files). The rules are passed via a temp file under

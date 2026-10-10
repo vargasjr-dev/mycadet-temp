@@ -176,7 +176,7 @@ describe("upgrade gate", () => {
   });
 
   it("upgrades a cadet-signed declaration nobody approved", async () => {
-    // Only a caller holding the platform secret can open it, and the user
+    // Only a caller holding the cloud secret can open it, and the user
     // extended that trust when they connected their account.
     const handle = makeHandler({
       resolve: () =>
@@ -203,7 +203,7 @@ describe("upgrade gate", () => {
     expect(upgrades).toHaveLength(1);
   });
 
-  it("still demands the platform signature on an unapproved cadet route", async () => {
+  it("still demands the cloud signature on an unapproved cadet route", async () => {
     // Skipping approval did not skip authentication.
     const handle = makeHandler({
       resolve: () =>
@@ -378,7 +378,7 @@ describe("handshake signature", () => {
     expect(upgrades).toEqual([]);
   });
 
-  it("verifies a cadet-signed route against the platform secret", async () => {
+  it("verifies a cadet-signed route against the cloud secret", async () => {
     const handle = makeHandler({
       resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
     });

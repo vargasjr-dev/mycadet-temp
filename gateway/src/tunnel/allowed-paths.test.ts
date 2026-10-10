@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 describe("TUNNEL_ALLOWED_PATHS", () => {
-  it("matches the platform-side header name (must stay in sync with mycadet-platform RegistrationAllowedPathsHeader)", () => {
+  it("matches the cloud-side header name (must stay in sync with mycadet-platform RegistrationAllowedPathsHeader)", () => {
     expect(TUNNEL_ALLOWED_PATHS_HEADER).toBe("X-Cadet-Tunnel-Allowed-Paths");
   });
 
@@ -57,7 +57,7 @@ describe("TUNNEL_ALLOWED_PATHS", () => {
     for (const pattern of patterns) {
       expect(() => new RegExp(pattern)).not.toThrow();
       // RE2-incompatible features that should never appear: lookahead,
-      // lookbehind, backreferences. A simple guard is enough — the platform
+      // lookbehind, backreferences. A simple guard is enough — the cloud
       // side will reject anything Go's regexp.Compile can't parse.
       expect(pattern).not.toMatch(/\(\?[=!<]/); // lookaround
       expect(pattern).not.toMatch(/\\[1-9]/); // backreferences
@@ -85,7 +85,7 @@ describe("TUNNEL_ALLOWED_PATHS", () => {
       "/v1/audio/some-uuid.mp3": true,
       "/v1/live-voice": true,
       "/v1/stt/stream": true,
-      // Watch sessions on a managed assistant ride the tunnel, the same shape
+      // Watch sessions on a cloud assistant ride the tunnel, the same shape
       // as live voice: tunnel validates the browser's minted token on this path
       // and injects the attested caller, and the gateway's handler admits only
       // the guardian on it. Self-hosted assistants bypass tunnel entirely.

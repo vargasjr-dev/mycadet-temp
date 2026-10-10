@@ -105,7 +105,7 @@
     "errorExpired": "This invite link has expired or already been used.",
     "errorAlreadyRedeemed": "This invite has already been claimed by someone else.",
     "errorSenderNotFound": "The sender's assistant could not be found.",
-    "errorNotPlatformManaged": "A2A invite links are only supported for platform-hosted assistants.",
+    "errorNotPlatformManaged": "A2A invite links are only supported for cloud-hosted assistants.",
     "errorGeneric": "Something went wrong. Please try again."
   },
   "channelStatus": {

@@ -4,7 +4,7 @@ This document describes the security model for the Cadet Assistant skill system,
 
 ## Overview
 
-Skills extend the assistant's capabilities by providing instructions (via `SKILL.md`) and optional custom tools (via `TOOLS.json`). Skills can be **bundled** (shipped with the application), **managed** (user-installed via `scaffold_managed_skill`), **workspace** (project-local), or **extra** (additional directories configured by the user).
+Skills extend the assistant's capabilities by providing instructions (via `SKILL.md`) and optional custom tools (via `TOOLS.json`). Skills can be **bundled** (shipped with the application), **managed** (user-installed via `scaffold_cloud_skill`), **workspace** (project-local), or **extra** (additional directories configured by the user).
 
 For managed skills, the installed source of truth is a valid directory at `$CADET_WORKSPACE_DIR/skills/<id>/` containing a top-level `SKILL.md` with standardized frontmatter. The assistant parses that frontmatter at startup and when skill directories change, then seeds Memory V2 skill entries under `skills/<id>` so the assistant can discover available skills from memory. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by install or scaffold paths.
 
@@ -54,7 +54,7 @@ The `computeSkillVersionHash(directoryPath)` function computes a deterministic S
 
 When a skill's source files change (any file added, removed, or modified), the hash changes. Version-specific trust rules with the old hash no longer match, and the user is re-prompted. This protects against:
 
-- **Supply-chain attacks**: A malicious update to a managed or workspace skill cannot silently inherit previous approvals.
+- **Supply-chain attacks**: A malicious update to a cloud or workspace skill cannot silently inherit previous approvals.
 - **Accidental drift**: Editing a skill's tool scripts invalidates stale approvals, ensuring the user reviews the new behavior.
 
 ### Choosing between version-specific and any-version rules

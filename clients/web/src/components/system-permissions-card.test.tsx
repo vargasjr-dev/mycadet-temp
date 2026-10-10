@@ -36,7 +36,7 @@ const assistants = [
   {
     id: "assistant-a",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
   },
 ];
@@ -135,7 +135,7 @@ mock.module("@/lib/self-hosted/connection", () => ({
 
 mock.module("@/hooks/use-assistant-avatar", () => ({
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId: () =>
+  resolveAssistantNotificationCloudId: () =>
     "123e4567-e89b-42d3-a456-426614174000",
 }));
 
@@ -143,11 +143,11 @@ mock.module("@/runtime/notification-avatar", () => ({
   createNotificationIdentity: (
     scopeId: string,
     assistantId: string,
-    platformAssistantId: string,
+    cloudAssistantId: string,
   ) => ({
     scopeId,
     assistantId,
-    nativeSenderId: platformAssistantId,
+    nativeSenderId: cloudAssistantId,
   }),
   getNotificationIdentitySnapshot: () => preparedSnapshot,
 }));

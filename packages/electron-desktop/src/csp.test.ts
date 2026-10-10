@@ -77,7 +77,7 @@ describe("CSP_POLICY", () => {
     expect(scriptSrc).toContain("'unsafe-inline'");
   });
 
-  test("script-src allows the platform origin for the replay recorder script", () => {
+  test("script-src allows the cloud origin for the replay recorder script", () => {
     const scriptSrc = directiveValue("script-src")!;
     expect(scriptSrc).toContain("https://*.mycadet.ai");
   });

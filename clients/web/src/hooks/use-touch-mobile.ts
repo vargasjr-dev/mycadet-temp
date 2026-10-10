@@ -7,7 +7,7 @@ import {
  * A narrow viewport AND a coarse pointer: a phone, rather than a tablet or a
  * desktop window someone shrank. It is a compound of two axes, not either one
  * of them. The input-capability axis alone is `isPointerCoarse()`; how much
- * fits on screen alone is `useIsMobile()`. See `docs/PLATFORM_ADAPTATION.md`.
+ * fits on screen alone is `useIsMobile()`. See `docs/CLOUD_ADAPTATION.md`.
  *
  * The compound is only correct when both halves are load-bearing, which is
  * rarer than it looks. Reading it for a question that turns on input alone

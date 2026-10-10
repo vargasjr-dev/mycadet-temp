@@ -2948,10 +2948,10 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests — Managed Proxy Fallback
+// Tests — Cloud Proxy Fallback
 // ---------------------------------------------------------------------------
 
-describe("AnthropicProvider — Managed Proxy Fallback", () => {
+describe("AnthropicProvider — Cloud Proxy Fallback", () => {
   beforeEach(() => {
     lastStreamParams = null;
     _lastStreamOptions = null;

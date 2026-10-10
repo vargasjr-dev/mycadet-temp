@@ -1,5 +1,5 @@
 /**
- * Reports a live-voice session's phase to the platform, which pushes it to the
+ * Reports a live-voice session's phase to the cloud, which pushes it to the
  * iOS Live Activity over APNs.
  *
  * ## Why the server reports a phase the client already knows
@@ -27,7 +27,7 @@
  * throw here would cost the conversation.
  */
 
-import { CadetPlatformClient } from "../platform/client.js";
+import { CadetCloudClient } from "../cloud/client.js";
 import { getLogger } from "../util/logger.js";
 import type { LiveVoiceServerFramePayload } from "./protocol.js";
 
@@ -188,7 +188,7 @@ export class LiveActivityReporter {
    * Retire the activity as the session ends.
    *
    * Latched, because a session can end more than one way — a clean hangup, a
-   * dropped socket, a process shutdown — and the platform deletes the
+   * dropped socket, a process shutdown — and the cloud deletes the
    * registration on the first one. Sending a second would push at an activity
    * that is already gone.
    */
@@ -234,7 +234,7 @@ export class LiveActivityReporter {
       }
       signal.addEventListener("abort", () => resolve(), { once: true });
     });
-    // Race the whole operation, including platform-client and credential
+    // Race the whole operation, including cloud-client and credential
     // resolution. The same signal reaches `fetch`, so a timed-out operation
     // that resolves credentials later cannot send its stale snapshot.
     void Promise.race([
@@ -284,12 +284,12 @@ export class LiveActivityReporter {
     signal: AbortSignal,
   ): Promise<void> {
     try {
-      const client = await CadetPlatformClient.create();
-      if (!client?.platformAssistantId) {
+      const client = await CadetCloudClient.create();
+      if (!client?.cloudAssistantId) {
         return;
       }
       const path = `/v1/assistants/${encodeURIComponent(
-        client.platformAssistantId,
+        client.cloudAssistantId,
       )}/live-activity/dispatch/`;
       const response = await client.fetch(path, {
         method: "POST",

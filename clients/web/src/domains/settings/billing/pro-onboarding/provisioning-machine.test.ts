@@ -305,7 +305,7 @@ describe("deriveProvisioningState — server verdict overrides", () => {
 });
 
 describe("deriveProvisioningState — an in-flight resize blocks completion", () => {
-  // The platform persists the effective machine_size / provisioned_storage_gib
+  // The cloud persists the effective machine_size / provisioned_storage_gib
   // at *acceptance* of the resize, while the operation marker is still
   // WAITING_FOR_PVC/WAITING_FOR_READY — so targets read as met for the whole
   // window the pod spends restarting. Completing there would clear machineBusy
@@ -513,7 +513,7 @@ describe("deriveProvisioningState — a provisional verdict needs a post-actuals
   // assistant poll can land the target sizes while the status query still holds
   // its pre-resize snapshot. Under `started`/`in_progress` that stale window
   // must not read as completion. The verdict cannot be the anchor — `started`
-  // only queues the resize on a worker — but the platform creates the marker
+  // only queues the resize on a worker — but the cloud creates the marker
   // before it persists the sizes, so a status reading taken after the actuals
   // met the targets settles whether the rollout is still running.
   const staleStatus = {

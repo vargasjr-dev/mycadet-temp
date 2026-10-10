@@ -8,8 +8,8 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { ConsentState } from "../../cloud/consent-cache.js";
 import type { LifecycleEvent } from "../../persistence/lifecycle-events-store.js";
-import type { ConsentState } from "../../platform/consent-cache.js";
 
 const checkpoints = new Map<string, string>();
 const recordedEvents: string[] = [];
@@ -32,7 +32,7 @@ mock.module("../../persistence/lifecycle-events-store.js", () => ({
   recordLifecycleEvent: (name: string) => recordImpl(name),
 }));
 
-mock.module("../../platform/consent-cache.js", () => ({
+mock.module("../../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => shareAnalytics,
 }));
 

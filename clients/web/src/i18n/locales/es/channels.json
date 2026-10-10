@@ -156,7 +156,7 @@
     "subtitle": "Configura cómo tu asistente envía y recibe correo",
     "title": "Correo"
   },
-  "emailManagedContent": {
+  "emailCloudContent": {
     "addressLabel": "Dirección",
     "checkingSubscription": "Comprobando suscripción…",
     "completeSetup": "Completar configuración del dominio",

@@ -42,7 +42,7 @@ const SLACK_PROVIDER_INJECTION_TEMPLATES: NonNullable<
  * every startup. Only Cadet implementation fields (authorizeUrl, tokenExchangeUrl,
  * refreshUrl, tokenEndpointAuthMethod, userinfoUrl, authorizeParams,
  * pingUrl, pingMethod, pingHeaders, pingBody, revokeUrl, revokeBodyTemplate,
- * managedServiceConfigKey, managedServiceIsPaid,
+ * cloudServiceConfigKey, managedServiceIsPaid,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
  * identityResponsePaths, identityFormat, identityOkField, featureFlag,
@@ -76,7 +76,7 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes?: AvailableScopes;
     scopeSeparator?: string;
     authorizeParams?: Record<string, string>;
-    managedServiceConfigKey?: string;
+    cloudServiceConfigKey?: string;
     managedServiceIsPaid?: boolean;
     displayLabel: string;
     description: string;
@@ -96,8 +96,8 @@ export const PROVIDER_SEED_DATA: Record<
     setupNotes?: string[];
     /**
      * Per-tenant providers only: the host the user supplies at connect time,
-     * which the platform substitutes into `{tenant_host}` URL placeholders.
-     * `pattern` mirrors the platform registry's validation so clients can
+     * which the cloud substitutes into `{tenant_host}` URL placeholders.
+     * `pattern` mirrors the cloud registry's validation so clients can
      * reject a malformed host before the request leaves the browser.
      */
     tenantHost?: { pattern: string; label: string; placeholder: string };
@@ -155,7 +155,7 @@ export const PROVIDER_SEED_DATA: Record<
       "https://developers.google.com/identity/protocols/oauth2/scopes",
     authorizeParams: { access_type: "offline", prompt: "consent" },
     loopbackPort: 17321,
-    managedServiceConfigKey: "google-oauth",
+    cloudServiceConfigKey: "google-oauth",
     injectionTemplates: [
       {
         hostPattern: "gmail.googleapis.com",
@@ -292,7 +292,7 @@ export const PROVIDER_SEED_DATA: Record<
     authorizeParams: { owner: "user" },
     tokenEndpointAuthMethod: "client_secret_basic",
     tokenExchangeBodyFormat: "json",
-    managedServiceConfigKey: "notion-oauth",
+    cloudServiceConfigKey: "notion-oauth",
     loopbackPort: 17323,
     injectionTemplates: [
       {
@@ -335,7 +335,7 @@ export const PROVIDER_SEED_DATA: Record<
       "https://developer.x.com/en/docs/authentication/oauth-2-0/authorization-code",
     tokenEndpointAuthMethod: "client_secret_basic",
     loopbackPort: 17335,
-    managedServiceConfigKey: "twitter-oauth",
+    cloudServiceConfigKey: "twitter-oauth",
     managedServiceIsPaid: true,
     injectionTemplates: [
       {
@@ -372,7 +372,7 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: ["repo", "read:user", "notifications"],
     availableScopes:
       "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps",
-    managedServiceConfigKey: "github-oauth",
+    cloudServiceConfigKey: "github-oauth",
     loopbackPort: 17332,
     injectionTemplates: [
       {
@@ -421,7 +421,7 @@ export const PROVIDER_SEED_DATA: Record<
     scopeSeparator: ",",
     authorizeParams: { prompt: "consent" },
     loopbackPort: 17324,
-    managedServiceConfigKey: "linear-oauth",
+    cloudServiceConfigKey: "linear-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.linear.app",
@@ -506,7 +506,7 @@ export const PROVIDER_SEED_DATA: Record<
       { scope: "project:delete", description: "Delete entire projects" },
     ],
     loopbackPort: 17325,
-    managedServiceConfigKey: "todoist-oauth",
+    cloudServiceConfigKey: "todoist-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.todoist.com",
@@ -543,7 +543,7 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes:
       "https://discord.com/developers/docs/topics/oauth2#shared-resources-oauth2-scopes",
     loopbackPort: 17326,
-    managedServiceConfigKey: "discord-oauth",
+    cloudServiceConfigKey: "discord-oauth",
     injectionTemplates: [
       {
         hostPattern: "discord.com",
@@ -614,7 +614,7 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: ["default"],
     availableScopes: "https://developers.asana.com/docs/oauth-scopes",
     loopbackPort: 17328,
-    managedServiceConfigKey: "asana-oauth",
+    cloudServiceConfigKey: "asana-oauth",
     injectionTemplates: [
       {
         hostPattern: "app.asana.com",
@@ -683,7 +683,7 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes:
       "https://developers.hubspot.com/docs/guides/apps/authentication/scopes",
     loopbackPort: 17330,
-    managedServiceConfigKey: "hubspot-oauth",
+    cloudServiceConfigKey: "hubspot-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.hubapi.com",
@@ -860,7 +860,7 @@ export const PROVIDER_SEED_DATA: Record<
     // time); 17339 is the real next-free slot once all three are seeded
     // together.
     loopbackPort: 17339,
-    managedServiceConfigKey: "monday-oauth",
+    cloudServiceConfigKey: "monday-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.monday.com",
@@ -902,7 +902,7 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
     loopbackPort: 17337,
-    managedServiceConfigKey: "eventbrite-oauth",
+    cloudServiceConfigKey: "eventbrite-oauth",
     injectionTemplates: [
       {
         hostPattern: "www.eventbriteapi.com",
@@ -1000,7 +1000,7 @@ export const PROVIDER_SEED_DATA: Record<
     // independently picked the next free port at the time); 17338 is the
     // real next-free slot once both are seeded together.
     loopbackPort: 17338,
-    managedServiceConfigKey: "calendly-oauth",
+    cloudServiceConfigKey: "calendly-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.calendly.com",
@@ -1172,7 +1172,7 @@ export const PROVIDER_SEED_DATA: Record<
     ],
     tokenEndpointAuthMethod: "client_secret_basic",
     loopbackPort: 17331,
-    managedServiceConfigKey: "figma-oauth",
+    cloudServiceConfigKey: "figma-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.figma.com",
@@ -1231,7 +1231,7 @@ export const PROVIDER_SEED_DATA: Record<
     authorizeParams: { prompt: "select_account" },
     tokenEndpointAuthMethod: "client_secret_post",
     loopbackPort: 17334,
-    managedServiceConfigKey: "outlook-oauth",
+    cloudServiceConfigKey: "outlook-oauth",
     injectionTemplates: [
       {
         hostPattern: "graph.microsoft.com",
@@ -1374,13 +1374,13 @@ export const PROVIDER_SEED_DATA: Record<
     tokenEndpointAuthMethod: "client_secret_post",
     // Link's authorize request also needs a `key` param holding the Stripe
     // publishable key of the account behind the OAuth client. Cadet's own
-    // key lives in the platform registry, which is the only place it is the
-    // right answer: it pairs with the platform's client_id. Seeding it here
+    // key lives in the cloud registry, which is the only place it is the
+    // right answer: it pairs with the cloud's client_id. Seeding it here
     // would hand every self-hosted install our merchant identity to send
     // alongside their own client_id, so BYO is deliberately left without one.
     // See setupNotes.
     loopbackPort: 17340,
-    managedServiceConfigKey: "stripe-link-oauth",
+    cloudServiceConfigKey: "stripe-link-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.link.com",
@@ -1391,7 +1391,7 @@ export const PROVIDER_SEED_DATA: Record<
     ],
     appType: "App",
     setupNotes: [
-      "Link is available in managed mode only. Its authorize endpoint requires a `key` parameter carrying the Stripe publishable key for the account that owns the OAuth client, and a bring-your-own connection has nowhere to put one: authorizeParams is re-stamped from seed data on every startup and no CLI or API surface sets it. Use managed mode, where the platform supplies both halves.",
+      "Link is available in managed mode only. Its authorize endpoint requires a `key` parameter carrying the Stripe publishable key for the account that owns the OAuth client, and a bring-your-own connection has nowhere to put one: authorizeParams is re-stamped from seed data on every startup and no CLI or API surface sets it. Use managed mode, where the cloud supplies both halves.",
     ],
     // /userinfo returns no id, so email is the only stable-ish handle; phone
     // backstops a wallet that has one but no email on file.
@@ -1581,8 +1581,8 @@ export const PROVIDER_SEED_DATA: Record<
       },
     ],
     loopbackPort: 17341,
-    managedServiceConfigKey: "shopify-oauth",
-    // Mirrors `extra_config.tenant_host` in the platform provider registry.
+    cloudServiceConfigKey: "shopify-oauth",
+    // Mirrors `extra_config.tenant_host` in the cloud provider registry.
     tenantHost: {
       pattern: "^[a-z0-9][a-z0-9-]*\\.myshopify\\.com$",
       label: "Shop domain",
@@ -1605,7 +1605,7 @@ export const PROVIDER_SEED_DATA: Record<
     // myshopify domain is the stable, human-recognisable handle.
     identityUrl: "https://{tenant_host}/admin/api/2026-07/shop.json",
     identityResponsePaths: ["shop.myshopify_domain", "shop.name"],
-    // Gated like monday/figma/stripe-link: the platform side and the
+    // Gated like monday/figma/stripe-link: the cloud side and the
     // shop-domain input in the clients land separately, and until both are
     // in place a visible Shopify tile would offer a connect flow that
     // cannot complete.
@@ -1618,21 +1618,21 @@ export const PROVIDER_SEED_DATA: Record<
     tokenExchangeUrl:
       "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
     // Access tokens live an hour; refresh tokens 100 days and are rotated on
-    // every refresh, which the platform persists. Both token endpoints
+    // every refresh, which the cloud persists. Both token endpoints
     // authenticate the client with HTTP Basic.
     refreshUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
     tokenEndpointAuthMethod: "client_secret_basic",
     // No revokeUrl: Intuit's revocation endpoint wants a JSON body under HTTP
     // Basic client auth, and the daemon's revoke helper only posts an
     // unauthenticated form body, so a seeded URL would fail silently on every
-    // your-own disconnect. The platform registry revokes managed tokens itself.
+    // your-own disconnect. The cloud registry revokes managed tokens itself.
     // Every Accounting API path is scoped to the company (realm) the user
     // picked on Intuit's consent screen. The realm arrives only as the
-    // callback's `realmId` query parameter; the platform captures it into the
+    // callback's `realmId` query parameter; the cloud captures it into the
     // connection's `provider_params` and fills the `{realm_id}` placeholder
     // server-side, so managed callers send paths relative to the company
     // (`/query`, `/customer/123`). Production and sandbox keys use different
-    // hosts; the platform picks the host per environment.
+    // hosts; the cloud picks the host per environment.
     baseUrl: "https://quickbooks.api.intuit.com/v3/company/{realm_id}",
     // No pingUrl: the only company-independent probe would still need the
     // realm in its path, which the ping route cannot fill in (it sends the
@@ -1666,7 +1666,7 @@ export const PROVIDER_SEED_DATA: Record<
       { scope: "address", description: "The signing-in user's address" },
     ],
     loopbackPort: 17342,
-    managedServiceConfigKey: "quickbooks-oauth",
+    cloudServiceConfigKey: "quickbooks-oauth",
     injectionTemplates: [
       {
         hostPattern: "quickbooks.api.intuit.com",
@@ -1683,7 +1683,7 @@ export const PROVIDER_SEED_DATA: Record<
     ],
     appType: "App",
     setupNotes: [
-      "QuickBooks scopes every Accounting API call to the company (realm) chosen on Intuit's consent screen. Managed connections carry the realm as provider_params.realm_id and requests are sent relative to /v3/company/{realmId}.",
+      "QuickBooks scopes every Accounting API call to the company (realm) chosen on Intuit's consent screen. Cloud connections carry the realm as provider_params.realm_id and requests are sent relative to /v3/company/{realmId}.",
       "Intuit development keys only authorize sandbox companies, which live on sandbox-quickbooks.api.intuit.com; production keys use quickbooks.api.intuit.com.",
       "The Accounting API returns XML unless the request carries Accept: application/json.",
     ],
@@ -1694,7 +1694,7 @@ export const PROVIDER_SEED_DATA: Record<
       "https://quickbooks.api.intuit.com/v3/company/{realm_id}/companyinfo/{realm_id}",
     identityHeaders: { Accept: "application/json" },
     identityResponsePaths: ["CompanyInfo.CompanyName", "CompanyInfo.LegalName"],
-    // Gated like figma/shopify: the platform side lands separately, and until
+    // Gated like figma/shopify: the cloud side lands separately, and until
     // the client ids are live a visible tile would offer a connect flow that
     // cannot complete.
     featureFlag: "quickbooks-oauth",

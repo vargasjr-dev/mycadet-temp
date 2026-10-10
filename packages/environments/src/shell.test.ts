@@ -72,7 +72,7 @@ describe("buildShellSpawnFlags", () => {
 });
 
 describe("path list handling", () => {
-  test("uses the platform delimiter", () => {
+  test("uses the cloud delimiter", () => {
     expect(pathListDelimiter("win32")).toBe(";");
     expect(pathListDelimiter("linux")).toBe(":");
   });

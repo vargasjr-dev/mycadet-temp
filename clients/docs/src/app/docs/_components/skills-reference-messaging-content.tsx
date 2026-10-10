@@ -48,7 +48,7 @@ export function SkillsReferenceMessagingContent() {
             <li>No macOS permissions needed</li>
             <li>
               Your assistant sends messages as itself or with your explicit approval, depending
-              on the platform
+              on the cloud
             </li>
           </ul>
         </section>

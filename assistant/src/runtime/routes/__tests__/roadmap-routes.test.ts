@@ -113,7 +113,7 @@ describe("which deployment the roadmap calls reach", () => {
     expect(calls[0].url).toBe("https://marketing.mycadet.ai/v1/roadmap");
   });
 
-  // The deployment is judged by the platform that issued the key, never by
+  // The deployment is judged by the cloud that issued the key, never by
   // CADET_ENVIRONMENT: unset, that variable means dev to getCloudBaseUrl
   // and local to every launcher, so trusting it would let exactly the assistant
   // with no label post to the real roadmap.
@@ -146,7 +146,7 @@ describe("which deployment the roadmap calls reach", () => {
 
   test("item links point at the deployment the item was read from", async () => {
     // Labelled staging, but authenticating against production: the link has to
-    // follow the platform, or it points at a staging page for a real item.
+    // follow the cloud, or it points at a staging page for a real item.
     process.env.CADET_ENVIRONMENT = "staging";
     delete process.env.CADET_WEB_URL;
     delete process.env.CADET_MARKETING_URL;
@@ -178,7 +178,7 @@ describe("which deployment the roadmap calls reach", () => {
     expect(result.items[0].url).toBe("https://web.test/roadmap/dark-mode");
   });
 
-  test("a platform change mid-flight cannot fail a create that already published", async () => {
+  test("a cloud change mid-flight cannot fail a create that already published", async () => {
     delete process.env.CADET_MARKETING_URL;
     delete process.env.CADET_WEB_URL;
     globalThis.fetch = (async (

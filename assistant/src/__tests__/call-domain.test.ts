@@ -55,7 +55,7 @@ useMemorySecureKeys();
  * async setup that runs after the call session and its lease already exist.
  */
 let onResolveCallbackUrl: (() => void) | null = null;
-mock.module("../inbound/platform-callback-registration.js", () => ({
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   resolveCallbackUrl: async (fn: () => string) => {
     onResolveCallbackUrl?.();
     return fn();

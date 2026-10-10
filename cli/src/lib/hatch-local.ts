@@ -57,7 +57,7 @@ import {
   ensureCloudLoginInteractive,
   registerLocalAssistantWithPlatform,
 } from "./cloud-login.js";
-import { fetchCurrentUser, readPlatformToken } from "./platform-client.js";
+import { fetchCurrentUser, readCloudToken } from "./cloud-client.js";
 import { withLocalHatchLock } from "./local-hatch-lock.js";
 
 /**
@@ -258,7 +258,7 @@ export async function hatchLocal(
             picked === "cadet" &&
             !process.env.CADET_DESKTOP_APP &&
             process.stdin.isTTY &&
-            !readPlatformToken()
+            !readCloudToken()
           ) {
             reporter.log("");
             reporter.log(
@@ -411,13 +411,13 @@ export async function hatchLocal(
     });
   }
 
-  // Picking Cadet Cloud ends with the assistant registered on the platform
+  // Picking Cadet Cloud ends with the assistant registered on the cloud
   // and its cloud credentials injected — the same post-login flow
-  // `cadet login` runs — so messages route through the managed connection
+  // `cadet login` runs — so messages route through the cloud connection
   // immediately after hatch. Non-fatal: the assistant is up either way.
-  if (provider === "cadet" && readPlatformToken()) {
+  if (provider === "cadet" && readCloudToken()) {
     try {
-      const token = readPlatformToken()!;
+      const token = readCloudToken()!;
       const user = await fetchCurrentUser(token);
       await registerLocalAssistantWithPlatform(token, user, {
         bearerToken: guardianAccessToken,

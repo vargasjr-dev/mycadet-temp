@@ -40,13 +40,13 @@ export function isFeatureFlagEnabled(key: string): boolean {
   return !!getFeatureFlagValue(key);
 }
 
-export function isPlatformMode(): boolean {
+export function isCloudServedBuild(): boolean {
   const v = process.env.IS_CLOUD?.trim().toLowerCase();
   return v === "true" || v === "1";
 }
 
-export function arePlatformFeaturesEnabled(): boolean {
-  if (isPlatformMode()) return true;
-  const v = process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
+export function areCloudFeaturesEnabled(): boolean {
+  if (isCloudServedBuild()) return true;
+  const v = process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
   return !(v === "true" || v === "1");
 }

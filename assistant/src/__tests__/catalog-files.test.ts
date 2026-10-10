@@ -306,7 +306,7 @@ describe("readCatalogSkillFiles (dev mode)", () => {
 
     const entries = await readCatalogSkillFiles("my-skill");
 
-    // Fall-through should produce the platform response (empty array),
+    // Fall-through should produce the cloud response (empty array),
     // NOT the external directory contents.
     expect(entries).toEqual([]);
 
@@ -321,8 +321,8 @@ describe("readCatalogSkillFiles (dev mode)", () => {
   test("rejects a symlinked skill root for content reads and falls through to platform mode", async () => {
     // Direct reproduction for `readCatalogSkillFileContent`: with a
     // symlinked skill root, the dev branch must not read the external
-    // file. Instead we should fall through to the platform endpoint and
-    // return whatever the platform says.
+    // file. Instead we should fall through to the cloud endpoint and
+    // return whatever the cloud says.
     const root = makeTempSkillsDir();
     const externalRoot = mkdtempSync(join(tmpdir(), "catalog-files-ext-"));
     tempDirs.push(externalRoot);
@@ -345,7 +345,7 @@ describe("readCatalogSkillFiles (dev mode)", () => {
 
     const entry = await readCatalogSkillFileContent("my-skill", "SKILL.md");
     expect(entry).not.toBeNull();
-    // Content must be the platform payload, NOT the external file's
+    // Content must be the cloud payload, NOT the external file's
     // bytes — otherwise the fall-through didn't happen.
     expect(entry!.content).toBe("PLATFORM_CONTENT");
     expect(entry!.mimeType).toBe("text/markdown");
@@ -410,7 +410,7 @@ describe("readCatalogSkillFiles (dev mode)", () => {
 // ---------------------------------------------------------------------------
 
 describe("readCatalogSkillFiles (platform mode)", () => {
-  test("fetches file listing from the platform and maps it", async () => {
+  test("fetches file listing from the cloud and maps it", async () => {
     mockRepoSkillsDir = undefined;
     mockCatalog = [skill("remote-skill")];
     installFetchMock(() =>
@@ -801,7 +801,7 @@ describe("readCatalogSkillFileContent (platform mode)", () => {
   });
 
   test("rejects hidden / SKIP_DIRS paths BEFORE making any fetch call", async () => {
-    // Platform-mode defense in depth: even though the platform endpoint
+    // Platform-mode defense in depth: even though the cloud endpoint
     // would refuse these reads server-side, we must short-circuit in
     // `readCatalogSkillFileContent` so an attacker cannot use the daemon
     // as a probe channel (and so we avoid unnecessary network traffic).

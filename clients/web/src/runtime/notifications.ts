@@ -84,7 +84,7 @@ export type { NotificationTapPayload } from "@/runtime/notification-taps";
 /**
  * Capacitor / APNs category for the "Go to Conversation" action. Must stay
  * aligned with `NotificationCategories.intentIdentifier` in the iOS shell and
- * `APNS_CONVERSATION_CATEGORY` on the platform APNs sender.
+ * `APNS_CONVERSATION_CATEGORY` on the cloud APNs sender.
  */
 export const NOTIFICATION_INTENT_ACTION_TYPE_ID = "notificationIntent";
 
@@ -574,7 +574,7 @@ export interface PostLocalNotificationArgs {
    */
   assistantId?: string;
   /**
-   * True when the daemon confirmed the platform (APNs) channel accepted a
+   * True when the daemon confirmed the cloud (APNs) channel accepted a
    * remote push for this delivery. A native app that is hidden at intent
    * arrival with a session-confirmed push registration skips the local
    * banner so the remote push is the only one.
@@ -655,7 +655,7 @@ async function notificationFailureSound(
  * runtime proxy. Mirrors the macOS client's
  * `NotificationClient.sendIntentResult` (which POSTs to the gateway) so the
  * daemon's `notificationDeliveries` table records client-side outcomes for
- * every delivery, regardless of the platform that handled it. Best-effort:
+ * every delivery, regardless of the cloud that handled it. Best-effort:
  * network errors are swallowed because the banner UX has already happened
  * and retrying the ack would not change user-visible behavior.
  */
@@ -862,7 +862,7 @@ export async function postLocalNotification(
     // Foreground native pushes use a local banner. Hidden pushes use the OS
     // banner when this platform accepted the remote delivery, so the SSE path
     // skips its local copy in that case. The legacy APNs-only flag remains the
-    // iOS fallback when an older assistant omits the platform list.
+    // iOS fallback when an older assistant omits the cloud list.
     //
     // Residual limitation: platform acceptance is an account-level outcome,
     // so on a multi-device account a token pruned mid-session can suppress

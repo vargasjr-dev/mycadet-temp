@@ -27,7 +27,7 @@ let cached: ResvgLoadResult | undefined;
 
 function loadResvg(): ResvgLoadResult {
   try {
-    // Inline require is necessary here: @resvg/resvg-js loads a platform-specific
+    // Inline require is necessary here: @resvg/resvg-js loads a cloud-specific
     // native .node addon at import time. A top-level import would crash the daemon
     // on startup inside bun --compile binaries where native addons are unavailable.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -38,7 +38,7 @@ function loadResvg(): ResvgLoadResult {
     // Log once at warn level (not error) — the daemon should keep running and
     // callers should fall back to a non-native path (ASCII only, or a 503 at
     // the HTTP layer). Emitting at error level would flag every install
-    // that skipped the platform-specific optional dependency as a daemon
+    // that skipped the cloud-specific optional dependency as a daemon
     // defect.
     log.warn(
       {
@@ -48,7 +48,7 @@ function loadResvg(): ResvgLoadResult {
         module: `@resvg/resvg-js-${process.platform}-${process.arch}`,
       },
       "Failed to load @resvg/resvg-js native module — avatar PNG rendering will be unavailable. " +
-        "The platform-specific optional dependency is likely missing.",
+        "The cloud-specific optional dependency is likely missing.",
     );
     return { available: false, error };
   }

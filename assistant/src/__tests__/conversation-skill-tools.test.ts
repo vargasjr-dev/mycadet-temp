@@ -1232,10 +1232,10 @@ describe("skill_loaded telemetry recording", () => {
 });
 
 // ---------------------------------------------------------------------------
-// lastUsedAt stamping on managed-skill load
+// lastUsedAt stamping on cloud-skill load
 // ---------------------------------------------------------------------------
 
-describe("lastUsedAt stamping on managed-skill load", () => {
+describe("lastUsedAt stamping on cloud-skill load", () => {
   let sessionState: Map<string, string>;
 
   // The projection layer computes `today` from the local clock; mirror that
@@ -1358,7 +1358,7 @@ describe("lastUsedAt stamping on managed-skill load", () => {
     expect(recordedLastUsedTouches).toHaveLength(1);
   });
 
-  test("version-hash change re-registers and re-stamps the managed skill", () => {
+  test("version-hash change re-registers and re-stamps the cloud skill", () => {
     mockCatalog = [makeSkill("homemade")];
     mockManifests = { homemade: makeManifest(["hm_run"]) };
     mockInstallMetas = {

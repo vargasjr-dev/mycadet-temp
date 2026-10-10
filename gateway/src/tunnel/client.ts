@@ -360,7 +360,7 @@ export class TunnelClient {
           // Declares the path allowlist Tunnel enforces for inbound proxied
           // traffic on this tunnel. Read per attempt so a reconnect picks up
           // webhook routes registered since the last one. See
-          // ./allowed-paths.ts for the route inventory and the platform-side
+          // ./allowed-paths.ts for the route inventory and the cloud-side
           // enforcement (ATL-402).
           [TUNNEL_ALLOWED_PATHS_HEADER]: buildTunnelAllowedPathsHeaderValue(
             () => this.readRegisteredWebhookPaths(),
@@ -435,7 +435,7 @@ export class TunnelClient {
   private async handleMessage(
     data: unknown,
     originWs: WebSocket,
-    platformAssistantId: string | undefined,
+    cloudAssistantId: string | undefined,
   ): Promise<void> {
     if (this.ws !== originWs || !this.running) return;
 
@@ -458,7 +458,7 @@ export class TunnelClient {
 
     switch (frame.type) {
       case TUNNEL_FRAME_TYPES.registered:
-        await this.handleRegisteredFrame(frame, originWs, platformAssistantId);
+        await this.handleRegisteredFrame(frame, originWs, cloudAssistantId);
         return;
       case TUNNEL_FRAME_TYPES.httpRequest:
         await this.handleHttpRequestFrame(frame, originWs);
@@ -479,12 +479,12 @@ export class TunnelClient {
   private async handleRegisteredFrame(
     frame: TunnelRegisteredFrame,
     originWs: WebSocket,
-    platformAssistantId: string | undefined,
+    cloudAssistantId: string | undefined,
   ): Promise<void> {
-    if (platformAssistantId && frame.assistant_id !== platformAssistantId) {
+    if (cloudAssistantId && frame.assistant_id !== cloudAssistantId) {
       log.error(
         {
-          expectedAssistantId: platformAssistantId,
+          expectedAssistantId: cloudAssistantId,
           receivedAssistantId: frame.assistant_id,
         },
         "Tunnel registered assistant ID mismatch",
@@ -793,12 +793,12 @@ export function createTunnelClient(
   },
 ): TunnelClient | undefined {
   if (!config.tunnelBaseUrl) {
-    const isPlatform =
+    const isCloud =
       process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
       process.env.IS_CLOUD?.trim() === "1";
-    if (isPlatform) {
+    if (isCloud) {
       log.warn(
-        "TUNNEL_BASE_URL is not configured on a platform pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
+        "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
       );
     }
     void clearManagedPublicBaseUrl(deps.configFile).catch((err) => {

@@ -1,6 +1,6 @@
 /**
  * "Your own" (BYO) email providers: the assistant sends and receives email
- * through the user's own provider account instead of a platform-managed
+ * through the user's own provider account instead of a cloud-managed
  * inbox. Configuration is the provider's stored `api_key` credential;
  * inbound arrives through the gateway's per-provider webhook routes
  * (`gateway/src/http/routes/resend-webhook.ts`, `mailgun-webhook.ts`).

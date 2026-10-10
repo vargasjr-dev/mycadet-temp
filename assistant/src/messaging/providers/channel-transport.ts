@@ -105,7 +105,7 @@ export interface ReactionTarget {
  * Tagged with its kind so a second way of naming a destination is additive
  * rather than a reinterpretation of `chatId`. Reaching a person who has not
  * been named as a chat is deliberately not a kind here: on Slack and Discord
- * it costs a platform call whose result must be resolved at send time rather
+ * it costs a cloud call whose result must be resolved at send time rather
  * than stored, and nothing asks for it yet.
  */
 export type ProactiveTarget = {

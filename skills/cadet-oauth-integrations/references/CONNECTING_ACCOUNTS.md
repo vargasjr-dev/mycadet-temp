@@ -12,7 +12,7 @@ Before the user can connect to a provider, they must have it in one of two state
 ### Step 1: Check whether managed mode is supported
 
 ```bash
-assistant oauth providers get <provider-key> --json | jq -r '.managedServiceConfigKey'
+assistant oauth providers get <provider-key> --json | jq -r '.cloudServiceConfigKey'
 ```
 
 If this returns a non-null value, managed mode is supported. Unless the user has already chosen your-own mode for a deliberate reason, prefer managed mode.
@@ -41,9 +41,9 @@ If there are none, see [Configuring a New OAuth Application](CONFIGURING_APPLICA
 
 ## Choosing Scopes
 
-In managed mode, connections use the platform's default scopes unless you pass `data.requestedScopes` on the oauth_connect surface. When you do, it is a full replacement set: the platform uses exactly those scopes instead of the defaults, so include every scope the connection should keep, not just the new ones. The chat surface handles the connection affordance.
+In managed mode, connections use the cloud's default scopes unless you pass `data.requestedScopes` on the oauth_connect surface. When you do, it is a full replacement set: the cloud uses exactly those scopes instead of the defaults, so include every scope the connection should keep, not just the new ones. The chat surface handles the connection affordance.
 
-Managed apps only accept scopes the provider approved for Cadet's OAuth app, so your-own scope names do not carry over. For managed Google, Gmail access is the single scope `https://mail.google.com/`; the `gmail.*` scopes and `calendar.readonly` are not approved for Cadet's app, and the platform rejects them.
+Managed apps only accept scopes the provider approved for Cadet's OAuth app, so your-own scope names do not carry over. For managed Google, Gmail access is the single scope `https://mail.google.com/`; the `gmail.*` scopes and `calendar.readonly` are not approved for Cadet's app, and the cloud rejects them.
 
 For your-own mode, consider what the user is trying to accomplish and request only the scopes needed for that task. You can see what scopes are available for a provider with:
 
@@ -59,7 +59,7 @@ If the user later needs additional scopes for a different task in your-own mode,
 
 ### Managed mode: show the in-chat connect surface
 
-If the provider is in managed mode, use `ui_show` with `surface_type: "oauth_connect"`. This is the same managed connection path available through Settings, but presented in chat at the moment the task needs it.
+If the provider is in managed mode, use `ui_show` with `surface_type: "oauth_connect"`. This is the same cloud connection path available through Settings, but presented in chat at the moment the task needs it.
 
 Use a short task-specific description, and let the client own the action label. Do not include raw OAuth URLs or a custom connect button label in the surface. If the task needs non-default scopes, pass them in the optional `data.requestedScopes` field (see [Choosing Scopes](#choosing-scopes) for the replacement-set semantics).
 
@@ -79,7 +79,7 @@ Use a short task-specific description, and let the client own the action label. 
 }
 ```
 
-`requestedScopes` is optional; omit it to use the platform's default scopes.
+`requestedScopes` is optional; omit it to use the cloud's default scopes.
 
 Wait for the user to complete or dismiss the surface before proceeding. If they connect, verify the connection before making requests. If they dismiss it, continue only if the task can proceed without that account.
 

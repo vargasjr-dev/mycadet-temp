@@ -42,7 +42,7 @@ const log = getLogger("migrations/145-collapse-profile-bindings-to-entries");
 // conservative keep-provider path.
 
 const ROUTING_IDENTITIES = new Set(["cadet", "chatgpt"]);
-const MANAGED_ROUTABLE = new Set([
+const CLOUD_ROUTABLE = new Set([
   "openai",
   "anthropic",
   "gemini",
@@ -294,7 +294,7 @@ function kindAgrees(rowKind: string, provider: string | undefined): boolean {
     return provider === "openai";
   }
   if (rowKind === "cadet") {
-    return MANAGED_ROUTABLE.has(provider);
+    return CLOUD_ROUTABLE.has(provider);
   }
   return false;
 }

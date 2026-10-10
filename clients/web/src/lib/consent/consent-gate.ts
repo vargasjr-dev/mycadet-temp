@@ -1,7 +1,7 @@
 import { getDeviceSetting } from "@/utils/device-settings";
 import { readConsentHydrated } from "@/domains/onboarding/prefs";
 import { useAuthStore } from "@/stores/auth-store";
-import { isConfirmedPlatformSession } from "@/stores/session-status";
+import { isConfirmedCloudSession } from "@/stores/session-status";
 
 /**
  * The composed diagnostics gate for client reporting surfaces (session replay,
@@ -17,10 +17,10 @@ import { isConfirmedPlatformSession } from "@/stores/session-status";
  * governs the pre-first-sync window.
  */
 export function diagnosticsConsentGranted(): boolean {
-  const { platformSession, platformSessionRestoredOffline } =
+  const { cloudSession, cloudSessionRestoredOffline } =
     useAuthStore.getState();
   if (
-    !isConfirmedPlatformSession(platformSession, platformSessionRestoredOffline)
+    !isConfirmedCloudSession(cloudSession, cloudSessionRestoredOffline)
   ) {
     return false;
   }
@@ -33,9 +33,9 @@ export function diagnosticsConsentGranted(): boolean {
 
 /** Whether native diagnostics can be destructively disabled. */
 export function diagnosticsReportingResolvedOff(): boolean {
-  const { platformSession } = useAuthStore.getState();
+  const { cloudSession } = useAuthStore.getState();
   return (
-    platformSession === "absent" ||
+    cloudSession === "absent" ||
     getDeviceSetting("diagnosticsReporting", "") === "false"
   );
 }

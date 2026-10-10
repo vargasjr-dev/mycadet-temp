@@ -1,6 +1,6 @@
 import { getCloudAssistantId } from "../config/env.js";
 import type { AssistantConfig } from "../config/schema.js";
-import { resolveManagedProxyContext } from "../providers/platform-proxy/context.js";
+import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
 import {
   attemptCesReconnection,
   getCesClient as getSecureKeysCesClient,
@@ -60,7 +60,7 @@ function startCesProcess(config: AssistantConfig): CesStartupResult {
   let currentClient: CesClient | undefined;
   let handshake: CesClientHandshakeOptions = {};
 
-  // Own this process's CES session before resolveManagedProxyContext()
+  // Own this process's CES session before resolveCloudProxyContext()
   // reads the API key. That read must not take the child open path.
   setCesReconnect(async () => {
     const client = await reconnectCesRpcSession(pm, handshake);
@@ -78,7 +78,7 @@ function startCesProcess(config: AssistantConfig): CesStartupResult {
       // the env var, so we pass it via the handshake. Reconnect ownership
       // is already claimed, so this read uses HTTP or the encrypted store,
       // not a second RPC session.
-      const proxyCtx = await resolveManagedProxyContext();
+      const proxyCtx = await resolveCloudProxyContext();
       if (abortController.signal.aborted) {
         return undefined;
       }
@@ -194,7 +194,7 @@ export async function startCes(config: AssistantConfig): Promise<void> {
 
   // Reconnect ownership is claimed inside startCesProcess before the
   // identity read. Snapshotting the API key there (not here) avoids a
-  // second resolveManagedProxyContext() after setCesClient, which would
+  // second resolveCloudProxyContext() after setCesClient, which would
   // read the key through CES while reconnecting.
   if (cesResult.processManager) {
     const pm = cesResult.processManager;

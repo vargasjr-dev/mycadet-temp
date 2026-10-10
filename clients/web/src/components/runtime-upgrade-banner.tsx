@@ -71,8 +71,8 @@ export function RuntimeUpgradeBanner({
   );
 
   const isBunLocalAssistant = activeAssistant?.cloud === "local";
-  const isPlatformAssistant =
-    activeAssistant?.isPlatformHosted === true &&
+  const isCloudAssistant =
+    activeAssistant?.isCloudHosted === true &&
     activeAssistant?.isLocal === false;
   const localCurrentVersion =
     activeAssistant?.runtimeVersion ?? currentVersion ?? null;
@@ -80,11 +80,11 @@ export function RuntimeUpgradeBanner({
     activeAssistant?.currentReleaseVersion ?? currentVersion ?? null;
   const mode: UpgradeMode | null = isBunLocalAssistant
     ? "local"
-    : isPlatformAssistant
+    : isCloudAssistant
       ? "platform"
       : null;
   const { data: platformOperationalStatus } = useAssistantOperationalStatus(
-    isPlatformAssistant ? (assistantId ?? null) : null,
+    isCloudAssistant ? (assistantId ?? null) : null,
   );
   const effectiveCurrentVersion =
     mode === "local"
@@ -123,7 +123,7 @@ export function RuntimeUpgradeBanner({
   const shouldCheckPlatform =
     !!assistantId &&
     !!effectiveCurrentVersion &&
-    isPlatformAssistant &&
+    isCloudAssistant &&
     isHealthyPlatformRuntimeState;
   const shouldCheck = shouldCheckLocal || shouldCheckPlatform;
   const visiblePlatformReleaseChannel = getVisibleReleaseChannel(

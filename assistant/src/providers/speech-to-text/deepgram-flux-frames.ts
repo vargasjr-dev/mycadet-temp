@@ -307,7 +307,7 @@ const EOT_TIMEOUT_MS_RANGE = { min: 500, max: 60_000 } as const;
 export interface FluxQueryParamOptions {
   /**
    * Flux model to run, e.g. `"flux-general-en"`. Required when dialing
-   * Deepgram directly. Omitted on the managed relay, which derives the model
+   * Deepgram directly. Omitted on the cloud relay, which derives the model
    * from the spoken language and prices it before dialing, and rejects a
    * client-sent one.
    */
@@ -392,9 +392,9 @@ const FLUX_CODE_SWITCHING = "multi";
 /**
  * The model and optional hint a spoken language selects.
  *
- * Deliberately the same mapping the managed relay applies server-side, so a
+ * Deliberately the same mapping the cloud relay applies server-side, so a
  * language means the same thing whether Flux is reached with your own key or
- * through the platform. Without it a BYOK session pins the English model and
+ * through the cloud. Without it a BYOK session pins the English model and
  * returns English-sounding nonsense for every other language, which is
  * invisible from the transcript alone.
  *

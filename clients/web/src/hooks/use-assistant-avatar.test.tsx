@@ -13,7 +13,7 @@ import type {
 import {
   avatarQueryKey,
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId,
+  resolveAssistantNotificationCloudId,
   shouldRetainAvatarPlaceholder,
   type AvatarData,
 } from "@/hooks/use-assistant-avatar";
@@ -121,7 +121,7 @@ URL.revokeObjectURL = revokeObjectURL;
 const assistantOne: ResolvedAssistant = {
   id: "asst-1",
   isLocal: true,
-  isPlatformHosted: false,
+  isCloudHosted: false,
   isPaired: false,
   runtimeUrl: "https://first.example.com/runtime",
 };
@@ -181,23 +181,23 @@ describe("useAssistantAvatar", () => {
   test("resolves only verified platform UUIDs for notification senders", () => {
     const platformId = "123e4567-e89b-12d3-a456-426614174000";
     expect(
-      resolveAssistantNotificationPlatformId({
+      resolveAssistantNotificationCloudId({
         ...assistantOne,
-        platformAssistantId: platformId,
+        cloudAssistantId: platformId,
       }),
     ).toBe(platformId);
     expect(
-      resolveAssistantNotificationPlatformId({
+      resolveAssistantNotificationCloudId({
         ...assistantOne,
         id: platformId,
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
       }),
     ).toBe(platformId);
     expect(
-      resolveAssistantNotificationPlatformId({
+      resolveAssistantNotificationCloudId({
         ...assistantOne,
-        platformAssistantId: "not-a-uuid",
+        cloudAssistantId: "not-a-uuid",
       }),
     ).toBeNull();
   });

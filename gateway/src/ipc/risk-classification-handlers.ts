@@ -471,8 +471,8 @@ export async function handleClassifyRisk(
 
     // ── Skill tools ───────────────────────────────────────────────────────
     case "skill_load":
-    case "scaffold_managed_skill":
-    case "delete_managed_skill": {
+    case "scaffold_cloud_skill":
+    case "delete_cloud_skill": {
       const assessment = await skillLoadRiskClassifier.classify({
         toolName: tool,
         skillSelector: params.skill,

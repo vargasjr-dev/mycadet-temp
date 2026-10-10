@@ -18,7 +18,7 @@ import {
 
 afterEach(() => {
   resetMockFetch();
-  delete process.env.CADET_PLATFORM_URL;
+  delete process.env.CADET_CLOUD_URL;
   delete process.env.ASSISTANT_API_KEY;
   _resetCloudIdentityForTests();
 });
@@ -34,22 +34,22 @@ function makeConfigFile(
 }
 
 function makeCaches(opts: {
-  platformBaseUrl?: string;
+  cloudBaseUrl?: string;
   assistantApiKey?: string;
-  platformAssistantId?: string;
+  cloudAssistantId?: string;
   ingressUrl?: string;
 }): { credentials: CredentialCache; configFile?: ConfigFileCache } {
   const store = new Map<string, string>();
-  if (opts.platformBaseUrl)
-    process.env.CADET_PLATFORM_URL = opts.platformBaseUrl;
+  if (opts.cloudBaseUrl)
+    process.env.CADET_CLOUD_URL = opts.cloudBaseUrl;
   if (opts.assistantApiKey)
     store.set(
       credentialKey("cadet", "assistant_api_key"),
       opts.assistantApiKey,
     );
-  if (opts.platformAssistantId) {
+  if (opts.cloudAssistantId) {
     applyCloudIdentityIds({
-      assistantId: opts.platformAssistantId,
+      assistantId: opts.cloudAssistantId,
       organizationId: "org-abc",
       userId: "user-123",
     });
@@ -88,9 +88,9 @@ describe("registerEmailCallbackRoute", () => {
 
   test("registers callback route with platform via credential cache", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     const callbackUrl =
@@ -123,7 +123,7 @@ describe("registerEmailCallbackRoute", () => {
   });
 
   test("uses env assistant key with credential cache for assistant ID", async () => {
-    process.env.CADET_PLATFORM_URL = "https://env-platform.example.com";
+    process.env.CADET_CLOUD_URL = "https://env-platform.example.com";
     process.env.ASSISTANT_API_KEY = "env-key";
 
     const callbackUrl =
@@ -139,7 +139,7 @@ describe("registerEmailCallbackRoute", () => {
     );
 
     const caches = makeCaches({
-      platformAssistantId: "11111111-2222-3333-4444-555555555555",
+      cloudAssistantId: "11111111-2222-3333-4444-555555555555",
     });
 
     const result = await registerEmailCallbackRoute(caches);
@@ -154,9 +154,9 @@ describe("registerEmailCallbackRoute", () => {
 
   test("throws on non-ok response", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     mockFetch(
@@ -172,9 +172,9 @@ describe("registerEmailCallbackRoute", () => {
 
   test("throws when response has no callback_url", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "test-api-key",
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     mockFetch(
@@ -193,9 +193,9 @@ describe("registerEmailCallbackRoute", () => {
 
   test("sends callback_base_url when ingress URL is configured (self-hosted)", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "vak_selfhosted",
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
       ingressUrl: "https://my-assistant.example.com",
     });
 
@@ -226,11 +226,11 @@ describe("registerEmailCallbackRoute", () => {
     });
   });
 
-  test("omits callback_base_url when no ingress URL is configured (platform-managed)", async () => {
+  test("omits callback_base_url when no ingress URL is configured (cloud-managed)", async () => {
     const caches = makeCaches({
-      platformBaseUrl: "https://test-cloud.mycadet.ai",
+      cloudBaseUrl: "https://test-cloud.mycadet.ai",
       assistantApiKey: "vak_managed",
-      platformAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      cloudAssistantId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
     });
 
     const callbackUrl =

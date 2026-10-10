@@ -731,7 +731,7 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
     });
 
     test("hands frames the Flux parser makes nothing of to the wrapper", async () => {
-      // This is how tunnel_error reaches the managed wrapper: it rides the
+      // This is how tunnel_error reaches the cloud wrapper: it rides the
       // same socket but is not a Flux frame.
       const unhandled: Record<string, unknown>[] = [];
       await startSession({

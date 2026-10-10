@@ -177,7 +177,7 @@ export function handleOpenPanel(
   }
   const { assistants } = useResolvedAssistantsStore.getState();
   // The identity store carries the assistant's self-chosen name from
-  // IDENTITY.md; the platform record name can be a placeholder
+  // IDENTITY.md; the cloud record name can be a placeholder
   // (e.g. "New Assistant"), so it is only a fallback.
   const identityName = useAssistantIdentityStore.getState().name;
   const assistantName =

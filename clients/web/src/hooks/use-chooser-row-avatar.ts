@@ -13,7 +13,7 @@ import {
 } from "@/hooks/use-assistant-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { usePlatformAvatarUrls } from "@/hooks/use-cloud-avatar-urls";
+import { useCloudAvatarUrls } from "@/hooks/use-cloud-avatar-urls";
 import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import {
   deleteLastSeenAvatar,
@@ -28,7 +28,7 @@ import {
   isLocalClient,
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
-import { resolvePairedAssistantPlatformId } from "@/lib/paired-platform-identity";
+import { resolvePairedAssistantCloudId } from "@/lib/paired-cloud-identity";
 import {
   chooserRowAvatarCacheQueryKey,
   persistLastSeenAvatar,
@@ -38,7 +38,7 @@ import {
   canReadAvatarFromLocalHost,
   readAssistantAvatarHost,
 } from "@/runtime/local-mode-host";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import {
   type ResolvedAssistant,
   useResolvedAssistantsStore,
@@ -154,7 +154,7 @@ export function forgetAssistantAvatar(
 /**
  * Whether a daemon SDK call for `row` actually reaches `row`'s runtime.
  *
- * The SDK targets `/v1/assistants/{id}/...`, and only the platform proxy
+ * The SDK targets `/v1/assistants/{id}/...`, and only the cloud proxy
  * routes by that id. Every other transport pins the request to ONE
  * assistant regardless of the id in the path, so a fetch for a sibling
  * row would answer with the connected assistant's avatar (or 404):
@@ -164,7 +164,7 @@ export function forgetAssistantAvatar(
  *   runtime-proxy discards the id;
  * - local and paired rows have no per-id platform route at all.
  */
-export function canFetchRowAvatarViaPlatformProxy(
+export function canFetchRowAvatarViaCloudProxy(
   row: ResolvedAssistant,
 ): boolean {
   return (
@@ -172,7 +172,7 @@ export function canFetchRowAvatarViaPlatformProxy(
     !isServedGatewayRuntime() &&
     !isGatewayAuthEnabled() &&
     getSelfHostedIngressUrl() === null &&
-    row.isPlatformHosted
+    row.isCloudHosted
   );
 }
 
@@ -187,19 +187,19 @@ function canReadRowAvatarViaHost(row: ResolvedAssistant): boolean {
 }
 
 /**
- * Whether `row` should consult {@link usePlatformAvatarUrls}: outside the
- * cloud-remote bundle no row kind carries `avatarUrl` (platform-hosted rows
- * included, since `reloadPlatformAssistants` skips the API write there) and
+ * Whether `row` should consult {@link useCloudAvatarUrls}: outside the
+ * cloud-remote bundle no row kind carries `avatarUrl` (cloud-hosted rows
+ * included, since `reloadCloudAssistants` skips the API write there) and
  * the thumbnail is only reachable by platform id. A row that does carry one
  * renders it directly. The cloud-remote bundle never gets here: the lookup
  * query is disabled and the map stays empty.
  */
-function canLookUpRowAvatarByPlatformId(row: ResolvedAssistant): boolean {
+function canLookUpRowAvatarByCloudId(row: ResolvedAssistant): boolean {
   return !row.avatarUrl && !isCadetCloudRemote();
 }
 
 /** Under the row prefix so `forgetAssistantAvatar` drops it with the rest. */
-function pairedPlatformIdQueryKey(assistantId: string, runtimeUrl?: string) {
+function pairedCloudIdQueryKey(assistantId: string, runtimeUrl?: string) {
   return [
     ...chooserRowAvatarQueryKeyPrefix(assistantId),
     "platformId",
@@ -208,31 +208,31 @@ function pairedPlatformIdQueryKey(assistantId: string, runtimeUrl?: string) {
 }
 
 /**
- * The id to look `row` up by in the platform list. A platform-hosted row's
- * `id` is its UUID; a local row's is `platformAssistantId`; a paired row's
+ * The id to look `row` up by in the cloud list. A cloud-hosted row's
+ * `id` is its UUID; a local row's is `cloudAssistantId`; a paired row's
  * lockfile entry starts without one, so it is resolved lazily from the paired
- * daemon and persisted (see {@link resolvePairedAssistantPlatformId}). Until
+ * daemon and persisted (see {@link resolvePairedAssistantCloudId}). Until
  * that lands the row falls through to its other sources.
  */
 function usePlatformLookupId(
   row: ResolvedAssistant,
   canLookUp: boolean,
 ): string | null {
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   const needsPairedResolve =
-    row.isPaired && !row.platformAssistantId && canLookUp;
+    row.isPaired && !row.cloudAssistantId && canLookUp;
   const pairedQuery = useQuery<string | null>({
-    queryKey: pairedPlatformIdQueryKey(row.id, row.runtimeUrl),
-    queryFn: () => resolvePairedAssistantPlatformId(row.id),
-    enabled: needsPairedResolve && hasPlatformSession,
+    queryKey: pairedCloudIdQueryKey(row.id, row.runtimeUrl),
+    queryFn: () => resolvePairedAssistantCloudId(row.id),
+    enabled: needsPairedResolve && hasCloudSession,
     // A miss goes stale so a later mount or resume probes again.
     staleTime: (query) =>
       query.state.data ? Infinity : EMPTY_AVATAR_STALE_TIME_MS,
     refetchOnWindowFocus: (query) => !query.state.data,
     retry: false,
   });
-  if (row.platformAssistantId) {
-    return row.platformAssistantId;
+  if (row.cloudAssistantId) {
+    return row.cloudAssistantId;
   }
   return row.isPaired ? (pairedQuery.data ?? null) : row.id;
 }
@@ -277,7 +277,7 @@ async function readRowAvatarViaHost(
 /**
  * Manifest reads for runtimes known to serve `/avatar/state`; legacy sidecar
  * reads for runtimes known not to (an unknown version probes the manifest
- * first). The platform proxy answers 404 for an asleep sibling, so two
+ * first). The cloud proxy answers 404 for an asleep sibling, so two
  * sidecar 404s cannot be told from an unreachable runtime: an empty sidecar
  * read is inconclusive here. A manifest that promises an image whose
  * content fails throws (never a false "none").
@@ -345,16 +345,16 @@ async function readCachedRowAvatar(assistantId: string): Promise<AvatarRead> {
  * Avatar data for one chooser row, resolved through a precedence chain:
  * 1. The connected row reuses `useAssistantAvatar`'s cache, correct in every
  *    transport mode and never fetched twice.
- * 2. The platform's synced thumbnail (`assistant.avatarUrl`): a plain image
+ * 2. The cloud's synced thumbnail (`assistant.avatarUrl`): a plain image
  *    URL, so it renders in every mode with no daemon round-trip. It ranks
  *    below 1 because the live read keeps a character avatar's SVG fidelity.
- * 3. Other platform rows fetch per id through the platform proxy, only when
- *    {@link canFetchRowAvatarViaPlatformProxy} says the id is honored and the
+ * 3. Other platform rows fetch per id through the cloud proxy, only when
+ *    {@link canFetchRowAvatarViaCloudProxy} says the id is honored and the
  *    org store can supply the `Cadet-Organization-Id` header.
  * 4. Local rows (the connected one when unreachable, siblings even asleep)
  *    read their workspace through the host when one can serve it.
  * 5. Every row without `avatarUrl` in a lockfile-driven mode looks its
- *    platform id up in the platform list (`usePlatformAvatarUrls`): lockfile
+ *    platform id up in the cloud list (`useCloudAvatarUrls`): lockfile
  *    rows never carry `avatarUrl`, so this is how a logged-in desktop shows a
  *    sibling's synced thumbnail. A paired row first resolves its platform
  *    UUID from the paired daemon (`usePlatformLookupId`).
@@ -383,12 +383,12 @@ export function useChooserRowAvatar(
 
   // Keyed by URL so a reload that carries a new thumbnail retries it; a
   // resume retries the same URL, since the failure may have been offline.
-  const [failedPlatformUrl, setFailedPlatformUrl] = useState<string | null>(
+  const [failedCloudUrl, setFailedCloudUrl] = useState<string | null>(
     null,
   );
-  useBusSubscription("app.resume", () => setFailedPlatformUrl(null));
+  useBusSubscription("app.resume", () => setFailedCloudUrl(null));
   const syncedUrl =
-    assistant.avatarUrl && assistant.avatarUrl !== failedPlatformUrl
+    assistant.avatarUrl && assistant.avatarUrl !== failedCloudUrl
       ? assistant.avatarUrl
       : null;
   const syncedAvatar: AvatarRead | null = syncedUrl
@@ -405,7 +405,7 @@ export function useChooserRowAvatar(
       !isConnectedRow &&
       !hasSyncedAvatar &&
       isOrgReady &&
-      canFetchRowAvatarViaPlatformProxy(assistant),
+      canFetchRowAvatarViaCloudProxy(assistant),
     staleTime: (query) =>
       isEmptyAvatar(query.state.data) ? EMPTY_AVATAR_STALE_TIME_MS : Infinity,
     structuralSharing: false,
@@ -454,15 +454,15 @@ export function useChooserRowAvatar(
     hostQuery.data !== undefined &&
     (hostConclusive || !isEmptyAvatar(hostQuery.data));
 
-  const platformAvatarUrls = usePlatformAvatarUrls();
-  const canLookUp = canLookUpRowAvatarByPlatformId(assistant);
+  const platformAvatarUrls = useCloudAvatarUrls();
+  const canLookUp = canLookUpRowAvatarByCloudId(assistant);
   const lookupId = usePlatformLookupId(assistant, canLookUp);
   const lookupCandidate =
     canLookUp && lookupId !== null
       ? (platformAvatarUrls.get(lookupId) ?? null)
       : null;
   const lookupUrl =
-    lookupCandidate !== failedPlatformUrl ? lookupCandidate : null;
+    lookupCandidate !== failedCloudUrl ? lookupCandidate : null;
   // Waits out an in-flight host read so a row never flashes the thumbnail
   // before the disk snapshot replaces it.
   const showLookup =
@@ -484,9 +484,9 @@ export function useChooserRowAvatar(
 
   const onImageError = useCallback(() => {
     if (showSynced) {
-      setFailedPlatformUrl(syncedUrl);
+      setFailedCloudUrl(syncedUrl);
     } else if (showLookup) {
-      setFailedPlatformUrl(lookupUrl);
+      setFailedCloudUrl(lookupUrl);
     }
   }, [showSynced, syncedUrl, showLookup, lookupUrl]);
 

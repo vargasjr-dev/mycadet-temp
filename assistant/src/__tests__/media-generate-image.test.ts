@@ -82,16 +82,16 @@ mock.module("../media/image-service.js", () => ({
   },
 }));
 
-let mockManagedBaseUrl: string | undefined;
-let mockManagedProxyContext = {
+let mockCloudBaseUrl: string | undefined;
+let mockCloudProxyContext = {
   enabled: false,
   cloudBaseUrl: "",
   assistantApiKey: "",
 };
 
-mock.module("../providers/platform-proxy/context.js", () => ({
-  buildManagedBaseUrl: async () => mockManagedBaseUrl,
-  resolveManagedProxyContext: async () => mockManagedProxyContext,
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  buildCloudBaseUrl: async () => mockCloudBaseUrl,
+  resolveCloudProxyContext: async () => mockCloudProxyContext,
 }));
 
 // Import after mocking
@@ -143,8 +143,8 @@ beforeEach(() => {
   lastGenerateCredentials = null;
   lastGenerateRequest = null;
   mockGenerateDelayMs = 0;
-  mockManagedBaseUrl = undefined;
-  mockManagedProxyContext = {
+  mockCloudBaseUrl = undefined;
+  mockCloudProxyContext = {
     enabled: false,
     cloudBaseUrl: "",
     assistantApiKey: "",
@@ -161,7 +161,7 @@ describe("image-studio skill script wrapper", () => {
     expect(getTool("media_generate_image")).toBeUndefined();
   });
 
-  test("returns error when no API key and no managed proxy", async () => {
+  test("returns error when no API key and no cloud proxy", async () => {
     setKey("gemini", undefined);
 
     const result = await run({ prompt: "a cat" }, fakeContext);
@@ -170,10 +170,10 @@ describe("image-studio skill script wrapper", () => {
     expect(result.content).toContain("No Gemini API key");
   });
 
-  test("provider cadet uses managed proxy credentials", async () => {
+  test("provider cadet uses cloud proxy credentials", async () => {
     seedImageGenService({ provider: "cadet" });
-    mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
-    mockManagedProxyContext = {
+    mockCloudBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
+    mockCloudProxyContext = {
       enabled: true,
       cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
@@ -185,7 +185,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.content).toContain("Generated 1 image");
     expect(lastGenerateProvider).toBe("gemini");
     expect(lastGenerateCredentials).toEqual({
-      type: "managed-proxy",
+      type: "cloud-proxy",
       assistantApiKey: "managed-key-123",
       baseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
     });
@@ -193,7 +193,7 @@ describe("image-studio skill script wrapper", () => {
 
   test("provider cadet routes managed to the gemini proxy for gemini models", async () => {
     seedImageGenService({ provider: "cadet" });
-    mockManagedProxyContext = {
+    mockCloudProxyContext = {
       enabled: true,
       cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
@@ -204,7 +204,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.isError).toBe(false);
     expect(lastGenerateProvider).toBe("gemini");
     expect(lastGenerateCredentials).toEqual({
-      type: "managed-proxy",
+      type: "cloud-proxy",
       assistantApiKey: "managed-key-123",
       baseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
     });
@@ -212,7 +212,7 @@ describe("image-studio skill script wrapper", () => {
 
   test("provider cadet routes a gpt model to the openai proxy", async () => {
     seedImageGenService({ provider: "cadet", model: "gpt-image-2" });
-    mockManagedProxyContext = {
+    mockCloudProxyContext = {
       enabled: true,
       cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
@@ -223,7 +223,7 @@ describe("image-studio skill script wrapper", () => {
     expect(result.isError).toBe(false);
     expect(lastGenerateProvider).toBe("openai");
     expect(lastGenerateCredentials).toEqual({
-      type: "managed-proxy",
+      type: "cloud-proxy",
       assistantApiKey: "managed-key-123",
       baseUrl: "https://platform.example.com/v1/runtime-proxy/openai",
     });
@@ -238,26 +238,26 @@ describe("image-studio skill script wrapper", () => {
     const result = await run({ prompt: "a hippo" }, fakeContext);
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("Managed proxy is not available");
+    expect(result.content).toContain("Cloud proxy is not available");
     expect(lastGenerateProvider).toBeNull();
   });
 
-  test("provider cadet returns error when managed proxy is unavailable", async () => {
+  test("provider cadet returns error when cloud proxy is unavailable", async () => {
     seedImageGenService({ provider: "cadet" });
     setKey("gemini", "direct-key"); // should be ignored in managed mode
-    mockManagedBaseUrl = undefined;
+    mockCloudBaseUrl = undefined;
 
     const result = await run({ prompt: "a cat" }, fakeContext);
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("Managed proxy is not available");
+    expect(result.content).toContain("Cloud proxy is not available");
   });
 
   test("your-own mode uses direct API key", async () => {
     seedImageGenService({ provider: "gemini" });
     setKey("gemini", "direct-key");
-    mockManagedBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
-    mockManagedProxyContext = {
+    mockCloudBaseUrl = "https://platform.example.com/v1/runtime-proxy/gemini";
+    mockCloudProxyContext = {
       enabled: true,
       cloudBaseUrl: "https://platform.example.com",
       assistantApiKey: "managed-key-123",
@@ -483,12 +483,12 @@ describe("image-studio skill script wrapper", () => {
 
   test("provider cadet credential error includes guidance not to change service config", async () => {
     seedImageGenService({ provider: "cadet" });
-    mockManagedBaseUrl = undefined;
+    mockCloudBaseUrl = undefined;
 
     const result = await run({ prompt: "a cat" }, fakeContext);
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("Managed proxy is not available");
+    expect(result.content).toContain("Cloud proxy is not available");
     expect(result.content).toContain("Report this error to the user as-is");
     expect(result.content).toContain(
       "Do not change service configuration (managed/your-own mode or default provider/model settings)",

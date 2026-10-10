@@ -8,7 +8,7 @@ import {
   bundledToolInputRepairs,
 } from "../tools/shared/input-repairs.js";
 
-const TOOL = "scaffold_managed_skill";
+const TOOL = "scaffold_cloud_skill";
 const FIND_TOOL = "find_similar_skills";
 
 /** The real manifest entries the repairs describe. */

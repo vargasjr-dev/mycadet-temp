@@ -40,7 +40,7 @@ const SERVICE_MODE_PATH_RE = /^services\.[^.]+\.mode$/;
  */
 const REMOVED_MODE_PATHS: Record<string, string> = {
   "services.web-search.mode":
-    "services.web-search.mode does not exist; web search is configured by provider alone. For managed search run `config set services.web-search.provider cadet`.",
+    "services.web-search.mode does not exist; web search is configured by provider alone. For cloud search run `config set services.web-search.provider cadet`.",
   "services.image-generation.mode":
     "services.image-generation.mode does not exist; image generation is configured by provider alone. For managed image generation run `config set services.image-generation.provider cadet`.",
 };

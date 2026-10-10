@@ -87,7 +87,7 @@ configureNativeAuth({
     refocus.appFocusSteal += 1;
     refocus.ensureVisible += 1;
   },
-  getPlatformUrl: () => "https://platform.example",
+  getCloudUrl: () => "https://platform.example",
   ipc: ipc as NativeAuthOptions["ipc"],
   openExternal: (url) => {
     lastOpenedUrl = url;

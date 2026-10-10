@@ -1846,7 +1846,7 @@
     "dockerDescriptionLinux": "在此電腦上的 Docker 容器中執行您的助理。",
     "dockerDescriptionMacos": "在此 Mac 上的 Docker 容器中執行您的助理。",
     "dockerDescriptionWindows": "在此電腦上的 Docker 容器中執行您的助理。",
-    "existingPlatformAssistant": "您已有平台助理「{id}」。請先將其除役，然後重試傳送。",
+    "existingCloudAssistant": "您已有平台助理「{id}」。請先將其除役，然後重試傳送。",
     "exportTimedOut": "匯出逾時。",
     "importFailed": "匯入失敗。",
     "importFailedHttp": "匯入失敗（HTTP {status}）。",

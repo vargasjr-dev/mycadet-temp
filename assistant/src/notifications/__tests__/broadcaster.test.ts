@@ -1111,7 +1111,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       renderedCopy: {},
     });
 
-  test("cadet payload carries true when the platform adapter reports an accepted push; platform payload omits it", async () => {
+  test("cadet payload carries true when the cloud adapter reports an accepted push; platform payload omits it", async () => {
     bothChannelsCopy();
 
     const cadet = makeCapturingAdapter("cadet");
@@ -1135,7 +1135,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(platform.sends[0]?.payload.remotePushDispatched).toBeUndefined();
   });
 
-  test("cadet payload carries false when the platform dispatch fails", async () => {
+  test("cadet payload carries false when the cloud dispatch fails", async () => {
     bothChannelsCopy();
 
     const cadet = makeCapturingAdapter("cadet");
@@ -1173,7 +1173,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(cadet.sends[0]?.payload.remotePushPlatforms).toEqual(["ios"]);
   });
 
-  test("cadet payload carries false when the platform reports no accepted push (skipped or zero tokens)", async () => {
+  test("cadet payload carries false when the cloud reports no accepted push (skipped or zero tokens)", async () => {
     bothChannelsCopy();
 
     const cadet = makeCapturingAdapter("cadet");
@@ -1192,7 +1192,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("cadet payload carries false when the platform result omits remotePushAccepted", async () => {
+  test("cadet payload carries false when the cloud result omits remotePushAccepted", async () => {
     bothChannelsCopy();
 
     const cadet = makeCapturingAdapter("cadet");
@@ -1208,7 +1208,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("cadet payload carries false when the platform adapter throws", async () => {
+  test("cadet payload carries false when the cloud adapter throws", async () => {
     bothChannelsCopy();
 
     const cadet = makeCapturingAdapter("cadet");
@@ -1233,7 +1233,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(results.find((r) => r.channel === "cadet")?.status).toBe("sent");
   });
 
-  test("cadet intent still flushes with false when the platform channel's prep throws", async () => {
+  test("cadet intent still flushes with false when the cloud channel's prep throws", async () => {
     bothChannelsCopy();
     pairingErrorByChannel = { platform: new Error("pairing exploded") };
 
@@ -1251,14 +1251,14 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
       broadcaster.broadcastDecision(makeSignal(), bothChannelsDecision()),
     ).rejects.toThrow("pairing exploded");
 
-    // The platform adapter never ran, but the deferred cadet send must not
+    // The cloud adapter never ran, but the deferred cadet send must not
     // be lost -- its pending delivery row would block retries forever.
     expect(platform.sends.length).toBe(0);
     expect(cadet.sends.length).toBe(1);
     expect(cadet.sends[0]?.payload.remotePushDispatched).toBe(false);
   });
 
-  test("deadline expiry flushes cadet with false while the platform dispatch finishes in the background", async () => {
+  test("deadline expiry flushes cadet with false while the cloud dispatch finishes in the background", async () => {
     bothChannelsCopy();
 
     let resolvePlatform: ((result: DeliveryResult) => void) | undefined;
@@ -1325,7 +1325,7 @@ describe("NotificationBroadcaster remotePushDispatched flag", () => {
     expect(results.find((r) => r.channel === "platform")?.status).toBe("sent");
   });
 
-  test("dispatches the platform adapter before the cadet intent when both are selected", async () => {
+  test("dispatches the cloud adapter before the cadet intent when both are selected", async () => {
     bothChannelsCopy();
 
     const callOrder: string[] = [];

@@ -12,7 +12,7 @@
  * thinking but **no `label`** field. The runtime profile seeder
  * (`seedInferenceProfiles`) materializes labels on its second pass —
  * but only when the profile didn't already exist. In platform mode
- * (`IS_PLATFORM=true`) it deliberately defers to the existing on-disk
+ * (`IS_CLOUD=true`) it deliberately defers to the existing on-disk
  * entry to avoid clobbering platform-supplied overlay fragments, so the
  * label never gets written.
  *
@@ -34,7 +34,7 @@
  *
  * Idempotent: running twice produces no second write.
  *
- * Does NOT skip on `CADET_DEFAULT_WORKSPACE_CONFIG_PATH`: the platform
+ * Does NOT skip on `CADET_DEFAULT_WORKSPACE_CONFIG_PATH`: the cloud
  * overlay supplies its own label when it cares, and the runtime seeder's
  * `preservedProfileNames` skip path will defer to that overlay-supplied
  * label on every boot. This migration only fills the gap when no source
@@ -52,7 +52,7 @@ const log = getLogger(
 );
 
 /**
- * Bare template labels for the canonical managed profile triplet. Kept in
+ * Bare template labels for the canonical cloud profile triplet. Kept in
  * sync with `MANAGED_PROFILE_TEMPLATES` in
  * `assistant/src/config/seed-inference-profiles.ts`. Duplicated here
  * intentionally — migrations are forward-only and self-contained per the
@@ -65,7 +65,7 @@ const CANONICAL_MANAGED_PROFILE_LABELS: Record<string, string> = {
   "cost-optimized": "Speed",
 };
 
-export const backfillManagedProfileLabelsMigration: WorkspaceMigration = {
+export const backfillCloudProfileLabelsMigration: WorkspaceMigration = {
   id: "082-backfill-managed-profile-labels",
   description:
     "Backfill label on canonical managed inference profiles when absent",

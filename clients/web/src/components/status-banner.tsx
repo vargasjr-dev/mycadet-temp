@@ -251,7 +251,7 @@ const OPERATIONAL_STATUS_TITLES: Record<AssistantOperationalState, string> = {
   retiring: "Assistant is retiring",
 };
 
-// Titles shown when a transient operation fails. The platform keeps the
+// Titles shown when a transient operation fails. The cloud keeps the
 // in-progress `state` (e.g. `upgrading_assistant_version`) but flips
 // `detail_state` to `"failed"`, so we surface a terminal failure message
 // rather than spinning on the operation forever.
@@ -326,7 +326,7 @@ function operationalStatusBannerConfig(
   }
 
   // A transient operation (upgrade, resize, restart, …) can fail while the
-  // reported `state` is still the in-progress operation. The platform signals
+  // reported `state` is still the in-progress operation. The cloud signals
   // this via `detail_state: "failed"`. Surface it as an error so the banner
   // doesn't spin indefinitely on a dead operation.
   if (status.detail_state === "failed") {
@@ -537,14 +537,14 @@ function useAssistantBannerConfig(): BannerConfig | null {
   const operationalStatusAssistantId =
     useAssistantLifecycleStore.use.operationalStatusAssistantId();
   const selectedOperationalStatusAssistantId = useMemo(() => {
-    const platformAssistants = assistantsValidForOrg(
+    const cloudAssistants = assistantsValidForOrg(
       assistants,
       currentOrganizationId,
     ).filter(
       (assistant) =>
-        assistant.isPlatformHosted === true && assistant.isLocal === false,
+        assistant.isCloudHosted === true && assistant.isLocal === false,
     );
-    // Prefer the selected assistant when it is a platform assistant, else
+    // Prefer the selected assistant when it is a cloud assistant, else
     // fall back to the org's first platform assistant. The unconditional
     // fallback is deliberate: during boot and claim/migration windows the
     // selection can legitimately be null, stale, or pointing at a local
@@ -554,10 +554,10 @@ function useAssistantBannerConfig(): BannerConfig | null {
     // cases; if the brief wrong-assistant poll while lifecycle is unresolved
     // ever matters, fix it with a selector in assistant/selection.ts.
     return (
-      platformAssistants.find(
+      cloudAssistants.find(
         (assistant) => assistant.id === selectedAssistantId,
       )?.id ??
-      platformAssistants[0]?.id ??
+      cloudAssistants[0]?.id ??
       null
     );
   }, [assistants, currentOrganizationId, selectedAssistantId]);
@@ -665,7 +665,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
   const isResumeGraceActive = useResumeGrace();
 
   // Suppress the brief "crash_loop" flash during a restart. The pod bounce
-  // bumps the container restart counter, which the platform can briefly
+  // bumps the container restart counter, which the cloud can briefly
   // classify as a crash loop before the assistant settles back to active.
   // Keyed by assistant id so a polling-target switch can't carry the
   // suppression over to a different assistant's genuine crash loop.
@@ -706,7 +706,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
   // Track dismissed failed-operation banners so the user can clear
   // terminal error messages (e.g. "Assistant upgrade failed"). The
   // dismissal is keyed on the operation state so it auto-resets when
-  // the platform reports a new state.
+  // the cloud reports a new state.
   const [dismissedFailedState, setDismissedFailedState] = useState<
     string | null
   >(null);
@@ -916,7 +916,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
   }
 
   // The probe only watches the lockfile-active local assistant's loopback
-  // gateway; a platform session's reachability is operational-status below.
+  // gateway; a cloud session's reachability is operational-status below.
   const localBackendSession =
     assistantState.kind === "active" && assistantState.isLocal;
   if (

@@ -152,7 +152,7 @@ const PAGES_PATH_RE = /^\/pages\/[^/]+$/;
 function routerEndpointForPath(path: string): string | null {
   if (path.startsWith("/v1/")) {
     // Strip trailing slashes so routes match regardless of whether the caller
-    // includes one (e.g. platform proxy paths use Django's trailing-slash
+    // includes one (e.g. cloud proxy paths use Django's trailing-slash
     // convention, so the gateway may forward paths with a trailing /).
     return path.slice("/v1/".length).replace(/\/$/, "");
   }
@@ -455,7 +455,7 @@ export class RuntimeHttpServer {
             if (!virtualDesktopEnabled()) {
               ws.close(
                 DESKTOP_CLOSE.unavailable,
-                "Virtual desktop is available only on enabled platform-hosted assistants",
+                "Virtual desktop is available only on enabled cloud-hosted assistants",
               );
               return;
             }

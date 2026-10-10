@@ -15,7 +15,7 @@ import { isPlatformLocal, startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
-import { setMenuPlatformSession } from "@/runtime/menu";
+import { setMenuCloudSession } from "@/runtime/menu";
 import { primeElectronSessionToken } from "@/runtime/session-token";
 import {
   captureInstallReferrer,
@@ -32,15 +32,15 @@ import { routes } from "@/utils/routes";
  * JS ↔ native bridge for the `NativeAuth` Capacitor plugin registered by the
  * iOS and Android native shells.
  *
- * The plugins open the platform browser auth surface against WorkOS AuthKit
+ * The plugins open the cloud browser auth surface against WorkOS AuthKit
  * with PKCE. After authentication, WorkOS delivers a short-lived,
  * single-use authorization code via the custom URL scheme. The native plugin
- * exchanges that code for a WorkOS access token, then swaps it for a platform
+ * exchanges that code for a WorkOS access token, then swaps it for a cloud
  * session token. The raw session key never transits the custom scheme.
  *
  * Why native auth exists at all: Google and other IdPs refuse OAuth in
  * embedded WebViews (`disallowed_useragent`). The native plugins open the
- * platform browser auth surface instead and return a platform session token.
+ * platform browser auth surface instead and return a cloud session token.
  */
 
 interface NativeAuthPlugin {
@@ -50,7 +50,7 @@ interface NativeAuthPlugin {
     intent?: string;
     /**
      * Allowlisted campaign params. The shell appends them as query params on
-     * its token POST: allauth headless posts JSON, so the platform reads
+     * its token POST: allauth headless posts JSON, so the cloud reads
      * attribution off `request.GET`. Omitted when empty, so a shell that
      * predates this field sees an unchanged call.
      */
@@ -116,7 +116,7 @@ export function isNativePlatform(): boolean {
  * renders client-only through `createRoot` (no SSR, no hydration).
  *
  * Prefer it over the bare function in JSX (docs/CAPACITOR.md): it keeps the
- * shape consistent with the platform hooks in `runtime/platform-detection.ts`
+ * shape consistent with the cloud hooks in `runtime/platform-detection.ts`
  * and stays correct if a prerender step is ever added. There is no first-paint
  * flicker to avoid.
  */
@@ -397,7 +397,7 @@ export function clearStaleNativeCheckoutStash(
  * fallback, and it is the only attribution a Play install carries at all (such
  * an install arrives with no URL params).
  *
- * The two are never merged: `persist_attribution` on the platform stores a row
+ * The two are never merged: `persist_attribution` on the cloud stores a row
  * as one coherent unit from a single source, so it must not be handed fields
  * spliced from two. First touch across repeat signups is already held there by
  * the empty-row backfill guard.
@@ -474,12 +474,12 @@ export async function startAuthFlow(
         primeElectronSessionToken(result.sessionToken);
         // Reconcile the account before choosing where login lands. Keep this
         // dynamic because auth-store imports this module.
-        const { useAuthStore, whenPlatformSessionSettled } = await import(
+        const { useAuthStore, whenCloudSessionSettled } = await import(
           "@/stores/auth-store"
         );
         await useAuthStore.getState().refreshSession();
-        await whenPlatformSessionSettled();
-        await setMenuPlatformSession(true);
+        await whenCloudSessionSettled();
+        await setMenuCloudSession(true);
         const destination = sanitizeReturnTo(
           resolveNativePostAuthDestination(options.intent, options.returnTo),
           DEFAULT_POST_AUTH_DESTINATION,
@@ -493,7 +493,7 @@ export async function startAuthFlow(
   }
 
   // Standalone local mode (no local Django serving the SPA): redirect
-  // through the platform's login page and back to a loopback callback.
+  // through the cloud's login page and back to a loopback callback.
   if (isLocalClient() && !isPlatformLocal()) {
     await startLoopbackAuth(options.returnTo ?? undefined, {
       intent: options.intent,

@@ -87,7 +87,7 @@ describe("buildAuthorizeUrl", () => {
 });
 
 describe("selectWorkosClientId", () => {
-  // During coexistence the platform lists two providers that share the
+  // During coexistence the cloud lists two providers that share the
   // "workos-oidc" id; only the OAuth2 one (no discovery URL) is usable.
   const legacy = {
     id: "workos-oidc",
@@ -108,7 +108,7 @@ describe("selectWorkosClientId", () => {
     expect(selectWorkosClientId([modern, legacy])).toBe("client_um");
   });
 
-  test("returns null when the platform lacks token auth", () => {
+  test("returns null when the cloud lacks token auth", () => {
     const preTokenAuth = { ...modern, flows: ["provider_redirect"] };
     expect(selectWorkosClientId([legacy, preTokenAuth])).toBeNull();
     expect(selectWorkosClientId([])).toBeNull();

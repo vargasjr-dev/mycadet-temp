@@ -12,7 +12,7 @@ test("forwards the complete local-mode namespace through IPC", async () => {
     { assistantId: "assistant-1" },
     "assistant-1",
   );
-  await bridge.replacePlatformAssistants([], "org-1");
+  await bridge.replaceCloudAssistants([], "org-1");
   await bridge.retire("assistant-1");
   await bridge.sleep("assistant-1");
   await bridge.wake("assistant-1", { repairGuardian: true });

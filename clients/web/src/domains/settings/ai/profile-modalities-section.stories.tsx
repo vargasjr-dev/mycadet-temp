@@ -6,7 +6,7 @@
  * render draws the value and the disclosure from the args and writes each
  * change back through `useArgs`, so the canvas and the Controls panel stay in
  * step. The stories cover the free-text defaults with every row
- * off, a mixed configuration, the read-only rendering a managed profile gets,
+ * off, a mixed configuration, the read-only rendering a cloud profile gets,
  * and the collapsible layout the modal uses, closed and open.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -82,7 +82,7 @@ export const Mixed: Story = {
   },
 };
 
-/** A managed profile: the same rows with every toggle disabled. */
+/** A cloud profile: the same rows with every toggle disabled. */
 export const ReadOnly: Story = {
   args: {
     ...Mixed.args,

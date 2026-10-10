@@ -235,10 +235,10 @@ mock.module("../skills/install-meta.js", () => ({
   readInstallMeta: () => null,
 }));
 
-mock.module("../skills/managed-store.js", () => ({
-  createManagedSkill: () => ({ created: true }),
-  deleteManagedSkill: () => ({ deleted: true }),
-  validateManagedSkillId: () => null,
+mock.module("../skills/cloud-store.js", () => ({
+  createCloudSkill: () => ({ created: true }),
+  deleteCloudSkill: () => ({ deleted: true }),
+  validateCloudSkillId: () => null,
 }));
 
 mock.module("../plugins/defaults/memory/graph/capability-seed.js", () => ({

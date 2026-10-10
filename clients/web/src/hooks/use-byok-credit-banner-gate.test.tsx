@@ -133,7 +133,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -144,31 +144,31 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: true,
       settled: false,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
   test("no resolved assistant is not-asked-yet, not answered-no", () => {
     // Every route query is disabled without an assistant, so the fail-open
     // verdict rests on nothing. A caller that read it as settled would claim
-    // a managed route on evidence the gate has not gathered.
+    // a cloud route on evidence the gate has not gathered.
     assistantId = null;
     const v = verdict();
     expect(v).toEqual({
       suppress: false,
       settled: false,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
-  test("a managed route is a settled answer", () => {
+  test("a cloud route is a settled answer", () => {
     answerRouteQueries();
     burnsManaged = true;
     const v = verdict();
     expect(v).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: true,
+      routeBurnsCloud: true,
     });
   });
 
@@ -182,7 +182,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: true,
+      routeBurnsCloud: true,
     });
   });
 
@@ -194,7 +194,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: true,
       settled: false,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -209,7 +209,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: true,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -227,7 +227,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -239,7 +239,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(verdict()).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -252,7 +252,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(verdict()).toEqual({
       suppress: false,
       settled: false,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -263,7 +263,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(verdict()).toEqual({
       suppress: true,
       settled: false,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 
@@ -275,7 +275,7 @@ describe("useByokCreditRouteVerdict", () => {
     expect(v).toEqual({
       suppress: false,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     });
   });
 });

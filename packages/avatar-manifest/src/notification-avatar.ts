@@ -30,7 +30,7 @@ export const NOTIFICATION_AVATAR_FALLBACK_DISC_HEX = "#ECEFEA";
 const ACCENT_MIX = 0.14;
 
 /**
- * Largest notification PNG the platform sync ships, in bytes. It bounds the
+ * Largest notification PNG the cloud sync ships, in bytes. It bounds the
  * `notification_avatar_base64` field of the PATCH that uploads the disc, which
  * is what APNs and FCM later hand their clients a URL and a hash for. A
  * photographic avatar is quantised (or dropped) to fit.
@@ -118,7 +118,7 @@ function px(value: number): string {
  * edge is the hard boundary no matter how far a cover-crop overflows.
  *
  * The `<image href="data:...">` shape is the one `downscaleRaster()` in
- * `assistant/src/platform/sync-avatar.ts` already feeds resvg, so the daemon's
+ * `assistant/src/cloud/sync-avatar.ts` already feeds resvg, so the daemon's
  * rasterizer is known to render it.
  */
 export function notificationAvatarSvg({

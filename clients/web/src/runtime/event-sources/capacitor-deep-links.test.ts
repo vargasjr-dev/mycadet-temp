@@ -70,7 +70,7 @@ beforeEach(() => {
   captureErrorMock.mockClear();
 });
 
-// The platform guard, unsubscribe races, and failure reporting are the
+// The cloud guard, unsubscribe races, and failure reporting are the
 // `subscribeCapacitorListener` contract, covered by
 // `runtime/capacitor-listener.test.ts`. This suite covers only this
 // source's wiring: URL routing and its error context.

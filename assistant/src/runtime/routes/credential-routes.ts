@@ -3,7 +3,7 @@
  *
  * These routes provide higher-level credential operations (list with metadata,
  * inspect, reveal, set, delete, status) that compose the lower-level secret
- * storage primitives with metadata, OAuth connections, and platform-managed
+ * storage primitives with metadata, OAuth connections, and cloud-managed
  * credential catalogs.
  *
  * POST   /v1/credentials/list    — list all credentials with metadata
@@ -19,9 +19,9 @@ import { z } from "zod";
 import { AcpCredentialFormatError } from "../../acp/acp-credentials.js";
 import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
 import {
-  fetchManagedCatalog,
-  type ManagedCredentialDescriptor,
-} from "../../credential-execution/managed-catalog.js";
+  type CloudCredentialDescriptor,
+  fetchCloudCatalog,
+} from "../../credential-execution/cloud-catalog.js";
 import { buildForChatSentinel } from "../../daemon/chat-credential-redaction.js";
 import { invalidateEmailReadinessForByoCredential } from "../../email/byo-email-credential.js";
 import {
@@ -54,16 +54,16 @@ import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { recordForChatMint } from "../for-chat-mint-registry.js";
 import { recordRevealSuccess } from "../reveal-success-registry.js";
 import {
+  isPlatformCloudCredential,
+  type PlatformCloudCredentialAction,
+  platformCloudCredentialRefusal,
+} from "./cloud-credentials.js";
+import {
   assertCredentialNotInUse,
   invalidateConnectionsAfterCredentialDelete,
 } from "./credential-in-use.js";
 import { InjectionTemplateSchema } from "./credential-prompt-routes.js";
 import { BadRequestError, ForbiddenError, InternalError } from "./errors.js";
-import {
-  isPlatformManagedCredential,
-  type PlatformManagedCredentialAction,
-  platformManagedCredentialRefusal,
-} from "./platform-managed-credentials.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -134,8 +134,8 @@ function buildCredentialOutput(
   return output;
 }
 
-function buildManagedCredentialOutput(
-  descriptor: ManagedCredentialDescriptor,
+function buildCloudCredentialOutput(
+  descriptor: CloudCredentialDescriptor,
 ): Record<string, unknown> {
   return {
     source: "platform",
@@ -162,10 +162,10 @@ interface CredentialLookup {
 /**
  * Resolve a credential lookup from service+field or UUID.
  * Throws BadRequestError when neither is provided or the UUID is not found,
- * and ForbiddenError for a credential the platform owns.
+ * and ForbiddenError for a credential the cloud owns.
  *
  * Every read handler that returns credential material (inspect, reveal)
- * resolves through here, so the platform-managed refusal sits at the single
+ * resolves through here, so the cloud-managed refusal sits at the single
  * point they share and cannot drift apart from the list filter.
  */
 function resolveCredentialLookup(
@@ -205,24 +205,24 @@ function resolveCredentialLookup(
 }
 
 /**
- * Refuse any use of a credential the platform provisions for itself, whatever
+ * Refuse any use of a credential the cloud provisions for itself, whatever
  * the calling principal. Reads are refused because the API key spends
  * inference on Cadet's account. Writes are refused because they are a read
- * they are owned by the platform's own provisioning; a hand-set key or
+ * they are owned by the cloud's own provisioning; a hand-set key or
  * identity id would silently misroute or impersonate every platform call.
  *
- * The platform's own provisioning does not come through here. It writes over
+ * The cloud's own provisioning does not come through here. It writes over
  * `POST /v1/secrets` (Django to vembda to the pod), as does the CLI and the
  * local-mode connect flow in the web client.
  */
 function assertNotPlatformManaged(
   service: string,
   field: string,
-  action: PlatformManagedCredentialAction,
+  action: PlatformCloudCredentialAction,
 ): void {
-  if (isPlatformManagedCredential(service, field)) {
+  if (isPlatformCloudCredential(service, field)) {
     throw new ForbiddenError(
-      platformManagedCredentialRefusal(service, field, action),
+      platformCloudCredentialRefusal(service, field, action),
     );
   }
 }
@@ -245,7 +245,7 @@ async function handleCredentialsList({ body }: RouteHandlerArgs) {
   // Platform-provisioned credentials are not the user's to act on, so they
   // never become a Settings row (and never a click-to-reveal).
   let allMetadata = live.records.filter(
-    (m) => !isPlatformManagedCredential(m.service, m.field),
+    (m) => !isPlatformCloudCredential(m.service, m.field),
   );
 
   if (search) {
@@ -290,9 +290,9 @@ async function handleCredentialsList({ body }: RouteHandlerArgs) {
     }),
   );
 
-  // Fetch platform-managed credentials (best-effort).
-  const managedResult = await fetchManagedCatalog();
-  let managedCredentials: Record<string, unknown>[] = [];
+  // Fetch cloud credentials (best-effort).
+  const managedResult = await fetchCloudCatalog();
+  let cloudCredentials: Record<string, unknown>[] = [];
   if (managedResult.ok && managedResult.descriptors.length > 0) {
     let descriptors = managedResult.descriptors;
     if (search) {
@@ -304,10 +304,10 @@ async function handleCredentialsList({ body }: RouteHandlerArgs) {
           (d.accountInfo ?? "").toLowerCase().includes(query),
       );
     }
-    managedCredentials = descriptors.map(buildManagedCredentialOutput);
+    cloudCredentials = descriptors.map(buildCloudCredentialOutput);
   }
 
-  return { credentials, managedCredentials };
+  return { credentials, cloudCredentials };
 }
 
 async function handleCredentialsInspect({ body }: RouteHandlerArgs) {
@@ -625,7 +625,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List all credentials with metadata",
     description:
-      "Return credentials from the live credential vault, with OAuth connection info and platform-managed credentials. Fails if the vault is unreachable.",
+      "Return credentials from the live credential vault, with OAuth connection info and cloud credentials. Fails if the vault is unreachable.",
     tags: ["credentials"],
     requestBody: z.object({
       search: z.string().optional().describe("Filter by substring match"),
@@ -634,9 +634,9 @@ export const ROUTES: RouteDefinition[] = [
       credentials: z
         .array(z.unknown())
         .describe("Local credentials with metadata"),
-      managedCredentials: z
+      cloudCredentials: z
         .array(z.unknown())
-        .describe("Platform-managed credentials"),
+        .describe("Cloud credentials"),
     }),
     handler: handleCredentialsList,
   },

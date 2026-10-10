@@ -3,7 +3,7 @@
  *
  *   GET /v1/conversations/:id/compaction?callId=…
  *
- * Reachable via the platform's `RuntimeProxyWildcardView` at
+ * Reachable via the cloud's `RuntimeProxyWildcardView` at
  * `/v1/assistants/{assistantId}/conversations/{conversationId}/compaction/?callId=…`.
  *
  * # Scope

@@ -36,7 +36,7 @@ export interface NativeAuthCallback {
 
 export interface NativeAuthOptions {
   activateWindow: () => void | Promise<void>;
-  getPlatformUrl: () => string;
+  getCloudUrl: () => string;
   ipc: IpcRegistrar;
   openExternal: (url: string) => void | Promise<void>;
   removeCookie: (url: string, name: string) => Promise<void>;
@@ -65,7 +65,7 @@ const getRuntime = (): NativeAuthOptions => {
 // header auth takes precedence.
 async function clearLegacySessionCookies(): Promise<void> {
   const options = getRuntime();
-  const url = options.getPlatformUrl();
+  const url = options.getCloudUrl();
   await Promise.all(
     ["sessionid", "__Secure-sessionid"].map((name) =>
       options.removeCookie(url, name).catch(() => undefined),
@@ -86,8 +86,8 @@ async function startOAuth(options: {
   activePkceCancel?.();
 
   const runtimeOptions = getRuntime();
-  const platformUrl = runtimeOptions.getPlatformUrl();
-  const clientId = await fetchWorkosClientId(platformUrl);
+  const cloudUrl = runtimeOptions.getCloudUrl();
+  const clientId = await fetchWorkosClientId(cloudUrl);
   const state = generateState();
   const { verifier, challenge } = generatePkcePair();
   const listener = await (
@@ -119,7 +119,7 @@ async function startOAuth(options: {
       verifier,
     });
     const sessionToken = await exchangeAccessTokenForSession(
-      platformUrl,
+      cloudUrl,
       clientId,
       accessToken,
     );

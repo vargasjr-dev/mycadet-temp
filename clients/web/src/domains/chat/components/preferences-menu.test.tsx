@@ -64,11 +64,11 @@ stubModule(
 );
 
 stubModule(
-  "@/hooks/use-platform-gate",
-  await import("@/hooks/use-platform-gate"),
+  "@/hooks/use-cloud-gate",
+  await import("@/hooks/use-cloud-gate"),
   {
-    usePlatformGate: () => "full",
-    useActiveAssistantIsPlatformHosted: () => true,
+    useCloudGate: () => "full",
+    useActiveAssistantIsCloudHosted: () => true,
   },
 );
 
@@ -94,7 +94,7 @@ stubModule(
     useByokCreditRouteVerdict: () => ({
       suppress: false,
       settled: true,
-      routeBurnsManaged: false,
+      routeBurnsCloud: false,
     }),
   },
 );

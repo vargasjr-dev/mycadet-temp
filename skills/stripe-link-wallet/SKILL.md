@@ -66,7 +66,7 @@ Two things can authenticate `link-cli`. Check them in this order:
 assistant oauth status stripe_link --json
 ```
 
-- `connections` lists one or more entries: use the [proxy preamble](#proxy-preamble) on every `link-cli` call and skip `auth login` entirely. Only active connections are returned, so do not filter on the `status` field (a managed connection reads `ACTIVE`, a your-own one `active`). Several entries: ask the user which account to use and pass it as `--account` in the preamble.
+- `connections` lists one or more entries: use the [proxy preamble](#proxy-preamble) on every `link-cli` call and skip `auth login` entirely. Only active connections are returned, so do not filter on the `status` field (a cloud connection reads `ACTIVE`, a your-own one `active`). Several entries: ask the user which account to use and pass it as `--account` in the preamble.
 - `connections` is empty: check for an existing device login with `link-cli auth status --format json`. `"authenticated": true` means the fallback path works as-is. Otherwise go to **Setup**.
 - Non-zero exit mentioning `Unknown provider` or `Not connected to Cadet Cloud`: the connection path is unavailable (Link OAuth is not enabled for this assistant, or it has no platform pairing). Use the device login path only.
 - `link-cli` missing: use `bunx @stripe/link-cli` for every `link-cli` command in this skill.
@@ -107,7 +107,7 @@ In every example below, substitute `bunx @stripe/link-cli` wherever you see `lin
 
 ### Connect Stripe Link through the assistant (preferred)
 
-This creates the managed OAuth connection the proxy preamble uses. Present the in-chat connect surface with `ui_show` and `surface_type: "oauth_connect"`:
+This creates the cloud OAuth connection the proxy preamble uses. Present the in-chat connect surface with `ui_show` and `surface_type: "oauth_connect"`:
 
 ```json
 {
@@ -121,7 +121,7 @@ This creates the managed OAuth connection the proxy preamble uses. Present the i
 }
 ```
 
-Do not run `assistant oauth connect stripe_link` from the shell and do not paste an OAuth URL into chat; the surface is the connect path for managed providers. Wait for the user to finish or dismiss it, then re-run `assistant oauth status stripe_link --json`. An active connection means the proxy path is ready: continue with what the user originally asked for. If they dismiss the surface, or it cannot be shown (a headless or API conversation has no interactive surface), fall back to the device login below.
+Do not run `assistant oauth connect stripe_link` from the shell and do not paste an OAuth URL into chat; the surface is the connect path for cloud providers. Wait for the user to finish or dismiss it, then re-run `assistant oauth status stripe_link --json`. An active connection means the proxy path is ready: continue with what the user originally asked for. If they dismiss the surface, or it cannot be shown (a headless or API conversation has no interactive surface), fall back to the device login below.
 
 ### Fallback: `link-cli` device login
 

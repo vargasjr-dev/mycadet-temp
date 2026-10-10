@@ -87,7 +87,7 @@ describe("DebugBundleExport", () => {
   });
   afterEach(() => cleanup());
 
-  test("asks the platform for the URL, then the daemon for the export, then waits for the job", async () => {
+  test("asks the cloud for the URL, then the daemon for the export, then waits for the job", async () => {
     renderRow();
     fireEvent.click(
       screen.getByRole("button", { name: "Export debug bundle" }),

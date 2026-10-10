@@ -79,7 +79,7 @@ recall which they did.
 probe, which is not all of them. It answers whether a channel is working, not
 whether something is connected.
 
-Credit balance, plan credit, and today's spend come from the platform's
+Credit balance, plan credit, and today's spend come from the cloud's
 billing ledger through `platform credits` and `platform subscription`, never
 from an estimate. "How much of my allowance is left" is the plan-credit
 reading, the same one the in-app usage meter shows: `plan_credit_remaining`
@@ -90,7 +90,7 @@ is out of credit. Plan credit mixes grants with different lifetimes
 (only the Pro bundle turns over with the billing cycle), so it has no single
 reset date: give `next_credit_expiry_at` and `credits_expiring_soon` for what
 expires next (across all grants, not only plan credit), and `currentPeriodEnd`
-from `platform subscription` only as the billing cycle boundary. When the grant fields are null, say the platform
+from `platform subscription` only as the billing cycle boundary. When the grant fields are null, say the cloud
 reports no plan-credit figures rather than deriving them. The only spend
 figure `platform credits` reports is `daily_spend`: today's (UTC)
 spend counted against the daily credit limit, which excludes spend covered by
@@ -98,7 +98,7 @@ plan-included credits. Present it as exactly that. For total spend today, or
 spend over any other period, say that you cannot see it and point to
 Settings > Billing; do not substitute `daily_spend` or `usage totals`, which is
 a local token-cost estimate, not the ledger. When `platform credits` fails or
-the assistant is not connected to the platform, say plainly that you cannot
+the assistant is not connected to the cloud, say plainly that you cannot
 see the balance and point to Settings > Billing. Do not guess a number, an
 allowance model, or a reset schedule, and never imply you checked when you did
 not.

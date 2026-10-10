@@ -13,11 +13,11 @@ mock.module("@/runtime/apns-environment", () => ({
   resolveSignedApnsEnvironment: resolveSignedApnsEnvironmentMock,
 }));
 
-const resolvePlatformAssistantIdMock = mock(
+const resolveCloudAssistantIdMock = mock(
   async (assistantId: string) => assistantId as string | null,
 );
-mock.module("@/lib/platform-assistant-id", () => ({
-  resolvePlatformAssistantId: resolvePlatformAssistantIdMock,
+mock.module("@/lib/cloud-assistant-id", () => ({
+  resolveCloudAssistantId: resolveCloudAssistantIdMock,
 }));
 
 // ── @capacitor/app (lazy-imported plugin Proxy) ──────────────────────────────
@@ -74,8 +74,8 @@ const { changeLocale } = await import("@/i18n");
 beforeEach(() => {
   lastUpsertArg = null;
   resolveSignedApnsEnvironmentMock.mockClear();
-  resolvePlatformAssistantIdMock.mockClear();
-  resolvePlatformAssistantIdMock.mockImplementation(
+  resolveCloudAssistantIdMock.mockClear();
+  resolveCloudAssistantIdMock.mockImplementation(
     async (assistantId: string) => assistantId,
   );
   getInfoMock.mockClear();
@@ -107,7 +107,7 @@ describe("registerLiveActivityPushToken APNs environment", () => {
   });
 
   test("upserts under the resolved platform UUID", async () => {
-    resolvePlatformAssistantIdMock.mockImplementationOnce(
+    resolveCloudAssistantIdMock.mockImplementationOnce(
       async () => "11111111-1111-4111-8111-111111111111",
     );
     await registerLiveActivityPushToken(REGISTRATION);
@@ -118,7 +118,7 @@ describe("registerLiveActivityPushToken APNs environment", () => {
   });
 
   test("skips upsert when no platform UUID can be resolved", async () => {
-    resolvePlatformAssistantIdMock.mockImplementationOnce(async () => null);
+    resolveCloudAssistantIdMock.mockImplementationOnce(async () => null);
     await registerLiveActivityPushToken(REGISTRATION);
 
     expect(upsertMock).not.toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("registerLiveActivityPushToken content state", () => {
   });
 
   /**
-   * The platform composes each push by looking a phase up in this map, so a
+   * The cloud composes each push by looking a phase up in this map, so a
    * table built as if the mic were live would push "Listening…" over the local
    * "Muted" on the first phase change after iOS suspends the web view, which
    * is the only state the island is ever seen in.
@@ -161,7 +161,7 @@ describe("registerLiveActivityPushToken content state", () => {
   });
 
   /**
-   * The table is the platform's whole vocabulary, so one built in English puts
+   * The table is the cloud's whole vocabulary, so one built in English puts
    * the island back into English on the first push after iOS suspends this web
    * layer, which is the only state the island is ever seen in.
    */
@@ -181,7 +181,7 @@ describe("registerLiveActivityPushToken content state", () => {
   // The stored row is what every background push composes from, so a slow
   // first request landing after a fast second one would leave the island
   // rendering the state the user moved away from.
-  test("registrations reach the platform in call order", async () => {
+  test("registrations reach the cloud in call order", async () => {
     const arrived: boolean[] = [];
     let releaseFirst!: () => void;
     const firstInFlight = new Promise<void>((resolve) => {

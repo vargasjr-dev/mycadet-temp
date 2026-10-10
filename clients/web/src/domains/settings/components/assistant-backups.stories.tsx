@@ -2,7 +2,7 @@
  * The backups table on the Doctor and debug panels: one row per snapshot with
  * its name and a copy button, a type tag, a ready or pending tag, the creation
  * time, and a restore button that stays disabled until the snapshot is ready.
- * A platform-hosted assistant also gets an Export button beside "Create
+ * A cloud-hosted assistant also gets an Export button beside "Create
  * Backup". The component fetches its own rows from both the daemon and the
  * platform, so `beforeEach` answers those two reads from fixtures through each
  * generated client's `fetch` and marks the active assistant cloud-hosted.
@@ -15,7 +15,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { AssistantBackup } from "@/assistant/api";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
-import { client as platformClient } from "@/generated/api/client.gen";
+import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
 
@@ -86,7 +86,7 @@ function backupsFor(pathname: string): AssistantBackup[] {
     : BACKUPS;
 }
 
-/** Answers the platform's `GET /v1/assistants/{id}/backups/`. */
+/** Answers the cloud's `GET /v1/assistants/{id}/backups/`. */
 async function platformFetch(request: Request): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname.endsWith("/backups/") && request.method === "GET") {
@@ -120,7 +120,7 @@ const meta = {
     },
   },
   beforeEach: () => {
-    const restorePlatform = stubClientFetch(platformClient, platformFetch);
+    const restorePlatform = stubClientFetch(cloudClient, platformFetch);
     const restoreDaemon = stubClientFetch(daemonClient, daemonFetch);
     const previousLifecycle =
       useAssistantLifecycleStore.getState().assistantState;

@@ -13,7 +13,7 @@
  * through the desktop session's spawn wrapper, workers and Qdrant through a
  * parent-side write right after spawn. Raising a value never needs a
  * capability; lowering one below the inherited value needs CAP_SYS_RESOURCE,
- * which the platform grants and self-hosted Docker (non-root) does not. There
+ * which the cloud grants and self-hosted Docker (non-root) does not. There
  * the daemon stays at 0, which children at +1000 still lose to.
  */
 

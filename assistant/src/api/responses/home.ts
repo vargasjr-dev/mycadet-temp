@@ -168,7 +168,7 @@ export type FeedItemGuardianRequest = z.infer<
 >;
 
 /**
- * One background rewrite of a managed skill, as a receipt item lists it.
+ * One background rewrite of a cloud skill, as a receipt item lists it.
  *
  * A receipt (`detailPanel.kind === "updatesList"`) collapses every skill
  * update a background pass made within one burst into a single feed item, and

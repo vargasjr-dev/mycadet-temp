@@ -434,7 +434,7 @@ describe("profile delete flow - replacement preselection", () => {
     expect(confirmButton().disabled).toBe(false);
   });
 
-  test("the managed default stays offered alongside the user profiles", async () => {
+  test("the cloud default stays offered alongside the user profiles", async () => {
     schedulesByProfile["my-custom"] = [
       { name: "Morning digest", isDeferred: false },
     ];
@@ -448,7 +448,7 @@ describe("profile delete flow - replacement preselection", () => {
     ]);
   });
 
-  test("managed profiles that are not the default are offered too", async () => {
+  test("cloud profiles that are not the default are offered too", async () => {
     profilesState["quality"] = {
       label: "Quality",
       source: "managed",

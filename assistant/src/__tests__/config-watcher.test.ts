@@ -153,7 +153,7 @@ mock.module("../runtime/sync/resource-sync-events.js", () => ({
   },
 }));
 
-mock.module("../platform/sync-identity.js", () => ({
+mock.module("../cloud/sync-identity.js", () => ({
   syncIdentityNameToPlatform: () => {},
 }));
 

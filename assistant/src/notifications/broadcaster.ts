@@ -285,7 +285,7 @@ export interface BroadcastDecisionOptions {
   resultsSink?: NotificationDeliveryResult[];
 }
 
-// Cap on how long the deferred cadet send waits for the platform dispatch
+// Cap on how long the deferred cadet send waits for the cloud dispatch
 // outcome: a duplicate banner beats a late one.
 const PLATFORM_OUTCOME_DEADLINE_MS = 2_500;
 
@@ -384,7 +384,7 @@ export class NotificationBroadcaster {
     // event fires immediately, before slower channel sends (e.g. Telegram 30s
     // timeout) can delay it. Platform sorts second: the cadet intent carries
     // remotePushDispatched, so its deferred send (below) flushes right after
-    // the platform outcome is known instead of waiting behind slower channels.
+    // the cloud outcome is known instead of waiting behind slower channels.
     const dispatchRank = (channel: NotificationChannel): number => {
       if (channel === "cadet") {
         return 0;
@@ -413,7 +413,7 @@ export class NotificationBroadcaster {
         : undefined;
     const results: NotificationDeliveryResult[] = options?.resultsSink ?? [];
 
-    // Cadet pairing carried forward for the platform channel's deep link.
+    // Cadet pairing carried forward for the cloud channel's deep link.
     // A single-pass carry is safe because orderedChannels sorts cadet first.
     let cadetPairing: {
       conversationId: string;
@@ -424,9 +424,9 @@ export class NotificationBroadcaster {
     // platform dispatch outcome, not channel selection: when both channels
     // are selected, the cadet channel is still prepared first (pairing, the
     // conversation-created emission, and the pending delivery row all run
-    // eagerly, so the platform deep link keeps the cadet pairing carry), but
-    // its adapter send is deferred until the platform adapter reports whether
-    // the platform accepted a device push. Typical cost: one fast HTTP
+    // eagerly, so the cloud deep link keeps the cadet pairing carry), but
+    // its adapter send is deferred until the cloud adapter reports whether
+    // the cloud accepted a device push. Typical cost: one fast HTTP
     // round-trip before the local banner goes out, capped at
     // PLATFORM_OUTCOME_DEADLINE_MS.
     let deferredCadetSend: PendingChannelDispatch | null = null;
@@ -446,7 +446,7 @@ export class NotificationBroadcaster {
     try {
       for (const channel of orderedChannels) {
         // Platform sorts immediately after cadet, so reaching any later
-        // channel means the platform outcome is settled (or the platform
+        // channel means the cloud outcome is settled (or the cloud
         // channel was skipped): flush the deferred cadet send now so the
         // local banner is not held behind slower sends. On the cadet
         // iteration itself this is a no-op -- cadet appears at most once in
@@ -592,7 +592,7 @@ export class NotificationBroadcaster {
           );
           if (existingDelivery) {
             // On retry paths the cadet row already exists, so the fresh-pairing
-            // carry below never runs -- seed the platform deep-link carry from
+            // carry below never runs -- seed the cloud deep-link carry from
             // the duplicate row's conversation instead.
             if (channel === "cadet" && existingDelivery.conversationId) {
               cadetPairing = {
@@ -838,14 +838,14 @@ export class NotificationBroadcaster {
 
         if (channel === "cadet" && orderedChannels.includes("platform")) {
           // The cadet intent carries remotePushDispatched, so its send waits
-          // for the platform outcome; everything else (pairing, events, the
+          // for the cloud outcome; everything else (pairing, events, the
           // pending delivery row) already ran above.
           deferredCadetSend = dispatch;
           continue;
         }
 
         if (channel === "platform" && deferredCadetSend) {
-          // The local banner is urgent: wait for the platform outcome only up
+          // The local banner is urgent: wait for the cloud outcome only up
           // to the deadline (a duplicate banner beats a late one). On expiry
           // the cadet send flushes with remotePushDispatched=false while the
           // dispatch keeps running, recording its delivery row when it

@@ -1,10 +1,13 @@
 import { config as dotenvConfig } from "dotenv";
 
 import { reconcileAppPins } from "../apps/app-pin-reconciler.js";
-import { syncAvatarToPlatform } from "../avatar/sync-avatar.js";
+import { syncAvatarToCloud } from "../avatar/sync-avatar.js";
 import { reconcileCallsOnStartup } from "../calls/call-recovery.js";
 import { TwilioVoiceProvider } from "../calls/twilio-provider.js";
 import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guardian-requests.js";
+import { isCloudClientConfigured } from "../cloud/client.js";
+import { startConsentRefresh } from "../cloud/consent-cache.js";
+import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
 import {
@@ -16,7 +19,7 @@ import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
 import { reconcileFlagGatedProfiles } from "../config/sync-gated-profiles.js";
 import { startConversationAutoArchive } from "../conversations/auto-archive.js";
 import { startCes } from "../credential-execution/ces-runtime.js";
-import { refreshManagedConnectionCache } from "../credential-execution/managed-catalog.js";
+import { refreshManagedConnectionCache } from "../credential-execution/cloud-catalog.js";
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { backfillRelationshipStateIfMissing } from "../home/relationship-state-writer.js";
 import { startCliIpcServer } from "../ipc/assistant-server.js";
@@ -31,9 +34,6 @@ import { initializeDb } from "../persistence/db-init.js";
 import { startEmbeddingRuntimeManager } from "../persistence/embeddings/embedding-backend.js";
 import { maybeEnqueueLexicalBackfillOnUpgrade } from "../persistence/job-handlers/message-lexical-backfill.js";
 import { clearLifecycleQuiesce } from "../persistence/lifecycle-quiesce.js";
-import { isPlatformClientConfigured } from "../platform/client.js";
-import { startConsentRefresh } from "../platform/consent-cache.js";
-import { syncWorkspaceIdentityToPlatform } from "../platform/sync-identity.js";
 import { ensurePromptFiles } from "../prompts/system-prompt.js";
 import { runProviderConnectionsBackfill } from "../providers/inference/backfill.js";
 import { repairSharedCredentialSlots } from "../providers/inference/credential-slot-repair.js";
@@ -67,7 +67,7 @@ import {
 import { APP_VERSION } from "../version.js";
 import { drainOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";
 import { getWorkflowRunManager } from "../workflows/run-manager.js";
-import { repairAdaptiveThinkingOnManagedProfiles } from "../workspace/adaptive-thinking-repair.js";
+import { repairAdaptiveThinkingOnCloudProfiles } from "../workspace/adaptive-thinking-repair.js";
 import { ensureByokDefaultProfiles } from "../workspace/byok-default-profile-ensure.js";
 import { ensureCompleteCustomProfiles } from "../workspace/custom-profile-ensure.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
@@ -218,7 +218,7 @@ export async function runDaemon(): Promise<void> {
   // immediately after the transport binds, ahead of DB init and readiness,
   // so an urgent signal arriving the moment requests are admitted is not
   // decided on an empty cache.
-  void isPlatformClientConfigured().catch((err) =>
+  void isCloudClientConfigured().catch((err) =>
     log.warn({ err }, "Platform configured-probe warmup failed"),
   );
 
@@ -227,7 +227,7 @@ export async function runDaemon(): Promise<void> {
   // so a slow or unreachable gateway doesn't delay daemon startup (the
   // IPC call has a 3s connect + 5s call timeout that would otherwise
   // stall the critical path).
-  // After the async fetch resolves, reconcile flag-gated managed profiles
+  // After the async fetch resolves, reconcile flag-gated cloud profiles
   // (OS Beta): `seedInferenceProfiles()` runs synchronously earlier in boot
   // before flags are available, so this lands the profile on the same boot once
   // the flag cache is populated. When this reconcile is the call that mutates
@@ -523,23 +523,23 @@ export async function runDaemon(): Promise<void> {
     }
   } // end if (dbReady)
 
-  // Populate the managed-connection cache so the `14-connected-services`
+  // Populate the cloud-connection cache so the `14-connected-services`
   // bundled section (rendered by `renderConnectedServices()` in
-  // system-sections.ts) can include platform-managed OAuth connections
+  // system-sections.ts) can include cloud OAuth connections
   // (e.g. Twitter) in the system prompt from the first turn.  This is
   // an HTTP-only call with no DB dependency, so it runs regardless of
   // dbReady.  A periodic refresh keeps the cache current when users
-  // connect/disconnect managed providers while the assistant is running.
+  // connect/disconnect cloud providers while the assistant is running.
   void refreshManagedConnectionCache().catch((err) =>
     log.warn(
       { err },
-      "Managed connection cache refresh failed — continuing startup",
+      "Cloud connection cache refresh failed — continuing startup",
     ),
   );
   const MANAGED_CONNECTION_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
   setInterval(() => {
     void refreshManagedConnectionCache().catch((err) =>
-      log.warn({ err }, "Periodic managed connection cache refresh failed"),
+      log.warn({ err }, "Periodic cloud connection cache refresh failed"),
     );
   }, MANAGED_CONNECTION_REFRESH_INTERVAL_MS);
 
@@ -550,7 +550,7 @@ export async function runDaemon(): Promise<void> {
   const defaultConfigMerge = mergeDefaultWorkspaceConfig();
 
   // Seed inference profiles into the workspace config: active/advisor
-  // resolution plus, on off-platform hatches, `llm.default` and a
+  // resolution plus, on off-cloud hatches, `llm.default` and a
   // personal provider connection for the hatch provider.
   try {
     seedInferenceProfiles({
@@ -564,7 +564,7 @@ export async function runDaemon(): Promise<void> {
   }
 
   // Re-run the adaptive thinking repair after overlay merge + profile seeding.
-  // Workspace migration 097 enables adaptive thinking on managed profiles, but
+  // Workspace migration 097 enables adaptive thinking on cloud profiles, but
   // it runs before mergeDefaultWorkspaceConfig() which can overwrite the fix
   // with overlay profiles that have thinking disabled or absent. On-platform
   // instances where the overlay supplies "balanced" / "quality-optimized"
@@ -573,7 +573,7 @@ export async function runDaemon(): Promise<void> {
   // ensures thinking is enabled regardless of overlay ordering.
   if (defaultConfigMerge.hadOverlay) {
     try {
-      repairAdaptiveThinkingOnManagedProfiles(getWorkspaceDir());
+      repairAdaptiveThinkingOnCloudProfiles(getWorkspaceDir());
       log.info("Post-overlay adaptive thinking repair complete");
     } catch (err) {
       log.warn(
@@ -681,7 +681,7 @@ export async function runDaemon(): Promise<void> {
   // Refresh the consent cache regardless of dev mode so record-time telemetry
   // writes (which drop on a confirmed opt-out) work in dev too. The usage
   // telemetry reporter re-checks share_analytics on every flush, so dev still
-  // never sends telemetry to the platform. Fire-and-forget: startConsentRefresh()
+  // never sends telemetry to the cloud. Fire-and-forget: startConsentRefresh()
   // runs an immediate non-blocking refresh, so the startup hot path is never
   // blocked.
   startConsentRefresh();
@@ -704,10 +704,10 @@ export async function runDaemon(): Promise<void> {
 
   // Initialize providers before Qdrant so HTTP routes can begin accepting
   // requests while Qdrant initializes, then best-effort sync the workspace
-  // identity name and avatar to the platform record.
+  // identity name and avatar to the cloud record.
   await initializeProviders(config);
   syncWorkspaceIdentityToPlatform();
-  syncAvatarToPlatform();
+  syncAvatarToCloud();
 
   // Start the idle/LRU/memory-pressure sweep over the in-memory conversation
   // pool.

@@ -381,7 +381,7 @@ function mergeSkillCardEntries(
 }
 
 /**
- * One rewrite of a managed skill by a background pass, as the receipt job's
+ * One rewrite of a cloud skill by a background pass, as the receipt job's
  * payload carries it. `entryId` is the producing tool call's, so a replayed
  * call merges as a no-op; the conversation ids are what the receipt links
  * to and what a conversation delete purges by.

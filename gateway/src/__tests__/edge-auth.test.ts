@@ -7,7 +7,7 @@
  *  1. Platform-managed (DISABLE_HTTP_AUTH=true + IS_CLOUD=true): identity
  *     asserted via `X-Cadet-User-Id` header cross-referenced against the
  *     stored `cadet:platform_user_id` credential. Scope authorization is
- *     delegated to the upstream platform proxy.
+ *     delegated to the upstream cloud proxy.
  *  2. Default: edge JWT validated; scoped guard additionally checks the
  *     scope_profile claim.
  *
@@ -37,7 +37,7 @@ mock.module("../credential-reader.js", () => ({
   ...actualCredentialReader,
   readCredential: (key: string) => mockReadCredential(key),
 }));
-mock.module("../platform-user-id.js", () => ({
+mock.module("../cloud-user-id.js", () => ({
   readStoredCloudUserId: async () => {
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
@@ -175,7 +175,7 @@ describe("requireEdgeAuth — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
   });
 
-  test("uses platform header check when a platform bearer is also forwarded", async () => {
+  test("uses platform header check when a cloud bearer is also forwarded", async () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuth } = makeMiddleware();
     const res = await requireEdgeAuth(
@@ -324,7 +324,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
   test("uses platform header check; no scope check on bypass path", async () => {
     // Even with a scope profile that wouldn't grant the required scope under
     // JWT mode, the bypass path only cross-checks the user header. Scope is
-    // enforced upstream by the platform proxy.
+    // enforced upstream by the cloud proxy.
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(
@@ -335,7 +335,7 @@ describe("requireEdgeAuthWithScope — DISABLE_HTTP_AUTH + IS_CLOUD", () => {
     expect(res).toBeNull();
   });
 
-  test("uses platform header check when a platform bearer is also forwarded", async () => {
+  test("uses platform header check when a cloud bearer is also forwarded", async () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeAuthWithScope } = makeMiddleware();
     const res = await requireEdgeAuthWithScope(

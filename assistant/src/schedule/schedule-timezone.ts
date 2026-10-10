@@ -66,7 +66,7 @@ export function resolveScheduleTimezone(
  * Wall-clock hour (0-23) of `now` in `timeZone`.
  *
  * Heartbeat active hours are stored as 0-23 integers. Evaluating them against
- * the host clock (UTC on a managed container) shifts the window by the user's
+ * the host clock (UTC on a cloud container) shifts the window by the user's
  * offset, so 8:00-22:00 becomes 1am-3pm Pacific. This reads the hour in the
  * same zone `resolveScheduleTimezone` selected.
  */

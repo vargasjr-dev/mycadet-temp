@@ -388,10 +388,10 @@ const writePairedLockfileAssistant = (assistantId: string): void => {
     }),
   );
 };
-const replacePlatformAssistants = (platformAssistants: unknown): WriteResult =>
-  handlers["cadet:localMode:replacePlatformAssistants"](
+const replaceCloudAssistants = (cloudAssistants: unknown): WriteResult =>
+  handlers["cadet:localMode:replaceCloudAssistants"](
     allowedEvent,
-    platformAssistants,
+    cloudAssistants,
   ) as WriteResult;
 const retire = (assistantId?: unknown): Promise<unknown> =>
   handlers["cadet:localMode:retire"](
@@ -709,7 +709,7 @@ describe("lockfile IPC handlers", () => {
     expect(fs.existsSync(lockfilePath)).toBe(false);
   });
 
-  test("replacePlatformAssistants swaps platform entries while preserving local ones", () => {
+  test("replaceCloudAssistants swaps platform entries while preserving local ones", () => {
     saveLockfileAssistant(
       {
         assistantId: "local-1",
@@ -723,7 +723,7 @@ describe("lockfile IPC handlers", () => {
       "local-1",
     );
 
-    const result = replacePlatformAssistants([
+    const result = replaceCloudAssistants([
       { assistantId: "new-platform", cloud: "cadet", runtimeUrl: "http://y" },
     ]);
 
@@ -737,7 +737,7 @@ describe("lockfile IPC handlers", () => {
     expect(ids).toEqual(["local-1", "new-platform"]);
   });
 
-  test("replacePlatformAssistants rejects a non-array argument without touching disk", () => {
+  test("replaceCloudAssistants rejects a non-array argument without touching disk", () => {
     saveLockfileAssistant(
       {
         assistantId: "local-1",
@@ -751,7 +751,7 @@ describe("lockfile IPC handlers", () => {
     // programming error or a hostile sender, so the schema rejects it rather
     // than coercing to an empty set — coercion would silently wipe every
     // platform assistant from the lockfile, a far worse outcome than failing.
-    expect(() => replacePlatformAssistants("not-an-array")).toThrow();
+    expect(() => replaceCloudAssistants("not-an-array")).toThrow();
 
     const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
       assistants: Array<{ assistantId: string }>;
@@ -759,8 +759,8 @@ describe("lockfile IPC handlers", () => {
     expect(onDisk.assistants.map((a) => a.assistantId)).toEqual(["local-1"]);
   });
 
-  test("replacePlatformAssistants cannot create a paired entry", () => {
-    const result = replacePlatformAssistants([
+  test("replaceCloudAssistants cannot create a paired entry", () => {
+    const result = replaceCloudAssistants([
       {
         assistantId: "paired-1",
         cloud: "paired",

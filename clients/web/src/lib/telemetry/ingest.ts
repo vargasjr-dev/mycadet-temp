@@ -22,7 +22,7 @@ function stripUndefined(event: object): Record<string, unknown> {
 /**
  * Server drop reasons that are working as designed and must not be reported.
  *
- * `analytics_opt_out` is the platform re-checking consent server-side. Every
+ * `analytics_opt_out` is the cloud re-checking consent server-side. Every
  * caller already gates on `readAnalyticsConsent()`, so a drop here means the
  * client's cached view of consent lags the server's, which is expected and
  * self-correcting rather than a defect. Reporting it would fire once per flush

@@ -50,7 +50,7 @@ describe("provider registry (ollama)", () => {
     expect(listProviders()).toEqual(["ollama"]);
   });
 
-  test("managed native web search preference does not make ollama a managed web-search provider", async () => {
+  test("managed native web search preference does not make ollama a cloud web-search provider", async () => {
     await initializeProviders(
       ollamaConfig({
         provider: "inference-provider-native",

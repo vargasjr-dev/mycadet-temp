@@ -130,7 +130,7 @@ describe("connectivity-probe", () => {
   });
 
   test("sets backend reachable=true when a cloud assistant carries leftover local resources", async () => {
-    // A stale gatewayPort merged onto a platform entry must not be probed.
+    // A stale gatewayPort merged onto a cloud entry must not be probed.
     mockLockfileData = {
       ok: true,
       data: {

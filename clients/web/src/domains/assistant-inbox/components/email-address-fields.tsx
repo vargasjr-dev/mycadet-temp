@@ -30,7 +30,7 @@ export interface EmailAddressFieldsProps {
  * as fields. The `@` and the domain beside the fields already say what they
  * are, so they carry their names for assistive technology only. Input is
  * lowercased as typed, and the handle is held to what a subdomain allows,
- * matching the platform's rules.
+ * matching the cloud's rules.
  */
 export function EmailAddressFields({
   prefix,

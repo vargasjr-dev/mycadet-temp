@@ -215,7 +215,7 @@ describe("identity-mirror faithful-replica semantics", () => {
       sourceChannel: "slack",
       externalUserId: "UDEE",
       externalChatId: "DDEE",
-      displayName: "Raw Platform Name",
+      displayName: "Raw Cloud Name",
       contactId: "co-dee",
     });
 

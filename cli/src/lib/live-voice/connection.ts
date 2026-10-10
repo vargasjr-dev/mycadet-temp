@@ -25,7 +25,7 @@
  * passes by construction, and there is nothing new to provision here.
  */
 
-import { isManagedCloud } from "../managed-cloud.js";
+import { isCloudHome } from "../cloud-values.js";
 import {
   formatAssistantLookupError,
   formatAssistantReference,
@@ -33,7 +33,7 @@ import {
   resolveTargetAssistant,
   type AssistantEntry,
 } from "../assistant-config.js";
-import { getPlatformUrl, readPlatformToken } from "../platform-client.js";
+import { getCloudUrl, readCloudToken } from "../cloud-client.js";
 import {
   guardianTokenDueForRenewal,
   loadGuardianToken,
@@ -88,11 +88,11 @@ export async function resolveLiveVoiceConnection(
     ? resolveNamedAssistant(assistantIdArg)
     : resolveTargetAssistant();
 
-  // Platform-cloud assistants are reached the other way round. Their gateway
+  // Cloud assistants are reached the other way round. Their gateway
   // is behind tunnel, which authenticates nobody and forwards an attestation
   // the gateway trusts, so the credential is not the guardian JWT below but a
-  // WS token minted from the platform session the CLI already holds.
-  if (isManagedCloud(entry.cloud)) {
+  // WS token minted from the cloud session the CLI already holds.
+  if (isCloudHome(entry.cloud)) {
     return await resolveCloudConnection(entry);
   }
 
@@ -126,7 +126,7 @@ export async function resolveLiveVoiceConnection(
 }
 
 /**
- * Resolve a live-voice connection to a platform-hosted assistant.
+ * Resolve a live-voice connection to a cloud-hosted assistant.
  *
  * The session token is the CLI's own cloud login, not anything specific to
  * this assistant, so a missing one is a `cadet login` problem rather than an
@@ -139,7 +139,7 @@ export async function resolveLiveVoiceConnection(
 async function resolveCloudConnection(
   entry: AssistantEntry,
 ): Promise<LiveVoiceConnection> {
-  const sessionToken = readPlatformToken();
+  const sessionToken = readCloudToken();
   if (!sessionToken) {
     throw new LiveVoiceConnectionError(
       `${formatAssistantReference(entry)} is a Cadet cloud assistant, which ` +
@@ -147,10 +147,10 @@ async function resolveCloudConnection(
     );
   }
 
-  // `runtimeUrl` is the platform this entry was hatched against, which is the
-  // one that can mint for it. `getPlatformUrl()` is the fallback for an entry
+  // `runtimeUrl` is the cloud this entry was hatched against, which is the
+  // one that can mint for it. `getCloudUrl()` is the fallback for an entry
   // written before that field was recorded.
-  const platformUrl = (entry.runtimeUrl || getPlatformUrl()).replace(
+  const cloudUrl = (entry.runtimeUrl || getCloudUrl()).replace(
     /\/+$/,
     "",
   );
@@ -158,7 +158,7 @@ async function resolveCloudConnection(
   let token: string;
   try {
     token = await mintTunnelWsToken({
-      platformUrl,
+      cloudUrl,
       assistantId: entry.assistantId,
       sessionToken,
     });
@@ -171,7 +171,7 @@ async function resolveCloudConnection(
 
   return {
     url: buildTunnelLiveVoiceUrl({
-      platformUrl,
+      cloudUrl,
       assistantId: entry.assistantId,
       token,
     }),

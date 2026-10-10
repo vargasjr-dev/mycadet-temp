@@ -3,7 +3,7 @@
  * connection-less profiles even when the resolved provider matches the
  * default provider's name.
  *
- * On platform-hosted installs the default transport rides the managed
+ * On cloud-hosted installs the default transport rides the cloud
  * (platform-billed) `cadet` connection while presenting the upstream
  * provider's name (e.g. "anthropic"). A BYOK profile `{provider:
  * "anthropic"}` with no explicit `provider_connection` must route through
@@ -69,7 +69,7 @@ const PERSONAL_CONNECTION = {
 beforeEach(() => {
   connectionRows = [];
   // Same provider name as the default transport; no provider_connection on
-  // the profile — the managed-install shape that must not silently reuse
+  // the profile — the cloud-install shape that must not silently reuse
   // the default transport.
   setConfig("llm", {
     default: {

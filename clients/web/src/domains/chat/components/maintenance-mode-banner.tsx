@@ -1,12 +1,12 @@
 import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { assistantsMaintenanceModeExitCreate } from "@/generated/api/sdk.gen";
 import {
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { Button } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 
@@ -24,12 +24,12 @@ export function MaintenanceModeBanner({
   const { t } = useTranslation("chat");
   const [isExiting, setIsExiting] = useState(false);
   const [exitError, setExitError] = useState<string | null>(null);
-  // Self-hosted assistants don't run platform-managed Recovery Mode, so the
-  // banner has nothing to act on — `platformHostedOnly: true` flips "gated"
-  // for the platform-mode-app-pointed-at-self-hosted case too (the standard
-  // gate would still resolve to "full" there and leak the platform-routed
+  // Self-hosted assistants don't run cloud-managed Recovery Mode, so the
+  // banner has nothing to act on — `cloudHostedOnly: true` flips "gated"
+  // for the cloud-mode-app-pointed-at-self-hosted case too (the standard
+  // gate would still resolve to "full" there and leak the cloud-routed
   // exit mutation onto a self-hosted target).
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
   // `ChatPage` is NOT mounted under `<ActiveAssistantGate>` (see routes.tsx
   // — chat owns its own lifecycle UI), so the banner can render while
   // lifecycle is still `{ kind: "loading" }`. The gate intentionally
@@ -41,11 +41,11 @@ export function MaintenanceModeBanner({
   // catches exactly the deep-link race we care about.
   const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return null;
   }
 
-  const isResolving = platformGate === "full" && isLifecycleLoading;
+  const isResolving = cloudGate === "full" && isLifecycleLoading;
 
   const handleResumeAssistant = async () => {
     if (isExiting) {
@@ -93,10 +93,10 @@ export function MaintenanceModeBanner({
         ) : null}
       </div>
       {showExitAction ? (
-        platformGate === "disabled" ? (
-          <PlatformLoginNotice>
+        cloudGate === "disabled" ? (
+          <CloudLoginNotice>
             {t("maintenanceModeBanner.loginHint")}
-          </PlatformLoginNotice>
+          </CloudLoginNotice>
         ) : (
           <Button
             variant="primary"

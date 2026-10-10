@@ -5,7 +5,7 @@
  * routes, so the status poll 404s. The resource-pressure monitor is not
  * a React Query read (it is a hand-rolled setInterval poller), so the
  * app QueryClient's no-retry-on-4xx policy does not apply: ungated, a
- * new bundle against an older platform-hosted daemon fires the 404 on
+ * new bundle against an older cloud-hosted daemon fires the 404 on
  * mount, then again every poll tick and on every app resume, for the
  * whole session. Below the floor the monitor stays disabled, which is
  * exactly the feature-off state: no poll, no banner, and any
@@ -13,8 +13,8 @@
  * the daemon predates the guard that broadcasts it.
  *
  * New behavior (>= MIN_VERSION): the route exists and the monitor polls
- * it (still only for platform-hosted assistants; the call site ANDs
- * this gate with `useActiveAssistantIsPlatformHosted()`).
+ * it (still only for cloud-hosted assistants; the call site ANDs
+ * this gate with `useActiveAssistantIsCloudHosted()`).
  *
  * MIN_VERSION invariant: no build with a base version below 0.11.5
  * carries the route (0.11.4 and earlier lines lack it entirely).

@@ -49,9 +49,9 @@ mock.module("@/generated/api/sdk.gen", () => ({
   },
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
-  useActiveAssistantIsPlatformHosted: () => true,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
+  useActiveAssistantIsCloudHosted: () => true,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({

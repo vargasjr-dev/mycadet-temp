@@ -2,7 +2,7 @@
  * App-held PKCE login against WorkOS User Management (RFC 8252 loopback):
  * authorize in the system browser, receive the code on an ephemeral
  * 127.0.0.1 listener, exchange it as a public client, then swap the access
- * token for a platform session token via allauth's headless token endpoint.
+ * token for a cloud session token via allauth's headless token endpoint.
  */
 
 import { net } from "electron";
@@ -66,10 +66,10 @@ interface HeadlessProviderEntry {
 /**
  * Pick the first-class WorkOS OAuth2 provider out of the headless config.
  *
- * During the coexistence window the platform lists two entries
+ * During the coexistence window the cloud lists two entries
  * with the same "workos-oidc" provider ID.
  * The OAuth2 one is distinguished by having no OIDC discovery URL.
- * Returns null when the platform doesn't support token auth yet -
+ * Returns null when the cloud doesn't support token auth yet -
  * callers should surface that as a clear error.
  */
 export function selectWorkosClientId(
@@ -84,8 +84,8 @@ export function selectWorkosClientId(
   return entry?.client_id ?? null;
 }
 
-export async function fetchWorkosClientId(platformUrl: string): Promise<string> {
-  const url = `${new URL(platformUrl).origin}/_allauth/app/v1/config`;
+export async function fetchWorkosClientId(cloudUrl: string): Promise<string> {
+  const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/config`;
   const response = await net.fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch auth config (${response.status})`);
@@ -189,13 +189,13 @@ export async function exchangeCodeWithWorkos(options: {
   return data.access_token;
 }
 
-/** Exchange the WorkOS access token for a platform session token. */
+/** Exchange the WorkOS access token for a cloud session token. */
 export async function exchangeAccessTokenForSession(
-  platformUrl: string,
+  cloudUrl: string,
   clientId: string,
   accessToken: string,
 ): Promise<string> {
-  const url = `${new URL(platformUrl).origin}/_allauth/app/v1/auth/provider/token`;
+  const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/auth/provider/token`;
   const response = await net.fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

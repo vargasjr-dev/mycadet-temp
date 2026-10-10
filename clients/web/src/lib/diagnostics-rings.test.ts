@@ -37,7 +37,7 @@ describe("diagnostics ring separation", () => {
     expect(lifecycleAdded.map((e) => e.kind)).not.toContain("ring_test_main");
   });
 
-  test("lifecycle recorder injects the platform tag like the main recorder", () => {
+  test("lifecycle recorder injects the cloud tag like the main recorder", () => {
     // GIVEN a baseline for the lifecycle ring
     const before = getLifecycleDiagnosticsEvents().length;
 

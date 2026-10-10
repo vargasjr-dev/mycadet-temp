@@ -24,8 +24,8 @@ function sessionReplaySurface(): SessionReplayConfig["surface"] {
  * Origin that fronts `/_sr/cdn` and `/_sr/ingest`.
  *
  * Packaged Electron serves the renderer from `app://`. Replay must stay
- * same-origin so the protocol handler can forward `/_sr/*` to the platform.
- * A direct call to the platform URL is cross-origin from `app://` and the
+ * same-origin so the protocol handler can forward `/_sr/*` to the cloud.
+ * A direct call to the cloud URL is cross-origin from `app://` and the
  * `/_sr` proxy does not treat that as a same-origin page.
  *
  * Web, iOS, Android, and Electron-dev (http localhost) keep using the
@@ -33,12 +33,12 @@ function sessionReplaySurface(): SessionReplayConfig["surface"] {
  */
 export function sessionReplayProxyBase(
   location: Pick<Location, "protocol" | "origin">,
-  platformUrl: string,
+  cloudUrl: string,
 ): string {
   if (location.protocol === "app:") {
     return location.origin;
   }
-  return platformUrl;
+  return cloudUrl;
 }
 
 /**

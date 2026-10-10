@@ -23,7 +23,7 @@ import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
 // A platform entry is identified by `cloud === "cadet"` and carries an
 // `organizationId`; a local entry has a non-cadet cloud + gateway port and no org.
-const platformAssistant: LockfileAssistant = {
+const cloudAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
   cloud: "cadet",
@@ -72,7 +72,7 @@ beforeEach(() => {
 describe("setFromLockfile", () => {
   it("copies organizationId for platform entries", () => {
     const lockfile: Lockfile = {
-      assistants: [platformAssistant],
+      assistants: [cloudAssistant],
       activeAssistant: "asst-platform",
     };
     useResolvedAssistantsStore.getState().setFromLockfile(lockfile);
@@ -80,7 +80,7 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
     expect(entry.cloud).toBe("cadet");
-    expect(entry.isPlatformHosted).toBe(true);
+    expect(entry.isCloudHosted).toBe(true);
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(true);
   });
@@ -91,7 +91,7 @@ describe("setFromLockfile", () => {
         {
           id: "asst-platform",
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
           currentReleaseVersion: "0.9.0",
           releaseChannel: "preview",
@@ -100,7 +100,7 @@ describe("setFromLockfile", () => {
     });
 
     useResolvedAssistantsStore.getState().setFromLockfile({
-      assistants: [platformAssistant],
+      assistants: [cloudAssistant],
       activeAssistant: "asst-platform",
     });
 
@@ -115,7 +115,7 @@ describe("setFromLockfile", () => {
         {
           id: "asst-platform",
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
           avatarUrl: "https://cdn.example/a.png",
         },
@@ -123,7 +123,7 @@ describe("setFromLockfile", () => {
     });
 
     useResolvedAssistantsStore.getState().setFromLockfile({
-      assistants: [platformAssistant],
+      assistants: [cloudAssistant],
       activeAssistant: "asst-platform",
     });
 
@@ -148,18 +148,18 @@ describe("setFromLockfile", () => {
     expect(entry.isActiveLockfileAssistant).toBe(true);
   });
 
-  it("copies platformAssistantId for local entries", () => {
+  it("copies cloudAssistantId for local entries", () => {
     useResolvedAssistantsStore.getState().setFromLockfile({
       assistants: [
-        { ...localAssistant, platformAssistantId: "uuid-local" },
-        platformAssistant,
+        { ...localAssistant, cloudAssistantId: "uuid-local" },
+        cloudAssistant,
       ],
       activeAssistant: "asst-local",
     });
 
     const [local, platform] = useResolvedAssistantsStore.getState().assistants;
-    expect(local.platformAssistantId).toBe("uuid-local");
-    expect(platform.platformAssistantId).toBeUndefined();
+    expect(local.cloudAssistantId).toBe("uuid-local");
+    expect(platform.cloudAssistantId).toBeUndefined();
   });
 
   it("marks local entries inactive when the lockfile active pointer differs", () => {
@@ -202,7 +202,7 @@ describe("setFromLockfile", () => {
     expect(entry.id).toBe("paired-desk");
     expect(entry.isPaired).toBe(true);
     expect(entry.isLocal).toBe(false);
-    expect(entry.isPlatformHosted).toBe(false);
+    expect(entry.isCloudHosted).toBe(false);
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
   });
 
@@ -253,7 +253,7 @@ describe("upsertFromApi", () => {
 
   it("preserves a lockfile-seeded organizationId on refresh (API has no org)", () => {
     useResolvedAssistantsStore.getState().setFromLockfile({
-      assistants: [platformAssistant],
+      assistants: [cloudAssistant],
       activeAssistant: null,
     });
 
@@ -304,7 +304,7 @@ describe("upsertFromApi", () => {
     expect(entry.cloud).toBe("paired");
     // The API's is_local claim must not reclassify a paired entry.
     expect(entry.isLocal).toBe(false);
-    expect(entry.isPlatformHosted).toBe(false);
+    expect(entry.isCloudHosted).toBe(false);
   });
 
   it("preserves a lockfile-seeded runtimeVersion on refresh", () => {
@@ -334,7 +334,7 @@ describe("upsertFromApi", () => {
     // A lifecycle refresh can land before the lockfile subscription has seeded
     // the resolved list; the insert must still pick up the fields the lockfile knows.
     useLockfileStore.getState().setLockfile({
-      assistants: [platformAssistant, localAssistant],
+      assistants: [cloudAssistant, localAssistant],
       activeAssistant: "asst-local",
     });
 
@@ -388,7 +388,7 @@ describe("setFromApi connectability", () => {
       ...overrides,
     }) as ApiAssistant;
 
-  it("carries the platform avatar_url and leaves lockfile entries without one", () => {
+  it("carries the cloud avatar_url and leaves lockfile entries without one", () => {
     useResolvedAssistantsStore
       .getState()
       .setFromApi([
@@ -520,27 +520,27 @@ describe("assistantsValidForOrg", () => {
   const local: ResolvedAssistant = {
     id: "local",
     isLocal: true,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: false,
   };
   const activeOrg: ResolvedAssistant = {
     id: "active-org",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     organizationId: "org-1",
   };
   const otherOrg: ResolvedAssistant = {
     id: "other-org",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     organizationId: "org-2",
   };
   const legacy: ResolvedAssistant = {
     id: "legacy",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
   };
 

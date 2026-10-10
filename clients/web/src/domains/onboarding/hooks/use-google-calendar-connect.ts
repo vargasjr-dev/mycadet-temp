@@ -7,7 +7,7 @@
  * `calendar.events`, the minimum to create an event, instead of the full
  * Gmail+Calendar+Drive bundle) and an `onConnect(scopes)` callback.
  *
- * The connect flow itself lives in `useManagedOAuthConnect`, which every entry
+ * The connect flow itself lives in `useCloudOAuthConnect`, which every entry
  * point shares. This hook adds only what the check-in page needs: a narrowed
  * scope set and a callback carrying the scopes actually granted.
  */
@@ -15,7 +15,7 @@
 import { toast } from "@mycadet/design-library/components/toast";
 import { useEffect, useRef } from "react";
 
-import { useManagedOAuthConnect } from "@/hooks/use-managed-oauth-connect";
+import { useCloudOAuthConnect } from "@/hooks/use-cloud-oauth-connect";
 import { t } from "@/i18n";
 
 const GOOGLE_PROVIDER_KEY = "google";
@@ -25,10 +25,10 @@ export const GOOGLE_CALENDAR_EVENTS_SCOPE =
   "https://www.googleapis.com/auth/calendar.events";
 
 /**
- * Identity scopes required for the managed OAuth flow to finalize a connection.
- * Without them the platform can't resolve the Google account (no access to the
+ * Identity scopes required for the cloud OAuth flow to finalize a connection.
+ * Without them the cloud can't resolve the Google account (no access to the
  * userinfo endpoint / id token) and the grant fails with `identity_failed`, so
- * no connection row is created. These are part of the managed app's default scope
+ * no connection row is created. These are part of the cloud app's default scope
  * set, which is why the full-bundle connect works; a calendar-only override
  * drops them. Cheap from a consent standpoint (email + basic identity) and
  * still far narrower than Gmail/Drive.
@@ -50,7 +50,7 @@ export const GOOGLE_CALENDAR_CONNECT_SCOPES = [
 interface UseGoogleCalendarConnectOptions {
   assistantId: string;
   /** Scopes to request. Defaults to identity + calendar-events (the minimum
-   *  that produces a working managed connection). */
+   *  that produces a working cloud connection). */
   requestedScopes?: string[];
   /** Called with the scopes actually granted once the connection lands. */
   onConnect: (scopes: string[]) => void;
@@ -72,7 +72,7 @@ export function useGoogleCalendarConnect({
   onConnect,
 }: UseGoogleCalendarConnectOptions): UseGoogleCalendarConnectResult {
   const providerLabel = t("googleCalendar.providerLabel", { ns: "onboarding" });
-  const connect = useManagedOAuthConnect({
+  const connect = useCloudOAuthConnect({
     assistantId,
     providerKey: GOOGLE_PROVIDER_KEY,
     providerLabel,

@@ -229,7 +229,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
       'button[role="combobox"][aria-label="TTS provider"]',
     );
     expect(trigger?.textContent).toContain("Cadet");
-    // Cadet authenticates via the platform connection, so there is no key to
+    // Cadet authenticates via the cloud connection, so there is no key to
     // enter and nothing for the client-side Test path to use.
     expect(screen.queryByText("API Key")).toBeNull();
     expect(screen.queryByRole("button", { name: "Test" })).toBeNull();
@@ -243,7 +243,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples the managed provider to mode "managed".
+    // still couples the cloud provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: { tts: { provider: "cadet", mode: "managed" } },
     });
@@ -283,9 +283,9 @@ describe("TextToSpeechCard — Cadet provider", () => {
   });
 
   test("a fetched managed-voice catalog replaces the static list and default", () => {
-    // Daemon advertises voice selection and the platform serves the catalog;
+    // Daemon advertises voice selection and the cloud serves the catalog;
     // the dropdown must offer the fetched voices (not the static fallback)
-    // and decorate the platform's default.
+    // and decorate the cloud's default.
     orgReady = true;
     daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
@@ -380,7 +380,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
         {
           model: "voice-without-preview",
           label: "Nova",
-          description: "A voice the platform serves without a hosted sample",
+          description: "A voice the cloud serves without a hosted sample",
           sampleUrl: "",
           source: "elevenlabs",
         },
@@ -401,7 +401,7 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
   test("a successful empty catalog hides the voice picker instead of falling back", () => {
     // An empty catalog is authoritative ("nothing offered right now") — the
-    // static fallback must not resurface voices the platform would reject.
+    // static fallback must not resurface voices the cloud would reject.
     orgReady = true;
     daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
@@ -421,12 +421,12 @@ describe("TextToSpeechCard — Cadet provider", () => {
 
     expect(document.querySelector('button[aria-label="Voice"]')).toBeNull();
     expect(
-      screen.getByText("No managed voices are currently available."),
+      screen.getByText("No cloud voices are currently available."),
     ).toBeTruthy();
   });
 
   test("grafts the Cadet option onto a fetched catalog that lacks it", () => {
-    // A daemon serving the pre-cadet catalog omits the managed option; the
+    // A daemon serving the pre-cadet catalog omits the cloud option; the
     // card must still offer it, or a legacy managed config has no selectable
     // representation and managed TTS becomes unreachable from this UI.
     orgReady = true;

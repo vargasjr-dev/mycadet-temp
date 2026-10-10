@@ -8,7 +8,7 @@ import { shouldOutputJson, writeOutput } from "../output.js";
 import { authHelp } from "./auth.help.js";
 
 interface AuthInfoResponse {
-  platformUrl: string | null;
+  cloudUrl: string | null;
   assistantId: string | null;
   organizationId: string | null;
   userId: string | null;
@@ -38,7 +38,7 @@ export function registerAuthCommand(program: Command): void {
 
           if (!shouldOutputJson(cmd)) {
             log.info(
-              `Platform URL:        ${result.platformUrl ?? "(not set)"}`,
+              `Platform URL:        ${result.cloudUrl ?? "(not set)"}`,
             );
             log.info(
               `Assistant ID:        ${result.assistantId ?? "(not set)"}`,

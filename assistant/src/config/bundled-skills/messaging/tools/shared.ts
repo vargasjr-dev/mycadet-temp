@@ -131,7 +131,7 @@ export async function resolveProvider(
   }
   if (connected.length === 0) {
     throw new Error(
-      "No messaging platforms are connected. Use messaging_auth_test to check connection status, then set up a platform.",
+      "No messaging platforms are connected. Use messaging_auth_test to check connection status, then set up a cloud.",
     );
   }
 

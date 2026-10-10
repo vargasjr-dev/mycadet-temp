@@ -87,8 +87,8 @@ function section(key: Exclude<IdentitySectionKey, "personality" | "email">) {
 export interface BuildIdentitySectionsOptions {
   /**
    * Draw the Email card, after Channels. Absent where there is no inbox
-   * to open (the flag is off, or the assistant is not platform-hosted):
-   * the one section that depends on the platform, since the mail lives
+   * to open (the flag is off, or the assistant is not cloud-hosted):
+   * the one section that depends on the cloud, since the mail lives
    * there. `locked` marks a plan without managed email.
    */
   email?: { locked: boolean };
@@ -99,7 +99,7 @@ export interface BuildIdentitySectionsOptions {
  * card is the way into a section, so a rough mobile surface is a reason to
  * polish it, not to hide it: an unpolished way in beats no way in. Email
  * is the exception, and only because the inbox itself does not exist off
- * the platform.
+ * the cloud.
  */
 export function buildIdentitySections({
   email,

@@ -142,7 +142,7 @@ const CLASSIFICATION_MAP: Record<FeedbackReason, ClassificationEnum> = {
  * Which client this feedback is being sent from.
  *
  * Typed as the API's own `ClientEnum` rather than a restated union, so a value
- * the platform stops accepting is a compile error here instead of a rejected
+ * the cloud stops accepting is a compile error here instead of a rejected
  * submission at runtime.
  */
 function getFeedbackClient(): ClientEnum {
@@ -246,7 +246,7 @@ function deepMapCapture(
  * Message state carries image bytes in two shapes: `data:` URIs (derived
  * preview URLs) and long raw base64 fields (inline attachment data). Neither
  * is diagnostic signal, and a handful of photos otherwise dominates the
- * bundle the platform accepts. Matching is content-based, not field-name
+ * bundle the cloud accepts. Matching is content-based, not field-name
  * based, so any future field that carries a data URI or a long pure-base64
  * string is stripped too. Prose is never touched: text with spaces or
  * punctuation fails the base64 test, and short strings (ids, hashes,

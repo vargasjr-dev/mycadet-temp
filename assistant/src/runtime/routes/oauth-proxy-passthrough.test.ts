@@ -4,7 +4,7 @@ import {
   CredentialRequiredError,
   InsufficientBalanceError,
   ProviderUnreachableError,
-} from "../../oauth/platform-connection.js";
+} from "../../oauth/cloud-connection.js";
 import { BackendError } from "../../util/errors.js";
 import { BadRequestError, ForbiddenError, RouteError } from "./errors.js";
 import {

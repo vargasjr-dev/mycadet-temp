@@ -4,14 +4,14 @@
  * Handles WorkOS sign-in via app-held PKCE, mirroring the macOS app. The
  * extension drives WorkOS User Management directly:
  *
- *   1. Discover the public WorkOS client id from the platform's headless
+ *   1. Discover the public WorkOS client id from the cloud's headless
  *      allauth config (`/_allauth/app/v1/config`).
  *   2. Generate an S256 PKCE pair with Web Crypto.
  *   3. Authorize via `chrome.identity.launchWebAuthFlow`, which terminates on
  *      a `chromiumapp.org` redirect URL that Chrome intercepts and returns to
  *      the extension.
  *   4. Exchange the authorization code at WorkOS as a public client.
- *   5. Swap the WorkOS access token for a platform session token via allauth's
+ *   5. Swap the WorkOS access token for a cloud session token via allauth's
  *      headless provider-token endpoint (`meta.session_token`, the Django
  *      session key).
  *
@@ -156,7 +156,7 @@ export async function clearSelectedAssistant(): Promise<void> {
  *
  * Discovers the public WorkOS client id, runs the PKCE authorize flow through
  * `chrome.identity.launchWebAuthFlow`, exchanges the code at WorkOS as a public
- * client, then swaps the access token for a platform session token. The session
+ * client, then swaps the access token for a cloud session token. The session
  * token is stored and used as `X-Session-Token` on platform API calls.
  *
  * Mirrors the macOS app's `workos-pkce` flow; the redirect transport is a
@@ -171,7 +171,7 @@ export async function startCloudLogin(
   // URL must be registered on the WorkOS UM app for `environment` — see README.
   const redirectUri = chrome.identity.getRedirectURL(REDIRECT_PATH);
 
-  // 1. Discover the public WorkOS client id from the platform's headless config.
+  // 1. Discover the public WorkOS client id from the cloud's headless config.
   const clientId = await fetchWorkosClientId(apiBaseUrl);
 
   // 2. Generate the PKCE pair and CSRF state.
@@ -215,7 +215,7 @@ export async function startCloudLogin(
   // 5. Exchange the code at WorkOS as a public client → access token.
   const accessToken = await exchangeCodeWithWorkos({ clientId, code, verifier });
 
-  // 6. Swap the WorkOS access token for a platform session token.
+  // 6. Swap the WorkOS access token for a cloud session token.
   const { sessionToken, email: exchangedEmail } =
     await exchangeAccessTokenForSession(apiBaseUrl, clientId, accessToken);
 

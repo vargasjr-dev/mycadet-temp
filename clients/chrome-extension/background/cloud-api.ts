@@ -1,7 +1,7 @@
 /**
  * Centralized HTTP client for cadet-cloud platform API calls.
  *
- * All authenticated requests to the platform (Django) go through
+ * All authenticated requests to the cloud (Django) go through
  * `cloudApiFetch()`, which automatically includes:
  *   - `Cadet-Organization-Id` header (from the stored CloudSession)
  *   - `X-Session-Token` header (allauth headless session token)
@@ -18,7 +18,7 @@ import { cloudUrlsForEnvironment } from "./extension-environment.js";
 // ── Fetch helper ────────────────────────────────────────────────────
 
 /**
- * Make an authenticated fetch to the platform API. Resolves the base
+ * Make an authenticated fetch to the cloud API. Resolves the base
  * URL from the given environment and injects standard headers.
  *
  * The `organizationId` is read from the stored CloudSession. Callers
@@ -105,7 +105,7 @@ export async function fetchOrganizationId(
 }
 
 /**
- * Fetch the current user's assistants from the platform API.
+ * Fetch the current user's assistants from the cloud API.
  */
 export async function fetchAssistants(
   environment: ExtensionEnvironment,

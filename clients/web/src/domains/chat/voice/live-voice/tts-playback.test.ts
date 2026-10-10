@@ -590,7 +590,7 @@ describe("LiveVoiceAudioPlayer", () => {
     const { player: mediaStreamPlayer, mediaElement } = makeMediaStreamPlayer();
 
     mediaStreamPlayer.prewarm();
-    // A route accepted at play() and later stopped by the platform still
+    // A route accepted at play() and later stopped by the cloud still
     // reports "media-stream"; only the live element state reveals it.
     mediaElement.pause();
 

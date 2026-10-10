@@ -55,7 +55,7 @@ export function deriveAssistantStatus({
   }
 
   // Active assistant but the always-on SSE stream is down: authenticated to
-  // the platform, not to the live event plane.
+  // the cloud, not to the live event plane.
   if (!isSSEConnected) {
     return "disconnected";
   }

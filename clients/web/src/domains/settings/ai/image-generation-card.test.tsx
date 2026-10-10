@@ -215,7 +215,7 @@ describe("ImageGenerationCard — provider-only configuration", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples the managed provider to mode "managed".
+    // still couples the cloud provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: {
         "image-generation": { provider: "cadet", mode: "managed" },

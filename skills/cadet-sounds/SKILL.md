@@ -21,7 +21,7 @@ You are helping the user customize the sound effects their desktop app plays. So
 Two stores, both under `$CADET_WORKSPACE_DIR/data/sounds/`:
 
 - **Sound files:** `.aiff`, `.wav`, `.mp3`, `.m4a`, or `.caf`. No other extensions are accepted. The app scans this directory to populate the dropdown for each event. Prefer `.wav`, `.mp3`, or `.m4a` when the same file must play on both macOS and Windows.
-- **`config.json`:** a single JSON file that stores the global on/off switch, the master volume, and a per-event map of `{ enabled, sounds }`. Each event's `sounds` is a **pool** of filenames; the app picks one at random on playback. An empty pool falls back to the platform's default blip.
+- **`config.json`:** a single JSON file that stores the global on/off switch, the master volume, and a per-event map of `{ enabled, sounds }`. Each event's `sounds` is a **pool** of filenames; the app picks one at random on playback. An empty pool falls back to the cloud's default blip.
 
 ## Sound events
 
@@ -79,7 +79,7 @@ bun run scripts/update-config.ts --event task_complete --sound null   # clear th
 
 ### Mode 3a: Sound pools
 
-Each event can hold **one or more** sounds. When the event fires, the app picks one entry at random from the pool. This is how you build variety, such as three different "poke" sounds that rotate when the user clicks the avatar. An empty pool falls back to the platform's default blip.
+Each event can hold **one or more** sounds. When the event fires, the app picks one entry at random from the pool. This is how you build variety, such as three different "poke" sounds that rotate when the user clicks the avatar. An empty pool falls back to the cloud's default blip.
 
 ```bash
 # Replace the pool with three sounds
@@ -131,7 +131,7 @@ bun run scripts/update-config.ts --event <key> --remove-sound "<filename>"
 bun run scripts/update-config.ts --event <key> --clear-sounds
 ```
 
-(The app already falls back to the platform's default blip if every referenced file is missing, but cleaning up the config is tidier.)
+(The app already falls back to the cloud's default blip if every referenced file is missing, but cleaning up the config is tidier.)
 
 ## UX Guidelines
 

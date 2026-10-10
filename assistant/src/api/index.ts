@@ -30,6 +30,7 @@ import { BackgroundToolStartedEventSchema } from "./events/background-tool-start
 import { BookmarkCreatedEventSchema } from "./events/bookmark-created.js";
 import { BookmarkDeletedEventSchema } from "./events/bookmark-deleted.js";
 import { ClientSettingsUpdateEventSchema } from "./events/client-settings-update.js";
+import { CloudDisconnectedEventSchema } from "./events/cloud-disconnected.js";
 import { CompactionCircuitClosedEventSchema } from "./events/compaction-circuit-closed.js";
 import { CompactionCircuitOpenEventSchema } from "./events/compaction-circuit-open.js";
 import { ConfigChangedEventSchema } from "./events/config-changed.js";
@@ -106,7 +107,6 @@ import { OAuthConnectResultEventSchema } from "./events/oauth-connect-result.js"
 import { OpenConversationEventSchema } from "./events/open-conversation.js";
 import { OpenPanelEventSchema } from "./events/open-panel.js";
 import { OpenUrlEventSchema } from "./events/open-url.js";
-import { PlatformDisconnectedEventSchema } from "./events/platform-disconnected.js";
 import { QuestionRequestEventSchema } from "./events/question-request.js";
 import {
   RecordingPauseEventSchema,
@@ -121,7 +121,7 @@ import { SecretRequestEventSchema } from "./events/secret-request.js";
 import { ServiceGroupUpdateCompleteEventSchema } from "./events/service-group-update-complete.js";
 import { ServiceGroupUpdateProgressEventSchema } from "./events/service-group-update-progress.js";
 import { ServiceGroupUpdateStartingEventSchema } from "./events/service-group-update-starting.js";
-import { ShowPlatformLoginEventSchema } from "./events/show-platform-login.js";
+import { ShowCloudLoginEventSchema } from "./events/show-cloud-login.js";
 import { SkillStateChangedEventSchema } from "./events/skill-state-changed.js";
 import { SoundsConfigUpdatedEventSchema } from "./events/sounds-config-updated.js";
 import { SubagentEventEventSchema } from "./events/subagent-event.js";
@@ -276,6 +276,10 @@ export {
   type ClientSettingsUpdateEvent,
   ClientSettingsUpdateEventSchema,
 } from "./events/client-settings-update.js";
+export {
+  type CloudDisconnectedEvent,
+  CloudDisconnectedEventSchema,
+} from "./events/cloud-disconnected.js";
 export {
   type CompactionCircuitClosedEvent,
   CompactionCircuitClosedEventSchema,
@@ -542,10 +546,6 @@ export {
 } from "./events/open-panel.js";
 export { type OpenUrlEvent, OpenUrlEventSchema } from "./events/open-url.js";
 export {
-  type PlatformDisconnectedEvent,
-  PlatformDisconnectedEventSchema,
-} from "./events/platform-disconnected.js";
-export {
   type AnsweredQuestion,
   type AnsweredQuestionResponse,
   AnsweredQuestionResponseSchema,
@@ -604,9 +604,9 @@ export {
   ServiceGroupUpdateStartingEventSchema,
 } from "./events/service-group-update-starting.js";
 export {
-  type ShowPlatformLoginEvent,
-  ShowPlatformLoginEventSchema,
-} from "./events/show-platform-login.js";
+  type ShowCloudLoginEvent,
+  ShowCloudLoginEventSchema,
+} from "./events/show-cloud-login.js";
 export {
   type SkillStateChangedEvent,
   SkillStateChangedEventSchema,
@@ -1094,7 +1094,7 @@ export const AssistantEventSchema = z.discriminatedUnion("type", [
   OpenConversationEventSchema,
   OpenPanelEventSchema,
   OpenUrlEventSchema,
-  PlatformDisconnectedEventSchema,
+  CloudDisconnectedEventSchema,
   QuestionRequestEventSchema,
   RecordingPauseEventSchema,
   RecordingResumeEventSchema,
@@ -1107,7 +1107,7 @@ export const AssistantEventSchema = z.discriminatedUnion("type", [
   ServiceGroupUpdateCompleteEventSchema,
   ServiceGroupUpdateProgressEventSchema,
   ServiceGroupUpdateStartingEventSchema,
-  ShowPlatformLoginEventSchema,
+  ShowCloudLoginEventSchema,
   SkillStateChangedEventSchema,
   SoundsConfigUpdatedEventSchema,
   SubagentEventEventSchema,

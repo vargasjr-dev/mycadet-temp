@@ -41,7 +41,7 @@ import {
   DEFAULT_CARD_CHARS,
   renderSkillCard,
 } from "../src/plugins/defaults/memory/substrate/skill-content.js";
-import { filterSkillsByPlatform } from "../src/skills/platform-compatibility.js";
+import { filterSkillsByPlatform } from "../src/skills/cloud-compatibility.js";
 
 interface ProbeOptions {
   queries: string[];

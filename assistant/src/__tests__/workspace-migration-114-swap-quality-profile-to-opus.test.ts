@@ -66,7 +66,7 @@ describe("114-swap-quality-profile-to-opus migration", () => {
     );
   });
 
-  test("swaps the managed quality-optimized profile from GLM 5.2 to Opus", () => {
+  test("swaps the cloud quality-optimized profile from GLM 5.2 to Opus", () => {
     writeConfig({
       llm: {
         profiles: {

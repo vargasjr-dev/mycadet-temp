@@ -76,7 +76,7 @@ const log = getLogger("plugin-webhook");
 /**
  * Credential holding the secret that signs this route.
  *
- * `cadet` routes verify against the platform's own webhook secret — the
+ * `cadet` routes verify against the cloud's own webhook secret — the
  * same credential the email webhook uses — so a plugin that only ever hears
  * from Cadet needs no secret of its own. Everything else verifies against
  * the plugin's, stored under its own service name.

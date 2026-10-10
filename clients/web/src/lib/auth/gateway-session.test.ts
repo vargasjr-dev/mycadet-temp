@@ -27,7 +27,7 @@ afterEach(() => {
   clearGatewayToken();
   setSelfHostedConnection(null);
   useLockfileStore.setState({ lockfile: null, committed: false });
-  process.env.VITE_PLATFORM_MODE = "true";
+  process.env.VITE_CLOUD_MODE = "true";
 });
 
 describe("remote gateway mode", () => {
@@ -59,14 +59,14 @@ describe("paired selection", () => {
   }
 
   test("gateway auth is enabled for a paired selection with a usable runtimeUrl", () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     selectPaired("https://gw.example.com");
 
     expect(isGatewayAuthEnabled()).toBe(true);
   });
 
   test("gateway auth stays disabled when the paired runtimeUrl is unusable", () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     selectPaired();
 
     expect(isGatewayAuthEnabled()).toBe(false);
@@ -79,7 +79,7 @@ describe("paired selection", () => {
   });
 
   test("paired auth mode requires a host-primed proxy connection", () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     selectPaired("https://gw.example.com");
     const fetchSpy = mock(async () => {
       throw new Error("unexpected fetch");
@@ -98,7 +98,7 @@ describe("paired selection", () => {
   });
 
   test("paired auth mode rejects a primed connection for another assistant", () => {
-    process.env.VITE_PLATFORM_MODE = "";
+    process.env.VITE_CLOUD_MODE = "";
     selectPaired("https://gw.example.com");
     setSelfHostedConnection({
       url: `${window.location.origin}/assistant/__gateway-paired/paired-b`,

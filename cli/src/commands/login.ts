@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 
 import {
   getActiveAssistant,
@@ -7,18 +7,18 @@ import {
   setActiveAssistant,
 } from "../lib/assistant-config";
 import {
-  clearPlatformToken,
+  clearCloudToken,
   fetchCurrentUser,
-  fetchPlatformAssistants,
-  readPlatformToken,
-  savePlatformToken,
-} from "../lib/platform-client";
+  fetchCloudAssistants,
+  readCloudToken,
+  saveCloudToken,
+} from "../lib/cloud-client";
 import {
   describeLoginError,
   registerLocalAssistantWithPlatform,
   workosPkceLogin,
 } from "../lib/cloud-login.js";
-import { getPlatformUrl } from "../lib/platform-client";
+import { getCloudUrl } from "../lib/cloud-client";
 import { syncCloudAssistants } from "../lib/sync-cloud-assistants";
 
 
@@ -34,7 +34,7 @@ export const login = Object.assign(
     console.log("By default, opens a browser window for authentication.");
     console.log("Alternatively, pass a session token directly with --token.");
     console.log("");
-    console.log("On success, syncs cloud-managed assistants to the local");
+    console.log("On success, syncs cloud assistants to the local");
     console.log("lockfile so they appear in `cadet ps`.");
     console.log("");
     console.log("Options:");
@@ -66,7 +66,7 @@ export const login = Object.assign(
 
   // Block if already authenticated (unless --force)
   if (!forceFlag && !token) {
-    const existingToken = readPlatformToken();
+    const existingToken = readCloudToken();
     if (existingToken) {
       try {
         const existingUser = await fetchCurrentUser(existingToken);
@@ -83,7 +83,7 @@ export const login = Object.assign(
   // If no --token flag, use app-held WorkOS PKCE login.
   if (!token) {
     try {
-      token = await workosPkceLogin(getPlatformUrl());
+      token = await workosPkceLogin(getCloudUrl());
     } catch (error) {
       console.error(`❌ ${describeLoginError(error)}`);
       process.exit(1);
@@ -94,10 +94,10 @@ export const login = Object.assign(
 
   try {
     const user = await fetchCurrentUser(token);
-    savePlatformToken(token);
+    saveCloudToken(token);
     console.log(`✅ Logged in as ${user.email}`);
 
-    // Register the local assistant with the platform (non-fatal).
+    // Register the local assistant with the cloud (non-fatal).
     // Mirrors the desktop app's LocalAssistantBootstrapService flow.
     try {
       await registerLocalAssistantWithPlatform(token, user);
@@ -105,8 +105,8 @@ export const login = Object.assign(
       // Non-fatal — login succeeded even if registration fails
     }
 
-    // Sync cloud assistants from the platform into the local lockfile.
-    // This ensures `cadet ps` shows managed assistants immediately
+    // Sync cloud assistants from the cloud into the local lockfile.
+    // This ensures `cadet ps` shows cloud assistants immediately
     // after login (e.g. after a retire-and-rehatch cycle). We've just
     // saved this token, so it's guaranteed non-empty here.
     try {
@@ -122,9 +122,9 @@ export const login = Object.assign(
 
       // If no active assistant is set, activate the first cloud one.
       if (!getActiveAssistant()) {
-        const platformAssistants = await fetchPlatformAssistants(token);
-        if (platformAssistants.length > 0) {
-          setActiveAssistant(platformAssistants[0].id);
+        const cloudAssistants = await fetchCloudAssistants(token);
+        if (cloudAssistants.length > 0) {
+          setActiveAssistant(cloudAssistants[0].id);
         }
       }
     } catch {
@@ -148,13 +148,13 @@ export const logout = Object.assign(
     console.log("Usage: cadet logout");
     console.log("");
     console.log("Log out of Cadet Cloud, remove the stored session token,");
-    console.log("and remove cloud-managed assistants from the local lockfile.");
+    console.log("and remove cloud assistants from the local lockfile.");
     process.exit(0);
   }
 
-  // Remove cloud-managed assistants from the lockfile.
+  // Remove cloud assistants from the lockfile.
   const cloudAssistants = loadAllAssistants().filter((a) =>
-    isManagedCloud(a.cloud),
+    isCloudHome(a.cloud),
   );
   for (const a of cloudAssistants) {
     removeAssistantEntry(a.assistantId);
@@ -165,7 +165,7 @@ export const logout = Object.assign(
     );
   }
 
-  clearPlatformToken();
+  clearCloudToken();
   console.log("Logged out. Cadet Cloud token removed.");
 },
   { description: "Log out of Cadet Cloud" },
@@ -182,7 +182,7 @@ export const whoami = Object.assign(
     process.exit(0);
   }
 
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     console.error("Not logged in. Run `cadet login` first.");
     process.exit(1);

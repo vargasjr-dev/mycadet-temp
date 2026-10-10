@@ -121,7 +121,7 @@ describe("a Comms declaration", () => {
  *
  * The two things a single path could not express are both here. The
  * conversation falls back from `message.space.id` to `space.id`, which in code
- * is `message.space ?? event.space`, and the platform is mapped to the two
+ * is `message.space ?? event.space`, and the cloud is mapped to the two
  * values admission acts on. The vendor\'s own casing is used for the map key,
  * because a declaration should be able to quote what the wire says.
  */
@@ -187,7 +187,7 @@ describe("a Photon declaration", () => {
     );
   });
 
-  it("maps the platform case-insensitively", () => {
+  it("maps the cloud case-insensitively", () => {
     // Photon spells it `iMessage`. A map that missed on capitalisation would
     // silently downgrade every blue bubble to the spoofable-sender treatment.
     const result = read("imessage", photonDelivery(), PHOTON);

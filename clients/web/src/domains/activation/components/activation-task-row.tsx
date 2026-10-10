@@ -157,7 +157,7 @@ export function ActivationTaskRow({
   const artifact = done ? progress?.artifacts[0] : undefined;
   // The link points off to the web, and inside the desktop app the web page it
   // points at is a download page for the app the user is already in. Read the
-  // platform axis, never the viewport (docs/PLATFORM_ADAPTATION.md).
+  // platform axis, never the viewport (docs/CLOUD_ADAPTATION.md).
   const link = task.link !== undefined && !isElectron() ? task.link : undefined;
   const callToAction = link ? (
     <ExternalAnchor

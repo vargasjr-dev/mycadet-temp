@@ -8,7 +8,7 @@ import { subscribeToPowerEvents } from "@/runtime/power-events";
  * the returned unsubscribe-noop drops through cleanly — web / iOS
  * get their resume signals from `app.resume` instead.
  *
- * The renderer wrapper is the platform gate; this helper is just the
+ * The renderer wrapper is the cloud gate; this helper is just the
  * narrow mapping from `kind` → typed bus event so consumers don't
  * have to switch on `kind` themselves.
  */

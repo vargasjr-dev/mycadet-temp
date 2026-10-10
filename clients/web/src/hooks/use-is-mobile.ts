@@ -15,7 +15,7 @@ export const MOBILE_MEDIA_QUERY = "(max-width: 767px)";
  * the pointer, so a desktop window narrowed below the breakpoint still has a
  * mouse. Interaction decisions (which overlay a trigger opens, whether a
  * hover affordance can exist) belong to `useTouchMobile()`. See
- * `docs/PLATFORM_ADAPTATION.md`.
+ * `docs/CLOUD_ADAPTATION.md`.
  */
 export function useIsMobile(): boolean {
   return useMediaQuery(MOBILE_MEDIA_QUERY);

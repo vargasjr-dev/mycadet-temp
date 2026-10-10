@@ -17,7 +17,7 @@ import {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   upsertRendererLockfileAssistant,
-  replacePlatformAssistants,
+  replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
@@ -48,7 +48,7 @@ const LOCAL_STATUS_PATTERN = /^(?:\/assistant)?\/__local\/status\/([^/]+)$/;
 const LOCAL_AVATAR_PATTERN = /^(?:\/assistant)?\/__local\/avatar\/([^/]+)$/;
 const LOCAL_UPGRADE_PATTERN = /^(?:\/assistant)?\/__local\/upgrade$/;
 const PLATFORM_SESSION_PATTERN =
-  /^(?:\/assistant)?\/__local\/platform-session$/;
+  /^(?:\/assistant)?\/__local\/cloud-session$/;
 
 // In-memory loopback platform session token for the dev server. The proxy
 // (vite.config.ts) and the middleware below run in the same Node process, so
@@ -85,7 +85,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   // once, so it has no single identity to report the way an nginx edge does.
   const configJson = JSON.stringify({
     webUrl: config.webUrl,
-    platformUrl: config.platformUrl,
+    cloudUrl: config.cloudUrl,
   });
 
   return {
@@ -98,7 +98,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
     },
     configureServer(server) {
       server.middlewares.use(loopbackCallbackMiddleware());
-      server.middlewares.use(platformSessionMiddleware());
+      server.middlewares.use(cloudSessionMiddleware());
       server.middlewares.use(configMiddleware(configJson));
       server.middlewares.use(lockfileMiddleware(config.lockfilePaths));
       server.middlewares.use(hatchMiddleware(baseDir));
@@ -224,8 +224,8 @@ function loopbackCallbackMiddleware(): Connect.NextHandleFunction {
 
 // Receives the loopback platform session token from the SPA (after it has
 // validated the `state` nonce) and holds it for the proxy. Mirrors the Bun
-// server's /__local/platform-session endpoint.
-function platformSessionMiddleware(): Connect.NextHandleFunction {
+// server's /__local/cloud-session endpoint.
+function cloudSessionMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const path = (req.url ?? "").split("?")[0];
     if (!PLATFORM_SESSION_PATTERN.test(path)) {
@@ -349,10 +349,10 @@ function lockfileMiddleware(
         }
 
         let result;
-        if (body.syncPlatform && Array.isArray(body.platformAssistants)) {
-          result = replacePlatformAssistants(
+        if (body.syncPlatform && Array.isArray(body.cloudAssistants)) {
+          result = replaceCloudAssistants(
             lockfilePaths,
-            body.platformAssistants as Array<Record<string, unknown>>,
+            body.cloudAssistants as Array<Record<string, unknown>>,
             body.organizationId as string | undefined,
           );
         } else if (body.rename && typeof body.rename === "object") {
@@ -517,7 +517,7 @@ function retireMiddleware(
       }
 
       void runRetire(invocation, assistantId, {
-        platformToken: getDevPlatformToken() ?? undefined,
+        cloudToken: getDevPlatformToken() ?? undefined,
       }).then((result) => {
         respondJson(
           res,

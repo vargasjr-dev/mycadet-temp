@@ -11,7 +11,7 @@
  *
  * It has NO dependency on the assistant daemon, SQLite, Drizzle, or any
  * service-specific module. The assistant's token-manager.ts and
- * token-persistence.ts wire in the platform-specific backends and
+ * token-persistence.ts wire in the cloud-specific backends and
  * delegate here for shared logic.
  */
 

@@ -5,7 +5,7 @@ import type { WorkspaceMigration } from "./types.js";
 
 /**
  * Put existing assistants on code-switching by writing
- * `services.stt.language: "multi"` on Deepgram and the managed relay,
+ * `services.stt.language: "multi"` on Deepgram and the cloud relay,
  * covering both an accepted English default and a language that was never
  * set at all.
  *
@@ -14,7 +14,7 @@ import type { WorkspaceMigration } from "./types.js";
  * exist before the language picker shipped (#39546, released 2026-07-31), and
  * on these two providers that picker never offered English and Multilingual
  * as peers. The only English row was the default row, labelled "English
- * (default)". So an `"en"` on Deepgram or the managed relay records "I
+ * (default)". So an `"en"` on Deepgram or the cloud relay records "I
  * accepted the default", not "I want English rather than code-switching", and
  * the default it accepted has since changed.
  *
@@ -22,7 +22,7 @@ import type { WorkspaceMigration } from "./types.js";
  *
  *   - Only `"en"` and absent. Any other language is a real choice from a list
  *     where it was the only way to get that language.
- *   - Only Deepgram and the managed relay (`mode: "managed"` routes there
+ *   - Only Deepgram and the cloud relay (`mode: "managed"` routes there
  *     while `provider` holds the bring-your-own restore value). xAI has
  *     offered an explicit English row since the picker shipped, so an `"en"`
  *     there is deliberate, and code-switching is a Deepgram mode its adapter
@@ -38,7 +38,7 @@ const MULTI_DEFAULT_PROVIDERS = new Set(["deepgram", "cadet"]);
 export const sttEnglishDefaultToMultilingualMigration: WorkspaceMigration = {
   id: "141-stt-english-default-to-multilingual",
   description:
-    "Move services.stt.language from the accepted English default to multilingual on Deepgram and managed speech",
+    "Move services.stt.language from the accepted English default to multilingual on Deepgram and cloud speech",
   run(workspaceDir: string): void {
     if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {
       return;

@@ -22,7 +22,7 @@ import {
 } from "@/domains/onboarding/prefs";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { isElectron } from "@/runtime/is-electron";
-import { useAuthStore, useHasPlatformSession } from "@/stores/auth-store";
+import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import {
   PRIVACY_CONSENT_VERSION,
   TOS_CONSENT_VERSION,
@@ -40,7 +40,7 @@ export function ReviewTermsScreen() {
   const userId = useAuthStore.use.user()?.id ?? null;
   const logout = useAuthStore.use.logout();
   const electron = isElectron();
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
 
   const [tosAccepted, setTosAccepted] = useTosAccepted();
   const [privacyConsent, setPrivacyConsent] = usePrivacyConsent();
@@ -127,7 +127,7 @@ export function ReviewTermsScreen() {
       privacy: privacyConsent,
       shareAnalytics: showAnalytics ? shareAnalyticsChecked : null,
       shareDiagnostics: showDiagnostics ? shareDiagnosticsChecked : null,
-      hasPlatformSession,
+      hasCloudSession,
     });
 
     const destination = sanitizeReturnTo(
@@ -137,7 +137,7 @@ export function ReviewTermsScreen() {
     void navigate(destination, { replace: true });
   }, [
     privacyConsent,
-    hasPlatformSession,
+    hasCloudSession,
     navigate,
     searchParams,
     shareAnalyticsChecked,

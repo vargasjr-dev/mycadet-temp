@@ -7,7 +7,7 @@
  *
  * The dedicated PUT exists because the generic config write paths parse
  * `llm.default` as a partial fragment — a provider the matrix cannot
- * implement is silently dropped or clamped to the managed column on the next
+ * implement is silently dropped or clamped to the cloud column on the next
  * reparse instead of rejected. This route strict-parses and fails loudly.
  *
  * Availability is reported, never enforced: a dangling connection pin is a

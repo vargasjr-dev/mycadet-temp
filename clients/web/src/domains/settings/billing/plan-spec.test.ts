@@ -367,7 +367,7 @@ describe("currentPlanFeatures", () => {
     );
   });
 
-  test("carries through an entitlement the platform adds later", () => {
+  test("carries through an entitlement the cloud adds later", () => {
     const extended = {
       ...proPlan,
       included_features: [...CATALOG, "Priority support"],

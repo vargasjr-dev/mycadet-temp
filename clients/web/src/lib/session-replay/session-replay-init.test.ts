@@ -53,7 +53,7 @@ describe("sessionReplayProxyBase", () => {
     ).toBe("app://mycadet.ai");
   });
 
-  test("uses the platform URL on hosted and Electron-dev surfaces", () => {
+  test("uses the cloud URL on hosted and Electron-dev surfaces", () => {
     expect(
       sessionReplayProxyBase(
         { protocol: "https:", origin: "https://mycadet.ai" },

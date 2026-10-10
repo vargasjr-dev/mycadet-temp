@@ -1,12 +1,12 @@
 import { ApiError, GoogleGenAI } from "@google/genai";
 
 import {
+  type CloudProxyCredentials,
   type GeneratedImage,
   type ImageGenCredentials,
   type ImageGenerationRequest,
   type ImageGenerationResult,
   isImageProviderBillingError,
-  type ManagedProxyCredentials,
   MAX_VARIANTS,
 } from "./types.js";
 
@@ -47,8 +47,8 @@ export function mapGeminiError(error: unknown): string {
     return `Gemini API error (status ${status}). Please try again.`;
   }
   if (error instanceof Error) {
-    // The managed proxy surfaces failures as plain Errors whose message embeds
-    // the upstream status (e.g. "Managed proxy request failed (402): ...").
+    // The cloud proxy surfaces failures as plain Errors whose message embeds
+    // the upstream status (e.g. "Cloud proxy request failed (402): ...").
     if (isImageProviderBillingError({ message: error.message })) {
       return GEMINI_BILLING_MESSAGE;
     }
@@ -57,17 +57,17 @@ export function mapGeminiError(error: unknown): string {
   return "An unexpected error occurred during image generation.";
 }
 
-// --- Managed proxy direct HTTP call ---
+// --- Cloud proxy direct HTTP call ---
 
 /**
- * Call the managed proxy directly via fetch, using the Gemini API URL format.
- * The platform proxy translates this to Vertex AI internally with ADC auth.
+ * Call the cloud proxy directly via fetch, using the Gemini API URL format.
+ * The cloud proxy translates this to Vertex AI internally with ADC auth.
  *
  * Uses the Gemini API format:
  *   POST {baseUrl}/v1beta/models/{model}:generateContent
  */
 async function generateImageViaProxy(
-  credentials: ManagedProxyCredentials,
+  credentials: CloudProxyCredentials,
   model: string,
   contents: unknown[],
   config: Record<string, unknown>,
@@ -94,7 +94,7 @@ async function generateImageViaProxy(
   if (!response.ok) {
     const body = await response.text();
     throw new Error(
-      `Managed proxy request failed (${response.status}): ${body}`,
+      `Cloud proxy request failed (${response.status}): ${body}`,
     );
   }
 
@@ -161,11 +161,11 @@ export async function generateImage(
   const config = { responseModalities: ["TEXT", "IMAGE"] as string[] };
   const contents = [{ role: "user" as const, parts }];
 
-  // For the managed proxy, bypass the @google/genai SDK and make direct HTTP
+  // For the cloud proxy, bypass the @google/genai SDK and make direct HTTP
   // calls. The SDK's generateContent doesn't support responseModalities for
   // image generation. Direct fetch lets us use the Gemini API format with
-  // the managed proxy translating to Vertex internally.
-  if (credentials.type === "managed-proxy") {
+  // the cloud proxy translating to Vertex internally.
+  if (credentials.type === "cloud-proxy") {
     const makeSingleCall = () =>
       generateImageViaProxy(
         credentials,

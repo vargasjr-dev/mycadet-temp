@@ -2,7 +2,7 @@
  * Boot-time provider_connection backfill: an existing user connection for
  * the entry's provider must win over the mode-derived default.
  *
- * On managed (platform-hosted) installs the mode default is the billed
+ * On managed (cloud-hosted) installs the mode default is the billed
  * `cadet` connection — stamping it onto a connection-less BYOK-intent
  * profile permanently routes the user's own-key setup through managed
  * billing. On your-own installs the mode default creates a parallel
@@ -27,7 +27,7 @@ import {
 
 await initializeDb();
 
-const originalIsPlatform = process.env.IS_PLATFORM;
+const originalIsPlatform = process.env.IS_CLOUD;
 
 function seedConfig(profiles: Record<string, unknown>): void {
   writeFileSync(
@@ -49,14 +49,14 @@ beforeEach(() => {
 
 afterEach(() => {
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
 });
 
 test("managed mode prefers an existing user connection over the cadet default", () => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   const created = createConnection(getDb(), {
     name: "anthropic-personal",
     provider: "anthropic",
@@ -71,7 +71,7 @@ test("managed mode prefers an existing user connection over the cadet default", 
 });
 
 test("managed mode still stamps cadet when no user connection exists", () => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   seedConfig({ byok: { provider: "anthropic", model: "claude-fable-5" } });
 
   runProviderConnectionsBackfill(getDb());
@@ -80,7 +80,7 @@ test("managed mode still stamps cadet when no user connection exists", () => {
 });
 
 test("managed-owned entries keep the cadet stamp even when a user connection exists", () => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   const created = createConnection(getDb(), {
     name: "anthropic-personal",
     provider: "anthropic",
@@ -118,7 +118,7 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
 });
 
 test("routing-identity providers are never stamped with a connection", () => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   seedConfig({
     managedRoute: { provider: "cadet", model: "claude-fable-5" },
     subscription: { provider: "chatgpt", model: "gpt-5.5" },
@@ -131,7 +131,7 @@ test("routing-identity providers are never stamped with a connection", () => {
 });
 
 test("your-own mode reuses a custom-named connection instead of creating -personal", () => {
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
   const created = createConnection(getDb(), {
     name: "my-anthropic",
     provider: "anthropic",

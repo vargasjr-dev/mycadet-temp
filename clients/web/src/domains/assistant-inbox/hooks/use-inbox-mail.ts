@@ -22,7 +22,7 @@ import type { EmailDetailLoader, InboxEmail, InboxUsage } from "../types";
 const PAGE_SIZE = 50;
 
 /**
- * The daemon's `email/download` route returns the platform's message
+ * The daemon's `email/download` route returns the cloud's message
  * object untyped; only the two body parts are read here, and a shape drift
  * reads as an empty body rather than a crash.
  */
@@ -59,18 +59,18 @@ export interface InboxMail {
 }
 
 /**
- * The mail the mailbox draws. The two folders come from the platform, keyed
- * on the platform assistant id, and the usage counts from the address's own
+ * The mail the mailbox draws. The two folders come from the cloud, keyed
+ * on the cloud assistant id, and the usage counts from the address's own
  * status endpoint. The body and attachments
  * of a message come through the daemon, keyed on the local assistant id the
  * daemon routes expect, and only when a message is opened.
  */
 export function useInboxMail(
   assistantId: string,
-  platformAssistantId: string,
+  cloudAssistantId: string,
   addressId: string,
 ): InboxMail {
-  const path = { assistant_id: platformAssistantId };
+  const path = { assistant_id: cloudAssistantId };
 
   const receivedQuery = useQuery(
     assistantsEmailsListOptions({

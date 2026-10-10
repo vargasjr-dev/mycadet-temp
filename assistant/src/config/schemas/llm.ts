@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import {
-  getManagedUpstream,
+  getCloudUpstream,
   parseCadetModel,
 } from "../../providers/cadet-model-routing.js";
 import {
@@ -18,9 +18,9 @@ import {
   DEFAULT_PROFILE_KEYS,
   DEFAULT_PROFILE_PROVIDERS,
   FALLBACK_PROFILE_BY_KEY,
+  isCloudOnlyProfileKey,
   isDefaultProfileKey,
   isFlagGatedProfileKey,
-  isManagedOnlyProfileKey,
   JEV_MANAGED_PROFILE_CALL_SITES,
   JEV_MANAGED_PROFILE_KEY,
   MANAGED_ONLY_PROFILE_KEYS,
@@ -28,7 +28,7 @@ import {
 import { InputModalitiesSchema } from "../input-modalities.js";
 
 /**
- * Managed-only keys that are valid reference targets on the managed column
+ * Managed-only keys that are valid reference targets on the cloud column
  * whether or not a workspace stub exists. The flag-gated ones (`os-beta`,
  * `auto`) are excluded: they resolve only while their reconciled stub is
  * present, so they enter the reference set through `llm.profiles` alone.
@@ -77,7 +77,7 @@ export const KNOWN_LLM_PROVIDERS = [
   "ionet",
   "poolside",
   "typesafe",
-  // Routing identities: "cadet" = the platform-managed route (upstream
+  // Routing identities: "cadet" = the cloud route (upstream
   // derived from the model at dispatch) and the catalog owner of
   // Cadet-hosted GPU models; "chatgpt" = the subscription route to OpenAI.
   // Dispatch substitutes a concrete upstream before adapter lookup.
@@ -173,8 +173,8 @@ export function routingIdentityModelIssue(
     if (routed) {
       return `Model "${model}" is an encoded routing string; store the native model id "${routed.model}".`;
     }
-    return getManagedUpstream(model) === null
-      ? `Model "${model}" is not served by the Cadet managed route.`
+    return getCloudUpstream(model) === null
+      ? `Model "${model}" is not served by the Cadet Cloud route.`
       : null;
   }
   if (provider === "chatgpt") {
@@ -506,7 +506,7 @@ const OpenRouterDeepPartialSchema = z.object({
 // ---------------------------------------------------------------------------
 
 /**
- * Distinguishes daemon-managed profiles (overwritten on every startup) from
+ * Distinguishes daemon-cloud profiles (overwritten on every startup) from
  * user-created ones (never touched by the daemon).
  */
 const ProfileSource = z.enum(["managed", "user"]);
@@ -617,7 +617,7 @@ export type LLMConfigFragment = z.infer<typeof LLMConfigFragment>;
  * (`LLMConfigBase` is the all-defaulted VIEW for resolution, never the
  * storage shape). `provider` stays the loose provider set and is clamped at
  * read time via `isDefaultProviderChoice`: a value with no matrix column
- * (keyless ollama, user-endpoint openai-compatible) resolves to the managed
+ * (keyless ollama, user-endpoint openai-compatible) resolves to the cloud
  * column rather than failing the whole blob.
  */
 export const LLMDefaultConfigSchema = LLMConfigFragment.extend({
@@ -630,7 +630,7 @@ export type LLMDefaultConfig = z.infer<typeof LLMDefaultConfigSchema>;
  * config carries them, for readers that see config.json before the loader's
  * schema parse (boot seed, ensure passes, wire overlays). Each field fails
  * independently so a valid provider survives a bad pin, and a malformed blob
- * reads as empty — both clamp to the managed column downstream via
+ * reads as empty — both clamp to the cloud column downstream via
  * `isDefaultProviderChoice`.
  */
 export const RawDefaultSelectionSchema = z
@@ -710,9 +710,9 @@ export const ProfileEntry = LLMConfigFragment.extend({
   inputModalities: InputModalitiesSchema.nullable().optional(),
   /**
    * Absent means active. `.nullable()` matches `label` so the PUT route's
-   * "send `null` to clear" sentinel works for status too — a managed
+   * "send `null` to clear" sentinel works for status too — a cloud
    * re-enable body of `{status: null}` clears back to active-by-absence
-   * (see `applyManagedProfileReenable`).
+   * (see `applyCloudProfileReenable`).
    */
   status: ProfileStatusSchema.nullable().optional(),
   /**
@@ -727,7 +727,7 @@ export const ProfileEntry = LLMConfigFragment.extend({
    */
   mix: MixSchema.optional(),
   /**
-   * Code-owned backup profile for a Cadet-managed default profile. This is
+   * Code-owned backup profile for a Cadet Cloud default profile. This is
    * read-only metadata from the default-profile catalog. Config write paths
    * reject user-authored values because custom and BYOK fallback routes are
    * not supported.
@@ -771,10 +771,10 @@ export type DefaultProviderConfig = {
 };
 
 /**
- * Whether the managed backup profiles (`BACKUP_PROFILE_KEYS`) resolve under a
+ * Whether the cloud backup profiles (`BACKUP_PROFILE_KEYS`) resolve under a
  * given `llm.default` blob.
  *
- * Backups are companions of the managed (`cadet`) column only: on a BYOK or
+ * Backups are companions of the cloud (`cadet`) column only: on a BYOK or
  * ChatGPT default provider `defaultProfileBodyForProvider` returns `undefined`
  * for them, because the install may hold no credential for the backup's
  * upstream. So a reference to one is a target that can never resolve there,
@@ -782,7 +782,7 @@ export type DefaultProviderConfig = {
  * cannot show.
  *
  * A missing blob or a `provider` with no matrix column (keyless ollama,
- * user-endpoint openai-compatible) clamps to the managed column via
+ * user-endpoint openai-compatible) clamps to the cloud column via
  * `isDefaultProviderChoice`, so backups resolve there too.
  */
 export function backupProfilesResolveUnderDefaultProvider(
@@ -799,35 +799,35 @@ export function backupProfilesResolveUnderDefaultProvider(
  * Why a referenced profile name does not resolve, for the reference error
  * messages. A backup key under a non-managed default provider gets its own
  * reason: the name is real and code-defined, it just has no body outside the
- * managed column, and "not defined in llm.profiles" would send the reader
+ * cloud column, and "not defined in llm.profiles" would send the reader
  * looking for a missing entry that was never supposed to exist.
  */
 function unresolvableProfileReason(
   name: string,
   backupsResolve: boolean,
 ): string {
-  if (backupsResolve || !isManagedOnlyProfileKey(name)) {
+  if (backupsResolve || !isCloudOnlyProfileKey(name)) {
     return "is not defined in llm.profiles";
   }
   if (name === JEV_MANAGED_PROFILE_KEY) {
-    return "is the managed Jev profile, which resolves only while llm.default is the managed provider";
+    return "is the cloud Jev profile, which resolves only while llm.default is the cloud provider";
   }
   if (name === AUTO_PROFILE_KEY) {
-    return "is the managed Auto profile, which resolves only while llm.default is the managed provider";
+    return "is the cloud Auto profile, which resolves only while llm.default is the cloud provider";
   }
-  return "is a managed backup profile, which resolves only while llm.default is the managed provider";
+  return "is a cloud backup profile, which resolves only while llm.default is the cloud provider";
 }
 
 /**
  * The `llm.profiles` keys that are reference targets in their own right,
- * given whether the managed backups resolve under the current
+ * given whether the cloud backups resolve under the current
  * `llm.default`.
  *
  * Every on-disk key qualifies but one: a reserved backup name whose entry is
  * a thin `source: "managed"` stub. The stub is not a profile, it is the
- * workspace's slot for a code-owned one, and it can reach disk on a managed
+ * workspace's slot for a code-owned one, and it can reach disk on a cloud
  * install through nothing more than a `config get` -> `config set` round-trip
- * of the effective profile list (`normalizeManagedProfileWrites` reduces the
+ * of the effective profile list (`normalizeCloudProfileWrites` reduces the
  * echoed body to exactly that stub). Counting it as an ordinary raw key would
  * let it launder a backup reference past the provider gate: after a switch to
  * a BYOK or ChatGPT default provider the reference would keep validating
@@ -846,7 +846,7 @@ function referenceableProfileKeys(
 ): string[] {
   return Object.entries(profiles ?? {})
     .filter(([name, value]) => {
-      if (backupsResolve || !isManagedOnlyProfileKey(name)) {
+      if (backupsResolve || !isCloudOnlyProfileKey(name)) {
         return true;
       }
       const entry =
@@ -874,8 +874,8 @@ function referenceableProfileKeys(
  * are read defensively so the raw on-disk shape is safe to pass.
  *
  * `llmDefault` is the sibling `llm.default` value (raw or parsed): it
- * decides whether the managed backups are valid targets, since they resolve
- * on the managed column alone.
+ * decides whether the cloud backups are valid targets, since they resolve
+ * on the cloud column alone.
  */
 export function collectFallbackProfileIssues(
   profiles: Record<string, unknown> | undefined,
@@ -891,8 +891,8 @@ export function collectFallbackProfileIssues(
   // (`default-profile-catalog.ts`) and resolve whether or not they are
   // materialized in `llm.profiles`, so their names are always valid
   // fallback targets (same rule as call-site `profile` references). The
-  // managed backups resolve the same way, but on the managed column only,
-  // so they are valid targets only under a managed `llm.default`.
+  // managed backups resolve the same way, but on the cloud column only,
+  // so they are valid targets only under a cloud `llm.default`.
   // A persisted managed stub for a backup name does not change that, see
   // `referenceableProfileKeys`.
   const backupsResolve = backupProfilesResolveUnderDefaultProvider(
@@ -930,7 +930,7 @@ export function collectFallbackProfileIssues(
     if (entry?.source !== "managed" || fallback !== expectedFallback) {
       issues.push({
         profileName: name,
-        message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Cadet-managed default profiles.`,
+        message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Cadet Cloud default profiles.`,
       });
       continue;
     }
@@ -1049,20 +1049,20 @@ export const LLMSchema = z
     // The always-available default profiles are code-defined
     // (`default-profile-catalog.ts`) and resolve whether or not they are
     // materialized in `llm.profiles`, so their names are always valid
-    // reference targets. The managed backups (`BACKUP_PROFILE_KEYS`) are
+    // reference targets. The cloud backups (`BACKUP_PROFILE_KEYS`) are
     // code-defined on the same terms and are listed in the effective
     // catalog, so a selection naming one (`activeProfile`, `advisorProfile`,
     // a call-site pin) must survive the next load rather than being stripped
-    // back to a default. Backups are scoped to the managed column though, so
-    // they join the set only under a managed `llm.default`: on a BYOK
+    // back to a default. Backups are scoped to the cloud column though, so
+    // they join the set only under a cloud `llm.default`: on a BYOK
     // or ChatGPT default provider they have no body to resolve to, and
     // keeping the reference would strand a selection the picker cannot show.
-    // The managed Jev profile (`JEV_MANAGED_PROFILE_KEY`) is scoped the same
+    // The cloud Jev profile (`JEV_MANAGED_PROFILE_KEY`) is scoped the same
     // way, as a pin target for the judge call sites.
     // The flag-gated `os-beta` is excluded: it resolves only while a
     // workspace entry exists, so a reference to it is valid only when that
     // entry is present in `config.profiles`. A backup name materialized as a
-    // thin managed stub does not re-enter the set on a non-managed column
+    // thin managed stub does not re-enter the set on a non-cloud column
     // either, see `referenceableProfileKeys`.
     const backupsResolve = backupProfilesResolveUnderDefaultProvider(
       config.default,
@@ -1121,7 +1121,7 @@ export const LLMSchema = z
         message: `Profile "${config.advisorProfile}" referenced by llm.advisorProfile ${unresolvableProfileReason(config.advisorProfile, backupsResolve)}`,
       });
     }
-    // The managed Jev profile is a valid reference target for call-site pins
+    // The cloud Jev profile is a valid reference target for call-site pins
     // only. Its model returns structured verdicts rather than chat text, so
     // the conversation positions reject it here as well as at the write
     // routes, which keeps a raw config write from handing the main agent or

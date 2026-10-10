@@ -86,7 +86,7 @@ describe("134-image-generation-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed gemini service to provider cadet, model preserved", () => {
+  test("rewrites a cloud gemini service to provider cadet, model preserved", () => {
     writeConfig({
       services: {
         "image-generation": {
@@ -105,10 +105,10 @@ describe("134-image-generation-mode-to-provider", () => {
     });
   });
 
-  // Managed OpenAI has no exemption: the backend derives from the model
-  // prefix at request time, so a managed gpt-image-2 user keeps routing to
+  // Cloud OpenAI has no exemption: the backend derives from the model
+  // prefix at request time, so a cloud gpt-image-2 user keeps routing to
   // the OpenAI proxy through provider cadet.
-  test("rewrites a managed openai service to provider cadet, model preserved", () => {
+  test("rewrites a cloud openai service to provider cadet, model preserved", () => {
     writeConfig({
       services: {
         "image-generation": {
@@ -201,7 +201,7 @@ describe("134-image-generation-mode-to-provider", () => {
     ).not.toThrow();
   });
 
-  // The migrated shape is what the daemon actually parses, so a managed user
+  // The migrated shape is what the daemon actually parses, so a cloud user
   // must land on cadet with their model intact rather than falling back to
   // a keyless BYOK provider.
   test("migrated output parses to the cadet provider", () => {
@@ -223,7 +223,7 @@ describe("134-image-generation-mode-to-provider", () => {
   });
 
   describe("down", () => {
-    test("round-trip restores the managed pair", () => {
+    test("round-trip restores the cloud pair", () => {
       writeConfig({
         services: {
           "image-generation": {

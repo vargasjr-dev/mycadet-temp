@@ -46,7 +46,7 @@ export const seedLatencyCallSiteDefaultsMigration: WorkspaceMigration = {
   description:
     "Seed latency-optimized call-site defaults for background LLM tasks",
   run(workspaceDir: string): void {
-    // If a platform default-config overlay is in play, it runs after
+    // If a cloud default-config overlay is in play, it runs after
     // migrations and is the authoritative source for both provider and
     // call-site seeds. Skip to avoid mismatched provider/model pairs.
     if (process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH) {

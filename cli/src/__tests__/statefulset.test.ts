@@ -35,7 +35,7 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(always.has(key)).toBe(true);
     }
 
-    expect(always.has("CADET_DISABLE_PLATFORM")).toBe(false);
+    expect(always.has("CADET_DISABLE_CLOUD")).toBe(false);
     expect(always.has("CADET_DEVICE_ID")).toBe(false);
   });
 
@@ -60,8 +60,8 @@ describe("getBuilderManagedEnvKeys", () => {
       a.name.localeCompare(b.name),
     );
     expect(sorted).toEqual([
+      { name: "CADET_CLOUD_URL", hostVar: "CADET_CLOUD_URL" },
       { name: "CADET_ENVIRONMENT", hostVar: "CADET_ENVIRONMENT" },
-      { name: "CADET_PLATFORM_URL", hostVar: "CADET_PLATFORM_URL" },
       { name: "TUNNEL_BASE_URL", hostVar: "TUNNEL_BASE_URL" },
     ]);
   });
@@ -76,8 +76,8 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(hostForwarded).toContainEqual({ name: envVar, hostVar: envVar });
     }
     expect(hostForwarded).toContainEqual({
-      name: "CADET_PLATFORM_URL",
-      hostVar: "CADET_PLATFORM_URL",
+      name: "CADET_CLOUD_URL",
+      hostVar: "CADET_CLOUD_URL",
     });
   });
 
@@ -126,7 +126,7 @@ describe("buildServiceRunArgs extra env routing", () => {
       gatewayContainer: "test-gateway",
       network: "test-net",
     },
-    extraGatewayEnv: { CADET_DISABLE_PLATFORM: "1" },
+    extraGatewayEnv: { CADET_DISABLE_CLOUD: "1" },
     extraAssistantEnv: { FOO: "bar" },
   };
 
@@ -134,19 +134,19 @@ describe("buildServiceRunArgs extra env routing", () => {
 
   test("extraGatewayEnv lands only in gateway args", () => {
     const gatewayArgs = runArgs.gateway();
-    expect(gatewayArgs).toContain("CADET_DISABLE_PLATFORM=1");
+    expect(gatewayArgs).toContain("CADET_DISABLE_CLOUD=1");
     expect(gatewayArgs).not.toContain("FOO=bar");
   });
 
   test("extraAssistantEnv lands only in assistant args", () => {
     const assistantArgs = runArgs.assistant();
     expect(assistantArgs).toContain("FOO=bar");
-    expect(assistantArgs).not.toContain("CADET_DISABLE_PLATFORM=1");
+    expect(assistantArgs).not.toContain("CADET_DISABLE_CLOUD=1");
   });
 
   test("credential-executor args get neither extra env map", () => {
     const cesArgs = runArgs["credential-executor"]();
-    expect(cesArgs).not.toContain("CADET_DISABLE_PLATFORM=1");
+    expect(cesArgs).not.toContain("CADET_DISABLE_CLOUD=1");
     expect(cesArgs).not.toContain("FOO=bar");
   });
 

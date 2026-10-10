@@ -19,11 +19,11 @@
 import { Modal } from "@mycadet/design-library/components/modal";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { VoiceList } from "@/components/speech/voice-list";
 import { VoiceProvidersNote } from "@/components/speech/voice-providers-note";
 import { useTranslation } from "@/i18n";
-import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/managed-voice-catalog";
+import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/cloud-voice-catalog";
 
 export interface VoicePickerModalProps {
   assistantId: string | null;
@@ -61,7 +61,7 @@ function VoicePickerContent({
 }) {
   const { t } = useTranslation();
   const { available, currentModel, selectModel, selecting } =
-    useManagedVoiceSelection(assistantId);
+    useCloudVoiceSelection(assistantId);
 
   return (
     <>

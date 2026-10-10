@@ -14,7 +14,7 @@
  *
  * Strategy mirrors plans-page-checkout.test.tsx: mock the generated SDK to
  * capture the request bodies and return fixtures, mock `openUrl` to capture
- * the redirect target, and force the platform-hosted gate open. The
+ * the redirect target, and force the cloud-hosted gate open. The
  * design-library Select is a custom combobox — driven by clicking the
  * trigger, then the option whose visible label matches.
  */
@@ -38,7 +38,7 @@ import {
 import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
 import * as nativeAuth from "@/runtime/native-auth";
-import * as platformGate from "@/hooks/use-platform-gate";
+import * as cloudGate from "@/hooks/use-cloud-gate";
 import {
   organizationsBillingPlansRetrieveQueryKey,
   organizationsBillingSubscriptionOnboardingRetrieveQueryKey,
@@ -116,12 +116,12 @@ mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => nativePlatform,
 }));
 
-// Force the platform-hosted gate open so the page mounts its pricing body
+// Force the cloud-hosted gate open so the page mounts its pricing body
 // instead of firing the self-hosted / not-ready redirect effect.
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGate,
-  usePlatformGate: () => "full",
-  useActiveAssistantIsPlatformHosted: () => true,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGate,
+  useCloudGate: () => "full",
+  useActiveAssistantIsCloudHosted: () => true,
   useActiveAssistantLifecycleIsLoading: () => false,
 }));
 
@@ -924,7 +924,7 @@ describe("CustomPlanModal — eligible Pro subscriber", () => {
 });
 
 describe("CustomPlanModal: a fee-less (Mighty) Pro sub", () => {
-  // Only the Mighty package is sold without the platform fee, and a custom
+  // Only the Mighty package is sold without the cloud fee, and a custom
   // plan always carries it, so leaving Mighty for a custom plan adds (and
   // bills) the fee even when every tier stays the same.
   test("opens with the fee row marked as a change and Continue enabled", () => {

@@ -2,7 +2,7 @@
  * Host-bash proxy SSE events (`host_bash_request` / `host_bash_cancel`).
  *
  * Server → client instructions that proxy shell commands to the desktop
- * client (host machine) when running as a managed assistant. The client
+ * client (host machine) when running as a cloud assistant. The client
  * executes and POSTs the result back to `/v1/host-bash-result`;
  * `host_bash_cancel` withdraws an in-flight request. `targetClientId`
  * pins delivery to a single connected client.

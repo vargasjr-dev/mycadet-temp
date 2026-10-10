@@ -17,11 +17,11 @@ import { join } from "node:path";
 
 import { AVATAR_IMAGE_FILENAME } from "@mycadet/avatar-manifest";
 
+import { syncIdentityNameToPlatform } from "../cloud/sync-identity.js";
 import { getConfig, invalidateConfigCache } from "../config/loader.js";
 import type { MemoryCleanupConfig } from "../config/schemas/memory-lifecycle.js";
 import { resetCleanupScheduleThrottle } from "../persistence/cleanup-schedule-state.js";
 import { clearEmbeddingBackendCache } from "../persistence/embeddings/embedding-backend.js";
-import { syncIdentityNameToPlatform } from "../platform/sync-identity.js";
 import { initializeProviders } from "../providers/registry.js";
 import { refreshAuthenticatedApiRateLimit } from "../runtime/middleware/rate-limiter.js";
 import {
@@ -462,7 +462,7 @@ export class ConfigWatcher {
 
 /**
  * Re-read IDENTITY.md and broadcast the parsed fields to clients, best-effort
- * syncing the assistant name to the platform record. The config watcher's
+ * syncing the assistant name to the cloud record. The config watcher's
  * IDENTITY.md-change reaction.
  */
 function broadcastIdentityChange(): void {

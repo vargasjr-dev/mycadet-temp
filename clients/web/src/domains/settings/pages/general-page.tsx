@@ -8,7 +8,7 @@ import {
   DiskPressureBanner,
   type DiskPressureBannerMode,
 } from "@/components/disk-pressure-banner";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { AssistantPicker } from "@/domains/settings/components/assistant-picker";
@@ -34,9 +34,9 @@ import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
 import {
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import {
   getRemoteAssistantDisplayName,
@@ -65,8 +65,8 @@ export function GeneralPage() {
     refetch,
     refetchUntilResized,
   } = useAssistantWithHealthz();
-  const multiPlatformAssistant =
-    useClientFeatureFlagStore.use.multiPlatformAssistant();
+  const multiCloudAssistant =
+    useClientFeatureFlagStore.use.multiCloudAssistant();
   const accountMfaEnabled = useClientFeatureFlagStore.use.accountMfa();
   const settingsSleepPolicy =
     useAssistantFeatureFlagStore.use.settingsSleepPolicy();
@@ -83,12 +83,12 @@ export function GeneralPage() {
     !isCadetCloudRemote() ||
     isNativeMobile;
   const navigate = useNavigate();
-  const platformGate = usePlatformGate();
-  const infraGate = usePlatformGate({ platformHostedOnly: true });
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const cloudGate = useCloudGate();
+  const infraGate = useCloudGate({ cloudHostedOnly: true });
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor({
     assistantId: assistant?.id ?? null,
-    enabled: infraGate === "full" && isPlatformHosted,
+    enabled: infraGate === "full" && isCloudHosted,
   });
   const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -107,7 +107,7 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  const platformAssistant =
+  const cloudAssistant =
     assistant?.is_local && !isLocalClient() ? null : assistant;
   const selected = getSelectedAssistant();
   const hasSelectedLocalAssistant =
@@ -118,10 +118,10 @@ export function GeneralPage() {
   // render the "Current" version line that carries the 7-tap developer-mode
   // unlock, so when neither shows we must render a standalone version line to
   // avoid dropping both the version display and the only unlock affordance
-  // (e.g. logged out of the platform, or a self-hosted/remote-gateway runtime
+  // (e.g. logged out of the cloud, or a self-hosted/remote-gateway runtime
   // that can't upgrade locally).
   const showsUpgradePanel =
-    (infraGate === "full" && !!platformAssistant) ||
+    (infraGate === "full" && !!cloudAssistant) ||
     (canUpgradeLocally && !!assistant);
 
   useEffect(() => {
@@ -163,9 +163,9 @@ export function GeneralPage() {
   };
 
   const showRetire =
-    ((platformGate === "full" || canRetireLocally) && !!platformAssistant) ||
-    (platformGate === "disabled" && !canRetireLocally);
-  // Mirrors DeleteAccountSection's internal platformHostedOnly gate — it
+    ((cloudGate === "full" || canRetireLocally) && !!cloudAssistant) ||
+    (cloudGate === "disabled" && !canRetireLocally);
+  // Mirrors DeleteAccountSection's internal cloudHostedOnly gate — it
   // returns null when gated, so the card must not render an empty shell.
   const showDeleteAccount = infraGate !== "gated";
 
@@ -189,11 +189,11 @@ export function GeneralPage() {
 
       <ProfileCard
         // Handles are platform-only — withhold the prop for self-hosted assistants.
-        assistant={isPlatformHosted ? platformAssistant : null}
-        showHandles={isAuthenticated && platformGate === "full"}
+        assistant={isCloudHosted ? cloudAssistant : null}
+        showHandles={isAuthenticated && cloudGate === "full"}
       >
         <TimezoneSection />
-        {accountMfaEnabled && platformGate !== "gated" && (
+        {accountMfaEnabled && cloudGate !== "gated" && (
           <>
             <div className="border-t border-[var(--border-subtle)]" />
             <section className="flex flex-col gap-2">
@@ -204,10 +204,10 @@ export function GeneralPage() {
                 {t("generalPage.twoFactorDescription")}
               </p>
               <div className="mt-1">
-                {platformGate === "disabled" ? (
-                  <PlatformLoginNotice>
+                {cloudGate === "disabled" ? (
+                  <CloudLoginNotice>
                     {t("generalPage.twoFactorLoginNotice")}
-                  </PlatformLoginNotice>
+                  </CloudLoginNotice>
                 ) : (
                   <TwoFactorSection />
                 )}
@@ -221,7 +221,7 @@ export function GeneralPage() {
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
         accessory={
-          infraGate === "full" && platformAssistant ? (
+          infraGate === "full" && cloudAssistant ? (
             <Button
               variant="outlined"
               onClick={() => setUpdateWindowOpen(true)}
@@ -232,18 +232,18 @@ export function GeneralPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          {infraGate === "full" && platformAssistant && (
+          {infraGate === "full" && cloudAssistant && (
             <>
               <AssistantUpgrades
-                assistantId={platformAssistant.id}
+                assistantId={cloudAssistant.id}
                 currentVersion={versionValue}
-                releaseChannel={platformAssistant.release_channel}
+                releaseChannel={cloudAssistant.release_channel}
                 onUpgradeComplete={() => {
                   void refetch();
                 }}
               />
               <PreviewReleaseChannel
-                assistantId={platformAssistant.id}
+                assistantId={cloudAssistant.id}
                 onComplete={() => {
                   void refetch();
                 }}
@@ -272,16 +272,16 @@ export function GeneralPage() {
             </div>
           )}
           {infraGate === "disabled" && !canUpgradeLocally && (
-            <PlatformLoginNotice>
+            <CloudLoginNotice>
               {t("generalPage.updatesLoginNotice")}
-            </PlatformLoginNotice>
+            </CloudLoginNotice>
           )}
           <PreviewUiChannel />
         </div>
       </DetailCard>
-      {infraGate === "full" && platformAssistant && (
+      {infraGate === "full" && cloudAssistant && (
         <UpdateWindowModal
-          assistantId={platformAssistant.id}
+          assistantId={cloudAssistant.id}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />
@@ -304,9 +304,9 @@ export function GeneralPage() {
           title={t("generalPage.computeResourcesTitle")}
           subtitle={t("generalPage.computeResourcesSubtitle")}
         >
-          <PlatformLoginNotice>
+          <CloudLoginNotice>
             {t("generalPage.computeResourcesLoginNotice")}
-          </PlatformLoginNotice>
+          </CloudLoginNotice>
         </DetailCard>
       )}
 
@@ -334,12 +334,12 @@ export function GeneralPage() {
 
       <PairDeviceCard />
 
-      {infraGate === "full" && platformAssistant && settingsSleepPolicy && (
+      {infraGate === "full" && cloudAssistant && settingsSleepPolicy && (
         <DetailCard
           title={t("generalPage.sleepPolicyTitle")}
           subtitle={t("generalPage.sleepPolicySubtitle")}
         >
-          <AssistantSleepPolicy assistantId={platformAssistant.id} />
+          <AssistantSleepPolicy assistantId={cloudAssistant.id} />
         </DetailCard>
       )}
       {infraGate === "disabled" && settingsSleepPolicy && (
@@ -347,13 +347,13 @@ export function GeneralPage() {
           title={t("generalPage.sleepPolicyTitle")}
           subtitle={t("generalPage.sleepPolicySubtitle")}
         >
-          <PlatformLoginNotice>
+          <CloudLoginNotice>
             {t("generalPage.sleepPolicyLoginNotice")}
-          </PlatformLoginNotice>
+          </CloudLoginNotice>
         </DetailCard>
       )}
 
-      {multiPlatformAssistant && !showAssistantSwitcherCard && (
+      {multiCloudAssistant && !showAssistantSwitcherCard && (
         <AssistantPicker />
       )}
 
@@ -383,13 +383,13 @@ export function GeneralPage() {
                   {t("generalPage.retireAssistantDescription")}
                 </p>
                 <div className="mt-1">
-                  {(platformGate === "full" || canRetireLocally) &&
-                  platformAssistant ? (
-                    <RetireAssistant assistantId={platformAssistant.id} />
+                  {(cloudGate === "full" || canRetireLocally) &&
+                  cloudAssistant ? (
+                    <RetireAssistant assistantId={cloudAssistant.id} />
                   ) : (
-                    <PlatformLoginNotice>
+                    <CloudLoginNotice>
                       {t("generalPage.retireAssistantLoginNotice")}
-                    </PlatformLoginNotice>
+                    </CloudLoginNotice>
                   )}
                 </div>
               </section>

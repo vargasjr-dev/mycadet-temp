@@ -42,7 +42,7 @@ function seedWebSearch(
   });
 }
 
-mock.module("../managed-search-proxy.js", () => ({
+mock.module("../cloud-search-proxy.js", () => ({
   callManagedSearchProxy: async (
     provider: string,
     request: Record<string, unknown>,
@@ -117,7 +117,7 @@ describe("web_search tool", () => {
 
   // ---- Provider cadet (managed, provider is the only axis) ---------------
 
-  test("provider cadet with no mode routes to the platform proxy", async () => {
+  test("provider cadet with no mode routes to the cloud proxy", async () => {
     seedWebSearch(undefined, "cadet");
 
     const result = await execute({ query: "cadet managed query" });
@@ -148,7 +148,7 @@ describe("web_search tool", () => {
       status: 402,
       headers: { "content-type": "application/json" },
       body: { detail: "Insufficient balance" },
-      message: "Managed search proxy returned status 402: Insufficient balance",
+      message: "Cloud search proxy returned status 402: Insufficient balance",
     };
     let byokFetchCalls = 0;
     globalThis.fetch = (async () => {
@@ -185,7 +185,7 @@ describe("web_search tool", () => {
     expect(mockManagedSearchProxyCalls).toHaveLength(0);
   });
 
-  test("provider native with no keys falls back to the platform proxy", async () => {
+  test("provider native with no keys falls back to the cloud proxy", async () => {
     seedWebSearch(undefined, "inference-provider-native");
 
     const result = await execute({ query: "no key native query" });
@@ -471,7 +471,7 @@ describe("web_search tool", () => {
     expect(callCount).toBe(4);
   });
 
-  // ---- Managed Brave provider -------------------------------------------
+  // ---- Cloud Brave provider -------------------------------------------
 
   test("provider cadet uses Brave proxy without BYOK provider keys", async () => {
     seedWebSearch(undefined, "cadet");
@@ -483,9 +483,9 @@ describe("web_search tool", () => {
         web: {
           results: [
             {
-              title: "Managed Result",
+              title: "Cloud Result",
               url: "https://example.com/managed",
-              description: "Managed Brave result",
+              description: "Cloud Brave result",
             },
           ],
         },
@@ -500,7 +500,7 @@ describe("web_search tool", () => {
     });
 
     expect(result.isError).toBe(false);
-    expect(result.content).toContain("Managed Result");
+    expect(result.content).toContain("Cloud Result");
     expect(mockManagedSearchProxyCalls).toHaveLength(1);
     expect(mockManagedSearchProxyCalls[0]).toMatchObject({
       provider: "brave",
@@ -565,7 +565,7 @@ describe("web_search tool", () => {
     );
   });
 
-  test("provider cadet passes abort signal to the platform proxy", async () => {
+  test("provider cadet passes abort signal to the cloud proxy", async () => {
     seedWebSearch(undefined, "cadet");
     const controller = new AbortController();
 
@@ -575,7 +575,7 @@ describe("web_search tool", () => {
     expect(mockManagedSearchProxyCalls[0].signal).toBe(controller.signal);
   });
 
-  test("provider cadet maps insufficient balance to a managed usage error", async () => {
+  test("provider cadet maps insufficient balance to a cloud usage error", async () => {
     seedWebSearch(undefined, "cadet");
     mockManagedSearchProxyResult = {
       ok: false,
@@ -583,7 +583,7 @@ describe("web_search tool", () => {
       status: 402,
       headers: { "content-type": "application/json" },
       body: { detail: "Insufficient balance" },
-      message: "Managed search proxy returned status 402: Insufficient balance",
+      message: "Cloud search proxy returned status 402: Insufficient balance",
     };
 
     const result = await execute({ query: "billing query" });
@@ -607,7 +607,7 @@ describe("web_search tool", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain(
-      "Managed Brave Search provider returned status 400",
+      "Cloud Brave Search provider returned status 400",
     );
   });
 
@@ -616,13 +616,13 @@ describe("web_search tool", () => {
     mockManagedSearchProxyResult = {
       ok: false,
       kind: "unavailable",
-      message: "Managed search proxy is unavailable in this environment.",
+      message: "Cloud search proxy is unavailable in this environment.",
     };
 
     const result = await execute({ query: "local managed query" });
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("Managed search proxy is unavailable");
+    expect(result.content).toContain("Cloud search proxy is unavailable");
     expect(result.content).toContain("Log in to Cadet");
   });
 

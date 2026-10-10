@@ -13,7 +13,7 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
-// Pin the platform to a pointer device, so the control opens its POPOVER and
+// Pin the cloud to a pointer device, so the control opens its POPOVER and
 // not the touch bottom sheet. Unmocked, `matchMedia` in the test DOM does not
 // answer either query the way a real browser would.
 mock.module("@/hooks/use-is-mobile", () => ({

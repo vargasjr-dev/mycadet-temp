@@ -478,7 +478,7 @@ export async function importCommit(
 }
 
 /**
- * Poll the status of a managed export job.
+ * Poll the status of a cloud export job.
  *
  * Only applicable to managed targets. Runtime exports are synchronous
  * and do not require status polling.
@@ -491,7 +491,7 @@ export async function pollExportStatus(
 }
 
 /**
- * Poll the status of a managed import job.
+ * Poll the status of a cloud import job.
  *
  * Only applicable to managed targets. Runtime imports are synchronous
  * and do not require status polling.
@@ -579,7 +579,7 @@ interface PollOptions {
 }
 
 /**
- * Poll a managed job until it reaches a terminal state (complete or failed).
+ * Poll a cloud job until it reaches a terminal state (complete or failed).
  *
  * Returns the final status response. Throws if maxAttempts is exceeded.
  */

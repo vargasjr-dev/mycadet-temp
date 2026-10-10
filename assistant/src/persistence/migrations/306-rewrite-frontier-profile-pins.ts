@@ -13,7 +13,7 @@ const PIN_TABLES = ["conversations", "cron_jobs"] as const;
 /**
  * Rewrite persisted `frontier` inference-profile pins to `quality-optimized`.
  *
- * The managed `frontier` profile folds into `quality-optimized` (both resolve to
+ * The cloud `frontier` profile folds into `quality-optimized` (both resolve to
  * Anthropic Opus on `anthropic-managed`). The workspace-config migration removes
  * the profile definition, but a profile key can also be pinned outside
  * config.json — on a conversation (`conversations.inference_profile`) or a

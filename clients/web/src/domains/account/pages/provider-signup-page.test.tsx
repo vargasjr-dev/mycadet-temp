@@ -38,8 +38,8 @@ mock.module("@/lib/auth/allauth-client", () => ({
   isConflict: () => false,
 }));
 
-mock.module("@/assistant/platform-assistants-sync", () => ({
-  refreshPlatformAssistantsIfStale: async () => {},
+mock.module("@/assistant/cloud-assistants-sync", () => ({
+  refreshCloudAssistantsIfStale: async () => {},
 }));
 
 const refreshSession = mock(async () => true);

@@ -134,7 +134,7 @@ async function captureStagedView(
     let image = await win.webContents.capturePage();
     if (image.isEmpty()) {
       // `paintWhenInitiallyHidden` should composite hidden windows, but if
-      // the platform returned a blank frame, show it offscreen and retry.
+      // the cloud returned a blank frame, show it offscreen and retry.
       win.showInactive();
       await delay(EMPTY_CAPTURE_RETRY_DELAY_MS);
       image = await win.webContents.capturePage();

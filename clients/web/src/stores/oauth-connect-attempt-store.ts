@@ -5,7 +5,7 @@ import { createSelectors } from "@/utils/create-selectors";
 /**
  * Zustand store for managed-OAuth connects that are waiting on the user.
  *
- * The authoritative record of a connection is the platform's connections list,
+ * The authoritative record of a connection is the cloud's connections list,
  * so the only thing this holds is what the server does not know yet: an
  * authorization is open somewhere and which connections existed before it
  * started.
@@ -28,16 +28,16 @@ export interface OAuthConnectAttempt {
   /** When the authorization opened, used to stop polling for a stale attempt. */
   startedAt: number;
   /**
-   * The id the PLATFORM knows this assistant by. Absent until the identity
+   * The id the CLOUD knows this assistant by. Absent until the identity
    * resolves: the attempt is recorded before that, so the setup requests
    * cannot race a second authorization into the same slot.
    */
-  platformAssistantId?: string;
+  cloudAssistantId?: string;
   /**
    * Connection signatures captured before authorization. A grant is only new
    * when it differs from these, which is what keeps an account the user
    * already connected from reading as the one they just authorized. Absent
-   * for the same reason as `platformAssistantId`.
+   * for the same reason as `cloudAssistantId`.
    */
   baselineSignatures?: ReadonlyMap<string, string>;
   /**
@@ -65,7 +65,7 @@ interface OAuthConnectAttemptActions {
     key: string,
     requestId: string,
     resolved: Required<
-      Pick<OAuthConnectAttempt, "platformAssistantId" | "baselineSignatures">
+      Pick<OAuthConnectAttempt, "cloudAssistantId" | "baselineSignatures">
     >,
   ) => void;
   /** Record that the provider's callback reported success for `requestId`. */

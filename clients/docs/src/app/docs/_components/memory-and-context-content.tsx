@@ -267,7 +267,7 @@ export function MemoryAndContextContent() {
           </p>
           <p className="mb-0 text-zinc-600">
             Self-hosted assistants keep their workspace and memory on
-            infrastructure you control. Managed hosting stores that data in
+            infrastructure you control. Cloud hosting stores that data in
             Cadet’s hosted environment. See{" "}
             <Link
               href="/docs/trust-security/privacy-and-data"

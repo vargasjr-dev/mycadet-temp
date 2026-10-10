@@ -80,24 +80,24 @@ mock.module("@/generated/api/client.gen", () => ({
 }));
 
 let selfHosted = false;
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
   useActiveAssistantIsSelfHosted: () => selfHosted,
   useActiveAssistantLifecycleIsLoading: () => false,
 }));
 
-// Local-mode ids are lockfile slugs; the platform wants the registered
+// Local-mode ids are lockfile slugs; the cloud wants the registered
 // UUID. Stand in the resolver: a UUID resolves to itself (as the real one
 // does, without a network round-trip) and a slug maps to ASSISTANT_ID.
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 const resolvedFor: string[] = [];
-mock.module("@/hooks/use-platform-assistant-id", () => ({
-  usePlatformAssistantId: (id: string | null) => {
+mock.module("@/hooks/use-cloud-assistant-id", () => ({
+  useCloudAssistantId: (id: string | null) => {
     if (id) {
       resolvedFor.push(id);
     }
     return {
-      platformAssistantId: id ? (UUID_RE.test(id) ? id : ASSISTANT_ID) : null,
+      cloudAssistantId: id ? (UUID_RE.test(id) ? id : ASSISTANT_ID) : null,
       isLoading: false,
       error: null,
     };
@@ -249,7 +249,7 @@ describe("AccessConsentSetting", () => {
     await screen.findByText("Staff access ends in 24 hours.");
   });
 
-  test("hides keep-on when the platform predates it, so a click can never send an unsupported field", async () => {
+  test("hides keep-on when the cloud predates it, so a click can never send an unsupported field", async () => {
     consented = true;
     expiresAt = new Date(Date.now() + 3 * 60 * 60_000).toISOString();
     platformSupportsKeepOn = false;
@@ -327,7 +327,7 @@ describe("AccessConsentSetting", () => {
     expect(screen.queryByTestId("debug-bundle-export")).toBeNull();
   });
 
-  test("a local-mode slug is resolved to the platform UUID before any platform call", async () => {
+  test("a local-mode slug is resolved to the cloud UUID before any platform call", async () => {
     selfHosted = true;
     consented = true;
     expiresAt = new Date(Date.now() + 3 * 60 * 60_000).toISOString();

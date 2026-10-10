@@ -28,7 +28,7 @@ export function paymentMethodCards(
       id: "primary",
       brand: config.payment_method_brand,
       last4: config.payment_method_last4,
-      // `?? null` because a platform deployment older than the expiry fields
+      // `?? null` because a cloud deployment older than the expiry fields
       // omits the keys entirely rather than sending them null.
       expMonth: config.payment_method_exp_month ?? null,
       expYear: config.payment_method_exp_year ?? null,

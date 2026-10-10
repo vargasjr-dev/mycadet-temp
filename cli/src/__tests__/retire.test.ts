@@ -21,7 +21,7 @@ import { join } from "node:path";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import { loadAllAssistants } from "../lib/assistant-config.js";
 import * as loopbackFetchModule from "../lib/loopback-fetch.js";
-import * as platformClientModule from "../lib/platform-client.js";
+import * as cloudClientModule from "../lib/cloud-client.js";
 import * as retireLocalModule from "../lib/retire-local.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
@@ -35,11 +35,11 @@ const originalStdinIsRaw = process.stdin.isRaw;
 const originalSetRawMode = process.stdin.setRawMode;
 const originalStdoutWrite = process.stdout.write;
 const realRetireLocalModule = { ...retireLocalModule };
-const realPlatformClientModule = { ...platformClientModule };
+const realCloudClientModule = { ...cloudClientModule };
 const realLoopbackFetchModule = { ...loopbackFetchModule };
 
 const retireLocalMock = mock(async () => {});
-const readPlatformTokenMock = mock((): string | null => null);
+const readCloudTokenMock = mock((): string | null => null);
 const authHeadersMock = mock(async () => ({
   "Content-Type": "application/json",
   "X-Session-Token": "session-token",
@@ -51,7 +51,7 @@ const authHeadersForKnownOrganizationMock = mock(
     "Cadet-Organization-Id": organizationId,
   }),
 );
-const getPlatformUrlMock = mock(() => "https://platform.example.com");
+const getCloudUrlMock = mock(() => "https://platform.example.com");
 const readGatewayCredentialMock = mock(
   async (
     _gatewayUrl: string,
@@ -71,12 +71,12 @@ mock.module("../lib/retire-local.js", () => ({
   retireLocal: retireLocalMock,
 }));
 
-mock.module("../lib/platform-client.js", () => ({
+mock.module("../lib/cloud-client.js", () => ({
   authHeaders: authHeadersMock,
   authHeadersForKnownOrganization: authHeadersForKnownOrganizationMock,
-  getPlatformUrl: getPlatformUrlMock,
+  getCloudUrl: getCloudUrlMock,
   readGatewayCredential: readGatewayCredentialMock,
-  readPlatformToken: readPlatformTokenMock,
+  readCloudToken: readCloudTokenMock,
 }));
 
 mock.module("../lib/loopback-fetch.js", () => ({
@@ -177,8 +177,8 @@ describe("cadet retire", () => {
     }) as typeof process.exit;
     retireLocalMock.mockReset();
     retireLocalMock.mockResolvedValue(undefined);
-    readPlatformTokenMock.mockReset();
-    readPlatformTokenMock.mockReturnValue(null);
+    readCloudTokenMock.mockReset();
+    readCloudTokenMock.mockReturnValue(null);
     authHeadersMock.mockReset();
     authHeadersMock.mockResolvedValue({
       "Content-Type": "application/json",
@@ -192,8 +192,8 @@ describe("cadet retire", () => {
         "Cadet-Organization-Id": organizationId,
       }),
     );
-    getPlatformUrlMock.mockReset();
-    getPlatformUrlMock.mockReturnValue("https://platform.example.com");
+    getCloudUrlMock.mockReset();
+    getCloudUrlMock.mockReturnValue("https://platform.example.com");
     readGatewayCredentialMock.mockReset();
     readGatewayCredentialMock.mockResolvedValue({
       value: null,
@@ -220,7 +220,7 @@ describe("cadet retire", () => {
 
   afterAll(() => {
     mock.module("../lib/retire-local.js", () => realRetireLocalModule);
-    mock.module("../lib/platform-client.js", () => realPlatformClientModule);
+    mock.module("../lib/cloud-client.js", () => realCloudClientModule);
     mock.module("../lib/loopback-fetch.js", () => realLoopbackFetchModule);
     if (originalLockfileDir === undefined) {
       delete process.env.CADET_LOCKFILE_DIR;
@@ -255,8 +255,8 @@ describe("cadet retire", () => {
   test("local retire unregisters the self-hosted platform record first", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test/api");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test/api");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
       if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
@@ -302,8 +302,8 @@ describe("cadet retire", () => {
       localUrl: localGatewayUrl,
     });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (gatewayUrl, name) => {
       expect(gatewayUrl).toBe(localGatewayUrl);
       if (name === "cadet:platform_assistant_id") {
@@ -346,13 +346,13 @@ describe("cadet retire", () => {
   test("local retire uses saved platform registration when local credentials are unreachable", async () => {
     const entry = makeEntry("assistant-1", {
       name: "Example Assistant",
-      platformAssistantId: "platform-assistant-1",
-      platformBaseUrl: "https://platform.example.test",
-      platformOrganizationId: "org-123",
+      cloudAssistantId: "platform-assistant-1",
+      cloudBaseUrl: "https://platform.example.test",
+      cloudOrganizationId: "org-123",
     });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockResolvedValue({
       value: null,
       unreachable: true,
@@ -384,10 +384,10 @@ describe("cadet retire", () => {
     expect(loadAllAssistants()).toEqual([]);
   });
 
-  test("local retire continues when local credentials are unreachable and no saved platform registration exists", async () => {
+  test("local retire continues when local credentials are unreachable and no saved cloud registration exists", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
+    readCloudTokenMock.mockReturnValue("session-token");
     readGatewayCredentialMock.mockResolvedValue({
       value: null,
       unreachable: true,
@@ -398,7 +398,7 @@ describe("cadet retire", () => {
 
     expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
     expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "no saved platform registration is available",
+      "no saved cloud registration is available",
     );
     expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
     expect(loadAllAssistants()).toEqual([]);
@@ -407,8 +407,8 @@ describe("cadet retire", () => {
   test("local retire skips platform unregister when stored platform URL origin mismatches", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.com");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.com");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
       if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
@@ -435,8 +435,8 @@ describe("cadet retire", () => {
   test("local retire skips platform unregister when stored organization ID is missing", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
       if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
@@ -462,8 +462,8 @@ describe("cadet retire", () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
     process.env.CADET_PLATFORM_TOKEN = "host-session-token";
-    readPlatformTokenMock.mockReturnValue(null);
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test");
+    readCloudTokenMock.mockReturnValue(null);
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
       if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };
@@ -497,8 +497,8 @@ describe("cadet retire", () => {
   test("local retire continues when self-hosted platform unregister fails", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
-    readPlatformTokenMock.mockReturnValue("session-token");
-    getPlatformUrlMock.mockReturnValue("https://platform.example.test");
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
     readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
       if (name === "cadet:platform_assistant_id") {
         return { value: "platform-assistant-1", unreachable: false };

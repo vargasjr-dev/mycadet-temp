@@ -76,15 +76,15 @@ function getRemoteGatewayIngressUrl(): string {
 
 export interface LifecycleServiceInputs {
   sessionStatus: SessionStatus;
-  hasPlatformSession: boolean;
+  hasCloudSession: boolean;
   /** The TanStack Query client owned by `RootLayout`'s provider. */
   queryClient: QueryClient;
   /**
-   * The platform assistant the user has selected (multi-assistant). `null`
+   * The cloud assistant the user has selected (multi-assistant). `null`
    * resolves the default first-listed assistant — the pre-multi-assistant
    * behavior. Optional so existing `setInputs` callers/tests need no change.
    */
-  selectedPlatformAssistantId?: string | null;
+  selectedCloudAssistantId?: string | null;
   /**
    * Whether the org store has hydrated (or no platform session exists).
    * Platform API calls require the Cadet-Organization-Id header;
@@ -116,9 +116,9 @@ class AssistantLifecycleService {
   private ready = false;
   private inputs: LifecycleServiceInputs = {
     sessionStatus: "initializing",
-    hasPlatformSession: false,
+    hasCloudSession: false,
     queryClient: null as unknown as QueryClient,
-    selectedPlatformAssistantId: null,
+    selectedCloudAssistantId: null,
   };
   private probeTimer: ReturnType<typeof setTimeout> | null = null;
   private healthHeartbeatTimer: ReturnType<typeof setTimeout> | null = null;
@@ -284,7 +284,7 @@ class AssistantLifecycleService {
       return;
     }
     // Check gateway auth before the unauthenticated-reset below: local (gateway)
-    // and platform are independent authorities, so a platform-session loss that
+    // and platform are independent authorities, so a cloud-session loss that
     // flips `sessionStatus` must not tear down a gateway-driven local lifecycle.
     if (isGatewayAuthMode()) {
       this.applyGatewayAuthShortCircuit();
@@ -298,7 +298,7 @@ class AssistantLifecycleService {
       return;
     }
 
-    if (this.inputs.hasPlatformSession) {
+    if (this.inputs.hasCloudSession) {
       setSelfHostedConnection(null);
     }
     if (!this.inputs.isOrgReady) {
@@ -335,7 +335,7 @@ class AssistantLifecycleService {
    *
    * `assistantIdOverride` pins this one refresh to a specific assistant
    * instead of the multi-assistant selection carried in
-   * `inputs.selectedPlatformAssistantId`. The onboarding handoff uses it so a
+   * `inputs.selectedCloudAssistantId`. The onboarding handoff uses it so a
    * just-hatched assistant is the one fetched and projected — otherwise, in a
    * multi-assistant session where a *different* assistant is already selected,
    * the refresh would re-fetch that selection and `projectActive` would
@@ -363,7 +363,7 @@ class AssistantLifecycleService {
       // doesn't silently replay. Poll-driven projections go through
       // `applyServerResult` to avoid the read-back loop.
       const selectedId =
-        assistantIdOverride ?? this.inputs.selectedPlatformAssistantId ?? null;
+        assistantIdOverride ?? this.inputs.selectedCloudAssistantId ?? null;
       let result = await this.inputs.queryClient.fetchQuery({
         queryKey: assistantQueryKey(selectedId),
         queryFn: () => getAssistant(selectedId ?? undefined),
@@ -573,8 +573,8 @@ class AssistantLifecycleService {
    * both short-circuit through this; keep them in lockstep.
    */
   /**
-   * Project a managed-active server result. Drops any stale
-   * self-hosted connection (runtime calls belong on the platform
+   * Project a cloud-active server result. Drops any stale
+   * self-hosted connection (runtime calls belong on the cloud
    * now, and we don't want a leftover token attached), sets the
    * id BEFORE the kind flips so the conversation list query and
    * `daemonUnreachableInterceptor` have a target on first
@@ -606,13 +606,13 @@ class AssistantLifecycleService {
    * runtime-proxied calls to the gateway and attach
    * `Authorization: Bearer`. The slots have to be primed before
    * `assistantId` flips, otherwise the first conversation list
-   * fetch races us and hits the platform.
+   * fetch races us and hits the cloud.
    *
    * Both `ingress_url` and `platform_actor_token` are nullable
    * in the serializer:
    *   - `ingress_url`: an assistant can be `is_local=true` before
    *     its gateway hostname is known. In that case the URL slot
-   *     stays null and the platform's proxy view 404s cleanly.
+   *     stays null and the cloud's proxy view 404s cleanly.
    *   - `platform_actor_token`: brief window after hatch where
    *     `bootstrap_platform_actor_token` is still in-flight. The
    *     request fires unauthenticated, the gateway responds 401,
@@ -1025,7 +1025,7 @@ class AssistantLifecycleService {
     });
     this.inputs = {
       sessionStatus: "initializing",
-      hasPlatformSession: false,
+      hasCloudSession: false,
       queryClient: null as unknown as QueryClient,
     };
     useAssistantLifecycleStore.setState({ assistantState: this.state });

@@ -14,7 +14,7 @@ import {
 /**
  * Normalized view of an OpenAI-compatible `APIError`. The SDK reads
  * `error.message` and renders bodies it can't parse as "(no body)", so
- * Django `{"detail": "..."}` payloads from the managed runtime proxy and
+ * Django `{"detail": "..."}` payloads from the cloud runtime proxy and
  * OpenRouter's nested `error.metadata.raw` get dropped. We capture the raw
  * non-2xx body in a `fetch` wrapper and reconstruct the useful fields here.
  */
@@ -110,7 +110,7 @@ export function deriveReason(
     return "request_shape_unsupported";
   }
 
-  // The managed proxy's daily-limit 402 shares the status with generic credit
+  // The cloud proxy's daily-limit 402 shares the status with generic credit
   // exhaustion; match its specific body code first so it isn't swallowed.
   if (FREE_TIER_DAILY_LIMIT_PATTERNS.some((re) => re.test(haystack))) {
     return "free_tier_daily_limit_reached";

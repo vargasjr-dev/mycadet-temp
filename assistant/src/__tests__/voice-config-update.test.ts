@@ -2,13 +2,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import * as actualManagedSpeech from "../platform/managed-speech.js";
+import * as actualCloudSpeech from "../cloud/cloud-speech.js";
 
-let mockManagedSpeechAvailable = false;
+let mockCloudSpeechAvailable = false;
 
-mock.module("../platform/managed-speech.js", () => ({
-  ...actualManagedSpeech,
-  managedSpeechAvailable: async () => mockManagedSpeechAvailable,
+mock.module("../cloud/cloud-speech.js", () => ({
+  ...actualCloudSpeech,
+  managedSpeechAvailable: async () => mockCloudSpeechAvailable,
 }));
 
 // ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ beforeEach(() => {
   ensureTestDir();
   writeConfig({});
   invalidateConfigCache();
-  mockManagedSpeechAvailable = false;
+  mockCloudSpeechAvailable = false;
 });
 
 afterEach(() => {
@@ -145,7 +145,7 @@ describe("voice_config_update — tts_provider", () => {
   });
 
   test("tts_provider cadet persists when a cloud connection is available", async () => {
-    mockManagedSpeechAvailable = true;
+    mockCloudSpeechAvailable = true;
 
     const result = await run(
       { setting: "tts_provider", value: "cadet" },
@@ -245,7 +245,7 @@ describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
     ).toBeUndefined();
   });
 
-  test("accepts an ElevenLabs voice id as a managed model (managed serves ElevenLabs voices)", async () => {
+  test("accepts an ElevenLabs voice id as a cloud model (managed serves ElevenLabs voices)", async () => {
     makeCadetActive();
 
     const result = await run(
@@ -259,7 +259,7 @@ describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
     );
   });
 
-  test("does not broadcast the ElevenLabs ttsVoiceId key for a managed voice", async () => {
+  test("does not broadcast the ElevenLabs ttsVoiceId key for a cloud voice", async () => {
     makeCadetActive();
     const messages: any[] = [];
     const ctx = makeContext({
@@ -276,7 +276,7 @@ describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
     expect(result.content).not.toContain("broadcast");
   });
 
-  test("hints the inline picker for the next managed voice change", async () => {
+  test("hints the inline picker for the next cloud voice change", async () => {
     makeCadetActive();
 
     const result = await run(
@@ -285,7 +285,7 @@ describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect(result.content).toStartWith("Cadet managed voice updated to");
+    expect(result.content).toStartWith("Cadet Cloud voice updated to");
     expect(result.content).toContain(
       'ui_show { surface_type: "voice_picker", data: {} }',
     );
@@ -537,7 +537,7 @@ describe("voice_config_update — stt_provider", () => {
   });
 
   test("persists the cadet provider when a cloud connection is available", async () => {
-    mockManagedSpeechAvailable = true;
+    mockCloudSpeechAvailable = true;
 
     const result = await run(
       { setting: "stt_provider", value: "cadet" },
@@ -549,7 +549,7 @@ describe("voice_config_update — stt_provider", () => {
   });
 
   test("rejects the cadet provider without a cloud connection", async () => {
-    mockManagedSpeechAvailable = false;
+    mockCloudSpeechAvailable = false;
 
     const result = await run(
       { setting: "stt_provider", value: "cadet" },
@@ -917,7 +917,7 @@ describe("voice_config_update - stt_language", () => {
 
 describe("voice_config_update — catalog-driven provider validation", () => {
   test("rejects tts_provider cadet without a cloud connection", async () => {
-    mockManagedSpeechAvailable = false;
+    mockCloudSpeechAvailable = false;
 
     const result = await run(
       { setting: "tts_provider", value: "cadet" },
@@ -931,7 +931,7 @@ describe("voice_config_update — catalog-driven provider validation", () => {
 
   test("accepts every provider ID in the catalog", async () => {
     // The catalog includes cadet, which is gated on a cloud connection.
-    mockManagedSpeechAvailable = true;
+    mockCloudSpeechAvailable = true;
     const catalogIds = listCatalogProviderIds();
     expect(catalogIds.length).toBeGreaterThanOrEqual(1);
 

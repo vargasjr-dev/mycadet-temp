@@ -15,7 +15,7 @@ mock.module("../daemon/skill-memory-refresh.js", () => ({
   refreshSkillCapabilityMemories: mockRefreshSkillCapabilityMemories,
 }));
 
-import { executeDeleteManagedSkill } from "../tools/skills/delete-managed.js";
+import { executeDeleteCloudSkill } from "../tools/skills/delete-cloud.js";
 import type { ToolContext } from "../tools/types.js";
 
 function makeContext(): ToolContext {
@@ -44,7 +44,7 @@ afterEach(() => {
   rmSync(join(TEST_DIR, "skills"), { recursive: true, force: true });
 });
 
-describe("delete_managed_skill tool", () => {
+describe("delete_cloud_skill tool", () => {
   test("keeps legacy index control as a deprecated no-op schema field", () => {
     const tools = JSON.parse(
       readFileSync(
@@ -56,7 +56,7 @@ describe("delete_managed_skill tool", () => {
       ),
     );
     const deleteTool = tools.tools.find(
-      (tool: { name: string }) => tool.name === "delete_managed_skill",
+      (tool: { name: string }) => tool.name === "delete_cloud_skill",
     );
 
     expect(deleteTool).toBeDefined();
@@ -74,7 +74,7 @@ describe("delete_managed_skill tool", () => {
     const staleIndex = "- doomed\n- survivor\n";
     writeFileSync(indexPath, staleIndex);
 
-    const result = await executeDeleteManagedSkill(
+    const result = await executeDeleteCloudSkill(
       {
         skill_id: "doomed",
       },
@@ -97,7 +97,7 @@ describe("delete_managed_skill tool", () => {
   test("accepts legacy remove_from_index input without returning index metadata", async () => {
     createSkill("legacy-delete");
 
-    const result = await executeDeleteManagedSkill(
+    const result = await executeDeleteCloudSkill(
       {
         skill_id: "legacy-delete",
         remove_from_index: true,
@@ -114,7 +114,7 @@ describe("delete_managed_skill tool", () => {
   });
 
   test("returns error for non-existent skill", async () => {
-    const result = await executeDeleteManagedSkill(
+    const result = await executeDeleteCloudSkill(
       {
         skill_id: "ghost",
       },
@@ -127,13 +127,13 @@ describe("delete_managed_skill tool", () => {
   });
 
   test("rejects missing skill_id", async () => {
-    const result = await executeDeleteManagedSkill({}, makeContext());
+    const result = await executeDeleteCloudSkill({}, makeContext());
     expect(result.isError).toBe(true);
     expect(result.content).toContain("skill_id is required");
   });
 
   test("rejects invalid skill_id", async () => {
-    const result = await executeDeleteManagedSkill(
+    const result = await executeDeleteCloudSkill(
       {
         skill_id: "../escape",
       },

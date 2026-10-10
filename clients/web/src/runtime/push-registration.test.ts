@@ -211,11 +211,11 @@ mock.module("@/generated/api/sdk.gen", () => ({
 }));
 
 const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
-const resolvePlatformAssistantIdMock = mock(
+const resolveCloudAssistantIdMock = mock(
   async (assistantId: string) => assistantId as string | null,
 );
-mock.module("@/lib/platform-assistant-id", () => ({
-  resolvePlatformAssistantId: resolvePlatformAssistantIdMock,
+mock.module("@/lib/cloud-assistant-id", () => ({
+  resolveCloudAssistantId: resolveCloudAssistantIdMock,
 }));
 
 // ── error reporting ─────────────────────────────────────────────────────
@@ -305,8 +305,8 @@ beforeEach(() => {
   upsertMock.mockClear();
   deleteMock.mockClear();
   captureErrorMock.mockClear();
-  resolvePlatformAssistantIdMock.mockClear();
-  resolvePlatformAssistantIdMock.mockImplementation(
+  resolveCloudAssistantIdMock.mockClear();
+  resolveCloudAssistantIdMock.mockImplementation(
     async (assistantId: string) => assistantId,
   );
   __resetPushRegistrationStateForTests();
@@ -461,7 +461,7 @@ describe("registerForRemotePush", () => {
   });
 
   test("upserts under the resolved platform UUID for a lockfile slug", async () => {
-    resolvePlatformAssistantIdMock.mockImplementationOnce(
+    resolveCloudAssistantIdMock.mockImplementationOnce(
       async () => PLATFORM_ASSISTANT_ID,
     );
     await registerForRemotePush("local-slug");
@@ -476,7 +476,7 @@ describe("registerForRemotePush", () => {
   });
 
   test("skips upsert when no platform UUID can be resolved", async () => {
-    resolvePlatformAssistantIdMock.mockImplementationOnce(async () => null);
+    resolveCloudAssistantIdMock.mockImplementationOnce(async () => null);
     await registerForRemotePush("self");
     registrationHandler?.({ value: "apns-token-abc" });
     await flushMicrotasks();
@@ -706,7 +706,7 @@ describe("hasSessionConfirmedRemotePushRegistration", () => {
 
   test("ignores a persisted-only registration (reload before any re-upsert)", () => {
     // A record surviving from an earlier session proves nothing about
-    // whether the platform still holds the token row (the server prunes
+    // whether the cloud still holds the token row (the server prunes
     // rows on APNs BadDeviceToken), so it must not count as confirmed.
     localStorage.setItem(
       "cadet:push_registration",

@@ -20,7 +20,7 @@ export const VALID_INFERENCE_PROVIDERS = [
   "openrouter",
 ] as const;
 
-// `cadet` generates through the platform runtime proxy; the backend
+// `cadet` generates through the cloud runtime proxy; the backend
 // (gemini/openai) derives from the selected model's prefix at request time.
 const VALID_IMAGE_GEN_PROVIDERS = [
   "cadet",
@@ -60,7 +60,7 @@ const InferenceServiceSchema = z.object({});
 
 /**
  * Image generation carries no `mode`: `provider` is the only axis. `"cadet"`
- * generates through the platform runtime proxy for the model-appropriate
+ * generates through the cloud runtime proxy for the model-appropriate
  * backend, billed to Cadet credits; `"gemini"`/`"openai"`/`"openrouter"`
  * use the user's key. A `mode` key sent by an older client is stripped at
  * parse.
@@ -74,7 +74,7 @@ const ImageGenerationServiceSchema = z.object({
  * Web-search carries no `mode`: `provider` is the only axis. `"cadet"`
  * searches through the Cadet Cloud search proxy, billed to Cadet
  * credits; `"inference-provider-native"` prefers the inference model's own
- * hosted search, falling back to the user's keys and then the platform
+ * hosted search, falling back to the user's keys and then the cloud
  * proxy; any other provider uses the user's own API key. A `mode` key sent
  * by an older client is stripped at parse.
  */
@@ -90,7 +90,7 @@ const WebSearchServiceSchema = z.object({
 });
 
 /**
- * Web-fetch carries no `mode`: there is no managed proxy for it, so the only
+ * Web-fetch carries no `mode`: there is no cloud proxy for it, so the only
  * axis is which provider backs the tool.
  */
 const WebFetchServiceSchema = z.object({

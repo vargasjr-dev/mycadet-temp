@@ -393,10 +393,10 @@ export function pairAssistant(
       // while imports never silently overwrite a non-paired assistant (see
       // guard above).
       paired: true,
-      // A re-pair may point at a different gateway, so the platform id the
+      // A re-pair may point at a different gateway, so the cloud id the
       // web resolver cached for the old target is dropped; the upsert merge
       // would otherwise keep it and the resolver would never re-probe.
-      platformAssistantId: undefined,
+      cloudAssistantId: undefined,
     },
     undefined,
   );

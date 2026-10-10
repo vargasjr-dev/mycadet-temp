@@ -3,10 +3,10 @@ import { Navigate, useSearchParams } from "react-router";
 
 import {
   requiresFullPageNavigation,
-  requiresPlatformSession,
+  requiresCloudSession,
 } from "@/domains/account/login-flow";
 import { sanitizeReturnTo } from "@/domains/account/return-to";
-import { usePlatformGateWithPending } from "@/hooks/use-platform-gate";
+import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import {
   useIsAuthenticated,
@@ -60,8 +60,8 @@ function ReturnToRedirect({ to }: { to: string }) {
  * `useIsAuthenticated()` also covers a local gateway identity, which has no
  * platform account, so a destination that needs one additionally waits on the
  * platform gate and falls through to the auth screen on `"disabled"`. The gate
- * is the session-only variant: a platform session is the only thing signing in
- * here can produce, so the `platformHostedOnly` dimension — which no auth
+ * is the session-only variant: a cloud session is the only thing signing in
+ * here can produce, so the `cloudHostedOnly` dimension — which no auth
  * screen can change — must not suppress a sign-in the visitor needs.
  *
  * `"pending"` is bounded by the gate, so the auth screen can never hang on the
@@ -72,7 +72,7 @@ export function useReturnToShortCircuit(): ReturnToShortCircuit {
   const [searchParams] = useSearchParams();
   const isAuthenticated = useIsAuthenticated();
   const isSessionInitializing = useIsSessionInitializing();
-  const platformGate = usePlatformGateWithPending();
+  const cloudGate = useCloudGateWithPending();
 
   const rawReturnTo = searchParams.get("returnTo");
   const destination = sanitizeReturnTo(rawReturnTo, routes.assistant);
@@ -86,11 +86,11 @@ export function useReturnToShortCircuit(): ReturnToShortCircuit {
   if (!isAuthenticated) {
     return { kind: "proceed", returnTo: destination };
   }
-  if (requiresPlatformSession(destination)) {
-    if (platformGate === "pending") {
+  if (requiresCloudSession(destination)) {
+    if (cloudGate === "pending") {
       return { kind: "wait" };
     }
-    if (platformGate === "disabled") {
+    if (cloudGate === "disabled") {
       return { kind: "proceed", returnTo: destination };
     }
   }

@@ -50,7 +50,7 @@ beforeEach(() => {
     };
     fetchCalls.push(call);
     const response = await respond(call);
-    // Mirror the platform: a 3xx under `redirect: "error"` rejects instead of
+    // Mirror the cloud: a 3xx under `redirect: "error"` rejects instead of
     // being followed.
     if (
       init?.redirect === "error" &&
@@ -654,7 +654,7 @@ describe("pairAssistant", () => {
     expect(readGuardianToken("desk").accessToken).toBe("t2");
   });
 
-  test("re-pairing to a new gateway drops a cached platformAssistantId", () => {
+  test("re-pairing to a new gateway drops a cached cloudAssistantId", () => {
     const first = pairAssistant([lockfilePath], configDir, {
       credentials: credentials({ deviceId: "dev-re", token: "t1" }),
       name: "desk",
@@ -663,7 +663,7 @@ describe("pairAssistant", () => {
     const cached = readLockfileFromDisk();
     (
       cached.assistants as Array<Record<string, unknown>>
-    )[0]!.platformAssistantId = "11111111-1111-4111-8111-111111111111";
+    )[0]!.cloudAssistantId = "11111111-1111-4111-8111-111111111111";
     fs.writeFileSync(lockfilePath, JSON.stringify(cached, null, 2));
 
     const second = pairAssistant([lockfilePath], configDir, {
@@ -681,7 +681,7 @@ describe("pairAssistant", () => {
     >;
     expect(assistants).toHaveLength(1);
     expect(assistants[0]!.runtimeUrl).toBe("https://new.example.com");
-    expect(assistants[0]!).not.toHaveProperty("platformAssistantId");
+    expect(assistants[0]!).not.toHaveProperty("cloudAssistantId");
   });
 
   test("deletes the just-written token when the lockfile write fails", () => {
@@ -1318,7 +1318,7 @@ describe("pairingPoll", () => {
     expect(readGuardianToken(first.assistantId).accessToken).toBe("acc-2");
   });
 
-  test("records the platform the caller names, defaulting to desktop", async () => {
+  test("records the cloud the caller names, defaulting to desktop", async () => {
     respond = () => json(202, pendingBody());
 
     const cliHandle = await startFromLink();

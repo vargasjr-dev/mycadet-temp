@@ -1,12 +1,12 @@
 /**
  * Install-by-name in disable-platform (air-gapped / self-hosted) mode.
  *
- * With `CADET_DISABLE_PLATFORM=true` there is no platform to serve a verified
+ * With `CADET_DISABLE_CLOUD=true` there is no platform to serve a verified
  * tarball, so `assistant plugins install <name>` resolves the pin from the
  * bundled marketplace catalog and installs through the trusted GitHub path
  * (`trustedSource`, which preserves the curated adapter stub) — with zero
  * platform calls. A name absent from the bundled catalog fails clearly. With
- * platform features enabled, the platform install endpoint is used unchanged.
+ * platform features enabled, the cloud install endpoint is used unchanged.
  */
 
 import {
@@ -28,7 +28,7 @@ const installPluginCalls: InstallPluginOptions[] = [];
 const platformInstallCalls: Array<{ name: string; force?: boolean }> = [];
 
 const realGithub = await import("../install-from-github.js");
-const realPlatform = await import("../install-from-platform.js");
+const realPlatform = await import("../install-from-cloud.js");
 const realCatalogCache = await import("../plugin-catalog-cache.js");
 let platformCatalogSource: PluginMatchSource = {
   kind: "github",
@@ -51,7 +51,7 @@ mock.module("../install-from-github.js", () => ({
   },
 }));
 
-mock.module("../install-from-platform.js", () => ({
+mock.module("../install-from-cloud.js", () => ({
   ...realPlatform,
   installPluginViaPlatform: async (opts: { name: string; force?: boolean }) => {
     platformInstallCalls.push(opts);
@@ -104,8 +104,8 @@ async function runInstall(name: string): Promise<void> {
 }
 
 describe("plugins install by name — disable-platform mode", () => {
-  const savedDisable = process.env.CADET_DISABLE_PLATFORM;
-  const savedIsPlatform = process.env.IS_PLATFORM;
+  const savedDisable = process.env.CADET_DISABLE_CLOUD;
+  const savedIsPlatform = process.env.IS_CLOUD;
   const savedExitCode = process.exitCode;
 
   beforeEach(() => {
@@ -123,22 +123,22 @@ describe("plugins install by name — disable-platform mode", () => {
 
   afterEach(() => {
     if (savedDisable === undefined) {
-      delete process.env.CADET_DISABLE_PLATFORM;
+      delete process.env.CADET_DISABLE_CLOUD;
     } else {
-      process.env.CADET_DISABLE_PLATFORM = savedDisable;
+      process.env.CADET_DISABLE_CLOUD = savedDisable;
     }
     if (savedIsPlatform === undefined) {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     } else {
-      process.env.IS_PLATFORM = savedIsPlatform;
+      process.env.IS_CLOUD = savedIsPlatform;
     }
     process.exitCode = savedExitCode;
     mock.restore();
   });
 
   test("installs a bundled plugin via the trusted GitHub path with no platform call", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
 
     await runInstall(BUNDLED_PLUGIN);
 
@@ -159,8 +159,8 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("errors clearly for a name absent from the bundled catalog", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
     const errSpy = spyOn(console, "error").mockImplementation(() => {});
 
     await runInstall("definitely-not-a-real-plugin");
@@ -173,8 +173,8 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("does not install a feature-gated bundled integration", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
 
     await runInstall("gamma");
 
@@ -183,9 +183,9 @@ describe("plugins install by name — disable-platform mode", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  test("uses the platform install endpoint when platform features are enabled", async () => {
-    delete process.env.CADET_DISABLE_PLATFORM;
-    delete process.env.IS_PLATFORM;
+  test("uses the cloud install endpoint when platform features are enabled", async () => {
+    delete process.env.CADET_DISABLE_CLOUD;
+    delete process.env.IS_CLOUD;
 
     await runInstall(BUNDLED_PLUGIN);
 
@@ -196,8 +196,8 @@ describe("plugins install by name — disable-platform mode", () => {
   });
 
   test("does not install a name absent from a successful platform catalog", async () => {
-    delete process.env.CADET_DISABLE_PLATFORM;
-    delete process.env.IS_PLATFORM;
+    delete process.env.CADET_DISABLE_CLOUD;
+    delete process.env.IS_CLOUD;
     const errSpy = spyOn(console, "error").mockImplementation(() => {});
 
     await runInstall("gamma");
@@ -210,9 +210,9 @@ describe("plugins install by name — disable-platform mode", () => {
     );
   });
 
-  test("installs a platform-visible local package without the platform tar endpoint", async () => {
-    delete process.env.CADET_DISABLE_PLATFORM;
-    delete process.env.IS_PLATFORM;
+  test("installs a cloud-visible local package without the cloud tar endpoint", async () => {
+    delete process.env.CADET_DISABLE_CLOUD;
+    delete process.env.IS_CLOUD;
     platformCatalogSource = {
       kind: "local",
       path: "plugins/mcp-catalog/fathom",

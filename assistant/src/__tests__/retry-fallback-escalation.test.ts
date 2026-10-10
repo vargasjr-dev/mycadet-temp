@@ -210,7 +210,7 @@ describe("RetryProvider fallback-route escalation", () => {
     const route = makeRoute(backup.provider);
     let refreshCalls = 0;
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => {
         refreshCalls += 1;
         return null;
@@ -233,7 +233,7 @@ describe("RetryProvider fallback-route escalation", () => {
   test.each(["byok", "oauth-subscription", "no-auth", undefined] as const)(
     "401 invalid_credentials on a %s route → callback never invoked, auth error surfaces",
     async (credentialSource) => {
-      // The credential eligibility case is restricted to `cadet-managed`
+      // The credential eligibility case is restricted to `cadet-cloud`
       // routes. A broken personal credential must surface so the user can
       // fix it, not silently reroute to a differently billed backup.
       const authError = new ProviderError("Unauthorized", "openai", 401, {
@@ -347,7 +347,7 @@ describe("RetryProvider fallback-route escalation", () => {
     expect(route.calls()).toBe(0);
   });
 
-  test("managed proxy preflight 400 for a retired model → falls back immediately", async () => {
+  test("cloud proxy preflight 400 for a retired model → falls back immediately", async () => {
     const primary = failingProvider(
       "openai",
       () =>
@@ -756,7 +756,7 @@ describe("RetryProvider fallback-route escalation", () => {
 
   test("route with forwardUsageAttributionHeaders true → headers present and reflect the backup profile, even when the primary does not forward them", async () => {
     // A non-managed primary (forwarding disabled) falling back to the
-    // managed proxy must include the required attribution headers.
+    // cloud proxy must include the required attribution headers.
     const primary = failingProvider(
       "openai",
       () => new ProviderError("model not found", "openai", 404),
@@ -942,7 +942,7 @@ describe("RetryProvider fallback-route escalation", () => {
   });
 
   test("an app-executed web_search tool survives the fallback untouched", async () => {
-    // With a search backend such as Brave or the platform search proxy, the
+    // With a search backend such as Brave or the cloud search proxy, the
     // daemon executes `web_search` itself and the caller sets no sentinel
     // marker. Filtering it by name would strip a capability the backup can
     // still serve, so the tool list has to carry over unchanged.

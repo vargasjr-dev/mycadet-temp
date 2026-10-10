@@ -119,15 +119,15 @@ An unlabeled connection can be selected with `--account <connection-id>`. For br
 
 A side-effect request made through the proxy still needs the `assistant ui confirm` gate described above.
 
-**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A managed connection is proxied by Cadet Cloud, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
+**Fidelity depends on the connection's mode.** On a bring-your-own connection the passthrough is byte-exact: the provider's response bytes and the query string arrive as written. A cloud connection is proxied by Cadet Cloud, which parses the response and rebuilds the query, so duplicate JSON keys and integers past 2^53 can change, `%20` becomes `+`, a valueless `?flag` becomes `flag=`, redirects are followed server-side instead of handed back, and HEAD is rejected. A provider that signs its own query string therefore works only on a bring-your-own connection. Check the mode with `assistant oauth mode <provider-key>`.
 
 A 3xx that does reach you keeps its status, but its target moves to the `x-cadet-proxy-location` response header, so nothing follows it automatically while carrying the grant. A tool that must follow one reads that header.
 
-Managed connections forward only `Content-Type`, `Accept`, `User-Agent`, and `X-Request-Id`. Requests with other headers, including `If-Match`, `Idempotency-Key`, and provider-version headers, return 400 before reaching the provider. Node fetch defaults `Accept-Language: *` and `Sec-Fetch-Mode: cors` are discarded. Use a bring-your-own connection when the CLI requires unsupported headers; do not remove write safeguards to bypass the rejection. Non-redirect responses, including `201 Created`, preserve `Location` on bring-your-own connections.
+Cloud connections forward only `Content-Type`, `Accept`, `User-Agent`, and `X-Request-Id`. Requests with other headers, including `If-Match`, `Idempotency-Key`, and provider-version headers, return 400 before reaching the provider. Node fetch defaults `Accept-Language: *` and `Sec-Fetch-Mode: cors` are discarded. Use a bring-your-own connection when the CLI requires unsupported headers; do not remove write safeguards to bypass the rejection. Non-redirect responses, including `201 Created`, preserve `Location` on bring-your-own connections.
 
 ### OAuth Token Escape Hatch
 
-In some rare cases, you may need access to the OAuth token directly. This is heavily discouraged and should generally be avoided. Reach for `proxy-url` above first: a script that "needs the token to run" almost always needs a base URL and a bearer token, which is exactly what the proxy hands it without exposing the credential. The proxy is also the only option on a managed connection, where `assistant oauth token` returns an error by design.
+In some rare cases, you may need access to the OAuth token directly. This is heavily discouraged and should generally be avoided. Reach for `proxy-url` above first: a script that "needs the token to run" almost always needs a base URL and a bearer token, which is exactly what the proxy hands it without exposing the credential. The proxy is also the only option on a cloud connection, where `assistant oauth token` returns an error by design.
 
 The escape hatch is valid only if:
 

@@ -8,7 +8,7 @@ import {
   isPairedLockfileEntry,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  replacePlatformAssistants,
+  replaceCloudAssistants,
   upsertLockfileAssistant,
   upsertRendererLockfileAssistant,
 } from "./lockfile";
@@ -549,7 +549,7 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = replacePlatformAssistants(
+    const result = replaceCloudAssistants(
       [lockfilePath],
       [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://p" }],
     );
@@ -648,7 +648,7 @@ describe("upsertRendererLockfileAssistant", () => {
   });
 });
 
-describe("replacePlatformAssistants", () => {
+describe("replaceCloudAssistants", () => {
   test("rejects a renderer sync that tries to create a paired entry", () => {
     writeOnDisk({
       activeAssistant: "asst_local",
@@ -658,7 +658,7 @@ describe("replacePlatformAssistants", () => {
     });
 
     expect(
-      replacePlatformAssistants(
+      replaceCloudAssistants(
         [lockfilePath],
         [
           {
@@ -678,7 +678,7 @@ describe("replacePlatformAssistants", () => {
     });
   });
 
-  // `onboardedAt` is recorded by the client and unknown to the platform, so the
+  // `onboardedAt` is recorded by the client and unknown to the cloud, so the
   // rows a sync builds from the API never carry it. Dropping it here would let
   // a routine session refresh erase the completion record.
   test("carries an existing onboardedAt onto the replacement row", () => {
@@ -694,7 +694,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    const result = replacePlatformAssistants(
+    const result = replaceCloudAssistants(
       [lockfilePath],
       [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://new" }],
     );
@@ -722,7 +722,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -751,7 +751,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [{ assistantId: "asst_b", cloud: "cadet" }],
     );
@@ -775,7 +775,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    const result = replacePlatformAssistants(
+    const result = replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -815,7 +815,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -844,7 +844,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -887,7 +887,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -918,7 +918,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -950,7 +950,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {
@@ -979,7 +979,7 @@ describe("replacePlatformAssistants", () => {
       ],
     });
 
-    replacePlatformAssistants(
+    replaceCloudAssistants(
       [lockfilePath],
       [
         {

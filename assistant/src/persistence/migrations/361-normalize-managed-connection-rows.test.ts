@@ -58,8 +58,8 @@ function readRow(
   return row;
 }
 
-describe("migration 361: normalize managed connection rows", () => {
-  test("rewrites a platform-auth row with a concrete provider to provider cadet", () => {
+describe("migration 361: normalize cloud connection rows", () => {
+  test("rewrites a cloud-auth row with a concrete provider to provider cadet", () => {
     const { sqlite, db } = createTestDb();
     insertRow(sqlite, "managed-openai", "openai", '{"type":"platform"}');
 
@@ -79,7 +79,7 @@ describe("migration 361: normalize managed connection rows", () => {
     expect(readRow(sqlite, "cadet").provider).toBe("cadet");
   });
 
-  test("rewrites a cadet-provider row with non-platform auth to platform auth", () => {
+  test("rewrites a cadet-provider row with non-cloud auth to platform auth", () => {
     const { sqlite, db } = createTestDb();
     insertRow(
       sqlite,

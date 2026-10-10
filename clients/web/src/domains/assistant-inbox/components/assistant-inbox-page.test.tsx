@@ -17,7 +17,7 @@ import { AssistantInboxPage } from "./assistant-inbox-page";
 const ASSISTANT_ID = "asst-test";
 const NOW = new Date("2026-09-16T15:40:00");
 
-/** A row as the platform's list returns it: no preview, body, or attachments. */
+/** A row as the cloud's list returns it: no preview, body, or attachments. */
 const LISTED: InboxEmail = {
   id: "m-1",
   direction: "inbound",

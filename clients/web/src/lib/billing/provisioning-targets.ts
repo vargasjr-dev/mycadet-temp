@@ -107,9 +107,9 @@ export function resizeDimensionsInFlight(
 
 /**
  * Whether an ensure-provisioned reply is a race rather than an answer. Either
- * the subscription has flipped to Pro but the platform cannot see the
+ * the subscription has flipped to Pro but the cloud cannot see the
  * entitlement yet (`no_active_pro`), or the entitlement is visible but the org
- * has no settled platform-hosted assistant to apply it to
+ * has no settled cloud-hosted assistant to apply it to
  * (`no_provisionable_assistants`). Both mean nothing was queued and no target
  * is known, and both stop holding once the org settles. Callers must re-ask
  * instead of adopting it — treating it as a verdict strands them on an

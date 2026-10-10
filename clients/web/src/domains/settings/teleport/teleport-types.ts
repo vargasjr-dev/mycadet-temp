@@ -141,7 +141,7 @@ export function destinationDescriptionKey(
 }
 
 /**
- * Parse a platform `signed-url` (download) 422 body into a version-mismatch
+ * Parse a cloud `signed-url` (download) 422 body into a version-mismatch
  * error message, mirroring the Swift `versionMismatch` decoding. Returns
  * `null` when the body isn't a recognizable version-mismatch payload.
  */

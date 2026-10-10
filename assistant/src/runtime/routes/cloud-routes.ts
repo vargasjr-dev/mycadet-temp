@@ -1,0 +1,1069 @@
+/**
+ * Platform route handlers for the shared HTTP/IPC route table.
+ *
+ * Serves ten operations:
+ *   - platform_status (GET platform/status): aggregates platform context,
+ *     credentials, assistant ID, and webhook secret. (Tunnel status
+ *     lives on the gateway — see gateway_status.)
+ *   - platform_connect (POST platform/connect): reports whether the stored
+ *     credentials still connect, and when the stored key has been rejected,
+ *     says so, so the caller can tell the user what replaces it.
+ *   - platform_disconnect (POST platform/disconnect): deletes stored platform
+ *     credentials and emits platform_disconnected signal.
+ *   - platform_callback_routes_register (POST platform/callback-routes/register):
+ *     registers a callback route with the cloud gateway.
+ *   - platform_callback_routes_list (GET platform/callback-routes): lists
+ *     registered callback routes for this assistant.
+ *   - platform_credits (GET platform/credits): fetches the org's remaining
+ *     credit balance, plan-included credit usage, extra credit, upcoming
+ *     expiry, today's spend, and daily-limit / low-balance state from the
+ *     platform billing summary.
+ *   - platform_subscription (GET platform/subscription): fetches the org's
+ *     current plan, subscription status, and entitlements.
+ *   - platform_plans (GET platform/plans): fetches the plan catalog with pricing.
+ *   - platform_invoices_list (GET platform/invoices): fetches one
+ *     cursor-paginated page of the org's Stripe invoice history.
+ *   - platform_invoices_by_id_get (GET platform/invoices/:id): pages through the
+ *     invoice list and returns a single invoice by Stripe invoice ID.
+ */
+
+import {
+  type CloudCredentialVerificationStatus,
+  type PlatformVerifyCredentialResponse,
+  PlatformVerifyCredentialResponseSchema,
+} from "@mycadet/service-contracts/cloud-credential";
+import {
+  type BillingPlanId,
+  extraCreditUsd,
+  planCreditUsedFraction,
+} from "@mycadet/service-contracts/plan-credit";
+import { z } from "zod";
+
+import {
+  resolveCloudOrganizationId,
+  resolveCloudUserId,
+} from "../../config/cloud-identity.js";
+import {
+  getCloudBaseUrl,
+  setCloudAssistantId,
+  setCloudOrganizationId,
+  setCloudUserId,
+} from "../../config/env.js";
+import { isCloudRemote } from "../../config/env-registry.js";
+import {
+  registerCallbackRoute,
+  resolveCloudCallbackRegistrationContext,
+} from "../../inbound/cloud-callback-registration.js";
+import { credentialKey } from "../../security/credential-key.js";
+import {
+  deleteSecureKeyAsync,
+  getSecureKeyAsync,
+} from "../../security/secure-keys.js";
+import { getExistingDeviceId } from "../../util/device-id.js";
+import { broadcastMessage } from "../assistant-event-hub.js";
+import { ACTOR_PRINCIPALS, LOCAL_PRINCIPALS } from "../auth/route-policy.js";
+import {
+  BadRequestError,
+  InternalError,
+  NotFoundError,
+  UnprocessableEntityError,
+} from "./errors.js";
+import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
+
+// ---------------------------------------------------------------------------
+// Credential store keys
+// ---------------------------------------------------------------------------
+
+const CREDENTIAL_KEYS = {
+  apiKey: { service: "cadet", field: "assistant_api_key" },
+  assistantId: { service: "cadet", field: "platform_assistant_id" },
+} as const;
+
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+
+const PlatformStatusResponseSchema = z.object({
+  isPlatform: z.boolean(),
+  baseUrl: z.string(),
+  assistantId: z.string(),
+  hasAssistantApiKey: z
+    .boolean()
+    .nullable()
+    .describe(
+      "Whether a cloud assistant API key is stored. Null when the credential store could not be read, which is not evidence that no key is stored.",
+    ),
+  hasWebhookSecret: z.boolean(),
+  clientInstallationId: z.string().nullable(),
+  available: z.boolean(),
+  organizationId: z.string().nullable(),
+  userId: z.string().nullable(),
+});
+type PlatformStatusResponse = z.infer<typeof PlatformStatusResponseSchema>;
+
+const PlatformConnectResponseSchema = z.object({
+  alreadyConnected: z.boolean().optional(),
+  baseUrl: z.string().optional(),
+  showPlatformLogin: z.boolean().optional(),
+  /**
+   * The stored cloud credential exists but the cloud rejects it. Distinct
+   * from "nothing stored": the user is not setting up, they are recovering,
+   * and what replaces the key is a fresh sign-in, not a first one.
+   */
+  credentialRejected: z.boolean().optional(),
+});
+export type PlatformConnectResponse = z.infer<
+  typeof PlatformConnectResponseSchema
+>;
+
+const PlatformDisconnectResponseSchema = z.object({
+  disconnected: z.literal(true),
+  previousBaseUrl: z.string().nullable(),
+});
+type PlatformDisconnectResponse = z.infer<
+  typeof PlatformDisconnectResponseSchema
+>;
+
+const CallbackRouteRegisterRequestSchema = z.object({
+  path: z.string(),
+  type: z.string(),
+});
+
+const CallbackRouteRegisterResponseSchema = z.object({
+  callbackUrl: z.string(),
+  callbackPath: z.string(),
+  type: z.string(),
+});
+type CallbackRouteRegisterResponse = z.infer<
+  typeof CallbackRouteRegisterResponseSchema
+>;
+
+const CallbackRouteSchema = z.object({
+  id: z.string(),
+  assistant_id: z.string(),
+  type: z.string(),
+  callback_path: z.string(),
+  callback_url: z.string(),
+  source_identifier: z.string().nullable(),
+});
+
+const CallbackRoutesListResponseSchema = z.object({
+  routes: z.array(CallbackRouteSchema),
+});
+type CallbackRoutesListResponse = z.infer<
+  typeof CallbackRoutesListResponseSchema
+>;
+
+const PlatformCreditsResponseSchema = z.object({
+  remaining: z.number(),
+  settled: z.number(),
+  pending: z.number(),
+  unit: z.literal("USD"),
+  stale: z.boolean(),
+  as_of: z.string(),
+  daily_spend: z
+    .number()
+    .nullable()
+    .describe(
+      "Today's (UTC) spend counted against the daily credit limit, in USD. Excludes spend covered by plan-included credits (initial credit, Pro credit bundle), so it is not total spend. Null when the cloud did not report it.",
+    ),
+  daily_limit: z
+    .number()
+    .nullable()
+    .describe("Daily credit limit in USD, or null when none is set."),
+  daily_limit_reached: z
+    .boolean()
+    .describe(
+      "True when today's spend has reached the daily limit and the limit is being enforced.",
+    ),
+  daily_limit_snoozed: z
+    .boolean()
+    .describe(
+      "True when the daily limit has been skipped for the rest of the current UTC day.",
+    ),
+  low_balance_threshold: z
+    .number()
+    .nullable()
+    .describe("Low-balance alert threshold in USD."),
+  low_balance_warning: z
+    .boolean()
+    .describe(
+      "True when the balance is above zero but below the low-balance threshold and auto top-up is not enabled.",
+    ),
+  plan_credit_remaining: z
+    .number()
+    .nullable()
+    .describe(
+      "Unused credit (USD) remaining on the unexpired plan-included grants (initial credit, Pro credit bundle). Null when the cloud did not report grant figures.",
+    ),
+  plan_credit_total: z
+    .number()
+    .nullable()
+    .describe(
+      "Total credit (USD) those plan-included grants were worth, net of refunds. Null when the cloud did not report grant figures.",
+    ),
+  plan_credit_used_fraction: z
+    .number()
+    .nullable()
+    .describe(
+      "Share of the plan-included credit already used, from 0 to 1: the same reading as the in-app usage meter. A Pro subscription whose unexpired grants total nothing reads as 1 (everything granted is used or expired). Null when there is no usable reading: grant figures missing, or a zero total on a base or unknown plan.",
+    ),
+  plan_credits_spent: z
+    .boolean()
+    .nullable()
+    .describe(
+      "True when the plan-included credit is used up or expired. Whether further managed usage is funded is extra_credit_remaining (zero means the organization is out of credit). Null when there is no plan-credit reading.",
+    ),
+  extra_credit_remaining: z
+    .number()
+    .nullable()
+    .describe(
+      "Credit (USD) bought or earned on top of the plan-included grants: remaining minus plan_credit_remaining, floored at zero. Null when grant figures are missing.",
+    ),
+  credits_expiring_soon: z
+    .number()
+    .nullable()
+    .describe(
+      "Unexpired credit (USD) on grants that expire within the next 30 days. Null when the cloud did not report it.",
+    ),
+  next_credit_expiry_at: z
+    .string()
+    .nullable()
+    .describe(
+      "Earliest upcoming expiry (ISO 8601) across grants that still hold credit, or null when none is scheduled.",
+    ),
+});
+type PlatformCreditsResponse = z.infer<typeof PlatformCreditsResponseSchema>;
+
+const PlatformInvoiceSchema = z.object({
+  id: z.string(),
+  number: z.string().nullable(),
+  status: z.string().nullable(),
+  currency: z.string(),
+  amount_due: z.number(),
+  amount_paid: z.number(),
+  amount_remaining: z.number(),
+  created: z.number(),
+  hosted_invoice_url: z.string().nullable(),
+  invoice_pdf: z.string().nullable(),
+});
+type PlatformInvoice = z.infer<typeof PlatformInvoiceSchema>;
+
+const PlatformInvoicesListResponseSchema = z.object({
+  invoices: z.array(PlatformInvoiceSchema),
+  has_more: z.boolean(),
+});
+type PlatformInvoicesListResponse = z.infer<
+  typeof PlatformInvoicesListResponseSchema
+>;
+
+const SubscriptionPackageSchema = z.object({
+  key: z.string(),
+  name: z.string(),
+  version: z.number(),
+  customized: z.boolean(),
+});
+
+const PlatformSubscriptionResponseSchema = z.object({
+  planId: z.enum(["base", "pro"]),
+  status: z.string().nullable(),
+  renewalDate: z.string().nullable(),
+  currentPeriodEnd: z.string().nullable(),
+  cancelAtPeriodEnd: z.boolean(),
+  cancelAt: z.string().nullable(),
+  selectedCreditTier: z.string().nullable(),
+  package: SubscriptionPackageSchema.nullable(),
+  entitlements: z.object({
+    managedEmail: z.boolean(),
+    phoneNumber: z.boolean(),
+  }),
+});
+type PlatformSubscriptionResponse = z.infer<
+  typeof PlatformSubscriptionResponseSchema
+>;
+
+// The plan catalog is a large, platform-owned structure (base + pro plans, each
+// with machine/storage/credit tiers and packages). The daemon forwards it as a
+// pass-through so the catalog shape stays owned by the cloud and additive
+// changes there don't require a daemon schema bump; only the top-level `plans`
+// envelope is asserted here.
+const PlatformPlansResponseSchema = z.object({
+  plans: z.array(z.record(z.string(), z.unknown())),
+});
+type PlatformPlansResponse = z.infer<typeof PlatformPlansResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+
+async function handlePlatformStatus(
+  _args: RouteHandlerArgs,
+): Promise<PlatformStatusResponse> {
+  const context = await resolveCloudCallbackRegistrationContext();
+
+  const [organizationId, userId, webhookSecretRaw] = await Promise.all([
+    resolveCloudOrganizationId(),
+    resolveCloudUserId(),
+    getSecureKeyAsync(credentialKey("cadet", "webhook_secret")),
+  ]);
+
+  const hasWebhookSecret = !!webhookSecretRaw;
+
+  return {
+    isPlatform: context.isPlatform,
+    baseUrl: context.cloudBaseUrl,
+    assistantId: context.assistantId,
+    hasAssistantApiKey: context.hasAssistantApiKey,
+    hasWebhookSecret,
+    clientInstallationId: getExistingDeviceId(),
+    available: context.enabled,
+    organizationId: organizationId || null,
+    userId: userId || null,
+  };
+}
+
+async function handlePlatformConnect(
+  _args: RouteHandlerArgs,
+): Promise<PlatformConnectResponse> {
+  // Check if already connected
+  const existingApiKey = await getSecureKeyAsync(
+    credentialKey(CREDENTIAL_KEYS.apiKey.service, CREDENTIAL_KEYS.apiKey.field),
+  );
+
+  // Stored credentials only count as a connection while they still
+  // authenticate. Answering "already connected" for a key the cloud has
+  // rejected would report nothing to do about the one thing that needs doing,
+  // and no client would get the signal to rotate it.
+  //
+  // Checked here rather than read from a cache: connect is a deliberate user
+  // action, so one request is affordable, and an answer computed now cannot go
+  // stale between the check and the answer. An unreachable platform leaves the
+  // stored credentials counting as a connection, so a network problem never
+  // strands a working install by reporting it disconnected.
+  let credentialRejected = false;
+  if (existingApiKey) {
+    const verified = await verifyStoredCredential();
+    if (verified !== "rejected") {
+      return {
+        alreadyConnected: true,
+        baseUrl: getCloudBaseUrl(),
+      };
+    }
+    credentialRejected = true;
+  }
+
+  // The outcome travels in the response, where the CLI reads it and tells the
+  // user what to do. Nothing shipped consumes the signal below, so the
+  // response is the only path the answer reaches anyone by.
+  broadcastMessage({ type: "show_platform_login" });
+
+  return credentialRejected
+    ? { showPlatformLogin: true, credentialRejected: true }
+    : { showPlatformLogin: true };
+}
+
+/**
+ * Ask the cloud whether the stored cloud credential authenticates.
+ * Nothing is stored: each caller that needs the answer asks, so there is no
+ * verdict to go stale.
+ *
+ * Shared by the verification route and by connect, so the two cannot disagree
+ * about what "connected" means. Never throws: an unsettled answer is
+ * `"unknown"`, which no caller treats as evidence of a dead credential.
+ */
+async function verifyStoredCredential(): Promise<CloudCredentialVerificationStatus> {
+  try {
+    const { checkAssistantApiKey } =
+      await import("../../credential-health/credential-health-service.js");
+    const result = await checkAssistantApiKey();
+    if (result === null) {
+      // No platform identity at all, so there is nothing to verify.
+      return "unknown";
+    }
+    if (result.status === "healthy") {
+      return "valid";
+    }
+    if (result.status === "revoked" || result.status === "missing_token") {
+      return "rejected";
+    }
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+async function handlePlatformVerifyCredential(
+  _args: RouteHandlerArgs,
+): Promise<PlatformVerifyCredentialResponse> {
+  return { status: await verifyStoredCredential() };
+}
+
+async function handlePlatformDisconnect(
+  _args: RouteHandlerArgs,
+): Promise<PlatformDisconnectResponse> {
+  // Reject if running inside a cloud host
+  if (isCloudRemote()) {
+    throw new UnprocessableEntityError(
+      "Cannot disconnect from the cloud on a cloud-hosted assistant.",
+    );
+  }
+
+  // Check if connected
+  const apiKey = await getSecureKeyAsync(
+    credentialKey(CREDENTIAL_KEYS.apiKey.service, CREDENTIAL_KEYS.apiKey.field),
+  );
+
+  if (!apiKey) {
+    throw new UnprocessableEntityError(
+      "Not connected to a cloud. Nothing to disconnect.\n\n" +
+        "Run 'assistant cloud status' to check connection state.",
+    );
+  }
+
+  // Delete all cloud credentials
+  const keysToDelete = [
+    CREDENTIAL_KEYS.apiKey,
+    CREDENTIAL_KEYS.assistantId,
+  ] as const;
+
+  const failedKeys: string[] = [];
+  for (const key of keysToDelete) {
+    const result = await deleteSecureKeyAsync(
+      credentialKey(key.service, key.field),
+    );
+    if (result === "error") {
+      failedKeys.push(`${key.service}:${key.field}`);
+    }
+  }
+
+  if (failedKeys.length > 0) {
+    throw new InternalError(
+      `Failed to delete credentials: ${failedKeys.join("; ")}`,
+    );
+  }
+
+  setCloudAssistantId(undefined);
+  setCloudOrganizationId(undefined);
+  setCloudUserId(undefined);
+
+  // Notify connected clients
+  broadcastMessage({ type: "platform_disconnected" });
+
+  return {
+    disconnected: true,
+    previousBaseUrl: null,
+  };
+}
+
+async function handleCallbackRoutesRegister(
+  args: RouteHandlerArgs,
+): Promise<CallbackRouteRegisterResponse> {
+  const { path, type } = (args.body ?? {}) as {
+    path?: string;
+    type?: string;
+  };
+
+  if (!path || typeof path !== "string") {
+    throw new BadRequestError("path is required");
+  }
+  if (!type || typeof type !== "string") {
+    throw new BadRequestError("type is required");
+  }
+
+  const context = await resolveCloudCallbackRegistrationContext();
+  if (!context.enabled) {
+    throw new UnprocessableEntityError(
+      "Platform callbacks not available — missing platform base URL, assistant ID, or API key. Run 'assistant cloud connect' or ensure credentials are configured.",
+    );
+  }
+
+  let callbackUrl: string;
+  try {
+    callbackUrl = await registerCallbackRoute(path, type);
+  } catch (err) {
+    throw new InternalError(
+      `Failed to register callback route: ${(err as Error).message}`,
+    );
+  }
+
+  return {
+    callbackUrl,
+    callbackPath: path,
+    type,
+  };
+}
+
+async function handleCallbackRoutesList(
+  _args: RouteHandlerArgs,
+): Promise<CallbackRoutesListResponse> {
+  const routes = (await fetchPlatformJson(
+    "/v1/internal/gateway/callback-routes/",
+    "callback routes",
+  )) as Array<{
+    id: string;
+    assistant_id: string;
+    type: string;
+    callback_path: string;
+    callback_url: string;
+    source_identifier: string | null;
+  }>;
+
+  return { routes };
+}
+
+/**
+ * Null when the billing summary omits the field (older platform builds) or it
+ * is not a finite number, so the daemon never reports a made-up figure.
+ */
+function parseUsd(value: string | null | undefined): number | null {
+  if (value == null || value.trim() === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+async function handlePlatformCredits(
+  _args: RouteHandlerArgs,
+): Promise<PlatformCreditsResponse> {
+  const summary = (await fetchPlatformJson(
+    "/v1/organizations/billing/summary/",
+    "credit balance",
+  )) as {
+    settled_balance_usd: string;
+    pending_compute_usd: string;
+    effective_balance_usd: string;
+    is_degraded: boolean;
+    daily_spend_usd?: string;
+    daily_credit_limit_usd?: string | null;
+    daily_limit_reached?: boolean;
+    daily_limit_snoozed?: boolean;
+    low_balance_threshold_usd?: string;
+    low_balance_warning?: boolean;
+    available_usage_balance?: string;
+    total_usage_balance?: string;
+    credits_expiring_soon_usd?: string;
+    next_credit_expiry_at?: string | null;
+  };
+
+  const remaining = Number(summary.effective_balance_usd);
+  const planCreditRemaining = parseUsd(summary.available_usage_balance);
+  const planCreditTotal = parseUsd(summary.total_usage_balance);
+  let usedFraction = planCreditUsedFraction(
+    planCreditTotal,
+    planCreditRemaining,
+    null,
+  );
+  if (
+    usedFraction === null &&
+    planCreditTotal !== null &&
+    planCreditTotal <= 0
+  ) {
+    // Only the zero-grant reading depends on the plan, so the subscription is
+    // read lazily and best-effort: a slow or failed read degrades that one
+    // reading to null instead of delaying or failing the balance.
+    const planId = await fetchBillingSubscription()
+      .then((subscription) => subscription.plan_id)
+      .catch((): BillingPlanId | null => null);
+    usedFraction = planCreditUsedFraction(
+      planCreditTotal,
+      planCreditRemaining,
+      planId,
+    );
+  }
+
+  return {
+    remaining,
+    settled: Number(summary.settled_balance_usd),
+    pending: Number(summary.pending_compute_usd),
+    unit: "USD",
+    stale: summary.is_degraded,
+    // as_of is response receipt time; add a server as_of field if the billing
+    // summary endpoint ever returns one.
+    as_of: new Date().toISOString(),
+    daily_spend: parseUsd(summary.daily_spend_usd),
+    daily_limit: parseUsd(summary.daily_credit_limit_usd),
+    daily_limit_reached: summary.daily_limit_reached === true,
+    daily_limit_snoozed: summary.daily_limit_snoozed === true,
+    low_balance_threshold: parseUsd(summary.low_balance_threshold_usd),
+    low_balance_warning: summary.low_balance_warning === true,
+    plan_credit_remaining: planCreditRemaining,
+    plan_credit_total: planCreditTotal,
+    plan_credit_used_fraction: usedFraction,
+    plan_credits_spent: usedFraction === null ? null : usedFraction >= 1,
+    extra_credit_remaining:
+      planCreditRemaining === null
+        ? null
+        : extraCreditUsd(remaining, planCreditRemaining),
+    credits_expiring_soon: parseUsd(summary.credits_expiring_soon_usd),
+    next_credit_expiry_at:
+      typeof summary.next_credit_expiry_at === "string"
+        ? summary.next_credit_expiry_at
+        : null,
+  };
+}
+
+/** Default per-request timeout for platform fetches. */
+const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
+
+interface FetchPlatformJsonOptions {
+  /**
+   * Abort signal from the caller's request. Combined with the per-request
+   * timeout so whichever fires first cancels the fetch.
+   */
+  signal?: AbortSignal;
+  /**
+   * Per-request timeout override in milliseconds. Defaults to
+   * PLATFORM_FETCH_TIMEOUT_MS; callers with an aggregate deadline (the
+   * invoices_get cursor walk) pass the remaining budget instead.
+   */
+  timeoutMs?: number;
+  /**
+   * When set, an upstream HTTP 400 is surfaced as a BadRequestError combining
+   * the response detail with this hint, so caller-correctable input errors
+   * (e.g. an invalid pagination cursor) keep their 400 status. When unset, a
+   * 400 falls through to the generic InternalError path.
+   */
+  badRequestHint?: string;
+  /**
+   * When set, an upstream HTTP 404 resolves to this value instead of the
+   * generic InternalError path, for resources where the cloud signals
+   * "nothing here" with a 404 (e.g. the invoice list for an organization
+   * without invoice history). When unset, a 404 stays an InternalError.
+   */
+  notFoundValue?: unknown;
+}
+
+/**
+ * GET a JSON resource from the cloud using the assistant's stored platform
+ * credentials. Throws UnprocessableEntityError when credentials are missing and
+ * InternalError on transport / non-2xx failures; `label` names the resource in
+ * those error messages. See FetchPlatformJsonOptions for per-call overrides.
+ */
+async function fetchPlatformJson(
+  path: string,
+  label: string,
+  options?: FetchPlatformJsonOptions,
+): Promise<unknown> {
+  const context = await resolveCloudCallbackRegistrationContext();
+
+  if (!context.cloudBaseUrl || !context.authHeader) {
+    throw new UnprocessableEntityError(
+      "Cloud credentials not available — run 'assistant cloud connect' or set CADET_CLOUD_URL",
+    );
+  }
+
+  const url = `${context.cloudBaseUrl}${path}`;
+  const timeout = AbortSignal.timeout(
+    options?.timeoutMs ?? PLATFORM_FETCH_TIMEOUT_MS,
+  );
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: context.authHeader,
+        Accept: "application/json",
+      },
+      signal: options?.signal
+        ? AbortSignal.any([options.signal, timeout])
+        : timeout,
+    });
+  } catch (err) {
+    throw new InternalError(
+      `Failed to fetch ${label}: ${(err as Error).message}`,
+    );
+  }
+
+  if (!response.ok) {
+    if (response.status === 404 && options?.notFoundValue !== undefined) {
+      return options.notFoundValue;
+    }
+    const detail = await response.text().catch(() => "");
+    if (response.status === 400 && options?.badRequestHint) {
+      throw new BadRequestError(
+        `Platform rejected the ${label} request${detail ? `: ${detail}` : ""}. ` +
+          options.badRequestHint,
+      );
+    }
+    throw new InternalError(
+      `Failed to fetch ${label} (HTTP ${response.status}): ${detail}`,
+    );
+  }
+
+  return response.json();
+}
+
+interface BillingSubscriptionData {
+  plan_id: BillingPlanId;
+  status: string | null;
+  renewal_date: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  cancel_at: string | null;
+  selected_credit_tier: string | null;
+  package: {
+    key: string;
+    name: string;
+    version: number;
+    customized: boolean;
+  } | null;
+  entitlements: { managed_email: boolean; phone_number: boolean };
+}
+
+function fetchBillingSubscription(): Promise<BillingSubscriptionData> {
+  return fetchPlatformJson(
+    "/v1/organizations/billing/subscription/",
+    "subscription",
+  ) as Promise<BillingSubscriptionData>;
+}
+
+async function handlePlatformSubscription(
+  _args: RouteHandlerArgs,
+): Promise<PlatformSubscriptionResponse> {
+  const data = await fetchBillingSubscription();
+
+  return {
+    planId: data.plan_id,
+    status: data.status,
+    renewalDate: data.renewal_date,
+    currentPeriodEnd: data.current_period_end,
+    cancelAtPeriodEnd: data.cancel_at_period_end,
+    cancelAt: data.cancel_at,
+    selectedCreditTier: data.selected_credit_tier,
+    package: data.package
+      ? {
+          key: data.package.key,
+          name: data.package.name,
+          version: data.package.version,
+          customized: data.package.customized,
+        }
+      : null,
+    entitlements: {
+      managedEmail: data.entitlements.managed_email,
+      phoneNumber: data.entitlements.phone_number,
+    },
+  };
+}
+
+async function handlePlatformPlans(
+  _args: RouteHandlerArgs,
+): Promise<PlatformPlansResponse> {
+  const data = (await fetchPlatformJson(
+    "/v1/organizations/billing/plans/",
+    "plan catalog",
+  )) as { plans?: Array<Record<string, unknown>> };
+
+  return { plans: data.plans ?? [] };
+}
+
+/**
+ * Fetch one cursor-paginated page of the org's Stripe invoice history from
+ * the cloud. Pass the previous page's last invoice id as `startingAfter`
+ * to fetch the next (older) page.
+ */
+async function fetchPlatformInvoicesPage(
+  startingAfter: string | undefined,
+  options?: FetchPlatformJsonOptions,
+): Promise<PlatformInvoicesListResponse> {
+  let path = "/v1/organizations/billing/invoices/";
+  if (startingAfter) {
+    path += `?${new URLSearchParams({ starting_after: startingAfter })}`;
+  }
+  return (await fetchPlatformJson(path, "invoices", {
+    ...options,
+    // The cloud returns 404 for an organization without invoice history;
+    // the web client treats that as an empty page
+    // (clients/web/src/domains/settings/components/invoices-table.tsx) and
+    // the daemon matches it.
+    notFoundValue: { invoices: [], has_more: false },
+  })) as PlatformInvoicesListResponse;
+}
+
+async function handlePlatformInvoicesList(
+  args: RouteHandlerArgs,
+): Promise<PlatformInvoicesListResponse> {
+  const startingAfter = args.queryParams?.starting_after;
+  return await fetchPlatformInvoicesPage(startingAfter, {
+    signal: args.abortSignal,
+    // The cloud returns 400 for an invalid or expired starting_after
+    // cursor. Only a caller-supplied cursor is caller-correctable, so the
+    // hint (and the BadRequestError it triggers) applies just when one was
+    // passed; a 400 on a cursor-less request stays an InternalError.
+    badRequestHint: startingAfter
+      ? "If you passed starting_after, use the id of the last invoice from the previous page."
+      : undefined,
+  });
+}
+
+/**
+ * Runaway guard for the invoices_get cursor walk: 25 pages is 2,500
+ * invoices at the cloud's 100-per-page size.
+ */
+export const MAX_INVOICE_PAGES = 25;
+
+/**
+ * Aggregate wall-clock deadline for the invoices_get cursor walk, matching
+ * the gateway IPC client's 30s request timeout. Guards against the walk
+ * running long after the caller has given up, since a gateway IPC timeout
+ * does not abort the request signal.
+ */
+export const INVOICE_WALK_DEADLINE_MS = 30_000;
+
+function invoiceWalkTimeoutError(id: string): InternalError {
+  return new InternalError(
+    `Invoice lookup for "${id}" timed out after ` +
+      `${INVOICE_WALK_DEADLINE_MS / 1000} seconds while paging invoice history`,
+  );
+}
+
+async function handlePlatformInvoiceGet(
+  args: RouteHandlerArgs,
+): Promise<PlatformInvoice> {
+  const id = args.pathParams?.id;
+  if (!id) {
+    throw new BadRequestError("invoice id is required");
+  }
+
+  // There is no per-invoice platform endpoint, so walk the paginated list
+  // until the invoice turns up or the cursor is exhausted.
+  const walkStartedAt = Date.now();
+  let cursor: string | undefined;
+  for (let pages = 0; pages < MAX_INVOICE_PAGES; pages++) {
+    // Stop walking pages once the caller has gone away (gateway IPC timeout,
+    // disconnected HTTP client). In-flight fetches are cancelled via the
+    // signal passed to fetchPlatformInvoicesPage.
+    if (args.abortSignal?.aborted) {
+      throw new InternalError(
+        `Invoice lookup for "${id}" aborted: caller disconnected`,
+      );
+    }
+    const remainingMs = walkStartedAt + INVOICE_WALK_DEADLINE_MS - Date.now();
+    if (remainingMs <= 0) {
+      throw invoiceWalkTimeoutError(id);
+    }
+    // Bound the page fetch by the remaining aggregate budget so a fetch
+    // started just under the deadline cannot run the walk past it.
+    let page: PlatformInvoicesListResponse;
+    try {
+      // No badRequestHint: the cursor is internally generated, so an
+      // upstream 400 here is an internal failure, not a caller input error.
+      page = await fetchPlatformInvoicesPage(cursor, {
+        signal: args.abortSignal,
+        timeoutMs: Math.min(PLATFORM_FETCH_TIMEOUT_MS, remainingMs),
+      });
+    } catch (err) {
+      // A fetch cancelled by the deadline remainder should read as the
+      // walk's aggregate timeout, not a generic network failure.
+      if (
+        !args.abortSignal?.aborted &&
+        Date.now() - walkStartedAt >= INVOICE_WALK_DEADLINE_MS
+      ) {
+        throw invoiceWalkTimeoutError(id);
+      }
+      throw err;
+    }
+    const match = page.invoices.find((invoice) => invoice.id === id);
+    if (match) {
+      return match;
+    }
+    if (!page.has_more || page.invoices.length === 0) {
+      throw new NotFoundError(
+        `Invoice "${id}" not found. Run 'assistant cloud invoices list' to see available invoices.`,
+      );
+    }
+    cursor = page.invoices.at(-1)!.id;
+  }
+
+  throw new InternalError(
+    `Invoice "${id}" not found in the first ${MAX_INVOICE_PAGES} pages of invoice history`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Route definitions
+// ---------------------------------------------------------------------------
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    operationId: "platform_status",
+    endpoint: "platform/status",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "Get platform deployment context and connection status",
+    description:
+      "Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel status is reported separately by gateway_status.",
+    tags: ["platform"],
+    handler: handlePlatformStatus,
+    responseBody: PlatformStatusResponseSchema,
+  },
+  {
+    operationId: "platform_connect",
+    endpoint: "platform/connect",
+    method: "POST",
+    policy: {
+      requiredScopes: ["settings.write"],
+      allowedPrincipalTypes: LOCAL_PRINCIPALS,
+    },
+    summary: "Connect to Cadet Cloud",
+    description:
+      "Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
+    tags: ["platform"],
+    handler: handlePlatformConnect,
+    responseBody: PlatformConnectResponseSchema,
+  },
+  {
+    operationId: "platform_verify_credential",
+    endpoint: "platform/verify-credential",
+    method: "POST",
+    // The in-app repair calls this through the gateway with an actor token,
+    // the same caller shape as platform_status, so it takes that route's
+    // principal bundle. A local-only policy would 403 every browser repair
+    // after it had already rotated and stored the replacement. Read scope:
+    // the route performs a check and mutates nothing.
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "Verify the Cadet Cloud credential against the cloud",
+    description:
+      "Asks the cloud whether the stored assistant API key authenticates. POST because it performs a check; the result is returned, not stored.",
+    tags: ["platform"],
+    handler: handlePlatformVerifyCredential,
+    responseBody: PlatformVerifyCredentialResponseSchema,
+  },
+  {
+    operationId: "platform_disconnect",
+    endpoint: "platform/disconnect",
+    method: "POST",
+    policy: {
+      requiredScopes: ["settings.write"],
+      allowedPrincipalTypes: LOCAL_PRINCIPALS,
+    },
+    summary: "Disconnect from Cadet Cloud",
+    description:
+      "Deletes stored cloud credentials and emits platform_disconnected signal to connected clients.",
+    tags: ["platform"],
+    handler: handlePlatformDisconnect,
+    responseBody: PlatformDisconnectResponseSchema,
+  },
+  {
+    operationId: "platform_callback_routes_register",
+    endpoint: "platform/callback-routes/register",
+    method: "POST",
+    policy: {
+      requiredScopes: ["settings.write"],
+      allowedPrincipalTypes: LOCAL_PRINCIPALS,
+    },
+    summary: "Register a cloud callback route",
+    description:
+      "Registers a callback route with the cloud gateway for inbound provider webhooks.",
+    tags: ["platform"],
+    handler: handleCallbackRoutesRegister,
+    requestBody: CallbackRouteRegisterRequestSchema,
+    responseBody: CallbackRouteRegisterResponseSchema,
+  },
+  {
+    operationId: "platform_callback_routes_list",
+    endpoint: "platform/callback-routes",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: LOCAL_PRINCIPALS,
+    },
+    summary: "List registered platform callback routes",
+    description:
+      "Lists all callback routes registered with the cloud for this assistant.",
+    tags: ["platform"],
+    handler: handleCallbackRoutesList,
+    responseBody: CallbackRoutesListResponseSchema,
+  },
+  {
+    operationId: "platform_credits",
+    endpoint: "platform/credits",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary:
+      "Get the organization's credit balance, plan-credit usage, and daily-limit state",
+    description:
+      "Fetches the org's settled, pending, and effective (remaining) credit balance in USD from the cloud billing summary, plus plan-included credit usage (remaining, total, and the used fraction shown by the in-app usage meter), extra credit bought or earned on top, credit expiring within 30 days, and the daily-limit state: today's spend counted against the daily credit limit (which excludes spend covered by plan-included credits, so it is not total spend), the limit itself, and the low-balance warning state.",
+    tags: ["platform"],
+    handler: handlePlatformCredits,
+    responseBody: PlatformCreditsResponseSchema,
+  },
+  {
+    operationId: "platform_subscription",
+    endpoint: "platform/subscription",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "Get the organization's current plan and subscription state",
+    description:
+      "Fetches the org's plan (base or pro), subscription status, renewal/period-end dates, cancellation state, selected credit tier, package, and plan-gated entitlements from the cloud.",
+    tags: ["platform"],
+    handler: handlePlatformSubscription,
+    responseBody: PlatformSubscriptionResponseSchema,
+  },
+  {
+    operationId: "platform_plans",
+    endpoint: "platform/plans",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "Get the plan catalog with pricing",
+    description:
+      "Fetches the cloud plan catalog: base and pro plans with pricing (in cents), machine/storage/credit tiers, and packages.",
+    tags: ["platform"],
+    handler: handlePlatformPlans,
+    responseBody: PlatformPlansResponseSchema,
+  },
+  {
+    operationId: "platform_invoices_list",
+    endpoint: "platform/invoices",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "List one page of the organization's Stripe invoices",
+    description:
+      "Fetches one page of the org's Stripe invoice history (newest first) from the cloud billing invoices endpoint. Amounts are in the currency's minor units. When has_more is true, pass the last invoice's id as starting_after to fetch the next page.",
+    tags: ["platform"],
+    queryParams: [
+      {
+        name: "starting_after",
+        type: "string",
+        required: false,
+        description:
+          "Cursor: return invoices older than the invoice with this id (from the previous page's last entry).",
+      },
+    ],
+    handler: handlePlatformInvoicesList,
+    responseBody: PlatformInvoicesListResponseSchema,
+  },
+  {
+    operationId: "platform_invoices_by_id_get",
+    endpoint: "platform/invoices/:id",
+    method: "GET",
+    policy: {
+      requiredScopes: ["settings.read"],
+      allowedPrincipalTypes: ACTOR_PRINCIPALS,
+    },
+    summary: "Get a single Stripe invoice by ID",
+    description:
+      "Pages through the org's invoice list from the cloud and returns the invoice matching the given Stripe invoice ID (e.g. in_xxx). 404 if no such invoice.",
+    tags: ["platform"],
+    handler: handlePlatformInvoiceGet,
+    responseBody: PlatformInvoiceSchema,
+  },
+];

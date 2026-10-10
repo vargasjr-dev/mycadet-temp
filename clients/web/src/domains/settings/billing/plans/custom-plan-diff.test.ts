@@ -187,7 +187,7 @@ describe("computeCustomPlanDiff — seeded reconfigure", () => {
   });
 
   test("a fee-less seed reads the fee row as added and prices the previous total without it", () => {
-    // Only Mighty is sold without the platform fee; a custom plan always
+    // Only Mighty is sold without the cloud fee; a custom plan always
     // carries it, so keeping the tiers still adds the fee.
     const diff = computeCustomPlanDiff({
       proPlan: proPlan(),

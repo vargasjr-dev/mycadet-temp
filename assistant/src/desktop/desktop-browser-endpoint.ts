@@ -47,7 +47,7 @@ export function validateDesktopWebSocket(value: unknown, port: number): string {
   return url.href;
 }
 
-// Match the listener to the managed Chrome process, including occupied-port races.
+// Match the listener to the cloud Chrome process, including occupied-port races.
 export async function assertDesktopListener(
   pid: number,
   port: number,
@@ -68,7 +68,7 @@ export async function assertDesktopListener(
     }
   }
   throw new Error(
-    "Debug listener does not belong to the managed desktop Chrome",
+    "Debug listener does not belong to the cloud desktop Chrome",
   );
 }
 

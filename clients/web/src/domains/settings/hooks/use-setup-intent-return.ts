@@ -17,7 +17,7 @@ import { t } from "@/i18n";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import { currentRequestScopeKey } from "@/stores/request-scope";
-import { isPlatformSessionSettled } from "@/stores/session-status";
+import { isCloudSessionSettled } from "@/stores/session-status";
 
 const CLIENT_SECRET_PARAM = "setup_intent_client_secret";
 const REDIRECT_STATUS_PARAM = "redirect_status";
@@ -38,12 +38,12 @@ type ConfirmSaved = (args: {
  * when the resolution started, and that client is keyed on the request scope:
  * the signed-in user as well as the organization. A 3DS return is a full page
  * load, where the local-gateway path authenticates a placeholder user while
- * the platform-session probe is still `"unknown"`, and the probe swapping in
+ * the cloud-session probe is still `"unknown"`, and the probe swapping in
  * the real user remounts the client. Waiting the probe out keeps the confirm's
  * writes on the client the cards read.
  */
 function requestScopeSettled(): boolean {
-  return isPlatformSessionSettled(useAuthStore.getState().platformSession);
+  return isCloudSessionSettled(useAuthStore.getState().cloudSession);
 }
 
 /**
@@ -70,7 +70,7 @@ async function resolveSetupIntentReturn({
   await awaitOrgHeaderSettled({ alsoReady: requestScopeSettled });
 
   // The scope the resolution runs under, read once the wait above has settled
-  // it: at param capture the platform-session probe can still be answering,
+  // it: at param capture the cloud-session probe can still be answering,
   // which would stamp the return with a placeholder identity.
   const initiatingScopeKey = currentRequestScopeKey();
 

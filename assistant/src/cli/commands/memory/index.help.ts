@@ -739,7 +739,7 @@ only contested gate decisions — the signal relevant for threshold calibration.
 Coverage is limited to runs still pending platform flush. In a healthy system
 the outbox holds only the last few minutes to hours of events, so
 --lookback-days is an upper bound, not a guarantee; long-window aggregation
-lives on the platform side on top of flushed watchdog events.
+lives on the cloud side on top of flushed watchdog events.
 
 Reads the telemetry database directly — the assistant does not need to be
 running.

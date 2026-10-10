@@ -452,7 +452,7 @@ async function handleSyncBytesImport(
  *
  * Returns the job's current status on 200, or 404 if the jobId is unknown
  * (never issued, or pruned after the TTL). The response shape deliberately
- * mirrors the platform's existing `/v1/migrations/import/:jobId/status/`
+ * mirrors the cloud's existing `/v1/migrations/import/:jobId/status/`
  * endpoint so `PlatformMigrationClient.pollImportStatus` works against
  * either surface with no changes.
  */

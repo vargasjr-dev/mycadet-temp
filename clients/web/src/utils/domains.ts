@@ -8,8 +8,8 @@ export const WWW_DOMAIN = "www.mycadet.ai";
 export const CADET_COOKIE_DOMAIN = ".mycadet.ai";
 
 /**
- * Hostnames where the assistant is platform-hosted (not local daemon).
- * Used to detect platform-hosted mode for assistant lifecycle management.
+ * Hostnames where the assistant is cloud-hosted (not local daemon).
+ * Used to detect cloud-hosted mode for assistant lifecycle management.
  */
 export const PLATFORM_HOSTED_HOSTNAMES: readonly string[] = [
   WWW_DOMAIN,

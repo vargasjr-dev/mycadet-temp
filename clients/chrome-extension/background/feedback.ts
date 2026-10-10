@@ -3,21 +3,21 @@
  *
  * Mirrors the macOS `LogReportFormView` / `LogExporter` contract so a
  * user (or support engineer) can ship a focused diagnostic bundle
- * back to the platform without leaving the popup. Submissions land at
+ * back to the cloud without leaving the popup. Submissions land at
  * `POST {apiBaseUrl}/v1/upload/feedback/` as `multipart/form-data` with
  * the same field shape the macOS app uses — `message`, `classification`,
  * `email`, `device_id`, `client_version`, optional `assistant_id`, and a
  * `logs_file` part containing a single-member `tar.gz` archive with the
  * diagnostic bundle JSON inside.
  *
- * The platform-side `sanitize_tar_gz` validator opens `logs_file` as
+ * The cloud-side `sanitize_tar_gz` validator opens `logs_file` as
  * `tarfile.open(..., mode="r|")` and drops the upload on the floor when
  * it isn't a real tar — so we ship a real (one-file) tar.gz instead of a
  * plain gzipped JSON blob.
  *
  * Cloud submissions attach `X-Session-Token` and `Cadet-Organization-Id`
  * when available; self-hosted submissions ship unauthenticated, same as
- * the macOS app's behaviour when no session token exists. The platform
+ * the macOS app's behaviour when no session token exists. The cloud
  * endpoint accepts both shapes.
  */
 
@@ -162,7 +162,7 @@ export interface SubmitOptions {
 }
 
 /**
- * POST the form + (optional) gzipped diagnostic bundle to the platform.
+ * POST the form + (optional) gzipped diagnostic bundle to the cloud.
  *
  * Throws on non-2xx so the popup can render a meaningful error. On
  * success the response body is ignored.
@@ -250,7 +250,7 @@ const TAR_BLOCK_SIZE = 512;
  * Build a single-member `tar.gz` archive containing the JSON-serialized
  * *bundle* as `extension-diagnostics.json`.
  *
- * The platform-side `sanitize_tar_gz` validator opens uploads with
+ * The cloud-side `sanitize_tar_gz` validator opens uploads with
  * `tarfile.open(..., mode="r|")` and drops uploads that don't yield a
  * valid tar — we ship a real (one-file) ustar archive so the bundle
  * makes it through sanitization end-to-end.

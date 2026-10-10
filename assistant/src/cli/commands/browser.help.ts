@@ -104,7 +104,7 @@ export const browserHelp: CliCommandHelp = {
     {
       flags: "--virtual-desktop",
       description:
-        "Use Chrome in the platform-hosted virtual desktop with visible cursor feedback.",
+        "Use Chrome in the cloud-hosted virtual desktop with visible cursor feedback.",
     },
     {
       flags: "--session <id>",
@@ -128,7 +128,7 @@ export const browserHelp: CliCommandHelp = {
   ],
   helpText: `
 Browser operations are executed through the running assistant.
-Virtual desktop is available only for platform-hosted assistants.
+Virtual desktop is available only for cloud-hosted assistants.
 In the web client, automatic selection prefers virtual desktop Chrome when
 its feature is enabled and the conversation has an
 identified guardian. The macOS and Windows apps keep their existing browser

@@ -44,7 +44,7 @@ export function AssistantLifecyclePanel() {
     setHatching(true);
     try {
       // `create` mode so this actually provisions an *additional* assistant.
-      // Without it the platform defaults to `ensure` and hands back the
+      // Without it the cloud defaults to `ensure` and hands back the
       // existing assistant — the button then looked like a no-op.
       const result = await hatchAssistant(undefined, "create");
       if (result.ok) {

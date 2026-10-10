@@ -28,7 +28,7 @@ The authoritative constants — `MAX_ICON_BYTES = 32 * 1024`, `MAX_ICON_DIMENSIO
 A plugin's icon comes from **either** a curated emoji **or** a PNG. Curate one
 source per plugin, not both. GitHub plugin PNGs and bundled local plugin PNGs
 are both vendored into the shared asset catalog. Local package PNGs stay the
-source of truth in their package. The platform resolves these sources into a
+source of truth in their package. The cloud resolves these sources into a
 single catalog `icon` value (see
 [Platform combination](#platform-combination-and-precedence)). A plugin that
 ships a PNG does not also need a marketplace `icon` emoji.
@@ -49,7 +49,7 @@ Each entry in [`plugins/marketplace.json`](../plugins/marketplace.json) MAY carr
 }
 ```
 
-The marketplace entry schema (name, a discriminated `source`, description, category, homepage, license, and the optional `icon`) is defined in [`plugin-marketplace.ts`](../assistant/src/cli/lib/plugin-marketplace.ts). GitHub sources pin `ref` to a **full commit SHA**; local sources name an exact package path and version embedded in the assistant distribution. The `icon` field is curated in-repo, not fetched from the third-party plugin. It is wired end to end: `marketplaceEntrySchema` carries it through `marketplaceMatch` into the catalog projection and the `assistant plugins search` response, and the platform's `/v1/plugins/` reads the same curated emoji independently to render the marketing site.
+The marketplace entry schema (name, a discriminated `source`, description, category, homepage, license, and the optional `icon`) is defined in [`plugin-marketplace.ts`](../assistant/src/cli/lib/plugin-marketplace.ts). GitHub sources pin `ref` to a **full commit SHA**; local sources name an exact package path and version embedded in the assistant distribution. The `icon` field is curated in-repo, not fetched from the third-party plugin. It is wired end to end: `marketplaceEntrySchema` carries it through `marketplaceMatch` into the catalog projection and the `assistant plugins search` response, and the cloud's `/v1/plugins/` reads the same curated emoji independently to render the marketing site.
 
 ### 2. PNG — vendored asset + derived manifest
 
@@ -85,7 +85,7 @@ plugins also have a derived compatibility copy at
 `integration.logo` must name that file. Existing OAuth logo filenames remain
 independent even when an OAuth provider and an MCP plugin share a brand.
 
-The platform marketing catalog serves icons from the plugin assets bucket, so
+The cloud marketing catalog serves icons from the plugin assets bucket, so
 each valid local package icon is vendored to `plugins/assets/<name>/icon.png`
 and indexed in `plugins/plugin-icons.json` — the package icon is the source of
 truth, and the vendored copy plus manifest entry must stay byte-identical to it
@@ -93,13 +93,13 @@ when either changes.
 
 ## Platform combination and precedence
 
-The platform serves each plugin a single `icon` value in `/v1/plugins/`, matching how skills expose one `icon`. It is a **URL-or-emoji** value resolved by this precedence:
+The cloud serves each plugin a single `icon` value in `/v1/plugins/`, matching how skills expose one `icon`. It is a **URL-or-emoji** value resolved by this precedence:
 
-1. **PNG URL** — if `plugins/plugin-icons.json` has an entry for the plugin, the platform serves the GCS URL of the vendored `icon.png` (cache-busted by `iconVersion`; see below).
+1. **PNG URL** — if `plugins/plugin-icons.json` has an entry for the plugin, the cloud serves the GCS URL of the vendored `icon.png` (cache-busted by `iconVersion`; see below).
 2. **Emoji** — else if the marketplace entry has an `icon` emoji, serve that string.
 3. **`null`** — else no icon. The client then falls back to a generic 📦/🧩 glyph (per [PR #37087](https://github.com/vargasjr-dev/mycadet/pull/37087)).
 
-A vendored PNG always wins over a curated emoji, so a plugin only needs one source: give it a PNG **or** an emoji, not both. The platform serves that single `icon`, and clients render it best-effort — there is no separate emoji field riding alongside a PNG URL.
+A vendored PNG always wins over a curated emoji, so a plugin only needs one source: give it a PNG **or** an emoji, not both. The cloud serves that single `icon`, and clients render it best-effort — there is no separate emoji field riding alongside a PNG URL.
 
 ## Bucket convention
 

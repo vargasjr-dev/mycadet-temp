@@ -34,8 +34,8 @@ interface GatedProfile {
   place: (profileOrder: string[]) => void;
   /**
    * Whether a BYOK install first materializes the stub disabled. True for a
-   * profile whose managed route exists but is unusable until the user enables
-   * the managed connection; false for a managed-only profile, whose stub has
+   * profile whose cloud route exists but is unusable until the user enables
+   * the cloud connection; false for a cloud-only profile, whose stub has
    * no body on a BYOK column and so is never offered there anyway.
    */
   byokStartsDisabled: boolean;
@@ -67,7 +67,7 @@ const GATED_PROFILES: readonly GatedProfile[] = [
 ];
 
 /**
- * Reconcile flag-gated managed profiles against the current feature-flag state.
+ * Reconcile flag-gated cloud profiles against the current feature-flag state.
  *
  * `seedInferenceProfiles()` runs synchronously at boot before feature flags are
  * available, so the gated profiles (OS Beta, Auto) are materialized here once
@@ -97,9 +97,9 @@ export function reconcileFlagGatedProfiles(): boolean {
     : [];
   llm.profileOrder = profileOrder;
 
-  const isPlatform =
-    process.env.IS_PLATFORM === "true" || process.env.IS_PLATFORM === "1";
-  const isByokMode = !isPlatform;
+  const isCloud =
+    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
+  const isByokMode = !isCloud;
 
   let changed = false;
   for (const gated of GATED_PROFILES) {
@@ -154,7 +154,7 @@ function enableProfile(
   // `topP`).
   const next: Record<string, unknown> = { source: "managed" };
 
-  // BYOK installs create the stub disabled: the managed inference connection
+  // BYOK installs create the stub disabled: the cloud inference connection
   // backing this profile isn't usable until the user enables it, so a fresh
   // entry starts disabled to avoid offering an unusable route. The
   // " (Managed)" label suffix disambiguates it from personal profiles in
@@ -251,7 +251,7 @@ function disableProfile(
     typeof llm.advisorProfile === "string" &&
     removed.has(llm.advisorProfile)
   ) {
-    // Repoint the advisor at the managed Quality profile (the strongest).
+    // Repoint the advisor at the cloud Quality profile (the strongest).
     // `quality-optimized` is an always-available code-catalog default, so it
     // resolves whether or not a workspace stub exists.
     llm.advisorProfile = "quality-optimized";

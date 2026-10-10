@@ -40,8 +40,8 @@ const realSttResolveModule = {
 const realSecureKeysModule = {
   ...(await import("../../security/secure-keys.js")),
 };
-const realManagedSpeechModule = {
-  ...(await import("../../platform/managed-speech.js")),
+const realCloudSpeechModule = {
+  ...(await import("../../cloud/cloud-speech.js")),
 };
 
 // -- Mutable stub state --------------------------------------------------------
@@ -76,12 +76,12 @@ mock.module("../../security/secure-keys.js", () => ({
 
 let managedAvailable = false;
 
-mock.module("../../platform/managed-speech.js", () => ({
-  ...realManagedSpeechModule,
+mock.module("../../cloud/cloud-speech.js", () => ({
+  ...realCloudSpeechModule,
   managedSpeechAvailable: async () =>
     preflightMocksActive
       ? managedAvailable
-      : realManagedSpeechModule.managedSpeechAvailable(),
+      : realCloudSpeechModule.managedSpeechAvailable(),
 }));
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
@@ -295,7 +295,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
     expect(readiness).toEqual({ status: "ready" });
   });
 
-  test("cadet TTS without a platform connection → connection copy, not API-key copy", async () => {
+  test("cadet TTS without a cloud connection → connection copy, not API-key copy", async () => {
     ttsProvider = "cadet";
     ttsProviders = {};
     managedAvailable = false;
@@ -306,7 +306,7 @@ describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
         kind: "tts",
         providerId: "cadet",
         reason:
-          'TTS provider "cadet" needs a Cadet Cloud connection for managed speech',
+          'TTS provider "cadet" needs a Cadet Cloud connection for cloud speech',
       },
     ]);
     expect(readiness.userMessage).toContain("assistant cloud connect");

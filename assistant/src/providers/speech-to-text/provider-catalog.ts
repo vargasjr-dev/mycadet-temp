@@ -504,10 +504,10 @@ export function supportsDiarization(id: SttProviderId): boolean {
  * than a stored API key.
  *
  * Derived from the catalog rather than a hand-kept id list: every check that
- * gates managed speech reads this, so adding a managed provider cannot leave
+ * gates cloud speech reads this, so adding a cloud provider cannot leave
  * one of them behind on a stale literal.
  */
-export function isManagedSttProvider(id: SttProviderId): boolean {
+export function isCloudSttProvider(id: SttProviderId): boolean {
   return CATALOG.get(id)?.credentialProvider === "cadet";
 }
 
@@ -653,7 +653,7 @@ export function listCredentialProviderNames(): readonly string[] {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const entry of CATALOG.values()) {
-    // Connection-based providers (cadet) authenticate via the platform
+    // Connection-based providers (cadet) authenticate via the cloud
     // connection, not a stored API key — offering them on the generic
     // key routes would accept a key that never enables anything.
     if (entry.setupMode !== "api-key") {

@@ -1,5 +1,5 @@
 /**
- * Sync the avatar raster to the platform Assistant record.
+ * Sync the avatar raster to the cloud Assistant record.
  *
  * Every avatar publish (routes and the fs watcher) and daemon startup enqueue
  * a sync through the shared platform PATCH queue. The current avatar state is
@@ -16,9 +16,9 @@
  * (API-key auth cannot read the record to verify it).
  * `avatar_base64: null` is sent only when the avatar is actually removed; a
  * non-none avatar whose raster is missing (image PNG gone, character
- * re-render unavailable) is skipped so the platform keeps the last synced
+ * re-render unavailable) is skipped so the cloud keeps the last synced
  * copy. A removal nulls the notification field too, and falls back to nulling
- * the display avatar alone, so a platform that rejects the notification field
+ * the display avatar alone, so a cloud that rejects the notification field
  * cannot block clearing the avatar. Its key carries the spec version as the
  * non-empty key does, so an installation still holding the key of a removal
  * that predates the notification field re-sends once instead of deduping
@@ -34,13 +34,13 @@
  * codec for the source) from latching for the key's whole lifetime: the key
  * changes the moment the cause clears, so the disc goes up on the next sync.
  * When the render is unavailable the key is omitted rather than nulled, so
- * the platform keeps the copy it holds. The state is read through the accent
+ * the cloud keeps the copy it holds. The state is read through the accent
  * backfill, so a manifest written before accents were persisted has its
  * accent derived and stored before the key is built and the disc is drawn,
  * rather than shipping the neutral fallback until something else repairs it.
  * A render that fails inside the body, after the key promised a disc, hands
  * the queue the disc-less key instead, so the next sync tries again rather
- * than recording a disc that never went up. If the platform rejects the field
+ * than recording a disc that never went up. If the cloud rejects the field
  * outright with a 400, the queue re-sends the display avatar alone, and under
  * the disc key: the 400 is a verdict on this render, so re-drawing it would
  * only take the same 400 on every later enqueue. The key still moves when the
@@ -55,12 +55,12 @@ import { dirname, join } from "node:path";
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
 import {
-  createPlatformPatchQueue,
+  type CloudPatchQueue,
+  createCloudPatchQueue,
   type PatchBodyResult,
   type PatchPayload,
-  type PlatformPatchQueue,
   type SyncedKey,
-} from "../platform/platform-patch-queue.js";
+} from "../cloud/cloud-patch-queue.js";
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
 import { getLogger } from "../util/logger.js";
 import { getWorkspaceDir } from "../util/platform.js";
@@ -101,7 +101,7 @@ const UPLOADABLE_TYPES: ReadonlySet<string> = new Set([
 const SYNC_STATE_SUBPATH = ["platform-sync", "avatar.json"];
 export const AVATAR_SYNC_KEY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-let queue: PlatformPatchQueue<void> | null = null;
+let queue: CloudPatchQueue<void> | null = null;
 
 /** Recreates the queue so the next sync re-seeds its dedup key from disk. */
 export function _resetSyncAvatarStateForTests(): void {
@@ -110,12 +110,12 @@ export function _resetSyncAvatarStateForTests(): void {
 }
 
 /**
- * Enqueue a best-effort push of the current avatar raster to the platform.
- * No-op when the platform client cannot be created or no assistant id is
+ * Enqueue a best-effort push of the current avatar raster to the cloud.
+ * No-op when the cloud client cannot be created or no assistant id is
  * configured, or when the raster's etag matches the last successful sync.
  */
-export function syncAvatarToPlatform(): void {
-  queue ??= createPlatformPatchQueue({
+export function syncAvatarToCloud(): void {
+  queue ??= createCloudPatchQueue({
     log,
     label: "avatar",
     buildPayload,
@@ -207,7 +207,7 @@ async function buildPayload(): Promise<PatchPayload | undefined> {
         // draws again.
         return { body: rasterOnly, key: keyFor(NONE_KEY) };
       }
-      // A 400 is the platform refusing this render rather than missing it,
+      // A 400 is the cloud refusing this render rather than missing it,
       // so the reduced send records the disc key: re-drawing would take the
       // same 400 on every later enqueue.
       return withNotificationFallback(
@@ -239,7 +239,7 @@ function sha256(bytes: Buffer): string {
 /**
  * Reads the raster through the fd-validated, avatar-dir-contained path and
  * refuses anything that does not sniff as an image, so a symlinked or
- * swapped `avatar-image.png` never ships host bytes to the platform.
+ * swapped `avatar-image.png` never ships host bytes to the cloud.
  */
 function readRaster(path: string): Buffer | undefined {
   const bytes = readContainedAvatarRaster(path);

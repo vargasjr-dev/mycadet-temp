@@ -7,11 +7,11 @@
  * `SQLITE_CORRUPT` / `SQLITE_NOTADB` error ("database disk image is malformed"
  * / "file is not a database") on the next statement that touches the damaged
  * page. Left unobserved, that damage is only noticed when a user hits a broken
- * feature; the platform has no fleet-wide view of how often it happens.
+ * feature; the cloud has no fleet-wide view of how often it happens.
  *
  * This watchdog makes corruption observable. It emits a `watchdog` telemetry
  * event with `check_name = "sqlite_corrupted"` — the same stream the event-loop
- * watchdog uses — but POSTs it *directly* to the platform ingest rather than
+ * watchdog uses — but POSTs it *directly* to the cloud ingest rather than
  * through the SQLite-backed watchdog buffer: a check that fires because SQLite
  * is unusable must not depend on writing to SQLite, and going direct keeps this
  * module out of the `db-connection` import graph. The direct path still honors
@@ -37,7 +37,7 @@ import { getLogger } from "../util/logger.js";
 const log = getLogger("sqlite-corruption-watchdog");
 
 /**
- * Check name emitted for SQLite corruption events. The platform's
+ * Check name emitted for SQLite corruption events. The cloud's
  * `watchdog__sqlite_corruption_daily` admin query filters `check_name` to
  * this exact string — it is the cross-repo contract, keep it stable.
  */

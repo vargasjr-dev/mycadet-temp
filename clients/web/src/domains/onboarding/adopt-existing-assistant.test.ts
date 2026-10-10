@@ -2,7 +2,7 @@
  * Tests for the research flow's adopt-vs-managed-hatch decision. The explicit
  * hosting choice must win when present; a missing query string must fall back
  * to the live-session signal so a pre-hatched local assistant is never routed
- * onto the managed hatch (which gates the flow on a wake that never ends
+ * onto the cloud hatch (which gates the flow on a wake that never ends
  * against a local gateway).
  */
 
@@ -11,7 +11,7 @@ import { describe, expect, test } from "bun:test";
 import { shouldAdoptExistingAssistant } from "./adopt-existing-assistant";
 
 describe("shouldAdoptExistingAssistant", () => {
-  test("platform (non-local) builds always run the managed hatch", () => {
+  test("platform (non-local) builds always run the cloud hatch", () => {
     for (const hostingParam of [null, "local", "docker", "cadet-cloud"]) {
       expect(
         shouldAdoptExistingAssistant({
@@ -35,8 +35,8 @@ describe("shouldAdoptExistingAssistant", () => {
     }
   });
 
-  test("explicit cadet-cloud hosting runs the managed hatch even over a live local session", () => {
-    // The desktop app can onboard a managed assistant while still holding a
+  test("explicit cadet-cloud hosting runs the cloud hatch even over a live local session", () => {
+    // The desktop app can onboard a cloud assistant while still holding a
     // gateway session from a previous local one — the explicit choice wins.
     expect(
       shouldAdoptExistingAssistant({
@@ -49,7 +49,7 @@ describe("shouldAdoptExistingAssistant", () => {
 
   test("no hosting param with a live local session adopts the connected assistant", () => {
     // A refresh or back-navigation that lost the query string must not strand
-    // a pre-hatched local assistant behind the managed wake gate.
+    // a pre-hatched local assistant behind the cloud wake gate.
     expect(
       shouldAdoptExistingAssistant({
         hostingParam: null,
@@ -59,9 +59,9 @@ describe("shouldAdoptExistingAssistant", () => {
     ).toBe(true);
   });
 
-  test("no hosting param and no local session runs the managed hatch", () => {
+  test("no hosting param and no local session runs the cloud hatch", () => {
     // Desktop app connected to a Cadet-Cloud assistant (platform session):
-    // the managed hatch resolves that existing assistant.
+    // the cloud hatch resolves that existing assistant.
     expect(
       shouldAdoptExistingAssistant({
         hostingParam: null,

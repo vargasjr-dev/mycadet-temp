@@ -711,7 +711,7 @@ async function reconcileWorkspaceTools(
     const tool = await loadDesiredLiveTool(stem, entry, importTimeoutMs);
     if (!tool) {
       // Import failed (already logged). Leave any prior registration intact
-      // and keep the managed entry so a later fix re-imports cleanly.
+      // and keep the cloud entry so a later fix re-imports cleanly.
       continue;
     }
 

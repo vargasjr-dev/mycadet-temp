@@ -421,7 +421,7 @@ export async function handleChannelInbound({
   // Canonicalize the sender identity so all trust lookups, member matching,
   // and guardian binding comparisons use a normalized form. Phone-like
   // channels (voice, whatsapp) are normalized to E.164; non-phone
-  // channels pass through the platform-stable ID unchanged.
+  // channels pass through the cloud-stable ID unchanged.
   const canonicalSenderId = rawSenderId
     ? canonicalizeInboundIdentity(sourceChannel, rawSenderId)
     : null;

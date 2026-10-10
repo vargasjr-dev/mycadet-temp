@@ -6,7 +6,7 @@
  *
  * - Sanitized environment variables only (no API keys, tokens, credentials)
  * - No credential proxy, no CES client, no host fallback
- * - Runs in Docker/platform-managed environments (network/filesystem isolation
+ * - Runs in Docker/cloud-managed environments (network/filesystem isolation
  *   is provided by the container, not OS-level sandboxing)
  * - Uses the conversation working directory as `cwd` so repo-local commands
  *   remain interoperable with externally authored skills that expect project

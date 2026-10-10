@@ -44,7 +44,7 @@ export interface TtsCallStrategy {
  *
  * Reads the provider from config via {@link resolveTtsConfig} (or takes
  * `providerOverride`, the provider a caller already resolved after
- * managed-speech defaulting), then looks up its `callMode` in the catalog.
+ * cloud-speech defaulting), then looks up its `callMode` in the catalog.
  *
  * Falls back to `native-twilio` with `"elevenlabs"` when the config
  * or catalog is unavailable (e.g. test mocks, pre-migration configs).

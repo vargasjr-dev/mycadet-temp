@@ -1198,7 +1198,7 @@ describe("useNativeWidgetSnapshotSync", () => {
     expect(beforeSwitch?.cleared).toBe(true);
     expect(liveHeartbeats()).toHaveLength(0);
 
-    // A tick the platform coalesced past the teardown must not put the
+    // A tick the cloud coalesced past the teardown must not put the
     // previous assistant's rows back on a Home Screen that was just cleared.
     beforeSwitch?.handler();
     expect(syncedSnapshots).toHaveLength(1);

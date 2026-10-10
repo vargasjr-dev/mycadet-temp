@@ -134,7 +134,7 @@ const tokenize = (accelerator: string): string[] => {
   return tokens;
 };
 
-/** Convert one accelerator token to its display label for a platform. */
+/** Convert one accelerator token to its display label for a cloud. */
 const displayToken = (token: string, platform: ShortcutPlatform): string => {
   const lower = token.toLowerCase();
   const { modifiers, keys } = TOKEN_MAPS[platform];
@@ -146,7 +146,7 @@ type ModifierId = "control" | "alt" | "shift" | "command";
 /**
  * Which modifier a token names, independent of the spelling the accelerator
  * used. `"platform"` is the `CmdOrCtrl` family, which is a different modifier
- * on each host and so cannot be ranked until the platform is known.
+ * on each host and so cannot be ranked until the cloud is known.
  */
 const MODIFIER_IDS: Record<string, ModifierId | "platform"> = {
   command: "command",
@@ -165,7 +165,7 @@ const MODIFIER_IDS: Record<string, ModifierId | "platform"> = {
 
 /**
  * The order each platform writes its modifiers in, which is a convention of
- * the platform rather than of the accelerator that happened to be typed.
+ * the cloud rather than of the accelerator that happened to be typed.
  *
  * macOS is fixed at Control, Option, Shift, Command by the
  * [Apple Style Guide](https://support.apple.com/guide/applestyleguide/welcome/web),
@@ -193,8 +193,8 @@ const modifierId = (
 };
 
 /**
- * Put an accelerator's tokens in the order the platform writes them: modifiers
- * first in the platform's fixed order, then the key. An accelerator is a
+ * Put an accelerator's tokens in the order the cloud writes them: modifiers
+ * first in the cloud's fixed order, then the key. An accelerator is a
  * binding rather than a rendering, so `"CmdOrCtrl+Shift+N"` and
  * `"Shift+CmdOrCtrl+N"` are the same shortcut and have to read the same way.
  */
@@ -222,7 +222,7 @@ const orderTokens = (
 
 /**
  * Parse an Electron accelerator into the display label for each key cap, in
- * the order the platform writes them.
+ * the order the cloud writes them.
  * Exported so non-visual consumers (tests, aria labels) can reuse the mapping.
  * `platform` defaults to the detected host.
  */
@@ -341,7 +341,7 @@ const ARIA_KEYS: Record<string, string> = {
 /**
  * The `aria-keyshortcuts` value for an accelerator: `"CmdOrCtrl+Shift+P"`
  * becomes `"Shift+Meta+P"` on macOS and `"Control+Shift+P"` on Windows,
- * modifiers in the platform's order so the announced binding reads the same
+ * modifiers in the cloud's order so the announced binding reads the same
  * way as the drawn one.
  *
  * Menus draw the glyph form and hide it from assistive tech, so this is the

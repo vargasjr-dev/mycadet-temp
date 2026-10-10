@@ -7,9 +7,9 @@
 
 import { z } from "zod";
 
+import { CadetCloudClient } from "../../cloud/client.js";
 import { getApexDomain } from "../../config/env.js";
 import { getConfig, setConfigSection } from "../../config/loader.js";
-import { CadetPlatformClient } from "../../platform/client.js";
 import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, RouteError, UnauthorizedError } from "./errors.js";
@@ -48,14 +48,14 @@ const DomainVerificationStatusResponseSchema = z.object({
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-async function requireClient(): Promise<CadetPlatformClient> {
-  const client = await CadetPlatformClient.create();
+async function requireClient(): Promise<CadetCloudClient> {
+  const client = await CadetCloudClient.create();
   if (!client) {
     throw new UnauthorizedError(
       "Platform credentials not configured. Run: assistant cloud connect",
     );
   }
-  if (!client.platformAssistantId) {
+  if (!client.cloudAssistantId) {
     throw new UnauthorizedError(
       "Assistant ID not configured. Run: assistant cloud connect",
     );
@@ -64,10 +64,10 @@ async function requireClient(): Promise<CadetPlatformClient> {
 }
 
 async function fetchDomains(
-  client: CadetPlatformClient,
+  client: CadetCloudClient,
 ): Promise<DomainListResponse> {
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/domains/`,
+    `/v1/assistants/${client.cloudAssistantId}/domains/`,
   );
 
   if (!response.ok) {
@@ -101,7 +101,7 @@ async function handleDomainRegister({ body = {} }: RouteHandlerArgs) {
   }
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/domains/`,
+    `/v1/assistants/${client.cloudAssistantId}/domains/`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -184,7 +184,7 @@ async function handleDomainVerificationStatus({ body = {} }: RouteHandlerArgs) {
   }
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/domains/${encodeURIComponent(domain_id)}/verification-status/`,
+    `/v1/assistants/${client.cloudAssistantId}/domains/${encodeURIComponent(domain_id)}/verification-status/`,
   );
 
   if (!response.ok) {

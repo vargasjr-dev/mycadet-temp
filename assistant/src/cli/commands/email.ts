@@ -180,7 +180,7 @@ Examples:
           "after",
           () => `
 Shows the email address registered for this assistant along with
-current usage and quota information from the platform.
+current usage and quota information from the cloud.
 
 Examples:
   $ assistant email status
@@ -482,7 +482,7 @@ Examples:
           }
 
           // Read attachments and base64-encode their content for the JSON
-          // wire to the platform proxy.
+          // wire to the cloud proxy.
           let attachments:
             | { filename: string; content_type: string; content: string }[]
             | undefined;

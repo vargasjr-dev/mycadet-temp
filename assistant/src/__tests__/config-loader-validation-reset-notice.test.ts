@@ -4,7 +4,7 @@
  * cloneDefaultConfig), it writes a JSON sentinel to
  * <workspace>/data/config-validation-reset-notice.json recording the reset.
  * The per-turn `config-validation-reset-notice` injector surfaces that event to
- * the agent so a setting that silently reverted (e.g. a managed Outlook/OAuth
+ * the agent so a setting that silently reverted (e.g. a cloud Outlook/OAuth
  * service mode) becomes explainable — matching LUM-2758.
  *
  * The revealing case: a wrong-type `llm.profiles` fails the first parse so

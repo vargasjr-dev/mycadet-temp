@@ -3232,7 +3232,7 @@ export async function surfaceProxyResolver(
       if (!canUseVirtualDesktop(desktopContext)) {
         return {
           content:
-            "The assistant desktop requires an identified guardian and an enabled platform-hosted assistant.",
+            "The assistant desktop requires an identified guardian and an enabled cloud-hosted assistant.",
           isError: true,
         };
       }

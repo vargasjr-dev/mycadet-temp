@@ -45,7 +45,7 @@ import { useAssistantReachability } from "@/assistant/use-assistant-reachability
 import { useDiskPressureMonitor } from "@/assistant/use-disk-pressure-monitor";
 import { getDiskPressureChatBlockReason } from "@/assistant/disk-pressure";
 import { useResourcePressureMonitor } from "@/assistant/use-resource-pressure-monitor";
-import { useActiveAssistantIsPlatformHosted } from "@/hooks/use-platform-gate";
+import { useActiveAssistantIsCloudHosted } from "@/hooks/use-cloud-gate";
 import { useComposerStore } from "@/domains/chat/composer-store";
 
 import { useConversationLoader } from "@/domains/chat/hooks/use-conversation-loader";
@@ -220,12 +220,12 @@ export function ActiveChatView() {
   }, [reachability.state.phase, refreshEpoch]);
 
   // -------------------------------------------------------------------------
-  // Disk pressure (only relevant for platform-hosted assistants)
+  // Disk pressure (only relevant for cloud-hosted assistants)
   // -------------------------------------------------------------------------
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor({
     assistantId,
-    enabled: isPlatformHosted,
+    enabled: isCloudHosted,
   });
   const diskPressureChatBlockReason = getDiskPressureChatBlockReason({
     monitorEnabled: diskPressure.mode !== null,
@@ -237,7 +237,7 @@ export function ActiveChatView() {
   const supportsResourcePressureStatus = useSupportsResourcePressureStatus();
   const resourcePressure = useResourcePressureMonitor({
     assistantId,
-    enabled: isPlatformHosted && supportsResourcePressureStatus,
+    enabled: isCloudHosted && supportsResourcePressureStatus,
   });
 
   // -------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /**
  * Outlook messaging provider adapter.
  *
- * Maps Microsoft Graph API responses to the platform-agnostic messaging types
+ * Maps Microsoft Graph API responses to the cloud-agnostic messaging types
  * and implements the MessagingProvider interface.
  */
 

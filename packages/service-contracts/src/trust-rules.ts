@@ -15,7 +15,7 @@
  * - **URL**: tools whose candidates include a URL (`web_fetch`,
  *   `network_request`).
  * - **Managed skill**: tools that manage first-party skill packages
- *   (`scaffold_managed_skill`, `delete_managed_skill`).
+ *   (`scaffold_cloud_skill`, `delete_cloud_skill`).
  * - **Skill load**: the `skill_load` tool, which uses a distinct candidate
  *   namespace (`skill_load:selector` or `skill_load_dynamic:selector`).
  * - **Generic**: everything else (computer-use tools, UI surface tools,
@@ -58,8 +58,8 @@ export const URL_TOOLS = ["web_fetch", "network_request"] as const;
  * Tools that manage first-party skill packages (scaffold/delete).
  */
 export const MANAGED_SKILL_TOOLS = [
-  "scaffold_managed_skill",
-  "delete_managed_skill",
+  "scaffold_cloud_skill",
+  "delete_cloud_skill",
 ] as const;
 
 /**
@@ -89,8 +89,8 @@ export function isUrlRule(rule: { tool: string }): boolean {
   return URL_TOOLS_SET.has(rule.tool);
 }
 
-/** Returns true when the rule's tool belongs to the managed-skill-tool family. */
-export function isManagedSkillRule(rule: { tool: string }): boolean {
+/** Returns true when the rule's tool belongs to the cloud-skill-tool family. */
+export function isCloudSkillRule(rule: { tool: string }): boolean {
   return MANAGED_SKILL_TOOLS_SET.has(rule.tool);
 }
 

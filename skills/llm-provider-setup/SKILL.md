@@ -16,17 +16,17 @@ This skill is the canonical procedure for adding a new LLM provider, model, or i
 
 ## Step 0 — Check what's already available (avoid collecting keys unnecessarily)
 
-Managed (platform-credentialed) routing may already cover the user's need — no API key required:
+Managed (cloud-credentialed) routing may already cover the user's need — no API key required:
 
 ```bash
-assistant inference providers list          # provider entries; `cadet` is the platform-managed route
+assistant inference providers list          # provider entries; `cadet` is the cloud route
 assistant inference providers default       # default provider + availability status
 assistant inference profiles list           # effective profiles: managed + user, with availability
 ```
 
-**Managed first.** If the user is signed in to Cadet and the model they asked for is served by the managed route, build the profile on it — `--provider cadet --model <model-id>`, no `--connection`, no credential, nothing to prompt for. Skip Steps 1 and 2 entirely and go to Step 3; there is no key to collect. If the model turns out not to be managed-routable, profile creation says so explicitly (Step 4) — only then fall back to key collection.
+**Managed first.** If the user is signed in to Cadet and the model they asked for is served by the cloud route, build the profile on it — `--provider cadet --model <model-id>`, no `--connection`, no credential, nothing to prompt for. Skip Steps 1 and 2 entirely and go to Step 3; there is no key to collect. If the model turns out not to be managed-routable, profile creation says so explicitly (Step 4) — only then fall back to key collection.
 
-Collect an API key only when there is genuinely no managed option: the user is not signed in to Cadet, the model is not served by the managed route, or the user explicitly wants to use their own key.
+Collect an API key only when there is genuinely no managed option: the user is not signed in to Cadet, the model is not served by the cloud route, or the user explicitly wants to use their own key.
 
 ## Step 1 — Reuse an existing key, or securely collect a new one
 
@@ -70,7 +70,7 @@ assistant inference providers create <connection-name> \
   --model <another-model-id>
 ```
 
-For a local, keyless endpoint (e.g. LM Studio, vLLM) use `--auth none` and drop `--credential`. The managed Cadet connection is not editable — create a new named connection instead of modifying it.
+For a local, keyless endpoint (e.g. LM Studio, vLLM) use `--auth none` and drop `--credential`. The cloud Cadet connection is not editable — create a new named connection instead of modifying it.
 
 ## Step 3 — Discover a valid model id (do not guess)
 
@@ -88,7 +88,7 @@ assistant inference send --model <candidate-id> --max-tokens 32 "Reply with OK"
 
 ## Step 4 — Create the profile
 
-On the managed route (Step 0), there is no connection to name:
+On the cloud route (Step 0), there is no connection to name:
 
 ```bash
 assistant inference profiles create <profile-name> \
@@ -109,7 +109,7 @@ assistant inference profiles create <profile-name> \
 
 **Always pass `--label` with the human-readable model name** (e.g. `"Gemini 3.6 Flash"`, `"Claude Opus 5"`) — the label is what the model picker and chat composer display, so a missing or terse one surfaces a raw config key like `gemini-latest` to the user. When `--label` is omitted the daemon falls back to the catalog's display name for the model, but an explicit label is better when the user asked for something specific ("my fast model"). The profile _name_ stays a short kebab-case key.
 
-Creation validates the provider, model id (against the catalog — pass `--allow-unlisted` only for a model you already probed in Step 3), and connection existence. It also refuses a profile that provably cannot dispatch — no connection, no stored key, or a model the managed route does not serve — so an unusable profile can never reach the chat model. Read the refusal message and fix the underlying gap (go back to Step 0 or Step 1); it names what is missing. Optional tuning flags: `--effort`, `--max-tokens`, `--temperature`, `--thinking on|off`.
+Creation validates the provider, model id (against the catalog — pass `--allow-unlisted` only for a model you already probed in Step 3), and connection existence. It also refuses a profile that provably cannot dispatch — no connection, no stored key, or a model the cloud route does not serve — so an unusable profile can never reach the chat model. Read the refusal message and fix the underlying gap (go back to Step 0 or Step 1); it names what is missing. Optional tuning flags: `--effort`, `--max-tokens`, `--temperature`, `--thinking on|off`.
 
 ## Step 5 — Verify with a live call (mandatory)
 

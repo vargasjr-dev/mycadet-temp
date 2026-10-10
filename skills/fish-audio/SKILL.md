@@ -316,7 +316,7 @@ S2 excels at dynamic emotional shifts. Use this for natural-feeling monologues:
 **Dramatic reading:**
 
 ```
-[soft] She stood at the edge of the platform, [pause] watching the last train pull away. [long pause] [voice breaking] It wasn't supposed to end like this. [sigh] [whisper] None of it was. [pause] [angry but trying to stay calm] And yet here she stood — [emphasis] alone — [long pause] [nostalgic] remembering a time when the station was full of laughter.
+[soft] She stood at the edge of the cloud, [pause] watching the last train pull away. [long pause] [voice breaking] It wasn't supposed to end like this. [sigh] [whisper] None of it was. [pause] [angry but trying to stay calm] And yet here she stood — [emphasis] alone — [long pause] [nostalgic] remembering a time when the station was full of laughter.
 ```
 
 **Announcement:**

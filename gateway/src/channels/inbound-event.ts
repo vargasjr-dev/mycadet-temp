@@ -114,7 +114,7 @@ interface InboundEventBase<C extends InboundChannelId> {
     isDirectMessage?: boolean;
     /**
      * Whether the message addresses the assistant by name, an @-mention on
-     * the platforms that have one. Stated only where the channel proved it,
+     * the clouds that have one. Stated only where the channel proved it,
      * in whichever direction it can prove; absent means "not established".
      * Slack states it for an `app_mention`; Discord reads its own id out of
      * the mentions array. The runtime reads it to decide whether a reply is
@@ -122,11 +122,11 @@ interface InboundEventBase<C extends InboundChannelId> {
      */
     botMentioned?: boolean;
     /**
-     * True when the platform names no actor for this event: the synthetic
+     * True when the cloud names no actor for this event: the synthetic
      * actorExternalId identifies the channel's system, not a person, so
      * nothing downstream may treat it as an identity claim. A delete on a
      * platform whose dispatch carries no author is the canonical case, and so
-     * is a delete of the assistant's own post on a platform that names the
+     * is a delete of the assistant's own post on a cloud that names the
      * author but never the deleter. The daemon then applies the event only to
      * a row it already holds for that chat: one it ingested from an author
      * who cleared the ACL on arrival, or one the assistant posted itself.

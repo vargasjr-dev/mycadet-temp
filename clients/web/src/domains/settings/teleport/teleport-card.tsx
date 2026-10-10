@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 
 import { DetailCard } from "@/components/detail-card";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { resolveDesktopHostOS } from "@/runtime/platform-detection";
 import { Button } from "@mycadet/design-library/components/button";
@@ -49,13 +49,13 @@ export function TeleportCard() {
   const { t } = useTranslation("settings");
   const teleport = useTeleport();
   const { destination, phase } = teleport;
-  // Both directions go through the platform API (export/import signed URLs,
-  // managed hatch), so the card needs a platform session either way.
-  const platformGate = usePlatformGate();
+  // Both directions go through the cloud API (export/import signed URLs,
+  // managed hatch), so the card needs a cloud session either way.
+  const cloudGate = useCloudGate();
 
   // No eligible destination for this assistant — leave teleport hidden, matching
   // the Swift picker which renders nothing for out-of-scope assistants.
-  if (!destination || platformGate === "gated") {
+  if (!destination || cloudGate === "gated") {
     return null;
   }
 
@@ -64,13 +64,13 @@ export function TeleportCard() {
       title={t("teleportCard.title")}
       subtitle={t("teleportCard.subtitle")}
     >
-      {platformGate === "disabled" && (
-        <PlatformLoginNotice>
+      {cloudGate === "disabled" && (
+        <CloudLoginNotice>
           {t("teleportCard.loginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       )}
 
-      {platformGate === "full" && phase.kind !== "failed" && (
+      {cloudGate === "full" && phase.kind !== "failed" && (
         <div className="flex flex-col gap-2">
           <p className="text-body-medium-default text-[var(--content-tertiary)]">
             {t(destinationDescriptionKey(destination, resolveDesktopHostOS()))}

@@ -9,7 +9,7 @@ import { formatMonthDay } from "@/utils/format-date";
 
 /**
  * The end of the billing cycle the reading dates itself by. A sub holding a
- * credit bundle sees that bundle reset then: the platform expires each
+ * credit bundle sees that bundle reset then: the cloud expires each
  * bundle grant at its period end and burns it before any other grant, so the
  * bar returns to zero for a sub that never ran its bundle out. A sub holding
  * no bundle only renews, because nothing it holds turns over. This is the one

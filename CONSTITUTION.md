@@ -163,9 +163,9 @@ Same word. Opposite direction of value flow.
 
 ### Our Commitments
 
-- Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the managed platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Cadet better.
+- Guardian data belongs to the guardian. Full stop. We do not train models on guardian data. We do not sell it. We do not share it. We're only able to access a Guardian's data if they are a user of the cloud platform and have given prior consent. When we do, it's to assist in debugging a problem or to learn how we can make Cadet better.
 - Self-hosting is the ultimate expression of data sovereignty. We actively build toward a world where anyone can be a guardian of a Cadet assistant without being a user of Cadet Cloud. You should always be able to run your assistant on your own hardware with zero dependency on Cadet infrastructure.
-- On the managed platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a platform account, and with self-hosting, Cadet is removed from the trust loop entirely.
+- On the cloud platform, the assistant's memory, credentials, and conversations live on a machine provisioned exclusively for the Guardian, scoped to one Guardian, with no cross-Guardian sharing. Without a cloud account, and with self-hosting, Cadet is removed from the trust loop entirely.
 - Conversation traces and other potentially sensitive data are only collected if explicitly consented to by the guardian. Guardians can revoke their consent to this collection at any time.
 
 ---
@@ -174,7 +174,7 @@ Same word. Opposite direction of value flow.
 
 > **Governs:** How Cadet thinks about, communicates about, and designs around failure.
 
-Every assistant *will* fail their guardian. The platform *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
+Every assistant *will* fail their guardian. The cloud *will* have outages. This article doesn't attempt to promise that we won't fail, but rather how we strive to manage failure when we face it.
 
 ### Four Truths About Failure
 
@@ -192,7 +192,7 @@ These are what trust rules are for. What audit logs are for. What singular loyal
 
 ### Cadet's Part
 
-Cadet maintains the assistant codebase and operates the platform. That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
+Cadet maintains the assistant codebase and operates the cloud. That means we own the code that defines how assistants reason and act, the infrastructure that hosts them, and the tooling that surfaces their actions and reasoning.
 
 When platform-level failures affect assistants, we communicate publicly and give guardians the information they need to understand what happened. Tooling like Cadet Doctor exists for this reason: making the inner workings of an assistant inspectable when something goes wrong.
 

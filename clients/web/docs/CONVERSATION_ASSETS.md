@@ -21,7 +21,7 @@ from loaded conversation history. Those counts describe loaded history only;
 camera-frame classification is unavailable on that path. Authorization failures,
 405 responses, and server errors do not enable the compatibility fallback.
 
-The platform exposes attachment collection GET requests through its authenticated
+The cloud exposes attachment collection GET requests through its authenticated
 runtime proxy. POST retains its upload handler. DELETE routing and attachment
 cleanup are separate concerns.
 

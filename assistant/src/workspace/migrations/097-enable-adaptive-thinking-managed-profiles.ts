@@ -3,15 +3,15 @@ import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
 
-// Enable adaptive thinking on the managed "balanced" and "quality-optimized"
+// Enable adaptive thinking on the cloud "balanced" and "quality-optimized"
 // profiles for existing platform instances.
 //
 // The assistant-side seed defaults (MANAGED_PROFILE_TEMPLATES in
 // seed-inference-profiles.ts) already ship thinking: { enabled: true,
 // streamThinking: true } for both profiles, which normalizes to
 // { type: "adaptive" } on the wire. Off-platform (BYOK) instances pick this
-// up on every boot because the seeder overwrites managed profiles. On-platform
-// instances preserve existing profiles (the platform overlay is authoritative),
+// up on every boot because the seeder overwrites cloud profiles. On-platform
+// instances preserve existing profiles (the cloud overlay is authoritative),
 // so instances that were hatched before thinking was enabled in the templates
 // are stuck with thinking disabled or absent.
 //
@@ -32,7 +32,7 @@ import type { WorkspaceMigration } from "./types.js";
 //     migration 052 off the repair while still patching profiles that pin a
 //     known Claude model under a non-Anthropic default.
 //
-// Note: the live startup path re-runs the same repair after the platform
+// Note: the live startup path re-runs the same repair after the cloud
 // overlay merge — see assistant/src/workspace/adaptive-thinking-repair.ts.
 // This file keeps its own frozen copy of the logic because migration modules
 // are self-contained snapshots and must never be imported by other code.
@@ -40,7 +40,7 @@ import type { WorkspaceMigration } from "./types.js";
 const ADAPTIVE_THINKING = { enabled: true, streamThinking: true } as const;
 const TARGET_PROFILES = ["balanced", "quality-optimized"] as const;
 
-export const enableAdaptiveThinkingManagedProfilesMigration: WorkspaceMigration =
+export const enableAdaptiveThinkingCloudProfilesMigration: WorkspaceMigration =
   {
     id: "097-enable-adaptive-thinking-managed-profiles",
     description:

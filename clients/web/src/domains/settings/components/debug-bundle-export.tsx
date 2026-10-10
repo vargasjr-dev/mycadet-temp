@@ -27,7 +27,7 @@ const sleep = (ms: number): Promise<void> =>
 /**
  * Cadet staff cannot reach a self-hosted assistant, so the owner sends
  * them a copy instead: the daemon's debug export (workspace, logs, and the
- * gateway's own database, never credentials) uploaded to the platform's
+ * gateway's own database, never credentials) uploaded to the cloud's
  * debug-bundle bucket, where it is kept for seven days.
  *
  * Only the desktop app on the machine running the assistant can ask the
@@ -36,7 +36,7 @@ const sleep = (ms: number): Promise<void> =>
  * the debug profile would strip `profile` and export credentials, so below
  * that version the row asks for an update instead.
  *
- * `assistantId` is the platform UUID (platform routes take no other id).
+ * `assistantId` is the cloud UUID (platform routes take no other id).
  */
 export function DebugBundleExport({
   assistantId,
@@ -58,7 +58,7 @@ export function DebugBundleExport({
       if (!local) {
         throw new Error("no local assistant");
       }
-      // 1. The platform mints the upload URL, and refuses it unless the
+      // 1. The cloud mints the upload URL, and refuses it unless the
       //    staff access grant is active. 2. The daemon builds and uploads
       //    the bundle. 3. Wait for the job so the owner sees a real result.
       const { data } = await assistantsDebugBundleUploadUrlCreate({

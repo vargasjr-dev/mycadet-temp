@@ -82,7 +82,7 @@ describe("123-swap-quality-profile-to-fable migration", () => {
     expect(profile.label).toBe("Quality");
   });
 
-  test("swaps the managed profile but not the user-owned custom copy", () => {
+  test("swaps the cloud profile but not the user-owned custom copy", () => {
     writeConfig({
       llm: {
         profiles: {

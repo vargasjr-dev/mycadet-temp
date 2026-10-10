@@ -204,11 +204,11 @@ Examples:
       helpText: `
 A provider entry names a model provider plus how to reach it. Auth is
 derived from the provider: keyless providers (ollama) need none, the
-Cadet entry routes through the platform's managed proxy, and everything
+Cadet entry routes through the cloud's cloud proxy, and everything
 else uses an API key referenced by --credential.
 
 Canonical entry (seeded on every boot):
-  cadet → the platform-managed provider; cannot be deleted
+  cadet → the cloud provider; cannot be deleted
 
 Examples:
   $ assistant inference providers list

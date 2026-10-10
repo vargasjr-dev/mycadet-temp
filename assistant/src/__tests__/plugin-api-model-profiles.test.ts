@@ -40,7 +40,7 @@ describe("getModelProfiles", () => {
     writeFixtureConfig({});
   });
 
-  test("omits the managed Jev profile, whose model returns verdicts rather than text", () => {
+  test("omits the cloud Jev profile, whose model returns verdicts rather than text", () => {
     writeFixtureConfig({});
     const keys = getModelProfiles().map((p) => p.key);
     expect(keys).toContain("balanced");

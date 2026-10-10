@@ -21,7 +21,7 @@ import { Skeleton } from "@mycadet/design-library/components/skeleton";
 import { DetailCard } from "@/components/detail-card";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ByoVoiceNote } from "@/components/speech/byo-voice-note";
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { VoiceLabel } from "@/components/speech/voice-list";
 import { VoicePickerModal } from "@/components/speech/voice-picker-modal";
 import { useTranslation } from "@/i18n";
@@ -31,7 +31,7 @@ export function VoicePickerCard() {
   const { t } = useTranslation("settings");
   const assistantId = useActiveAssistantId();
   const { available, settled, voices, currentModel } =
-    useManagedVoiceSelection(assistantId);
+    useCloudVoiceSelection(assistantId);
   const current = voices.find((v) => v.model === currentModel) ?? voices[0];
   const [pickerOpen, setPickerOpen] = useState(false);
 

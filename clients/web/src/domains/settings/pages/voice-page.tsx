@@ -30,7 +30,7 @@ import { isElectron } from "@/runtime/is-electron";
 
 import { supportsModifierHold } from "@/runtime/hotkey";
 import { useHotkeyRecorder } from "@/domains/settings/keyboard-shortcuts/use-hotkey-recorder";
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 
 import { DetailCard } from "@/components/detail-card";
 import { useTranslation } from "@/i18n";
@@ -133,17 +133,17 @@ export function VoiceSections() {
 
 /**
  * Pointer to Models & Services, which carries the BYO speech providers (they
- * live with every other provider there, not on this page) and the managed
- * custom-voice-ID entry: most people want the managed voice above, but those
+ * live with every other provider there, not on this page) and the cloud
+ * custom-voice-ID entry: most people want the cloud voice above, but those
  * bringing their own key or a specific voice ID need a way across.
  *
- * Shown only alongside the managed picker. An assistant already on its own
+ * Shown only alongside the cloud picker. An assistant already on its own
  * provider gets that same pointer from the card itself, which has nothing else
  * to offer — a second copy of the sentence directly beneath it just repeats.
  */
 function SpeechServicesBanner() {
   const { t } = useTranslation("settings");
-  const { available } = useManagedVoiceSelection(useActiveAssistantId());
+  const { available } = useCloudVoiceSelection(useActiveAssistantId());
 
   if (!available) {
     return null;

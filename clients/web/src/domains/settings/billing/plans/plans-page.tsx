@@ -69,10 +69,10 @@ import type {
 } from "@/generated/api/types.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
-  useActiveAssistantIsPlatformHosted,
+  useActiveAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { openBillingPathInBrowser } from "@/lib/billing/android-billing-handoff";
 import { saveCheckoutIntent } from "@/lib/billing/checkout-intent";
 import { checkoutReturnTarget } from "@/lib/billing/checkout-return-target";
@@ -125,12 +125,12 @@ function PlansPageContent() {
   const queryClient = useQueryClient();
   const electron = isElectron();
 
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const lifecycleLoading = useActiveAssistantLifecycleIsLoading();
-  const platformReady = platformGate === "full" && isPlatformHosted;
+  const platformReady = cloudGate === "full" && isCloudHosted;
   // Hosting still resolving on a deep-link — hold the spinner, don't redirect.
-  const platformResolving = platformGate === "full" && lifecycleLoading;
+  const platformResolving = cloudGate === "full" && lifecycleLoading;
 
   const subscriptionQuery = useQuery({
     ...organizationsBillingSubscriptionRetrieveOptions(),
@@ -164,7 +164,7 @@ function PlansPageContent() {
   const [switchTarget, setSwitchTarget] = useState<ProPackage | null>(null);
   // Reveals the in-tab provisioning takeover after a successful switch or
   // customize — `BillingOnboardingModal` in resize mode, which only observes
-  // the grow-only resize the platform already fired server-side (no redundant
+  // the grow-only resize the cloud already fired server-side (no redundant
   // client-driven resize).
   const [resizeTakeoverOpen, setResizeTakeoverOpen] = useState(false);
   // What the plan looked like before the in-place change this takeover is
@@ -300,11 +300,11 @@ function PlansPageContent() {
   // below strip it.
   const packageParam = searchParams.get(PACKAGE_PARAM);
 
-  // The takeover only makes sense against a platform-hosted assistant with a
+  // The takeover only makes sense against a cloud-hosted assistant with a
   // live package catalog. Anything else — self-hosted or no platform session,
   // an empty catalog (the `pro-packages` flag off), or a subscription we can't
   // read — has nothing to show, so fall back to the billing page.
-  const notPlatformHosted = !platformReady && !platformResolving;
+  const notCloudHosted = !platformReady && !platformResolving;
   const catalogEmpty = platformReady && !plansQuery.isLoading && !hasPackages;
   // An unconsumed deep link has asked for both billing reads again, so the two
   // read-derived bails are answers to a question already being re-asked: a
@@ -314,19 +314,19 @@ function PlansPageContent() {
   // on sight.
   const deepLinkAwaitingReads = packageParam != null && !billingReadsRefreshed;
   const cannotResolve =
-    notPlatformHosted ||
+    notCloudHosted ||
     (!deepLinkAwaitingReads && (subscriptionQuery.isError || catalogEmpty));
   useEffect(() => {
     if (cannotResolve) {
       // Platform-hosted but catalog-empty (pro-packages off) or a failed
       // subscription read still has an upgrade path via the billing adjust-plan
       // modal; self-hosted / no session does not.
-      const target = notPlatformHosted
+      const target = notCloudHosted
         ? routes.settings.usageBilling
         : `${routes.settings.usageBilling}&adjust_plan`;
       navigate(target, { replace: true });
     }
-  }, [cannotResolve, notPlatformHosted, navigate]);
+  }, [cannotResolve, notCloudHosted, navigate]);
 
   const handleBack = () => {
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;

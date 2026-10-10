@@ -11,7 +11,7 @@ import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
  *      but a server-ADOPTED raw `true` earns no such override, so a
  *      divergent server-effective opt-out is never bypassed by adopted
  *      values.
- *   3. Otherwise the platform-computed effective verdict
+ *   3. Otherwise the cloud-computed effective verdict
  *      (`serverAnalyticsEffective`, adopted at sync) decides; before the
  *      first sync with a server record the opt-out default applies
  *      (analytics is opt-out, so never-asked authorizes uploads).

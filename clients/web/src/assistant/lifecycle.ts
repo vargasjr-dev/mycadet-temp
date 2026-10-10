@@ -12,9 +12,9 @@ export type ResolvedAssistantLifecycleState =
   | { kind: "error"; message: string; transient?: boolean };
 
 /**
- * Error code the Electron main process's platform proxy puts in its
+ * Error code the Electron main process's cloud proxy puts in its
  * synthesized 502 body when `net.fetch` itself failed (the request
- * never reached the platform — e.g. `net::ERR_NETWORK_CHANGED` while
+ * never reached the cloud — e.g. `net::ERR_NETWORK_CHANGED` while
  * Wi-Fi reassociates after sleep). Mirrors `PROXY_NETWORK_ERROR_CODE`
  * in `clients/macos/src/main/platform-forward.ts`; the two must stay in
  * sync, but there is no shared package between the renderer and the
@@ -28,7 +28,7 @@ export const TRANSPORT_ERROR_MESSAGE = "Connection interrupted. Reconnecting…"
  * Does this failed `/assistant/` result look like a transport failure
  * (device offline, network flapping on wake) rather than a server
  * answer? Two signals:
- *   - the structured code the Electron platform proxy attaches when
+ *   - the structured code the Electron cloud proxy attaches when
  *     its own `net.fetch` rejected, and
  *   - a raw Chromium `net::ERR_*` string in the detail (older
  *     Electron builds forwarded the error message verbatim).
@@ -50,7 +50,7 @@ export function isTransportShapedError(
  * that mirror them (sidebar, Home Screen widgets, dock badge).
  *
  * `active` is a running assistant. `self_hosted` is too, once the
- * self-hosted chat flag is on: the platform record is provisioned and
+ * self-hosted chat flag is on: the cloud record is provisioned and
  * the daemon is the runtime, so the same conversation list that ChatPage
  * already renders must also reach the layout-owned queries.
  */
@@ -124,7 +124,7 @@ export const PLATFORM_HOSTED_DISABLED_CODE = "platform_hosted_disabled";
 export const PLATFORM_HOSTED_DISABLED_MESSAGE =
   "We are at capacity for Cadet Managed Assistants, more will be available soon!";
 
-export function isPlatformHostedDisabled(
+export function isCloudHostedDisabled(
   status: number | undefined,
   error: Record<string, unknown> | undefined,
 ): boolean {

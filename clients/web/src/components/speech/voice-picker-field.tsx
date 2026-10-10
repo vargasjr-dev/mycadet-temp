@@ -6,7 +6,7 @@
  *
  * Controlled: the parent owns the value (so it can stay a draft until Save).
  * The list closes the popover on select. Renders nothing when the assistant
- * offers no managed voice catalog, so the surrounding label collapses with it.
+ * offers no cloud voice catalog, so the surrounding label collapses with it.
  */
 
 import { useState } from "react";
@@ -14,10 +14,10 @@ import { useState } from "react";
 import { Popover } from "@mycadet/design-library/components/popover";
 
 import { SelectTriggerRow } from "@/components/speech/select-trigger-row";
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { VoiceList } from "@/components/speech/voice-list";
 import { useTranslation } from "@/i18n";
-import { voiceTraitsLabel } from "@/lib/tts/managed-voice-catalog";
+import { voiceTraitsLabel } from "@/lib/tts/cloud-voice-catalog";
 
 export interface VoicePickerFieldProps {
   assistantId: string | null;
@@ -39,7 +39,7 @@ export function VoicePickerField({
   // parent-controlled (the Text-to-Speech card decides to show it from its
   // draft provider), so a draft switch to Cadet must reveal the picker before
   // the provider is persisted.
-  const { voices } = useManagedVoiceSelection(assistantId);
+  const { voices } = useCloudVoiceSelection(assistantId);
 
   if (voices.length === 0) {
     return null;

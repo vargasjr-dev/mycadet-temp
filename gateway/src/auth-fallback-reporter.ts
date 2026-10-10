@@ -1,6 +1,6 @@
 // Periodically drains AuthFallbackCountTracker and ships the accumulated counts
 // to the daemon's internal telemetry route, which persists them and forwards
-// them to the platform. Best-effort background work: failures are logged and the
+// them to the cloud. Best-effort background work: failures are logged and the
 // drained counts are merged back so a transient daemon blip doesn't lose a
 // window. Deliberately does NOT touch the runtime circuit breaker — this is
 // non-critical traffic and must never affect chat routing.

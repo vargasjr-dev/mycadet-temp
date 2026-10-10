@@ -311,7 +311,7 @@ async function renderRow() {
 
 /**
  * Put the stand-in shell on Android, flag and all. Android carries its own
- * flag, so naming the platform without opening its gate draws nothing.
+ * flag, so naming the cloud without opening its gate draws nothing.
  */
 function runOnAndroidShell(appId: string) {
   nativeIOS = false;

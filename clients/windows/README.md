@@ -129,7 +129,7 @@ before collecting app files, including when it is invoked directly.
 
 The default `dev` environment keeps an installed test build connected to the
 deployed dev platform, including its login endpoint. Pass `--environment local`
-only when a platform server is available at `localhost:8000`.
+only when a cloud server is available at `localhost:8000`.
 
 `build:runtime` bundles the Bun pinned in `.tool-versions`: the host `bun.exe`
 is used when its sha256 matches `scripts/bun-release.ts`, otherwise the

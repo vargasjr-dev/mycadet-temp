@@ -2,7 +2,7 @@
  * The consumers running an STT provider other than `services.stt.provider`.
  *
  * `services.stt.roles` lets one consumer diverge from the global provider,
- * and managed-speech defaulting can write one without the user asking (live
+ * and cloud-speech defaulting can write one without the user asking (live
  * voice moves to Flux while batch and telephony stay behind). The provider
  * form above shows only the global, so without this the divergence that
  * config exists to make visible would be legible only in the daemon log.

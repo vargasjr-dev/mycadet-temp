@@ -10,7 +10,7 @@
  *   actually turns client diagnostics on. A local explicit opt-out closes it — the
  *   just-adopted revoke or a pending device opt-out whose `patchConsent`
  *   write is still in flight (or failed). Otherwise, with a server record,
- *   the platform-computed effective verdict (`diagnosticsEffective`) decides;
+ *   the cloud-computed effective verdict (`diagnosticsEffective`) decides;
  *   without one the gate derives from the device preference (absent reads
  *   open — opt-out default). Kept as its own watchable key because the
  *   cross-tab watchers and the Electron main mirror react to
@@ -38,7 +38,7 @@ export interface ResolvedDiagnosticsConsent {
   /** The server's `share_diagnostics` value; `null` when unknown/absent. */
   shareDiagnostics: boolean | null;
   /**
-   * The platform-computed effective verdict (`share_diagnostics_effective`).
+   * The cloud-computed effective verdict (`share_diagnostics_effective`).
    * Authoritative for the gate when `hasServerRecord` is set.
    */
   diagnosticsEffective: boolean;
@@ -51,7 +51,7 @@ export interface ResolvedDiagnosticsConsent {
  * bool), module-private so every write flows through the exported chokepoints.
  * The Electron main mirror is NOT synced here: the cross-tab watcher
  * reacts to this device-setting change and pushes the
- * platform-session-composed value (`diagnosticsConsentGranted()`) to main, so a
+ * cloud-session-composed value (`diagnosticsConsentGranted()`) to main, so a
  * device gate that is `true` without a confirmed live session never enables the
  * main client. Syncing the raw gate here would race that composed write.
  */

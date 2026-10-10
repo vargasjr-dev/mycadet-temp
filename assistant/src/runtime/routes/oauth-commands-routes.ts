@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 
 import { channelForBotProvider } from "@mycadet/service-contracts/channels";
 
+import { CadetCloudClient } from "../../cloud/client.js";
 import {
   getConfig,
   loadRawConfig,
@@ -46,7 +47,6 @@ import {
   type OAuthProviderRow,
 } from "../../oauth/oauth-store.js";
 import { missingScopesForStoredToken } from "../../oauth/scope-utils.js";
-import { CadetPlatformClient } from "../../platform/client.js";
 import { withValidToken } from "../../security/token-manager.js";
 import { matchHostPattern } from "../../tools/credentials/host-pattern-match.js";
 import { parseJsonSafe } from "../../util/json.js";
@@ -77,14 +77,14 @@ interface PlatformConnectionEntry {
 
 function getManagedServiceConfigKey(provider: string): string | null {
   const providerRow = getProvider(provider);
-  const managedKey = providerRow?.managedServiceConfigKey;
+  const managedKey = providerRow?.cloudServiceConfigKey;
   if (!managedKey || !(managedKey in ServicesSchema.shape)) {
     return null;
   }
   return managedKey;
 }
 
-function isManagedMode(provider: string): boolean {
+function isCloudMode(provider: string): boolean {
   const managedKey = getManagedServiceConfigKey(provider);
   if (!managedKey) {
     return false;
@@ -97,30 +97,30 @@ function isManagedMode(provider: string): boolean {
   }
 }
 
-async function requirePlatformClient(): Promise<CadetPlatformClient> {
-  const client = await CadetPlatformClient.create();
+async function requireCloudClient(): Promise<CadetCloudClient> {
+  const client = await CadetCloudClient.create();
   if (!client) {
     throw new BadRequestError(
       "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
     );
   }
-  if (!client.platformAssistantId) {
+  if (!client.cloudAssistantId) {
     throw new BadRequestError(
-      "Connected to Cadet Cloud but no assistant ID is configured. Ensure the assistant is registered on the platform.",
+      "Connected to Cadet Cloud but no assistant ID is configured. Ensure the assistant is registered on the cloud.",
     );
   }
   return client;
 }
 
 async function fetchActiveConnections(
-  client: CadetPlatformClient,
+  client: CadetCloudClient,
   provider: string,
 ): Promise<PlatformConnectionEntry[]> {
   const params = new URLSearchParams();
   params.set("provider", provider);
   params.set("status", "ACTIVE");
 
-  const path = `/v1/assistants/${encodeURIComponent(client.platformAssistantId)}/oauth/connections/?${params.toString()}`;
+  const path = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/?${params.toString()}`;
   const response = await client.fetch(path);
 
   if (!response.ok) {
@@ -141,12 +141,12 @@ async function fetchActiveConnections(
 
 /**
  * Best-effort helper to count active cloud connections for a provider.
- * Returns 0 if the platform client cannot be created or the fetch fails.
+ * Returns 0 if the cloud client cannot be created or the fetch fails.
  */
 async function countManagedConnections(provider: string): Promise<number> {
   try {
-    const client = await CadetPlatformClient.create();
-    if (!client || !client.platformAssistantId) {
+    const client = await CadetCloudClient.create();
+    if (!client || !client.cloudAssistantId) {
       return 0;
     }
     const entries = await fetchActiveConnections(client, provider);
@@ -264,7 +264,7 @@ function judgeProviderResponse(
  * health measures the same thing on the heartbeat; measuring it on the
  * request names the gap at the moment a call may depend on it, since a
  * connection made before a scope was required keeps working for every call
- * that does not need it. A managed connection has no local row and reports
+ * that does not need it. A cloud connection has no local row and reports
  * nothing.
  */
 function missingScopesForConnection(
@@ -312,10 +312,10 @@ async function handleDisconnect({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  const managed = isManagedMode(b.provider);
+  const managed = isCloudMode(b.provider);
 
   if (managed) {
-    const client = await requirePlatformClient();
+    const client = await requireCloudClient();
     const entries = await fetchActiveConnections(client, b.provider);
 
     let connectionId: string | undefined;
@@ -355,7 +355,7 @@ async function handleDisconnect({ body = {} }: RouteHandlerArgs) {
       accountLabel = entries[0].account_label;
     }
 
-    const disconnectPath = `/v1/assistants/${encodeURIComponent(client.platformAssistantId)}/oauth/connections/${encodeURIComponent(connectionId!)}/disconnect/`;
+    const disconnectPath = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/${encodeURIComponent(connectionId!)}/disconnect/`;
     const disconnectResponse = await client.fetch(disconnectPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -513,13 +513,13 @@ async function handleModeSet({ body = {} }: RouteHandlerArgs) {
       };
     }
     throw new BadRequestError(
-      `Managed mode is not available for ${b.provider}. Only providers with platform-managed OAuth support can be switched to managed mode.`,
+      `Managed mode is not available for ${b.provider}. Only providers with cloud OAuth support can be switched to managed mode.`,
     );
   }
 
   // Require cloud connection when switching to managed mode
   if (b.mode === "managed") {
-    const client = await CadetPlatformClient.create();
+    const client = await CadetCloudClient.create();
     if (!client) {
       throw new BadRequestError(
         "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
@@ -590,10 +590,10 @@ async function handleStatus({ queryParams = {} }: RouteHandlerArgs) {
     );
   }
 
-  const managed = isManagedMode(provider);
+  const managed = isCloudMode(provider);
 
   if (managed) {
-    const client = await requirePlatformClient();
+    const client = await requireCloudClient();
     const rawEntries = await fetchActiveConnections(client, provider);
 
     const connections = rawEntries.map((c) => ({
@@ -762,9 +762,9 @@ async function handleToken({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError("provider is required");
   }
 
-  if (isManagedMode(b.provider)) {
+  if (isCloudMode(b.provider)) {
     throw new BadRequestError(
-      "Token retrieval is not supported for platform-managed providers. " +
+      "Token retrieval is not supported for cloud providers. " +
         "When a provider is in managed mode, Cadet handles OAuth tokens on your behalf — " +
         "they are not exposed directly.\n\n" +
         `To verify your connection is working, run 'assistant oauth ping ${b.provider}'.\n` +
@@ -858,11 +858,11 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  const managed = isManagedMode(b.provider);
+  const managed = isCloudMode(b.provider);
 
   if (b.client_id) {
     if (managed) {
-      log.info("--client-id is ignored for platform-managed providers");
+      log.info("--client-id is ignored for cloud providers");
     } else {
       const app = getAppByProviderAndClientId(b.provider, b.client_id);
       if (!app) {
@@ -1075,9 +1075,9 @@ async function handleManagedConnect({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError("provider is required");
   }
 
-  const client = await requirePlatformClient();
+  const client = await requireCloudClient();
 
-  const startPath = `/v1/assistants/${encodeURIComponent(client.platformAssistantId)}/oauth/${encodeURIComponent(b.provider)}/start/`;
+  const startPath = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/${encodeURIComponent(b.provider)}/start/`;
 
   const reqBody: Record<string, unknown> = {};
   if (b.scopes && b.scopes.length > 0) {
@@ -1085,7 +1085,7 @@ async function handleManagedConnect({ body = {} }: RouteHandlerArgs) {
   }
   reqBody.redirect_after_connect =
     b.redirect_after_connect ?? "/account/oauth/complete";
-  // Only forwarded when present: the platform validates it against the
+  // Only forwarded when present: the cloud validates it against the
   // provider's pattern and rejects per-tenant providers that omit it.
   const tenantHost =
     typeof b.tenant_host === "string" ? b.tenant_host.trim() : "";
@@ -1129,7 +1129,7 @@ async function handleManagedConnectPoll({
     throw new BadRequestError("provider query param is required");
   }
 
-  const client = await requirePlatformClient();
+  const client = await requireCloudClient();
   const entries = await fetchActiveConnections(client, provider);
 
   return {
@@ -1268,9 +1268,9 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Start managed OAuth connect",
+    summary: "Start cloud OAuth connect",
     description:
-      "Start a managed (platform) OAuth connect flow and return the connect URL.",
+      "Start a cloud (platform) OAuth connect flow and return the connect URL.",
     tags: ["oauth"],
     handler: handleManagedConnect,
   },
@@ -1282,7 +1282,7 @@ export const ROUTES: RouteDefinition[] = [
       requiredScopes: ["settings.read"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "Poll managed OAuth connections",
+    summary: "Poll cloud OAuth connections",
     description:
       "Fetch active cloud connections for a provider (used to detect new connections after managed connect).",
     tags: ["oauth"],

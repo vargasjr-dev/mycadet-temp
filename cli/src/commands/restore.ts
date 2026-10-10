@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import {
   existsSync,
   mkdirSync,
@@ -35,14 +35,14 @@ import {
 import { getArchivePath, getMetadataPath } from "../lib/retire-archive.js";
 import { exec } from "../lib/step-runner.js";
 import {
-  readPlatformToken,
-  rollbackPlatformAssistant,
-  platformRequestSignedUrl,
+  readCloudToken,
+  rollbackCloudAssistant,
+  cloudRequestSignedUrl,
   platformUploadToSignedUrl,
   platformImportPreflightFromGcs,
   platformImportBundleFromGcs,
   platformPollJobStatus,
-} from "../lib/platform-client.js";
+} from "../lib/cloud-client.js";
 import { performDockerRollback } from "../lib/upgrade-lifecycle.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
@@ -214,7 +214,7 @@ async function restorePlatform(
   opts: { version?: string; dryRun: boolean },
 ): Promise<void> {
   // Step 1 — Authenticate
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     console.error("Not logged in. Run 'cadet login' first.");
     process.exit(1);
@@ -224,10 +224,10 @@ async function restorePlatform(
   // We deliberately omit min/max runtime version here: restore uploads an
   // arbitrary .vbundle from disk (often produced by a different runtime
   // than the one we'd query right now), and the bundle's own manifest is
-  // the authority on its compatibility band. The platform skips the
+  // the authority on its compatibility band. The cloud skips the
   // version gate when these fields are absent and re-derives compat from
   // the manifest when it processes the import.
-  const { url: uploadUrl, bundleKey } = await platformRequestSignedUrl(
+  const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
     { operation: "upload" },
     token,
     entry.runtimeUrl,
@@ -271,7 +271,7 @@ async function restorePlatform(
 
     if (preflightResult.statusCode === 404) {
       console.error(
-        "No managed assistant found. Ensure your assistant is running.",
+        "No cloud assistant found. Ensure your assistant is running.",
       );
       process.exit(1);
     }
@@ -361,7 +361,7 @@ async function restorePlatform(
     );
 
     try {
-      await rollbackPlatformAssistant(
+      await rollbackCloudAssistant(
         token,
         entry.assistantId,
         opts.version,
@@ -407,7 +407,7 @@ async function restorePlatform(
 
   if (importResult.statusCode === 404) {
     console.error(
-      "No managed assistant found. Ensure your assistant is running.",
+      "No cloud assistant found. Ensure your assistant is running.",
     );
     process.exit(1);
   }
@@ -693,7 +693,7 @@ export const restore = Object.assign(
     process.exit(1);
   }
 
-  if (isManagedCloud(cloud)) {
+  if (isCloudHome(cloud)) {
     const bundleData = readFileSync(fromPath);
     await restorePlatform(entry, name, bundleData, { version, dryRun });
     return;
@@ -701,7 +701,7 @@ export const restore = Object.assign(
 
   if (version && cloud !== "docker") {
     console.error(
-      "Restore with --version is only supported for Docker and managed assistants.",
+      "Restore with --version is only supported for Docker and cloud assistants.",
     );
     process.exit(1);
   }

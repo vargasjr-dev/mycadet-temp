@@ -78,7 +78,7 @@ export function AssistantInboxSetupCard({
   const [handle, setHandle] = useState(initialHandle);
   const [checkMessage, setCheckMessage] = useState<string | null>(null);
 
-  /* The handle arrives with the platform's assistant listing, which can land
+  /* The handle arrives with the cloud's assistant listing, which can land
      after first paint; adopt it until the user has typed one of their own. */
   const [touched, setTouched] = useState(false);
   useEffect(() => {

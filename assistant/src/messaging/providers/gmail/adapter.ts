@@ -1,7 +1,7 @@
 /**
  * Gmail messaging provider adapter.
  *
- * Maps Gmail API responses to the platform-agnostic messaging types
+ * Maps Gmail API responses to the cloud-agnostic messaging types
  * and implements the MessagingProvider interface.
  */
 

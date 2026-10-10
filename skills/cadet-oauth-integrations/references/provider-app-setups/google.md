@@ -11,9 +11,9 @@ The included `cadet-oauth-integrations` skill handles the generic parts of the f
 
 ## Check Managed Mode First
 
-**Before guiding the user through Google Cloud Console setup, check whether they should be using Cadet-managed Google OAuth instead.**
+**Before guiding the user through Google Cloud Console setup, check whether they should be using Cadet Cloud Google OAuth instead.**
 
-Google supports managed mode (see `assistant oauth providers get google`). Setting up a Google Cloud project, OAuth consent screen, and credentials is a multi-step, technical process that takes 3-5 minutes minimum and frequently hits edge cases (consent screen verification, scope mismatches, redirect URI errors). The managed flow takes ~30 seconds: log in with Google, grant scopes, done.
+Google supports managed mode (see `assistant oauth providers get google`). Setting up a Google Cloud project, OAuth consent screen, and credentials is a multi-step, technical process that takes 3-5 minutes minimum and frequently hits edge cases (consent screen verification, scope mismatches, redirect URI errors). The cloud flow takes ~30 seconds: log in with Google, grant scopes, done.
 
 To check:
 
@@ -23,8 +23,8 @@ assistant oauth mode google --json | jq -r '.mode'
 
 - If the result is `managed`, **stop reading this file** and follow [CONNECTING_ACCOUNTS.md](../CONNECTING_ACCOUNTS.md) instead.
 - If the result is `your-own`, ask the user whether they'd prefer the simpler managed flow before continuing:
-  > "Google can connect through Cadet's managed integration — no Google Cloud Console setup needed, just a login. The custom-app path takes a few minutes and involves several developer console screens. Want to use the managed flow, or do you want to set up your own?"
-  > If they prefer managed, run `assistant oauth mode google --set managed` and switch to the managed flow.
+  > "Google can connect through Cadet's managed integration — no Google Cloud Console setup needed, just a login. The custom-app path takes a few minutes and involves several developer console screens. Want to use the cloud flow, or do you want to set up your own?"
+  > If they prefer managed, run `assistant oauth mode google --set managed` and switch to the cloud flow.
 - If the user already has an active Google connection (`assistant oauth status google` returns a live connection), do not switch modes — respect their existing setup.
 
 Only proceed with Path A or Path B below if the user has explicitly chosen `your-own` mode.

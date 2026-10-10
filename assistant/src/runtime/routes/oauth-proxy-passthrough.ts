@@ -8,13 +8,13 @@
  */
 
 import {
+  CredentialRequiredError,
+  InsufficientBalanceError,
+} from "../../oauth/cloud-connection.js";
+import {
   isBinaryOAuthBody,
   type OAuthConnectionResponse,
 } from "../../oauth/connection.js";
-import {
-  CredentialRequiredError,
-  InsufficientBalanceError,
-} from "../../oauth/platform-connection.js";
 import type { TokenExpiredError } from "../../security/token-manager.js";
 import { findContentTypeHeader } from "../../util/oauth-request-body.js";
 import {
@@ -69,7 +69,7 @@ const TEXT_ENCODER = new TextEncoder();
 /**
  * Statuses the `Response` constructor refuses a body on, limited to the ones
  * this route can emit. The interim 1xx statuses are absent: a BYO `fetch`
- * never surfaces one as a final response and the platform envelope refuses a
+ * never surfaces one as a final response and the cloud envelope refuses a
  * status outside 200 to 599, so a `RouteResponse` carrying one would only make
  * the adapter's `Response` constructor throw.
  */
@@ -409,9 +409,9 @@ export function mapProxyResolveError(
  *
  * Upstream text arrives here verbatim: a BYO refresh failure carries the
  * provider token endpoint's own response and the refresh breaker's state, and
- * a managed provider that could not be reached carries the platform proxy's
+ * a cloud provider that could not be reached carries the cloud proxy's
  * body. The grant holder learns which dependency failed and what repairs it,
- * and nothing the provider or the platform wrote; the route logs the verbatim
+ * and nothing the provider or the cloud wrote; the route logs the verbatim
  * text so the operator still has it.
  *
  * `InsufficientBalanceError` is the exception: it is raised on a bare status
@@ -506,7 +506,7 @@ function pinningProviderSegment(
  * A BYO connection reports a dead credential either as `TokenExpiredError`
  * (no token, or a refresh that cannot succeed) or, when a refreshed request
  * still comes back 401, as an error carrying `status: 401`. Both mean the same
- * thing the platform's `CredentialRequiredError` does: reconnect.
+ * thing the cloud's `CredentialRequiredError` does: reconnect.
  */
 function isBYOCredentialFailure(err: unknown): boolean {
   return isTokenExpiredError(err) || hasUnauthorizedStatus(err);

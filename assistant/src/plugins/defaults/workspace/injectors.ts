@@ -292,7 +292,7 @@ function readConfigValidationResetNotice(): ConfigValidationResetNotice | null {
  * the loader recovers along a ladder (see `config/loader.ts`
  * `recoverFromInvalidConfig`) and records a sentinel. Whichever rung it lands
  * on, the saved config is not fully in effect: a section — or the whole config —
- * may have reverted to schema defaults, flipping a managed email/OAuth service
+ * may have reverted to schema defaults, flipping a cloud email/OAuth service
  * mode back to `your-own`, or the user's most recent edit may simply never have
  * applied. That is otherwise invisible (log-only). This injector reads the
  * sentinel and, when it is younger than
@@ -340,7 +340,7 @@ const configValidationResetNoticeInjector: Injector = {
       `The user's config.json failed schema validation at ${notice.resetAt} ` +
       `and did not fully take effect. Settings the user did not change may ` +
       `have silently reverted to defaults — including managed email/OAuth ` +
-      `service modes (a managed connection can flip back to "your-own" and ` +
+      `service modes (a cloud connection can flip back to "your-own" and ` +
       `break), model choices, and other customizations — and a recent edit may ` +
       `never have applied. The on-disk config.json is intact; the invalid ` +
       `entries just need fixing for the saved values to take effect again. ` +

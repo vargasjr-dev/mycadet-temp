@@ -43,20 +43,20 @@ describe("buildBillingUsageTotalsQuery", () => {
 });
 
 describe("isBillingUsageDataEnabled", () => {
-  // Signature: (platformGate, reachabilityGate, isPlatformHosted).
-  test("enables the queries only for a positively-resolved platform-hosted assistant with the platform API reachable", () => {
+  // Signature: (cloudGate, reachabilityGate, isCloudHosted).
+  test("enables the queries only for a positively-resolved cloud-hosted assistant with the cloud API reachable", () => {
     expect(isBillingUsageDataEnabled("full", "full", true)).toBe(true);
   });
 
   test("stays disabled while the gate is 'full' but hosting is not yet resolved", () => {
-    // The platformHostedOnly gate reports "full" during the lifecycle loading
-    // window; the strict isPlatformHosted check is what blocks a doomed fetch.
+    // The cloudHostedOnly gate reports "full" during the lifecycle loading
+    // window; the strict isCloudHosted check is what blocks a doomed fetch.
     expect(isBillingUsageDataEnabled("full", "full", false)).toBe(false);
   });
 
-  test("stays disabled when the platform API is unreachable (CADET_DISABLE_PLATFORM)", () => {
-    // platformHostedOnly ignores CADET_DISABLE_PLATFORM and can report "full"
-    // for a platform-hosted assistant even when platformFeaturesGate aborts the
+  test("stays disabled when the cloud API is unreachable (CADET_DISABLE_CLOUD)", () => {
+    // cloudHostedOnly ignores CADET_DISABLE_CLOUD and can report "full"
+    // for a cloud-hosted assistant even when platformFeaturesGate aborts the
     // request. The reachability gate ("gated") is what prevents the doomed
     // fetch and keeps the chart hidden, matching how the Billing tab hides
     // itself for the same state.

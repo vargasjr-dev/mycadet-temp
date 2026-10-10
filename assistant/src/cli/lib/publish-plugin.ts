@@ -1,10 +1,10 @@
 /**
  * `assistant plugins publish` — validate a local plugin, resolve its git
- * context, and submit it to the Cadet marketplace catalog via the platform
+ * context, and submit it to the Cadet marketplace catalog via the cloud
  * API.
  *
  * The flow mirrors `npm publish`: validate the package locally, resolve the
- * version (commit SHA), and POST to a registry endpoint. The platform then
+ * version (commit SHA), and POST to a registry endpoint. The cloud then
  * creates a pull request against `vargasjr-dev/mycadet` using the
  * Cadet Automation GitHub App.
  *
@@ -343,12 +343,12 @@ export async function postPublishRequest(
  *
  * Returns `null` when not connected to Cadet Cloud (no API key
  * or base URL configured). The CLI command uses this to avoid hoisting
- * `CadetPlatformClient` into its static import graph; resolving it lazily
+ * `CadetCloudClient` into its static import graph; resolving it lazily
  * keeps that daemon code out of the CLI process until the command needs it.
  */
 export async function resolvePlatformDeps(): Promise<PublishDeps | null> {
-  const { CadetPlatformClient } = await import("../../platform/client.js");
-  const client = await CadetPlatformClient.create();
+  const { CadetCloudClient } = await import("../../cloud/client.js");
+  const client = await CadetCloudClient.create();
   if (!client) {
     return null;
   }
@@ -580,7 +580,7 @@ export async function runPublish(
     }
   }
 
-  // 7. Submit to the platform API
+  // 7. Submit to the cloud API
   const platformDeps = await resolvePlatformDeps();
   if (!platformDeps) {
     const msg =

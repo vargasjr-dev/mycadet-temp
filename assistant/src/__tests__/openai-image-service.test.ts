@@ -252,12 +252,12 @@ describe("generateImageOpenAI", () => {
     ).toBeUndefined();
   });
 
-  test("managed-proxy credentials set baseURL on the OpenAI client", async () => {
+  test("cloud-proxy credentials set baseURL on the OpenAI client", async () => {
     fakeResponse = imageResponse({ b64_json: "x" });
 
     await generateImageOpenAI(
       {
-        type: "managed-proxy",
+        type: "cloud-proxy",
         assistantApiKey: "proxy-key",
         baseUrl: "https://proxy.example.com/v1",
       },

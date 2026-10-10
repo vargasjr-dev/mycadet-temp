@@ -8,11 +8,11 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
-import type { SkillInstallMeta } from "../skills/install-meta.js";
 import {
   SKILL_PLATFORM_VALUES,
   skillPlatformForNodePlatform,
-} from "../skills/platform-compatibility.js";
+} from "../skills/cloud-compatibility.js";
+import type { SkillInstallMeta } from "../skills/install-meta.js";
 import { setConfig } from "./helpers/set-config.js";
 
 function makeSummary(overrides: Partial<SkillSummary> = {}): SkillSummary {
@@ -169,9 +169,9 @@ describe("listInstalledSkills", () => {
     };
     catalogFixture = [
       makeSummary({
-        id: "managed-skill",
+        id: "cloud-skill",
         source: "managed",
-        directoryPath: "/skills/managed-skill",
+        directoryPath: "/skills/cloud-skill",
       }),
       makeSummary({
         id: "workspace-skill",
@@ -181,21 +181,21 @@ describe("listInstalledSkills", () => {
       makeSummary({ id: "bundled-skill", source: "bundled" }),
       makeSummary({ id: "plugin-skill", source: "plugin" }),
     ];
-    installMetaByDir = { "/skills/managed-skill": meta };
+    installMetaByDir = { "/skills/cloud-skill": meta };
 
     const { listInstalledSkills } =
       await import("../skills/available-skills.js");
     const entries = await listInstalledSkills();
     const byId = new Map(entries.map((e) => [e.id, e]));
 
-    expect(byId.get("managed-skill")!.installMeta).toEqual(meta);
+    expect(byId.get("cloud-skill")!.installMeta).toEqual(meta);
     // Read but absent on disk → null.
     expect(byId.get("workspace-skill")!.installMeta).toBeNull();
     // Never read for sources that don't carry install-meta.
     expect(byId.get("bundled-skill")!.installMeta).toBeUndefined();
     expect(byId.get("plugin-skill")!.installMeta).toBeUndefined();
     expect(readInstallMetaCalls.sort()).toEqual([
-      "/skills/managed-skill",
+      "/skills/cloud-skill",
       "/skills/workspace-skill",
     ]);
   });

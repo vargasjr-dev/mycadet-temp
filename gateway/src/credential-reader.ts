@@ -196,7 +196,7 @@ export function getCesHttpConfig():
 }
 
 /**
- * Try to read a credential from the CES managed service over HTTP.
+ * Try to read a credential from the CES cloud service over HTTP.
  *
  * Delegates to `@mycadet/ces-client/http-credentials` for the transport.
  * Activated when `CES_CREDENTIAL_URL` is set (e.g. `http://ces-host:8090`).

@@ -99,10 +99,10 @@ tester.run("cli/no-daemon-internals", rule, {
       code: `import { conversations } from "../../persistence/schema/conversations.js";`,
       errors: [{ messageId: "hoistedDaemonImport" }],
     },
-    // Hoisting the platform client.
+    // Hoisting the cloud client.
     {
       filename: NESTED,
-      code: `import { CadetPlatformClient } from "../../../platform/client.js";`,
+      code: `import { CadetCloudClient } from "../../../cloud/client.js";`,
       errors: [{ messageId: "hoistedDaemonImport" }],
     },
     // A non-leaf module under providers/ is daemon-internal (only util/ etc.

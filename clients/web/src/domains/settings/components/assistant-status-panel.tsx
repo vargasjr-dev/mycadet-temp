@@ -213,7 +213,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
   }, [refetchAssistant, refetchHealthz]);
 
   /* Opens the watch; the query polls from there. The machine-size tag comes
-     from the assistant record, which the platform updates synchronously during
+     from the assistant record, which the cloud updates synchronously during
      a resize, so that one is refreshed up front. */
   const refetchUntilResized = useCallback(
     (baseline: HealthzGetResponse | null) => {

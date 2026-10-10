@@ -184,7 +184,7 @@ describe("147-rename-colliding-backup-profile-names migration", () => {
     // at their own profile.
     expect(llm.profiles["balanced-backup"]).toBeUndefined();
     expect(llm.activeProfile).toBe("balanced-backup-custom");
-    // A reference to the now-free reserved key remains valid on the managed
+    // A reference to the now-free reserved key remains valid on the cloud
     // column, which is what the schema's always-available set encodes.
     const parsed = LLMSchema.safeParse({
       ...llm,

@@ -607,7 +607,7 @@ describe("useProProvisioning", () => {
     });
     expect(latest!.kickError).toBeNull();
 
-    // The landing resize also retires the operation marker: the platform
+    // The landing resize also retires the operation marker: the cloud
     // reports `resizing_machine` until the rollout converges, so met actuals
     // never coexist with an in-flight marker on a real completion.
     assistantResponse = makeAssistant("large", 50);
@@ -1611,7 +1611,7 @@ describe("useProProvisioning presentation signals", () => {
     const { client } = renderProbe();
     await reachResizing(client);
 
-    // The platform persists both effective sizes at resize acceptance, so the
+    // The cloud persists both effective sizes at resize acceptance, so the
     // actuals meet the targets while the pod is still restarting. Only the
     // machine marker is in flight, so storage may land ahead of it.
     assistantResponse = makeAssistant("large", 50);

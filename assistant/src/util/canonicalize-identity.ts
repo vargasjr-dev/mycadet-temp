@@ -7,7 +7,7 @@
  *
  * Phone-like channels (voice, whatsapp) normalize to E.164 using the
  * existing phone utilities. Email channels are lowercased (RFC 5321).
- * Other channels (telegram, slack, etc.) pass through the platform-stable
+ * Other channels (telegram, slack, etc.) pass through the cloud-stable
  * ID as-is after whitespace trimming.
  */
 

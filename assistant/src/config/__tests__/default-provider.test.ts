@@ -39,7 +39,7 @@ afterAll(() => {
   mock.restore();
 });
 
-import { CADET_MANAGED_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import {
   DefaultProviderSelectionSchema,
   resolveDefaultConnectionName,
@@ -106,7 +106,7 @@ describe("LLMSchema.default (the base blob)", () => {
   // The blob is a partial fragment with no `.catch`: a provider with no
   // matrix column stays on disk (stripping it would drop the blob's other
   // fields), and the READ clamps it to null — resolution treats that as the
-  // managed column.
+  // cloud column.
   test("a blob whose provider has no matrix column survives parse and clamps", () => {
     const parsed = LLMSchema.parse({
       default: { provider: "openai-compatible", model: "gpt-x" },
@@ -161,9 +161,9 @@ describe("resolveDefaultConnectionName", () => {
     ).toBe("my-connection");
   });
 
-  test("cadet resolves to the managed connection name", () => {
+  test("cadet resolves to the cloud connection name", () => {
     expect(resolveDefaultConnectionName({ provider: "cadet" })).toBe(
-      CADET_MANAGED_CONNECTION_NAME,
+      CADET_CLOUD_CONNECTION_NAME,
     );
   });
 

@@ -12,7 +12,7 @@ type CallSiteDefaultConfig = {
   /**
    * Direct model pin overriding the resolved profile's model. The resolver
    * treats a bare model pin as catalog-implied: it stamps the model's
-   * catalog provider and keeps the provider-agnostic Cadet managed
+   * catalog provider and keeps the provider-agnostic Cadet Cloud
    * connection (see `resolveOverrideOrDefault`). Reserve for call sites
    * whose latency envelope the profile's model cannot meet.
    */
@@ -89,8 +89,8 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   // Vision captioning for the image-fallback plugin. No pinned profile — the
   // plugin resolves a vision-capable profile itself via `doesSupportVision` and
   // passes it as an `overrideProfile`, so the call-site default is a fallback
-  // that inherits the workspace default. Pinning a managed profile would break
-  // BYOK installs where managed profiles are uncredentialed.
+  // that inherits the workspace default. Pinning a cloud profile would break
+  // BYOK installs where cloud profiles are uncredentialed.
   vision: {},
 
   heartbeatAgent: {
@@ -153,14 +153,14 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     effort: "low",
     thinking: { enabled: false },
   },
-  // The managed-only profile resolves through the Cadet connection. On a
+  // The cloud-only profile resolves through the Cadet connection. On a
   // BYOK install it has no body, so the judge is unavailable and the front
   // door's own decision stands.
   voiceEscalationJudge: {
     profile: JEV_MANAGED_PROFILE_KEY,
   },
   // Picks the default profile for a turn pinned to the Auto profile. On a
-  // BYOK install the managed-only Jev profile has no body, so the router is
+  // BYOK install the cloud-only Jev profile has no body, so the router is
   // unavailable and the turn runs on Balanced.
   autoProfileRouter: {
     profile: JEV_MANAGED_PROFILE_KEY,
@@ -205,7 +205,7 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   },
   // Anonymous and schema leaves inherit the workspace default config (no pinned
   // profile) so they always resolve to a credentialed provider. Pinning a
-  // managed profile like `cost-optimized` breaks BYOK installs where the managed
+  // cloud profile like `cost-optimized` breaks BYOK installs where the cloud
   // profiles are uncredentialed. A per-leaf `profile` option or a `workflowLeaf`
   // call-site override still takes precedence for cost control.
   workflowLeaf: {

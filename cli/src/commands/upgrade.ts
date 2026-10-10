@@ -1,5 +1,5 @@
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
@@ -27,14 +27,14 @@ import {
   fetchLatestStableVersion,
   fetchReleases,
   resolveImageRefs,
-} from "../lib/platform-releases";
+} from "../lib/cloud-releases";
 import {
   authHeaders,
   fetchAssistantDetail,
   fetchUpgradeInProgress,
-  getPlatformUrl,
-  readPlatformToken,
-} from "../lib/platform-client";
+  getCloudUrl,
+  readCloudToken,
+} from "../lib/cloud-client";
 import { checkManagedHealth } from "../lib/health-check.js";
 import {
   evaluateUpgradePoll,
@@ -1096,7 +1096,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Poll the platform until the upgrade completes, then confirm health.
+ * Poll the cloud until the upgrade completes, then confirm health.
  * Mirrors the web UI's Software Updates flow (poll the DB-backed
  * `current_release_version` rather than the gateway, which bounces while
  * the service group restarts).
@@ -1146,7 +1146,7 @@ async function waitForPlatformUpgrade(
       const healthDeadline = Date.now() + PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS;
       while (Date.now() < healthDeadline) {
         const health = await checkManagedHealth(
-          entry.runtimeUrl || getPlatformUrl(),
+          entry.runtimeUrl || getCloudUrl(),
           entry.assistantId,
         );
         if (health.status === "healthy") {
@@ -1170,7 +1170,7 @@ async function waitForPlatformUpgrade(
 
   const timeoutMin = Math.round(timeoutMs / 60_000);
   console.warn(
-    `⚠️  Upgrade request was accepted but completion was not confirmed within ${timeoutMin} minutes. The platform may still be working — check \`cadet ps\` or the web settings page.`,
+    `⚠️  Upgrade request was accepted but completion was not confirmed within ${timeoutMin} minutes. The cloud may still be working — check \`cadet ps\` or the web settings page.`,
   );
 }
 
@@ -1180,10 +1180,10 @@ async function upgradePlatform(
   wait: boolean,
 ): Promise<void> {
   console.log(
-    `🔄 Upgrading platform-hosted assistant '${entry.assistantId}'...\n`,
+    `🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`,
   );
 
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     const msg =
       "Error: Not logged in. Run `cadet login --token <token>` first.";
@@ -1197,7 +1197,7 @@ async function upgradePlatform(
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
     fetchAssistantDetail(token, entry.assistantId, entry.runtimeUrl),
-    checkManagedHealth(entry.runtimeUrl || getPlatformUrl(), entry.assistantId),
+    checkManagedHealth(entry.runtimeUrl || getCloudUrl(), entry.assistantId),
   ]);
   // Health probe first, DB-backed field as the sleeping-assistant fallback.
   const currentVersion =
@@ -1208,7 +1208,7 @@ async function upgradePlatform(
   // platform may differ from the active lockfile default.
   const releases = await fetchReleases({
     channel: releaseChannel,
-    platformUrl: entry.runtimeUrl,
+    cloudUrl: entry.runtimeUrl,
   });
 
   const resolution = resolveUpgradeTarget({
@@ -1259,7 +1259,7 @@ async function upgradePlatform(
 
   const headers = await authHeaders(token, entry.runtimeUrl);
 
-  const url = `${entry.runtimeUrl || getPlatformUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
+  const url = `${entry.runtimeUrl || getCloudUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
   const body: { version?: string } = {};
   if (version) {
     body.version = version;
@@ -1328,11 +1328,11 @@ async function upgradePlatform(
   }
 
   // NOTE: We intentionally do NOT broadcast a "complete" event here.
-  // The platform API returning 200 only means "upgrade request accepted" —
+  // The cloud API returning 200 only means "upgrade request accepted" —
   // the service group has not yet restarted with the new version.  The
   // completion signal will come from the client's health-check
   // version-change detection (DaemonConnection.swift) once the new
-  // version actually appears after the platform restarts the service group.
+  // version actually appears after the cloud restarts the service group.
 
   console.log(`✅ ${result.detail}`);
   if (result.version) {
@@ -1466,7 +1466,7 @@ async function resolveLatestStableTag(): Promise<string> {
     );
     emitCliError(
       "UNKNOWN",
-      "Could not determine the latest stable release from the platform API",
+      "Could not determine the latest stable release from the cloud API",
     );
     process.exit(1);
   }
@@ -1543,7 +1543,7 @@ export const upgrade = Object.assign(
     return;
   }
 
-  // When --latest is passed, resolve the target from the platform API and
+  // When --latest is passed, resolve the target from the cloud API and
   // self-update the CLI if it's behind.  The resolved version is then used
   // as the explicit target for the rest of the upgrade flow.
   let effectiveVersion = version;
@@ -1569,7 +1569,7 @@ export const upgrade = Object.assign(
       return;
     }
 
-    if (isManagedCloud(cloud)) {
+    if (isCloudHome(cloud)) {
       await upgradePlatform(entry, effectiveVersion, !noWait);
       return;
     }

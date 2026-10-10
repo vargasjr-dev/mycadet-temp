@@ -56,7 +56,7 @@ export interface PlanCardContentProps {
   machineChanged: boolean;
   storageChanged: boolean;
   creditChanged: boolean;
-  /** The fee-less sub gains the platform fee: a pending change on its own. */
+  /** The fee-less sub gains the cloud fee: a pending change on its own. */
   feeAdded: boolean;
   tierChangeError: string | null;
   upgradePending: boolean;

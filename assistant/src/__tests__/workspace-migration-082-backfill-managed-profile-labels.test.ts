@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { backfillManagedProfileLabelsMigration } from "../workspace/migrations/082-backfill-managed-profile-labels.js";
+import { backfillCloudProfileLabelsMigration } from "../workspace/migrations/082-backfill-managed-profile-labels.js";
 
 let workspaceDir: string;
 
@@ -44,7 +44,7 @@ afterEach(() => {
 
 describe("082-backfill-managed-profile-labels migration", () => {
   test("has correct migration id", () => {
-    expect(backfillManagedProfileLabelsMigration.id).toBe(
+    expect(backfillCloudProfileLabelsMigration.id).toBe(
       "082-backfill-managed-profile-labels",
     );
   });
@@ -82,7 +82,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
       },
     });
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
     const profiles = (config.llm as Record<string, unknown>).profiles as Record<
@@ -117,7 +117,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
       },
     });
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
     const profiles = (config.llm as Record<string, unknown>).profiles as Record<
@@ -144,7 +144,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
       },
     });
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
     const profiles = (config.llm as Record<string, unknown>).profiles as Record<
@@ -172,7 +172,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
       },
     });
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
     const profiles = (config.llm as Record<string, unknown>).profiles as Record<
@@ -195,10 +195,10 @@ describe("082-backfill-managed-profile-labels migration", () => {
       },
     });
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
     const afterFirst = readFileSync(join(workspaceDir, "config.json"), "utf-8");
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
     const afterSecond = readFileSync(
       join(workspaceDir, "config.json"),
       "utf-8",
@@ -210,7 +210,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
   test("no-op when config.json does not exist", () => {
     // Fresh workspace, no config file. Migration must not throw or create
     // the file.
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
     expect(existsSync(join(workspaceDir, "config.json"))).toBe(false);
   });
 
@@ -218,7 +218,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
     writeConfig({ llm: { default: { provider: "anthropic" } } });
     const before = readFileSync(join(workspaceDir, "config.json"), "utf-8");
 
-    backfillManagedProfileLabelsMigration.run(workspaceDir);
+    backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const after = readFileSync(join(workspaceDir, "config.json"), "utf-8");
     expect(after).toBe(before);
@@ -228,7 +228,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
     writeFileSync(join(workspaceDir, "config.json"), "{ not valid json");
     // Should not throw.
     expect(() =>
-      backfillManagedProfileLabelsMigration.run(workspaceDir),
+      backfillCloudProfileLabelsMigration.run(workspaceDir),
     ).not.toThrow();
   });
 
@@ -252,7 +252,7 @@ describe("082-backfill-managed-profile-labels migration", () => {
     });
 
     try {
-      backfillManagedProfileLabelsMigration.run(workspaceDir);
+      backfillCloudProfileLabelsMigration.run(workspaceDir);
 
       const config = readConfig();
       const profiles = (config.llm as Record<string, unknown>)

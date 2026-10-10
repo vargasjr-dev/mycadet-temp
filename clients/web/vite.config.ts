@@ -35,7 +35,7 @@ function inPackages(...names: string[]): (id: string) => boolean {
 
 // Keep in sync with PLATFORM_MODE_TRUTHY in src/lib/local-mode.ts
 const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
-function isPlatformMode(raw: string | undefined): boolean {
+function isCloudServedBuild(raw: string | undefined): boolean {
   return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
 }
 
@@ -99,7 +99,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       tailwindcss(),
       react(),
-      isPlatformMode(env.VITE_PLATFORM_MODE) ? null : localModePlugin(env),
+      isCloudServedBuild(env.VITE_CLOUD_MODE) ? null : localModePlugin(env),
     ].filter(Boolean),
     resolve: {
       alias: [
@@ -132,7 +132,7 @@ export default defineConfig(({ mode }) => {
         allow: [import.meta.dirname, DESIGN_LIBRARY_SRC, ASSISTANT_API_SRC],
       },
       proxy: {
-        ...(isPlatformMode(env.VITE_PLATFORM_MODE)
+        ...(isCloudServedBuild(env.VITE_CLOUD_MODE)
           ? {
               "/v1": { target: apiProxyTarget, changeOrigin: true },
               "/_allauth": { target: apiProxyTarget, changeOrigin: true },

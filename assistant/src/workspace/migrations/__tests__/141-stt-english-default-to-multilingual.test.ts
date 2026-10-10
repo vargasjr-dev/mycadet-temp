@@ -42,7 +42,7 @@ describe("141-stt-english-default-to-multilingual", () => {
     expect(language()).toBe("multi");
   });
 
-  test("moves it on the managed relay", () => {
+  test("moves it on the cloud relay", () => {
     write({ provider: "cadet", language: "en" });
     MIG.run(workspaceDir);
     expect(language()).toBe("multi");

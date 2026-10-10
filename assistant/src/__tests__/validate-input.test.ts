@@ -638,7 +638,7 @@ describe("coerceArrayShapes", () => {
       const result = coerceArrayShapes(input, schema);
       expect(result).toBe(input);
       const validation = validateInputAgainstSchema(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         result,
         schema,
       );
@@ -656,7 +656,7 @@ describe("coerceArrayShapes", () => {
       schema,
     );
     expect(
-      validateInputAgainstSchema("scaffold_managed_skill", coerced, schema),
+      validateInputAgainstSchema("scaffold_cloud_skill", coerced, schema),
     ).toEqual({ ok: true });
     expect(coerced.activation_hints).toEqual(["user asks to deploy staging"]);
   });
@@ -694,7 +694,7 @@ describe("coerceArrayShapes", () => {
       schema,
     );
     const validation = validateInputAgainstSchema(
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       coerced,
       schema,
     );
@@ -747,7 +747,7 @@ describe("validateInputAgainstSchema: array shape error message", () => {
 
   test("points at the JSON array form when a string is passed", () => {
     const result = validateInputAgainstSchema(
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       { activation_hints: "[deploy staging" },
       schema,
     );
@@ -762,7 +762,7 @@ describe("validateInputAgainstSchema: array shape error message", () => {
 
   test("names an object when an object is passed", () => {
     const result = validateInputAgainstSchema(
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       { activation_hints: { first: "deploy staging" } },
       schema,
     );

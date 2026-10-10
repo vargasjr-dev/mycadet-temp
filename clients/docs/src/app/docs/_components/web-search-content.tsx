@@ -60,7 +60,7 @@ export function WebSearchContent() {
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             You control which provider runs that search and how it&apos;s
-            billed. Cadet&apos;s managed search works out of the box on your
+            billed. Cadet&apos;s cloud search works out of the box on your
             platform account, your inference provider&apos;s native search can
             handle it in-model, or you can connect your own API key for a
             dedicated search engine like Perplexity, Brave Search, Tavily, or
@@ -76,7 +76,7 @@ export function WebSearchContent() {
             Providers
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Six providers ship with every workspace. Managed providers need no
+            Six providers ship with every workspace. Cloud providers need no
             API key and bill through your Cadet account; BYOK providers call
             the vendor directly with a key you connect and bill you there.
           </p>
@@ -102,7 +102,7 @@ export function WebSearchContent() {
                   </td>
                   <td className="py-3 pr-4"><KindBadge kind="Managed" /></td>
                   <td className="py-3">
-                    Searches run through Cadet&apos;s managed search service.
+                    Searches run through Cadet&apos;s cloud search service.
                     No setup, no API key. Metered from your Cadet account
                     balance.
                   </td>
@@ -117,7 +117,7 @@ export function WebSearchContent() {
                     freshness follow whichever LLM you have selected. When the
                     selected model has no native search, the assistant falls
                     back to any connected search key, then to Cadet&apos;s
-                    managed search.
+                    cloud search.
                   </td>
                 </tr>
                 <tr>
@@ -315,7 +315,7 @@ export function WebSearchContent() {
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">Index source</td>
-                  <td className="py-3 pr-4">Cadet&apos;s managed search service</td>
+                  <td className="py-3 pr-4">Cadet&apos;s cloud search service</td>
                   <td className="py-3 pr-4">Whatever the LLM provider uses</td>
                   <td className="py-3 pr-4">Aggregates multiple search engines</td>
                   <td className="py-3 pr-4">Independent crawl, not Google or Bing</td>
@@ -418,7 +418,7 @@ export function WebSearchContent() {
             searches are never silently rerouted to a key you pay for
             elsewhere. On <strong>Provider Native</strong>, the model&apos;s
             own hosted search runs first, then any connected search keys, then
-            Cadet&apos;s managed search. On a <strong>BYOK provider</strong>,
+            Cadet&apos;s cloud search. On a <strong>BYOK provider</strong>,
             your assistant tries the provider you selected first; if it has no
             key configured or its request fails with a retryable error, the
             daemon walks the fallback chain in this order:

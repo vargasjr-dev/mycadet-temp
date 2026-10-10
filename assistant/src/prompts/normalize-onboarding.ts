@@ -138,7 +138,7 @@ export function normalizeOnboardingContext(
     // Findings are model-extracted from arbitrary web content and get written
     // into persisted persona markdown as single bullets. Collapse ALL runs of
     // whitespace (incl. newlines) so one finding can never mint extra lines —
-    // injected bullets, headings, or a `## ` that would corrupt the managed
+    // injected bullets, headings, or a `## ` that would corrupt the cloud
     // section boundary on later rewrites.
     researchFindings: ctx.researchFindings?.length
       ? ctx.researchFindings

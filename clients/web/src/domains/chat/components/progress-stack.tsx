@@ -11,7 +11,7 @@
  * rather than to a moment in it, and it lives in the header cluster where it
  * always has.
  *
- * Placement follows the space actually available, not the platform:
+ * Placement follows the space actually available, not the cloud:
  *
  *  - **Floating in the right gutter**, when the chat column is wide enough that
  *    the centred transcript leaves an empty strip beside it. Mounted INSIDE the
@@ -32,7 +32,7 @@
  *    rather than guessing from a breakpoint, because the same window is wide or
  *    narrow depending on what else is open beside the chat.
  *
- * See `docs/PLATFORM_ADAPTATION.md` on branching by window size vs. by space.
+ * See `docs/CLOUD_ADAPTATION.md` on branching by window size vs. by space.
  */
 
 import { useLocation } from "react-router";

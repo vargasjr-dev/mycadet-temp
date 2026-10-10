@@ -295,7 +295,7 @@ describe("ProfilesSection - chips", () => {
 });
 
 describe("ProfilesSection - kebab menus", () => {
-  test("an active managed profile offers View/Make Default but no Disable or Delete", async () => {
+  test("an active cloud profile offers View/Make Default but no Disable or Delete", async () => {
     renderSection();
     const menu = await openKebab("Balanced");
     const items = menuItems(menu);
@@ -307,7 +307,7 @@ describe("ProfilesSection - kebab menus", () => {
     expect(items).not.toContain("Edit");
   });
 
-  test("a disabled managed profile offers Enable and hides Make Default", async () => {
+  test("a disabled cloud profile offers Enable and hides Make Default", async () => {
     renderSection();
     const menu = await openKebab("Speed");
     const items = menuItems(menu);

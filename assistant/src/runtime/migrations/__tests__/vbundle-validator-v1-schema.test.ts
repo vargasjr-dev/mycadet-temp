@@ -5,7 +5,7 @@
  *   - Accepts a v1 ten-field manifest produced by `buildVBundle`.
  *   - Rejects every legacy six-field manifest shape.
  *   - Rejects when `schema_version` is anything other than `1`.
- *   - Enforces the managed-mode redaction `.refine()` (`origin.mode === "managed" ⇒ secrets_redacted === true`).
+ *   - Enforces the cloud-mode redaction `.refine()` (`origin.mode === "managed" ⇒ secrets_redacted === true`).
  *   - Enforces the `data/db/assistant.db`-in-contents `.refine()`.
  *   - Rejects when the declared `checksum` doesn't match the recomputed self-checksum.
  */

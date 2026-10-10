@@ -34,7 +34,7 @@ let selectedAssistantIdMock: string | null = null;
 let assistantsMock: Array<{
   id: string;
   isLocal: boolean;
-  isPlatformHosted: boolean;
+  isCloudHosted: boolean;
   isPaired?: boolean;
   organizationId?: string | null;
 }> = [];
@@ -229,7 +229,7 @@ beforeEach(() => {
     {
       id: "assistant-123",
       isLocal: false,
-      isPlatformHosted: true,
+      isCloudHosted: true,
       organizationId: "org-1",
     },
   ];
@@ -336,7 +336,7 @@ describe("StatusBanner", () => {
       {
         id: "assistant-selected",
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
         organizationId: "org-1",
       },
     ];
@@ -360,7 +360,7 @@ describe("StatusBanner", () => {
       {
         id: "assistant-only",
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
         organizationId: "org-1",
       },
     ];
@@ -382,13 +382,13 @@ describe("StatusBanner", () => {
       {
         id: "assistant-local",
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         organizationId: "org-1",
       },
       {
         id: "assistant-platform",
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
         organizationId: "org-1",
       },
     ];
@@ -882,7 +882,7 @@ describe("StatusBanner", () => {
         {
           id: "assistant-123",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
         },
       ];
@@ -909,7 +909,7 @@ describe("StatusBanner", () => {
         {
           id: "assistant-123",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
         },
       ];
@@ -932,7 +932,7 @@ describe("StatusBanner", () => {
         {
           id: "assistant-123",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
         },
       ];
@@ -952,13 +952,13 @@ describe("StatusBanner", () => {
         {
           id: "assistant-123",
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
         },
         {
           id: "assistant-paired",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
         },
       ];
@@ -990,7 +990,7 @@ describe("StatusBanner", () => {
         {
           id: "assistant-123",
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
         },
       ];
@@ -1205,7 +1205,7 @@ describe("StatusBanner", () => {
       expect(html).not.toContain("Assistant fatal error");
     });
 
-    test("does not render backend-unreachable for a platform-hosted session", () => {
+    test("does not render backend-unreachable for a cloud-hosted session", () => {
       isElectronMock = true;
       connectivityStateMock = "backend-unreachable";
       assistantStateMock = { kind: "active", isLocal: false };
@@ -1215,7 +1215,7 @@ describe("StatusBanner", () => {
       expect(html).toBe("");
     });
 
-    test("renders operational status instead of backend-unreachable for a platform-hosted session", () => {
+    test("renders operational status instead of backend-unreachable for a cloud-hosted session", () => {
       isElectronMock = true;
       connectivityStateMock = "backend-unreachable";
       assistantStateMock = { kind: "active", isLocal: false };

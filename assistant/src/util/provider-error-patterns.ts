@@ -94,14 +94,14 @@ export const INSUFFICIENT_CREDITS_PATTERNS = [
   /key limit (?:has been )?(?:exceeded|reached)/i,
 ];
 
-// Managed-proxy daily-credit-limit rejection: the platform emits a 402 whose
+// Managed-proxy daily-credit-limit rejection: the cloud emits a 402 whose
 // body carries `"code": "daily_limit_reached"`. More specific than the generic
 // credit-exhaustion prose above — both are 402s from the same proxy — so
 // classification sites must test this before INSUFFICIENT_CREDITS_PATTERNS.
 export const DAILY_LIMIT_PATTERNS = [/"code"\s*:\s*"daily_limit_reached"/i];
 
 // Managed-proxy free-tier daily usage-credit cap: a 402 whose body carries
-// `"code": "free_tier_daily_limit_reached"`. The platform imposes it on a
+// `"code": "free_tier_daily_limit_reached"`. The cloud imposes it on a
 // cohort of free-tier orgs (it is not the user-configured daily limit above,
 // which caps purchased spend), so it gets its own reason and copy: there is
 // no limit for the user to raise, only the UTC reset, an upgrade, or extra

@@ -80,7 +80,7 @@ function isDailyLimitReached(error: ChatErrorLike | null | undefined): boolean {
   }
 
   // `free_tier_daily_limit_reached` ends with `daily_limit_reached` too; it
-  // is the platform's cap, not the user's, and must not read as the latter.
+  // is the cloud's cap, not the user's, and must not read as the latter.
   return (
     error.errorCategory.endsWith(DAILY_LIMIT_REACHED_CATEGORY) &&
     !isFreeTierDailyLimitReached(error)
@@ -139,7 +139,7 @@ export type ComposerBillingBanner =
  *
  * `free_tier_daily_limit` is driven by the summary's `freeTierDailyLimitBlocked`
  * (the cap is reached AND the wallet holds no extra credit to fall back on,
- * which is exactly when the platform rejects a send) as much as by the error:
+ * which is exactly when the cloud rejects a send) as much as by the error:
  *
  * - An error-driven free-tier decision renders while the summary agrees or is
  *   not read (`undefined`). Once it says `false`, adding credits or upgrading
@@ -227,7 +227,7 @@ export function shouldShowGenericChatErrorNotice(
   return !!error && !shouldSuppressGenericChatErrorNotice(error);
 }
 
-export function isManagedCredentialChatError(
+export function isCloudCredentialChatError(
   error: ChatErrorLike | null | undefined,
 ): boolean {
   return error?.code === MANAGED_KEY_INVALID_CODE;

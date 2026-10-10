@@ -10,7 +10,7 @@ The included `cadet-oauth-integrations` skill handles the generic parts of the f
 
 ## Check Managed Mode First
 
-**Before guiding the user through any of the steps below, check whether they should be using Cadet-managed Notion OAuth instead.**
+**Before guiding the user through any of the steps below, check whether they should be using Cadet Cloud Notion OAuth instead.**
 
 Notion supports managed mode (see `assistant oauth providers get notion`). The flows in this file are for users who have explicitly chosen `your-own` mode. If the user has not made an explicit choice yet, default to managed mode — it requires no Notion developer console setup at all.
 
@@ -23,7 +23,7 @@ assistant oauth mode notion --json | jq -r '.mode'
 - If the result is `managed`, **stop reading this file** and follow [CONNECTING_ACCOUNTS.md](../CONNECTING_ACCOUNTS.md) instead. The user logs in with Notion and is done.
 - If the result is `your-own`, ask the user whether they'd prefer the simpler managed flow before continuing:
   > "Notion can connect through Cadet's managed integration — no developer console setup needed, just a login. Want to use that, or do you want to create your own integration?"
-  > If they prefer managed, run `assistant oauth mode notion --set managed` and switch to the managed flow.
+  > If they prefer managed, run `assistant oauth mode notion --set managed` and switch to the cloud flow.
 - If the user already has an active Notion connection (`assistant oauth status notion` returns a live connection), do not switch modes — respect their existing setup.
 
 Only proceed with the steps below if the user has explicitly chosen `your-own` mode.

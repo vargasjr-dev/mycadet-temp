@@ -54,7 +54,7 @@ export interface ViewportAxes {
  * with the `hover` it implies. The compound `useTouchMobile()` query falls out
  * of both, which is the point: the combinations that come apart, a roomy touch
  * tablet and a narrow window driven by a mouse, are the ones adaptation bugs
- * hide in. See `docs/PLATFORM_ADAPTATION.md`.
+ * hide in. See `docs/CLOUD_ADAPTATION.md`.
  *
  * Stubbing `window.matchMedia` rather than mocking the hook modules keeps the
  * test honest about which signal the component actually consults, and avoids

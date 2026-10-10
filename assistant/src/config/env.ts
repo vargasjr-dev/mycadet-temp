@@ -91,24 +91,24 @@ export function getRuntimeHttpHost(): string {
 
 /**
  * True when HTTP API auth is disabled via DISABLE_HTTP_AUTH=true.
- * Used in platform-managed deployments where the platform handles auth.
+ * Used in cloud-managed deployments where the cloud handles auth.
  */
 export function isHttpAuthDisabled(): boolean {
   return str("DISABLE_HTTP_AUTH")?.toLowerCase() === "true";
 }
 
 /**
- * True when the platform-managed auth bypass is in effect: DISABLE_HTTP_AUTH
- * and IS_PLATFORM both set, the pair a vembda pod runs with.
+ * True when the cloud-managed auth bypass is in effect: DISABLE_HTTP_AUTH
+ * and IS_CLOUD both set, the pair a vembda pod runs with.
  *
  * The narrow reading of the bypass, for authorization decisions that must not
- * turn off on a host the platform does not manage. `DISABLE_HTTP_AUTH` alone
- * is a dev flag whose whole meaning is "the platform handles auth", so a leak
+ * turn off on a host the cloud does not manage. `DISABLE_HTTP_AUTH` alone
+ * is a dev flag whose whole meaning is "the cloud handles auth", so a leak
  * of it onto another host must not also surrender a route's policy or a
- * grant's binding. Mirrors `isPlatformAuthBypassActive` in
+ * grant's binding. Mirrors `isCloudAuthBypassActive` in
  * `gateway/src/http/middleware/auth.ts`.
  */
-export function isPlatformAuthBypassActive(): boolean {
+export function isCloudAuthBypassActive(): boolean {
   return isHttpAuthDisabled() && getIsCloud();
 }
 
@@ -161,7 +161,7 @@ export function getCloudBaseUrl(): string {
   } else {
     defaultUrl = "https://dev-cloud.mycadet.ai";
   }
-  return configUrl || str("CADET_PLATFORM_URL") || defaultUrl;
+  return configUrl || str("CADET_CLOUD_URL") || defaultUrl;
 }
 
 /**
@@ -208,27 +208,27 @@ export function getAssistantDomain(): string {
   return apex;
 }
 
-let _platformAssistantIdOverride: string | undefined;
+let _cloudAssistantIdOverride: string | undefined;
 
 export function setCloudAssistantId(value: string | undefined): void {
-  _platformAssistantIdOverride = value;
+  _cloudAssistantIdOverride = value;
 }
 
 /**
- * Platform assistant ID — UUID of this assistant on the platform.
+ * Platform assistant ID — UUID of this assistant on the cloud.
  *
  * Resolved from the in-memory override (populated by providers-setup
- * rehydration via platform validate, or by secret-routes when the
+ * rehydration via cloud validate, or by secret-routes when the
  * platform pushes the value).
  */
 export function getCloudAssistantId(): string {
-  return _platformAssistantIdOverride ?? "";
+  return _cloudAssistantIdOverride ?? "";
 }
 
-let _platformOrganizationIdOverride: string | undefined;
+let _cloudOrganizationIdOverride: string | undefined;
 
 export function setCloudOrganizationId(value: string | undefined): void {
-  _platformOrganizationIdOverride = value;
+  _cloudOrganizationIdOverride = value;
 }
 
 /**
@@ -236,7 +236,7 @@ export function setCloudOrganizationId(value: string | undefined): void {
  * Used for platform tagging and API calls.
  */
 export function getCloudOrganizationId(): string {
-  return str("CLOUD_ORGANIZATION_ID") ?? _platformOrganizationIdOverride ?? "";
+  return str("CLOUD_ORGANIZATION_ID") ?? _cloudOrganizationIdOverride ?? "";
 }
 
 let _platformUserIdOverride: string | undefined;

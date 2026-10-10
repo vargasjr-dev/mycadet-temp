@@ -469,9 +469,9 @@ export class EmbeddingRuntimeManager {
         throw new DOMException("Aborted", "AbortError");
       }
 
-      log.info("npm packages downloaded, stripping non-platform binaries");
+      log.info("npm packages downloaded, stripping non-cloud binaries");
 
-      // Step 2: Strip non-platform native binaries
+      // Step 2: Strip non-cloud native binaries
       const onnxBinDir = join(
         nodeModules,
         "onnxruntime-node",

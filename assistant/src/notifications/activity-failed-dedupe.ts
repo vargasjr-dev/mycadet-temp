@@ -2,7 +2,7 @@ import type { ConversationErrorCode } from "../api/events/conversation-error.js"
 import type { BackgroundJobErrorKind } from "../runtime/background-job-runner.js";
 
 /**
- * Failure codes whose cause is the whole workspace: the managed route and the
+ * Failure codes whose cause is the whole workspace: the cloud route and the
  * local machine exist once, so every job they hit shares one root cause and
  * one remedy, whatever provider or profile the job used. These collapse into
  * a single notification per cause per UTC day.

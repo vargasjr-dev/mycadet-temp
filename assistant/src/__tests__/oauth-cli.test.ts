@@ -24,14 +24,14 @@ import { describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
-let mockPlatformClientCreate: () => Promise<Record<
+let mockCloudClientCreate: () => Promise<Record<
   string,
   unknown
 > | null> = async () => null;
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
-    create: () => mockPlatformClientCreate(),
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
+    create: () => mockCloudClientCreate(),
   },
 }));
 
@@ -44,7 +44,7 @@ const { requirePlatformConnection } =
 
 describe("requirePlatformConnection", () => {
   test("returns false and writes error when not connected", async () => {
-    mockPlatformClientCreate = async () => null;
+    mockCloudClientCreate = async () => null;
     const stdoutChunks: string[] = [];
     const originalWrite = process.stdout.write.bind(process.stdout);
     process.stdout.write = ((chunk: unknown) => {
@@ -72,8 +72,8 @@ describe("requirePlatformConnection", () => {
   });
 
   test("returns true when client can be created (even without assistant ID)", async () => {
-    mockPlatformClientCreate = async () => ({
-      platformAssistantId: "",
+    mockCloudClientCreate = async () => ({
+      cloudAssistantId: "",
       fetch: async () => new Response(),
     });
     process.exitCode = 0;
@@ -87,8 +87,8 @@ describe("requirePlatformConnection", () => {
   });
 
   test("returns true when client can be created with assistant ID", async () => {
-    mockPlatformClientCreate = async () => ({
-      platformAssistantId: "asst-456",
+    mockCloudClientCreate = async () => ({
+      cloudAssistantId: "asst-456",
       fetch: async () => new Response(),
     });
     process.exitCode = 0;

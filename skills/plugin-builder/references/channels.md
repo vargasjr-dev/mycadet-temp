@@ -109,7 +109,7 @@ A static bearer token does not provide replay protection. Prefer `hmac` with `fr
 
 Rules that stay gateway-side:
 
-- The credential **service** is the plugin's directory name. The descriptor names only a **field** (`courier_webhook_secret` above). A manifest cannot point a route at another plugin's secret or at the platform's.
+- The credential **service** is the plugin's directory name. The descriptor names only a **field** (`courier_webhook_secret` above). A manifest cannot point a route at another plugin's secret or at the cloud's.
 - Store the secret via `assistant credentials prompt` (or `storeCredential` from a hook/tool/route). Never put it in the file.
 - For `hmac`, `payload` is the exact bytes the vendor signs, in order: `"body"`, `{ "header": "..." }`, or `{ "literal": "..." }`. A header named in `payload` but absent from the request fails verification rather than contributing an empty string.
 - For `hmac`, `freshness` is a replay window. Declare it when the vendor binds a timestamp. A signature over the body alone stays valid for as long as the secret does.

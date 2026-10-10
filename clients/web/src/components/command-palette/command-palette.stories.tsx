@@ -15,7 +15,7 @@
  *
  * The two come apart on real hardware, which is the whole reason they are two
  * signals: a tablet is roomy with a thumb, and a narrowed desktop window is
- * compact with a keyboard. See `docs/PLATFORM_ADAPTATION.md`.
+ * compact with a keyboard. See `docs/CLOUD_ADAPTATION.md`.
  */
 
 import type { Meta, StoryObj } from "@storybook/react-vite";

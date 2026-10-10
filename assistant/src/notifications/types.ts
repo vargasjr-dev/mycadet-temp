@@ -69,7 +69,7 @@ export const DeliveryResultSchema = z.object({
   skipped: z.boolean().optional(),
   error: z.string().optional(),
   messageId: z.string().optional(),
-  /** Set only by the platform push adapter: true when the platform accepted
+  /** Set only by the cloud push adapter: true when the cloud accepted
    *  at least one device push for delivery (not proof of device receipt). */
   remotePushAccepted: z.boolean().optional(),
   remotePushPlatforms: z.array(z.enum(["ios", "android"])).optional(),
@@ -124,7 +124,7 @@ export const ChannelDeliveryPayloadSchema = z.object({
    *  broadcaster so channel adapters render it without re-parsing
    *  `contextPayload`. */
   toolApprovalSource: ToolApprovalSourceViewSchema.optional(),
-  /** True when the platform (APNs) channel accepted a remote push for this
+  /** True when the cloud (APNs) channel accepted a remote push for this
    *  delivery. Set only on the cadet channel's payload so clients can avoid
    *  double-bannering. */
   remotePushDispatched: z.boolean().optional(),

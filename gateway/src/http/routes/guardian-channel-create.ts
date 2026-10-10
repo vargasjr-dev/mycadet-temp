@@ -1,8 +1,8 @@
 /**
  * POST /v1/contacts/guardian/channel — create a guardian channel binding
- * via platform auto-verify.
+ * via cloud auto-verify.
  *
- * This route is called by the platform's `assistant email register` flow
+ * This route is called by the cloud's `assistant email register` flow
  * to auto-verify the owner's email channel. It creates a guardian email
  * channel binding directly in both the assistant and gateway databases.
  *
@@ -138,7 +138,7 @@ export function createGuardianChannelHandler() {
 
     log.info(
       { channel: body.type, address: body.address },
-      "Auto-verified guardian channel via platform auto-register",
+      "Auto-verified guardian channel via cloud auto-register",
     );
 
     return Response.json({

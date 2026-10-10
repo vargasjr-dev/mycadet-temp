@@ -57,8 +57,8 @@ export async function runSkillToolScript(
   // capability reserved for bundled skills, which ship trusted, in-repo
   // executors. A non-bundled skill (managed, workspace, plugin, extra) that
   // declares `execution_target: host` must be refused: otherwise an
-  // attacker-planted TOOLS.json — e.g. written into a managed skill dir via
-  // scaffold_managed_skill companion files, or shipped in a third-party skill —
+  // attacker-planted TOOLS.json — e.g. written into a cloud skill dir via
+  // scaffold_cloud_skill companion files, or shipped in a third-party skill —
   // could get arbitrary code imported into the host process and auto-approved
   // under the low-risk threshold. Non-bundled skills must run their tools in the
   // sandbox (handled above); host execution here is a hard, fail-closed deny.

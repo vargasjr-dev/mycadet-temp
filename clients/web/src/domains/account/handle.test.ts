@@ -6,7 +6,7 @@
  * smell worth investigating.
  *
  * The actual HTTP path is exercised end-to-end by the Django integration
- * tests on the platform side. Here we just verify the client wrappers map
+ * tests on the cloud side. Here we just verify the client wrappers map
  * server responses to the right discriminator variant.
  */
 

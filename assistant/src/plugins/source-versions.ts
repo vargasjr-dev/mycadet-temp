@@ -68,7 +68,7 @@ export interface SourceVersionsDocument {
   /** ISO timestamp of the last rewrite, for staleness logging. */
   readonly writtenAt: string;
   /**
-   * Keyed by the absolute directory path as the platform helpers construct
+   * Keyed by the absolute directory path as the cloud helpers construct
    * it (`getWorkspacePluginsDir()`-derived plugin dirs, plus
    * `getWorkspaceHooksDir()` for standalone workspace hooks), so readers
    * can key their own state the same way without any name resolution.

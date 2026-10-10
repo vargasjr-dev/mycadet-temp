@@ -23,7 +23,7 @@ export const ROUTES: RouteDefinition[] = ["GET", "POST"].map((method) => ({
   handler: () => {
     if (!isVirtualDesktopEnabled()) {
       throw new NotFoundError(
-        "Virtual desktop is available only on enabled platform-hosted assistants",
+        "Virtual desktop is available only on enabled cloud-hosted assistants",
       );
     }
     const status = desktopDependencies.getStatus();

@@ -78,8 +78,8 @@ export function isFirstPartyDefaultPlugin(name: string): boolean {
 }
 
 /**
- * Manifest name (e.g. `default-platform-hosted`) for a default plugin's
- * *directory* name (e.g. `platform-hosted`), or `null` when `<dirName>` is not
+ * Manifest name (e.g. `default-cloud-hosted`) for a default plugin's
+ * *directory* name (e.g. `cloud-hosted`), or `null` when `<dirName>` is not
  * a default plugin. Memoized alongside {@link getAllDefaultPluginNames}.
  *
  * Default-plugin `.disabled` sentinels are keyed by the manifest name (the CLI
@@ -115,7 +115,7 @@ export function getDefaultPluginManifestName(dirName: string): string | null {
  * or `null` when `<name>` is not a default plugin's route namespace.
  *
  * A default plugin's route namespace is `default-<directory-name>` (e.g.
- * `default-platform-hosted`) — the same `default-…` name its `.disabled`
+ * `default-cloud-hosted`) — the same `default-…` name its `.disabled`
  * sentinel and per-chat scoping are keyed by. `<name>` is the namespace: the
  * `default-` prefix is stripped to recover the source directory, so a name
  * without the prefix (e.g. the bare directory name) resolves to `null`. The
@@ -140,7 +140,7 @@ export function getDefaultPluginRoutesDir(name: string): string | null {
 
 /**
  * Enumerate default plugins that ship a `routes/` directory, keyed by their
- * route namespace (`default-<directory-name>`, e.g. `default-platform-hosted`).
+ * route namespace (`default-<directory-name>`, e.g. `default-cloud-hosted`).
  * Mirrors {@link getDefaultPluginRoutesDir} so route discovery and dispatch
  * agree on which default plugin routes exist and under which namespace.
  */
@@ -166,7 +166,7 @@ export function getDefaultPluginRouteRoots(): {
 
 /**
  * Enumerate default plugins that ship a `skills/` directory, keyed by their
- * plugin name (`default-<directory-name>`, e.g. `default-platform-hosted`).
+ * plugin name (`default-<directory-name>`, e.g. `default-cloud-hosted`).
  * Each `skillsDir` holds the plugin's resident skills at `<id>/SKILL.md`, the
  * same layout an installed plugin uses under
  * `<workspaceDir>/plugins/<name>/skills/`.

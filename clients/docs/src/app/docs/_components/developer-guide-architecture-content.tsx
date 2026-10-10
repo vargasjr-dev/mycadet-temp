@@ -5,7 +5,7 @@ import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
 
 const TOC_ITEMS = [
-  { id: "platform-domains", label: "Platform Domains", level: 2 },
+  { id: "platform-domains", label: "Cloud Domains", level: 2 },
   { id: "assistant-runtime", label: "Assistant Runtime", level: 3 },
   { id: "native-clients", label: "Native Clients", level: 3 },
   { id: "gateway", label: "Gateway", level: 3 },
@@ -28,7 +28,7 @@ export function DeveloperGuideArchitectureContent() {
 
         <section id="platform-domains">
           <SectionHeading id="platform-domains" level={2}>
-            Platform Domains
+            Cloud Domains
           </SectionHeading>
 
           <section id="assistant-runtime" className="mt-6">

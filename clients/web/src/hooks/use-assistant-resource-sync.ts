@@ -294,7 +294,7 @@ function resetAssistantCapabilities(
 
 /**
  * An avatar change on the connected assistant. Beyond the query sweep, drops
- * the row's synced `avatarUrl` and platform lookup entry: the platform copy
+ * the row's synced `avatarUrl` and platform lookup entry: the cloud copy
  * lags the live change, and while set it keeps the chooser's live/cache paths
  * disabled. The reconnect sweep does not do this, since nothing is known to
  * have changed there.

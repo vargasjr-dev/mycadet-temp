@@ -62,13 +62,13 @@ function BillingQueryFixture({
   // the same read seams a real client sets, and hand them back on unmount so a
   // story cannot leak billing state into the next one.
   useLayoutEffect(() => {
-    const previousAuth = useAuthStore.getState().platformSession;
+    const previousAuth = useAuthStore.getState().cloudSession;
     const previousLifecycle =
       useAssistantLifecycleStore.getState().assistantState;
     const previousOrgId =
       useOrganizationStore.getState().persistedOrganizationId;
 
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
     useAssistantLifecycleStore.setState({
       assistantState: { kind: "active", isLocal: false, health: "healthy" },
     });
@@ -91,7 +91,7 @@ function BillingQueryFixture({
     });
 
     return () => {
-      useAuthStore.setState({ platformSession: previousAuth });
+      useAuthStore.setState({ cloudSession: previousAuth });
       useAssistantLifecycleStore.setState({
         assistantState: previousLifecycle,
       });

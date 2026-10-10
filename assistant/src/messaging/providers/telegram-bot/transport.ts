@@ -150,7 +150,7 @@ export const telegramTransport: ChannelTransport = {
    * A start that Telegram refuses (a chat that is not private, where drafts
    * are not offered) reports not-ok, and the caller falls back to sending the
    * finished reply. That is the whole of the per-conversation rule: it is
-   * answered here, where the platform's constraint lives.
+   * answered here, where the cloud's constraint lives.
    */
   async streamReply(ctx, chatId, op) {
     const opts = threadOptions(ctx);

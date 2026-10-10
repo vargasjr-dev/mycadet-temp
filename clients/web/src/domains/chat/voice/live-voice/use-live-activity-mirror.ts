@@ -316,14 +316,14 @@ export function useLiveActivityMirror(): void {
      */
     let pushToken: string | null = null;
     /**
-     * What was last registered with the platform, as `token:assistant:
+     * What was last registered with the cloud, as `token:assistant:
      * conversation:accent:muted:locale`.
      *
      * Every part matters and none is stable: the token rotates; a session
      * started from a draft has no conversation id until the server's `ready`
      * assigns one; registering against `null` and never revisiting it would
      * leave the activity addressable by nothing; and the accent and mute state
-     * are content the platform composes its pushes from, so a stale
+     * are content the cloud composes its pushes from, so a stale
      * registration would push the island back to whatever they were at start.
      * The locale is in the key for that last reason too: the registration
      * carries a phase to label table, so a language switch (which moves nothing
@@ -335,7 +335,7 @@ export function useLiveActivityMirror(): void {
     let registeredKey: string | null = null;
 
     /**
-     * Register the running activity with the platform once the token and the
+     * Register the running activity with the cloud once the token and the
      * session's identity are both known.
      *
      * This is what lets the island keep updating after iOS suspends this web
@@ -385,7 +385,7 @@ export function useLiveActivityMirror(): void {
         clearWorkTimer();
         generation += 1;
         // Dropped before the token is retired: the registration outlives the
-        // activity otherwise, and the platform would push a phase at an island
+        // activity otherwise, and the cloud would push a phase at an island
         // that no longer exists.
         pushToken = null;
         registeredKey = null;

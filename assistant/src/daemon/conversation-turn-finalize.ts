@@ -342,7 +342,7 @@ export async function runDeferredTurnTail(params: {
   // check necessarily runs with the conversation already free. A follow-up
   // send that beats it there advances the cursor and suppresses the push,
   // which is the right answer: a user typing the next message is looking at
-  // the reply. Not awaited: the pipeline awaits the platform adapter's HTTP
+  // the reply. Not awaited: the pipeline awaits the cloud adapter's HTTP
   // dispatch, which retries with backoff, and nothing below here depends on
   // the emit. The producer never rejects.
   if (turnCompleted && state.lastAssistantMessageId) {

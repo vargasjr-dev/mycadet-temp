@@ -29,7 +29,7 @@ Examples:
       description: "Show platform identity and authentication status",
       helpText: `
 Fields:
-  platformUrl         The Cadet Cloud base URL this assistant connects to
+  cloudUrl         The Cadet Cloud base URL this assistant connects to
   assistantId         This assistant's platform UUID
   organizationId      The organization this assistant belongs to (from CLOUD_ORGANIZATION_ID)
   userId              The user who owns this assistant (from CLOUD_USER_ID)

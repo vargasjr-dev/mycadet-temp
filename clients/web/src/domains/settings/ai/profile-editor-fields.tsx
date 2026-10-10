@@ -154,15 +154,15 @@ export function ProfileEditorFields({
   // Enabling and disabling a profile the user owns lives on its row's kebab
   // menu, so the editor does not ask: a new profile is active, and an existing
   // one keeps whatever the row set. The one case the row cannot serve is a
-  // managed profile opened read-only and already disabled, where this
+  // cloud profile opened read-only and already disabled, where this
   // enable-only toggle is the whole reason the form can be saved at all. The
-  // panel variant never shows it - it reaches managed profiles through
+  // panel variant never shows it - it reaches cloud profiles through
   // "Save As New".
   const activeToggle =
     !flat && editor.isReadOnly && editor.status === "disabled" ? (
       <Toggle
         // Enable-only: the flip is what arms Save, and it unmounts the toggle
-        // with it, because a managed profile cannot be disabled from here.
+        // with it, because a cloud profile cannot be disabled from here.
         checked={false}
         onChange={() => editor.setStatus("active")}
         label={t("profileEditorFields.activeLabel")}

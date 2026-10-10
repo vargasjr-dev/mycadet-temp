@@ -342,7 +342,7 @@ describe("ProviderCommitMessageGenerator", () => {
       provider: mockProvider,
       configuredProviderName: "cadet",
     };
-    const commitMsg = "fix: managed-route commit";
+    const commitMsg = "fix: cloud-route commit";
     mockSendMessage.mockResolvedValueOnce(makeSuccessResponse(commitMsg));
     const gen = getCommitMessageGenerator();
     const result = await gen.generateCommitMessage(baseContext, {

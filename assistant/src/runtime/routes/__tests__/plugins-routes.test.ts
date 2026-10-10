@@ -119,7 +119,7 @@ import {
   type UpgradePluginOptions,
 } from "../../../cli/lib/upgrade-plugin.js";
 
-// Spy on the route logger so tests can assert that a platform-catalog outage
+// Spy on the route logger so tests can assert that a cloud-catalog outage
 // is recorded before it is mapped to a client 503. The catalog fetcher and the
 // transport adapters swallow the failure otherwise (`RouteError` → wire error,
 // no capture), so the log line is the only trace an operator gets — assert it.
@@ -1626,8 +1626,8 @@ describe("POST /v1/plugins/install", () => {
     // The default (no-pin) path reads the same gated catalog `search`
     // advertises and installs from a trusted pre-resolved source — no direct
     // `plugins/marketplace.json` fetch (the pin/marketplace path is untouched).
-    const prev = process.env.CADET_DISABLE_PLATFORM;
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    const prev = process.env.CADET_DISABLE_CLOUD;
+    process.env.CADET_DISABLE_CLOUD = "true";
     try {
       installSpy.mockImplementation(async (opts) => trustedInstallResult(opts));
 
@@ -1660,9 +1660,9 @@ describe("POST /v1/plugins/install", () => {
       });
     } finally {
       if (prev === undefined) {
-        delete process.env.CADET_DISABLE_PLATFORM;
+        delete process.env.CADET_DISABLE_CLOUD;
       } else {
-        process.env.CADET_DISABLE_PLATFORM = prev;
+        process.env.CADET_DISABLE_CLOUD = prev;
       }
     }
   });

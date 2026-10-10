@@ -193,7 +193,7 @@ describe("AddCreditsModal", () => {
 });
 
 describe("AddCreditsModal checkout return_target", () => {
-  // The platform uses `return_target` to decide whether checkout finishes on
+  // The cloud uses `return_target` to decide whether checkout finishes on
   // a web return URL or the custom-scheme bounce. Dropping it from the body
   // silently strands Electron/iOS users in the external browser, so these
   // tests pin the pass-through of `checkoutReturnTarget()`.

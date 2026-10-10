@@ -9,11 +9,11 @@
  * which sources its reporter instance is constructed with.
  */
 
-import { queryUnreportedUsageEvents } from "../persistence/llm-usage-store.js";
 import {
   getCachedShareDiagnostics,
   getCachedShareDiagnosticsVersion,
-} from "../platform/consent-cache.js";
+} from "../cloud/consent-cache.js";
+import { queryUnreportedUsageEvents } from "../persistence/llm-usage-store.js";
 import type { UsageAttributionProfileSource } from "../usage/types.js";
 import { getLogger } from "../util/logger.js";
 import { APP_VERSION } from "../version.js";
@@ -209,12 +209,12 @@ export const ORPHAN_OUTBOX_DRAIN_SOURCE_ID = "__orphan_outbox_drain";
 
 /**
  * Synthetic ack-mode source that drains outbox rows whose `name` is no longer a
- * current outbox event type — e.g. rows recorded before the platform removed or
+ * current outbox event type — e.g. rows recorded before the cloud removed or
  * renamed a type, still pending on a client that has since upgraded. The
  * derived per-type sources ({@link OUTBOX_TELEMETRY_EVENT_NAMES}) never query
  * those names, so without this the rows would sit in the outbox forever.
  *
- * Draining is send-then-ack: the platform skips an unknown event type but still
+ * Draining is send-then-ack: the cloud skips an unknown event type but still
  * returns 2xx, after which the row is deleted. This is safe against a stale
  * local wire copy — a name merely missing from a lagging wire still ships and
  * lands rather than being purged and lost — and rides `share_analytics` like
@@ -304,7 +304,7 @@ const usageSource = simpleSource(
     // Record-time version when present; otherwise the running
     // binary's `APP_VERSION` (a legacy row from before
     // migration 267 ran). We deliberately don't emit explicit
-    // `null` — under the platform contract a present-but-null
+    // `null` — under the cloud contract a present-but-null
     // per-event value would override the envelope, and we'd
     // rather have a concrete version than no version.
     assistant_version: e.assistantVersion ?? APP_VERSION,
@@ -345,12 +345,12 @@ const turnSource: TelemetryEventSource = {
     // deferred turn (and everything after it) is picked up on a later flush
     // once its response settles.
     //
-    // Trace eligibility is composed daemon-side to mirror the platform's
+    // Trace eligibility is composed daemon-side to mirror the cloud's
     // authoritative owner-based ingest gate, so traces for ineligible owners
     // never leave the device. Two parts, fail-closed (both must be true):
     //   1. the owner's cached `share_diagnostics` consent, and
     //   2. the owner's cached `share_diagnostics_accepted_version` being at or
-    //      past the disclosing version — the platform applies the identical
+    //      past the disclosing version — the cloud applies the identical
     //      check, so an old consent never yields a trace here or there.
     const traceEligible =
       getCachedShareDiagnostics() &&
@@ -467,7 +467,7 @@ const turnSource: TelemetryEventSource = {
         // to `messages` is a separate (larger) migration; until
         // then we stamp the running binary's `APP_VERSION` so the
         // wire value is concrete (matches what the envelope would
-        // have provided, but per-event so it survives the platform
+        // have provided, but per-event so it survives the cloud
         // contract that treats present per-event values as winning
         // over the envelope).
         assistant_version: APP_VERSION,
@@ -517,7 +517,7 @@ const toolExecutedSource = simpleSource(
     // `tool_invocations` has no record-time version column — stamp
     // the running binary's `APP_VERSION` so the wire value is
     // concrete rather than an explicit null that would override the
-    // envelope under the platform's per-event-wins contract.
+    // envelope under the cloud's per-event-wins contract.
     assistant_version: APP_VERSION,
   }),
 );

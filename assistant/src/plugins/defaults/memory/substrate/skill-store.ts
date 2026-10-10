@@ -323,14 +323,14 @@ async function runSeedV2SkillEntries(generation: number): Promise<void> {
     // Build the dense + sparse vectors for the Qdrant write. Sparse (BM25/TF)
     // encoding is computed locally and needs no backend; only the dense vectors
     // require `embedWithBackend`, which is unconfigured during the cold-start
-    // window before a managed-proxy embedding credential is provisioned.
+    // window before a cloud-proxy embedding credential is provisioned.
     //
     // A dense-embed failure is non-fatal to the in-memory cache: the v3 needle
     // finder lane and always-candidate skill pinning read skills from `entries`
     // / the page index, NOT from Qdrant, so the cache is populated from the
     // local catalog regardless of backend state and skills stay discoverable
-    // from first boot. Only the dense Qdrant upsert is skipped; the managed-
-    // credential reseed (`maybeReseedCapabilitiesAfterManagedCredential`) and
+    // from first boot. Only the dense Qdrant upsert is skipped; the cloud-
+    // credential reseed (`maybeReseedCapabilitiesAfterCloudCredential`) and
     // the v3 maintain pass backfill the dense vectors once the backend recovers.
     const nextEntries = new Map<string, SkillEntry>();
     let denseVectors: number[][] = [];
@@ -461,7 +461,7 @@ async function runSeedV2SkillEntries(generation: number): Promise<void> {
     fallbackAlwaysCandidateIds = new Set<string>();
     invalidatePageIndex();
 
-    // Surface a dense-embed failure to `throwOnError` callers (the managed-
+    // Surface a dense-embed failure to `throwOnError` callers (the cloud-
     // credential reseed and the operator reembed route) so the existing retry +
     // maintain machinery backfills the dense lane. The in-memory cache is
     // already updated above, so the needle lane is fixed regardless.

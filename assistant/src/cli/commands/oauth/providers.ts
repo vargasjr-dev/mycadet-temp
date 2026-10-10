@@ -282,7 +282,7 @@ export function registerProviderCommands(oauth: Command): void {
     ) => {
       const queryParams: Record<string, string> = {};
       if (opts.supportsManaged) {
-        queryParams.supports_managed_mode = "true";
+        queryParams.supports_cloud_mode = "true";
       }
       const r = await cliIpcCall<{
         providers: Array<Record<string, unknown>>;
@@ -300,7 +300,7 @@ export function registerProviderCommands(oauth: Command): void {
         providerKey: p.provider_key as string,
         displayName: p.display_name as string | null,
         description: p.description as string | null,
-        supportsManagedMode: p.supports_managed_mode as boolean,
+        supportsManagedMode: p.supports_cloud_mode as boolean,
         managedServiceIsPaid: p.managed_service_is_paid as boolean,
         requiresClientSecret: p.requires_client_secret as boolean,
         logoUrl: p.logo_url as string | null,

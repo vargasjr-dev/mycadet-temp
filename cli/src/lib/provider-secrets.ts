@@ -86,7 +86,7 @@ const PROVIDER_LABELS: Record<LlmProviderId, string> = {
   typesafe: "TypeSafe",
 };
 
-// Ranked for the hatch prompt: Cadet Cloud first (the managed connection —
+// Ranked for the hatch prompt: Cadet Cloud first (the cloud connection —
 // no key to collect), then the hosted-inference gateways, then the BYO-key
 // incumbents, then the rest, with the endpoint-supplied catalogs last.
 export const HATCH_PROVIDER_CHOICES: readonly LlmProviderId[] = [
@@ -681,11 +681,11 @@ export async function ensureProviderApiKey(
 
   if (!envVarName) {
     // Managed-connection provider (e.g. Cadet Cloud): authenticated through
-    // the platform, not a user-supplied API key. Checked before the
+    // the cloud, not a user-supplied API key. Checked before the
     // supported-provider guard so the keyless flow stays reachable.
     return {
       status: "skipped",
-      message: `${providerName} authenticates through the managed connection; no API key needed.`,
+      message: `${providerName} authenticates through the cloud connection; no API key needed.`,
     };
   }
 

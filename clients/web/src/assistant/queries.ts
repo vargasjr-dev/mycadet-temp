@@ -90,30 +90,30 @@ export function pollIntervalFor(
  * switching assistants is a key change that triggers a fresh resolve.
  */
 export function assistantQueryKey(
-  selectedPlatformAssistantId?: string | null,
+  selectedCloudAssistantId?: string | null,
 ): readonly unknown[] {
-  return selectedPlatformAssistantId
-    ? [...ASSISTANT_QUERY_KEY, selectedPlatformAssistantId]
+  return selectedCloudAssistantId
+    ? [...ASSISTANT_QUERY_KEY, selectedCloudAssistantId]
     : ASSISTANT_QUERY_KEY;
 }
 
 export interface UseAssistantQueryOptions {
   /**
    * Disables the query when false. Used to short-circuit the fetch
-   * during auth handshake / local-mode boot before the platform
+   * during auth handshake / local-mode boot before the cloud
    * session is actually available.
    */
   enabled: boolean;
   /**
-   * The platform assistant the user has selected, when multi-assistant
+   * The cloud assistant the user has selected, when multi-assistant
    * is active. `null`/absent resolves the default (first listed) assistant —
    * the pre-multi-assistant behavior.
    */
-  selectedPlatformAssistantId?: string | null;
+  selectedCloudAssistantId?: string | null;
 }
 
 export function useAssistantQuery(options: UseAssistantQueryOptions) {
-  const selectedId = options.selectedPlatformAssistantId ?? null;
+  const selectedId = options.selectedCloudAssistantId ?? null;
   return useQuery<GetAssistantResult>({
     queryKey: assistantQueryKey(selectedId),
     queryFn: () => getAssistant(selectedId ?? undefined),

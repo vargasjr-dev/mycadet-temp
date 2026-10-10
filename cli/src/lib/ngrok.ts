@@ -282,7 +282,7 @@ export async function maybeStartNgrokTunnel(
   workspaceDir: string,
   assistantId?: string,
 ): Promise<ChildProcess | null> {
-  // Managed/containerized deployments route webhooks through the platform's
+  // Managed/containerized deployments route webhooks through the cloud's
   // callback proxy. ngrok is not needed and would not be reachable from the
   // platform anyway — skip it entirely.
   const isContainerized =

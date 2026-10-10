@@ -4,7 +4,7 @@
  * `{env}-cloud.mycadet.ai` → `tunnel-{env}.mycadet.ai`). Returns null for
  * hosts outside that convention (localhost, custom domains). Shared by the
  * gateway speech relay and the web live-voice client so the two ends of the
- * managed-speech transport can't drift.
+ * cloud-speech transport can't drift.
  */
 export function tunnelHostForPlatformHost(host: string): string | null {
   if (host === "cloud.mycadet.ai") {

@@ -343,14 +343,14 @@ export async function runInitHook(
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 
 /**
- * Run one owner's `shutdown` — the targeted single-owner teardown for a managed
+ * Run one owner's `shutdown` — the targeted single-owner teardown for a cloud
  * uninstall, disable, or reload (the whole-chain `runHook(HOOKS.SHUTDOWN)` at
  * process exit runs *every* owner's; this runs exactly one). Resolves it through
  * the same {@link resolveHook} the dispatch path uses — cache or disk, so it
  * needs nothing pre-warmed and works in any process (a `shutdown` hook must not
  * assume it shares a process with its `init`; see {@link ShutdownContext}) —
  * then invokes it under the shared {@link withTimeout} so a hook that hangs
- * can't block teardown (e.g. the `rmSync` a managed uninstall runs next). No-op
+ * can't block teardown (e.g. the `rmSync` a cloud uninstall runs next). No-op
  * when the owner defines no `shutdown`. Best-effort: a thrown, timed-out, or
  * malformed shutdown is logged and swallowed.
  */

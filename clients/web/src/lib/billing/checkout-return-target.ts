@@ -4,11 +4,11 @@ import type { ReturnTargetEnum } from "@/generated/api/types.gen";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 
 /**
- * Where the platform should send the browser when Stripe Checkout finishes.
+ * Where the cloud should send the browser when Stripe Checkout finishes.
  *
  * Both Electron shells open Checkout in the *system browser* (see
  * `runtime/browser.ts`), so a web return URL strands the user in that browser
- * and the app never learns checkout completed. `"native"` makes the platform
+ * and the app never learns checkout completed. `"native"` makes the cloud
  * bounce the browser to `<scheme>://billing/checkout-complete`, which the
  * shared deep-link handler routes back into the app
  * (`packages/electron-desktop/src/deep-links.ts`: `open-url` on macOS,
@@ -19,7 +19,7 @@ import { detectElectronHostOS } from "@/runtime/platform-detection";
  * and the `session_id` would never reach the app. The custom-scheme bounce is
  * Apple's prescribed hand-off: it dismisses the sheet and routes the URL in via
  * `appUrlOpen`, which `capacitor-deep-links.ts` turns into
- * `deeplink.billingCheckoutComplete`. The platform derives the scheme
+ * `deeplink.billingCheckoutComplete`. The cloud derives the scheme
  * server-side per environment, matching each iOS target's `BUNDLE_URL_SCHEME`.
  *
  * Plain web takes the web return; a browser cannot open a custom-scheme URL.

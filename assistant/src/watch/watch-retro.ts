@@ -140,7 +140,7 @@ const WATCH_RETRO_WAKE_SOURCE = "watch-retro";
  * after it would read as a sign-off nobody asked for.
  *
  * **The card does not depend on the load succeeding.** `skill-management` is a
- * selector, not a fixed definition: `loadSkillCatalog` lets a managed or
+ * selector, not a fixed definition: `loadSkillCatalog` lets a cloud or
  * workspace skill of the same id replace the bundled one, and
  * `resolveSkillSelector` hands back whichever entry won. So the load can come
  * back as someone else's skill, or as a refusal, and putting it ahead of the

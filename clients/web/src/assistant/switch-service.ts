@@ -30,7 +30,7 @@ export type SwitchOutcome = { ok: true } | { ok: false; error: string };
  * Switch to an assistant by id. A paired entry needs the paired connect flow
  * (host-authorized gateway proxy setup); the bare selection write
  * would record it active without credentials. Everything else goes through
- * the platform selection path; local assistants never reach this handler
+ * the cloud selection path; local assistants never reach this handler
  * (the tray and palette exclude them).
  */
 export async function switchToAssistant(
@@ -62,8 +62,8 @@ export async function switchToAssistant(
  * Switch to a resolved assistant through the connect entry its kind needs,
  * mirroring the chooser screen's dispatch: a paired entry primes the
  * host-authorized proxy, a local entry on a local client primes a gateway
- * token for its gateway, and everything else (platform-hosted, or a
- * hub-listed local entry reached through the platform) goes through the
+ * token for its gateway, and everything else (cloud-hosted, or a
+ * hub-listed local entry reached through the cloud) goes through the
  * platform session path.
  *
  * Unlike {@link switchToAssistant}, which serves id-only host commands whose
@@ -83,7 +83,7 @@ export async function switchToResolvedAssistant(
     await auth.connectLocalAssistant(assistant.id);
     return;
   }
-  await auth.connectPlatformAssistant(assistant.id);
+  await auth.connectCloudAssistant(assistant.id);
 }
 
 export type RemovePairedOutcome =

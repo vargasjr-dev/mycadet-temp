@@ -4,8 +4,8 @@
  * Implements RiskClassifier<SkillClassifierInput> with constant risk levels
  * for each skill tool type:
  * - skill_load: Low (read-only skill loading)
- * - scaffold_managed_skill: High (writes persistent skill source code)
- * - delete_managed_skill: High (removes persistent skill source code)
+ * - scaffold_cloud_skill: High (writes persistent skill source code)
+ * - delete_cloud_skill: High (removes persistent skill source code)
  *
  * Gateway adaptation: accepts pre-resolved skill metadata via
  * SkillClassifierInput.resolvedMetadata instead of importing the assistant's
@@ -50,7 +50,7 @@ export interface ResolvedSkillMetadata {
 /** Input to the skill risk classifier. */
 export interface SkillClassifierInput {
   /** Which skill tool is being invoked. */
-  toolName: "skill_load" | "scaffold_managed_skill" | "delete_managed_skill";
+  toolName: "skill_load" | "scaffold_cloud_skill" | "delete_cloud_skill";
   /** Optional skill selector (e.g. skill name or path). */
   skillSelector?: string;
   /**
@@ -134,12 +134,12 @@ function buildSkillLoadAllowlistOptions(
 /**
  * Build allowlist options for scaffold/delete managed skill tools.
  */
-function buildManagedSkillAllowlistOptions(
+function buildCloudSkillAllowlistOptions(
   toolName: string,
   skillId?: string,
 ): AllowlistOption[] {
   const toolLabel =
-    toolName === "scaffold_managed_skill" ? "scaffold" : "delete";
+    toolName === "scaffold_cloud_skill" ? "scaffold" : "delete";
   const options: AllowlistOption[] = [];
   if (skillId) {
     options.push({
@@ -200,25 +200,25 @@ export class SkillLoadRiskClassifier implements RiskClassifier<SkillClassifierIn
         };
         break;
       }
-      case "scaffold_managed_skill":
+      case "scaffold_cloud_skill":
         assessment = {
           riskLevel: "high",
           reason: "Skill scaffold — writes persistent skill source code",
           scopeOptions: [],
           matchType: "registry",
-          allowlistOptions: buildManagedSkillAllowlistOptions(
+          allowlistOptions: buildCloudSkillAllowlistOptions(
             toolName,
             skillSelector,
           ),
         };
         break;
-      case "delete_managed_skill":
+      case "delete_cloud_skill":
         assessment = {
           riskLevel: "high",
           reason: "Skill delete — removes persistent skill source code",
           scopeOptions: [],
           matchType: "registry",
-          allowlistOptions: buildManagedSkillAllowlistOptions(
+          allowlistOptions: buildCloudSkillAllowlistOptions(
             toolName,
             skillSelector,
           ),
@@ -227,7 +227,7 @@ export class SkillLoadRiskClassifier implements RiskClassifier<SkillClassifierIn
     }
 
     // User override is applied after normal classification. This means a user-defined
-    // rule CAN lower a security-escalated risk (e.g., scaffold_managed_skill).
+    // rule CAN lower a security-escalated risk (e.g., scaffold_cloud_skill).
     // This is intentional — user overrides are authoritative for users who explicitly
     // created them. Uses resolved skillId from metadata (when available), and
     // skill_load_dynamic as the tool key for dynamic skills.

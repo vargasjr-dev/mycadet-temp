@@ -8,7 +8,7 @@ import { organizationsBillingSubscriptionUpgradeCreateMutation } from "@/generat
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { useMarketingPricingTakeover } from "@/hooks/use-marketing-pricing-takeover";
-import { usePlatformGateWithPending } from "@/hooks/use-platform-gate";
+import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { checkoutContinuation } from "@/lib/billing/checkout-continuation";
 import {
   clearCheckoutIntent,
@@ -63,7 +63,7 @@ function abandonCheckout() {
  *
  * Flow:
  *   - No package and no valid tier params → back to the plans takeover.
- *   - Gate `"pending"` → hold on the spinner. The platform-session probe has
+ *   - Gate `"pending"` → hold on the spinner. The cloud-session probe has
  *     not answered yet, and a cold reload of this URL is exactly where that
  *     window falls.
  *   - Gate `"disabled"`/`"gated"` → back to plans (its own gating owns the
@@ -105,17 +105,17 @@ function CheckoutPageContent() {
     [packageKey, searchParams],
   );
   // Default (session-only) gate: a signed-in platform session reads `"full"`
-  // even without an active assistant. See `use-platform-gate.ts`.
+  // even without an active assistant. See `use-cloud-gate.ts`.
   //
   // The pending-aware variant, because a hard reload of this URL lands while
-  // the platform-session probe is still in flight: `sessionStatus` settles
+  // the cloud-session probe is still in flight: `sessionStatus` settles
   // ahead of it, so the route is already mounted and reading a session that has
   // not answered yet. Bailing on that would throw away a paid deep link a
   // moment before it becomes valid. `"pending"` is bounded — it decides on
   // `"disabled"` if the probe never lands.
-  const gate = usePlatformGateWithPending();
+  const gate = useCloudGateWithPending();
   // The request interceptor reads `Cadet-Organization-Id` from the org store,
-  // which hydrates asynchronously after auth. On a cold deep link the platform
+  // which hydrates asynchronously after auth. On a cold deep link the cloud
   // session can settle before the org id lands, so gate the fire on this too.
   // The tri-state, not the boolean: an id that hasn't arrived yet is worth
   // waiting for, and one that resolution concluded without is not.
@@ -276,7 +276,7 @@ function CheckoutPageContent() {
       navigate(bailTarget, { replace: true });
       return;
     }
-    // Hold until the funnel flag resolves and the platform gate is full (a
+    // Hold until the funnel flag resolves and the cloud gate is full (a
     // `"pending"` session lands here). The phase check keeps the branches below
     // to a single attempt, whichever way they decide it.
     if (

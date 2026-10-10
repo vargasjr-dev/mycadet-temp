@@ -89,7 +89,7 @@ const mockProviders = new Map<
     tokenEndpointAuthMethod?: string;
     tokenExchangeBodyFormat?: string;
     baseUrl?: string;
-    managedServiceConfigKey?: string | null;
+    cloudServiceConfigKey?: string | null;
   }
 >();
 
@@ -225,7 +225,7 @@ async function setupCredential(
       service === "google"
         ? "https://gmail.googleapis.com/gmail/v1/users/me"
         : undefined,
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
   });
   mockApps.set(appId, {
     id: appId,

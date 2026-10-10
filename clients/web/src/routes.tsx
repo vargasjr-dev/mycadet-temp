@@ -247,7 +247,7 @@ export const routeTree = [
             path: "platform-callback",
             lazy: {
               Component: () =>
-                import("@/domains/account/pages/platform-loopback-page").then(
+                import("@/domains/account/pages/cloud-loopback-page").then(
                   (m) => m.PlatformLoopbackPage,
                 ),
             },

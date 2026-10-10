@@ -1,11 +1,11 @@
+import { managedSpeechAvailable } from "../../../../cloud/cloud-speech.js";
 import { normalizeActivationKey } from "../../../../daemon/handlers/config-voice.js";
-import { managedSpeechAvailable } from "../../../../platform/managed-speech.js";
 import {
   DEEPGRAM_MULTI_LANGUAGE_CODES,
   DEEPGRAM_NOVA3_MONOLINGUAL_CODES,
 } from "../../../../providers/speech-to-text/deepgram.js";
 import {
-  isManagedSttProvider,
+  isCloudSttProvider,
   listProviderModelFamilies,
 } from "../../../../providers/speech-to-text/provider-catalog.js";
 import type { SttProviderId } from "../../../../stt/types.js";
@@ -202,14 +202,14 @@ const STT_LANGUAGE_ALIASES: Record<
 /**
  * Same steer `navigate_settings_tab` puts on the Voice tab, applied to the
  * strongest competing affordance: this tool's description coaches the model to
- * read the managed catalog and set `tts_voice_id` itself, which is exactly the
+ * read the cloud catalog and set `tts_voice_id` itself, which is exactly the
  * "assistant names voices in prose" outcome the inline picker exists to
  * replace. Managed only, because that is the catalog the picker renders. The
  * write still happens and the result stays non-error; this only redirects the
  * next request.
  */
 const MANAGED_VOICE_PICKER_HINT = voicePickerHint(
-  "which lets them hear and pick from the managed catalog in the conversation. Set the id here only when the user named a specific voice.",
+  "which lets them hear and pick from the cloud catalog in the conversation. Set the id here only when the user named a specific voice.",
 );
 
 function validateSetting(
@@ -354,7 +354,7 @@ function validateSetting(
       }
       // Provider scoping, after alias normalization so "Tamil" and "ta" fail
       // the same way: the extended roster and "multi" are verified for
-      // Deepgram nova-3 (BYOK deepgram and the managed relay) only. Under
+      // Deepgram nova-3 (BYOK deepgram and the cloud relay) only. Under
       // xai, persisting them would mean every web surface withholds the code
       // while the resolver forwards it unverified (or, for "multi", drops it
       // silently), so the write is an honest rejection instead. Auto-detect
@@ -469,23 +469,23 @@ export async function run(
     return { content: `Error: ${validation.error}`, isError: true };
   }
 
-  // Managed speech has more than one STT id, so the gate reads the catalog
-  // rather than a literal: without this, setting a managed provider other
+  // Cloud speech has more than one STT id, so the gate reads the catalog
+  // rather than a literal: without this, setting a cloud provider other
   // than "cadet" on a disconnected assistant persists happily and then
   // resolves no transcriber at all.
-  const wantsManagedSpeech =
+  const wantsCloudSpeech =
     (setting === "stt_provider" &&
-      isManagedSttProvider(validation.coerced as SttProviderId)) ||
+      isCloudSttProvider(validation.coerced as SttProviderId)) ||
     (setting === "tts_provider" && validation.coerced === "cadet");
-  if (wantsManagedSpeech && !(await managedSpeechAvailable())) {
+  if (wantsCloudSpeech && !(await managedSpeechAvailable())) {
     return {
       content:
-        "Error: managed speech requires a Cadet Cloud connection. Run 'assistant cloud connect' first.",
+        "Error: cloud speech requires a Cadet Cloud connection. Run 'assistant cloud connect' first.",
       isError: true,
     };
   }
 
-  // Recheck: the managed-speech reachability probe above is an await, and the
+  // Recheck: the cloud-speech reachability probe above is an await, and the
   // client broadcast and config write below are what the user would notice.
   throwIfCancelled(context);
 

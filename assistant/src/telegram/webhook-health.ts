@@ -166,8 +166,8 @@ function telegramApiBaseUrl(): string {
  * and the assistant already maintain mirrored copies of the routing tier order
  * (`resolveExpectedTelegramWebhookUrl` and `hasWebhookRoutingConfigured`, which
  * cross-reference each other in comments after LUM-2899), and a third copy here
- * would be a third thing to keep in agreement. It also lets the managed path be
- * checked at all: resolving a platform callback URL means POSTing a route
+ * would be a third thing to keep in agreement. It also lets the cloud path be
+ * checked at all: resolving a cloud callback URL means POSTing a route
  * registration, which a read-only health check must not do.
  */
 function recordedWebhookUrl(): string | undefined {
@@ -188,12 +188,12 @@ function channelLabel(): string {
 
 /**
  * The remediation path, which differs by deployment. Self-hosted users own the
- * ingress URL; platform-managed callback routes are registered for them.
+ * ingress URL; cloud-managed callback routes are registered for them.
  */
-function fixPath(usesManagedCallbacks: boolean): string {
-  if (usesManagedCallbacks) {
+function fixPath(usesCloudCallbacks: boolean): string {
+  if (usesCloudCallbacks) {
     return (
-      "This deployment uses platform-managed callback routes, so the webhook URL is not yours to set — " +
+      "This deployment uses cloud-managed callback routes, so the webhook URL is not yours to set — " +
       "if it stays broken, contact support."
     );
   }
@@ -237,7 +237,7 @@ export async function checkTelegramWebhookHealth(): Promise<TelegramWebhookHealt
     };
   }
 
-  const { configured, usesManagedCallbacks } =
+  const { configured, usesCloudCallbacks } =
     await hasWebhookRoutingConfigured(true);
   if (!configured) {
     return {
@@ -288,7 +288,7 @@ export async function checkTelegramWebhookHealth(): Promise<TelegramWebhookHealt
       status: "not_registered",
       detail:
         `${label} has no webhook registered with Telegram, so inbound messages are not reaching ` +
-        `the assistant. ${fixPath(usesManagedCallbacks)}`,
+        `the assistant. ${fixPath(usesCloudCallbacks)}`,
       ...(pendingUpdateCount !== undefined ? { pendingUpdateCount } : {}),
     };
   }
@@ -307,7 +307,7 @@ export async function checkTelegramWebhookHealth(): Promise<TelegramWebhookHealt
       detail:
         `${label} is registered with Telegram at a different address than this assistant ` +
         `last registered, so its messages are being delivered somewhere this assistant is not ` +
-        `listening. ${fixPath(usesManagedCallbacks)}`,
+        `listening. ${fixPath(usesCloudCallbacks)}`,
       registeredUrl,
       expectedUrl,
       ...(pendingUpdateCount !== undefined ? { pendingUpdateCount } : {}),
@@ -329,7 +329,7 @@ export async function checkTelegramWebhookHealth(): Promise<TelegramWebhookHealt
       status: "delivery_failing",
       detail:
         `${label} cannot receive messages: Telegram reported "${reported}" while delivering to the ` +
-        `webhook.${queued} ${fixPath(usesManagedCallbacks)}`,
+        `webhook.${queued} ${fixPath(usesCloudCallbacks)}`,
       ...(info.last_error_message
         ? { lastErrorMessage: info.last_error_message }
         : {}),

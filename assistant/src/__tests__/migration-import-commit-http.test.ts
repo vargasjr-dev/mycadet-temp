@@ -630,7 +630,7 @@ describe("handleMigrationImport — validation failures", () => {
 //
 // Pin: a bundle whose min_runtime_version exceeds APP_VERSION must surface as
 // a 4xx user-actionable response (422 Unprocessable Entity), not a 500
-// InternalError. Body mirrors the platform's PR #5470 response shape so
+// InternalError. Body mirrors the cloud's PR #5470 response shape so
 // clients can render the same UX regardless of which gate (platform or
 // runtime) rejected the bundle.
 // ---------------------------------------------------------------------------

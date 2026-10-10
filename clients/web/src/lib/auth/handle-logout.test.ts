@@ -56,7 +56,7 @@ mock.module("@/runtime/identity", () => ({
 }));
 
 mock.module("@/runtime/menu", () => ({
-  setMenuPlatformSession: async () => undefined,
+  setMenuCloudSession: async () => undefined,
 }));
 
 mock.module("@/domains/onboarding/gate", () => ({

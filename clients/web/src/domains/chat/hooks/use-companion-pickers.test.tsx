@@ -5,8 +5,8 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 let voicesAskedFor: (string | null)[] = [];
 let catalogAvailable = true;
 
-mock.module("@/components/speech/use-managed-voice-selection", () => ({
-  useManagedVoiceSelection: (assistantId: string | null) => {
+mock.module("@/components/speech/use-cloud-voice-selection", () => ({
+  useCloudVoiceSelection: (assistantId: string | null) => {
     voicesAskedFor.push(assistantId);
     return {
       available: assistantId !== null && catalogAvailable,

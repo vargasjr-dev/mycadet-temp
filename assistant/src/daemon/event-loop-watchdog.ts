@@ -270,7 +270,7 @@ export function evaluateTick(
 }
 
 /**
- * Check name emitted for event-loop block events. The platform's
+ * Check name emitted for event-loop block events. The cloud's
  * `watchdog__event_loop_blocking_daily` admin query filters `check_name` to
  * this exact string, so it is the primary group-by dimension downstream —
  * keep it stable.
@@ -322,7 +322,7 @@ async function reportBlock(
     },
     "event loop blocked",
   );
-  // Persist a `watchdog` telemetry event so the platform can surface
+  // Persist a `watchdog` telemetry event so the cloud can surface
   // event-loop blocking in the infrastructure admin chart. `recordWatchdogEvent`
   // no-ops when usage-data collection is disabled (the event is dropped to
   // honor the opt-out), so the watchdog runs unconditionally without leaking

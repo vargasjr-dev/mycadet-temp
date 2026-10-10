@@ -4,7 +4,7 @@ import {
   buildProviderCallbackUrl,
   readAuthCallbackIntent,
   requiresFullPageNavigation,
-  requiresPlatformSession,
+  requiresCloudSession,
   resolvePostAuthDestination,
 } from "@/domains/account/login-flow";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -68,7 +68,7 @@ describe("login flow routing", () => {
             Date.now() - 8 * 24 * 60 * 60 * 1000,
           ).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -128,13 +128,13 @@ describe("login flow routing", () => {
   });
 
   test("requiresFullPageNavigation for the marketing import funnel", () => {
-    // /import is served by the platform Next.js app, not this SPA.
+    // /import is served by the cloud Next.js app, not this SPA.
     expect(requiresFullPageNavigation("/import")).toBe(true);
     expect(requiresFullPageNavigation("/import?utm_source=hermes")).toBe(true);
   });
 });
 
-describe("requiresPlatformSession", () => {
+describe("requiresCloudSession", () => {
   const BILLING_LANDING = `${routes.settings.root}/billing`;
   const STRIPE_RETURN = "session_id=cs_test_123";
   const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
@@ -155,8 +155,8 @@ describe("requiresPlatformSession", () => {
     ["/import?foo=1"],
     ["/accounts/cli/callback?port=1"],
     ["https://mycadet.ai/x"],
-  ])("%s needs a platform session", (destination) => {
-    expect(requiresPlatformSession(destination)).toBe(true);
+  ])("%s needs a cloud session", (destination) => {
+    expect(requiresCloudSession(destination)).toBe(true);
   });
 
   test.each([
@@ -171,13 +171,13 @@ describe("requiresPlatformSession", () => {
     [routes.onboarding.hatching],
     [`${routes.onboarding.hatching}?hosting=cadet-cloud`],
   ])("%s works on a local gateway identity", (destination) => {
-    expect(requiresPlatformSession(destination)).toBe(false);
+    expect(requiresCloudSession(destination)).toBe(false);
   });
 
   test("matches sub-paths, not siblings that merely share a prefix", () => {
-    expect(requiresPlatformSession(`${routes.plans}/detail`)).toBe(true);
-    expect(requiresPlatformSession(`${routes.plans}-archive`)).toBe(false);
-    expect(requiresPlatformSession(`${routes.account.root}/login`)).toBe(true);
-    expect(requiresPlatformSession("/accountant")).toBe(false);
+    expect(requiresCloudSession(`${routes.plans}/detail`)).toBe(true);
+    expect(requiresCloudSession(`${routes.plans}-archive`)).toBe(false);
+    expect(requiresCloudSession(`${routes.account.root}/login`)).toBe(true);
+    expect(requiresCloudSession("/accountant")).toBe(false);
   });
 });

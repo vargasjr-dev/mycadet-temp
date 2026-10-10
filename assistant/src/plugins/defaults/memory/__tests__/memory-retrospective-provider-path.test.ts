@@ -18,7 +18,7 @@
  *     `memory_retrospective_state`: the handler re-reads the fork's persisted
  *     rows (`collectRetrospectiveRunEvidence` → `loadRetrospectiveRunMessages`
  *     → `getMessages`) and only advances when THIS run persisted a durable
- *     memory-writing `tool_use` (`remember` / `scaffold_managed_skill`) or
+ *     memory-writing `tool_use` (`remember` / `scaffold_cloud_skill`) or
  *     replied and stopped on its own (a completed no-findings review).
  */
 

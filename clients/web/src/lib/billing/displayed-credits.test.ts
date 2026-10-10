@@ -23,7 +23,7 @@ describe("displayedCreditsUsd", () => {
     expect(displayedCreditsUsd("5.00", "9.10")).toBe("0.00");
   });
 
-  test("a platform reporting no grant figure returns the balance untouched", () => {
+  test("a cloud reporting no grant figure returns the balance untouched", () => {
     // An older self-hosted platform omits the field, and a wrong reduction is
     // worse than no reduction.
     expect(displayedCreditsUsd("34.65", null)).toBe("34.65");

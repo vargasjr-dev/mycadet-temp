@@ -69,8 +69,8 @@ export function HoverCapabilityOverride({
 
 /**
  * Whether the device's primary input can hover (see
- * {@link HOVER_ABSENT_MEDIA_QUERY}). Re-renders when the platform re-evaluates
- * the feature, though whether attaching a mouse flips it is the platform's
+ * {@link HOVER_ABSENT_MEDIA_QUERY}). Re-renders when the cloud re-evaluates
+ * the feature, though whether attaching a mouse flips it is the cloud's
  * call: Android promotes the mouse to primary input, iPadOS keeps reporting
  * touch.
  *

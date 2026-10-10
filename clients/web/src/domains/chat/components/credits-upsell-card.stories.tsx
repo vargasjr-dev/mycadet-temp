@@ -43,8 +43,8 @@ function makeSubscription(planId: PlanIdEnum): SubscriptionResponse {
 interface CreditWallStoryArgs {
   /** `plan_id` on the billing subscription. `base` is the free plan. */
   planId: "base" | "pro";
-  /** Whether a platform session exists; `absent` drives the login treatment. */
-  platformSession: "present" | "absent";
+  /** Whether a cloud session exists; `absent` drives the login treatment. */
+  cloudSession: "present" | "absent";
   /** A self-hosted active assistant gates the card away entirely. */
   selfHosted: boolean;
 }
@@ -62,14 +62,14 @@ function SeededStores({
   args: CreditWallStoryArgs;
   children: React.ReactNode;
 }) {
-  const { planId, platformSession, selfHosted } = args;
+  const { planId, cloudSession, selfHosted } = args;
 
   useLayoutEffect(() => {
-    const previousAuth = useAuthStore.getState().platformSession;
+    const previousAuth = useAuthStore.getState().cloudSession;
     const previousLifecycle =
       useAssistantLifecycleStore.getState().assistantState;
 
-    useAuthStore.setState({ platformSession });
+    useAuthStore.setState({ cloudSession });
     useAssistantLifecycleStore.setState({
       assistantState: selfHosted
         ? { kind: "self_hosted" }
@@ -84,7 +84,7 @@ function SeededStores({
     );
 
     return () => {
-      useAuthStore.setState({ platformSession: previousAuth });
+      useAuthStore.setState({ cloudSession: previousAuth });
       useAssistantLifecycleStore.setState({
         assistantState: previousLifecycle,
       });
@@ -92,7 +92,7 @@ function SeededStores({
         queryKey: organizationsBillingSubscriptionRetrieveOptions().queryKey,
       });
     };
-  }, [planId, platformSession, selfHosted]);
+  }, [planId, cloudSession, selfHosted]);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -115,12 +115,12 @@ const meta: Meta<CreditWallStoryArgs> = {
   parameters: { layout: "padded" },
   argTypes: {
     planId: { control: "radio", options: ["base", "pro"] },
-    platformSession: { control: "radio", options: ["present", "absent"] },
+    cloudSession: { control: "radio", options: ["present", "absent"] },
     selfHosted: { control: "boolean" },
   },
   args: {
     planId: "base",
-    platformSession: "present",
+    cloudSession: "present",
     selfHosted: false,
   },
   render: (args) => (
@@ -159,9 +159,9 @@ export const AddCredits_PaidPlan: Story = {
  * Platform reachable but no session: every billing CTA would dead-end, so the
  * card swaps itself for the shared login affordance.
  */
-export const NoPlatformSession: Story = {
+export const NoCloudSession: Story = {
   name: "Log in · no platform session",
-  args: { platformSession: "absent" },
+  args: { cloudSession: "absent" },
 };
 
 /**

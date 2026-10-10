@@ -21,7 +21,7 @@ import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library";
 
 /**
- * Capacitor native login. Opens the platform browser auth surface with no
+ * Capacitor native login. Opens the cloud browser auth surface with no
  * provider hint; WorkOS AuthKit handles Apple / Google / email selection.
  *
  * Renders the welcome shell the browser renders, including the avatar wave
@@ -53,7 +53,7 @@ function NativeLoginForm({ returnTo }: { returnTo: string | null }) {
       // Report every real failure, classified or not. This is the screen the
       // "I tried to log in and it errored right away" reports come from, and
       // until now the classified branch logged nothing at all — so the reports
-      // arrived with no trace of which refusal the platform issued.
+      // arrived with no trace of which refusal the cloud issued.
       captureError(err, {
         context: "native_login",
         tags: { authError: nativeAuthErrorDetail(err) ?? "unclassified" },
@@ -87,7 +87,7 @@ function NativeLoginForm({ returnTo }: { returnTo: string | null }) {
 
 /**
  * Web / Electron login: the same welcome screen `/assistant/welcome` shows,
- * which is what this is the platform-mode counterpart of. The log-in button
+ * which is what this is the cloud-mode counterpart of. The log-in button
  * and the AuthKit handoff behind it come from `AuthWelcomeScreen`; the only
  * thing this build decides is what sits beside it — signup rather than local
  * mode's route past the account.

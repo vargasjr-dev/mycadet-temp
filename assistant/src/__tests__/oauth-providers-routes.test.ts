@@ -9,7 +9,7 @@ const mockListProviders = mock(() => [
     clientIdPlaceholder: null,
     logoUrl: "https://cdn.simpleicons.org/google",
     requiresClientSecret: 1,
-    managedServiceConfigKey: "google-oauth",
+    cloudServiceConfigKey: "google-oauth",
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenExchangeUrl: "https://oauth2.googleapis.com/token",
     refreshUrl: null,
@@ -52,7 +52,7 @@ const mockListProviders = mock(() => [
     clientIdPlaceholder: null,
     logoUrl: null,
     requiresClientSecret: 1,
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
     authorizeUrl: "https://github.com/login/oauth/authorize",
     tokenExchangeUrl: "https://github.com/login/oauth/access_token",
     refreshUrl: null,
@@ -151,7 +151,7 @@ describe("GET /v1/oauth/providers", () => {
         dashboard_url: string | null;
         client_id_placeholder: string | null;
         requires_client_secret: boolean;
-        supports_managed_mode: boolean;
+        supports_cloud_mode: boolean;
       }>;
     };
 
@@ -177,7 +177,7 @@ describe("GET /v1/oauth/providers", () => {
       "client_id_placeholder",
       "requires_client_secret",
       "logo_url",
-      "supports_managed_mode",
+      "supports_cloud_mode",
       "managed_service_is_paid",
       "feature_flag",
       "category",
@@ -208,42 +208,42 @@ describe("GET /v1/oauth/providers", () => {
     expect(providers[1]!.logo_url).toBeNull();
   });
 
-  test("supports_managed_mode=true returns only managed providers", async () => {
+  test("supports_cloud_mode=true returns only cloud providers", async () => {
     const { status, body } = await callRoute(
       getRoute("GET", "oauth/providers"),
-      { queryParams: { supports_managed_mode: "true" } },
+      { queryParams: { supports_cloud_mode: "true" } },
     );
 
     expect(status).toBe(200);
     const { providers } = body as {
       providers: Array<{
         provider_key: string;
-        supports_managed_mode: boolean;
+        supports_cloud_mode: boolean;
       }>;
     };
 
     expect(providers).toHaveLength(1);
     expect(providers[0]!.provider_key).toBe("google");
-    expect(providers[0]!.supports_managed_mode).toBe(true);
+    expect(providers[0]!.supports_cloud_mode).toBe(true);
   });
 
-  test("supports_managed_mode=false returns only non-managed providers", async () => {
+  test("supports_cloud_mode=false returns only non-cloud providers", async () => {
     const { status, body } = await callRoute(
       getRoute("GET", "oauth/providers"),
-      { queryParams: { supports_managed_mode: "false" } },
+      { queryParams: { supports_cloud_mode: "false" } },
     );
 
     expect(status).toBe(200);
     const { providers } = body as {
       providers: Array<{
         provider_key: string;
-        supports_managed_mode: boolean;
+        supports_cloud_mode: boolean;
       }>;
     };
 
     expect(providers).toHaveLength(1);
     expect(providers[0]!.provider_key).toBe("github");
-    expect(providers[0]!.supports_managed_mode).toBe(false);
+    expect(providers[0]!.supports_cloud_mode).toBe(false);
   });
 });
 

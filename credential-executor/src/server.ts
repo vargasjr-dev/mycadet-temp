@@ -124,7 +124,7 @@ export class CesRpcServer {
     // Auto-register the update_managed_credential handler if a callback is provided.
     if (options.onApiKeyUpdate) {
       const onUpdate = options.onApiKeyUpdate;
-      this.handlers[CesRpcMethod.UpdateManagedCredential] = (
+      this.handlers[CesRpcMethod.UpdateCloudCredential] = (
         request: unknown,
       ) => {
         const { assistantApiKey, assistantId } = request as {

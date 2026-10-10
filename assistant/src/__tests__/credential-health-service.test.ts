@@ -16,7 +16,7 @@ let mockProviders: Array<{
   pingBody: string | null;
   authorizeParams: string | null;
   scopeSeparator: string | null;
-  managedServiceConfigKey?: string;
+  cloudServiceConfigKey?: string;
 }> = [];
 
 let mockConnections: Map<
@@ -55,11 +55,11 @@ let managedPingOutcome:
   | { kind: "credential_required" }
   | { kind: "throw"; message: string } = { kind: "status", status: 200 };
 
-// Managed assistant-credential mock state. The verdict is what the platform
-// answers about the stored assistant API key; `platformClientAvailable` covers
+// Cloud assistant-credential mock state. The verdict is what the cloud
+// answers about the stored assistant API key; `cloudClientAvailable` covers
 // the case where the client cannot be built at all.
 let assistantKeyVerdict: "valid" | "rejected" | "unknown" = "valid";
-let platformClientAvailable = true;
+let cloudClientAvailable = true;
 
 // ── Module mocks ─────────────────────────────────────────────────────
 
@@ -112,18 +112,18 @@ mock.module("../security/token-manager.js", () => ({
   },
 }));
 
-// Managed-path mocks: platform client and PlatformOAuthConnection. The
+// Managed-path mocks: platform client and CloudOAuthConnection. The
 // managed code path uses dynamic imports for these so they only matter when
-// a managed test scenario is exercised. The managed/your-own service mode is
+// a cloud test scenario is exercised. The cloud/your-own service mode is
 // seeded into the real workspace config via `seedGoogleOAuthMode` below.
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => {
-      if (!platformClientAvailable) {
+      if (!cloudClientAvailable) {
         return null;
       }
       return {
-        platformAssistantId: "test-assistant",
+        cloudAssistantId: "test-assistant",
         fetch: async (_path: string) => ({
           ok: managedListResponse.ok,
           status: managedListResponse.status,
@@ -142,8 +142,8 @@ class MockCredentialRequiredError extends Error {
   }
 }
 
-mock.module("../oauth/platform-connection.js", () => ({
-  PlatformOAuthConnection: class {
+mock.module("../oauth/cloud-connection.js", () => ({
+  CloudOAuthConnection: class {
     constructor(_opts: unknown) {}
     async request(_req: unknown) {
       if (managedPingOutcome.kind === "credential_required") {
@@ -197,7 +197,7 @@ function addProvider(
     defaultScopes?: string[];
     pingUrl?: string | null;
     pingMethod?: string | null;
-    managedServiceConfigKey?: string;
+    cloudServiceConfigKey?: string;
     authorizeParams?: Record<string, string>;
   },
 ) {
@@ -212,10 +212,10 @@ function addProvider(
     pingMethod: opts?.pingMethod ?? null,
     pingHeaders: null,
     pingBody: null,
-    // checkManagedProvider reads this field via OAuthProviderRow; the
-    // health-check code branches to the managed path only when set AND
+    // checkCloudProvider reads this field via OAuthProviderRow; the
+    // health-check code branches to the cloud path only when set AND
     // when the corresponding config key's service mode is "managed".
-    managedServiceConfigKey: opts?.managedServiceConfigKey,
+    cloudServiceConfigKey: opts?.cloudServiceConfigKey,
   });
 }
 
@@ -265,7 +265,7 @@ describe("credential-health-service", () => {
     managedListResponse = { ok: true, status: 200, body: { results: [] } };
     managedPingOutcome = { kind: "status", status: 200 };
     assistantKeyVerdict = "valid";
-    platformClientAvailable = true;
+    cloudClientAvailable = true;
   });
 
   test("returns empty report when no providers exist", async () => {
@@ -660,8 +660,8 @@ describe("credential-health-service", () => {
   });
 
   describe("managed-provider path", () => {
-    // Distinguishing managed-path failure modes: a 424 from the platform
-    // proxy (CredentialRequiredError) means the platform tried and gave up
+    // Distinguishing managed-path failure modes: a 424 from the cloud
+    // proxy (CredentialRequiredError) means the cloud tried and gave up
     // on refresh — actionable, fire reconnect alert. A bare 401/403 from
     // the upstream provider could be a transient platform-side miss (proxy
     // didn't refresh-before-forward) and should NOT fire reconnect alerts
@@ -670,7 +670,7 @@ describe("credential-health-service", () => {
     function setupManagedGoogle(opts?: { hasActiveConnection?: boolean }) {
       addProvider("google", {
         pingUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
-        managedServiceConfigKey: "google-oauth",
+        cloudServiceConfigKey: "google-oauth",
       });
       seedGoogleOAuthMode("managed");
       if (opts?.hasActiveConnection !== false) {
@@ -714,7 +714,7 @@ describe("credential-health-service", () => {
       // This is the key change: previously this would fire a user-facing
       // reconnect alert (because "revoked" is in hardFailureStatuses). Now
       // we treat upstream 401 as potentially transient — only a 424 from
-      // the platform proxy is trusted enough to trigger the alert.
+      // the cloud proxy is trusted enough to trigger the alert.
       setupManagedGoogle();
       managedPingOutcome = { kind: "status", status: 401 };
 
@@ -771,11 +771,11 @@ describe("credential-health-service", () => {
     });
   });
 
-  describe("managed assistant credential", () => {
+  describe("cloud assistant credential", () => {
     const KEY = "credential/cadet/assistant_api_key";
     const ASSISTANT_ID = "credential/cadet/platform_assistant_id";
 
-    // Checked directly rather than through `checkAllCredentials`: the managed
+    // Checked directly rather than through `checkAllCredentials`: the cloud
     // credential is not enrolled in the heartbeat pass yet, because the alert
     // that pass raises has nowhere to send the reader until the notification
     // carries the repair.
@@ -785,7 +785,7 @@ describe("credential-health-service", () => {
       expect(await assistantKeyResult()).toBeNull();
     });
 
-    test("is missing_token when a platform identity exists without a key", async () => {
+    test("is missing_token when a cloud identity exists without a key", async () => {
       secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
 
       const result = await assistantKeyResult();
@@ -793,7 +793,7 @@ describe("credential-health-service", () => {
       expect(result!.canAutoRecover).toBe(true);
     });
 
-    test("is healthy when the platform accepts the stored key", async () => {
+    test("is healthy when the cloud accepts the stored key", async () => {
       secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "valid";
@@ -801,7 +801,7 @@ describe("credential-health-service", () => {
       expect((await assistantKeyResult())!.status).toBe("healthy");
     });
 
-    test("is revoked when the platform rejects the stored key", async () => {
+    test("is revoked when the cloud rejects the stored key", async () => {
       secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "rejected";
@@ -832,10 +832,10 @@ describe("credential-health-service", () => {
       expect((await assistantKeyResult())!.status).toBe("unreachable");
     });
 
-    test("is unreachable when the platform client cannot be built", async () => {
+    test("is unreachable when the cloud client cannot be built", async () => {
       secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
-      platformClientAvailable = false;
+      cloudClientAvailable = false;
 
       expect((await assistantKeyResult())!.status).toBe("unreachable");
     });

@@ -27,7 +27,7 @@ function summary(
   };
 }
 
-// The list as the settings page renders it: a managed default, a healthy
+// The list as the settings page renders it: a cloud default, a healthy
 // custom profile, one the user switched off, one whose credential is gone,
 // and one that was never finished.
 const PROFILES: InferenceProfileSummary[] = [

@@ -1,7 +1,7 @@
 /**
  * Tests for `writeOnboardingSection` in persona-resolver.
  *
- * The function writes a managed `## Onboarding Context` section to the
+ * The function writes a cloud `## Onboarding Context` section to the
  * guardian persona file (with a fallback chain). These tests stub
  * `util/platform.js` and `contacts/contact-store.js` to control the
  * write target and verify idempotency, fallback, and field omission.
@@ -257,7 +257,7 @@ describe("writeOnboardingSection", () => {
     expect(content).not.toContain("GitHub");
   });
 
-  test("preserves content outside the managed section", () => {
+  test("preserves content outside the cloud section", () => {
     mockGuardianDeliveries = [];
     mockContactsByAddress = {};
     writeFileSync(

@@ -131,7 +131,7 @@ describe("validateWireEvents", () => {
   });
 
   test("unknown event types are reported and warned once per process per type", () => {
-    // A type the platform ingest endpoint has no serializer for: the server
+    // A type the cloud ingest endpoint has no serializer for: the server
     // silently skips it. Uses a synthetic never-shipped discriminant so the
     // test stays valid as real event types graduate into the wire contract.
     const unknownEvent = {

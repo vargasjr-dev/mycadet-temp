@@ -23,7 +23,7 @@ import {
 
 import type { AssistantEntry } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { authHeaders, invalidateOrgIdCache } from "./platform-client.js";
+import { authHeaders, invalidateOrgIdCache } from "./cloud-client.js";
 import { z } from "zod";
 
 const ManagedBackupEntrySchema = z.object({
@@ -53,7 +53,7 @@ async function errorSuffix(response: Response): Promise<string> {
 }
 
 /**
- * Send a platform backup request with user-session auth, refreshing the
+ * Send a cloud backup request with user-session auth, refreshing the
  * cached organization id once on 401 (the same recovery the runtime identity
  * probe applies).
  */
@@ -93,7 +93,7 @@ async function fetchPlatformBackups(
 }
 
 /**
- * `created_at` of every restorable PVC snapshot of a platform assistant:
+ * `created_at` of every restorable PVC snapshot of a cloud assistant:
  * `GET /v1/assistants/<id>/backups/`.
  */
 export async function listPlatformBackups(
@@ -109,7 +109,7 @@ export interface CreatePlatformBackupOptions {
 }
 
 /**
- * Take a PVC snapshot of a platform assistant and wait until it is
+ * Take a PVC snapshot of a cloud assistant and wait until it is
  * restorable: `POST /v1/assistants/<id>/backups/`, then re-list until the
  * returned `snapshot_name` reports `ready_to_use`. Throws if the POST fails
  * or the snapshot is not ready within `timeoutMs`.

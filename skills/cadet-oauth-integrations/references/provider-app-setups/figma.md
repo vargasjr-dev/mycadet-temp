@@ -21,7 +21,7 @@ assistant oauth mode figma --json | jq -r '.mode'
 
 - If the result is `managed`, **stop reading this file** and follow [CONNECTING_ACCOUNTS.md](../CONNECTING_ACCOUNTS.md) instead.
 - If the result is `your-own` and the user already has an active Figma connection (`assistant oauth status figma`), respect it and do not switch modes.
-- Otherwise offer the managed flow before walking through app registration. It is a single Figma login, against the seven steps below.
+- Otherwise offer the cloud flow before walking through app registration. It is a single Figma login, against the seven steps below.
 
 Only continue here once the user has chosen `your-own`.
 

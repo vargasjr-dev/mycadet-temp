@@ -69,7 +69,7 @@ describe("assistant cloud connect", () => {
     expect(parsed.showPlatformLogin).toBe(true);
   });
 
-  // A stored key the platform rejects is a recovery, not a first setup: the
+  // A stored key the cloud rejects is a recovery, not a first setup: the
   // outcome has to reach the caller in the response, since the daemon's login
   // signal has no shipped consumer.
   test("a rejected stored credential is reported as such", async () => {

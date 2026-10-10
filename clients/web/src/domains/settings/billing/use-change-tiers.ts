@@ -135,7 +135,7 @@ export interface UseChangeTiersResult {
  * Shared wiring for applying a custom tier configuration to an active Pro
  * subscription. Posts the whole selection as ONE change-package call with
  * explicit tiers (the server diffs it against the subscription and applies
- * every dimension, plus the platform fee a custom plan always carries, in one
+ * every dimension, plus the cloud fee a custom plan always carries, in one
  * payment-gated change), invalidates the billing queries, and surfaces any
  * error as a toast.
  *
@@ -154,7 +154,7 @@ export interface UseChangeTiersResult {
  * customized (and unpinned) Pro subs; the difference is that this flow edits
  * individual tiers in place, while the package switch re-pins to a named plan.
  *
- * Pass `enabled` (the caller's platform-hosted gate) to hold the org-scoped
+ * Pass `enabled` (the caller's cloud-hosted gate) to hold the org-scoped
  * reads until the page is ready; they are also gated on org-header readiness.
  */
 export function useChangeTiers({
@@ -169,7 +169,7 @@ export function useChangeTiers({
   const inFlightRef = useRef(false);
   const [inFlight, setInFlight] = useState(false);
   // These are org-scoped reads, so hold them until the caller is ready (its own
-  // platform-hosted gate) and the org header source has hydrated — otherwise a
+  // cloud-hosted gate) and the org header source has hydrated — otherwise a
   // request can fire without `Cadet-Organization-Id` and 4xx.
   const orgReady = useIsOrgReady();
   const ready = enabled && orgReady;
@@ -337,7 +337,7 @@ export function useChangeTiers({
     const machineChanged = target.machineTier !== fresh.machineTier;
     const storageChanged = target.storageTier !== fresh.storageTier;
     const creditChanged = target.creditTier !== fresh.creditTier;
-    // A custom plan always carries the platform fee, so a fee-less (Mighty)
+    // A custom plan always carries the cloud fee, so a fee-less (Mighty)
     // sub re-submitting its own tiers is still a change: the fee is added.
     const feeAdded = !fresh.hasPlatformFee;
 

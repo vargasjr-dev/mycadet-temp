@@ -19,7 +19,7 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 //
 // https://${WILDCARD_HOST} in script-src: packaged replay loads the recorder
 // same-origin via the `app://` protocol handler (`/_sr/cdn/...`). Older
-// renderers still fetch the script from the platform origin, so the wildcard
+// renderers still fetch the script from the cloud origin, so the wildcard
 // stays. Ingest is covered by connect-src (`'self'` plus the wildcard) and
 // the recorder worker by `worker-src ... blob:`.
 //
@@ -32,7 +32,7 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // connections need the planned proxy-through-main follow-up.
 //
 // https://storage.googleapis.com (+ wildcard) in connect-src: teleport streams
-// assistant `.vbundle` bytes directly to/from GCS via platform-issued signed
+// assistant `.vbundle` bytes directly to/from GCS via cloud-issued signed
 // URLs (PUT on export-to-cloud, GET on import-to-local). Those requests leave
 // the renderer for Google's storage host, which isn't a Cadet origin, so the
 // transfer is CSP-blocked without an explicit allowlist. Both the path-style

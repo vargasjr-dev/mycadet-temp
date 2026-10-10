@@ -64,12 +64,12 @@ export function cloudAssistantHubUrl(envName: string | undefined): string {
 export const SEEDS: Record<string, EnvironmentDefinition> = {
   production: {
     name: "production",
-    platformUrl: "https://cloud.mycadet.ai",
+    cloudUrl: "https://cloud.mycadet.ai",
     webUrl: "https://mycadet.ai",
   },
   staging: {
     name: "staging",
-    platformUrl: "https://staging-cloud.mycadet.ai",
+    cloudUrl: "https://staging-cloud.mycadet.ai",
     webUrl: "https://staging.mycadet.ai",
     portsOverride: portBlock(17000),
   },
@@ -77,21 +77,21 @@ export const SEEDS: Record<string, EnvironmentDefinition> = {
     name: "test",
     // Non-functional URL — used only by unit tests for URL resolution, never
     // hit in production.
-    platformUrl: "https://test-cloud.mycadet.ai",
+    cloudUrl: "https://test-cloud.mycadet.ai",
     webUrl: "https://dev.mycadet.ai",
     portsOverride: portBlock(19000),
   },
   dev: {
     name: "dev",
-    platformUrl: "https://dev-cloud.mycadet.ai",
+    cloudUrl: "https://dev-cloud.mycadet.ai",
     webUrl: "https://dev.mycadet.ai",
     portsOverride: portBlock(18000),
   },
   local: {
     name: "local",
-    platformUrl: "http://localhost:8000",
+    cloudUrl: "http://localhost:8000",
     webUrl: "http://localhost:3000",
-    // assistantPlatformUrl: "http://host.docker.internal:8000",
+    // assistantCloudUrl: "http://host.docker.internal:8000",
     // ^ uncomment this once dockerized hatch path is live.
     // The assistant runs in a different network namespace than the host.
     portsOverride: portBlock(20000),

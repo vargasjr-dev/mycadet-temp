@@ -827,7 +827,7 @@ describe("createSkillTool: bundled input repairs", () => {
   function makeScaffoldTool(bundled: boolean) {
     return createSkillTool(
       makeEntry({
-        name: "scaffold_managed_skill",
+        name: "scaffold_cloud_skill",
         executor: "echo.ts",
         input_schema: SCAFFOLD_SCHEMA,
       }),

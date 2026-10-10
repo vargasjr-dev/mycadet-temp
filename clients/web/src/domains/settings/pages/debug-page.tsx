@@ -10,7 +10,7 @@ import { DebugControlsPanel } from "@/domains/settings/components/panels/debug-c
 import { DoctorPanel } from "@/domains/settings/components/panels/doctor-panel";
 import { ToneLabPanel } from "@/domains/settings/components/tone-lab/tone-lab-panel";
 import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helpers";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { navigateToConversation } from "@/utils/conversation-navigation";
 import { Tabs } from "@mycadet/design-library/components/tabs";
@@ -57,24 +57,24 @@ export function DebugPage() {
     [navigate],
   );
   // Terminal and Doctor are platform-routed and must be hidden when the active
-  // assistant is self-hosted — `platformHostedOnly: true` is the correct
-  // variant. The standard gate still resolves to "full" on a platform-mode app
+  // assistant is self-hosted — `cloudHostedOnly: true` is the correct
+  // variant. The standard gate still resolves to "full" on a cloud-mode app
   // pointed at a self-hosted assistant, leaving the tabs visible and letting the
   // user land on a doomed terminal/doctor connection.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
 
   const tabs = useMemo(
     () =>
       ALL_TABS.filter((tab) => {
-        if (tab.id === "terminal" && platformGate === "gated") {
+        if (tab.id === "terminal" && cloudGate === "gated") {
           return false;
         }
-        if (tab.id === "doctor" && platformGate === "gated") {
+        if (tab.id === "doctor" && cloudGate === "gated") {
           return false;
         }
         return true;
       }),
-    [platformGate],
+    [cloudGate],
   );
 
   // A gated deep-link (e.g. ?tab=doctor on a self-hosted assistant) has no

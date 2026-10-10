@@ -1,11 +1,11 @@
-import { useAuthStore, useHasPlatformSession } from "@/stores/auth-store";
+import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
   useRequestOrganizationId,
   type OrganizationStatus,
 } from "@/stores/organization-store";
-import { hasLivePlatformSession } from "@/stores/session-status";
+import { hasLiveCloudSession } from "@/stores/session-status";
 
 /**
  * How close the `Cadet-Organization-Id` header source is to producing an id.
@@ -38,9 +38,9 @@ export const ORG_HEADER_SETTLE_TIMEOUT_MS = 5_000;
 function resolveOrgHeaderReadiness(
   requestOrganizationId: string | null,
   status: OrganizationStatus,
-  hasPlatformSession: boolean,
+  hasCloudSession: boolean,
 ): OrgHeaderReadiness {
-  if (!hasPlatformSession) {
+  if (!hasCloudSession) {
     return "ready";
   }
   if (requestOrganizationId != null) {
@@ -53,7 +53,7 @@ export function useOrgHeaderReadiness(): OrgHeaderReadiness {
   return resolveOrgHeaderReadiness(
     useRequestOrganizationId(),
     useOrganizationStore.use.status(),
-    useHasPlatformSession(),
+    useHasCloudSession(),
   );
 }
 
@@ -67,7 +67,7 @@ export function getOrgHeaderReadiness(): OrgHeaderReadiness {
   return resolveOrgHeaderReadiness(
     getActiveOrganizationIdForRequests(),
     useOrganizationStore.getState().status,
-    hasLivePlatformSession(useAuthStore.getState().platformSession),
+    hasLiveCloudSession(useAuthStore.getState().cloudSession),
   );
 }
 

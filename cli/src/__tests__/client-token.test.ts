@@ -90,7 +90,7 @@ describe("client --token (ephemeral)", () => {
     expect(parsed.runtimeUrl).toBe(REMOTE_URL);
     expect(parsed.assistantId).toBe("self"); // DAEMON_INTERNAL_ASSISTANT_ID
     expect(parsed.bearerToken).toBe("test-jwt-token");
-    expect(parsed.platformToken).toBeUndefined();
+    expect(parsed.cloudToken).toBeUndefined();
   });
 
   test("--assistant-id overrides the default 'self' segment", () => {

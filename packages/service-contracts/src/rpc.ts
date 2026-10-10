@@ -34,7 +34,7 @@ import { RpcErrorSchema } from "./error.js";
 
 export const CesRpcMethod = {
   /** Push an updated assistant credential to CES after post-hatch provisioning. */
-  UpdateManagedCredential: "update_managed_credential",
+  UpdateCloudCredential: "update_managed_credential",
   /** Retrieve a single credential by account name. */
   GetCredential: "get_credential",
   /** Store or update a credential by account name. */
@@ -63,7 +63,7 @@ export type CesRpcMethod = (typeof CesRpcMethod)[keyof typeof CesRpcMethod];
 // update_managed_credential
 // ---------------------------------------------------------------------------
 
-export const UpdateManagedCredentialSchema = z.object({
+export const UpdateCloudCredentialSchema = z.object({
   /** The assistant API key to push to CES for platform credential materialization. */
   assistantApiKey: z.string(), // nosemgrep: not-a-secret
   /**
@@ -72,16 +72,16 @@ export const UpdateManagedCredentialSchema = z.object({
    */
   assistantId: z.string().optional(),
 });
-export type UpdateManagedCredential = z.infer<
-  typeof UpdateManagedCredentialSchema
+export type UpdateCloudCredential = z.infer<
+  typeof UpdateCloudCredentialSchema
 >;
 
-export const UpdateManagedCredentialResponseSchema = z.object({
-  /** Whether the managed credential was successfully updated. */
+export const UpdateCloudCredentialResponseSchema = z.object({
+  /** Whether the cloud credential was successfully updated. */
   updated: z.boolean(),
 });
-export type UpdateManagedCredentialResponse = z.infer<
-  typeof UpdateManagedCredentialResponseSchema
+export type UpdateCloudCredentialResponse = z.infer<
+  typeof UpdateCloudCredentialResponseSchema
 >;
 
 // ---------------------------------------------------------------------------
@@ -311,9 +311,9 @@ export type BulkSetCredentialRecordsResponse = z.infer<
  * schemas. Useful for building type-safe RPC dispatch layers.
  */
 export interface CesRpcContract {
-  [CesRpcMethod.UpdateManagedCredential]: {
-    request: UpdateManagedCredential;
-    response: UpdateManagedCredentialResponse;
+  [CesRpcMethod.UpdateCloudCredential]: {
+    request: UpdateCloudCredential;
+    response: UpdateCloudCredentialResponse;
   };
   [CesRpcMethod.GetCredential]: {
     request: GetCredential;
@@ -361,9 +361,9 @@ export interface CesRpcContract {
  * Schema lookup map for runtime validation of RPC payloads.
  */
 export const CesRpcSchemas = {
-  [CesRpcMethod.UpdateManagedCredential]: {
-    request: UpdateManagedCredentialSchema,
-    response: UpdateManagedCredentialResponseSchema,
+  [CesRpcMethod.UpdateCloudCredential]: {
+    request: UpdateCloudCredentialSchema,
+    response: UpdateCloudCredentialResponseSchema,
   },
   [CesRpcMethod.GetCredential]: {
     request: GetCredentialSchema,

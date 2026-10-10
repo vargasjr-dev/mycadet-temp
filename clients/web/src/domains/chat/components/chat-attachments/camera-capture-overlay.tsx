@@ -10,7 +10,7 @@
  * opened by a URL drained from Capacitor's `appUrlOpen` bridge, which
  * establishes none: a widget button was pressed on the Home Screen, outside the
  * web view entirely. A `.click()` from the effect that drains it is therefore
- * consumed in silence and no camera ever appears, on exactly the platform the
+ * consumed in silence and no camera ever appears, on exactly the cloud the
  * command exists for. The bridge has no such requirement, so the camera is
  * opened through it instead and the input is gone from this path.
  *

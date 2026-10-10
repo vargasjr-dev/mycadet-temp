@@ -65,7 +65,7 @@ function formatAuth(auth: AuthInfo): string {
     case "api_key":
       return `api_key (credential: ${auth.credential})`;
     case "platform":
-      return "platform (managed proxy)";
+      return "platform (cloud proxy)";
     case "none":
       return "none";
     case "oauth_subscription":

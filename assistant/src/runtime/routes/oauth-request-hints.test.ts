@@ -158,7 +158,7 @@ describe("composeRequestHint", () => {
     );
   });
 
-  test("a rejected managed credential points at connection health", () => {
+  test("a rejected cloud credential points at connection health", () => {
     expect(composeRequestHint(asPerson({ status: 403, managed: true }))).toBe(
       "Request returned HTTP 403. The OAuth token may be expired or revoked.\n\n" +
         "Run 'assistant oauth status google' to check connection health.\n" +

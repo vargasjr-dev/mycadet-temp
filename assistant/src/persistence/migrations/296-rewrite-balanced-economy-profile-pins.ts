@@ -13,14 +13,14 @@ const PIN_TABLES = ["conversations", "cron_jobs"] as const;
 /**
  * Rewrite persisted `balanced-economy` inference-profile pins to `balanced`.
  *
- * The managed `balanced-economy` profile folds into `balanced` (both resolve to
+ * The cloud `balanced-economy` profile folds into `balanced` (both resolve to
  * MiniMax M3 on Fireworks). The workspace-config migration removes the profile
  * definition, but a profile key can also be pinned outside config.json — on a
  * conversation (`conversations.inference_profile`) or a schedule
  * (`cron_jobs.inference_profile`). Left unrewritten those pins dangle, and
  * `resolveCallSiteConfig` treats an unresolvable override as a silent
  * fall-through to the active/default profile — dropping the user's intended
- * MiniMax route. `balanced-economy` is a reserved managed-profile key, so every
+ * MiniMax route. `balanced-economy` is a reserved cloud-profile key, so every
  * persisted pin refers to the now-folded profile.
  *
  * Ownership guard: the companion workspace migration keeps a `balanced-economy`

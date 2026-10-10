@@ -118,7 +118,7 @@ describe("resolveMobilePromotion", () => {
     });
   });
 
-  test("falls back to generic when the platform is unknown", () => {
+  test("falls back to generic when the cloud is unknown", () => {
     expect(resolveMobilePromotion(null)).toEqual({
       target: "generic",
       appName: null,

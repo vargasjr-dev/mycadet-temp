@@ -1,6 +1,6 @@
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { getConfigReadOnly } from "../config/loader.js";
 import type { AssistantConfig } from "../config/schema.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { getLogger } from "../util/logger.js";
 import { recordConfigSettingEvent } from "./config-setting-events-store.js";
 

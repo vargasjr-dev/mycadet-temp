@@ -46,7 +46,7 @@ export const FALLBACK_TURN_TRUST: TrustContext = {
  * trustContext, and in an auth-disabled (local) deployment that unresolved
  * actor is the guardian. A *present* trustContext always reflects the real
  * actor — even under `DISABLE_HTTP_AUTH`, which is the standing config in
- * platform-managed deployments — so a resolved non-guardian channel actor is
+ * cloud-managed deployments — so a resolved non-guardian channel actor is
  * never elevated to guardian.
  *
  * When no trust context is available and auth is enabled (e.g. a desktop-only

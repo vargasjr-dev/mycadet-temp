@@ -55,13 +55,13 @@ async function main(): Promise<void> {
   writeFileSync(pidPath, String(process.pid), { flag: "w" });
   log.info({ pid: process.pid, pidPath }, "Memory worker process started");
 
-  // Rehydrate the platform base URL and IDs from the credential store before
+  // Rehydrate the cloud base URL and IDs from the credential store before
   // any job runs. The daemon does this in initializeProvidersAndTools(); this
   // standalone process must do it itself so getCloudBaseUrl() resolves to
   // the persisted platform environment instead of the CADET_ENVIRONMENT
   // default. Retrospective and consolidation passes wake real agent
   // conversations whose inference and background-wake requests go through the
-  // platform proxy — without rehydration those requests hit the wrong platform
+  // cloud proxy — without rehydration those requests hit the wrong platform
   // and are rejected.
   await rehydrateCloudCredentials();
 

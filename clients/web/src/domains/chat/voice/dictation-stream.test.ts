@@ -195,7 +195,7 @@ describe("startDictationStream", () => {
   });
 
   /**
-   * The socket is a token mint away for a managed assistant, and the speaker
+   * The socket is a token mint away for a cloud assistant, and the speaker
    * is not waiting for it. Capture starts at once and what it hears is held
    * until the runtime says `ready`, so a dictation that begins the instant a
    * key goes down keeps its opening words.
@@ -371,7 +371,7 @@ describe("startDictationStream", () => {
   });
 
   /**
-   * A paired ingress, a token the platform refused, an assistant with no way
+   * A paired ingress, a token the cloud refused, an assistant with no way
    * in: each is a reason there is no stream rather than a fault. The handle
    * still exists, it just resolves to nothing, and batch dictation is
    * unaffected.

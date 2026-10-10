@@ -10,11 +10,11 @@ import { act, cleanup, render } from "@testing-library/react";
 
 import * as authStore from "@/stores/auth-store";
 
-let hasPlatformSessionMock = true;
+let hasCloudSessionMock = true;
 
 mock.module("@/stores/auth-store", () => ({
   ...authStore,
-  useHasPlatformSession: () => hasPlatformSessionMock,
+  useHasCloudSession: () => hasCloudSessionMock,
 }));
 
 const { useIsOrgReady, useOrgHeaderReadiness } =
@@ -52,7 +52,7 @@ function ReadinessProbe() {
 }
 
 beforeEach(() => {
-  hasPlatformSessionMock = true;
+  hasCloudSessionMock = true;
   latest = null;
   latestReadiness = null;
   sessionStorage.clear();
@@ -70,7 +70,7 @@ afterEach(() => {
 });
 
 describe("useIsOrgReady", () => {
-  test("not ready with a platform session and no org id anywhere", () => {
+  test("not ready with a cloud session and no org id anywhere", () => {
     render(<Probe />);
     expect(latest).toBe(false);
   });
@@ -94,8 +94,8 @@ describe("useIsOrgReady", () => {
     expect(latest).toBe(true);
   });
 
-  test("ready without a platform session (self-hosted auth)", () => {
-    hasPlatformSessionMock = false;
+  test("ready without a cloud session (self-hosted auth)", () => {
+    hasCloudSessionMock = false;
     render(<Probe />);
     expect(latest).toBe(true);
   });
@@ -179,18 +179,18 @@ describe("useOrgHeaderReadiness", () => {
   });
 
   test("no platform session needs no header at all", () => {
-    hasPlatformSessionMock = false;
+    hasCloudSessionMock = false;
     render(<ReadinessProbe />);
     expect(latestReadiness).toBe("ready");
   });
 
   test("a settled-absent session with a failed org fetch is ready", () => {
-    // The half-dead end state: the platform API conclusively rejected the
-    // session, so the probe settled `platformSession: "absent"` (no platform
+    // The half-dead end state: the cloud API conclusively rejected the
+    // session, so the probe settled `cloudSession: "absent"` (no platform
     // session) while the org fetch landed on "error". Readiness must be
     // "ready" here; this is what un-gates the org-gated daemon queries
     // (conversation skeletons) on bearer-auth connections.
-    hasPlatformSessionMock = false;
+    hasCloudSessionMock = false;
     useOrganizationStore.setState({
       status: "error",
       error: "Platform session was rejected (HTTP 403).",

@@ -24,9 +24,9 @@ mock.module("../provider-availability.js", () => ({
         : "absent",
 }));
 
-mock.module("../platform-proxy/context.js", () => ({
-  hasManagedProxyPrereqs: async () => platformLoggedIn,
-  resolveManagedProxyContext: async () => ({
+mock.module("../cloud-proxy/context.js", () => ({
+  hasCloudProxyPrereqs: async () => platformLoggedIn,
+  resolveCloudProxyContext: async () => ({
     enabled: platformLoggedIn,
     // Base URL configured: an unauthenticated result must come from the
     // credential probe, so CES outages stay distinguishable.
@@ -74,11 +74,11 @@ beforeEach(() => {
   secureKeys = { "credential/anthropic/api_key": "sk-ant" };
   cesUnreachable = false;
   platformLoggedIn = false;
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
-  delete process.env.IS_PLATFORM;
+  delete process.env.IS_CLOUD;
 });
 
 describe("preflightResolvedConfig", () => {
@@ -140,7 +140,7 @@ describe("preflightResolvedConfig", () => {
     ).resolves.toBeUndefined();
   });
 
-  test("a cadet identity without a platform login throws platform_unauthenticated", async () => {
+  test("a cadet identity without a cloud login throws platform_unauthenticated", async () => {
     connectionsByName["cadet"] = {
       name: "cadet",
       provider: "cadet",
@@ -153,9 +153,9 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
-  test("a user-owned row claiming the cadet name preflights the platform", async () => {
+  test("a user-owned row claiming the cadet name preflights the cloud", async () => {
     // Dispatch ignores that row, so its credential is irrelevant to the
-    // verdict: signed in passes, signed out is the platform's own failure.
+    // verdict: signed in passes, signed out is the cloud's own failure.
     connectionsByName["cadet"] = {
       name: "cadet",
       provider: "openai",
@@ -295,7 +295,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("model_incompatible");
   });
 
-  test("the cadet managed connection serves managed-routable providers when logged in", async () => {
+  test("the cadet cloud connection serves managed-routable providers when logged in", async () => {
     connectionsByName = {
       cadet: {
         name: "cadet",
@@ -315,7 +315,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("platform_unauthenticated");
   });
 
-  test("the cadet managed connection rejects non-managed-routable providers", async () => {
+  test("the cadet cloud connection rejects non-managed-routable providers", async () => {
     connectionsByName = {
       cadet: {
         name: "cadet",
@@ -330,7 +330,7 @@ describe("preflightResolvedConfig", () => {
     expect(err?.reason).toBe("provider_mismatch");
   });
 
-  test("platform-auth connections require a platform login", async () => {
+  test("cloud-auth connections require a cloud login", async () => {
     connectionsByName["anthropic-personal"] = {
       name: "anthropic-personal",
       provider: "anthropic",
@@ -363,7 +363,7 @@ describe("preflightResolvedConfig", () => {
   });
 });
 
-describe("preflightResolvedConfig platform-managed credential messaging", () => {
+describe("preflightResolvedConfig cloud credential messaging", () => {
   const platformManaged = () => {
     connectionsByName = {
       cadet: {
@@ -372,7 +372,7 @@ describe("preflightResolvedConfig platform-managed credential messaging", () => 
         auth: { type: "platform" },
       },
     };
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
   };
   const managedRoute = () => resolved({ provider_connection: "cadet" });
 
@@ -400,7 +400,7 @@ describe("preflightResolvedConfig platform-managed credential messaging", () => 
     expect(await preflightError(managedRoute())).toBeUndefined();
   });
 
-  test("non-platform install keeps the log-in-or-switch wording", async () => {
+  test("non-cloud install keeps the log-in-or-switch wording", async () => {
     connectionsByName = {
       cadet: {
         name: "cadet",
@@ -408,7 +408,7 @@ describe("preflightResolvedConfig platform-managed credential messaging", () => 
         auth: { type: "platform" },
       },
     };
-    // IS_PLATFORM left unset covers both local and self-hosted Docker installs.
+    // IS_CLOUD left unset covers both local and self-hosted Docker installs.
     const err = await preflightError(managedRoute());
     expect(err?.reason).toBe("platform_unauthenticated");
     expect(err?.message).toContain("log in or pick a different provider");

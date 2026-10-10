@@ -1,7 +1,7 @@
 /**
  * Workspace migration `159-rename-colliding-jev-profile-name`.
  *
- * `jev-managed` became a reserved code-owned profile name (the managed Jev
+ * `jev-managed` became a reserved code-owned profile name (the cloud Jev
  * profile). From this release on, that name resolves to the code body no
  * matter what `llm.profiles` holds, and the schema rejects it as
  * `activeProfile` or `advisorProfile`, so a user-created profile that
@@ -32,7 +32,7 @@
  * value under the key is not a profile at all; both are left alone.
  *
  * The DB rewrite is not best effort: a pin the rewrite abandons would route
- * through the managed Jev profile instead of the user's own, so a database
+ * through the cloud Jev profile instead of the user's own, so a database
  * that exists but cannot be written is retried with a short backoff and a
  * failure that outlives the retries throws; `retryFailedCheckpoint` re-runs
  * the whole migration on the next boot. The DB rewrite runs before the

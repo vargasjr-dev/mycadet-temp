@@ -9,7 +9,7 @@
  *     mirrors the Swift `bootstrapActorToken` + `withAssistant` scoping and is
  *     isolated from the globally-active self-hosted connection so a teleport
  *     never disturbs the current session's token.
- *   - **managed (cloud)** assistants are reached through the platform's
+ *   - **managed (cloud)** assistants are reached through the cloud's
  *     assistant proxy (`/v1/assistants/{id}/...`) via the generated API client,
  *     which already attaches the session + organization headers.
  */
@@ -235,7 +235,7 @@ export async function createLocalBackup(
 }
 
 /**
- * Ask a managed (cloud) assistant's runtime to export to a signed GCS URL:
+ * Ask a cloud (cloud) assistant's runtime to export to a signed GCS URL:
  * `POST /v1/assistants/{id}/migrations/export-to-gcs/`. The export is async —
  * the runtime returns 202 + `job_id` and uploads in the background.
  */
@@ -264,10 +264,10 @@ export async function exportManagedToGcs(
 }
 
 /**
- * Poll a managed assistant's runtime-local export job until it completes:
+ * Poll a cloud assistant's runtime-local export job until it completes:
  * `GET /v1/assistants/{id}/migrations/jobs/{jobId}`. Routes through the
  * assistant proxy so it reaches the runtime's in-memory job registry rather
- * than the platform job DB.
+ * than the cloud job DB.
  */
 export async function pollManagedExportJob(
   managedId: string,

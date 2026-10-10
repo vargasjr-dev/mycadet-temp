@@ -67,7 +67,7 @@ function detectBrowser(userAgent: string): string | null {
 /**
  * Resolves a stored User-Agent into a browser and OS, or `null` if the input
  * is blank or neither could be identified. Never returns a partially-empty
- * object; callers that get `null` should fall back to a platform label.
+ * object; callers that get `null` should fall back to a cloud label.
  */
 export function labelFromUserAgent(
   userAgent: string | null | undefined,

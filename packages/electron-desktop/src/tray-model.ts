@@ -11,7 +11,7 @@ import {
   pairedHostLabel,
   type Lockfile,
   type LockfileAssistant,
-  isManagedCloud,
+  isCloudHome,
 } from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
@@ -68,7 +68,7 @@ export interface TrayModelRuntime {
   openComponentGallery: () => void;
   /**
    * Run the companion's introduction again from the first beat. Only offered
-   * where there is a surface to introduce, so absent on the platforms without
+   * where there is a surface to introduce, so absent on the clouds without
    * one.
    */
   replayCompanionIntro?: () => void;
@@ -160,7 +160,7 @@ const assistantDisplayTitle = (assistant: LockfileAssistant): string => {
 /**
  * Switcher label for a lockfile assistant. Paired entries carry a suffix
  * naming the remote host (the chooser's paired labeling) so they read as
- * remote pairings, not managed assistants.
+ * remote pairings, not cloud assistants.
  */
 const assistantMenuLabel = (assistant: LockfileAssistant): string => {
   const title = assistantDisplayTitle(assistant);
@@ -207,11 +207,11 @@ const buildTrayMenu = (
   // Assistant switcher: gated by the multi-platform-assistant feature flag.
   if (isMultiAssistantEnabled() && !onboarding) {
     const lockfile = trayRuntime.getLockfile();
-    // Managed (platform-hosted) and paired (remote, imported) assistants
+    // Managed (cloud-hosted) and paired (remote, imported) assistants
     // belong in the switcher. Local/Docker lockfile entries are handled by
-    // separate flows and would mis-route through the platform selection path.
+    // separate flows and would mis-route through the cloud selection path.
     const assistants = lockfile.assistants.filter(
-      (a) => isManagedCloud(a.cloud) || a.cloud === "paired",
+      (a) => isCloudHome(a.cloud) || a.cloud === "paired",
     );
     const activeId = lockfile.activeAssistant;
 
@@ -380,7 +380,7 @@ const buildTrayMenu = (
       label: "Show / Hide Main Window",
       click: handlers.toggleMainWindow,
     },
-    // The floating avatar pill (`companion-window.ts`), on the platforms that
+    // The floating avatar pill (`companion-window.ts`), on the clouds that
     // have one. Where there is no surface there is nothing to show or hide, and
     // an item offering to bring one back would be the only place in the app
     // that mentions it exists.

@@ -8,7 +8,7 @@
  * throttles and eventually suspends once the app is backgrounded, which is the
  * only state in which the Lock Screen and the Dynamic Island are on screen at
  * all. Registering the token gives the same activity a second driver — the
- * daemon reports each phase change to the platform, which pushes it through
+ * daemon reports each phase change to the cloud, which pushes it through
  * APNs, and iOS applies it with no app process involved.
  *
  * The two drivers coexist by design rather than by arbitration. They carry the
@@ -23,7 +23,7 @@
  * none of it because the shell ships on App Store cadence while this bundle
  * deploys continuously. A server composing its own strings would reintroduce
  * exactly that drift one layer further out, so registration hands over a
- * phase to label map and the platform only ever looks a phase up in it. The map
+ * phase to label map and the cloud only ever looks a phase up in it. The map
  * is built in the language the app is in, which is what makes a
  * server-composed push read the way the room did. The accent and mute state
  * travel the same way and for the same underlying reason. See
@@ -44,7 +44,7 @@ import {
   type LiveVoiceSessionState,
 } from "@/domains/chat/voice/live-voice/live-voice-store";
 import { fixedT } from "@/i18n";
-import { resolvePlatformAssistantId } from "@/lib/platform-assistant-id";
+import { resolveCloudAssistantId } from "@/lib/cloud-assistant-id";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { resolveSignedApnsEnvironment } from "@/runtime/apns-environment";
 import { createStorageAccessor } from "@/utils/typed-storage";
@@ -114,7 +114,7 @@ function parseRegistration(raw: string): ActivityRegistration | null {
  * web view can reload mid-session — and on iOS, reloading is exactly what
  * happens when the app is resumed after a long suspension — which would drop
  * the module state and with it any way to name the token that needs deleting.
- * The registration would then survive until the platform expired it.
+ * The registration would then survive until the cloud expired it.
  *
  * The stored value is a push-routing address, not auth material; losing it to
  * XSS grants nothing.
@@ -151,10 +151,10 @@ function trackUpsert(upsert: Promise<void>): void {
 }
 
 /**
- * Tail of the upsert chain, so registrations reach the platform in the order
+ * Tail of the upsert chain, so registrations reach the cloud in the order
  * they were made.
  *
- * The row is now content the platform composes its pushes from, which makes
+ * The row is now content the cloud composes its pushes from, which makes
  * ordering load-bearing: two registrations in flight at once (a mute toggled
  * twice, or a mute landing while an avatar that loaded late re-registers the
  * accent) can arrive in either order, and the loser is what every subsequent
@@ -163,7 +163,7 @@ function trackUpsert(upsert: Promise<void>): void {
  */
 let upsertChain: Promise<void> = Promise.resolve();
 
-/** Everything the platform needs to push at one running activity. */
+/** Everything the cloud needs to push at one running activity. */
 export interface LiveActivityRegistration {
   token: string;
   assistantId: string;
@@ -178,7 +178,7 @@ export interface LiveActivityRegistration {
    * fields, and a server push replaces that state wholesale, so a dispatch
    * composed without them would gray out the island and drop its mute glyph on
    * the first phase change after the app is backgrounded, which is the only
-   * state the island is ever seen in. The platform stores them on the token row
+   * state the island is ever seen in. The cloud stores them on the token row
    * and composes every push from there; the caller re-registers when either
    * moves.
    */
@@ -190,7 +190,7 @@ export interface LiveActivityRegistration {
  * Register (or re-register) the activity's push token for a conversation.
  *
  * Safe to call repeatedly: iOS rotates tokens mid-activity and each value
- * invalidates the last, so every event re-registers. The platform keys on
+ * invalidates the last, so every event re-registers. The cloud keys on
  * `(user, token)`, so a rotation replaces the row rather than accumulating one.
  */
 export async function registerLiveActivityPushToken(
@@ -213,8 +213,8 @@ async function upsertToken({
   muted,
 }: LiveActivityRegistration): Promise<void> {
   try {
-    const platformAssistantId = await resolvePlatformAssistantId(assistantId);
-    if (platformAssistantId === null) {
+    const cloudAssistantId = await resolveCloudAssistantId(assistantId);
+    if (cloudAssistantId === null) {
       return;
     }
     // `@capacitor/app` is a plugin Proxy — destructure inline (see CAPACITOR.md).
@@ -224,7 +224,7 @@ async function upsertToken({
     const apnsEnvironment = await resolveSignedApnsEnvironment(bundleId);
 
     const result = await assistantsLiveActivityTokensUpsert({
-      path: { assistant_id: platformAssistantId },
+      path: { assistant_id: cloudAssistantId },
       body: {
         token,
         bundle_id: bundleId,
@@ -246,7 +246,7 @@ async function upsertToken({
       return;
     }
 
-    registered = { token, assistantId: platformAssistantId };
+    registered = { token, assistantId: cloudAssistantId };
     persistedRegistration.save(registered);
   } catch (err) {
     captureError(err, {
@@ -263,7 +263,7 @@ async function upsertToken({
  * platform delete is still authenticated.
  *
  * Best-effort by nature — the session may be ending precisely because the app
- * is going away, and this request may never leave. The platform therefore
+ * is going away, and this request may never leave. The cloud therefore
  * expires registrations on its own; this is the fast path, not the guarantee.
  */
 export async function unregisterLiveActivityPushToken(): Promise<void> {

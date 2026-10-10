@@ -109,7 +109,7 @@ describe("usePlanUsageBalance on a Pro sub", () => {
     expect(result.current?.ratio).toBe(1);
   });
 
-  test("stays silent when the platform reports no grant figures", () => {
+  test("stays silent when the cloud reports no grant figures", () => {
     // An older platform omits both; there is no honest reading, full or
     // otherwise.
     const { result } = renderBalance({
@@ -191,7 +191,7 @@ describe("usePlanUsageBalance on a free plan", () => {
     expect(result.current).toBeNull();
   });
 
-  test("stays silent when the platform reports only one figure", () => {
+  test("stays silent when the cloud reports only one figure", () => {
     // An older self-hosted platform omits both; a partial read is no more
     // usable than none.
     const { result } = renderBalance({
@@ -231,7 +231,7 @@ describe("usageGrantRatio", () => {
     expect(usageGrantRatio(0, 0)).toBeNull();
   });
 
-  test("a platform reporting neither figure has no reading", () => {
+  test("a cloud reporting neither figure has no reading", () => {
     expect(usageGrantRatio(null, 1.6)).toBeNull();
     expect(usageGrantRatio(5, null)).toBeNull();
     expect(usageGrantRatio(null, null)).toBeNull();

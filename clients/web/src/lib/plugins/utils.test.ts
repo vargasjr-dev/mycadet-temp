@@ -100,7 +100,7 @@ describe("mergePlugins", () => {
     expect(catalogRow.icon).toBeUndefined();
   });
 
-  test("splits a catalog entry's icon into emoji vs platform-hosted URL", () => {
+  test("splits a catalog entry's icon into emoji vs cloud-hosted URL", () => {
     const url = "https://assets.example/coffee/icon.png?v=abc";
     const [emojiRow, urlRow] = mergePlugins(
       [],

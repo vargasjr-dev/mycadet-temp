@@ -206,8 +206,8 @@ export function normalizeSttError(err: unknown): SttError {
 }
 
 // ---------------------------------------------------------------------------
-// Cadet managed adapter — implements BatchTranscriber on top of the
-// platform's managed speech endpoint. No API key: the cloud connection
+// Cadet Cloud adapter — implements BatchTranscriber on top of the
+// platform's cloud speech endpoint. No API key: the cloud connection
 // is the credential.
 // ---------------------------------------------------------------------------
 
@@ -220,9 +220,9 @@ class CadetManagedBatchTranscriber implements BatchTranscriber {
   async transcribe(
     request: SttTranscribeRequest,
   ): Promise<SttTranscribeResult> {
-    const { cadetManagedTranscribe } =
-      await import("../providers/speech-to-text/cadet-managed.js");
-    return cadetManagedTranscribe(
+    const { cadetCloudTranscribe } =
+      await import("../providers/speech-to-text/cadet-cloud.js");
+    return cadetCloudTranscribe(
       request.audio,
       request.mimeType,
       request.signal,
@@ -243,7 +243,7 @@ class CadetManagedBatchTranscriber implements BatchTranscriber {
  * `language` is the spoken language, forwarded to providers whose batch API
  * accepts one: Deepgram (where `"multi"` also pins nova-3), xAI (where
  * `"multi"` is dropped because it is a Deepgram-specific value, not a
- * language code), and the Cadet managed path, whose platform proxy passes
+ * language code), and the Cadet Cloud path, whose cloud proxy passes
  * it to Deepgram server-side. Whisper and Gemini auto-detect natively and
  * take no language parameter, so it is silently ignored for them.
  *
@@ -255,7 +255,7 @@ export function createDaemonBatchTranscriber(
   providerId: SttProviderId,
   language?: string,
 ): BatchTranscriber | null {
-  // Managed speech authenticates via the cloud connection, not an API
+  // Cloud speech authenticates via the cloud connection, not an API
   // key. Callers pass canonical ids; the resolver maps legacy ones first.
   if (providerId === "cadet") {
     return new CadetManagedBatchTranscriber(language);

@@ -20,7 +20,7 @@ import {
   getGatewayToken,
   getLocalTokenUrl,
 } from "@/lib/auth/gateway-session";
-import { getPlatformRuntimeUrl } from "@/lib/platform-runtime-url";
+import { getPlatformRuntimeUrl } from "@/lib/cloud-runtime-url";
 import {
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
@@ -160,20 +160,20 @@ const commitLockfile = (data: Lockfile): void => {
 const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
 
 export function isLocalClient(): boolean {
-  const raw = import.meta.env.VITE_PLATFORM_MODE;
+  const raw = import.meta.env.VITE_CLOUD_MODE;
   if (!raw) {
     return true;
   }
   return !PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
 }
 
-export function isPlatformDisabled(): boolean {
+export function isCloudDisabled(): boolean {
   const config = readInjectedConfig();
-  if (config.disablePlatform != null) {
-    return !!config.disablePlatform;
+  if (config.disableCloud != null) {
+    return !!config.disableCloud;
   }
 
-  const raw = import.meta.env.VITE_CADET_DISABLE_PLATFORM;
+  const raw = import.meta.env.VITE_CADET_DISABLE_CLOUD;
   if (raw) {
     const v = raw.toLowerCase();
     return v === "true" || v === "1";
@@ -423,7 +423,7 @@ export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
   return isLoopbackGatewayCloud(a.cloud);
 }
 
-export function isPlatformAssistant(a: LockfileAssistant): boolean {
+export function isCloudAssistant(a: LockfileAssistant): boolean {
   return a.cloud === "cadet";
 }
 
@@ -456,8 +456,8 @@ export function getLocalAssistants(): LockfileAssistant[] {
   return getLockfile().assistants.filter(isLocalAssistant);
 }
 
-export function getPlatformAssistants(): LockfileAssistant[] {
-  return getLockfile().assistants.filter(isPlatformAssistant);
+export function getCloudAssistants(): LockfileAssistant[] {
+  return getLockfile().assistants.filter(isCloudAssistant);
 }
 
 /**
@@ -739,7 +739,7 @@ export async function primeLocalGatewayConnection(
     // the credential and proves the remote gateway is reachable. The renderer
     // sends no bearer. A connection to this same paired gateway stays live
     // while the probe is in flight (a re-prime must not open a window in
-    // which requests fall through to the platform and gateway-auth predicates
+    // which requests fall through to the cloud and gateway-auth predicates
     // read false) and is dropped only if the probe fails, so a failed prime
     // never leaves the app believing it is connected. A slot pointing at some
     // other assistant is left alone either way. It also clears credentials

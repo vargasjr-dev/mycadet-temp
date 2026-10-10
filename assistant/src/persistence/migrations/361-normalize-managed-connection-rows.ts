@@ -5,23 +5,23 @@ const PLATFORM_AUTH_JSON = JSON.stringify({ type: "platform" });
 
 /**
  * Reconcile `provider_connections` rows so platform auth and provider
- * "cadet" always pair. The two columns record the same fact (the managed,
+ * "cadet" always pair. The two columns record the same fact (the cloud,
  * platform-billed route); auth derivation sets them together and the
  * connection routes reject writes that split them, but rows written before
  * that guard can disagree. The provider column is the authoritative managed
- * signal (`isCadetManagedConnection`), so mismatched rows must converge:
+ * signal (`isCadetCloudConnection`), so mismatched rows must converge:
  *
  * - Platform auth with any other provider: the provider becomes "cadet".
- *   These rows dispatch through the managed proxy (transport selection keys
- *   on the managed identity), so normalizing the provider preserves billing
+ *   These rows dispatch through the cloud proxy (transport selection keys
+ *   on the cloud identity), so normalizing the provider preserves billing
  *   and transport behavior, while normalizing the auth instead would
- *   silently turn a platform-billed row into a keyless BYOK row. This also
+ *   silently turn a cloud-billed row into a keyless BYOK row. This also
  *   heals a stuck pre-consolidation canonical row (name "cadet", concrete
  *   provider, platform auth) that boot seeding skips because its provider
  *   differs from the sentinel.
  * - Provider "cadet" with any other auth: the auth becomes
- *   `{"type":"platform"}`. A cadet row means the managed route by
- *   definition, and non-platform auth on it never yields a usable adapter.
+ *   `{"type":"platform"}`. A cadet row means the cloud route by
+ *   definition, and non-cloud auth on it never yields a usable adapter.
  *
  * Rows whose auth column is not valid JSON are left alone (the DB loaders
  * already treat them as invalid). Idempotent: a reconciled row matches

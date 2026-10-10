@@ -1,12 +1,12 @@
 /**
  * SSE transport for terminal PTY output.
  *
- * The terminal events endpoint is not in the platform OpenAPI spec (it's a
+ * The terminal events endpoint is not in the cloud OpenAPI spec (it's a
  * raw SSE stream), so there is no generated SDK function for it. This module
  * provides the subscription primitive that {@link useTerminalSession} drives.
  */
 
-import { client as platformClient } from "@/generated/api/client.gen";
+import { client as cloudClient } from "@/generated/api/client.gen";
 import {
   normalizeSSEPayload,
   unwrapMessageEnvelope,
@@ -64,7 +64,7 @@ export function subscribeTerminalEvents(
 
     let streamError: Error | null = null;
     try {
-      const { stream } = await platformClient.sse.get<
+      const { stream } = await cloudClient.sse.get<
         Record<string, unknown> | string
       >({
         url: "/v1/assistants/{assistant_id}/terminal/sessions/{session_id}/events/",

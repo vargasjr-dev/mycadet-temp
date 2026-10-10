@@ -166,7 +166,7 @@ const LEGACY_HATCH_PROFILE_NAMES = [
 ] as const;
 
 /**
- * The managed Balanced model. These tests assert that resolution serves the
+ * The cloud Balanced model. These tests assert that resolution serves the
  * code catalog rather than a workspace body, so they follow the catalog
  * instead of restating its pin.
  */
@@ -403,13 +403,13 @@ describe("loadConfig startup behavior", () => {
     }
     ensureTestDir();
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
@@ -588,7 +588,7 @@ describe("loadConfig startup behavior", () => {
     expect(raw.dataDir).toBeUndefined();
   });
 
-  test("off-platform hatch writes no profile entries; defaults resolve through the hatch provider", () => {
+  test("off-cloud hatch writes no profile entries; defaults resolve through the hatch provider", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -644,8 +644,8 @@ describe("loadConfig startup behavior", () => {
     expect("status" in (effective.balanced ?? {})).toBe(false);
   });
 
-  test("on-platform hatch writes no profile entries; defaults resolve from the catalog", () => {
-    process.env.IS_PLATFORM = "true";
+  test("on-cloud hatch writes no profile entries; defaults resolve from the catalog", () => {
+    process.env.IS_CLOUD = "true";
 
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
@@ -732,8 +732,8 @@ describe("loadConfig startup behavior", () => {
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
   });
 
-  test("on-platform re-hatch resets active profile to balanced", () => {
-    process.env.IS_PLATFORM = "true";
+  test("on-cloud re-hatch resets active profile to balanced", () => {
+    process.env.IS_CLOUD = "true";
 
     writeConfig({
       llm: {
@@ -860,7 +860,7 @@ describe("loadConfig startup behavior", () => {
     expect(raw.llm.default.model).toBe("codellama");
   });
 
-  test("off-platform hatch with openai resolves the defaults through the openai column", () => {
+  test("off-cloud hatch with openai resolves the defaults through the openai column", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -891,7 +891,7 @@ describe("loadConfig startup behavior", () => {
     expect(effective["cost-optimized"]?.model).toBe("gpt-5.6-luna");
   });
 
-  test("off-platform hatch with a provider outside the named matrix columns resolves through the shared BYOK templates", () => {
+  test("off-cloud hatch with a provider outside the named matrix columns resolves through the shared BYOK templates", () => {
     // `together` has no column in PROFILE_IMPLS and no intent table: the
     // defaults must still anchor on it (not fall back to anthropic), backed
     // by the `together-personal` connection and its catalog defaultModel.
@@ -931,7 +931,7 @@ describe("loadConfig startup behavior", () => {
     }
   });
 
-  test("off-platform hatch with a connection-eligible provider that is not a default-provider choice falls back to anthropic", () => {
+  test("off-cloud hatch with a connection-eligible provider that is not a default-provider choice falls back to anthropic", () => {
     // `typesafe` passes the connection gate (API-key catalog provider, and
     // not in PROVIDERS_REQUIRING_BASE_URL_AND_MODELS) but it is not a known
     // LLM provider, so no profile can reference it and it is not a
@@ -973,7 +973,7 @@ describe("loadConfig startup behavior", () => {
     }
   });
 
-  test("off-platform boot leaves an existing managed entry byte-identical", () => {
+  test("off-cloud boot leaves an existing managed entry byte-identical", () => {
     // A drifted legacy full-body entry left by a previous release stays
     // exactly as written — boots never rewrite managed entries. Content is
     // served from the code catalog at resolution time instead.
@@ -996,7 +996,7 @@ describe("loadConfig startup behavior", () => {
 
     expect(raw.llm.profiles.balanced).toEqual(drifted);
     expect(raw.llm.activeProfile).toBe("balanced");
-    // Resolution ignores the drifted body: a managed-source entry contributes
+    // Resolution ignores the drifted body: a cloud-source entry contributes
     // only label/status/topP, everything else comes from the catalog.
     const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
@@ -1033,7 +1033,7 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveQuality?.source).toBeUndefined();
   });
 
-  test("defaults the advisor profile to the managed Quality profile", () => {
+  test("defaults the advisor profile to the cloud Quality profile", () => {
     writeConfig({ llm: { default: { provider: "anthropic" } } });
 
     mergeDefaultConfigAndSeedInferenceProfiles();
@@ -1056,7 +1056,7 @@ describe("loadConfig startup behavior", () => {
     // updates ship in a release without any workspace rewrite. Boots never
     // touch managed entries; the effective view serves the catalog body and
     // overlays only label/status/topP from the workspace entry.
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     const drifted = {
       source: "managed",
@@ -1087,11 +1087,11 @@ describe("loadConfig startup behavior", () => {
     expect("topP" in (effectiveBalanced ?? {})).toBe(false);
   });
 
-  test("platform boot preserves user-edited label and status on a managed stub", () => {
-    // The workspace-owned fields a user may set on a managed profile — label
+  test("platform boot preserves user-edited label and status on a cloud stub", () => {
+    // The workspace-owned fields a user may set on a cloud profile — label
     // and status — live on the stub, which boots never touch. The effective
     // view overlays them onto the code-owned body.
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     const edited = {
       source: "managed",
@@ -1117,8 +1117,8 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.status).toBe("disabled");
   });
 
-  test("off-platform boot preserves a user-edited label on a managed stub (Codex P1 on PR #30362)", () => {
-    // Simulate a user who renamed the managed "balanced" profile via
+  test("off-cloud boot preserves a user-edited label on a cloud stub (Codex P1 on PR #30362)", () => {
+    // Simulate a user who renamed the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { label: "My Default" }.
     const stub = { source: "managed", label: "My Default" };
     writeConfig({
@@ -1139,8 +1139,8 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
   });
 
-  test("off-platform boot preserves user-toggled status on a managed stub", () => {
-    // Simulate a user who disabled the managed "balanced" profile via
+  test("off-cloud boot preserves user-toggled status on a cloud stub", () => {
+    // Simulate a user who disabled the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { status: "disabled" }.
     const stub = { source: "managed", status: "disabled" };
     writeConfig({
@@ -1161,8 +1161,8 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
   });
 
-  test("boot preserves a user-edited topP override on a managed stub", () => {
-    // Simulate a user who overrode topP on the managed "balanced" profile via
+  test("boot preserves a user-edited topP override on a cloud stub", () => {
+    // Simulate a user who overrode topP on the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { topP: 0.5 }. The override lives
     // on the stub, survives boots untouched, and overlays the catalog body
     // (which carries no topP of its own).
@@ -1199,7 +1199,7 @@ describe("loadConfig startup behavior", () => {
     expect("topP" in (effectiveBalanced ?? {})).toBe(false);
   });
 
-  test("off-platform reseed preserves an explicit null label (user cleared it)", () => {
+  test("off-cloud reseed preserves an explicit null label (user cleared it)", () => {
     // Setting label to null is the "clear" intent — must survive too,
     // otherwise the next boot would re-stamp the template's default
     // label and ignore the user's clear action.
@@ -1224,7 +1224,7 @@ describe("loadConfig startup behavior", () => {
     expect(raw.llm.profiles.balanced.label).toBeNull();
   });
 
-  test("non-hatch off-platform boot writes no managed entries; defaults resolve bare-labeled from the catalog", () => {
+  test("non-hatch off-cloud boot writes no managed entries; defaults resolve bare-labeled from the catalog", () => {
     // First boot of a config with no prior profiles and no hatch overlay:
     // nothing is materialized for the default names. The " (Managed)" label
     // suffix exists only on the thin stubs written at BYOK hatch time; a
@@ -1246,10 +1246,10 @@ describe("loadConfig startup behavior", () => {
     // The overlay's `balanced` fragment lands verbatim on disk and stays
     // there across boots — boots never rewrite managed entries. Resolution,
     // however, always serves default profile CONTENT from the code catalog:
-    // a managed-source workspace entry contributes only label/status/topP,
+    // a cloud-source workspace entry contributes only label/status/topP,
     // so the overlay's provider/model never reach the resolver. Only its
     // `label` shows through the effective view.
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
 
     writeConfig({
       llm: {
@@ -1286,7 +1286,7 @@ describe("loadConfig startup behavior", () => {
                 source: "managed",
                 provider: "openai",
                 model: "gpt-5.4",
-                label: "Platform Balanced",
+                label: "Cloud Balanced",
               },
             },
             activeProfile: "balanced",
@@ -1309,7 +1309,7 @@ describe("loadConfig startup behavior", () => {
       source: "managed",
       provider: "openai",
       model: "gpt-5.4",
-      label: "Platform Balanced",
+      label: "Cloud Balanced",
     });
     // Resolution serves default-profile CONTENT from the code catalog: the
     // overlay's provider/model never reach the resolver — even on the
@@ -1323,7 +1323,7 @@ describe("loadConfig startup behavior", () => {
       source: "managed",
       provider: "openai",
       model: "gpt-5.4",
-      label: "Platform Balanced",
+      label: "Cloud Balanced",
     });
     expect(raw.llm.profiles.balanced.maxTokens).toBeUndefined();
     expect(raw.llm.profiles.balanced.thinking).toBeUndefined();
@@ -1339,7 +1339,7 @@ describe("loadConfig startup behavior", () => {
       source: "managed",
       provider: "openai",
       model: "gpt-5.4",
-      label: "Platform Balanced",
+      label: "Cloud Balanced",
     });
     const effectiveBalanced = getEffectiveProfile(
       afterRestart.llm.profiles,
@@ -1353,7 +1353,7 @@ describe("loadConfig startup behavior", () => {
       enabled: true,
       streamThinking: true,
     });
-    expect(effectiveBalanced?.label).toBe("Platform Balanced");
+    expect(effectiveBalanced?.label).toBe("Cloud Balanced");
   });
 
   test("quarantines corrupt config before merging hatch overlay", () => {
@@ -1432,7 +1432,7 @@ describe("loadConfig startup behavior", () => {
   });
 
   test("an active managed backup profile is repaired on a BYOK install", () => {
-    // Backups live on the managed column alone, so under a BYOK default
+    // Backups live on the cloud column alone, so under a BYOK default
     // provider the selection names a profile that resolves to nothing. The
     // schema rejects the reference on load and the seeder, which resolves
     // availability through the same provider-aware view, repairs the stored
@@ -1456,7 +1456,7 @@ describe("loadConfig startup behavior", () => {
     expect(raw.llm.activeProfile).toBe("balanced");
   });
 
-  test("a call site pinned to a managed backup profile survives a reload", () => {
+  test("a call site pinned to a cloud backup profile survives a reload", () => {
     writeConfig({
       llm: {
         default: {
@@ -1523,17 +1523,17 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     }
     ensureTestDir();
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
-  test("off-platform hatch writes no stubs; defaults resolve active with bare labels", () => {
+  test("off-cloud hatch writes no stubs; defaults resolve active with bare labels", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -1564,7 +1564,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect("status" in (effective["cost-optimized"] ?? {})).toBe(false);
   });
 
-  test("off-platform BYOK hatch defaults advisor to quality-optimized", () => {
+  test("off-cloud BYOK hatch defaults advisor to quality-optimized", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -1580,7 +1580,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(config.llm.advisorProfile).toBe("quality-optimized");
   });
 
-  test("off-platform boot clears a disabled managed advisor even when a personal profile exists", () => {
+  test("off-cloud boot clears a disabled managed advisor even when a personal profile exists", () => {
     writeConfig({
       llm: {
         advisorProfile: "frontier",
@@ -1627,13 +1627,13 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     mergeDefaultConfigAndSeedInferenceProfiles();
     const config = loadConfig();
 
-    // Advisor repair only considers the managed defaults; a user profile is
+    // Advisor repair only considers the cloud defaults; a user profile is
     // never auto-selected, so a fully-disabled managed set clears the field.
     expect(config.llm.advisorProfile).toBeUndefined();
   });
 
-  test("platform boot repairs a disabled managed advisor to an active managed profile", () => {
-    process.env.IS_PLATFORM = "true";
+  test("platform boot repairs a disabled managed advisor to an active cloud profile", () => {
+    process.env.IS_CLOUD = "true";
     writeConfig({
       llm: {
         advisorProfile: "frontier",
@@ -1662,7 +1662,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(config.llm.advisorProfile).toBe("quality-optimized");
   });
 
-  test("off-platform boot clears a disabled managed advisor when no active replacement exists", () => {
+  test("off-cloud boot clears a disabled managed advisor when no active replacement exists", () => {
     writeConfig({
       llm: {
         advisorProfile: "frontier",
@@ -1705,7 +1705,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(config.llm.advisorProfile).toBeUndefined();
   });
 
-  test("off-platform managed-inference hatch keeps selected managed connection active", () => {
+  test("off-cloud managed-inference hatch keeps selected cloud connection active", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -1727,11 +1727,11 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.activeProfile).toBe("balanced");
-    // The hatch overlay selected a managed profile (all managed profiles
+    // The hatch overlay selected a cloud profile (all cloud profiles
     // share the single `cadet` connection), so no disabled stubs are
     // written: the defaults stay absent from llm.profiles and resolve active
     // from the code catalog. The default advisor falls to the strongest
-    // active managed profile, `quality-optimized`.
+    // active cloud profile, `quality-optimized`.
     expect(raw.llm.advisorProfile).toBe("quality-optimized");
     expect(raw.llm.profiles.balanced).toBeUndefined();
     const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
@@ -1739,7 +1739,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect("status" in (effectiveBalanced ?? {})).toBe(false);
   });
 
-  test("off-platform managed-inference hatch respects explicit non-managed active connection", () => {
+  test("off-cloud managed-inference hatch respects explicit non-managed active connection", () => {
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
       overlayPath,
@@ -1778,7 +1778,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(getConnection(db, "gemini-managed")).not.toBeNull();
   });
 
-  test("non-hatch off-platform boot writes no managed entries and never auto-disables the defaults", () => {
+  test("non-hatch off-cloud boot writes no managed entries and never auto-disables the defaults", () => {
     // Existing installs that upgrade to a version where the workspace
     // carries no entries for the default names get nothing materialized on
     // a normal boot — and therefore nothing auto-disabled. The disabled
@@ -1807,8 +1807,8 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect("status" in (effective["cost-optimized"] ?? {})).toBe(false);
   });
 
-  test("on-platform hatch writes no managed stubs; catalog labels stay bare", () => {
-    process.env.IS_PLATFORM = "true";
+  test("on-cloud hatch writes no managed stubs; catalog labels stay bare", () => {
+    process.env.IS_CLOUD = "true";
 
     const overlayPath = join(WORKSPACE_DIR, "hatch-overlay.json");
     writeFileSync(
@@ -1831,10 +1831,10 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(effective["cost-optimized"]?.label).toBe("Budget");
   });
 
-  test("a managed key missing from profileOrder lands beside its siblings", () => {
-    // An install that predates a newly shipped managed profile, with a custom
+  test("a cloud key missing from profileOrder lands beside its siblings", () => {
+    // An install that predates a newly shipped cloud profile, with a custom
     // profile already in its order. The new key belongs with the other
-    // managed profiles, not after whatever the user has arranged below them.
+    // cloud profiles, not after whatever the user has arranged below them.
     writeConfig({
       llm: {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
@@ -1869,7 +1869,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
   });
 
   test("boot leaves legacy bare labels on managed entries untouched", () => {
-    // Existing off-platform install has bare labels (`label: "Balanced"`)
+    // Existing off-cloud install has bare labels (`label: "Balanced"`)
     // on its managed entries. Boots never rewrite managed entries — there
     // is no label-suffix upgrade pass — so the entries stay byte-identical
     // and the bare labels flow through the effective view.
@@ -1913,7 +1913,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(effective["cost-optimized"]?.label).toBe("Speed");
   });
 
-  test("boot preserves user-customized labels and explicit null on off-platform", () => {
+  test("boot preserves user-customized labels and explicit null on off-cloud", () => {
     // A user-set string that differs from the bare default survives, as
     // does an explicit null (user cleared the label) — boots never touch
     // managed entries, whatever label state they carry.
@@ -1954,10 +1954,10 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(raw.llm.profiles["cost-optimized"].label).toBe("Speed (Managed)");
   });
 
-  test("platform boot leaves a bare label on a managed entry untouched", () => {
-    // An on-platform install with a bare "Balanced" label keeps it — boots
+  test("platform boot leaves a bare label on a cloud entry untouched", () => {
+    // An on-cloud install with a bare "Balanced" label keeps it — boots
     // never rewrite managed entries, and no suffix exists on platform.
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     writeConfig({
       llm: {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
@@ -1980,8 +1980,8 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(config.llm.profiles.balanced?.label).toBe("Balanced");
   });
 
-  test("subsequent off-platform boot preserves user-set status on managed profiles", () => {
-    // Simulate a user who hatched yesterday, then re-enabled the managed
+  test("subsequent off-cloud boot preserves user-set status on cloud profiles", () => {
+    // Simulate a user who hatched yesterday, then re-enabled the cloud
     // Balanced profile (they have platform auth via a separate route).
     writeConfig({
       llm: {
@@ -2019,13 +2019,13 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: OS Beta flag-gated managed profile. The template is defined but
+// Tests: OS Beta flag-gated cloud profile. The template is defined but
 // intentionally NOT part of MANAGED_PROFILE_TEMPLATES, so seedInferenceProfiles
 // must never create it. The flag-gated reconcile creates or removes it based on
 // the `os-beta` feature flag.
 // ---------------------------------------------------------------------------
 
-describe("OS Beta managed profile template", () => {
+describe("OS Beta cloud profile template", () => {
   beforeEach(() => {
     ensureTestDir();
     const resetPaths = [
@@ -2043,13 +2043,13 @@ describe("OS Beta managed profile template", () => {
     }
     ensureTestDir();
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 
   afterEach(() => {
     delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
   });
 

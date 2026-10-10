@@ -40,7 +40,7 @@ plugin(viteAssetUrlStub);
 
 // Tests default to platform mode (matching CI/CD builds). Individual tests
 // that need local mode should mock isLocalClient() instead.
-process.env.VITE_PLATFORM_MODE = "true";
+process.env.VITE_CLOUD_MODE = "true";
 
 // Set a base URL so relative fetch requests (e.g. "/v1/assistants/...")
 // resolve correctly instead of failing against "about:blank".

@@ -1,4 +1,4 @@
-import type { ReleaseListItem } from "./platform-releases.js";
+import type { ReleaseListItem } from "./cloud-releases.js";
 import { compareVersions, versionsEqual } from "./version-compat.js";
 
 export interface UpgradeTargetResolution {
@@ -88,7 +88,7 @@ export interface UpgradePollState {
 }
 
 /**
- * Completion predicate for the platform upgrade poll loop. Pure.
+ * Completion predicate for the cloud upgrade poll loop. Pure.
  *
  * The primary signal is the DB-backed `current_release_version` (works while
  * the service group restarts or the assistant sleeps); the upgrade-status

@@ -14,10 +14,11 @@ import {
   AcpCredentialFormatError,
   assertAcpCredentialFormat,
 } from "../../acp/acp-credentials.js";
-import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
+import { syncAvatarToCloud } from "../../avatar/sync-avatar.js";
+import { syncWorkspaceIdentityToPlatform } from "../../cloud/sync-identity.js";
+import { maybeDefaultSpeechToCloud } from "../../config/cloud-speech-defaults.js";
 import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
-import { maybeDefaultSpeechToManaged } from "../../config/managed-speech-defaults.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import type { CesClient } from "../../credential-execution/client.js";
 import {
@@ -25,8 +26,7 @@ import {
   scrubStoredCredentialFromTranscripts,
 } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
-import { syncWorkspaceIdentityToPlatform } from "../../platform/sync-identity.js";
-import { maybeReseedCapabilitiesAfterManagedCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";
+import { maybeReseedCapabilitiesAfterCloudCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";
 import { validateAnthropicApiKey } from "../../providers/anthropic/client.js";
 import { validateAtlasCloudApiKey } from "../../providers/atlascloud/client.js";
 import { validateBasetenApiKey } from "../../providers/baseten/client.js";
@@ -56,6 +56,7 @@ import {
 } from "../../tools/credentials/metadata-store.js";
 import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
+import { isPlatformCloudCredential } from "./cloud-credentials.js";
 import {
   assertCredentialNotInUse,
   invalidateConnectionsAfterCredentialDelete,
@@ -66,7 +67,6 @@ import {
   NotFoundError,
   RouteError,
 } from "./errors.js";
-import { isPlatformManagedCredential } from "./platform-managed-credentials.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("runtime-http");
@@ -363,12 +363,12 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         }
         assertMetadataWritable();
         await persistCredential(service, field, value);
-        if (isPlatformManagedCredential(service, field)) {
+        if (isPlatformCloudCredential(service, field)) {
           await refreshProvidersAfterSecretChange();
           // Close the first-boot race where the startup capability seed ran before
-          // the managed embedding credential was provisioned, leaving skill/CLI
+          // the cloud embedding credential was provisioned, leaving skill/CLI
           // pages unseeded until restart. Detached, must not block the response.
-          void maybeReseedCapabilitiesAfterManagedCredential(getConfig());
+          void maybeReseedCapabilitiesAfterCloudCredential(getConfig());
           if (field === "assistant_api_key") {
             await notifyCesOfAssistantApiKeyUpdate(value, getCesClient());
           }
@@ -380,12 +380,12 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
           // ID. Fire on each write that completes a piece of that set; the
           // hook no-ops until the connection is complete.
           // Detached, must not block the response.
-          void maybeDefaultSpeechToManaged();
+          void maybeDefaultSpeechToCloud();
           // Same last-write-wins shape: the startup syncs no-op before live
           // registration, so re-enqueue them here. Both dedup and no-op until
           // the client and assistant id exist.
           syncWorkspaceIdentityToPlatform();
-          syncAvatarToPlatform();
+          syncAvatarToCloud();
         }
         log.info({ service, field }, "Credential added via HTTP");
         return { success: true, type, name };

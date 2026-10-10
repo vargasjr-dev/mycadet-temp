@@ -100,7 +100,7 @@ describe("087-memory-router-balanced-profile migration", () => {
   });
 
   test("skips BYOK / non-Anthropic workspaces to avoid breaking memoryRouter", () => {
-    // `balanced` resolves to the managed Anthropic connection, which BYOK
+    // `balanced` resolves to the cloud Anthropic connection, which BYOK
     // installs disable. Rewriting to `balanced` there would silently disable
     // memory injection (getConfiguredProvider returns null). Preserve whatever
     // memoryRouter config the workspace already has — including absence.

@@ -36,7 +36,7 @@ const main = async (): Promise<void> => {
   const platformOrigin = platformOriginFromDevUrl(remoteUrl);
   const buildExitCode = await run(["run", "build:web"], {
     ...process.env,
-    VITE_PLATFORM_MODE: "false",
+    VITE_CLOUD_MODE: "false",
   });
   if (buildExitCode !== 0) {
     process.exit(buildExitCode);
@@ -46,7 +46,7 @@ const main = async (): Promise<void> => {
     await run(["run", "dev:electron-only"], {
       ...process.env,
       CADET_LOCAL_RENDERER: "true",
-      CADET_PLATFORM_URL: platformOrigin,
+      CADET_CLOUD_URL: platformOrigin,
       CADET_WEB_URL: platformOrigin,
     }),
   );

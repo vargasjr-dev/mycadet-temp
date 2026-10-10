@@ -881,7 +881,7 @@ export interface NotificationAvatar {
 }
 
 /**
- * The assistant a notification is from, for the platforms that render a sender
+ * The assistant a notification is from, for the clouds that render a sender
  * rather than the app: its name goes on the first line and its notification
  * avatar becomes the icon.
  */
@@ -1120,9 +1120,9 @@ export interface LockfileAssistant {
   hatchedAt?: string;
   onboardedAt?: string;
   organizationId?: string;
-  platformAssistantId?: string;
-  platformBaseUrl?: string;
-  platformOrganizationId?: string;
+  cloudAssistantId?: string;
+  cloudBaseUrl?: string;
+  cloudOrganizationId?: string;
   resources?: LocalAssistantResources;
 }
 
@@ -1799,13 +1799,13 @@ export interface CompanionVoiceGroup {
 }
 
 export interface CompanionVoiceOption {
-  /** The managed voice's model id. */
+  /** The cloud voice's model id. */
   id: string;
   /** Its character traits, as Settings words them. */
   label: string;
   /** A hosted sample the popover plays for a preview. Empty when none. */
   sampleUrl: string;
-  /** The platform default voice. */
+  /** The cloud default voice. */
   isDefault: boolean;
 }
 
@@ -2442,7 +2442,7 @@ export interface CompanionContext {
    */
   popover?: CompanionPopover;
   /**
-   * Whether the call's assistant has managed voices to pick from, so the call
+   * Whether the call's assistant has cloud voices to pick from, so the call
    * bar draws its voice chevron. Absent is a publisher that predates it.
    */
   voicesPickable?: boolean;

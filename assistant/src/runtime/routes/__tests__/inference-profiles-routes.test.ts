@@ -6,7 +6,7 @@
  *   - bad provider (not in the LLMProvider enum)
  *   - uncataloged model without --allow-unlisted
  *   - missing provider connection
- *   - managed-profile create / update / delete rejection
+ *   - cloud-profile create / update / delete rejection
  *   - the dispatch-availability guard on create / update / set-active
  *
  * Routing-identity creates exercise the happy-path write end-to-end (through
@@ -32,11 +32,11 @@ mock.module("../../../persistence/embeddings/embedding-backend.js", () => ({
   clearEmbeddingBackendCache: () => {},
 }));
 
-// The availability guard judges the Cadet-managed route and the credential
+// The availability guard judges the Cadet Cloud route and the credential
 // store for real; both are stood in for here so tests can pick a state.
 let managedProxyEnabled = true;
-mock.module("../../../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../../../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: managedProxyEnabled,
     cloudBaseUrl: "https://platform.example",
     assistantApiKey: managedProxyEnabled ? "key" : "",
@@ -124,7 +124,7 @@ function seedKeyedConnection(provider: string): void {
   });
 }
 
-/** The Cadet-managed row every routing-identity profile resolves to. */
+/** The Cadet Cloud row every routing-identity profile resolves to. */
 function seedCadetConnection(): void {
   seedConnection("cadet", "cadet", { type: "platform" });
 }
@@ -205,7 +205,7 @@ describe("POST inference/profiles (create) validation", () => {
     ).rejects.toBeInstanceOf(BadRequestError);
   });
 
-  test("creates a cadet profile for a managed-routable model", async () => {
+  test("creates a cadet profile for a cloud-routable model", async () => {
     seedCadetConnection();
     const result = (await call("inference_profiles_create", {
       body: {
@@ -238,7 +238,7 @@ describe("POST inference/profiles (create) validation", () => {
     ).rejects.toThrow(/maxTokens/);
   });
 
-  test("rejects a cadet profile whose model has no managed upstream", async () => {
+  test("rejects a cadet profile whose model has no cloud upstream", async () => {
     await expect(
       call("inference_profiles_create", {
         body: {
@@ -248,7 +248,7 @@ describe("POST inference/profiles (create) validation", () => {
         },
       }),
     ).rejects.toThrow(
-      /"not-a-real-model" is not served by the Cadet managed route/,
+      /"not-a-real-model" is not served by the Cadet Cloud route/,
     );
   });
 
@@ -367,7 +367,7 @@ describe("POST inference/profiles (create) validation", () => {
     ).rejects.toThrow(/does not exist/);
   });
 
-  test("rejects creating a managed default name", async () => {
+  test("rejects creating a cloud default name", async () => {
     await expect(
       call("inference_profiles_create", {
         body: {
@@ -389,7 +389,7 @@ describe("inference-profile writes are availability-aware", () => {
     model: "gemini-3.6-flash",
   };
 
-  test("rejects a BYO provider with no connection and names the managed alternative", async () => {
+  test("rejects a BYO provider with no connection and names the cloud alternative", async () => {
     const promise = call("inference_profiles_create", { body: geminiBody });
     await expect(promise).rejects.toBeInstanceOf(BadRequestError);
     await expect(promise).rejects.toThrow(
@@ -402,7 +402,7 @@ describe("inference-profile writes are availability-aware", () => {
     expect(persistedProfiles()).toEqual({});
   });
 
-  test("falls back to the credential sequence when the managed route is unusable", async () => {
+  test("falls back to the credential sequence when the cloud route is unusable", async () => {
     managedProxyEnabled = false;
     secureKeyResults.clear();
     const promise = call("inference_profiles_create", { body: geminiBody });
@@ -552,7 +552,7 @@ describe("inference-profile writes are availability-aware", () => {
 // ── update validation ─────────────────────────────────────────────────────────
 
 describe("PATCH inference/profiles/:name (update) validation", () => {
-  test("rejects editing a managed default profile", async () => {
+  test("rejects editing a cloud default profile", async () => {
     setConfig("llm", {
       profiles: {
         balanced: {
@@ -567,7 +567,7 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
         pathParams: { name: "balanced" },
         body: { effort: "low" },
       }),
-    ).rejects.toThrow(/managed profile/);
+    ).rejects.toThrow(/cloud profile/);
   });
 
   test("404s an unknown profile", async () => {
@@ -583,11 +583,11 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
 // ── delete protection ───────────────────────────────────────────────────────
 
 describe("DELETE inference/profiles/:name protection", () => {
-  test("rejects deleting a managed default profile", async () => {
+  test("rejects deleting a cloud default profile", async () => {
     setConfig("llm", { profiles: { balanced: { source: "managed" } } });
     await expect(
       call("inference_profiles_delete", { pathParams: { name: "balanced" } }),
-    ).rejects.toThrow(/managed profile/);
+    ).rejects.toThrow(/cloud profile/);
   });
 
   test("404s an unknown profile", async () => {
@@ -796,7 +796,7 @@ describe("GET inference/profiles honors the llm.default blob", () => {
 // ── active-profile setter validation (Finding 3) ──────────────────────────────
 
 describe("POST inference/profiles/:name/validate billing guards", () => {
-  test("gives no verdict for a mix whose winning arm rides the managed route", async () => {
+  test("gives no verdict for a mix whose winning arm rides the cloud route", async () => {
     seedCadetConnection();
     setConfig("llm", {
       profiles: {
@@ -815,7 +815,7 @@ describe("POST inference/profiles/:name/validate billing guards", () => {
     expect(result.check).toBeNull();
   });
 
-  test("gives no verdict when a call-site override routes the probe onto the managed identity", async () => {
+  test("gives no verdict when a call-site override routes the probe onto the cloud identity", async () => {
     seedCadetConnection();
     setConfig("llm", {
       profiles: {

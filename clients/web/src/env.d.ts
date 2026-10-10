@@ -35,9 +35,9 @@ declare global {
     /** Release channel this bundle was built as. `"preview"` or stable otherwise. */
     readonly VITE_CHANNEL?: string;
     /** When set, the app runs in platform (cloud-hosted) mode. Unset = local mode. */
-    readonly VITE_PLATFORM_MODE?: string;
+    readonly VITE_CLOUD_MODE?: string;
     /** When truthy ("1", "true", "yes"), disables platform connectivity in local mode. */
-    readonly VITE_CADET_DISABLE_PLATFORM?: string;
+    readonly VITE_CADET_DISABLE_CLOUD?: string;
     /**
      * Live Google Play listing for ai.mycadet.android. Android install
      * promotion remains hidden when this is unset or invalid.
@@ -46,7 +46,7 @@ declare global {
     /**
      * Override for the live-voice tunnel host (no scheme), e.g. `localhost:8501`
      * for a local `vel up` tunnel. When unset the host is derived at runtime from
-     * the platform host (`tunnel.mycadet.ai`, `tunnel-{env}.mycadet.ai`). See
+     * the cloud host (`tunnel.mycadet.ai`, `tunnel-{env}.mycadet.ai`). See
      * `domains/chat/voice/live-voice/connection.ts`.
      */
     readonly VITE_TUNNEL_HOST?: string;

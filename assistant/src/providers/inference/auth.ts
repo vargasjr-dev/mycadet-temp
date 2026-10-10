@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CADET_MANAGED_PROVIDER } from "../cadet-model-routing.js";
+import { CADET_CLOUD_PROVIDER } from "../cadet-model-routing.js";
 import { PROVIDER_CATALOG } from "../model-catalog.js";
 
 // ---------------------------------------------------------------------------
@@ -12,7 +12,7 @@ import { PROVIDER_CATALOG } from "../model-catalog.js";
  *
  * Runtime-supported variants:
  *   - api_key: look up `credential` in vault, inject as bearer/provider header.
- *   - platform: route via Cadet managed proxy; no client-side credential.
+ *   - platform: route via Cadet Cloud proxy; no client-side credential.
  *   - none: no auth (e.g. Ollama running locally).
  *   - oauth_subscription: OAuth-based subscription auth (e.g. ChatGPT Codex).
  *   - service_account: Google service-account JSON key (Vertex AI); signs a
@@ -46,8 +46,8 @@ export type Auth = z.infer<typeof AuthSchema>;
 /**
  * Derive the auth configuration a provider implies when a client omits an
  * explicit `auth` object: keyless catalog providers (`setupMode: "keyless"`,
- * e.g. ollama) need none, the Cadet-managed sentinel routes via the
- * platform proxy, and every other provider authenticates by API key. Returns
+ * e.g. ollama) need none, the Cadet Cloud sentinel routes via the
+ * cloud proxy, and every other provider authenticates by API key. Returns
  * null when an API key is required but no credential was supplied, so route
  * handlers can reject with a 400. `oauth_subscription` is never derived —
  * the ChatGPT PKCE routes own that connection.
@@ -56,7 +56,7 @@ export function deriveAuthForProvider(
   provider: string,
   credential?: string,
 ): Auth | null {
-  if (provider === CADET_MANAGED_PROVIDER) {
+  if (provider === CADET_CLOUD_PROVIDER) {
     return { type: "platform" };
   }
   const entry = PROVIDER_CATALOG.find((p) => p.id === provider);
@@ -75,14 +75,14 @@ export function deriveAuthForProvider(
  * The auth a connection dispatches with. The stored auth object is
  * authoritative only where it carries a payload (an api_key credential ref,
  * the oauth_subscription marker, a deliberately keyed keyless provider);
- * the cadet provider IS the managed route, so its auth derives from the
+ * the cadet provider IS the cloud route, so its auth derives from the
  * provider and the stored value can never mislead dispatch.
  */
 export function effectiveConnectionAuth(connection: {
   provider: string;
   auth: Auth;
 }): Auth {
-  return connection.provider === CADET_MANAGED_PROVIDER
+  return connection.provider === CADET_CLOUD_PROVIDER
     ? { type: "platform" }
     : connection.auth;
 }
@@ -119,11 +119,11 @@ export type ResolvedAuth =
 export const VALID_CONNECTION_PROVIDERS: readonly string[] = [
   ...new Set([
     ...PROVIDER_CATALOG.map((p) => p.id),
-    // The provider-agnostic Cadet-managed connection stores this sentinel in
+    // The provider-agnostic Cadet Cloud connection stores this sentinel in
     // its `provider` column. The same id owns Cadet-hosted GPU models in the
     // catalog. Keep it allowlisted explicitly so a future catalog rename
     // cannot drop persisted `cadet` rows from the DB loaders.
-    CADET_MANAGED_PROVIDER,
+    CADET_CLOUD_PROVIDER,
     // The ChatGPT-subscription row stores the "chatgpt" routing identity in
     // its `provider` column: the row IS the subscription route (auth
     // modality = provider identity), and dispatch derives the openai
@@ -233,7 +233,7 @@ export const ProviderConnectionSchema = z
     createdAt: z.number().int(),
     updatedAt: z.number().int(),
     /**
-     * Whether this row is the Cadet-managed connection (`cadet`). Derived from
+     * Whether this row is the Cadet Cloud connection (`cadet`). Derived from
      * `MANAGED_CONNECTION_NAMES` in `connections.ts` at serialize time; the
      * DB column does not exist. Clients use this to render the read-only
      * "Cadet" badge + view-only editor and to disable the delete affordance

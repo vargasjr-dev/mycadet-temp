@@ -56,7 +56,7 @@ describe("choice and copy_block surface definitions", () => {
     expect(getSurfaceTypeEnum()).toContain("oauth_connect");
     expect(uiShowTool.description).toContain("recommended");
     expect(uiShowTool.description).toContain("visible copy button");
-    expect(uiShowTool.description).toContain("managed OAuth");
+    expect(uiShowTool.description).toContain("cloud OAuth");
   });
 
   test("choice and oauth_connect are interactive but copy_block is display-only", () => {

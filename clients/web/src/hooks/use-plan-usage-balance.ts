@@ -115,7 +115,7 @@ export function freeTierDailyLeftUsd(
  * Whether the wallet holds credit bought or earned on top of the usage
  * grants. Under the free-tier cap that is the only credit that spends today:
  * the grants' own remainder is frozen until the UTC reset, so a wallet holding
- * nothing but that remainder has nothing to draw on and the platform rejects
+ * nothing but that remainder has nothing to draw on and the cloud rejects
  * the next send. A null balance is unknown, not extra credit.
  */
 export function hasExtraCredit(

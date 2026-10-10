@@ -9,7 +9,7 @@
  * caller needs a listener of its own.
  *
  * Which base URL is correct depends on how the assistant is reachable: a
- * platform pod and a platform-connected assistant are served through a
+ * platform pod and a cloud-connected assistant are served through a
  * managed callback route, a self-hosted deployment through its configured
  * public ingress. `resolveCallbackUrl` owns that decision, and this is the
  * OAuth-shaped entry point to it, mirroring `plugin-api/webhook-url.ts`
@@ -17,7 +17,7 @@
  */
 
 import { loadConfig } from "../config/loader.js";
-import { resolveCallbackUrl } from "./platform-callback-registration.js";
+import { resolveCallbackUrl } from "./cloud-callback-registration.js";
 import {
   getMcpOAuthClientMetadataUrl,
   getOAuthCallbackUrl,
@@ -33,9 +33,9 @@ import {
 export const OAUTH_CALLBACK_PATH = "webhooks/oauth/callback";
 
 /**
- * Registration type recorded with the platform.
+ * Registration type recorded with the cloud.
  *
- * The platform keys a callback route by `(path, type)`, and there is one
+ * The cloud keys a callback route by `(path, type)`, and there is one
  * OAuth route, so one type describes it. Registering the same path under
  * several types would produce duplicate admin rows pointing at the same
  * URL.
@@ -51,7 +51,7 @@ const OAUTH_REGISTRATION_TYPE = "oauth";
  * across attempts, which is what an exact-match `redirect_uri` check needs.
  *
  * @throws when no public ingress is configured and the assistant is not
- *   connected to the platform. There is no URL that would work in that
+ *   connected to the cloud. There is no URL that would work in that
  *   case, and returning a plausible one produces an authorization request
  *   whose callback silently never arrives.
  */
@@ -69,7 +69,7 @@ export async function resolveOauthCallbackUrl(): Promise<string> {
  *
  * A URL-based client id must be HTTPS, and its document must publish the exact
  * redirect URI used by the authorization request. The gateway document is
- * derived from public ingress, so a platform-relayed callback cannot use it.
+ * derived from public ingress, so a cloud-relayed callback cannot use it.
  * Returning undefined preserves Dynamic Client Registration as the SDK's
  * fallback in either case.
  */

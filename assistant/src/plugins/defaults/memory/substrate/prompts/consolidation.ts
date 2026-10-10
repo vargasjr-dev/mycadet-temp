@@ -1182,7 +1182,7 @@ export function renderConsolidationPrompt(
  * page index's reports, `{{OVERLONG_SECTIONS_SECTION}}` from the v3 section
  * scan, and the legacy `{{PROC_TO_SKILLS_SECTION}}` always
  * stripped to empty, so a prompt copied from any past bundled source never
- * leaks a raw placeholder, and a customized prompt can opt into the managed
+ * leaks a raw placeholder, and a customized prompt can opt into the cloud
  * sections.
  *
  * The buffer entries and the repair sections do not wait for opt-in: an

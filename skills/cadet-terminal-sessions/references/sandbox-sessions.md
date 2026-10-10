@@ -18,7 +18,7 @@ This is the **default mode** for any work that doesn't require access to the use
    cadet terminal attach <session-name>
    ```
 
-   > **Note:** `cadet terminal attach` requires a managed (cloud-hosted) assistant. For local/Docker setups, use `tmux attach -t <session-name>` directly.
+   > **Note:** `cadet terminal attach` requires a cloud (cloud-hosted) assistant. For local/Docker setups, use `tmux attach -t <session-name>` directly.
 
    This opens a live, read-write terminal view of that session in the Cadet UI.
 

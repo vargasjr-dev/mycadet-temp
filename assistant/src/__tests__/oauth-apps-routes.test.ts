@@ -47,7 +47,7 @@ mock.module("../oauth/oauth-store.js", () => ({
           logoUrl: null,
           clientIdPlaceholder: null,
           requiresClientSecret: 1,
-          managedServiceConfigKey: "google-oauth",
+          cloudServiceConfigKey: "google-oauth",
           authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
           tokenExchangeUrl: "https://oauth2.googleapis.com/token",
           refreshUrl: null,
@@ -168,7 +168,7 @@ describe("GET /v1/oauth/apps", () => {
         dashboard_url: string | null;
         client_id_placeholder: string | null;
         requires_client_secret: boolean;
-        supports_managed_mode: boolean;
+        supports_cloud_mode: boolean;
       } | null;
       apps: unknown[];
     };
@@ -179,7 +179,7 @@ describe("GET /v1/oauth/apps", () => {
     expect(result.provider!.description).toBe("Google OAuth provider");
     expect(result.provider!.requires_client_secret).toBe(true);
     expect(typeof result.provider!.requires_client_secret).toBe("boolean");
-    expect(result.provider!.supports_managed_mode).toBe(true);
+    expect(result.provider!.supports_cloud_mode).toBe(true);
   });
 
   test("returns null provider when provider does not exist", async () => {

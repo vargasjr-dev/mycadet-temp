@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation, type TFunction } from "@/i18n";
 import {
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId,
+  resolveAssistantNotificationCloudId,
 } from "@/hooks/use-assistant-avatar";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import {
@@ -373,7 +373,7 @@ export function SystemPermissionsCard({
         const identity = createNotificationIdentity(
           scopeId,
           assistant.id,
-          resolveAssistantNotificationPlatformId(assistant),
+          resolveAssistantNotificationCloudId(assistant),
         );
         if (!identity) {
           return undefined;

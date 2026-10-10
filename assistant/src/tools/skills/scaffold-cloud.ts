@@ -1,0 +1,590 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+import { v4 as uuid } from "uuid";
+
+import type { SkillSource } from "../../config/skills.js";
+import { loadSkillCatalog } from "../../config/skills.js";
+import { refreshSkillCapabilityMemories } from "../../daemon/skill-memory-refresh.js";
+import { sanitizeMultilineMessagePreview } from "../../notifications/notification-utils.js";
+import { getConversation } from "../../persistence/conversation-crud.js";
+import { upsertSkillCardInsertJob } from "../../persistence/jobs-store.js";
+import { MEMORY_RETROSPECTIVE_ORIGIN } from "../../plugins/defaults/memory/memory-retrospective-constants.js";
+import { recordSkillUpdate } from "../../plugins/defaults/memory/skill-update-receipt-job.js";
+import {
+  createCloudSkill,
+  getCloudSkillDir,
+} from "../../skills/cloud-store.js";
+import { readInstallMeta } from "../../skills/install-meta.js";
+import { recordWatchdogEvent } from "../../telemetry/watchdog-events-store.js";
+import { getLogger } from "../../util/logger.js";
+import { throwIfCancelled } from "../shared/abort.js";
+import type { ToolContext, ToolExecutionResult } from "../types.js";
+
+const log = getLogger("scaffold-cloud-skill");
+
+/** Watchdog check_name for the per-creation skill-authoring counter. */
+const SKILL_AUTHORED_CHECK_NAME = "skill_authored";
+
+/** Strip embedded newlines/carriage returns to prevent YAML frontmatter injection. */
+function sanitizeFrontmatterValue(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+/**
+ * Self-correcting error for a scaffold call with no activation hints. Matches
+ * the shape of the schema validator's required-field error, which is what a
+ * call through the registered tool hits first; this covers direct callers and
+ * an explicit empty list, which the schema's presence check accepts.
+ */
+const MISSING_ACTIVATION_HINTS =
+  'activation_hints is required: pass 1-4 short trigger phrases stating the intent this skill serves (for example "user asks to deploy staging") so it can be found later by intent, not just by name.';
+
+/**
+ * Self-correcting error for a background overwrite of an existing skill with
+ * no change summary. The schema cannot express the condition (a create and a
+ * user-directed edit need none), so the executor is the enforcement point.
+ */
+const MISSING_CHANGE_SUMMARY =
+  'change_summary is required when updating an existing skill: pass one or two short sentences (under 200 characters) for the person who reads the "Skill updated" notice, naming what you changed and what in the trace prompted it (for example "Added the retry after an expired session and the export endpoint that held steady.").';
+
+/**
+ * Validate + normalize a string-array input (sanitize, drop blanks, dedupe).
+ * Returns `{ error }` on the first invalid element, or `{ value }` holding
+ * the normalized array: undefined when the input is absent, and an empty
+ * array when it was passed empty, since on an overwrite the store keeps the
+ * current value for an absent field and clears it for an empty one. Shared by
+ * the includes / activation_hints / avoid_when inputs so they behave
+ * identically; whether an absent or empty value is acceptable is the
+ * caller's call.
+ * Each element goes through sanitizeFrontmatterValue: activation_hints /
+ * avoid_when are concatenated verbatim into capability memory text (see
+ * buildSkillContent), so an embedded newline could otherwise smuggle an extra
+ * prompt line into a future turn — collapse control chars the same way
+ * name/description are.
+ */
+function normalizeOptionalStringArray(
+  raw: unknown,
+  field: string,
+): { value?: string[]; error?: string } {
+  if (raw === undefined) {
+    return {};
+  }
+  if (!Array.isArray(raw)) {
+    return { error: `${field} must be an array of strings` };
+  }
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (typeof item !== "string") {
+      return { error: `each element in ${field} must be a non-empty string` };
+    }
+    const cleaned = sanitizeFrontmatterValue(item);
+    if (!cleaned) {
+      return { error: `each element in ${field} must be a non-empty string` };
+    }
+    if (seen.has(cleaned)) {
+      continue;
+    }
+    seen.add(cleaned);
+    normalized.push(cleaned);
+  }
+  return { value: normalized };
+}
+
+/** Watchdog check_name counted when a receipt entry could not be recorded. */
+const SKILL_UPDATE_RECEIPT_RECORD_FAILED_CHECK_NAME =
+  "skill_update_receipt_record_failed";
+
+/**
+ * Record that a background pass changed a skill the user already has.
+ *
+ * A newly authored skill announces itself in the conversation through the
+ * `skill_card` surface; an update is announced through a skill-update
+ * receipt instead. The pass runs in a background fork and rewrites the body
+ * of a skill the user may be relying on, and `createCloudSkill` writes
+ * through an atomic rename keeping no prior version, so the receipt is what
+ * puts the change in the background feed alongside the other unattended
+ * work (sweeps, scheduled jobs, heartbeat), where a user already looks to
+ * see what the assistant did on its own. One pass can rewrite several skills
+ * within minutes, so the rewrites accumulate on one pending receipt job
+ * (`plugins/defaults/memory/skill-update-receipt-job.ts`), which announces
+ * the whole burst once it has settled rather than one notification per
+ * rewrite.
+ *
+ * `changeSummary` is the pass's own account of what it changed and is the
+ * entry's body: the receipt is the only place the change surfaces, and a
+ * reader triaging it there has no diff to look at, so an entry that only
+ * names the skill sends them into the skill to find out what happened. The
+ * executor refuses the overwrite without one, so this never runs without it.
+ *
+ * `sourceConversationId` is the conversation the receipt's link resolves to
+ * for this entry (see `home-updates-list.tsx`): the source conversation when
+ * lineage resolved, else none. The run's own conversation is never used in
+ * its place: it is an ephemeral fork the next successful retrospective
+ * garbage-collects, and the receipt job leaves out any entry whose source
+ * is gone by the time it announces, so naming the fork would drop the
+ * entry rather than link it. `entryId` is the producing tool call's id, so a
+ * re-executed call records nothing new. A context with no tool call id (a
+ * direct caller) has no re-execution to guard against, so it gets a fresh
+ * id: a stable key on the run and skill would drop a second rewrite of the
+ * same skill in the same run.
+ *
+ * Best-effort and non-blocking: the skill is already written, and a receipt
+ * that cannot be recorded is a receipt the user will not get, not a reason
+ * to fail or retry a write that already landed. The failure is logged with
+ * the ids and counted, and the tool-invocation history keeps the summary as
+ * audit evidence.
+ */
+function recordBackgroundSkillUpdate(args: {
+  skillId: string;
+  name: string;
+  changeSummary: string;
+  runConversationId: string;
+  sourceConversationId: string | undefined;
+  toolUseId: string | undefined;
+}): void {
+  const entryId = `${args.runConversationId}:${args.toolUseId ?? uuid()}`;
+  try {
+    recordSkillUpdate({
+      entryId,
+      skillId: args.skillId,
+      name: args.name,
+      changeSummary: args.changeSummary,
+      runConversationId: args.runConversationId,
+      ...(args.sourceConversationId
+        ? { sourceConversationId: args.sourceConversationId }
+        : {}),
+    });
+  } catch (err) {
+    log.warn(
+      {
+        err,
+        skillId: args.skillId,
+        runConversationId: args.runConversationId,
+        entryId,
+      },
+      "skill update receipt recording failed; the skill write stands and no receipt will name this update",
+    );
+    try {
+      recordWatchdogEvent({
+        checkName: SKILL_UPDATE_RECEIPT_RECORD_FAILED_CHECK_NAME,
+        value: 1,
+      });
+    } catch {
+      // recordWatchdogEvent already no-ops on opt-out and a missing
+      // telemetry DB; anything past that is not worth surfacing here.
+    }
+  }
+}
+
+/**
+ * Core execution logic for scaffold_cloud_skill.
+ * Exported so bundled-skill executors and tests can call it directly.
+ *
+ * `deps` injects the catalog and conversation-lookup seams so the ownership
+ * backstop's non-managed collision check and the lineage resolution can be
+ * exercised without standing up a real bundled/plugin catalog or a live DB.
+ */
+export async function executeScaffoldCloudSkill(
+  input: Record<string, unknown>,
+  context: ToolContext,
+  deps: {
+    loadCatalog?: () => { id: string; source: SkillSource }[];
+    getConversation?: (
+      id: string,
+    ) => { forkParentConversationId: string | null } | null;
+  } = {},
+): Promise<ToolExecutionResult> {
+  const skillId = input.skill_id;
+  if (typeof skillId !== "string" || !skillId.trim()) {
+    return {
+      content: "Error: skill_id is required and must be a non-empty string",
+      isError: true,
+    };
+  }
+
+  const name = input.name;
+  if (typeof name !== "string" || !name.trim()) {
+    return {
+      content: "Error: name is required and must be a non-empty string",
+      isError: true,
+    };
+  }
+
+  const description = input.description;
+  if (typeof description !== "string" || !description.trim()) {
+    return {
+      content: "Error: description is required and must be a non-empty string",
+      isError: true,
+    };
+  }
+
+  const bodyMarkdown = input.body_markdown;
+  if (typeof bodyMarkdown !== "string" || !bodyMarkdown.trim()) {
+    return {
+      content:
+        "Error: body_markdown is required and must be a non-empty string",
+      isError: true,
+    };
+  }
+
+  // Validate and normalize the string-array inputs. `includes` lists child
+  // skill IDs; activation_hints / avoid_when become the skill's "Use when:" /
+  // "Avoid when:" retrieval signal in memory.
+  const includesResult = normalizeOptionalStringArray(
+    input.includes,
+    "includes",
+  );
+  if (includesResult.error) {
+    return { content: `Error: ${includesResult.error}`, isError: true };
+  }
+  const includes = includesResult.value;
+
+  const activationHintsResult = normalizeOptionalStringArray(
+    input.activation_hints,
+    "activation_hints",
+  );
+  if (activationHintsResult.error) {
+    return { content: `Error: ${activationHintsResult.error}`, isError: true };
+  }
+  const activationHints = activationHintsResult.value;
+  // Hints are the skill's "Use when:" retrieval text and should track the
+  // body, so every write states them: the store would keep the current ones
+  // on an overwrite, but hints for a rewritten procedure are the caller's
+  // to restate, not the store's to assume.
+  if (!activationHints || activationHints.length === 0) {
+    return {
+      content: `Error: ${MISSING_ACTIVATION_HINTS}`,
+      isError: true,
+    };
+  }
+
+  const avoidWhenResult = normalizeOptionalStringArray(
+    input.avoid_when,
+    "avoid_when",
+  );
+  if (avoidWhenResult.error) {
+    return { content: `Error: ${avoidWhenResult.error}`, isError: true };
+  }
+  const avoidWhen = avoidWhenResult.value;
+
+  // Validate and normalize companion files. Each entry carries the file bytes
+  // exactly one way: inline `content`, or `copy_from` naming an on-disk source
+  // the store validates and reads (cloud-store.validateCompanionSource).
+  let files:
+    | Array<{ path: string; content?: string; copyFrom?: string }>
+    | undefined;
+  if (input.files !== undefined) {
+    if (!Array.isArray(input.files)) {
+      return {
+        content:
+          "Error: files must be an array of { path, content | copy_from } objects",
+        isError: true,
+      };
+    }
+    const collected: Array<{
+      path: string;
+      content?: string;
+      copyFrom?: string;
+    }> = [];
+    for (const item of input.files) {
+      if (typeof item !== "object" || item === null) {
+        return {
+          content:
+            "Error: each element in files must be a { path, content | copy_from } object",
+          isError: true,
+        };
+      }
+      const { path, content, copy_from } = item as Record<string, unknown>;
+      if (typeof path !== "string" || !path.trim()) {
+        return {
+          content: "Error: each file must have a non-empty string path",
+          isError: true,
+        };
+      }
+      if ((content === undefined) === (copy_from === undefined)) {
+        return {
+          content: `Error: file "${path}" must set exactly one of content or copy_from`,
+          isError: true,
+        };
+      }
+      if (content !== undefined && typeof content !== "string") {
+        return {
+          content: "Error: each file's content must be a string",
+          isError: true,
+        };
+      }
+      if (copy_from !== undefined && typeof copy_from !== "string") {
+        return {
+          content: "Error: each file's copy_from must be a string path",
+          isError: true,
+        };
+      }
+      collected.push({
+        path: path.trim(),
+        ...(content !== undefined ? { content: content as string } : {}),
+        ...(copy_from !== undefined ? { copyFrom: copy_from as string } : {}),
+      });
+    }
+    if (collected.length > 0) {
+      files = collected;
+    }
+  }
+
+  // Validate and normalize the optional category (lowercased/trimmed for
+  // consistency with the lowercase Skills-UI sidebar buckets). A blank value
+  // is passed through as the store's "clear" signal; the frontmatter builder
+  // never writes a blank category.
+  let category: string | undefined;
+  if (input.category !== undefined) {
+    if (typeof input.category !== "string") {
+      return {
+        content: "Error: category must be a string",
+        isError: true,
+      };
+    }
+    category = input.category.trim().toLowerCase();
+  }
+
+  // The receipt entry's body. Model-authored text bound for a notification
+  // surface, so it gets the same control-character strip and preview clamp as
+  // any other producer-supplied body; blank collapses to absent so the
+  // requirement below treats it as missing rather than recording an empty
+  // entry.
+  let changeSummary: string | undefined;
+  if (input.change_summary !== undefined) {
+    if (typeof input.change_summary !== "string") {
+      return {
+        content: "Error: change_summary must be a string",
+        isError: true,
+      };
+    }
+    const sanitized = sanitizeMultilineMessagePreview(input.change_summary);
+    if (sanitized) {
+      changeSummary = sanitized;
+    }
+  }
+
+  const id = skillId.trim();
+  const fromRetrospective =
+    context.requestOrigin === MEMORY_RETROSPECTIVE_ORIGIN;
+  const author = fromRetrospective ? "assistant" : "user";
+
+  // Whether a cloud SKILL.md already existed before this call. Drives the
+  // ownership backstop below, the created-vs-refined discriminant for the
+  // skill-card enqueue, and the `skill_authored` telemetry counter: only a
+  // genuine CREATE (no pre-existing skill, regardless of the `overwrite`
+  // flag) gets a card or a counter event.
+  const managedSkillExistedBefore = existsSync(
+    join(getCloudSkillDir(id), "SKILL.md"),
+  );
+
+  // Ownership backstop (retrospective origin only): the retrospective may author
+  // a skill ONLY if it owns it. Fail closed on either of two collisions.
+  if (fromRetrospective) {
+    // (1) A non-managed catalog entry (bundled, plugin, workspace, extra) owns
+    // this id. Creating a cloud skill with that id SHADOWS the catalog entry,
+    // and an overwrite under the cloud dir would never touch it — either way
+    // the retrospective must not stand on a skill it did not author. This covers
+    // create AND overwrite. The prompt directs the model to skip when an
+    // existing skill of any source already covers the procedure; this enforces
+    // it.
+    const loadCatalog = deps.loadCatalog ?? (() => loadSkillCatalog());
+    const nonManagedOwner = loadCatalog().find(
+      (s) => s.id === id && s.source !== "managed",
+    );
+    if (nonManagedOwner) {
+      return {
+        content: `Error: skill "${id}" is owned by a ${nonManagedOwner.source} skill; the retrospective may not create, overwrite, or shadow it. The procedure is already covered — skip it.`,
+        isError: true,
+      };
+    }
+
+    // (2) A managed skill already exists on disk but is not VERIFIABLY
+    // assistant-authored. `readInstallMeta` returns null for a fresh create AND
+    // for an existing skill whose install-meta/version.json is missing or
+    // corrupt — so gate on the SKILL.md existing and the author tag reading
+    // exactly "assistant". This fails closed on user-authored, untagged, and
+    // unverifiable (missing/corrupt meta) managed skills alike, matching the
+    // prune side where such skills are never pruned.
+    if (
+      managedSkillExistedBefore &&
+      readInstallMeta(getCloudSkillDir(id))?.author !== "assistant"
+    ) {
+      return {
+        content: `Error: skill "${id}" is not verifiably assistant-authored; the retrospective may not overwrite it or write companion files into it. Author a new skill instead.`,
+        isError: true,
+      };
+    }
+  }
+
+  // A background overwrite announces itself through the receipt entry
+  // recorded in recordBackgroundSkillUpdate, whose body is this summary, so
+  // the write is refused without one. The error returns to the pass in the same turn and
+  // it retries with the field, the way a missing activation_hints does.
+  // Checked after the ownership backstop so a pass that may not touch the
+  // skill hears that first, and only for a call that asked to overwrite: a
+  // call without the flag is blocked by the cloud store's own overwrite
+  // error, and hearing about the summary instead would cost it a retry that
+  // still cannot succeed. Before any write, so nothing is lost.
+  if (
+    fromRetrospective &&
+    managedSkillExistedBefore &&
+    input.overwrite === true &&
+    !changeSummary
+  ) {
+    return { content: `Error: ${MISSING_CHANGE_SUMMARY}`, isError: true };
+  }
+
+  // Conversation lineage (retrospective origin only). The retrospective runs
+  // in a background fork of the conversation it distilled the procedure from,
+  // so the fork's parent is this skill's durable source conversation.
+  // Resolution is best-effort: a missing or unresolvable parent must never
+  // fail the scaffold.
+  let sourceConversationId: string | undefined;
+  let retrospectiveConversationId: string | undefined;
+  if (fromRetrospective && context.conversationId) {
+    retrospectiveConversationId = context.conversationId;
+    try {
+      const lookupConversation = deps.getConversation ?? getConversation;
+      sourceConversationId =
+        lookupConversation(context.conversationId)?.forkParentConversationId ??
+        undefined;
+    } catch {
+      // Lineage stays unset; the scaffold itself still proceeds.
+    }
+  }
+
+  // Normalized frontmatter values, shared by the persisted SKILL.md and the
+  // skill-card payload below so the card always shows the values as persisted.
+  const normalizedName = sanitizeFrontmatterValue(name);
+  const normalizedDescription = sanitizeFrontmatterValue(description);
+  const normalizedEmoji =
+    typeof input.emoji === "string"
+      ? sanitizeFrontmatterValue(input.emoji)
+      : undefined;
+
+  throwIfCancelled(context);
+
+  const result = createCloudSkill({
+    id,
+    name: normalizedName,
+    description: normalizedDescription,
+    bodyMarkdown: bodyMarkdown,
+    emoji: normalizedEmoji,
+    overwrite: input.overwrite === true,
+    includes,
+    activationHints,
+    avoidWhen,
+    category,
+    files,
+    author,
+    sourceConversationId,
+    retrospectiveConversationId,
+  });
+
+  if (!result.created) {
+    return { content: `Error: ${result.error}`, isError: true };
+  }
+
+  refreshSkillCapabilityMemories();
+
+  // Central adoption counter for skill authoring (admin analytics groups on
+  // the watchdog check_name). Genuine creates only — refinements of a
+  // pre-existing skill are not new capabilities and would double-count.
+  // `authored_by` distinguishes proactive retrospective authoring from
+  // user-directed scaffolds; the skill id itself stays out of the detail
+  // bag — ids derive from user/model content (a name can encode a
+  // customer or procedure), and watchdog events are metadata-only with no
+  // deletion-redaction tie to the source conversation. Never throws: a
+  // telemetry failure must not fail a scaffold that already succeeded.
+  if (!managedSkillExistedBefore) {
+    try {
+      recordWatchdogEvent({
+        checkName: SKILL_AUTHORED_CHECK_NAME,
+        value: 1,
+        detail: {
+          authored_by: fromRetrospective ? "retrospective" : "user",
+        },
+      });
+    } catch {
+      // recordWatchdogEvent already no-ops on opt-out and a missing
+      // telemetry DB; anything past that is not worth surfacing here.
+    }
+  }
+
+  // A background pass changed a skill that already existed. Creates announce
+  // themselves through the skill card below; updates land on the skill-update
+  // receipt that announces the whole burst. Covers an explicit
+  // `overwrite: true` refinement as well as any other background write onto
+  // a pre-existing skill.
+  if (
+    fromRetrospective &&
+    managedSkillExistedBefore &&
+    retrospectiveConversationId &&
+    changeSummary
+  ) {
+    recordBackgroundSkillUpdate({
+      skillId: id,
+      name: normalizedName,
+      changeSummary,
+      runConversationId: retrospectiveConversationId,
+      sourceConversationId,
+      toolUseId: context.toolUseId,
+    });
+  }
+
+  // Surface a genuine retrospective CREATE to the user as a skill card on the
+  // source conversation, via the durable `skill_card_insert` delivery job
+  // (memory-retrospective-skill-card.ts). The creation site is the one place
+  // that knows created-vs-refined (`managedSkillExistedBefore` — an
+  // `overwrite: true` call on a skill that did not previously exist is still a
+  // create), the request origin, and the fork-parent lineage as facts.
+  // Refinements of a pre-existing skill never get a card, and delivery needs a
+  // resolved source conversation to land in. Best-effort: an enqueue failure
+  // must never fail the scaffold — the skill is already created.
+  if (
+    fromRetrospective &&
+    !managedSkillExistedBefore &&
+    sourceConversationId &&
+    retrospectiveConversationId
+  ) {
+    try {
+      upsertSkillCardInsertJob({
+        sourceConversationId,
+        runConversationId: retrospectiveConversationId,
+        skills: [
+          {
+            skillId: id,
+            name: normalizedName,
+            description: normalizedDescription,
+            ...(normalizedEmoji ? { emoji: normalizedEmoji } : {}),
+          },
+        ],
+      });
+      log.info(
+        {
+          skillId: id,
+          sourceConversationId,
+          runConversationId: retrospectiveConversationId,
+        },
+        "skill card: enqueued skill_card_insert for retrospective-authored skill",
+      );
+    } catch (err) {
+      log.warn(
+        { err, skillId: id, sourceConversationId },
+        "skill card: failed to enqueue skill_card_insert; skill creation unaffected",
+      );
+    }
+  }
+
+  return {
+    content: JSON.stringify({
+      created: true,
+      skill_id: id,
+      path: result.path,
+    }),
+    isError: false,
+  };
+}

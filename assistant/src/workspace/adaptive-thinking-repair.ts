@@ -3,15 +3,15 @@ import { join } from "node:path";
 
 import { getCatalogProviderForModel } from "../providers/model-catalog.js";
 
-// Enable adaptive thinking on the managed "balanced" and "quality-optimized"
+// Enable adaptive thinking on the cloud "balanced" and "quality-optimized"
 // profiles.
 //
 // The assistant-side seed defaults (MANAGED_PROFILE_TEMPLATES in
 // seed-inference-profiles.ts) already ship thinking: { enabled: true,
 // streamThinking: true } for both profiles, which normalizes to
 // { type: "adaptive" } on the wire. Off-platform (BYOK) instances pick this
-// up on every boot because the seeder overwrites managed profiles. On-platform
-// instances preserve existing profiles (the platform overlay is authoritative),
+// up on every boot because the seeder overwrites cloud profiles. On-platform
+// instances preserve existing profiles (the cloud overlay is authoritative),
 // so instances that were hatched before thinking was enabled in the templates
 // are stuck with thinking disabled or absent.
 //
@@ -47,7 +47,7 @@ const TARGET_PROFILES = ["balanced", "quality-optimized"] as const;
  *
  * Idempotent: profiles that already have thinking enabled are skipped.
  */
-export function repairAdaptiveThinkingOnManagedProfiles(
+export function repairAdaptiveThinkingOnCloudProfiles(
   workspaceDir: string,
 ): void {
   const configPath = join(workspaceDir, "config.json");

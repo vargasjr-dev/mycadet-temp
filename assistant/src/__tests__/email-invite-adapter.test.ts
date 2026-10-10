@@ -2,9 +2,9 @@
  * Tests for the email invite adapter.
  *
  * Verifies that the email adapter resolves the assistant's address from the
- * shared registered-inbox reader (the platform is the only writer of managed
+ * shared registered-inbox reader (the cloud is the only writer of managed
  * inbox registrations) and falls back to `undefined` when no address is
- * registered or the platform cannot be asked.
+ * registered or the cloud cannot be asked.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -49,14 +49,14 @@ describe("emailInviteAdapter", () => {
     expect(handle).toBeUndefined();
   });
 
-  test("returns undefined when the platform is not connected", async () => {
+  test("returns undefined when the cloud is not connected", async () => {
     mockInboxState = { status: "no_platform" };
 
     const handle = await resolveAdapterHandle(emailInviteAdapter);
     expect(handle).toBeUndefined();
   });
 
-  test("returns undefined when the platform cannot be asked", async () => {
+  test("returns undefined when the cloud cannot be asked", async () => {
     mockInboxState = { status: "unavailable", detail: "HTTP 503" };
 
     const handle = await resolveAdapterHandle(emailInviteAdapter);
@@ -71,7 +71,7 @@ describe("emailInviteAdapter", () => {
   });
 
   test("a local email.address config value cannot supply the handle", async () => {
-    // Registration lives on the platform; a stray config value (a key
+    // Registration lives on the cloud; a stray config value (a key
     // nothing writes) must not surface as the assistant's address.
     setConfig("email", { address: "stale@example.com" });
     mockInboxState = { status: "none" };

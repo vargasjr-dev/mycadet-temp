@@ -4,7 +4,7 @@
  *
  * One component rather than two copies because the two are the same control
  * doing the same job, and the look is load-bearing in a way that has to stay
- * consistent. A ring around a core, at the size the platform's own camera uses,
+ * consistent. A ring around a core, at the size the cloud's own camera uses,
  * so it is the one thing on the surface nobody has to be taught.
  *
  * White, with no fill of its own. Both surfaces darken the band the shutter

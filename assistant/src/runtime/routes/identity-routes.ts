@@ -59,7 +59,7 @@ function getMemoryInfo(): MemoryInfo {
   try {
     const bytesToMb = (b: number) =>
       Math.round((b / (1024 * 1024)) * 100) / 100;
-    // In platform-managed mode the daemon shares its Node process with whatever
+    // In cloud-managed mode the daemon shares its Node process with whatever
     // the container is doing as a whole; `process.memoryUsage().rss` only sees
     // this process's resident set, which understates the container footprint
     // operators care about. Read the cgroup usage file directly so /v1/health

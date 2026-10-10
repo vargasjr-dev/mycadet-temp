@@ -132,7 +132,7 @@ export function isMobileBrowser(): boolean {
   if (typeof window.matchMedia !== "function") {
     return false;
   }
-  // Input capability is a separate axis from platform (docs/PLATFORM_ADAPTATION.md),
+  // Input capability is a separate axis from platform (docs/CLOUD_ADAPTATION.md),
   // so this last resort must not promote a desktop OS on its own: a Windows,
   // ChromeOS, or Linux tablet reports coarse hoverless input and is still a
   // desktop. `Macintosh` is deliberately absent, since no Mac has a touchscreen

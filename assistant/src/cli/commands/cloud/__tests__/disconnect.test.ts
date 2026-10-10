@@ -79,11 +79,11 @@ describe("assistant cloud disconnect", () => {
     expect(parsed.previousBaseUrl).toBe("https://cloud.mycadet.ai");
   });
 
-  test("rejects with error when running on a platform-hosted assistant", async () => {
+  test("rejects with error when running on a cloud-hosted assistant", async () => {
     mockResponse = {
       ok: false,
       error:
-        "Cannot disconnect from the platform on a platform-hosted assistant.",
+        "Cannot disconnect from the cloud on a cloud-hosted assistant.",
       statusCode: 422,
     };
 
@@ -97,7 +97,7 @@ describe("assistant cloud disconnect", () => {
     mockResponse = {
       ok: false,
       error:
-        "Not connected to a platform. Nothing to disconnect.\n\nRun 'assistant cloud status' to check connection state.",
+        "Not connected to a cloud. Nothing to disconnect.\n\nRun 'assistant cloud status' to check connection state.",
       statusCode: 422,
     };
 

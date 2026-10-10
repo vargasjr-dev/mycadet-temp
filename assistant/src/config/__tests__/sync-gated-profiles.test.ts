@@ -73,19 +73,19 @@ describe("reconcileFlagGatedProfiles", () => {
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     setOverridesForTesting({});
     invalidateConfigCache();
   });
 
   afterEach(() => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     setOverridesForTesting({});
     invalidateConfigCache();
   });
 
-  test("flag on materializes the managed os-beta profile after balanced", () => {
-    process.env.IS_PLATFORM = "true";
+  test("flag on materializes the cloud os-beta profile after balanced", () => {
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
 
@@ -127,7 +127,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag on is idempotent across repeated runs", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
 
@@ -136,8 +136,8 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(reconcileFlagGatedProfiles()).toBe(false);
   });
 
-  test("flag on preserves user overrides on the managed profile", () => {
-    process.env.IS_PLATFORM = "true";
+  test("flag on preserves user overrides on the cloud profile", () => {
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -165,8 +165,8 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(effective.effort).toBe("low");
   });
 
-  test("flag off removes a managed os-beta and applies fallbacks", () => {
-    process.env.IS_PLATFORM = "true";
+  test("flag off removes a cloud os-beta and applies fallbacks", () => {
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -188,7 +188,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag off with no os-beta present is a no-op", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": false });
 
@@ -196,7 +196,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag off scrubs os-beta from user mix arms, keeping >= 2-arm mixes", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -233,7 +233,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag off removes a two-arm mix that loses os-beta and repoints refs", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -279,7 +279,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag off shortens a three-arm mix to two surviving arms", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -312,7 +312,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("flag off clears a call-site profile reference to os-beta", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true });
     reconcileFlagGatedProfiles();
@@ -341,7 +341,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("a user-owned os-beta profile is never touched", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     writeConfig({
       llm: {
         default: { provider: "anthropic" },
@@ -369,8 +369,8 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(before);
   });
 
-  test("auto-profile flag on materializes the managed auto profile at the head of the order", () => {
-    process.env.IS_PLATFORM = "true";
+  test("auto-profile flag on materializes the cloud auto profile at the head of the order", () => {
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "auto-profile": true });
 
@@ -398,8 +398,8 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(getEffectiveProfile(raw.llm.profiles, "auto")).toBeDefined();
   });
 
-  test("auto-profile flag off removes the managed auto profile and repoints its references", () => {
-    process.env.IS_PLATFORM = "true";
+  test("auto-profile flag off removes the cloud auto profile and repoints its references", () => {
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "auto-profile": true });
     reconcileFlagGatedProfiles();
@@ -425,7 +425,7 @@ describe("reconcileFlagGatedProfiles", () => {
   });
 
   test("os-beta and auto-profile reconcile independently in one pass", () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     seedBalancedConfig();
     setOverridesForTesting({ "os-beta": true, "auto-profile": true });
     expect(reconcileFlagGatedProfiles()).toBe(true);

@@ -68,7 +68,7 @@ export interface PreferencesUsageReading {
  * separates the two: a null that is still landing from one that is the answer.
  *
  * `conversationId` is the chat the reading is for. It reaches the wallet
- * status so a managed per-conversation profile pin classifies `exhausted`
+ * status so a cloud per-conversation profile pin classifies `exhausted`
  * against the route that chat actually dispatches on, rather than against the
  * global default.
  */
@@ -140,7 +140,7 @@ export function usePreferencesUsage(
   // first reading the hook produces already carries the claim. `spent` widens
   // the same condition to the Pro sub whose grants total nothing, whose full
   // bar is the plan's fallback rather than a ratio the summary can derive.
-  const { settled: claimSettled, routeBurnsManaged } =
+  const { settled: claimSettled, routeBurnsCloud } =
     useByokCreditRouteVerdict(
       enabled &&
         (spent || overallSpent || (grantRatio != null && grantRatio >= 1)) &&
@@ -165,13 +165,13 @@ export function usePreferencesUsage(
         ratio,
         spent,
         // A used-up day alarms once nothing but frozen usage credit is left in
-        // the wallet: that is exactly when the platform rejects the next send.
-        // Only on a managed route, though: a BYOK conversation dispatches on
+        // the wallet: that is exactly when the cloud rejects the next send.
+        // Only on a cloud route, though: a BYOK conversation dispatches on
         // the user's own key and never meets the cap.
-        exhausted: settled && routeBurnsManaged && spent && !hasExtraCredit,
+        exhausted: settled && routeBurnsCloud && spent && !hasExtraCredit,
         // With extra credit behind the spent day, the next turn draws on it.
         usingExtraCredits:
-          settled && routeBurnsManaged && spent && hasExtraCredit,
+          settled && routeBurnsCloud && spent && hasExtraCredit,
       },
       settled,
     };
@@ -186,13 +186,13 @@ export function usePreferencesUsage(
       // then arrive on the same render instead of the strip growing the
       // popover a beat later.
       exhausted: settled && spent && isExhausted,
-      // A managed route is the whole basis for the claim, so it is required
+      // A cloud route is the whole basis for the claim, so it is required
       // rather than inferred from `suppress` not being set. The gate lowers
       // suppression for a fail-open null and for a BYOK route with spend on
       // some other surface, and neither means this conversation's next turn
-      // touches the managed wallet.
+      // touches the cloud wallet.
       usingExtraCredits:
-        settled && routeBurnsManaged && spent && hasWalletCredit,
+        settled && routeBurnsCloud && spent && hasWalletCredit,
     },
     settled,
   };

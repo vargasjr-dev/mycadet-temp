@@ -1,4 +1,4 @@
-import { getManagedUpstream } from "../providers/cadet-model-routing.js";
+import { getCloudUpstream } from "../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
 import {
   catalogMaxOutputTokens,
@@ -16,10 +16,10 @@ import {
   type DefaultProfileKey,
   type DefaultProfileProvider,
   FALLBACK_PROFILE_BY_KEY,
+  isCloudOnlyProfileKey,
   isDefaultProfileKey,
   isDefaultProfileProvider,
   isFlagGatedProfileKey,
-  isManagedOnlyProfileKey,
   JEV_MANAGED_PROFILE_KEY,
   OS_BETA_PROFILE_KEY,
 } from "./default-profile-names.js";
@@ -44,10 +44,10 @@ import {
  * structured as an intent × provider matrix: each default profile is an
  * intent, and each provider that can serve default profiles has a concrete
  * implementation of that intent (model, token budget, effort, thinking).
- * The `cadet` column is the platform-managed implementation and the
+ * The `cadet` column is the cloud-managed implementation and the
  * `chatgpt` column is the ChatGPT-subscription implementation; the other
  * columns are the BYOK implementations resolved through `llm.default`
- * on off-platform installs.
+ * on off-cloud installs.
  *
  * Nothing materializes default bodies into workspace config: runtime readers
  * resolve profiles through `getEffectiveProfiles`/`getEffectiveProfile`
@@ -75,7 +75,7 @@ export type DefaultProfileTemplate = Omit<
 type ProfileImpls = Record<DefaultProfileKey, DefaultProfileTemplate>;
 
 /**
- * The `cadet` column: platform-managed implementations, stamped
+ * The `cadet` column: cloud-managed implementations, stamped
  * `provider: "cadet"` — dispatch derives the upstream from the model.
  * Models are pinned (never intents): the intent tables are keyed by
  * concrete dispatch providers, and the model is what selects the upstream.
@@ -140,17 +140,17 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
     },
   },
   "latency-optimized": {
-    // The managed latency class, also what the live-voice front model runs on.
+    // The cloud latency class, also what the live-voice front model runs on.
     // Its leading tokens are the turn-taking verdict, so what this profile
     // optimizes is the tail of time-to-first-token rather than the median: a
     // verdict slower than `voice.frontModel.endpointDecisionTimeoutMs`
     // trips the speculative fail-open commit in live-voice-session.ts, which
     // is audible dead air.
     //
-    // Two constraints bind the model id. Its managed credentials must be
+    // Two constraints bind the model id. Its cloud credentials must be
     // provisioned in every environment, and it alone selects the upstream:
     // `provider` below is the provider-agnostic managed sentinel, so
-    // `getManagedUpstream` resolves the real upstream from the model's catalog
+    // `getCloudUpstream` resolves the real upstream from the model's catalog
     // owner. This model is the one live-voice TTFT drives validated.
     model: "gpt-5.6-luna",
     provider: "cadet",
@@ -172,7 +172,7 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
 };
 
 /**
- * The managed backup profiles, one per default profile: the route a primary's
+ * The cloud backup profiles, one per default profile: the route a primary's
  * `fallbackProfile` pointer names. Cadet column only: backups never
  * materialize for BYOK or chatgpt installs. Like the primaries, models are
  * pinned (never intents) and stamped `provider: "cadet"`, so dispatch
@@ -392,8 +392,8 @@ export const PROFILE_IMPLS: Record<
 >;
 
 /**
- * The managed Jev profile: TypeSafe's System One decision model through the
- * platform proxy. Managed column only, because the platform is the only
+ * The cloud Jev profile: TypeSafe's System One decision model through the
+ * cloud proxy. Managed column only, because the cloud is the only
  * route the catalog offers for it here, and never a conversation profile,
  * because `jev-latest` returns structured answers rather than chat text
  * (`supportsText: false` on the `typesafe` catalog entry). Its budget is
@@ -412,7 +412,7 @@ export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
 };
 
 /**
- * The Auto profile: the managed Balanced body under its own label, so that
+ * The Auto profile: the cloud Balanced body under its own label, so that
  * anything dispatching the name directly runs Balanced. The per-message
  * choice among the defaults happens in the agent loop, not here (see
  * `AUTO_PROFILE_KEY`). No `fallbackProfile`: the code-owned fallback mapping
@@ -433,8 +433,8 @@ export const AUTO_PROFILE_TEMPLATE: DefaultProfileTemplate = (() => {
 })();
 
 /**
- * Managed profiles, i.e. the `cadet` column keyed by profile name, plus the
- * managed backup profiles and the managed Jev profile. Backups come after the
+ * Cloud profiles, i.e. the `cadet` column keyed by profile name, plus the
+ * managed backup profiles and the cloud Jev profile. Backups come after the
  * primaries, which is what places them after the primaries in the seeded
  * `profileOrder`: the seeder inserts missing managed keys in this record's
  * order. Keyed by the user-facing defaults only: an internal profile is
@@ -490,7 +490,7 @@ export const USER_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
   );
 
 /**
- * Flag-gated managed profile. NOT in `MANAGED_PROFILE_TEMPLATES`, so the
+ * Flag-gated cloud profile. NOT in `MANAGED_PROFILE_TEMPLATES`, so the
  * unconditional boot seed never creates it. Reconciled in/out by
  * the flag-gated profile reconcile based on the `os-beta` feature flag.
  * Balanced defaults, with lower reasoning effort while the profile is in beta.
@@ -537,7 +537,7 @@ export const CODE_OWNED_PROFILE_NAMES = new Set<string>([
   JEV_MANAGED_PROFILE_KEY,
 ]);
 
-// All managed profiles, including the flag-gated os-beta, are invariant:
+// All cloud profiles, including the flag-gated os-beta, are invariant:
 // their MANAGED-SOURCE entries are read-only to user-facing writes except
 // re-enabling a disabled one (enforced at commitConfigWrite). A user-owned
 // profile sharing one of these names is NOT locked — invariance is gated on
@@ -614,14 +614,14 @@ for (const key of DEFAULT_PROFILE_KEYS) {
     if (impl.model != null) {
       const routable =
         impl.provider === "cadet"
-          ? getManagedUpstream(impl.model) !== null
+          ? getCloudUpstream(impl.model) !== null
           : impl.provider === "chatgpt"
             ? isCodexSubscriptionModel(impl.model)
             : isModelInCatalog(impl.provider, impl.model);
       if (!routable) {
         throw new Error(
           `PROFILE_IMPLS[${key}][${provider}] references model "${impl.model}" ` +
-            `which is not ${impl.provider === "cadet" ? "served by any managed upstream" : impl.provider === "chatgpt" ? "in CODEX_SUBSCRIPTION_MODEL_IDS" : `in PROVIDER_CATALOG for provider "${impl.provider}"`}. ` +
+            `which is not ${impl.provider === "cadet" ? "served by any cloud upstream" : impl.provider === "chatgpt" ? "in CODEX_SUBSCRIPTION_MODEL_IDS" : `in PROVIDER_CATALOG for provider "${impl.provider}"`}. ` +
             `Update model-catalog.ts or default-profile-catalog.ts.`,
         );
       }
@@ -630,31 +630,31 @@ for (const key of DEFAULT_PROFILE_KEYS) {
 }
 
 // Backup profiles get the same eager verification as the cadet column: a
-// pinned model that no managed upstream serves would make the fallback route
+// pinned model that no cloud upstream serves would make the fallback route
 // undispatchable exactly when it is needed. The cross-provider rule (backup
 // upstream differs from the primary's) is asserted in
 // __tests__/default-profile-catalog-fallback.test.ts.
 for (const key of BACKUP_PROFILE_KEYS) {
   const impl = BACKUP_PROFILE_IMPLS[key];
-  if (impl.model == null || getManagedUpstream(impl.model) === null) {
+  if (impl.model == null || getCloudUpstream(impl.model) === null) {
     throw new Error(
       `BACKUP_PROFILE_IMPLS[${key}] references model "${impl.model ?? ""}" ` +
-        `which is not served by any managed upstream. ` +
+        `which is not served by any cloud upstream. ` +
         `Update model-catalog.ts or default-profile-catalog.ts.`,
     );
   }
 }
 
-// The managed Jev profile pins a model the platform proxy must front, and the
+// The cloud Jev profile pins a model the cloud proxy must front, and the
 // judges depend on it being the non-text TypeSafe model rather than a chat
 // model that happens to share the id.
 if (
-  getManagedUpstream(JEV_MANAGED_PROFILE_TEMPLATE.model ?? "") !== "typesafe"
+  getCloudUpstream(JEV_MANAGED_PROFILE_TEMPLATE.model ?? "") !== "typesafe"
 ) {
   throw new Error(
     `JEV_MANAGED_PROFILE_TEMPLATE references model "${JEV_MANAGED_PROFILE_TEMPLATE.model ?? ""}" ` +
-      `which the managed route does not serve through typesafe. ` +
-      `Update model-catalog.ts, platform-proxy/constants.ts, or default-profile-catalog.ts.`,
+      `which the cloud route does not serve through typesafe. ` +
+      `Update model-catalog.ts, cloud-proxy/constants.ts, or default-profile-catalog.ts.`,
   );
 }
 
@@ -706,8 +706,8 @@ function buildDefaultProfileEntries(): Record<string, ProfileEntry> {
 
 /**
  * The materialized code-default bodies keyed by profile name — the
- * code-owned content a managed-source workspace entry resolves to. These are
- * the `cadet` column (the managed implementations).
+ * code-owned content a cloud-source workspace entry resolves to. These are
+ * the `cadet` column (the cloud implementations).
  *
  * Materialized once at module load, so this is the shipped catalog. The
  * provider-aware resolvers (`resolveDefaultProfileForProvider`,
@@ -773,13 +773,13 @@ function resolveAgainstBody(
   if (body == null) {
     // A managed stub is the workspace's slot for a code-owned profile, never
     // a profile of its own, so with no body behind it there is nothing to
-    // resolve. Only a managed-only name (a backup, the Jev profile) reaches
+    // resolve. Only a cloud-only name (a backup, the Jev profile) reaches
     // this branch with a stub (the default keys always have a body), and it
     // reaches it on the columns where those profiles do not exist. Resolving
     // to the stub would list a profile with no provider or model and let a
     // reference to it look valid, which is precisely what `LLMSchema` rejects
     // on those columns.
-    if (isManagedOnlyProfileKey(name) && workspace?.source === "managed") {
+    if (isCloudOnlyProfileKey(name) && workspace?.source === "managed") {
       return undefined;
     }
     return workspace;
@@ -865,14 +865,14 @@ function defaultProfileBodyForProvider(
   defaultBlob: LLMDefaultConfig | undefined,
 ): ProfileEntry | undefined {
   if (!isDefaultProfileKey(name)) {
-    // Backup profiles and the managed Jev profile exist on the managed
+    // Backup profiles and the cloud Jev profile exist on the cloud
     // (`cadet`) column only: under a BYOK or chatgpt default provider the
     // primaries carry no `fallbackProfile` pointers, and neither may
     // materialize, since the install may hold no credential for their
-    // provider. A blob with no usable selection resolves to the managed
+    // provider. A blob with no usable selection resolves to the cloud
     // column, so it keeps them.
     if (
-      isManagedOnlyProfileKey(name) &&
+      isCloudOnlyProfileKey(name) &&
       !backupProfilesResolveUnderDefaultProvider(defaultBlob)
     ) {
       return undefined;
@@ -882,7 +882,7 @@ function defaultProfileBodyForProvider(
   // The blob's `provider` is the loose provider set: only a value the intent
   // × provider matrix can implement selects a column; anything else — no
   // provider, a keyless ollama, a user-endpoint openai-compatible — resolves
-  // to the managed column, which is what the frozen bodies carry.
+  // to the cloud column, which is what the frozen bodies carry.
   const provider = defaultBlob?.provider;
   if (provider == null || !isDefaultProviderChoice(provider)) {
     return CODE_DEFAULT_PROFILE_ENTRIES[name];
@@ -925,12 +925,12 @@ function clampMaxTokensToModelCap(body: ProfileEntry): ProfileEntry {
  * record all runtime readers of `llm.profiles` should consume; the raw
  * workspace record is a write-path concern.
  *
- * Deliberately provider-agnostic: it lists the managed backups whatever
+ * Deliberately provider-agnostic: it lists the cloud backups whatever
  * `llm.default` says, because it resolves names against the passed
  * catalog alone and never reads config. Internal resolution and reference
  * validation use `getEffectiveProfilesForProvider`; user-facing selectors use
  * `getUserSelectableProfilesForProvider`, which additionally removes backups
- * from the managed column. Keeping those views separate lets automatic
+ * from the cloud column. Keeping those views separate lets automatic
  * fallback resolve an internal route without offering it as a direct choice.
  */
 export function getEffectiveProfiles(
@@ -976,7 +976,7 @@ export function getEffectiveProfilesForProvider(
       continue;
     }
     // Nothing resolved, so the name must not survive from the workspace
-    // spread above: a backup carrying only a managed stub on a column that
+    // spread above: a backup carrying only a cloud stub on a column that
     // has no backups would otherwise be listed as an available profile with
     // no provider or model behind it.
     delete effective[name];

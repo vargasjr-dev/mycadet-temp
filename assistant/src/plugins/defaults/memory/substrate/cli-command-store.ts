@@ -159,12 +159,12 @@ async function runSeedV2CliCommandEntries(generation: number): Promise<void> {
 
     // Sparse (BM25/TF) encoding is computed locally; only the dense vectors
     // require `embedWithBackend`, which is unconfigured during the cold-start
-    // window before a managed-proxy embedding credential is provisioned. A
+    // window before a cloud-proxy embedding credential is provisioned. A
     // dense-embed failure is non-fatal to the in-memory cache: the v3 needle
     // finder lane reads CLI capabilities from `entries` / the page index, NOT
     // from Qdrant, so the cache is populated from the local Commander tree
     // regardless of backend state and commands stay discoverable from first
-    // boot. Only the dense Qdrant upsert is skipped; the managed-credential
+    // boot. Only the dense Qdrant upsert is skipped; the cloud-credential
     // reseed and the v3 maintain pass backfill the dense vectors on recovery.
     const nextEntries = new Map<string, CliCommandEntry>();
     let denseVectors: number[][] = [];

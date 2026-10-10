@@ -158,7 +158,7 @@ describe("getModelProfiles", () => {
     );
   });
 
-  test("default profile descriptions use the managed column without a default provider", () => {
+  test("default profile descriptions use the cloud column without a default provider", () => {
     const result = listProfiles();
     expect(result.find((p) => p.key === "quality-optimized")?.description).toBe(
       "High-quality results with the most capable model",

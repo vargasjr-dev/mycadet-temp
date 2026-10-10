@@ -877,7 +877,7 @@ export class Conversation {
    * `NSHomeDirectory()`). Populated from `HostProxyTransportMetadata` when
    * a message arrives from an interface that supports host-proxy tools
    * (see `supportsHostProxy`). Consumed by the `<workspace>` block renderer
-   * so platform-managed (containerized) daemons show the user's actual
+   * so cloud-managed (containerized) daemons show the user's actual
    * client-side home dir instead of the container's `os.homedir()`.
    * @internal
    */

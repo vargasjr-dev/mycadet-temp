@@ -16,7 +16,7 @@ import {
 
 describe("the call chords' captions", () => {
   /**
-   * The platform is named rather than detected: the test DOM reports whichever
+   * The cloud is named rather than detected: the test DOM reports whichever
    * machine runs it, and the spelling under test is the Mac's.
    */
   test("spell each key under Option, in the Mac's glyphs", () => {

@@ -76,13 +76,13 @@ function makeKeyedCredentials(
 describe("tunnel origin derivation", () => {
   // getCloudBaseUrl falls back to this env var; pin it absent so the
   // missing-credential cases below are deterministic on dev machines.
-  const savedPlatformUrl = process.env.CADET_PLATFORM_URL;
+  const savedCloudUrl = process.env.CADET_CLOUD_URL;
   beforeAll(() => {
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
   });
   afterAll(() => {
-    if (savedPlatformUrl !== undefined) {
-      process.env.CADET_PLATFORM_URL = savedPlatformUrl;
+    if (savedCloudUrl !== undefined) {
+      process.env.CADET_CLOUD_URL = savedCloudUrl;
     }
   });
 
@@ -104,9 +104,9 @@ describe("tunnel origin derivation", () => {
     ).toBeNull();
   });
 
-  test("derives the tunnel origin from CADET_PLATFORM_URL when TUNNEL_BASE_URL is unset", async () => {
+  test("derives the tunnel origin from CADET_CLOUD_URL when TUNNEL_BASE_URL is unset", async () => {
     const server = makeFakeServer();
-    process.env.CADET_PLATFORM_URL = "https://staging-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://staging-cloud.mycadet.ai";
     const handler = createSpeechRelayUpgradeHandler(
       makeConfig({ tunnelBaseUrl: undefined }),
       "stt",
@@ -132,16 +132,16 @@ describe("tunnel origin derivation", () => {
   });
 
   test("falls back to prod tunnel for an off-convention or missing platform base URL", async () => {
-    for (const platformBaseUrl of [
+    for (const cloudBaseUrl of [
       "http://localhost:8000",
       "not a url",
       undefined,
     ]) {
       const server = makeFakeServer();
-      if (platformBaseUrl === undefined) {
-        delete process.env.CADET_PLATFORM_URL;
+      if (cloudBaseUrl === undefined) {
+        delete process.env.CADET_CLOUD_URL;
       } else {
-        process.env.CADET_PLATFORM_URL = platformBaseUrl;
+        process.env.CADET_CLOUD_URL = cloudBaseUrl;
       }
       const handler = createSpeechRelayUpgradeHandler(
         makeConfig({ tunnelBaseUrl: undefined }),
@@ -165,9 +165,9 @@ describe("tunnel origin derivation", () => {
     }
   });
 
-  test("an explicit TUNNEL_BASE_URL wins over CADET_PLATFORM_URL", async () => {
+  test("an explicit TUNNEL_BASE_URL wins over CADET_CLOUD_URL", async () => {
     const server = makeFakeServer();
-    process.env.CADET_PLATFORM_URL = "https://staging-cloud.mycadet.ai";
+    process.env.CADET_CLOUD_URL = "https://staging-cloud.mycadet.ai";
     const handler = createSpeechRelayUpgradeHandler(makeConfig(), "stt", {
       credentials: makeKeyedCredentials({
         "credential/cadet/assistant_api_key": "vk-1",
@@ -267,7 +267,7 @@ describe("createSpeechRelayUpgradeHandler — gate", () => {
   });
 
   test("forwards the tts voice model to tunnel", async () => {
-    // Regression: the daemon sends the selected managed voice as `model`;
+    // Regression: the daemon sends the selected cloud voice as `model`;
     // a gateway that rejects it silently breaks voice selection (the
     // daemon's synthesis fails before tunnel ever sees the session).
     const server = makeFakeServer();

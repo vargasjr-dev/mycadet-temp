@@ -1,7 +1,7 @@
 import { recordTelemetryEvent } from "./telemetry-events-outbox.js";
 
 /**
- * Server-side bounds from the platform `ConfigSettingTelemetryEventSerializer`.
+ * Server-side bounds from the cloud `ConfigSettingTelemetryEventSerializer`.
  * Values are clamped at record time so an oversize pair degrades to a
  * truncated event instead of a per-event ingest rejection.
  */

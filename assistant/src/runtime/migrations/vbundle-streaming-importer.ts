@@ -333,9 +333,9 @@ export async function streamCommitImport(
         // cleanupTempDir() in the catch — a safe no-op on a missing path
         // — and mapThrownToResult translates VersionIncompatibleError into
         // the version_incompatible result shape. Catches legacy bundles
-        // whose ExportJob row predates the platform compat-column rollout
+        // whose ExportJob row predates the cloud compat-column rollout
         // (compat columns NULL → platform gate skipped) and any future
-        // drift between the platform gate and the manifest.
+        // drift between the cloud gate and the manifest.
         const compatResult = policy.evaluateRuntimeCompatibility(
           manifest.compatibility,
           APP_VERSION,
@@ -1061,13 +1061,13 @@ export async function streamCommitImport(
   }
 
   // Preserve the target's `cadet:*` credential metadata entries across
-  // the swap. Django's post-hatch provisioning on the platform writes
+  // the swap. Django's post-hatch provisioning on the cloud writes
   // `cadet:assistant_api_key` / `platform_assistant_id` / `webhook_secret`
   // via POST /v1/secrets, which upserts into the live
   // workspace's `data/credentials/metadata.json`. Without this merge the
   // swap would replace that file with the source's copy (which has no
   // cadet entries on local sources), and the gateway's
-  // `readServiceCredentials` would stop finding the platform API key.
+  // `readServiceCredentials` would stop finding the cloud API key.
   //
   // Executes in the temp workspace only — no effect on the live workspace
   // — so a failure here leaves pre-swap state untouched. Any filesystem

@@ -1,14 +1,14 @@
 /**
  * Tests for the boot-maintenance helpers in `boot-maintenance.ts`:
  *
- * - `maybeReseedCapabilitiesAfterManagedCredential`: the secrets route calls
- *   this when a managed-proxy credential lands, to close the first-boot race
+ * - `maybeReseedCapabilitiesAfterCloudCredential`: the secrets route calls
+ *   this when a cloud-proxy credential lands, to close the first-boot race
  *   where the daemon's startup capability seed (skills + CLI commands) runs
- *   before the platform provisions the managed embedding credential — the
+ *   before the cloud provisions the cloud embedding credential — the
  *   seed's embed throws and the synthetic capability pages never reach the
  *   page index. The reseed must fire only when the substrate is active AND the
- *   managed-proxy prerequisites are now satisfied, so self-hosted / BYOK
- *   assistants (no managed proxy) are never made to run a doomed embed. When
+ *   cloud-proxy prerequisites are now satisfied, so self-hosted / BYOK
+ *   assistants (no cloud proxy) are never made to run a doomed embed. When
  *   v3 is live it then enqueues a `memory_v3_maintain` job so v3 picks up the
  *   capability pages immediately instead of waiting out the 6h maintain
  *   backstop.
@@ -67,8 +67,8 @@ const pageStoreDelegates: {
   hasConceptPages: async () => true,
 };
 
-mock.module("../../../../../providers/platform-proxy/context.js", () => ({
-  hasManagedProxyPrereqs: async () => proxyState.prereqs,
+mock.module("../../../../../providers/cloud-proxy/context.js", () => ({
+  hasCloudProxyPrereqs: async () => proxyState.prereqs,
 }));
 
 // `config/memory-v3-gate.js` is deliberately NOT mocked. It is pure (its only
@@ -115,7 +115,7 @@ mock.module("../../../../../daemon/embedding-reconcile.js", () => ({
 
 const {
   maybeRebuildConceptCollection,
-  maybeReseedCapabilitiesAfterManagedCredential,
+  maybeReseedCapabilitiesAfterCloudCredential,
 } = await import("../boot-maintenance.js");
 
 /**
@@ -156,11 +156,11 @@ afterEach(() => {
   proxyState.prereqs = true;
 });
 
-describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
-  test("reseeds both skill and CLI entries when v2 is enabled and managed-proxy prereqs are satisfied", async () => {
+describe("maybeReseedCapabilitiesAfterCloudCredential", () => {
+  test("reseeds both skill and CLI entries when v2 is enabled and cloud-proxy prereqs are satisfied", async () => {
     proxyState.prereqs = true;
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV2(true));
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV2(true));
 
     expect(seedSkill).toHaveBeenCalledTimes(1);
     expect(seedCli).toHaveBeenCalledTimes(1);
@@ -169,7 +169,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
   test("enqueues a v3 maintain pass after reseeding when v3 is live", async () => {
     proxyState.prereqs = true;
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV3());
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV3());
 
     expect(enqueueJob).toHaveBeenCalledTimes(1);
     expect(enqueueJob).toHaveBeenCalledWith("memory_v3_maintain", {});
@@ -178,7 +178,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
   test("reseeds but does not enqueue a v3 maintain pass when v3 is not live", async () => {
     proxyState.prereqs = true;
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV2(true));
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV2(true));
 
     expect(seedSkill).toHaveBeenCalledTimes(1);
     expect(seedCli).toHaveBeenCalledTimes(1);
@@ -186,17 +186,17 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
   });
 
   test("no-op when v2 memory is disabled", async () => {
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV2(false));
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV2(false));
 
     expect(seedSkill).not.toHaveBeenCalled();
     expect(seedCli).not.toHaveBeenCalled();
     expect(enqueueJob).not.toHaveBeenCalled();
   });
 
-  test("no-op for non-managed assistants (managed-proxy prereqs not satisfied)", async () => {
+  test("no-op for non-cloud assistants (cloud-proxy prereqs not satisfied)", async () => {
     proxyState.prereqs = false;
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV2(true));
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV2(true));
 
     expect(seedSkill).not.toHaveBeenCalled();
     expect(seedCli).not.toHaveBeenCalled();
@@ -211,7 +211,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
 
     // Must not reject — the helper contains each seed's failure so a doomed
     // embed never propagates back to the credential-store caller.
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV2(true));
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV2(true));
 
     expect(seedCli).toHaveBeenCalledTimes(1);
   });
@@ -222,7 +222,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
       throw new Error('Embedding backend "gemini" is not configured');
     });
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV3());
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV3());
 
     // The CLI catalog seeded, so v3 must still rebuild its lanes — a single
     // catalog failure cannot suppress the maintain pass.
@@ -237,7 +237,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
     // the field. The CLI reseed completes normally.
     seedSkill.mockImplementationOnce(() => new Promise<void>(() => {}));
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV3(), {
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV3(), {
       reseedTimeoutMs: 20,
     });
 
@@ -258,7 +258,7 @@ describe("maybeReseedCapabilitiesAfterManagedCredential", () => {
         }),
     );
 
-    await maybeReseedCapabilitiesAfterManagedCredential(configWithV3(), {
+    await maybeReseedCapabilitiesAfterCloudCredential(configWithV3(), {
       reseedTimeoutMs: 10,
     });
 

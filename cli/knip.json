@@ -3,7 +3,7 @@
     "src/**/*.test.ts",
     "src/**/__tests__/**/*.ts",
     "src/lib/version-compat.ts",
-    "src/lib/platform-releases.ts",
+    "src/lib/cloud-releases.ts",
     "src/lib/cli-error.ts",
     "scripts/**/*.ts"
   ],

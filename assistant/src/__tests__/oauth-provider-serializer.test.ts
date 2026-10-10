@@ -28,7 +28,7 @@ function makeRow(overrides: Partial<OAuthProviderRow> = {}): OAuthProviderRow {
     pingBody: null,
     revokeUrl: null,
     revokeBodyTemplate: null,
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
     managedServiceIsPaid: false,
     displayLabel: null,
     description: null,
@@ -114,14 +114,14 @@ describe("serializeProvider", () => {
     expect(result.identityResponsePaths).toBeNull();
   });
 
-  test("supportsManagedMode is true when managedServiceConfigKey is non-null", () => {
-    const row = makeRow({ managedServiceConfigKey: "google-managed" });
+  test("supportsManagedMode is true when cloudServiceConfigKey is non-null", () => {
+    const row = makeRow({ cloudServiceConfigKey: "google-managed" });
     const result = serializeProvider(row)!;
     expect(result.supportsManagedMode).toBe(true);
   });
 
-  test("supportsManagedMode is false when managedServiceConfigKey is null", () => {
-    const row = makeRow({ managedServiceConfigKey: null });
+  test("supportsManagedMode is false when cloudServiceConfigKey is null", () => {
+    const row = makeRow({ cloudServiceConfigKey: null });
     const result = serializeProvider(row)!;
     expect(result.supportsManagedMode).toBe(false);
   });
@@ -276,7 +276,7 @@ describe("serializeProviderSummary", () => {
       dashboardUrl: "https://console.cloud.google.com",
       clientIdPlaceholder: "your-client-id.apps.googleusercontent.com",
       requiresClientSecret: 1,
-      managedServiceConfigKey: "google-managed",
+      cloudServiceConfigKey: "google-managed",
     });
 
     const result = serializeProviderSummary(row)!;
@@ -289,7 +289,7 @@ describe("serializeProviderSummary", () => {
       client_id_placeholder: "your-client-id.apps.googleusercontent.com",
       requires_client_secret: true,
       logo_url: null,
-      supports_managed_mode: true,
+      supports_cloud_mode: true,
       managed_service_is_paid: false,
       feature_flag: null,
       category: "productivity",
@@ -311,7 +311,7 @@ describe("serializeProviderSummary", () => {
 
   test("exposes the tenant host a per-tenant provider needs at connect", () => {
     // Shopify's OAuth endpoints live on the merchant's own host, so a client
-    // has to collect it before the managed flow can start. The summary is the
+    // has to collect it before the cloud flow can start. The summary is the
     // only provider metadata the web client reads, so it carries the ask.
     const shopify = serializeProviderSummary(makeRow({ provider: "shopify" }))!;
     expect(shopify.tenant_host).toEqual({
@@ -368,10 +368,10 @@ describe("serializeProviderSummary", () => {
     expect(result.requires_client_secret).toBe(false);
   });
 
-  test("supports_managed_mode is false when managedServiceConfigKey is null", () => {
-    const row = makeRow({ managedServiceConfigKey: null });
+  test("supports_cloud_mode is false when cloudServiceConfigKey is null", () => {
+    const row = makeRow({ cloudServiceConfigKey: null });
     const result = serializeProviderSummary(row)!;
-    expect(result.supports_managed_mode).toBe(false);
+    expect(result.supports_cloud_mode).toBe(false);
   });
 
   test("returns null for null input", () => {

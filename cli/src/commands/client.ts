@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
@@ -30,7 +30,7 @@ import {
   getLockfileData,
   renameLockfileAssistantIfPresent,
   upsertRendererLockfileAssistant,
-  replacePlatformAssistants,
+  replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
@@ -64,13 +64,13 @@ import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
   fetchOrganizationId,
-  fetchPlatformAssistants,
-  getPlatformUrl,
+  fetchCloudAssistants,
+  getCloudUrl,
   getWebUrl,
-  readPlatformToken,
-  savePlatformToken,
-  clearPlatformToken,
-} from "../lib/platform-client";
+  readCloudToken,
+  saveCloudToken,
+  clearCloudToken,
+} from "../lib/cloud-client";
 import { tuiLog } from "../lib/tui-log";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { relaunchDetached } from "../lib/detached-process.js";
@@ -87,7 +87,7 @@ const TokenBodySchema = z.object({ token: z.unknown() }).nullable();
 
 const SyncPlatformBodySchema = z.object({
   syncPlatform: z.unknown().optional(),
-  platformAssistants: z.array(z.record(z.string(), z.unknown())).optional(),
+  cloudAssistants: z.array(z.record(z.string(), z.unknown())).optional(),
   organizationId: z.string().optional(),
   rename: z
     .object({ assistantId: z.string(), name: z.string() })
@@ -133,10 +133,10 @@ interface ParsedArgs {
   assistantName?: string;
   /** Assistant data root (home-collapsed) for the TUI details panel. */
   workspaceRoot?: string;
-  /** "cadet" for platform-hosted assistants, undefined for local. */
+  /** "cadet" for cloud-hosted assistants, undefined for local. */
   cloud?: string;
-  /** Platform session token (X-Session-Token), set when isManagedCloud(cloud). */
-  platformToken?: string;
+  /** Platform session token (X-Session-Token), set when isCloudHome(cloud). */
+  cloudToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
   /** Interface identifier sent as X-Cadet-Interface-Id on all requests. */
@@ -145,7 +145,7 @@ interface ParsedArgs {
   flagEnvVars: Record<string, string>;
   /** Parsed --flag overrides: kebab-case key -> typed value (for web injection). */
   parsedFlagOverrides: Record<string, boolean | string>;
-  disablePlatform: boolean;
+  disableCloud: boolean;
   /** Auto-open the web interface in the default browser (--interface web only). */
   openBrowser: boolean;
   /** Explicit web server port (--interface web only). Binds strictly — no scan. */
@@ -179,10 +179,10 @@ export function parseArgs(): ParsedArgs {
   const { envVars: cliFlagVars, remaining: argsWithoutFlags } =
     parseFeatureFlagArgs(process.argv.slice(3));
   const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
-  const disablePlatformAmbient =
-    process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
-  let disablePlatform =
-    disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
+  const disableCloudAmbient =
+    process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
+  let disableCloud =
+    disableCloudAmbient === "true" || disableCloudAmbient === "1";
   const args = argsWithoutFlags;
 
   // Build parsedFlagOverrides from the extracted env vars:
@@ -222,8 +222,8 @@ export function parseArgs(): ParsedArgs {
     if (arg === "--help" || arg === "-h") {
       printUsage();
       process.exit(0);
-    } else if (arg === "--disable-platform") {
-      disablePlatform = true;
+    } else if (arg === "--disable-cloud") {
+      disableCloud = true;
     } else if (arg === "--no-open") {
       openBrowserPref = false;
     } else if (arg === "--background") {
@@ -312,14 +312,14 @@ export function parseArgs(): ParsedArgs {
   // other topology — local, docker, and "paired" (a remote assistant paired
   // from another machine) — uses a bearer guardian JWT. Both are skipped
   // entirely when --token supplies the credential, so no saved creds are read.
-  const platformToken = bearerTokenOverride
+  const cloudToken = bearerTokenOverride
     ? undefined
-    : isManagedCloud(cloud)
-      ? (readPlatformToken() ?? undefined)
+    : isCloudHome(cloud)
+      ? (readCloudToken() ?? undefined)
       : undefined;
   const bearerToken = bearerTokenOverride
     ? bearerTokenOverride
-    : isManagedCloud(cloud)
+    : isCloudHome(cloud)
       ? undefined
       : (loadGuardianToken(entry?.assistantId ?? "")?.accessToken ?? undefined);
 
@@ -365,12 +365,12 @@ export function parseArgs(): ParsedArgs {
     assistantName,
     workspaceRoot,
     cloud,
-    platformToken,
+    cloudToken,
     bearerToken,
     interfaceId,
     flagEnvVars,
     parsedFlagOverrides,
-    disablePlatform,
+    disableCloud,
     openBrowser: openBrowserPref,
     webPort,
     background,
@@ -401,7 +401,7 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
                               (--interface web). Prints the URL, PID, and log
                               path, then returns to the shell.
     --flag <key=value>         Feature flag override (repeatable, kebab-case key)
-    --disable-platform         Suppress all outbound platform API calls
+    --disable-cloud         Suppress all outbound platform API calls
     -h, --help                 Show this help message
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
@@ -421,19 +421,19 @@ ${ANSI.bold}EXAMPLES:${ANSI.reset}
 `);
 }
 
-async function maybeHydratePlatformAssistantName(
+async function maybeHydrateCloudAssistantName(
   assistantId: string,
   assistantName: string | undefined,
   cloud: string | undefined,
-  platformToken: string | undefined,
+  cloudToken: string | undefined,
 ): Promise<string | undefined> {
-  if (!isManagedCloud(cloud) || assistantName || !platformToken) {
+  if (!isCloudHome(cloud) || assistantName || !cloudToken) {
     return assistantName;
   }
 
   try {
     const matchedAssistant = (
-      await fetchPlatformAssistants(platformToken)
+      await fetchCloudAssistants(cloudToken)
     ).find((assistant) => assistant.id === assistantId);
     const hydratedName = matchedAssistant?.name.trim();
     if (!hydratedName) {
@@ -500,18 +500,18 @@ const PAIRING_CANCEL_PATTERN = /^(?:\/assistant)?\/__local\/pairing-cancel$/;
 const GUARDIAN_TOKEN_PATTERN =
   /^(?:\/assistant)?\/__local\/guardian-token\/([^/]+)$/;
 const PLATFORM_SESSION_PATTERN =
-  /^(?:\/assistant)?\/__local\/platform-session$/;
+  /^(?:\/assistant)?\/__local\/cloud-session$/;
 
 // The loopback platform session token. Persisted via the same store the CLI
 // uses (so `cadet client` restarts and CLI logins stay in sync), cached here
 // to keep it off the per-request proxy path. Set only after the SPA validates
 // the loopback `state`, so an unsolicited /callback can't fixate a session.
-let platformSessionToken: string | null | undefined;
+let cloudSessionToken: string | null | undefined;
 function currentPlatformToken(): string | null {
-  if (platformSessionToken === undefined) {
-    platformSessionToken = readPlatformToken();
+  if (cloudSessionToken === undefined) {
+    cloudSessionToken = readCloudToken();
   }
-  return platformSessionToken;
+  return cloudSessionToken;
 }
 
 // Whether to attach a host-owned credential to a proxied request. The browser
@@ -582,8 +582,8 @@ async function handleLocalEndpoints(
   // platform. The browser never holds a session cookie.
   if (PLATFORM_SESSION_PATTERN.test(pathname)) {
     if (req.method === "DELETE") {
-      clearPlatformToken();
-      platformSessionToken = null;
+      clearCloudToken();
+      cloudSessionToken = null;
       return Response.json({ ok: true });
     }
     if (req.method === "POST") {
@@ -598,8 +598,8 @@ async function handleLocalEndpoints(
           { status: 400 },
         );
       }
-      savePlatformToken(token);
-      platformSessionToken = token;
+      saveCloudToken(token);
+      cloudSessionToken = token;
       return Response.json({ ok: true });
     }
     return new Response(null, { status: 405 });
@@ -627,10 +627,10 @@ async function handleLocalEndpoints(
         );
       }
       let result;
-      if (body.syncPlatform && body.platformAssistants) {
-        result = replacePlatformAssistants(
+      if (body.syncPlatform && body.cloudAssistants) {
+        result = replaceCloudAssistants(
           lockfilePaths,
-          body.platformAssistants,
+          body.cloudAssistants,
           body.organizationId,
         );
       } else if (body.rename) {
@@ -1303,17 +1303,17 @@ async function spawnBackgroundWebInterface(
  */
 export function buildWebInterfaceConfig(opts: {
   webUrl: string;
-  platformUrl: string;
-  disablePlatform: boolean;
+  cloudUrl: string;
+  disableCloud: boolean;
 }): Record<string, unknown> {
-  const { webUrl, platformUrl, disablePlatform } = opts;
-  return { webUrl, platformUrl, disablePlatform };
+  const { webUrl, cloudUrl, disableCloud } = opts;
+  return { webUrl, cloudUrl, disableCloud };
 }
 
 async function runWebInterface(
   flagEnvVars: Record<string, string>,
   parsedFlagOverrides: Record<string, boolean | string>,
-  disablePlatform: boolean,
+  disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
@@ -1327,7 +1327,7 @@ async function runWebInterface(
     return runViteDevServer(
       webSourceDir,
       flagEnvVars,
-      disablePlatform,
+      disableCloud,
       openInBrowser,
       webPort,
     );
@@ -1339,18 +1339,18 @@ async function runWebInterface(
       `${ANSI.bold}--interface web${ANSI.reset}: unable to locate ` +
         `@mycadet/web assets.\n\n` +
         `  npm/bunx install:   npm install @mycadet/web\n` +
-        `  source checkout:    cd clients/web && VITE_PLATFORM_MODE=false bun run build`,
+        `  source checkout:    cd clients/web && VITE_CLOUD_MODE=false bun run build`,
     );
     process.exit(1);
   }
 
   const rawIndexHtml = await Bun.file(path.join(distDir, "index.html")).text();
-  const platformUrl = getPlatformUrl();
+  const cloudUrl = getCloudUrl();
   const webUrl = getWebUrl();
   const safeJson = (v: unknown) =>
     JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
   const configJson = safeJson(
-    buildWebInterfaceConfig({ webUrl, platformUrl, disablePlatform }),
+    buildWebInterfaceConfig({ webUrl, cloudUrl, disableCloud }),
   );
   const hasOverrides = Object.keys(parsedFlagOverrides).length > 0;
   const flagOverridesSnippet = hasOverrides
@@ -1380,9 +1380,9 @@ async function runWebInterface(
       return Response.redirect(SPA_BASE, 302);
     }
 
-    // Loopback auth: the platform redirects here after login with
+    // Loopback auth: the cloud redirects here after login with
     // ?state=...&session_token=... — forward into the SPA, which validates the
-    // `state` nonce before registering the token via /__local/platform-session.
+    // `state` nonce before registering the token via /__local/cloud-session.
     if (pathname === "/callback") {
       return Response.redirect(`/account/platform-callback${url.search}`, 302);
     }
@@ -1404,9 +1404,9 @@ async function runWebInterface(
       pathname.startsWith("/_allauth/") ||
       pathname.startsWith("/accounts/")
     ) {
-      const target = new URL(pathname + url.search, platformUrl);
+      const target = new URL(pathname + url.search, cloudUrl);
       const headers = new Headers(req.headers);
-      headers.set("Host", new URL(platformUrl).host);
+      headers.set("Host", new URL(cloudUrl).host);
       headers.delete("Origin");
       headers.delete("Referer");
 
@@ -1430,7 +1430,7 @@ async function runWebInterface(
           headers.set("X-Session-Token", sessionToken);
         }
       } else if (sessionToken) {
-        // allauth / accounts: the platform expects the Django session cookie.
+        // allauth / accounts: the cloud expects the Django session cookie.
         headers.set(
           "Cookie",
           `sessionid=${sessionToken}; __Secure-sessionid=${sessionToken}`,
@@ -1507,7 +1507,7 @@ async function runWebInterface(
     console.log(`Port ${preferredPort} in use; using ${port}.`);
   }
   // Advertise `localhost` (not `127.0.0.1`) so the app origin matches the host
-  // the platform hardcodes in its loopback callback. We bind both loopback
+  // the cloud hardcodes in its loopback callback. We bind both loopback
   // families above so `localhost` reaches us whichever one it resolves to.
   const webInterfaceUrl = `http://localhost:${port}${SPA_BASE}`;
   console.log(`Cadet web interface: ${webInterfaceUrl}`);
@@ -1526,11 +1526,11 @@ async function runWebInterface(
 async function runViteDevServer(
   webSourceDir: string,
   flagEnvVars: Record<string, string>,
-  disablePlatform: boolean,
+  disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
-  const platformUrl = getPlatformUrl();
+  const cloudUrl = getCloudUrl();
 
   // Build VITE_CADET_FLAG_* vars so Vite exposes them to the browser bundle.
   const viteFlagVars: Record<string, string> = {};
@@ -1555,11 +1555,11 @@ async function runViteDevServer(
       ...process.env,
       ...flagEnvVars,
       ...viteFlagVars,
-      ...(disablePlatform ? { VITE_CADET_DISABLE_PLATFORM: "true" } : {}),
-      VITE_PLATFORM_MODE: "false",
-      API_PROXY_TARGET: platformUrl,
+      ...(disableCloud ? { VITE_CADET_DISABLE_CLOUD: "true" } : {}),
+      VITE_CLOUD_MODE: "false",
+      API_PROXY_TARGET: cloudUrl,
       CADET_WEB_URL: getWebUrl(),
-      CADET_PLATFORM_URL: platformUrl,
+      CADET_CLOUD_URL: cloudUrl,
       PORT: String(port),
     },
   });
@@ -1590,7 +1590,7 @@ async function runViteDevServer(
  * Return a possibly-refreshed bearer token for the TUI's startup auth.
  *
  * Only a STORED guardian token is refreshable: platform session auth
- * (`isManagedCloud(cloud)`) and ephemeral `--token` overrides (whose token won't
+ * (`isCloudHome(cloud)`) and ephemeral `--token` overrides (whose token won't
  * match the store) are left untouched, as is a token that's still fresh. When
  * the stored token has passed its `refreshAfter` (or expiry) and a refresh
  * token is available, refresh once via the concurrency-safe refreshGuardianToken
@@ -1603,7 +1603,7 @@ export async function resolveFreshBearerToken(
   bearerToken: string | undefined,
   cloud: string | undefined,
 ): Promise<string | undefined> {
-  if (isManagedCloud(cloud) || !bearerToken || !assistantId) return bearerToken;
+  if (isCloudHome(cloud) || !bearerToken || !assistantId) return bearerToken;
 
   const stored = loadGuardianToken(assistantId);
   // Refresh only the stored token (an ephemeral --token won't match), and only
@@ -1637,19 +1637,19 @@ export const client = Object.assign(
     assistantName: parsedAssistantName,
     workspaceRoot,
     cloud,
-    platformToken,
+    cloudToken,
     bearerToken,
     interfaceId,
     flagEnvVars,
     parsedFlagOverrides,
-    disablePlatform,
+    disableCloud,
     openBrowser: openInBrowser,
     webPort,
     background,
   } = parseArgs();
 
-  if (disablePlatform) {
-    process.env.CADET_DISABLE_PLATFORM = "true";
+  if (disableCloud) {
+    process.env.CADET_DISABLE_CLOUD = "true";
   }
 
   if (interfaceId === WEB_INTERFACE_ID) {
@@ -1660,7 +1660,7 @@ export const client = Object.assign(
     await runWebInterface(
       flagEnvVars,
       parsedFlagOverrides,
-      disablePlatform,
+      disableCloud,
       openInBrowser,
       webPort,
     );
@@ -1675,23 +1675,23 @@ export const client = Object.assign(
     interfaceId,
   });
 
-  const assistantName = await maybeHydratePlatformAssistantName(
+  const assistantName = await maybeHydrateCloudAssistantName(
     assistantId,
     parsedAssistantName,
     cloud,
-    platformToken,
+    cloudToken,
   );
 
   // Build pre-constructed request headers merged from auth + client registration.
   // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
   let auth: Record<string, string> | undefined;
-  if (isManagedCloud(cloud) && platformToken) {
-    const orgId = await fetchOrganizationId(platformToken).catch((err) => {
+  if (isCloudHome(cloud) && cloudToken) {
+    const orgId = await fetchOrganizationId(cloudToken).catch((err) => {
       tuiLog.warn("failed to fetch organization id", { err: String(err) });
       return undefined;
     });
     auth = {
-      "X-Session-Token": platformToken,
+      "X-Session-Token": cloudToken,
       ...(orgId ? { "Cadet-Organization-Id": orgId } : {}),
       ...getClientRegistrationHeaders(interfaceId),
     };

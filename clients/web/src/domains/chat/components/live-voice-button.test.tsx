@@ -96,7 +96,7 @@ describe("LiveVoiceButton", () => {
     // GIVEN the desktop presentation, which gates no row on focus
     const { getByLabelText } = render(<LiveVoiceButton onStart={onStartSpy} />);
 
-    // THEN the press behaves as the platform intends
+    // THEN the press behaves as the cloud intends
     expect(fireEvent.mouseDown(getByLabelText("Start voice mode"))).toBe(true);
 
     // AND the row's chrome alone does not cancel it: a window dragged narrow

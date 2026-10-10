@@ -208,7 +208,7 @@ function seedAvatar(kind: "character" | "custom"): void {
   mockCustomFieldHex = kind === "custom" ? "#3B5C8A" : null;
 }
 
-// Stub the OAuth connect surface (pulls the managed-oauth + generated-SDK
+// Stub the OAuth connect surface (pulls the cloud-oauth + generated-SDK
 // graph) so the room-slot tests assert only the wiring: that the room renders
 // the pending card and routes its action to `handleSurfaceAction`.
 mock.module("@/domains/chat/components/surfaces/oauth-connect-surface", () => ({
@@ -683,7 +683,7 @@ describe("VoiceRoom: placement variants", () => {
   });
 
   test("both variants keep Escape-to-minimize, so the content room is dismissible too", () => {
-    // The content variant is non-modal, but Escape is still the platform
+    // The content variant is non-modal, but Escape is still the cloud
     // "leave the overlay" key; it must not degrade into ending the call.
     startOwnedSession("listening");
     render(<VoiceRoom variant="content" />);

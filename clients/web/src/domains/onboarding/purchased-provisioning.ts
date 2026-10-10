@@ -1,7 +1,7 @@
 /**
  * The post-payment provisioning wait, shared by every hatch entry point.
  *
- * Once a platform assistant is active and healthz-ready, hold until the
+ * Once a cloud assistant is active and healthz-ready, hold until the
  * server-side resize to the purchased machine and storage specs converges, then
  * re-probe healthz (the resize restarts the pod). The reconcile is idempotent
  * and fire-and-forget; a genuinely free org, and the `RESIZE_WAIT_MAX_MS` cap,
@@ -48,7 +48,7 @@ export interface AwaitPurchasedProvisioningOptions {
   assistantId: string;
   /** This hatch is the return leg of a completed checkout (`post_checkout=1`). */
   postCheckoutReturn: boolean;
-  /** `hosting=cadet-cloud` — a managed hatch even in a local-mode build. */
+  /** `hosting=cadet-cloud` — a cloud hatch even in a local-mode build. */
   managedHatch: boolean;
   /** Epoch ms the overall hatch poll started; bounds the post-resize health wait. */
   hatchStartMs: number;
@@ -88,8 +88,8 @@ export async function awaitPurchasedProvisioning(
       registerTimer?.(timer);
     });
 
-  // Purchased specs live on the platform, so only a managed hatch reads them. A
-  // local-mode run without the managed marker can reach here off a preflight
+  // Purchased specs live on the cloud, so only a cloud hatch reads them. A
+  // local-mode run without the cloud marker can reach here off a preflight
   // that resolved the lockfile assistant, which has no billing surface —
   // short-circuit there.
   if (isLocalClient() && !managedHatch) {
@@ -290,7 +290,7 @@ export async function awaitPurchasedProvisioning(
       operationInFlight = true;
     }
 
-    // The platform persists the effective sizes before the pod finishes
+    // The cloud persists the effective sizes before the pod finishes
     // restarting, so completion requires the resize operation to have cleared —
     // not just targets-met — to avoid landing on a soon-dead pod.
     if (targetsMet(targets, actuals) && !operationInFlight) {

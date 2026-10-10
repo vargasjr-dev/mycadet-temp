@@ -830,7 +830,7 @@ describe("skill_load tool", () => {
   test("omits tools unsupported by the current client operating system", async () => {
     writeSkill(
       "platform-tools",
-      "Platform Tools",
+      "Cloud Tools",
       "Has platform-specific tools",
       "Body.",
     );

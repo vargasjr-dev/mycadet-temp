@@ -14,7 +14,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import { getContainerMemoryEvents } from "../util/cgroup-memory.js";
 import { getLogger } from "../util/logger.js";

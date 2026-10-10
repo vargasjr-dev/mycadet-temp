@@ -10,8 +10,8 @@ import type { Message } from "../providers/types.js";
 import { SubagentManager } from "../subagent/manager.js";
 import type { SubagentConfig, SubagentState } from "../subagent/types.js";
 
-/** Minimal shape matching the private ManagedSubagent interface for test injection. */
-interface FakeManagedSubagent {
+/** Minimal shape matching the private CloudSubagent interface for test injection. */
+interface FakeCloudSubagent {
   conversation: {
     abort: () => void;
     dispose: () => void;
@@ -43,7 +43,7 @@ interface FakeManagedSubagent {
 
 /** Type-safe accessor for SubagentManager's private internals via bracket notation. */
 interface ManagerInternals {
-  subagents: Map<string, FakeManagedSubagent>;
+  subagents: Map<string, FakeCloudSubagent>;
   parentToChildren: Map<string, Set<string>>;
   runSubagent: (subagentId: string, objective: string) => Promise<void>;
   sweepTerminal: () => void;
@@ -55,7 +55,7 @@ function asInternals(manager: SubagentManager): ManagerInternals {
 }
 
 function makeFakeConversation(): NonNullable<
-  FakeManagedSubagent["conversation"]
+  FakeCloudSubagent["conversation"]
 > {
   return {
     abort: () => {},
@@ -77,7 +77,7 @@ function injectFakeSubagent(
   subagentId: string,
   state: SubagentState,
   parentSendToClient?: (msg: AssistantEvent) => void,
-  conversation?: FakeManagedSubagent["conversation"],
+  conversation?: FakeCloudSubagent["conversation"],
 ): void {
   const internals = asInternals(manager);
 

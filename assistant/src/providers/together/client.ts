@@ -9,7 +9,7 @@ export interface TogetherProviderOptions {
 const DEFAULT_TOGETHER_BASE_URL = "https://api.together.ai/v1";
 
 /**
- * Together AI exposes an OpenAI-compatible endpoint. Used as the managed route
+ * Together AI exposes an OpenAI-compatible endpoint. Used as the cloud route
  * for MiniMax M3. Together serializes object-typed tool args correctly, so —
  * unlike {@link FireworksProvider} — no `coerceObjectArgsToJsonString`
  * workaround is needed.

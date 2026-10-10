@@ -36,7 +36,7 @@ export interface ResolvedTtsConfig {
  *
  * `providerOverride` selects a provider other than the configured one and
  * returns that provider's config block — used by callers that resolve the
- * provider themselves (e.g. live voice, which runs on the managed-speech
+ * provider themselves (e.g. live voice, which runs on the cloud-speech
  * effective provider).
  */
 export function resolveTtsConfig(

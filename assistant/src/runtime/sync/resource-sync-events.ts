@@ -1,4 +1,4 @@
-import { syncAvatarToPlatform } from "../../avatar/sync-avatar.js";
+import { syncAvatarToCloud } from "../../avatar/sync-avatar.js";
 import type { IdentityFields } from "../../daemon/handlers/identity.js";
 import {
   conversationMessagesSyncTag,
@@ -34,7 +34,7 @@ export function publishAvatarChanged(originClientId?: string): void {
     avatarPath: getAvatarImagePath(),
   });
   void publishSyncInvalidation([SYNC_TAGS.assistantAvatar], originClientId);
-  syncAvatarToPlatform();
+  syncAvatarToCloud();
 }
 
 export function publishIdentityChanged(

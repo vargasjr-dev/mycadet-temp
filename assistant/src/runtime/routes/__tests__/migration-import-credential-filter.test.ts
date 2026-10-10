@@ -20,7 +20,7 @@
  *   key format are excluded.
  * - User credentials (any other prefix) pass through unchanged.
  * - Mixed bundles correctly split platform vs user credentials.
- * - skippedPlatform count matches the number of excluded entries.
+ * - skippedCloud count matches the number of excluded entries.
  * - Regression: the prefix constant matches `credentialKey("cadet", "")`.
  */
 
@@ -98,8 +98,8 @@ function filterCredentials(
   const userCredentials = bundleCredentials.filter(
     (c) => !c.account.startsWith(PLATFORM_CREDENTIAL_PREFIX),
   );
-  const skippedPlatform = bundleCredentials.length - userCredentials.length;
-  return { userCredentials, skippedPlatform };
+  const skippedCloud = bundleCredentials.length - userCredentials.length;
+  return { userCredentials, skippedCloud };
 }
 
 // ---------------------------------------------------------------------------
@@ -125,11 +125,11 @@ describe("migration import credential filtering", () => {
     const manifest = makeManifest(cadetPaths);
 
     const bundleCredentials = extractCredentialsFromBundle(entries, manifest);
-    const { userCredentials, skippedPlatform } =
+    const { userCredentials, skippedCloud } =
       filterCredentials(bundleCredentials);
 
     expect(userCredentials).toHaveLength(0);
-    expect(skippedPlatform).toBe(cadetFields.length);
+    expect(skippedCloud).toBe(cadetFields.length);
   });
 
   test("user credentials pass through unchanged", () => {
@@ -146,7 +146,7 @@ describe("migration import credential filtering", () => {
     ]);
 
     const bundleCredentials = extractCredentialsFromBundle(entries, manifest);
-    const { userCredentials, skippedPlatform } =
+    const { userCredentials, skippedCloud } =
       filterCredentials(bundleCredentials);
 
     expect(userCredentials).toHaveLength(2);
@@ -158,7 +158,7 @@ describe("migration import credential filtering", () => {
       account: anthropicAccount,
       value: "sk-ant-456",
     });
-    expect(skippedPlatform).toBe(0);
+    expect(skippedCloud).toBe(0);
   });
 
   test("mixed bundle with both platform and user credentials correctly splits", () => {
@@ -184,7 +184,7 @@ describe("migration import credential filtering", () => {
     ]);
 
     const bundleCredentials = extractCredentialsFromBundle(entries, manifest);
-    const { userCredentials, skippedPlatform } =
+    const { userCredentials, skippedCloud } =
       filterCredentials(bundleCredentials);
 
     // Only user credentials should pass through.
@@ -198,10 +198,10 @@ describe("migration import credential filtering", () => {
     );
     expect(cadetCreds).toHaveLength(0);
 
-    expect(skippedPlatform).toBe(2);
+    expect(skippedCloud).toBe(2);
   });
 
-  test("skippedPlatform count is accurate with mixed credentials", () => {
+  test("skippedCloud count is accurate with mixed credentials", () => {
     const cadetApiKey = credentialKey("cadet", "assistant_api_key");
     const cadetAssistantId = credentialKey("cadet", "platform_assistant_id");
     const cadetWebhook = credentialKey("cadet", "webhook_secret");
@@ -221,10 +221,10 @@ describe("migration import credential filtering", () => {
     ]);
 
     const bundleCredentials = extractCredentialsFromBundle(entries, manifest);
-    const { userCredentials, skippedPlatform } =
+    const { userCredentials, skippedCloud } =
       filterCredentials(bundleCredentials);
 
-    expect(skippedPlatform).toBe(3);
+    expect(skippedCloud).toBe(3);
     expect(userCredentials).toHaveLength(1);
     expect(userCredentials[0]).toEqual({
       account: userKey,
@@ -233,7 +233,7 @@ describe("migration import credential filtering", () => {
 
     // Verify total = user + skipped
     expect(bundleCredentials.length).toBe(
-      userCredentials.length + skippedPlatform,
+      userCredentials.length + skippedCloud,
     );
   });
 

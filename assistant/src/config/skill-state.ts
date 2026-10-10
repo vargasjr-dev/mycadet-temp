@@ -1,4 +1,4 @@
-import { isSkillCompatibleWithPlatform } from "../skills/platform-compatibility.js";
+import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
 import { isAssistantFeatureFlagEnabled } from "./assistant-feature-flags.js";
 import type { AssistantConfig, SkillEntryConfig } from "./schema.js";
 import type { SkillSummary } from "./skills.js";
@@ -32,7 +32,7 @@ export function resolveSkillStates(
   };
 
   for (const skill of catalog) {
-    if (!isSkillCompatibleWithPlatform(skill)) {
+    if (!isSkillCompatibleWithCloud(skill)) {
       continue;
     }
 

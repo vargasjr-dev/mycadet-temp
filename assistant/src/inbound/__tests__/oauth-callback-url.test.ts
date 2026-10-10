@@ -15,7 +15,7 @@ const resolveCallbackUrl = mock(
   async () => "https://ingress.example/webhooks/oauth/callback",
 );
 
-mock.module("../platform-callback-registration.js", () => ({
+mock.module("../cloud-callback-registration.js", () => ({
   resolveCallbackUrl,
 }));
 
@@ -86,7 +86,7 @@ describe("resolveOauthCallbackUrl", () => {
     expect(typeA).toEqual(typeB);
   });
 
-  test("registers one route type so the platform holds a single admin row", async () => {
+  test("registers one route type so the cloud holds a single admin row", async () => {
     await resolveOauthCallbackUrl();
     const [, , type] = resolveCallbackUrl.mock.calls[0] as unknown[];
     expect(type).toEqual("oauth");

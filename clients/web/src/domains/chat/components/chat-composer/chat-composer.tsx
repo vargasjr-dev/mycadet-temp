@@ -90,7 +90,7 @@ import {
 } from "@/runtime/platform-detection";
 import { isPointerCoarse, usePointerCoarse } from "@/utils/pointer";
 import { routes } from "@/utils/routes";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { Button, cn, Notice, Popover } from "@mycadet/design-library";
 
@@ -511,7 +511,7 @@ export function ChatComposer({
     starter?.prewarm();
     // Gate the open on the daemon's readiness verdict BEFORE starting, so the
     // room never flashes open then immediately closes for a user with no
-    // usable STT/TTS provider. The daemon runs managed-speech defaulting as
+    // usable STT/TTS provider. The daemon runs cloud-speech defaulting as
     // part of the preflight, so a user who *can* be auto-configured comes back
     // `ready` here.
     liveVoicePreflightPendingRef.current = true;
@@ -676,12 +676,12 @@ export function ChatComposer({
   // soft keyboard's Enter inserts a newline. Anything that stands in for
   // keyboard submit reads this, never the viewport width: the two disagree on a
   // roomy tablet and on a narrowed desktop window, and the substitute belongs to
-  // the absence of the thing it replaces. See `docs/PLATFORM_ADAPTATION.md`.
+  // the absence of the thing it replaces. See `docs/CLOUD_ADAPTATION.md`.
   const keyboardCanSubmit = !pointerCoarse;
   // The compact row and everything in it follow the window's width; what the
   // plus opens follows the input. A narrowed desktop or Electron window keeps
   // the row, and still wants the picker a mouse can drive. See
-  // `docs/PLATFORM_ADAPTATION.md`.
+  // `docs/CLOUD_ADAPTATION.md`.
   const isMobile = useIsMobile();
   const isNative = useIsNativePlatform();
   const isElectronHost = isElectron();
@@ -700,9 +700,9 @@ export function ChatComposer({
   // calls; defaults to end-of-input for the initial render.
   const cursorRef = useRef(input.length);
 
-  // The Doctor is platform-hosted only, so `/doctor` is not offered when the
+  // The Doctor is cloud-hosted only, so `/doctor` is not offered when the
   // active assistant is self-hosted (the Doctor tab doesn't exist there).
-  const doctorGated = usePlatformGate({ platformHostedOnly: true }) === "gated";
+  const doctorGated = useCloudGate({ cloudHostedOnly: true }) === "gated";
   const searchSlashCommands = useCallback(
     (filter: string) => {
       const commands = filteredCommands(filter);

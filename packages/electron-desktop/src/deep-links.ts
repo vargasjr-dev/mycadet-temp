@@ -102,7 +102,7 @@ export function resolveAcceptedSchemes(env: string): string[] {
 }
 
 // Stripe Checkout Session ids (`cs_test_a1B2…` / `cs_live_…`). Mirrors the
-// shape check the platform's hand-off view applies before it builds the
+// shape check the cloud's hand-off view applies before it builds the
 // deep link, so garbage never reaches the renderer's billing route.
 const CHECKOUT_SESSION_ID_RE = /^cs_[A-Za-z0-9_]{1,255}$/;
 
@@ -151,7 +151,7 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     on an `unknown` URL (which the renderer logs).
  *   - `cadet://billing/checkout-complete?status=…&session_id=…` →
  *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
- *     The platform bounces a native-initiated Stripe Checkout here
+ *     The cloud bounces a native-initiated Stripe Checkout here
  *     once the user finishes in the system browser. `status=success`
  *     requires a well-formed Checkout Session id; `status=cancel`
  *     carries none. `flow=top_up` marks a credit top-up checkout;

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { DEFAULT_PROVIDER_CHOICES } from "../config/schemas/llm.js";
+import { PLATFORM_PROVIDER_META } from "../providers/cloud-proxy/constants.js";
 import {
   catalogModelSupportsText,
   getCatalogProviderForModel,
@@ -10,7 +11,6 @@ import {
   PROVIDER_CATALOG,
   supportsForcedToolChoiceWithThinking,
 } from "../providers/model-catalog.js";
-import { PLATFORM_PROVIDER_META } from "../providers/platform-proxy/constants.js";
 import { resolvePricing, resolvePricingForUsage } from "../util/pricing.js";
 
 /**
@@ -84,7 +84,7 @@ interface ClientCatalogEntry {
   envVar?: string;
   apiKeyPlaceholder?: string;
   credentialsGuide?: ClientCatalogCredentialsGuide;
-  supportsPlatformAuth?: boolean;
+  supportsCloudAuth?: boolean;
   featureFlag?: string;
   defaultModel: string;
   models: ClientCatalogModel[];
@@ -137,8 +137,8 @@ describe("LLM catalog parity: daemon vs client", () => {
       expect(clientEntry.setupHint).toBe(daemonEntry.setupHint);
       expect(clientEntry.envVar).toBe(daemonEntry.envVar);
       expect(clientEntry.apiKeyPlaceholder).toBe(daemonEntry.apiKeyPlaceholder);
-      expect(clientEntry.supportsPlatformAuth).toBe(
-        daemonEntry.supportsPlatformAuth,
+      expect(clientEntry.supportsCloudAuth).toBe(
+        daemonEntry.supportsCloudAuth,
       );
       expect(clientEntry.featureFlag).toBe(daemonEntry.featureFlag);
       expect(clientEntry.credentialsGuide).toEqual(
@@ -148,7 +148,7 @@ describe("LLM catalog parity: daemon vs client", () => {
     }
   });
 
-  test("supportsPlatformAuth mirrors PLATFORM_PROVIDER_META", () => {
+  test("supportsCloudAuth mirrors PLATFORM_PROVIDER_META", () => {
     // The catalog field is derived from PLATFORM_PROVIDER_META at build
     // time. This test guards against future hand-edits to model-catalog.ts
     // that would let the two drift. Adding a provider to PLATFORM_PROVIDER_META
@@ -157,7 +157,7 @@ describe("LLM catalog parity: daemon vs client", () => {
     for (const entry of PROVIDER_CATALOG) {
       const expectedSupportsManagedAuth =
         PLATFORM_PROVIDER_META[entry.id]?.managed === true;
-      expect(entry.supportsPlatformAuth).toBe(expectedSupportsManagedAuth);
+      expect(entry.supportsCloudAuth).toBe(expectedSupportsManagedAuth);
     }
   });
 

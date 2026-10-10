@@ -9,7 +9,7 @@
  * channel renders a reply, and written to the chat's conversation only once
  * the channel has acknowledged it.
  *
- * Posting the same text through `channels request` reaches the platform API
+ * Posting the same text through `channels request` reaches the cloud API
  * directly and leaves no record of what was said, which is why this command
  * exists beside it. Both act as the bot and both carry the same rating: the
  * effect is a message either way.

@@ -206,10 +206,10 @@ export function commitImport(options: ImportCommitOptions): ImportCommitResult {
   }
 
   // Defense-in-depth: refuse to import a bundle whose declared compat range
-  // excludes this runtime BEFORE any state mutation. The platform-side gate
+  // excludes this runtime BEFORE any state mutation. The cloud-side gate
   // is the primary check; this catches legacy bundles whose ExportJob row
   // predates PR #5470 (compat columns NULL → platform gate skipped) and
-  // any caller that bypasses the platform-issued signed URL flow.
+  // any caller that bypasses the cloud-issued signed URL flow.
   const compatResult = policy.evaluateRuntimeCompatibility(
     manifest.compatibility,
     APP_VERSION,
@@ -723,7 +723,7 @@ export function commitImport(options: ImportCommitOptions): ImportCommitResult {
   // carry a metadata.json entry, the target's cadet:* entries were
   // wiped along with the `data/credentials/` directory. Restore them by
   // writing a minimal file containing just the preserved entries so the
-  // gateway can still locate the platform API key. When Step 1b did NOT
+  // gateway can still locate the cloud API key. When Step 1b did NOT
   // run (e.g. workspaceDir unset) the live metadata.json is still on
   // disk untouched — we must not rewrite it here or we would drop the
   // non-cadet entries the caller chose to keep.

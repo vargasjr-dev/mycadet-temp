@@ -54,7 +54,7 @@ const PROFILE_SCOPES: Record<ScopeProfile, ReadonlySet<Scope>> = {
   // route. `enforcePolicy` admits it only where the route's policy names
   // oauth.proxy, so a route naming no scope refuses it too.
   oauth_proxy_v1: new Set<Scope>(["oauth.proxy"]),
-  // Managed speech relay only (ATL-1033): the daemon's relay-dial token must
+  // Cloud speech relay only (ATL-1033): the daemon's relay-dial token must
   // not open any other edge-scoped route.
   speech_relay_v1: new Set<Scope>(["speech.relay"]),
   ui_page_v1: new Set<Scope>(["settings.read"]),

@@ -312,7 +312,7 @@ export function KeyConceptsChannelsContent() {
             <li>Vacation auto-responder</li>
           </ul>
           <p className="mb-4 text-zinc-600">
-            Gmail is also a platform in the unified messaging system — your
+            Gmail is also a cloud in the unified messaging system — your
             assistant can read, search, and send across Gmail, Telegram, and
             other connected platforms through a single interface.
           </p>

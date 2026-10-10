@@ -11,10 +11,10 @@ import type { WorkspaceMigration } from "./types.js";
  * names the backend the proxy fronts (gemini or openai). The schema treats
  * `provider` as the only axis, with `"cadet"` meaning managed and the
  * backend derived from the selected model's prefix at request time, so this
- * migration rewrites every managed service to `provider: "cadet"`. There is
+ * migration rewrites every cloud service to `provider: "cadet"`. There is
  * no per-provider exemption: the stored backend value under managed mode is
  * itself derived from the model on every model write, so replacing it loses
- * nothing — `model` is preserved verbatim and keeps routing the managed
+ * nothing — `model` is preserved verbatim and keeps routing the cloud
  * request to the same backend.
  *
  * Idempotent: a config with no `mode` key is left untouched.
@@ -97,8 +97,8 @@ export const imageGenerationModeToProviderMigration: WorkspaceMigration = {
     }
 
     // Schemas that predate this migration accept provider "cadet" alongside
-    // mode "managed", so the managed pair round-trips exactly. The backend
-    // provider a managed service holds before `run()` is not recoverable —
+    // mode "managed", so the cloud pair round-trips exactly. The backend
+    // provider a cloud service holds before `run()` is not recoverable —
     // `run()` overwrites it with "cadet". That value is derived from the
     // model prefix, so it re-derives on the next model write.
     service.mode = service.provider === "cadet" ? "managed" : "your-own";

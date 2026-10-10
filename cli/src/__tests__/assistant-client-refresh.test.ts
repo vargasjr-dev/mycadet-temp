@@ -2,7 +2,7 @@
  * Tests for AssistantClient's reactive 401 -> refresh -> retry: a paired/local
  * guardian access token that 401s is refreshed once via the stored refresh
  * credential and the request retried. Self-gating (no refresh token => no
- * retry) and never applied to the platform session-auth path.
+ * retry) and never applied to the cloud session-auth path.
  */
 import {
   afterAll,
@@ -148,7 +148,7 @@ describe("AssistantClient 401 -> refresh -> retry", () => {
     expect(calls.filter((c) => isRefresh(c.url))).toHaveLength(0);
   });
 
-  test("never refreshes on the platform session-auth path", async () => {
+  test("never refreshes on the cloud session-auth path", async () => {
     seedPaired("refresh-tok"); // entry must exist; session auth ignores it
     let assistantAttempts = 0;
     const calls = stubFetch((url) => {

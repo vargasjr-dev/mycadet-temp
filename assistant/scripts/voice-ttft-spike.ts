@@ -14,7 +14,7 @@
  *   full-flash    cost-optimized, real buildSystemPrompt() + full tool defs
  *   full-quality  quality-optimized, full prompt + tools (pre-flag brain)
  *
- * Run with the daemon's environment so the managed connection resolves:
+ * Run with the daemon's environment so the cloud connection resolves:
  *   CADET_WORKSPACE_DIR=<daemon workspace> \
  *     bun run scripts/voice-ttft-spike.ts [--trials 3] [--variants a,b]
  *
@@ -216,7 +216,7 @@ async function main(): Promise<void> {
     const resolveMs = performance.now() - resolveStart;
     if (!provider) {
       console.error(
-        `${spec.name}: no provider resolved (managed credentials missing? ` +
+        `${spec.name}: no provider resolved (cloud credentials missing? ` +
           `run with the daemon's CADET_WORKSPACE_DIR)`,
       );
       continue;

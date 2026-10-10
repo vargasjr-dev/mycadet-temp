@@ -42,8 +42,8 @@ mock.module("@/stores/resolved-assistants-store", () => {
   return { useResolvedAssistantsStore: store };
 });
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => "full",
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => "full",
 }));
 
 mock.module("@/hooks/use-onboarding-login", () => ({
@@ -55,7 +55,7 @@ mock.module("@/lib/auth/handle-logout", () => ({
 }));
 
 mock.module("@/stores/auth-store", () => ({
-  useHasPlatformSession: () => false,
+  useHasCloudSession: () => false,
 }));
 
 mock.module("@/runtime/notifications", () => ({

@@ -5,7 +5,7 @@ import type { WorkspaceMigration } from "./types.js";
 
 /**
  * Strip the now-removed `services.web-fetch.mode` field from existing
- * `config.json` files. Web fetch has no managed proxy, so the field never
+ * `config.json` files. Web fetch has no cloud proxy, so the field never
  * governed anything — provider is the only axis — and the schema no longer
  * recognizes it.
  *

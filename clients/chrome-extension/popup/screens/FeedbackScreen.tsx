@@ -30,7 +30,7 @@ interface SubmitFeedbackResponse {
 /**
  * Share Feedback form mirroring the macOS `LogReportFormView`. Captures
  * a classification, contact email, message, and an opt-in diagnostic
- * bundle, then ships them to the platform via the background worker.
+ * bundle, then ships them to the cloud via the background worker.
  */
 export function FeedbackScreen({ onBack }: FeedbackScreenProps) {
   const [classification, setClassification] = useState<FeedbackClassification>('bug_report');

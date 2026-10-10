@@ -2184,10 +2184,10 @@
     "summaryUnanswered": "Not set",
     "untitledTask": "What I saw"
   },
-  "restoreManagedCredentialButton": {
+  "restoreCloudCredentialButton": {
     "restore": "Restore access",
     "restoring": "Restoring...",
-    "restored": "Restored. Cadet-managed models are working again.",
+    "restored": "Restored. Cadet Cloud models are working again.",
     "failedNoAssistant": "Select an assistant, then try again.",
     "failedCannotActHere": "This app cannot restore the credential for this assistant. Open the assistant on the computer that runs it.",
     "failedReplacementRejected": "Cadet rejected the replacement credential. Log in to Cadet Cloud, then try again.",

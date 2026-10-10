@@ -292,7 +292,7 @@ describe("hatch provider secrets", () => {
   test("HATCH_PROVIDER_CHOICES only lists labeled providers", () => {
     for (const provider of HATCH_PROVIDER_CHOICES) {
       expect(formatProviderName(provider)).toBeTruthy();
-      // Cadet Cloud is the managed-connection exception: no env var, no
+      // Cadet Cloud is the cloud-connection exception: no env var, no
       // key collection — everything else must have a supported setup flow.
       if (provider !== "cadet") {
         expect(isSupportedLlmProvider(provider)).toBe(true);
@@ -313,7 +313,7 @@ describe("hatch provider secrets", () => {
     ]);
   });
 
-  test("Cadet Cloud configures silently through the managed connection", async () => {
+  test("Cadet Cloud configures silently through the cloud connection", async () => {
     const { calls, fetchImpl } = makeFetch([]);
     const logs: string[] = [];
 

@@ -7,7 +7,7 @@ import {
   resolveCloud,
   type Lockfile,
 } from "./lockfile-contract";
-import { isManagedCloud } from "./lockfile-contract";
+import { isCloudHome } from "./lockfile-contract";
 import { withLockfileLock } from "./lockfile-lock";
 import { stripSensitiveFields } from "./util";
 
@@ -377,17 +377,17 @@ export function isActiveAssistant(
   return false;
 }
 
-export function replacePlatformAssistants(
+export function replaceCloudAssistants(
   lockfilePaths: string[],
-  platformAssistants: Array<Record<string, unknown>>,
+  cloudAssistants: Array<Record<string, unknown>>,
   organizationId?: string,
 ): WriteResult {
   if (
-    platformAssistants.some(
+    cloudAssistants.some(
       (assistant) =>
         typeof assistant?.assistantId !== "string" ||
         assistant.assistantId === "" ||
-        !isManagedCloud(resolveCloud(assistant)) ||
+        !isCloudHome(resolveCloud(assistant)) ||
         assistant.paired === true,
     )
   ) {
@@ -403,14 +403,14 @@ export function replacePlatformAssistants(
     const existing = Array.isArray(lockfile.assistants)
       ? lockfile.assistants
       : [];
-    const syncedIds = new Set(platformAssistants.map((a) => a.assistantId));
+    const syncedIds = new Set(cloudAssistants.map((a) => a.assistantId));
     // Org-scoped sync preserves other orgs' platform entries; no org full-replaces.
     const preserved = existing.filter((a: Record<string, unknown>) => {
-      if (!isManagedCloud(a?.cloud)) return true;
+      if (!isCloudHome(a?.cloud)) return true;
       if (syncedIds.has(a.assistantId)) return false;
       return organizationId != null && a.organizationId !== organizationId;
     });
-    // `onboardedAt` is recorded by the client and unknown to the platform, so
+    // `onboardedAt` is recorded by the client and unknown to the cloud, so
     // the replacement rows never carry it. Without this it is erased by every
     // routine session sync.
     const priorOnboardedAt = new Map<string, unknown>();
@@ -421,7 +421,7 @@ export function replacePlatformAssistants(
     }
     lockfile.assistants = [
       ...preserved,
-      ...platformAssistants.map((a) => {
+      ...cloudAssistants.map((a) => {
         const prior = priorOnboardedAt.get(a.assistantId as string);
         return a.onboardedAt == null && prior != null
           ? { ...a, onboardedAt: prior }

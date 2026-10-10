@@ -45,15 +45,15 @@ mock.module("../oauth/oauth-store.js", () => ({
       slack: "slack",
     };
     return managedKeys[provider]
-      ? { managedServiceConfigKey: managedKeys[provider] }
+      ? { cloudServiceConfigKey: managedKeys[provider] }
       : undefined;
   },
 }));
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => ({
-      platformAssistantId: "test-assistant",
+      cloudAssistantId: "test-assistant",
       fetch: async (path: string) => {
         const url = new URL(`http://localhost${path}`);
         const provider = url.searchParams.get("provider");
@@ -237,7 +237,7 @@ describe("integration-status", () => {
       expect(slack?.connected).toBe(true);
     });
 
-    test("formatIntegrationSummary reflects managed connections", async () => {
+    test("formatIntegrationSummary reflects cloud connections", async () => {
       setPlatformConnected("google", "google");
       setPlatformConnected("slack", "slack");
 

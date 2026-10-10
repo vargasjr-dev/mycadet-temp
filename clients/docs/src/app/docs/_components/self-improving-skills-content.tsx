@@ -42,7 +42,7 @@ export function SelfImprovingSkillsContent() {
         <p className="mb-4 text-zinc-600 dark:text-zinc-400">
           Your assistant can preserve a useful procedure after it has actually
           carried it out, then reuse that procedure when a similar task comes
-          up. The result is a managed skill that remains visible and under your
+          up. The result is a cloud skill that remains visible and under your
           control.
         </p>
         <p className="mb-8 text-zinc-600 dark:text-zinc-400">
@@ -114,7 +114,7 @@ export function SelfImprovingSkillsContent() {
           </p>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
             When the work contains a reusable procedure, Cadet can express that
-            procedure as a managed skill with instructions and supporting files.
+            procedure as a cloud skill with instructions and supporting files.
             Future conversations can then load the skill when a request calls
             for the same kind of work.
           </p>

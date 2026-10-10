@@ -2,9 +2,9 @@
  * Buffer importer runtime-version compat gate.
  *
  * Wires `commitImport` to `policy.evaluateRuntimeCompatibility` BEFORE any
- * state mutation. The platform-side gate is the primary check; this catches
+ * state mutation. The cloud-side gate is the primary check; this catches
  * legacy bundles whose ExportJob row predates PR #5470 (compat columns NULL
- * → platform gate skipped) and any caller that bypasses the platform-issued
+ * → platform gate skipped) and any caller that bypasses the cloud-issued
  * signed URL flow.
  *
  * Invariants pinned here:

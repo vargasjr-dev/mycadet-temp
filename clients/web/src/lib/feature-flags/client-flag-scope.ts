@@ -2,7 +2,7 @@
  * Ties the client feature-flag store's hydration to the identity its values
  * were evaluated for.
  *
- * The platform evaluates client flags against the signed-in user + org, or
+ * The cloud evaluates client flags against the signed-in user + org, or
  * against an anonymous context when there is no session — so the two answers
  * legitimately differ. The `/account/*` screens sync flags for anonymous
  * visitors, which means a pre-sign-in value is already in the store when the

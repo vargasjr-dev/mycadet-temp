@@ -21,7 +21,7 @@
  *      free to treat null as "no provider available" and fall back to
  *      a graceful no-op (e.g. rollup producer skips, satellite throw
  *      with their own actionable message).
- *   4. Transient failures inside the resolver (managed-proxy context
+ *   4. Transient failures inside the resolver (cloud-proxy context
  *      lookup, credential read I/O) are caught and treated like a soft
  *      credential issue (return null). A transient blip should not take
  *      a conversation offline.
@@ -38,11 +38,12 @@ import { credentialKey } from "../security/credential-key.js";
 import { ProviderNotConfiguredError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  getManagedUpstream,
-  isCadetManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CADET_CLOUD_CONNECTION_NAME,
+  CLOUD_ROUTABLE_PROVIDERS,
+  getCloudUpstream,
+  isCadetCloudConnection,
 } from "./cadet-model-routing.js";
+import { resolveCloudProxyContext } from "./cloud-proxy/context.js";
 import {
   describeSubscriptionModelIncompatibility,
   isConnectionCompatibleWithModel,
@@ -56,7 +57,6 @@ import {
   getConnection,
   listConnections,
 } from "./inference/connections.js";
-import { resolveManagedProxyContext } from "./platform-proxy/context.js";
 import { checkCredentialPresence } from "./provider-availability.js";
 import { dispatchProviderResolvable } from "./provider-resolvability.js";
 import type { ProvidersConfig } from "./registry.js";
@@ -157,8 +157,8 @@ export function connectionProviderKind(
     if (!row) {
       return null;
     }
-    if (isCadetManagedConnection(row)) {
-      return model ? getManagedUpstream(model) : null;
+    if (isCadetCloudConnection(row)) {
+      return model ? getCloudUpstream(model) : null;
     }
     if (row.provider === "chatgpt") {
       return "openai";
@@ -195,7 +195,7 @@ export function catalogProviderForProfile(
   model: string,
 ): string | null {
   if (ROUTING_IDENTITY_PROVIDERS.has(provider)) {
-    return provider === "chatgpt" ? "openai" : getManagedUpstream(model);
+    return provider === "chatgpt" ? "openai" : getCloudUpstream(model);
   }
   return resolveEntryProviderKind(provider, model) ?? provider;
 }
@@ -262,12 +262,12 @@ export async function tryResolveProviderForConnectionName(
   // resolves on platform auth and ignores a user-owned row claiming that name
   // (boot seeding refuses to overwrite such a row, so these installs have no
   // canonical row at all). Keyed on the name rather than the declared
-  // provider: a call-site tweak pinning a concrete upstream over a managed
-  // profile keeps the managed connection while replacing the provider
+  // provider: a call-site tweak pinning a concrete upstream over a cloud
+  // profile keeps the cloud connection while replacing the provider
   // (`llm-resolver.ts`), and that route is platform-billed just the same.
   if (
-    connectionName === CADET_MANAGED_CONNECTION_NAME &&
-    !isCadetManagedConnection(connection)
+    connectionName === CADET_CLOUD_CONNECTION_NAME &&
+    !isCadetCloudConnection(connection)
   ) {
     const provider = await resolveThroughPlatform(
       config,
@@ -276,36 +276,36 @@ export async function tryResolveProviderForConnectionName(
     );
     return attachProviderRoute(provider, canonicalCadetConnection());
   }
-  // The provider-agnostic Cadet-managed connection carries only the `cadet`
+  // The provider-agnostic Cadet Cloud connection carries only the `cadet`
   // sentinel, so the usual `connection.provider === expectedProvider` equality
   // never holds. It routes by the resolving profile's declared provider
   // instead (threaded as `providerOverride` below), which must be present AND
-  // one of the managed-routable upstreams — the platform proxy can only serve
-  // those. A `cadet` connection paired with a non-managed provider
+  // one of the cloud-routable upstreams — the cloud proxy can only serve
+  // those. A `cadet` connection paired with a non-cloud provider
   // (openrouter/ollama/openai-compatible/…) is a genuine misconfiguration: it
   // falls through to the mismatch recovery/error path below rather than routing
   // as platform auth, which would otherwise fail as a soft miss and silently
   // fall back to the default provider.
-  const isCadet = isCadetManagedConnection(connection);
+  const isCadet = isCadetCloudConnection(connection);
   if (isCadet && !expectedProvider) {
     // An entry-name route carries no declared provider (the label is the
     // row's name, not a vendor); a cadet-kind row derives its upstream
     // from the model, same as the cadet identity itself.
     expectedProvider = model
-      ? (getManagedUpstream(model) ?? undefined)
+      ? (getCloudUpstream(model) ?? undefined)
       : undefined;
     if (!expectedProvider) {
       throw new ConnectionResolutionError(
         connectionName,
         "provider_mismatch",
-        `provider_connection "${connectionName}" is the provider-agnostic Cadet-managed connection but the resolving profile declared no provider — set the profile's provider so the upstream can be selected`,
+        `provider_connection "${connectionName}" is the provider-agnostic Cadet Cloud connection but the resolving profile declared no provider — set the profile's provider so the upstream can be selected`,
       );
     }
   }
   const isCadetRoute =
     isCadet &&
     !!expectedProvider &&
-    MANAGED_ROUTABLE_PROVIDERS.has(expectedProvider);
+    CLOUD_ROUTABLE_PROVIDERS.has(expectedProvider);
   // The ChatGPT-subscription row stores the "chatgpt" routing identity in
   // its provider column, so the equality never holds for its openai
   // upstream. The identity dispatches with the upstream threaded as
@@ -371,7 +371,7 @@ export async function tryResolveProviderForConnectionName(
     }
   }
   // `resolveProviderFromConnection` reaches into auth resolution (credential
-  // reads, managed-proxy context). A transient failure there is a soft
+  // reads, cloud-proxy context). A transient failure there is a soft
   // miss — log and return null so the caller can treat it the same as
   // "no usable credentials". Hard config errors are thrown above; this
   // catch is specifically for in-flight failures that should not take
@@ -416,14 +416,14 @@ function attachProviderRoute(
   if (provider) {
     provider.routeAttribution = {
       connectionName: connection.name,
-      isManagedRoute: isCadetManagedConnection(connection),
+      isCloudRoute: isCadetCloudConnection(connection),
     };
   }
   return provider;
 }
 
 /**
- * Whether a route through this connection name is Cadet-managed
+ * Whether a route through this connection name is Cadet Cloud
  * (platform-billed), for callers that hold only the name. Returns undefined
  * when the row can't be read, so the caller can fall back rather than assert
  * a BYOK route it never confirmed.
@@ -432,10 +432,10 @@ function attachProviderRoute(
  * ignored and the route resolves through platform auth regardless (see
  * `tryResolveProviderForConnectionName`).
  */
-export function isManagedConnectionRoute(
+export function isCloudConnectionRoute(
   connectionName: string,
 ): boolean | undefined {
-  if (connectionName === CADET_MANAGED_CONNECTION_NAME) {
+  if (connectionName === CADET_CLOUD_CONNECTION_NAME) {
     return true;
   }
   let connection;
@@ -444,11 +444,11 @@ export function isManagedConnectionRoute(
   } catch {
     return undefined;
   }
-  return connection ? isCadetManagedConnection(connection) : undefined;
+  return connection ? isCadetCloudConnection(connection) : undefined;
 }
 
 /**
- * Resolve a managed route through platform auth without reading a connection
+ * Resolve a cloud route through platform auth without reading a connection
  * row. Used when the canonical `cadet` row is claimed by a user-owned
  * connection, so the row boot seeding would have written does not exist.
  */
@@ -457,12 +457,12 @@ async function resolveThroughPlatform(
   upstream: string | undefined,
   model: string | undefined,
 ): Promise<Provider | null> {
-  if (!upstream || !MANAGED_ROUTABLE_PROVIDERS.has(upstream)) {
+  if (!upstream || !CLOUD_ROUTABLE_PROVIDERS.has(upstream)) {
     return null;
   }
   log.info(
     { upstream, model },
-    "Cadet-managed route resolved through platform auth: a user-owned connection claims the canonical connection name",
+    "Cadet Cloud route resolved through platform auth: a user-owned connection claims the canonical connection name",
   );
   try {
     return await resolveProviderFromConnection(
@@ -479,7 +479,7 @@ async function resolveThroughPlatform(
       /unresolved routing identity/.test(err.message)
     ) {
       throw new ConnectionResolutionError(
-        CADET_MANAGED_CONNECTION_NAME,
+        CADET_CLOUD_CONNECTION_NAME,
         "adapter_unavailable",
         err.message,
         { cause: err, model },
@@ -600,7 +600,7 @@ export async function resolveDefaultProvider(
  *
  *   - connection row missing (`not_found`)
  *   - connection bound to a different provider (`provider_mismatch`), with
- *     the provider-agnostic Cadet-managed exception for managed-routable
+ *     the provider-agnostic Cadet Cloud exception for managed-routable
  *     providers
  *   - API-key/subscription credential absent from the vault
  *     (`missing_credential`)
@@ -665,20 +665,20 @@ export async function preflightResolvedConfig(
     );
   }
   // Dispatch routes anything through the canonical name on platform auth, so
-  // preflight judges the platform rather than a claiming row's credentials.
+  // preflight judges the cloud rather than a claiming row's credentials.
   if (
-    connectionName === CADET_MANAGED_CONNECTION_NAME &&
-    !isCadetManagedConnection(connection)
+    connectionName === CADET_CLOUD_CONNECTION_NAME &&
+    !isCadetCloudConnection(connection)
   ) {
     connection = canonicalCadetConnection();
   }
 
-  if (isCadetManagedConnection(connection)) {
-    if (!MANAGED_ROUTABLE_PROVIDERS.has(provider)) {
+  if (isCadetCloudConnection(connection)) {
+    if (!CLOUD_ROUTABLE_PROVIDERS.has(provider)) {
       throw new ConnectionResolutionError(
         connectionName,
         "provider_mismatch",
-        `provider_connection "${connectionName}" is the Cadet-managed connection, which cannot serve provider "${provider}"`,
+        `provider_connection "${connectionName}" is the Cadet Cloud connection, which cannot serve provider "${provider}"`,
         errorOptions,
       );
     }
@@ -687,7 +687,7 @@ export async function preflightResolvedConfig(
       return;
     }
     if (getIsCloud()) {
-      // A platform-managed assistant cannot present a login screen or switch
+      // A cloud assistant cannot present a login screen or switch
       // providers, so the login-or-switch wording never fits. An unreachable
       // store is transient and recovers on its own, so it reads as a retry. A
       // reachable but empty store can only be fixed by re-provisioning the
@@ -776,14 +776,14 @@ export async function preflightResolvedConfig(
 
 /**
  * Platform-login state with the credential-store-outage case kept distinct:
- * `resolveManagedProxyContext` collapses an unreachable key read into
+ * `resolveCloudProxyContext` collapses an unreachable key read into
  * "no key", which must not be reported as a logout. A missing platform base
  * URL is definitively unauthenticated (it is config, not a credential read).
  */
 async function platformLoginPresence(): Promise<
   "ok" | "unauthenticated" | "indeterminate"
 > {
-  const ctx = await resolveManagedProxyContext();
+  const ctx = await resolveCloudProxyContext();
   if (ctx.enabled) {
     return "ok";
   }

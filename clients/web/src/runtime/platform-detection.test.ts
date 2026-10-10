@@ -335,7 +335,7 @@ describe("isMobileBrowser", () => {
   });
 
   test("is false on a hoverless Windows tablet", () => {
-    // Coarse and hoverless input is an input signal, not a platform one. A
+    // Coarse and hoverless input is an input signal, not a cloud one. A
     // Windows tablet reports both and is still a desktop.
     setUserAgent(WINDOWS_TOUCH_UA);
     setUserAgentData({ mobile: false });

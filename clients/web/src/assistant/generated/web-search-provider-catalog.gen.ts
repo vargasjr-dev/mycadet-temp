@@ -1,5 +1,5 @@
 // Static catalog of web search providers available in the AI settings page.
-// Originally generated in the platform repo; maintained as a static file here.
+// Originally generated in the cloud repo; maintained as a static file here.
 
 /** Ordered list of provider ids — drives the picker option order. */
 export const WEB_SEARCH_PROVIDER_IDS: readonly string[] = [

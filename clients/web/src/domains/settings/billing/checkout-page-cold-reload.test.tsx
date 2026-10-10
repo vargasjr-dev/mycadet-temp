@@ -1,11 +1,11 @@
 /**
  * Cold-reload coverage for the deep-link CheckoutPage.
  *
- * `checkout-page.test.tsx` mocks the platform gate to drive the page's own
+ * `checkout-page.test.tsx` mocks the cloud gate to drive the page's own
  * branches. This file leaves the gate real and drives the auth store instead,
  * so the page sees the window a hard reload of `/assistant/checkout?package=…`
  * actually opens: `sessionStatus` is already authenticated while
- * `platformSession` is still `"unknown"`, because the local-gateway path
+ * `cloudSession` is still `"unknown"`, because the local-gateway path
  * settles the first without awaiting the second.
  */
 
@@ -47,7 +47,7 @@ mock.module("@/runtime/browser", () => ({
   },
 }));
 
-// Org readiness and the funnel flag are settled here so the platform session is
+// Org readiness and the funnel flag are settled here so the cloud session is
 // the only thing the page is waiting on.
 mock.module("@/hooks/use-is-org-ready", () => ({
   ...orgReadyMod,
@@ -102,7 +102,7 @@ describe("CheckoutPage — cold reload", () => {
     // The reload window: signed in, platform liveness not yet known.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      platformSession: "unknown",
+      cloudSession: "unknown",
     });
 
     const { getByLabelText, getByTestId } = renderCheckout();
@@ -114,7 +114,7 @@ describe("CheckoutPage — cold reload", () => {
     expect(getByTestId("loc").textContent).toBe(ENTRY);
 
     act(() => {
-      useAuthStore.setState({ platformSession: "present" });
+      useAuthStore.setState({ cloudSession: "present" });
     });
 
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
@@ -125,7 +125,7 @@ describe("CheckoutPage — cold reload", () => {
   test("a settled-absent session still bails to plans and drops the stash", async () => {
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      platformSession: "absent",
+      cloudSession: "absent",
     });
     saveCheckoutIntent({
       kind: "package",

@@ -115,10 +115,10 @@ describe("resolveAuth defense-in-depth", () => {
   // exact credential name the tests pass to resolveAuth.
   useMemorySecureKeys({ "cred-test": "sk-test-key" });
 
-  // Mock the platform proxy context to avoid real platform calls.
-  mock.module("../../platform-proxy/context.js", () => ({
-    buildManagedBaseUrl: async () => null,
-    resolveManagedProxyContext: async () => ({
+  // Mock the cloud proxy context to avoid real platform calls.
+  mock.module("../../cloud-proxy/context.js", () => ({
+    buildCloudBaseUrl: async () => null,
+    resolveCloudProxyContext: async () => ({
       assistantApiKey: "platform-key",
     }),
   }));

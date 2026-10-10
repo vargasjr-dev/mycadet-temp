@@ -18,14 +18,14 @@ const CURRENT: ResolvedAssistant = {
   id: "a1",
   name: "Alice",
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
 };
 const OTHER: ResolvedAssistant = {
   id: "a2",
   name: "Bob",
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
   runtimeVersion: "0.9.0",
 };
@@ -273,7 +273,7 @@ describe("AssistantSwitcher expanded card", () => {
       id: "a3",
       name: "Carol",
       isLocal: false,
-      isPlatformHosted: true,
+      isCloudHosted: true,
       isPaired: false,
       runtimeVersion: "0.5.0",
     };
@@ -308,7 +308,7 @@ describe("AssistantSwitcher expanded card", () => {
       id: "a4",
       name: "Dana",
       isLocal: false,
-      isPlatformHosted: false,
+      isCloudHosted: false,
       isPaired: true,
     };
     switchable = { assistants: [CURRENT, OTHER, PAIRED], canSwitch: true };

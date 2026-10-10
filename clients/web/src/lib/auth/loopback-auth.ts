@@ -6,7 +6,7 @@
  * back to `http://localhost:{port}/callback?state=...&session_token=...`.
  * The local web server forwards `/callback` to the SPA's `PlatformLoopbackPage`,
  * which validates the state and registers the token with the local server so
- * its platform proxy can authenticate — no browser session cookie is used.
+ * its cloud proxy can authenticate — no browser session cookie is used.
  */
 
 const FALLBACK_WEB_URL = "https://www.mycadet.ai";
@@ -15,7 +15,7 @@ const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
 interface CadetConfig {
   webUrl?: string;
-  platformUrl?: string;
+  cloudUrl?: string;
 }
 
 function getLocalConfig(): { webUrl: string } {

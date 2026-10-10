@@ -131,7 +131,7 @@ import { Button } from "@mycadet/design-library";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   getChatBillingBannerDecision,
-  isManagedCredentialChatError,
+  isCloudCredentialChatError,
   resolveComposerBillingBanner,
   shouldShowGenericChatErrorNotice,
 } from "@/domains/chat/utils/error-classification";
@@ -188,9 +188,9 @@ import { paneState } from "@/stores/pane-state";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
 
-import { canRecoverLocalAssistantPlatformCredential } from "@/lib/local-platform-identity";
+import { canRecoverLocalAssistantCloudCredential } from "@/lib/local-cloud-identity";
 
-import { RestoreManagedCredentialButton } from "./restore-managed-credential-button";
+import { RestoreCloudCredentialButton } from "./restore-cloud-credential-button";
 import { useLowBalanceBannerStore } from "@/stores/low-balance-banner-store";
 
 // ---------------------------------------------------------------------------
@@ -738,7 +738,7 @@ export function ChatMainPanel({
   // Single balance-status read shared by every proactive billing surface in
   // this component: the transcript's tail card, the empty state's card, and
   // the low-balance composer banner. The active conversation is passed so
-  // the BYOK suppression respects a per-conversation managed profile pin. A
+  // the BYOK suppression respects a per-conversation cloud profile pin. A
   // client-minted draft has no server row to look up (the lookup would 404
   // and needlessly fail the gate open); its effective profile lives in the
   // composer stash, so that is threaded instead.
@@ -843,20 +843,20 @@ export function ChatMainPanel({
     </Button>
   ) : undefined;
 
-  // The assistant API key is provisioned by the platform, so unlike a rejected
+  // The assistant API key is provisioned by the cloud, so unlike a rejected
   // personal key there is nothing for the user to fix in Settings. Recovery
   // differs by how the assistant is hosted, so the banner offers one of two
   // actions rather than a single link:
   //
-  //   platform-hosted → the Doctor, which can re-issue the key. The request is
+  //   cloud-hosted → the Doctor, which can re-issue the key. The request is
   //     parked in the same one-shot store `/doctor <message>` uses, so the
   //     panel auto-starts a session already on topic, not on a blank prompt.
-  //   self-hosted -> the client owns the reprovision flow (the platform's own
+  //   self-hosted -> the client owns the reprovision flow (the cloud's own
   //     recovery excludes these registrations). Where this client can write
   //     to the assistant's gateway (a plain local assistant or a local Docker
   //     instance), the banner performs it, and the button itself asks for a
   //     platform sign-in first when there is none. Where it cannot (a
-  //     remotely served client, a platform-disabled one), the banner hands
+  //     remotely served client, a cloud-disabled one), the banner hands
   //     over the CLI command instead, so no hosting mode is left without a
   //     way back.
   //
@@ -878,8 +878,8 @@ export function ChatMainPanel({
         </Link>
       </Button>
     ) : assistantState.kind === "active" &&
-      canRecoverLocalAssistantPlatformCredential() ? (
-      <RestoreManagedCredentialButton onRestored={onRestored} />
+      canRecoverLocalAssistantCloudCredential() ? (
+      <RestoreCloudCredentialButton onRestored={onRestored} />
     ) : assistantState.kind === "active" ? (
       <Button
         variant="outlined"
@@ -925,7 +925,7 @@ export function ChatMainPanel({
             buildOpenUrlAction(error.actionUrl, () =>
               useChatSessionStore.getState().setError(null),
             ) ??
-            (isManagedCredentialChatError(error)
+            (isCloudCredentialChatError(error)
               ? buildReprovisionAssistantKeyAction(() => {
                   const session = useChatSessionStore.getState();
                   if (session.error === error) {
@@ -945,7 +945,7 @@ export function ChatMainPanel({
             buildOpenUrlAction(notice.actionUrl, () =>
               useChatSessionStore.getState().setNotice(null),
             ) ??
-            (isManagedCredentialChatError(notice)
+            (isCloudCredentialChatError(notice)
               ? buildReprovisionAssistantKeyAction(() => {
                   const session = useChatSessionStore.getState();
                   if (session.notice === notice) {

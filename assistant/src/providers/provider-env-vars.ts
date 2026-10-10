@@ -24,7 +24,7 @@ import { SEARCH_PROVIDER_CATALOG } from "./search-provider-catalog.js";
 /**
  * Search-provider env var names, derived from `SEARCH_PROVIDER_CATALOG`.
  * Adding a BYOK provider to the catalog automatically extends this map —
- * managed providers (no `envVar`) are filtered out.
+ * cloud providers (no `envVar`) are filtered out.
  */
 const SEARCH_PROVIDER_ENV_VAR_NAMES: Record<string, string> = Object.freeze(
   Object.fromEntries(

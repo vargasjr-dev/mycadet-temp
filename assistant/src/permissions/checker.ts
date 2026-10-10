@@ -476,7 +476,7 @@ function buildClassifyRiskParams(
 
   // ── Skill tools ──
   if (
-    ["skill_load", "scaffold_managed_skill", "delete_managed_skill"].includes(
+    ["skill_load", "scaffold_cloud_skill", "delete_cloud_skill"].includes(
       toolName,
     )
   ) {
@@ -610,7 +610,7 @@ export async function classifyRisk(
 }
 
 // ── Background memory-retrospective skill-authoring auto-grant ────────────────
-// Skill scaffolding (`scaffold_managed_skill`, risk: high + allowlist-gated),
+// Skill scaffolding (`scaffold_cloud_skill`, risk: high + allowlist-gated),
 // finding similar skills (`find_similar_skills`), and loading the
 // `skill-management` skill (`skill_load skill-management`, which exposes the
 // scaffold tool) require an interactive approval. The memory-retrospective
@@ -640,7 +640,7 @@ function isRetrospectiveSkillAuthoringGrant(
   ) {
     return false;
   }
-  if (toolName === "scaffold_managed_skill") {
+  if (toolName === "scaffold_cloud_skill") {
     return true;
   }
   if (toolName === "find_similar_skills") {

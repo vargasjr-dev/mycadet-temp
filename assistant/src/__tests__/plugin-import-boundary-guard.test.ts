@@ -154,7 +154,7 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../prompts/persona-resolver.js",
     "../../../../prompts/system-prompt.js",
     "../../../../prompts/template-detection.js",
-    "../../../../providers/platform-proxy/context.js",
+    "../../../../providers/cloud-proxy/context.js",
     "../../../../runtime/assistant-event-hub.js",
     "../../../../runtime/auth/route-policy.js",
     "../../../../runtime/background-job-runner.js",
@@ -277,7 +277,7 @@ const BASELINE: Record<string, readonly string[]> = {
     "yaml",
     "zod",
   ],
-  "platform-hosted": ["node:fs/promises", "node:path"],
+  "cloud-hosted": ["node:fs/promises", "node:path"],
   // Host-internal surface snapshot and task_progress parser. UI surfaces
   // stay host-owned, so there is no plugin-api equivalent.
   "task-progress": [

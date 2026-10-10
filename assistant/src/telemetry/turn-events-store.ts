@@ -179,7 +179,7 @@ export function queryUnreportedTurnEvents(
       // sqlite's `json_extract` yields 1/0 for JSON booleans, not true/false,
       // and SQL NULL when the path is absent (rows predating the field). Kept
       // numeric here and converted below. A raw pass-through would put `1`
-      // on the wire, which the platform's BooleanField would reject.
+      // on the wire, which the cloud's BooleanField would reject.
       scripted: sql<
         number | null
       >`json_extract(${messages.metadata}, '$.scripted')`.as("scripted"),

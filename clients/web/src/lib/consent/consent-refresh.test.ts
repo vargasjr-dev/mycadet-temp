@@ -94,7 +94,7 @@ function consentRecord(overrides: Partial<UserConsent> = {}): UserConsent {
     required_versions: {},
     ...overrides,
   };
-  // Mirror the wire contract: the platform serves effective = value ?? true.
+  // Mirror the wire contract: the cloud serves effective = value ?? true.
   return {
     ...base,
     share_analytics_effective:
@@ -141,7 +141,7 @@ describe("refreshDiagnosticsConsent", () => {
   });
 
   test("no-ops for a local-mode user with no platform account", async () => {
-    // A truthy id is not a platform account, and the 401/403 the platform
+    // A truthy id is not a cloud account, and the 401/403 the cloud
     // answers with is a settled rejection that arms the auth recovery.
     currentUser = LOCAL_USER;
     await refreshDiagnosticsConsent();

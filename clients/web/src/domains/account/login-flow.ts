@@ -70,18 +70,18 @@ const PLATFORM_ONLY_PATHS: readonly string[] = [
  * Does landing on `destination` need a live platform session, or is a local
  * gateway identity enough?
  *
- * Three families need one. Anything the platform serves rather than this SPA:
+ * Three families need one. Anything the cloud serves rather than this SPA:
  * the Django account routes, the API, the marketing import funnel and any
- * mycadet.ai URL. The platform-only in-app surfaces above. And the returns that
+ * mycadet.ai URL. The cloud-only in-app surfaces above. And the returns that
  * carry a finished purchase — a billing landing holding Stripe's `session_id`,
- * and the managed hatch, which reads the purchased ceiling server-side and
+ * and the cloud hatch, which reads the purchased ceiling server-side and
  * hatches at the baseline plan without a session.
  *
  * Everything else is daemon-served and works on a local session, including a
  * bare `/assistant/settings/usage`: the Usage tab reads from the local daemon,
  * so only the `session_id` return leg of it is platform-bound.
  */
-export function requiresPlatformSession(destination: string): boolean {
+export function requiresCloudSession(destination: string): boolean {
   if (requiresFullPageNavigation(destination)) {
     return true;
   }

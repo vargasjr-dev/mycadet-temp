@@ -12,10 +12,10 @@ export const webhooksHelp: CliCommandHelp = {
 Resolves a stable callback URL that external services (Telegram, Twilio,
 email providers, OAuth) should use to reach this assistant.
 
-On platform-managed assistants, this registers a callback route with the
+On cloud assistants, this registers a callback route with the
 platform gateway. Otherwise it uses the configured ingress.publicBaseUrl,
-falling back to the platform gateway when no ingress is configured and the
-assistant is connected to the platform.
+falling back to the cloud gateway when no ingress is configured and the
+assistant is connected to the cloud.
 
 The webhook path is derived from the type: underscores become path
 separators, prefixed with webhooks/.
@@ -35,7 +35,7 @@ Examples:
       name: "register",
       args: "<type>",
       description:
-        "Get a callback URL for a webhook type, registering with the platform if needed",
+        "Get a callback URL for a webhook type, registering with the cloud if needed",
       options: [
         {
           flags: "--path <path>",
@@ -48,12 +48,12 @@ Examples:
         },
       ],
       helpText: `
-Resolves a callback URL for the given webhook type. On platform-managed
-assistants (IS_PLATFORM=true), registers a callback route with the platform
+Resolves a callback URL for the given webhook type. On cloud-managed
+assistants (IS_CLOUD=true), registers a callback route with the cloud
 gateway and returns the stable external URL. Otherwise it reads
 ingress.publicBaseUrl from config and appends the webhook path. That URL is
 either your own tunnel or the Tunnel URL the gateway publishes. If no
-ingress is configured and the assistant is connected to the platform
+ingress is configured and the assistant is connected to the cloud
 (via 'assistant cloud connect'), it registers a callback route with the
 platform gateway instead of failing.
 
@@ -84,9 +84,9 @@ Examples:
       name: "list",
       description: "List registered webhook callback routes",
       helpText: `
-Lists all webhook callback routes registered with the platform for this
+Lists all webhook callback routes registered with the cloud for this
 assistant. Only available when cloud credentials are configured (either
-via IS_PLATFORM or 'assistant cloud connect').
+via IS_CLOUD or 'assistant cloud connect').
 
 Self-hosted assistants without cloud credentials do not have a persistent
 webhook registry — use 'assistant webhooks register <type>' to resolve URLs

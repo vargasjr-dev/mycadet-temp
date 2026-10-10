@@ -6,7 +6,7 @@
  *
  * Covers every catalog surface the web UI consumes: per-model fields
  * (ids, order, display names, token limits, thinking flags), per-provider
- * default models, the provider display-name and platform-auth maps, the
+ * default models, the provider display-name and cloud-auth maps, the
  * INFERENCE_PROVIDERS picker list in constants.ts, and the
  * CONNECTION_PROVIDERS picker list in provider-editor-constants.ts.
  */
@@ -30,7 +30,7 @@ import {
   catalogModelSupportsText,
   getVisibleModelsForProvider,
   getTextGenerationModelsForProvider,
-  getManagedUpstreamForModel,
+  getCloudUpstreamForModel,
   providerOffersTextGeneration,
   CADET_SERVED_PROVIDERS,
   type LlmProviderId,
@@ -56,7 +56,7 @@ interface MetaCatalogModel {
 interface MetaCatalogProvider {
   id: string;
   displayName: string;
-  supportsPlatformAuth?: boolean;
+  supportsCloudAuth?: boolean;
   defaultModel: string;
   models: MetaCatalogModel[];
 }
@@ -161,13 +161,13 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     expect(new Set(labels)).toEqual(servedLabels);
   });
 
-  test("getManagedUpstreamForModel derives the serving provider", () => {
-    expect(getManagedUpstreamForModel("claude-opus-4-8")).toBe("anthropic");
+  test("getCloudUpstreamForModel derives the serving provider", () => {
+    expect(getCloudUpstreamForModel("claude-opus-4-8")).toBe("anthropic");
     expect(
-      getManagedUpstreamForModel("accounts/fireworks/models/glm-5p3"),
+      getCloudUpstreamForModel("accounts/fireworks/models/glm-5p3"),
     ).toBe("fireworks");
-    expect(getManagedUpstreamForModel("qwen/qwen3-8b")).toBe("cadet");
-    expect(getManagedUpstreamForModel("not-a-real-model")).toBeUndefined();
+    expect(getCloudUpstreamForModel("qwen/qwen3-8b")).toBe("cadet");
+    expect(getCloudUpstreamForModel("not-a-real-model")).toBeUndefined();
   });
 
   test("cadet GPU models stay out of pickers and hide without hosted inference", () => {
@@ -232,7 +232,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     }
   });
 
-  test("provider platform-auth support matches the meta catalog", () => {
+  test("provider cloud-auth support matches the meta catalog", () => {
     // Like the display-name map, this covers every daemon provider so the
     // connection editor can filter auth types for daemon-only providers.
     // Normalized to boolean: missing entries on either side mean `false`.
@@ -240,7 +240,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
       expect(
         PROVIDER_SUPPORTS_PLATFORM_AUTH[provider.id],
         `PROVIDER_SUPPORTS_PLATFORM_AUTH["${provider.id}"] drifted from meta`,
-      ).toBe(provider.supportsPlatformAuth === true);
+      ).toBe(provider.supportsCloudAuth === true);
     }
   });
 
@@ -264,7 +264,7 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     // back a connection — so it must list exactly the meta catalog's
     // provider ids or a provider becomes un-creatable as a connection.
     // `cadet` is excluded: those models use the assistant API key on the
-    // existing managed connection and have no BYOK create path.
+    // existing cloud connection and have no BYOK create path.
     // Order is not asserted: the list's order is the picker's display order.
     const connectionProviderIds: string[] = [...CONNECTION_PROVIDERS];
     expect(connectionProviderIds.sort()).toEqual(

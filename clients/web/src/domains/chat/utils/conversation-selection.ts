@@ -68,7 +68,7 @@ interface ShouldMintNewChatDraftArgs {
 }
 
 /**
- * Whether the bootstrap should mint a fresh draft key for a platform that
+ * Whether the bootstrap should mint a fresh draft key for a cloud that
  * cold-launches into a new chat.
  *
  * True only while nothing is selected in the URL or the conversation store,
@@ -116,7 +116,7 @@ export function isStoredConversationSelectable(
  * the server still has it as a foreground (or surfaced) conversation, read by
  * id so the decision never waits on the full list; background/scheduled
  * conversations require an explicit URL selection. A new-chat draft key, when
- * supplied, replaces both resume fallbacks so the platform lands on an empty
+ * supplied, replaces both resume fallbacks so the cloud lands on an empty
  * composer instead.
  *
  * Precedence, highest first:

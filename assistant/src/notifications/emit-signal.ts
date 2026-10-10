@@ -13,18 +13,18 @@ import type { GuardianDelivery } from "@mycadet/gateway-client";
 import { v4 as uuid } from "uuid";
 
 import { getDeliverableChannels } from "../channels/config.js";
+import { isCloudClientConfigured } from "../cloud/client.js";
 import {
   getGuardianDelivery,
   guardianForChannel,
 } from "../contacts/guardian-delivery-reader.js";
 import type { ConversationCreateType } from "../persistence/conversation-types.js";
-import { isPlatformClientConfigured } from "../platform/client.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
+import { CloudPushAdapter } from "./adapters/cloud.js";
 import { DiscordAdapter } from "./adapters/discord.js";
 import { CadetAdapter } from "./adapters/macos.js";
-import { PlatformPushAdapter } from "./adapters/platform.js";
 import { SlackAdapter } from "./adapters/slack.js";
 import { TelegramAdapter } from "./adapters/telegram.js";
 import { resolveAssistantInitiatedThread } from "./assistant-initiated-thread.js";
@@ -72,7 +72,7 @@ export function getBroadcaster(): NotificationBroadcaster {
       new TelegramAdapter(),
       new SlackAdapter(),
       new DiscordAdapter(),
-      new PlatformPushAdapter(),
+      new CloudPushAdapter(),
     ]);
 
     // Wire the conversation-created callback so the event goes out as soon
@@ -142,7 +142,7 @@ export async function getConnectedChannels(): Promise<NotificationChannel[]> {
       case "platform":
         // Platform push is treated as connected at the decision-engine
         // layer; the actual delivery path lazily resolves
-        // `CadetPlatformClient.create()` in `PlatformPushAdapter.send()`
+        // `CadetCloudClient.create()` in `CloudPushAdapter.send()`
         // and reports a delivery failure when credentials are absent.
         channels.push(channel);
         break;
@@ -316,7 +316,7 @@ function emitOutcome(
 
 /**
  * True when at least one channel adapter has already been handed the signal.
- * `sent` is a completed delivery; `pending` is the platform push that passed
+ * `sent` is a completed delivery; `pending` is the cloud push that passed
  * its outcome deadline and is still in flight. Both mean a retry would
  * re-deliver.
  */
@@ -449,7 +449,7 @@ export async function emitNotificationSignal<TEventName extends string>(
     const prePolicyDecision = decision;
     let platformConfigured: Promise<boolean> | undefined;
     const platformIsConfigured = () =>
-      (platformConfigured ??= isPlatformClientConfigured());
+      (platformConfigured ??= isCloudClientConfigured());
 
     // Step 2.5a: High/critical urgency signals always get both the in-app
     // system notification (cadet) and the remote push (platform),

@@ -3,7 +3,7 @@
  *
  * The monolingual set is exactly Deepgram nova-3's verified monolingual
  * roster (per Deepgram's models-languages-overview documentation), because
- * the managed relay pins nova-3; the daemon holds the authoritative code
+ * the cloud relay pins nova-3; the daemon holds the authoritative code
  * list (`DEEPGRAM_NOVA3_MONOLINGUAL_CODES`) and a parity test pins this
  * catalog to it. Extending it requires verifying nova-3 monolingual support
  * in Deepgram's docs first. Base codes only: regional variants ("en-US")
@@ -165,7 +165,7 @@ const MULTI_CAPABLE_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
  * Daemon provider ids that get the extended nova-3 monolingual roster (the
  * `extended` entries). The extended entries are verified against Deepgram's
  * nova-3 documentation only, so they are offered exactly where nova-3 runs:
- * `deepgram` directly and `cadet` via the managed relay (model pinned to
+ * `deepgram` directly and `cadet` via the cloud relay (model pinned to
  * nova-3 server-side). Other language-selectable providers (xai) keep the
  * pre-expansion multi-roster set they were verified with; an unverified code
  * there could silently degrade recognition rather than error.
@@ -189,7 +189,7 @@ export const AUTO_DETECT_WHEN_UNSET_DAEMON_PROVIDERS: ReadonlySet<string> =
 
 /**
  * Daemon provider ids whose unset state resolves to code-switching. Deepgram
- * and the managed relay decode language-less audio as English rather than
+ * and the cloud relay decode language-less audio as English rather than
  * detecting it, so the daemon fills an unset `services.stt.language` with
  * `"multi"` before it reaches them (`effectiveSttLanguage` in
  * `assistant/src/providers/speech-to-text/resolve.ts`).

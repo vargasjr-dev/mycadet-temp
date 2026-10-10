@@ -55,7 +55,7 @@ export const discordTransport: ChannelTransport = {
   /**
    * A chat is a channel id, with `threadId` naming the thread, which is its
    * own channel. Reaching a person who has not been named as a chat would
-   * mean opening their DM first, a platform call this resolution does not
+   * mean opening their DM first, a cloud call this resolution does not
    * make; the inbound `dm` param below is how an event-carried callback says
    * its `chatId` is a recipient rather than a room.
    */

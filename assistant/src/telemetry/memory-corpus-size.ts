@@ -5,7 +5,7 @@ import { getWorkspaceDir } from "../util/platform.js";
 
 /**
  * Coarse on-disk size of the assistant's memory corpus, in the snake_case
- * shape the `memory_tier` watchdog `detail` bag carries to the platform.
+ * shape the `memory_tier` watchdog `detail` bag carries to the cloud.
  *
  * Both corpora are measured on every tier rather than branching on the tier
  * itself: an assistant part-way through a v1 -> v2 -> v3 migration has content

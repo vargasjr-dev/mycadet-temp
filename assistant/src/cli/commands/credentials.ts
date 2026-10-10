@@ -59,8 +59,8 @@ function printCredentialHuman(output: Record<string, unknown>): void {
   }
 }
 
-function printManagedCredentialHuman(output: Record<string, unknown>): void {
-  log.info(`  [platform-managed] ${output.provider}`);
+function printCloudCredentialHuman(output: Record<string, unknown>): void {
+  log.info(`  [cloud-managed] ${output.provider}`);
   log.info(`    Handle:      ${output.handle}`);
   log.info(`    Status:      ${output.status}`);
   if (output.accountInfo) {
@@ -82,7 +82,7 @@ function printManagedCredentialHuman(output: Record<string, unknown>): void {
 
 interface CredentialsListResponse {
   credentials: Record<string, unknown>[];
-  managedCredentials: Record<string, unknown>[];
+  cloudCredentials: Record<string, unknown>[];
 }
 
 interface CredentialsStatusResponse {
@@ -120,16 +120,16 @@ export function registerCredentialsCommand(program: Command): void {
             );
           }
 
-          const { credentials, managedCredentials } = r.result!;
+          const { credentials, cloudCredentials } = r.result!;
 
           if (shouldOutputJson(cmd)) {
             writeOutput(cmd, {
               ok: true,
               credentials,
-              managedCredentials,
+              cloudCredentials,
             });
           } else {
-            const totalCount = credentials.length + managedCredentials.length;
+            const totalCount = credentials.length + cloudCredentials.length;
             if (totalCount === 0) {
               log.info("No credentials found");
             } else {
@@ -140,12 +140,12 @@ export function registerCredentialsCommand(program: Command): void {
                   log.info("");
                 }
               }
-              if (managedCredentials.length > 0) {
+              if (cloudCredentials.length > 0) {
                 log.info(
-                  `${managedCredentials.length} platform-managed credential(s):\n`,
+                  `${cloudCredentials.length} cloud credential(s):\n`,
                 );
-                for (const managed of managedCredentials) {
-                  printManagedCredentialHuman(managed);
+                for (const managed of cloudCredentials) {
+                  printCloudCredentialHuman(managed);
                   log.info("");
                 }
               }

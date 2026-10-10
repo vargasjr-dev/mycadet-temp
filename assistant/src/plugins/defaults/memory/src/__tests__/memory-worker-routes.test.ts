@@ -155,7 +155,7 @@ describe("memory_worker_status", () => {
     expect(res).toMatchObject({ status: "not_running" });
   });
 
-  test("surfaces the local embedding backend (the default non-platform provider)", async () => {
+  test("surfaces the local embedding backend (the default non-cloud provider)", async () => {
     backendStatus = {
       enabled: true,
       degraded: false,

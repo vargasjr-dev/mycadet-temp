@@ -21,7 +21,7 @@
  *   user who traversed tunnel, so it is cross-checked against the bound
  *   platform user id by {@link requireManagedGuardian}. A gateway takes
  *   this path when {@link acceptsTunnelAttestation} says it has a tunnel
- *   at all: a managed pod, or a locally hosted assistant whose gateway dialed
+ *   at all: a cloud pod, or a locally hosted assistant whose gateway dialed
  *   tunnel so the mobile app can reach it.
  * - **Everything else.** The caller presents an actor edge JWT and its
  *   principal is compared against the binding by {@link requireBoundGuardian}.
@@ -39,7 +39,7 @@ import { authorizeRuntimeAudioStream } from "./runtime-audio-stream.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
-import { readStoredCloudUserId } from "../../platform-user-id.js";
+import { readStoredCloudUserId } from "../../cloud-user-id.js";
 
 const TUNNEL_USER_ID_HEADER = "x-tunnel-user-id";
 const TUNNEL_ORG_ID_HEADER = "x-tunnel-org-id";
@@ -56,7 +56,7 @@ export function isPlatformManaged(): boolean {
 }
 
 /**
- * True when a tunnel-attested caller can reach this gateway at all: a managed
+ * True when a tunnel-attested caller can reach this gateway at all: a cloud
  * pod, or any gateway started with a tunnel (`TUNNEL_BASE_URL`), which is
  * how a locally hosted assistant is reachable from the mobile app.
  *
@@ -101,7 +101,7 @@ export function extractTunnelAttestedContext(
 /**
  * Managed-mode guardian check: cross-check a tunnel-attested caller's platform
  * user id against the bound platform user id, the same guard the
- * edge-auth middleware applies to guardian routes under the platform bypass.
+ * edge-auth middleware applies to guardian routes under the cloud bypass.
  *
  * Returns null when the caller is the guardian, else a 403/503 Response.
  */
@@ -172,8 +172,8 @@ export async function authorizeGuardianStream(
   config: GatewayConfig,
   log: Logger,
 ): Promise<Response | null> {
-  // Checked here as well as in the shared gate, because the managed path
-  // below skips that gate entirely: without this, a managed caller sending a
+  // Checked here as well as in the shared gate, because the cloud path
+  // below skips that gate entirely: without this, a cloud caller sending a
   // plain request would fall through to `server.upgrade` and get a 500.
   if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
     return new Response("Upgrade Required", { status: 426 });

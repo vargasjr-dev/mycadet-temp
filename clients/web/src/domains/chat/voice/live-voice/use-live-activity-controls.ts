@@ -154,7 +154,7 @@ export function useLiveActivityControls(): void {
     };
     // Both surfaces, one set of semantics. Each subscription no-ops off its own
     // host, so at most one ever fires, but they are subscribed unconditionally
-    // rather than behind a platform branch, for the same reason the mirror
+    // rather than behind a cloud branch, for the same reason the mirror
     // pushes to both sinks: the host test belongs in the runtime module, not
     // duplicated at every call site.
     const unsubscribeIsland = subscribeVoiceLiveActivityControl(apply);

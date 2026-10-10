@@ -1,5 +1,5 @@
 /**
- * Tests for registering `cadet-shared` invites with the platform during
+ * Tests for registering `cadet-shared` invites with the cloud during
  * invite creation (`createInviteNative`). The gateway DB is real; the
  * platform, credential store, feature flags and daemon IPC are stubbed.
  */
@@ -69,8 +69,8 @@ const CLOUD_URL = "https://test-cloud.mycadet.ai";
 const API_KEY = "vak_test_key";
 const CONTACT_ID = "contact-alice";
 
-function withPlatformCredentials(): void {
-  process.env.CADET_PLATFORM_URL = CLOUD_URL;
+function withCloudCredentials(): void {
+  process.env.CADET_CLOUD_URL = CLOUD_URL;
   storedCredentials = {
     [API_KEY_KEY]: { value: API_KEY, unreachable: false },
   };
@@ -100,8 +100,8 @@ beforeEach(() => {
   fetchMock = mock(async () => new Response(null, { status: 204 }));
   ipcCalls = [];
   trustedContactsEnabled = true;
-  withPlatformCredentials();
-  delete process.env.CADET_DISABLE_PLATFORM;
+  withCloudCredentials();
+  delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
   delete process.env.ASSISTANT_API_KEY;
 });
@@ -150,7 +150,7 @@ describe("cadet-shared invite registration", () => {
 
   test("falls back to the environment for platform credentials", async () => {
     storedCredentials = {};
-    process.env.CADET_PLATFORM_URL = CLOUD_URL;
+    process.env.CADET_CLOUD_URL = CLOUD_URL;
     process.env.ASSISTANT_API_KEY = "vak_env_key";
 
     await createInviteNative({
@@ -198,7 +198,7 @@ describe("registration is skipped", () => {
   });
 
   test("when platform features are disabled", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
 
     await createInviteNative({
       contactId: CONTACT_ID,
@@ -263,12 +263,12 @@ describe("a failed registration leaves no invite", () => {
     await expectCreateRejected(429, "TOO_MANY_OUTSTANDING_INVITES");
   });
 
-  test("a platform error surfaces as 502", async () => {
+  test("a cloud error surfaces as 502", async () => {
     fetchMock = mock(async () => new Response(null, { status: 503 }));
     await expectCreateRejected(502, "INVITE_REGISTRATION_FAILED");
   });
 
-  test("a platform refusal surfaces as 502", async () => {
+  test("a cloud refusal surfaces as 502", async () => {
     fetchMock = mock(async () => new Response(null, { status: 404 }));
     await expectCreateRejected(502, "INVITE_REGISTRATION_FAILED");
   });
@@ -280,7 +280,7 @@ describe("a failed registration leaves no invite", () => {
     await expectCreateRejected(502, "INVITE_REGISTRATION_FAILED");
   });
 
-  test("an unreachable credential store surfaces as 503 without calling the platform", async () => {
+  test("an unreachable credential store surfaces as 503 without calling the cloud", async () => {
     storedCredentials = {
       [API_KEY_KEY]: { value: undefined, unreachable: true },
     };

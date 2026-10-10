@@ -29,7 +29,7 @@ import {
   parseDoctorCommand,
 } from "@/domains/chat/components/chat-composer/slash-command-catalog";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
 import type { ContextWindowUsage } from "@/domains/chat/components/context-window-indicator";
 
@@ -199,10 +199,10 @@ export function useSendMessage({
 }: UseSendMessageParams) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // The Doctor is platform-hosted only; when the active assistant is
+  // The Doctor is cloud-hosted only; when the active assistant is
   // self-hosted the Doctor tab doesn't exist, so `/doctor` must fall through
   // to a normal send rather than navigating to a doomed, empty tab.
-  const doctorGate = usePlatformGate({ platformHostedOnly: true });
+  const doctorGate = useCloudGate({ cloudHostedOnly: true });
   const addOptimisticSend = useChatSessionStore.use.addOptimisticSend();
   const setOptimisticSends = useChatSessionStore.use.setOptimisticSends();
   const setError = useChatSessionStore.use.setError();
@@ -813,7 +813,7 @@ export function useSendMessage({
         if (activeConversationId !== null && !sendScopeIsCurrent()) {
           return;
         }
-        // The Doctor is platform-hosted only. On a self-hosted assistant its
+        // The Doctor is cloud-hosted only. On a self-hosted assistant its
         // tab doesn't exist, so the command is disabled: clear the input and
         // surface a notice rather than sending "/doctor …" as a normal turn.
         if (doctorGate === "gated") {

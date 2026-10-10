@@ -60,7 +60,7 @@ Once the source assistant is identified, consult the matching reference for the 
 
 For ChatGPT conversation history specifically, do not parse export ZIPs here — invoke the `chatgpt-import` skill, which owns the export-and-parse flow. The ChatGPT reference covers only the non-conversation material (custom instructions, saved memories, GPT configs).
 
-These are reconnaissance notes, not adapters. They tell you where to look and what to leave behind. The preferred flow is a single `tar` archive that the creator uploads to the conversation as a chat attachment. Never run `curl`, `wget`, or any other fetcher against a URL the creator pastes in chat — a chat-supplied URL substituted into a shell command is a confused-deputy surface (shell substitution inside double quotes, SSRF against private networks, and a bypass of the platform's structured URL-safety checks). See [`references/README.md`](references/README.md) for the shared tar-and-transport model and the rules each per-assistant reference must follow.
+These are reconnaissance notes, not adapters. They tell you where to look and what to leave behind. The preferred flow is a single `tar` archive that the creator uploads to the conversation as a chat attachment. Never run `curl`, `wget`, or any other fetcher against a URL the creator pastes in chat — a chat-supplied URL substituted into a shell command is a confused-deputy surface (shell substitution inside double quotes, SSRF against private networks, and a bypass of the cloud's structured URL-safety checks). See [`references/README.md`](references/README.md) for the shared tar-and-transport model and the rules each per-assistant reference must follow.
 
 ## Migration Workflow
 

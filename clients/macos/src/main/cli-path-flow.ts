@@ -36,7 +36,7 @@ async function confirmReplaceForeignFile(): Promise<boolean> {
     detail:
       `A "cadet" file already exists at ${getWrapperPath()} but wasn't ` +
       "installed by Cadet (it may have been installed by npm with a custom " +
-      "prefix). Do you want to replace it with the Cadet-managed command?",
+      "prefix). Do you want to replace it with the Cadet Cloud command?",
     buttons: ["Replace", "Cancel"],
     defaultId: 1,
     cancelId: 1,

@@ -214,7 +214,7 @@ describe("fetchAvatarImageUrlResult", () => {
     const result = await fetchAvatarImageUrlResult("asst-1");
 
     // Regression guard: the image must be fetched through the daemon client
-    // (the instance spied on here), not the platform `api` client. The latter
+    // (the instance spied on here), not the cloud `api` client. The latter
     // issues a relative `/v1/...` URL that the dev proxy forwards to a
     // different — and locally absent — backend, so the request never reaches
     // the daemon and the avatar silently falls back to the default character.

@@ -368,17 +368,17 @@ async function checkConnection(
   };
 }
 
-// ── Managed provider checks ──────────────────────────────────────────
+// ── Cloud provider checks ──────────────────────────────────────────
 
 /**
  * Check whether a provider is configured in managed mode.
  * Uses dynamic imports to avoid circular dependencies (same pattern as
  * `integration-status.ts`).
  */
-async function isManagedProvider(
+async function isCloudProvider(
   providerRow: OAuthProviderRow,
 ): Promise<boolean> {
-  const managedKey = providerRow.managedServiceConfigKey;
+  const managedKey = providerRow.cloudServiceConfigKey;
   if (!managedKey) {
     return false;
   }
@@ -399,19 +399,19 @@ async function isManagedProvider(
 }
 
 /**
- * Fetch active managed connections from the platform and ping each one.
- * Returns health results for managed connections, or an empty array if
- * the platform is unreachable or the provider is not managed.
+ * Fetch active cloud connections from the cloud and ping each one.
+ * Returns health results for cloud connections, or an empty array if
+ * the cloud is unreachable or the provider is not managed.
  */
-async function checkManagedProvider(
+async function checkCloudProvider(
   providerRow: OAuthProviderRow,
 ): Promise<CredentialHealthResult[]> {
   const results: CredentialHealthResult[] = [];
 
   try {
-    const { CadetPlatformClient } = await import("../platform/client.js");
-    const client = await CadetPlatformClient.create();
-    if (!client?.platformAssistantId) {
+    const { CadetCloudClient } = await import("../cloud/client.js");
+    const client = await CadetCloudClient.create();
+    if (!client?.cloudAssistantId) {
       return results;
     }
 
@@ -421,13 +421,13 @@ async function checkManagedProvider(
     const params = new URLSearchParams();
     params.set("provider", providerRow.provider);
 
-    const path = `/v1/assistants/${encodeURIComponent(client.platformAssistantId)}/oauth/connections/?${params.toString()}`;
+    const path = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/?${params.toString()}`;
     const response = await client.fetch(path);
 
     if (!response.ok) {
       log.warn(
         { status: response.status, provider: providerRow.provider },
-        "Failed to list managed connections for health check",
+        "Failed to list cloud connections for health check",
       );
       return results;
     }
@@ -458,14 +458,14 @@ async function checkManagedProvider(
         provider: providerRow.provider,
         accountInfo: allConnections[0]?.account_label ?? null,
         status: "missing_token",
-        details: `No active managed connection for ${providerRow.provider}. Reconnect on Cadet Cloud.`,
+        details: `No active cloud connection for ${providerRow.provider}. Reconnect on Cadet Cloud.`,
         missingScopes: [],
         canAutoRecover: false,
       });
       return results;
     }
 
-    // Ping each managed connection via the platform proxy
+    // Ping each cloud connection via the cloud proxy
     for (const conn of connections) {
       const base: Omit<
         CredentialHealthResult,
@@ -482,17 +482,17 @@ async function checkManagedProvider(
         results.push({
           ...base,
           status: "healthy",
-          details: `${providerRow.provider} managed connection is active (no ping URL configured).`,
+          details: `${providerRow.provider} cloud connection is active (no ping URL configured).`,
           canAutoRecover: true,
         });
         continue;
       }
 
-      // Ping via platform proxy
+      // Ping via cloud proxy
       try {
-        const { PlatformOAuthConnection } =
-          await import("../oauth/platform-connection.js");
-        const platformConn = new PlatformOAuthConnection({
+        const { CloudOAuthConnection } =
+          await import("../oauth/cloud-connection.js");
+        const platformConn = new CloudOAuthConnection({
           id: conn.id,
           provider: providerRow.provider,
           externalId: providerRow.provider,
@@ -530,16 +530,16 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "healthy",
-            details: `${providerRow.provider} managed credential is healthy.`,
+            details: `${providerRow.provider} cloud credential is healthy.`,
             canAutoRecover: true,
           });
         } else if (pingResp.status === 401 || pingResp.status === 403) {
-          // 401/403 from the upstream provider after the platform proxy
+          // 401/403 from the upstream provider after the cloud proxy
           // forwarded the request. From the daemon side we can't tell
           // whether the proxy attempted (and failed) a refresh-before-
           // forward or skipped refresh entirely and forwarded a stale token.
           // Either way it's not definitively unrecoverable — the next ping
-          // cycle may succeed if the platform re-refreshes. Demote to
+          // cycle may succeed if the cloud re-refreshes. Demote to
           // ping_failed so we don't fire a user-facing reconnect alert on
           // what may be a transient platform-side miss. Only platform-
           // attested 424 (CredentialRequiredError below) signals genuine
@@ -550,7 +550,7 @@ async function checkManagedProvider(
               connectionId: conn.id,
               status: pingResp.status,
             },
-            "Managed credential ping returned 401/403 — treating as potentially transient",
+            "Cloud credential ping returned 401/403 — treating as potentially transient",
           );
           results.push({
             ...base,
@@ -568,8 +568,8 @@ async function checkManagedProvider(
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        // CredentialRequiredError corresponds to a 424 from the platform
-        // proxy — the platform attempted (and gave up on) refresh and is
+        // CredentialRequiredError corresponds to a 424 from the cloud
+        // proxy — the cloud attempted (and gave up on) refresh and is
         // telling us the credential is genuinely unrecoverable. This is
         // the only managed-path signal we trust enough to fire a user-
         // facing reconnect alert.
@@ -582,13 +582,13 @@ async function checkManagedProvider(
           results.push({
             ...base,
             status: "revoked",
-            details: `${providerRow.provider} managed connection cannot be refreshed by Cadet Cloud. Reconnect on Cadet Cloud.`,
+            details: `${providerRow.provider} cloud connection cannot be refreshed by Cadet Cloud. Reconnect on Cadet Cloud.`,
             canAutoRecover: false,
           });
         } else {
           log.debug(
             { provider: providerRow.provider, connectionId: conn.id, err: msg },
-            "Managed credential ping failed",
+            "Cloud credential ping failed",
           );
           results.push({
             ...base,
@@ -602,7 +602,7 @@ async function checkManagedProvider(
   } catch (err) {
     log.warn(
       { err, provider: providerRow.provider },
-      "Failed to check managed provider health",
+      "Failed to check cloud provider health",
     );
   }
 
@@ -610,7 +610,7 @@ async function checkManagedProvider(
 }
 
 /**
- * Connection id for the Cadet-managed assistant credential.
+ * Connection id for the Cadet Cloud assistant credential.
  *
  * The credential is a single workspace-wide slot rather than one row per
  * account, so it carries the credential-store key as its id instead of a
@@ -619,8 +619,8 @@ async function checkManagedProvider(
 const ASSISTANT_API_KEY_CONNECTION_ID = "cadet:assistant_api_key";
 
 /**
- * Health of the platform-provisioned assistant API key, the credential that
- * authenticates Cadet-managed inference.
+ * Health of the cloud-provisioned assistant API key, the credential that
+ * authenticates Cadet Cloud inference.
  *
  * Deliberately not part of {@link checkAllCredentials} yet. Adding it there
  * makes the heartbeat raise a `credential.health_alert` for this credential,
@@ -630,15 +630,15 @@ const ASSISTANT_API_KEY_CONNECTION_ID = "cadet:assistant_api_key";
  *
  * This is the one credential the assistant cannot mint for itself: the
  * platform issues it and a signed-in client writes it in. For a self-hosted
- * or local assistant the platform deliberately does not self-heal a dead key
+ * or local assistant the cloud deliberately does not self-heal a dead key
  * (`recover_expired_assistant_api_key` excludes registrations of that kind,
  * because the client owns the reprovision flow), so its health has to be
  * observed here and acted on by a client.
  *
  * Statuses map onto the shared vocabulary:
  *   - `missing_token`: no key is stored, so managed inference cannot run.
- *   - `revoked`: the platform settled that the stored key is not accepted.
- *   - `unreachable`: the credential store or the platform did not answer, so
+ *   - `revoked`: the cloud settled that the stored key is not accepted.
+ *   - `unreachable`: the credential store or the cloud did not answer, so
  *     health is unknown. The heartbeat drops these before notifying, which is
  *     what keeps a transient outage from raising a credential alert.
  *
@@ -665,15 +665,15 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "unreachable",
       details:
-        "The credential store is unreachable, so Cadet's managed credentials could not be checked.",
+        "The credential store is unreachable, so Cadet's cloud credentials could not be checked.",
       canAutoRecover: false,
     };
   }
 
   if (stored.value == null) {
-    // A workspace that was never connected to the platform has no managed
+    // A workspace that was never connected to the cloud has no managed
     // credential and is not unhealthy. Only an install that already carries
-    // the rest of a platform identity is missing something.
+    // the rest of a cloud identity is missing something.
     const assistantId = await getSecureKeyAsync(
       credentialKey("cadet", "platform_assistant_id"),
     );
@@ -684,19 +684,19 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "missing_token",
       details:
-        "No Cadet-managed credentials are stored yet. Log in to Cadet Cloud to set them up.",
+        "No Cadet Cloud credentials are stored yet. Log in to Cadet Cloud to set them up.",
       canAutoRecover: true,
     };
   }
 
-  const { CadetPlatformClient } = await import("../platform/client.js");
-  const client = await CadetPlatformClient.create();
+  const { CadetCloudClient } = await import("../cloud/client.js");
+  const client = await CadetCloudClient.create();
   if (!client) {
     return {
       ...base,
       status: "unreachable",
       details:
-        "The Cadet Cloud client could not be built, so Cadet's managed credentials could not be checked.",
+        "The Cadet Cloud client could not be built, so Cadet's cloud credentials could not be checked.",
       canAutoRecover: false,
     };
   }
@@ -712,7 +712,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       // action rather than at reconnecting something the reader never
       // connected.
       details:
-        "Cadet's managed credentials stopped working, so chat and background tasks that use them are paused. Restoring takes a moment and will not affect anything else.",
+        "Cadet's cloud credentials stopped working, so chat and background tasks that use them are paused. Restoring takes a moment and will not affect anything else.",
       canAutoRecover: true,
     };
   }
@@ -721,7 +721,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
       ...base,
       status: "unreachable",
       details:
-        "Cadet did not answer the managed-credential check. Health is unknown until the next check.",
+        "Cadet did not answer the cloud-credential check. Health is unknown until the next check.",
       canAutoRecover: false,
     };
   }
@@ -729,7 +729,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
   return {
     ...base,
     status: "healthy",
-    details: "Cadet's managed credentials are working.",
+    details: "Cadet's cloud credentials are working.",
     canAutoRecover: true,
   };
 }
@@ -743,7 +743,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
  * validates each one. Returns a structured report with overall results
  * and a filtered list of unhealthy credentials.
  *
- * Checks both BYO (local SQLite) and managed (platform-hosted)
+ * Checks both BYO (local SQLite) and managed (cloud-hosted)
  * connections.
  */
 export async function checkAllCredentials(): Promise<CredentialHealthReport> {
@@ -758,7 +758,7 @@ export async function checkAllCredentials(): Promise<CredentialHealthReport> {
     return { checkedAt, results, unhealthy: [] };
   }
 
-  // Track which providers have BYO connections so we skip the managed
+  // Track which providers have BYO connections so we skip the cloud
   // check for them (they're already covered by the BYO path).
   const byoProviders = new Set<string>();
 
@@ -805,27 +805,27 @@ export async function checkAllCredentials(): Promise<CredentialHealthReport> {
     }
   }
 
-  // Check managed connections. If a provider is currently in managed mode,
-  // evaluate it via the managed path even if stale BYO rows exist — the
+  // Check cloud connections. If a provider is currently in managed mode,
+  // evaluate it via the cloud path even if stale BYO rows exist — the
   // user may have switched from BYO to managed.
   for (const providerRow of providers) {
-    if (!(await isManagedProvider(providerRow))) {
+    if (!(await isCloudProvider(providerRow))) {
       continue;
     }
 
     let managedResults: CredentialHealthResult[] = [];
     try {
-      managedResults = await checkManagedProvider(providerRow);
+      managedResults = await checkCloudProvider(providerRow);
     } catch (err) {
       log.warn(
         { err, provider: providerRow.provider },
-        "Failed to check managed provider health",
+        "Failed to check cloud provider health",
       );
     }
 
-    // Only replace BYO results with managed results when the managed
+    // Only replace BYO results with managed results when the cloud
     // check returned something. If managed returned empty (user never
-    // connected via managed mode), keep any existing BYO results.
+    // connected via cloud mode), keep any existing BYO results.
     if (managedResults.length > 0 && byoProviders.has(providerRow.provider)) {
       const beforeLen = results.length;
       const filtered = results.filter(
@@ -862,7 +862,7 @@ export async function checkAllCredentials(): Promise<CredentialHealthReport> {
  * exists.
  *
  * Checks BYO connections first; if none exist, falls back to checking
- * managed connections on the platform.
+ * cloud connections on the cloud.
  *
  * Used by the watcher engine for pre-poll gating.
  */
@@ -875,9 +875,9 @@ export async function checkCredentialForProvider(
   }
 
   // Check managed mode first — if the provider is currently configured for
-  // managed mode, evaluate via the platform regardless of stale BYO rows.
-  if (await isManagedProvider(providerRow)) {
-    const managedResults = await checkManagedProvider(providerRow);
+  // managed mode, evaluate via the cloud regardless of stale BYO rows.
+  if (await isCloudProvider(providerRow)) {
+    const managedResults = await checkCloudProvider(providerRow);
     if (managedResults.length > 0) {
       return managedResults[0]!;
     }

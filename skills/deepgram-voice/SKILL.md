@@ -18,17 +18,17 @@ Deepgram provides text-to-speech voices (the **Aura** model family) for both **i
 voice_config_update setting="tts_voice_id" value="<aura-model-id>"
 ```
 
-> **The voice lives under the _active_ provider, not always Deepgram.** The config key depends on `services.tts.provider`: `deepgram` → `services.tts.providers.deepgram.model`, `cadet` (managed) → `services.tts.providers.cadet.model`, `elevenlabs` → `services.tts.providers.elevenlabs.voiceId`. The `voice_config_update` tool (and the `assistant tts voice <id>` CLI command) handle this routing for you. **Do NOT `assistant config set services.tts.providers.deepgram.model ...` blindly** — on a managed (`cadet`) assistant that field is ignored, so the write "succeeds" but the voice never changes. See [Setting the voice](#setting-the-voice) for the CLI fallback.
+> **The voice lives under the _active_ provider, not always Deepgram.** The config key depends on `services.tts.provider`: `deepgram` → `services.tts.providers.deepgram.model`, `cadet` (managed) → `services.tts.providers.cadet.model`, `elevenlabs` → `services.tts.providers.elevenlabs.voiceId`. The `voice_config_update` tool (and the `assistant tts voice <id>` CLI command) handle this routing for you. **Do NOT `assistant config set services.tts.providers.deepgram.model ...` blindly** — on a cloud (`cadet`) assistant that field is ignored, so the write "succeeds" but the voice never changes. See [Setting the voice](#setting-the-voice) for the CLI fallback.
 >
-> **The tables below apply when the active provider is `deepgram` (BYO key) or managed `cadet`.** Managed assistants synthesize Deepgram voices through the platform — the platform bills per rate-carded model and rejects voices it does not offer (the write succeeds but the voice fails on the next turn), so stick to current Aura-2 voices there. With a BYO key ([setup below](#deepgram-api-key-setup)), any Aura model id from the catalog works. Other BYO TTS providers (`elevenlabs`, `xai`, `fish-audio`, …) use their own voice identifiers — never write a Deepgram Aura model id to them; see [Getting to a Deepgram voice from another provider](#getting-to-a-deepgram-voice-from-another-provider).
+> **The tables below apply when the active provider is `deepgram` (BYO key) or managed `cadet`.** Managed assistants synthesize Deepgram voices through the cloud — the cloud bills per rate-carded model and rejects voices it does not offer (the write succeeds but the voice fails on the next turn), so stick to current Aura-2 voices there. With a BYO key ([setup below](#deepgram-api-key-setup)), any Aura model id from the catalog works. Other BYO TTS providers (`elevenlabs`, `xai`, `fish-audio`, …) use their own voice identifiers — never write a Deepgram Aura model id to them; see [Getting to a Deepgram voice from another provider](#getting-to-a-deepgram-voice-from-another-provider).
 
 ## Getting to a Deepgram voice from another provider
 
 Check the active provider first: `assistant config get services.tts.provider`.
 
-- **Already on managed `cadet`?** No provider change needed. The managed platform supports **both Deepgram and ElevenLabs voices** — `services.tts.providers.cadet.model` accepts either an Aura model id or an ElevenLabs voice id, so switching between a Deepgram and an ElevenLabs voice is just another `voice_config_update` call.
+- **Already on managed `cadet`?** No provider change needed. The cloud platform supports **both Deepgram and ElevenLabs voices** — `services.tts.providers.cadet.model` accepts either an Aura model id or an ElevenLabs voice id, so switching between a Deepgram and an ElevenLabs voice is just another `voice_config_update` call.
 - **On a BYO provider (e.g. `elevenlabs`) and the user wants a Deepgram voice?** Two options — ask which they prefer. Switch with the `voice_config_update` tool, not raw `assistant config set` — the tool validates the switch (e.g. rejects `cadet` when no platform connection exists, which a raw config write would leave silently broken):
-  1. **Switch to managed `cadet`** (`voice_config_update setting="tts_provider" value="cadet"`) — no Deepgram key needed; requires a platform connection and bills managed credits. Bonus: they keep access to both the Deepgram and ElevenLabs catalogs.
+  1. **Switch to managed `cadet`** (`voice_config_update setting="tts_provider" value="cadet"`) — no Deepgram key needed; requires a cloud connection and bills managed credits. Bonus: they keep access to both the Deepgram and ElevenLabs catalogs.
   2. **Switch to BYO `deepgram`** (`voice_config_update setting="tts_provider" value="deepgram"`) — requires a Deepgram API key ([setup below](#deepgram-api-key-setup)); usage bills their Deepgram account directly.
 
 After either switch, set the voice with `voice_config_update` as usual.
@@ -57,7 +57,7 @@ Pick a voice that matches your identity and the user's preferences. Offer to sho
 | Draco    | Warm, trustworthy, baritone (British)     | `aura-2-draco-en`    |
 | Hyperion | Caring, warm, empathetic (Australian)     | `aura-2-hyperion-en` |
 
-> These are **Aura-2** voices — Deepgram's current generation. First-generation ids (`aura-asteria-en`, `aura-orion-en`, … without the `-2-`) still work with a BYO key but sound noticeably flatter; prefer Aura-2 unless the user asks otherwise. `aura-2-thalia-en` is the managed platform's default voice.
+> These are **Aura-2** voices — Deepgram's current generation. First-generation ids (`aura-asteria-en`, `aura-orion-en`, … without the `-2-`) still work with a BYO key but sound noticeably flatter; prefer Aura-2 unless the user asks otherwise. `aura-2-thalia-en` is the cloud platform's default voice.
 
 ### Setting the voice
 
@@ -75,7 +75,7 @@ assistant tts voice "<selected-model-id>"
 
 Setting `services.tts.providers.deepgram.model` directly while the active provider is `cadet` (or any non-deepgram provider) is the #1 cause of "I changed the voice but it didn't change" — that field is ignored by the active provider, so the write reports success but nothing changes. If you must use `config set`, first check `assistant config get services.tts.provider` and write the matching key (`cadet` → `services.tts.providers.cadet.model`, `deepgram` → `services.tts.providers.deepgram.model`).
 
-Verify it worked by reading back the key for the **active** provider, e.g. for a managed assistant:
+Verify it worked by reading back the key for the **active** provider, e.g. for a cloud assistant:
 
 ```bash
 assistant config get services.tts.providers.cadet.model
@@ -87,7 +87,7 @@ Tell the user what voice you chose and why, but also offer to show all available
 
 ## Deepgram API Key Setup
 
-When the active provider is `cadet` (managed), no key is needed — the platform handles Deepgram synthesis and billing. A key is only required when the provider is `deepgram` (BYO key), or for [browsing the full catalog](#advanced-voice-selection-with-api-key). Get one at https://console.deepgram.com (free credit available).
+When the active provider is `cadet` (managed), no key is needed — the cloud handles Deepgram synthesis and billing. A key is only required when the provider is `deepgram` (BYO key), or for [browsing the full catalog](#advanced-voice-selection-with-api-key). Get one at https://console.deepgram.com (free credit available).
 
 To collect the API key securely:
 
@@ -99,7 +99,7 @@ The same key is shared with Deepgram speech-to-text — storing it once covers b
 
 ## Advanced Voice Selection (with API key)
 
-Users with a Deepgram API key can go beyond the curated list above — **only when the active provider is `deepgram` (BYO key)**. On managed `cadet`, stay with the curated voices: the platform only accepts its rate-carded subset, and an unoffered id is persisted successfully but fails on the next spoken turn.
+Users with a Deepgram API key can go beyond the curated list above — **only when the active provider is `deepgram` (BYO key)**. On managed `cadet`, stay with the curated voices: the cloud only accepts its rate-carded subset, and an unoffered id is persisted successfully but fails on the next spoken turn.
 
 ### Check for an existing key
 
@@ -166,4 +166,4 @@ assistant config set services.tts.providers.deepgram.format mp3
 
 ## Voice Model Tuning
 
-There is no separate model-id setting — the voice id **is** the model id, and the generation is part of it: `aura-2-*` ids use Aura-2, bare `aura-*-en` ids use first-generation Aura. To move a voice between generations, change the id itself, e.g. `aura-asteria-en` (Aura-1) → `aura-2-asteria-en` (Aura-2). Managed (`cadet`) assistants should always use Aura-2 ids — the platform only rate-cards current models.
+There is no separate model-id setting — the voice id **is** the model id, and the generation is part of it: `aura-2-*` ids use Aura-2, bare `aura-*-en` ids use first-generation Aura. To move a voice between generations, change the id itself, e.g. `aura-asteria-en` (Aura-1) → `aura-2-asteria-en` (Aura-2). Managed (`cadet`) assistants should always use Aura-2 ids — the cloud only rate-cards current models.

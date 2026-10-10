@@ -277,7 +277,7 @@ const RequestedScopesSchema = z.preprocess(
 );
 
 export const OAuthConnectSurfaceDataSchema = z.object({
-  /** OAuth provider key from the managed provider catalog, e.g. "google". */
+  /** OAuth provider key from the cloud provider catalog, e.g. "google". */
   providerKey: z
     .preprocess(
       (value) => (typeof value === "string" ? value.trim() : value),
@@ -285,9 +285,9 @@ export const OAuthConnectSurfaceDataSchema = z.object({
     )
     .catch(""),
   /**
-   * Optional OAuth scopes to request for the managed connection. A full
-   * replacement set: when present, the platform uses exactly these scopes
-   * instead of its defaults (it does not merge). Omit to use the platform's
+   * Optional OAuth scopes to request for the cloud connection. A full
+   * replacement set: when present, the cloud uses exactly these scopes
+   * instead of its defaults (it does not merge). Omit to use the cloud's
    * default scopes for the provider.
    */
   requestedScopes: RequestedScopesSchema,

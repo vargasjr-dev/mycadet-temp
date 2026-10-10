@@ -248,7 +248,7 @@ describe("inference_send profile usability", () => {
     );
   }
 
-  test("rejects a disabled profile instead of running the managed default", async () => {
+  test("rejects a disabled profile instead of running the cloud default", async () => {
     const err = await rejection({ ...hermes, status: "disabled" });
     expect(err).toBeInstanceOf(BadRequestError);
     expect(err.message).toContain("disabled");

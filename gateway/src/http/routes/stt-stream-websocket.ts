@@ -9,7 +9,7 @@
  * the binding, and dictation takes any valid actor, which is why that pin is a
  * route opt-in rather than part of the shared gate.
  *
- * A managed assistant is reached through tunnel, which validates the browser's
+ * A cloud assistant is reached through tunnel, which validates the browser's
  * own token and attests the caller to the bridge; there is no edge JWT on that
  * path to validate. So a tunnel-attested caller with the bridge proof is
  * admitted here the way live voice and watch admit one, minus their guardian

@@ -10,6 +10,10 @@ import {
   isAnthropicModel,
 } from "./anthropic-gateway-shared.js";
 import {
+  buildCloudBaseUrl,
+  resolveCloudProxyContext,
+} from "./cloud-proxy/context.js";
+import {
   buildProviderAdapter,
   createAdapterFromConnection,
 } from "./inference/adapter-factory.js";
@@ -24,10 +28,6 @@ import {
 import { resolveAuth } from "./inference/resolve-auth.js";
 import { isModelInCatalog, PROVIDER_CATALOG } from "./model-catalog.js";
 import { getProviderDefaultModel } from "./model-intents.js";
-import {
-  buildManagedBaseUrl,
-  resolveManagedProxyContext,
-} from "./platform-proxy/context.js";
 import { RetryProvider } from "./retry.js";
 import type { Provider } from "./types.js";
 import { UsageTrackingProvider } from "./usage-tracking.js";
@@ -35,7 +35,7 @@ import { UsageTrackingProvider } from "./usage-tracking.js";
 const log = getLogger("provider-registry");
 
 const providers = new Map<string, Provider>();
-const routingSources = new Map<string, "user-key" | "managed-proxy">();
+const routingSources = new Map<string, "user-key" | "cloud-proxy">();
 const NATIVE_WEB_SEARCH_PROVIDER_IDS = new Set(["anthropic", "openai"]);
 
 /**
@@ -71,7 +71,7 @@ function getConnectionProviderCacheKey(
   effectiveProvider: string,
 ): string {
   // `effectiveProvider` differs from `connection.provider` only for the
-  // provider-agnostic Cadet-managed connection, where one connection name
+  // provider-agnostic Cadet Cloud connection, where one connection name
   // serves multiple upstreams — include it so those entries don't collide.
   return `${connection.name}\u0000${effectiveProvider}\u0000${model}`;
 }
@@ -94,7 +94,7 @@ export function listProviders(): string[] {
 
 export function getProviderRoutingSource(
   name: string,
-): "user-key" | "managed-proxy" | undefined {
+): "user-key" | "cloud-proxy" | undefined {
   return routingSources.get(name);
 }
 
@@ -164,7 +164,7 @@ export function shouldUseNativeWebSearch(
 }
 
 /**
- * Resolve provider credentials. User key takes precedence; managed proxy is
+ * Resolve provider credentials. User key takes precedence; cloud proxy is
  * used as a fallback when platform prerequisites are available.
  *
  * The routing decision is now derived from credential availability rather than
@@ -173,19 +173,19 @@ export function shouldUseNativeWebSearch(
 async function resolveProviderCredentials(providerName: string): Promise<{
   apiKey: string;
   baseURL?: string;
-  source: "user-key" | "managed-proxy";
+  source: "user-key" | "cloud-proxy";
 } | null> {
   const userKey = await getProviderKeyAsync(providerName);
   if (userKey) {
     return { apiKey: userKey, source: "user-key" };
   }
-  const managedBaseUrl = await buildManagedBaseUrl(providerName);
-  if (managedBaseUrl) {
-    const ctx = await resolveManagedProxyContext();
+  const cloudBaseUrl = await buildCloudBaseUrl(providerName);
+  if (cloudBaseUrl) {
+    const ctx = await resolveCloudProxyContext();
     return {
       apiKey: ctx.assistantApiKey,
-      baseURL: managedBaseUrl,
-      source: "managed-proxy",
+      baseURL: cloudBaseUrl,
+      source: "cloud-proxy",
     };
   }
   return null;
@@ -215,14 +215,14 @@ export async function initializeProviders(
 
     const isKeyless = entry.setupMode === "keyless";
 
-    // Credential resolution: user key first, managed proxy second. Keyless
+    // Credential resolution: user key first, cloud proxy second. Keyless
     // providers (e.g. ollama) skip both — they only need to be configured as
     // the mainAgent provider, or have a key present (rare keyed-mode), to
     // boot. Boot order matches catalog order; routingSources tracks which
     // credential surface served each provider.
     let apiKey = "";
     let baseURL: string | undefined;
-    let source: "user-key" | "managed-proxy" = "user-key";
+    let source: "user-key" | "cloud-proxy" = "user-key";
     if (isKeyless) {
       const key = await getProviderKeyAsync(entry.id);
       const isConfiguredMainAgent = mainAgentProvider === entry.id;
@@ -267,12 +267,12 @@ export async function initializeProviders(
     registerProvider(
       entry.id,
       new RetryProvider(adapter, {
-        forwardUsageAttributionHeaders: source === "managed-proxy",
+        forwardUsageAttributionHeaders: source === "cloud-proxy",
         // A keyless provider booted without a key has no credential to blame,
         // so don't let its rejections render as "update your personal key".
         credentialSource:
-          source === "managed-proxy"
-            ? "cadet-managed"
+          source === "cloud-proxy"
+            ? "cadet-cloud"
             : isKeyless && !apiKey
               ? "no-auth"
               : "byok",
@@ -308,7 +308,7 @@ export async function resolveProviderFromConnection(
   config: ProvidersConfig,
   opts: { model?: string; providerOverride?: string } = {},
 ): Promise<Provider | null> {
-  // The provider-agnostic Cadet-managed connection carries only the `cadet`
+  // The provider-agnostic Cadet Cloud connection carries only the `cadet`
   // sentinel on its row, so callers pass the resolved profile's provider here.
   // For every other connection this is `undefined` and the effective provider
   // is the connection's own — no behavior change.

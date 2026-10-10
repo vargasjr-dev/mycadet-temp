@@ -574,13 +574,13 @@ const riskOverrides: AssistantRiskOverride[] = [
     path: "inference profiles update",
     risk: "medium",
     reason:
-      "Mutates a custom profile in llm.profiles; daemon rejects managed profiles",
+      "Mutates a custom profile in llm.profiles; daemon rejects cloud profiles",
   },
   {
     path: "inference profiles delete",
     risk: "medium",
     reason:
-      "Deletes a custom profile from llm.profiles; daemon rejects managed profiles",
+      "Deletes a custom profile from llm.profiles; daemon rejects cloud profiles",
   },
   {
     path: "inference profiles active",

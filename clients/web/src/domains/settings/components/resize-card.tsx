@@ -62,7 +62,7 @@ export function ResizeCard({
     organizationsBillingSubscriptionRetrieveOptions(),
   );
   const subscription = subscriptionQuery.data;
-  const isPlatform = !assistant.is_local;
+  const isCloud = !assistant.is_local;
   const isPro = subscription?.plan_id === "pro";
 
   const onboardingQuery = useQuery({
@@ -212,7 +212,7 @@ export function ResizeCard({
     </Button>
   );
 
-  const diskAction = !isPlatform ? null : isPro ? (
+  const diskAction = !isCloud ? null : isPro ? (
     canGrowStorage ? (
       <button
         type="button"
@@ -237,7 +237,7 @@ export function ResizeCard({
     basePlanResizeAction
   );
 
-  const machineAction = !isPlatform ? null : isPro ? (
+  const machineAction = !isCloud ? null : isPro ? (
     canUpsize ? (
       <button
         type="button"

@@ -20,7 +20,7 @@ export interface WorkspaceTopLevelRenderOptions {
   /**
    * Host home directory on the client machine. When provided, takes
    * precedence over the daemon's own `os.homedir()`. This matters for
-   * platform-managed (containerized) daemons where `os.homedir()` returns
+   * cloud-managed (containerized) daemons where `os.homedir()` returns
    * the container's home, not the user's actual Mac.
    */
   hostHomeDir?: string;

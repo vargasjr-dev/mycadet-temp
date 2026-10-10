@@ -36,7 +36,7 @@ import {
   ADD_CREDITS_COPY,
   UPGRADE_COPY,
 } from "@/domains/chat/components/credits-upsell-card";
-import { EmailManagedContent } from "@/domains/channels/components/email-managed-content";
+import { EmailCloudContent } from "@/domains/channels/components/email-cloud-content";
 import { packageSpecs } from "@/domains/settings/billing/plan-spec";
 import { PlanTile } from "@/domains/settings/billing/plan-tile";
 import {
@@ -48,7 +48,7 @@ import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api
 import type { SubscriptionResponse } from "@/generated/api/types.gen";
 
 /**
- * The entitlement wall is the real `EmailManagedContent`, not a rebuild of it,
+ * The entitlement wall is the real `EmailCloudContent`, not a rebuild of it,
  * so the catalog cannot drift from the icon, copy and CTA wiring
  * the production component owns. Only the subscription read is faked; one
  * instance mounts here, and the component writes no global store, so unlike the
@@ -284,7 +284,7 @@ export const ResourceAndEntitlementWalls: Story = {
       <Group heading="Storage wall">
         <WallCase
           wall="Storage almost full"
-          trigger="Disk usage crosses the warn threshold on a platform-hosted assistant."
+          trigger="Disk usage crosses the warn threshold on a cloud-hosted assistant."
           cta="Manage Storage + Upgrade"
           destination="/workspace?sort=size · /assistant/plans"
         >
@@ -336,7 +336,7 @@ export const ResourceAndEntitlementWalls: Story = {
           cta="Upgrade"
           destination="/assistant/plans"
         >
-          <EmailManagedContent
+          <EmailCloudContent
             assistantId="story-assistant"
             assistantHandle="ada"
             emailRootDomain="mycadet.ai"

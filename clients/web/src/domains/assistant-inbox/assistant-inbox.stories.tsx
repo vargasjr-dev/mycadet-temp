@@ -17,7 +17,7 @@
  * 3. With an address, it is the mailbox: masthead, Inbox and Sent, a list
  *    beside a reading pane.
  *
- * Nothing here talks to a platform. The mail and avatar are fixtures,
+ * Nothing here talks to a cloud. The mail and avatar are fixtures,
  * and the handlers log to the Actions panel.
  */
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
@@ -318,7 +318,7 @@ export const SetUpEmailChooseHandle: Story = {
 };
 
 /**
- * The registration refused what was typed. The platform's own message sits
+ * The registration refused what was typed. The cloud's own message sits
  * under the fields, beside the thing to fix, and the action stays available
  * so a corrected draft can be sent again.
  */
@@ -441,7 +441,7 @@ export const SentFolder: Story = {
 };
 
 /**
- * Rows as the platform lists them, with no preview, body, or attachments,
+ * Rows as the cloud lists them, with no preview, body, or attachments,
  * and a loader that takes a moment to answer: the shape production runs on.
  * Open a message to see the pane load the body in.
  */

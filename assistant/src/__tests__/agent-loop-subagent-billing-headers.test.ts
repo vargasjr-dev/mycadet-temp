@@ -106,7 +106,7 @@ describe("AgentLoop subagent billing-header attribution", () => {
     // GIVEN a conversation stamped as an advisor-consult subagent
     await seedConversation("conv-loop-advisor", "advisor", "advisor_consult");
 
-    // AND a managed-proxy-shaped provider stack (headers forwarded)
+    // AND a cloud-proxy-shaped provider stack (headers forwarded)
     const { provider, configs } = makeRecordingProvider("openai");
     const wrapped = new RetryProvider(provider, {
       forwardUsageAttributionHeaders: true,

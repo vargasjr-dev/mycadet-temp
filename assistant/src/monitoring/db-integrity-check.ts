@@ -21,7 +21,7 @@ const MAX_ERRORS = 10;
  * Cap on each error message's UTF-8 byte length. With MAX_ERRORS rows this
  * bounds the whole error payload well under the 4096-byte watchdog `detail`
  * limit (WATCHDOG_DETAIL_MAX_JSON_BYTES) — an oversized detail is silently
- * dropped by the platform, which would selectively erase the most-corrupted
+ * dropped by the cloud, which would selectively erase the most-corrupted
  * databases from the prevalence metric. Bytes, not `String.length`: ten
  * 160-character CJK messages would otherwise serialize to ~4.9 KB.
  */

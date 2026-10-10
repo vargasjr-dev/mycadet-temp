@@ -2,7 +2,7 @@
  * Tests for `getSkillFiles` provider chain fallback.
  *
  * When a skill id isn't resolvable via `findSkillById` (i.e. not installed
- * locally, not bundled, not a managed skill), `getSkillFiles` falls back to
+ * locally, not bundled, not a cloud skill), `getSkillFiles` falls back to
  * the provider chain (cadet catalog → skills.sh → clawhub). Each provider
  * is tried in order until one returns data. When a skill IS resolved by
  * `findSkillById` but its on-disk directory is missing, `getSkillFiles`
@@ -167,10 +167,10 @@ mock.module("../skills/skillssh-registry.js", () => ({
   searchSkillsRegistry: async () => [],
 }));
 
-mock.module("../skills/managed-store.js", () => ({
-  createManagedSkill: () => ({ created: true }),
-  deleteManagedSkill: () => ({ deleted: true }),
-  validateManagedSkillId: () => null,
+mock.module("../skills/cloud-store.js", () => ({
+  createCloudSkill: () => ({ created: true }),
+  deleteCloudSkill: () => ({ deleted: true }),
+  validateCloudSkillId: () => null,
 }));
 
 mock.module("../plugins/defaults/memory/graph/capability-seed.js", () => ({

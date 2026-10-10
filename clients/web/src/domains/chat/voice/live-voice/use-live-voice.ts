@@ -1583,7 +1583,7 @@ export function useLiveVoice(
             return;
           }
           // Initial-connect resilience (JARVIS-1282): a hands-free session's
-          // very first connect can transiently fail before `ready` — a managed
+          // very first connect can transiently fail before `ready` — a cloud
           // assistant's tunnel is briefly cold, or the token mint blips —
           // and finishing with that error flashes the failure surface while the
           // room's avatar is still animating in. Retry within the backoff

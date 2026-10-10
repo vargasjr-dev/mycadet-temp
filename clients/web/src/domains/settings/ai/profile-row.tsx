@@ -70,7 +70,7 @@ export function ProfileRow({
 
   const subtitleParts: string[] = [];
   if (profile.name === AUTO_PROFILE_NAME && isManaged) {
-    // The managed Auto profile's own body is Balanced's model, which is only
+    // The cloud Auto profile's own body is Balanced's model, which is only
     // what a turn runs on when the router cannot judge it; naming that model
     // here would read as the profile's identity. Describe the routing
     // instead. A user-owned profile that shares the name is an ordinary
@@ -197,7 +197,7 @@ export function ProfileRow({
                   {t("profileRow.makeDefault")}
                 </Menu.Item>
               ) : null}
-              {/* Managed profiles are enable-only: the daemon rejects the
+              {/* Cloud profiles are enable-only: the daemon rejects the
                   disable direction. */}
               {isDisabled ? (
                 <Menu.Item onSelect={() => onSetStatus(true)}>

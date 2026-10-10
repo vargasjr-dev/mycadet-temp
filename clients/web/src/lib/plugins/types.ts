@@ -47,8 +47,8 @@ export interface PluginListItem {
    */
   icon?: string;
   /**
-   * https URL of the platform-hosted bundled icon. Catalog rows only, where
-   * the platform is the trusted source; installed rows fetch their bundled
+   * https URL of the cloud-hosted bundled icon. Catalog rows only, where
+   * the cloud is the trusted source; installed rows fetch their bundled
    * icon through the daemon endpoint instead (`hasIcon` / `iconVersion`).
    */
   iconUrl?: string;

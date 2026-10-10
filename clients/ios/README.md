@@ -761,7 +761,7 @@ restart clears those results. Validated PNG bytes may remain in the existing
 App Group cache, but the cache does not establish identity or delivery
 ownership.
 
-`push-avatar-sender` independently controls whether the platform gives the APNs
+`push-avatar-sender` independently controls whether the cloud gives the APNs
 route sender metadata. `local-notification-avatar` controls the app-local route.
 Both default off. The signed-device cases and current rollout status are in the
 [notification avatar and local delivery QA ledger](../../docs/notification-avatar-local-qa.md).
@@ -787,7 +787,7 @@ APNs carries JSON, so the sender arrives as a nested object beside `aps`:
 
 `mutable-content: 1` is what makes iOS run the extension at all. `id`, `name`,
 and `avatar_hash` must all be non-empty or the push is delivered untouched.
-`avatar_url` is optional: it is the first field the platform drops when a
+`avatar_url` is optional: it is the first field the cloud drops when a
 payload nears the APNs size limit, and the hash alone still hits a warm cache.
 The thread is the assistant id, so every conversation with one assistant
 threads together. Android reads the same four fields as flat `sender_*` entries

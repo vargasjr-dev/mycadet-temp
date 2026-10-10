@@ -11,7 +11,7 @@ import {
   getLockfileData,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
-  replacePlatformAssistants,
+  replaceCloudAssistants,
   runDevicesList,
   runDevicesRevoke,
   runHatch,
@@ -173,7 +173,7 @@ async function retire(assistantId: string): Promise<RetireResult> {
     return { ok: false, error: (err as Error).message };
   }
   const result = await runRetire(invocation, assistantId, {
-    platformToken: requireRuntime().session.getToken() ?? undefined,
+    cloudToken: requireRuntime().session.getToken() ?? undefined,
   });
   return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
@@ -477,10 +477,10 @@ export const installLocalMode = (): void => {
   );
 
   ipc(
-    "cadet:localMode:replacePlatformAssistants",
+    "cadet:localMode:replaceCloudAssistants",
     z.tuple([z.array(assistantRecord), z.string().optional()]),
     ([list, organizationId]): LockfileWriteResult => {
-      const result = replacePlatformAssistants(
+      const result = replaceCloudAssistants(
         lockfilePaths,
         list,
         organizationId,

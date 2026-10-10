@@ -1846,7 +1846,7 @@
     "dockerDescriptionLinux": "在此电脑上的 Docker 容器中运行您的助手。",
     "dockerDescriptionMacos": "在此 Mac 上的 Docker 容器中运行您的助手。",
     "dockerDescriptionWindows": "在此电脑上的 Docker 容器中运行您的助手。",
-    "existingPlatformAssistant": "您已有平台助手“{id}”。请先将其退役，然后重试传送。",
+    "existingCloudAssistant": "您已有平台助手“{id}”。请先将其退役，然后重试传送。",
     "exportTimedOut": "导出超时。",
     "importFailed": "导入失败。",
     "importFailedHttp": "导入失败（HTTP {status}）。",

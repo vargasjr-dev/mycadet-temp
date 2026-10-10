@@ -1,7 +1,7 @@
 ---
 name: mcp-setup
 description: Add, authenticate, list, and remove MCP (Model Context Protocol) servers — connect any external tool or service that publishes an MCP endpoint to the assistant
-compatibility: "Works on both the Cadet desktop app (local daemon) and the Cadet web app (platform-hosted). Auth flow differs by environment."
+compatibility: "Works on both the Cadet desktop app (local daemon) and the Cadet web app (cloud-hosted). Auth flow differs by environment."
 metadata:
   emoji: "🔌"
   cadet:
@@ -53,7 +53,7 @@ echo "desktop ok"
 ```
 
 - If it succeeds → you are on the **desktop app**. Use `host_bash` for all commands, including `auth` (opens a local browser).
-- If it is unavailable → you are on the **web app** (or a cloud-hosted session). Use `bash` for all commands, including `auth` (the platform handles the browser redirect).
+- If it is unavailable → you are on the **web app** (or a cloud-hosted session). Use `bash` for all commands, including `auth` (the cloud handles the browser redirect).
 
 Both environments fully support MCP. The only difference is which tool runs the commands.
 
@@ -80,7 +80,7 @@ assistant mcp add <name> -t streamable-http -u <url>
 Then run `assistant mcp list`. If it shows `! Needs authentication`, run `assistant mcp auth <name>`.
 
 - On **desktop** → run via `host_bash` (opens the local browser).
-- On **web app** → run via `bash` (the platform handles the browser redirect).
+- On **web app** → run via `bash` (the cloud handles the browser redirect).
 
 ---
 
@@ -128,7 +128,7 @@ assistant mcp auth <name>
 ```
 
 - On **desktop** → run via `host_bash` (opens the user's local browser for OAuth login).
-- On **web app** → run via `bash` (the platform handles the browser redirect and saves tokens).
+- On **web app** → run via `bash` (the cloud handles the browser redirect and saves tokens).
 
 Tokens are saved automatically. Use when:
 

@@ -4,7 +4,7 @@
  * Exercises the full CES RPC transport stack over a real Unix socket
  * without mocks, Docker, K8s, or real OAuth credentials:
  *
- * 1. Starts the managed CES server on a temporary Unix socket
+ * 1. Starts the cloud CES server on a temporary Unix socket
  * 2. Connects as a client via the real socket
  * 3. Performs the RPC handshake (protocol version negotiation)
  * 4. Sends an RPC request (`list_grants`) and verifies the response

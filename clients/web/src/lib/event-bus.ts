@@ -227,7 +227,7 @@ export interface BusEventMap {
   /**
    * Stripe Checkout finished for a checkout a native shell started
    * (the Electron shell's system browser or Capacitor iOS's in-app
-   * SFSafariViewController). The platform bounces the browser to
+   * SFSafariViewController). The cloud bounces the browser to
    * `<scheme>://billing/checkout-complete`; the billing domain consumes
    * this to land the user back on billing. `flow` says which checkout
    * it was: `subscription` opens the post-checkout Pro onboarding
@@ -340,7 +340,7 @@ export interface BusEventMap {
   };
   /**
    * A daemon SDK request came back with a gateway-class status (502/503/504):
-   * it reached the platform but could not reach the assistant's runtime, which
+   * it reached the cloud but could not reach the assistant's runtime, which
    * is restarting or not yet ready. Published by `daemonUnreachableInterceptor`
    * so the connecting overlay appears even when the failure lands on an
    * incidental request (a page load, a background refetch) rather than on the

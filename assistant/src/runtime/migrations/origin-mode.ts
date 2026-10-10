@@ -4,13 +4,13 @@
  * The vbundle manifest v1 schema's `origin.mode` enum captures the deployment
  * shape that produced the bundle. The runtime's two underlying signals are:
  *
- *   - `getIsCloud()` — true when the daemon runs as a platform-managed
- *     deployment (`IS_PLATFORM`, set only on platform pods).
+ *   - `getIsCloud()` — true when the daemon runs as a cloud-managed
+ *     deployment (`IS_CLOUD`, set only on cloud pods).
  *   - `getIsContainerized()` — true when the daemon runs inside a container
  *     (`IS_CONTAINERIZED`), identifying where the daemon process is running.
  *
- * Deliberately NOT keyed on managed-proxy prerequisites: any logged-in
- * local assistant holds a platform URL and `assistant_api_key` (to use the
+ * Deliberately NOT keyed on cloud-proxy prerequisites: any logged-in
+ * local assistant holds a cloud URL and `assistant_api_key` (to use the
  * platform LLM proxy), so proxy-prereq presence does not distinguish a
  * managed deployment from a local one. Stamping a local export as
  * "managed" would trip the importer's `secrets_redacted must be true when

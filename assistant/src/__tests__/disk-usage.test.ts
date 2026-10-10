@@ -88,7 +88,7 @@ const { __resetDiskUsageCacheForTests, getDiskUsageInfo, parseK8sMemoryBytes } =
 const ENV_VARS = [
   "CADET_MINIKUBE_STORAGE_SIZE",
   "IS_CONTAINERIZED",
-  "IS_PLATFORM",
+  "IS_CLOUD",
 ] as const;
 
 afterAll(() => {
@@ -211,9 +211,9 @@ describe("disk usage sampler", () => {
     );
   });
 
-  test("does not use du for platform-managed containerized instances", async () => {
+  test("does not use du for cloud-managed containerized instances", async () => {
     process.env.IS_CONTAINERIZED = "1";
-    process.env.IS_PLATFORM = "1";
+    process.env.IS_CLOUD = "1";
     const before = statfsSnapshot(PRELOAD_WS);
     const usage = await getDiskUsageInfo();
     const after = statfsSnapshot(PRELOAD_WS);

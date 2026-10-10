@@ -11,7 +11,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { refreshPlatformAssistantsIfStale } from "@/assistant/platform-assistants-sync";
+import { refreshCloudAssistantsIfStale } from "@/assistant/cloud-assistants-sync";
 import { resolveSelectedAssistantId } from "@/assistant/selection";
 import { retireAssistant } from "@/assistant/retire-service";
 import { isCurrentOrigin, switchToOrigin } from "@/assistant/switch-origin";
@@ -53,7 +53,7 @@ import {
   nativeSwitchToOrigin,
   nativeCadetCloudOrigin,
 } from "@/runtime/self-hosted-servers";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { useConnectDialogStore } from "@/stores/connect-dialog-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import {
@@ -172,7 +172,7 @@ export function SelectAssistantScreen() {
   const noAutoSkip = searchParams.get("noAutoSkip") === "1";
   const electron = isElectron();
   const localClient = isLocalClient();
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const currentOrganizationId =
     useOrganizationStore.use.currentOrganizationId();
@@ -198,10 +198,10 @@ export function SelectAssistantScreen() {
   const cloudOriginOffered = cloudOrigin !== null;
 
   // A local entry is session-free only where a local transport exists; on
-  // the hub it connects through the platform path, so like a managed entry
-  // it needs the platform session.
+  // the hub it connects through the cloud path, so like a cloud entry
+  // it needs the cloud session.
   const isAccessible = (a: ResolvedAssistant): boolean =>
-    a.isPaired || (a.isLocal && localClient) || hasPlatformSession;
+    a.isPaired || (a.isLocal && localClient) || hasCloudSession;
 
   // `setFromApi` already drops unreachable local registrations, but a
   // lifecycle upsert of a stale persisted selection can still land one in the
@@ -223,7 +223,7 @@ export function SelectAssistantScreen() {
   // A locked platform entry can be forgotten on this device (dropped from the
   // lockfile) only where that same host is present and the user is logged out.
   const canRemoveLockedAssistants =
-    !hasPlatformSession && localModeHostAvailable;
+    !hasCloudSession && localModeHostAvailable;
 
   const [selected, setSelected] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -270,7 +270,7 @@ export function SelectAssistantScreen() {
   // refresh on mount so the new assistant shows up. Session and mode guards
   // live in the sync module, so this is a no-op off a logged-in hub.
   useEffect(() => {
-    void refreshPlatformAssistantsIfStale();
+    void refreshCloudAssistantsIfStale();
   }, []);
 
   useEffect(() => {
@@ -344,7 +344,7 @@ export function SelectAssistantScreen() {
   // Default selection: the app's known selected assistant when accessible,
   // else the first accessible assistant, else the first origin card. Also
   // reconciles an existing selection that stops being accessible (an
-  // in-place logout locks the platform cards), so Continue can never target
+  // in-place logout locks the cloud cards), so Continue can never target
   // a locked assistant. A selected remembered origin needs no session, so it
   // stands.
   useEffect(() => {
@@ -574,7 +574,7 @@ export function SelectAssistantScreen() {
       imported ?? {
         id: assistantId,
         isLocal: false,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         isPaired: true,
       },
     );
@@ -600,7 +600,7 @@ export function SelectAssistantScreen() {
     if (fromLogin || noAutoSkip || removedThisVisitRef.current) {
       return;
     }
-    // The platform hub always shows the chooser rather than auto-connecting.
+    // The cloud hub always shows the chooser rather than auto-connecting.
     if (!localClient) {
       return;
     }
@@ -670,7 +670,7 @@ export function SelectAssistantScreen() {
   };
 
   const onBack = () => {
-    // welcome is local-only; the platform hub's way back is the app itself.
+    // welcome is local-only; the cloud hub's way back is the app itself.
     void navigate(localClient ? routes.welcome : routes.assistant);
   };
 
@@ -738,17 +738,17 @@ export function SelectAssistantScreen() {
                   }
                   loginDisabled={connecting}
                   onLogin={
-                    // Locked platform-hosted and hub-local cards both unlock
-                    // with a platform login (both connect via the platform).
+                    // Locked cloud-hosted and hub-local cards both unlock
+                    // with a cloud login (both connect via the cloud).
                     !accessible &&
-                    (assistant.isPlatformHosted || assistant.isLocal)
+                    (assistant.isCloudHosted || assistant.isLocal)
                       ? loginLoading
                         ? cancelLogin
                         : () => void login()
                       : undefined
                   }
                   onRemove={
-                    (assistant.isPlatformHosted && canRemoveLockedAssistants) ||
+                    (assistant.isCloudHosted && canRemoveLockedAssistants) ||
                     (assistant.isPaired && localModeHostAvailable)
                       ? () => setRemoveTarget(assistant)
                       : undefined
@@ -1010,7 +1010,7 @@ function RemoveCardMenu({
 /**
  * Radio-card shell every chooser entry renders through: icon, title,
  * subtitle, the roving tab stop, and the right-hand affordance cluster. A
- * locked card (a platform assistant with no session) drops the radio
+ * locked card (a cloud assistant with no session) drops the radio
  * semantics and the selected dot, keeping only its actions.
  */
 function ChooserCard({
@@ -1028,7 +1028,7 @@ function ChooserCard({
   title: string;
   subtitle: string;
   selected: boolean;
-  /** Not selectable in this session (platform-hosted without a login). */
+  /** Not selectable in this session (cloud-hosted without a login). */
   locked?: boolean;
   /** The radiogroup's single roving tab stop lands on this card. */
   tabStop: boolean;
@@ -1149,7 +1149,7 @@ function AssistantCard({
 }: {
   assistant: ResolvedAssistant;
   selected: boolean;
-  /** Not selectable in this session (platform-hosted without a login). */
+  /** Not selectable in this session (cloud-hosted without a login). */
   locked: boolean;
   /** The radiogroup's single roving tab stop lands on this card. */
   tabStop: boolean;

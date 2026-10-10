@@ -1,6 +1,6 @@
 /**
  * Re-fetch platform consent on visibility/focus + a long-interval backstop,
- * so a platform-side revoke is picked up without a fresh login. Adopts the
+ * so a cloud-side revoke is picked up without a fresh login. Adopts the
  * server-effective verdicts for both data-capture gates; diagnostics
  * additionally routes through {@link applyResolvedDiagnosticsConsent} — the
  * single direction-asymmetric chokepoint that writes the saved preference and
@@ -24,7 +24,7 @@ const BACKSTOP_INTERVAL_MS = 30 * 60_000;
 let lastRefreshAt = 0;
 
 /**
- * When a platform account is signed in, fetch the server consent and route it
+ * When a cloud account is signed in, fetch the server consent and route it
  * through the diagnostics chokepoint. No-op otherwise; a thrown fetch leaves
  * state unchanged.
  */
@@ -48,7 +48,7 @@ export async function refreshDiagnosticsConsent(): Promise<void> {
       return;
     }
     const resolved = resolveServerConsent(consent);
-    // An empty server record is not authoritative: a platform-side revoke
+    // An empty server record is not authoritative: a cloud-side revoke
     // always arrives as a real record (share_diagnostics=false). Leave state
     // unchanged, matching the failed-fetch posture; the auth resync owns the
     // no-record path.

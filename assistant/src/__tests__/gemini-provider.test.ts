@@ -1978,14 +1978,14 @@ describe("GeminiProvider", () => {
   // -----------------------------------------------------------------------
   // Managed transport — constructor configuration
   // -----------------------------------------------------------------------
-  test("does not set httpOptions when managedBaseUrl is not provided", () => {
+  test("does not set httpOptions when cloudBaseUrl is not provided", () => {
     new GeminiProvider("test-key", "gemini-3-flash-preview");
     expect(lastConstructorOpts).toEqual({ apiKey: "test-key" });
   });
 
-  test("sets httpOptions.baseUrl when managedBaseUrl is provided", () => {
+  test("sets httpOptions.baseUrl when cloudBaseUrl is provided", () => {
     new GeminiProvider("managed-key", "gemini-3-flash-preview", {
-      managedBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
+      cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
     });
     expect(lastConstructorOpts).toEqual({
       apiKey: "managed-key",
@@ -2000,7 +2000,7 @@ describe("GeminiProvider", () => {
       "managed-key",
       "gemini-3-flash-preview",
       {
-        managedBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
+        cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
       },
     );
 
@@ -2025,7 +2025,7 @@ describe("GeminiProvider", () => {
       "managed-key",
       "gemini-3-flash-preview",
       {
-        managedBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
+        cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
       },
     );
 

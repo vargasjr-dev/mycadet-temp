@@ -41,11 +41,11 @@ const BASE_AVAILABLE_CHANNELS: readonly ChannelId[] = [
 ] as const;
 
 /**
- * Best-effort check that email is configured for this assistant: a managed
- * inbox registered on the platform, or a "your own" provider credential
- * (whose gateway webhook routes carry inbound just as the managed pipeline
+ * Best-effort check that email is configured for this assistant: a cloud
+ * inbox registered on the cloud, or a "your own" provider credential
+ * (whose gateway webhook routes carry inbound just as the cloud pipeline
  * does). An unavailable platform is treated as "no inbox": we prefer to
- * under-report than block the entire Contacts page when the platform is
+ * under-report than block the entire Contacts page when the cloud is
  * briefly unreachable.
  *
  * Fresh, preserving this route's long-standing live-read-per-request

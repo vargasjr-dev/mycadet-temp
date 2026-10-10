@@ -852,7 +852,7 @@
     "apiKeyRequired": "Guarda una clave de API para este proveedor antes de probar.",
     "chooseFromCatalog": "Elegir del catálogo",
     "customVoiceIdAriaLabel": "ID de voz personalizado",
-    "noManagedVoices": "No hay voces gestionadas disponibles en este momento.",
+    "noCloudVoices": "No hay voces gestionadas disponibles en este momento.",
     "provider": "Proveedor",
     "providerAriaLabel": "Proveedor de TTS",
     "saveFailed": "No se pudieron guardar los ajustes de texto a voz",

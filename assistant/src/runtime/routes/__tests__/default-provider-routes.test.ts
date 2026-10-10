@@ -13,8 +13,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 let managedProxyEnabled = false;
 let managedProxyBaseUrl = "https://platform.example";
-mock.module("../../../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../../../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: managedProxyEnabled,
     cloudBaseUrl: managedProxyBaseUrl,
     assistantApiKey: managedProxyEnabled ? "key" : "",
@@ -157,7 +157,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).status).toBe("missing_connection");
   });
 
-  test("user-owned connection claiming the cadet name → the platform's own status", async () => {
+  test("user-owned connection claiming the cadet name → the cloud's own status", async () => {
     // seedCanonicalConnections skips reseeding when a user row claims the
     // name. Dispatch ignores that row and routes through cloud auth, so a
     // signed-in platform is genuinely usable and reads as ok.
@@ -174,7 +174,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).status).toBe("ok");
   });
 
-  test("cloud-auth connection for a non-managed provider → unsupported_auth even when signed in", async () => {
+  test("cloud-auth connection for a non-cloud provider → unsupported_auth even when signed in", async () => {
     seedConnection({
       name: "openrouter-personal",
       provider: "openrouter",
@@ -323,7 +323,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain('"openai"');
   });
 
-  test("cadet-managed connection pinned for a managed-routable provider follows cloud auth", async () => {
+  test("cadet-cloud connection pinned for a cloud-routable provider follows cloud auth", async () => {
     seedConnection({
       name: "cadet",
       provider: "cadet",
@@ -338,7 +338,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(await get()).status).toBe("ok");
   });
 
-  test("cadet-managed connection pinned for a non-managed provider → provider_mismatch", async () => {
+  test("cadet-cloud connection pinned for a non-cloud provider → provider_mismatch", async () => {
     seedConnection({
       name: "cadet",
       provider: "cadet",
@@ -351,7 +351,7 @@ describe("GET config/llm/default-provider", () => {
 
     const result = await get();
     expect(availability(result).status).toBe("provider_mismatch");
-    expect(availability(result).message).toContain("Cadet-managed");
+    expect(availability(result).message).toContain("Cadet Cloud");
   });
 
   test("service_account connection with invalid credential → missing_credential", async () => {
@@ -368,7 +368,7 @@ describe("GET config/llm/default-provider", () => {
     expect(availability(result).message).toContain("service-account");
   });
 
-  test("platform-auth connection follows managed-proxy state", async () => {
+  test("cloud-auth connection follows cloud-proxy state", async () => {
     seedConnection({
       name: "anthropic-personal",
       provider: "anthropic",

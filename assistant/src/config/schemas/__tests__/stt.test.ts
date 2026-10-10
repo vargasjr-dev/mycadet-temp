@@ -69,7 +69,7 @@ describe("SttServiceSchema", () => {
   test("language defaults to multilingual rather than staying absent", () => {
     // Every config carries a real language, so nothing downstream has to
     // infer one from an absent key. Omitting the param entirely is not a
-    // neutral state on Deepgram and the managed relay: it decodes as
+    // neutral state on Deepgram and the cloud relay: it decodes as
     // English, which is what this default exists to stop.
     const parsed = SttServiceSchema.parse({ provider: "cadet" });
     expect(parsed.language).toBe("multi");
@@ -104,7 +104,7 @@ describe("SttServiceSchema", () => {
   });
 });
 
-describe("managed provider", () => {
+describe("cloud provider", () => {
   test("accepts cadet as an ordinary provider choice", () => {
     const parsed = SttServiceSchema.parse({ provider: "cadet" });
     expect(parsed.provider).toBe("cadet");

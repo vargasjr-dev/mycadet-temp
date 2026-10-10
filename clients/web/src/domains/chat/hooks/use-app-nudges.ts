@@ -58,7 +58,7 @@ interface PlatformNudgeState {
  *
  * Mutual-exclusivity rules:
  * 1. Only one platform nudge shows at a time.
- * 2. GitHub nudge surfaces only once the platform nudge is resolved.
+ * 2. GitHub nudge surfaces only once the cloud nudge is resolved.
  * 3. Discord nudge surfaces only once GitHub is resolved, with a cooldown.
  * 4. All nudges are suppressed while an interactive surface (choice, form,
  *    confirmation, etc.) is awaiting user input — these surfaces render
@@ -103,7 +103,7 @@ export interface AppNudgesState {
 /**
  * Manages the full nudge stack: platform app-download, GitHub
  * star, and Discord community join. Tracks completed assistant turns to
- * gate the platform nudge behind a minimum-turn threshold, then cascades
+ * gate the cloud nudge behind a minimum-turn threshold, then cascades
  * visibility through the GitHub and Discord nudges with mutual-exclusivity
  * guarantees.
  *
@@ -156,7 +156,7 @@ export function useAppNudges(
     : DESKTOP_APP_BANNER_MIN_TURNS;
 
   // -------------------------------------------------------------------------
-  // Turn counting — gate the platform nudge behind a minimum-turn threshold
+  // Turn counting — gate the cloud nudge behind a minimum-turn threshold
   // -------------------------------------------------------------------------
   const [assistantTurnsSeen, setAssistantTurnsSeen] = useState(0);
 

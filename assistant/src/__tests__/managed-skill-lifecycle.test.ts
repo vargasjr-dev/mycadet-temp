@@ -8,7 +8,7 @@ let TEST_DIR = "";
 const seedUpsertSlugs: string[] = [];
 
 // Keep bundled skills out of the catalog so the lifecycle assertions only
-// see the managed skills these tests create (default `allowBundled: null`
+// see the cloud skills these tests create (default `allowBundled: null`
 // would load every bundled skill).
 setConfig("skills", { allowBundled: [] });
 
@@ -42,12 +42,12 @@ import {
   getSkillCapability,
   seedV2SkillEntries,
 } from "../plugins/defaults/memory/substrate/skill-store.js";
-import { executeDeleteManagedSkill } from "../tools/skills/delete-managed.js";
+import { executeDeleteCloudSkill } from "../tools/skills/delete-cloud.js";
 import { skillLoadTool } from "../tools/skills/load.js";
-import { executeScaffoldManagedSkill } from "../tools/skills/scaffold-managed.js";
+import { executeScaffoldCloudSkill } from "../tools/skills/scaffold-cloud.js";
 import type { ToolContext } from "../tools/types.js";
 
-/** scaffold_managed_skill requires activation hints; a fixed set for tests. */
+/** scaffold_cloud_skill requires activation hints; a fixed set for tests. */
 const HINTS = ["user asks to run the lifecycle test procedure"];
 
 function makeContext(): ToolContext {
@@ -122,8 +122,8 @@ Run the custom lifecycle verification procedure.
   }, 15_000);
 
   test("full lifecycle: create skill, verify in catalog and prompt, then delete", async () => {
-    // Step 1: Scaffold a managed skill
-    const scaffoldResult = await executeScaffoldManagedSkill(
+    // Step 1: Scaffold a cloud skill
+    const scaffoldResult = await executeScaffoldCloudSkill(
       {
         skill_id: "lifecycle-test",
         name: "Lifecycle Test",
@@ -158,7 +158,7 @@ Run the custom lifecycle verification procedure.
     expect(existsSync(join(TEST_DIR, "skills", "SKILLS.md"))).toBe(false);
 
     // Step 4: Delete the skill
-    const deleteResult = await executeDeleteManagedSkill(
+    const deleteResult = await executeDeleteCloudSkill(
       {
         skill_id: "lifecycle-test",
       },
@@ -183,7 +183,7 @@ Run the custom lifecycle verification procedure.
     const ctx = makeContext();
 
     // Create initial skill
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "overwrite-test",
         name: "V1",
@@ -195,7 +195,7 @@ Run the custom lifecycle verification procedure.
     );
 
     // Overwrite with updated content
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "overwrite-test",
         name: "V2",
@@ -226,7 +226,7 @@ Run the custom lifecycle verification procedure.
   });
 
   test("delete non-existent skill returns error", async () => {
-    const result = await executeDeleteManagedSkill(
+    const result = await executeDeleteCloudSkill(
       {
         skill_id: "does-not-exist",
       },
@@ -240,7 +240,7 @@ Run the custom lifecycle verification procedure.
     const ctx = makeContext();
 
     // Step 1: Scaffold a skill directly
-    const scaffoldResult = await executeScaffoldManagedSkill(
+    const scaffoldResult = await executeScaffoldCloudSkill(
       {
         skill_id: "chain-test",
         name: "Chain Test",
@@ -270,7 +270,7 @@ Run the custom lifecycle verification procedure.
     expect(loadContent).toContain("echo chain-test-ok");
 
     // Step 3: Clean up
-    const deleteResult = await executeDeleteManagedSkill(
+    const deleteResult = await executeDeleteCloudSkill(
       { skill_id: "chain-test" },
       ctx,
     );

@@ -94,12 +94,12 @@ describe("tool registry dynamic-tools tools", () => {
 
   test("scaffold and delete are NOT in the core tool registry (moved to bundled skill)", async () => {
     await initializeTools();
-    // scaffold_managed_skill and delete_managed_skill moved to the
+    // scaffold_cloud_skill and delete_cloud_skill moved to the
     // skill-management bundled skill — they are no longer registered as core
     // tools. Their High risk classification is handled by classifyRisk() in
     // checker.ts so security behavior is preserved.
-    expect(getTool("scaffold_managed_skill")).toBeUndefined();
-    expect(getTool("delete_managed_skill")).toBeUndefined();
+    expect(getTool("scaffold_cloud_skill")).toBeUndefined();
+    expect(getTool("delete_cloud_skill")).toBeUndefined();
   });
 
   test("skill_load is registered as Low risk", async () => {

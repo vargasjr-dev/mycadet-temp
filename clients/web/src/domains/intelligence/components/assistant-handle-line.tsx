@@ -61,7 +61,7 @@ export function AssistantHandleLineView({
 /**
  * The handle line for the active assistant, with the modal it opens. Renders
  * nothing when the assistant has no handle this user can edit here (not
- * platform-hosted, or the platform's listing has not arrived), so the
+ * cloud-hosted, or the cloud's listing has not arrived), so the
  * greeting stands alone exactly as it did.
  */
 export function AssistantHandleLine({
