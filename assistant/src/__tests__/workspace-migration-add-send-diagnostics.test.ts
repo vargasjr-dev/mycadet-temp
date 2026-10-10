@@ -1,4 +1,10 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
@@ -29,8 +35,8 @@ describe("005-add-send-diagnostics migration", () => {
 
     addSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    expect(
-      JSON.parse(readFileSync(CONFIG_PATH(), "utf-8")),
-    ).toEqual({ sendDiagnostics: true });
+    expect(JSON.parse(readFileSync(CONFIG_PATH(), "utf-8"))).toEqual({
+      sendDiagnostics: true,
+    });
   });
 });
