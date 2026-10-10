@@ -822,9 +822,13 @@ jobs:
           retention-days: 1
 
   publish-npm-prod:
+    needs: ['extract-version', 'build-npm-prod', 'push-assistant-manifest', 'push-gateway-manifest', 'push-credential-executor-manifest']
+    if: ${{ always() && !cancelled() && needs.build-npm-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' }}
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     strategy:
       matrix:
@@ -914,9 +918,13 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-prod:
+    needs: ['extract-version', 'build-plugin-api-prod', 'push-assistant-manifest', 'push-gateway-manifest', 'push-credential-executor-manifest']
+    if: ${{ always() && !cancelled() && needs.build-plugin-api-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' }}
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1052,9 +1060,13 @@ jobs:
           retention-days: 1
 
   publish-npm-staging:
+    needs: ['extract-version', 'build-npm-staging']
+    if: ${{ always() && !cancelled() && needs.build-npm-staging.result == 'success' }}
+    environment: staging
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     strategy:
       matrix:
@@ -1142,9 +1154,13 @@ jobs:
           retention-days: 1
 
   publish-plugin-api-staging:
+    needs: ['extract-version', 'build-plugin-api-staging']
+    if: ${{ always() && !cancelled() && needs.build-plugin-api-staging.result == 'success' }}
+    environment: staging
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1242,9 +1258,13 @@ jobs:
           retention-days: 1
 
   publish-web-staging:
+    needs: ['extract-version', 'build-web-staging']
+    if: ${{ always() && !cancelled() && needs.build-web-staging.result == 'success' }}
+    environment: staging
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1281,9 +1301,13 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --tag staging --access public
 
   publish-meta-staging:
+    needs: ['extract-version', 'publish-npm-staging', 'publish-web-staging']
+    if: ${{ needs.extract-version.outputs.is_staging == 'true' }}
+    environment: staging
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1451,9 +1475,13 @@ jobs:
           retention-days: 1
 
   publish-web-prod:
+    needs: ['extract-version', 'build-web-prod', 'push-assistant-manifest', 'push-gateway-manifest', 'push-credential-executor-manifest']
+    if: ${{ always() && !cancelled() && needs.build-web-prod.result == 'success' && needs.push-assistant-manifest.result == 'success' && needs.push-gateway-manifest.result == 'success' && needs.push-credential-executor-manifest.result == 'success' }}
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1493,9 +1521,13 @@ jobs:
           npm publish /tmp/npm-dist/package.tgz --access public
 
   publish-meta-prod:
+    needs: ['extract-version', 'publish-npm-prod', 'publish-web-prod']
+    if: ${{ needs.extract-version.outputs.is_staging != 'true' }}
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
      
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
