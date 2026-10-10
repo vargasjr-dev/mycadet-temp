@@ -40,10 +40,10 @@ import {
 import { z } from "zod";
 
 import {
+  setCloudAssistantId,
   setCloudBaseUrl,
-  setPlatformAssistantId,
-  setPlatformOrganizationId,
-  setPlatformUserId,
+  setCloudOrganizationId,
+  setCloudUserId,
 } from "../../config/env.js";
 import { isPlatformRemote } from "../../config/env-registry.js";
 import {
@@ -471,9 +471,9 @@ async function handlePlatformDisconnect(
   }
 
   setCloudBaseUrl(undefined);
-  setPlatformAssistantId(undefined);
-  setPlatformOrganizationId(undefined);
-  setPlatformUserId(undefined);
+  setCloudAssistantId(undefined);
+  setCloudOrganizationId(undefined);
+  setCloudUserId(undefined);
 
   // Notify connected clients
   broadcastMessage({ type: "platform_disconnected" });

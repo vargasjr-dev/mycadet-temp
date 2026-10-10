@@ -18,7 +18,7 @@ let oauthConnectionStore: Record<
   { id: string; status: string; accountInfo?: string | null }
 > = {};
 const syncCalls: Array<{ provider: string; accountInfo?: string }> = [];
-let platformContextEnabled = false;
+let cloudContextEnabled = false;
 
 const registerCallbackRouteMock = mock(
   async (callbackPath: string, _type: string) =>
@@ -34,11 +34,11 @@ mock.module("../inbound/platform-callback-registration.js", () => ({
   registerCallbackRoute: registerCallbackRouteMock,
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform: false,
-    cloudBaseUrl: platformContextEnabled ? "https://cloud.mycadet.ai" : "",
-    assistantId: platformContextEnabled ? "assistant-123" : "",
-    hasAssistantApiKey: platformContextEnabled,
-    authHeader: platformContextEnabled ? "Api-Key secret" : null,
-    enabled: platformContextEnabled,
+    cloudBaseUrl: cloudContextEnabled ? "https://cloud.mycadet.ai" : "",
+    assistantId: cloudContextEnabled ? "assistant-123" : "",
+    hasAssistantApiKey: cloudContextEnabled,
+    authHeader: cloudContextEnabled ? "Api-Key secret" : null,
+    enabled: cloudContextEnabled,
   }),
 }));
 
@@ -120,7 +120,7 @@ describe("Telegram config handler", () => {
     reseedMemorySecureKeys(secureKeyStore);
     oauthConnectionStore = {};
     syncCalls.length = 0;
-    platformContextEnabled = false;
+    cloudContextEnabled = false;
     registerCallbackRouteMock.mockClear();
     setIngressPublicBaseUrl("");
     globalThis.fetch = originalFetch;
@@ -150,7 +150,7 @@ describe("Telegram config handler", () => {
   // managed platform callbacks, so saving the bot token must register the
   // route.
   test("set registers the platform callback route for a platform-connected local assistant", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     globalThis.fetch = mockTelegramApi();
 
     const result = await setTelegramConfig(
@@ -178,7 +178,7 @@ describe("Telegram config handler", () => {
   // A logged-in local assistant holds cloud credentials for the LLM proxy,
   // so credential presence must not override an explicitly configured ingress.
   test("set does not register a platform callback route when a public ingress is configured", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     setIngressPublicBaseUrl("https://abc.ngrok.io");
     globalThis.fetch = mockTelegramApi();
 

@@ -7,7 +7,7 @@ import type {
   ConversationErrorCode,
   ConversationErrorEvent,
 } from "../api/events/conversation-error.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import {
   isImageDimensionsTooLargeError,
   isImageMediaTypeMismatchError,
@@ -372,7 +372,7 @@ function connectionResolutionUserMessage(
       // A platform-managed assistant cannot log in or switch providers, and
       // this classifier only sees the reason code, so one honest wording covers
       // both the transient and the re-provision cases.
-      if (getIsPlatform()) {
+      if (getIsCloud()) {
         return `${connection}${usedBy} is unavailable. If this persists, the cloud credential may need to be re-provisioned on Cadet Cloud.`;
       }
       return `${connection}${usedBy} requires a Cadet Cloud login. Log in, or pick a different provider in ${fixPath}.`;

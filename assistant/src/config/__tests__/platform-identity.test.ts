@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 import {
   getCloudBaseUrl,
+  setCloudAssistantId,
   setCloudBaseUrl,
-  setPlatformAssistantId,
-  setPlatformOrganizationId,
-  setPlatformUserId,
+  setCloudOrganizationId,
+  setCloudUserId,
 } from "../env.js";
 
 useMemorySecureKeys();
@@ -133,9 +133,9 @@ describe("resolvePlatformAssistantId", () => {
     }) as unknown as typeof fetch;
     delete process.env.ASSISTANT_API_KEY;
     setCloudBaseUrl(undefined);
-    setPlatformAssistantId(undefined);
-    setPlatformOrganizationId(undefined);
-    setPlatformUserId(undefined);
+    setCloudAssistantId(undefined);
+    setCloudOrganizationId(undefined);
+    setCloudUserId(undefined);
     _resetPlatformIdentityEnsureForTests();
   });
 
@@ -152,14 +152,14 @@ describe("resolvePlatformAssistantId", () => {
       process.env.CADET_PLATFORM_URL = originalPlatformUrlEnv;
     }
     setCloudBaseUrl(undefined);
-    setPlatformAssistantId(undefined);
-    setPlatformOrganizationId(undefined);
-    setPlatformUserId(undefined);
+    setCloudAssistantId(undefined);
+    setCloudOrganizationId(undefined);
+    setCloudUserId(undefined);
     _resetPlatformIdentityEnsureForTests();
   });
 
   test("returns the in-memory override without calling validate", async () => {
-    setPlatformAssistantId(ASSISTANT_ID);
+    setCloudAssistantId(ASSISTANT_ID);
     process.env.ASSISTANT_API_KEY = "assistant-key";
     await expect(resolvePlatformAssistantId()).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(0);

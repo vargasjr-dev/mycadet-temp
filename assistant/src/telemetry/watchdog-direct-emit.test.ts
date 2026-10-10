@@ -36,9 +36,9 @@ mock.module("../platform/client.js", () => ({
   },
 }));
 
-import { setPlatformOrganizationId, setPlatformUserId } from "../config/env.js";
-setPlatformOrganizationId("org-1");
-setPlatformUserId("user-1");
+import { setCloudOrganizationId, setCloudUserId } from "../config/env.js";
+setCloudOrganizationId("org-1");
+setCloudUserId("user-1");
 
 mock.module("../util/device-id.js", () => ({
   getDeviceId: () => "device-xyz",

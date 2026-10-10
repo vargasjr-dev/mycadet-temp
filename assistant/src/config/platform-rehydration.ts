@@ -47,7 +47,7 @@ async function rehydrateField(
  * Rehydrate the platform base URL and the related platform IDs (assistant,
  * organization, user). Safe to call more than once.
  */
-export async function rehydratePlatformCredentials(): Promise<void> {
+export async function rehydrateCloudCredentials(): Promise<void> {
   // Base URL first so managed proxy activation and identity validate resolve
   // the correct environment for every request that follows.
   await rehydrateField(

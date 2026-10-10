@@ -1,7 +1,7 @@
-import { getDisablePlatform, getIsPlatform } from "../config/env-registry.js";
+import { getDisablePlatform, getIsCloud } from "../config/env-registry.js";
 
 export function arePlatformFeaturesEnabled(): boolean {
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     return true;
   }
   return !getDisablePlatform();

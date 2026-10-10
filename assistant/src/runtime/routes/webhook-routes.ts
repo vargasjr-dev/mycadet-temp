@@ -11,7 +11,7 @@
 
 import { z } from "zod";
 
-import { getIsPlatform } from "../../config/env-registry.js";
+import { getIsCloud } from "../../config/env-registry.js";
 import { getConfig } from "../../config/loader.js";
 import {
   registerCallbackRoute,
@@ -148,7 +148,7 @@ async function handleWebhooksRegister(
     (pathOverride as string | undefined) ?? deriveWebhookPath(type as string);
   const sourceIdentifier = source as string | undefined;
 
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     if (isTunnelWebhooksEnabled()) {
       const callbackUrl = await resolveClaimedPodWebhookUrl(
         () => `${getPublicBaseUrl(getConfig())}/${webhookPath}`,

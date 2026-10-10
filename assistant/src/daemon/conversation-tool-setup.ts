@@ -12,7 +12,7 @@ import {
   type HostProxyCapability,
   supportsHostProxy,
 } from "../channels/types.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled } from "../config/memory-v3-gate.js";
 import {
@@ -463,7 +463,7 @@ export function createToolExecutor(
       // offered on a gated cleanup turn is not refused at execution.
       sendUserMessageActive: resolveSendUserMessageActive(ctx),
       toolUseId,
-      isPlatformHosted: getIsPlatform(),
+      isPlatformHosted: getIsCloud(),
       ...resolveTurnClientOs(ctx),
       overrideProfile: ctx.currentTurnOverrideProfile,
       cronRunId: ctx.currentTurnCronRunId,

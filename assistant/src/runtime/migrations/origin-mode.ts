@@ -4,7 +4,7 @@
  * The vbundle manifest v1 schema's `origin.mode` enum captures the deployment
  * shape that produced the bundle. The runtime's two underlying signals are:
  *
- *   - `getIsPlatform()` — true when the daemon runs as a platform-managed
+ *   - `getIsCloud()` — true when the daemon runs as a platform-managed
  *     deployment (`IS_PLATFORM`, set only on platform pods).
  *   - `getIsContainerized()` — true when the daemon runs inside a container
  *     (`IS_CONTAINERIZED`), identifying where the daemon process is running.
@@ -18,10 +18,7 @@
  * every logged-in local assistant.
  */
 
-import {
-  getIsContainerized,
-  getIsPlatform,
-} from "../../config/env-registry.js";
+import { getIsCloud, getIsContainerized } from "../../config/env-registry.js";
 
 export type VBundleOriginMode =
   | "managed"
@@ -35,7 +32,7 @@ export type VBundleOriginMode =
  * "self-hosted-remote", bare-metal → "self-hosted-local".
  */
 export async function getOriginMode(): Promise<VBundleOriginMode> {
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     return "managed";
   }
   if (getIsContainerized()) {

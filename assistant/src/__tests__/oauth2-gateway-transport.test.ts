@@ -60,7 +60,7 @@ mock.module("../inbound/public-ingress-urls.js", () => ({
 }));
 
 mock.module("../config/env-registry.js", () => ({
-  getIsPlatform: () => false,
+  getIsCloud: () => false,
 }));
 
 // Mock platform-callback-registration to avoid cold-start latency from its

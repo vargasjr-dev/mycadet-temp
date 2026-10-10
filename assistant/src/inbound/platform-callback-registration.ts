@@ -19,7 +19,7 @@
  */
 
 import { getCloudBaseUrl } from "../config/env.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
 import { resolvePlatformAssistantId } from "../config/platform-identity.js";
 import { ipcRegisterWebhookRoute } from "../ipc/gateway-client.js";
@@ -54,7 +54,7 @@ export interface PlatformCallbackRegistrationContext {
 }
 
 export async function resolvePlatformCallbackRegistrationContext(): Promise<PlatformCallbackRegistrationContext> {
-  const platform = getIsPlatform();
+  const platform = getIsCloud();
   const [storedBaseUrlRaw, storedAssistantApiKey, assistantId] =
     await Promise.all([
       getSecureKeyAsync(credentialKey("cadet", "platform_base_url")),
@@ -177,7 +177,7 @@ export async function registerCallbackRoute(
  * bases and always uses the platform callback URL.
  */
 function resolveSelfHostedCallbackBaseUrl(): string | undefined {
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     return undefined;
   }
   try {
@@ -280,7 +280,7 @@ export async function resolveCallbackUrl(
   queryParams?: Record<string, string>,
   sourceIdentifier?: string,
 ): Promise<string> {
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     if (isTunnelWebhooksEnabled()) {
       const claimed = await resolveClaimedPodWebhookUrl(directUrl, () =>
         registerLocalWebhookRoute(callbackPath, type, sourceIdentifier),

@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import { getEffectiveProfilesForProvider } from "../../config/default-profile-catalog.js";
 import { resolveDefaultConnectionName } from "../../config/default-provider-resolution.js";
-import { getIsPlatform } from "../../config/env-registry.js";
+import { getIsCloud } from "../../config/env-registry.js";
 import { getConfigReadOnly } from "../../config/loader.js";
 import { getDb } from "../../persistence/db-connection.js";
 import {
@@ -145,7 +145,7 @@ async function parseCustomProviderFields(
       // runs on Cadet infrastructure. Self-hosted daemons run on the user's
       // own machine, so localhost/private addresses are the expected target
       // (e.g. LM Studio, vLLM, text-generation-webui).
-      if (getIsPlatform()) {
+      if (getIsCloud()) {
         const hostname = parsed.hostname;
         if (isPrivateOrLocalHost(hostname)) {
           throw new BadRequestError(

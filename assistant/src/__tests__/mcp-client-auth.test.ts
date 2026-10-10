@@ -10,7 +10,7 @@ useMemorySecureKeyMap();
 mock.module("../config/env-registry.js", () => ({
   getDebugStdoutLogs: () => false,
   getIsContainerized: () => false,
-  getIsPlatform: () => false,
+  getIsCloud: () => false,
   isPlatformRemote: () => false,
   getCpuLimit: () => undefined,
   getMinikubeStorageSize: () => undefined,

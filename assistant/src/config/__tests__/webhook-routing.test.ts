@@ -14,14 +14,14 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 let isPlatform = false;
 let tunnelWebhooksEnabled = false;
 let rawConfig: Record<string, unknown> = {};
-let platformContextEnabled = false;
+let cloudContextEnabled = false;
 
 // Spread the real modules: these are broad barrels and replacing them wholesale
 // breaks unrelated importers pulled in by the module under test.
 const actualEnvRegistry = await import("../env-registry.js");
 mock.module("../env-registry.js", () => ({
   ...actualEnvRegistry,
-  getIsPlatform: () => isPlatform,
+  getIsCloud: () => isPlatform,
 }));
 
 const actualLoader = await import("../loader.js");
@@ -44,10 +44,10 @@ mock.module("../../inbound/platform-callback-registration.js", () => ({
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
-    assistantId: platformContextEnabled ? "assistant-123" : "",
-    hasAssistantApiKey: platformContextEnabled,
-    authHeader: platformContextEnabled ? "Api-Key secret" : null,
-    enabled: platformContextEnabled,
+    assistantId: cloudContextEnabled ? "assistant-123" : "",
+    hasAssistantApiKey: cloudContextEnabled,
+    authHeader: cloudContextEnabled ? "Api-Key secret" : null,
+    enabled: cloudContextEnabled,
   }),
 }));
 
@@ -59,7 +59,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     isPlatform = false;
     tunnelWebhooksEnabled = false;
     rawConfig = {};
-    platformContextEnabled = false;
+    cloudContextEnabled = false;
   });
 
   // ── Tier 1: platform pods ────────────────────────────────────────────────
@@ -123,7 +123,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   // ── Tier 2: a configured ingress wins ────────────────────────────────────
 
   test("ingress beats the platform-connected fallback", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
     // Any logged-in local assistant holds platform credentials for the LLM
@@ -136,7 +136,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   });
 
   test("the twilio option resolves ingress before the fallback too", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "https://twilio.example.com" } };
 
     expect(await hasWebhookRoutingConfigured(true, { twilio: true })).toEqual({
@@ -146,7 +146,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   });
 
   test("the twilio option falls back to managed callbacks with no ingress", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(await hasWebhookRoutingConfigured(true, { twilio: true })).toEqual({
       configured: true,
@@ -157,7 +157,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   // ── Tier 3: platform-connected fallback ──────────────────────────────────
 
   test("a platform-connected assistant with no ingress uses managed callbacks", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     // The LUM-2882 case: `webhooks register` hands back a platform callback
     // URL here, so the status surfaces must not report missing ingress.
@@ -168,7 +168,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   });
 
   test("the fallback applies when the ingress URL is present but empty", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "" } };
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
@@ -178,7 +178,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   });
 
   test("an explicit ingress.enabled false blocks the fallback", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     rawConfig = { ingress: { enabled: false } };
 
     // Opting out is a decision not to accept inbound webhooks at all, not an
@@ -190,7 +190,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   });
 
   test("ingress.enabled false blocks the fallback even with a URL configured", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     rawConfig = {
       ingress: { enabled: false, publicBaseUrl: "https://tunnel.example.com" },
     };
@@ -213,7 +213,7 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
   // ── allowManagedCallbacks gating ─────────────────────────────────────────
 
   test("allowManagedCallbacks false hides the platform-connected fallback", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     // Channels that can only be served by a self-hosted ingress pass `false`
     // and must never be told a managed route stands in for one.
@@ -246,11 +246,11 @@ describe("hasIngressConfigured", () => {
   beforeEach(() => {
     isPlatform = false;
     rawConfig = {};
-    platformContextEnabled = false;
+    cloudContextEnabled = false;
   });
 
   test("is unaffected by platform connectivity", () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(hasIngressConfigured()).toBe(false);
   });

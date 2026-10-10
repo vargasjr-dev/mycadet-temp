@@ -17,7 +17,7 @@ import {
 import { resolvePlatformCallbackRegistrationContext } from "../inbound/platform-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";
 import { isTunnelWebhooksEnabled } from "../inbound/tunnel-webhooks-gate.js";
-import { getIsPlatform } from "./env-registry.js";
+import { getIsCloud } from "./env-registry.js";
 import { getConfig, loadRawConfig } from "./loader.js";
 
 /**
@@ -104,7 +104,7 @@ export async function hasWebhookRoutingConfigured(
   configured: boolean;
   usesManagedCallbacks: boolean;
 }> {
-  const platformManaged = allowManagedCallbacks && getIsPlatform();
+  const platformManaged = allowManagedCallbacks && getIsCloud();
   if (platformManaged && !isTunnelWebhooksEnabled()) {
     return { configured: true, usesManagedCallbacks: true };
   }

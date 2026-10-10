@@ -63,7 +63,7 @@ export function getIsContainerized(): boolean {
  * containerized (need CES sidecar, gateway trust store, etc.) but are
  * not platform-managed.
  */
-export function getIsPlatform(): boolean {
+export function getIsCloud(): boolean {
   return flag("IS_PLATFORM");
 }
 
@@ -71,7 +71,7 @@ export function getIsPlatform(): boolean {
  * Whether this assistant is running as a platform-managed remote instance.
  */
 export function isPlatformRemote(): boolean {
-  return getIsPlatform();
+  return getIsCloud();
 }
 
 /**

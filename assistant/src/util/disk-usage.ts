@@ -3,8 +3,8 @@ import { existsSync, statfsSync } from "node:fs";
 import { promisify } from "node:util";
 
 import {
+  getIsCloud,
   getIsContainerized,
-  getIsPlatform,
   getMinikubeStorageSize,
 } from "../config/env-registry.js";
 import { getWorkspaceDir } from "./platform.js";
@@ -117,7 +117,7 @@ function classifyWorkspaceVolume(
   // Local Docker hatch: the workspace is a Docker named volume backed by the
   // host filesystem. Platform-managed remote instances run on CSI-backed PVCs
   // where statfsSync already reports the volume, so they are excluded.
-  if (getIsContainerized() && !getIsPlatform()) {
+  if (getIsContainerized() && !getIsCloud()) {
     return { kind: "host-free" };
   }
 

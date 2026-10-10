@@ -1,5 +1,5 @@
 import { maybeDefaultSpeechToManaged } from "../config/managed-speech-defaults.js";
-import { rehydratePlatformCredentials } from "../config/platform-rehydration.js";
+import { rehydrateCloudCredentials } from "../config/platform-rehydration.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getMcpServerManager } from "../mcp/manager.js";
 import { startConfiguredMcpServers } from "../mcp/startup.js";
@@ -32,7 +32,7 @@ export async function initializeProvidersAndTools(
   // Rehydrate the platform base URL and IDs from the credential store so
   // managed proxy activation survives assistant restarts. The in-memory
   // overrides are normally only set by the secret-routes handlers at runtime.
-  await rehydratePlatformCredentials();
+  await rehydrateCloudCredentials();
 
   // Speech defaulting normally fires when the cloud credentials land
   // (secret-routes); evaluating it once per boot also covers assistants whose

@@ -19,7 +19,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
 
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { parseScopeList } from "../oauth/scope-utils.js";
 import { getLogger } from "../util/logger.js";
 import { renderOAuthCompletionPage as renderLoopbackPage } from "./oauth-completion-page.js";
@@ -793,7 +793,7 @@ export async function startOAuth2Flow(
 
   // When containerized with a platform, callback routes are registered
   // through the platform gateway — treat as having a public URL.
-  if (!hasPublicUrl && getIsPlatform()) {
+  if (!hasPublicUrl && getIsCloud()) {
     hasPublicUrl = true;
   }
 

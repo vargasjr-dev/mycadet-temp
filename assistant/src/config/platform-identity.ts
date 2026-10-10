@@ -18,9 +18,9 @@ import {
   getPlatformAssistantId,
   getPlatformOrganizationId,
   getPlatformUserId,
-  setPlatformAssistantId,
-  setPlatformOrganizationId,
-  setPlatformUserId,
+  setCloudAssistantId,
+  setCloudOrganizationId,
+  setCloudUserId,
 } from "./env.js";
 
 const log = getLogger("platform-identity");
@@ -47,13 +47,13 @@ function asNonEmptyString(value: unknown): string | undefined {
 
 export function applyPlatformIdentityIds(ids: PlatformIdentityIds): void {
   if (ids.assistantId) {
-    setPlatformAssistantId(ids.assistantId);
+    setCloudAssistantId(ids.assistantId);
   }
   if (ids.organizationId) {
-    setPlatformOrganizationId(ids.organizationId);
+    setCloudOrganizationId(ids.organizationId);
   }
   if (ids.userId) {
-    setPlatformUserId(ids.userId);
+    setCloudUserId(ids.userId);
   }
 }
 

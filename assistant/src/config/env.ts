@@ -14,7 +14,7 @@
  */
 
 import { getLogger } from "../util/logger.js";
-import { checkUnrecognizedEnvVars, getIsPlatform } from "./env-registry.js";
+import { checkUnrecognizedEnvVars, getIsCloud } from "./env-registry.js";
 import { getConfig } from "./loader.js";
 
 const log = getLogger("env");
@@ -109,7 +109,7 @@ export function isHttpAuthDisabled(): boolean {
  * `gateway/src/http/middleware/auth.ts`.
  */
 export function isPlatformAuthBypassActive(): boolean {
-  return isHttpAuthDisabled() && getIsPlatform();
+  return isHttpAuthDisabled() && getIsCloud();
 }
 
 // ── Qdrant ───────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export function getAssistantDomain(): string {
 
 let _platformAssistantIdOverride: string | undefined;
 
-export function setPlatformAssistantId(value: string | undefined): void {
+export function setCloudAssistantId(value: string | undefined): void {
   _platformAssistantIdOverride = value;
 }
 
@@ -238,7 +238,7 @@ export function getPlatformAssistantId(): string {
 
 let _platformOrganizationIdOverride: string | undefined;
 
-export function setPlatformOrganizationId(value: string | undefined): void {
+export function setCloudOrganizationId(value: string | undefined): void {
   _platformOrganizationIdOverride = value;
 }
 
@@ -254,7 +254,7 @@ export function getPlatformOrganizationId(): string {
 
 let _platformUserIdOverride: string | undefined;
 
-export function setPlatformUserId(value: string | undefined): void {
+export function setCloudUserId(value: string | undefined): void {
   _platformUserIdOverride = value;
 }
 

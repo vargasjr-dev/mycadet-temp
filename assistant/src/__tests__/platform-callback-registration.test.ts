@@ -37,7 +37,7 @@ let ipcRegisterCalls: RegisterWebhookRouteIpcParams[] = [];
 const actualEnvRegistry = await import("../config/env-registry.js");
 mock.module("../config/env-registry.js", () => ({
   ...actualEnvRegistry,
-  getIsPlatform: () => mockIsPlatform,
+  getIsCloud: () => mockIsPlatform,
 }));
 
 const actualTunnelGate = await import("../inbound/tunnel-webhooks-gate.js");

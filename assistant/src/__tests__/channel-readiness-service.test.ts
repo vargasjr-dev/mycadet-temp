@@ -23,7 +23,7 @@ mock.module("../calls/twilio-rest.js", () => ({
 }));
 
 mock.module("../config/env-registry.js", () => ({
-  getIsPlatform: () => mockGetIsPlatform,
+  getIsCloud: () => mockGetIsPlatform,
 }));
 
 // Spread the real module: replacing it wholesale drops the exports peer test

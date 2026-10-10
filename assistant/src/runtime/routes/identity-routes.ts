@@ -7,7 +7,7 @@ import { totalmem } from "node:os";
 
 import { z } from "zod";
 
-import { getIsPlatform } from "../../config/env-registry.js";
+import { getIsCloud } from "../../config/env-registry.js";
 import { getDbMigrationReadiness } from "../../daemon/daemon-readiness.js";
 import { parseIdentityFields } from "../../daemon/handlers/identity.js";
 import { getProfilerRuntimeStatus } from "../../daemon/profiler-run-store.js";
@@ -67,7 +67,7 @@ function getMemoryInfo(): MemoryInfo {
     // can't be sampled, fall back to the cgroup usage (if any) before reporting 0
     // — the metric is best-effort and must never fail the probe.
     const currentBytes =
-      (getIsPlatform() ? getContainerMemoryUsageBytes() : null) ??
+      (getIsCloud() ? getContainerMemoryUsageBytes() : null) ??
       sampleProcessRssBytes() ??
       getContainerMemoryUsageBytes() ??
       0;

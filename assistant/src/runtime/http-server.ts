@@ -24,7 +24,7 @@ import {
   getRuntimeHttpPort,
   isHttpAuthDisabled,
 } from "../config/env.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { getConfig } from "../config/loader.js";
 import {
   getDbMigrationReadiness,
@@ -647,7 +647,7 @@ export class RuntimeHttpServer {
     }
 
     if (isHttpAuthDisabled()) {
-      if (getIsPlatform()) {
+      if (getIsCloud()) {
         log.info(
           "DISABLE_HTTP_AUTH is set — HTTP auth disabled (expected: platform handles auth)",
         );

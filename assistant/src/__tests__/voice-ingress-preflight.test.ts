@@ -8,10 +8,10 @@ let mockCredentialReadiness: Record<string, unknown>;
 let credentialReadinessCalls = 0;
 
 // Spread the real env-registry so the config loader's transitive
-// `util/platform` imports still resolve; only getIsPlatform is driven per test.
+// `util/platform` imports still resolve; only getIsCloud is driven per test.
 mock.module("../config/env-registry.js", () => ({
   ...realEnvRegistry,
-  getIsPlatform: () => mockGetIsPlatform(),
+  getIsCloud: () => mockGetIsPlatform(),
 }));
 
 mock.module("../calls/telephony-credential-preflight.js", () => ({

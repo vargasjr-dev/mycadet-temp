@@ -10,7 +10,7 @@ import { InternalError, UnprocessableEntityError } from "../errors.js";
 let isPlatform = false;
 let tunnelWebhooksEnabled = false;
 let config: Record<string, unknown> = {};
-let platformContextEnabled = false;
+let cloudContextEnabled = false;
 let registerCallbackRouteError: Error | undefined;
 
 let localWebhookRouteRegistered = true;
@@ -34,7 +34,7 @@ const registerLocalWebhookRouteMock = mock(
 const actualEnvRegistry = await import("../../../config/env-registry.js");
 mock.module("../../../config/env-registry.js", () => ({
   ...actualEnvRegistry,
-  getIsPlatform: () => isPlatform,
+  getIsCloud: () => isPlatform,
 }));
 
 const actualLoader = await import("../../../config/loader.js");
@@ -56,10 +56,10 @@ mock.module("../../../inbound/platform-callback-registration.js", () => ({
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
-    assistantId: platformContextEnabled ? "assistant-123" : "",
-    hasAssistantApiKey: platformContextEnabled,
-    authHeader: platformContextEnabled ? "Api-Key secret" : null,
-    enabled: platformContextEnabled,
+    assistantId: cloudContextEnabled ? "assistant-123" : "",
+    hasAssistantApiKey: cloudContextEnabled,
+    authHeader: cloudContextEnabled ? "Api-Key secret" : null,
+    enabled: cloudContextEnabled,
   }),
 }));
 
@@ -77,7 +77,7 @@ describe("webhooks_register callback URL resolution", () => {
     isPlatform = false;
     tunnelWebhooksEnabled = false;
     config = {};
-    platformContextEnabled = false;
+    cloudContextEnabled = false;
     registerCallbackRouteError = undefined;
     localWebhookRouteRegistered = true;
     registerCallbackRouteMock.mockClear();
@@ -86,7 +86,7 @@ describe("webhooks_register callback URL resolution", () => {
 
   test("platform pods register with the platform gateway", async () => {
     isPlatform = true;
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toEqual({
       callbackUrl: "https://tunnel.mycadet.ai/assistant-123/webhooks/telegram",
@@ -100,7 +100,7 @@ describe("webhooks_register callback URL resolution", () => {
   // The bug: a local assistant that IS connected to the platform used to fall
   // through to the self-hosted branch and 422 when it had no public ingress.
   test("platform-connected local assistant with no ingress gets the platform callback URL", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toEqual({
       callbackUrl: "https://tunnel.mycadet.ai/assistant-123/webhooks/telegram",
@@ -118,7 +118,7 @@ describe("webhooks_register callback URL resolution", () => {
   test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
     isPlatform = true;
     tunnelWebhooksEnabled = true;
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     config = {
       ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123" },
     };
@@ -140,7 +140,7 @@ describe("webhooks_register callback URL resolution", () => {
   test("tunnel-webhooks on: a refused claim falls back to the platform", async () => {
     isPlatform = true;
     tunnelWebhooksEnabled = true;
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     localWebhookRouteRegistered = false;
     config = {
       ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123" },
@@ -156,7 +156,7 @@ describe("webhooks_register callback URL resolution", () => {
   test("tunnel-webhooks on: a pod with no published URL still registers with the platform", async () => {
     isPlatform = true;
     tunnelWebhooksEnabled = true;
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toMatchObject({
       callbackUrl: "https://tunnel.mycadet.ai/assistant-123/webhooks/telegram",
@@ -168,7 +168,7 @@ describe("webhooks_register callback URL resolution", () => {
   test("tunnel-webhooks on: a pod with ingress disabled falls back to the platform", async () => {
     isPlatform = true;
     tunnelWebhooksEnabled = true;
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     config = { ingress: { enabled: false } };
 
     expect(await register({ type: "telegram" })).toMatchObject({
@@ -199,7 +199,7 @@ describe("webhooks_register callback URL resolution", () => {
   // A logged-in local assistant holds platform credentials for the LLM proxy,
   // so credential presence must not override an explicitly configured tunnel.
   test("a configured publicBaseUrl wins over platform connectivity", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     config = { ingress: { publicBaseUrl: "https://abc.ngrok.io" } };
 
     expect(await register({ type: "telegram" })).toMatchObject({
@@ -214,7 +214,7 @@ describe("webhooks_register callback URL resolution", () => {
   // a tunneled platform-connected assistant already resolves to a stable
   // platform-owned URL through the ingress tier.
   test("a Tunnel-managed publicBaseUrl resolves through the ingress tier", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     config = {
       ingress: {
         publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123",
@@ -232,7 +232,7 @@ describe("webhooks_register callback URL resolution", () => {
   });
 
   test("explicitly disabled ingress is not routed around via the platform", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     config = { ingress: { enabled: false } };
 
     await expect(register({ type: "telegram" })).rejects.toBeInstanceOf(
@@ -242,7 +242,7 @@ describe("webhooks_register callback URL resolution", () => {
   });
 
   test("the source identifier is forwarded to the platform registration", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     await register({ type: "telegram", source: "@my_bot" });
 
@@ -254,7 +254,7 @@ describe("webhooks_register callback URL resolution", () => {
   });
 
   test("a failed platform registration surfaces as a 500", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     registerCallbackRouteError = new Error(
       "Platform callback route registration failed (HTTP 502)",
     );
@@ -265,7 +265,7 @@ describe("webhooks_register callback URL resolution", () => {
   });
 
   test("a missing platform registration context surfaces as a 422", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     registerCallbackRouteError = new Error(
       "Platform callbacks not available — missing platform registration context",
     );
@@ -276,7 +276,7 @@ describe("webhooks_register callback URL resolution", () => {
   });
 
   test("a path override replaces the derived webhook path", async () => {
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     expect(
       await register({ type: "custom", path: "webhooks/my-provider" }),

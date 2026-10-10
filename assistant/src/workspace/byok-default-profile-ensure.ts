@@ -8,7 +8,7 @@ import {
   USER_PROFILE_TEMPLATES,
 } from "../config/default-profile-catalog.js";
 import type { DefaultProfileKey } from "../config/default-profile-names.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { invalidateConfigCache } from "../config/loader.js";
 import {
   isByokDefaultProviderChoice,
@@ -255,7 +255,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   if (!existsSync(configPath)) {
     return;
   }
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     return;
   }
 

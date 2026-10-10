@@ -16,7 +16,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { getConfig } from "../config/loader.js";
-import { rehydratePlatformCredentials } from "../config/platform-rehydration.js";
+import { rehydrateCloudCredentials } from "../config/platform-rehydration.js";
 import { resetDb } from "../persistence/db-connection.js";
 import { startConsentRefresh } from "../platform/consent-cache.js";
 import { disableStreamSeqStamping } from "../runtime/assistant-stream-state.js";
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   // initializeProvidersAndTools(); this standalone process must do it itself so
   // the non-turn telemetry it flushes carries the platform organization and
   // user context instead of shipping with those fields empty.
-  await rehydratePlatformCredentials();
+  await rehydrateCloudCredentials();
 
   let sampler: ResourceSamplerHandle | null = null;
   let fdMonitor: FileDescriptorMonitorHandle | null = null;

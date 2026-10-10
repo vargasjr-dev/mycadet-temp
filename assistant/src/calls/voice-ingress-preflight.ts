@@ -1,4 +1,4 @@
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { loadConfig } from "../config/loader.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getPublicBaseUrl } from "../inbound/public-ingress-urls.js";
@@ -43,7 +43,7 @@ export async function preflightVoiceIngress(): Promise<VoiceIngressPreflightResu
 
   // Platform-callback deployments register routes with the platform and receive
   // stable callback URLs. No public ingress URL or local gateway is involved.
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     return {
       ok: true,
       ingressConfig,

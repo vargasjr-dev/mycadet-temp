@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { availableParallelism, cpus } from "node:os";
 
-import { getCpuLimit, getIsPlatform } from "../config/env-registry.js";
+import { getCpuLimit, getIsCloud } from "../config/env-registry.js";
 import { parseKeyedCounts } from "./cgroup-memory.js";
 
 export interface ContainerCpuStat {
@@ -102,7 +102,7 @@ export function getContainerCpuCores(): number {
         const cores = quota / period;
         // Sanity check: if the value looks like the node's full CPU count
         // and we're on a platform pod, it's likely gVisor leaking the host value.
-        if (cores < cpus().length * 0.9 || !getIsPlatform()) {
+        if (cores < cpus().length * 0.9 || !getIsCloud()) {
           return cores;
         }
       }
@@ -123,7 +123,7 @@ export function getContainerCpuCores(): number {
     );
     if (!isNaN(quota) && !isNaN(period) && period > 0 && quota > 0) {
       const cores = quota / period;
-      if (cores < cpus().length * 0.9 || !getIsPlatform()) {
+      if (cores < cpus().length * 0.9 || !getIsCloud()) {
         return cores;
       }
     }

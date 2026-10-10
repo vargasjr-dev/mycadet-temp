@@ -13,7 +13,7 @@ const secureKeyValues = useMemorySecureKeyMap();
 // `webhooks register` actually does for platform-connected local assistants.
 let ingressConfig: Record<string, unknown> = {};
 let isPlatform = false;
-let platformContextEnabled = false;
+let cloudContextEnabled = false;
 
 type FetchOutcome =
   | { kind: "json"; status?: number; body: unknown }
@@ -65,7 +65,7 @@ mock.module("../../config/loader.js", () => ({
 const actualEnvRegistry = await import("../../config/env-registry.js");
 mock.module("../../config/env-registry.js", () => ({
   ...actualEnvRegistry,
-  getIsPlatform: () => isPlatform,
+  getIsCloud: () => isPlatform,
 }));
 
 const actualRegistration =
@@ -75,10 +75,10 @@ mock.module("../../inbound/platform-callback-registration.js", () => ({
   resolvePlatformCallbackRegistrationContext: async () => ({
     isPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
-    assistantId: platformContextEnabled ? "assistant-123" : "",
-    hasAssistantApiKey: platformContextEnabled,
-    authHeader: platformContextEnabled ? "Api-Key secret" : null,
-    enabled: platformContextEnabled,
+    assistantId: cloudContextEnabled ? "assistant-123" : "",
+    hasAssistantApiKey: cloudContextEnabled,
+    authHeader: cloudContextEnabled ? "Api-Key secret" : null,
+    enabled: cloudContextEnabled,
   }),
 }));
 
@@ -155,7 +155,7 @@ beforeEach(() => {
   secureKeyValues.set(WEBHOOK_SECRET_KEY, "s3cret");
   ingressConfig = { publicBaseUrl: "https://example.test" };
   isPlatform = false;
-  platformContextEnabled = false;
+  cloudContextEnabled = false;
   setWebhookInfo({ url: WEBHOOK_URL, pending_update_count: 0 });
   fetchCallCount = 0;
   fetchedUrls.length = 0;
@@ -206,7 +206,7 @@ describe("gating", () => {
     // An opt-out means no inbound webhook is expected at all, so the sweep has
     // nothing to verify even though platform credentials are present.
     ingressConfig = { enabled: false };
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
 
     const result = await runTelegramWebhookHealthCheck();
 
@@ -220,7 +220,7 @@ describe("gating", () => {
     // route in this exact configuration, so a broken registration is real and
     // the sweep has to verify it rather than skip.
     ingressConfig = {};
-    platformContextEnabled = true;
+    cloudContextEnabled = true;
     setWebhookInfo({
       url: WEBHOOK_URL,
       last_error_date: unixSecondsAgo(30),

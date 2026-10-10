@@ -45,8 +45,8 @@ mock.module("../../daemon/identity-helpers.js", () => ({
   getAssistantName: () => "Jarvis",
 }));
 
-import { setPlatformAssistantId } from "../../config/env.js";
-setPlatformAssistantId("019d6d4f-6dbd-779f-91d3-cb273b9429a5");
+import { setCloudAssistantId } from "../../config/env.js";
+setCloudAssistantId("019d6d4f-6dbd-779f-91d3-cb273b9429a5");
 
 const { McpOAuthProvider } = await import("../mcp-oauth-provider.js");
 

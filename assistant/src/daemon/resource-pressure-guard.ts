@@ -15,7 +15,7 @@ import {
   type ResourcePressureState,
   type ResourcePressureStatus,
 } from "../api/events/resource-pressure-status-changed.js";
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { getContainerCpuCores } from "../util/cgroup-cpu.js";
 import {
@@ -252,7 +252,7 @@ function defaultSampleMemory(): ResourcePressureMemorySample | null {
 }
 
 export function startResourcePressureGuard(): ResourcePressureStatus {
-  if (!getIsPlatform()) {
+  if (!getIsCloud()) {
     return cloneStatus(state.status);
   }
 
@@ -279,7 +279,7 @@ export function stopResourcePressureGuard(): void {
 export function evaluateResourcePressureNow(
   deps?: ResourcePressureSamplers,
 ): ResourcePressureStatus {
-  if (!getIsPlatform()) {
+  if (!getIsCloud()) {
     return cloneStatus(state.status);
   }
 
@@ -364,7 +364,7 @@ export function evaluateResourcePressureNow(
 }
 
 export function getResourcePressureStatus(): ResourcePressureStatus {
-  if (!getIsPlatform()) {
+  if (!getIsCloud()) {
     return cloneStatus(DISABLED_STATUS);
   }
   if (!state.status.enabled) {

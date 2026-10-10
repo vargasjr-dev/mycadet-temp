@@ -66,13 +66,13 @@ mock.module("../config/env.js", () => ({
   setCloudBaseUrl: (value: string | undefined) => {
     cloudBaseUrlOverride = value;
   },
-  setPlatformAssistantId: (value: string | undefined) => {
+  setCloudAssistantId: (value: string | undefined) => {
     platformAssistantIdOverride = value;
   },
-  setPlatformOrganizationId: (value: string | undefined) => {
+  setCloudOrganizationId: (value: string | undefined) => {
     platformOrganizationIdOverride = value;
   },
-  setPlatformUserId: (value: string | undefined) => {
+  setCloudUserId: (value: string | undefined) => {
     platformUserIdOverride = value;
   },
 }));

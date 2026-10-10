@@ -9,7 +9,7 @@
 
 import { readFileSync } from "node:fs";
 
-import { getIsPlatform } from "../config/env-registry.js";
+import { getIsCloud } from "../config/env-registry.js";
 import { getContainerCpuCores } from "./cgroup-cpu.js";
 
 /**
@@ -135,7 +135,7 @@ function runCpuSamplerTick(now: number): void {
     _lastProcessCpuUsage = newProcessUsage;
   }
 
-  if (getIsPlatform()) {
+  if (getIsCloud()) {
     // In platform mode, prefer cgroup-level CPU usage so we see the full
     // container footprint, not just this process.
     const cgroupUs = getContainerCpuUsageUs();
