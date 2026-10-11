@@ -1,0 +1,479 @@
+/**
+ * Directory layout helpers: every canonical path the daemon reads and
+ * writes, all rooted at the workspace ($CADET_WORKSPACE_DIR) and its
+ * internal data directory.
+ *
+ * Extracted from `util/platform.ts` — these are directory-layout concerns,
+ * not platform-detection concerns. `platform.ts` re-exports this module for
+ * backward compatibility; new code should import from here directly.
+ */
+
+import { chmodSync, existsSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
+
+import {
+  AVATAR_IMAGE_FILENAME,
+  AVATAR_MANIFEST_FILENAME,
+  resolveAvatarDir,
+} from "@mycadet/avatar-manifest";
+import { assertTestPathIsEphemeral as assertEphemeralInTests } from "@mycadet/environments/test-path-guard";
+
+/**
+ * Returns the internal data directory ($CADET_WORKSPACE_DIR/data). Runtime
+ * databases, logs, memory indices, and other internal state live here.
+ */
+export function getDataDir(): string {
+  return join(getWorkspaceDir(), "data");
+}
+
+/**
+ * Returns the path to the config-quarantine notice sentinel
+ * (`<workspace>/data/config-quarantine-notice.json`).
+ *
+ * Written by the config loader when a corrupt `config.json` is quarantined and
+ * read by the per-turn `config-quarantine-notice` injector. Lives under the
+ * internal data dir (runtime state, config-free to resolve) rather than the
+ * user-facing workspace root because it is daemon-written bookkeeping, not a
+ * file the user edits. The path resolves without loading config, so it is safe
+ * to call during early-boot config load before the DB or `getConfig().dataDir`
+ * exist.
+ */
+export function getConfigQuarantineNoticePath(): string {
+  return join(getDataDir(), "config-quarantine-notice.json");
+}
+
+/**
+ * Returns the path to the config-validation-reset notice sentinel
+ * (`<workspace>/data/config-validation-reset-notice.json`).
+ *
+ * Written by the config loader when `config.json` parses as JSON but fails
+ * schema validation so hard that the loader falls back to *full* defaults
+ * (e.g. an unknown key that masks a `superRefine` violation until the offending
+ * key is stripped). Unlike a quarantine, the on-disk file is left untouched —
+ * the user's customized values are still present but inactive until the invalid
+ * entries are fixed. Read by the per-turn `config-validation-reset-notice`
+ * injector so the agent can explain a settings/connection change the user did
+ * not make. Lives beside the quarantine sentinel under the internal data dir
+ * for the same reasons (daemon-written bookkeeping; resolves without loading
+ * config, so it is safe during early-boot config load).
+ */
+export function getConfigValidationResetNoticePath(): string {
+  return join(getDataDir(), "config-validation-reset-notice.json");
+}
+
+/**
+ * Returns the embedding models directory ($CADET_WORKSPACE_DIR/embedding-models).
+ * Downloaded embedding runtime (onnxruntime-node, transformers bundle, model weights)
+ * is stored here, downloaded post-hatch rather than shipped with the app.
+ */
+export function getEmbeddingModelsDir(): string {
+  return join(getWorkspaceDir(), "embedding-models");
+}
+
+/**
+ * Returns the sandbox root directory (<workspace>/data/sandbox).
+ * Global sandbox state lives under this directory.
+ */
+export function getSandboxRootDir(): string {
+  return join(getDataDir(), "sandbox");
+}
+
+/**
+ * Returns the default sandbox working directory ($CADET_WORKSPACE_DIR).
+ * This is the workspace root — tool working directories should use this
+ * path unless explicitly overridden.
+ */
+export function getSandboxWorkingDir(): string {
+  return getWorkspaceDir();
+}
+
+/**
+ * Returns the sounds directory ($CADET_WORKSPACE_DIR/data/sounds).
+ * Custom sound files and sound configuration live here.
+ */
+export function getSoundsDir(): string {
+  return join(getWorkspaceDir(), "data", "sounds");
+}
+
+/** Returns the avatar directory ($CADET_WORKSPACE_DIR/data/avatar). */
+export function getAvatarDir(): string {
+  return resolveAvatarDir(getWorkspaceDir());
+}
+
+/** Returns the canonical avatar image path ($CADET_WORKSPACE_DIR/data/avatar/avatar-image.png). */
+export function getAvatarImagePath(): string {
+  return join(getAvatarDir(), AVATAR_IMAGE_FILENAME);
+}
+
+/** Returns the canonical avatar manifest path ($CADET_WORKSPACE_DIR/data/avatar/avatar.json). */
+export function getAvatarManifestPath(): string {
+  return join(getAvatarDir(), AVATAR_MANIFEST_FILENAME);
+}
+
+export function getPidPath(): string {
+  return join(getWorkspaceDir(), "cadet.pid");
+}
+
+export function getDbPath(): string {
+  return join(getDataDir(), "db", "assistant.db");
+}
+
+/**
+ * Returns the directory where logs live: `<dataDir>/logs/`. Files rotate
+ * daily (`assistant-YYYY-MM-DD.log`), so callers ask for the directory and
+ * let the logger own the filename.
+ */
+export function getLogsDir(): string {
+  return join(getDataDir(), "logs");
+}
+
+export function getHistoryPath(): string {
+  return join(getDataDir(), "history");
+}
+
+/** Returns $CADET_WORKSPACE_DIR/signals — the directory for IPC signal files. */
+export function getSignalsDir(): string {
+  return join(getWorkspaceDir(), "signals");
+}
+
+// These expose specific root-level file paths so callers don't need to
+// import getRootDir() directly. getRootDir() is intentionally unexported.
+
+/** Returns the path to the daemon stderr log ($CADET_WORKSPACE_DIR/logs/daemon-stderr.log). */
+export function getDaemonStderrLogPath(): string {
+  return join(getWorkspaceDir(), "logs", "daemon-stderr.log");
+}
+
+/** Returns the path to the daemon startup lock file ($CADET_WORKSPACE_DIR/daemon-startup.lock). */
+export function getDaemonStartupLockPath(): string {
+  return join(getWorkspaceDir(), "daemon-startup.lock");
+}
+
+/** Returns the directory for externally-installed packages ($CADET_WORKSPACE_DIR/external). */
+export function getExternalDir(): string {
+  return join(getWorkspaceDir(), "external");
+}
+
+/** Returns the directory for installed binaries ($CADET_WORKSPACE_DIR/bin). */
+export function getBinDir(): string {
+  return join(getWorkspaceDir(), "bin");
+}
+
+/**
+ * Returns the path to the dot-env file (`<cadetRoot>/.env`, the parent of
+ * the workspace directory). Stays outside the workspace sandbox boundary
+ * because it contains secrets.
+ */
+export function getDotEnvPath(): string {
+  return join(dirname(getWorkspaceDir()), ".env");
+}
+
+/** Returns the path to the embed-worker PID file ($CADET_WORKSPACE_DIR/embed-worker.pid). */
+export function getEmbedWorkerPidPath(): string {
+  return join(getWorkspaceDir(), "embed-worker.pid");
+}
+
+/** Returns the path to the memory-worker PID file ($CADET_WORKSPACE_DIR/memory-worker.pid). */
+export function getMemoryWorkerPidPath(): string {
+  return join(getWorkspaceDir(), "memory-worker.pid");
+}
+
+/** Returns the path to the schedule-worker PID file ($CADET_WORKSPACE_DIR/schedule-worker.pid). */
+export function getScheduleWorkerPidPath(): string {
+  return join(getWorkspaceDir(), "schedule-worker.pid");
+}
+
+/**
+ * Returns the directory where the resource monitor persists its forensics
+ * ($CADET_WORKSPACE_DIR/data/monitoring). Lives on the workspace volume (the
+ * PVC) so the sample ring buffer and high-memory snapshots survive an OOM
+ * SIGKILL that resets all in-process state. Git-ignored from the workspace
+ * tree (see `data/monitoring/` in git-service.ts) so the assistant's own
+ * telemetry is not auto-committed as user changes.
+ */
+export function getMonitoringDataDir(): string {
+  return join(getDataDir(), "monitoring");
+}
+
+/** Returns the path to the monitoring PID file, under the monitor data dir. */
+export function getMonitoringPidPath(): string {
+  return join(getMonitoringDataDir(), "monitoring.pid");
+}
+
+/**
+ * Root holding every daemon-managed subprocess's runtime directory
+ * ($CADET_WORKSPACE_DIR/procs). Each managed subprocess keeps its IPC socket,
+ * PID file, and per-process scratch under `procs/<name>/`, so `ls procs` is a
+ * census of managed subprocesses and cleanup is one `rm -rf` of the subdir.
+ */
+export function getProcsDir(): string {
+  return join(getWorkspaceDir(), "procs");
+}
+
+/** The runtime directory for one managed subprocess: `procs/<name>/`. */
+export function getProcDir(name: string): string {
+  return join(getProcsDir(), name);
+}
+
+/** Create (if needed) and return a cloud subprocess's runtime directory. */
+export function ensureProcDir(name: string): string {
+  const dir = getProcDir(name);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/**
+ * The IPC socket a cloud subprocess binds and the daemon connects to
+ * (`procs/<name>/ipc.sock`). The basename is fixed — the directory already
+ * carries the subprocess name. Keep it short: Unix `sun_path` is ~104–108 bytes.
+ */
+export function getProcSocketPath(name: string): string {
+  return join(getProcDir(name), "ipc.sock");
+}
+
+/** The PID file a cloud subprocess writes on readiness (`procs/<name>/<name>.pid`). */
+export function getProcPidPath(name: string): string {
+  return join(getProcDir(name), `${name}.pid`);
+}
+
+// --- Live-workspace guard for test processes --------------------------------
+//
+// A test process must never resolve the workspace (or the cadet root) to a
+// real, non-temp directory: production code exercised by a test would then
+// read and destructively write live state. The containment assertion is
+// shared with the gateway via @mycadet/environments/test-path-guard;
+// src/__tests__/assert-not-live-db.ts keeps its own containment check
+// because test machinery must not import production dependencies.
+
+function assertTestPathIsEphemeral(dir: string): void {
+  assertEphemeralInTests(dir, {
+    // Shared with assertTestDbIsIsolated() in persistence/db-connection.ts.
+    allowEnvVar: "CADET_ALLOW_REAL_WORKSPACE_IN_TESTS",
+    runHint: "Run tests from the assistant package root.",
+  });
+}
+
+/**
+ * Returns the workspace root for user-facing state.
+ *
+ * When the CADET_WORKSPACE_DIR env var is set, returns that value (used in
+ * containerized deployments where the workspace is a separate volume).
+ * Otherwise falls back to `<cwd>/workspace`.
+ *
+ * In test processes the resolved directory must live under `os.tmpdir()`
+ * (see the live-workspace guard above); anything else throws.
+ */
+export function getWorkspaceDir(): string {
+  const dir =
+    process.env.CADET_WORKSPACE_DIR?.trim() || join(process.cwd(), "workspace");
+  assertTestPathIsEphemeral(dir);
+  return dir;
+}
+
+/**
+ * Returns a display-friendly workspace path for embedding in agent-facing text
+ * (skill bodies, tool descriptions). Replaces the home directory prefix with `~`
+ * so paths stay concise and portable across machines.
+ *
+ * Examples:
+ *   /Users/alice/.local/share/cadet/workspace → ~/.local/share/cadet/workspace
+ *   /workspace           → /workspace
+ */
+export function getWorkspaceDirDisplay(): string {
+  return formatHomeRelativePath(getWorkspaceDir(), homedir());
+}
+
+interface PathOperations {
+  isAbsolute(path: string): boolean;
+  relative(from: string, to: string): string;
+  sep: string;
+}
+
+export function formatHomeRelativePath(
+  absolutePath: string,
+  homePath: string,
+  pathOperations: PathOperations = { isAbsolute, relative, sep },
+): string {
+  const relativeToHome = pathOperations.relative(homePath, absolutePath);
+  if (relativeToHome === "") {
+    return "~";
+  }
+  if (
+    relativeToHome !== ".." &&
+    !relativeToHome.startsWith(`..${pathOperations.sep}`) &&
+    !pathOperations.isAbsolute(relativeToHome)
+  ) {
+    return `~${pathOperations.sep}${relativeToHome}`;
+  }
+  return absolutePath;
+}
+
+/** Returns $CADET_WORKSPACE_DIR/config.json */
+export function getWorkspaceConfigPath(): string {
+  return join(getWorkspaceDir(), "config.json");
+}
+
+/** Filename for the user-owned Agent Plugins MCP document. */
+export const WORKSPACE_MCP_FILENAME = "mcp.json";
+
+/** Returns $CADET_WORKSPACE_DIR/mcp.json */
+export function getWorkspaceMcpConfigPath(): string {
+  return join(getWorkspaceDir(), WORKSPACE_MCP_FILENAME);
+}
+
+/** Returns $CADET_WORKSPACE_DIR/skills */
+export function getWorkspaceSkillsDir(): string {
+  return join(getWorkspaceDir(), "skills");
+}
+
+/** Returns $CADET_WORKSPACE_DIR/hooks */
+export function getWorkspaceHooksDir(): string {
+  return join(getWorkspaceDir(), "hooks");
+}
+
+/**
+ * Returns `<workspaceDir>/plugins` — the directory scanned by the user plugin
+ * loader at daemon startup. Writes here are security-sensitive: any
+ * `register.{ts,js}` will be dynamic-imported on next restart, so the file
+ * risk classifier escalates writes under this path to High.
+ */
+export function getWorkspacePluginsDir(): string {
+  return join(getWorkspaceDir(), "plugins");
+}
+
+/**
+ * Returns $CADET_WORKSPACE_DIR/tools — user-defined tool overrides.
+ *
+ * Each subdirectory `<name>/` provides either an override of a core tool of
+ * the same name or a net-new tool. The single canonical location removes
+ * the "which plugin wins" ambiguity that would arise if multiple plugins
+ * could register competing overrides for the same tool.
+ *
+ * Files under this directory are dynamic-imported by the workspace-tool
+ * loader on daemon start; the file risk classifier escalates writes under
+ * this path to High for the same reason `plugins/` is escalated.
+ */
+export function getWorkspaceToolsDir(): string {
+  return join(getWorkspaceDir(), "tools");
+}
+
+/**
+ * Returns $CADET_WORKSPACE_DIR/routes — user-defined HTTP route handlers.
+ *
+ * Handler modules under this directory are dynamic-imported by the user-route
+ * dispatcher and their exported HTTP-method functions are executed on the
+ * next matching request, so the file risk classifier escalates writes under
+ * this path to High for the same reason `plugins/` and `tools/` are escalated.
+ */
+export function getWorkspaceRoutesDir(): string {
+  return join(getWorkspaceDir(), "routes");
+}
+
+/**
+ * Returns $CADET_WORKSPACE_DIR/workflows — saved (named) workflow scripts.
+ *
+ * A file here becomes a saved workflow whose source is executed (in the sandbox,
+ * and unattended when triggered by a schedule), so the file risk classifier
+ * escalates writes under this path to High like `tools/` and `routes/`.
+ */
+export function getWorkspaceWorkflowsDir(): string {
+  return join(getWorkspaceDir(), "workflows");
+}
+
+/** Returns $CADET_WORKSPACE_DIR/deprecated — transitional files slated for removal. */
+export function getDeprecatedDir(): string {
+  return join(getWorkspaceDir(), "deprecated");
+}
+
+/** Returns $CADET_WORKSPACE_DIR/conversations */
+export function getConversationsDir(): string {
+  return join(getWorkspaceDir(), "conversations");
+}
+
+/** Returns the workspace path for a prompt file (e.g. IDENTITY.md, SOUL.md). */
+export function getWorkspacePromptPath(file: string): string {
+  return join(getWorkspaceDir(), file);
+}
+
+/**
+ * Returns `<workspaceDir>/prompts/system` — the workspace override layer for
+ * system prompt sections. Layout: `prompts/system/<NN-name>.md`.
+ *
+ * The bundled section registry (`prompts/templates/system-sections.ts`) is
+ * the source of default truth; a file here with the same id replaces the
+ * bundled body (or, stripped to nothing, silences it), and a brand-new
+ * `<NN-name>` adds a workspace-only section. Because that includes the
+ * security-policy sections, writes under this directory are gated as a
+ * control-plane prompt surface (`permissions/workspace-policy.ts`).
+ */
+export function getWorkspaceSystemPromptDir(): string {
+  return join(getWorkspaceDir(), "prompts", "system");
+}
+
+// Cloud profiler runs live under <workspace>/data/profiler/. These
+// helpers enforce a single canonical layout so every runtime caller
+// resolves the same paths.
+
+/**
+ * Returns the profiler root directory (<workspace>/data/profiler).
+ * All profiler state (runs directory, global metadata) lives here.
+ */
+export function getProfilerRootDir(): string {
+  return join(getDataDir(), "profiler");
+}
+
+/**
+ * Returns the profiler runs directory (<workspace>/data/profiler/runs).
+ * Each completed or active profiler run gets its own sub-directory here.
+ */
+export function getProfilerRunsDir(): string {
+  return join(getProfilerRootDir(), "runs");
+}
+
+/**
+ * Returns the directory for a specific profiler run by ID
+ * (<workspace>/data/profiler/runs/<runId>).
+ */
+export function getProfilerRunDir(runId: string): string {
+  return join(getProfilerRunsDir(), runId);
+}
+
+export function ensureDataDir(): void {
+  const workspace = getWorkspaceDir();
+  const wsData = join(workspace, "data");
+  const dirs = [
+    // Workspace dirs
+    workspace,
+    join(workspace, "signals"),
+    join(workspace, "skills"),
+    join(workspace, "routes"),
+    join(workspace, "embedding-models"),
+    join(workspace, "conversations"),
+    join(workspace, "logs"),
+    join(workspace, "external"),
+    join(workspace, "bin"),
+    // Data sub-dirs under workspace
+    wsData,
+    join(wsData, "db"),
+    join(wsData, "qdrant"),
+    join(wsData, "logs"),
+    join(wsData, "memory"),
+    join(wsData, "memory", "knowledge"),
+    join(wsData, "apps"),
+    join(wsData, "attachments"),
+    join(wsData, "sounds"),
+  ];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
+  // Lock down the root directory so only the owner can traverse it.
+  // Runtime files (socket, session token, PID) live directly under root.
+  try {
+    chmodSync(dirname(workspace), 0o700);
+  } catch {
+    // Non-fatal: some filesystems don't support Unix permissions
+  }
+}

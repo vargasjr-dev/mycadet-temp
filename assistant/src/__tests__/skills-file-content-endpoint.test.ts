@@ -43,14 +43,14 @@ import { mockHttp } from "./requests-mock.js";
 // Real env: the real getCloudBaseUrl() reads config.cloud.baseUrl — point it
 // at a host mockHttp matches by path substring, so the platform-facing
 // provider fetches flow through the real env → URL → fetch chain.
-setConfig("cloud", { baseUrl: "https://cadet.test" });
+setConfig("cloud", { baseUrl: "https://test-cloud.mycadet.ai" });
 
 import {
   _resetFileProvidersForTest,
   getSkillFileContent,
 } from "../daemon/handlers/skills.js";
 import { getCatalog, invalidateCatalogCache } from "../skills/catalog-cache.js";
-import { getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
 // clawhub CLI subprocess shim — real spawn, canned stdout
