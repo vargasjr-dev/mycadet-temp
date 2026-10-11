@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { AGENT_PLUGINS_MCP_SCHEMA_URL } from "../spec-schema.js";
 import {
   loadWorkspaceMcpConfig,
-  overlayWorkspaceMcpForConfigRead,
   readWorkspaceMcpFile,
   saveWorkspaceMcpConfig,
 } from "../workspace-mcp-config.js";
@@ -109,31 +108,30 @@ describe("workspace mcp.json", () => {
     );
   });
 
-  test("overlay projects transport-only servers for config reads", () => {
-    saveWorkspaceMcpConfig({
-      servers: {
-        remote: {
-          transport: {
+  test("raw load passes hand-authored headers through — serving layers strip them", () => {
+    mkdirSync(process.env.CADET_WORKSPACE_DIR!, { recursive: true });
+    writeFileSync(
+      mcpPath(),
+      JSON.stringify({
+        $schema: AGENT_PLUGINS_MCP_SCHEMA_URL,
+        mcpServers: {
+          remote: {
             type: "streamable-http",
             url: "https://example.com/mcp",
+            headers: { authorization: "Bearer secret" },
           },
         },
-      },
-    });
+      }),
+    );
 
-    const config: Record<string, unknown> = {
-      llm: { activeProfile: "balanced" },
-    };
-    overlayWorkspaceMcpForConfigRead(config);
-    expect(config.mcp).toEqual({
-      servers: {
-        remote: {
-          transport: {
-            type: "streamable-http",
-            url: "https://example.com/mcp",
-          },
-        },
-      },
+    // The module API returns the file's content unfiltered: a hand-authored
+    // mcp.json may carry headers, so anything serving this raw — config
+    // responses, exports — would leak secrets. The MCP list handler is the
+    // serving layer and strips them.
+    expect(loadWorkspaceMcpConfig().servers.remote?.transport).toEqual({
+      type: "streamable-http",
+      url: "https://example.com/mcp",
+      headers: { authorization: "Bearer secret" },
     });
   });
 });

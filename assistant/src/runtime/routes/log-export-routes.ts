@@ -22,7 +22,7 @@ import { join } from "node:path";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 
-import { overlayWorkspaceMcpForConfigRead } from "../../mcp/workspace-mcp-config.js";
+import { loadWorkspaceMcpConfig } from "../../mcp/workspace-mcp-config.js";
 import { getDb, getLogsDb } from "../../persistence/db-connection.js";
 import {
   llmRequestLogs,
@@ -569,7 +569,10 @@ function readSanitizedConfig(): Record<string, unknown> | undefined {
       }
     }
 
-    overlayWorkspaceMcpForConfigRead(config);
+    // Project the workspace MCP servers onto the export, read through the
+    // module's API. Raw on purpose: the walk below redacts transport
+    // headers and env, which must be present to sanitize.
+    config.mcp = loadWorkspaceMcpConfig();
     const mcpServers = asRecord(asRecord(config.mcp)?.servers);
     for (const server of Object.values(mcpServers ?? {})) {
       const transport = asRecord(asRecord(server)?.transport);

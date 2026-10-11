@@ -100,7 +100,6 @@ import {
   log,
 } from "../../daemon/handlers/shared.js";
 import { rescheduleHeartbeatIfTimezoneChanged } from "../../heartbeat/heartbeat-service.js";
-import { workspaceMcpWireView } from "../../mcp/workspace-mcp-config.js";
 import {
   getAssistantMessageIdsInTurn,
   getConversation,
@@ -686,10 +685,14 @@ function handleGetConfig() {
     // reader, including the config-write merge base — never sees wire-only
     // state. The old clone existed only to protect the cache from in-place
     // overlay mutation; a derivation needs no clone.
+    //
+    // `mcp` is deliberately NOT part of the wire view: MCP servers are
+    // fetched from the MCP API (`GET` list), which serves the transports
+    // with secrets stripped — a hand-authored mcp.json can carry headers,
+    // and the config response must never leak them.
     const config = loadConfig();
     return {
       ...config,
-      mcp: workspaceMcpWireView(),
       llm: { ...config.llm, profiles: wireProfilesView(config.llm) },
       ...wireChatSettingsView(config),
     };
