@@ -3190,8 +3190,6 @@ async function main() {
   });
   sleepWakeDetector.start();
 
-  const drainMs = config.shutdownDrainMs;
-
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
@@ -3225,7 +3223,7 @@ async function main() {
         server.stop(true);
         process.exit(0);
       });
-    }, drainMs);
+    }, 5_000);
   });
 }
 
