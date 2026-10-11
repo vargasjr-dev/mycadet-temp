@@ -93,24 +93,21 @@ jobs:
           cache-from: type=gha,scope=docs-site
           cache-to: type=gha,mode=max,ignore-error=true,scope=docs-site
 
-      # The dispatch lives inside the matrix leg so each environment deploys
-      # only after its own publish succeeded, and a cancelled (superseded)
-      # publish never triggers a deploy. docs-cd rolls only the docs
-      # Deployment to this SHA — it does not run a full platform Helm deploy.
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-          owner: cadet-ai
-          repositories: mycadet-platform
-
-      - name: Trigger platform docs deploy
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      # Roll the docs-site Cloud Run service (owned by the platform repo's
+      # terraform) to the freshly published SHA. Guarded: until terraform
+      # creates the service the first time, this is a no-op. Docs are
+      # environment-agnostic, so every matrix leg rolls the same single
+      # service. No cross-repo dispatch — the WIF identity already used for
+      # the image push has run.admin, and gcloud run deploy preserves the
+      # terraform-managed service config it doesn't touch.
+      - name: Roll the docs service
         run: |
-          gh workflow run docs-cd.yaml \
-            --repo vargasjr-dev/mycadet-platform \
-            --field environment="${{ matrix.environment }}" \
-            --field docs_image_tag="${{ github.sha }}"
+          if gcloud run services describe docs-site --region us-central1 --project "${{ vars.GCP_PROJECT_ID }}" > /dev/null 2>&1; then
+            gcloud run deploy docs-site \
+              --region us-central1 \
+              --project "${{ vars.GCP_PROJECT_ID }}" \
+              --image "${{ steps.image.outputs.gcp }}:${{ github.sha }}" \
+              --quiet
+          else
+            echo "docs-site service does not exist yet — terraform owns first creation; skipping roll."
+          fi
