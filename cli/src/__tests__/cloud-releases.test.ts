@@ -7,7 +7,11 @@ import {
   resolveOwnImageRefs,
 } from "../lib/cloud-releases.js";
 import { dockerhubImages } from "../lib/docker.js";
-import { isDevVersion, isLocalVersion, isStagingVersion } from "../lib/version-compat.js";
+import {
+  isDevVersion,
+  isLocalVersion,
+  isStagingVersion,
+} from "../lib/version-compat.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -79,12 +83,12 @@ describe("fetchReleases", () => {
 });
 
 describe("resolveImageRefs", () => {
-  test("released CLI resolves un-suffixed repos tagged with the target version", () => {
+  test("released CLI resolves un-suffixed repos tagged with the bare version", () => {
     const tags = resolveImageRefs("v0.12.6", "0.12.6");
-    expect(tags.assistant).toBe("mycadet/mycadet-assistant:v0.12.6");
-    expect(tags.gateway).toBe("mycadet/mycadet-gateway:v0.12.6");
+    expect(tags.assistant).toBe("mycadet/mycadet-assistant:0.12.6");
+    expect(tags.gateway).toBe("mycadet/mycadet-gateway:0.12.6");
     expect(tags["credential-executor"]).toBe(
-      "mycadet/mycadet-credential-executor:v0.12.6",
+      "mycadet/mycadet-credential-executor:0.12.6",
     );
   });
 
@@ -94,31 +98,32 @@ describe("resolveImageRefs", () => {
       "0.12.6-dev.202610081023.3a27b77",
     );
     expect(tags.assistant).toBe(
-      "mycadet/mycadet-assistant-dev:v0.12.6-dev.202610081023.3a27b77",
+      "mycadet/mycadet-assistant-dev:0.12.6-dev.202610081023.3a27b77",
     );
     expect(tags.gateway).toBe(
-      "mycadet/mycadet-gateway-dev:v0.12.6-dev.202610081023.3a27b77",
+      "mycadet/mycadet-gateway-dev:0.12.6-dev.202610081023.3a27b77",
     );
     expect(tags["credential-executor"]).toBe(
-      "mycadet/mycadet-credential-executor-dev:v0.12.6-dev.202610081023.3a27b77",
+      "mycadet/mycadet-credential-executor-dev:0.12.6-dev.202610081023.3a27b77",
     );
   });
 
   test("repo suffix follows the CLI version, tag follows the target", () => {
     const tags = resolveImageRefs("v0.12.5", "0.12.6-dev.202610081023.3a27b77");
-    expect(tags.assistant).toBe("mycadet/mycadet-assistant-dev:v0.12.5");
+    expect(tags.assistant).toBe("mycadet/mycadet-assistant-dev:0.12.5");
   });
 
   test("does not consult the network", async () => {
     mockFetchError();
     const tags = resolveImageRefs("v0.12.6", "0.12.6");
-    expect(tags.assistant).toContain(":v0.12.6");
+    expect(tags.assistant).toContain(":0.12.6");
   });
 
-  test("normalizes the v-prefix on the tag", () => {
+  test("normalizes the v-prefix off the tag", () => {
     const withoutPrefix = resolveImageRefs("0.12.6", "0.12.6");
     const withPrefix = resolveImageRefs("v0.12.6", "0.12.6");
-    expect(withoutPrefix.assistant).toBe(withPrefix.assistant);
+    expect(withoutPrefix.assistant).toBe("mycadet/mycadet-assistant:0.12.6");
+    expect(withPrefix.assistant).toBe(withoutPrefix.assistant);
   });
 });
 
@@ -126,8 +131,13 @@ describe("resolveOwnImageRefs", () => {
   test("uses the CLI's own version for both tag and repo suffix", () => {
     const tags = resolveOwnImageRefs("0.12.6-dev.202610081023.3a27b77");
     expect(tags.assistant).toBe(
-      "mycadet/mycadet-assistant-dev:v0.12.6-dev.202610081023.3a27b77",
+      "mycadet/mycadet-assistant-dev:0.12.6-dev.202610081023.3a27b77",
     );
+  });
+
+  test("falls back to the literal latest tag when the CLI version is unknown", () => {
+    const tags = resolveOwnImageRefs("");
+    expect(tags.assistant).toBe("mycadet/mycadet-assistant:latest");
   });
 });
 
