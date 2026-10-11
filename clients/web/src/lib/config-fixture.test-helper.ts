@@ -1,639 +1,344 @@
 import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
 
 /**
- * The daemon's config GET response at schema defaults — generated from
- * `AssistantConfigSchema.parse({})` (the same parse `loadConfig()` serves on
- * the wire), so a schema-default change regenerates this fixture instead of
- * drifting by hand.
+ * The config GET response at schema defaults — generated from
+ * `AssistantConfigSchema.pick({ conversations, notifications, llm, memory,
+ * services }).parse({})`, the response contract the spec documents for
+ * `GET /v1/config`, so a schema-default change regenerates this fixture
+ * instead of drifting by hand.
  */
 const MATERIALIZED_DEFAULTS: ConfigGetResponse = {
-  "services": {
-    "inference": {},
+  conversations: {
+    autoArchive: {
+      enabled: false,
+      afterDays: 7,
+    },
+    skipAutoRetitling: false,
+    backgroundInjection:
+      "This is a background turn — your guardian isn't watching. If anything noteworthy comes up, send them a notification so they see it when they're back by invoking the `notifications` skill (`assistant notifications send --message \"...\"`)",
+    resumeProcessingOnStartup: false,
+  },
+  notifications: {
+    newMessageEnabled: true,
+  },
+  llm: {
+    profiles: {},
+    profileOrder: [],
+    callSites: {},
+    profileSession: {
+      defaultTtlSeconds: 1800,
+      maxTtlSeconds: 43200,
+    },
+    pricingOverrides: [],
+  },
+  memory: {
+    enabled: true,
+    embeddings: {
+      required: true,
+      provider: "auto",
+      localModel: "Xenova/bge-small-en-v1.5",
+      openaiModel: "text-embedding-3-small",
+      geminiModel: "gemini-embedding-2",
+      ollamaModel: "nomic-embed-text",
+      customModel: "text-embedding-3-small",
+    },
+    qdrant: {
+      url: "http://127.0.0.1:6333",
+      collection: "memory",
+      vectorSize: 384,
+      onDisk: true,
+      quantization: "scalar",
+    },
+    retrieval: {
+      maxInjectTokens: 16000,
+      freshness: {
+        enabled: true,
+        maxAgeDays: {
+          identity: 0,
+          preference: 0,
+          project: 30,
+          decision: 30,
+          constraint: 90,
+          event: 30,
+        },
+        staleDecay: 0.5,
+        reinforcementShieldDays: 7,
+      },
+      scopePolicy: "allow_global_fallback",
+      dynamicBudget: {
+        enabled: true,
+        minInjectTokens: 2400,
+        maxInjectTokens: 16000,
+        targetHeadroomTokens: 10000,
+      },
+      injection: {
+        contextLoad: {
+          maxNodes: 25,
+          serendipitySlots: 5,
+          capabilityReserve: 5,
+        },
+        perTurn: {
+          maxNodes: 6,
+          serendipitySlots: 1,
+          capabilityReserve: 2,
+        },
+      },
+      scratchpadInjection: {
+        enabled: true,
+      },
+    },
+    segmentation: {
+      targetTokens: 450,
+      overlapTokens: 60,
+    },
+    jobs: {
+      workerConcurrency: 2,
+      stalledJobTimeoutMs: 1800000,
+      slowLlmConcurrency: 1,
+      fastConcurrency: 2,
+      embedConcurrency: 2,
+    },
+    retention: {
+      keepRawForever: true,
+    },
+    cleanup: {
+      enabled: true,
+      supersededItemRetentionMs: 2592000000,
+      conversationRetentionDays: 0,
+      llmRequestLogRetentionMs: 3600000,
+    },
+    maintenance: {
+      intervalMs: 86400000,
+      quietPeriodMs: 10800000,
+      skillPruneDays: null,
+    },
+    extraction: {
+      useLLM: true,
+      extractFromAssistant: true,
+      batchSize: 10,
+      idleTimeoutMs: 300000,
+    },
+    summarization: {
+      useLLM: true,
+    },
+    substrate: {},
+    v2: {
+      enabled: true,
+      sweep_enabled: false,
+      d: 0.3,
+      c_user: 0.3,
+      c_assistant: 0.2,
+      c_now: 0.2,
+      k: 0.5,
+      hops: 2,
+      top_k: 25,
+      ann_candidate_limit: null,
+      epsilon: 0.01,
+      dense_weight: 0.85,
+      sparse_weight: 0.15,
+      bm25_k1: 1.2,
+      bm25_b: 0.4,
+      consolidation_interval_hours: 8,
+      consolidation_max_buffer_lines: 100,
+      consolidation_max_entries_per_run: 150,
+      max_page_chars: 5000,
+      consolidation_prompt_path: null,
+      rerank: {
+        enabled: false,
+        top_k: 50,
+        alpha: 0.3,
+        model: "Alibaba-NLP/gte-reranker-modernbert-base",
+        dtype: "q8",
+      },
+      router: {
+        enabled: true,
+        max_page_ids: 25,
+        router_prompt_path: null,
+        batch_size: null,
+        tier1_size: null,
+        tier2_size: null,
+        historical_pairs: 1,
+        historical_pairs_max_chars: null,
+      },
+    },
+    v3: {
+      live: false,
+      prune: {
+        maxResidentBytes: 393216,
+        targetResidentBytes: 262144,
+      },
+      hotSet: {
+        k: 40,
+        halfLifeDays: 14,
+      },
+      freshSet: {
+        k: 100,
+      },
+      learnedEdges: {
+        halfLifeDays: 30,
+        minCount: 3,
+        npmiFloor: 0.2,
+        maxPerPage: 6,
+        perSeed: 3,
+        cap: 20,
+      },
+      needleK: 100,
+      denseK: 100,
+      replyQueryK: 12,
+      spanQueryK: 0,
+      finderSectionsPerPage: 3,
+      selectorEnabled: true,
+      selectorPromptPath: null,
+      edge: {
+        hubDegree: 30,
+        seedCount: 18,
+        perSeed: 6,
+        cap: 45,
+      },
+      entity: {
+        enabled: true,
+        idfFloor: 4,
+        cap: 8,
+      },
+      rareTerm: {
+        enabled: true,
+        maxDf: 12,
+        maxDfFraction: 0.002,
+        perTerm: 2,
+        cap: 24,
+      },
+      gate: {
+        enabled: true,
+        denseThreshold: 0.66,
+        sparseThreshold: 0.35,
+        sparseOnlyThreshold: 0.75,
+        denseClusterThreshold: 0.6,
+        denseClusterMaxDelta: 0.02,
+        topK: 5,
+        bm25NormK: null,
+        bypassForCore: false,
+      },
+      poolLog: {
+        captureInput: false,
+      },
+    },
+    retrospective: {
+      enabled: true,
+      skillImprovement: true,
+      skillImprovementMonitoring: false,
+      timeThresholdMs: 1800000,
+      messageThreshold: 10,
+      minCooldownMs: 300000,
+      requireUserActivity: true,
+      sweepIntervalMs: 28800000,
+      sweepLookbackMs: 604800000,
+      keepSupersededRuns: false,
+      matchConversationProfile: false,
+      promptPath: null,
+    },
+  },
+  services: {
+    inference: {},
     "image-generation": {
-      "provider": "gemini",
-      "model": "gemini-3.1-flash-image-preview"
+      provider: "gemini",
+      model: "gemini-3.1-flash-image-preview",
     },
     "web-search": {
-      "provider": "inference-provider-native"
+      provider: "inference-provider-native",
     },
     "web-fetch": {
-      "provider": "default"
+      provider: "default",
     },
-    "stt": {
-      "provider": "deepgram",
-      "language": "multi",
-      "providers": {},
-      "roles": {}
+    stt: {
+      provider: "deepgram",
+      language: "multi",
+      providers: {},
+      roles: {},
     },
-    "tts": {
-      "provider": "elevenlabs",
-      "providers": {
-        "elevenlabs": {
-          "voiceId": "ZF6FPAbjXT4488VcRRnw",
-          "voiceModelId": "",
-          "speed": 1,
-          "stability": 0.5,
-          "similarityBoost": 0.75,
-          "conversationTimeoutSeconds": 30
+    tts: {
+      provider: "elevenlabs",
+      providers: {
+        elevenlabs: {
+          voiceId: "ZF6FPAbjXT4488VcRRnw",
+          voiceModelId: "",
+          speed: 1,
+          stability: 0.5,
+          similarityBoost: 0.75,
+          conversationTimeoutSeconds: 30,
         },
         "fish-audio": {
-          "referenceId": "",
-          "chunkLength": 200,
-          "format": "mp3",
-          "latency": "normal",
-          "speed": 1
+          referenceId: "",
+          chunkLength: 200,
+          format: "mp3",
+          latency: "normal",
+          speed: 1,
         },
-        "deepgram": {
-          "model": "aura-asteria-en",
-          "format": "mp3"
+        deepgram: {
+          model: "aura-asteria-en",
+          format: "mp3",
         },
-        "xai": {
-          "voiceId": "eve",
-          "language": "auto",
-          "format": "mp3",
-          "sampleRate": 24000,
-          "bitRate": 128000
+        xai: {
+          voiceId: "eve",
+          language: "auto",
+          format: "mp3",
+          sampleRate: 24000,
+          bitRate: 128000,
         },
-        "cadet": {}
-      }
+        cadet: {},
+      },
     },
     "google-oauth": {
-      "mode": "managed"
+      mode: "managed",
     },
     "outlook-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "linear-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "github-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "notion-oauth": {
-      "mode": "managed"
+      mode: "managed",
     },
     "twitter-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "asana-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "todoist-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "discord-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "hubspot-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "monday-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "shopify-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "stripe-link-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "figma-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "quickbooks-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "eventbrite-oauth": {
-      "mode": "your-own"
+      mode: "your-own",
     },
     "calendly-oauth": {
-      "mode": "your-own"
-    }
-  },
-  "memory": {
-    "enabled": true,
-    "embeddings": {
-      "required": true,
-      "provider": "auto",
-      "localModel": "Xenova/bge-small-en-v1.5",
-      "openaiModel": "text-embedding-3-small",
-      "geminiModel": "gemini-embedding-2",
-      "ollamaModel": "nomic-embed-text",
-      "customModel": "text-embedding-3-small"
+      mode: "your-own",
     },
-    "qdrant": {
-      "url": "http://127.0.0.1:6333",
-      "collection": "memory",
-      "vectorSize": 384,
-      "onDisk": true,
-      "quantization": "scalar"
-    },
-    "retrieval": {
-      "maxInjectTokens": 16000,
-      "freshness": {
-        "enabled": true,
-        "maxAgeDays": {
-          "identity": 0,
-          "preference": 0,
-          "project": 30,
-          "decision": 30,
-          "constraint": 90,
-          "event": 30
-        },
-        "staleDecay": 0.5,
-        "reinforcementShieldDays": 7
-      },
-      "scopePolicy": "allow_global_fallback",
-      "dynamicBudget": {
-        "enabled": true,
-        "minInjectTokens": 2400,
-        "maxInjectTokens": 16000,
-        "targetHeadroomTokens": 10000
-      },
-      "injection": {
-        "contextLoad": {
-          "maxNodes": 25,
-          "serendipitySlots": 5,
-          "capabilityReserve": 5
-        },
-        "perTurn": {
-          "maxNodes": 6,
-          "serendipitySlots": 1,
-          "capabilityReserve": 2
-        }
-      },
-      "scratchpadInjection": {
-        "enabled": true
-      }
-    },
-    "segmentation": {
-      "targetTokens": 450,
-      "overlapTokens": 60
-    },
-    "jobs": {
-      "workerConcurrency": 2,
-      "stalledJobTimeoutMs": 1800000,
-      "slowLlmConcurrency": 1,
-      "fastConcurrency": 2,
-      "embedConcurrency": 2
-    },
-    "retention": {
-      "keepRawForever": true
-    },
-    "cleanup": {
-      "enabled": true,
-      "supersededItemRetentionMs": 2592000000,
-      "conversationRetentionDays": 0,
-      "llmRequestLogRetentionMs": 3600000
-    },
-    "maintenance": {
-      "intervalMs": 86400000,
-      "quietPeriodMs": 10800000,
-      "skillPruneDays": null
-    },
-    "extraction": {
-      "useLLM": true,
-      "extractFromAssistant": true,
-      "batchSize": 10,
-      "idleTimeoutMs": 300000
-    },
-    "summarization": {
-      "useLLM": true
-    },
-    "substrate": {},
-    "v2": {
-      "enabled": true,
-      "sweep_enabled": false,
-      "d": 0.3,
-      "c_user": 0.3,
-      "c_assistant": 0.2,
-      "c_now": 0.2,
-      "k": 0.5,
-      "hops": 2,
-      "top_k": 25,
-      "ann_candidate_limit": null,
-      "epsilon": 0.01,
-      "dense_weight": 0.85,
-      "sparse_weight": 0.15,
-      "bm25_k1": 1.2,
-      "bm25_b": 0.4,
-      "consolidation_interval_hours": 8,
-      "consolidation_max_buffer_lines": 100,
-      "consolidation_max_entries_per_run": 150,
-      "max_page_chars": 5000,
-      "consolidation_prompt_path": null,
-      "rerank": {
-        "enabled": false,
-        "top_k": 50,
-        "alpha": 0.3,
-        "model": "Alibaba-NLP/gte-reranker-modernbert-base",
-        "dtype": "q8"
-      },
-      "router": {
-        "enabled": true,
-        "max_page_ids": 25,
-        "router_prompt_path": null,
-        "batch_size": null,
-        "tier1_size": null,
-        "tier2_size": null,
-        "historical_pairs": 1,
-        "historical_pairs_max_chars": null
-      }
-    },
-    "v3": {
-      "live": false,
-      "prune": {
-        "maxResidentBytes": 393216,
-        "targetResidentBytes": 262144
-      },
-      "hotSet": {
-        "k": 40,
-        "halfLifeDays": 14
-      },
-      "freshSet": {
-        "k": 100
-      },
-      "learnedEdges": {
-        "halfLifeDays": 30,
-        "minCount": 3,
-        "npmiFloor": 0.2,
-        "maxPerPage": 6,
-        "perSeed": 3,
-        "cap": 20
-      },
-      "needleK": 100,
-      "denseK": 100,
-      "replyQueryK": 12,
-      "spanQueryK": 0,
-      "finderSectionsPerPage": 3,
-      "selectorEnabled": true,
-      "selectorPromptPath": null,
-      "edge": {
-        "hubDegree": 30,
-        "seedCount": 18,
-        "perSeed": 6,
-        "cap": 45
-      },
-      "entity": {
-        "enabled": true,
-        "idfFloor": 4,
-        "cap": 8
-      },
-      "rareTerm": {
-        "enabled": true,
-        "maxDf": 12,
-        "maxDfFraction": 0.002,
-        "perTerm": 2,
-        "cap": 24
-      },
-      "gate": {
-        "enabled": true,
-        "denseThreshold": 0.66,
-        "sparseThreshold": 0.35,
-        "sparseOnlyThreshold": 0.75,
-        "denseClusterThreshold": 0.6,
-        "denseClusterMaxDelta": 0.02,
-        "topK": 5,
-        "bm25NormK": null,
-        "bypassForCore": false
-      },
-      "poolLog": {
-        "captureInput": false
-      }
-    },
-    "retrospective": {
-      "enabled": true,
-      "skillImprovement": true,
-      "skillImprovementMonitoring": false,
-      "timeThresholdMs": 1800000,
-      "messageThreshold": 10,
-      "minCooldownMs": 300000,
-      "requireUserActivity": true,
-      "sweepIntervalMs": 28800000,
-      "sweepLookbackMs": 604800000,
-      "keepSupersededRuns": false,
-      "matchConversationProfile": false,
-      "promptPath": null
-    }
   },
-  "monitoring": {
-    "sampleIntervalMs": 250,
-    "ringBufferSize": 4000,
-    "highMemThresholdRatio": 0.75,
-    "snapshotCooldownMs": 30000,
-    "fdPollIntervalMs": 300000,
-    "highFdThresholdRatio": 0.8,
-    "fdWarnCooldownMs": 60000,
-    "mountWatchIntervalMs": 10000,
-    "pluginSourceScanIntervalMs": 2000,
-    "baselineSnapshotIntervalMs": 600000
-  },
-  "migrations": {
-    "worker": {
-      "enabled": false
-    }
-  },
-  "userRoutes": {
-    "host": {
-      "enabled": false
-    }
-  },
-  "dataDir": "/workspace/wt/config-audit/assistant/workspace/data",
-  "timeouts": {
-    "shellMaxTimeoutSec": 600,
-    "shellDefaultTimeoutSec": 120,
-    "permissionTimeoutSec": 300,
-    "questionResponseTimeoutSec": 1800,
-    "toolExecutionTimeoutSec": 120,
-    "providerStreamTimeoutSec": 1800,
-    "backgroundTurnTimeoutSec": 1800,
-    "scheduleTurnTimeoutSec": 1800
-  },
-  "rateLimit": {
-    "maxRequestsPerMinute": 0
-  },
-  "apiRateLimit": {
-    "authenticatedMaxRequestsPerMinute": 300
-  },
-  "secretDetection": {
-    "enabled": true,
-    "blockIngress": true,
-    "allowOneTimeSend": false,
-    "blockTokenShapedMessages": true
-  },
-  "auditLog": {
-    "retentionDays": 0
-  },
-  "logFile": {
-    "dir": "/workspace/wt/config-audit/assistant/workspace/data/logs",
-    "retentionDays": 30
-  },
-  "llm": {
-    "profiles": {},
-    "profileOrder": [],
-    "callSites": {},
-    "profileSession": {
-      "defaultTtlSeconds": 1800,
-      "maxTtlSeconds": 43200
-    },
-    "pricingOverrides": []
-  },
-  "llmRequestLogs": {
-    "readSource": "local",
-    "enabled": true
-  },
-  "filing": {
-    "enabled": true,
-    "intervalMs": 14400000,
-    "compactionEnabled": true,
-    "compactionIntervalMs": 86400000,
-    "activeHoursStart": null,
-    "activeHoursEnd": null
-  },
-  "heartbeat": {
-    "enabled": true,
-    "intervalMs": 3600000,
-    "cronExpression": null,
-    "timezone": null,
-    "activeHoursStart": 8,
-    "activeHoursEnd": 22,
-    "maxConsecutiveRuns": 3,
-    "maxDailyRuns": 10,
-    "disposition": "This is your time to do something useful, interesting, or creative while your guardian is away.\n\nBefore checking on anything, ask yourself: is there something I want to work on, think about, or make progress on right now? A project, an idea, something I noticed, something I've been meaning to get to. If so, do it.\n\nIf you do something worth sharing — built something, noticed something, had an idea — send your guardian a notification so they see it when they're back.\n\nIf nothing needs attention and nothing stirs, that's fine. But make sure you actually considered it first rather than defaulting to \"nothing to do.\""
-  },
-  "hostBrowser": {
-    "cdpInspect": {
-      "enabled": false,
-      "host": "localhost",
-      "port": 9222,
-      "probeTimeoutMs": 500,
-      "desktopAuto": {
-        "enabled": true,
-        "cooldownMs": 30000
-      }
-    }
-  },
-  "conversations": {
-    "autoArchive": {
-      "enabled": false,
-      "afterDays": 7
-    },
-    "skipAutoRetitling": false,
-    "backgroundInjection": "This is a background turn — your guardian isn't watching. If anything noteworthy comes up, send them a notification so they see it when they're back by invoking the `notifications` skill (`assistant notifications send --message \"...\"`)",
-    "resumeProcessingOnStartup": false
-  },
-  "journal": {
-    "contextWindowSize": 10
-  },
-  "acp": {
-    "maxConcurrentSessions": 4,
-    "agents": {}
-  },
-  "skills": {
-    "entries": {},
-    "load": {
-      "extraDirs": []
-    },
-    "install": {
-      "nodeManager": "npm"
-    },
-    "allowBundled": null,
-    "remoteProviders": {
-      "skillssh": {
-        "enabled": true
-      },
-      "clawhub": {
-        "enabled": true
-      }
-    },
-    "remotePolicy": {
-      "blockSuspicious": true,
-      "blockMalware": true,
-      "maxSkillsShRisk": "medium"
-    }
-  },
-  "workspaceGit": {
-    "turnCommitMaxWaitMs": 4000,
-    "failureBackoffBaseMs": 2000,
-    "failureBackoffMaxMs": 60000,
-    "maxFileSizeBytes": 256000,
-    "historyCompaction": {
-      "enabled": true
-    },
-    "interactiveGitTimeoutMs": 10000,
-    "stageBatchSize": 1000,
-    "enrichmentQueueSize": 50,
-    "enrichmentConcurrency": 1,
-    "enrichmentJobTimeoutMs": 30000,
-    "enrichmentMaxRetries": 2,
-    "commitMessageLLM": {
-      "enabled": false,
-      "timeoutMs": 600,
-      "maxFilesInPrompt": 30,
-      "maxDiffBytes": 12000,
-      "minRemainingTurnBudgetMs": 1000,
-      "breaker": {
-        "openAfterFailures": 3,
-        "backoffBaseMs": 2000,
-        "backoffMaxMs": 60000
-      }
-    }
-  },
-  "compaction": {
-    "enabled": true,
-    "autoThreshold": 0.7
-  },
-  "compactionLogs": {
-    "destination": "none"
-  },
-  "twilio": {
-    "accountSid": "",
-    "phoneNumber": "",
-    "setupStarted": false
-  },
-  "calls": {
-    "enabled": true,
-    "provider": "twilio",
-    "maxDurationSeconds": 3600,
-    "userConsultTimeoutSeconds": 120,
-    "ttsPlaybackDelayMs": 3000,
-    "accessRequestPollIntervalMs": 500,
-    "guardianWaitUpdateInitialIntervalMs": 15000,
-    "guardianWaitUpdateInitialWindowMs": 30000,
-    "guardianWaitUpdateSteadyMinIntervalMs": 20000,
-    "guardianWaitUpdateSteadyMaxIntervalMs": 30000,
-    "disclosure": {
-      "enabled": true,
-      "text": "At the very beginning of the call, introduce yourself as an assistant calling on behalf of the person you represent. Do not say \"AI assistant\"."
-    },
-    "voice": {
-      "telephonyStreaming": true,
-      "utteranceEndMs": 1000
-    },
-    "callerIdentity": {
-      "allowPerCallOverride": true
-    },
-    "verification": {
-      "enabled": false,
-      "maxAttempts": 3,
-      "codeLength": 6
-    }
-  },
-  "liveVoice": {
-    "vad": {
-      "speechEnergyThreshold": 800,
-      "noiseFloorMargin": 3,
-      "silenceThresholdMs": 1200,
-      "maxTurnDurationMs": 30000,
-      "bargeInMinSpeechMs": 250,
-      "echoBargeInMargin": 1.5,
-      "echoEmaHalfLifeMs": 400,
-      "echoDrainSlackMs": 300
-    },
-    "flux": {
-      "turnEnd": {
-        "enabled": true
-      },
-      "eotThreshold": 0.7,
-      "eotTimeoutMs": 5000
-    },
-    "archiveAudio": false
-  },
-  "voice": {
-    "frontModel": {
-      "endpointDecisionTimeoutMs": 1200,
-      "endpointExtensionMs": 1500,
-      "endpointMaxExtensions": 2,
-      "progress": {
-        "enabled": true,
-        "opsThreshold": 3,
-        "idleIntervalMs": 5000,
-        "maxSilenceMs": 35000,
-        "longOpMs": 15000,
-        "minGapMs": 6000,
-        "generationTimeoutMs": 5000
-      }
-    }
-  },
-  "sight": {
-    "keepLatestFrames": 2
-  },
-  "whatsapp": {
-    "phoneNumber": "",
-    "timeoutMs": 15000,
-    "maxRetries": 3,
-    "initialBackoffMs": 1000
-  },
-  "telegram": {
-    "botId": "",
-    "botUsername": "",
-    "apiBaseUrl": "https://api.telegram.org",
-    "timeoutMs": 15000,
-    "maxRetries": 3,
-    "initialBackoffMs": 1000
-  },
-  "slack": {
-    "teamId": "",
-    "teamName": "",
-    "teamUrl": "",
-    "botUserId": "",
-    "botUsername": "",
-    "threadMode": "mention_then_thread"
-  },
-  "discord": {
-    "botUserId": "",
-    "botUsername": "",
-    "applicationId": "",
-    "inviteUrl": ""
-  },
-  "a2a": {
-    "enabled": false
-  },
-  "ingress": {
-    "publicBaseUrl": "",
-    "webhook": {
-      "secret": "",
-      "timeoutMs": 30000,
-      "maxRetries": 2,
-      "initialBackoffMs": 500,
-      "maxPayloadBytes": 1048576
-    },
-    "rateLimit": {
-      "maxRequestsPerMinute": 0,
-      "maxRequestsPerHour": 0
-    },
-    "shutdownDrainMs": 5000
-  },
-  "cloud": {
-    "baseUrl": "",
-    "subdomain": ""
-  },
-  "daemon": {
-    "startupSocketWaitMs": 5000,
-    "stopTimeoutMs": 5000,
-    "sigkillGracePeriodMs": 2000,
-    "standaloneRecording": true
-  },
-  "notifications": {
-    "newMessageEnabled": true
-  },
-  "ui": {
-    "emptyStateGreetingCacheTtlMs": 14400000
-  },
-  "tools": {
-    "exclude": []
-  },
-  "workflows": {
-    "maxAgentsPerRun": 500,
-    "maxConcurrentLeaves": 6,
-    "maxConcurrentRuns": 3,
-    "journalRetentionDays": 30
-  },
-  "pluginUpdates": {
-    "mode": "manual",
-    "strategy": "theirs",
-    "checkIntervalMs": 3600000
-  },
-  "maxStepsPerSession": 50
 };
 
 /**
