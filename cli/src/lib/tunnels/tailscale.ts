@@ -1,7 +1,9 @@
+import type { ProviderMeta } from "../tunnel.js";
+
 import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
-import { GATEWAY_PORT } from "./constants.js";
+import { GATEWAY_PORT } from "../constants.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
@@ -9,7 +11,7 @@ import {
   saveIngressUrl,
   savePairingTunnel,
   stampLockfileIngressUrl,
-} from "./ingress-config.js";
+} from "../ingress-config.js";
 
 // ── Tailscale CLI discovery + invocation ────────────────────────────────────
 
@@ -431,3 +433,14 @@ export async function runTailscaleTunnel(
   // listeners keep the event loop alive.
   await new Promise<void>(() => {});
 }
+
+/** Per-provider copy `cadet tunnel`'s help renders for tailscale. */
+export const TAILSCALE_TUNNEL_META: ProviderMeta = {
+  reach: "Tailnet-only tunnel, reachable from your own devices",
+  install: "install: https://tailscale.com/download, then run `tailscale up`",
+  notes: [
+    "When webhook integrations are configured it records its URL for device",
+    "pairing only, leaving the saved webhook callback base as it is.",
+  ],
+  supportsReservedDomain: false,
+};

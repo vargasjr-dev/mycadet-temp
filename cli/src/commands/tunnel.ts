@@ -4,6 +4,7 @@ import { join } from "path";
 
 import {
   TUNNEL_PROVIDERS,
+  type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
 import {
@@ -30,17 +31,17 @@ import {
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
   adoptedTunnelStopNotice,
+  cadetTunnelComingSoonError,
   clearReservedDomain,
   hasWebhookIntegrationsConfigured,
   providerSupportsReservedDomain,
   runProviderTunnel,
 } from "../lib/tunnel.js";
 
-// `cadet` is the cloud option this command owns; the local providers come
-// from the shared registry so validation here cannot drift from what the
-// workspace config accepts.
-const VALID_PROVIDERS = ["cadet", ...TUNNEL_PROVIDERS] as const;
-type TunnelProvider = (typeof VALID_PROVIDERS)[number];
+// The accepted `--provider` values ARE the shared registry, so validation
+// here cannot drift from what the workspace config accepts.
+const VALID_PROVIDERS = TUNNEL_PROVIDERS;
+type TunnelProvider = TunnelProviderName;
 
 interface TunnelArgs {
   assistantName: string | null;
@@ -127,9 +128,6 @@ function parseArgs(): TunnelArgs {
       );
       console.log("");
       console.log("Providers:");
-      console.log(
-        "  cadet       Managed tunnel via Cadet Cloud (not yet available)",
-      );
       for (const name of TUNNEL_PROVIDERS) {
         const meta = PROVIDER_META[name];
         console.log(`  ${name.padEnd(12)}${meta.reach}`);
@@ -426,11 +424,8 @@ export const tunnel = Object.assign(
     return;
   }
 
-  if (provider === "cadet") {
-    throw new Error(
-      `Tunnel provider '${provider}' is not yet implemented. ` +
-        `If this provider is documented, ${STALE_CLI_UPDATE_HINT}`,
-    );
+  if (PROVIDER_META[provider].comingSoon) {
+    throw cadetTunnelComingSoonError(provider);
   }
 
   const { entry, gatewayPort, workspaceDir } =
@@ -440,8 +435,8 @@ export const tunnel = Object.assign(
     provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
 
   if (clearDomain) {
-    clearReservedDomain(workspaceDir);
-    console.log("Cleared the saved reserved domain from the workspace config.");
+    clearReservedDomain();
+    console.log("Cleared the saved reserved domain.");
   }
 
   let edge: TunnelEdge;

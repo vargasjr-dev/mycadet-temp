@@ -1041,10 +1041,17 @@ export async function stopContainerTunnelEdge(
 }
 
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
-function stampAppProcessEntry(workspaceDir: string): void {
+function stampAppProcessEntry(
+  workspaceDir: string,
+  assistantId?: string,
+): void {
   const pid = getIngressPid(workspaceDir);
   if (pid !== null) {
-    stampRootProcess("app", { pid, startedAt: new Date().toISOString() });
+    stampRootProcess("app", {
+      pid,
+      startedAt: new Date().toISOString(),
+      assistantId,
+    });
   }
 }
 
@@ -1111,7 +1118,7 @@ export async function ensureTunnelEdge(opts: {
 
   switch (result.status) {
     case "started":
-      stampAppProcessEntry(opts.workspaceDir);
+      stampAppProcessEntry(opts.workspaceDir, opts.assistantId);
       return {
         port: result.listenPort,
         started: true,
@@ -1145,7 +1152,7 @@ export async function ensureTunnelEdge(opts: {
             stuckEdgeRecoveryHint(opts.workspaceDir),
         );
       }
-      stampAppProcessEntry(opts.workspaceDir);
+      stampAppProcessEntry(opts.workspaceDir, opts.assistantId);
       return {
         port: result.listenPort,
         started: false,

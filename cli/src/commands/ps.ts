@@ -285,9 +285,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   // tree (assistant + every child it owns, built from the OS process table)
   // with the gateway's own entry appended — no hard-coded subsystem list to
   // drift out of sync with what the assistant actually spawns.
-  const tree = gatewayUrl
-    ? await fetchGatewayPs(gatewayUrl, token)
-    : null;
+  const tree = gatewayUrl ? await fetchGatewayPs(gatewayUrl, token) : null;
 
   const rows: TableRow[] =
     tree && tree.length > 0
@@ -431,22 +429,20 @@ function locationFor(entry: AssistantEntry): string {
   return entry.runtimeUrl ?? "unknown — no runtime URL recorded";
 }
 
-async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
+async function getAssistantProcessRows(
+  entry: AssistantEntry,
+): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
   console.log(`Processes for ${formatAssistantReference(entry)} (${cloud}):`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
-    const rows = await getLocalProcesses(entry);
-    printTable(rows);
-    return;
+    return getLocalProcesses(entry);
   }
 
   if (cloud === "docker") {
-    const rows = await getDockerProcesses(entry);
-    printTable(rows);
-    return;
+    return getDockerProcesses(entry);
   }
 
   if (isCloudHome(cloud)) {
@@ -455,20 +451,16 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
 
     if (!psData) {
-      const rows: TableRow[] = [
+      return [
         {
           name: "assistant",
           status: withStatusEmoji("unreachable"),
           info: "could not reach Cadet Cloud API — run `cadet login`",
         },
       ];
-      printTable(rows);
-      return;
     }
 
-    const rows = flattenProcessTree(psData.processes);
-    printTable(rows);
-    return;
+    return flattenProcessTree(psData.processes);
   }
 
   if (cloud === "apple-container") {
@@ -492,8 +484,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       });
     }
-    printTable(rows);
-    return;
+    return rows;
   }
 
   if (cloud === "paired") {
@@ -501,15 +492,13 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     // list — probe the remote gateway's health over the bearer token instead.
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
     const health = await checkHealth(entry.runtimeUrl, token);
-    const rows: TableRow[] = [
+    return [
       {
         name: "gateway",
         status: withStatusEmoji(health.status),
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       },
     ];
-    printTable(rows);
-    return;
   }
 
   let output: string;
@@ -526,7 +515,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("timed out")) {
       console.warn(`Warning: remote process listing timed out — ${msg}`);
-      return;
+      return [];
     }
     console.error(`Failed to list processes: ${msg}`);
     process.exit(1);
@@ -536,44 +525,89 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
 
   if (procs.length === 0) {
     console.log("No cadet processes found on the remote instance.");
-    return;
+    return [];
   }
 
-  const rows: TableRow[] = procs.map((p) => ({
+  return procs.map((p) => ({
     name: classifyProcess(p.command),
     status: withStatusEmoji("running"),
     info: `PID ${p.pid} | ${p.command.slice(0, 80)}`,
   }));
-
-  printTable(rows);
 }
 
 // ── Root-managed process rows (tunnel agent, app edge) ──────────
 
+/** A CLI-managed process row, plus the assistant it fronts (when recorded). */
+interface RootManagedRow {
+  row: TableRow;
+  assistantId?: string;
+}
+
 /**
  * Rows for the CLI-managed processes recorded at the lockfile root: the
  * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
- * stale entry reads as not running rather than as a lie.
+ * stale entry reads as not running rather than as a lie. Each row carries the
+ * assistant it fronts so the listing can nest it under that assistant.
  */
-async function getRootManagedRows(): Promise<TableRow[]> {  const { tunnel, app } = readRootProcesses();
-  const rows: TableRow[] = [];
+async function getRootManagedRows(): Promise<RootManagedRow[]> {
+  const { tunnel, app } = readRootProcesses();
+  const rows: RootManagedRow[] = [];
 
   if (tunnel) {
     const alive = isLocalProcessAlive(tunnel.pid);
     rows.push({
-      name: `tunnel (${tunnel.provider ?? "unknown provider"})`,
-      status: withStatusEmoji(alive ? "running" : "not running"),
-      info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
+      assistantId: tunnel.assistantId,
+      row: {
+        name: `tunnel (${tunnel.provider ?? "unknown provider"})`,
+        status: withStatusEmoji(alive ? "running" : "not running"),
+        info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
+      },
     });
   }
   if (app) {
     const alive = isLocalProcessAlive(app.pid);
     rows.push({
-      name: "app (nginx edge)",
-      status: withStatusEmoji(alive ? "running" : "not running"),
-      info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
+      assistantId: app.assistantId,
+      row: {
+        name: "app (nginx edge)",
+        status: withStatusEmoji(alive ? "running" : "not running"),
+        info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
+      },
     });
   }
+  return rows;
+}
+
+/**
+ * Fold the CLI-managed process rows into ONE table with the assistant rows:
+ * a process fronts an assistant when it recorded that assistant's id, and
+ * those rows nest under it; anything unattributed (or fronting an assistant
+ * this environment no longer lists) renders at the bottom, machine-level.
+ */
+async function assistantRowsWithRootProcesses(
+  assistants: AssistantEntry[],
+  healths: AssistantHealth[],
+  activeAssistantId: string | null,
+): Promise<TableRow[]> {
+  const nestedByAssistant = new Map<string, TableRow[]>();
+  const unattributed: TableRow[] = [];
+  const knownIds = new Set(assistants.map((entry) => entry.assistantId));
+  for (const managed of await getRootManagedRows()) {
+    if (managed.assistantId && knownIds.has(managed.assistantId)) {
+      const nested = nestedByAssistant.get(managed.assistantId) ?? [];
+      nested.push({ ...managed.row, name: `  └ ${managed.row.name}` });
+      nestedByAssistant.set(managed.assistantId, nested);
+    } else {
+      unattributed.push(managed.row);
+    }
+  }
+
+  const rows: TableRow[] = [];
+  assistants.forEach((entry, i) => {
+    rows.push(formatAssistantListRow(entry, activeAssistantId, healths[i]!));
+    rows.push(...(nestedByAssistant.get(entry.assistantId) ?? []));
+  });
+  rows.push(...unattributed);
   return rows;
 }
 
@@ -696,75 +730,71 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     return;
   }
 
-  const rows = await Promise.all(
-    assistants.map(async (entry) =>
-      formatAssistantListRow(
-        entry,
-        activeAssistantId,
-        await getAssistantListHealth(entry),
-      ),
-    ),
+  const healths = await Promise.all(
+    assistants.map((entry) => getAssistantListHealth(entry)),
   );
 
-  printTable(rows, { name: "NAME", status: "STATUS", info: "INFO" });
-  console.log("");
-  await printRootManagedProcesses();
-}
-
-/**
- * Print the root lockfile's CLI-managed processes, when any are recorded —
- * the `tunnel` agent and the `app` nginx edge are machine-level, so they
- * appear no matter which assistant was asked about.
- */
-async function printRootManagedProcesses(): Promise<void> {
-  const rows = await getRootManagedRows();
-  if (rows.length === 0) return;
-  console.log("CLI-managed processes (root lockfile):");
-  printTable(rows);
-  console.log("");
+  printTable(
+    await assistantRowsWithRootProcesses(
+      assistants,
+      healths,
+      activeAssistantId,
+    ),
+    { name: "NAME", status: "STATUS", info: "INFO" },
+  );
 }
 
 // ── Entry point ─────────────────────────────────────────────────
 
 export const ps = Object.assign(
   async function ps(): Promise<void> {
-  const args = process.argv.slice(3);
-  if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
-    console.log("");
-    console.log(
-      "List all assistants, or show processes for a specific assistant.",
-    );
-    console.log("");
-    console.log("Arguments:");
-    console.log(
-      "  <name-or-id> Show processes for the assistant display name or ID",
-    );
-    console.log("");
-    console.log("Options:");
-    console.log(
-      "  --verbose    Show diagnostic logs (platform sync, auth issues)",
-    );
-    process.exit(0);
-  }
+    const args = process.argv.slice(3);
+    if (args.includes("--help") || args.includes("-h")) {
+      console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
+      console.log("");
+      console.log(
+        "List all assistants, or show processes for a specific assistant.",
+      );
+      console.log("");
+      console.log("Arguments:");
+      console.log(
+        "  <name-or-id> Show processes for the assistant display name or ID",
+      );
+      console.log("");
+      console.log("Options:");
+      console.log(
+        "  --verbose    Show diagnostic logs (platform sync, auth issues)",
+      );
+      process.exit(0);
+    }
 
-  const verbose = args.includes("--verbose");
-  const assistantIdentifier = parseAssistantTargetArg(args);
+    const verbose = args.includes("--verbose");
+    const assistantIdentifier = parseAssistantTargetArg(args);
 
-  if (!assistantIdentifier) {
-    await listAllAssistants(verbose);
-    return;
-  }
+    if (!assistantIdentifier) {
+      await listAllAssistants(verbose);
+      return;
+    }
 
-  const result = lookupAssistantByIdentifier(assistantIdentifier);
-  if (result.status !== "found") {
-    console.error(formatAssistantLookupError(assistantIdentifier, result));
-    process.exit(1);
-  }
+    const result = lookupAssistantByIdentifier(assistantIdentifier);
+    if (result.status !== "found") {
+      console.error(formatAssistantLookupError(assistantIdentifier, result));
+      process.exit(1);
+    }
 
-  await showAssistantProcesses(result.entry);
-  await printRootManagedProcesses();
-},
+    const rows = await getAssistantProcessRows(result.entry);
+    // The CLI-managed processes (root lockfile) that front THIS assistant ride
+    // the same table; ones fronting another assistant stay in the list view.
+    for (const managed of await getRootManagedRows()) {
+      if (
+        managed.assistantId &&
+        managed.assistantId !== result.entry.assistantId
+      ) {
+        continue;
+      }
+      rows.push(managed.row);
+    }
+    printTable(rows);
+  },
   { description: "List assistants (or processes for a specific assistant)" },
 );
-

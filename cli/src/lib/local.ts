@@ -1958,11 +1958,10 @@ export async function stopLocalProcesses(
   const cesPidFile = join(cadetDir, "ces.pid");
   await stopProcessByPidFile(cesPidFile, "credential-executor");
 
-  // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry,
-  // falling back to the legacy pid file), verifying the pid still belongs to
-  // the provider's binary before signaling it — PID reuse must never send an
-  // unrelated process a signal.
-  await stopTunnelProcess(cadetDir);
+  // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry),
+  // verifying the pid still belongs to the provider's binary before signaling
+  // it — PID reuse must never send an unrelated process a signal.
+  await stopTunnelProcess();
 
   // Stop the nginx ingress if one is fronting this gateway (it guards against
   // PID reuse itself).

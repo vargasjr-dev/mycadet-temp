@@ -104,6 +104,7 @@ import {
   handleListDevices,
   handleRevokeDevice,
 } from "./http/routes/devices.js";
+import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
 import { handlePair } from "./http/routes/pair.js";
 import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
 import {
@@ -886,6 +887,15 @@ async function main() {
       method: "GET",
       auth: "edge",
       handler: () => psHandler.handlePs(),
+    },
+
+    // ── Ingress domain recording (localhost CLI only, bearer-authed) ──
+    {
+      path: "/v1/ingress/domains",
+      method: "POST",
+      auth: "edge",
+      handler: (req, _params, getClientIp) =>
+        handleSaveIngressDomain(req, getClientIp(), configFileCache),
     },
 
     // ── Tunnel status ──

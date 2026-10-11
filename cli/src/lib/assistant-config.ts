@@ -167,6 +167,8 @@ export interface RootProcessRecord {
   pid: number;
   /** Which tunnel provider owns the process; "tunnel" entries only. */
   provider?: string;
+  /** The assistant the process fronts, so `cadet ps` can nest the row. */
+  assistantId?: string;
   startedAt: string;
 }
 

@@ -6,9 +6,6 @@ import {
   type AssistantEntry,
   type RootProcessRecord,
 } from "./assistant-config.js";
-import { runCloudflareTunnel } from "./cloudflare-tunnel.js";
-import { existsSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
 
 import {
   getDefaultWorkspaceDir,
@@ -16,7 +13,6 @@ import {
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
-import { IngressConfigSchema } from "./tunnels/ngrok.js";
 import {
   ensureTunnelEdge,
   formatEdgeMode,
@@ -27,22 +23,28 @@ import {
 import { waitForDaemonReady } from "./http-client.js";
 import {
   hasWebhookIntegrations,
+  IngressConfigSchema,
+  isNgrokProcess,
   maybeStartNgrokTunnel,
+  NGROK_TUNNEL_META,
+  runNgrokTunnel,
+  saveNgrokDomain,
 } from "./tunnels/ngrok.js";
 import { stopProcess } from "./process.js";
 import { shellArg } from "./shell-arg.js";
-import { runTailscaleTunnel } from "./tailscale-tunnel.js";
 import {
   selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
+import { runCadetTunnel, CADET_TUNNEL_META } from "./tunnels/cadet.js";
 import {
-  isNgrokProcess,
-  LEGACY_NGROK_PID_FILENAME,
-  readLegacyNgrokPid,
-  runNgrokTunnel,
-  saveNgrokDomain,
-} from "./tunnels/ngrok.js";
+  runCloudflareTunnel,
+  CLOUDFLARE_TUNNEL_META,
+} from "./tunnels/cloudflare.js";
+import {
+  runTailscaleTunnel,
+  TAILSCALE_TUNNEL_META,
+} from "./tunnels/tailscale.js";
 
 /**
  * The provider the automatic tunnel paths start when no provider is named.
@@ -61,57 +63,37 @@ export interface ProviderMeta {
   notes?: string[];
   /** Example reserved-domain value, for providers that support `--domain`. */
   domainExample?: string;
+  /** Whether `--domain`/`--clear-domain` can bind a reserved domain. */
+  supportsReservedDomain: boolean;
+  /**
+   * Listed but not yet implemented: the command refuses it before starting
+   * any infrastructure, so `--provider <name>` fails fast with the
+   * coming-soon copy instead of building an edge nothing will use.
+   */
+  comingSoon?: boolean;
 }
 
+/**
+ * The registry: each provider's copy lives in its own `tunnels/<provider>.ts`
+ * module and is assembled here, so `cadet tunnel`'s help, `--provider`
+ * validation, and dispatch all read one shape.
+ */
 export const PROVIDER_META: Record<TunnelProviderName, ProviderMeta> = {
-  ngrok: {
-    reach: "Public tunnel that webhook integrations can reach",
-    install: "install: brew install ngrok/ngrok/ngrok",
-    domainExample: "my-assistant.ngrok.app",
-  },
-  cloudflare: {
-    reach: "Public tunnel that webhook integrations can reach",
-    install: "install: brew install cloudflare/cloudflare/cloudflared",
-    notes: ["No Cloudflare account required for quick tunnels."],
-  },
-  tailscale: {
-    reach: "Tailnet-only tunnel, reachable from your own devices",
-    install: "install: https://tailscale.com/download, then run `tailscale up`",
-    notes: [
-      "When webhook integrations are configured it records its URL for device",
-      "pairing only, leaving the saved webhook callback base as it is.",
-    ],
-  },
-};
-
-/** How far each provider's tunnel URL reaches, for one-line listings. */
-export const PROVIDER_REACH: Record<TunnelProviderName, string> = {
-  ngrok: PROVIDER_META.ngrok.reach,
-  cloudflare: PROVIDER_META.cloudflare.reach,
-  tailscale: PROVIDER_META.tailscale.reach,
-};
-
-/** Which providers can bind a reserved domain via `--domain`/`--clear-domain`. */
-export const PROVIDER_SUPPORTS_RESERVED_DOMAIN: Record<
-  TunnelProviderName,
-  boolean
-> = {
-  ngrok: true,
-  cloudflare: false,
-  tailscale: false,
+  cadet: CADET_TUNNEL_META,
+  ngrok: NGROK_TUNNEL_META,
+  cloudflare: CLOUDFLARE_TUNNEL_META,
+  tailscale: TAILSCALE_TUNNEL_META,
 };
 
 /**
- * Registry check that tolerates any provider spelling, including the
- * command-level `cadet` option (which supports no reserved domain).
+ * Registry check that tolerates any provider spelling: only providers whose
+ * meta claims reserved-domain support accept `--domain`/`--clear-domain`.
  */
 export function providerSupportsReservedDomain(provider: string): boolean {
-  switch (provider) {
-    case "ngrok":
-      return PROVIDER_SUPPORTS_RESERVED_DOMAIN.ngrok;
-    default:
-      return false;
+  for (const [name, meta] of Object.entries(PROVIDER_META)) {
+    if (name === provider) return meta.supportsReservedDomain;
   }
+  return false;
 }
 
 /** Options every provider tunnel accepts; `runProviderTunnel` maps them. */
@@ -145,6 +127,10 @@ export async function runProviderTunnel(
     });
     return;
   }
+  if (provider === "cadet") {
+    await runCadetTunnel(opts);
+    return;
+  }
   if (provider === "cloudflare") {
     await runCloudflareTunnel(base);
     return;
@@ -157,35 +143,24 @@ export async function runProviderTunnel(
   });
 }
 
-/** Drop the workspace's reserved-domain record (providers that keep one). */
-export function clearReservedDomain(workspaceDir: string): void {
-  saveNgrokDomain(workspaceDir, null);
+/** Drop the saved reserved-domain record (providers that keep one). */
+export function clearReservedDomain(): void {
+  saveNgrokDomain(null);
 }
 
 /**
- * Stop a tunnel agent this CLI started: the root lockfile's `tunnel` entry
- * first, then the legacy pid file CLIs wrote before the lockfile tracked
- * processes. The pid is verified against the provider's process identity
- * before signaling — a stale entry after PID reuse must not kill an
- * unrelated process.
+ * Stop a tunnel agent this CLI started, per the root lockfile's `tunnel`
+ * entry. The pid is verified against the provider's process identity before
+ * signaling — a stale entry after PID reuse must not kill an unrelated
+ * process.
  */
-export async function stopTunnelProcess(cadetDir: string): Promise<void> {
+export async function stopTunnelProcess(): Promise<void> {
   const recorded: RootProcessRecord | undefined = readRootProcesses().tunnel;
-  if (recorded) {
-    if (isNgrokProcess(recorded.pid)) {
-      await stopProcess(recorded.pid, "tunnel");
-    }
-    clearRootProcess("tunnel");
-    return;
+  if (!recorded) return;
+  if (isNgrokProcess(recorded.pid)) {
+    await stopProcess(recorded.pid, "tunnel");
   }
-  const legacyPid = readLegacyNgrokPid(cadetDir);
-  if (legacyPid !== null) {
-    if (isNgrokProcess(legacyPid)) {
-      await stopProcess(legacyPid, "tunnel");
-    }
-    const pidPath = join(cadetDir, LEGACY_NGROK_PID_FILENAME);
-    if (existsSync(pidPath)) unlinkSync(pidPath);
-  }
+  clearRootProcess("tunnel");
 }
 
 /**
@@ -204,6 +179,7 @@ export {
   ADOPTED_TUNNEL_RE,
   hasWebhookIntegrationsConfigured,
 } from "./tunnels/ngrok.js";
+export { cadetTunnelComingSoonError } from "./tunnels/cadet.js";
 
 /** Matches the Docker hatch path's service-readiness allowance. */
 export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;

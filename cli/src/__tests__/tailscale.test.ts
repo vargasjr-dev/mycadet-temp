@@ -20,7 +20,7 @@ import {
   stopTailscaleServe,
   type TailscaleCommandResult,
   type TailscaleDeps,
-} from "../lib/tailscale-tunnel.js";
+} from "../lib/tunnels/tailscale.js";
 import { snapshotEnv } from "./helpers/env.js";
 
 describe("Tailscale discovery", () => {

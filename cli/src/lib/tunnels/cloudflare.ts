@@ -1,11 +1,13 @@
+import type { ProviderMeta } from "../tunnel.js";
+
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 
-import { GATEWAY_PORT } from "./constants.js";
+import { GATEWAY_PORT } from "../constants.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
   saveIngressUrl,
-} from "./ingress-config.js";
+} from "../ingress-config.js";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
 
@@ -230,3 +232,11 @@ export async function runCloudflareTunnel(
     child.on("exit", () => resolve());
   });
 }
+
+/** Per-provider copy `cadet tunnel`'s help renders for cloudflare. */
+export const CLOUDFLARE_TUNNEL_META: ProviderMeta = {
+  reach: "Public tunnel that webhook integrations can reach",
+  install: "install: brew install cloudflare/cloudflare/cloudflared",
+  notes: ["No Cloudflare account required for quick tunnels."],
+  supportsReservedDomain: false,
+};
