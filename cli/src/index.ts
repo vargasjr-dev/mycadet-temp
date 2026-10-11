@@ -14,6 +14,7 @@ import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
 import { clean } from "./commands/clean";
 import { client } from "./commands/client";
+import { completeCadet, completions } from "./commands/completions";
 import { confirm } from "./commands/confirm";
 import { connect } from "./commands/connect";
 import { devices } from "./commands/devices";
@@ -53,6 +54,7 @@ const commands = {
   backup,
   clean,
   client,
+  completions,
   confirm,
   connect,
   debug,
@@ -228,6 +230,19 @@ async function main() {
     if (!launched) {
       printHelp();
     }
+    process.exit(0);
+  }
+
+  // Hidden completion hook: the bash completion script calls
+  // `cadet __complete <words-up-to-cursor>` and filters the printed
+  // candidates against the word under the cursor. Deliberately unlisted in
+  // the command map so it never shows up in help.
+  if (commandName === "__complete") {
+    const candidates = completeCadet(
+      process.argv.slice(3),
+      Object.keys(commands),
+    );
+    console.log(candidates.join("\n"));
     process.exit(0);
   }
 
