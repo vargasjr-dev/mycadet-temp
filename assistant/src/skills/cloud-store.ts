@@ -540,9 +540,7 @@ export interface StoredCloudSkill {
  * that does not parse resolves to null, so a caller enriching or patching one
  * skill never fails on a bad one.
  */
-export function readStoredCloudSkill(
-  skillId: string,
-): StoredCloudSkill | null {
+export function readStoredCloudSkill(skillId: string): StoredCloudSkill | null {
   const skillFilePath = join(getCloudSkillDir(skillId), "SKILL.md");
   try {
     const content = readFileSync(skillFilePath, "utf-8");

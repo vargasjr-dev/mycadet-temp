@@ -1106,9 +1106,7 @@ describe("emitNotificationSignal From me push defaults", () => {
     "cadet_allowlist",
   ])("respects %s policy without adding platform", async (scenario) => {
     assistantInitiatedCandidate = scenario !== "noncandidate";
-    isCloudClientConfiguredMock.mockResolvedValue(
-      scenario !== "unconfigured",
-    );
+    isCloudClientConfiguredMock.mockResolvedValue(scenario !== "unconfigured");
     evaluateSignalMock.mockResolvedValue({
       ...decision(scenario === "external_only" ? ["telegram"] : ["cadet"]),
       shouldNotify: scenario !== "suppressed",

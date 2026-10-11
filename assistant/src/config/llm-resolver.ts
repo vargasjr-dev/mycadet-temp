@@ -440,8 +440,7 @@ function resolveOverrideOrDefault(
       // or platform installs lose their only connection.
       if (
         !(
-          winnerFragment.provider_connection ===
-            CADET_CLOUD_CONNECTION_NAME &&
+          winnerFragment.provider_connection === CADET_CLOUD_CONNECTION_NAME &&
           CLOUD_ROUTABLE_PROVIDERS.has(implied)
         )
       ) {

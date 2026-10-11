@@ -613,7 +613,7 @@ describe("localRuntimeIdentity", () => {
         orgIdFetchedAs.push(`org-${orgIdFetchedAs.length + 1}`);
         return new Response(
           JSON.stringify({
-            results: [{ id: orgIdFetchedAs[orgIdFetchedAs.length - 1]! }],
+            results: [{ id: orgIdFetchedAs[orgIdFetchedAs.length - 1]!, name: "My Cadet" }],
           }),
           { status: 200 },
         );

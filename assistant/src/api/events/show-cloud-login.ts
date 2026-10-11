@@ -15,6 +15,4 @@ export const ShowCloudLoginEventSchema = z.object({
   type: z.literal("show_platform_login"),
 });
 
-export type ShowCloudLoginEvent = z.infer<
-  typeof ShowCloudLoginEventSchema
->;
+export type ShowCloudLoginEvent = z.infer<typeof ShowCloudLoginEventSchema>;

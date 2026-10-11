@@ -86,10 +86,9 @@ mock.module("@mycadet/plugin-api", () => ({
 const { POST } = await import("../routes/reengage.js");
 
 function postRequest(): Request {
-  return new Request(
-    "http://plugin.internal/x/plugins/cloud-hosted/reengage",
-    { method: "POST" },
-  );
+  return new Request("http://plugin.internal/x/plugins/cloud-hosted/reengage", {
+    method: "POST",
+  });
 }
 
 describe("cloud-hosted /reengage POST", () => {

@@ -67,9 +67,7 @@ export async function assertDesktopListener(
       return;
     }
   }
-  throw new Error(
-    "Debug listener does not belong to the cloud desktop Chrome",
-  );
+  throw new Error("Debug listener does not belong to the cloud desktop Chrome");
 }
 
 export async function findDesktopBrowserPid(

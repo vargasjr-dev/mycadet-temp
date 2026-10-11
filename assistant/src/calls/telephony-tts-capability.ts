@@ -118,8 +118,7 @@ export async function evaluateTelephonyTtsPlayability(
   // request is made — with allowNativeFallback false, that would mean
   // silent call failures instead of a BYOK fallback.
   if (entry.id === "cadet") {
-    const { managedSpeechAvailable } =
-      await import("../cloud/cloud-speech.js");
+    const { managedSpeechAvailable } = await import("../cloud/cloud-speech.js");
     if (!(await managedSpeechAvailable())) {
       return {
         status: "not-playable",

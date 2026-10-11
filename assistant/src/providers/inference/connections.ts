@@ -39,9 +39,7 @@ function isCloudRow(row: {
   provider: string;
   auth: { type: string };
 }): boolean {
-  return (
-    MANAGED_CONNECTION_NAMES.has(row.name) && isCadetCloudConnection(row)
-  );
+  return MANAGED_CONNECTION_NAMES.has(row.name) && isCadetCloudConnection(row);
 }
 
 // ---------------------------------------------------------------------------

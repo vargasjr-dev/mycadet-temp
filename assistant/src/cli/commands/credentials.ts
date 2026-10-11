@@ -141,9 +141,7 @@ export function registerCredentialsCommand(program: Command): void {
                 }
               }
               if (cloudCredentials.length > 0) {
-                log.info(
-                  `${cloudCredentials.length} cloud credential(s):\n`,
-                );
+                log.info(`${cloudCredentials.length} cloud credential(s):\n`);
                 for (const managed of cloudCredentials) {
                   printCloudCredentialHuman(managed);
                   log.info("");

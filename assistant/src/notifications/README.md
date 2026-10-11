@@ -537,7 +537,7 @@ Where classification does not run, any other code-less reply falls through to th
 | `conversation-seed-composer.ts` | Surface-aware conversation seed generation (richer than notification copy)                                 |
 | `destination-resolver.ts`       | Resolves per-channel endpoints (Telegram and Slack chat ID, Discord user ID)                               |
 | `adapters/macos.ts`             | Cadet adapter -- broadcasts `notification_intent` via SSE with deep-link metadata                          |
-| `adapters/platform.ts`          | Platform adapter: posts to the cloud push-dispatch endpoint for native mobile push                      |
+| `adapters/platform.ts`          | Platform adapter: posts to the cloud push-dispatch endpoint for native mobile push                         |
 | `adapters/telegram.ts`          | Telegram adapter: calls the Telegram Bot API through `messaging/providers/telegram-bot/send.ts`            |
 | `adapters/slack.ts`             | Slack adapter: posts to the guardian's DM through `messaging/providers/slack/send.ts`                      |
 | `adapters/discord.ts`           | Discord adapter: sends to the guardian's DM through `messaging/providers/discord/send.ts`                  |

@@ -137,9 +137,7 @@ describe("LLM catalog parity: daemon vs client", () => {
       expect(clientEntry.setupHint).toBe(daemonEntry.setupHint);
       expect(clientEntry.envVar).toBe(daemonEntry.envVar);
       expect(clientEntry.apiKeyPlaceholder).toBe(daemonEntry.apiKeyPlaceholder);
-      expect(clientEntry.supportsCloudAuth).toBe(
-        daemonEntry.supportsCloudAuth,
-      );
+      expect(clientEntry.supportsCloudAuth).toBe(daemonEntry.supportsCloudAuth);
       expect(clientEntry.featureFlag).toBe(daemonEntry.featureFlag);
       expect(clientEntry.credentialsGuide).toEqual(
         daemonEntry.credentialsGuide,

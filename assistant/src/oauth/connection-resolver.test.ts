@@ -351,9 +351,7 @@ describe("resolveOAuthConnection scope-awareness", () => {
 
   test("managed: unknown scope data never blocks (back-compat)", async () => {
     // Older connections report no scopes_granted — must not be rejected.
-    mockCloudClient = clientReturning([
-      { id: "legacy", account_label: null },
-    ]);
+    mockCloudClient = clientReturning([{ id: "legacy", account_label: null }]);
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],

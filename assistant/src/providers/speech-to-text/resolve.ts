@@ -667,8 +667,7 @@ async function createStreamingTranscriber(
       // connection (API key + assistant ID) is checkable locally — gate
       // here so preflight reports "connect your account" instead of
       // resolving a transcriber whose dial is doomed.
-      const { cadetCloudSpeechAvailable } =
-        await import("./cadet-cloud.js");
+      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
       if (!(await cadetCloudSpeechAvailable())) {
         return null;
       }
@@ -698,8 +697,7 @@ async function createStreamingTranscriber(
       // `contract=flux` so the turn events arrive intact instead of being
       // translated into the released v1 Deepgram dialect. Gated on the local
       // cloud connection for the same reason as `cadet` above.
-      const { cadetCloudSpeechAvailable } =
-        await import("./cadet-cloud.js");
+      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
       if (!(await cadetCloudSpeechAvailable())) {
         return null;
       }

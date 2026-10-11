@@ -246,9 +246,7 @@ export class CadetManagedFluxRealtimeTranscriber implements StreamingTranscriber
    * error and ends the stream.
    */
   private beginRedial(): void {
-    log.info(
-      "Cloud Flux relay session hit tunnel's duration cap, re-dialing",
-    );
+    log.info("Cloud Flux relay session hit tunnel's duration cap, re-dialing");
     this.inner = null;
     this.turnIndexOffset = this.latestTurnIndex + 1;
     void (async () => {

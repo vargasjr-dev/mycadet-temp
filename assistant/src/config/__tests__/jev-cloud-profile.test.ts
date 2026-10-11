@@ -75,8 +75,6 @@ describe("jev-managed as a call-site pin target", () => {
       },
     });
     expect(result.success).toBe(false);
-    expect(JSON.stringify(result.error?.issues)).toContain(
-      "cloud Jev profile",
-    );
+    expect(JSON.stringify(result.error?.issues)).toContain("cloud Jev profile");
   });
 });

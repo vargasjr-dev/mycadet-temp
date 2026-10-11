@@ -82,8 +82,7 @@ describe("assistant cloud disconnect", () => {
   test("rejects with error when running on a cloud-hosted assistant", async () => {
     mockResponse = {
       ok: false,
-      error:
-        "Cannot disconnect from the cloud on a cloud-hosted assistant.",
+      error: "Cannot disconnect from the cloud on a cloud-hosted assistant.",
       statusCode: 422,
     };
 

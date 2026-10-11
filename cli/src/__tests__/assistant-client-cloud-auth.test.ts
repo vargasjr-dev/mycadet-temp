@@ -68,7 +68,7 @@ const isOrgFetch = (url: string) => url.includes("/v1/organizations/");
 const isRefresh = (url: string) => url.includes("/v1/guardian/refresh");
 
 function orgResponse(): Response {
-  return new Response(JSON.stringify({ results: [{ id: ORG_ID }] }), {
+  return new Response(JSON.stringify({ results: [{ id: ORG_ID, name: "My Cadet" }] }), {
     status: 200,
     headers: { "content-type": "application/json" },
   });

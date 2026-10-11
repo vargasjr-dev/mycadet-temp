@@ -301,8 +301,7 @@ describe("GeminiEmbeddingBackend", () => {
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          cloudBaseUrl:
-            "https://platform.example.com/v1/runtime-proxy/gemini",
+          cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
         },
       );
       await backend.embed(["hello"]);
@@ -335,8 +334,7 @@ describe("GeminiEmbeddingBackend", () => {
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          cloudBaseUrl:
-            "https://platform.example.com/v1/runtime-proxy/gemini",
+          cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
           taskType: "RETRIEVAL_DOCUMENT",
           dimensions: 3072,
         },
@@ -375,8 +373,7 @@ describe("GeminiEmbeddingBackend", () => {
         "ast-managed-key",
         "gemini-embedding-2",
         {
-          cloudBaseUrl:
-            "https://platform.example.com/v1/runtime-proxy/gemini",
+          cloudBaseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
           dimensions: 3072,
         },
       );

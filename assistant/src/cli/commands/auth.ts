@@ -37,9 +37,7 @@ export function registerAuthCommand(program: Command): void {
           writeOutput(cmd, result);
 
           if (!shouldOutputJson(cmd)) {
-            log.info(
-              `Platform URL:        ${result.cloudUrl ?? "(not set)"}`,
-            );
+            log.info(`Platform URL:        ${result.cloudUrl ?? "(not set)"}`);
             log.info(
               `Assistant ID:        ${result.assistantId ?? "(not set)"}`,
             );

@@ -634,9 +634,7 @@ export const ROUTES: RouteDefinition[] = [
       credentials: z
         .array(z.unknown())
         .describe("Local credentials with metadata"),
-      cloudCredentials: z
-        .array(z.unknown())
-        .describe("Cloud credentials"),
+      cloudCredentials: z.array(z.unknown()).describe("Cloud credentials"),
     }),
     handler: handleCredentialsList,
   },

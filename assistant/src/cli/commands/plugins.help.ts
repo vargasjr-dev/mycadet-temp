@@ -184,8 +184,7 @@ Examples:
       options: [
         {
           flags: "--print",
-          description:
-            "Print the entry JSON without submitting to the cloud",
+          description: "Print the entry JSON without submitting to the cloud",
         },
         {
           flags: "--path <dir>",

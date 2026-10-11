@@ -2894,8 +2894,7 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
   {
     id: "cadet",
     displayName: "Cadet",
-    subtitle:
-      "Models served on Cadet GPU nodes through the cloud connection.",
+    subtitle: "Models served on Cadet GPU nodes through the cloud connection.",
     setupMode: "api-key",
     setupHint:
       "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",

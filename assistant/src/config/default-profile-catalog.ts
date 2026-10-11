@@ -648,9 +648,7 @@ for (const key of BACKUP_PROFILE_KEYS) {
 // The cloud Jev profile pins a model the cloud proxy must front, and the
 // judges depend on it being the non-text TypeSafe model rather than a chat
 // model that happens to share the id.
-if (
-  getCloudUpstream(JEV_MANAGED_PROFILE_TEMPLATE.model ?? "") !== "typesafe"
-) {
+if (getCloudUpstream(JEV_MANAGED_PROFILE_TEMPLATE.model ?? "") !== "typesafe") {
   throw new Error(
     `JEV_MANAGED_PROFILE_TEMPLATE references model "${JEV_MANAGED_PROFILE_TEMPLATE.model ?? ""}" ` +
       `which the cloud route does not serve through typesafe. ` +

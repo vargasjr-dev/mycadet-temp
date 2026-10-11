@@ -11,8 +11,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
 const loader = await import("../config/loader.js");
-const registration =
-  await import("../inbound/cloud-callback-registration.js");
+const registration = await import("../inbound/cloud-callback-registration.js");
 const { resolveWebhookUrl } = await import("../plugin-api/webhook-url.js");
 const { runInPluginContext } =
   await import("../plugins/plugin-execution-context.js");

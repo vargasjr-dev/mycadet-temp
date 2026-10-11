@@ -146,8 +146,10 @@ async function checkIngress(
   allowCloudCallbacks = false,
   options: { twilio?: boolean } = {},
 ): Promise<ReadinessCheckResult> {
-  const { configured, usesCloudCallbacks } =
-    await hasWebhookRoutingConfigured(allowCloudCallbacks, options);
+  const { configured, usesCloudCallbacks } = await hasWebhookRoutingConfigured(
+    allowCloudCallbacks,
+    options,
+  );
   return check(
     "ingress",
     configured,

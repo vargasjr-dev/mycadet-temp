@@ -20,10 +20,7 @@ mock.module("./client.js", () => ({
 }));
 
 import { getLogger } from "../util/logger.js";
-import {
-  createCloudPatchQueue,
-  type SyncedKey,
-} from "./cloud-patch-queue.js";
+import { createCloudPatchQueue, type SyncedKey } from "./cloud-patch-queue.js";
 
 interface Patch {
   path: string;

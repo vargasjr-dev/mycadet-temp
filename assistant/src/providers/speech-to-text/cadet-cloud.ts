@@ -44,9 +44,7 @@ export async function cadetCloudSpeechAvailable(): Promise<boolean> {
  * wrong BYOK "check your API key" guidance, so it gets its own sanitized
  * cloud-connection message.
  */
-export function sttErrorFromCloudSpeech(
-  failure: CloudSpeechFailure,
-): SttError {
+export function sttErrorFromCloudSpeech(failure: CloudSpeechFailure): SttError {
   const hasDetail = failure.detail !== undefined;
   const userFacing =
     failure.kind === "unavailable" ||

@@ -1168,9 +1168,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           pathParams: { name: "os-beta" },
           body: { label: "My OS Beta" },
         }),
-      ).rejects.toThrow(
-        /Cannot edit cloud profile "os-beta" fields \[label\]/,
-      );
+      ).rejects.toThrow(/Cannot edit cloud profile "os-beta" fields \[label\]/);
       // Guard rejects before any write — the seed label is untouched.
       expect(persistedProfile("os-beta").label).toBe("OS Beta");
     });

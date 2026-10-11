@@ -342,10 +342,7 @@ export class CadetCloudClient {
       );
       return "unknown";
     } catch (err) {
-      log.debug(
-        { err },
-        "credential verification could not reach the cloud",
-      );
+      log.debug({ err }, "credential verification could not reach the cloud");
       return "unknown";
     }
   }

@@ -93,9 +93,7 @@ async function generateImageViaProxy(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(
-      `Cloud proxy request failed (${response.status}): ${body}`,
-    );
+    throw new Error(`Cloud proxy request failed (${response.status}): ${body}`);
   }
 
   const data = (await response.json()) as {

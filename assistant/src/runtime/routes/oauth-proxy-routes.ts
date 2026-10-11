@@ -120,9 +120,7 @@ export async function handleOAuthProxy(
   const { connection } = resolution;
   if (connection instanceof CloudOAuthConnection) {
     if (method === "HEAD") {
-      throw new MethodNotAllowedError(
-        "Cloud connections do not support HEAD",
-      );
+      throw new MethodNotAllowedError("Cloud connections do not support HEAD");
     }
     const managedHeaders = prepareCloudProxyHeaders(headers);
     const { unsupportedHeaders } = managedHeaders;

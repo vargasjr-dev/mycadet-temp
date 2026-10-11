@@ -52,9 +52,7 @@ export function filterSkillsByPlatform<T extends PlatformScopedSkill>(
   skills: readonly T[],
   platform: NodeJS.Platform = process.platform,
 ): T[] {
-  return skills.filter((skill) =>
-    isSkillCompatibleWithCloud(skill, platform),
-  );
+  return skills.filter((skill) => isSkillCompatibleWithCloud(skill, platform));
 }
 
 export function skillPlatformUnavailableMessage(

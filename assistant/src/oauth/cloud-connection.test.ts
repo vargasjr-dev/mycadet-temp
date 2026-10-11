@@ -18,9 +18,7 @@ import {
   unhonoredManagedOptions,
 } from "./cloud-connection.js";
 
-function makeMockClient(
-  fetchImpl?: typeof globalThis.fetch,
-): CadetCloudClient {
+function makeMockClient(fetchImpl?: typeof globalThis.fetch): CadetCloudClient {
   const mockFetchFn =
     fetchImpl ??
     (mock(async () => {
