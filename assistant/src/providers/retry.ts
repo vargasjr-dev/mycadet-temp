@@ -442,20 +442,20 @@ function retryErrorType(error: unknown): string {
 }
 
 /**
- * The managed proxy's preflight guard rejects a model with no billing rate
+ * The cloud proxy's preflight guard rejects a model with no billing rate
  * card using a 400 whose body carries this phrase (django
  * `app/runtime_proxy/views.py`). It marks a model rename/retirement incident
  * (a route problem, not a request problem), so it is fallback-eligible even
  * though 400s are otherwise final.
  */
-// Matches the platform preflight's copy for an unsupported managed model.
+// Matches the cloud preflight's copy for an unsupported managed model.
 const MANAGED_PROXY_UNSUPPORTED_MODEL_PATTERN =
   /is not yet supported on the Cadet hosted service/;
 
 /**
  * Whether the failure indicts one model rather than the upstream serving it: a
  * provider-classified `model_not_found`, a 404 with no definitive
- * classification, or the managed proxy's preflight 400 for a renamed/retired
+ * classification, or the cloud proxy's preflight 400 for a renamed/retired
  * model. As in `isRetryableError`, a provider-stamped semantic reason takes
  * precedence over the status fallback: a 404 whose classifier assigned a
  * definitive non-model reason (Anthropic, for example, stamps `bad_request` on
@@ -509,16 +509,16 @@ function isFallbackEligibleError(
   if (!(error instanceof ProviderError)) {
     return false;
   }
-  // (b) Invalid managed credential (the invalid-key incident). Applies only
-  // to `cadet-managed` routes, where the platform owns the credential and a
-  // broken key is a platform incident. A BYOK or OAuth-subscription route
+  // (b) Invalid cloud credential (the invalid-key incident). Applies only
+  // to `cadet-cloud` routes, where the cloud owns the credential and a
+  // broken key is a cloud incident. A BYOK or OAuth-subscription route
   // with a broken personal credential must surface the auth error so the
   // user can fix it, not silently reroute to a differently billed backup.
   // Only reached after `sendMessage`'s credential-refresh path has already
-  // been attempted for managed routes: same status/reason gate as
-  // `shouldRefreshManagedCredential`.
+  // been attempted for cloud routes: same status/reason gate as
+  // `shouldRefreshCloudCredential`.
   if (
-    opts.credentialSource === "cadet-managed" &&
+    opts.credentialSource === "cadet-cloud" &&
     (error.statusCode === 401 || error.statusCode === 403) &&
     (error.reason === undefined ||
       error.reason === "unknown" ||
@@ -690,7 +690,7 @@ function normalizeSendMessageOptions(
   }
 
   if (providerName === "fireworks") {
-    // Covers BYOK Fireworks and the Cadet-managed Fireworks upstream, which
+    // Covers BYOK Fireworks and the Cadet Cloud Fireworks upstream, which
     // both dispatch through `FireworksProvider`. Keyless calls send no header.
     const sessionKey = [config.selectionSeed, config.conversationId].find(
       (value): value is string =>
@@ -1242,10 +1242,10 @@ export class RetryProvider implements Provider {
        * `fallbackProfile`, mirroring how `refreshCredentialProvider` keeps
        * this wrapper ignorant of credential storage.
        * `forwardUsageAttributionHeaders` must describe the BACKUP route, not
-       * the primary: managed-proxy routes pass true, BYOK and other
+       * the primary: cloud-proxy routes pass true, BYOK and other
        * third-party routes pass false. The fallback send normalizes with the
        * returned policy so `X-Cadet-*` billing metadata never leaks to a
-       * third party and is never omitted from the managed proxy. One hop max:
+       * third party and is never omitted from the cloud proxy. One hop max:
        * the returned adapter must be RAW, so the backup can never escalate
        * again whatever happens to it. Whether the backup send gets a retry
        * budget depends on which entry point escalated; see
@@ -1278,9 +1278,9 @@ export class RetryProvider implements Provider {
     }
   }
 
-  private shouldRefreshManagedCredential(error: unknown): boolean {
+  private shouldRefreshCloudCredential(error: unknown): boolean {
     return (
-      this.options.credentialSource === "cadet-managed" &&
+      this.options.credentialSource === "cadet-cloud" &&
       this.options.refreshCredentialProvider !== undefined &&
       error instanceof ProviderError &&
       (error.statusCode === 401 || error.statusCode === 403) &&
@@ -1291,13 +1291,13 @@ export class RetryProvider implements Provider {
   }
 
   /**
-   * Reload the managed credential after an auth rejection and swap the inner
+   * Reload the cloud credential after an auth rejection and swap the inner
    * provider for one built around it, so a key rotated out of band is picked
    * up without a restart. Returns true when a refreshed adapter took over and
    * the request is worth attempting again. Never throws: a failed reload
    * leaves the original error to surface.
    */
-  private async refreshManagedCredential(): Promise<boolean> {
+  private async refreshCloudCredential(): Promise<boolean> {
     try {
       const refreshed = await this.options.refreshCredentialProvider?.();
       if (refreshed) {
@@ -1318,7 +1318,7 @@ export class RetryProvider implements Provider {
           connectionName: this.options.connectionName,
           refreshError,
         },
-        "Failed to reload managed assistant credentials",
+        "Failed to reload cloud assistant credentials",
       );
     }
     return false;
@@ -1424,7 +1424,7 @@ export class RetryProvider implements Provider {
         );
         // One probe, one attempt: no retry loop. Two one-shot repairs are the
         // exception, both because the probe would otherwise misread its own
-        // failure as the route still being down. A managed credential that
+        // failure as the route still being down. A cloud credential that
         // expired during the outage is refreshed, or the route could never come
         // back. Malformed tool-argument JSON gets the same corrective note the
         // retry loop appends, because that failure is conditioned on the
@@ -1463,10 +1463,10 @@ export class RetryProvider implements Provider {
             }
             if (
               !credentialRefreshAttempted &&
-              this.shouldRefreshManagedCredential(error)
+              this.shouldRefreshCloudCredential(error)
             ) {
               credentialRefreshAttempted = true;
-              if (await this.refreshManagedCredential()) {
+              if (await this.refreshCloudCredential()) {
                 continue;
               }
             }
@@ -1594,10 +1594,10 @@ export class RetryProvider implements Provider {
       } catch (error) {
         if (
           !credentialRefreshAttempted &&
-          this.shouldRefreshManagedCredential(error)
+          this.shouldRefreshCloudCredential(error)
         ) {
           credentialRefreshAttempted = true;
-          if (await this.refreshManagedCredential()) {
+          if (await this.refreshCloudCredential()) {
             continue;
           }
         }
@@ -1719,7 +1719,7 @@ export class RetryProvider implements Provider {
    * routes: degraded mode loses native search rather than the whole turn.
    *
    * Gated on `config.nativeWebSearchSentinel`, never on the name alone: with a
-   * search backend like Brave or the platform search proxy configured, a tool
+   * search backend like Brave or the cloud search proxy configured, a tool
    * of the same name is app-executed and works on every route, so filtering it
    * would take away a capability the backup can still serve.
    *
@@ -1778,7 +1778,7 @@ export class RetryProvider implements Provider {
    * `normalizeSendMessageOptions` has already consumed the `callSite` and
    * stamped the backup route's `usageAttributionHeaders`; running it again over
    * that now callSite-less config would delete the headers and have no way to
-   * rebuild them, leaving degraded traffic unattributed on the platform's
+   * rebuild them, leaving degraded traffic unattributed on the cloud's
    * billing events. This is the same reason the route callback hands back a raw
    * adapter instead of a wrapped one.
    */
@@ -1947,9 +1947,9 @@ export class RetryProvider implements Provider {
     // restamps the usage-attribution headers from the backup resolution, so
     // platform usage events attribute degraded traffic to the backup
     // profile. Whether those headers are forwarded at all follows the
-    // FALLBACK route's policy, not the primary's: a managed primary falling
+    // FALLBACK route's policy, not the primary's: a cloud primary falling
     // back to a third-party adapter must not leak billing metadata, and a
-    // non-managed primary falling back to the managed proxy must include it.
+    // non-managed primary falling back to the cloud proxy must include it.
     const fallbackConfig: Record<string, unknown> = { ...options?.config };
     delete fallbackConfig.max_tokens;
     delete fallbackConfig.effort;

@@ -69,10 +69,10 @@ export function ProfileDetailPanel({
     return entry ? { name: profileName, ...entry } : undefined;
   }, [profileName, profiles]);
 
-  // Managed profiles AND invariant-flagged profiles open in view mode. The
+  // Cloud profiles AND invariant-flagged profiles open in view mode. The
   // daemon stamps `invariant` only on managed-source entries, so the two
   // checks normally coincide; keeping both is defensive. A user-owned
-  // profile sharing a managed name carries neither marker and opens fully
+  // profile sharing a cloud name carries neither marker and opens fully
   // editable - the daemon accepts every write to it.
   const mode =
     profileName == null

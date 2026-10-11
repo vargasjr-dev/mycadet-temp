@@ -13,7 +13,7 @@ import { validateInferenceProfileConfig } from "@mycadet/assistant-api";
 import { t } from "@/i18n";
 
 import {
-  getManagedUpstreamForModel,
+  getCloudUpstreamForModel,
   getModelsForProvider,
   parseCadetRoutedModel,
   type LlmCatalogModel,
@@ -215,7 +215,7 @@ export function useProfileEditor({
   onSave,
 }: UseProfileEditorArgs): ProfileEditor {
   const [effectiveMode, setEffectiveMode] = useState<ProfileEditorMode>(mode);
-  // Managed profiles are read-only: no rename, no reshaping, no disabling -
+  // Cloud profiles are read-only: no rename, no reshaping, no disabling -
   // the only interactive control is the enable-only status flip when the
   // profile is disabled. The lock keys off the server-stamped `invariant`
   // wire flag, so it must hold even if the host opens the editor in edit
@@ -225,7 +225,7 @@ export function useProfileEditor({
     initialValues?.invariant === true && effectiveMode !== "create";
   // The invariant lock forces read-only handling even in edit mode, so Save
   // takes the partial-merge path and never the delete/recreate cycle the
-  // daemon rejects for managed profiles.
+  // daemon rejects for cloud profiles.
   const isReadOnly = effectiveMode === "view" || isInvariant;
 
   // Baseline for `hasViewModeChanges`: the enable flip is the only edit
@@ -237,11 +237,11 @@ export function useProfileEditor({
     initialValues?.description ?? "",
   );
   const [key, setKey] = useState(mode === "create" ? "" : (profileName ?? ""));
-  // "cadet" is a picker-level value: profiles bound to the Cadet-managed
+  // "cadet" is a picker-level value: profiles bound to the Cadet Cloud
   // connection present (and edit) as provider "Cadet"; the wire-shape
   // upstream is derived from the model at save time. The form opens on the
   // stored upstream and only promotes to Cadet once the loaded connections
-  // prove the bound row is the managed sentinel (see the effect below).
+  // prove the bound row is the cloud sentinel (see the effect below).
   // A stored "chatgpt" provider (migration 144 output, the picker, or the
   // API) opens as the ChatGPT selection.
   const [provider, setProvider] = useState<ConnectionProvider | "">(
@@ -370,7 +370,7 @@ export function useProfileEditor({
       resolveProfileParamVisibility(
         provider === CADET_CONNECTION_PROVIDER
           ? (routedModel?.provider ??
-              getManagedUpstreamForModel(model) ??
+              getCloudUpstreamForModel(model) ??
               initialValues?.provider ??
               "")
           : provider,
@@ -447,7 +447,7 @@ export function useProfileEditor({
   const [newProviderNote, setNewProviderNote] = useState(false);
 
   // Promote a cadet-bound profile into Cadet picker mode once the loaded
-  // connections prove the bound row is the managed sentinel. Skipped once the
+  // connections prove the bound row is the cloud sentinel. Skipped once the
   // user changes the provider themselves.
   useEffect(() => {
     if (initialValues?.provider_connection !== CADET_CONNECTION_PROVIDER) {
@@ -749,7 +749,7 @@ export function useProfileEditor({
       // The Cadet picker entry's wire shape is version-gated. Daemons at the
       // gate's MIN_VERSION store the routing identity directly
       // (`provider: "cadet"` + native model, no binding); older daemons get
-      // the legacy shape: the model's managed upstream as `provider`, bound
+      // the legacy shape: the model's cloud upstream as `provider`, bound
       // to the provider-agnostic cadet connection.
       // The chatgpt identity needs no version gate: the picker offers it
       // only when the daemon returned a provider "chatgpt" row, which only
@@ -763,7 +763,7 @@ export function useProfileEditor({
           ? writesIdentityPayload
             ? CADET_CONNECTION_PROVIDER
             : (routedModel?.provider ??
-              getManagedUpstreamForModel(model) ??
+              getCloudUpstreamForModel(model) ??
               initialValues?.provider ??
               "")
           : provider;

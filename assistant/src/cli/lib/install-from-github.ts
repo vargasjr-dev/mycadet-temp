@@ -592,7 +592,7 @@ export async function installPlugin(
  * install is left behind; a decline then surfaces as
  * {@link PluginInstallDeclinedError}. A no-op when no gate was supplied.
  *
- * Shared by {@link installPlugin} and the platform-endpoint install so both
+ * Shared by {@link installPlugin} and the cloud-endpoint install so both
  * abort a declined install the same way.
  */
 export async function confirmStagedOrAbort(
@@ -649,7 +649,7 @@ export interface FinalizeStagedInstallParams {
  * `<pluginsDir>/<name>`. Returns the final install path and the fingerprint that
  * was recorded.
  *
- * Shared by {@link installPlugin} (fresh materialization), the platform-endpoint
+ * Shared by {@link installPlugin} (fresh materialization), the cloud-endpoint
  * install, and the merge-based `plugins upgrade --strategy` path so all record
  * identical provenance, install dependencies the same way, and use the same
  * atomic rm+rename swap. Dependencies land in `<stagingDir>/node_modules/` — a
@@ -821,7 +821,7 @@ export interface InstallMeta {
   readonly commit: string | null;
   /**
    * Integrity digest of the downloaded artifact, when the install came through
-   * the platform install endpoint (`ETag: "sha256:<hex>"`). Recorded verbatim
+   * the cloud install endpoint (`ETag: "sha256:<hex>"`). Recorded verbatim
    * (including the `sha256:` prefix) as a stable id for caching / dedupe and to
    * document what was verified. Absent for git-cloned installs, which have no
    * single artifact to hash.
@@ -1179,7 +1179,7 @@ function normalizeInstalledManifest(
  * (`buildPluginFromDir`) hard-requires a `package.json` validated against
  * `PluginPackageJsonSchema` and silently skips the plugin when it's missing.
  *
- * Used by both the GitHub clone path and the platform tarball path. The
+ * Used by both the GitHub clone path and the cloud tarball path. The
  * synthesized manifest carries the install name and the default
  * `@mycadet/plugin-api` peer dependency range. No foreign-ecosystem
  * manifest data is read: the install name is the only identity we trust

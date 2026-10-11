@@ -38,7 +38,7 @@ export type TelephonyTtsNotPlayableReason =
   | "unsupported-format"
   | "missing-credentials"
   | "missing-fish-audio-reference-id"
-  | "missing-platform-connection";
+  | "missing-cloud-connection";
 
 /**
  * Result of resolving whether a TTS provider is playable over the
@@ -113,18 +113,17 @@ export async function evaluateTelephonyTtsPlayability(
     }
   }
 
-  // The cadet secret alone doesn't prove usability: managed speech also
-  // needs the platform assistant identity, or synthesis fails before any
+  // The cadet secret alone doesn't prove usability: cloud speech also
+  // needs the cloud assistant identity, or synthesis fails before any
   // request is made — with allowNativeFallback false, that would mean
   // silent call failures instead of a BYOK fallback.
   if (entry.id === "cadet") {
-    const { managedSpeechAvailable } =
-      await import("../platform/managed-speech.js");
+    const { managedSpeechAvailable } = await import("../cloud/cloud-speech.js");
     if (!(await managedSpeechAvailable())) {
       return {
         status: "not-playable",
         providerId: entry.id,
-        reason: "missing-platform-connection",
+        reason: "missing-cloud-connection",
       };
     }
   }

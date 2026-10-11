@@ -2,7 +2,7 @@
  * Host computer-use proxy.
  *
  * Proxies computer-use actions to the desktop client when running as a
- * managed assistant, following the same request/resolve pattern as
+ * cloud assistant, following the same request/resolve pattern as
  * HostBashProxy. Also owns CU-specific state tracking (step counting,
  * loop detection, observation formatting) for the unified agent loop.
  *

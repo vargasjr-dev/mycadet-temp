@@ -10,7 +10,7 @@
  * Two things make the seeding work. TanStack Query serves cached data even
  * while a query's `enabled` is false, so priming the cache is enough for both
  * billing reads. And `useBillingBalanceStatus` refuses to look at the summary
- * until the platform gate, the assistant lifecycle, and the org store all say
+ * until the cloud gate, the assistant lifecycle, and the org store all say
  * the org has managed billing, so those three stores are seeded too.
  */
 import type { ReactNode } from "react";
@@ -139,7 +139,7 @@ function SeededPanel({
   const [client] = useState(() => createStoryQueryClient());
 
   useLayoutEffect(() => {
-    const previousAuth = useAuthStore.getState().platformSession;
+    const previousAuth = useAuthStore.getState().cloudSession;
     const previousLifecycle =
       useAssistantLifecycleStore.getState().assistantState;
     const previousOrgId =
@@ -147,11 +147,11 @@ function SeededPanel({
     const previousAssistantId =
       useResolvedAssistantsStore.getState().activeAssistantId;
 
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
     useAssistantLifecycleStore.setState({
       assistantState: { kind: "active", isLocal: false, health: "healthy" },
     });
-    // The org-header gate reports "resolving", never "ready", while a platform
+    // The org-header gate reports "resolving", never "ready", while a cloud
     // session exists with no organization id to scope requests to.
     useOrganizationStore.setState({ persistedOrganizationId: "org_storybook" });
     // The usage panel withholds both of its readings until the BYOK route
@@ -180,7 +180,7 @@ function SeededPanel({
     });
     // The two ungated reads the classifier makes. Primed so it settles on the
     // first render rather than flickering through neutral while two daemon
-    // fetches fail; no BYOK connection means the managed reading these
+    // fetches fail; no BYOK connection means the cloud reading these
     // stories document. The other three reads stay disabled: two sit behind
     // version gates the unseeded identity store leaves closed, and the
     // conversation read needs a conversation the menu has not got.
@@ -191,7 +191,7 @@ function SeededPanel({
     });
 
     return () => {
-      useAuthStore.setState({ platformSession: previousAuth });
+      useAuthStore.setState({ cloudSession: previousAuth });
       useAssistantLifecycleStore.setState({
         assistantState: previousLifecycle,
       });

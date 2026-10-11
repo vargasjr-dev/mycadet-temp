@@ -43,13 +43,13 @@ async function callStatusRoute() {
   );
 }
 
-const originalIsPlatform = process.env.IS_PLATFORM;
+const originalIsPlatform = process.env.IS_CLOUD;
 
 function restoreIsPlatform(): void {
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
 }
 
@@ -72,7 +72,7 @@ describe("resource pressure routes", () => {
   });
 
   test("returns the disabled snapshot when the guard never started", async () => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
 
     const result = await callStatusRoute();
 
@@ -85,7 +85,7 @@ describe("resource pressure routes", () => {
   });
 
   test("returns the guard's current snapshot on platform", async () => {
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     evaluateResourcePressureNow({
       sampleCpuPercent: () => 42,
       sampleMemory: () => ({

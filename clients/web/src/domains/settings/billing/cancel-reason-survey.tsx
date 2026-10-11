@@ -33,7 +33,7 @@ const OPTION_LABEL_KEYS = {
   other: "cancelReasonSurvey.optionOther",
 } as const satisfies Record<CancellationFeedbackEnum, string>;
 
-/** Mirrors the platform serializer's `CANCELLATION_COMMENT_MAX_LENGTH`. */
+/** Mirrors the cloud serializer's `CANCELLATION_COMMENT_MAX_LENGTH`. */
 export const CANCEL_COMMENT_MAX_LENGTH = 1000;
 
 export interface CancelReasonSurveyValue {

@@ -27,7 +27,7 @@ describe("useTenantHostInput", () => {
     expect(result.current.valid).toBe(false);
     expect(result.current.showsInvalid).toBe(true);
 
-    // Normalized the way the platform normalizes, so what is validated here
+    // Normalized the way the cloud normalizes, so what is validated here
     // is what gets sent.
     act(() => result.current.setValue("  My-Store.myshopify.com "));
     expect(result.current.valid).toBe(true);

@@ -25,7 +25,7 @@ export type GatewayConfig = {
   /**
    * Body cap for the inbound email webhook (`/webhooks/email`). Email
    * attachments arrive inlined as base64 in the payload, so this ceiling is
-   * much larger than {@link maxWebhookPayloadBytes} to fit the platform's
+   * much larger than {@link maxWebhookPayloadBytes} to fit the cloud's
    * per-file / per-message attachment cap. Optional — callers fall back to
    * {@link maxWebhookPayloadBytes} when unset.
    */
@@ -217,7 +217,7 @@ export function loadConfig(): GatewayConfig {
     },
     maxAttachmentConcurrency: 3,
     maxWebhookPayloadBytes: 1024 * 1024,
-    // Fits the platform's inbound-attachment cap (25 MB/file × 10 files),
+    // Fits the cloud's inbound-attachment cap (25 MB/file × 10 files),
     // expanded by base64 (~4/3) plus body/JSON overhead.
     maxEmailWebhookPayloadBytes: 350 * 1024 * 1024,
     port,

@@ -128,32 +128,6 @@
     "typePreview": "預覽",
     "typeScheduled": "排程"
   },
-  "assistantLifecyclePanel": {
-    "allAssistantsSubtitle": "{count, plural, other {# 個助理已找到。}}",
-    "allAssistantsTitle": "所有助理",
-    "assistantId": "助理 ID",
-    "created": "建立時間",
-    "current": "目前",
-    "hatch": "孵化",
-    "hatchConfirmMessage": "您確定要建立新的助理嗎？這將會佈建新的基礎設施。",
-    "hatchConfirmTitle": "孵化新助理",
-    "hatchDescription": "佈建新的助理。這可能需要一些時間。",
-    "hatchExistingToast": "您已經有一個助理。沒有建立任何新的項目。",
-    "hatchFailedToast": "孵化助理失敗。",
-    "hatchSubtitle": "建立新的助理實例。",
-    "hatchSuccessToast": "新助理已成功孵化。",
-    "hatchTitle": "孵化新助理",
-    "infoEmpty": "沒有找到助理。孵化一個助理以開始使用。",
-    "infoLoading": "正在載入助理資訊...",
-    "infoSubtitle": "目前助理詳細資訊。",
-    "infoTitle": "助理資訊",
-    "lastModified": "上次修改",
-    "machineId": "機器 ID",
-    "name": "名稱",
-    "status": "狀態",
-    "unnamed": "未命名",
-    "version": "版本"
-  },
   "assistantPicker": {
     "active": "啟用中",
     "subtitle": "選擇此帳號的啟用中助理。",
@@ -714,7 +688,6 @@
   "developerPage": {
     "sectionsAriaLabel": "開發者區塊",
     "tabFeatureFlags": "功能旗標",
-    "tabLifecycle": "助理生命週期",
     "tabMemory": "記憶體"
   },
   "doctorChatBlocks": {
@@ -1846,7 +1819,7 @@
     "dockerDescriptionLinux": "在此電腦上的 Docker 容器中執行您的助理。",
     "dockerDescriptionMacos": "在此 Mac 上的 Docker 容器中執行您的助理。",
     "dockerDescriptionWindows": "在此電腦上的 Docker 容器中執行您的助理。",
-    "existingPlatformAssistant": "您已有平台助理「{id}」。請先將其除役，然後重試傳送。",
+    "existingCloudAssistant": "您已有平台助理「{id}」。請先將其除役，然後重試傳送。",
     "exportTimedOut": "匯出逾時。",
     "importFailed": "匯入失敗。",
     "importFailedHttp": "匯入失敗（HTTP {status}）。",

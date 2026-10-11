@@ -14,7 +14,7 @@ export class RouteError extends Error {
    * Optional structured payload surfaced to clients in the standard
    * error envelope as `error.details`. Use sparingly — only when the
    * client genuinely needs machine-readable context beyond `code` and
-   * `message` (e.g. mirroring a platform-side response shape).
+   * `message` (e.g. mirroring a cloud-side response shape).
    */
   readonly details?: unknown;
 

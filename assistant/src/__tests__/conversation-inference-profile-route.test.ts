@@ -4,8 +4,8 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 // session handler's availability guard. Stand in for a signed-in platform
 // session so the pin path under test is the healthy one — same pattern as
 // inference-profile-session-handler.test.ts.
-mock.module("../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: true,
     cloudBaseUrl: "https://platform.example",
     assistantApiKey: "key",
@@ -31,7 +31,7 @@ import { waitFor } from "./helpers/wait-for.js";
 
 await initializeDb();
 
-// The Cadet-managed connection row the managed presets resolve to.
+// The Cadet Cloud connection row the cloud presets resolve to.
 getDb()
   .insert(providerConnections)
   .values({

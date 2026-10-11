@@ -11,8 +11,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
+import { syncIdentityNameToPlatform } from "../cloud/sync-identity.js";
 import { parseIdentityFields } from "../daemon/handlers/identity.js";
-import { syncIdentityNameToPlatform } from "../platform/sync-identity.js";
 import { getLogger } from "../util/logger.js";
 import { getWorkspacePromptPath } from "../util/platform.js";
 import { getEnrichmentService } from "./commit-message-enrichment-service.js";
@@ -172,7 +172,7 @@ export async function commitTurnChanges(
       );
 
       // If IDENTITY.md changed, trigger a best-effort sync of the
-      // assistant name to the platform record.  This acts as a fallback
+      // assistant name to the cloud record.  This acts as a fallback
       // for environments where fs.watch / inotify is unreliable (e.g.
       // container runtimes using gVisor or Docker-in-Docker).
       if (

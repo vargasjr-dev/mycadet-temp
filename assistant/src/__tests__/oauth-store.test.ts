@@ -2391,7 +2391,7 @@ describe("disconnectOAuthProvider", () => {
   test("replaces all occurrences of {access_token} in body template values (matching Python str.replace)", async () => {
     // Python's str.replace(old, new) replaces ALL occurrences by default,
     // whereas JavaScript's String.prototype.replace with a string pattern
-    // only replaces the FIRST occurrence. The platform's try_revoke_token
+    // only replaces the FIRST occurrence. The cloud's try_revoke_token
     // is implemented in Python, so any template value containing repeated
     // placeholders must have ALL of them substituted to preserve parity.
     // This test guards against a regression to .replace(), which would

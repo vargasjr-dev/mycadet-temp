@@ -17,7 +17,7 @@
  *     `Authorization: Bearer` header to the rewritten request.
  *
  * Both slots are null by default — the interceptor is a no-op until the
- * lifecycle hook primes them, and every request flows to the platform
+ * lifecycle hook primes them, and every request flows to the cloud
  * as before.
  */
 
@@ -26,12 +26,12 @@ interface SelfHostedConnection {
    * The user's gateway hostname for this assistant (from
    * `AssistantSerializer.ingress_url`). May be null briefly between
    * `is_local=true` flipping and the gateway registering its public
-   * hostname — runtime calls fall through to the platform's proxy view
+   * hostname — runtime calls fall through to the cloud's proxy view
    * in that window.
    */
   url: string | null;
   /**
-   * The platform's actor token for this assistant (from
+   * The cloud's actor token for this assistant (from
    * `AssistantSerializer.platform_actor_token`). May be null briefly
    * after hatch while `bootstrap_platform_actor_token` runs — the
    * interceptor sends the request without `Authorization` in that

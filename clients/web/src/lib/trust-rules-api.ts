@@ -5,8 +5,8 @@
  * their schemas live on the gateway's route metadata
  * (`gateway/src/http/routes/trust-rules-routes.ts`), so the types here are
  * codegen-derived. The gateway client's interceptor routes to the
- * self-hosted gateway in local mode and through the platform proxy for
- * platform-hosted assistants.
+ * self-hosted gateway in local mode and through the cloud proxy for
+ * cloud-hosted assistants.
  */
 import {
   assistantTrustRuleCreate,

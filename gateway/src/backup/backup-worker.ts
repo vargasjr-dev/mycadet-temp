@@ -25,7 +25,7 @@ import { pipeline } from "node:stream/promises";
 import { mintServiceToken } from "../auth/token-exchange.js";
 import { readConfigFileOrEmpty } from "../config-file-utils.js";
 import { fetchImpl } from "../fetch.js";
-import { isPlatformMode } from "../feature-flag-resolver.js";
+import { isCloudServedBuild } from "../feature-flag-resolver.js";
 import { getLogger } from "../logger.js";
 import { getGatewaySecurityDir } from "../paths.js";
 import { ensureBackupKey } from "./backup-key.js";
@@ -398,7 +398,7 @@ function createDisabledBackupWorkerHandle(): BackupWorkerHandle {
  * runOnce() methods.
  */
 export function startBackupWorker(deps: BackupDeps): BackupWorkerHandle {
-  if (isPlatformMode()) {
+  if (isCloudServedBuild()) {
     log.info("Backup worker disabled in platform mode");
     return createDisabledBackupWorkerHandle();
   }

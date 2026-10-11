@@ -14,7 +14,7 @@ export async function isOAuthProviderConnected(
   provider: string,
 ): Promise<boolean> {
   const providerRow = getProvider(provider);
-  const managedKey = providerRow?.managedServiceConfigKey;
+  const managedKey = providerRow?.cloudServiceConfigKey;
 
   if (managedKey) {
     try {
@@ -39,16 +39,16 @@ export async function isOAuthProviderConnected(
 }
 
 /**
- * Check the platform for active connections for a managed provider.
+ * Check the cloud for active connections for a cloud provider.
  * Returns false on any error (network, auth, etc.) rather than throwing.
  */
 async function isProviderConnectedOnPlatform(
   provider: string,
 ): Promise<boolean> {
   try {
-    const { CadetPlatformClient } = await import("../platform/client.js");
-    const client = await CadetPlatformClient.create();
-    if (!client?.platformAssistantId) {
+    const { CadetCloudClient } = await import("../cloud/client.js");
+    const client = await CadetCloudClient.create();
+    if (!client?.cloudAssistantId) {
       return false;
     }
 
@@ -56,7 +56,7 @@ async function isProviderConnectedOnPlatform(
     params.set("provider", provider);
     params.set("status", "ACTIVE");
 
-    const path = `/v1/assistants/${encodeURIComponent(client.platformAssistantId)}/oauth/connections/?${params.toString()}`;
+    const path = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/?${params.toString()}`;
     const response = await client.fetch(path);
 
     if (!response.ok) {

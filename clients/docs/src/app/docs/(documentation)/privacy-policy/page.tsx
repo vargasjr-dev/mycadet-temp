@@ -142,7 +142,7 @@ export default function PrivacyPolicyPage() {
         Apple or Google), we may have access to certain information from that
         platform, such as your name and email address, depending on your
         platform settings. We may also collect information you share when you
-        interact with us on social media platforms.
+        interact with us on social media clouds.
       </p>
 
       <h3>Derived Information</h3>
@@ -180,7 +180,7 @@ export default function PrivacyPolicyPage() {
       </p>
       <p>
         <strong>Provider privacy notices.</strong> Below is a list of all
-        third-party AI providers potentially used by Cadet managed Services, as
+        third-party AI providers potentially used by Cadet Cloud Services, as
         well as their privacy policies. Please review each provider&apos;s
         privacy notice to understand how they handle your data:
       </p>

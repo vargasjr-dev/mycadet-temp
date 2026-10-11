@@ -19,7 +19,7 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
-import * as platformClient from "../lib/platform-client.js";
+import * as cloudClient from "../lib/cloud-client.js";
 import { withPreconnect } from "./helpers/http.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
@@ -29,9 +29,9 @@ const resolveTargetMock = spyOn(
 ).mockImplementation(() => {
   throw new Error("process.exit:1");
 });
-const readPlatformTokenMock = spyOn(
-  platformClient,
-  "readPlatformToken",
+const readCloudTokenMock = spyOn(
+  cloudClient,
+  "readCloudToken",
 ).mockReturnValue("platform-token");
 const exportMock = spyOn(
   localRuntimeClient,
@@ -76,9 +76,9 @@ const LOCAL_ENTRY = {
   runtimeUrl: "http://127.0.0.1:7821",
   cloud: "local",
   hatchedAt: new Date().toISOString(),
-  platformAssistantId: "11111111-2222-3333-4444-555555555555",
-  platformBaseUrl: "https://cloud.mycadet.ai",
-  platformOrganizationId: "org-1",
+  cloudAssistantId: "11111111-2222-3333-4444-555555555555",
+  cloudBaseUrl: "https://cloud.mycadet.ai",
+  cloudOrganizationId: "org-1",
 } satisfies assistantConfig.AssistantEntry;
 
 let originalFetch: typeof globalThis.fetch;
@@ -112,8 +112,8 @@ beforeEach(() => {
   identityMock.mockReset();
   identityMock.mockResolvedValue({ version: "0.12.3" });
   leaseGuardianTokenSpy.mockClear();
-  readPlatformTokenMock.mockReset();
-  readPlatformTokenMock.mockReturnValue("platform-token");
+  readCloudTokenMock.mockReset();
+  readCloudTokenMock.mockReturnValue("platform-token");
   exportMock.mockClear();
   pollMock.mockClear();
 });
@@ -127,7 +127,7 @@ afterAll(() => {
   resolveTargetMock.mockRestore();
   identityMock.mockRestore();
   leaseGuardianTokenSpy.mockRestore();
-  readPlatformTokenMock.mockRestore();
+  readCloudTokenMock.mockRestore();
   exportMock.mockRestore();
   pollMock.mockRestore();
   loadGuardianTokenSpy.mockRestore();
@@ -135,7 +135,7 @@ afterAll(() => {
 });
 
 describe("cadet debug", () => {
-  test("mints the URL on the platform, exports with the debug profile, and waits", async () => {
+  test("mints the URL on the cloud, exports with the debug profile, and waits", async () => {
     await debug();
 
     expect(fetchCalls).toHaveLength(1);
@@ -157,7 +157,7 @@ describe("cadet debug", () => {
       profile: "debug",
     });
     expect(pollMock).toHaveBeenCalled();
-    // The daemon was checked for the debug profile before the platform call.
+    // The daemon was checked for the debug profile before the cloud call.
     expect(identityMock).toHaveBeenCalledTimes(1);
   });
 
@@ -207,7 +207,7 @@ describe("cadet debug", () => {
     expect(polls).toBe(2);
   });
 
-  test("explains what to turn on when the platform refuses", async () => {
+  test("explains what to turn on when the cloud refuses", async () => {
     uploadUrlStatus = 403;
     const errors: string[] = [];
     const errorSpy = spyOn(console, "error").mockImplementation((msg) => {
@@ -239,7 +239,7 @@ describe("cadet debug", () => {
   test("asks for a login when the assistant is not registered", async () => {
     resolveTargetMock.mockReturnValue({
       ...LOCAL_ENTRY,
-      platformAssistantId: undefined,
+      cloudAssistantId: undefined,
     });
     const errors: string[] = [];
     const errorSpy = spyOn(console, "error").mockImplementation((msg) => {

@@ -15,7 +15,7 @@ export interface LifecycleEvent {
  * Optional typed attributes a lifecycle event carries alongside its name.
  *
  * Every one is nullable and optional on the wire, so a caller with nothing to
- * say omits it and a platform that predates the field ignores it. They exist
+ * say omits it and a cloud that predates the field ignores it. They exist
  * so grouping dimensions (risk, access preset, surface) are columns rather
  * than substrings of `event_name`, which the server caps at 64 chars.
  */

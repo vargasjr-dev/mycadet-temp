@@ -49,7 +49,7 @@ export interface EmailDetailProps {
  * row with the sender's disc, the subject over the full date, and the
  * actions on the trailing edge (asking the assistant to reply, and copying
  * the message); then the From and To lines between two hairlines; then the
- * body as the plain text the platform stores, and the attachments. The
+ * body as the plain text the cloud stores, and the attachments. The
  * reply action exists only on an inbound message with something to act on
  * it, because the composer lives in chat rather than here.
  *

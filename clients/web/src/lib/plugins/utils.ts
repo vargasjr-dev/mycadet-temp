@@ -6,7 +6,7 @@ import type {
 } from "./types";
 
 /**
- * The platform catalog reports either a curated emoji or the https URL of the
+ * The cloud catalog reports either a curated emoji or the https URL of the
  * plugin's bundled icon in the same `icon` field. Only the catalog may carry
  * a URL: an installed plugin's `package.json` icon is author-controlled text
  * and must never be rendered as an image source.

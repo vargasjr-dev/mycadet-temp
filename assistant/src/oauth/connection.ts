@@ -8,7 +8,7 @@ export interface OAuthConnectionRequest {
    * where rebuilding {@link OAuthConnectionRequest.query} would reorder
    * interleaved repeated keys, rewrite `%20` as `+`, and give a valueless flag
    * an `=`. An empty one falls through to `query`. Honored by BYO connections;
-   * a managed connection sends `query` to the platform proxy, which rebuilds
+   * a cloud connection sends `query` to the cloud proxy, which rebuilds
    * it.
    */
   rawQuery?: string;

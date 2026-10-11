@@ -156,7 +156,7 @@
     "subtitle": "配置您的助手如何发送和接收电子邮件",
     "title": "电子邮件"
   },
-  "emailManagedContent": {
+  "emailCloudContent": {
     "addressLabel": "地址",
     "checkingSubscription": "正在检查订阅…",
     "completeSetup": "完成域名设置",

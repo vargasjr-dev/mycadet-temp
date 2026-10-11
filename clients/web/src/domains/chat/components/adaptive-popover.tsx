@@ -11,7 +11,7 @@
  *
  * Branches on {@link useTouchMobile} (coarse pointer AND phone width), not on
  * width alone: a narrow desktop window still wants the popover, since a bottom
- * sheet there is a modal for no reason. See `docs/PLATFORM_ADAPTATION.md`.
+ * sheet there is a modal for no reason. See `docs/CLOUD_ADAPTATION.md`.
  */
 
 import { useState, type ReactNode } from "react";

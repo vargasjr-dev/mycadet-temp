@@ -959,14 +959,14 @@ function providerFirstTrigger(): HTMLButtonElement {
   return trigger;
 }
 
-describe("the managed route's annotation", () => {
+describe("the cloud route's annotation", () => {
   test("reads Recommended here, and stays Managed in the provider-first picker", () => {
     renderCreate([
-      makeConnection("cadet-managed", "cadet"),
+      makeConnection("cadet-cloud", "cadet"),
       makeConnection("anthropic-personal"),
     ]);
 
-    // A custom id is served by every route, which is where the managed route
+    // A custom id is served by every route, which is where the cloud route
     // stands beside another and the annotation is drawn at all.
     selectModel("Enter a custom model ID…");
     fireEvent.change(getInputByPlaceholder("provider/model-id"), {
@@ -981,7 +981,7 @@ describe("the managed route's annotation", () => {
     // question, so the two flows cannot be quietly unified.
     cleanup();
     setModelFirstFlag(false);
-    renderCreate([makeConnection("cadet-managed", "cadet")]);
+    renderCreate([makeConnection("cadet-cloud", "cadet")]);
     fireEvent.click(providerFirstTrigger());
 
     const managed = Array.from(

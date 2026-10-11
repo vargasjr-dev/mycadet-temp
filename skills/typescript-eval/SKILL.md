@@ -11,7 +11,7 @@ metadata:
 
 # TypeScript Evaluation
 
-When you need to test a TypeScript snippet before persisting it as a managed skill, use `bash` directly.
+When you need to test a TypeScript snippet before persisting it as a cloud skill, use `bash` directly.
 
 ## Workflow
 
@@ -58,6 +58,6 @@ bash command="rm -rf /tmp/cadet-eval/"
 ## Guidelines
 
 - **Iteration limit:** Max 3 attempts before asking the user for guidance.
-- **After successful test:** Persist with `scaffold_managed_skill` only after explicit user consent.
+- **After successful test:** Persist with `scaffold_cloud_skill` only after explicit user consent.
 - **Timeout:** Use `timeout_seconds=10` (or up to 20 for complex snippets).
 - **Never persist or delete skills without explicit user confirmation.**

@@ -30,10 +30,10 @@ mock.module("../config/env-registry.js", () => ({
 // files import from it, which breaks their named-import validation whenever
 // this mock wins evaluation in a combined run.
 const actualRegistration =
-  await import("../inbound/platform-callback-registration.js");
-mock.module("../inbound/platform-callback-registration.js", () => ({
+  await import("../inbound/cloud-callback-registration.js");
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   ...actualRegistration,
-  resolvePlatformCallbackRegistrationContext: async () => ({
+  resolveCloudCallbackRegistrationContext: async () => ({
     isPlatform: mockGetIsPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
     assistantId: mockPlatformConnected ? "assistant-123" : "",
@@ -292,8 +292,8 @@ describe("ChannelReadinessService", () => {
     });
   });
 
-  test("telegram readiness accepts a platform-connected assistant with no ingress", async () => {
-    // LUM-2882: `webhooks register telegram` resolves a platform callback URL
+  test("telegram readiness accepts a cloud-connected assistant with no ingress", async () => {
+    // LUM-2882: `webhooks register telegram` resolves a cloud callback URL
     // in this configuration, so reporting missing ingress here would hide a
     // registration that is really in place (or really broken).
     mockPlatformConnected = true;
@@ -311,7 +311,7 @@ describe("ChannelReadinessService", () => {
     });
   });
 
-  test("phone readiness accepts a platform-connected assistant with no ingress", async () => {
+  test("phone readiness accepts a cloud-connected assistant with no ingress", async () => {
     mockPlatformConnected = true;
     mockHasTwilioCredentials = true;
     setConfig("twilio", { phoneNumber: "+15550123" });
@@ -327,7 +327,7 @@ describe("ChannelReadinessService", () => {
     });
   });
 
-  test("configured ingress beats the platform-connected fallback", async () => {
+  test("configured ingress beats the cloud-connected fallback", async () => {
     // Any logged-in local assistant holds cloud credentials for the LLM
     // proxy. Reporting managed routing here would mislabel a webhook that
     // `webhooks register` resolves to the self-hosted URL.
@@ -347,9 +347,9 @@ describe("ChannelReadinessService", () => {
     });
   });
 
-  test("explicit ingress opt-out blocks the platform-connected fallback", async () => {
+  test("explicit ingress opt-out blocks the cloud-connected fallback", async () => {
     // Switching ingress off is a decision not to accept inbound webhooks, not
-    // an invitation to route them through the platform instead.
+    // an invitation to route them through the cloud instead.
     mockPlatformConnected = true;
     mockSecureKeys[credentialKey("telegram", "bot_token")] = "123:abc";
     mockSecureKeys[credentialKey("telegram", "webhook_secret")] = "secret";
@@ -365,10 +365,10 @@ describe("ChannelReadinessService", () => {
     });
   });
 
-  test("email readiness accepts a platform-connected assistant with no ingress", async () => {
-    // Inbound email arrives through the platform callback route the gateway
+  test("email readiness accepts a cloud-connected assistant with no ingress", async () => {
+    // Inbound email arrives through the cloud callback route the gateway
     // registers (`registerEmailCallbackRoute`, the same pattern as Telegram),
-    // so a platform-connected assistant with no public ingress URL still
+    // so a cloud-connected assistant with no public ingress URL still
     // receives email and must not report missing ingress.
     mockPlatformConnected = true;
 

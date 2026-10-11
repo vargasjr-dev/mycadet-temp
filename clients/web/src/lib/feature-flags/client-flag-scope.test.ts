@@ -170,7 +170,7 @@ describe("setupClientFlagScopeSync", () => {
         currentClientFlagScopeKey(),
       );
 
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
 
     const state = useClientFeatureFlagStore.getState();
     expect(state.hydrated).toBe(true);

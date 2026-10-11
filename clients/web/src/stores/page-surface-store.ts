@@ -86,7 +86,7 @@ export const DEFAULT_SHELL_BACKGROUND = "var(--surface-base)";
 /**
  * The app shell's background for a published page surface.
  *
- * Split out from the shell so the platform gate is directly testable: desktop
+ * Split out from the shell so the cloud gate is directly testable: desktop
  * web and Electron must keep {@link DEFAULT_SHELL_BACKGROUND} no matter what a
  * page publishes.
  */

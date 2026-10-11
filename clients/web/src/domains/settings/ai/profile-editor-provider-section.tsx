@@ -164,7 +164,7 @@ export function ProfileEditorProviderSection({
 
   // Providers backed by at least one connection — picking a provider with zero
   // connections binds a profile to a route the daemon can't dispatch through.
-  // The Cadet-managed connection expands into every managed-routable provider
+  // The Cadet Cloud connection expands into every managed-routable provider
   // (see `providersServedByConnections`). The currently-bound `provider` is
   // always kept so editing a stale profile still renders a sensible trigger.
   const visibleProviders = useMemo(() => {
@@ -420,7 +420,7 @@ export function ProfileEditorProviderSection({
       ? entryPickerValue(provider, providerConnection)
       : null;
   // A binding to an identity row (a chatgpt row serving openai, a cadet
-  // row serving a managed-routable vendor) has no entry option of its own:
+  // row serving a cloud-routable vendor) has no entry option of its own:
   // identity rows never expand. The identity's bare option names the route
   // the profile actually dispatches through, so the trigger shows it
   // rather than the vendor.

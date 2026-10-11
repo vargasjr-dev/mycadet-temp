@@ -1,7 +1,7 @@
 /**
  * Transport-agnostic route definitions for live-voice preflight.
  *
- * POST /v1/live-voice/preflight — ensure managed-speech defaulting has run,
+ * POST /v1/live-voice/preflight — ensure cloud-speech defaulting has run,
  * then report whether the daemon can run both audio legs of a live voice
  * session. Lets the web client verify voice is configured BEFORE opening the
  * voice-room WebSocket, instead of opening it and reacting to an error frame.
@@ -22,12 +22,12 @@ import type { RouteDefinition } from "./types.js";
 // ---------------------------------------------------------------------------
 
 async function handleLiveVoicePreflight() {
-  const { maybeDefaultSpeechToManaged } =
-    await import("../../config/managed-speech-defaults.js");
+  const { maybeDefaultSpeechToCloud } =
+    await import("../../config/cloud-speech-defaults.js");
   const { resolveLiveVoiceCredentialReadiness } =
     await import("../../live-voice/live-voice-credential-preflight.js");
 
-  await maybeDefaultSpeechToManaged();
+  await maybeDefaultSpeechToCloud();
   return resolveLiveVoiceCredentialReadiness();
 }
 
@@ -52,7 +52,7 @@ export const ROUTES: RouteDefinition[] = [
     endpoint: "live-voice/preflight",
     method: "POST",
     // Requires settings.write, not a read scope: the handler runs
-    // maybeDefaultSpeechToManaged(), which can persist config changes
+    // maybeDefaultSpeechToCloud(), which can persist config changes
     // (switching services.stt/tts.provider to "cadet"). This matches the
     // secret/settings config writers, which all require settings.write.
     policy: {
@@ -61,7 +61,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Live voice preflight",
     description:
-      "Ensure managed speech defaulting has run, then report whether live voice can start.",
+      "Ensure cloud speech defaulting has run, then report whether live voice can start.",
     tags: ["live-voice"],
     responseBody: z.object({
       status: z.enum(["ready", "not-ready"]),

@@ -10,7 +10,7 @@ import { ApiError } from "@/utils/api-errors";
 
 let developerMode = false;
 let ownCredentials: Array<{ service: string; field: string }> = [];
-let managedCredentials: Array<{
+let cloudCredentials: Array<{
   handle: string;
   provider: string;
   accountInfo: string | null;
@@ -48,7 +48,7 @@ mock.module("@/stores/assistant-identity-store", () => {
 
 mock.module("@/generated/daemon/sdk.gen", () => ({
   credentialsListPost: async () => ({
-    data: { credentials: ownCredentials, managedCredentials },
+    data: { credentials: ownCredentials, cloudCredentials },
   }),
 }));
 
@@ -137,16 +137,16 @@ afterEach(() => {
   cleanup();
   developerMode = false;
   ownCredentials = [];
-  managedCredentials = [];
+  cloudCredentials = [];
   deleteBodies = [];
   deleteError = null;
   capturedErrors.length = 0;
 });
 
 describe("CredentialsPage", () => {
-  test("hides managed credentials and the source split outside developer mode", async () => {
+  test("hides cloud credentials and the source split outside developer mode", async () => {
     ownCredentials = [{ service: "stripe", field: "api_key" }];
-    managedCredentials = [
+    cloudCredentials = [
       {
         handle: "managed-google",
         provider: "Google",
@@ -164,10 +164,10 @@ describe("CredentialsPage", () => {
     expect(screen.queryByText("Google")).toBeNull();
   });
 
-  test("shows the source split and managed credentials in developer mode", async () => {
+  test("shows the source split and cloud credentials in developer mode", async () => {
     developerMode = true;
     ownCredentials = [{ service: "stripe", field: "api_key" }];
-    managedCredentials = [
+    cloudCredentials = [
       {
         handle: "managed-google",
         provider: "Google",
@@ -269,8 +269,8 @@ describe("CredentialsPage", () => {
     expect(screen.queryByText("Credential is in use")).toBeNull();
   });
 
-  test("shows the empty state instead of managed credentials outside developer mode", async () => {
-    managedCredentials = [
+  test("shows the empty state instead of cloud credentials outside developer mode", async () => {
+    cloudCredentials = [
       {
         handle: "managed-google",
         provider: "Google",

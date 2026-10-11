@@ -136,7 +136,7 @@ export function currentTierRows(
   proPlan: ProPlan,
 ): string[] {
   // Static map first, so casing stays stable for the tiers this bundle knows;
-  // then the catalog's own label, so a tier the platform adds reads the same
+  // then the catalog's own label, so a tier the cloud adds reads the same
   // here as it does in the tier picker; the raw key only as a last resort.
   const machine = current.machineTier
     ? (MACHINE_TIER_LABEL[current.machineTier] ??
@@ -170,7 +170,7 @@ export function currentTierRows(
  * every catalog feature those rows did not replace.
  *
  * The surviving rows come from the live catalog rather than a client-side
- * mirror, so an entitlement the platform adds appears with no web change, and a
+ * mirror, so an entitlement the cloud adds appears with no web change, and a
  * dimension the sub has no concrete value for keeps its generic capability row
  * instead of vanishing.
  */

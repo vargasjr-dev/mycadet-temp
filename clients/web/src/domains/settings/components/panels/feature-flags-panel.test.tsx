@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as gatewaySdk from "@/generated/gateway/sdk.gen";
 
 // Regression test for the bug where assistant-scoped flag toggles never
-// persisted: the panel read the active assistant id from the platform
+// persisted: the panel read the active assistant id from the cloud
 // `assistants/active` query (null in local mode), so the store silently
 // skipped the gateway PATCH. The fix sources the id from the gate-backed
 // resolved-assistants store via `useActiveAssistantId`. This test locks in
@@ -26,7 +26,7 @@ mock.module("@/generated/api/client.gen", () => ({
 
 // Assistant-scoped flag writes route through the gateway client
 // (`assistantFeatureFlagsPatch`), so the toggle's PATCH lands here, not on
-// the platform client above. Spread the real module so the read-query path
+// the cloud client above. Spread the real module so the read-query path
 // (`assistantFeatureFlagsGet`, used by the flag-sync hook) keeps working.
 mock.module("@/generated/gateway/sdk.gen", () => ({
   ...gatewaySdk,

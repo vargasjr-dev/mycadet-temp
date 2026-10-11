@@ -114,7 +114,7 @@ from the assistant's registered email address.
 
 Body source priority: --body flag > --file flag > stdin (if not a TTY).
 
-When --reply-to is provided, the platform auto-resolves In-Reply-To,
+When --reply-to is provided, the cloud auto-resolves In-Reply-To,
 References, and Subject headers from the referenced email. You can
 still override subject with -s.
 

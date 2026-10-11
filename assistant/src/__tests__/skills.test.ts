@@ -1077,7 +1077,7 @@ describe("ingress-dependent setup skills declare public-ingress intentionally", 
       "utf-8",
     );
     expect(content).toContain("avoid-when:");
-    expect(content.toLowerCase()).toContain("platform-managed");
+    expect(content.toLowerCase()).toContain("cloud-managed");
   });
 });
 

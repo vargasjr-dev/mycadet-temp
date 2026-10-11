@@ -64,7 +64,7 @@ cadet ps      # check process status
 cadet sleep   # stop assistant + gateway
 ```
 
-> **Note:** `cadet wake` requires a hatched assistant. Run `cadet hatch` first, or launch the macOS app which handles hatching automatically. Alternatively, the macOS app supports **managed sign-in** during onboarding — authenticating via the platform and connecting to a platform-hosted assistant without running a local assistant.
+> **Note:** `cadet wake` requires a hatched assistant. Run `cadet hatch` first, or launch the macOS app which handles hatching automatically. Alternatively, the macOS app supports **managed sign-in** during onboarding — authenticating via the cloud and connecting to a cloud-hosted assistant without running a local assistant.
 
 #### Development: raw bun commands
 
@@ -225,10 +225,10 @@ The assistant can create, test, and persist new skills at runtime. This is usefu
 
 #### Workflow
 
-1. **Evaluate**: The assistant drafts the script and runs it with `bash` in the sandbox, iterating until it works; the exact file that ran is what `scaffold_managed_skill` copies in (`copy_from`).
-2. **Persist**: After successful evaluation and explicit user consent, the assistant calls `scaffold_managed_skill` to write the skill to `$CADET_WORKSPACE_DIR/skills/<id>/SKILL.md`.
+1. **Evaluate**: The assistant drafts the script and runs it with `bash` in the sandbox, iterating until it works; the exact file that ran is what `scaffold_cloud_skill` copies in (`copy_from`).
+2. **Persist**: After successful evaluation and explicit user consent, the assistant calls `scaffold_cloud_skill` to write the skill to `$CADET_WORKSPACE_DIR/skills/<id>/SKILL.md`.
 3. **Load**: The assistant calls `skill_load` with the new skill ID to load its instructions.
-4. **Delete**: To remove a managed skill, use `delete_managed_skill`.
+4. **Delete**: To remove a cloud skill, use `delete_cloud_skill`.
 
 Installed managed skills are discovered from valid directories under `$CADET_WORKSPACE_DIR/skills/<id>/` that contain a top-level `SKILL.md` with standardized frontmatter. On startup and skill directory changes, the assistant parses that frontmatter and seeds the skill's capabilities into the memory concept-page collection (see [Memory Architecture](https://www.mycadet.ai/docs/developer-guide/internals/memory)); those entries represent available skills to the assistant. The legacy `SKILLS.md` index is removed by workspace migration and is no longer created by current install or scaffold paths.
 
@@ -236,8 +236,8 @@ Installed managed skills are discovered from valid directories under `$CADET_WOR
 
 | Tool                     | Risk Level | Description                                                                                                                                         |
 | ------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scaffold_managed_skill` | High       | Write a managed skill to `$CADET_WORKSPACE_DIR/skills/<id>/`. Creates `SKILL.md` with frontmatter, including optional `includes` for child skills. |
-| `delete_managed_skill`   | High       | Remove a managed skill directory.                                                                                                                   |
+| `scaffold_cloud_skill` | High       | Write a cloud skill to `$CADET_WORKSPACE_DIR/skills/<id>/`. Creates `SKILL.md` with frontmatter, including optional `includes` for child skills. |
+| `delete_cloud_skill`   | High       | Remove a cloud skill directory.                                                                                                                   |
 
 Both tools require explicit user approval before execution (Risk Level = High).
 
@@ -265,7 +265,7 @@ When a parent skill is loaded via `skill_load`:
 - Immediate child metadata (ID, name, description, path) is shown in the output.
 - Child skills are **not** automatically activated — the agent must explicitly call `skill_load` for each child it needs.
 
-The `scaffold_managed_skill` tool accepts an optional `includes` array to set this metadata when creating managed skills.
+The `scaffold_cloud_skill` tool accepts an optional `includes` array to set this metadata when creating managed skills.
 
 ### Browser Capabilities
 
@@ -400,7 +400,7 @@ GET /v1/events?conversationId=<id>
 
 | Parameter         | Required | Description                                                                                                                                                                                                                                                        |
 | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for cadet-managed conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
+| `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for cadet-cloud conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
 | `conversationKey` | No       | The external key used by non-cadet channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.     |
 
 **Response**: `200 OK` with `Content-Type: text/event-stream`. Each frame is a standard SSE event:

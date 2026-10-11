@@ -2,10 +2,10 @@
  * Email channel invite adapter.
  *
  * Resolves the assistant's email address for use in invite instructions.
- * The address is a managed inbox registration, which lives on the platform
+ * The address is a cloud inbox registration, which lives on the cloud
  * (nothing about one lands in workspace config), so it resolves through the
  * shared registered-inbox reader. Returns `undefined` when no address is
- * registered or the platform cannot be asked, which causes the invite
+ * registered or the cloud cannot be asked, which causes the invite
  * instruction generator to emit generic "on Email" wording.
  *
  * Email invites use the universal 6-digit code path for redemption, so

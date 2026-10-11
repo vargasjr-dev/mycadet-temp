@@ -141,7 +141,7 @@ class FailingTranscriber implements StreamingTranscriber {
 
 /**
  * Mock managed transcriber whose start() throws a userFacing SttError,
- * mirroring the managed relay's mapped dial rejection.
+ * mirroring the cloud relay's mapped dial rejection.
  */
 class ManagedFailingTranscriber implements StreamingTranscriber {
   readonly providerId = "cadet" as const;
@@ -359,7 +359,7 @@ describe("SttStreamSession", () => {
     test("managed start failure surfaces its remediation verbatim", async () => {
       const { ws, session } = createSession("cadet");
       const managedMessage =
-        "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
+        "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
 
       await session.start(
         async () => new ManagedFailingTranscriber(managedMessage),
@@ -368,7 +368,7 @@ describe("SttStreamSession", () => {
       const frames = ws.frames;
       expect(frames[0].type).toBe("error");
       expect(frames[0].category).toBe("auth");
-      // The managed remediation passes through; the BYOK "check your API key"
+      // The cloud remediation passes through; the BYOK "check your API key"
       // rewrite must not clobber it for a connection-backed provider.
       expect(frames[0].message).toBe(managedMessage);
       expect(frames[0].message as string).not.toContain("API key");

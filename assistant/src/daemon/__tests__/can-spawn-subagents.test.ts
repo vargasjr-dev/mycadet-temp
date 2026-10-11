@@ -129,7 +129,7 @@ describe("an execution-gated wake's allowlist", () => {
           // spawn tool are not, so a spawn is denied at execution.
           subagentAllowedTools: new Set([
             "remember",
-            "scaffold_managed_skill",
+            "scaffold_cloud_skill",
             "skill_load",
             "find_similar_skills",
           ]),

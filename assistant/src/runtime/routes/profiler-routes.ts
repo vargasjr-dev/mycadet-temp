@@ -1,5 +1,5 @@
 /**
- * Route handlers for managed profiler run management.
+ * Route handlers for cloud profiler run management.
  *
  * Control-plane callers (proxied via vembda) can enumerate, inspect, export,
  * and delete completed profiler runs without opening a shell on the assistant

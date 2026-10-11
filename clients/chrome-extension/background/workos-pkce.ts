@@ -135,8 +135,8 @@ export function selectWorkosClientId(
   return entry?.client_id ?? null;
 }
 
-export async function fetchWorkosClientId(platformUrl: string): Promise<string> {
-  const url = `${new URL(platformUrl).origin}/_allauth/app/v1/config`;
+export async function fetchWorkosClientId(cloudUrl: string): Promise<string> {
+  const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/config`;
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) {
     throw new Error(`Failed to fetch auth config (${response.status}).`);
@@ -195,17 +195,17 @@ export async function exchangeCodeWithWorkos(options: {
 export interface SessionExchangeResult {
   /** Platform session token. */
   sessionToken: string;
-  /** The user's email, if the platform returned it. */
+  /** The user's email, if the cloud returned it. */
   email?: string;
 }
 
-/** Exchange the WorkOS access token for a platform session token (+ email if present). */
+/** Exchange the WorkOS access token for a cloud session token (+ email if present). */
 export async function exchangeAccessTokenForSession(
-  platformUrl: string,
+  cloudUrl: string,
   clientId: string,
   accessToken: string,
 ): Promise<SessionExchangeResult> {
-  const url = `${new URL(platformUrl).origin}/_allauth/app/v1/auth/provider/token`;
+  const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/auth/provider/token`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {

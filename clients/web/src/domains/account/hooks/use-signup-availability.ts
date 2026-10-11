@@ -14,13 +14,13 @@ interface SignupAvailabilityOptions {
 }
 
 /**
- * Whether the platform accepts new accounts, read from allauth's config
- * endpoint (`account.is_open_for_signup`, which follows the platform's
+ * Whether the cloud accepts new accounts, read from allauth's config
+ * endpoint (`account.is_open_for_signup`, which follows the cloud's
  * `DJANGO_ACCOUNT_ALLOW_REGISTRATION` setting).
  *
  * Fails open: only a definite `false` closes the sign-up screen. A probe that
  * errors, returns a malformed payload, or stalls past `timeoutMs` leaves the
- * screen in place, and the platform still refuses the registration itself at
+ * screen in place, and the cloud still refuses the registration itself at
  * the end of the OAuth flow.
  */
 export function useSignupAvailability({

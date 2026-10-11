@@ -184,8 +184,7 @@ Examples:
       options: [
         {
           flags: "--print",
-          description:
-            "Print the entry JSON without submitting to the platform",
+          description: "Print the entry JSON without submitting to the cloud",
         },
         {
           flags: "--path <dir>",
@@ -205,7 +204,7 @@ Examples:
 
 Validates the plugin in the current directory (or --path), resolves the
 git commit SHA and GitHub remote, and submits the entry to the Cadet
-platform API. The platform creates a pull request against
+platform API. The cloud creates a pull request against
 vargasjr-dev/mycadet adding the plugin to the marketplace catalog.
 
 Requires a connected Cadet Cloud account (run \`assistant cloud connect\`).

@@ -691,8 +691,8 @@ Write a local article draft.
   });
 
   test("populates the cache from the local catalog on the first seed even when the embedding backend is unavailable (cold-start needle resilience)", async () => {
-    // Regression: on a brand-new managed assistant the startup seed runs before
-    // the platform provisions the managed embedding credential, so the very
+    // Regression: on a brand-new cloud assistant the startup seed runs before
+    // the cloud provisions the cloud embedding credential, so the very
     // first `embedWithBackend` throws. The in-memory cache (which the v3 needle
     // lane and the page index read) must still populate from the local catalog
     // so skills are discoverable from first boot; only the dense Qdrant upsert
@@ -724,7 +724,7 @@ Write a local article draft.
   });
 
   test("surfaces the dense-embed failure to throwOnError callers while still populating the needle cache", async () => {
-    // The managed-credential reseed and the operator reembed route pass
+    // The cloud-credential reseed and the operator reembed route pass
     // `throwOnError` so they learn the dense lane didn't complete and the
     // retry/maintain machinery backfills it — but the needle cache is fixed
     // regardless before the error propagates.

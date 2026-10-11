@@ -34,7 +34,7 @@ export function buildNestedConfig(
 
 /**
  * Ensure hatch always provides enough initial LLM config for the assistant to
- * detect a fresh off-platform hatch and seed BYOK profiles.
+ * detect a fresh off-cloud hatch and seed BYOK profiles.
  *
  * @deprecated Part of the workspace-config overlay path — a CLI→Assistant
  * side channel that bypasses the Assistant's public APIs and has no

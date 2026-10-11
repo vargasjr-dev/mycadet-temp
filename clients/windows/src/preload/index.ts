@@ -18,8 +18,8 @@ contextBridge.exposeInMainWorld("cadet", bridge);
 
 const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
-  platformUrl: string;
-  disablePlatform?: boolean;
+  cloudUrl: string;
+  disableCloud?: boolean;
   deviceId: string | null;
 } | null;
 if (cadetConfig) {

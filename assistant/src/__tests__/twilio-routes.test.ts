@@ -255,7 +255,7 @@ mock.module("../daemon/handlers/config-channels.js", () => ({
   }),
 }));
 
-mock.module("../inbound/platform-callback-registration.js", () => ({
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   registerCallbackRoute: async () => {},
   resolveCallbackUrl: async (resolver: () => string | Promise<string>) =>
     await resolver(),

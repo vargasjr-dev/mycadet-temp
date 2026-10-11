@@ -50,10 +50,10 @@ describe("describeSttFailure", () => {
     });
   });
 
-  describe("managed speech (userFacing marker)", () => {
+  describe("cloud speech (userFacing marker)", () => {
     test("auth failure surfaces the reconnect remediation verbatim", () => {
       const message =
-        "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
+        "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
       const copy = describeSttFailure(
         new SttError("auth", message, { userFacing: true }),
         "cadet",
@@ -77,7 +77,7 @@ describe("describeSttFailure", () => {
     });
 
     test("passthrough does not depend on the provider label", () => {
-      const message = "Managed speech relay error: upstream_error";
+      const message = "Cloud speech relay error: upstream_error";
       const copy = describeSttFailure(
         new SttError("provider-error", message, { userFacing: true }),
         undefined,

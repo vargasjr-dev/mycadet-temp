@@ -367,7 +367,7 @@ export interface SendMessageConfig {
    * True when the caller appended {@link NATIVE_WEB_SEARCH_TOOL_NAME} purely
    * to activate the route's provider-native web search, rather than passing an
    * app-executed search tool of the same name (which is what runs when a
-   * search backend like Brave or the platform search proxy is configured).
+   * search backend like Brave or the cloud search proxy is configured).
    * Only the caller can tell those apart, and a route change after that
    * decision has to: `RetryProvider` drops the tool on a backup that runs no
    * native search, and must not touch it when the daemon executes it itself.
@@ -406,9 +406,9 @@ export interface SendMessageConfig {
    */
   promptCacheKey?: string;
   /**
-   * Internal per-request HTTP headers for managed-proxy usage attribution.
+   * Internal per-request HTTP headers for cloud-proxy usage attribution.
    * Provider clients may pass these through SDK request options only when the
-   * transport is Cadet-managed, and must never include this object in provider
+   * transport is Cadet Cloud, and must never include this object in provider
    * JSON request bodies.
    */
   usageAttributionHeaders?: Record<string, string>;
@@ -578,7 +578,7 @@ export interface ContextOverflowErrorOptions {
  *
  * A regex-on-message fallback still exists in
  * `daemon/parse-actual-tokens-from-error.ts` as a safety net for adapters
- * that rewrap the error (e.g. managed-proxy) before it reaches the agent
+ * that rewrap the error (e.g. cloud-proxy) before it reaches the agent
  * loop.
  */
 export class ContextOverflowError extends ProviderError {

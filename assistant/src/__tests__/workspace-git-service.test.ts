@@ -1073,7 +1073,7 @@ describe("WorkspaceGitService", () => {
         "fixture-keep.md\n",
       );
       // Force-added despite a user-authored .gitignore rule — the untrack
-      // step matches Cadet-managed rules only, so it must stay tracked.
+      // step matches Cadet Cloud rules only, so it must stay tracked.
       writeFileSync(join(testDir, ".gitignore"), "user-secret.md\n");
       writeFileSync(join(testDir, "user-secret.md"), "keep");
       execFileSync("git", ["add", "-A", "-f"], { cwd: testDir });

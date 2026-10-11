@@ -132,7 +132,7 @@ export function getLongContextPricingHint(
 
 /**
  * Returns the localStorage key for a web-search provider's user-supplied
- * API key, or "" for managed providers that don't store a user-supplied key.
+ * API key, or "" for cloud providers that don't store a user-supplied key.
  */
 export function getWebSearchProviderKeyStorage(provider: string): string {
   return WEB_SEARCH_PROVIDER_KEY_STORAGE[provider] ?? "";

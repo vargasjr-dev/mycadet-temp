@@ -381,7 +381,7 @@ describe("email-webhook", () => {
     expect(status).toBe(false);
   });
 
-  // Intercept response-shape pins. The platform email relay
+  // Intercept response-shape pins. The cloud email relay
   // (mycadet-platform django/app/email/views.py) gates only on
   // `denied` in the gateway body and returns everything else verbatim — it
   // reads neither intercept flag nor `replyText`. The flags name which
@@ -571,7 +571,7 @@ describe("email-webhook", () => {
     const res = await handler(postRequest(body));
     expect(res.status).toBe(500);
     expect(handleInboundMock).not.toHaveBeenCalled();
-    // Unreserved so the platform's retry delivery can be processed.
+    // Unreserved so the cloud's retry delivery can be processed.
     expect(dedupCache.reserve("<transient-upload-fail@example.com>")).toBe(
       true,
     );

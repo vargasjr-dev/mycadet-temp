@@ -77,7 +77,7 @@ describe("migrateCreateProviderConnections", () => {
     const { db } = setupDb();
     // `cadet` was not reserved before consolidation, so an install may already
     // have a BYOK connection keyed `cadet`. Seeding must not rewrite it to the
-    // platform-auth sentinel.
+    // cloud-auth sentinel.
     createConnection(db, {
       name: "cadet",
       provider: "anthropic",
@@ -338,7 +338,7 @@ describe("Mix-and-match: two profiles, same provider, different connections", ()
     const { db } = setupDb();
 
     // Two connections for the same provider with distinct auth resolve
-    // independently: one platform-auth, one personal api_key.
+    // independently: one cloud-auth, one personal api_key.
     createConnection(db, {
       name: "anthropic-platform",
       provider: "anthropic",

@@ -15,7 +15,7 @@ import { writeOutput } from "../../output.js";
 
 /**
  * Verify that the user has connected to Cadet Cloud (has stored
- * credentials). Unlike `requirePlatformClient`, this does NOT require a
+ * credentials). Unlike `requireCloudClient`, this does NOT require a
  * platform assistant ID — it only checks that credentials exist.
  *
  * Writes an error and sets exitCode=1 when the user is not connected.
@@ -26,8 +26,8 @@ import { writeOutput } from "../../output.js";
 export async function requirePlatformConnection(
   cmd: Command,
 ): Promise<boolean> {
-  const { CadetPlatformClient } = await import("../../../platform/client.js");
-  const client = await CadetPlatformClient.create();
+  const { CadetCloudClient } = await import("../../../cloud/client.js");
+  const client = await CadetCloudClient.create();
   if (!client) {
     writeOutput(cmd, {
       ok: false,

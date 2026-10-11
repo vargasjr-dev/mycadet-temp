@@ -59,7 +59,7 @@ export function applyCloudIdentityIds(ids: CloudIdentityIds): void {
 /**
  * Trade an assistant API key for the bound platform ids.
  *
- * Returns null when the platform is unreachable, refuses the key, or the
+ * Returns null when the cloud is unreachable, refuses the key, or the
  * body has no ids. Never throws.
  */
 export async function fetchCloudIdentityIds(
@@ -131,7 +131,7 @@ function identityFingerprint(apiKey: string, baseUrl: string): string {
   return `${baseUrl}\0${apiKey}`;
 }
 
-export function _resetPlatformIdentityEnsureForTests(): void {
+export function _resetCloudIdentityEnsureForTests(): void {
   ensureInFlight = null;
   failedFingerprint = null;
   nextEnsureAttemptAt = 0;

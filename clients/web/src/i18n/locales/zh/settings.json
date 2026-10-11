@@ -128,32 +128,6 @@
     "typePreview": "预览",
     "typeScheduled": "计划"
   },
-  "assistantLifecyclePanel": {
-    "allAssistantsSubtitle": "{count, plural, other {# 个助手已找到。}}",
-    "allAssistantsTitle": "所有助手",
-    "assistantId": "助手ID",
-    "created": "创建时间",
-    "current": "当前",
-    "hatch": "孵化",
-    "hatchConfirmMessage": "您确定要创建新助手吗？这将配置新的基础设施。",
-    "hatchConfirmTitle": "孵化新助手",
-    "hatchDescription": "配置新助手。这可能需要一些时间。",
-    "hatchExistingToast": "您已有一个助手。未创建任何新内容。",
-    "hatchFailedToast": "孵化助手失败。",
-    "hatchSubtitle": "创建新的助手实例。",
-    "hatchSuccessToast": "新助手孵化成功。",
-    "hatchTitle": "孵化新助手",
-    "infoEmpty": "未找到助手。孵化一个助手以开始使用。",
-    "infoLoading": "正在加载助手信息...",
-    "infoSubtitle": "当前助手详情。",
-    "infoTitle": "助手信息",
-    "lastModified": "上次修改",
-    "machineId": "机器ID",
-    "name": "名称",
-    "status": "状态",
-    "unnamed": "未命名",
-    "version": "版本"
-  },
   "assistantPicker": {
     "active": "活跃",
     "subtitle": "选择此账户的活跃助手。",
@@ -714,7 +688,6 @@
   "developerPage": {
     "sectionsAriaLabel": "开发者部分",
     "tabFeatureFlags": "功能标志",
-    "tabLifecycle": "助手生命周期",
     "tabMemory": "内存"
   },
   "doctorChatBlocks": {
@@ -1846,7 +1819,7 @@
     "dockerDescriptionLinux": "在此电脑上的 Docker 容器中运行您的助手。",
     "dockerDescriptionMacos": "在此 Mac 上的 Docker 容器中运行您的助手。",
     "dockerDescriptionWindows": "在此电脑上的 Docker 容器中运行您的助手。",
-    "existingPlatformAssistant": "您已有平台助手“{id}”。请先将其退役，然后重试传送。",
+    "existingCloudAssistant": "您已有平台助手“{id}”。请先将其退役，然后重试传送。",
     "exportTimedOut": "导出超时。",
     "importFailed": "导入失败。",
     "importFailedHttp": "导入失败（HTTP {status}）。",

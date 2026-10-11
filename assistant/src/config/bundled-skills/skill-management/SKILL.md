@@ -31,7 +31,7 @@ Do NOT use this skill when the user just wants to run an existing skill. That is
 - **Edit** an existing skill by scaffolding over it (replaces the body and needs `activation_hints` restated; every other frontmatter field you leave out keeps its current value, and an empty value clears one)
 - **Delete** an existing managed skill directory
 
-Skills created via `scaffold_managed_skill` become available for `skill_load` when a valid top-level `SKILL.md` is written under the skill directory.
+Skills created via `scaffold_cloud_skill` become available for `skill_load` when a valid top-level `SKILL.md` is written under the skill directory.
 
 ## Step 1 - Align with the user before building
 
@@ -100,7 +100,7 @@ Each completion criterion must bind a **tool call** to the **user-visible artifa
 ```markdown
 ## SKILL COMPLETE WHEN
 
-- [ ] `scaffold_managed_skill` wrote the SKILL.md and returned its path
+- [ ] `scaffold_cloud_skill` wrote the SKILL.md and returned its path
 - [ ] User confirmed the skill loads via `skill_load`
 - [ ] User saw the trigger phrases that will activate it
 ```
@@ -111,7 +111,7 @@ Each completion criterion must bind a **tool call** to the **user-visible artifa
 
 Past 500 lines the model loses things in the middle. Warnings get buried, branching loses visibility, and the file fights the task for the same context budget. If a skill is growing past 500 lines, split reference material into separate files the skill points to.
 
-Companion files ship through `scaffold_managed_skill`'s `files` input and live inside the skill folder:
+Companion files ship through `scaffold_cloud_skill`'s `files` input and live inside the skill folder:
 
 - **`references/*.md`** for failure modes, gotchas, and cached values the body should point to.
 - **`scripts/*`** for reusable code the procedure runs. Store the exact version that already ran successfully: pass `copy_from` with the tested file's absolute path instead of pasting its contents into `content`, so the bytes that shipped are the bytes that ran. Have the new skill's body invoke it through the baseDir placeholder (the word baseDir in curly braces), which resolves to that skill's folder when it loads. The terminal does not run from the skill folder, so a bare `scripts/...` path would fail. (The placeholder is spelled out here rather than written literally because this very body undergoes the same substitution.)

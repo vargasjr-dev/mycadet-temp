@@ -14,14 +14,14 @@ export const LS_EMAIL_MODE = "cadet:ai:emailMode";
 export const LS_EMAIL_BYO_PROVIDER = "cadet:ai:emailByoProvider";
 /**
  * Prefix, completed with the assistant id: a JSON array of message ids the
- * user deleted from that assistant's inbox on this device. The platform keeps
+ * user deleted from that assistant's inbox on this device. The cloud keeps
  * no delete for a single message, so the inbox hides them here instead.
  */
 export const LS_ASSISTANT_INBOX_DELETED_EMAILS_PREFIX =
   "cadet:ui:assistantInboxDeletedEmails:";
 /**
  * Prefix, completed with the assistant id: a JSON array of message ids the
- * user has opened in that assistant's inbox on this device. The platform
+ * user has opened in that assistant's inbox on this device. The cloud
  * keeps no read state, so the list's unread mark is this device's memory.
  */
 export const LS_ASSISTANT_INBOX_READ_EMAILS_PREFIX =

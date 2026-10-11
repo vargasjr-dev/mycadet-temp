@@ -94,7 +94,7 @@ const storyFetchProvider = async () => ({
   client_id_placeholder: null,
   requires_client_secret: false,
   logo_url: null,
-  supports_managed_mode: true,
+  supports_cloud_mode: true,
   managed_service_is_paid: false,
   feature_flag: null,
   category: "productivity" as const,

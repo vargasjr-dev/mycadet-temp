@@ -26,12 +26,12 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 interface UseAssistantLifecycleOptions {
   sessionStatus: SessionStatus;
-  hasPlatformSession: boolean;
+  hasCloudSession: boolean;
 }
 
 export function useAssistantLifecycle({
   sessionStatus,
-  hasPlatformSession,
+  hasCloudSession,
 }: UseAssistantLifecycleOptions): void {
   const queryClient = useQueryClient();
 
@@ -45,7 +45,7 @@ export function useAssistantLifecycle({
   const shouldQueryServer =
     isAuthenticated(sessionStatus) &&
     !isGatewayAuthMode() &&
-    (hasPlatformSession || !isLocalClient()) &&
+    (hasCloudSession || !isLocalClient()) &&
     isOrgReady;
 
   // Subscribe so the hook re-renders (and the lockfile-local check below
@@ -55,12 +55,12 @@ export function useAssistantLifecycle({
   // is honored (see the flag and org gates in the hook), so the resolution
   // falls back to the default first-listed assistant.
   const resolvedSelectionId = useGatedSelectedAssistantId();
-  // Keep only lockfile-only LOCAL assistants off the platform retrieve path:
-  // they're gateway-based, never registered on the platform, so getAssistant(id)
+  // Keep only lockfile-only LOCAL assistants off the cloud retrieve path:
+  // they're gateway-based, never registered on the cloud, so getAssistant(id)
   // 404s. Managed AND platform self-hosted (API `is_local`) assistants ARE valid
   // there — the lifecycle's projectSelfHosted handles the self-hosted response —
   // and a pre-hydration unknown id passes through for the 404 net.
-  const selectedPlatformAssistantId =
+  const selectedCloudAssistantId =
     resolvedSelectionId &&
     !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
       ? resolvedSelectionId
@@ -68,7 +68,7 @@ export function useAssistantLifecycle({
 
   const { data: assistantResult } = useAssistantQuery({
     enabled: shouldQueryServer,
-    selectedPlatformAssistantId,
+    selectedCloudAssistantId,
   });
 
   // Push inputs into the service and let it react. The service is a
@@ -78,17 +78,17 @@ export function useAssistantLifecycle({
   useEffect(() => {
     lifecycleService.setInputs({
       sessionStatus,
-      hasPlatformSession,
+      hasCloudSession,
       queryClient,
-      selectedPlatformAssistantId,
+      selectedCloudAssistantId,
       isOrgReady,
     });
     void lifecycleService.respondToInputs();
   }, [
     sessionStatus,
-    hasPlatformSession,
+    hasCloudSession,
     queryClient,
-    selectedPlatformAssistantId,
+    selectedCloudAssistantId,
     isOrgReady,
   ]);
 

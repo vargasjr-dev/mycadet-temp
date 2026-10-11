@@ -4,7 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 const authRef = {
   sessionStatus: "authenticated" as const,
   isSessionInitializing: false,
-  hasPlatformSession: true,
+  hasCloudSession: true,
 };
 const resolvedRef = {
   assistants: [
@@ -12,7 +12,7 @@ const resolvedRef = {
       id: "assistant-1",
       name: "Primary",
       isLocal: false,
-      isPlatformHosted: true,
+      isCloudHosted: true,
     },
   ],
   activeAssistantId: "assistant-1" as string | null,
@@ -81,7 +81,7 @@ mock.module("@/stores/auth-store", () => {
   };
   return {
     useAuthStore,
-    useHasPlatformSession: () => authRef.hasPlatformSession,
+    useHasCloudSession: () => authRef.hasCloudSession,
     useIsSessionInitializing: () => authRef.isSessionInitializing,
   };
 });
@@ -156,13 +156,13 @@ const { CommandPaletteWindowPage } =
 beforeEach(() => {
   authRef.sessionStatus = "authenticated";
   authRef.isSessionInitializing = false;
-  authRef.hasPlatformSession = true;
+  authRef.hasCloudSession = true;
   resolvedRef.assistants = [
     {
       id: "assistant-1",
       name: "Primary",
       isLocal: false,
-      isPlatformHosted: true,
+      isCloudHosted: true,
     },
   ];
   resolvedRef.activeAssistantId = "assistant-1";
@@ -188,7 +188,7 @@ describe("CommandPaletteWindowPage", () => {
     expect(useClientFeatureFlagSyncMock).toHaveBeenCalledWith(true);
     expect(useAssistantLifecycleMock).toHaveBeenCalledWith({
       sessionStatus: "authenticated",
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     expect(useConversationListQueryMock).toHaveBeenCalledWith(
       "assistant-1",
@@ -202,13 +202,13 @@ describe("CommandPaletteWindowPage", () => {
         id: "assistant-1",
         name: "Primary",
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
       },
       {
         id: "assistant-2",
         name: "Secondary",
         isLocal: false,
-        isPlatformHosted: true,
+        isCloudHosted: true,
       },
     ];
     resolvedRef.activeAssistantId = null;

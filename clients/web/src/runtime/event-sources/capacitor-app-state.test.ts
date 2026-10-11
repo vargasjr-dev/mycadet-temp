@@ -58,7 +58,7 @@ beforeEach(() => {
   publishSpy.mockClear();
 });
 
-// The platform guard, unsubscribe races, and failure reporting are the
+// The cloud guard, unsubscribe races, and failure reporting are the
 // `subscribeCapacitorListener` contract, covered by
 // `runtime/capacitor-listener.test.ts`. This suite covers only this
 // source's wiring: what it publishes and its error context.

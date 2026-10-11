@@ -62,7 +62,7 @@ export interface ReadEmails {
 }
 
 /**
- * Which messages the user has opened, kept on the device: the platform
+ * Which messages the user has opened, kept on the device: the cloud
  * stores no read state for a message, so the unread mark in the list is
  * this device's memory of what was opened here. A message is read once it
  * has been open in the reading pane; nothing marks one unread again.

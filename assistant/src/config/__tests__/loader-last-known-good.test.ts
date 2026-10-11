@@ -73,13 +73,13 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     invalidateConfigCache();
     _resetLastKnownGoodConfigForTests();
   });
 
   afterEach(() => {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
     if (existsSync(CONFIG_PATH)) {
       rmSync(CONFIG_PATH, { force: true });
     }
@@ -187,16 +187,16 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
     expect(config.tools.exclude).toEqual([]);
   });
 
-  test("recovery on a platform daemon returns the context-filled effective config", () => {
-    process.env.IS_PLATFORM = "true";
+  test("recovery on a cloud daemon returns the context-filled effective config", () => {
+    process.env.IS_CLOUD = "true";
 
     // First load with no config.json seeds the file and fills the
-    // deployment-context managed OAuth service modes in memory; the
+    // deployment-context cloud OAuth service modes in memory; the
     // last-known-good snapshot is refreshed AFTER that fill.
     const seeded = loadConfig();
     expect(seeded.services["outlook-oauth"].mode).toBe("managed");
 
-    // Recovery keeps the last-known-good EFFECTIVE config, so the managed mode
+    // Recovery keeps the last-known-good EFFECTIVE config, so the cloud mode
     // survives rather than reverting to the schema default ("your-own").
     const recovered = _recoverFromInvalidConfigForTests(
       {},

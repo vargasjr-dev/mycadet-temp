@@ -18,7 +18,7 @@ const EMPTY: StickyProfiles = { profiles: {}, profileOrder: [] };
  * Read `llm.profiles` / `llm.profileOrder` from the shared daemon-config query,
  * retaining the last non-empty snapshot.
  *
- * Managed profiles are always daemon-seeded, so an empty profile map is never a
+ * Cloud profiles are always daemon-seeded, so an empty profile map is never a
  * legitimate steady state — it only appears transiently (e.g. a partial config
  * payload written into the shared query cache while the daemon rewrites
  * settings.json). Falling back to the last non-empty list during that window

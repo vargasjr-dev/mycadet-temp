@@ -286,11 +286,11 @@ function sharedInviteRegistrationError(
  * daemon-owned and layered on by each create transport exactly once: the
  * daemon's create relay composes in-process; the gateway HTTP handler
  * composes via the `invites_compose_presentation` daemon IPC.
- * A `cadet-shared` invite is registered with the platform before the row is
+ * A `cadet-shared` invite is registered with the cloud before the row is
  * written (see `registerSharedInvite`).
  *
  * Throws InviteNativeError(404) when the contact is unknown, (400) on invalid
- * voice parameters, (409 / 429 / 502 / 503) when the platform registration
+ * voice parameters, (409 / 429 / 502 / 503) when the cloud registration
  * does not succeed, and (500) when the gateway write fails.
  */
 export async function createInviteNative(

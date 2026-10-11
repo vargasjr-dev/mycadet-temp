@@ -2,12 +2,12 @@
  * Default-plugin route resolution: a first-party default plugin's routes are
  * served in the `/x/plugins/<name>/` namespace from the app source tree
  * (`plugins/defaults/<dir>/routes/`), where `<name>` is `default-<dir>` (e.g.
- * `default-platform-hosted`) — the same `default-…` name its `.disabled`
+ * `default-cloud-hosted`) — the same `default-…` name its `.disabled`
  * sentinel is keyed by — not its bare directory name. An installed workspace
  * plugin of the same name overrides the default.
  *
- * These tests exercise the real `platform-hosted` default plugin (namespace
- * `default-platform-hosted`), which ships `routes/reengage.ts`, a POST-only
+ * These tests exercise the real `cloud-hosted` default plugin (namespace
+ * `default-cloud-hosted`), which ships `routes/reengage.ts`, a POST-only
  * handler. A GET reaches the resolved source file and 405s — proving
  * resolution + source-tree module load without running the handler's heavy
  * background-turn logic.
@@ -37,7 +37,7 @@ import {
 } from "../user-route-resolution.js";
 
 /** The default plugin's source directory name. */
-const DEFAULT_PLUGIN_DIR = "platform-hosted";
+const DEFAULT_PLUGIN_DIR = "cloud-hosted";
 /** Its route namespace = `default-<dir>` by convention. */
 const DEFAULT_PLUGIN = `default-${DEFAULT_PLUGIN_DIR}`;
 
@@ -86,7 +86,7 @@ describe("default plugin route source resolution", () => {
     expect(getDefaultPluginRoutesDir("default-../util")).toBeNull();
   });
 
-  test("getDefaultPluginRouteRoots includes the platform-hosted plugin under its manifest name", () => {
+  test("getDefaultPluginRouteRoots includes the cloud-hosted plugin under its manifest name", () => {
     const roots = getDefaultPluginRouteRoots();
     const entry = roots.find((r) => r.pluginName === DEFAULT_PLUGIN);
     expect(entry).toBeDefined();

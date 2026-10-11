@@ -664,7 +664,7 @@ describe("HMAC URL and form payloads", () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it("verifies against the platform-injected URL first", () => {
+  it("verifies against the cloud-injected URL first", () => {
     const injected =
       "https://test-cloud.mycadet.ai.test/v1/gateway/callbacks/abc123";
     const result = verify(

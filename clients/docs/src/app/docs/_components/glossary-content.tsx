@@ -100,12 +100,12 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
           dependency on Cadet.
         </span>
         <span className="block">
-          The exception is the platform &ndash; the multi-tenant infrastructure
+          The exception is the cloud &ndash; the multi-tenant infrastructure
           that hosts assistants for guardians who don&apos;t want to run their
           own. Billing, tenancy isolation, secrets management, support tooling,
-          the operational surface around managed hosting: this is the
+          the operational surface around cloud hosting: this is the
           convenience layer Cadet builds and operates as a business. You rent
-          the platform. You own the assistant.
+          the cloud. You own the assistant.
         </span>
       </>
     ),
@@ -123,7 +123,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Platform",
     definition:
-      "Cadet’s managed infrastructure that hosts and runs assistants. The platform is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the platform, and are committed to always supporting self-hosting. Never use “platform” to describe the assistant.",
+      "Cadet’s managed infrastructure that hosts and runs assistants. The cloud is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the cloud, and are committed to always supporting self-hosting. Never use “platform” to describe the assistant.",
   },
   {
     term: "Schedule",
@@ -148,7 +148,7 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     term: "Teleport",
     definition:
-      "Moving an assistant from one home to another. For example, migrating from the Cadet managed platform to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant’s identity, memory, and relationships should survive the move intact.",
+      "Moving an assistant from one home to another. For example, migrating from the Cadet Cloud platform to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant’s identity, memory, and relationships should survive the move intact.",
   },
   {
     term: "Trust Rules",

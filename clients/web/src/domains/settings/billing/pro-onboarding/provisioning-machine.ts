@@ -1,7 +1,7 @@
 /**
  * Pure state machine for the post-checkout provisioning screen.
  *
- * The platform auto-resizes the assistant machine/storage from the Stripe
+ * The cloud auto-resizes the assistant machine/storage from the Stripe
  * subscribe webhook, so the client only *observes*: first that the
  * subscription flipped to Pro (CONFIRMING), then that the assistant's actual
  * machine size / provisioned storage caught up to the purchased targets
@@ -112,7 +112,7 @@ export function deriveProvisioningState(
   const operationObserved = sawOperation || resizeOperationInFlight;
 
   // A *currently observed* resize dominates every terminal state, because the
-  // actuals go high before the machine is usable: the platform persists the
+  // actuals go high before the machine is usable: the cloud persists the
   // effective machine_size / provisioned_storage_gib in the same call that
   // leaves the operation marker WAITING_FOR_PVC/WAITING_FOR_READY, so targets
   // read as met from the moment the resize is accepted while the pod is still
@@ -127,7 +127,7 @@ export function deriveProvisioningState(
   // for completion: the assistant and operational-status queries poll
   // independently, so the assistant poll can land the target sizes while the
   // status query still holds its pre-resize snapshot — a window in which
-  // nothing has reported the marker even though the platform created it (it
+  // nothing has reported the marker even though the cloud created it (it
   // creates the marker *before* it writes the effective sizes).
   //
   // The verdict itself cannot be the anchor: `started` only means the resize
@@ -136,7 +136,7 @@ export function deriveProvisioningState(
   // read taken right after either verdict can still be the pre-marker
   // snapshot.
   //
-  // What does hold is the platform's write order — `resize_assistant` creates
+  // What does hold is the cloud's write order — `resize_assistant` creates
   // the marker BEFORE it persists the effective sizes. So an actuals read that
   // shows the targets met necessarily happened after the marker existed, and
   // any status reading taken after *that* either finds the marker (still

@@ -10,7 +10,7 @@
  *   - In `CADET_DEV` mode, when `<repo>/skills/<id>/` exists on disk, we
  *     read the skill files directly from the repo checkout (matching the
  *     behavior of `getCatalog()` in dev).
- *   - Otherwise, we call the platform preview endpoints:
+ *   - Otherwise, we call the cloud preview endpoints:
  *       GET /v1/skills/{skill_id}/files/
  *       GET /v1/skills/{skill_id}/files/content/?path=...
  *
@@ -69,9 +69,9 @@ export type { SkillFileEntry } from "./skill-file-types.js";
 
 // ─── Platform response contracts ─────────────────────────────────────────────
 //
-// The platform preview API uses snake_case on the wire. We map to the
+// The cloud preview API uses snake_case on the wire. We map to the
 // daemon's camelCase shape inside this module so nothing downstream needs to
-// know about the platform contract.
+// know about the cloud contract.
 
 interface PlatformFileListResponse {
   skill_id: string;
@@ -101,7 +101,7 @@ interface PlatformFileContentResponse {
  *   - Reject paths that escape the root (normalized result equals `..` or
  *     begins with `../`).
  *
- * The platform also validates these server-side; client-side sanitization is
+ * The cloud also validates these server-side; client-side sanitization is
  * defense in depth and short-circuits obvious bad requests before a network
  * round trip.
  */
@@ -164,7 +164,7 @@ type CatalogSource =
 /**
  * Resolve where to read files for a given catalog skill id. Performs NO
  * network calls — network requests happen only inside `readCatalogSkillFiles`
- * and `readCatalogSkillFileContent` on the platform path.
+ * and `readCatalogSkillFileContent` on the cloud path.
  *
  * Dev-mode safety: when a `<repoSkillsDir>/<skillId>` entry exists on disk,
  * we verify that the skill root is a real directory physically located
@@ -246,7 +246,7 @@ function isSafeDevSkillRoot(candidate: string, repoSkillsDir: string): boolean {
 // ─── Platform fetch helper ───────────────────────────────────────────────────
 
 /**
- * Fetch JSON from the platform preview API. Returns `null` on any failure
+ * Fetch JSON from the cloud preview API. Returns `null` on any failure
  * (non-2xx, network error, abort). The query string is stripped from log
  * messages to avoid leaking user-supplied file paths.
  */

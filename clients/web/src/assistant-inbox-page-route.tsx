@@ -69,7 +69,7 @@ function InboxLoading({ label }: { label: string }) {
 
 interface MailboxProps {
   assistantId: string;
-  platformAssistantId: string;
+  cloudAssistantId: string;
   assistantName: string;
   address: string;
   addressId: string;
@@ -82,7 +82,7 @@ interface MailboxProps {
 /** The mailbox with its reads attached; split out so its hooks run only in the ready state. */
 function Mailbox({
   assistantId,
-  platformAssistantId,
+  cloudAssistantId,
   assistantName,
   address,
   addressId,
@@ -92,7 +92,7 @@ function Mailbox({
 }: MailboxProps) {
   const { t } = useTranslation("assistant-inbox");
   const navigate = useNavigate();
-  const mail = useInboxMail(assistantId, platformAssistantId, addressId);
+  const mail = useInboxMail(assistantId, cloudAssistantId, addressId);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { deletedIds, deleteEmails } = useDeletedEmails(assistantId);
   const { readIds, markRead } = useReadEmails(assistantId);
@@ -200,7 +200,7 @@ function Mailbox({
       <EmailSettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        assistantId={platformAssistantId}
+        assistantId={cloudAssistantId}
         localAssistantId={assistantId}
         assistantName={assistantName}
         assistantHandle={handle}
@@ -275,14 +275,14 @@ export function AssistantInboxPageRoute() {
 
   /* An advisory probe of a handle typed into the setup card, through the
      same endpoint the profile card's handle editor uses. */
-  const platformAssistantId = state.platformAssistantId;
+  const cloudAssistantId = state.cloudAssistantId;
   const checkHandle = useCallback(
     async (handle: string, signal: AbortSignal): Promise<HandleCheckResult> => {
-      if (!platformAssistantId) {
+      if (!cloudAssistantId) {
         return { available: true };
       }
       const result = await checkAssistantHandleAvailable(
-        platformAssistantId,
+        cloudAssistantId,
         handle,
         signal,
       );
@@ -297,15 +297,15 @@ export function AssistantInboxPageRoute() {
           t("assistantInboxRoute.setupFailed"),
       };
     },
-    [platformAssistantId, t],
+    [cloudAssistantId, t],
   );
 
   const confirmSetup = useCallback(
     async ({ prefix, handle }: { prefix: string; handle: string }) => {
-      if (!state.platformAssistantId) {
+      if (!state.cloudAssistantId) {
         return;
       }
-      const path = { assistant_id: state.platformAssistantId };
+      const path = { assistant_id: state.cloudAssistantId };
       setSettling(true);
       setSetupError(null);
       try {
@@ -328,7 +328,7 @@ export function AssistantInboxPageRoute() {
             queryKey: assistantsListQueryKey(),
           });
           // The subdomain is claimed even when the address on it could not
-          // be made: the platform reports that as a field on the success,
+          // be made: the cloud reports that as a field on the success,
           // not as a failure, so it is read here and treated as one.
           const emailError = readDomainEmailError(created);
           if (emailError) {
@@ -433,7 +433,7 @@ export function AssistantInboxPageRoute() {
       return (
         <Mailbox
           assistantId={assistantId}
-          platformAssistantId={state.platformAssistantId ?? ""}
+          cloudAssistantId={state.cloudAssistantId ?? ""}
           assistantName={state.assistantName}
           address={state.address ?? ""}
           addressId={state.addressId ?? ""}

@@ -177,7 +177,7 @@ function resolveDiscoveredPluginIngress(
  *
  * Approval is the general gate, with one exception: a route declaring
  * `signer: "cadet"` is served without it. Such a route only opens to a
- * caller holding the platform's own webhook secret, which is to say us, and
+ * caller holding the cloud's own webhook secret, which is to say us, and
  * the user extended that trust when they connected their account, so asking
  * them to approve it again buys nothing. A route signed by anyone else still
  * needs a guardian decision, because approval is what establishes who that

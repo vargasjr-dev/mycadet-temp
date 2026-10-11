@@ -19,8 +19,8 @@ export async function checkManagedHealth(
   runtimeUrl: string,
   assistantId: string,
 ): Promise<HealthCheckResult> {
-  const { readPlatformToken } = await import("./platform-client.js");
-  const token = readPlatformToken();
+  const { readCloudToken } = await import("./cloud-client.js");
+  const token = readCloudToken();
   if (!token) {
     return {
       status: "error (auth)",
@@ -30,7 +30,7 @@ export async function checkManagedHealth(
 
   let headers: Record<string, string>;
   try {
-    const { authHeaders } = await import("./platform-client.js");
+    const { authHeaders } = await import("./cloud-client.js");
     headers = await authHeaders(token, runtimeUrl);
   } catch (err) {
     return {
@@ -130,9 +130,9 @@ export async function fetchManagedPs(
   runtimeUrl: string,
   assistantId: string,
 ): Promise<ManagedPsResponse | null> {
-  const { readPlatformToken, authHeaders } =
-    await import("./platform-client.js");
-  const token = readPlatformToken();
+  const { readCloudToken, authHeaders } =
+    await import("./cloud-client.js");
+  const token = readCloudToken();
   if (!token) return null;
 
   let headers: Record<string, string>;

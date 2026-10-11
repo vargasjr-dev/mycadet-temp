@@ -1,5 +1,5 @@
 /**
- * The platform relays an email provider's refusal verbatim inside its own
+ * The cloud relays an email provider's refusal verbatim inside its own
  * sentence, e.g. `Failed to provision email domain: {"statusCode":403,
  * "message":"You have reached the domain limit of your plan.","name":
  * "validation_error"}`. The user should read the provider's sentence, not
@@ -28,7 +28,7 @@ export function readableSetupError(detail: string): string {
 }
 
 /**
- * The platform's `POST …/domains/` claims the subdomain, then registers the
+ * The cloud's `POST …/domains/` claims the subdomain, then registers the
  * address on it as a best effort: an address that could not be created
  * comes back as `email_error` on an otherwise successful response, which
  * the generated type does not carry.

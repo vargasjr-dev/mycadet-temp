@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { stripManagedProfileBodiesMigration } from "../workspace/migrations/126-strip-managed-profile-bodies.js";
+import { stripCloudProfileBodiesMigration } from "../workspace/migrations/126-strip-managed-profile-bodies.js";
 
 let workspaceDir: string;
 
@@ -74,7 +74,7 @@ describe("126-strip-managed-profile-bodies", () => {
       },
     });
 
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
 
     const profiles = (readConfig().llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
@@ -110,7 +110,7 @@ describe("126-strip-managed-profile-bodies", () => {
       },
     });
 
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
 
     const profiles = (readConfig().llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
@@ -136,7 +136,7 @@ describe("126-strip-managed-profile-bodies", () => {
       },
     });
 
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
 
     const profiles = (readConfig().llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
@@ -146,7 +146,7 @@ describe("126-strip-managed-profile-bodies", () => {
     });
   });
 
-  test("strips a managed os-beta body to a stub", () => {
+  test("strips a cloud os-beta body to a stub", () => {
     writeConfig({
       llm: {
         profiles: {
@@ -161,7 +161,7 @@ describe("126-strip-managed-profile-bodies", () => {
       },
     });
 
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
 
     const profiles = (readConfig().llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
@@ -173,7 +173,7 @@ describe("126-strip-managed-profile-bodies", () => {
   });
 
   test("is idempotent and no-ops on already-thin stubs and missing config", () => {
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
     expect(existsSync(join(workspaceDir, "config.json"))).toBe(false);
 
     writeConfig({
@@ -183,9 +183,9 @@ describe("126-strip-managed-profile-bodies", () => {
         },
       },
     });
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
     const first = readFileSync(join(workspaceDir, "config.json"), "utf-8");
-    stripManagedProfileBodiesMigration.run(workspaceDir);
+    stripCloudProfileBodiesMigration.run(workspaceDir);
     const second = readFileSync(join(workspaceDir, "config.json"), "utf-8");
     expect(second).toBe(first);
   });

@@ -334,7 +334,7 @@ describe("SpeechToTextCard — Cadet provider", () => {
       'button[role="combobox"][aria-label="STT provider"]',
     );
     expect(trigger?.textContent).toContain("Cadet");
-    // Cadet authenticates via the platform connection — there is no key.
+    // Cadet authenticates via the cloud connection — there is no key.
     expect(screen.queryByText("API Key")).toBeNull();
     expect(
       screen.getByText(/Transcription runs through your Cadet account/),
@@ -350,7 +350,7 @@ describe("SpeechToTextCard — Cadet provider", () => {
 
     await waitFor(() => expect(configPatchCalls.length).toBe(1));
     // Written as a pair so the save stays valid on daemons whose schema
-    // still couples the managed provider to mode "managed".
+    // still couples the cloud provider to mode "managed".
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: { stt: { provider: "cadet", mode: "managed" } },
     });

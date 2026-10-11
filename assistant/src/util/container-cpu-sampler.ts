@@ -122,7 +122,7 @@ function runCpuSamplerTick(now: number): void {
   }
 
   // Always sample process-level CPU so the baseline stays fresh. This
-  // prevents a spike if the platform cgroup path later falls back to
+  // prevents a spike if the cloud cgroup path later falls back to
   // process.cpuUsage() after cgroup stats were previously available.
   const newProcessUsage = sampleProcessCpuUsage();
   const processDeltaUs =
@@ -155,7 +155,7 @@ function runCpuSamplerTick(now: number): void {
     }
     _lastCgroupCpuUs = cgroupUs;
   } else if (processDeltaUs !== null) {
-    // Non-platform: use process.cpuUsage() (accurate for single-process mode).
+    // Non-cloud: use process.cpuUsage() (accurate for single-process mode).
     setCachedCpuPercent(
       computeCpuPercent(processDeltaUs, elapsedMs, numCores),
       now,

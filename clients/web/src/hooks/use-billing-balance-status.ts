@@ -5,9 +5,9 @@ import { useByokCreditRouteVerdict } from "@/hooks/use-byok-credit-banner-gate";
 import { hasExtraCredit } from "@/hooks/use-plan-usage-balance";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 
 export interface BillingBalanceStatus {
   /** Effective balance is at or below zero: the org is out of credits. */
@@ -107,16 +107,16 @@ const INERT_STATUS: Omit<BillingBalanceStatus, "enabled" | "settled"> = {
 
 /**
  * Whether the org-scoped billing summary query may fire: the active assistant
- * must be positively resolved as platform-hosted with a live platform session,
+ * must be positively resolved as cloud-hosted with a live platform session,
  * and the org store must be ready to supply the `Cadet-Organization-Id`
  * header. Shared by {@link useBillingBalanceStatus} and the turn-end billing
  * invalidation in `use-conversation-history` so the two gates never drift.
  */
 export function useBillingBalanceQueryEnabled(): boolean {
-  const billingPlatformGate = usePlatformGate({ platformHostedOnly: true });
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const billingCloudGate = useCloudGate({ cloudHostedOnly: true });
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const isOrgReady = useIsOrgReady();
-  return billingPlatformGate === "full" && isPlatformHosted && isOrgReady;
+  return billingCloudGate === "full" && isCloudHosted && isOrgReady;
 }
 
 /**
@@ -137,7 +137,7 @@ export function useBillingBalanceQueryEnabled(): boolean {
  * The balance flags additionally stay down when the effective chat route is
  * provably BYOK and no managed credits were burned in the last day (see
  * {@link useByokCreditRouteVerdict}): chat turns that dispatch on the
- * user's own key never fail on the managed wallet, so the credit wall would
+ * user's own key never fail on the cloud wallet, so the credit wall would
  * be a false alarm. Chat surfaces pass their active `conversationId` so a
  * managed per-conversation profile pin keeps the banners up over a BYOK
  * global default; client-minted drafts (no server row) pass the

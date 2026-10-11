@@ -336,10 +336,10 @@ describe("inspectPlugin", () => {
   });
 
   test("previews an uninstalled bundled provider offline without fetching GitHub", async () => {
-    const savedDisablePlatform = process.env.CADET_DISABLE_PLATFORM;
-    const savedIsPlatform = process.env.IS_PLATFORM;
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    const savedDisablePlatform = process.env.CADET_DISABLE_CLOUD;
+    const savedIsPlatform = process.env.IS_CLOUD;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
     let fetchCalls = 0;
     const fetch = (async () => {
       fetchCalls += 1;
@@ -376,14 +376,14 @@ describe("inspectPlugin", () => {
       expect(fetchCalls).toBe(0);
     } finally {
       if (savedDisablePlatform === undefined) {
-        delete process.env.CADET_DISABLE_PLATFORM;
+        delete process.env.CADET_DISABLE_CLOUD;
       } else {
-        process.env.CADET_DISABLE_PLATFORM = savedDisablePlatform;
+        process.env.CADET_DISABLE_CLOUD = savedDisablePlatform;
       }
       if (savedIsPlatform === undefined) {
-        delete process.env.IS_PLATFORM;
+        delete process.env.IS_CLOUD;
       } else {
-        process.env.IS_PLATFORM = savedIsPlatform;
+        process.env.IS_CLOUD = savedIsPlatform;
       }
     }
   });

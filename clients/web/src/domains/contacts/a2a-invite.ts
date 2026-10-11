@@ -8,7 +8,7 @@ export interface A2AInviteParams {
 /**
  * Build a shareable A2A invite link that routes to the connect page.
  * The link includes `senderAssistantId` and `token` so the recipient
- * can redeem the invite via the platform broker.
+ * can redeem the invite via the cloud broker.
  */
 export function buildA2AInviteLink(params: A2AInviteParams): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "";

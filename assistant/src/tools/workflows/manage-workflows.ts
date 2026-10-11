@@ -200,7 +200,7 @@ export async function executeManageWorkflows(
       // valid `profile` for `run_workflow` (an unknown profile throws).
       const { llm } = loadConfig();
       // A workflow leaf runs chat turns, so this is the conversation view,
-      // which leaves out the managed Jev profile.
+      // which leaves out the cloud Jev profile.
       const profiles = getConversationProfilesForProvider(llm);
       return {
         content: JSON.stringify({

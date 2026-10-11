@@ -81,7 +81,7 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
     // Non-exact matches and malformed leaves are untouched.
     expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
     expect(llm.callSites.malformed).toBe(STALE);
-    // Managed profiles stamped provider "cadet" carry Fireworks model IDs.
+    // Cloud profiles stamped provider "cadet" carry Fireworks model IDs.
     expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
     expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
   });

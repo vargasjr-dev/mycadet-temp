@@ -39,11 +39,11 @@ import { handle } from "./ipc";
 import { dispatchToMain } from "./main-window";
 
 interface MenuState {
-  hasPlatformSession: boolean;
+  hasCloudSession: boolean;
 }
 
 const state: MenuState = {
-  hasPlatformSession: false,
+  hasCloudSession: false,
 };
 
 // Null until the first detection completes; the menu shows the Install item
@@ -176,7 +176,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         ...(cliItems.length > 0 ? [{ type: "separator" as const }] : []),
         { role: "services" },
         { type: "separator" },
-        state.hasPlatformSession
+        state.hasCloudSession
           ? {
               label: "Log Out",
               click: () => dispatchMenuCommand({ kind: "logout" }),
@@ -336,9 +336,9 @@ export const installApplicationMenu = (): void => {
   if (installed) return;
   installed = true;
 
-  handle("cadet:menu:setPlatformSession", z.tuple([z.boolean()]), ([has]) => {
-    if (state.hasPlatformSession === has) return;
-    state.hasPlatformSession = has;
+  handle("cadet:menu:setCloudSession", z.tuple([z.boolean()]), ([has]) => {
+    if (state.hasCloudSession === has) return;
+    state.hasCloudSession = has;
     applyMenu();
   });
 

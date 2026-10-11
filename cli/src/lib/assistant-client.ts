@@ -14,10 +14,10 @@
  * The auth scheme follows the assistant's topology, so callers never pick it.
  * Platform-managed entries in particular have no local guardian token: they
  * authenticate against the wildcard runtime proxy at
- * `{platformUrl}/v1/assistants/<id>/<rest>` with the stored cloud credential.
+ * `{cloudUrl}/v1/assistants/<id>/<rest>` with the stored cloud credential.
  */
 
-import { isManagedCloud } from "./managed-cloud.js";
+import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
 import { GATEWAY_PORT } from "./constants.js";
 import {
@@ -29,8 +29,8 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 import {
   authHeaders,
   invalidateOrgIdCache,
-  readPlatformToken,
-} from "./platform-client.js";
+  readCloudToken,
+} from "./cloud-client.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const FALLBACK_RUNTIME_URL = `http://127.0.0.1:${GATEWAY_PORT}`;
@@ -54,7 +54,7 @@ export interface AssistantClientOpts {
    * sent as `X-Session-Token: <sessionToken>` and the org id is
    * sent via the `Cadet-Organization-Id` header.
    *
-   * Platform-managed assistants do NOT need this: they are detected from the
+   * Cloud assistants do NOT need this: they are detected from the
    * lockfile entry and authenticated from the stored platform token.
    */
   sessionToken?: string;
@@ -75,7 +75,7 @@ export class AssistantClient {
   private readonly _assistantId: string;
   /**
    * The credential for the current mode. Mutable: a 401 on the guardian path
-   * refreshes it in place (see request), and the platform path fills it in on
+   * refreshes it in place (see request), and the cloud path fills it in on
    * first use (see resolveAuthHeaders).
    */
   private token: string | undefined;
@@ -103,7 +103,7 @@ export class AssistantClient {
     }
 
     this._assistantId = entry.assistantId;
-    const platformManaged = !opts?.sessionToken && isManagedCloud(entry.cloud);
+    const platformManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
     const platformHost = stripTrailingSlashes(entry.runtimeUrl);
 
     // SECURITY: a cloud credential is account-scoped, far broader than the
@@ -155,7 +155,7 @@ export class AssistantClient {
    * error rather than letting an anonymous request fall through to a bare 403.
    */
   private requirePlatformToken(): string {
-    const token = readPlatformToken();
+    const token = readCloudToken();
     if (!token) {
       throw new Error(
         "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",

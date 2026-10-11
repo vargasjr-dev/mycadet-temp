@@ -61,7 +61,7 @@ function retryOptions(adapter: unknown): RetryOptions {
 }
 
 describe("adapter factory", () => {
-  // Hermetic credential store: without this, the managed-proxy tests read
+  // Hermetic credential store: without this, the cloud-proxy tests read
   // whatever ambient backend the host has, and a stray assistant API key
   // flips the refresh-declines expectations.
   setSecureKeyBackendForTesting(memorySecureKeyBackend({}));
@@ -260,7 +260,7 @@ describe("adapter factory", () => {
     });
   });
 
-  test("wires managed connections to reload rotated assistant credentials", () => {
+  test("wires cloud connections to reload rotated assistant credentials", () => {
     const connection: ProviderConnection = {
       name: "cadet",
       provider: "cadet",
@@ -286,7 +286,7 @@ describe("adapter factory", () => {
     expect(adapter).not.toBeNull();
     const options = retryOptions(adapter);
     expect(options).toMatchObject({
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       connectionName: "cadet",
     });
     expect(typeof options.refreshCredentialProvider).toBe("function");

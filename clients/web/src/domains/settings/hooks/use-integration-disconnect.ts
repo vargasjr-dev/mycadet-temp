@@ -16,8 +16,8 @@ import { isMcpMethodKind, type ConnectionSummary } from "../connect-plan";
 export interface UseIntegrationDisconnectOptions {
   /** The assistant the plugins belong to. */
   assistantId: string;
-  /** The platform assistant the managed connections belong to. */
-  platformAssistantId: string | null;
+  /** The cloud assistant the cloud connections belong to. */
+  cloudAssistantId: string | null;
   /**
    * Ends a sign-in the removal would strand. It is handed the whole row
    * rather than one server id, because uninstalling a plugin takes every
@@ -37,7 +37,7 @@ export interface UseIntegrationDisconnectOptions {
 /**
  * Taking one connection away, whichever kind it is.
  *
- * A managed account is revoked at the platform; an MCP server a plugin owns
+ * A managed account is revoked at the cloud; an MCP server a plugin owns
  * goes with the plugin, because the plugin is what declared it and leaving it
  * installed would put the server straight back. The caller passes the
  * integration's display name along with the row, since the toast names the
@@ -45,7 +45,7 @@ export interface UseIntegrationDisconnectOptions {
  */
 export function useIntegrationDisconnect({
   assistantId,
-  platformAssistantId,
+  cloudAssistantId,
   onStopAuth,
   onRemoveServer,
   onPluginRemoved,
@@ -70,7 +70,7 @@ export function useIntegrationDisconnect({
   });
 
   const connectionsOpts = {
-    path: { assistant_id: platformAssistantId ?? "" },
+    path: { assistant_id: cloudAssistantId ?? "" },
   };
   const disconnectAccount =
     useAssistantsOauthDisconnectByConnectionCreateMutation({
@@ -125,12 +125,12 @@ export function useIntegrationDisconnect({
         }
         return;
       }
-      if (!connection.accountId || !platformAssistantId) {
+      if (!connection.accountId || !cloudAssistantId) {
         return;
       }
       mutateAccount({
         path: {
-          assistant_id: platformAssistantId,
+          assistant_id: cloudAssistantId,
           connection_id: connection.accountId,
         },
       });
@@ -140,7 +140,7 @@ export function useIntegrationDisconnect({
       mutateAccount,
       onRemoveServer,
       onStopAuth,
-      platformAssistantId,
+      cloudAssistantId,
       removePlugin,
     ],
   );

@@ -1018,7 +1018,7 @@ export function registerDeclaredCredentialKeyPatterns(
  *
  * `disable` and `reload` keep the directory present, so {@link runShutdownHook}
  * resolves and runs the on-disk `shutdown` (via the same resolution the dispatch
- * path uses). `uninstall` runs nothing here: a managed uninstall runs `shutdown`
+ * path uses). `uninstall` runs nothing here: a cloud uninstall runs `shutdown`
  * *before* removing the directory (see `cli/lib/uninstall-plugin.ts`), and an
  * out-of-band `rm` leaves nothing to resolve.
  */

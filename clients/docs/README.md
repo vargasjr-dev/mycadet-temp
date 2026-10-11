@@ -49,7 +49,7 @@ agent-facing markdown mirrors, then `next build` produces a standalone server.
 - `src/app/docs/api/search/`: the lexical search API; `src/lib/docs/search/` is the ranking library
 - `src/lib/`: metadata/canonical helpers, URL registry, releases fetcher, route discovery
 - `src/proxy.ts`: page_view attribution middleware (visitor cookie, UTM capture)
-- `scripts/`: build-time generators, the parity script, and the platform route snapshot
+- `scripts/`: build-time generators, the parity script, and the cloud route snapshot
 - `public/docs/`: static assets, served under `/docs/`
 
 See [`AGENTS.md`](./AGENTS.md) for authoring conventions and the URL, theme,

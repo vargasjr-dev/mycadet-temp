@@ -54,7 +54,7 @@ import { useSttLanguageSelection } from "@/components/speech/use-stt-language-se
  * `services.stt.provider` value (the card id and daemon id differ for
  * Whisper), and `credentialService` is the CES namespace for its key.
  * Client-only providers (macOS native dictation) are absent — they never
- * touch the daemon. `cadet` authenticates via the platform connection, so
+ * touch the daemon. `cadet` authenticates via the cloud connection, so
  * it has no credential service of its own.
  */
 const STT_DAEMON_PROVIDER: Record<
@@ -82,7 +82,7 @@ const CARD_ID_BY_DAEMON_PROVIDER: Record<string, string> = {
  * Fallback provider, as both a card id and a daemon id. Mirrors the daemon's
  * `services.stt.provider` schema default. Deliberately not `providers[0]` —
  * the dropdown leads with Cadet, and an unconfigured client must not claim
- * the managed provider on its own.
+ * the cloud provider on its own.
  */
 const DEFAULT_PROVIDER_ID = "deepgram";
 

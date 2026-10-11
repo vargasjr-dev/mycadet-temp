@@ -120,12 +120,12 @@ import { type LogRow } from "../../persistence/llm-request-log-store.js";
 import { getMemoryRecallLogByMessageIds } from "../../plugins/defaults/memory/memory-recall-log-store.js";
 import { getMemoryV2ActivationLogByMessageIds } from "../../plugins/defaults/memory/v2/activation-log-store.js";
 import { getMemoryV3SelectionForInspectorByMessageIds } from "../../plugins/defaults/memory/v3/selection-log-store.js";
-import { MANAGED_ROUTABLE_PROVIDERS } from "../../providers/cadet-model-routing.js";
+import { CLOUD_ROUTABLE_PROVIDERS } from "../../providers/cadet-model-routing.js";
 import { writableProfileProviderIssue } from "../../providers/connection-resolution.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../../providers/inference/auth.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
+  CADET_CLOUD_CONNECTION_NAME,
   createConnection,
   getConnection,
   LEGACY_MANAGED_CONNECTION_NAMES,
@@ -773,6 +773,21 @@ const ConfigPatchRequestSchema = z
   .passthrough()
   .meta({ id: "ConfigPatchRequest" });
 
+/**
+ * The response contract for `GET`/`PATCH /v1/config` — the five subtrees
+ * external clients actually read, picked out of the full graph. Rendering
+ * the whole `AssistantConfigSchema` into the spec blasted openapi.yaml past
+ * 12K lines; we're not ready to trim the response schema itself yet, so the
+ * runtime still returns the full config and the spec documents these.
+ */
+const ConfigGetResponseSchema = AssistantConfigSchema.pick({
+  conversations: true,
+  notifications: true,
+  llm: true,
+  memory: true,
+  services: true,
+});
+
 function handleGetConfig() {
   try {
     const config = loadConfig();
@@ -811,7 +826,7 @@ function overlayChatSettingsForWire(config: AssistantConfig): void {
  * render labels/models — so the wire view materializes them, resolved through
  * `llm.default`'s column of the intent × provider matrix so a BYO
  * install sees the provider/model that actually dispatches. Wire-only:
- * `normalizeManagedProfileWrites` reduces echoed bodies back to the
+ * `normalizeCloudProfileWrites` reduces echoed bodies back to the
  * workspace-owned fields on the write paths, so a `config get` →
  * `config set` round-trip never persists catalog content — the two must
  * resolve through the same column or honest round-trips are rejected.
@@ -882,7 +897,7 @@ function stripWireOnlyProfileKeys(patch: unknown): void {
  * `handleSetConfig`'s `raw` write, which shares object references with the
  * inspected patch shape.
  */
-export function normalizeManagedProfileWrites(patch: unknown): void {
+export function normalizeCloudProfileWrites(patch: unknown): void {
   const root = readPlainObject(patch);
   const llm = readPlainObject(root?.llm);
   const profiles = readPlainObject(llm?.profiles);
@@ -967,15 +982,15 @@ export function normalizeManagedProfileWrites(patch: unknown): void {
       entry.status != null &&
       entry.status !== "active"
     ) {
-      throw new BadRequestError(`Cannot disable managed profile "${name}".`);
+      throw new BadRequestError(`Cannot disable cloud profile "${name}".`);
     }
     const residual = Object.keys(entry).filter(
       (key) => key !== "source" && key !== "status",
     );
     if (residual.length > 0) {
       throw new BadRequestError(
-        `Cannot edit managed profile "${name}" fields [${residual.join(", ")}]. ` +
-          `Managed profiles are read-only; duplicate to a custom profile to customize.`,
+        `Cannot edit cloud profile "${name}" fields [${residual.join(", ")}]. ` +
+          `Cloud profiles are read-only; duplicate to a custom profile to customize.`,
       );
     }
     entry.source = "managed";
@@ -990,10 +1005,10 @@ export function normalizeManagedProfileWrites(patch: unknown): void {
  *   `inputModalities.image` override winning when set. Unknown (provider,
  *   model) pairs with no override default to `true` (fail-open) so image
  *   upload remains available for custom / unlisted models.
- * - `invariant`: `true` for managed-source entries of the managed profile
+ * - `invariant`: `true` for managed-source entries of the cloud profile
  *   names (`INVARIANT_PROFILE_NAMES`); absent otherwise. Source-gated to
  *   match `assertInvariantProfilesPreserved` — a user-owned profile sharing
- *   a managed name is fully editable, so it must render as a normal custom
+ *   a cloud name is fully editable, so it must render as a normal custom
  *   profile.
  */
 function enrichProfilesForWire(config: unknown): void {
@@ -1066,7 +1081,7 @@ function handleGetConfigSchema({ queryParams = {} }: RouteHandlerArgs) {
   };
 }
 
-export function rejectManagedProfileDeletion(
+export function rejectCloudProfileDeletion(
   body: Record<string, unknown>,
 ): void {
   const llm = asMutablePlainObject(body.llm);
@@ -1075,7 +1090,7 @@ export function rejectManagedProfileDeletion(
   }
   if ("profiles" in llm && llm.profiles === null) {
     throw new BadRequestError(
-      "Cannot null llm.profiles — managed profiles would be deleted.",
+      "Cannot null llm.profiles — cloud profiles would be deleted.",
     );
   }
   const profiles = asMutablePlainObject(llm.profiles);
@@ -1087,23 +1102,23 @@ export function rejectManagedProfileDeletion(
     if (profiles[name] !== null || !MANAGED_PROFILE_NAMES.has(name)) {
       continue;
     }
-    // Only block deletion when the on-disk entry is Cadet-managed. A
-    // user-owned profile sharing a managed name carries a non-managed `source`
+    // Only block deletion when the on-disk entry is Cadet Cloud. A
+    // user-owned profile sharing a cloud name carries a non-managed `source`
     // and is freely deletable.
     const existing = asMutablePlainObject(existingProfiles[name]);
     if (existing?.source === "managed") {
-      throw new BadRequestError(`Cannot delete managed profile "${name}".`);
+      throw new BadRequestError(`Cannot delete cloud profile "${name}".`);
     }
   }
 }
 
 /**
- * Enforce the managed-profile invariants at the config-write choke point.
+ * Enforce the cloud-profile invariants at the config-write choke point.
  *
  * Protects the thin managed stubs (`INVARIANT_PROFILE_NAMES`) that live in
  * workspace config. Default profile CONTENT is code-owned and only exists on
  * the wire, so the guard's job is the stub itself: it checks entries present
- * in the OLD config, and `normalizeManagedProfileWrites` reduces incoming
+ * in the OLD config, and `normalizeCloudProfileWrites` reduces incoming
  * managed entries to the workspace-owned fields before this comparison runs.
  *
  * Invariance is gated on managed ownership: a name is enforced only when the
@@ -1112,7 +1127,7 @@ export function rejectManagedProfileDeletion(
  * is real and supported, because the flag-gated reconcile refuses to
  * overwrite a same-named user profile.
  *
- * For each invariant name where the OLD raw config carries a managed-source
+ * For each invariant name where the OLD raw config carries a cloud-source
  * plain-object entry at `llm.profiles[name]`:
  *
  * - The NEW raw config must still carry a plain-object entry at the same
@@ -1161,17 +1176,17 @@ function assertInvariantProfilesPreserved(
       : null;
     if (!newEntry) {
       throw new BadRequestError(
-        `Cannot delete or replace managed profile "${name}". Managed profiles are read-only.`,
+        `Cannot delete or replace cloud profile "${name}". Cloud profiles are read-only.`,
       );
     }
 
     if (!isDeepStrictEqual(oldEntry.status, newEntry.status)) {
       if (newEntry.status === "disabled") {
-        throw new BadRequestError(`Cannot disable managed profile "${name}".`);
+        throw new BadRequestError(`Cannot disable cloud profile "${name}".`);
       }
       if (newEntry.status !== "active" && newEntry.status != null) {
         throw new BadRequestError(
-          `Cannot set status ${JSON.stringify(newEntry.status)} on managed profile "${name}". ` +
+          `Cannot set status ${JSON.stringify(newEntry.status)} on cloud profile "${name}". ` +
             `Only re-enabling (status "active") is allowed.`,
         );
       }
@@ -1187,8 +1202,8 @@ function assertInvariantProfilesPreserved(
     );
     if (changedKeys.length > 0) {
       throw new BadRequestError(
-        `Cannot edit managed profile "${name}" fields [${changedKeys.join(", ")}]. ` +
-          `Managed profiles are read-only; duplicate to a custom profile to customize.`,
+        `Cannot edit cloud profile "${name}" fields [${changedKeys.join(", ")}]. ` +
+          `Cloud profiles are read-only; duplicate to a custom profile to customize.`,
       );
     }
   }
@@ -1346,8 +1361,8 @@ function assertRoutableIdentityEntries(
 function assertCodeOwnedFallbackProfiles(raw: Record<string, unknown>): void {
   const llm = readPlainObject(raw.llm);
   const profiles = readPlainObject(llm?.profiles);
-  // The sibling `llm.default` decides whether the managed backups are valid
-  // fallback targets: they resolve on the managed column alone.
+  // The sibling `llm.default` decides whether the cloud backups are valid
+  // fallback targets: they resolve on the cloud column alone.
   const issues = collectFallbackProfileIssues(
     profiles ?? undefined,
     llm?.default,
@@ -1488,8 +1503,8 @@ async function handlePatchConfig({ body }: RouteHandlerArgs) {
     throw new BadRequestError(chatSettings.error.message);
   }
   stripWireOnlyProfileKeys(body);
-  normalizeManagedProfileWrites(body);
-  rejectManagedProfileDeletion(body as Record<string, unknown>);
+  normalizeCloudProfileWrites(body);
+  rejectCloudProfileDeletion(body as Record<string, unknown>);
   rejectMcpTransportHeaderWrite(body);
   stripMcpFromConfigWrite(body as Record<string, unknown>);
 
@@ -1557,24 +1572,24 @@ async function handleSetConfig({ body }: RouteHandlerArgs) {
   ) {
     return { ok: true };
   }
-  // Build the equivalent patch shape so the managed-profile guard can
+  // Build the equivalent patch shape so the cloud-profile guard can
   // inspect the touched subtree. `setNestedValue` places `value` into
   // `patchShape` by reference, so stripping wire-only profile keys here
   // also strips the object written to `raw` below.
   const patchShape: Record<string, unknown> = {};
   setNestedValue(patchShape, path, value);
   stripWireOnlyProfileKeys(patchShape);
-  normalizeManagedProfileWrites(patchShape);
-  rejectManagedProfileDeletion(patchShape);
+  normalizeCloudProfileWrites(patchShape);
+  rejectCloudProfileDeletion(patchShape);
   rejectMcpConfigSetPath(path, value);
   rejectMcpTransportHeaderWrite(patchShape);
 
   const raw = loadRawConfig();
   // A SET below the entry level (`llm.profiles.<name>.<leaf>`) writes the
   // primitive leaf directly into `raw`, bypassing the by-reference
-  // normalization above — creating an entry for a managed-owned name would
+  // normalization above — creating an entry for a cloud-owned name would
   // leave it source-less, and a source-less entry reads as a user shadow
-  // that blocks the catalog body. Stamp the managed marker onto the written
+  // that blocks the catalog body. Stamp the cloud marker onto the written
   // entry when the name was absent or managed-owned before this write.
   const managedEntryName =
     pathSegments[0] === "llm" &&
@@ -1675,12 +1690,12 @@ async function handleReplaceInferenceProfile({
     throw new BadRequestError(`Invalid profile fragment: ${detail}`);
   }
   // A managed name with no existing entry stays protected so users can't
-  // shadow a seeded managed profile. An existing entry carrying a non-managed
+  // shadow a seeded cloud profile. An existing entry carrying a non-managed
   // `source` is user-owned and remains fully editable.
   const existingProfile = asMutablePlainObject(
     getConfig().llm.profiles?.[name],
   );
-  const isManaged =
+  const isCloud =
     MANAGED_PROFILE_NAMES.has(name) &&
     (existingProfile == null || existingProfile.source === "managed");
   if (CODE_OWNED_PROFILE_NAMES.has(name)) {
@@ -1709,11 +1724,11 @@ async function handleReplaceInferenceProfile({
       `Profile "${name}" is not currently available and cannot be edited.`,
     );
   }
-  if (isManaged) {
-    // Managed profiles are daemon-seeded and read-only — the commit guard
+  if (isCloud) {
+    // Cloud profiles are daemon-seeded and read-only — the commit guard
     // (`assertInvariantProfilesPreserved`) rejects every write to them
     // except re-enabling a disabled profile. Enforce the same contract up
-    // front: the only body a managed PUT accepts is a pure status re-enable
+    // front: the only body a cloud PUT accepts is a pure status re-enable
     // (`{status: "active"}`, or `{status: null}` to clear back to
     // active-by-absence). Rejecting here keeps the error message ahead of
     // any side effects and mirrors the guard's wording.
@@ -1727,8 +1742,8 @@ async function handleReplaceInferenceProfile({
       const detail =
         disallowed.length > 0 ? ` fields [${disallowed.join(", ")}]` : "";
       throw new BadRequestError(
-        `Cannot edit managed profile "${name}"${detail}. ` +
-          `Managed profiles are read-only (a disabled profile can be re-enabled); ` +
+        `Cannot edit cloud profile "${name}"${detail}. ` +
+          `Cloud profiles are read-only (a disabled profile can be re-enabled); ` +
           `duplicate to a custom profile to customize.`,
       );
     }
@@ -1831,10 +1846,10 @@ async function handleReplaceInferenceProfile({
 
   // When the UI sends provider but no provider_connection, derive the connection
   // now so the config deep-merge doesn't inherit a stale connection from the
-  // default layer. Managed entries are excluded: the managed gate above
+  // default layer. Managed entries are excluded: the cloud gate above
   // already rejected any provider-carrying fragment, so their only surviving
   // body is a status re-enable, which derives no connection. A user-owned
-  // profile sharing a managed name is fully editable, so it takes the
+  // profile sharing a cloud name is fully editable, so it takes the
   // derivation like any other custom profile.
   const fragment = parsed.data as Record<string, unknown>;
   // Routing identities resolve their connection per-request from the
@@ -1842,7 +1857,7 @@ async function handleReplaceInferenceProfile({
   // ("cadet" is its stored provider) or create a junk "<identity>-personal"
   // connection for chatgpt.
   if (
-    !isManaged &&
+    !isCloud &&
     fragment.provider &&
     !fragment.provider_connection &&
     !ROUTING_IDENTITY_PROVIDERS.has(fragment.provider as string)
@@ -1859,12 +1874,12 @@ async function handleReplaceInferenceProfile({
     if (active) {
       fragment.provider_connection = active.name;
     } else if (
-      MANAGED_ROUTABLE_PROVIDERS.has(provider) &&
-      getConnection(db, CADET_MANAGED_CONNECTION_NAME)
+      CLOUD_ROUTABLE_PROVIDERS.has(provider) &&
+      getConnection(db, CADET_CLOUD_CONNECTION_NAME)
     ) {
-      // Managed-routable providers are served by the single Cadet-managed
+      // Managed-routable providers are served by the single Cadet Cloud
       // connection; prefer it over lazily creating a personal connection.
-      fragment.provider_connection = CADET_MANAGED_CONNECTION_NAME;
+      fragment.provider_connection = CADET_CLOUD_CONNECTION_NAME;
     } else if (!PROVIDERS_REQUIRING_BASE_URL_AND_MODELS.has(provider)) {
       const connectionName = `${provider}-personal`;
       const isKeyless = provider === "ollama";
@@ -1885,13 +1900,13 @@ async function handleReplaceInferenceProfile({
   }
 
   const raw = loadRawConfig();
-  if (isManaged) {
+  if (isCloud) {
     // Partial overlay: keep every existing key intact, only apply the status
-    // re-enable (the sole body the managed gate above admits). Using
+    // re-enable (the sole body the cloud gate above admits). Using
     // `replaceInferenceProfileConfig` here would wipe the seed-owned fields
     // (provider, model, advanced params) because that function assumes the
     // body carries the full UI surface.
-    applyManagedProfileReenable(raw, name, fragment.status as "active" | null);
+    applyCloudProfileReenable(raw, name, fragment.status as "active" | null);
   } else {
     replaceInferenceProfileConfig(raw, name, fragment);
   }
@@ -1900,7 +1915,7 @@ async function handleReplaceInferenceProfile({
   // `handleSetConfig`: file-watcher suppression so the in-process reload
   // doesn't race the explicit reinit, embedding backend cache clear,
   // in-process `getConfig` cache invalidation, and provider registry
-  // reinitialization. `status: "disabled"` on a managed profile (and any
+  // reinitialization. `status: "disabled"` on a cloud profile (and any
   // `provider` / `model` / `provider_connection` change on a custom
   // profile) must take effect immediately rather than waiting for the
   // next watcher tick.
@@ -1909,11 +1924,11 @@ async function handleReplaceInferenceProfile({
 }
 
 /**
- * Apply the disabled→active re-enable to a managed profile entry, preserving
+ * Apply the disabled→active re-enable to a cloud profile entry, preserving
  * every other field already on disk (provider, model, advanced params, etc).
  * `status: "active"` sets the key; `null` clears it (active-by-absence).
  */
-function applyManagedProfileReenable(
+function applyCloudProfileReenable(
   raw: Record<string, unknown>,
   name: string,
   status: "active" | null,
@@ -1934,7 +1949,7 @@ function applyManagedProfileReenable(
     ...(asMutablePlainObject(profiles[name]) ?? {}),
   };
   // Only reached for managed-owned names (the route's managed gate), so a
-  // freshly created stub must carry the managed marker the effective view
+  // freshly created stub must carry the cloud marker the effective view
   // and write guards key on.
   nextProfile.source = "managed";
   if (status === null) {
@@ -2300,7 +2315,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Get full config",
     description: "Return the raw settings.json configuration object.",
     tags: ["config"],
-    responseBody: AssistantConfigSchema,
+    responseBody: ConfigGetResponseSchema,
     handler: handleGetConfig,
   },
   {
@@ -2316,7 +2331,7 @@ export const ROUTES: RouteDefinition[] = [
       "Deep-merge a partial JSON object into the settings.json configuration.",
     tags: ["config"],
     requestBody: ConfigPatchRequestSchema,
-    responseBody: AssistantConfigSchema,
+    responseBody: ConfigGetResponseSchema,
     handler: handlePatchConfig,
   },
   {

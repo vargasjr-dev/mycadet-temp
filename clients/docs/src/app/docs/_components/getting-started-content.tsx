@@ -326,7 +326,7 @@ export function GettingStartedContent() {
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
               <strong>Sign in with Cadet (default)</strong> — Authenticate with
-              your Cadet account for the managed experience. Your assistant runs
+              your Cadet account for the cloud experience. Your assistant runs
               in Cadet Cloud, billing is handled through your account, no API
               keys to manage.
             </li>

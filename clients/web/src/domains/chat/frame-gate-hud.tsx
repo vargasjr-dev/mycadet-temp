@@ -17,8 +17,8 @@
  * Two, and the question between them is how much room the mount has: the card
  * is 288px wide and nearly a column tall, which is a corner of a desktop
  * viewfinder and most of a phone's. That is the window-size axis, so the branch
- * reads `useIsMobile()` and not the pointer or the platform, per
- * `docs/PLATFORM_ADAPTATION.md`: a desktop window dragged narrow has the same
+ * reads `useIsMobile()` and not the pointer or the cloud, per
+ * `docs/CLOUD_ADAPTATION.md`: a desktop window dragged narrow has the same
  * shortage of room as a handset, and a roomy tablet has none of it whichever
  * way it is being touched. It is that hook rather than a query of this
  * component's own, so the app has one answer to "is this a narrow window"

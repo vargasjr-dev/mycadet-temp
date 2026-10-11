@@ -119,7 +119,7 @@ async function checkLiveVoiceAuth(
         // the caller is *a* platform user who traversed tunnel, not that they
         // are THIS assistant's guardian, so cross-check the tunnel user id
         // against the bound platform user id (the same guardian check the
-        // edge-auth middleware applies to guardian routes under the managed
+        // edge-auth middleware applies to guardian routes under the cloud
         // bypass). Without it, any tunnel-authorized org user reaching this
         // assistant would be stamped guardian downstream.
         const guardianError = await requireManagedGuardian(
@@ -127,7 +127,7 @@ async function checkLiveVoiceAuth(
           log,
         );
         if (guardianError) return { response: guardianError };
-        // Tunnel attests a platform user, not an actor principal, so the
+        // Tunnel attests a cloud user, not an actor principal, so the
         // principal comes from the gateway's own binding rather than from
         // anything the request carried.
         const guardian = await findCadetGuardian();

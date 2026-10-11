@@ -209,7 +209,7 @@ describe("ShareFeedbackModal", () => {
     expect(request.body.client).toBe("android");
   });
 
-  test("falls back to web when the platform rejects Android", async () => {
+  test("falls back to web when the cloud rejects Android", async () => {
     capacitorPlatform = "android";
     rejectAndroidFeedbackClient = true;
     const client = new QueryClient({

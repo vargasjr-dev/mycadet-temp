@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { mkdirSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
@@ -14,9 +14,9 @@ import {
   localRuntimePollJobStatus,
 } from "../lib/local-runtime-client.js";
 import {
-  platformRequestSignedUrl,
-  readPlatformToken,
-} from "../lib/platform-client.js";
+  cloudRequestSignedUrl,
+  readCloudToken,
+} from "../lib/cloud-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 // Default timeout for the runtime-direct export request. Overridable via
@@ -102,7 +102,7 @@ export const backup = Object.assign(
     process.exit(1);
   }
 
-  if (isManagedCloud(cloud)) {
+  if (isCloudHome(cloud)) {
     await backupPlatform(entry, name, outputArg);
     return;
   }
@@ -233,9 +233,9 @@ export const backup = Object.assign(
 // ---------------------------------------------------------------------------
 // Platform-managed (cloud="cadet") backup over GCS.
 //
-// The runtime exports the bundle straight to a platform-issued signed GCS
+// The runtime exports the bundle straight to a cloud-issued signed GCS
 // URL; the CLI then downloads from GCS to local disk. Bytes never flow
-// through Django. Same architectural shape as the platform-source half of
+// through Django. Same architectural shape as the cloud-source half of
 // `cadet teleport`. Output format and success log lines match mode 1
 // (runtime-direct local backup) so users see one consistent UX.
 //
@@ -251,24 +251,24 @@ async function backupPlatform(
   name: string,
   outputArg?: string,
 ): Promise<void> {
-  const platformToken = readPlatformToken();
-  if (!platformToken) {
+  const cloudToken = readCloudToken();
+  if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first (required for platform-managed backup).",
+      "Not logged in. Run 'cadet login' first (required for cloud-managed backup).",
     );
     process.exit(1);
   }
   // Pin upload, download, and runtime requests to the same platform instance
-  // the assistant lives on. Using `getPlatformUrl()` instead would target
+  // the assistant lives on. Using `getCloudUrl()` instead would target
   // whatever the lockfile / env-var resolves to, which may differ from
   // `entry.runtimeUrl` for staging/dev assistants and end up signing URLs
-  // for the wrong GCS bucket. Mirrors the teleport bundlePlatformUrl
+  // for the wrong GCS bucket. Mirrors the teleport bundleCloudUrl
   // threading at `cli/src/commands/teleport.ts:1311-1312`.
-  const platformUrl = entry.runtimeUrl;
+  const cloudUrl = entry.runtimeUrl;
   // Track the working platform token across kickoff/poll/download so a
   // 401-driven refresh during polling stays consistent through the final
   // signed-download request.
-  let exportPlatformToken = platformToken;
+  let exportPlatformToken = cloudToken;
 
   // Step 0 — Ask the source runtime which version it's running. The bundle
   // is produced by the daemon (not the CLI), and the CLI version can drift
@@ -288,17 +288,17 @@ async function backupPlatform(
   }
 
   // Step 1 — Request a signed upload URL.
-  const { url: uploadUrl, bundleKey } = await platformRequestSignedUrl(
+  const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
     {
       operation: "upload",
       minRuntimeVersion: runtimeIdentity.version,
       maxRuntimeVersion: null,
     },
     exportPlatformToken,
-    platformUrl,
+    cloudUrl,
   );
 
-  // Step 2 — Kick off runtime export-to-GCS through the platform's
+  // Step 2 — Kick off runtime export-to-GCS through the cloud's
   // wildcard runtime proxy. `localRuntimeExportToGcs` builds the
   // `/v1/assistants/<id>/migrations/export-to-gcs` URL for cloud="cadet"
   // and uses platform-token auth (no guardian-token bootstrap).
@@ -327,7 +327,7 @@ async function backupPlatform(
     label: "platform export",
     poll: () => localRuntimePollJobStatus(entry, exportPlatformToken, jobId),
     refreshOn401: async () => {
-      const refreshed = readPlatformToken();
+      const refreshed = readCloudToken();
       if (!refreshed) {
         throw new Error(
           "Platform auth expired during export and no credential was found on disk. Run 'cadet login' and retry.",
@@ -344,7 +344,7 @@ async function backupPlatform(
 
   // Step 4 — Request a signed download URL for the same bundle and fetch
   // it from GCS directly. No auth on signed URLs.
-  // Use `exportPlatformToken` (not the original `platformToken`) so a
+  // Use `exportPlatformToken` (not the original `cloudToken`) so a
   // poll-loop 401 refresh doesn't get clobbered here — otherwise a long
   // export that recovered mid-poll via re-auth would still 401 on the
   // download-URL request and abort an otherwise successful run.
@@ -354,15 +354,15 @@ async function backupPlatform(
   // runtime to gate against, and the user can later restore the file
   // into any compatible runtime. Sending the CLI's version would
   // incorrectly block older CLIs from backing up newer assistants.
-  // The platform treats `target_runtime_version` as optional and skips
+  // The cloud treats `target_runtime_version` as optional and skips
   // the version check when it's omitted.
-  const { url: bundleUrl } = await platformRequestSignedUrl(
+  const { url: bundleUrl } = await cloudRequestSignedUrl(
     {
       operation: "download",
       bundleKey,
     },
     exportPlatformToken,
-    platformUrl,
+    cloudUrl,
   );
 
   let downloadResponse: Response;

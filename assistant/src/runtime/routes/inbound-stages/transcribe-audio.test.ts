@@ -204,7 +204,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const audio = makeAudioAttachment("a1");
     mockAttachments = [audio];
     const managedMessage =
-      "Managed speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
+      "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
     mockTranscriber = {
       providerId: "cadet",
       boundaryId: "daemon-batch",

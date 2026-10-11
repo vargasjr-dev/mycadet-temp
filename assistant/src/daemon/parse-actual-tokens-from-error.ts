@@ -11,7 +11,7 @@ import { isContextOverflowError } from "../providers/types.js";
  *   "too many input tokens: 242201 > 200000"                (OpenAI)
  *
  * The regex path remains a safety net for provider-adapter paths (e.g.
- * managed-proxy rewrappers) that surface untyped errors.
+ * cloud-proxy rewrappers) that surface untyped errors.
  *
  * Accepts a raw error object, an `Error` instance, or a plain string.
  * Returns the actual token count, or `null` when it cannot be determined.
@@ -38,7 +38,7 @@ export function parseActualTokensFromError(
 /**
  * Message patterns that identify a provider context-overflow rejection.
  * Covers the typed wrapper's source patterns plus common provider phrasings
- * that adapter paths (e.g. managed-proxy rewrappers) surface as untyped
+ * that adapter paths (e.g. cloud-proxy rewrappers) surface as untyped
  * errors:
  *   "prompt is too long: 242201 tokens > 200000 maximum"   (Anthropic)
  *   "too many input tokens: 242201 > 200000"                (OpenAI)
@@ -55,7 +55,7 @@ const OVERFLOW_MESSAGE_PATTERNS: readonly RegExp[] = [
 /**
  * Heuristic context-overflow check that also catches REWRAPPED provider
  * errors. `isContextOverflowError` only matches the typed
- * `ContextOverflowError` wrapper; adapter layers (managed-proxy rewrappers,
+ * `ContextOverflowError` wrapper; adapter layers (cloud-proxy rewrappers,
  * retry shims) can re-throw the same rejection as a plain `Error`, hiding the
  * typed signal. Callers that must not misread an overflow as a clean
  * no-output stop (e.g. the suppressed-compaction agent-wake path) should use

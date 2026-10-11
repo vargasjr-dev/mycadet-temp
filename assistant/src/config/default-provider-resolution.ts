@@ -1,4 +1,4 @@
-import { CADET_MANAGED_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
 import { CHATGPT_SUBSCRIPTION_CONNECTION_NAME } from "../providers/inference/auth.js";
 import {
   isDefaultProviderChoice,
@@ -23,7 +23,7 @@ export function resolveDefaultConnectionName(
     return dp.provider_connection;
   }
   if (provider === "cadet") {
-    return CADET_MANAGED_CONNECTION_NAME;
+    return CADET_CLOUD_CONNECTION_NAME;
   }
   if (provider === "chatgpt") {
     return CHATGPT_SUBSCRIPTION_CONNECTION_NAME;

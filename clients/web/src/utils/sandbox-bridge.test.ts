@@ -171,7 +171,7 @@ describe("injectBridge", () => {
       "<!doctype html><html><head></head><body>",
       "<div id=root></div>",
       "<script>",
-      "// the platform injects right before </body>, so wait for it",
+      "// the cloud injects right before </body>, so wait for it",
       "console.log('app loaded');",
       "</script>",
       "</body></html>",

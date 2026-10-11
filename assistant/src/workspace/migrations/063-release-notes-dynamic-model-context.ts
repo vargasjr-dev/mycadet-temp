@@ -22,7 +22,7 @@ const RELEASE_NOTE = `${MARKER}
 Inference profiles now show max output tokens as a model-aware slider, so the
 available range follows the selected model instead of accepting invalid values.
 
-You can also configure the context window per profile. New managed profiles
+You can also configure the context window per profile. New cloud profiles
 stay at the conservative 200K context budget by default, and existing profiles
 keep their current effective context budget unless you edit them.
 `;

@@ -66,18 +66,18 @@ function hostnameOf(url: string): string | undefined {
 }
 
 /**
- * The deployment this assistant belongs to, judged by the platform it
+ * The deployment this assistant belongs to, judged by the cloud it
  * authenticates against.
  *
  * `CADET_ENVIRONMENT` cannot answer this. Unset, it means dev to
  * `getCloudBaseUrl` and local to every launcher, but it would have to mean
  * production for a roadmap default to be safe, and it is blind to the config
- * file and `CADET_PLATFORM_URL`, either of which can point a differently
- * labelled assistant at production. The platform base URL is the one signal
+ * file and `CADET_CLOUD_URL`, either of which can point a differently
+ * labelled assistant at production. The cloud base URL is the one signal
  * that already accounts for all three, and it names the deployment that issued
  * the very key these calls are signed with.
  *
- * Undefined for a platform outside the seed table (a self-hosted one, say),
+ * Undefined for a cloud outside the seed table (a self-hosted one, say),
  * which is not production and whose roadmap and web origins must be named.
  */
 function resolveDeployment(): EnvironmentDefinition | undefined {
@@ -86,7 +86,7 @@ function resolveDeployment(): EnvironmentDefinition | undefined {
     return undefined;
   }
   return Object.values(SEEDS).find(
-    (seed) => hostnameOf(seed.platformUrl) === host,
+    (seed) => hostnameOf(seed.cloudUrl) === host,
   );
 }
 
@@ -154,7 +154,7 @@ function itemUrl(web: string, slug: string): string {
 
 /**
  * The assistant's own platform API key, or undefined when the assistant is not
- * connected to the platform.
+ * connected to the cloud.
  */
 async function assistantApiKey(): Promise<string | undefined> {
   const key = await getSecureKeyAsync(
@@ -649,7 +649,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List public roadmap items",
     description:
-      "Lists items from the public Cadet roadmap. Authenticated as the assistant when a platform API key is stored, which fills in viewerUpvoted; anonymous otherwise.",
+      "Lists items from the public Cadet roadmap. Authenticated as the assistant when a cloud API key is stored, which fills in viewerUpvoted; anonymous otherwise.",
     tags: ["roadmap"],
     queryParams: [
       { name: "q", required: false, description: "Search query" },

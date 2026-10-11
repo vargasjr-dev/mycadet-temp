@@ -854,7 +854,7 @@
     "apiKeyRequired": "Save an API key for this provider before testing.",
     "chooseFromCatalog": "Choose from catalog",
     "customVoiceIdAriaLabel": "Custom voice ID",
-    "noManagedVoices": "No managed voices are currently available.",
+    "noCloudVoices": "No cloud voices are currently available.",
     "provider": "Provider",
     "providerAriaLabel": "TTS provider",
     "saveFailed": "Failed to save text-to-speech settings",

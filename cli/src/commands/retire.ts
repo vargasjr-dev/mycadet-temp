@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
@@ -24,10 +24,10 @@ import { printInstanceDetails } from "../lib/instance-details.js";
 import {
   authHeaders,
   authHeadersForKnownOrganization,
-  getPlatformUrl,
+  getCloudUrl,
   readGatewayCredential,
-  readPlatformToken,
-} from "../lib/platform-client.js";
+  readCloudToken,
+} from "../lib/cloud-client.js";
 import { retireDocker, dockerResourceNames } from "../lib/docker.js";
 import { retireInstance as retireAwsInstance } from "../lib/aws.js";
 import { retireInstance as retireGcpInstance } from "../lib/gcp.js";
@@ -52,37 +52,40 @@ interface RetireArgs {
 }
 
 interface SelfHostedPlatformRegistration {
-  platformAssistantId: string;
-  platformBaseUrl: string | null;
+  cloudAssistantId: string;
+  cloudBaseUrl: string | null;
   organizationId: string | null;
 }
 
-const PLATFORM_TOKEN_ENV = "CADET_PLATFORM_TOKEN";
+const CLOUD_TOKEN_ENV = "CADET_CLOUD_TOKEN";
+const LEGACY_CLOUD_TOKEN_ENV = "CADET_PLATFORM_TOKEN";
 
 function readPlatformRetireToken(): string | null {
-  const envToken = process.env[PLATFORM_TOKEN_ENV]?.trim();
+  const envToken = (
+    process.env[CLOUD_TOKEN_ENV] ?? process.env[LEGACY_CLOUD_TOKEN_ENV]
+  )?.trim();
   if (envToken) return envToken;
-  return readPlatformToken();
+  return readCloudToken();
 }
 
-function platformOrigin(platformUrl: string): string | null {
+function platformOrigin(cloudUrl: string): string | null {
   try {
-    return new URL(platformUrl).origin;
+    return new URL(cloudUrl).origin;
   } catch {
     return null;
   }
 }
 
-function resolveTrustedSelfHostedPlatformUrl(
-  storedPlatformUrl: string | null,
+function resolveTrustedSelfHostedCloudUrl(
+  storedCloudUrl: string | null,
 ): string | null {
-  const configuredPlatformUrl = getPlatformUrl();
-  if (!storedPlatformUrl) return configuredPlatformUrl;
+  const configuredCloudUrl = getCloudUrl();
+  if (!storedCloudUrl) return configuredCloudUrl;
 
-  const storedOrigin = platformOrigin(storedPlatformUrl);
-  const configuredOrigin = platformOrigin(configuredPlatformUrl);
+  const storedOrigin = platformOrigin(storedCloudUrl);
+  const configuredOrigin = platformOrigin(configuredCloudUrl);
   if (storedOrigin && configuredOrigin && storedOrigin === configuredOrigin) {
-    return configuredPlatformUrl;
+    return configuredCloudUrl;
   }
 
   console.warn(
@@ -99,32 +102,36 @@ function nonEmptyString(value: string | null | undefined): string | null {
 function lockfileSelfHostedPlatformRegistration(
   entry: AssistantEntry,
 ): SelfHostedPlatformRegistration | null {
-  const platformAssistantId = nonEmptyString(entry.platformAssistantId);
-  if (!platformAssistantId) return null;
+  const cloudAssistantId = nonEmptyString(
+    entry.cloudAssistantId ?? entry.cloudAssistantId,
+  );
+  if (!cloudAssistantId) return null;
 
   return {
-    platformAssistantId,
-    platformBaseUrl: nonEmptyString(entry.platformBaseUrl),
-    organizationId: nonEmptyString(entry.platformOrganizationId),
+    cloudAssistantId,
+    cloudBaseUrl: nonEmptyString(entry.cloudBaseUrl ?? entry.platformBaseUrl),
+    organizationId: nonEmptyString(
+      entry.cloudOrganizationId ?? entry.platformOrganizationId,
+    ),
   };
 }
 
-async function deletePlatformAssistant(
+async function deleteCloudAssistant(
   assistantId: string,
   options: {
     token: string;
-    platformUrl?: string;
+    cloudUrl?: string;
     organizationId?: string;
     label: string;
     successMessage: string;
     alreadyGoneMessage: string;
   },
 ): Promise<void> {
-  const platformUrl = options.platformUrl || getPlatformUrl();
-  const url = `${platformUrl}/v1/assistants/${encodeURIComponent(assistantId)}/retire/`;
+  const cloudUrl = options.cloudUrl || getCloudUrl();
+  const url = `${cloudUrl}/v1/assistants/${encodeURIComponent(assistantId)}/retire/`;
   const headers = options.organizationId
     ? authHeadersForKnownOrganization(options.token, options.organizationId)
-    : await authHeaders(options.token, platformUrl);
+    : await authHeaders(options.token, cloudUrl);
 
   const response = await loopbackSafeFetch(url, {
     method: "DELETE",
@@ -148,12 +155,12 @@ async function readSelfHostedPlatformRegistration(
 ): Promise<SelfHostedPlatformRegistration | null> {
   const fallback = lockfileSelfHostedPlatformRegistration(entry);
   const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
-  const platformAssistant = await readGatewayCredential(
+  const cloudRegistration = await readGatewayCredential(
     gatewayUrl,
     "cadet:platform_assistant_id",
     entry.bearerToken,
   );
-  if (platformAssistant.unreachable) {
+  if (cloudRegistration.unreachable) {
     if (fallback) {
       console.warn(
         "\u26a0\ufe0f  Could not read platform registration from the local assistant; using saved platform registration.",
@@ -161,16 +168,16 @@ async function readSelfHostedPlatformRegistration(
       return fallback;
     }
     console.warn(
-      "\u26a0\ufe0f  Could not read platform registration from the local assistant and no saved platform registration is available; skipping platform unregister.",
+      "\u26a0\ufe0f  Could not read cloud registration from the local assistant and no saved cloud registration is available; skipping cloud unregister.",
     );
     return null;
   }
 
-  const platformAssistantId =
-    nonEmptyString(platformAssistant.value) ?? fallback?.platformAssistantId;
-  if (!platformAssistantId) return null;
+  const cloudAssistantId =
+    nonEmptyString(cloudRegistration.value) ?? fallback?.cloudAssistantId;
+  if (!cloudAssistantId) return null;
 
-  const [platformBaseUrl, organizationId] = await Promise.all([
+  const [cloudBaseUrl, organizationId] = await Promise.all([
     readGatewayCredential(
       gatewayUrl,
       "cadet:platform_base_url",
@@ -184,10 +191,10 @@ async function readSelfHostedPlatformRegistration(
   ]);
 
   return {
-    platformAssistantId,
-    platformBaseUrl:
-      nonEmptyString(platformBaseUrl.value) ??
-      fallback?.platformBaseUrl ??
+    cloudAssistantId,
+    cloudBaseUrl:
+      nonEmptyString(cloudBaseUrl.value) ??
+      fallback?.cloudBaseUrl ??
       null,
     organizationId:
       nonEmptyString(organizationId.value) ?? fallback?.organizationId ?? null,
@@ -203,10 +210,10 @@ async function unregisterSelfHostedLocalPlatformRecord(
   const registration = await readSelfHostedPlatformRegistration(entry);
   if (!registration) return;
 
-  const platformUrl = resolveTrustedSelfHostedPlatformUrl(
-    registration.platformBaseUrl,
+  const cloudUrl = resolveTrustedSelfHostedCloudUrl(
+    registration.cloudBaseUrl,
   );
-  if (!platformUrl) return;
+  if (!cloudUrl) return;
   if (!registration.organizationId) {
     console.warn(
       "⚠️  Could not read platform organization ID from the local assistant; skipping platform unregister.",
@@ -214,9 +221,9 @@ async function unregisterSelfHostedLocalPlatformRecord(
     return;
   }
 
-  await deletePlatformAssistant(registration.platformAssistantId, {
+  await deleteCloudAssistant(registration.cloudAssistantId, {
     token,
-    platformUrl,
+    cloudUrl,
     organizationId: registration.organizationId,
     label: "Platform self-hosted unregister",
     successMessage: "\u2705 Platform self-hosted registration unregistered.",
@@ -275,9 +282,9 @@ async function retireCadet(
   }
 
   try {
-    await deletePlatformAssistant(assistantId, {
+    await deleteCloudAssistant(assistantId, {
       token,
-      platformUrl: runtimeUrl,
+      cloudUrl: runtimeUrl,
       label: "Platform retire",
       successMessage: "\u2705 Platform-hosted instance retired.",
       alreadyGoneMessage:
@@ -498,7 +505,7 @@ async function retireInner(): Promise<void> {
     await retireLocal(assistantId, entry);
   } else if (cloud === "custom") {
     await retireCustom(entry);
-  } else if (isManagedCloud(cloud)) {
+  } else if (isCloudHome(cloud)) {
     await retireCadet(assistantId, entry.runtimeUrl);
   } else {
     console.error(`Error: Unknown cloud type '${cloud}'.`);

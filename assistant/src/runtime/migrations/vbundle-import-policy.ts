@@ -114,7 +114,7 @@ type SemverTriple = readonly [number, number, number];
 function parseSemverTriple(version: string): SemverTriple | null {
   // Strip optional prerelease/build suffix ("-foo", "+sha"). We treat
   // "0.7.1-staging.1" as equal-to-release "0.7.1" for gating purposes.
-  // The platform-side check uses packaging.version.Version, which sorts
+  // The cloud-side check uses packaging.version.Version, which sorts
   // prereleases BEFORE the corresponding release; matching that exactly
   // would require a fuller parser — for runtime-side defense-in-depth
   // this conservative read is sufficient (matches release of the same
@@ -184,7 +184,7 @@ export function formatRuntimeCompatibilityMessage(
 
 /**
  * Whether `version` names a runtime built from a source checkout: the
- * `<pkg.version>-local.<timestamp>.<sha>` `APP_VERSION` that the platform
+ * `<pkg.version>-local.<timestamp>.<sha>` `APP_VERSION` that the cloud
  * repo's `vel up` stamps on the assistant images it builds for its local
  * minikube cluster. The triple is the checkout's package.json version,
  * which only moves on release cuts, so it says nothing about whether the

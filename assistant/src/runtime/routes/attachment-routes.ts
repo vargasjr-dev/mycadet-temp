@@ -207,7 +207,7 @@ async function handleMultipartUpload(
     );
   }
 
-  // Reconstruct a Request to use the platform's multipart parser.
+  // Reconstruct a Request to use the cloud's multipart parser.
   const syntheticReq = new Request("http://localhost", {
     method: "POST",
     headers: { "content-type": headers["content-type"] ?? "" },

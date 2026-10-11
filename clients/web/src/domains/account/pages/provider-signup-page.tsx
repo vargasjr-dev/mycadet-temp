@@ -7,7 +7,7 @@ import {
   AccountInput,
 } from "@/components/account/account-form";
 import { useTranslation } from "@/i18n";
-import { refreshPlatformAssistantsIfStale } from "@/assistant/platform-assistants-sync";
+import { refreshCloudAssistantsIfStale } from "@/assistant/cloud-assistants-sync";
 import { AccountShell } from "@/components/account/account-shell";
 import { SignupShell } from "@/domains/account/components/signup-shell";
 import {
@@ -87,7 +87,7 @@ export function ProviderSignupPage() {
     if (!result.ok) {
       if (isConflict(result)) {
         await refreshSession();
-        await refreshPlatformAssistantsIfStale();
+        await refreshCloudAssistantsIfStale();
         const conflict = resolvePostLoginDestination(
           returnTo,
           routes.account.root,
@@ -105,7 +105,7 @@ export function ProviderSignupPage() {
     }
 
     await refreshSession();
-    await refreshPlatformAssistantsIfStale();
+    await refreshCloudAssistantsIfStale();
     const post = resolvePostAuthDestination({
       returnTo,
       fallback: routes.account.root,

@@ -15,7 +15,7 @@ import { Modal } from "@mycadet/design-library/components/modal";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
 import { SelectTriggerRow } from "@/components/speech/select-trigger-row";
 import { SttLanguagePicker } from "@/components/speech/stt-language-picker";
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { useSttLanguageSelection } from "@/components/speech/use-stt-language-selection";
 import { VoiceList } from "@/components/speech/voice-list";
 import { VoiceProvidersNote } from "@/components/speech/voice-providers-note";
@@ -23,7 +23,7 @@ import {
   sttLanguageLabelForCode,
   suggestedLanguageForLocale,
 } from "@/lib/stt/language-catalog";
-import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/managed-voice-catalog";
+import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/cloud-voice-catalog";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTranslation } from "@/i18n";
@@ -394,7 +394,7 @@ export function VoiceFirstRunCard({
 
 /**
  * The "Voices" view reached from the intro's "Voice settings" link: pick the
- * assistant's voice, then start. Split into its own component so the managed-
+ * assistant's voice, then start. Split into its own component so the cloud-
  * voice query runs only when this view is open — not on the intro (which would
  * pull the React Query graph into every first-run render).
  */
@@ -430,7 +430,7 @@ function VoiceSettingsView({
   // assistants also get the credits subtitle; BYO ones see no catalog (the footer
   // note is their path), so the Cadet-credits line wouldn't apply.
   const { available, currentModel, selectModel, selecting } =
-    useManagedVoiceSelection(assistantId);
+    useCloudVoiceSelection(assistantId);
 
   return (
     <>

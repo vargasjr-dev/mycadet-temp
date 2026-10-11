@@ -75,7 +75,7 @@ describe("clawhubInstall slug validation", () => {
 });
 
 describe("clawhubInstall staging", () => {
-  test("runs clawhub in a staging project root without touching the managed skill", async () => {
+  test("runs clawhub in a staging project root without touching the cloud skill", async () => {
     const originalSpawn = Bun.spawn;
     const projectRoot = join(TEST_DIR, "clawhub-staging-project");
     const finalSkillDir = join(TEST_DIR, "skills", "demo-skill");

@@ -1,5 +1,5 @@
 /**
- * Timing policy for the managed OAuth connect flow.
+ * Timing policy for the cloud OAuth connect flow.
  *
  * Separated so tests can shrink the waits without holding a suite open for
  * real seconds, and so the two numbers that shape how long a user looks at a
@@ -19,7 +19,7 @@ export const CONNECTION_POLL_WINDOW_MS = 5 * 60_000;
 /**
  * How long to keep looking for the granted account after the provider's
  * callback reported success. The row usually lands within a poll or two, but
- * the connections list does not model every provider the platform can
+ * the connections list does not model every provider the cloud can
  * authorize, and a flow that succeeded must not wait on a row that is never
  * coming.
  */

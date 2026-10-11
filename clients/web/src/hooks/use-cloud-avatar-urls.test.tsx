@@ -1,5 +1,5 @@
 /**
- * Tests for `usePlatformAvatarUrls`: the enable gate (live platform session
+ * Tests for `useCloudAvatarUrls`: the enable gate (live platform session
  * in a lockfile-driven mode, org header ready), the id-to-url reduction, the
  * failure-to-empty-map contract, one list call shared by every consumer, and
  * the promise never to write the resolved-assistants store. The auth and
@@ -36,11 +36,11 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
 }));
 
-const resolvePairedAssistantPlatformId = mock(
+const resolvePairedAssistantCloudId = mock(
   async (_id: string): Promise<string | null> => null,
 );
-mock.module("@/lib/paired-platform-identity", () => ({
-  resolvePairedAssistantPlatformId,
+mock.module("@/lib/paired-cloud-identity", () => ({
+  resolvePairedAssistantCloudId,
 }));
 
 const listAssistants = mock(
@@ -58,10 +58,10 @@ const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const {
-  platformAvatarUrlsQueryKey,
-  supersedePlatformAvatar,
+  cloudAvatarUrlsQueryKey,
+  supersedeCloudAvatar,
   suppressPlatformAvatarUrl,
-  usePlatformAvatarUrls,
+  useCloudAvatarUrls,
 } = await import("@/hooks/use-cloud-avatar-urls");
 const { AVATAR_SUPERSEDE_WINDOW_MS, resetAvatarSupersedeForTests } =
   await import("@/lib/avatar-supersede");
@@ -91,7 +91,7 @@ async function settle(): Promise<void> {
 
 function signIn(userId = "user-1"): void {
   useAuthStore.setState({
-    platformSession: "present",
+    cloudSession: "present",
     user: {
       kind: "platform",
       id: userId,
@@ -108,7 +108,7 @@ beforeEach(() => {
   cloudRemote = false;
   orgReady = true;
   resetAvatarSupersedeForTests();
-  resolvePairedAssistantPlatformId.mockClear();
+  resolvePairedAssistantCloudId.mockClear();
   signIn();
   listAssistants.mockResolvedValue({
     ok: true,
@@ -128,9 +128,9 @@ afterEach(() => {
   useAuthStore.setState(initialAuthState, true);
 });
 
-describe("usePlatformAvatarUrls", () => {
+describe("useCloudAvatarUrls", () => {
   test("maps id to a non-empty avatar_url", async () => {
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => {
@@ -144,17 +144,17 @@ describe("usePlatformAvatarUrls", () => {
   test.each([
     [
       "no live platform session",
-      () => useAuthStore.setState({ platformSession: "absent", user: null }),
+      () => useAuthStore.setState({ cloudSession: "absent", user: null }),
     ],
     [
       "an unsettled platform session",
-      () => useAuthStore.setState({ platformSession: "unknown" }),
+      () => useAuthStore.setState({ cloudSession: "unknown" }),
     ],
     ["pure cloud mode", () => (cloudRemote = true)],
     ["an unready org header", () => (orgReady = false)],
   ])("stays idle with %s", async (_l, arrange) => {
     arrange();
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await settle();
@@ -164,7 +164,7 @@ describe("usePlatformAvatarUrls", () => {
 
   test("a rejected list resolves to an empty map", async () => {
     listAssistants.mockRejectedValue(new Error("offline"));
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => {
@@ -176,7 +176,7 @@ describe("usePlatformAvatarUrls", () => {
 
   test("a non-ok list resolves to an empty map", async () => {
     listAssistants.mockResolvedValue({ ok: false, status: 500, error: {} });
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => {
@@ -190,7 +190,7 @@ describe("usePlatformAvatarUrls", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(queryClient),
     });
     await waitFor(() => {
@@ -199,7 +199,7 @@ describe("usePlatformAvatarUrls", () => {
 
     listAssistants.mockRejectedValueOnce(new Error("offline"));
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(2);
     await settle();
@@ -210,23 +210,23 @@ describe("usePlatformAvatarUrls", () => {
     const wrapper = createWrapper();
     const { result } = renderHook(
       () => [
-        usePlatformAvatarUrls(),
-        usePlatformAvatarUrls(),
-        usePlatformAvatarUrls(),
+        useCloudAvatarUrls(),
+        useCloudAvatarUrls(),
+        useCloudAvatarUrls(),
       ],
       { wrapper },
     );
     await waitFor(() => {
       expect(result.current[0]?.get("a")).toBe(WITH_AVATAR);
     });
-    renderHook(() => usePlatformAvatarUrls(), { wrapper });
+    renderHook(() => useCloudAvatarUrls(), { wrapper });
     await settle();
     expect(listAssistants).toHaveBeenCalledTimes(1);
   });
 
   test("a different user gets a fresh list", async () => {
     const wrapper = createWrapper();
-    const { result } = renderHook(() => usePlatformAvatarUrls(), { wrapper });
+    const { result } = renderHook(() => useCloudAvatarUrls(), { wrapper });
     await waitFor(() => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
@@ -240,7 +240,7 @@ describe("usePlatformAvatarUrls", () => {
 
   test("an organization switch gets a fresh list", async () => {
     const wrapper = createWrapper();
-    const { result } = renderHook(() => usePlatformAvatarUrls(), { wrapper });
+    const { result } = renderHook(() => useCloudAvatarUrls(), { wrapper });
     await waitFor(() => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
@@ -258,7 +258,7 @@ describe("usePlatformAvatarUrls", () => {
   test("never writes the resolved-assistants store", async () => {
     const setState = spyOn(useResolvedAssistantsStore, "setState");
     const before = useResolvedAssistantsStore.getState().assistants;
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await waitFor(() => {
@@ -285,7 +285,7 @@ describe("suppressPlatformAvatarUrl", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(queryClient),
     });
     await waitFor(() => {
@@ -305,7 +305,7 @@ describe("suppressPlatformAvatarUrl", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(queryClient),
     });
     await waitFor(() => {
@@ -326,7 +326,7 @@ describe("suppressPlatformAvatarUrl", () => {
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
     expect(
-      queryClient.getQueryState(platformAvatarUrlsQueryKey("user-1", null))
+      queryClient.getQueryState(cloudAvatarUrlsQueryKey("user-1", null))
         ?.status,
     ).toBe("success");
   });
@@ -335,7 +335,7 @@ describe("suppressPlatformAvatarUrl", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const { result } = renderHook(() => usePlatformAvatarUrls(), {
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(queryClient),
     });
     await waitFor(() => {
@@ -348,7 +348,7 @@ describe("suppressPlatformAvatarUrl", () => {
     });
 
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(2);
     await settle();
@@ -356,7 +356,7 @@ describe("suppressPlatformAvatarUrl", () => {
 
     setSystemTime(new Date(Date.now() + AVATAR_SUPERSEDE_WINDOW_MS));
     await act(() =>
-      queryClient.refetchQueries({ queryKey: ["platformAvatarUrls"] }),
+      queryClient.refetchQueries({ queryKey: ["cloudAvatarUrls"] }),
     );
     expect(listAssistants).toHaveBeenCalledTimes(3);
     await waitFor(() => {
@@ -365,17 +365,17 @@ describe("suppressPlatformAvatarUrl", () => {
   });
 });
 
-describe("supersedePlatformAvatar", () => {
+describe("supersedeCloudAvatar", () => {
   const PAIRED_UUID = "11111111-2222-4333-8444-555555555555";
 
   test("a paired row without a persisted UUID is suppressed under the UUID the daemon answers", async () => {
-    resolvePairedAssistantPlatformId.mockResolvedValueOnce(PAIRED_UUID);
+    resolvePairedAssistantCloudId.mockResolvedValueOnce(PAIRED_UUID);
     useResolvedAssistantsStore.setState({
       assistants: [
         {
           id: "paired-slug",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
           cloud: "paired",
         },
@@ -384,13 +384,13 @@ describe("supersedePlatformAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
-    act(() => supersedePlatformAvatar(queryClient, "paired-slug"));
+    act(() => supersedeCloudAvatar(queryClient, "paired-slug"));
 
     await waitFor(() => {
-      expect(resolvePairedAssistantPlatformId).toHaveBeenCalledWith(
+      expect(resolvePairedAssistantCloudId).toHaveBeenCalledWith(
         "paired-slug",
       );
     });
@@ -407,20 +407,20 @@ describe("supersedePlatformAvatar", () => {
         {
           id: "paired-slug",
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: true,
           cloud: "paired",
-          platformAssistantId: PAIRED_UUID,
+          cloudAssistantId: PAIRED_UUID,
         },
       ],
     });
     const queryClient = new QueryClient();
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
-    supersedePlatformAvatar(queryClient, "paired-slug");
+    supersedeCloudAvatar(queryClient, "paired-slug");
 
-    expect(resolvePairedAssistantPlatformId).not.toHaveBeenCalled();
+    expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     expect(
       queryClient.getQueryData<Map<string, string>>(key)?.has(PAIRED_UUID),
     ).toBe(false);

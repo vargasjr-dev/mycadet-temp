@@ -107,9 +107,9 @@ describe("normalizeOpenAIAPIError", () => {
     // SDK collapsed the body; raw body still has the real detail.
     const n = normalizeOpenAIAPIError(
       apiError(400, { sdkBody: {} }),
-      JSON.stringify({ detail: "managed proxy rejected model" }),
+      JSON.stringify({ detail: "cloud proxy rejected model" }),
     );
-    expect(n.message).toBe("managed proxy rejected model");
+    expect(n.message).toBe("cloud proxy rejected model");
   });
 
   test("falls back to the SDK-parsed error when the captured JSON was truncated", () => {
@@ -474,7 +474,7 @@ describe("deriveReason", () => {
   });
 
   test("daily-limit body code → daily_limit_reached (before insufficient_credits)", () => {
-    // Both are 402s from the managed proxy; the specific daily-limit code must
+    // Both are 402s from the cloud proxy; the specific daily-limit code must
     // win over the generic status-402 → insufficient_credits mapping.
     expect(
       deriveReason(

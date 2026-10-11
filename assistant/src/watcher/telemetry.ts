@@ -19,12 +19,12 @@
  * swallows storage errors.
  */
 
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import {
   getMemoryCheckpoint,
   setMemoryCheckpoint,
 } from "../persistence/checkpoints.js";
 import { recordLifecycleEvent } from "../persistence/lifecycle-events-store.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { getLogger } from "../util/logger.js";
 import { listWatchers } from "./watcher-store.js";
 

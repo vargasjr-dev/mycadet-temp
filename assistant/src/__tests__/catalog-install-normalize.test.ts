@@ -1,7 +1,7 @@
 /**
  * Regression tests for catalog entry normalization in catalog-install.ts.
  *
- * The platform `/v1/skills/` API flattens skill metadata into top-level
+ * The cloud `/v1/skills/` API flattens skill metadata into top-level
  * fields (`category`, `display_name`, `icon`) rather than the nested
  * `metadata.cadet.*` shape used by the local `catalog.json`. Both
  * `fetchCatalog` (remote) and `readLocalCatalog` (local file) must produce a
@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-process.env.CADET_PLATFORM_URL = "https://platform.example.com";
+process.env.CADET_CLOUD_URL = "https://platform.example.com";
 
 import { fetchCatalog, readLocalCatalog } from "../skills/catalog-install.js";
 
@@ -40,7 +40,7 @@ function stubFetchJson(payload: unknown): typeof fetch {
 }
 
 describe("fetchCatalog normalization", () => {
-  test("re-nests the platform's flattened category under metadata.cadet", async () => {
+  test("re-nests the cloud's flattened category under metadata.cadet", async () => {
     globalThis.fetch = stubFetchJson({
       skills: [
         {

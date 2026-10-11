@@ -29,9 +29,9 @@
  *    a saved card on the success panel alone, a failure back into the form in
  *    the mode the saved card calls for. The failure waits for the config query
  *    to settle, so it cannot be pinned to add mode by a still-pending one.
- *  - The card expiry and the saved billing address come from the platform
+ *  - The card expiry and the saved billing address come from the cloud
  *    config: the row and the modal's replace subtitle show the expiry, the
- *    modal is seeded with the address, and a platform deployment that omits
+ *    modal is seeded with the address, and a cloud deployment that omits
  *    the keys renders with nulls instead.
  *  - The config query is gated on org readiness: before the org store
  *    hydrates the card shows the loading state, never the Add button or the
@@ -485,7 +485,7 @@ describe("PaymentMethodsCard redirect return", () => {
 
   test("invalidates the config query through this card's own client", async () => {
     // The resolution confirms the card through the QueryClient it captured
-    // when it started, and a request-scope change (the platform-session probe
+    // when it started, and a request-scope change (the cloud-session probe
     // swapping the user id) remounts that client: without this the section can
     // keep showing the empty state until an unrelated GET lands.
     const client = makeClient(DISABLED_CONFIG);
@@ -673,7 +673,7 @@ describe("PaymentMethodsCard expiry and billing address", () => {
     expect(lastPmModalProps().billingAddress).toEqual(BILLING_ADDRESS);
   });
 
-  test("renders with nulls when the platform omits the keys", () => {
+  test("renders with nulls when the cloud omits the keys", () => {
     const legacy = withoutPlatformExpiryAndAddress(WITH_EXPIRY_AND_ADDRESS);
     retrieveResponse = { ...legacy };
     const { getByTestId } = render(wrap(legacy));

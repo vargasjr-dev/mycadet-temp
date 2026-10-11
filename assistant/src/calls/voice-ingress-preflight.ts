@@ -34,14 +34,14 @@ export async function preflightVoiceIngress(): Promise<VoiceIngressPreflightResu
   const ingressConfig = loadConfig();
 
   // The daemon performs both STT and TTS on the media-stream transport —
-  // in every deployment mode, platform-hosted included — so credential
+  // in every deployment mode, cloud-hosted included — so credential
   // readiness gates outbound placement before any Twilio call is made.
   const readiness = await resolveTelephonyCredentialReadiness();
   if (readiness.status === "not-ready") {
     return fail(readiness.userMessage);
   }
 
-  // Platform-callback deployments register routes with the platform and receive
+  // Platform-callback deployments register routes with the cloud and receive
   // stable callback URLs. No public ingress URL or local gateway is involved.
   if (getIsCloud()) {
     return {

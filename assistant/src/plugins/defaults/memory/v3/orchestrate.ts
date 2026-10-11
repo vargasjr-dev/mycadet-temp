@@ -118,7 +118,7 @@ import {
 const log = getLogger("memory-v3-injection-gate");
 
 /** `check_name` of the `watchdog` telemetry event recorded once per
- *  injection-gate run. The platform's memory admin analytics count and filter
+ *  injection-gate run. The cloud's memory admin analytics count and filter
  *  on this exact string — keep it stable. */
 export const MEMORY_V3_INJECTION_GATE_CHECK_NAME = "memory_v3_injection_gate";
 
@@ -133,7 +133,7 @@ export const MEMORY_V3_INJECTION_GATE_CHECK_NAME = "memory_v3_injection_gate";
  *  gate threw). Pass rate is only meaningful over scored runs — the shortcuts are
  *  all unconditional passes and would otherwise inflate it. It is derivable from
  *  `reason`, but the daemon owns the reason set and adds to it freely, so it is
- *  reported explicitly rather than left for the platform to re-derive from a
+ *  reported explicitly rather than left for the cloud to re-derive from a
  *  hardcoded list that would silently miscount the next reason we add. */
 function recordGateRun(detail: Record<string, unknown>): void {
   try {
@@ -149,7 +149,7 @@ function recordGateRun(detail: Record<string, unknown>): void {
 }
 
 /** `check_name` of the `watchdog` telemetry event recorded once per orchestrated
- *  turn, carrying what the SELECTOR did. Keep this string stable — the platform's
+ *  turn, carrying what the SELECTOR did. Keep this string stable — the cloud's
  *  memory admin analytics filter on it. */
 export const MEMORY_V3_SELECTION_CHECK_NAME = "memory_v3_selection";
 

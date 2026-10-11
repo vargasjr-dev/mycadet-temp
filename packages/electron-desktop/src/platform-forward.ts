@@ -1,5 +1,5 @@
 /**
- * Pure planning for the platform API proxy (`/v1/*`, `/_allauth/*`,
+ * Pure planning for the cloud API proxy (`/v1/*`, `/_allauth/*`,
  * `/accounts/*`, `/_sr/*`).
  *
  * Mirrors `gateway-forward.ts`: the URL/header logic is testable without
@@ -130,17 +130,17 @@ function getInitiatorTrust(
 }
 
 /**
- * Resolve a renderer request to a platform-proxy plan.
+ * Resolve a renderer request to a cloud-proxy plan.
  *
- * On `forward`, the request's `Origin` is rewritten to the platform's own
+ * On `forward`, the request's `Origin` is rewritten to the cloud's own
  * origin. The renderer issues this request from `app://mycadet.ai` but the
  * platform expects its own origin for CORS purposes. Unsafe requests are only
  * forwarded when their browser-controlled `Origin` or `Referer` matches the
  * trusted renderer origin. All other headers pass through unchanged.
  */
-export function planPlatformForward(
+export function planCloudForward(
   request: PlatformForwardRequest,
-  platformUrl: string,
+  cloudUrl: string,
   options: PlatformForwardOptions = {},
 ): PlatformForwardPlan {
   const url = new URL(request.url);
@@ -161,11 +161,11 @@ export function planPlatformForward(
     return {
       kind: "reject",
       status: 403,
-      message: "Forbidden platform proxy request",
+      message: "Forbidden cloud proxy request",
     };
   }
 
-  const target = new URL(platformUrl);
+  const target = new URL(cloudUrl);
   const headers = new Headers(request.headers);
   headers.delete(ELECTRON_RENDERER_ORIGIN_HEADER);
   headers.set("origin", target.origin);

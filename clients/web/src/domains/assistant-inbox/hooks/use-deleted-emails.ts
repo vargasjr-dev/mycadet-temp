@@ -80,13 +80,13 @@ export interface DeletedEmails {
 /**
  * Which messages the user has deleted from the inbox, kept on the device.
  *
- * The platform stores mail per assistant and offers no delete for a single
- * message (see `assistants_emails_list` in the platform spec: the collection
+ * The cloud stores mail per assistant and offers no delete for a single
+ * message (see `assistants_emails_list` in the cloud spec: the collection
  * is read-only), so "Delete from inbox" cannot remove anything from the
  * server. What it can do is honour the request on this device: the ids are
  * kept in a local setting and the mailbox filters them out of both folders.
  * Subscribed rather than read once so a deletion made in another tab hides
- * the rows here too. When the platform grows a delete, this is the seam to
+ * the rows here too. When the cloud grows a delete, this is the seam to
  * replace.
  */
 export function useDeletedEmails(assistantId: string): DeletedEmails {

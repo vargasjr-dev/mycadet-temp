@@ -1,5 +1,5 @@
 /**
- * Cadet-managed TTS: synthesis through the platform's managed speech
+ * Cadet Cloud TTS: synthesis through the cloud's cloud speech
  * surfaces (Cadet-held Deepgram key, billed to Cadet credits). No provider
  * API key exists on this machine — the cloud connection is the credential.
  *
@@ -15,12 +15,12 @@
  * messages rather than returning silence.
  */
 
-import { getConfig } from "../../config/loader.js";
 import {
-  type ManagedSpeechResult,
+  type CloudSpeechResult,
+  type CloudSpeechTtsFormat,
   managedSpeechSynthesize,
-  type ManagedSpeechTtsFormat,
-} from "../../platform/managed-speech.js";
+} from "../../cloud/cloud-speech.js";
+import { getConfig } from "../../config/loader.js";
 import {
   mapTunnelError,
   probeTunnelRejection,
@@ -41,42 +41,42 @@ const log = getLogger("cadet-tts");
 const TTS_STREAM_PATH = "/v1/speech/tts/stream";
 
 /**
- * The platform's PCM format is fixed at 16 kHz, 16-bit LE mono — the
+ * The cloud's PCM format is fixed at 16 kHz, 16-bit LE mono — the
  * media-stream transcoder needs to know the rate regardless of hints.
  */
 const CADET_PCM_SAMPLE_RATE_HZ = 16_000;
 
-type ManagedSpeechFailure = Extract<ManagedSpeechResult<never>, { ok: false }>;
+type CloudSpeechFailure = Extract<CloudSpeechResult<never>, { ok: false }>;
 
 /**
- * Map the synthesis request onto the platform's format vocabulary.
+ * Map the synthesis request onto the cloud's format vocabulary.
  *
  * The PCM hint (media-stream playback) maps to raw 16 kHz PCM for mu-law
  * transcoding; every other use case gets mp3.
  */
 function resolveManagedFormat(
   request: TtsSynthesisRequest,
-): ManagedSpeechTtsFormat {
+): CloudSpeechTtsFormat {
   return request.outputFormat === "pcm" ? "pcm_16000" : "mp3";
 }
 
 /**
- * The configured managed voice, if any. A request-level voiceId wins over
- * config; undefined means the platform's default voice.
+ * The configured cloud voice, if any. A request-level voiceId wins over
+ * config; undefined means the cloud's default voice.
  */
-function resolveManagedVoice(request: TtsSynthesisRequest): string | undefined {
+function resolveCloudVoice(request: TtsSynthesisRequest): string | undefined {
   return request.voiceId ?? getConfig().services.tts.providers.cadet.model;
 }
 
-function synthesisError(failure: ManagedSpeechFailure): Error {
+function synthesisError(failure: CloudSpeechFailure): Error {
   if (failure.code === "insufficient_balance") {
     return new Error(
-      "Cadet credits are exhausted — add funds to your Cadet account to continue using managed speech.",
+      "Cadet credits are exhausted — add funds to your Cadet account to continue using cloud speech.",
     );
   }
   if (failure.kind === "unavailable") {
     return new Error(
-      `Managed speech is unavailable: ${failure.message} Run 'assistant cloud connect' to connect your Cadet account.`,
+      `Cloud speech is unavailable: ${failure.message} Run 'assistant cloud connect' to connect your Cadet account.`,
     );
   }
   return new Error(failure.message);
@@ -88,7 +88,7 @@ async function performSynthesis(
   const result = await managedSpeechSynthesize({
     text: request.text,
     format: resolveManagedFormat(request),
-    model: resolveManagedVoice(request),
+    model: resolveCloudVoice(request),
     signal: request.signal,
   });
   if (!result.ok) {
@@ -119,7 +119,7 @@ async function performStreamingSynthesis(
   const connection = await resolveSpeechRelayConnection();
   if (!connection) {
     throw new Error(
-      "Managed speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant cloud connect' to connect your Cadet account.",
+      "Cloud speech is unavailable: the assistant cannot reach its speech relay. Run 'assistant cloud connect' to connect your Cadet account.",
     );
   }
 
@@ -131,7 +131,7 @@ async function performStreamingSynthesis(
     // consumes headerless PCM, so RIFF header bytes would play as static.
     container: "none",
   });
-  const voice = resolveManagedVoice(request);
+  const voice = resolveCloudVoice(request);
   if (voice) {
     params.set("model", voice);
   }
@@ -196,7 +196,7 @@ export function createCadetProvider(): TtsProvider {
     id: "cadet",
     capabilities,
     // Per the TtsProvider contract this returns undefined for non-PCM
-    // output; the platform's PCM format is pinned to 16 kHz.
+    // output; the cloud's PCM format is pinned to 16 kHz.
     resolveOutputSampleRateHz: (request) =>
       request.outputFormat === "pcm" ? CADET_PCM_SAMPLE_RATE_HZ : undefined,
     synthesize: performSynthesis,
@@ -205,7 +205,7 @@ export function createCadetProvider(): TtsProvider {
 }
 
 /**
- * The complete Cadet managed provider definition — catalog metadata plus
+ * The complete Cadet Cloud provider definition — catalog metadata plus
  * the runtime adapter — assembled into the canonical catalog by
  * `provider-catalog.ts`.
  */
@@ -214,14 +214,14 @@ export const cadetTtsProviderDefinition: TtsProviderDefinition = {
   displayName: "Cadet",
   subtitle:
     "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
-  // Advertises managed voice selection (`services.tts.providers.cadet.model`)
+  // Advertises cloud voice selection (`services.tts.providers.cadet.model`)
   // to clients; web gates its voice dropdown on this flag, so daemons that
   // predate the field never show a selector whose writes they would ignore.
   supportsVoiceSelection: true,
   apiKeyPlaceholder: "Connected via your Cadet account",
   credentialsGuide: {
     description:
-      "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
+      "Connect this assistant to your Cadet account; cloud speech uses that connection instead of a provider API key.",
     url: "https://cloud.mycadet.ai/",
     linkLabel: "Open Cadet Cloud",
   },
@@ -231,7 +231,7 @@ export const cadetTtsProviderDefinition: TtsProviderDefinition = {
     supportsStreaming: true,
     supportedFormats: ["mp3", "pcm"],
   },
-  // The adapter honours the PCM hint via the platform's pcm_16000 format.
+  // The adapter honours the PCM hint via the cloud's pcm_16000 format.
   mediaStreamPlayback: { outputFormat: "pcm" },
   secretRequirements: [
     {

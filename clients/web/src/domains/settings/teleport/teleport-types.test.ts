@@ -24,7 +24,7 @@ describe("classifyHosting", () => {
 });
 
 describe("resolveDestination", () => {
-  it("offers local for managed assistants", () => {
+  it("offers local for cloud assistants", () => {
     expect(resolveDestination("cadet")).toBe("local");
   });
 

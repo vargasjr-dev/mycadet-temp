@@ -107,7 +107,7 @@ For everything else in your review window, use the \`remember\` tool on facts, p
   test("proc-to-skills active: tool line widens and the authoring section is appended", () => {
     const out = buildForkInstruction(makeArgs({ procToSkillsActive: true }));
     expect(out).toContain(
-      "Only `remember`, `find_similar_skills`, and `scaffold_managed_skill` are available for this pass",
+      "Only `remember`, `find_similar_skills`, and `scaffold_cloud_skill` are available for this pass",
     );
     // skill-management is preactivated for the wake, so the prompt no longer
     // instructs a `skill_load` step.

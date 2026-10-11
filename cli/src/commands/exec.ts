@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { spawn } from "child_process";
 import { red } from "../lib/color";
 
@@ -9,7 +9,7 @@ import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import type { ServiceName } from "../lib/docker";
 import { execAppleContainer } from "../lib/exec-apple-container";
-import { getPlatformUrl, readPlatformToken } from "../lib/platform-client";
+import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/ssh-apple-container";
 import {
   interactiveSession,
@@ -243,8 +243,8 @@ export const exec = Object.assign(
     return;
   }
 
-  if (isManagedCloud(cloud)) {
-    const token = readPlatformToken();
+  if (isCloudHome(cloud)) {
+    const token = readCloudToken();
     if (!token) {
       console.error(
         red("Not logged in. Run `cadet login` first to authenticate with Cadet Cloud."),
@@ -255,7 +255,7 @@ export const exec = Object.assign(
     const assistant = {
       assistantId: entry.assistantId,
       token,
-      platformUrl: getPlatformUrl(),
+      cloudUrl: getCloudUrl(),
     };
 
     const serviceParam = service === "assistant" ? undefined : service;

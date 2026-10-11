@@ -171,7 +171,7 @@ export default meta;
 type Story = StoryObj<typeof IntegrationConnectModal>;
 
 /** Platform-hosted: the MCP server leads and the chevron offers only "Sign in through Cadet". */
-export const NotionPlatformHosted: Story = {};
+export const NotionCloudHosted: Story = {};
 
 /** Self-hosted: the same two paths plus "Use your own OAuth app" behind the chevron. */
 export const NotionSelfHosted: Story = {
@@ -189,12 +189,12 @@ export const GoogleManagedOnly: Story = {
   args: { plan: planFor({ providers: [GOOGLE_PROVIDER] }) },
 };
 
-/** Without a platform session the managed path is a login, not a connect. */
+/** Without a cloud session the cloud path is a login, not a connect. */
 export const LoginRequired: Story = {
   args: {
     plan: planFor({
       providers: [GOOGLE_PROVIDER],
-      platformGate: "disabled",
+      cloudGate: "disabled",
     }),
   },
 };

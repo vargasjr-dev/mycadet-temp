@@ -9,7 +9,7 @@
  * list is the real signal).
  *
  * Strategy mirrors plans-page-checkout.test.tsx: mock the generated SDK with
- * mutable responses, force the platform-hosted gate open, and stub the heavy
+ * mutable responses, force the cloud-hosted gate open, and stub the heavy
  * billing children so the page wiring under test is the only moving part. The
  * onboarding modal stub reports its `open` prop via a data attribute.
  */
@@ -28,7 +28,7 @@ import type {
   SubscriptionResponse,
 } from "@/generated/api/types.gen";
 import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
-import * as platformGate from "@/hooks/use-platform-gate";
+import * as cloudGate from "@/hooks/use-cloud-gate";
 import * as platformDetection from "@/runtime/platform-detection";
 import * as authStore from "@/stores/auth-store";
 
@@ -67,16 +67,16 @@ mock.module("@/generated/api/sdk.gen", () => ({
 // Drives the active assistant's hosting. Platform-hosted by default so
 // BillingTab mounts its plan-management body instead of the login notice /
 // unavailable states; flipped to model an org holding both hosting types with
-// the self-hosted one selected, where `platformHostedOnly` surfaces gate off.
-let activeAssistantIsPlatformHosted = true;
+// the self-hosted one selected, where `cloudHostedOnly` surfaces gate off.
+let activeAssistantIsCloudHosted = true;
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGate,
-  usePlatformGate: (options?: { platformHostedOnly?: boolean }) =>
-    options?.platformHostedOnly === true && !activeAssistantIsPlatformHosted
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGate,
+  useCloudGate: (options?: { cloudHostedOnly?: boolean }) =>
+    options?.cloudHostedOnly === true && !activeAssistantIsCloudHosted
       ? "gated"
       : "full",
-  useActiveAssistantIsPlatformHosted: () => activeAssistantIsPlatformHosted,
+  useActiveAssistantIsCloudHosted: () => activeAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading: () => false,
 }));
 
@@ -89,7 +89,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 
 mock.module("@/stores/auth-store", () => ({
   ...authStore,
-  useIsPlatformSessionSettled: () => true,
+  useIsCloudSessionSettled: () => true,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -231,7 +231,7 @@ beforeEach(() => {
   domainsResponse = makeDomains(false);
   orgReady = true;
   nativeAndroid = false;
-  activeAssistantIsPlatformHosted = true;
+  activeAssistantIsCloudHosted = true;
 });
 
 afterEach(() => {
@@ -285,7 +285,7 @@ describe("BillingTab post-checkout return", () => {
   });
 
   test("opens the wizard on session_id while a self-hosted assistant is active", async () => {
-    activeAssistantIsPlatformHosted = false;
+    activeAssistantIsCloudHosted = false;
     const { getByTestId, queryByTestId } = renderPage(
       "?tab=billing&session_id=cs_test_123",
     );
@@ -302,7 +302,7 @@ describe("BillingTab post-checkout return", () => {
   });
 
   test("opens the wizard on ?pro_onboarding while a self-hosted assistant is active", async () => {
-    activeAssistantIsPlatformHosted = false;
+    activeAssistantIsCloudHosted = false;
     const { getByTestId } = renderPage("?tab=billing&pro_onboarding");
 
     await waitFor(() =>
@@ -316,7 +316,7 @@ describe("BillingTab post-checkout return", () => {
   });
 
   test("mounts no wizard for a self-hosted assistant with no billing intent", async () => {
-    activeAssistantIsPlatformHosted = false;
+    activeAssistantIsCloudHosted = false;
     const { queryByTestId } = renderPage();
 
     await waitFor(() => expect(queryByTestId("loc")).toBeTruthy());

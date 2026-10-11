@@ -1,6 +1,6 @@
 /**
  * The email settings modal the Assistant Inbox opens from its masthead's
- * gear: the managed address in a read-only field with its copy and remove
+ * gear: the cloud address in a read-only field with its copy and remove
  * controls, the domain's verification on the label line, the day's usage,
  * and who can message the assistant over email.
  */

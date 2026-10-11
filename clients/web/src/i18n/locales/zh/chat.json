@@ -2167,7 +2167,7 @@
     "summaryUnanswered": "未设置",
     "untitledTask": "观察到的操作"
   },
-  "restoreManagedCredentialButton": {
+  "restoreCloudCredentialButton": {
     "restore": "恢复访问",
     "restoring": "正在恢复...",
     "restored": "已恢复。由 Cadet 托管的模型重新可用。",

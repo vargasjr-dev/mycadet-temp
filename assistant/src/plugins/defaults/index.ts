@@ -32,6 +32,7 @@ import { registerPlugin, resetPluginRegistryForTests } from "../registry.js";
 import { type Plugin, PluginExecutionError } from "../types.js";
 import { channelInjectors } from "./channel/injectors.js";
 import channelPkg from "./channel/package.json" with { type: "json" };
+import cloudHostedPkg from "./cloud-hosted/package.json" with { type: "json" };
 import compactionPkg from "./compaction/package.json" with { type: "json" };
 import { documentsInjectors } from "./documents/injectors.js";
 import documentsPkg from "./documents/package.json" with { type: "json" };
@@ -71,7 +72,6 @@ import memoryShutdown from "./memory/hooks/shutdown.js";
 import memoryUserPromptSubmit from "./memory/hooks/user-prompt-submit.js";
 import { memoryInjectors } from "./memory/injectors.js";
 import memoryPkg from "./memory/package.json" with { type: "json" };
-import platformHostedPkg from "./platform-hosted/package.json" with { type: "json" };
 import { sessionInjectors } from "./session/injectors.js";
 import sessionPkg from "./session/package.json" with { type: "json" };
 import surfaceCompletionNudgePostModelCall from "./surface-completion-nudge/hooks/post-model-call.js";
@@ -274,15 +274,15 @@ export const defaultSessionPlugin: Plugin = {
 };
 
 /**
- * `platform-hosted` — contributes the platform-hosted `/reengage` route. It
+ * `cloud-hosted` — contributes the cloud-hosted `/reengage` route. It
  * ships no hooks, tools, or injectors, so it registers as a manifest only;
  * the route source is served once the assistant dispatches default-plugin
  * routes.
  */
-export const defaultPlatformHostedPlugin: Plugin = {
+export const defaultCloudHostedPlugin: Plugin = {
   manifest: {
-    name: platformHostedPkg.name,
-    version: platformHostedPkg.version,
+    name: cloudHostedPkg.name,
+    version: cloudHostedPkg.version,
   },
 };
 
@@ -459,7 +459,7 @@ export function getAllDefaultPlugins(): readonly Plugin[] {
     defaultDocumentsPlugin,
     defaultChannelPlugin,
     defaultSessionPlugin,
-    defaultPlatformHostedPlugin,
+    defaultCloudHostedPlugin,
     defaultImageFallbackPlugin,
     defaultToolResultTruncatePlugin,
     defaultEmptyResponsePlugin,

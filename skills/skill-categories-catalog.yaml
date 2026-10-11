@@ -1,5 +1,5 @@
 # Skill category definitions for the Cadet skills catalog.
-# Fetched from GitHub at runtime by the platform.
+# Fetched from GitHub at runtime by the cloud.
 
 categories:
   - slug: email

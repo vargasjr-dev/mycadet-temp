@@ -79,7 +79,7 @@ import { releaseNotesTavilyWebSearchMigration } from "./078-release-notes-tavily
 import { homeFeedNotificationOnlyMigration } from "./079-home-feed-notification-only.js";
 import { restrictVercelApiTokenMetadataMigration } from "./080-restrict-vercel-api-token-metadata.js";
 import { backfillBashAllowedToolsForInjectionCredentialsMigration } from "./081-backfill-bash-allowed-tools-for-injection-credentials.js";
-import { backfillManagedProfileLabelsMigration } from "./082-backfill-managed-profile-labels.js";
+import { backfillCloudProfileLabelsMigration } from "./082-backfill-managed-profile-labels.js";
 import { systemPromptPrefixToFileMigration } from "./083-system-prompt-prefix-to-file.js";
 import { removeLegacySkillsIndexMigration } from "./084-remove-legacy-skills-index.js";
 import { memoryV2Bm25BReembedDisabledV2PagesMigration } from "./085-memory-v2-bm25-b-reembed-disabled-v2-pages.js";
@@ -94,7 +94,7 @@ import { backfillLeafIdsMigration } from "./093-backfill-leaf-ids.js";
 import { seedAvatarManifestMigration } from "./094-seed-avatar-manifest.js";
 import { bumpHeartbeatInterval30mTo60mMigration } from "./095-bump-heartbeat-interval-30m-to-60m.js";
 import { reduceQualityProfileEffortMigration } from "./096-reduce-quality-profile-effort.js";
-import { enableAdaptiveThinkingManagedProfilesMigration } from "./097-enable-adaptive-thinking-managed-profiles.js";
+import { enableAdaptiveThinkingCloudProfilesMigration } from "./097-enable-adaptive-thinking-managed-profiles.js";
 import { removeStaleUpdatesBulletinFileMigration } from "./098-remove-stale-updates-bulletin-file.js";
 import { disableCacheOneShotCallsitesMigration } from "./099-disable-cache-one-shot-callsites.js";
 import { upgradeQualityProfileToFable5Migration } from "./100-upgrade-quality-profile-to-fable-5.js";
@@ -123,7 +123,7 @@ import { relocateDefaultUserBoundaryMigration } from "./122-relocate-default-use
 import { swapQualityProfileToFableMigration } from "./123-swap-quality-profile-to-fable.js";
 import { correctDefaultUserBoundaryCommentsMigration } from "./124-correct-default-user-boundary-comments.js";
 import { repointManagedConnectionsToCadetMigration } from "./125-repoint-managed-connections-to-cadet.js";
-import { stripManagedProfileBodiesMigration } from "./126-strip-managed-profile-bodies.js";
+import { stripCloudProfileBodiesMigration } from "./126-strip-managed-profile-bodies.js";
 import { backfillDefaultProviderMigration } from "./127-backfill-default-provider.js";
 import { repairStaleOpenrouterGrokModelIdsMigration } from "./128-repair-stale-openrouter-grok-model-ids.js";
 import { removeAnalyzeConversationConfigMigration } from "./129-remove-analyze-conversation-config.js";
@@ -249,7 +249,7 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   homeFeedNotificationOnlyMigration,
   restrictVercelApiTokenMetadataMigration,
   backfillBashAllowedToolsForInjectionCredentialsMigration,
-  backfillManagedProfileLabelsMigration,
+  backfillCloudProfileLabelsMigration,
   systemPromptPrefixToFileMigration,
   removeLegacySkillsIndexMigration,
   memoryV2Bm25BReembedDisabledV2PagesMigration,
@@ -264,7 +264,7 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   seedAvatarManifestMigration,
   bumpHeartbeatInterval30mTo60mMigration,
   reduceQualityProfileEffortMigration,
-  enableAdaptiveThinkingManagedProfilesMigration,
+  enableAdaptiveThinkingCloudProfilesMigration,
   removeStaleUpdatesBulletinFileMigration,
   disableCacheOneShotCallsitesMigration,
   upgradeQualityProfileToFable5Migration,
@@ -293,7 +293,7 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   swapQualityProfileToFableMigration,
   correctDefaultUserBoundaryCommentsMigration,
   repointManagedConnectionsToCadetMigration,
-  stripManagedProfileBodiesMigration,
+  stripCloudProfileBodiesMigration,
   backfillDefaultProviderMigration,
   repairStaleOpenrouterGrokModelIdsMigration,
   removeAnalyzeConversationConfigMigration,

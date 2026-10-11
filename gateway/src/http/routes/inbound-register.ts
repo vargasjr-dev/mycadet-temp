@@ -2,11 +2,11 @@
  * POST /inbound/register — auto-verify the guardian's email channel when
  * an email provider is registered.
  *
- * The platform provides `guardian_email` in the request body. For BYO
+ * The cloud provides `guardian_email` in the request body. For BYO
  * providers with an identity API (Mailgun), the gateway cross-verifies
  * the email against the API response. For BYO providers without one
  * (Resend), it validates that the stored API key is functional (proving
- * account ownership) and trusts the provided email. For platform-managed
+ * account ownership) and trusts the provided email. For cloud-managed
  * email (type "cadet"), the route's edge-scoped auth is sufficient.
  *
  * On success, creates a guardian email channel binding directly in both

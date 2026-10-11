@@ -11,7 +11,11 @@
  * `oauth-proxy-passthrough.ts`; this module is the wiring around them.
  */
 
-import { isPlatformAuthBypassActive } from "../../config/env.js";
+import { isCloudAuthBypassActive } from "../../config/env.js";
+import {
+  CloudOAuthConnection,
+  prepareCloudProxyHeaders,
+} from "../../oauth/cloud-connection.js";
 import {
   isIdempotentHttpMethod,
   type OAuthConnectionResponse,
@@ -19,10 +23,6 @@ import {
 import type { OAuthConnectionResolution } from "../../oauth/connection-resolver.js";
 import { resolveOAuthConnectionWithMeta } from "../../oauth/connection-resolver.js";
 import { getProvider } from "../../oauth/oauth-store.js";
-import {
-  PlatformOAuthConnection,
-  prepareManagedProxyHeaders,
-} from "../../oauth/platform-connection.js";
 import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
@@ -76,11 +76,11 @@ export async function handleOAuthProxy(
   // A grant names one provider and, when it pinned one, one account. The
   // subject is re-derived from this request's own segment, so rewriting or
   // dropping `@account` cannot match the grant's subject. Only a
-  // platform-managed pod skips the comparison: there the daemon discards the
+  // cloud-managed pod skips the comparison: there the daemon discards the
   // token and builds a synthetic context that carries no grant subject to
   // compare against.
   if (
-    !isPlatformAuthBypassActive() &&
+    !isCloudAuthBypassActive() &&
     args.headers?.["x-cadet-subject"] !== proxyGrantSubject(provider, account)
   ) {
     throw new ForbiddenError(
@@ -118,13 +118,11 @@ export async function handleOAuthProxy(
   }
 
   const { connection } = resolution;
-  if (connection instanceof PlatformOAuthConnection) {
+  if (connection instanceof CloudOAuthConnection) {
     if (method === "HEAD") {
-      throw new MethodNotAllowedError(
-        "Managed connections do not support HEAD",
-      );
+      throw new MethodNotAllowedError("Cloud connections do not support HEAD");
     }
-    const managedHeaders = prepareManagedProxyHeaders(headers);
+    const managedHeaders = prepareCloudProxyHeaders(headers);
     const { unsupportedHeaders } = managedHeaders;
     if (unsupportedHeaders.length > 0) {
       throw new BadRequestError(
@@ -134,7 +132,7 @@ export async function handleOAuthProxy(
     headers = managedHeaders.headers;
   }
 
-  // A Buffer travels as raw bytes on BYO and as base64 on the platform, in
+  // A Buffer travels as raw bytes on BYO and as base64 on the cloud, in
   // both cases under the caller's own Content-Type.
   const body =
     carriesBody(method) && args.rawBody?.byteLength
@@ -152,7 +150,7 @@ export async function handleOAuthProxy(
       headers,
       body,
       signal: args.abortSignal,
-      // Byte-exact passthrough. Honored by BYO connections; a managed
+      // Byte-exact passthrough. Honored by BYO connections; a cloud
       // connection is parsed platform-side and cannot offer it.
       rawResponseBody: true,
       // The caller's own HTTP client decides what to do with a 3xx; the
@@ -163,7 +161,7 @@ export async function handleOAuthProxy(
       // the other idempotent methods keep their retries.
       singleAttempt: !isIdempotentHttpMethod(method),
       // The provider signing this query sees the bytes the caller wrote: key
-      // order, `%20`, and valueless flags all survive. Managed connections
+      // order, `%20`, and valueless flags all survive. Cloud connections
       // have no raw mode and send `query` instead.
       rawQuery: args.rawUrl.search,
     });
@@ -202,9 +200,9 @@ const BINARY_BODY = {
 const ERROR_RESPONSES: Record<string, { description: string }> = {
   "400": {
     description:
-      "Malformed provider segment or proxied path, or request headers unsupported by a managed connection",
+      "Malformed provider segment or proxied path, or request headers unsupported by a cloud connection",
   },
-  "402": { description: "The managed account is out of balance" },
+  "402": { description: "The cloud account is out of balance" },
   "403": {
     description: "The grant was minted for a different provider or account",
   },

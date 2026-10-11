@@ -3,7 +3,7 @@
  *
  * Listens for lockfile changes and maintains an SSE + poster pair for each
  * assistant. Local assistants (with a gatewayPort) connect to the loopback
- * gateway; cloud/managed assistants connect to the platform via
+ * gateway; cloud/cloud assistants connect to the cloud via
  * assistant-scoped URLs with session-token auth. Paired assistants use the
  * desktop data plane without receiving access to the host's tools.
  *

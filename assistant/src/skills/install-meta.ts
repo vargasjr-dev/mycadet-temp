@@ -38,7 +38,7 @@ export interface SkillInstallMeta {
   // breadcrumb only — `sourceConversationId` is the durable lineage.
   retrospectiveConversationId?: string;
   // Day-granularity stamp of the last time the skill was loaded (ISO 8601).
-  // Stamped by `touchSkillLastUsed` on the managed-skill activation path; the
+  // Stamped by `touchSkillLastUsed` on the cloud-skill activation path; the
   // usage-based prune reads its date portion as the last-used signal.
   lastUsedAt?: string;
 }

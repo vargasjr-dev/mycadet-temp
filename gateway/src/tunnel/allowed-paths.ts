@@ -1,7 +1,7 @@
 /**
  * Tunnel path allowlist sent to Tunnel on the WS upgrade request via the
  * {@link TUNNEL_ALLOWED_PATHS_HEADER} HTTP header. Tunnel parses the JSON-encoded
- * regex array on the platform side
+ * regex array on the cloud side
  * ({@link
  *   https://github.com/vargasjr-dev/mycadet-platform/blob/main/tunnel/internal/tunnel/protocol.go
  *   `RegistrationAllowedPathsHeader`})

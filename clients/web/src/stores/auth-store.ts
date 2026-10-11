@@ -20,10 +20,10 @@ import {
   isAuthenticated,
   isSessionSettled,
   isSettledSessionRejection,
-  hasLivePlatformSession,
-  isPlatformSessionSettled,
-  isConfirmedPlatformSession,
-  type PlatformSessionStatus,
+  hasLiveCloudSession,
+  isCloudSessionSettled,
+  isConfirmedCloudSession,
+  type CloudSessionStatus,
   type SessionStatus,
 } from "@/stores/session-status";
 
@@ -48,7 +48,7 @@ import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
   getLockfileAssistant,
-  getPlatformAssistants,
+  getCloudAssistants,
   getLocalAssistants,
   getSelectedAssistant,
   isPairedAssistant,
@@ -57,7 +57,7 @@ import {
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
-import { bootstrapLocalAssistantPlatformIdentity } from "@/lib/local-platform-identity";
+import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import { listAssistants } from "@/assistant/api";
 import { deleteBiometricToken } from "@/runtime/native-biometric";
 import { unregisterLiveActivityPushToken } from "@/domains/chat/voice/live-voice/live-activity-push-registration";
@@ -88,7 +88,7 @@ import { clearUserScopedStorage } from "@/lib/auth/session-cleanup";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { subscribe } from "@/lib/event-bus";
 import { isElectron } from "@/runtime/is-electron";
-import { clearLocalPlatformSession } from "@/runtime/local-mode-host";
+import { clearLocalCloudSession } from "@/runtime/local-mode-host";
 import {
   isNativePlatform,
   isOAuthFlowInFlight,
@@ -105,7 +105,7 @@ export interface AuthUser {
    * Discriminates a real platform account (`"platform"`) from synthetic local
    * gateway access (`"local"`). Both carry a stable `id` — local's is the
    * synthetic `"gateway-local"`, kept for storage namespacing — so a non-null
-   * user does not by itself imply a platform account.
+   * user does not by itself imply a cloud account.
    */
   kind: "platform" | "local";
   id: string | null;
@@ -147,18 +147,18 @@ function toAuthUser(raw: RawSessionUser | null): AuthUser | null {
 interface AuthState {
   sessionStatus: SessionStatus;
   user: AuthUser | null;
-  platformSession: PlatformSessionStatus;
-  // True while `platformSession: "present"` is a believed offline restore
+  cloudSession: CloudSessionStatus;
+  // True while `cloudSession: "present"` is a believed offline restore
   // (LUM-2412) rather than a session a live probe confirmed. Telemetry gates on
   // a confirmed-live session, so it must not treat the restored state as live.
-  platformSessionRestoredOffline: boolean;
+  cloudSessionRestoredOffline: boolean;
 }
 
 interface AuthActions {
   initSession: () => Promise<void>;
   connectLocalAssistant: (assistantId: string) => Promise<void>;
   connectPairedAssistant: (assistantId: string) => Promise<void>;
-  connectPlatformAssistant: (assistantId: string) => Promise<void>;
+  connectCloudAssistant: (assistantId: string) => Promise<void>;
   refreshSession: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -207,7 +207,7 @@ let authEpoch = 0;
 // session has ended. `authEpoch` settles races between observations; this
 // settles the other direction, because a decision also invalidates the
 // observations already in flight. A `refreshSession` that entered before the
-// logout can still be inside `reconcilePlatformAssistants()` or
+// logout can still be inside `reconcileCloudAssistants()` or
 // `syncUserScopedState()` when the authoritative session-ending write lands,
 // and its later `set(authenticatedPlatformUser(user))` would restore signed-in
 // surfaces (and re-persist the departing user's snapshot and consent) from a
@@ -240,13 +240,13 @@ function enteringAuthenticatedSession(
  * instead of re-listing the same field combinations at every call site. Each
  * returns the patch for `set()`, so the actions read as a state machine.
  *
- * `platformSession` is left untouched by transitions that don't know it yet
+ * `cloudSession` is left untouched by transitions that don't know it yet
  * (a follow-up probe settles it); transitions that do know it set it inline.
  */
 const authenticatedPlatformUser = (
   user: AuthUser | null,
 ): Partial<AuthState> => {
-  // Entering this state is the one place a platform session is freshly
+  // Entering this state is the one place a cloud session is freshly
   // confirmed — persist the snapshot here so every confirmation path
   // (boot, refresh, connect, biometric retry) feeds the offline restore
   // (LUM-2412) without each call site remembering to.
@@ -254,9 +254,9 @@ const authenticatedPlatformUser = (
   return enteringAuthenticatedSession({
     sessionStatus: "authenticated",
     user,
-    platformSession: "present",
+    cloudSession: "present",
     // Confirmed by a live probe; `restoreOfflineSession` overrides this to true.
-    platformSessionRestoredOffline: false,
+    cloudSessionRestoredOffline: false,
   });
 };
 
@@ -269,7 +269,7 @@ const authenticatedLocalUser = (): Partial<AuthState> =>
 const sessionEnded = (): Partial<AuthState> => ({
   sessionStatus: "unauthenticated",
   user: null,
-  platformSession: "absent",
+  cloudSession: "absent",
 });
 
 /**
@@ -320,16 +320,16 @@ const sessionEnded = (): Partial<AuthState> => ({
  * not land either. That half lives in {@link logoutGeneration}, which
  * `refreshSession` re-checks before each of its authenticated writes.
  *
- * `keepPlatformSession` omits the `platformSession: "absent"` half of the
- * transition for the one caller that ends the session with a platform probe
+ * `keepCloudSession` omits the `cloudSession: "absent"` half of the
+ * transition for the one caller that ends the session with a cloud probe
  * still in flight. Writing `"absent"` there would settle
- * {@link isPlatformSessionSettled} on a value the probe is about to replace,
+ * {@link isCloudSessionSettled} on a value the probe is about to replace,
  * and consumers that gate on the settle (the billing tab rewrite,
- * `usePlatformGate`) would act on it. The snapshot drop is unconditional.
+ * `useCloudGate`) would act on it. The snapshot drop is unconditional.
  */
 async function endSession(
   set: AuthSet,
-  options?: { keepPlatformSession?: boolean; authoritative?: boolean },
+  options?: { keepCloudSession?: boolean; authoritative?: boolean },
 ): Promise<void> {
   const epoch = authEpoch;
   resetNotificationIdentitySession();
@@ -338,7 +338,7 @@ async function endSession(
     return;
   }
   set(
-    options?.keepPlatformSession
+    options?.keepCloudSession
       ? { sessionStatus: "unauthenticated", user: null }
       : sessionEnded(),
   );
@@ -364,12 +364,12 @@ const isInconclusiveProbe = (
  * transport-failed boot probe (offline launch, tray reopen before Wi-Fi
  * reassociates — LUM-2412). Requires a local credential: the Electron
  * session token lives in the main process, so its presence means the
- * user never signed out — the probe merely couldn't reach the platform.
+ * user never signed out — the probe merely couldn't reach the cloud.
  * Web builds have no readable credential (cookie sessions), so they
  * keep the conservative login-screen behavior.
  *
  * Restores through the full `authenticatedPlatformUser` transition —
- * including `platformSession: "present"` — rather than leaving the
+ * including `cloudSession: "present"` — rather than leaving the
  * tri-state `"unknown"`: the snapshot is only ever written when a
  * platform session was confirmed, and no probe runs offline to settle
  * an `"unknown"`, so consumers gated on it (the auth middleware's
@@ -392,7 +392,7 @@ async function restoreOfflineSession(set: AuthSet): Promise<boolean> {
   await syncUserScopedState(cached.id);
   set({
     ...authenticatedPlatformUser(cached),
-    platformSessionRestoredOffline: true,
+    cloudSessionRestoredOffline: true,
   });
   return true;
 }
@@ -499,8 +499,8 @@ async function syncUserScopedState(nextUserId: string | null): Promise<void> {
       // device, not the just-adopted server value.
       const localShareAnalytics = store.shareAnalytics;
       const localShareDiagnostics = store.shareDiagnostics;
-      // Adopt the platform-computed effective verdicts for the data-capture
-      // gates UNCONDITIONALLY: the platform computes a verdict for every
+      // Adopt the cloud-computed effective verdicts for the data-capture
+      // gates UNCONDITIONALLY: the cloud computes a verdict for every
       // response, including no-row responses (never-asked → enabled), so
       // there is no client-side judgment about record-ness on this path —
       // that heuristic (hasServerRecord) guards only legal-consent fallback,
@@ -666,7 +666,7 @@ async function syncUserScopedState(nextUserId: string | null): Promise<void> {
 
   const consent = restoreConsentForUser(nextUserId);
   const store = useOnboardingStore.getState();
-  // Consent fetch failed for a platform user: a device that has never
+  // Consent fetch failed for a cloud user: a device that has never
   // resolved a diagnostics gate fails closed until a successful sync can
   // reveal a server-side explicit opt-out. A failed fetch keeps the last
   // adopted server verdicts; a signed-out sync clears them — they belong to
@@ -696,15 +696,15 @@ async function syncUserScopedState(nextUserId: string | null): Promise<void> {
 }
 
 /**
- * Probe the platform assistants endpoint and report whether the platform API
+ * Probe the cloud assistants endpoint and report whether the cloud API
  * conclusively rejected the session (a settled 401/403/410 from
- * the org or assistants call). Only that settled evidence may end a platform
+ * the org or assistants call). Only that settled evidence may end a cloud
  * session; transport failures and other errors prove nothing (LUM-2412) and
  * leave cached lockfile data standing. Cloud mode loads assistants via
- * `reloadPlatformAssistants` (platform-assistants-sync), which has no
+ * `reloadCloudAssistants` (cloud-assistants-sync), which has no
  * lockfile and stays outside this evidence rule.
  */
-async function reconcilePlatformAssistants(
+async function reconcileCloudAssistants(
   syncIsCurrent?: () => boolean,
   sessionIsCurrent?: () => boolean,
 ): Promise<boolean> {
@@ -739,10 +739,10 @@ async function reconcilePlatformAssistants(
   return false;
 }
 
-// Monotonic id stamped on each platform-session probe. Probes can overlap
+// Monotonic id stamped on each cloud-session probe. Probes can overlap
 // (an app-resume refresh firing while the initial probe is still in flight),
 // and a stale completion must not mutate session state — most importantly it
-// must not move `platformSession` while a newer probe is still pending, which
+// must not move `cloudSession` while a newer probe is still pending, which
 // would resurface the very race this state guards. Only the latest probe's id
 // matches `latestPlatformProbe`, so older probes no-op.
 let latestPlatformProbe = 0;
@@ -750,16 +750,16 @@ let latestPlatformProbe = 0;
 // Settle promise for the most recently launched probe, reassigned on every
 // launch. Because re-probes keep the last `"present"`/`"absent"` rather than
 // reopening `"unknown"` (so reactive consumers don't flicker), the displayed
-// `platformSession` can be a prior result while a fresh probe is still in
+// `cloudSession` can be a prior result while a fresh probe is still in
 // flight. Imperative readers that must not act on a not-yet-refreshed value
-// (the onboarding route fork) await `whenPlatformSessionSettled`, which chases
+// (the onboarding route fork) await `whenCloudSessionSettled`, which chases
 // this reference so a probe that becomes latest mid-wait is awaited too.
 // Initialized resolved: before any probe runs the status is `"unknown"`, which
 // those callers already gate on separately.
 let platformProbeSettled: Promise<void> = Promise.resolve();
 
 /**
- * Run the fire-and-forget platform-session probe used by the local gateway
+ * Run the fire-and-forget cloud-session probe used by the local gateway
  * auth paths, which return control before the session is known.
  *
  * The probe never reopens the `"unknown"` window: a re-run (app-resume
@@ -780,7 +780,7 @@ let platformProbeSettled: Promise<void> = Promise.resolve();
  * result (the refresh path, which must retract a session that has ended);
  * init paths leave a prior optimistic value untouched.
  */
-function probePlatformSession(
+function probeCloudSession(
   set: AuthSet,
   options: { setUserOnSuccess?: boolean; clearOnFailure?: boolean } = {},
 ): void {
@@ -794,8 +794,8 @@ function probePlatformSession(
       if (result.ok && result.data.user) {
         const probedUser = toAuthUser(result.data.user);
         // Sync platform assistants to the lockfile BEFORE setting
-        // platformSession to "present". The auth middleware unblocks on
-        // `platformSession !== "unknown"`, and hasAssistants() must
+        // cloudSession to "present". The auth middleware unblocks on
+        // `cloudSession !== "unknown"`, and hasAssistants() must
         // already reflect synced platform assistants at that point.
         // The whole sequence (org fetch, list, host replace) is bounded
         // to 3s so a hanging call can't block the probe from settling;
@@ -813,7 +813,7 @@ function probePlatformSession(
           try {
             await Promise.race([
               (async () => {
-                sessionRejected = await reconcilePlatformAssistants(
+                sessionRejected = await reconcileCloudAssistants(
                   syncIsCurrent,
                   () => !isStale(),
                 );
@@ -835,7 +835,7 @@ function probePlatformSession(
           return;
         }
         if (sessionRejected) {
-          // The platform API conclusively rejected the allauth-confirmed
+          // The cloud API conclusively rejected the allauth-confirmed
           // credential: settle absent, install no user, and drop the snapshot
           // so `restoreOfflineSession` cannot resurrect the account. Transport
           // failures and the race timeout never reach here (LUM-2412).
@@ -847,26 +847,26 @@ function probePlatformSession(
             : {};
           set({
             ...demotion,
-            platformSession: "absent",
-            platformSessionRestoredOffline: false,
+            cloudSession: "absent",
+            cloudSessionRestoredOffline: false,
           });
           return;
         }
         const userUpdate = options.setUserOnSuccess ? { user: probedUser } : {};
-        // Adopting the probed user confirms a platform session outside the
+        // Adopting the probed user confirms a cloud session outside the
         // `authenticatedPlatformUser` transition, so persist here too to feed
         // the local-mode offline restore (LUM-2412).
         if (options.setUserOnSuccess) {
           persistUserSnapshot(probedUser);
         }
         set({
-          platformSession: "present",
-          platformSessionRestoredOffline: false,
+          cloudSession: "present",
+          cloudSessionRestoredOffline: false,
           ...userUpdate,
         });
-        bootstrapLocalAssistantPlatformIdentity();
+        bootstrapLocalAssistantCloudIdentity();
       } else if (options.clearOnFailure) {
-        set({ platformSession: "absent" });
+        set({ cloudSession: "absent" });
       }
     })
     .catch(() => {
@@ -874,7 +874,7 @@ function probePlatformSession(
         return;
       }
       if (options.clearOnFailure) {
-        set({ platformSession: "absent" });
+        set({ cloudSession: "absent" });
       }
     })
     .finally(() => {
@@ -882,18 +882,18 @@ function probePlatformSession(
         return;
       }
       set((state) =>
-        state.platformSession === "unknown"
-          ? { platformSession: "absent" }
+        state.cloudSession === "unknown"
+          ? { cloudSession: "absent" }
           : {},
       );
     });
 }
 
 /**
- * Resolve once no platform-session probe is in flight, or immediately when none
+ * Resolve once no cloud-session probe is in flight, or immediately when none
  * is running.
  *
- * Reactive consumers read `platformSession` directly and rely on re-probes
+ * Reactive consumers read `cloudSession` directly and rely on re-probes
  * leaving the last `"present"`/`"absent"` in place (no flicker). Imperative
  * one-shot readers that must not branch on a stale value — the onboarding
  * hosting/welcome fork — await this instead, so they observe the fresh probe
@@ -907,7 +907,7 @@ function probePlatformSession(
  * one out too, returning only once the reference is unchanged across an await —
  * i.e. no probe launched while waiting for the last one.
  */
-export async function whenPlatformSessionSettled(): Promise<void> {
+export async function whenCloudSessionSettled(): Promise<void> {
   let awaited = platformProbeSettled;
   await awaited;
   while (platformProbeSettled !== awaited) {
@@ -917,24 +917,24 @@ export async function whenPlatformSessionSettled(): Promise<void> {
 }
 
 /**
- * Probe the platform session when one could exist: non-local mode, gateway
+ * Probe the cloud session when one could exist: non-local mode, gateway
  * auth enabled, or local mode with platform assistants in the lockfile.
  * Gateway auth always probes because the user may have logged into the
  * platform (e.g. via the login flow) without having added platform
  * assistants yet. When nothing qualifies, settle to `"absent"`.
  */
-function probePlatformSessionIfReachable(
+function probeCloudSessionIfReachable(
   set: AuthSet,
   options?: { setUserOnSuccess?: boolean; clearOnFailure?: boolean },
 ): void {
   if (
     !isLocalClient() ||
     isGatewayAuthEnabled() ||
-    getPlatformAssistants().length > 0
+    getCloudAssistants().length > 0
   ) {
-    probePlatformSession(set, options);
+    probeCloudSession(set, options);
   } else {
-    set({ platformSession: "absent" });
+    set({ cloudSession: "absent" });
   }
 }
 
@@ -967,31 +967,31 @@ async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
 const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   sessionStatus: "initializing",
   user: null,
-  platformSession: "unknown",
-  platformSessionRestoredOffline: false,
+  cloudSession: "unknown",
+  cloudSessionRestoredOffline: false,
 
   // Deliberately not guarded by `logoutGeneration`, unlike `refreshSession`.
   // Its two callers can't overlap a logout: the boot path runs before any
-  // signed-in surface exists to press Log Out on, and the platform loopback
+  // signed-in surface exists to press Log Out on, and the cloud loopback
   // page runs it from the logged-out login flow as the commit step of a
   // deliberate sign-in: a decision, which the guard exists to protect, rather
   // than an observation the guard should be able to discard.
   initSession: async () => {
-    // Cloud remote: the platform session cookie is the credential — no
+    // Cloud remote: the cloud session cookie is the credential — no
     // gateway session exists to establish or rotate.
     if (isCadetCloudRemote()) {
-      set({ ...authenticatedLocalUser(), platformSession: "present" });
+      set({ ...authenticatedLocalUser(), cloudSession: "present" });
       return;
     }
     // Gateway-token JWT scheme — refresh what we hold, else prime below.
     if (await hasRemoteGatewaySessionAfterRefresh()) {
-      set({ ...authenticatedLocalUser(), platformSession: "absent" });
-      // A local client may also hold a platform session (logged in through
-      // the platform login flow) — keep probing for it; it settles async. A
+      set({ ...authenticatedLocalUser(), cloudSession: "absent" });
+      // A local client may also hold a cloud session (logged in through
+      // the cloud login flow) — keep probing for it; it settles async. A
       // served-gateway browser shares no platform cookie space, so it never
       // probes.
       if (isLocalClient()) {
-        probePlatformSessionIfReachable(set);
+        probeCloudSessionIfReachable(set);
       }
       return;
     }
@@ -1009,16 +1009,16 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         set(authenticatedLocalUser());
       } catch {
         // Gateway prime failed: settle to unauthenticated but leave
-        // `platformSession` for the follow-up probe to resolve.
-        await endSession(set, { keepPlatformSession: true });
+        // `cloudSession` for the follow-up probe to resolve.
+        await endSession(set, { keepCloudSession: true });
       }
-      probePlatformSessionIfReachable(set);
+      probeCloudSessionIfReachable(set);
       return;
     }
 
     if (isLocalClient() && !isGatewayAuthEnabled()) {
-      const hasPlatformAssistants = getPlatformAssistants().length > 0;
-      if (hasPlatformAssistants) {
+      const hasCloudAssistants = getCloudAssistants().length > 0;
+      if (hasCloudAssistants) {
         // Platform assistants require a valid session — await the check
         // so the auth middleware can redirect to login if it fails.
         let result: Awaited<ReturnType<typeof getSession>> | null = null;
@@ -1029,7 +1029,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
             // Re-sync platform assistants to remove stale lockfile entries.
             // The rejection evidence gates the user-scoped sync: a rejected
             // account's consent and org state must not be (re)installed.
-            const sessionRejected = await reconcilePlatformAssistants();
+            const sessionRejected = await reconcileCloudAssistants();
             if (!sessionRejected) {
               await syncUserScopedState(user?.id ?? null);
               set(authenticatedPlatformUser(user));
@@ -1056,9 +1056,9 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       }
       set(authenticatedLocalUser());
       if (!suppressPlatformProbe) {
-        probePlatformSession(set, { setUserOnSuccess: true });
+        probeCloudSession(set, { setUserOnSuccess: true });
       } else {
-        set({ platformSession: "absent" });
+        set({ cloudSession: "absent" });
       }
       suppressPlatformProbe = false;
       return;
@@ -1070,9 +1070,9 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       if (result.ok && result.data.user) {
         const user = toAuthUser(result.data.user);
         await syncUserScopedState(user?.id ?? null);
-        // The resolved assistants list is loaded by the platform-session
-        // subscription (setupPlatformAssistantsSync), which fires when the
-        // transition below flips `platformSession` to "present".
+        // The resolved assistants list is loaded by the cloud-session
+        // subscription (setupCloudAssistantsSync), which fires when the
+        // transition below flips `cloudSession` to "present".
         set(authenticatedPlatformUser(user));
         return;
       }
@@ -1100,9 +1100,9 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           if (retryResult.ok && retryResult.data.user) {
             const user = toAuthUser(retryResult.data.user);
             await syncUserScopedState(user?.id ?? null);
-            // The resolved assistants list loads via the platform-session
-            // subscription (setupPlatformAssistantsSync) when the transition
-            // below flips `platformSession` to "present".
+            // The resolved assistants list loads via the cloud-session
+            // subscription (setupCloudAssistantsSync) when the transition
+            // below flips `cloudSession` to "present".
             set(authenticatedPlatformUser(user));
             return;
           }
@@ -1159,14 +1159,14 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     await primeLocalGatewayConnectionWithRepair(target);
     await establishLocalUserSession(set, assistantId);
     if (
-      isConfirmedPlatformSession(
-        get().platformSession,
-        get().platformSessionRestoredOffline,
+      isConfirmedCloudSession(
+        get().cloudSession,
+        get().cloudSessionRestoredOffline,
       )
     ) {
-      bootstrapLocalAssistantPlatformIdentity(assistantId);
+      bootstrapLocalAssistantCloudIdentity(assistantId);
     }
-    probePlatformSessionIfReachable(set);
+    probeCloudSessionIfReachable(set);
   },
 
   /**
@@ -1177,8 +1177,8 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
    * deliberate differences: it primes through the plain
    * `primeLocalGatewayConnection` because `wake` cannot start or repair an
    * assistant on a remote machine, and it skips
-   * `bootstrapLocalAssistantPlatformIdentity` because that registers a LOCAL
-   * assistant with the platform while a paired entry is only a client-side
+   * `bootstrapLocalAssistantCloudIdentity` because that registers a LOCAL
+   * assistant with the cloud while a paired entry is only a client-side
    * pairing record.
    */
   connectPairedAssistant: async (assistantId: string) => {
@@ -1188,10 +1188,10 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     }
     await primeLocalGatewayConnection(target);
     await establishLocalUserSession(set, assistantId);
-    probePlatformSessionIfReachable(set);
+    probeCloudSessionIfReachable(set);
   },
 
-  connectPlatformAssistant: async (assistantId: string) => {
+  connectCloudAssistant: async (assistantId: string) => {
     const result = await getSession();
     if (!result.ok || !result.data.user) {
       throw new Error("Platform authentication required");
@@ -1228,7 +1228,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     const abandon = (): boolean => isAuthenticated(get().sessionStatus);
 
     if (isCadetCloudRemote()) {
-      // The platform cookie is the only credential here: re-verify it
+      // The cloud cookie is the only credential here: re-verify it
       // authoritatively instead of pinging a gateway session that does
       // not exist. A settled rejection ends the session (the recovery
       // flow then routes to login); an ok probe re-stamps liveness.
@@ -1242,7 +1242,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         return abandon();
       }
       if (ok) {
-        set({ ...authenticatedLocalUser(), platformSession: "present" });
+        set({ ...authenticatedLocalUser(), cloudSession: "present" });
         return true;
       }
       await endSession(set);
@@ -1252,9 +1252,9 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       if (supersededByLogout()) {
         return abandon();
       }
-      set({ ...authenticatedLocalUser(), platformSession: "absent" });
+      set({ ...authenticatedLocalUser(), cloudSession: "absent" });
       if (isLocalClient()) {
-        probePlatformSessionIfReachable(set, { clearOnFailure: true });
+        probeCloudSessionIfReachable(set, { clearOnFailure: true });
       }
       return true;
     }
@@ -1272,8 +1272,8 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           await ensureGatewayToken(getLocalTokenUrl());
         }
         if (supersededByLogout()) {
-          // Abandon the platform probe below too: launching it would settle
-          // `platformSession` from the session the logout just ended.
+          // Abandon the cloud probe below too: launching it would settle
+          // `cloudSession` from the session the logout just ended.
           return abandon();
         }
         set(enteringAuthenticatedSession({ sessionStatus: "authenticated" }));
@@ -1281,7 +1281,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         await endSession(set);
         return false;
       }
-      probePlatformSessionIfReachable(set, { clearOnFailure: true });
+      probeCloudSessionIfReachable(set, { clearOnFailure: true });
       return true;
     }
 
@@ -1298,7 +1298,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         // evidence gates the user-scoped sync: a rejected account's consent
         // and org state must not be (re)installed before the demotion below.
         const sessionRejected = isLocalClient()
-          ? await reconcilePlatformAssistants()
+          ? await reconcileCloudAssistants()
           : false;
         if (!sessionRejected) {
           // Checked on both sides of the sync: the first check keeps a logout
@@ -1331,12 +1331,12 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     if (isInconclusiveProbe(result)) {
       return isAuthenticated(get().sessionStatus);
     }
-    // A settled "no platform session" (401) ends the platform session, not the
+    // A settled "no platform session" (401) ends the cloud session, not the
     // local one. Demote an authenticated session to the local user and mark the
     // platform session absent, dropping the stale platform user and offline
     // snapshot so platform-gated surfaces stop treating it as signed in, while
     // keeping `sessionStatus` "authenticated": a 401 must not log a local-only
-    // user out. (The successful probe above still adopts the platform user, so
+    // user out. (The successful probe above still adopts the cloud user, so
     // provider sign-in keeps working.) An unauthenticated session, e.g. mid
     // cold-start hatch, is left for the gateway to settle once its token mints.
     //
@@ -1348,8 +1348,8 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // The predicate asks whether the local session can stand on its own,
     // mirroring how `initSession` branches: a local gateway answers for itself,
     // and so does a client with no platform assistant to reach. A local client
-    // whose assistants are platform-hosted is excluded, since a managed
-    // assistant is unreachable without a platform session and routing to login
+    // whose assistants are cloud-hosted is excluded, since a cloud
+    // assistant is unreachable without a cloud session and routing to login
     // beats stranding the user beside one that cannot answer. Remote-gateway
     // mode returns at the top of this action.
     //
@@ -1358,12 +1358,12 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // already made false.
     const localSessionStandsAlone =
       isLocalClient() &&
-      (isGatewayAuthEnabled() || getPlatformAssistants().length === 0);
+      (isGatewayAuthEnabled() || getCloudAssistants().length === 0);
     if (localSessionStandsAlone) {
       const wasAuthenticated = isAuthenticated(get().sessionStatus);
       if (wasAuthenticated) {
         clearUserSnapshot();
-        set({ ...authenticatedLocalUser(), platformSession: "absent" });
+        set({ ...authenticatedLocalUser(), cloudSession: "absent" });
       }
       return wasAuthenticated;
     }
@@ -1403,8 +1403,8 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     }
 
     suppressPlatformProbe = true;
-    // Delete the APNs device token from the platform BEFORE clearing the
-    // session — the platform delete is authenticated by the still-valid
+    // Delete the APNs device token from the cloud BEFORE clearing the
+    // session — the cloud delete is authenticated by the still-valid
     // session cookie. No-ops off native iOS. Best-effort: never blocks logout.
     await unregisterFromRemotePush();
     // Same window, same reason: a Live Activity registered for a voice session
@@ -1420,7 +1420,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       }
       // Web loopback: drop the token the local server's proxy authenticates with.
       if (isLocalClient() && !isElectron()) {
-        await clearLocalPlatformSession();
+        await clearLocalCloudSession();
       }
       void deleteBiometricToken();
       clearOrganization();
@@ -1446,7 +1446,7 @@ export const useAuthStore = createSelectors(useAuthStoreBase);
  *
  * Each subscribes to one atomic field and answers a single domain question, so
  * components never re-encode the enum (`sessionStatus === "authenticated"`,
- * `platformSession === "present"`) and never juggle a pair of booleans. They
+ * `cloudSession === "present"`) and never juggle a pair of booleans. They
  * compose the pure `session-status` predicates over the atomic selectors
  * generated by `createSelectors`, keeping Zustand's `Object.is` snapshot
  * equality stable.
@@ -1457,28 +1457,28 @@ export const useIsAuthenticated = (): boolean =>
 export const useIsSessionInitializing = (): boolean =>
   !isSessionSettled(useAuthStore.use.sessionStatus());
 
-export const useHasPlatformSession = (): boolean =>
-  hasLivePlatformSession(useAuthStore.use.platformSession());
+export const useHasCloudSession = (): boolean =>
+  hasLiveCloudSession(useAuthStore.use.cloudSession());
 
 /**
- * Reactive: the platform-session probe has settled (`platformSession` is no
+ * Reactive: the cloud-session probe has settled (`cloudSession` is no
  * longer `"unknown"`). Gate behavior that must not act on the pre-settle
- * window — where {@link useHasPlatformSession} still reads `false` for a
+ * window — where {@link useHasCloudSession} still reads `false` for a
  * session that will resolve to `"present"` — on this rather than on
  * {@link useIsSessionInitializing}, which can clear first.
  */
-export const useIsPlatformSessionSettled = (): boolean =>
-  isPlatformSessionSettled(useAuthStore.use.platformSession());
+export const useIsCloudSessionSettled = (): boolean =>
+  isCloudSessionSettled(useAuthStore.use.cloudSession());
 
 /**
  * A platform session a live probe confirmed — excludes the believed offline
  * restore (LUM-2412). Telemetry consent gates on this, not the routing-oriented
- * {@link useHasPlatformSession}, so it never enables offline.
+ * {@link useHasCloudSession}, so it never enables offline.
  */
-export const useHasConfirmedPlatformSession = (): boolean =>
-  isConfirmedPlatformSession(
-    useAuthStore.use.platformSession(),
-    useAuthStore.use.platformSessionRestoredOffline(),
+export const useHasConfirmedCloudSession = (): boolean =>
+  isConfirmedCloudSession(
+    useAuthStore.use.cloudSession(),
+    useAuthStore.use.cloudSessionRestoredOffline(),
   );
 
 /**

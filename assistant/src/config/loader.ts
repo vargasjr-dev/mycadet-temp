@@ -34,7 +34,7 @@ let suppressConfigDiskWritesDepth = 0;
  * {@link validateWithSchema} on every validation-success path, then overwritten
  * by {@link loadConfig} with the deployment-context-filled config whenever
  * context defaults apply — so it reflects the config as consumers actually see
- * it (managed service modes and all), not just the pre-fill schema-defaulted
+ * it (cloud service modes and all), not just the pre-fill schema-defaulted
  * view. It is a safety net for the recovery ladder — when config.json later
  * fails validation even after per-key cleanup, the last-known-good config is
  * preferred over discarding the user's entire configuration and falling back to
@@ -126,27 +126,27 @@ function cloneDefaultConfig(): AssistantConfig {
 
 /**
  * Returns deployment-context-aware config defaults that override schema
- * defaults for platform-managed assistants. Applied to every `loadConfig()`
+ * defaults for cloud assistants. Applied to every `loadConfig()`
  * call as a fill-only pass — they only fill keys that are absent from the
  * raw config on disk, so an explicit user choice (e.g. saving "your-own"
  * via the macOS Models & Services UI) always wins.
  *
- * IS_PLATFORM is set by the Cadet Cloud launcher for all hosted
+ * IS_CLOUD is set by the Cadet Cloud launcher for all hosted
  * assistant deployments. Local, Docker, and bare-metal assistants are
  * unaffected.
  */
 export function getDeploymentContextDefaults(): Record<string, unknown> {
-  if (process.env.IS_PLATFORM !== "true" && process.env.IS_PLATFORM !== "1") {
+  if (process.env.IS_CLOUD !== "true" && process.env.IS_CLOUD !== "1") {
     return {};
   }
   // Web-search carries no deployment default: `provider` is its only axis,
   // the schema default (`inference-provider-native`) prefers native hosted
-  // search, and app-executed search falls back to the platform proxy when no
+  // search, and app-executed search falls back to the cloud proxy when no
   // BYOK key is configured. Filling a `mode` here would override BYOK
   // configs on every load.
   const managed = { mode: "managed" as const };
   return {
-    // Express platform intent that hosted assistants embed via the managed
+    // Express platform intent that hosted assistants embed via the cloud
     // Gemini backend. Fill-only (applied in-memory by
     // `fillContextDefaultsForMissingKeys`), so it expresses the default without
     // persisting it or overriding an explicit on-disk provider. The committed
@@ -156,8 +156,8 @@ export function getDeploymentContextDefaults(): Record<string, unknown> {
     // default (`gemini-embedding-2`).
     memory: { embeddings: { provider: "gemini" } },
     services: {
-      // Image-generation is provider-only for the managed axis: `cadet`
-      // generates through the platform runtime proxy (the backend derives
+      // Image-generation is provider-only for the cloud axis: `cadet`
+      // generates through the cloud runtime proxy (the backend derives
       // from the selected model's prefix at request time). Hosted assistants
       // default to it here; fill-only, so an explicit on-disk BYOK provider
       // (gemini/openai) always wins. Filling a `mode` instead would
@@ -390,7 +390,7 @@ function describeIssues(issues: ValidationIssue[]): string {
  * a `superRefine` violation until the strip unmasks it. Every rung of that
  * ladder leaves at least part of the user's saved configuration inactive, and
  * the rungs that reset a section (or the whole config) to schema defaults
- * silently revert settings the user never touched: managed service modes, model
+ * silently revert settings the user never touched: cloud service modes, model
  * choices, API keys. The on-disk file is left intact, so the user's values are
  * still present but inactive until the invalid entries are fixed.
  *
@@ -1118,13 +1118,13 @@ export function loadConfig(): AssistantConfig {
     // this run's effective values.
     const willSeed = !configFileExisted && suppressConfigDiskWritesDepth === 0;
 
-    // Layer deployment-context defaults (e.g. IS_PLATFORM=true → all service
+    // Layer deployment-context defaults (e.g. IS_CLOUD=true → all service
     // modes = "managed") onto the in-memory config for any leaves that aren't
     // explicitly set in `fileConfig`. This runs on every load — not just the
     // first — because the workspace config file is written by upstream
     // lifecycle steps (`mergeDefaultWorkspaceConfig`, `seedInferenceProfiles`)
     // before `loadConfig()` is reached. Gating on `!configFileExisted` would
-    // make the context defaults dead code on platform-managed daemons whose
+    // make the context defaults dead code on cloud-managed daemons whose
     // config.json was created by those earlier steps without service-mode
     // entries. Explicit user choices on disk are preserved because the helper
     // only fills missing keys.
@@ -1137,23 +1137,23 @@ export function loadConfig(): AssistantConfig {
       );
       // Refresh the last-known-good safety net with the effective config.
       // `validateWithSchema` captured a snapshot before these deployment-context
-      // fills (e.g. IS_PLATFORM=true → managed OAuth service modes) were layered
+      // fills (e.g. IS_CLOUD=true → cloud OAuth service modes) were layered
       // on, so its snapshot reflects pre-fill schema defaults. The fills are part
       // of this run's effective configuration, so a later recovery must restore
-      // them rather than flip a managed service mode back to its schema default.
+      // them rather than flip a cloud service mode back to its schema default.
       lastKnownGoodConfig = structuredClone(config);
     }
 
     // First-launch seed only: when config.json does not exist, write the
     // effective config to disk so users can discover and edit all available
-    // options. Deployment-context service-mode defaults (e.g. IS_PLATFORM=true →
-    // managed service modes) are included for discoverability, but the platform
+    // options. Deployment-context service-mode defaults (e.g. IS_CLOUD=true →
+    // cloud service modes) are included for discoverability, but the cloud
     // embedding-provider intent is OMITTED entirely — not even persisted as the
     // schema default "auto". `fillContextDefaultsForMissingKeys` only fills a
     // leaf absent from disk, so persisting any provider value (including "auto")
     // would be read back as an explicit user choice on the next load and
-    // permanently suppress re-applying the platform "gemini" default. Leaving
-    // the leaf absent keeps the platform intent in-memory-only yet re-applied on
+    // permanently suppress re-applying the cloud "gemini" default. Leaving
+    // the leaf absent keeps the cloud intent in-memory-only yet re-applied on
     // every load.
     //
     // When the file already exists, leave it alone — disk represents user

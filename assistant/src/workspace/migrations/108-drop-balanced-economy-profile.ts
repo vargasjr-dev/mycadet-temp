@@ -3,10 +3,10 @@ import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
 
-// Reclaim the managed `balanced-economy` inference profile. Its
+// Reclaim the cloud `balanced-economy` inference profile. Its
 // MiniMax-M3-on-Fireworks config lives on `balanced`, whose content the seeder
 // reconciles from the templates on every boot; the seeder never deletes a
-// profile, so this migration deletes the managed `balanced-economy` object and
+// profile, so this migration deletes the cloud `balanced-economy` object and
 // repoints every reference to it — its `profileOrder` entry, the `activeProfile`
 // and `advisorProfile` selections, call-site `profile` overrides, and mix-profile
 // arms — onto `balanced`, which resolves to the same MiniMax M3 route. A
@@ -19,7 +19,7 @@ const REPLACEMENT = "balanced";
 export const dropBalancedEconomyProfileMigration: WorkspaceMigration = {
   id: "108-drop-balanced-economy-profile",
   description:
-    "Remove the managed Balanced Economy profile and repoint its references to Balanced",
+    "Remove the cloud Balanced Economy profile and repoint its references to Balanced",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -46,7 +46,7 @@ export const dropBalancedEconomyProfileMigration: WorkspaceMigration = {
     const economy = profiles !== null ? readObject(profiles[ECONOMY]) : null;
 
     // A user-owned profile that happens to use this name keeps everything,
-    // references included — only the managed profile is reclaimed.
+    // references included — only the cloud profile is reclaimed.
     if (economy !== null && economy.source !== "managed") {
       return;
     }

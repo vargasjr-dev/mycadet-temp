@@ -1,0 +1,330 @@
+/**
+ * Platform callback route registration.
+ *
+ * Both cloud-managed (IS_CLOUD=true) and self-hosted assistants can
+ * register callback routes with the cloud so inbound provider webhooks
+ * (Telegram, Twilio, email, OAuth) are forwarded correctly.
+ *
+ * Cloud assistants pick up context from environment variables.
+ * Self-hosted assistants use stored credentials (from `assistant cloud
+ * connect` or the ensure-registration bootstrap).
+ *
+ * The cloud endpoint is:
+ *   POST {CADET_CLOUD_URL}/v1/internal/gateway/callback-routes/register/
+ *
+ * It accepts { assistant_id, callback_path, type } and returns a stable
+ * callback_url that external services should use. Self-hosted assistants
+ * also send callback_base_url (configured or detected public ingress) so
+ * the cloud can register a route that points at this instance.
+ */
+
+import { resolveCloudAssistantId } from "../config/cloud-identity.js";
+import { getCloudBaseUrl } from "../config/env.js";
+import { getIsCloud } from "../config/env-registry.js";
+import { getConfig } from "../config/loader.js";
+import { ipcRegisterWebhookRoute } from "../ipc/gateway-client.js";
+import { credentialKey } from "../security/credential-key.js";
+import { getSecureKeyResultAsync } from "../security/secure-keys.js";
+import { getLogger } from "../util/logger.js";
+import { resolveClaimedPodWebhookUrl } from "./pod-webhook-claim.js";
+import {
+  PublicIngressDisabledError,
+  tryGetPublicBaseUrl,
+} from "./public-ingress-urls.js";
+import { isTunnelWebhooksEnabled } from "./tunnel-webhooks-gate.js";
+
+const log = getLogger("cloud-callback-registration");
+
+export interface CloudCallbackRegistrationContext {
+  isPlatform: boolean;
+  cloudBaseUrl: string;
+  assistantId: string;
+  /**
+   * Whether a cloud assistant API key is available: `null` when the
+   * credential store could not be read, so its absence is not evidence that
+   * no key is stored. A client deciding whether to provision one must not
+   * read `null` as "missing".
+   */
+  hasAssistantApiKey: boolean | null;
+  authHeader: string | null;
+  enabled: boolean;
+}
+
+export async function resolveCloudCallbackRegistrationContext(): Promise<CloudCallbackRegistrationContext> {
+  const platform = getIsCloud();
+  const [storedAssistantApiKey, assistantId] = await Promise.all([
+    getSecureKeyResultAsync(credentialKey("cadet", "assistant_api_key")),
+    resolveCloudAssistantId(),
+  ]);
+
+  const cloudBaseUrl = getCloudBaseUrl().replace(/\/+$/, "");
+  const envAssistantCredential = process.env.ASSISTANT_API_KEY?.trim();
+  const assistantCredential =
+    storedAssistantApiKey.value?.trim() || envAssistantCredential || undefined;
+  const authHeader = assistantCredential
+    ? `Api-Key ${assistantCredential}`
+    : null;
+  const hasAssistantApiKey =
+    !assistantCredential && storedAssistantApiKey.unreachable
+      ? null
+      : !!assistantCredential;
+
+  return {
+    isPlatform: platform,
+    cloudBaseUrl,
+    assistantId,
+    hasAssistantApiKey,
+    authHeader,
+    // Enabled when we have enough context to register callback routes.
+    // Does NOT require IS_CLOUD — self-hosted assistants with stored
+    // credentials can also register routes.
+    enabled:
+      cloudBaseUrl.length > 0 && assistantId.length > 0 && authHeader !== null,
+  };
+}
+
+interface RegisterCallbackRouteResponse {
+  callback_url: string;
+  callback_path: string;
+  type: string;
+  assistant_id: string;
+}
+
+/**
+ * Register a callback route with the cloud's internal gateway endpoint.
+ *
+ * @param callbackPath - The path portion after the ingress base URL
+ *   (e.g. "webhooks/twilio/voice"). Leading/trailing slashes are stripped
+ *   by the cloud.
+ * @param type - The route type identifier (e.g. "twilio_voice",
+ *   "twilio_status", "oauth", "telegram").
+ * @param sourceIdentifier - Optional human-readable source identifier
+ *   (e.g. bot handle, phone number) for display in admin UI.
+ * @returns The cloud-provided callback URL that external services should use.
+ * @throws If the cloud request fails.
+ */
+export async function registerCallbackRoute(
+  callbackPath: string,
+  type: string,
+  sourceIdentifier?: string,
+): Promise<string> {
+  const context = await resolveCloudCallbackRegistrationContext();
+  if (!context.enabled || !context.authHeader) {
+    throw new Error(
+      "Platform callbacks not available — missing platform registration context",
+    );
+  }
+
+  const cloudBaseUrl = context.cloudBaseUrl;
+  const assistantId = context.assistantId;
+
+  const url = `${cloudBaseUrl}/v1/internal/gateway/callback-routes/register/`;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: context.authHeader,
+  };
+
+  const payload: Record<string, string> = {
+    assistant_id: assistantId,
+    callback_path: callbackPath,
+    type,
+  };
+  if (sourceIdentifier) {
+    payload.source_identifier = sourceIdentifier;
+  }
+  const callbackBaseUrl = resolveSelfHostedCallbackBaseUrl();
+  if (callbackBaseUrl) {
+    payload.callback_base_url = callbackBaseUrl;
+  }
+  const body = JSON.stringify(payload);
+
+  log.debug({ callbackPath, type }, "Registering platform callback route");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body,
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `Platform callback route registration failed (HTTP ${response.status}): ${detail}`,
+    );
+  }
+
+  const data = (await response.json()) as RegisterCallbackRouteResponse;
+
+  log.info(
+    { callbackPath, type, callbackUrl: data.callback_url },
+    "Platform callback route registered",
+  );
+
+  return data.callback_url;
+}
+
+/**
+ * Self-hosted assistants must send the public ingress URL when registering
+ * with the cloud. Cloud pods omit it: Django ignores client-provided
+ * bases and always uses the cloud callback URL.
+ */
+function resolveSelfHostedCallbackBaseUrl(): string | undefined {
+  if (getIsCloud()) {
+    return undefined;
+  }
+  try {
+    return tryGetPublicBaseUrl(getConfig());
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Claim a webhook subpath on the gateway so the Tunnel forwards it.
+ *
+ * The registry matches paths exactly, so query parameters a caller appends to
+ * the resolved URL play no part. Returns false when the gateway declines the
+ * claim or cannot be reached, leaving platform callback registration as the
+ * way to keep the webhook reachable.
+ *
+ * @param callbackPath - The path to claim, e.g. "webhooks/twilio/voice".
+ */
+export async function registerLocalWebhookRoute(
+  callbackPath: string,
+  type: string,
+  sourceIdentifier?: string,
+): Promise<boolean> {
+  const path = callbackPath.startsWith("/") ? callbackPath : `/${callbackPath}`;
+  const result = await ipcRegisterWebhookRoute({
+    path,
+    type,
+    source: sourceIdentifier,
+  });
+
+  if (!result.ok) {
+    log.warn(
+      { path, type, reason: result.reason },
+      "Gateway webhook route registration failed, falling back to the cloud",
+    );
+    return false;
+  }
+  if (result.disabled) {
+    log.info(
+      { path, type },
+      "Gateway is not serving its own webhooks, falling back to the cloud",
+    );
+    return false;
+  }
+
+  log.debug({ path, type }, "Gateway webhook route registered");
+  return true;
+}
+
+/**
+ * Resolve a callback URL, registering with the cloud when appropriate.
+ *
+ * Resolution order, matching `handleWebhooksRegister` in
+ * `runtime/routes/webhook-routes.ts` and `hasWebhookRoutingConfigured` in
+ * `config/webhook-routing.ts`:
+ *
+ *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
+ *      always register with the cloud gateway. With the flag on, they try
+ *      the direct supplier first — the gateway's Tunnel client publishes the
+ *      tunnel URL into `ingress.publicBaseUrl` — and fall back to platform
+ *      registration on any failure, including an explicit
+ *      `ingress.enabled: false`: a pod owner toggling that flag must not
+ *      lose webhooks entirely. The subpath is claimed on the gateway before
+ *      the tunnel URL is handed out, and a refused claim falls back the same
+ *      way.
+ *   2. **A configured public ingress wins** for everyone else, so the direct
+ *      supplier is tried first and its value returned when it resolves.
+ *   3. **Platform-connected assistants with no ingress** register with the
+ *      platform gateway rather than surfacing the direct builder's error.
+ *      Connectivity is decided by credentials (platform base URL + assistant
+ *      ID + assistant API key), not by `IS_CLOUD`, which is only ever true
+ *      on a cloud pod.
+ *
+ * Off a pod, an explicit `ingress.enabled: false` is a decision not to accept
+ * inbound webhooks at all, so `PublicIngressDisabledError` propagates instead
+ * of being routed around. Ingress precedes the cloud fallback because any
+ * logged-in local assistant holds cloud credentials for the LLM proxy:
+ * treating credential presence as "managed" would silently reroute an
+ * explicitly configured self-hosted callback through the cloud.
+ *
+ * The `directUrl` parameter is a **lazy supplier** (a function returning a
+ * string) rather than an eagerly-evaluated string. This is critical because
+ * the direct URL builders (e.g. `getTwilioVoiceWebhookUrl`) call
+ * `getPublicBaseUrl()` which throws when no public ingress URL is configured.
+ * On a cloud pod the direct URL is never needed, and deferring evaluation
+ * avoids the throw.
+ *
+ * @param directUrl - Lazy supplier for the direct callback URL.
+ * @param callbackPath - The path to register (e.g. "webhooks/twilio/voice").
+ * @param type - The route type identifier.
+ * @param queryParams - Optional query parameters to append to the resolved URL.
+ * @param sourceIdentifier - Optional human-readable source identifier for admin display.
+ * @returns The resolved callback URL.
+ */
+export async function resolveCallbackUrl(
+  directUrl: () => string,
+  callbackPath: string,
+  type: string,
+  queryParams?: Record<string, string>,
+  sourceIdentifier?: string,
+): Promise<string> {
+  if (getIsCloud()) {
+    if (isTunnelWebhooksEnabled()) {
+      const claimed = await resolveClaimedPodWebhookUrl(directUrl, () =>
+        registerLocalWebhookRoute(callbackPath, type, sourceIdentifier),
+      );
+      if (claimed !== undefined) {
+        return claimed;
+      }
+    }
+  } else {
+    let ingressUrl: string | undefined;
+    let ingressError: unknown;
+    try {
+      ingressUrl = directUrl();
+    } catch (err) {
+      if (err instanceof PublicIngressDisabledError) {
+        throw err;
+      }
+      ingressError = err;
+    }
+
+    if (ingressUrl !== undefined) {
+      return ingressUrl;
+    }
+
+    // No ingress configured. Fall back to the cloud gateway when this
+    // assistant is connected to the cloud. Cloud pods always are, so
+    // they skip the context probe and register directly.
+    const context = await resolveCloudCallbackRegistrationContext();
+    if (!context.enabled) {
+      throw ingressError;
+    }
+  }
+
+  try {
+    let url = await registerCallbackRoute(callbackPath, type, sourceIdentifier);
+    if (queryParams && Object.keys(queryParams).length > 0) {
+      const params = new URLSearchParams(queryParams);
+      const separator = url.includes("?") ? "&" : "?";
+      url = `${url}${separator}${params.toString()}`;
+    }
+    return url;
+  } catch (err) {
+    // Registration is only attempted once the local ingress has been ruled
+    // out, so there is nothing left to fall back to. Surface a clear error so
+    // callers (and the user) understand this is a cloud-side issue, not a
+    // tunnel problem.
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Managed callback route registration failed: ${detail}. ` +
+        `Please contact support if this problem persists.`,
+    );
+  }
+}

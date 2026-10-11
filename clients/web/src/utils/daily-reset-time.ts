@@ -1,5 +1,5 @@
 /**
- * Human phrase for the moment the daily credit limit resets. The platform
+ * Human phrase for the moment the daily credit limit resets. The cloud
  * resets the spend counter at midnight UTC; this expresses that moment in the
  * viewer's clock with a timezone label: "5:00 PM MT". The generic zone name
  * avoids DST-specific abbreviations (MT, not MDT); zones without one fall

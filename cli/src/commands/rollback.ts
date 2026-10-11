@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import {
   findAssistantByName,
   getActiveAssistant,
@@ -16,9 +16,9 @@ import {
 import type { ServiceName } from "../lib/docker";
 import { emitCliError, categorizeUpgradeError } from "../lib/cli-error.js";
 import {
-  readPlatformToken,
-  rollbackPlatformAssistant,
-} from "../lib/platform-client.js";
+  readCloudToken,
+  rollbackCloudAssistant,
+} from "../lib/cloud-client.js";
 import {
   broadcastUpgradeEvent,
   buildCompleteEvent,
@@ -46,7 +46,7 @@ function parseArgs(): { name: string | null; version: string | null } {
       console.log("Usage: cadet rollback [<name>] [--version <version>]");
       console.log("");
       console.log(
-        "Roll back a Docker or managed assistant to a previous version.",
+        "Roll back a Docker or cloud assistant to a previous version.",
       );
       console.log("");
       console.log("Arguments:");
@@ -135,7 +135,7 @@ async function rollbackPlatformViaEndpoint(
   version?: string,
 ): Promise<void> {
   // Step 1 — Authenticate
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     const msg =
       "Error: Not logged in. Run `cadet login --token <token>` first.";
@@ -156,7 +156,7 @@ async function rollbackPlatformViaEndpoint(
 
   let result: { detail: string; version: string | null };
   try {
-    result = await rollbackPlatformAssistant(
+    result = await rollbackCloudAssistant(
       token,
       entry.assistantId,
       version,
@@ -224,14 +224,14 @@ export const rollback = Object.assign(
   }
 
   // ---------- Managed (Cadet Cloud) rollback ----------
-  if (isManagedCloud(cloud)) {
+  if (isCloudHome(cloud)) {
     await rollbackPlatformViaEndpoint(entry, version ?? undefined);
     return;
   }
 
   // ---------- Unsupported topologies ----------
   if (cloud !== "docker") {
-    const msg = "Rollback is only supported for Docker and managed assistants.";
+    const msg = "Rollback is only supported for Docker and cloud assistants.";
     console.error(msg);
     emitCliError("UNSUPPORTED_TOPOLOGY", msg);
     process.exit(1);

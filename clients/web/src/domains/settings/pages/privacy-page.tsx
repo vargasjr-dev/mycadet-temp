@@ -13,11 +13,11 @@ import { BiometricSettingsCard } from "@/domains/settings/components/biometric-s
 import { MediaEmbedsCard } from "@/domains/settings/components/media-embeds-card";
 import { RiskToleranceSettings } from "@/domains/settings/components/risk-tolerance-settings";
 import { TrustRules } from "@/domains/settings/components/trust-rules/trust-rules";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { Trans, useTranslation } from "@/i18n";
 import {
   useAuthStore,
-  useHasConfirmedPlatformSession,
+  useHasConfirmedCloudSession,
 } from "@/stores/auth-store";
 import { getDeviceSetting, setDeviceSetting } from "@/utils/device-settings";
 import { savePreferenceToggle } from "@/lib/consent/consent-persistence";
@@ -46,14 +46,14 @@ export function PrivacyPage() {
   const { t } = useTranslation("settings");
   // The standard gate, matching `AccessConsentSetting`, so the divider
   // shows exactly when that row does.
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
   // The Share toggles control telemetry (client diagnostics, daemon analytics)
   // that only runs with a probe-confirmed live platform session, so gate both
   // the visibility and the consent write on it. A
   // believed offline restore (LUM-2412) is not live, so the toggles hide and a
   // flip can't stamp version-currency offline.
-  const hasPlatformSession = useHasConfirmedPlatformSession();
-  const showShareConsent = hasPlatformSession;
+  const hasCloudSession = useHasConfirmedCloudSession();
+  const showShareConsent = hasCloudSession;
   const userId = useAuthStore.use.user()?.id ?? null;
   // Never-asked (null) displays as on: both toggles are opt-out. The store
   // setters inside `savePreferenceToggle` keep these reactive, so server
@@ -78,14 +78,14 @@ export function PrivacyPage() {
   const handleAnalyticsToggle = () => {
     savePreferenceToggle("share_analytics", !shareAnalyticsChecked, {
       userId,
-      hasPlatformSession,
+      hasCloudSession,
     });
   };
 
   const handleDiagnosticsToggle = () => {
     savePreferenceToggle("share_diagnostics", !shareDiagnosticsChecked, {
       userId,
-      hasPlatformSession,
+      hasCloudSession,
     });
   };
 
@@ -104,7 +104,7 @@ export function PrivacyPage() {
       <DetailCard
         title={t("privacyPage.title")}
         subtitle={
-          hasPlatformSession ? (
+          hasCloudSession ? (
             <Trans
               ns="settings"
               i18nKey="privacyPage.subtitleWithPolicy"
@@ -148,7 +148,7 @@ export function PrivacyPage() {
             trailing divider in that case so we don't render two adjacent
             dividers around a missing row.
           */}
-          {platformGate !== "gated" && <Divider />}
+          {cloudGate !== "gated" && <Divider />}
           <div>
             <label
               htmlFor="llm-log-retention"

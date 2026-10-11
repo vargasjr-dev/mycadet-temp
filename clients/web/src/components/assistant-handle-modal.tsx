@@ -10,12 +10,12 @@ import {
 } from "@/generated/api/@tanstack/react-query.gen";
 import type { Assistant } from "@/generated/api/types.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
-  /** The assistant as the platform lists it; its id is the platform's. */
+  /** The assistant as the cloud lists it; its id is the cloud's. */
   assistant: Assistant;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -78,7 +78,7 @@ export interface AssistantHandleModalControl {
 /**
  * Everything a surface needs to offer the handle modal for the active
  * assistant: the handle to show, the opener, and the modal to mount. Handles
- * live on the platform, so off a platform-hosted assistant, or before the
+ * live on the cloud, so off a cloud-hosted assistant, or before the
  * platform's listing has the assistant, there is nothing to open and
  * `openModal` is `null`; callers drop their trigger on that.
  */
@@ -86,10 +86,10 @@ export function useAssistantHandleModal(
   assistantId: string | null,
 ): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
-  const gate = usePlatformGate({ platformHostedOnly: true });
+  const gate = useCloudGate({ cloudHostedOnly: true });
   const onPlatform = gate === "full" && !!assistantId;
   const orgReady = useIsOrgReady();
-  const { platformAssistantId } = usePlatformAssistantId(
+  const { cloudAssistantId } = useCloudAssistantId(
     assistantId,
     onPlatform,
   );
@@ -99,7 +99,7 @@ export function useAssistantHandleModal(
   });
   const assistant =
     assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === platformAssistantId,
+      (candidate) => candidate.id === cloudAssistantId,
     ) ?? null;
 
   const openModal = useCallback(() => setOpen(true), []);

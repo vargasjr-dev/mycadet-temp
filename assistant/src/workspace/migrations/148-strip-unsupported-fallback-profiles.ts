@@ -4,7 +4,7 @@
  * Automatic model fallbacks are code-owned metadata on the four managed
  * default profiles. Earlier builds accepted custom `fallbackProfile` values
  * in raw workspace config, including pointers rewritten by migration 147.
- * Those values cannot be executed under the managed-only fallback contract
+ * Those values cannot be executed under the cloud-only fallback contract
  * and would make later config writes fail validation.
  *
  * This migration removes every persisted pointer except the exact managed
@@ -35,7 +35,7 @@ const CODE_OWNED_FALLBACKS: Record<string, string> = {
 export const stripUnsupportedFallbackProfilesMigration: WorkspaceMigration = {
   id: "148-strip-unsupported-fallback-profiles",
   description:
-    "Remove custom fallback profile pointers outside the managed default contract",
+    "Remove custom fallback profile pointers outside the cloud default contract",
   // A transient config write failure must not leave an unsupported pointer
   // behind permanently; the next boot can safely repeat this idempotent pass.
   retryFailedCheckpoint: true,

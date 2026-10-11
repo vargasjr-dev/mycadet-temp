@@ -29,13 +29,13 @@ mock.module("../../contacts/guardian-delivery-reader.js", () => ({
   guardianForChannel: () => undefined,
 }));
 
-mock.module("../../platform/client.js", () => ({
-  CadetPlatformClient: class {
+mock.module("../../cloud/client.js", () => ({
+  CadetCloudClient: class {
     static async create(): Promise<null> {
       return null;
     }
   },
-  isPlatformClientConfigured: async () => false,
+  isCloudClientConfigured: async () => false,
 }));
 
 mock.module("../broadcaster.js", () => ({
@@ -153,7 +153,7 @@ describe("emitNotificationSignal dedupe claim on failure", () => {
     );
   });
 
-  // "sent" is a completed channel delivery; "pending" is the platform push
+  // "sent" is a completed channel delivery; "pending" is the cloud push
   // that passed its outcome deadline and is still in flight. Both are
   // side effects a retry would repeat.
   for (const status of ["sent", "pending"] as const) {

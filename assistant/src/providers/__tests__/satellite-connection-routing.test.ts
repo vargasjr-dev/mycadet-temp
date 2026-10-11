@@ -94,7 +94,7 @@ mock.module("../inference/connections.js", () => ({
 
 // Connection names that should make `resolveProviderFromConnection` throw —
 // simulates a transient failure inside auth resolution (credential read,
-// managed-proxy context lookup) bubbling up from the inner registry call.
+// cloud-proxy context lookup) bubbling up from the inner registry call.
 const connectionsThatThrowOnResolve = new Set<string>();
 
 mock.module("../registry.js", () => ({
@@ -186,14 +186,14 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
 
     setLlmConfig({
       profiles: {
-        "managed-profile": {
+        "cloud-profile": {
           provider: "anthropic",
           provider_connection: "anthropic-managed",
           model: "claude-opus-4-7",
         },
       },
       callSites: {
-        replySuggestion: { profile: "managed-profile" },
+        replySuggestion: { profile: "cloud-profile" },
       },
     });
 
@@ -406,7 +406,7 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
 
   test("transient auth-resolution failure → falls back to default (graceful per-call degradation)", async () => {
     // Simulates a transient error inside `resolveProviderFromConnection`
-    // (e.g. a credential read fails, or managed-proxy context lookup
+    // (e.g. a credential read fails, or cloud-proxy context lookup
     // throws). The connection-resolution helper catches transient throws
     // and returns null. The wrapper then falls back to the default
     // Provider so a credential blip does not take inference offline.

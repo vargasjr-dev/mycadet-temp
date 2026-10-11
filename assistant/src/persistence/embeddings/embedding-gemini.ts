@@ -44,8 +44,8 @@ const BATCH_ROUTE_UNAVAILABLE_STATUSES = new Set([404, 405, 501]);
 export interface GeminiEmbeddingOptions {
   taskType?: EmbeddingTaskType;
   dimensions?: number;
-  /** When set, routes requests through the managed proxy at this base URL. */
-  managedBaseUrl?: string;
+  /** When set, routes requests through the cloud proxy at this base URL. */
+  cloudBaseUrl?: string;
   /**
    * Milliseconds to sleep between sequential embed calls to yield to the
    * event loop. Defaults to 5000 in production; set to 0 in tests.
@@ -59,7 +59,7 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
   private readonly apiKey: string;
   private readonly taskType?: EmbeddingTaskType;
   private readonly dimensions?: number;
-  private readonly managedBaseUrl?: string;
+  private readonly cloudBaseUrl?: string;
   private readonly interCallDelayMs: number;
   /**
    * Set once the batch route has answered that it does not exist, so later
@@ -72,13 +72,13 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
     this.model = model;
     this.taskType = options?.taskType;
     this.dimensions = options?.dimensions;
-    this.managedBaseUrl = options?.managedBaseUrl;
+    this.cloudBaseUrl = options?.cloudBaseUrl;
     this.interCallDelayMs = options?.interCallDelayMs ?? 100;
   }
 
-  /** True when requests route through the managed platform proxy. */
+  /** True when requests route through the cloud cloud proxy. */
   get managed(): boolean {
-    return Boolean(this.managedBaseUrl);
+    return Boolean(this.cloudBaseUrl);
   }
 
   /**
@@ -272,7 +272,7 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
     // as a protobuf oneof populated from the URL path (internally `_model`),
     // so adding it to the body triggers a 400: "oneof field '_model' is
     // already set. Cannot set 'model'". This holds for both the direct API
-    // and the managed proxy, which forwards the body unchanged; the platform
+    // and the cloud proxy, which forwards the body unchanged; the cloud
     // billing layer parses the model from the URL path instead.
     if (this.taskType) {
       body.taskType = this.taskType;
@@ -305,11 +305,11 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
     return values;
   }
 
-  /** The model's `:embedContent` or `:batchEmbedContents` URL, direct or via the managed proxy. */
+  /** The model's `:embedContent` or `:batchEmbedContents` URL, direct or via the cloud proxy. */
   private endpointUrl(method: "embedContent" | "batchEmbedContents"): string {
     const model = encodeURIComponent(this.model);
-    return this.managedBaseUrl
-      ? `${this.managedBaseUrl}/v1beta/models/${model}:${method}`
+    return this.cloudBaseUrl
+      ? `${this.cloudBaseUrl}/v1beta/models/${model}:${method}`
       : `https://generativelanguage.googleapis.com/v1beta/models/${model}:${method}?key=${encodeURIComponent(this.apiKey)}`;
   }
 
@@ -317,7 +317,7 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (this.managedBaseUrl) {
+    if (this.cloudBaseUrl) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
     }
     return headers;

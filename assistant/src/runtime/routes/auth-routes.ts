@@ -12,12 +12,12 @@ import {
   getCloudOrganizationId,
   getCloudUserId,
 } from "../../config/env.js";
-import { resolveManagedProxyContext } from "../../providers/platform-proxy/context.js";
+import { resolveCloudProxyContext } from "../../providers/cloud-proxy/context.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 interface AuthInfoResult {
-  platformUrl: string | null;
+  cloudUrl: string | null;
   assistantId: string | null;
   organizationId: string | null;
   userId: string | null;
@@ -28,16 +28,16 @@ interface AuthInfoResult {
 async function handleAuthInfo(
   _args: RouteHandlerArgs,
 ): Promise<AuthInfoResult> {
-  const ctx = await resolveManagedProxyContext();
+  const ctx = await resolveCloudProxyContext();
 
-  const platformUrl = getCloudBaseUrl();
+  const cloudUrl = getCloudBaseUrl();
   const assistantId = getCloudAssistantId();
   const organizationId = getCloudOrganizationId();
   const userId = getCloudUserId();
   const authenticated = ctx.enabled;
 
   const result: AuthInfoResult = {
-    platformUrl: platformUrl || null,
+    cloudUrl: cloudUrl || null,
     assistantId: assistantId || null,
     organizationId: organizationId || null,
     userId: userId || null,
@@ -45,7 +45,7 @@ async function handleAuthInfo(
   };
 
   if (!authenticated) {
-    result.message = !platformUrl
+    result.message = !cloudUrl
       ? "Platform URL not configured. Run assistant config set platform.baseUrl <url>"
       : "Assistant API key not found. Store one with: assistant keys set credential/cadet/assistant_api_key <key>";
   }
@@ -67,7 +67,7 @@ export const ROUTES: RouteDefinition[] = [
       "Returns platform identity and authentication status for this assistant.",
     tags: ["auth"],
     responseBody: z.object({
-      platformUrl: z.string().nullable(),
+      cloudUrl: z.string().nullable(),
       assistantId: z.string().nullable(),
       organizationId: z.string().nullable(),
       userId: z.string().nullable(),

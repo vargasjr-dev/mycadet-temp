@@ -1007,7 +1007,7 @@ describe("memoryRetrospectiveJob", () => {
     ]);
   });
 
-  test("scaffold_managed_skill counts as durable work even with zero remembers", async () => {
+  test("scaffold_cloud_skill counts as durable work even with zero remembers", async () => {
     mockWakeResult = { invoked: true, exitReason: "no_tool_calls" };
     messagesByConversationId["fork-conv-1"] = [
       {
@@ -1016,7 +1016,7 @@ describe("memoryRetrospectiveJob", () => {
           {
             type: "tool_use",
             id: "tu-skill-1",
-            name: "scaffold_managed_skill",
+            name: "scaffold_cloud_skill",
             input: { name: "deploy-checklist" },
           },
         ]),
@@ -1343,7 +1343,7 @@ describe("memoryRetrospectiveJob", () => {
     const opts = wakeCalls[0]!.opts;
     expect(opts.allowedTools).toEqual([
       "remember",
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       "skill_load",
       "find_similar_skills",
     ]);
@@ -2616,7 +2616,7 @@ describe("memoryRetrospectiveJob", () => {
     );
     // None of the skill-authoring directives appear.
     expect(instructionText).not.toContain("find_similar_skills");
-    expect(instructionText).not.toContain("scaffold_managed_skill");
+    expect(instructionText).not.toContain("scaffold_cloud_skill");
     expect(instructionText).not.toContain("companion file");
     expect(instructionText).not.toContain("user-authored");
   });
@@ -2631,7 +2631,7 @@ describe("memoryRetrospectiveJob", () => {
     // Available-tools line names the skill-authoring pair; skill-management is
     // preactivated, so no `skill_load` step is instructed.
     expect(instructionText).toContain("find_similar_skills");
-    expect(instructionText).toContain("scaffold_managed_skill");
+    expect(instructionText).toContain("scaffold_cloud_skill");
     expect(instructionText).not.toContain("skill_load skill-management");
 
     // Permissive relevance pre-check keyed on actually-executed procedures.

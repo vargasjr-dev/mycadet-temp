@@ -23,7 +23,7 @@ import { Toggle } from "@mycadet/design-library/components/toggle";
 
 /**
  * In-page anchor for deep links straight to this card (chat banner "Adjust
- * Limit", the platform's daily-limit email). Must match the hash in
+ * Limit", the cloud's daily-limit email). Must match the hash in
  * `routes.settings.usageBillingDailyLimit`.
  */
 export const DAILY_CREDIT_LIMIT_ANCHOR_ID = "daily-credit-limit";

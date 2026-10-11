@@ -10,10 +10,10 @@ import type {
   OrganizationsBillingUsageTotalsRetrieveData,
 } from "@/generated/api/types.gen";
 import {
-  type PlatformGateState,
-  useActiveAssistantIsPlatformHosted,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  type CloudGateState,
+  useActiveAssistantIsCloudHosted,
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { getEffectiveTimezone } from "@/utils/effective-timezone";
 import {
   DEFAULT_LLM_USAGE_DIMENSION,
@@ -86,41 +86,41 @@ export function buildBillingUsageTotalsQuery(
  * Whether the organization-scoped platform billing queries may fire.
  *
  * These fetches only make sense when three things hold:
- *   - the active assistant is platform-hosted (`platformHostedOnly` gate is
+ *   - the active assistant is cloud-hosted (`cloudHostedOnly` gate is
  *     "full"),
- *   - the platform API is reachable (the default reachability gate is not
+ *   - the cloud API is reachable (the default reachability gate is not
  *     "gated" — i.e. the app is not in local mode with
- *     `CADET_DISABLE_PLATFORM` set, where `platformFeaturesGate` aborts the
+ *     `CADET_DISABLE_CLOUD` set, where `platformFeaturesGate` aborts the
  *     request), and
- *   - the assistant is positively resolved as platform-hosted.
+ *   - the assistant is positively resolved as cloud-hosted.
  *
- * The `platformHostedOnly` gate deliberately ignores `CADET_DISABLE_PLATFORM`
+ * The `cloudHostedOnly` gate deliberately ignores `CADET_DISABLE_CLOUD`
  * and reports "full" during the lifecycle loading window, so neither of the
  * other two checks is redundant: without the reachability gate a local-mode
- * app driving a platform-hosted assistant with the platform API disabled would
- * fire two doomed requests, and without `isPlatformHosted` a fetch could kick
+ * app driving a cloud-hosted assistant with the cloud API disabled would
+ * fire two doomed requests, and without `isCloudHosted` a fetch could kick
  * off before hosting is resolved.
  */
 export function isBillingUsageDataEnabled(
-  platformGate: PlatformGateState,
-  reachabilityGate: PlatformGateState,
-  isPlatformHosted: boolean,
+  cloudGate: CloudGateState,
+  reachabilityGate: CloudGateState,
+  isCloudHosted: boolean,
 ): boolean {
   return (
-    platformGate === "full" && reachabilityGate !== "gated" && isPlatformHosted
+    cloudGate === "full" && reachabilityGate !== "gated" && isCloudHosted
   );
 }
 
 export function useBillingUsageData(state: UsageChartState) {
   const tz = useEffectiveTimezone();
 
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  const reachabilityGate = usePlatformGate();
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const reachabilityGate = useCloudGate();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const enabled = isBillingUsageDataEnabled(
-    platformGate,
+    cloudGate,
     reachabilityGate,
-    isPlatformHosted,
+    isCloudHosted,
   );
 
   const seriesQuery = useQuery({

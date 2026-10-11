@@ -16,7 +16,7 @@ export interface TelemetryEventBase {
    * back-compat with platforms that haven't deployed the per-event
    * handling.
    *
-   * The platform's `TelemetryIngestView` prefers per-event over
+   * The cloud's `TelemetryIngestView` prefers per-event over
    * envelope: when a per-event value is present (including explicit
    * `null`) it wins. When the field is omitted on the event entirely
    * (old assistant), the envelope value is the back-compat fallback.
@@ -30,7 +30,7 @@ export interface TelemetryEventBase {
    * stamp the flushing binary's `APP_VERSION`. Stamping `APP_VERSION`
    * instead of emitting explicit `null` preserves envelope-equivalent
    * behavior under the per-event-wins contract. The type allows
-   * `null` for parity with the platform contract; in practice the
+   * `null` for parity with the cloud contract; in practice the
    * daemon never sends it.
    */
   assistant_version: string | null;
@@ -44,7 +44,7 @@ export interface TelemetryEventBase {
  *
  * `provider`/`model` are nullable on the wire because rows persisted before
  * the attribution columns existed, and rows whose attribution resolution
- * failed, must still ship; the platform serializer accepts null.
+ * failed, must still ship; the cloud serializer accepts null.
  */
 export interface ModelTelemetryEventBase extends TelemetryEventBase {
   /** Provider serving the call, e.g. "anthropic", "fireworks". */
@@ -61,7 +61,7 @@ export interface ModelTelemetryEventBase extends TelemetryEventBase {
  * Applies the daemon's record-time guarantee to a wire-derived event type.
  *
  * The wire contract marks `assistant_version` optional for back-compat with
- * old daemons; under the platform's per-event-wins contract a present
+ * old daemons; under the cloud's per-event-wins contract a present
  * per-event value (including explicit `null`) beats the envelope fallback.
  * This daemon always stamps the field at record time (see
  * {@link TelemetryEventBase.assistant_version} for the full contract), so
@@ -204,7 +204,7 @@ export interface TurnTelemetryClientInfo {
  * role `"user"` keep that role here so the transcript is faithful to what was
  * sent to the model. `content` is the parsed `messages.content` — either the
  * modern `ContentBlock[]` (text / tool_use / tool_result / thinking / image /
- * file blocks) or a legacy plain string. Stored verbatim by the platform as an
+ * file blocks) or a legacy plain string. Stored verbatim by the cloud as an
  * opaque JSON column, so the shape is self-describing rather than normalized.
  */
 export interface TurnTraceMessage {
@@ -259,7 +259,7 @@ export interface TurnTraceToolCall {
  * turn and the next real user turn. Attached to the turn telemetry event's
  * `trace` field ONLY when trace collection is enabled — the owner's
  * `share_diagnostics` consent at an eligible accepted version.
- * The platform stores this verbatim as an opaque JSON column, so the daemon
+ * The cloud stores this verbatim as an opaque JSON column, so the daemon
  * owns the shape.
  *
  * Each turn's trace is its natural window. A turn whose window holds no
@@ -278,7 +278,7 @@ export interface TurnTraceToolDefinition {
 }
 
 export interface TurnTrace {
-  /** Shape version so the platform/dbt can evolve parsing without ambiguity. */
+  /** Shape version so the cloud/dbt can evolve parsing without ambiguity. */
   schema_version: 3;
   /**
    * Ordered message rows for the turn (the user message first, then assistant
@@ -424,7 +424,7 @@ export interface TurnTelemetryEvent extends TelemetryEventBase {
    * composes the gate itself from the owner's cached `share_diagnostics`
    * consent AND the accepted consent version being at or past the disclosing
    * version. Fail-closed: when either is off (or unknown) no trace
-   * is attached. The platform dual-writes consented traces into a separate PII
+   * is attached. The cloud dual-writes consented traces into a separate PII
    * table and keeps the trace-free turn row; downstream consumers that don't
    * read traces ignore this field. Null / absent when the gate is off or the
    * serialized trace exceeded the size cap.
@@ -479,7 +479,7 @@ export interface SkillLoadedTelemetryEvent extends ModelTelemetryEventBase {
  * watchdog observes liveness/health signals (event-loop block, stream-idle
  * stalls, restarts, ...) and emits one event per check firing.
  *
- * Deliberately minimal and forward-compatible, mirroring the platform
+ * Deliberately minimal and forward-compatible, mirroring the cloud
  * `WatchdogTelemetryEventSerializer`:
  *
  *   - `check_name` — which watchdog check fired. Open string set (not a
@@ -488,7 +488,7 @@ export interface SkillLoadedTelemetryEvent extends ModelTelemetryEventBase {
  *     downstream. The infrastructure admin chart filters this to
  *     `event_loop_blocked`.
  *   - `value` — the single measured magnitude for the check (block ms, idle
- *     ms, ...). Nullable: not every check carries a scalar. The platform
+ *     ms, ...). Nullable: not every check carries a scalar. The cloud
  *     coerces ints to float, so the daemon need not distinguish.
  *   - `detail` — open JSON bag for any extra fields the daemon attaches
  *     (reason codes, secondary numbers, a human message) without a
@@ -576,13 +576,13 @@ type Overrides = {
 };
 
 /**
- * Daemon-only event types not (yet) in the platform wire contract — i.e. types
+ * Daemon-only event types not (yet) in the cloud wire contract — i.e. types
  * the daemon emits but `POST /v1/telemetry/ingest/` would silently skip because
- * they have no serializer in the platform's `TELEMETRY_EVENT_SERIALIZERS`.
+ * they have no serializer in the cloud's `TELEMETRY_EVENT_SERIALIZERS`.
  *
  * Currently EMPTY: every emitted type is in the wire contract. When the daemon
- * needs to emit a type before the platform accepts it, add it here (keyed by
- * its wire `type`). Once the platform adds the serializer and the wire sync
+ * needs to emit a type before the cloud accepts it, add it here (keyed by
+ * its wire `type`). Once the cloud adds the serializer and the wire sync
  * lands, the key must leave `Extensions` — into `Overrides` if the daemon type
  * stays narrower than the wire, or plain wire flow-through otherwise. The
  * `_extensionsDontCollide` guard below turns red until that move is made.
@@ -596,7 +596,7 @@ export type TelemetryEvent = EventMap[keyof EventMap];
 
 /**
  * Lifecycle event — app_open, hatch, etc. 1:1 with the wire contract:
- * `telemetry-wire.generated.ts` (from the platform's
+ * `telemetry-wire.generated.ts` (from the cloud's
  * `LifecycleTelemetryEventSerializer`) is the source of truth.
  */
 export type LifecycleTelemetryEvent = EventMap["lifecycle"];
@@ -604,7 +604,7 @@ export type LifecycleTelemetryEvent = EventMap["lifecycle"];
 /**
  * Onboarding event — pre-chat selections, Google connect status, and
  * activation-funnel steps. 1:1 with the wire contract
- * (`OnboardingTelemetryEventSerializer`); the platform accepts either the
+ * (`OnboardingTelemetryEventSerializer`); the cloud accepts either the
  * legacy `screen` shape or the complete funnel step field set — see the wire
  * schema's superRefine.
  */
@@ -634,7 +634,7 @@ export type AvatarChangedTelemetryEvent = EventMap["avatar_changed"];
 
 // ---- Compile-time drift guards ----
 // Each `Overrides` entry is pinned to its wire type in BOTH directions, so a
-// wire sync PR that moves the platform contract turns red here instead of
+// wire sync PR that moves the cloud contract turns red here instead of
 // drifting silently:
 //
 //   - `_*Narrows` — the daemon type stays assignable to the wire type, i.e.
@@ -689,7 +689,7 @@ type _watchdogNarrows = AssertNarrows<
 // opaque-JSON fields are NOT excluded here: opacity is about a field's
 // SHAPE (the daemon's richer types aren't assignable to `JsonValue`), but
 // key PRESENCE is part of the typed contract — the generated wire types
-// declare `raw_usage`/`trace`/`client`/`detail`, and a platform sync that
+// declare `raw_usage`/`trace`/`client`/`detail`, and a cloud sync that
 // removed or renamed one of them would otherwise leave every guard green
 // while the daemon kept emitting a field the server discards.
 type _llmUsageKeysExist = AssertNarrows<
@@ -757,7 +757,7 @@ export type WatermarkTelemetryEventName =
 /**
  * Event names backed by the `telemetry_events` outbox: every wire event type
  * that is not watermark-flushed. Derived from the generated wire contract, so a
- * new event type added on the platform side flows onto the outbox — and gets a
+ * new event type added on the cloud side flows onto the outbox — and gets a
  * flush source (`telemetry-event-sources.ts`) and a fully-typed
  * `recordTelemetryEvent` call — with NO edit here. Each name doubles as the
  * wire `type` discriminant and the flush-group key.

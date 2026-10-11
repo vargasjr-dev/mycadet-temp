@@ -175,7 +175,7 @@ describe("159-rename-colliding-jev-profile-name migration", () => {
     expect(keys).toEqual(["jev-managed-custom-2", "jev-managed-custom"]);
   });
 
-  test("leaves a managed stub alone and is idempotent", async () => {
+  test("leaves a cloud stub alone and is idempotent", async () => {
     const original = {
       llm: {
         profiles: {

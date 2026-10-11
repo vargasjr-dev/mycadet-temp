@@ -22,7 +22,7 @@ export type GetRawPeerIp = () => string;
  * - "edge-guardian" — caller must be the bound cadet guardian. In the default
  *                      path, edge JWT is validated and the caller's actor
  *                      principal must match the guardian's principal id.
- *                      When DISABLE_HTTP_AUTH=true (platform-managed), the
+ *                      When DISABLE_HTTP_AUTH=true (cloud-managed), the
  *                      caller is asserted via X-Cadet-User-Id forwarded by
  *                      vembda, cross-referenced with the bound platform
  *                      user id.

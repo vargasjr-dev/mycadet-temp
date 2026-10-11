@@ -60,7 +60,7 @@ describe("onboardingCompletedMiddleware", () => {
       id,
       hatchedAt,
       isLocal: true,
-      isPlatformHosted: false,
+      isCloudHosted: false,
       isPaired: false,
     });
 

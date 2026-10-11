@@ -85,7 +85,7 @@ export const SourceMetadataSchema = z
     commandIntent: CommandIntentSchema.optional(),
     /**
      * Whether the message addresses the assistant by name, an @-mention on
-     * the platforms that have one. Stated by the channel's normalizer only
+     * the clouds that have one. Stated by the channel's normalizer only
      * where it proved the answer; absent means "not established". Read to
      * decide whether a reply is expected before any text exists, never to
      * admit or deny: admission is the gate's job, upstream of this.
@@ -154,7 +154,7 @@ export const SourceMetadataSchema = z
      */
     trustVerdict: TrustVerdictSchema.optional(),
     /**
-     * The platform named no actor for this event; the actor id is the
+     * The cloud named no actor for this event; the actor id is the
      * channel's synthetic system identity, never an identity claim.
      */
     actorUnattributed: z.boolean().optional(),

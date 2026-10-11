@@ -3,7 +3,7 @@
  * against the assistant's SQLite database. Migrations (m0002, m0010, m0014,
  * et al.) need raw read/drop access to legacy assistant tables on first boot
  * of upgraded installs, and cross-container SQLite file access corrupts the
- * DB on platform pods (fcntl locks are not shared across mount namespaces) —
+ * DB on cloud pods (fcntl locks are not shared across mount namespaces) —
  * so they go through this route.
  *
  * This route is intentionally NOT in the shared ROUTES array — it is a

@@ -98,7 +98,7 @@ export function firstRunCardIntercepts(
  * handshake's failure notice.
  *
  * Gating at all is what keeps the room from flashing open and closing for a
- * user with no usable STT/TTS provider. The daemon runs managed-speech
+ * user with no usable STT/TTS provider. The daemon runs cloud-speech
  * defaulting as part of this call, so a user who *can* be auto-configured
  * comes back allowed.
  */

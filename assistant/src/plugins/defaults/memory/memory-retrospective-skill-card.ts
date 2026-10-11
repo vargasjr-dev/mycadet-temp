@@ -2,8 +2,8 @@
 // Memory retrospective — skill-authored card delivery.
 // ---------------------------------------------------------------------------
 //
-// When a retrospective pass genuinely CREATES a managed skill, the scaffold
-// executor (`executeScaffoldManagedSkill`) enqueues a durable
+// When a retrospective pass genuinely CREATES a cloud skill, the scaffold
+// executor (`executeScaffoldCloudSkill`) enqueues a durable
 // `skill_card_insert` job at the creation site — the executor knows
 // created-vs-overwrote, the request origin, and the fork-parent source
 // conversation as facts, so no message archaeology is needed. This module

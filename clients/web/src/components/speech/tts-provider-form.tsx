@@ -34,7 +34,7 @@ import {
   LS_TTS_VOICE_ID_PREFIX,
 } from "@/utils/local-settings-keys";
 import { VoicePickerField } from "@/components/speech/voice-picker-field";
-import { useManagedVoices } from "@/lib/tts/use-managed-voices";
+import { useCloudVoices } from "@/lib/tts/use-cloud-voices";
 import { TTS_PROVIDERS } from "@/lib/provider-catalogs";
 
 /**
@@ -107,7 +107,7 @@ export function TtsProviderForm({
     if (!fetched) {
       return TTS_PROVIDERS;
     }
-    // Assistants running an older catalog omit cadet, but the managed option
+    // Assistants running an older catalog omit cadet, but the cloud option
     // must still be offered (and a legacy managed config still renders as
     // Cadet) — graft the static entry on.
     if (fetched.some((p) => p.id === "cadet")) {
@@ -141,7 +141,7 @@ export function TtsProviderForm({
 
   // Mirrors the daemon's `services.tts.provider` schema default. Deliberately
   // not `providers[0]` — the catalog leads with Cadet, and an unconfigured
-  // client must not claim the managed provider on its own.
+  // client must not claim the cloud provider on its own.
   const defaultProviderId = "elevenlabs";
   const serverProvider = useMemo(
     () =>
@@ -157,26 +157,26 @@ export function TtsProviderForm({
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Managed (Cadet) voices, fetched live from the platform via the daemon so
-  // the offered list and default track the platform's rate card. Empty until
+  // Managed (Cadet) voices, fetched live from the cloud via the daemon so
+  // the offered list and default track the cloud's rate card. Empty until
   // loaded — the picker renders only from platform data.
   const {
     voices: managedVoices,
-    defaultModel: defaultManagedVoice,
+    defaultModel: defaultCloudVoice,
     fetched,
-  } = useManagedVoices(assistantId, { enabled: draftProvider === "cadet" });
+  } = useCloudVoices(assistantId, { enabled: draftProvider === "cadet" });
 
-  // Managed voice selection. Server value comes from daemon config; absent
-  // means the platform default voice.
-  const serverManagedVoice =
-    daemonTts?.providers?.cadet?.model ?? defaultManagedVoice ?? "";
-  const [draftManagedVoice, setDraftManagedVoice] =
-    useDraftOverride(serverManagedVoice);
-  const selectedManagedVoice =
-    managedVoices.find((v) => v.model === draftManagedVoice) ??
+  // Cloud voice selection. Server value comes from daemon config; absent
+  // means the cloud default voice.
+  const serverCloudVoice =
+    daemonTts?.providers?.cadet?.model ?? defaultCloudVoice ?? "";
+  const [draftCloudVoice, setDraftCloudVoice] =
+    useDraftOverride(serverCloudVoice);
+  const selectedCloudVoice =
+    managedVoices.find((v) => v.model === draftCloudVoice) ??
     managedVoices[0];
 
-  // Custom-voice entry: a free-text field for a managed voice id outside the
+  // Custom-voice entry: a free-text field for a cloud voice id outside the
   // curated catalog. Null override means "not yet toggled by the user" — the
   // mode then derives from the saved config, opening custom automatically when
   // the saved voice isn't a catalog voice so an already-custom id shows in the
@@ -185,11 +185,11 @@ export function TtsProviderForm({
     null,
   );
   const serverVoiceInCatalog = managedVoices.some(
-    (v) => v.model === serverManagedVoice,
+    (v) => v.model === serverCloudVoice,
   );
-  const customManagedVoice =
+  const customCloudVoice =
     customModeOverride ??
-    (fetched && serverManagedVoice !== "" && !serverVoiceInCatalog);
+    (fetched && serverCloudVoice !== "" && !serverVoiceInCatalog);
 
   const selectedProvider = useMemo(() => {
     return providers.find((p) => p.id === draftProvider) ?? providers[0]!;
@@ -197,14 +197,14 @@ export function TtsProviderForm({
 
   // Written to config only when true: never writing on an untouched default
   // keeps "unset = platform default" configs unset, and daemons that predate
-  // managed voice selection never receive a field they would silently drop. The
+  // cloud voice selection never receive a field they would silently drop. The
   // non-empty guard keeps a cleared custom-voice field from PATCHing an empty
   // model (which the daemon would treat as an unknown voice).
   const managedVoiceChanged =
     draftProvider === "cadet" &&
     selectedProvider.supportsVoiceSelection &&
-    draftManagedVoice.trim() !== "" &&
-    draftManagedVoice.trim() !== serverManagedVoice;
+    draftCloudVoice.trim() !== "" &&
+    draftCloudVoice.trim() !== serverCloudVoice;
 
   const loadProviderState = useCallback((providerId: string) => {
     const storedKey = getLocalSetting(LS_TTS_API_KEY_PREFIX + providerId, "");
@@ -307,7 +307,7 @@ export function TtsProviderForm({
             }
           : {}),
         ...(managedVoiceChanged
-          ? { providers: { cadet: { model: draftManagedVoice.trim() } } }
+          ? { providers: { cadet: { model: draftCloudVoice.trim() } } }
           : {}),
       };
       if (Object.keys(ttsBody).length > 0) {
@@ -342,7 +342,7 @@ export function TtsProviderForm({
   }, [
     assistantId,
     draftProvider,
-    draftManagedVoice,
+    draftCloudVoice,
     managedVoiceChanged,
     apiKeyText,
     voiceIdText,
@@ -416,21 +416,21 @@ export function TtsProviderForm({
   const apiKeyPlaceholder = providerHasKey
     ? "••••••••  (Enter a new key to replace)"
     : selectedProvider.apiKeyPlaceholder;
-  // Cadet authenticates via the platform connection, so it has no key to enter
+  // Cadet authenticates via the cloud connection, so it has no key to enter
   // and nothing for the client-side Test path (a direct provider call) to use.
-  const isManaged = draftProvider === "cadet";
-  // Managed voice selection needs a daemon that persists
+  const isCloud = draftProvider === "cadet";
+  // Cloud voice selection needs a daemon that persists
   // `services.tts.providers.cadet.model`. Old daemons (and the static
   // fallback catalog used before the live catalog loads) report
   // supportsVoiceSelection: false for cadet, hiding the selector so the UI
   // never claims to save a voice the daemon would ignore.
   const managedVoiceSupported =
-    isManaged && selectedProvider.supportsVoiceSelection;
+    isCloud && selectedProvider.supportsVoiceSelection;
 
   // Catalog is the only entry path for now — the "Enter a custom voice ID"
   // affordance is temporarily removed (to be brought back later). We still
   // offer a way *back* to the catalog for an assistant whose saved voice is a
-  // non-catalog id (surfaced as the free-text field via `customManagedVoice`),
+  // non-catalog id (surfaced as the free-text field via `customCloudVoice`),
   // so those configs aren't stranded in custom mode with no escape.
   const chooseFromCatalogLink = (
     <Button
@@ -441,9 +441,9 @@ export function TtsProviderForm({
         setCustomModeOverride(false);
         // Snap a non-catalog draft back to a real catalog voice so the picker's
         // trigger label matches the selection.
-        if (!managedVoices.some((v) => v.model === draftManagedVoice)) {
-          setDraftManagedVoice(
-            defaultManagedVoice || managedVoices[0]?.model || "",
+        if (!managedVoices.some((v) => v.model === draftCloudVoice)) {
+          setDraftCloudVoice(
+            defaultCloudVoice || managedVoices[0]?.model || "",
           );
         }
       }}
@@ -455,7 +455,7 @@ export function TtsProviderForm({
   // Only the "way back" toggle remains, and only when a saved custom voice put
   // the form into custom mode and there's actually a catalog to return to.
   const managedVoiceToggle =
-    managedVoiceSupported && customManagedVoice && managedVoices.length > 0
+    managedVoiceSupported && customCloudVoice && managedVoices.length > 0
       ? chooseFromCatalogLink
       : null;
 
@@ -476,7 +476,7 @@ export function TtsProviderForm({
         />
       </div>
 
-      {!isManaged && (
+      {!isCloud && (
         <div className="space-y-1">
           <label className="block text-body-small-default text-[var(--content-tertiary)]">
             {t("ttsProviderForm.apiKey")}
@@ -496,38 +496,38 @@ export function TtsProviderForm({
           <label className="block text-body-small-default text-[var(--content-tertiary)]">
             {t("ttsProviderForm.voice")}
           </label>
-          {customManagedVoice ? (
-            /* Free-text entry for a managed voice id outside the catalog
-               (power users, or an id the platform serves but doesn't list). */
+          {customCloudVoice ? (
+            /* Free-text entry for a cloud voice id outside the catalog
+               (power users, or an id the cloud serves but doesn't list). */
             <Input
               type="text"
-              value={draftManagedVoice}
-              onChange={(e) => setDraftManagedVoice(e.target.value)}
+              value={draftCloudVoice}
+              onChange={(e) => setDraftCloudVoice(e.target.value)}
               placeholder={t("ttsProviderForm.voiceIdPlaceholder")}
               aria-label={t("ttsProviderForm.customVoiceIdAriaLabel")}
               fullWidth
             />
-          ) : selectedManagedVoice ? (
+          ) : selectedCloudVoice ? (
             /* Collapsed select-style field that opens the shared voice list
                (grouped, per-row preview, provider badge). Controlled so the
                pick stays a draft until Save, matching the rest of this form. */
             <VoicePickerField
               assistantId={assistantId}
-              value={draftManagedVoice}
-              onChange={setDraftManagedVoice}
+              value={draftCloudVoice}
+              onChange={setDraftCloudVoice}
             />
           ) : (
             // Gated on `fetched` so the note never flashes while loading.
             fetched && (
               <p className="text-body-small-default text-[var(--content-tertiary)]">
-                {t("ttsProviderForm.noManagedVoices")}
+                {t("ttsProviderForm.noCloudVoices")}
               </p>
             )
           )}
         </div>
       )}
 
-      {selectedProvider.supportsVoiceSelection && !isManaged && (
+      {selectedProvider.supportsVoiceSelection && !isCloud && (
         <div className="space-y-1">
           <label className="block text-body-small-default text-[var(--content-tertiary)]">
             {t("ttsProviderForm.voiceId")}
@@ -543,15 +543,15 @@ export function TtsProviderForm({
       )}
 
       {/* The credentials guide is the "where's my API key" helper for BYO
-          providers. The managed (Cadet) provider needs no key — the assistant
+          providers. The cloud (Cadet) provider needs no key — the assistant
           is already connected — so its "Connect this assistant" card is just
           noise between the voice picker and the preview button. */}
-      {!hideCredentialsGuide && !isManaged && (
+      {!hideCredentialsGuide && !isCloud && (
         <CredentialsGuide guide={selectedProvider.credentialsGuide} />
       )}
 
       <div className="flex items-center gap-2">
-        {!isManaged && (
+        {!isCloud && (
           <Button variant="outlined" onClick={handleTest} disabled={testing}>
             {testing ? t("ttsProviderForm.testing") : t("ttsProviderForm.test")}
           </Button>
@@ -561,7 +561,7 @@ export function TtsProviderForm({
           {!hideSaveButton && (
             <SaveButton onClick={handleSave} disabled={!hasChanges || saving} />
           )}
-          {providerHasKey && !isManaged && (
+          {providerHasKey && !isCloud && (
             <ResetButton onClick={handleReset} />
           )}
         </div>

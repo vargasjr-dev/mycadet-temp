@@ -33,7 +33,7 @@ import { shareFileViaMacSheet } from "@/runtime/native-share";
  *   attribute on anchors with `blob:` URLs (WebKit bug 216918), so the blob is
  *   written to a temp file via `@capacitor/filesystem` and presented via
  *   `@capacitor/share` (`UIActivityViewController`), where "Save to Files" is
- *   the download. That is a platform limitation, not the intent split above.
+ *   the download. That is a cloud limitation, not the intent split above.
  * - **Web (plain browser):** the `<a download>` pattern for both intents, since
  *   no reliable cross-browser file-share surface exists to prefer.
  *

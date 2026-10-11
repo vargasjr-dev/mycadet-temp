@@ -15,7 +15,7 @@ export type LiveVoicePreflightVerdict = LivevoicePreflightPostResponse;
  * POST /v1/live-voice/preflight
  *
  * Imperative one-shot call made at voice-entry time (NOT a long-lived query):
- * the daemon runs `maybeDefaultSpeechToManaged()` then reports whether live
+ * the daemon runs `maybeDefaultSpeechToCloud()` then reports whether live
  * voice can start. The composer awaits this before opening the room so it
  * never flashes open then immediately closes for a user with no usable
  * STT/TTS provider.

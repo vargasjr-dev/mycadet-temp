@@ -42,7 +42,7 @@ export interface RecapAction {
    *
    * Rows under the chat shell keep their commands on the trailing edge, since a
    * rightward drag there belongs to the navigation drawer. See
-   * `clients/web/docs/PLATFORM_ADAPTATION.md`, "Swipe edges under the chat
+   * `clients/web/docs/CLOUD_ADAPTATION.md`, "Swipe edges under the chat
    * shell".
    */
   swipeEdge?: "leading" | "trailing";

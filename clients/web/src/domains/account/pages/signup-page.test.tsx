@@ -24,7 +24,7 @@ mock.module("@/stores/auth-store", mockAuthStore);
 mock.module("@/runtime/native-auth", mockNativeAuth);
 mock.module("@/lib/auth/hard-navigate", mockHardNavigate);
 
-/** What the platform reports about accepting new accounts. */
+/** What the cloud reports about accepting new accounts. */
 const signupAvailability = { value: "open" as SignupAvailability };
 mock.module("@/domains/account/hooks/use-signup-availability", () => ({
   useSignupAvailability: () => signupAvailability.value,
@@ -65,7 +65,7 @@ describe("SignupPage waiting shell", () => {
 describe("SignupPage availability", () => {
   setupAuthEntry();
 
-  test("the shell holds until the platform says whether signups are open", () => {
+  test("the shell holds until the cloud says whether signups are open", () => {
     signupAvailability.value = "pending";
     const { container } = renderAuthEntry(SignupPage, ROUTE, ROUTE);
 

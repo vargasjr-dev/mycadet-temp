@@ -132,7 +132,7 @@ describe("buildTunnelWsUrl", () => {
 
   test("derives the tunnel host from the injected platform URL (Electron shell)", () => {
     window.__CADET_CONFIG__ = {
-      platformUrl: "https://staging-cloud.mycadet.ai",
+      cloudUrl: "https://staging-cloud.mycadet.ai",
     };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
@@ -140,7 +140,7 @@ describe("buildTunnelWsUrl", () => {
   });
 
   test("falls back to the prod tunnel host for an off-convention platform URL", () => {
-    window.__CADET_CONFIG__ = { platformUrl: "http://localhost:8000" };
+    window.__CADET_CONFIG__ = { cloudUrl: "http://localhost:8000" };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.host).toBe("tunnel.mycadet.ai");
   });

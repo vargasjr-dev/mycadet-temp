@@ -85,23 +85,23 @@ const CONNECTION_SCOPE = {
 function preparedIdentity(
   assistantId = ASSISTANT_ID,
   scope: NotificationAvatarScope = CONNECTION_SCOPE,
-  platformAssistantId?: string,
+  cloudAssistantId?: string,
 ) {
   const scopeId = resolveNotificationAvatarScope(scope)!;
-  return createNotificationIdentity(scopeId, assistantId, platformAssistantId)!;
+  return createNotificationIdentity(scopeId, assistantId, cloudAssistantId)!;
 }
 
 const preparedOptions = (
   assistantName = "Assistant One",
   avatarReady = true,
   scope: NotificationAvatarScope = CONNECTION_SCOPE,
-  platformAssistantId?: string,
+  cloudAssistantId?: string,
   ownerAssistantId = ASSISTANT_ID,
 ) => {
   const scopeId = resolveNotificationAvatarScope(scope)!;
   return {
     scopeId,
-    platformAssistantId,
+    cloudAssistantId,
     assistantName,
     assistantNameOwner: { scopeId, assistantId: ownerAssistantId },
     avatarOwner: { scopeId, assistantId: ownerAssistantId },

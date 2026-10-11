@@ -7,7 +7,7 @@
  * auto-approve-thresholds-routes.ts`), so the request/response types here
  * are codegen-derived rather than hand-written. The gateway client's
  * interceptor routes to the self-hosted gateway in local mode and through
- * the platform proxy for platform-hosted assistants.
+ * the cloud proxy for cloud-hosted assistants.
  */
 
 import {

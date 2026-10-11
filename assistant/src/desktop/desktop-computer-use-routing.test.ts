@@ -21,7 +21,7 @@ import { sensitiveToolReach } from "../tools/tool-approval-handler.js";
 import * as computerUse from "./desktop-computer-use.js";
 import { shouldUseVirtualDesktop } from "./virtual-desktop-feature.js";
 
-const originalPlatform = process.env.IS_PLATFORM;
+const originalPlatform = process.env.IS_CLOUD;
 const originalContainerized = process.env.IS_CONTAINERIZED;
 const context = {
   trustClass: "guardian" as const,
@@ -32,7 +32,7 @@ const context = {
 const spies: Array<{ mockRestore(): void }> = [];
 
 beforeEach(() => {
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   process.env.IS_CONTAINERIZED = "true";
   setOverridesForTesting({ "assistant-desktop": true });
 });
@@ -43,9 +43,9 @@ afterEach(() => {
   }
   setOverridesForTesting({});
   if (originalPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalPlatform;
+    process.env.IS_CLOUD = originalPlatform;
   }
   if (originalContainerized === undefined) {
     delete process.env.IS_CONTAINERIZED;
@@ -135,7 +135,7 @@ test("native, unidentified and non-guardian turns do not select the virtual desk
   expect(shouldUseVirtualDesktop({ ...context, trustClass: "unknown" })).toBe(
     false,
   );
-  process.env.IS_PLATFORM = "false";
+  process.env.IS_CLOUD = "false";
   expect(shouldUseVirtualDesktop(context)).toBe(false);
 });
 
@@ -203,7 +203,7 @@ for (const input of [
 for (const platform of [true, false]) {
   for (const clientOs of ["web", "macos", "windows", "linux"] as const) {
     test(`bundled tool policy and dispatch agree for ${platform ? "platform" : "local"} ${clientOs}`, async () => {
-      process.env.IS_PLATFORM = String(platform);
+      process.env.IS_CLOUD = String(platform);
       const skillDir = join(getBundledSkillsDir(), "computer-use");
       const manifest = JSON.parse(
         readFileSync(join(skillDir, "TOOLS.json"), "utf8"),

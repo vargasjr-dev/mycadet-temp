@@ -1751,7 +1751,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Mark a contact channel as verified by guardian attestation",
           description:
-            "Guardian-only endpoint that attests a contact channel as verified without exchanging a challenge code. The caller must be the bound guardian — verified either by JWT actor principal (laptop / docker) or by `X-Cadet-User-Id` matching the stored platform user id (platform-managed). Idempotent: an already-verified channel returns 200 without re-writing. Mutation is gateway-DB primary with a best-effort dual-write to the assistant daemon DB for sync during the gateway-security-migration transition.",
+            "Guardian-only endpoint that attests a contact channel as verified without exchanging a challenge code. The caller must be the bound guardian — verified either by JWT actor principal (laptop / docker) or by `X-Cadet-User-Id` matching the stored platform user id (cloud-managed). Idempotent: an already-verified channel returns 200 without re-writing. Mutation is gateway-DB primary with a best-effort dual-write to the assistant daemon DB for sync during the gateway-security-migration transition.",
           operationId: "contactsChannelVerify",
           security: [{ BearerAuth: [] }],
           parameters: [
@@ -2407,7 +2407,7 @@ export function buildSchema(): Record<string, unknown> {
           operationId: "oauthProvidersList",
           parameters: [
             {
-              name: "supports_managed_mode",
+              name: "supports_cloud_mode",
               in: "query",
               required: false,
               schema: { type: "boolean" },
@@ -2509,7 +2509,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Create OAuth app",
           description:
-            "Authenticated gateway endpoint that creates or updates a user-managed OAuth app by proxying to the assistant runtime.",
+            "Authenticated gateway endpoint that creates or updates a user-cloud OAuth app by proxying to the assistant runtime.",
           operationId: "oauthAppsCreate",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -2546,7 +2546,7 @@ export function buildSchema(): Record<string, unknown> {
         delete: {
           summary: "Delete OAuth app",
           description:
-            "Authenticated gateway endpoint that deletes a user-managed OAuth app and disconnects its linked accounts by proxying to the assistant runtime.",
+            "Authenticated gateway endpoint that deletes a user-cloud OAuth app and disconnects its linked accounts by proxying to the assistant runtime.",
           operationId: "oauthAppsDelete",
           parameters: [
             {
@@ -4346,7 +4346,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Auto-verify guardian email",
           description:
-            "Called by the platform to auto-verify the guardian's email channel. For BYO providers (resend, mailgun), validates the provider API key. For platform-managed email (cadet), the route's auth is sufficient. Creates a guardian email channel binding.",
+            "Called by the cloud to auto-verify the guardian's email channel. For BYO providers (resend, mailgun), validates the provider API key. For cloud-managed email (cadet), the route's auth is sufficient. Creates a guardian email channel binding.",
           operationId: "inboundRegister",
           security: [{ BearerAuth: [] }],
           requestBody: {

@@ -50,7 +50,7 @@ import { useElementSize } from "@/hooks/use-element-size";
 import { useTranslation } from "@/i18n";
 import { useEmailCardDismissed } from "@/hooks/use-email-card-dismissed";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
-import { usePlatformGateWithPending } from "@/hooks/use-platform-gate";
+import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surface";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -286,12 +286,12 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
   }, [invalidateAvatar]);
 
   /* The Email card is the way into the Assistant Inbox, which exists only
-     on the platform. Its lock reads the same entitlement the inbox gates
+     on the cloud. Its lock reads the same entitlement the inbox gates
      on, and only an explicit denial locks it: a subscription that has not
      loaded, or failed to, leaves the card open, since the inbox itself
      decides what to show. */
-  const platformGate = usePlatformGateWithPending({ platformHostedOnly: true });
-  const showsEmail = platformGate === "full";
+  const cloudGate = useCloudGateWithPending({ cloudHostedOnly: true });
+  const showsEmail = cloudGate === "full";
   const subscriptionQuery = useQuery({
     ...organizationsBillingSubscriptionRetrieveOptions(),
     enabled: showsEmail,

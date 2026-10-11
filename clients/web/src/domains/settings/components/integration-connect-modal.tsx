@@ -94,7 +94,7 @@ export interface IntegrationConnectModalProps {
   /** The bring-your-own OAuth form, rendered when that path is picked. */
   ownOAuthContent?: ReactNode;
   /**
-   * Per-tenant providers (Shopify): the host the managed sign-in has to be
+   * Per-tenant providers (Shopify): the host the cloud sign-in has to be
    * pointed at, because the provider's OAuth endpoints live on the customer's
    * own domain. Absent for providers with one global host.
    */
@@ -236,7 +236,7 @@ export function IntegrationConnectModal({
       case "mcp-oauth":
       case "mcp-manual":
         return t("integrationConnect.tagMcp");
-      case "managed-oauth":
+      case "cloud-oauth":
         return t("integrationConnect.tagCadet");
       case "own-oauth":
         return t("integrationConnect.tagOwnApp");
@@ -452,10 +452,10 @@ function ConnectView({
   onClose: () => void;
 }) {
   const { t } = useTranslation("settings");
-  // Only the managed path opens an authorization on the provider's own
+  // Only the cloud path opens an authorization on the provider's own
   // domain, so only it has to ask which one. The hook is inert without a
   // requirement, so every other method passes its result straight through.
-  const hostNeeded = method.kind === "managed-oauth" ? tenantHost : null;
+  const hostNeeded = method.kind === "cloud-oauth" ? tenantHost : null;
   const hostInput = useTenantHostInput(hostNeeded);
   const methodAttempt = attempt?.methodId === method.id ? attempt : null;
   const inFlight = methodAttempt !== null && methodAttempt.phase !== "error";

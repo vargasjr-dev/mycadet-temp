@@ -1,7 +1,7 @@
 name: Dev Release
 
 on:
-  # The platform drives releases by dispatching this workflow.
+  # The cloud drives releases by dispatching this workflow.
   workflow_dispatch: {}
 
 concurrency:
@@ -720,7 +720,7 @@ jobs:
           retention-days: 1
 
   # ── Web SPA (dev bucket) ─────────────────────────────────────────────
-  # The platform SPA ships to the dev GCS bucket with every dev release,
+  # The cloud SPA ships to the dev GCS bucket with every dev release,
   # not on merge to main; staging/production deploys live in release.yml.
   #
   # ci-web is the only hard gate: a dev release must always get the web changes
@@ -733,8 +733,8 @@ jobs:
   # (backend CI red, a Docker build failure) no longer strands green web
   # commits outside dev until the next run happens to be fully green.
   #
-  # The platform learns about dev releases by pulling from Docker Hub itself;
-  # this workflow no longer registers anything with the platform API.
+  # The cloud learns about dev releases by pulling from Docker Hub itself;
+  # this workflow no longer registers anything with the cloud API.
   #
   # The trade-off is accepted on dev only: a dev SPA can briefly run against the
   # previously-released dev backend. Staging and production keep the strict
@@ -749,7 +749,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/deploy-platform-web-spa.yaml
+    uses: ./.github/workflows/deploy-cloud-web-spa.yaml
     with:
       environment: dev
     secrets: inherit
@@ -767,7 +767,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/deploy-platform-web-spa.yaml
+    uses: ./.github/workflows/deploy-cloud-web-spa.yaml
     with:
       environment: production
       channel: preview

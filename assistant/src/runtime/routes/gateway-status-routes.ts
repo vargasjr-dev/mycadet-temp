@@ -3,7 +3,7 @@
  *
  * The tunnel is the gateway's outbound public-ingress transport. It is only
  * used to tunnel inbound Twilio webhooks and live voice/audio WebSockets to
- * this assistant — it plays no part in cloud credentials or the managed
+ * this assistant — it plays no part in cloud credentials or the cloud
  * LLM proxy. The handler reads the live status from the gateway over the local
  * IPC socket, so the assistant does not need gateway signing material.
  *

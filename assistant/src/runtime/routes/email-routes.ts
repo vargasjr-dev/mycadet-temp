@@ -7,6 +7,7 @@
 
 import { z } from "zod";
 
+import { CadetCloudClient } from "../../cloud/client.js";
 import { getReadinessService } from "../../daemon/handlers/config-channels.js";
 import { markdownToEmailHtml } from "../../email/html-renderer.js";
 import {
@@ -14,7 +15,6 @@ import {
   listEmailAddresses,
   type RegisteredEmailAddress,
 } from "../../email/registered-inbox.js";
-import { CadetPlatformClient } from "../../platform/client.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,
@@ -26,14 +26,14 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-async function requireClient(): Promise<CadetPlatformClient> {
-  const client = await CadetPlatformClient.create();
+async function requireClient(): Promise<CadetCloudClient> {
+  const client = await CadetCloudClient.create();
   if (!client) {
     throw new UnauthorizedError(
       "Platform credentials not configured. Run: assistant cloud connect",
     );
   }
-  if (!client.platformAssistantId) {
+  if (!client.cloudAssistantId) {
     throw new UnauthorizedError(
       "Assistant ID not configured. Run: assistant cloud connect",
     );
@@ -48,7 +48,7 @@ async function handleEmailRegister({ body = {} }: RouteHandlerArgs) {
   const client = await requireClient();
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/email-addresses/`,
+    `/v1/assistants/${client.cloudAssistantId}/email-addresses/`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,10 +92,10 @@ function invalidateEmailReadinessState(): void {
 
 /**
  * The registered addresses, or the route-appropriate error: a listing
- * failure maps to LIST_FAILED with the platform's status when it sent one.
+ * failure maps to LIST_FAILED with the cloud's status when it sent one.
  */
 async function requireEmailAddressList(
-  client: CadetPlatformClient,
+  client: CadetCloudClient,
 ): Promise<RegisteredEmailAddress[]> {
   const list = await listEmailAddresses(client);
   if (!list.ok) {
@@ -119,7 +119,7 @@ async function handleEmailUnregister(_args: RouteHandlerArgs) {
   const target = addresses[0];
 
   const deleteResponse = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/email-addresses/${target.id}/`,
+    `/v1/assistants/${client.cloudAssistantId}/email-addresses/${target.id}/`,
     { method: "DELETE" },
   );
 
@@ -153,7 +153,7 @@ async function handleEmailStatus(_args: RouteHandlerArgs) {
   const target = addresses[0];
 
   const statusResponse = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/email-addresses/${target.id}/status/`,
+    `/v1/assistants/${client.cloudAssistantId}/email-addresses/${target.id}/status/`,
   );
 
   if (!statusResponse.ok) {
@@ -198,7 +198,7 @@ async function handleEmailList({ queryParams = {} }: RouteHandlerArgs) {
   }
 
   const qs = params.toString();
-  const path = `/v1/assistants/${client.platformAssistantId}/emails/${qs ? `?${qs}` : ""}`;
+  const path = `/v1/assistants/${client.cloudAssistantId}/emails/${qs ? `?${qs}` : ""}`;
   const response = await client.fetch(path);
 
   if (!response.ok) {
@@ -222,7 +222,7 @@ async function handleEmailDownload({ queryParams = {} }: RouteHandlerArgs) {
   const { messageId } = queryParams;
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/emails/${messageId}/`,
+    `/v1/assistants/${client.cloudAssistantId}/emails/${messageId}/`,
   );
 
   if (!response.ok) {
@@ -344,7 +344,7 @@ async function handleEmailAttachmentList({
   const { messageId } = queryParams;
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/emails/${messageId}/attachments/`,
+    `/v1/assistants/${client.cloudAssistantId}/emails/${messageId}/attachments/`,
   );
 
   if (!response.ok) {
@@ -370,7 +370,7 @@ async function handleEmailAttachmentGet({
   const { messageId, attachmentId } = queryParams;
 
   const response = await client.fetch(
-    `/v1/assistants/${client.platformAssistantId}/emails/${messageId}/attachments/${attachmentId}/download/`,
+    `/v1/assistants/${client.cloudAssistantId}/emails/${messageId}/attachments/${attachmentId}/download/`,
   );
 
   if (!response.ok) {

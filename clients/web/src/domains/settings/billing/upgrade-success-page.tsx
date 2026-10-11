@@ -5,17 +5,17 @@ import { Navigate, useNavigate } from "react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { useTranslation } from "@/i18n";
 import {
   organizationsBillingSubscriptionRetrieveOptions,
   organizationsBillingSubscriptionRetrieveQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
 import {
-  useActiveAssistantIsPlatformHosted,
+  useActiveAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { Card } from "@mycadet/design-library/components/card";
@@ -39,15 +39,15 @@ export const SUCCESS_REDIRECT_DELAY_MS = 2500;
 export function UpgradeSuccessPage() {
   const { t } = useTranslation("settings");
   // Same predicate as the billing page itself for the page-level chrome.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
   // Strict hosting predicate for the *Fetch*-tier `enabled` below.
-  // `platformGate === "full"` is permissive during the lifecycle-loading
+  // `cloudGate === "full"` is permissive during the lifecycle-loading
   // window — using it alone for `enabled` would let the subscription poll
   // start before we know whether the assistant is hosted. Pair with
-  // `useActiveAssistantIsPlatformHosted()` so polling only kicks off after
+  // `useActiveAssistantIsCloudHosted()` so polling only kicks off after
   // positive hosted resolution (matches the notifications-page pattern from
   // PR-2.5 / Trap 6).
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   // Distinguish the genuine *resolving* window from terminal-non-hosted
   // states. We let the resolving window fall through to PendingState (the
   // existing "Finalizing your upgrade…" UX) since polling is still
@@ -57,7 +57,7 @@ export function UpgradeSuccessPage() {
   // Polling is allowed only after lifecycle resolves *positively* to
   // hosted. Used to gate both the query's `enabled` and the timeout that
   // disables `refetchInterval` — see effect below.
-  const isPollingEnabled = platformGate === "full" && isPlatformHosted;
+  const isPollingEnabled = cloudGate === "full" && isCloudHosted;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [pollExpired, setPollExpired] = useState(false);
@@ -72,9 +72,9 @@ export function UpgradeSuccessPage() {
 
   const { data: queryData, isError: queryIsError } = useQuery({
     ...organizationsBillingSubscriptionRetrieveOptions(),
-    // Fetch-tier predicate: strict on `isPlatformHosted`, not just the
-    // page-level `platformGate === "full"`. During the lifecycle-loading
-    // window `platformGate === "full"` and `isPlatformHosted === false`,
+    // Fetch-tier predicate: strict on `isCloudHosted`, not just the
+    // page-level `cloudGate === "full"`. During the lifecycle-loading
+    // window `cloudGate === "full"` and `isCloudHosted === false`,
     // and the poll would otherwise start firing org-scoped requests
     // before we know the assistant is hosted. Wait for positive
     // resolution; either the query fires (hosted) or the body's
@@ -141,15 +141,15 @@ export function UpgradeSuccessPage() {
   // Whole-page gates: same Navigate/chrome pattern as `billing-page.tsx`. The
   // hooks above all ran (with `enabled: false` for the query) so React's
   // hooks-order invariant holds.
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return <Navigate replace to={routes.settings.general} />;
   }
-  if (platformGate === "disabled") {
+  if (cloudGate === "disabled") {
     return (
       <div className="max-w-4xl space-y-6">
-        <PlatformLoginNotice>
+        <CloudLoginNotice>
           {t("upgradeSuccessPage.platformLoginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       </div>
     );
   }

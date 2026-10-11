@@ -31,7 +31,7 @@ function platformLabel(t: TFunction<"settings">, platform: string): string {
 
 interface ResolvedDeviceName {
   name: string;
-  /** False only for the platform fallback; true for any reported identity. */
+  /** False only for the cloud fallback; true for any reported identity. */
   isRealIdentity: boolean;
 }
 

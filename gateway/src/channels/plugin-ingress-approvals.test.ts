@@ -404,7 +404,7 @@ describe("findServableRoute", () => {
   });
 
   it("serves a cadet-signed route without approval", () => {
-    // Only a caller holding the platform secret can open it, and that trust
+    // Only a caller holding the cloud secret can open it, and that trust
     // was already given when the account was connected.
     const res = resolution({
       pending: [

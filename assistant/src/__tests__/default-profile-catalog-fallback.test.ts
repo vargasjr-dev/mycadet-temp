@@ -9,8 +9,8 @@
  *   upstream than its primary, so an outage at the primary's provider can
  *   be served by the backup.
  * - Probe coverage: every backup model is a catalog member of its upstream
- *   provider, which is what feeds the platform's model liveness probe.
- * - Scoping: backups exist for the managed column only. A BYOK or chatgpt
+ *   provider, which is what feeds the cloud's model liveness probe.
+ * - Scoping: backups exist for the cloud column only. A BYOK or chatgpt
  *   default provider materializes no backup profiles, and its primaries
  *   carry no `fallbackProfile` pointers.
  * - The effective catalog parses under `LLMSchema` (exercising the
@@ -38,7 +38,7 @@ import {
   FALLBACK_PROFILE_BY_KEY,
 } from "../config/default-profile-names.js";
 import { LLMSchema, type ProfileEntry } from "../config/schemas/llm.js";
-import { getManagedUpstream } from "../providers/cadet-model-routing.js";
+import { getCloudUpstream } from "../providers/cadet-model-routing.js";
 import { isModelInCatalog } from "../providers/model-catalog.js";
 
 const cadet = { provider: "cadet" as const };
@@ -76,12 +76,12 @@ describe("fallbackProfile pointers on the cadet column", () => {
 });
 
 describe("cross-provider rule", () => {
-  test("every backup dispatches through a different managed upstream than its primary", () => {
+  test("every backup dispatches through a different cloud upstream than its primary", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       const primary = CODE_DEFAULT_PROFILE_ENTRIES[key];
       const backup = CODE_DEFAULT_PROFILE_ENTRIES[FALLBACK_PROFILE_BY_KEY[key]];
-      const primaryUpstream = getManagedUpstream(primary.model as string);
-      const backupUpstream = getManagedUpstream(backup.model as string);
+      const primaryUpstream = getCloudUpstream(primary.model as string);
+      const backupUpstream = getCloudUpstream(backup.model as string);
       expect(primaryUpstream).not.toBeNull();
       expect(backupUpstream).not.toBeNull();
       expect(backupUpstream).not.toBe(primaryUpstream);
@@ -91,7 +91,7 @@ describe("cross-provider rule", () => {
   test("every backup model is a catalog member of its upstream (liveness-probe coverage)", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
       const model = CODE_DEFAULT_PROFILE_ENTRIES[key].model as string;
-      const upstream = getManagedUpstream(model);
+      const upstream = getCloudUpstream(model);
       expect(upstream).not.toBeNull();
       expect(isModelInCatalog(upstream as string, model)).toBe(true);
     }
@@ -99,7 +99,7 @@ describe("cross-provider rule", () => {
 });
 
 describe("managed-column-only scoping", () => {
-  test("the managed column materializes the backups after the primaries", () => {
+  test("the cloud column materializes the backups after the primaries", () => {
     const effective = getEffectiveProfilesForProvider(
       LLMSchema.parse({ default: cadet }),
     );
@@ -158,10 +158,10 @@ describe("managed-column-only scoping", () => {
     }
   });
 
-  test("a persisted managed stub does not resurrect a backup off the managed column", () => {
-    // A `config get` -> `config set` round-trip on a managed install can
+  test("a persisted managed stub does not resurrect a backup off the cloud column", () => {
+    // A `config get` -> `config set` round-trip on a cloud install can
     // leave a thin managed stub for a backup in `llm.profiles`
-    // (`normalizeManagedProfileWrites`). The stub is the workspace's slot for
+    // (`normalizeCloudProfileWrites`). The stub is the workspace's slot for
     // a code-owned body, not a profile, so once the column has no body behind
     // it the name must stop being listed rather than resolve to a
     // providerless entry the pickers would offer and `LLMSchema` would
@@ -183,7 +183,7 @@ describe("managed-column-only scoping", () => {
         }),
       ).toBeUndefined();
     }
-    // The managed column still has a body for the stub to stand for.
+    // The cloud column still has a body for the stub to stand for.
     expect(
       getEffectiveProfilesForProvider(
         LLMSchema.parse({ profiles: workspace, default: cadet }),
@@ -191,7 +191,7 @@ describe("managed-column-only scoping", () => {
     ).toBe(CODE_DEFAULT_PROFILE_ENTRIES["balanced-backup"]?.model);
   });
 
-  test("a user-owned entry under a backup name stays listed off the managed column", () => {
+  test("a user-owned entry under a backup name stays listed off the cloud column", () => {
     // Nothing code-owned resolves there, so the entry is simply a profile of
     // that name and keeps its own body.
     const workspace: Record<string, ProfileEntry> = {
@@ -234,7 +234,7 @@ describe("effective-profile machinery", () => {
   test("a workspace entry never overlays a backup, whatever its source", () => {
     // Backups are code-owned (`CODE_OWNED_PROFILE_NAMES`), so unlike the
     // primaries they take no workspace overlay at all: not the usual
-    // label/status/topP whitelist from a managed stub, and not a user-owned
+    // label/status/topP whitelist from a cloud stub, and not a user-owned
     // shadow. Disabling a backup through a hand-edited config would strand
     // the primary's fallback exactly when it is needed.
     for (const source of ["managed", "user"] as const) {
@@ -263,7 +263,7 @@ describe("effective-profile machinery", () => {
 
   test("backup profiles are delete-protected like the other managed defaults", () => {
     // Membership in these sets is what wires the route-level deletion
-    // rejection (`rejectManagedProfileDeletion`, `handleCreateProfile`) and
+    // rejection (`rejectCloudProfileDeletion`, `handleCreateProfile`) and
     // the commitConfigWrite invariant guard
     // (`assertInvariantProfilesPreserved`).
     for (const key of BACKUP_PROFILE_KEYS) {

@@ -9,19 +9,19 @@ import {
   test,
 } from "bun:test";
 
-import * as platformClient from "../lib/platform-client.js";
+import * as cloudClient from "../lib/cloud-client.js";
 import {
   createPlatformBackup,
   listPlatformBackups,
 } from "../lib/teleport-backup.js";
 
-const authHeadersSpy = spyOn(platformClient, "authHeaders").mockResolvedValue({
+const authHeadersSpy = spyOn(cloudClient, "authHeaders").mockResolvedValue({
   "Content-Type": "application/json",
   "X-Session-Token": "platform-token",
   "Cadet-Organization-Id": "org-1",
 });
 const invalidateOrgIdCacheSpy = spyOn(
-  platformClient,
+  cloudClient,
   "invalidateOrgIdCache",
 ).mockImplementation(() => {});
 

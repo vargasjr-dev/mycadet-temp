@@ -16,7 +16,7 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 let desktopEnabled: boolean | undefined = true;
 let assistantId = "asst-1";
 let touch = false;
-let platformHosted = true;
+let cloudHosted = true;
 let attended = true;
 let attentionSupported = true;
 
@@ -30,8 +30,8 @@ mock.module("./use-desktop-setup", () => ({
   useDesktopSetupStatus: () => ({ query: { data: { automationActive } } }),
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  useActiveAssistantIsPlatformHosted: () => platformHosted,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
 
 mock.module("@/utils/pointer", () => ({
@@ -100,7 +100,7 @@ beforeEach(() => {
   touch = false;
   attended = true;
   attentionSupported = true;
-  platformHosted = true;
+  cloudHosted = true;
   automationActive = false;
   useDesktopPreviewStore.setState({
     position: null,
@@ -488,7 +488,7 @@ describe("AssistantDesktopAffordance", () => {
 });
 
 test("self-hosted assistants cannot open the virtual desktop even with its flag enabled", () => {
-  platformHosted = false;
+  cloudHosted = false;
   render(<DesktopHarness />);
   expect(
     screen.queryByRole("button", { name: "Open Alice's virtual desktop" }),
@@ -502,7 +502,7 @@ test("switching to a self-hosted assistant closes the virtual desktop preview", 
     screen.getByRole("button", { name: "Open Alice's virtual desktop" }),
   );
   await waitFor(() => expect(screen.getByTestId("desktop-panel")).toBeTruthy());
-  platformHosted = false;
+  cloudHosted = false;
   rerender(<DesktopHarness />);
   await waitFor(() => expect(screen.queryByTestId("desktop-panel")).toBeNull());
   expect(useDesktopPreviewStore.getState().session).toBeNull();

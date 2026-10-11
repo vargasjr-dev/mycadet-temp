@@ -50,7 +50,7 @@ describe("runRetire", () => {
 
   test("passes a host platform token to the CLI subprocess", async () => {
     const pending = runRetire(invocation, "asst-42", {
-      platformToken: "session-token",
+      cloudToken: "session-token",
     });
     lastChild.emit("close", 0);
 

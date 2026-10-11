@@ -6,7 +6,7 @@
  * platform helpers, or any service-specific code — callers supply the file
  * path and this module handles versioned JSON persistence with atomic writes.
  *
- * The assistant's `metadata-store.ts` wires in the platform-specific data
+ * The assistant's `metadata-store.ts` wires in the cloud-specific data
  * directory and re-exports convenience functions that delegate here.
  */
 

@@ -19,7 +19,7 @@ const BRAND_LABELS: Record<string, string> = {
  * has no label for counts as no brand rather than reaching the screen raw:
  * Stripe sends `"unknown"` for a card whose network it could not identify, and
  * values such as `"eftpos_au"` and `"link"` for networks we name nothing for,
- * and the platform passes all of them through untouched. Rendered as-is they
+ * and the cloud passes all of them through untouched. Rendered as-is they
  * read as an enum mid sentence, as in "Replacing eftpos_au •••• 4242".
  */
 export function brandLabel(brand: string | null | undefined): string | null {

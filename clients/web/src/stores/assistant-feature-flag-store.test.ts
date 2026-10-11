@@ -5,11 +5,11 @@ const patchMock = mock((_request: unknown) =>
 );
 
 // Assistant-scoped flag writes MUST go through the gateway client
-// (`assistantFeatureFlagsPatch`), not the platform client. Routing them
-// through the platform client drops them on the runtime-proxy allowlist
+// (`assistantFeatureFlagsPatch`), not the cloud client. Routing them
+// through the cloud client drops them on the runtime-proxy allowlist
 // and 404s for local/self-hosted assistants (non-UUID ids). Mocking the
 // gateway SDK here is the regression guard: if a write ever reverts to
-// the platform client, `patchMock` won't be hit and these tests fail.
+// the cloud client, `patchMock` won't be hit and these tests fail.
 mock.module("@/generated/gateway/sdk.gen", () => ({
   assistantFeatureFlagsPatch: patchMock,
 }));

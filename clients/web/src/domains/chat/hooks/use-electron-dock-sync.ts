@@ -22,7 +22,7 @@ import { getDeviceBool, watchDeviceSetting } from "@/utils/device-settings";
  * starting or stopped assistant would spend the retry budget on a request
  * that cannot succeed.
  *
- * The app menu's platform-session state is published separately from
+ * The app menu's cloud-session state is published separately from
  * `RootLayout` (an always-mounted layer) so it stays correct on non-chat
  * routes where `ChatLayout` isn't mounted.
  */

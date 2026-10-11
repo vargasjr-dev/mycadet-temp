@@ -94,7 +94,7 @@
     },
     {
       "name": "messaging_search",
-      "description": "Search messages across a platform using its native query syntax.",
+      "description": "Search messages across a cloud using its native query syntax.",
       "category": "messaging",
       "risk": "low",
       "input_schema": {
@@ -110,7 +110,7 @@
           },
           "query": {
             "type": "string",
-            "description": "Search query using the platform's native syntax"
+            "description": "Search query using the cloud's native syntax"
           },
           "max_results": {
             "type": "number",

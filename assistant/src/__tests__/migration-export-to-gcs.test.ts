@@ -284,8 +284,8 @@ describe("handleMigrationExportToGcs — happy path", () => {
     // manifest claims a truthful `secrets_redacted: true` regardless of
     // credential-store state, and the bundle passes validation with
     // `origin.mode: "managed"`.
-    const originalIsPlatform = process.env.IS_PLATFORM;
-    process.env.IS_PLATFORM = "true";
+    const originalIsPlatform = process.env.IS_CLOUD;
+    process.env.IS_CLOUD = "true";
 
     let capturedBody: Buffer | undefined;
     const fixture = await startFixtureServer(async (req, res) => {
@@ -328,9 +328,9 @@ describe("handleMigrationExportToGcs — happy path", () => {
       expect(validation.manifest?.secrets_redacted).toBe(true);
     } finally {
       if (originalIsPlatform === undefined) {
-        delete process.env.IS_PLATFORM;
+        delete process.env.IS_CLOUD;
       } else {
-        process.env.IS_PLATFORM = originalIsPlatform;
+        process.env.IS_CLOUD = originalIsPlatform;
       }
       await fixture.close();
     }

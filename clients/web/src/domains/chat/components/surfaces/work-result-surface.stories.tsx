@@ -342,7 +342,7 @@ const oauthConsentSurface = makeWorkResultSurface({
             id: "connect",
             title: "Google connected",
             description:
-              "The managed OAuth surface handled consent without sending the user to settings.",
+              "The cloud OAuth surface handled consent without sending the user to settings.",
             tone: "positive",
           },
           {

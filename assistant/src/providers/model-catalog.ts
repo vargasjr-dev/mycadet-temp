@@ -1,4 +1,4 @@
-import { PLATFORM_PROVIDER_META } from "./platform-proxy/constants.js";
+import { PLATFORM_PROVIDER_META } from "./cloud-proxy/constants.js";
 
 export type LongContextMode =
   | "native-model"
@@ -163,14 +163,14 @@ export interface ProviderCatalogEntry {
     linkLabel: string;
   };
   /**
-   * Whether this provider supports the `platform` auth type (Cadet-managed
-   * keys routed through the platform proxy). Derived from
+   * Whether this provider supports the `platform` auth type (Cadet Cloud
+   * keys routed through the cloud proxy). Derived from
    * `PLATFORM_PROVIDER_META` at catalog build time so the two stay in lock
    * step. Clients use this field to hide the "Platform (managed by Cadet)"
    * option from the auth-type dropdown for providers like Fireworks or
    * OpenRouter where managed keys are not available.
    */
-  supportsPlatformAuth?: boolean;
+  supportsCloudAuth?: boolean;
   /** When set, this provider is only visible when the named feature flag is enabled. */
   featureFlag?: string;
 }
@@ -2894,11 +2894,10 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
   {
     id: "cadet",
     displayName: "Cadet",
-    subtitle:
-      "Models served on Cadet GPU nodes through the managed connection.",
+    subtitle: "Models served on Cadet GPU nodes through the cloud connection.",
     setupMode: "api-key",
     setupHint:
-      "Uses the assistant API key through the Cadet managed connection. These models cannot use a bring-your-own key.",
+      "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",
     featureFlag: "cadet-hosted-inference",
     models: [
       {
@@ -2922,11 +2921,11 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] =
   RAW_PROVIDER_CATALOG.map((entry) => ({
     ...entry,
     models: entry.models.map(catalogModel),
-    // Derive supportsPlatformAuth from PLATFORM_PROVIDER_META so the catalog
+    // Derive supportsCloudAuth from PLATFORM_PROVIDER_META so the catalog
     // and the proxy routing table can never drift. Adding a provider to
     // PLATFORM_PROVIDER_META with `managed: true` automatically opts it into
     // the Platform auth-type dropdown in the clients.
-    supportsPlatformAuth: PLATFORM_PROVIDER_META[entry.id]?.managed === true,
+    supportsCloudAuth: PLATFORM_PROVIDER_META[entry.id]?.managed === true,
   }));
 
 /**

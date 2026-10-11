@@ -9,15 +9,15 @@ import type { WorkspaceMigration } from "./types.js";
  * Configs written by older versions carry two axes: `mode: "managed"` routes
  * search through the Cadet Cloud proxy while `provider` holds an
  * untouched BYOK choice. The schema treats `provider` as the only axis, with
- * `"cadet"` meaning managed, so this migration rewrites a managed service to
+ * `"cadet"` meaning managed, so this migration rewrites a cloud service to
  * `provider: "cadet"` — otherwise the lingering BYOK provider would be taken
- * at face value and a managed user would silently land on a provider they
+ * at face value and a cloud user would silently land on a provider they
  * hold no key for.
  *
  * `inference-provider-native` is the exception: it is a distinct user-facing
- * option (the inference model runs its own hosted search), so a managed
+ * option (the inference model runs its own hosted search), so a cloud
  * service on that provider keeps it verbatim rather than becoming `cadet`.
- * Its managed fallback (platform proxy when the model has no native search
+ * Its cloud fallback (cloud proxy when the model has no native search
  * and no user key exists) works without a `mode`.
  *
  * Idempotent: a config with no `mode` key is left untouched.
@@ -91,8 +91,8 @@ export const webSearchModeToProviderMigration: WorkspaceMigration = {
     }
 
     // Schemas that predate this migration accept provider "cadet" alongside
-    // mode "managed", so the managed pair round-trips exactly. The BYOK
-    // provider a managed service holds before `run()` is not recoverable —
+    // mode "managed", so the cloud pair round-trips exactly. The BYOK
+    // provider a cloud service holds before `run()` is not recoverable —
     // `run()` overwrites it. Likewise `inference-provider-native` rolls back
     // to `your-own`: dropping `mode` erases any pairing with `managed`.
     service.mode = service.provider === "cadet" ? "managed" : "your-own";

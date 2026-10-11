@@ -6,13 +6,13 @@ import { providerConnections } from "../../persistence/schema/inference.js";
 import { normalizeCredentialRef } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  CADET_MANAGED_PROVIDER,
-  isCadetManagedConnection,
+  CADET_CLOUD_CONNECTION_NAME,
+  CADET_CLOUD_PROVIDER,
+  isCadetCloudConnection,
 } from "../cadet-model-routing.js";
 import { clearConnectionProviderCache } from "../registry.js";
 
-export { CADET_MANAGED_CONNECTION_NAME };
+export { CADET_CLOUD_CONNECTION_NAME };
 import {
   type Auth,
   AuthSchema,
@@ -28,20 +28,18 @@ import {
 const log = getLogger("providers/inference/connections");
 
 /**
- * Whether a row is one of the managed connections, judged by the row and not
+ * Whether a row is one of the cloud connections, judged by the row and not
  * by its name alone. Boot seeding leaves a user-owned row claiming a canonical
  * name in place, and that row is an ordinary connection: routing ignores it,
  * the route layer lets it be edited and deleted, and clients must render it
  * that way or the collision becomes unrecoverable from the UI.
  */
-function isManagedRow(row: {
+function isCloudRow(row: {
   name: string;
   provider: string;
   auth: { type: string };
 }): boolean {
-  return (
-    MANAGED_CONNECTION_NAMES.has(row.name) && isCadetManagedConnection(row)
-  );
+  return MANAGED_CONNECTION_NAMES.has(row.name) && isCadetCloudConnection(row);
 }
 
 // ---------------------------------------------------------------------------
@@ -110,7 +108,7 @@ export function listConnections(
         label: row.label ?? null,
         baseUrl: row.baseUrl ?? null,
         models: parseModelsColumn(row.models),
-        isManaged: isManagedRow({ ...row, provider: provider.data, auth }),
+        isManaged: isCloudRow({ ...row, provider: provider.data, auth }),
       },
     ];
   });
@@ -144,7 +142,7 @@ export function getConnection(
     label: row.label ?? null,
     baseUrl: row.baseUrl ?? null,
     models: parseModelsColumn(row.models),
-    isManaged: isManagedRow({ ...row, provider: provider.data, auth }),
+    isManaged: isCloudRow({ ...row, provider: provider.data, auth }),
   };
 }
 
@@ -265,7 +263,7 @@ export function createConnection(
       models,
       createdAt: now,
       updatedAt: now,
-      isManaged: isManagedRow({ name: input.name, provider, auth }),
+      isManaged: isCloudRow({ name: input.name, provider, auth }),
     },
   };
 }
@@ -353,7 +351,7 @@ export function updateConnection(
       baseUrl: nextBaseUrl,
       models: nextModels,
       updatedAt: now,
-      isManaged: isManagedRow({ name, provider: nextProvider, auth }),
+      isManaged: isCloudRow({ name, provider: nextProvider, auth }),
     },
   };
 }
@@ -427,15 +425,15 @@ const CANONICAL_CONNECTIONS: Array<{
   label: string;
 }> = [
   {
-    name: CADET_MANAGED_CONNECTION_NAME,
-    provider: CADET_MANAGED_PROVIDER,
+    name: CADET_CLOUD_CONNECTION_NAME,
+    provider: CADET_CLOUD_PROVIDER,
     auth: { type: "platform" },
     label: "Cadet",
   },
 ];
 
 /**
- * The Cadet-managed connection as boot seeding defines it, built without a DB
+ * The Cadet Cloud connection as boot seeding defines it, built without a DB
  * read. Dispatch uses this when the `cadet` name is occupied by a user-owned
  * row: seeding refuses to overwrite such a row, so the canonical row can be
  * absent from the DB while managed routing still has to work. Platform auth
@@ -458,15 +456,15 @@ export function canonicalCadetConnection(): ProviderConnection {
 }
 
 /**
- * Names of the canonical Cadet-managed connections. Seeded on every daemon
- * boot via `seedCanonicalConnections` and representing the platform-managed
+ * Names of the canonical Cadet Cloud connections. Seeded on every daemon
+ * boot via `seedCanonicalConnections` and representing the cloud-managed
  * inference route. They are write-protected at the route layer:
  *   - DELETE is blocked outright (would resurrect on next boot anyway, but
  *     blocking prevents a confusing delete → re-appear loop).
  *   - PATCH that changes `auth` is blocked (auth is locked to `{type:"platform"}`
  *     so any other value would be reverted on the next boot upsert).
  *   - PATCH that changes `label` is allowed — users may legitimately relabel the
- *     managed connection. `label` is seeded on initial INSERT and backfilled when
+ *     cloud connection. `label` is seeded on initial INSERT and backfilled when
  *     null on subsequent boots so pre-seed installs pick up the default; a non-null
  *     user-customized label is preserved (see `seedCanonicalConnections`).
  *
@@ -495,7 +493,7 @@ export function seedCanonicalConnections(db: DrizzleDb): void {
     // canonical name. `cadet` was not a reserved name before consolidation, so
     // an install may already have a BYOK connection keyed `cadet` (with a real
     // provider + api_key auth). Upserting it here would silently rewrite it to
-    // the platform-auth sentinel and make it managed/write-protected, breaking
+    // the cloud-auth sentinel and make it managed/write-protected, breaking
     // any profile that references the user's connection. Only seed/refresh when
     // the row is absent or already our sentinel (same provider).
     const existing = db

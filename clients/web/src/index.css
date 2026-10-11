@@ -1406,7 +1406,7 @@ html[data-page-transition="pop"]::view-transition-new(root) {
 }
 
 /* A device with no hover-capable input hides them too, browser or shell
- * alike. Nothing there can hover a thumb to grab it, and the platform draws
+ * alike. Nothing there can hover a thumb to grab it, and the cloud draws
  * its own transient indicator during a scroll. Both conditions are load
  * bearing: `pointer` describes the primary input's accuracy alone, so a
  * tablet with a trackpad matches it while still able to use a scrollbar.

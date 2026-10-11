@@ -28,13 +28,13 @@ export const GMAIL_API_BASE_URL =
 /**
  * Minimum Google OAuth scope a connection must carry for Gmail read access.
  *
- * The managed `google` OAuth app bundles Gmail + Calendar + Drive, but a
+ * The cloud `google` OAuth app bundles Gmail + Calendar + Drive, but a
  * connection can be granted a narrow subset (e.g. the onboarding check-in flow
  * requests Calendar-only). Resolving against Gmail read access turns a
  * downstream 403 into an actionable "reconnect Google and grant Gmail" error
  * at resolution time when the selected connection cannot read Gmail.
  *
- * Managed connections never carry this scope: Cadet's app grants Gmail as
+ * Cloud connections never carry this scope: Cadet's app grants Gmail as
  * `https://mail.google.com/`, which `scopeDifference` in `oauth/scope-utils.ts`
  * accepts as covering it.
  */
@@ -526,7 +526,7 @@ async function fetchMessagesIndividually(
  * Packs up to 100 sub-requests per HTTP call and runs up to BATCH_CONCURRENCY calls in parallel.
  * Falls back to individual getMessage for any sub-requests that fail within a batch.
  *
- * For connections that do not support raw token access (e.g. platform-managed connections),
+ * For connections that do not support raw token access (e.g. cloud connections),
  * falls back to fetching each message individually via connection.request().
  */
 export async function batchGetMessages(
@@ -556,7 +556,7 @@ export async function batchGetMessages(
   }
 
   // Try batch API first; fall back to individual fetches if withToken is unavailable
-  // (e.g. platform-managed connections where raw tokens cannot be exposed).
+  // (e.g. cloud connections where raw tokens cannot be exposed).
   let useBatch = true;
   try {
     // Probe withToken availability with a no-op call

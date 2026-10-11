@@ -194,7 +194,7 @@ When adding a synced resource:
 - Keep live turn and streaming events domain-specific. `sync_changed` is for persisted resource invalidation.
 - Keep legacy bespoke events during native rollout and remove them only after adoption is verified. Do not add durable `sync_changes` tables, cursors, or `/sync/changes` endpoints for v1 unless the design is reopened.
 
-See the platform repo's `docs/multi-client-sync.md` for the tag registry and client-routing examples.
+See the cloud repo's `docs/multi-client-sync.md` for the tag registry and client-routing examples.
 
 ## Assistant-Driven Judgement
 
@@ -298,7 +298,7 @@ The daemon must not invoke LLM providers at startup or on unconditional timers �
 
 ## Companion Repos
 
-- **[`mycadet-platform`](../mycadet-platform)** — Django backend that manages platform-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: Python 3.14, Django, DRF, PostgreSQL, Redis/Valkey. See `../mycadet-platform/AGENTS.md` for development instructions.
+- **[`mycadet-platform`](../mycadet-platform)** — Django backend that manages cloud-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: Python 3.14, Django, DRF, PostgreSQL, Redis/Valkey. See `../mycadet-platform/AGENTS.md` for development instructions.
 
 When making changes that could affect the cloud platform, review the sibling `../mycadet-platform` repo for compatibility and required follow-up updates. High-risk change areas include:
 

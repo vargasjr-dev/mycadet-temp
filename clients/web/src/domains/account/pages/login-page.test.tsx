@@ -144,7 +144,7 @@ describe("LoginPage web handoff", () => {
 });
 
 /**
- * What the user is left looking at when the platform refuses the sign-in — the
+ * What the user is left looking at when the cloud refuses the sign-in — the
  * failure they report as "I tried to log in and it errored right away". The
  * refusal happens in the session exchange that runs after the auth sheet
  * closes, and the native shell names its cause in `data.authError`.

@@ -54,7 +54,7 @@ export interface ClassifiedConversationError {
    * Name of the resolved profile (`llm.activeProfile` / per-call override)
    * in play when the error occurred. Forwarded to the wire message so
    * banners can name the profile when the connection identifier is
-   * generic (e.g. the canonical managed connection). Optional for the
+   * generic (e.g. the canonical cloud connection). Optional for the
    * same reason as `connectionName`.
    */
   profileName?: string;
@@ -71,11 +71,11 @@ export interface ClassifiedConversationError {
 export interface ConversationErrorAttribution {
   connectionName?: string;
   profileName?: string;
-  /** Whether the resolved turn route uses Cadet-managed inference. */
-  isManagedRoute?: boolean;
+  /** Whether the resolved turn route uses Cadet Cloud inference. */
+  isCloudRoute?: boolean;
   /**
    * Which credential the failed request presented. Splits the non-managed side
-   * of `isManagedRoute` into personal keys, subscription logins, and keyless
+   * of `isCloudRoute` into personal keys, subscription logins, and keyless
    * endpoints so rejection copy names the right thing to fix.
    */
   credentialSource?: ProviderCredentialSource;
@@ -198,10 +198,10 @@ export interface ErrorContext {
    */
   profileName?: string;
   /**
-   * Whether the resolved turn route uses Cadet-managed inference. Turn routing
+   * Whether the resolved turn route uses Cadet Cloud inference. Turn routing
    * takes precedence over the provider registry's boot-time default.
    */
-  isManagedRoute?: boolean;
+  isCloudRoute?: boolean;
 }
 
 /**
@@ -282,11 +282,11 @@ export function classifyConversationError(
     error instanceof ProviderError ? error.routeAttribution : undefined;
   const connectionName = providerRoute?.connectionName ?? ctx.connectionName;
   const profileName = providerRoute?.profileName ?? ctx.profileName;
-  const isManagedRoute = providerRoute?.isManagedRoute ?? ctx.isManagedRoute;
+  const isCloudRoute = providerRoute?.isCloudRoute ?? ctx.isCloudRoute;
   const attribution: ConversationErrorAttribution = {
     ...(connectionName ? { connectionName } : {}),
     ...(profileName ? { profileName } : {}),
-    ...(isManagedRoute !== undefined ? { isManagedRoute } : {}),
+    ...(isCloudRoute !== undefined ? { isCloudRoute } : {}),
     ...(providerRoute?.credentialSource
       ? { credentialSource: providerRoute.credentialSource }
       : {}),
@@ -360,7 +360,7 @@ function connectionResolutionUserMessage(
     case "missing_connection":
       return `No provider connection is configured${usedBy}. Ask me to set one up right here, or add an API key in ${fixPath}.`;
     case "unroutable_managed_model":
-      return `The model "${error.model ?? "<unset>"}"${usedBy} isn't served by the Cadet managed route. Pick a model from the Cadet catalog, or choose a concrete provider in ${fixPath}.`;
+      return `The model "${error.model ?? "<unset>"}"${usedBy} isn't served by the Cadet Cloud route. Pick a model from the Cadet catalog, or choose a concrete provider in ${fixPath}.`;
     case "adapter_unavailable":
       return `${connection}${usedBy} could not serve model "${error.model ?? "<unset>"}". This model is only available on the Cadet GPU route and was not sent through another provider.`;
     case "missing_credential":
@@ -369,7 +369,7 @@ function connectionResolutionUserMessage(
       // doesn't.
       return `${connection}${usedBy} has no stored credential. Add an API key or reconnect it in ${fixPath}.`;
     case "platform_unauthenticated":
-      // A platform-managed assistant cannot log in or switch providers, and
+      // A cloud assistant cannot log in or switch providers, and
       // this classifier only sees the reason code, so one honest wording covers
       // both the transient and the re-provision cases.
       if (getIsCloud()) {
@@ -396,15 +396,15 @@ function classifyCore(
   message: string,
   attribution: ConversationErrorAttribution = {},
 ): Omit<ClassifiedConversationError, "debugDetails"> {
-  const isManagedRoute =
+  const isCloudRoute =
     error instanceof ProviderError &&
-    (attribution.isManagedRoute ??
-      getProviderRoutingSource(error.provider) === "managed-proxy");
+    (attribution.isCloudRoute ??
+      getProviderRoutingSource(error.provider) === "cloud-proxy");
   // Which credential the request actually presented. Only rejection copy needs
-  // this finer axis; every other branch keys off `isManagedRoute`. Routes that
-  // predate per-request stamping collapse to the managed/personal split.
+  // this finer axis; every other branch keys off `isCloudRoute`. Routes that
+  // predate per-request stamping collapse to the cloud/personal split.
   const credentialSource: ProviderCredentialSource =
-    attribution.credentialSource ?? (isManagedRoute ? "cadet-managed" : "byok");
+    attribution.credentialSource ?? (isCloudRoute ? "cadet-cloud" : "byok");
 
   // Prefer the semantic reason stamped by the provider layer, regardless of
   // HTTP status — statusless errors (e.g. SDK streaming failures) still carry a
@@ -412,7 +412,7 @@ function classifyCore(
   // reason-less error) fall through to the status switch + regex battery below.
   if (error instanceof ProviderError && error.reason) {
     const c = reasonToClassification(error.reason, {
-      isManagedRoute,
+      isCloudRoute,
       credentialSource,
       attribution,
       message,
@@ -446,13 +446,13 @@ function classifyCore(
       );
     }
     if (error.statusCode === 402) {
-      if (isManagedRoute) {
+      if (isCloudRoute) {
         return managedBalanceClassification();
       }
       return providerBillingClassification();
     }
     if (error.statusCode === 429) {
-      if (isManagedUsageLimitError(message, isManagedRoute)) {
+      if (isCloudUsageLimitError(message, isCloudRoute)) {
         return managedUsageLimitClassification();
       }
       return rateLimitClassification();
@@ -592,7 +592,7 @@ function classifyCore(
   }
 
   // Regex fallback for non-ProviderError or ProviderError without statusCode
-  return classifyByMessage(message, isManagedRoute);
+  return classifyByMessage(message, isCloudRoute);
 }
 
 /**
@@ -617,21 +617,21 @@ function extractProviderDetail(message: string): string | undefined {
 
 /**
  * Map a provider-stamped {@link ProviderErrorReason} to a classification,
- * applying the managed-proxy-vs-user-key routing overlay inline. Returns `null`
+ * applying the cloud-proxy-vs-user-key routing overlay inline. Returns `null`
  * for reasons that should defer to the legacy status/regex fallback
  * (`bad_request`, `unknown`).
  */
 function reasonToClassification(
   reason: ProviderErrorReason,
   args: {
-    isManagedRoute: boolean;
+    isCloudRoute: boolean;
     credentialSource: ProviderCredentialSource;
     attribution?: ConversationErrorAttribution;
     message: string;
     providerName: string;
   },
 ): Omit<ClassifiedConversationError, "debugDetails"> | null {
-  const managed = args.isManagedRoute;
+  const managed = args.isCloudRoute;
   switch (reason) {
     case "invalid_credentials":
       return rejectedCredentialClassification(
@@ -653,13 +653,13 @@ function reasonToClassification(
         ? managedBalanceClassification()
         : providerBillingClassification();
     case "daily_limit_reached":
-      // The reason is stamped only from the platform proxy's
+      // The reason is stamped only from the cloud proxy's
       // `"code":"daily_limit_reached"` body, so it is authoritative on its
-      // own — the global routing map can lag per-connection platform-auth
+      // own — the global routing map can lag per-connection cloud-auth
       // routes and must not downgrade this to the generic billing surface.
       return dailyLimitClassification();
     case "free_tier_daily_limit_reached":
-      // Same provenance as `daily_limit_reached`: only the platform proxy's
+      // Same provenance as `daily_limit_reached`: only the cloud proxy's
       // `"code":"free_tier_daily_limit_reached"` body stamps it.
       return freeTierDailyLimitClassification();
     case "overloaded":
@@ -762,12 +762,12 @@ function isStreamingError(message: string): boolean {
   return STREAMING_ERROR_PATTERNS.some((p) => p.test(message));
 }
 
-function isManagedUsageLimitError(
+function isCloudUsageLimitError(
   message: string,
-  isManagedRoute: boolean,
+  isCloudRoute: boolean,
 ): boolean {
   return (
-    isManagedRoute || MANAGED_USAGE_LIMIT_PATTERNS.some((p) => p.test(message))
+    isCloudRoute || MANAGED_USAGE_LIMIT_PATTERNS.some((p) => p.test(message))
   );
 }
 
@@ -858,7 +858,7 @@ function managedUsageLimitClassification(): Omit<
   return {
     code: "MANAGED_USAGE_LIMIT",
     userMessage:
-      "Cadet managed inference is rate limited. This is a Cadet-side usage limit, not an AI provider outage.",
+      "Cadet Cloud inference is rate limited. This is a Cadet-side usage limit, not an AI provider outage.",
     retryable: true,
     errorCategory: "managed_usage_limit",
   };
@@ -866,7 +866,7 @@ function managedUsageLimitClassification(): Omit<
 
 /**
  * Deliberately instruction-free. The assistant API key is provisioned and
- * pushed by the platform — the assistant only ever reads it — so there is no
+ * pushed by the cloud — the assistant only ever reads it — so there is no
  * Settings affordance to re-provision it and no user action that would help.
  * The copy's job is to rule out the user's own provider key as the cause;
  * clients that can offer a real next step attach one (web renders Doctor).
@@ -1019,7 +1019,7 @@ function rejectedCredentialClassification(
   attribution?: ConversationErrorAttribution,
 ): Omit<ClassifiedConversationError, "debugDetails"> {
   switch (credentialSource) {
-    case "cadet-managed":
+    case "cadet-cloud":
       return managedKeyInvalidClassification();
     case "oauth-subscription":
       return subscriptionLoginRejectedClassification(providerName, attribution);
@@ -1120,7 +1120,7 @@ function providerNotConfiguredClassification(
  */
 function classifyByMessage(
   message: string,
-  isManagedRoute: boolean,
+  isCloudRoute: boolean,
 ): Omit<ClassifiedConversationError, "debugDetails"> {
   // Empty-request-messages is always an internal construction failure — check
   // it before the provider/network patterns so a ProviderError that carries the
@@ -1137,7 +1137,7 @@ function classifyByMessage(
   // Check rate limit first (before network, since 429 could match both)
   for (const pattern of RATE_LIMIT_PATTERNS) {
     if (pattern.test(message)) {
-      if (isManagedUsageLimitError(message, isManagedRoute)) {
+      if (isCloudUsageLimitError(message, isCloudRoute)) {
         return managedUsageLimitClassification();
       }
       return rateLimitClassification();

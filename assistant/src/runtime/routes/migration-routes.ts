@@ -119,8 +119,8 @@ import { RouteResponse } from "./types.js";
 const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
 
 /**
- * Platform-identity fields that the managed runtime expects to see in CES.
- * On a managed assistant the platform provisions these after hatch (most via
+ * Platform-identity fields that the cloud runtime expects to see in CES.
+ * On a cloud assistant the cloud provisions these after hatch (most via
  * `POST /v1/secrets`). A signed-in client may additionally (re)assert some of
  * them on teleport / local→managed transfer. Either set of writes can race with
  * the import — the CES write survives (separate volume), but the metadata
@@ -267,9 +267,9 @@ async function resolveAssistantId(): Promise<string> {
  *
  * Managed-mode exports never reach this with credentials: both export
  * handlers skip credential collection entirely when `origin.mode` is
- * "managed" (the validator's cross-field refine rejects a managed bundle
+ * "managed" (the validator's cross-field refine rejects a cloud bundle
  * with `secrets_redacted: false`, and teleport clients re-provision
- * platform identity after a platform→local import).
+ * platform identity after a cloud→local import).
  */
 export function computeSecretsRedacted(
   credentialCount: number,
@@ -378,7 +378,7 @@ export async function handleMigrationExport(
     // Managed deployments never ship credentials in bundles — the manifest
     // schema forbids it (`secrets_redacted` must be true when `origin.mode`
     // is "managed"), and teleport clients re-provision platform identity
-    // after a platform→local import. Redact instead of emitting a bundle
+    // after a cloud→local import. Redact instead of emitting a bundle
     // the importer is guaranteed to reject.
     let credentials: Array<{ account: string; value: string }> = [];
     let secretsRedacted = true;
@@ -637,7 +637,7 @@ export async function handleMigrationExportToGcs({ body }: RouteHandlerArgs) {
   // deployments never ship credentials in bundles — the manifest schema
   // forbids it (`secrets_redacted` must be true when `origin.mode` is
   // "managed"), and teleport clients re-provision platform identity after
-  // a platform→local import — so redact instead of emitting a bundle the
+  // a cloud→local import — so redact instead of emitting a bundle the
   // importer is guaranteed to reject.
   //
   // A debug bundle goes to Cadet staff, so it never carries credentials
@@ -724,7 +724,7 @@ export async function handleMigrationExportToGcs({ body }: RouteHandlerArgs) {
             method: "PUT",
             body: webBody,
             // `duplex: "half"` is required when sending a streaming body
-            // via fetch in Node/Bun — without it the platform rejects the
+            // via fetch in Node/Bun — without it the cloud rejects the
             // request as "duplex option is required when body is a
             // ReadableStream".
             duplex: "half",
@@ -1138,7 +1138,7 @@ function wasFetchBodyTornDown(stream: PassThrough): boolean {
  * assistant is willing to PUT a bundle (SSRF). Widening the export path is
  * its own explicit operator opt-in via the separate
  * `CADET_MIGRATION_EXPORT_ALLOWED_HOSTS` env var (local/minikube only,
- * where the platform serves plain-http SigV4 URLs from SeaweedFS) — see
+ * where the cloud serves plain-http SigV4 URLs from SeaweedFS) — see
  * `exportValidatorOptions`.
  */
 let urlValidatorOptions: ValidateGcsSignedUrlOptions | undefined;
@@ -1169,7 +1169,7 @@ export function parseMigrationImportAllowedHostsEnv(
  *
  * Precedence: an explicit test override (when set) wins; otherwise the
  * env-derived import allowlist from `CADET_MIGRATION_IMPORT_ALLOWED_HOSTS`.
- * The platform injects that env var only where the bundle is served over
+ * The cloud injects that env var only where the bundle is served over
  * plain http from a non-GCS host — e.g. local/minikube, where the signed
  * bundle URL points at `http://host.docker.internal/...`. Supplying a
  * non-default allowlist intentionally relaxes the validator's scheme check
@@ -1206,7 +1206,7 @@ function importValidatorOptions(): ValidateGcsSignedUrlOptions | undefined {
  * Deliberately a separate env var from the import allowlist: the export
  * path controls where the assistant will PUT a full workspace bundle, so
  * widening it must be its own operator decision, never a side effect of
- * relaxing imports. The platform injects it only where the signed upload
+ * relaxing imports. The cloud injects it only where the signed upload
  * URL is served over plain http from a non-GCS host (local/minikube
  * SeaweedFS); it is unset in staging/prod, keeping the strict GCS-only
  * default there.
@@ -1260,7 +1260,7 @@ interface GcsImportErrorInit {
   reason?: string;
   errors?: Array<{ code: string; message: string; path?: string }>;
   partial_report?: ImportCommitReport;
-  /** Populated for `version_incompatible` — mirrors the platform's PR #5470
+  /** Populated for `version_incompatible` — mirrors the cloud's PR #5470
    *  response shape so the URL-body endpoint can return the same body. */
   bundle_compat?: RuntimeCompatibility;
   /** Populated for `version_incompatible`. */
@@ -1602,7 +1602,7 @@ async function runGcsImport(
     }
     if (result.reason === "version_incompatible") {
       // Returned by commitImport / streamCommitImport when the runtime falls
-      // outside the bundle's compat range. The platform-side gate is the
+      // outside the bundle's compat range. The cloud-side gate is the
       // primary check; this catches legacy bundles whose ExportJob row
       // predates PR #5470 (compat columns NULL → platform gate skipped).
       throw new GcsImportError({
@@ -1885,7 +1885,7 @@ function throwGcsImportError(err: unknown): never {
     }
     if (err.code === "version_incompatible") {
       // 422 (not 500) — the bundle is structurally valid but cannot be
-      // imported on this runtime. Body mirrors the platform's PR #5470
+      // imported on this runtime. Body mirrors the cloud's PR #5470
       // response shape.
       throw new UnprocessableEntityError(err.message, {
         reason: "version_incompatible" as const,
@@ -2089,7 +2089,7 @@ interface CredentialImportSummary {
   succeeded: number;
   failed: number;
   failedAccounts: string[];
-  skippedPlatform: number;
+  skippedCloud: number;
 }
 
 /**
@@ -2116,13 +2116,13 @@ async function importBundleCredentialsIntoCes(
   const userCredentials = bundleCredentials.filter(
     (c) => !c.account.startsWith(PLATFORM_CREDENTIAL_PREFIX),
   );
-  const skippedPlatform = bundleCredentials.length - userCredentials.length;
-  if (skippedPlatform > 0) {
-    log.info(`Skipped ${skippedPlatform} cloud credential(s) from import`);
+  const skippedCloud = bundleCredentials.length - userCredentials.length;
+  if (skippedCloud > 0) {
+    log.info(`Skipped ${skippedCloud} cloud credential(s) from import`);
   }
 
   if (userCredentials.length === 0) {
-    if (skippedPlatform > 0) {
+    if (skippedCloud > 0) {
       // All credentials in the bundle were cloud credentials — report
       // the skip count even though nothing was sent to CES.
       return {
@@ -2130,7 +2130,7 @@ async function importBundleCredentialsIntoCes(
         succeeded: 0,
         failed: 0,
         failedAccounts: [],
-        skippedPlatform,
+        skippedCloud,
       };
     }
     return undefined;
@@ -2160,7 +2160,7 @@ async function importBundleCredentialsIntoCes(
       succeeded,
       failed: failedResults.length,
       failedAccounts: failedResults.map((f) => f.account),
-      skippedPlatform,
+      skippedCloud,
     };
   } catch (err) {
     log.warn({ err }, "Credential import failed entirely");
@@ -2172,7 +2172,7 @@ async function importBundleCredentialsIntoCes(
       succeeded: 0,
       failed: userCredentials.length,
       failedAccounts: userCredentials.map((c) => c.account),
-      skippedPlatform,
+      skippedCloud,
     };
   }
 }
@@ -2243,13 +2243,13 @@ function throwImportCommitFailure(
 
   if (result.reason === "version_incompatible") {
     // Returned by commitImport / streamCommitImport when the runtime falls
-    // outside the bundle's compat range. The platform-side gate is the
+    // outside the bundle's compat range. The cloud-side gate is the
     // primary check; this catches legacy bundles whose ExportJob row
     // predates PR #5470 (compat columns NULL → platform gate skipped).
     //
     // 422 (not 500) — the bundle is structurally valid but cannot be
     // imported on this runtime; the caller can act on it (upgrade the
-    // runtime, choose a different bundle). Body mirrors the platform's
+    // runtime, choose a different bundle). Body mirrors the cloud's
     // PR #5470 response shape.
     throw new UnprocessableEntityError(
       formatRuntimeCompatibilityMessage(
@@ -2281,7 +2281,7 @@ function throwImportCommitFailure(
  *
  *   - `{ job_id, type, status: "processing" }`
  *     Covers both the internal `pending` and `running` states — collapsed
- *     into a single wire value to match the platform's transport shape used
+ *     into a single wire value to match the cloud's transport shape used
  *     by `ExportStatusProcessingSerializer` / `ImportStatusProcessingSerializer`.
  *   - `{ job_id, type, status: "complete", result }`
  *   - `{ job_id, type, status: "failed", error, error_code, upstream_status? }`
@@ -2325,7 +2325,7 @@ export async function handleMigrationJobStatus({
     return result;
   }
 
-  // pending or running — collapse to the platform's "processing" wire value.
+  // pending or running — collapse to the cloud's "processing" wire value.
   return {
     job_id: job.id,
     type: job.type,

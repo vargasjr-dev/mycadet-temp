@@ -11,19 +11,19 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { CadetCloudClient } from "../../../cloud/client.js";
+import {
+  CloudOAuthConnection,
+  CredentialRequiredError,
+  InsufficientBalanceError,
+  ProviderUnreachableError,
+} from "../../../oauth/cloud-connection.js";
 import type {
   OAuthConnection,
   OAuthConnectionRequest,
   OAuthConnectionResponse,
 } from "../../../oauth/connection.js";
 import { decodeOAuthResponseBytes } from "../../../oauth/connection.js";
-import {
-  CredentialRequiredError,
-  InsufficientBalanceError,
-  PlatformOAuthConnection,
-  ProviderUnreachableError,
-} from "../../../oauth/platform-connection.js";
-import type { CadetPlatformClient } from "../../../platform/client.js";
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import type { AuthContext } from "../../auth/types.js";
 import { routeDefinitionsToHTTPRoutes } from "../http-adapter.js";
@@ -70,29 +70,29 @@ const byoConnection: OAuthConnection = {
 };
 
 /**
- * A real managed connection over a stub platform, for the paths whose behavior
- * lives inside `PlatformOAuthConnection` rather than in the route.
+ * A real cloud connection over a stub platform, for the paths whose behavior
+ * lives inside `CloudOAuthConnection` rather than in the route.
  */
 function realManagedConnection(
   fetchImpl: (path: string, init?: RequestInit) => Promise<Response>,
-): PlatformOAuthConnection {
-  return new PlatformOAuthConnection({
+): CloudOAuthConnection {
+  return new CloudOAuthConnection({
     id: "conn-managed",
     provider: "stripe_link",
     externalId: "ext-1",
     accountInfo: null,
     connectionId: "platform-conn-1",
     client: {
-      platformAssistantId: "asst-1",
+      cloudAssistantId: "asst-1",
       fetch: fetchImpl,
-    } as unknown as CadetPlatformClient,
+    } as unknown as CadetCloudClient,
   });
 }
 
-/** Satisfies the route's `instanceof PlatformOAuthConnection` check. */
+/** Satisfies the route's `instanceof CloudOAuthConnection` check. */
 function managedConnection(): OAuthConnection {
   return Object.assign(
-    Object.create(PlatformOAuthConnection.prototype) as OAuthConnection,
+    Object.create(CloudOAuthConnection.prototype) as OAuthConnection,
     {
       id: "conn-managed",
       provider: "stripe_link",
@@ -145,15 +145,15 @@ mock.module("../../../oauth/connection-resolver.js", () => ({
 
 // Spread the real module so the rest of the import graph keeps its env
 // readers; only the two auth-bypass readings are pinned. They move
-// independently: DISABLE_HTTP_AUTH is set on any host, the platform-managed
+// independently: DISABLE_HTTP_AUTH is set on any host, the cloud-managed
 // bypass only on a vembda pod.
 let httpAuthDisabled = false;
-let platformAuthBypass = false;
+let cloudAuthBypass = false;
 const env = await import("../../../config/env.js");
 mock.module("../../../config/env.js", () => ({
   ...env,
   isHttpAuthDisabled: () => httpAuthDisabled,
-  isPlatformAuthBypassActive: () => platformAuthBypass,
+  isCloudAuthBypassActive: () => cloudAuthBypass,
 }));
 
 const { handleOAuthProxy, ROUTES } = await import("../oauth-proxy-routes.js");
@@ -271,7 +271,7 @@ function requireCaptured(): OAuthConnectionRequest {
 
 beforeEach(() => {
   httpAuthDisabled = false;
-  platformAuthBypass = false;
+  cloudAuthBypass = false;
   captured = undefined;
   upstreamBytes = undefined;
   requestError = undefined;
@@ -322,7 +322,7 @@ describe("path and query fidelity", () => {
     const req = requireCaptured();
     // Byte-exact for a provider that signs the query it receives.
     expect(req.rawQuery).toBe("?a=1&b=2&a=3&q=x%20y&flag");
-    // The parsed form is all a managed connection can send.
+    // The parsed form is all a cloud connection can send.
     expect(req.query).toEqual({ a: ["1", "3"], b: "2", q: "x y", flag: "" });
   });
 
@@ -364,7 +364,7 @@ describe("method passthrough", () => {
     expect((await response.arrayBuffer()).byteLength).toBe(0);
   });
 
-  test("rejects HEAD against a managed connection", async () => {
+  test("rejects HEAD against a cloud connection", async () => {
     resolution = { ...resolution, connection: managedConnection() };
 
     const response = await callProxy({ method: "HEAD" });
@@ -391,7 +391,7 @@ describe("write safety", () => {
     });
   }
 
-  test("a managed write is not replayed after a 502", async () => {
+  test("a cloud write is not replayed after a 502", async () => {
     let attempts = 0;
     resolution = {
       ...resolution,
@@ -403,7 +403,7 @@ describe("write safety", () => {
 
     const response = await callProxy({ method: "POST", body: "{}" });
 
-    // The platform answers 502 only after calling the provider, so a replay
+    // The cloud answers 502 only after calling the provider, so a replay
     // could land the write twice.
     expect(attempts).toBe(1);
     expect(response.status).toBe(502);
@@ -564,7 +564,7 @@ describe("header handling", () => {
     ["GET", "Stripe-Version"],
     ["GET", "X-Custom-Option"],
   ]) {
-    test(`rejects managed ${method} with ${name} before the platform call`, async () => {
+    test(`rejects managed ${method} with ${name} before the cloud call`, async () => {
       let attempts = 0;
       resolution.connection = realManagedConnection(async () => {
         attempts++;
@@ -930,18 +930,18 @@ describe("grant binding", () => {
     expect(resolverCalls).toHaveLength(0);
   });
 
-  test("a platform-managed pod skips the comparison it has no subject for", async () => {
+  test("a cloud-managed pod skips the comparison it has no subject for", async () => {
     // The pod's daemon discards the token and synthesizes a context, so the
     // grant's subject never reaches the handler.
     httpAuthDisabled = true;
-    platformAuthBypass = true;
+    cloudAuthBypass = true;
 
     const response = await callProxy({ subject: "actor:self:dev-bypass" });
 
     expect(response.status).toBe(200);
   });
 
-  test("DISABLE_HTTP_AUTH off a platform pod still binds the grant", async () => {
+  test("DISABLE_HTTP_AUTH off a cloud pod still binds the grant", async () => {
     httpAuthDisabled = true;
 
     const response = await callProxy({ subject: "actor:self:dev-bypass" });

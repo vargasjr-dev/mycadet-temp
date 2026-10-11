@@ -5,7 +5,7 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { AssistantState } from "@/assistant/types";
 import {
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId,
+  resolveAssistantNotificationCloudId,
 } from "@/hooks/use-assistant-avatar";
 import { publish } from "@/lib/event-bus";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
@@ -42,7 +42,7 @@ function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   const assistant = assistantsState.assistants.find(
     (candidate) => candidate.id === payload.identity?.assistantId,
   );
-  if (!assistant || !assistant.isPlatformHosted) {
+  if (!assistant || !assistant.isCloudHosted) {
     return true;
   }
   if (auth.user?.kind !== "platform" || !auth.user.id) {
@@ -180,7 +180,7 @@ function resolveCurrentTapAssistant(
     ? createNotificationIdentity(
         scopeId,
         assistant.id,
-        resolveAssistantNotificationPlatformId(assistant),
+        resolveAssistantNotificationCloudId(assistant),
       )
     : null;
   return currentIdentity && sameNotificationIdentity(identity, currentIdentity)
@@ -197,7 +197,7 @@ function resolveCurrentTapAssistant(
  * covers all three tap paths in `runtime/notifications.ts`.
  *
  * No effect cleanup: `setNotificationTapHandler` swaps the handler
- * reference in place and registers the platform listeners only once
+ * reference in place and registers the cloud listeners only once
  * for the app's lifetime, so there is nothing to tear down.
  */
 export function useNotificationTapNavigation(): void {

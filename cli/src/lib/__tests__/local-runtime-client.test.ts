@@ -14,7 +14,7 @@ const TOKEN = "local-bearer-token";
 
 // All tests in this file exercise the local/docker code path (cloud="local"),
 // which builds `{runtimeUrl}/v1/migrations/<subpath>` URLs and uses
-// guardian-token bearer auth. The platform path (cloud="cadet") is covered
+// guardian-token bearer auth. The cloud path (cloud="cadet") is covered
 // by `runtime-url.test.ts` (URL construction) and the teleport tests
 // (call-site wiring).
 const ENTRY: Pick<AssistantEntry, "cloud" | "runtimeUrl" | "assistantId"> = {
@@ -384,7 +384,7 @@ describe("localRuntimePollJobStatus", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Platform-managed assistants (cloud="cadet") route through the platform's
+// Cloud assistants (cloud="cadet") route through the cloud's
 // wildcard runtime proxy at `/v1/assistants/<id>/migrations/...` with
 // platform-token auth (NOT guardian-token bearer). This block asserts the
 // actual URL and headers built by the helpers — not mocked, not abstracted.
@@ -588,7 +588,7 @@ describe("localRuntimeIdentity", () => {
   });
 
   // ---------------------------------------------------------------------
-  // 401-retry parity with platformRequestSignedUrl (Codex P2 regression
+  // 401-retry parity with cloudRequestSignedUrl (Codex P2 regression
   // guard). localRuntimeIdentity is the first network call in the
   // backup/teleport export flow for cadet-cloud assistants, so a stale
   // Cadet-Organization-Id cache entry would surface as a hard abort
@@ -613,7 +613,7 @@ describe("localRuntimeIdentity", () => {
         orgIdFetchedAs.push(`org-${orgIdFetchedAs.length + 1}`);
         return new Response(
           JSON.stringify({
-            results: [{ id: orgIdFetchedAs[orgIdFetchedAs.length - 1]! }],
+            results: [{ id: orgIdFetchedAs[orgIdFetchedAs.length - 1]!, name: "My Cadet" }],
           }),
           { status: 200 },
         );

@@ -114,7 +114,7 @@ const AVAILABLE_EVERY_STATE: { plan: ConnectPlan; state: TileConnectState }[] =
           "Figma rejected the sign-in because the workspace administrator " +
           "has not granted this application access to the account yet.",
         methodId: figmaPlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     },
     { plan: dropboxPlan, state: idle },
@@ -122,10 +122,10 @@ const AVAILABLE_EVERY_STATE: { plan: ConnectPlan; state: TileConnectState }[] =
 
 /** The same catalog with no platform session: every managed path is a login. */
 const AVAILABLE_LOGGED_OUT = [
-  planFor({ providers: [GOOGLE_PROVIDER], platformGate: "disabled" }),
-  planFor({ providers: [GITHUB_PROVIDER], platformGate: "disabled" }),
-  planFor({ providers: [FIGMA_PROVIDER], platformGate: "disabled" }),
-  planFor({ providers: [ASANA_PROVIDER], platformGate: "disabled" }),
+  planFor({ providers: [GOOGLE_PROVIDER], cloudGate: "disabled" }),
+  planFor({ providers: [GITHUB_PROVIDER], cloudGate: "disabled" }),
+  planFor({ providers: [FIGMA_PROVIDER], cloudGate: "disabled" }),
+  planFor({ providers: [ASANA_PROVIDER], cloudGate: "disabled" }),
 ].map((plan) => ({ plan, state: idle }));
 
 /**

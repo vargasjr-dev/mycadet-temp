@@ -289,7 +289,7 @@ that scheme for checkouts launched from a native context.
 
 The `NativeAuth` Capacitor plugin opens WorkOS AuthKit in the system browser,
 receives the custom-scheme callback, performs the PKCE code exchange, and
-returns a platform session token to the web app. The web app installs the
+returns a cloud session token to the web app. The web app installs the
 session cookie and navigates to the requested destination.
 
 The plugin rejects auth attempts whose `baseURL` host does not match the
@@ -421,10 +421,10 @@ taps. FCM needs Play services and an untracked `google-services.json`;
 failures retry on resume.
 
 `AndroidPushRegistration.getCapabilities` advertises
-`native-notification-render` on token registration. The platform sends
+`native-notification-render` on token registration. The cloud sends
 data-only pushes only to tokens that claim it, so a build that cannot render
 one natively must never claim it. The claim is deliberately not gated on
-`push-avatar-sender`: that flag is the platform's own switch for the data-only
+`push-avatar-sender`: that flag is the cloud's own switch for the data-only
 shape, while the capability says which tokens could render one, so a shell that
 can render natively says so whether the flag is on or off.
 
@@ -686,7 +686,7 @@ workflow to publish a dev release. The hourly cron is disabled.
 
 Complete the following setup before enabling Google Play publishing:
 
-1. Apply the platform Terraform stacks that enable the Android Publisher API
+1. Apply the cloud Terraform stacks that enable the Android Publisher API
    in the dev, staging, and production GCP projects.
 2. Create Play Console apps for `ai.mycadet.android`,
    `ai.mycadet.android.staging`, and

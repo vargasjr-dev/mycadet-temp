@@ -13,7 +13,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { getBundledSkillsDir } from "../config/skills.js";
 import {
   getBundledSkillsRoot,
-  getManagedSkillsRoot,
+  getCloudSkillsRoot,
   getSkillRoots,
   isSkillSourcePath,
   normalizeDirPath,
@@ -594,9 +594,9 @@ describe("normalizeFilePath", () => {
   });
 });
 
-describe("getManagedSkillsRoot / getBundledSkillsRoot", () => {
+describe("getCloudSkillsRoot / getBundledSkillsRoot", () => {
   test("returns managed skills dir with trailing separator", () => {
-    const root = getManagedSkillsRoot();
+    const root = getCloudSkillsRoot();
     expect(root.endsWith(sep)).toBe(true);
     expect(root).toContain("skills");
   });
@@ -695,7 +695,7 @@ describe("isSkillSourcePath", () => {
     testDirs.push(linkPath);
 
     // A file inside the symlinked skill should NOT match because realpath
-    // resolves it to realDir which is outside the managed skills dir
+    // resolves it to realDir which is outside the cloud skills dir
     const filePath = join(linkPath, "executor.ts");
     // The symlink target (realDir) is outside MOCK_MANAGED_DIR, so this
     // should be false (symlink-safe detection)

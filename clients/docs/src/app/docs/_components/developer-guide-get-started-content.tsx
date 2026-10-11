@@ -47,7 +47,7 @@ export function DeveloperGuideGetStartedContent() {
             <li>
               <strong>Contributors</strong> working on the assistant
               runtime, the macOS, Windows, or iOS clients, the gateway, the CLI,
-              or the platform web app.
+              or the cloud web app.
             </li>
             <li>
               <strong>Integrators</strong> building skills, automations,
@@ -76,7 +76,7 @@ export function DeveloperGuideGetStartedContent() {
           </p>
           <p className="mb-0 text-zinc-600">
             Cadet Cloud is the same software running on managed
-            infrastructure. The HTTP API is gated behind the platform
+            infrastructure. The HTTP API is gated behind the cloud
             gateway in cloud mode, not exposed directly, so for raw API
             development you&apos;ll want a local install. See{" "}
             <Link

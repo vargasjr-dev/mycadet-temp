@@ -250,7 +250,7 @@ const pluginSearchMatchSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Plugin icon: a curated emoji from the marketplace entry, or an icon URL served by the platform catalog when the plugin ships a bundled image.",
+      "Plugin icon: a curated emoji from the marketplace entry, or an icon URL served by the cloud catalog when the plugin ships a bundled image.",
     ),
   category: z
     .string()
@@ -774,13 +774,13 @@ const pluginDiffResponseSchema = z.object({
 const log = getLogger("plugins-routes");
 
 /**
- * Emit a structured log for a platform plugin-catalog outage before the caller
+ * Emit a structured log for a cloud plugin-catalog outage before the caller
  * maps it to a client-facing error.
  *
- * The catalog fetcher (`plugin-catalog-platform.ts`) throws
+ * The catalog fetcher (`plugin-catalog-cloud.ts`) throws
  * `PluginCatalogUnavailableError` without logging, and the transport adapters
  * return the resulting `RouteError` (a 503) without logging it — so an
- * outage on the platform-first paths (`search`, `install`, the remote-only
+ * outage on the cloud-first paths (`search`, `install`, the remote-only
  * detail view) otherwise leaves no trace beyond the daemon access-log status
  * code, and the real upstream status / URL is lost. Log at `error` so the
  * outage is time-correlatable in the daemon log and lands in error telemetry;
@@ -1093,7 +1093,7 @@ async function handleSearchPlugins({
     // cheap deterministic 400 rather than a wasted catalog fetch.
     assertValidSearchPattern(query);
     // getPluginCatalog is platform-first (or the bundled manifest when platform
-    // features are disabled) and fails hard on a platform error — never served
+    // features are disabled) and fails hard on a cloud error — never served
     // stale. Filtering by the query is in-memory over the resolved catalog.
     const catalog = await getPluginCatalog(ref, {
       fetch: globalThis.fetch.bind(globalThis),

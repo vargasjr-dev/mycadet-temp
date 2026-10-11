@@ -98,7 +98,7 @@ async function runConnectCommand(extraArgs: string[] = []): Promise<{
 }
 
 describe("oauth connect", () => {
-  test("managed provider in a conversation shell returns oauth_connect guidance without opening a browser", async () => {
+  test("cloud provider in a conversation shell returns oauth_connect guidance without opening a browser", async () => {
     const { stdout, exitCode } = await runConnectCommand();
 
     expect(exitCode).toBe(1);
@@ -116,7 +116,7 @@ describe("oauth connect", () => {
     ]);
   });
 
-  test("managed provider in a conversation shell includes requested scopes in the oauth_connect guidance", async () => {
+  test("cloud provider in a conversation shell includes requested scopes in the oauth_connect guidance", async () => {
     const { stdout, exitCode } = await runConnectCommand([
       "--scopes",
       "https://www.googleapis.com/auth/tasks",

@@ -16,7 +16,7 @@ import type { WorkspaceMigration } from "./types.js";
  *   provider: "deepgram-flux"  ->  provider: "deepgram"
  *                                  providers.deepgram.model: "flux"
  *
- * The same rewrite applies to the managed pair. Any other provider value is
+ * The same rewrite applies to the cloud pair. Any other provider value is
  * left untouched, and an existing `providers.<parent>` entry keeps every key
  * it already had.
  *

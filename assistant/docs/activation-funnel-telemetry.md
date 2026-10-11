@@ -56,7 +56,7 @@ Flow, end to end:
      `assistant/src/telemetry/activation-funnel.ts`;
    - emission is best-effort (wrapped in try/catch) and never blocks or alters
      the surface-action flow;
-   - `recordActivationEvent` respects the platform `share_analytics` consent gate
+   - `recordActivationEvent` respects the cloud `share_analytics` consent gate
      via `getRawShareAnalytics()`: only a confirmed opt-out (`false`) drops the
      event; an `"unknown"` state (cold cache, no platform session) records and
      lets the flush/ingest gates enforce consent before anything ships.
@@ -101,7 +101,7 @@ All five steps are recorded deterministically on surface commit. The north star
 a materialized activation event (see §1).
 
 On the wire, each onboarding event also sets `screen = step_name` (to satisfy
-the platform's legacy-path validation), and `completed_at` is the ISO-8601
+the cloud's legacy-path validation), and `completed_at` is the ISO-8601
 record time.
 
 ---
@@ -189,7 +189,7 @@ whether those rows reach BigQuery (flush gate, dev-disabled).
    (it reads `getRawShareAnalytics()`); an `"unknown"` state records, but the
    flush defers until consent resolves. So for rows to actually SHIP, the dev
    session must be signed in to
-   the platform with `share_analytics` consent enabled, or no rows reach
+   the cloud with `share_analytics` consent enabled, or no rows reach
    SQLite. The consent cache is refreshed by `startConsentRefresh()` in
    `assistant/src/daemon/lifecycle.ts`, which runs **regardless of dev mode** — so
    a dev session signed in with `share_analytics` consent enabled writes
@@ -242,7 +242,7 @@ A successful flush POSTs the unreported onboarding rows to
 
 ### 5.6 Verify in BigQuery
 
-Wait for the platform → GCS NDJSON → BigQuery pipeline to land the events, then
+Wait for the cloud → GCS NDJSON → BigQuery pipeline to land the events, then
 run the query in §6.
 
 ---
@@ -292,7 +292,7 @@ collapses it earliest-wins).
 > `session_id` is the rail conversation's id. The **north star** ("≥5 user
 > messages within 24h per LD variant") is **not** a funnel event — compute it
 > downstream by joining the existing `turn` telemetry events (`turn_index` per
-> conversation) to the platform's `flag_assignment_raw` cohort-assignment table.
+> conversation) to the cloud's `flag_assignment_raw` cohort-assignment table.
 > **Dedup contract:** each row's `daemon_event_id` is deterministic,
 > `${funnel_version}:${session_id}:${step_name}`, keyed on the row's stored
 > `funnel_version`; the existing dbt earliest-wins dedup on `daemon_event_id`
@@ -314,7 +314,7 @@ collapses it earliest-wins).
   emission to a genuine user action, resolving the naming-check open
   interpretation.
 - **Stream B (multivariate cohort flag conversion) is NOT in this work.** It is
-  gated on the platform team's in-flight string-flag serving — until the platform
+  gated on the cloud team's in-flight string-flag serving — until the cloud
   can serve string/multivariate flags, flipping
   `experiment-activation-flow-2026-06-03` boolean→multivariate client-side would
   silently disable the live allowlisted rail. Until then, `ab_variant` is the

@@ -54,35 +54,37 @@ export function getIsContainerized(): boolean {
 }
 
 /**
- * IS_PLATFORM — boolean, default: false
- * When true, indicates the assistant is running as a platform-managed
- * remote instance. Controls platform-specific behaviors like webhook
- * callback registration and blocking `platform disconnect`.
+ * IS_CLOUD — boolean, default: false
+ * When true, indicates the assistant is running as a Cadet Cloud-managed
+ * remote instance. Controls cloud-specific behaviors like webhook
+ * callback registration and blocking `cloud disconnect`.
  *
  * Separate from IS_CONTAINERIZED because local Docker assistants are
  * containerized (need CES sidecar, gateway trust store, etc.) but are
- * not platform-managed.
+ * not cloud-managed. Reads the legacy IS_CLOUD name as a fallback so
+ * deployments provisioned before the rename keep working.
  */
 export function getIsCloud(): boolean {
-  return flag("IS_PLATFORM");
+  return flag("IS_CLOUD") || flag("IS_CLOUD");
 }
 
 /**
- * Whether this assistant is running as a platform-managed remote instance.
+ * Whether this assistant is running as a Cadet Cloud-managed remote instance.
  */
-export function isPlatformRemote(): boolean {
+export function isCloudRemote(): boolean {
   return getIsCloud();
 }
 
 /**
- * CADET_DISABLE_PLATFORM — boolean, default: false
- * When true, all outbound platform API calls in local mode are suppressed.
- * The daemon, gateway, and web UI each no-op platform requests with a
- * debug log. Has no effect when IS_PLATFORM is true (platform-managed
- * instances always connect to the platform).
+ * CADET_DISABLE_CLOUD — boolean, default: false
+ * When true, all outbound cloud API calls in local mode are suppressed.
+ * The daemon, gateway, and web UI each no-op cloud requests with a
+ * debug log. Has no effect when IS_CLOUD is true (cloud-managed
+ * instances always connect to the cloud). Reads the legacy
+ * CADET_DISABLE_CLOUD name as a fallback for older deployments.
  */
-export function getDisablePlatform(): boolean {
-  return flag("CADET_DISABLE_PLATFORM");
+export function getDisableCloud(): boolean {
+  return flag("CADET_DISABLE_CLOUD") || flag("CADET_DISABLE_CLOUD");
 }
 
 /**
@@ -96,14 +98,14 @@ export function getDeviceIdOverride(): string | undefined {
 }
 
 // ── Profiler env vars ───────────────────────────────────────────────────
-// These are injected by the platform when running a managed assistant in
+// These are injected by the cloud when running a cloud assistant in
 // profiler mode. The runtime uses them to locate, scope, and budget-limit
 // profiler output on the workspace volume.
 
 /**
  * CADET_CPU_LIMIT — string (K8s resource format), default: undefined
  * The CPU resource limit for the container (e.g. "2000m", "2").
- * Set by the platform StatefulSet template to the exact K8s CPU limit.
+ * Set by the cloud StatefulSet template to the exact K8s CPU limit.
  * Used by the health endpoint to report accurate CPU core count inside
  * gVisor sandboxes where cgroup files may expose the host node's CPUs.
  */
@@ -187,7 +189,7 @@ const KNOWN_CADET_VARS = new Set([
   "CADET_DESKTOP_APP",
   "CADET_DEV",
   "CADET_DEVICE_ID",
-  "CADET_DISABLE_PLATFORM",
+  "CADET_DISABLE_CLOUD",
   "CADET_DOCS_BASE_URL",
   "CADET_ENVIRONMENT",
   "CADET_HATCHED_BY",
@@ -198,7 +200,7 @@ const KNOWN_CADET_VARS = new Set([
   "CADET_MARKETING_URL",
   "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
   "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
-  "CADET_PLATFORM_URL",
+  "CADET_CLOUD_URL",
   "CADET_PROFILER_MAX_BYTES",
   "CADET_PROFILER_MAX_RUNS",
   "CADET_PROFILER_MIN_FREE_MB",

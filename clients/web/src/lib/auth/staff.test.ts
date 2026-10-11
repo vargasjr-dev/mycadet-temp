@@ -17,7 +17,7 @@ function user(overrides: Partial<AuthUser>): AuthUser {
 }
 
 describe("isCadetStaff", () => {
-  test("accepts the platform staff bit", () => {
+  test("accepts the cloud staff bit", () => {
     expect(isCadetStaff(user({ isStaff: true }))).toBe(true);
   });
 

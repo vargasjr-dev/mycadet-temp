@@ -623,7 +623,7 @@ export const logs = Object.assign(
 
     case "cadet":
       console.error(
-        "Logs for Cadet-managed instances are not yet supported.\n" +
+        "Logs for Cadet Cloud instances are not yet supported.\n" +
           "View logs in the Cadet Cloud dashboard.",
       );
       process.exit(1);

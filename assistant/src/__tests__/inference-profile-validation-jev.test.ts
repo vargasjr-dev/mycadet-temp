@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { validateInferenceProfileKey } from "../config/inference-profile-validation.js";
 import { setConfig } from "./helpers/set-config.js";
 
-describe("validateInferenceProfileKey and the managed Jev profile", () => {
+describe("validateInferenceProfileKey and the cloud Jev profile", () => {
   beforeEach(() => {
     setConfig("llm", { profiles: {} });
   });

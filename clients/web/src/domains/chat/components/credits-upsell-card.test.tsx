@@ -4,10 +4,10 @@
  * (the modal mount itself is covered in `lazy-add-credits-modal.test.tsx`).
  *
  * The mode inputs are mocked at the hook seam (`useIsFreePlan`,
- * `usePlatformGate`) and toggled per-test: `mock.module` is process-global, so
+ * `useCloudGate`) and toggled per-test: `mock.module` is process-global, so
  * a second registration would leak into the rest of the file. `useNavigate` is
  * mocked so the View-plans wiring can be asserted without a Router, and
- * `PlatformLoginNotice` is stubbed (its login flow needs a Router + auth
+ * `CloudLoginNotice` is stubbed (its login flow needs a Router + auth
  * context).
  */
 import type { ReactNode } from "react";
@@ -16,8 +16,8 @@ import * as reactRouter from "react-router";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 
-import * as platformGateModule from "@/hooks/use-platform-gate";
-import type { PlatformGateState } from "@/hooks/use-platform-gate";
+import * as cloudGateModule from "@/hooks/use-cloud-gate";
+import type { CloudGateState } from "@/hooks/use-cloud-gate";
 import { useAddCreditsModalStore } from "@/stores/add-credits-modal-store";
 
 let navigateTargets: unknown[] = [];
@@ -37,15 +37,15 @@ mock.module("@/hooks/use-is-free-plan", () => ({
   },
 }));
 
-let platformGate: PlatformGateState = "full";
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGateModule,
-  usePlatformGate: () => platformGate,
+let cloudGate: CloudGateState = "full";
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGateModule,
+  useCloudGate: () => cloudGate,
 }));
 
-mock.module("@/components/platform-login-notice", () => ({
-  PlatformLoginNotice: ({ children }: { children: ReactNode }) => (
-    <div data-testid="platform-login-notice-stub">{children}</div>
+mock.module("@/components/cloud-login-notice", () => ({
+  CloudLoginNotice: ({ children }: { children: ReactNode }) => (
+    <div data-testid="cloud-login-notice-stub">{children}</div>
   ),
 }));
 
@@ -56,7 +56,7 @@ beforeEach(() => {
   navigateTargets = [];
   isFreePlan = true;
   freePlanEnabledArgs = [];
-  platformGate = "full";
+  cloudGate = "full";
   useAddCreditsModalStore.setState({ open: false });
 });
 
@@ -118,13 +118,13 @@ describe("CreditsUpsellCard", () => {
   });
 
   test("disabled gate renders the login treatment instead of a billing CTA", () => {
-    platformGate = "disabled";
+    cloudGate = "disabled";
 
     const { getByTestId, getByText, queryByRole } = render(
       <CreditsUpsellCard />,
     );
 
-    expect(getByTestId("platform-login-notice-stub")).toBeTruthy();
+    expect(getByTestId("cloud-login-notice-stub")).toBeTruthy();
     expect(getByText("Log in to Cadet Cloud to add credits.")).toBeTruthy();
     expect(queryByRole("button", { name: "Add credits" })).toBeNull();
     expect(queryByRole("button", { name: "View plans" })).toBeNull();
@@ -134,7 +134,7 @@ describe("CreditsUpsellCard", () => {
   });
 
   test("gated (self-hosted assistant) renders nothing", () => {
-    platformGate = "gated";
+    cloudGate = "gated";
 
     const { container } = render(<CreditsUpsellCard />);
 

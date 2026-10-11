@@ -198,7 +198,7 @@ const INBOUND_FIELD_NAMES = Object.keys(
 /**
  * What the sender's id is, so it can be compared with the ones already stored.
  *
- * `opaque` (the default) is right for a platform-stable id and is the only
+ * `opaque` (the default) is right for a cloud-stable id and is the only
  * safe guess, because rewriting an id that was already canonical is how a
  * returning sender stops matching their own contact record.
  */

@@ -1,7 +1,7 @@
 /**
  * Guards that a `cadet` provider_connection only takes the provider-agnostic
- * routing path when the resolving profile declares a managed-routable upstream.
- * A `cadet` connection paired with a non-managed provider (openrouter/ollama/…)
+ * routing path when the resolving profile declares a cloud-routable upstream.
+ * A `cadet` connection paired with a non-cloud provider (openrouter/ollama/…)
  * is a misconfiguration and must use the normal mismatch recovery/error path,
  * not route as platform auth and silently fall back.
  */
@@ -88,14 +88,14 @@ describe("cadet connection mismatch handling", () => {
     expect(provider).not.toBeNull();
     expect(provider?.routeAttribution).toEqual({
       connectionName: "cadet",
-      isManagedRoute: true,
+      isCloudRoute: true,
     });
     expect(resolveCalls).toHaveLength(1);
     expect(resolveCalls[0].connection.name).toBe("cadet");
     expect(resolveCalls[0].opts.providerOverride).toBe("fireworks");
   });
 
-  test("non-managed provider with no recovery throws provider_mismatch", async () => {
+  test("non-cloud provider with no recovery throws provider_mismatch", async () => {
     fakeConnections.set("cadet", cadetConn);
     listResult = []; // no openrouter connection to recover to
     let caught: unknown;
@@ -113,11 +113,11 @@ describe("cadet connection mismatch handling", () => {
     expect((caught as ConnectionResolutionError).reason).toBe(
       "provider_mismatch",
     );
-    // Never routed as a cadet platform-auth request.
+    // Never routed as a cadet cloud-auth request.
     expect(resolveCalls).toHaveLength(0);
   });
 
-  test("non-managed provider auto-recovers to a real connection (no override)", async () => {
+  test("non-cloud provider auto-recovers to a real connection (no override)", async () => {
     fakeConnections.set("cadet", cadetConn);
     listResult = [
       {
@@ -135,7 +135,7 @@ describe("cadet connection mismatch handling", () => {
     expect(provider).not.toBeNull();
     expect(provider?.routeAttribution).toEqual({
       connectionName: "openrouter-personal",
-      isManagedRoute: false,
+      isCloudRoute: false,
     });
     expect(resolveCalls).toHaveLength(1);
     expect(resolveCalls[0].connection.name).toBe("openrouter-personal");
@@ -145,8 +145,8 @@ describe("cadet connection mismatch handling", () => {
 
 /**
  * Boot seeding leaves a user-owned row claiming the `cadet` name in place, so
- * an install can have no canonical row at all. A managed profile only resolves
- * on a platform install, so its route is platform auth, never the credentials
+ * an install can have no canonical row at all. A cloud profile only resolves
+ * on a cloud install, so its route is platform auth, never the credentials
  * that row happens to carry, and never an error over the name collision.
  */
 describe("user-owned connection claiming the cadet name", () => {
@@ -199,7 +199,7 @@ describe("user-owned connection claiming the cadet name", () => {
 
   test("an unavailable platform is a soft miss, not a fall-through", async () => {
     fakeConnections.set("cadet", userOwnedOpenai);
-    resolveResult = null; // not signed in to the platform
+    resolveResult = null; // not signed in to the cloud
     const provider = await tryResolveProviderForConnectionName(
       "cadet",
       config,
@@ -213,8 +213,8 @@ describe("user-owned connection claiming the cadet name", () => {
 
   test("a concrete provider over the canonical name is still platform-billed", async () => {
     // The shape `resolveCallSiteConfig` produces when a call-site tweak pins a
-    // concrete upstream over a managed profile: provider is the upstream, the
-    // managed connection survives. The legacy config of the same shape (a BYOK
+    // concrete upstream over a cloud profile: provider is the upstream, the
+    // cloud connection survives. The legacy config of the same shape (a BYOK
     // profile pointing at a row named `cadet`) resolves the same way.
     fakeConnections.set("cadet", userOwnedOpenai);
     const provider = await tryResolveProviderForConnectionName(

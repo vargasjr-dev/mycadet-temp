@@ -43,7 +43,7 @@ const cache = new Map<string, SubagentAttribution>();
  *
  * Never throws. This runs on the provider dispatch hot path and attribution
  * must never be able to take a model request down. Any failure degrades to
- * "no attribution", which is exactly how the platform treats a missing header.
+ * "no attribution", which is exactly how the cloud treats a missing header.
  */
 export function resolveSubagentAttribution(
   conversationId: string | undefined,

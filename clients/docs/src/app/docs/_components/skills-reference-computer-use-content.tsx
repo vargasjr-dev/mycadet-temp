@@ -26,7 +26,7 @@ export function SkillsReferenceComputerUseContent() {
             APIs and screenshots, then clicks, types, and scrolls. Some actions depend on the
             desktop operating system. Platform-hosted web conversations default to the
             streamed Virtual desktop using accessibility elements and screenshots. Native desktop
-            apps, including the Mac app connected to a platform-hosted assistant, use
+            apps, including the Mac app connected to a cloud-hosted assistant, use
             the connected computer unless explicitly directed to the virtual desktop.
             Explicit connected-computer targets override the web default.
             Each virtual desktop action uses the observation ID from its latest screenshot;

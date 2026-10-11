@@ -1,10 +1,10 @@
 import { getConfig } from "../config/loader.js";
 import type { SkillSource } from "../config/skills.js";
-import type { SkillInstallMeta } from "./install-meta.js";
 import {
-  isSkillCompatibleWithPlatform,
+  isSkillCompatibleWithCloud,
   type SkillPlatform,
-} from "./platform-compatibility.js";
+} from "./cloud-compatibility.js";
+import type { SkillInstallMeta } from "./install-meta.js";
 
 /**
  * Plugin-facing read API over the skill surface: the locally installed
@@ -128,7 +128,7 @@ export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
       typeof flagKey === "string" &&
       flagKey.length > 0 &&
       !isAssistantFeatureFlagEnabled(flagKey, config);
-    const incompatible = !isSkillCompatibleWithPlatform(entry);
+    const incompatible = !isSkillCompatibleWithCloud(entry);
     return {
       id: entry.id,
       displayName: entry.metadata?.cadet?.["display-name"] ?? entry.name,

@@ -326,7 +326,7 @@ describe("renderNotificationAvatarPng", () => {
 
       const png = (await renderNotificationAvatarPng())!;
       // The IHDR width and height, at fixed offsets past the 8-byte signature.
-      // The platform's own ceiling is a square of at most 512 px and 128 KB.
+      // The cloud's own ceiling is a square of at most 512 px and 128 KB.
       expect(png.readUInt32BE(16)).toBe(256);
       expect(png.readUInt32BE(20)).toBe(256);
       expect(png.length).toBeLessThanOrEqual(131072);
@@ -421,7 +421,7 @@ describe("renderNotificationAvatarPng", () => {
 });
 
 /**
- * The platform sync folds this answer into its dedup key, so it has to be
+ * The cloud sync folds this answer into its dedup key, so it has to be
  * true exactly when a disc would come out, and it has to say so without
  * rendering one.
  */

@@ -11,7 +11,7 @@
  * `properties` instead would advertise parameters the tool does not accept.
  *
  * Rules describe the first-party tools that ship in `bundled-skills/`, and tool
- * names are not reserved: a managed, workspace, extra, or plugin skill may
+ * names are not reserved: a cloud, workspace, extra, or plugin skill may
  * define its own `subagent_read` with an entirely different contract. The
  * `bundled` prefix on the exports below is the reminder that callers must
  * establish bundled provenance before consulting the table.

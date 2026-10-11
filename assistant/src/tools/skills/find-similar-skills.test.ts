@@ -19,7 +19,7 @@ import { basename, join } from "node:path";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import type { SkillSource } from "../../config/skills.js";
-import type { StoredManagedSkill } from "../../skills/managed-store.js";
+import type { StoredCloudSkill } from "../../skills/cloud-store.js";
 import type { OwnerInfo } from "../types.js";
 
 // Map managed skill id → recorded author, consulted by the mocked
@@ -253,7 +253,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
         source: "bundled",
       },
     );
-  const stored: Record<string, StoredManagedSkill> = {
+  const stored: Record<string, StoredCloudSkill> = {
     "weekly-export": {
       name: "Weekly Report Export",
       description: "Export the weekly usage report",
@@ -279,7 +279,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
     },
   };
   const reads: string[] = [];
-  const readStoredManagedSkill = (skillId: string) => {
+  const readStoredCloudSkill = (skillId: string) => {
     reads.push(skillId);
     return stored[skillId] ?? null;
   };
@@ -299,7 +299,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
       {
         nearestExistingSkills: hits,
         loadCatalog: refinableCatalog,
-        readStoredManagedSkill,
+        readStoredCloudSkill,
       },
     );
 
@@ -331,7 +331,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
           { skillId: "user-skill", score: 1 },
         ],
         loadCatalog: refinableCatalog,
-        readStoredManagedSkill,
+        readStoredCloudSkill,
       },
     );
 
@@ -353,7 +353,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
       {
         nearestExistingSkills: hits,
         loadCatalog: refinableCatalog,
-        readStoredManagedSkill,
+        readStoredCloudSkill,
       },
     );
 
@@ -418,7 +418,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
           { skillId: "weekly-export", score: 0.9 },
         ],
         loadCatalog: refinableCatalog,
-        readStoredManagedSkill: () => null,
+        readStoredCloudSkill: () => null,
       },
     );
 

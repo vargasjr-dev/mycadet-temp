@@ -5,13 +5,13 @@
  * onboarding CTA — used to catch its failure and print one sentence:
  * "Something went wrong. Please try again." That sentence is correct for a
  * dropped connection and useless for everything else, and the flow's real
- * failure mode is everything else: the platform refusing the sign-in after
+ * failure mode is everything else: the cloud refusing the sign-in after
  * the IdP already accepted it. A user whose signup is closed, or whose Google
  * account was never linked to a Cadet account, retried forever against copy
  * that told them retrying would work.
  *
  * The native shells (`clients/ios/App/App/NativeAuthPlugin.swift`,
- * `clients/android/.../NativeAuthPlugin.java`) classify the platform's
+ * `clients/android/.../NativeAuthPlugin.java`) classify the cloud's
  * response and reject with Capacitor's `code = "AUTH_ERROR"` plus
  * `data.authError` naming the cause. This module is the one place that turns
  * those causes into copy, so the three entry points cannot drift apart.
@@ -30,7 +30,7 @@ export const GENERIC_AUTH_ERROR_KEY = "authErrors.genericFailure" as const;
 
 /**
  * Copy per `data.authError`. Keys are the codes the native shells emit:
- * `signup_closed` / `provider_signup` / `login_incomplete` from the platform
+ * `signup_closed` / `provider_signup` / `login_incomplete` from the cloud
  * session exchange, plus whatever allauth names in a 400. Anything unlisted
  * falls back to {@link GENERIC_AUTH_ERROR_MESSAGE} — an unmapped code is a
  * missing entry here, never a crash.
@@ -60,7 +60,7 @@ export function nativeAuthErrorCode(err: unknown): string | undefined {
 }
 
 /**
- * True when the user dismissed the platform auth sheet. A routine dismissal,
+ * True when the user dismissed the cloud auth sheet. A routine dismissal,
  * not a failure: callers drop the loading state and show nothing.
  */
 export function isUserCancelledAuthError(err: unknown): boolean {
@@ -72,7 +72,7 @@ export function isUserCancelledAuthError(err: unknown): boolean {
  *
  * Also the right tag to report alongside the error: it is the difference
  * between a report that says "auth failed" and one that says which refusal
- * the platform issued.
+ * the cloud issued.
  */
 export function nativeAuthErrorDetail(err: unknown): string | undefined {
   if (nativeAuthErrorCode(err) !== "AUTH_ERROR") {

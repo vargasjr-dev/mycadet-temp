@@ -6,7 +6,7 @@ export interface BundledCliModules {
   pluginDiff: typeof import("./lib/diff-plugin.js");
   pluginInspect: typeof import("./lib/inspect-plugin.js");
   pluginInstallGitHub: typeof import("./lib/install-from-github.js");
-  pluginInstallPlatform: typeof import("./lib/install-from-platform.js");
+  pluginInstallPlatform: typeof import("./lib/install-from-cloud.js");
   pluginInstalled: typeof import("./lib/list-installed-plugins.js");
   pluginPinHistory: typeof import("./lib/plugin-pin-history.js");
   pluginSearch: typeof import("./lib/search-plugins.js");

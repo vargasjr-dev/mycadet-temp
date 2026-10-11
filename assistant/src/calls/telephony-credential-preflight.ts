@@ -111,7 +111,7 @@ function sttGapClause(
       // Connection-based providers are fixed by connecting the account,
       // not by entering an API key.
       if (capability.credentialProvider === "cadet") {
-        return `a Cadet Cloud connection for managed speech (run 'assistant cloud connect')`;
+        return `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect')`;
       }
       return `an API key for the speech-to-text provider "${providerId}"`;
     }
@@ -140,14 +140,14 @@ function ttsGap(
         clause: `an API key for the text-to-speech provider "${providerId}" (no fallback provider has usable credentials)`,
       };
     }
-    case "missing-platform-connection": {
+    case "missing-cloud-connection": {
       return {
         gap: {
           kind: "tts",
           providerId,
           reason: `Managed TTS has no usable Cadet Cloud connection and no playable fallback provider is available`,
         },
-        clause: `a Cadet Cloud connection for managed speech (run 'assistant cloud connect'; no fallback provider has usable credentials)`,
+        clause: `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect'; no fallback provider has usable credentials)`,
       };
     }
     case "missing-fish-audio-reference-id": {

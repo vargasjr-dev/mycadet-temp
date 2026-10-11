@@ -58,10 +58,10 @@ export function maybeSeedCliCommandCards(config: AssistantConfig): void {
 
 /**
  * Default upper bound on how long
- * {@link maybeReseedCapabilitiesAfterManagedCredential} waits for the capability
+ * {@link maybeReseedCapabilitiesAfterCloudCredential} waits for the capability
  * reseeds before enqueuing the v3 maintain pass. The reseeds keep running
  * detached past this bound — it only stops the barrier from waiting on a wedged
- * catalog (a stalled `getCatalog()` or a managed-proxy embed that never
+ * catalog (a stalled `getCatalog()` or a cloud-proxy embed that never
  * returns). A straggler that finishes later re-enqueues maintain.
  */
 const RESEED_BARRIER_TIMEOUT_MS = 120_000;
@@ -89,13 +89,13 @@ async function settledWithin(
 }
 
 /**
- * Re-seed the v2 skill and CLI-command capability entries once a managed-proxy
+ * Re-seed the v2 skill and CLI-command capability entries once a cloud-proxy
  * credential lands, closing the first-boot race where the daemon's startup seed
- * runs before the platform has provisioned the managed embedding credential.
+ * runs before the cloud has provisioned the cloud embedding credential.
  *
- * On a brand-new managed assistant the memory worker fires the startup seed
+ * On a brand-new cloud assistant the memory worker fires the startup seed
  * (`maybeSeedCapabilitySkills` / `maybeSeedCliCommandCards`) seconds after
- * boot, but the platform pushes `cadet:assistant_api_key` (the credential the
+ * boot, but the cloud pushes `cadet:assistant_api_key` (the credential the
  * managed Gemini embedding backend needs) tens of seconds later. The seed's
  * `embedWithBackend` call throws `EmbeddingBackendUnavailableError` before the
  * skill/CLI `entries` cache is replaced, so `listSkillEntries()` /
@@ -105,7 +105,7 @@ async function settledWithin(
  * the next daemon restart. Re-running the seed when the credential arrives
  * restores the capability pages without a restart.
  *
- * Gated on the managed-proxy prerequisites now being satisfied (both the
+ * Gated on the cloud-proxy prerequisites now being satisfied (both the
  * platform base URL and the assistant API key present) so a non-managed
  * credential write — or a partial update that has not yet completed the pair —
  * does not kick a doomed embed. Idempotent: `seedV2SkillEntries` /
@@ -125,7 +125,7 @@ async function settledWithin(
  *
  * The maintain enqueue must NOT be gated on both catalogs settling. The two
  * embeds are independent, and a single wedged catalog (a stalled `getCatalog()`
- * or a managed-proxy embed that never returns) would otherwise block the v3 lane
+ * or a cloud-proxy embed that never returns) would otherwise block the v3 lane
  * rebuild indefinitely, so the catalog that DID seed never reaches the selector.
  * The barrier is therefore bounded by `reseedTimeoutMs`: maintain is enqueued
  * once the barrier resolves (the pass is idempotent and reconciles whatever the
@@ -136,7 +136,7 @@ async function settledWithin(
  * `reseedTimeoutMs` is injectable for tests; production uses
  * {@link RESEED_BARRIER_TIMEOUT_MS}.
  */
-export async function maybeReseedCapabilitiesAfterManagedCredential(
+export async function maybeReseedCapabilitiesAfterCloudCredential(
   config: AssistantConfig,
   opts: { reseedTimeoutMs?: number } = {},
 ): Promise<void> {
@@ -144,13 +144,13 @@ export async function maybeReseedCapabilitiesAfterManagedCredential(
     return;
   }
 
-  const { hasManagedProxyPrereqs } =
-    await import("../../../../providers/platform-proxy/context.js");
-  if (!(await hasManagedProxyPrereqs())) {
+  const { hasCloudProxyPrereqs } =
+    await import("../../../../providers/cloud-proxy/context.js");
+  if (!(await hasCloudProxyPrereqs())) {
     return;
   }
 
-  // The managed credential has just landed, so the embedding backend is now
+  // The cloud credential has just landed, so the embedding backend is now
   // reachable. Retry the embedding-identity reconcile to close the
   // fresh-platform-install-booted-with-Gemini-down case: the first boot defers
   // (degraded) because the backend probe returns null, and this credential-
@@ -168,7 +168,7 @@ export async function maybeReseedCapabilitiesAfterManagedCredential(
   } catch (err) {
     log.warn(
       { err },
-      "Embedding-identity reconcile after managed proxy credential update threw — continuing",
+      "Embedding-identity reconcile after cloud proxy credential update threw — continuing",
     );
   }
 
@@ -200,12 +200,12 @@ export async function maybeReseedCapabilitiesAfterManagedCredential(
     seed().then(
       () =>
         log.info(
-          `Memory v2 ${label} entries seeded after managed proxy credential update`,
+          `Memory v2 ${label} entries seeded after cloud proxy credential update`,
         ),
       (err: unknown) =>
         log.warn(
           { err },
-          `Failed to seed v2 ${label} entries after managed proxy credential update`,
+          `Failed to seed v2 ${label} entries after cloud proxy credential update`,
         ),
     ),
   );
@@ -229,7 +229,7 @@ export async function maybeReseedCapabilitiesAfterManagedCredential(
     } catch (err) {
       log.warn(
         { err },
-        "Failed to enqueue memory_v3_maintain after managed proxy credential update",
+        "Failed to enqueue memory_v3_maintain after cloud proxy credential update",
       );
     }
   };

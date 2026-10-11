@@ -3,15 +3,15 @@
  *
  * Send Cadet staff a debug bundle of a self-hosted assistant: the
  * workspace, its logs, and the gateway's own database, with no credentials.
- * Staff open it on a throwaway debug clone. The platform only hands out the
+ * Staff open it on a throwaway debug clone. The cloud only hands out the
  * upload URL while "Allow Staff Access" is on, and the bundle is deleted
  * after seven days.
  *
- * Steps: the daemon is checked for the debug profile, the platform mints
+ * Steps: the daemon is checked for the debug profile, the cloud mints
  * the upload URL, the daemon exports with the debug profile, and this
  * command waits for the job so the result is real.
  */
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import {
   formatAssistantReference,
   resolveTargetAssistant,
@@ -29,9 +29,9 @@ import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
   authHeaders,
   authHeadersForKnownOrganization,
-  getPlatformUrl,
-  readPlatformToken,
-} from "../lib/platform-client.js";
+  getCloudUrl,
+  readCloudToken,
+} from "../lib/cloud-client.js";
 import { compareVersions } from "../lib/version-compat.js";
 
 // Matches the daemon's own upload deadline (EXPORT_TO_GCS_PUT_TIMEOUT_MS in
@@ -60,7 +60,7 @@ Arguments:
 Requirements:
   - 'Allow Staff Access' is on for the assistant (Settings > Privacy).
   - You are logged in ('cadet login'), which also registers the
-    assistant with the platform.
+    assistant with the cloud.
   - The assistant runs version ${DEBUG_PROFILE_MIN_VERSION} or newer.
   - The assistant is self-hosted. Cadet-hosted assistants need no bundle;
     staff clone them directly.
@@ -88,30 +88,30 @@ export const debug = Object.assign(
 
   const entry = resolveTargetAssistant(parseAssistantTargetArg(args));
   const reference = formatAssistantReference(entry);
-  if (isManagedCloud(entry.cloud)) {
+  if (isCloudHome(entry.cloud)) {
     console.error(
       `${reference} is hosted by Cadet, so staff can clone it directly. No bundle is needed.`,
     );
     process.exit(1);
   }
 
-  const platformToken = readPlatformToken();
-  if (!platformToken) {
+  const cloudToken = readCloudToken();
+  if (!cloudToken) {
     console.error("Not logged in. Run 'cadet login' first.");
     process.exit(1);
   }
-  const platformAssistantId = entry.platformAssistantId?.trim();
-  if (!platformAssistantId) {
+  const cloudAssistantId = entry.cloudAssistantId?.trim();
+  if (!cloudAssistantId) {
     console.error(
-      `${reference} is not registered with the platform yet. Run 'cadet login' and retry.`,
+      `${reference} is not registered with the cloud yet. Run 'cadet login' and retry.`,
     );
     process.exit(1);
   }
-  const platformUrl = entry.platformBaseUrl?.trim() || getPlatformUrl();
-  const organizationId = entry.platformOrganizationId?.trim();
+  const cloudUrl = entry.cloudBaseUrl?.trim() || getCloudUrl();
+  const organizationId = entry.cloudOrganizationId?.trim();
 
   // Step 1: a guardian token for the daemon, and a check that the daemon
-  // knows the debug profile. This comes before the platform call so a
+  // knows the debug profile. This comes before the cloud call so a
   // daemon that would export credentials is refused before any URL exists.
   let accessToken = await daemonAccessToken(entry, reference, false);
   const { version } = await localRuntimeIdentity(entry, accessToken);
@@ -123,13 +123,13 @@ export const debug = Object.assign(
     process.exit(1);
   }
 
-  // Step 2: the platform mints the upload URL, and refuses unless the
+  // Step 2: the cloud mints the upload URL, and refuses unless the
   // owner's staff access grant is active.
   const headers = organizationId
-    ? authHeadersForKnownOrganization(platformToken, organizationId)
-    : await authHeaders(platformToken, platformUrl);
+    ? authHeadersForKnownOrganization(cloudToken, organizationId)
+    : await authHeaders(cloudToken, cloudUrl);
   const urlResponse = await loopbackSafeFetch(
-    `${platformUrl}/v1/assistants/${encodeURIComponent(platformAssistantId)}/debug-bundle-upload-url/`,
+    `${cloudUrl}/v1/assistants/${encodeURIComponent(cloudAssistantId)}/debug-bundle-upload-url/`,
     { method: "POST", headers },
   );
   if (urlResponse.status === 403) {

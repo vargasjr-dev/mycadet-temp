@@ -379,7 +379,7 @@ describe("WebSearchCard — provider-only configuration", () => {
   });
 
   test("a legacy managed-mode Provider Native daemon stays Provider Native", () => {
-    // The platform default config: managed mode never meant "Cadet search"
+    // The cloud default config: managed mode never meant "Cadet search"
     // for Provider Native — migration 132 preserves it, so must the card.
     daemonConfigData = {
       services: {

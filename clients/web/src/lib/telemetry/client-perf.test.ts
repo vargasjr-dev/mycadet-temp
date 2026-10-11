@@ -348,7 +348,7 @@ describe("emitClientPerfEvent", () => {
     expect(detectClientOsMock).toHaveBeenCalledTimes(1);
   });
 
-  test("labels the native shells from the platform predicates", () => {
+  test("labels the native shells from the cloud predicates", () => {
     emitClientPerfEvent("client_list.drain", 1);
     expect(lastDetail().surface).toBe("web");
 

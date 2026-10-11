@@ -16,7 +16,7 @@ import { installPermissionHandler } from "@mycadet/electron-desktop/permissions"
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
 import {
   executePlatformForwardPlan,
-  planPlatformForward,
+  planCloudForward,
 } from "@mycadet/electron-desktop/platform-forward";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
@@ -270,7 +270,7 @@ const registerAppProtocol = (): void => {
       ? pairedGatewayTargetsFromLockfile(watched)
       : readPairedGatewayTargets(lockfilePaths);
   };
-  const { platformUrl } = resolveLocalConfigFromEnv(process.env);
+  const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
 
   protocol.handle(APP_PROTOCOL, async (request) => {
     // The renderer addresses local gateways at the same `app://` origin via
@@ -303,7 +303,7 @@ const registerAppProtocol = (): void => {
     // Platform API and first-party session-replay routes (`/v1/*`,
     // `/_allauth/*`, `/accounts/*`, `/_sr/*`) forward to the cloud platform
     // so managed mode and desktop replay ingest work in packaged builds.
-    const platformProxied = await forwardPlatformRequest(request, platformUrl);
+    const platformProxied = await forwardPlatformRequest(request, cloudUrl);
     if (platformProxied) return platformProxied;
 
     const asset = await planAppProtocolAssetRequest({
@@ -329,24 +329,24 @@ const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
-  platformUrl: resolvedConfig.platformUrl,
-  disablePlatform:
+  cloudUrl: resolvedConfig.cloudUrl,
+  disableCloud:
     ["true", "1"].includes(
-      (process.env.CADET_DISABLE_PLATFORM ?? "").toLowerCase(),
+      (process.env.CADET_DISABLE_CLOUD ?? "").toLowerCase(),
     ) || undefined,
   deviceId: getDeviceId(),
 }));
 
 /**
- * Forward a platform API request (`/v1/*`, `/_allauth/*`, `/accounts/*`) to
- * the cloud platform, or return `null` for non-platform paths. Mirrors the
+ * Forward a cloud API request (`/v1/*`, `/_allauth/*`, `/accounts/*`) to
+ * the cloud platform, or return `null` for non-cloud paths. Mirrors the
  * gateway forward: `net.fetch` runs in main so the renderer stays same-origin.
  */
 const forwardPlatformRequest = async (
   request: GlobalRequest,
-  platformUrl: string,
+  cloudUrl: string,
 ): Promise<Response | null> => {
-  const plan = planPlatformForward(request, platformUrl, {
+  const plan = planCloudForward(request, cloudUrl, {
     allowedOrigin: resolveAllowedOrigin(),
   });
   const target = plan.kind === "forward" ? `${plan.method} ${plan.url}` : "";

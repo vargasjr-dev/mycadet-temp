@@ -69,7 +69,7 @@ export function publishCapacitorDeepLinksSource(): () => void {
  * App Intent produced this". Android registers the same scheme (for the auth
  * callback host today) and strips nothing, so it must never be trusted here,
  * even if a future intent-filter widens which URLs it accepts. Read once per
- * URL rather than at module load so tests can swap the platform.
+ * URL rather than at module load so tests can swap the cloud.
  */
 function shellVouchesForProvenance(): boolean {
   return Capacitor.getPlatform() === "ios";

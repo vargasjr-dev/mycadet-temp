@@ -172,7 +172,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Get ingress tunnel status",
     description:
-      "Probe the configured public ingress URL and report whether a tunnel is serving this assistant. `unconfigured` means no tunnel has ever been recorded (or the ingress is managed for this assistant, as it is when platform-hosted or fronted by a Tunnel), `stopped` means a tunnel ran before and is not running now (callback ingress is explicitly switched off, or its URL is gone), `healthy` means the URL answers and fronts this assistant's web app, `unpairable` means it answers but does not serve that app, so a pairing link minted against it would not open, `unreachable` means it does not answer, and `foreign` means it answers for a different assistant. `lastTunnel` names the tunnel to restart, on the states where a recorded one applies to the configured URL.",
+      "Probe the configured public ingress URL and report whether a tunnel is serving this assistant. `unconfigured` means no tunnel has ever been recorded (or the ingress is managed for this assistant, as it is when cloud-hosted or fronted by a Tunnel), `stopped` means a tunnel ran before and is not running now (callback ingress is explicitly switched off, or its URL is gone), `healthy` means the URL answers and fronts this assistant's web app, `unpairable` means it answers but does not serve that app, so a pairing link minted against it would not open, `unreachable` means it does not answer, and `foreign` means it answers for a different assistant. `lastTunnel` names the tunnel to restart, on the states where a recorded one applies to the configured URL.",
     tags: ["config"],
     handler: handleIngressStatus,
     responseBody: IngressStatusResponseSchema,

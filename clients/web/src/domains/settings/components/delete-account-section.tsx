@@ -1,12 +1,12 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { useUserDeletionRequestCreateMutation } from "@/generated/api/@tanstack/react-query.gen";
 import {
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { clearConsentForUser } from "@/lib/consent/consent-persistence";
@@ -18,11 +18,11 @@ import { toast } from "@mycadet/design-library/components/toast";
 
 export function DeleteAccountSection() {
   const { t } = useTranslation("settings");
-  // platformHostedOnly: deleting a Cadet Cloud account from a UI that
+  // cloudHostedOnly: deleting a Cadet Cloud account from a UI that
   // is actively connected to a self-hosted assistant is confusing /
-  // disruptive — the user can switch to a platform-hosted assistant to
+  // disruptive — the user can switch to a cloud-hosted assistant to
   // access this action. The standard gate would still expose it.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
   // Settings routes are NOT mounted under `<ActiveAssistantGate>`, so a
   // fresh deep-link to the privacy page renders with lifecycle still in
   // `{ kind: "loading" }`. The gate above returns `"full"` during that
@@ -50,7 +50,7 @@ export function DeleteAccountSection() {
     },
   });
 
-  const isResolving = platformGate === "full" && isLifecycleLoading;
+  const isResolving = cloudGate === "full" && isLifecycleLoading;
 
   // Dialog lifetime can span gate transitions: a user can open the dialog
   // while resolved-as-hosted, then trigger an assistant switch (lifecycle
@@ -66,11 +66,11 @@ export function DeleteAccountSection() {
     }
   }, [isResolving, confirmOpen]);
 
-  // User accounts are a platform concept — there is no account to delete on
+  // User accounts are a cloud concept — there is no account to delete on
   // a self-hosted assistant. Early return must follow every hook above so
   // gate transitions (e.g. lifecycle flipping to `self_hosted` after the
   // API resolves) never skip a hook and trigger a hook-order violation.
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return null;
   }
 
@@ -84,10 +84,10 @@ export function DeleteAccountSection() {
           {t("deleteAccountSection.description")}
         </p>
         <div className="mt-1">
-          {platformGate === "disabled" ? (
-            <PlatformLoginNotice>
+          {cloudGate === "disabled" ? (
+            <CloudLoginNotice>
               {t("deleteAccountSection.platformLoginNotice")}
-            </PlatformLoginNotice>
+            </CloudLoginNotice>
           ) : (
             <div className="flex items-center gap-2">
               <Button

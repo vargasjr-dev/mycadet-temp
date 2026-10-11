@@ -16,8 +16,8 @@
  * first-run onboarding card leaves it off.
  *
  * Selecting a voice writes it to daemon config via
- * {@link useManagedVoiceSelection}, which hot-applies on the assistant's next
- * spoken turn. Renders nothing unless managed voice selection is available.
+ * {@link useCloudVoiceSelection}, which hot-applies on the assistant's next
+ * spoken turn. Renders nothing unless cloud voice selection is available.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,7 +28,7 @@ import { cn, CrossfadeStack } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
 import { Select } from "@mycadet/design-library/components/select";
 
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { useVoiceSamplePreview } from "@/components/speech/use-voice-sample-preview";
 import { useTranslation } from "@/i18n";
 import {
@@ -36,7 +36,7 @@ import {
   MANAGED_VOICE_SOURCE_LABELS,
   splitVoiceDescription,
   voiceTraitsLabel,
-} from "@/lib/tts/managed-voice-catalog";
+} from "@/lib/tts/cloud-voice-catalog";
 
 /**
  * A voice's label: its character traits lead (sentence-cased), with the accent
@@ -81,7 +81,7 @@ export interface VoiceListProps {
    * Controlled mode. Pass both to let the parent own the selection — the list
    * calls `onChange` instead of writing to daemon config, so a batched form
    * (Models & Services) can hold the pick in a draft until Save. Omit both and
-   * the list self-commits via {@link useManagedVoiceSelection} (instant
+   * the list self-commits via {@link useCloudVoiceSelection} (instant
    * hot-apply — the voice room and Voice settings picker).
    */
   value?: string;
@@ -131,7 +131,7 @@ export function VoiceList({
     defaultModel,
     selectModel,
     selecting,
-  } = useManagedVoiceSelection(assistantId);
+  } = useCloudVoiceSelection(assistantId);
 
   // Controlled when the parent supplies both value and onChange; otherwise the
   // list owns selection and commits instantly.

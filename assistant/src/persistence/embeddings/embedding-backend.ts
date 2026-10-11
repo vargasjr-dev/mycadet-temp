@@ -4,8 +4,8 @@ import { getOllamaBaseUrlEnv } from "../../config/env.js";
 import { resolveCallSiteConfig } from "../../config/llm-resolver.js";
 import { isMemoryEnabled } from "../../config/memory-v3-gate.js";
 import type { AssistantConfig } from "../../config/types.js";
-import { PLATFORM_PROVIDER_META } from "../../providers/platform-proxy/constants.js";
-import { resolveManagedProxyContext } from "../../providers/platform-proxy/context.js";
+import { PLATFORM_PROVIDER_META } from "../../providers/cloud-proxy/constants.js";
+import { resolveCloudProxyContext } from "../../providers/cloud-proxy/context.js";
 import { getProviderKeyAsync } from "../../security/secure-keys.js";
 import { getLogger } from "../../util/logger.js";
 import {
@@ -522,19 +522,19 @@ function getCustomEmbeddingBackend(
 }
 
 /**
- * Build (or reuse) the managed-proxy Gemini backend, or return undefined
- * when the managed proxy prerequisites (platform URL + assistant API key)
+ * Build (or reuse) the cloud-proxy Gemini backend, or return undefined
+ * when the cloud proxy prerequisites (platform URL + assistant API key)
  * are not satisfied.
  */
 async function tryGetManagedGeminiBackend(
   config: AssistantConfig,
 ): Promise<EmbeddingBackend | undefined> {
-  const proxyCtx = await resolveManagedProxyContext();
+  const proxyCtx = await resolveCloudProxyContext();
   const meta = PLATFORM_PROVIDER_META["gemini"];
   if (!proxyCtx.enabled || !meta?.managed || !meta.proxyPath) {
     return undefined;
   }
-  const managedBaseUrl = `${proxyCtx.cloudBaseUrl}${meta.proxyPath}`;
+  const cloudBaseUrl = `${proxyCtx.cloudBaseUrl}${meta.proxyPath}`;
   return getCachedOrCreate(
     "gemini",
     config.memory.embeddings.geminiModel,
@@ -545,7 +545,7 @@ async function tryGetManagedGeminiBackend(
         {
           taskType: config.memory.embeddings.geminiTaskType,
           dimensions: config.memory.embeddings.geminiDimensions ?? 3072,
-          managedBaseUrl,
+          cloudBaseUrl,
         },
       ),
     [...geminiCacheExtras(config), "managed"],
@@ -607,8 +607,8 @@ export async function selectEmbeddingBackend(
     };
   }
 
-  // When managed proxy prerequisites are satisfied, insert managed-proxy Gemini
-  // at the front of the auto chain so platform assistants use Cadet-managed
+  // When cloud proxy prerequisites are satisfied, insert cloud-proxy Gemini
+  // at the front of the auto chain so platform assistants use Cadet Cloud
   // Gemini embeddings.
   if (requested === "auto" || requested === "gemini") {
     const managed = await tryGetManagedGeminiBackend(config);
@@ -817,7 +817,7 @@ export async function isEmbeddingDimensionAvailable(
   }
 
   // Probe the exact backend chain `embedWithBackend` would try (primary +
-  // auto-mode fallbacks + the managed→direct Gemini fallback) via the shared
+  // auto-mode fallbacks + the cloud→direct Gemini fallback) via the shared
   // assembler, so this preflight can never be more pessimistic than the real
   // embed path. Dense recall stays available if ANY backend in the chain
   // produces the committed dimension. `resolveBackendDimension` memoizes per
@@ -898,7 +898,7 @@ export class EmbeddingBackendUnavailableError extends Error {
  * Assemble the ordered backend chain {@link embedWithBackend} will try for a
  * given primary selection: the primary, then (in `auto` mode, non-Gemini
  * primary) the configured fallbacks, then a direct-key Gemini fallback when the
- * primary is managed-proxy Gemini. This is the single source of truth for the
+ * primary is cloud-proxy Gemini. This is the single source of truth for the
  * fallback chain, shared with the dimension-availability preflight
  * ({@link isEmbeddingDimensionAvailable}) so the preflight cannot diverge from
  * what the real embed path attempts.
@@ -916,7 +916,7 @@ async function assembleEmbeddingBackends(
       ? await selectFallbackBackends(config, primary.provider)
       : [];
 
-  // A managed-proxy Gemini primary can fail at the proxy (e.g. a stale or
+  // A cloud-proxy Gemini primary can fail at the proxy (e.g. a stale or
   // revoked cloud credential) while a valid direct Gemini key sits in the
   // credential store. The provider chain above never includes Gemini when
   // Gemini IS the primary, so without this the direct key would never be tried.
@@ -1133,7 +1133,7 @@ async function selectFallbackBackends(
         if (geminiKey) {
           backends.push(getDirectGeminiBackend(config, geminiKey));
         } else {
-          // Try managed proxy Gemini as fallback when no direct key exists.
+          // Try cloud proxy Gemini as fallback when no direct key exists.
           const managed = await tryGetManagedGeminiBackend(config);
           if (managed) {
             backends.push(managed);

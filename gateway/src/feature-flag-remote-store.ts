@@ -1,13 +1,13 @@
 /**
  * Gateway-side remote feature flag store — file-backed persistence of
- * feature flag values pushed from the platform.
+ * feature flag values pushed from the cloud.
  *
  * Mirrors the feature-flag-store.ts pattern: file path resolution via
  * getGatewaySecurityDir(), atomic writes (temp file + rename), 0o600
  * permissions, and module-level caching with manual invalidation.
  *
  * Unlike the local override store, writes replace the *entire* value map at
- * once (the platform pushes a complete snapshot) and immediately update the
+ * once (the cloud pushes a complete snapshot) and immediately update the
  * in-memory cache so no file watcher is needed.
  */
 

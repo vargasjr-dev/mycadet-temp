@@ -32,7 +32,7 @@ describe("buildBundledPluginCatalog", () => {
     expect(catalog.ref).toBe("bundled");
     // The catalog dedupes by name (first occurrence wins — see
     // `projectMarketplaceEntries`), so the match count tracks the number of
-    // distinct names, not the raw entry count. The platform-generated manifest
+    // distinct names, not the raw entry count. The cloud-generated manifest
     // can carry multiple entries under one name (e.g. a repin that appends a
     // new ref, or an icon-curation pass), and the reader collapses them.
     const uniqueNames = new Set(bundledManifest.plugins.map((p) => p.name));

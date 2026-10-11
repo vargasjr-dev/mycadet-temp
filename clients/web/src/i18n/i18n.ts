@@ -8,7 +8,7 @@
  * MessageFormat is what Crowdin, Lokalise, Phrase, Tolgee, Android and iOS all
  * read. Authoring in ICU means the catalogs outlive this library choice and
  * can be handed to any TMS as-is. `i18next-icu` swaps i18next's formatter for
- * `intl-messageformat`, which resolves plural categories through the platform
+ * `intl-messageformat`, which resolves plural categories through the cloud
  * `Intl.PluralRules`, so a locale with six plural forms gets six without the
  * call site knowing anything about it.
  *

@@ -35,7 +35,7 @@ export const COMPOSER_MOBILE_RADIUS_CLASS = "rounded-[26px]";
  * the mobile row's structure while every control in it kept desktop chrome. The
  * primitive's own mobile growth is switched off (`expandOnMobile={false}`)
  * wherever these classes land, so one signal owns the whole control. See
- * `docs/PLATFORM_ADAPTATION.md`.
+ * `docs/CLOUD_ADAPTATION.md`.
  */
 export const MOBILE_CONTROL_CLASS = "h-10 w-10 rounded-full";
 

@@ -7,7 +7,7 @@
  * indicator went green on a channel nobody could reach.
  *
  * The classification lives in `checkTelegramWebhookHealth`, which already
- * handles error recency and the managed-versus-self-hosted recovery text.
+ * handles error recency and the cloud-versus-self-hosted recovery text.
  * These tests pin how the probe maps its verdicts across three outcomes, not
  * two: verified pass, hard failure, and the no-evidence statuses that are
  * neither. A probe that cannot see the answer must not report a fault, and

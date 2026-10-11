@@ -31,9 +31,9 @@ import { describe, expect, test } from "bun:test";
  *   # LLM context normalization (transport-agnostic message handling)
  *   bun test src/__tests__/llm-context-normalization.test.ts
  *
- *   # Provider registry and managed proxy integration
+ *   # Provider registry and cloud proxy integration
  *   bun test src/__tests__/registry.test.ts
- *   bun test src/__tests__/provider-managed-proxy-integration.test.ts
+ *   bun test src/__tests__/provider-cloud-proxy-integration.test.ts
  *
  *   # Web search guard (allowlist includes both provider files)
  *   bun test src/__tests__/conversation-history-web-search.test.ts

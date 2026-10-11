@@ -72,12 +72,12 @@ and asks for approval like any action with irreversible effects. Reads are
 not distinguished from writes: the effect is the endpoint's. To send a
 message, use 'assistant channels send', which posts through the channel's
 transport and records what it sent; a message posted through this command
-reaches the platform directly and leaves no record of what was said.
+reaches the cloud directly and leaves no record of what was said.
 
 Arguments:
   <channel>  One of: ${BOT_CHANNELS}. A channel with no bot credential of
              its own (phone, cadet) is refused.
-  <url>      The API method path, relative to the platform's API host
+  <url>      The API method path, relative to the cloud's API host
              (for Slack, '/conversations.history'; for Discord, '/users/@me';
              for Telegram, '/getMe'). The provider supplies the host.
 

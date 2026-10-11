@@ -62,7 +62,7 @@ mock.module("../oauth/oauth-store.js", () => ({
   listConnections: () => mockOauthConnections,
 }));
 
-mock.module("../credential-execution/managed-catalog.js", () => ({
+mock.module("../credential-execution/cloud-catalog.js", () => ({
   getCachedManagedConnections: () => mockManagedConnections,
 }));
 

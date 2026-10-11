@@ -3,14 +3,14 @@ import { Settings } from "lucide-react";
 import { Modal } from "@mycadet/design-library";
 
 import { ChannelTrustFloorSection } from "@/domains/channels/components/channel-trust-floor-section";
-import { EmailManagedContent } from "@/domains/channels/components/email-managed-content";
+import { EmailCloudContent } from "@/domains/channels/components/email-cloud-content";
 import { useChannelTrustFloors } from "@/domains/channels/hooks/use-channel-trust-floors";
 import { useTranslation } from "@/i18n";
 
 export interface EmailSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The platform assistant id the email routes take. */
+  /** The cloud assistant id the email routes take. */
   assistantId: string;
   /** The local assistant id the gateway's channel policy routes take. */
   localAssistantId: string;
@@ -20,7 +20,7 @@ export interface EmailSettingsModalProps {
 }
 
 /**
- * The managed email settings from the Channels page, in a modal the inbox
+ * The cloud email settings from the Channels page, in a modal the inbox
  * opens from its masthead's gear (so the header wears the same gear): the
  * address with its domain's verification, the way to copy or remove it,
  * the repair notice when the domain is not yet set up with the provider,
@@ -50,7 +50,7 @@ export function EmailSettingsModal({
         </Modal.Header>
         <Modal.Body>
           <div className="flex flex-col gap-5">
-            <EmailManagedContent
+            <EmailCloudContent
               assistantId={assistantId}
               assistantHandle={assistantHandle}
               emailRootDomain={emailRootDomain}

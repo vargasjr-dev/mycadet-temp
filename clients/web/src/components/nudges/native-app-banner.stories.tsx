@@ -51,7 +51,7 @@ const meta: Meta<typeof NativeAppBanner> = {
 export default meta;
 type Story = StoryObj<typeof NativeAppBanner>;
 
-/** iOS web, off Safari: the App Store listing, with the platform named. */
+/** iOS web, off Safari: the App Store listing, with the cloud named. */
 export const IOS: Story = {
   name: "iOS · App Store",
 };

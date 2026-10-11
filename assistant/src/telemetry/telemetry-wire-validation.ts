@@ -2,7 +2,7 @@
  * Pre-flush validation of outgoing telemetry events against the
  * platform-generated wire schemas (`telemetry-wire.generated.ts`).
  *
- * The platform ingest endpoint rejects individual events that violate its
+ * The cloud ingest endpoint rejects individual events that violate its
  * serializer bounds and skips event types it has no serializer for — both
  * silently from the daemon's point of view (the batch still 2xxes). This
  * module surfaces those would-be-silent drops as structured warnings at the
@@ -73,7 +73,7 @@ export function getWireSchemaForType(type: string): z.ZodObject | undefined {
  * the refined wire schemas; this drops the claims/suggestions byte-bound
  * superRefines, which aren't expressible in the request type anyway — the
  * handler still validates the assembled event against the full wire schema
- * ({@link getWireSchemaForType}) for those bounds. Undefined when the platform
+ * ({@link getWireSchemaForType}) for those bounds. Undefined when the cloud
  * contract has no serializer for `type`.
  */
 export function getWireFieldsSchema(type: string): z.ZodObject | undefined {
@@ -113,7 +113,7 @@ interface WireValidationResult {
 }
 
 /**
- * Validate a batch of outgoing telemetry events against the platform wire
+ * Validate a batch of outgoing telemetry events against the cloud wire
  * schemas, logging a structured warning for each event the server would
  * silently drop. Warn payloads carry the event `type` and issue
  * `{ path, code }` shapes only — never field values, and never dynamic key

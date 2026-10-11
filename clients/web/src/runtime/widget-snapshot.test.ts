@@ -217,7 +217,7 @@ describe("widget-snapshot bridge", () => {
     // Nothing was written, so nothing landed.
     await expect(syncWidgetSnapshot(SNAPSHOT, "asst-1")).resolves.toBe(false);
     // Nothing to clear either, so the clear is complete by construction and
-    // leaves no obligation behind on a platform that never had a snapshot.
+    // leaves no obligation behind on a cloud that never had a snapshot.
     await expect(clearWidgetSnapshot()).resolves.toBe(true);
     await expect(retryPendingWidgetSnapshotClear()).resolves.toBe(true);
     expect(syncCalls).toHaveLength(0);

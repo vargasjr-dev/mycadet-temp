@@ -7,7 +7,7 @@ import {
   setNestedValue,
 } from "../../config/loader.js";
 import { hasWebhookRoutingConfigured } from "../../config/webhook-routing.js";
-import { registerCallbackRoute } from "../../inbound/platform-callback-registration.js";
+import { registerCallbackRoute } from "../../inbound/cloud-callback-registration.js";
 import {
   ensureManualTokenConnection,
   removeManualTokenConnection,
@@ -246,17 +246,17 @@ export async function setTelegramConfig(
     hasWebhookSecret,
   };
 
-  // Register the Telegram callback route so the platform knows how to
+  // Register the Telegram callback route so the cloud knows how to
   // forward Telegram webhooks. This applies whenever webhooks are delivered
-  // via managed callbacks: platform pods, and platform-connected local
+  // via cloud callbacks: cloud pods, and platform-connected local
   // assistants with no public ingress. For both, platform callbacks are the
   // only way to receive Telegram webhooks. `hasWebhookRoutingConfigured`
   // encodes the resolution order (a configured ingress wins; an explicit
-  // `ingress.enabled: false` blocks the platform fallback) and is the same
+  // `ingress.enabled: false` blocks the cloud fallback) and is the same
   // derivation the Telegram status checks read, so registration and reported
   // status stay in agreement.
-  const { usesManagedCallbacks } = await hasWebhookRoutingConfigured(true);
-  if (usesManagedCallbacks) {
+  const { usesCloudCallbacks } = await hasWebhookRoutingConfigured(true);
+  if (usesCloudCallbacks) {
     registerCallbackRoute("webhooks/telegram", "telegram").catch((err) => {
       log.warn({ err }, "Failed to register Telegram platform callback route");
     });

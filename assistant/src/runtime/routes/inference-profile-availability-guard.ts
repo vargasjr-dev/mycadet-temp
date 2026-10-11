@@ -13,7 +13,7 @@
  * identically.
  */
 
-import { getManagedUpstream } from "../../providers/cadet-model-routing.js";
+import { getCloudUpstream } from "../../providers/cadet-model-routing.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import type { ConnectionAvailability } from "../../providers/inference/connection-availability.js";
 import { cadetConnectionAvailability } from "../../providers/inference/connection-availability.js";
@@ -54,7 +54,7 @@ export function verifyProfileCommand(name: string): string {
 
 function managedAlternative(model: string, repair: ProfileRepairHint): string {
   const served =
-    "this model is served by your signed-in Cadet-managed route (no API key needed)";
+    "this model is served by your signed-in Cadet Cloud route (no API key needed)";
   const quotedModel = shellQuote(model);
   switch (repair.kind) {
     case "create":
@@ -89,8 +89,8 @@ function byoSequence(provider: string): string {
 
 /**
  * Build the repair guidance for an unavailable selection: the exact
- * Cadet-managed alternative when the model is managed-routable and the
- * managed route is usable; otherwise key collection alone when a connection
+ * Cadet Cloud alternative when the model is managed-routable and the
+ * cloud route is usable; otherwise key collection alone when a connection
  * already exists and only its credential is missing, or the full
  * bring-your-own-key sequence when there is no connection at all.
  */
@@ -109,7 +109,7 @@ async function repairGuidance(
   if (ROUTING_IDENTITY_PROVIDERS.has(provider)) {
     return `Sign in to the "${provider}" route in Settings → Models & Services, or pick a profile backed by a provider API key, then retry.`;
   }
-  if (model && getManagedUpstream(model) !== null) {
+  if (model && getCloudUpstream(model) !== null) {
     const managed = await cadetConnectionAvailability();
     if (managed.status === "ok") {
       return managedAlternative(model, repair);

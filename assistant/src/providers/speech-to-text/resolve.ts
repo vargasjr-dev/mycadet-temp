@@ -13,7 +13,7 @@ import {
   batchBoundaryGapReason,
   getCredentialProvider,
   getProviderEntry,
-  isManagedSttProvider,
+  isCloudSttProvider,
   resolveSttCatalogKey,
   supportsBoundary,
   supportsDiarization,
@@ -27,7 +27,7 @@ const log = getLogger("stt-resolver");
 
 /**
  * Providers that decode language-less audio as English rather than detecting
- * the spoken language: Deepgram directly, and the managed relay, which dials
+ * the spoken language: Deepgram directly, and the cloud relay, which dials
  * Deepgram server-side. For these, an unset `services.stt.language` is not a
  * neutral state: it is a silent English pin that returns non-English speech
  * as English-sounding nonsense.
@@ -38,7 +38,7 @@ const log = getLogger("stt-resolver");
 const MULTILINGUAL_DEFAULT_PROVIDERS: ReadonlySet<SttProviderId> = new Set([
   "deepgram",
   "cadet",
-  // Managed Flux resolves an absent language to `flux-general-en` relay-side,
+  // Cloud Flux resolves an absent language to `flux-general-en` relay-side,
   // so unset is an English pin here too. With "multi" the relay selects
   // `flux-general-multi` and lets Flux detect and code-switch.
   "cadet-flux",
@@ -157,10 +157,10 @@ export async function resolveBatchTranscriber(
   }
 
   if (provider === "cadet") {
-    // Managed batch rides the platform's speech proxy, which forwards the
+    // Managed batch rides the cloud's speech proxy, which forwards the
     // language to Deepgram server-side. A platform build predating that
     // field ignores it rather than failing, so the daemon can send one
-    // before the platform side deploys.
+    // before the cloud side deploys.
     return (await sttProviderKeyResolves("cadet"))
       ? createDaemonBatchTranscriber(null, "cadet", language)
       : null;
@@ -380,7 +380,7 @@ export interface ResolveStreamingTranscriberOptions {
   /**
    * Provider to resolve a transcriber for. Defaults to
    * `services.stt.provider`. Callers that derive the provider themselves
-   * (e.g. live voice, which runs on the managed-speech effective provider)
+   * (e.g. live voice, which runs on the cloud-speech effective provider)
    * pass it here so the resolved transcriber matches the provider their own
    * readiness check approved.
    */
@@ -421,7 +421,7 @@ export interface ResolveStreamingTranscriberOptions {
    * config for a single session.
    *
    * Leaving both unset does not reach the adapters as "no language": on
-   * Deepgram and the managed relay, where that would mean English rather
+   * Deepgram and the cloud relay, where that would mean English rather
    * than detection, {@link effectiveSttLanguage} fills in code-switching
    * first. See {@link CreateStreamingTranscriberOptions.language} for how
    * each adapter treats what it finally receives.
@@ -518,7 +518,7 @@ export async function resolveStreamingTranscriber(
   // Both managed entries authenticate with the cloud connection, not a
   // stored API key: there is no key to fetch, and readiness is whether the
   // connection resolves.
-  const managed = isManagedSttProvider(provider);
+  const managed = isCloudSttProvider(provider);
   const apiKey = managed
     ? null
     : await getProviderKeyAsync(credentialProviderName);
@@ -576,7 +576,7 @@ interface CreateStreamingTranscriberOptions {
   utteranceEndMs?: number;
   /**
    * Spoken language, forwarded to the adapters that accept one: Deepgram,
-   * xAI, and the managed relay (which passes it to Deepgram server-side).
+   * xAI, and the cloud relay (which passes it to Deepgram server-side).
    *
    * Gemini and Whisper take no language option (both auto-detect natively
    * from the audio), so this is silently ignored for them, matching how
@@ -586,7 +586,7 @@ interface CreateStreamingTranscriberOptions {
    * decode as English, so non-English speech comes back as English-sounding
    * nonsense rather than failing loudly. Any configured language pins
    * nova-3 on BYOK Deepgram (see `deepgramLanguageOptions`); `"multi"`
-   * selects nova-3's code-switching mode (the managed relay pins nova-3
+   * selects nova-3's code-switching mode (the cloud relay pins nova-3
    * server-side).
    */
   language?: string;
@@ -657,19 +657,18 @@ async function createStreamingTranscriber(
       });
     }
     case "cadet": {
-      // Managed speech dials the GATEWAY's speech relay (tunnel contact is
+      // Cloud speech dials the GATEWAY's speech relay (tunnel contact is
       // gateway-only); the apiKey argument is unused. Diarization is
       // unsupported (not in the relay's param allowlist) and silently
       // ignored, matching Gemini/Whisper — as is utteranceEndMs (the relay
       // allowlist has no utterance_end_ms; boundary finals ride on
       // endpointing alone).
-      // The gateway is the credential authority, but the platform
+      // The gateway is the credential authority, but the cloud
       // connection (API key + assistant ID) is checkable locally — gate
       // here so preflight reports "connect your account" instead of
       // resolving a transcriber whose dial is doomed.
-      const { cadetManagedSpeechAvailable } =
-        await import("./cadet-managed.js");
-      if (!(await cadetManagedSpeechAvailable())) {
+      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
+      if (!(await cadetCloudSpeechAvailable())) {
         return null;
       }
       const { resolveSpeechRelayConnection } =
@@ -679,12 +678,12 @@ async function createStreamingTranscriber(
         return null;
       }
       const { CadetManagedRealtimeTranscriber } =
-        await import("./cadet-managed-realtime.js");
+        await import("./cadet-cloud-realtime.js");
       return new CadetManagedRealtimeTranscriber(connection, {
         sampleRate: options.sampleRate,
         // `language` IS in the relay's param allowlist, and the relay pins
         // the STT model to nova-3 server-side, so "multi" code-switching
-        // needs nothing from the platform, only this forward. Source:
+        // needs nothing from the cloud, only this forward. Source:
         // mycadet-platform: tunnel/internal/tunnel/deepgram.go
         // (deepgramSTTParams allowlist; deepgramSTTModel pin).
         ...(options.language ? { language: options.language } : {}),
@@ -694,13 +693,12 @@ async function createStreamingTranscriber(
       });
     }
     case "cadet-flux": {
-      // Managed Flux: same relay as `cadet`, but the STT v2 endpoint with
+      // Cloud Flux: same relay as `cadet`, but the STT v2 endpoint with
       // `contract=flux` so the turn events arrive intact instead of being
       // translated into the released v1 Deepgram dialect. Gated on the local
       // cloud connection for the same reason as `cadet` above.
-      const { cadetManagedSpeechAvailable } =
-        await import("./cadet-managed.js");
-      if (!(await cadetManagedSpeechAvailable())) {
+      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
+      if (!(await cadetCloudSpeechAvailable())) {
         return null;
       }
       // The relay maps the language onto a Flux model and refuses the dial
@@ -713,7 +711,7 @@ async function createStreamingTranscriber(
       if (managedFluxModelForLanguage(options.language) === null) {
         log.warn(
           { providerId, language: options.language },
-          "Managed Flux has no model for the configured language; refusing rather than transcribing it as another",
+          "Cloud Flux has no model for the configured language; refusing rather than transcribing it as another",
         );
         return null;
       }
@@ -724,7 +722,7 @@ async function createStreamingTranscriber(
         return null;
       }
       const { CadetManagedFluxRealtimeTranscriber } =
-        await import("./cadet-managed-flux-realtime.js");
+        await import("./cadet-cloud-flux-realtime.js");
       return new CadetManagedFluxRealtimeTranscriber(connection, {
         sampleRate: options.sampleRate,
         // The relay picks `flux-general-en` or `flux-general-multi` from
@@ -778,17 +776,17 @@ async function createStreamingTranscriber(
  */
 /**
  * Human-readable reason for a credential gap, aware that connection-based
- * providers (cadet) are fixed by connecting the platform account, not by
+ * providers (cadet) are fixed by connecting the cloud account, not by
  * entering an API key.
  */
 export function sttCredentialGapReason(credentialProviderName: string): string {
   // Called with either the catalog id ("cadet") or its credential-service
-  // key ("cadet", the persisted identity family) — both mean managed speech.
+  // key ("cadet", the persisted identity family) — both mean cloud speech.
   if (
     credentialProviderName === "cadet" ||
     credentialProviderName === "cadet"
   ) {
-    return "No Cadet Cloud connection for managed speech — run 'assistant cloud connect'";
+    return "No Cadet Cloud connection for cloud speech — run 'assistant cloud connect'";
   }
   return `No API key configured for credential provider "${credentialProviderName}"`;
 }
@@ -798,8 +796,8 @@ export async function sttProviderKeyResolves(
 ): Promise<boolean> {
   // cadet has no stored API key — the cloud connection is the credential.
   if (credentialProviderName === "cadet") {
-    const { cadetManagedSpeechAvailable } = await import("./cadet-managed.js");
-    return cadetManagedSpeechAvailable();
+    const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
+    return cadetCloudSpeechAvailable();
   }
   return (await getProviderKeyAsync(credentialProviderName)) !== undefined;
 }

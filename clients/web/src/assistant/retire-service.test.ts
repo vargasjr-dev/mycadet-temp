@@ -86,7 +86,7 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
     if (!state.isLocalClient) {
       return { action: "redirect", to: "/assistant/onboarding/privacy" };
     }
-    if (state.platformSession === "present") {
+    if (state.cloudSession === "present") {
       return { action: "redirect", to: "/assistant/onboarding/hosting" };
     }
     return { action: "redirect", to: "/assistant/welcome" };
@@ -96,7 +96,7 @@ mock.module("@/lib/navigation/build-state", () => ({
   buildNavigationState: () => ({
     isLocalClient: isLocalClientValue,
     isAuthenticated: false,
-    platformSession: "absent",
+    cloudSession: "absent",
     hasAssistants: storeAssistants.length > 0,
   }),
 }));
@@ -144,7 +144,7 @@ afterEach(() => {
 
 describe("retireAssistant", () => {
   test("platform assistant hands its OAuth connections to the successor", async () => {
-    // GIVEN a platform-hosted source and a teleport target to inherit from it
+    // GIVEN a cloud-hosted source and a teleport target to inherit from it
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
@@ -153,7 +153,7 @@ describe("retireAssistant", () => {
       successorAssistantId: "succ",
     });
 
-    // THEN the platform delete names the successor
+    // THEN the cloud delete names the successor
     expect(retireAssistantByIdMock).toHaveBeenCalledWith("p1", {
       successorAssistantId: "succ",
     });
@@ -171,21 +171,21 @@ describe("retireAssistant", () => {
       successorAssistantId: "succ",
     });
 
-    // THEN the local path ran and the platform delete was never called
+    // THEN the local path ran and the cloud delete was never called
     expect(retireLocalAssistantMock).toHaveBeenCalledWith("l1");
     expect(retireAssistantByIdMock).not.toHaveBeenCalled();
     expect(outcome.ok).toBe(true);
   });
 
-  test("platform assistant routes through the platform delete by id", async () => {
-    // GIVEN a platform-hosted target in web mode
+  test("platform assistant routes through the cloud delete by id", async () => {
+    // GIVEN a cloud-hosted target in web mode
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
     // WHEN retiring it
     const outcome = await retireAssistant(queryClient, "p1");
 
-    // THEN the platform delete ran with that id and the local path did not
+    // THEN the cloud delete ran with that id and the local path did not
     expect(retireAssistantByIdMock).toHaveBeenCalledWith("p1", {});
     expect(retireLocalAssistantMock).not.toHaveBeenCalled();
     expect(forgetAssistantAvatarMock).toHaveBeenCalledWith(queryClient, "p1");
@@ -196,7 +196,7 @@ describe("retireAssistant", () => {
   });
 
   test("a successful retire drops the research-onboarding resume snapshot", async () => {
-    // GIVEN a platform-hosted target
+    // GIVEN a cloud-hosted target
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
@@ -211,7 +211,7 @@ describe("retireAssistant", () => {
   });
 
   test("a failed retire keeps the research-onboarding resume snapshot", async () => {
-    // GIVEN the platform delete fails terminally
+    // GIVEN the cloud delete fails terminally
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
     retireByIdResult = { ok: false, status: 500, error: { detail: "boom" } };
@@ -233,7 +233,7 @@ describe("retireAssistant", () => {
     // WHEN retiring it
     const outcome = await retireAssistant(queryClient, "l1");
 
-    // THEN the local retire ran and the platform path did not
+    // THEN the local retire ran and the cloud path did not
     expect(retireLocalAssistantMock).toHaveBeenCalledWith("l1");
     expect(retireAssistantByIdMock).not.toHaveBeenCalled();
     expect(outcome.ok).toBe(true);
@@ -263,21 +263,21 @@ describe("retireAssistant", () => {
   });
 
   test("routes by the TARGET assistant, not local-mode alone", async () => {
-    // GIVEN local mode but the *target* is a platform assistant
+    // GIVEN local mode but the *target* is a cloud assistant
     isLocalClientValue = true;
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
 
-    // WHEN retiring the platform target
+    // WHEN retiring the cloud target
     const outcome = await retireAssistant(queryClient, "p1");
 
-    // THEN it uses the platform delete (not local)
+    // THEN it uses the cloud delete (not local)
     expect(retireAssistantByIdMock).toHaveBeenCalledWith("p1", {});
     expect(retireLocalAssistantMock).not.toHaveBeenCalled();
     expect(outcome.ok).toBe(true);
   });
 
-  test("a 404 from the platform delete is treated as success", async () => {
+  test("a 404 from the cloud delete is treated as success", async () => {
     lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     storeAssistants = [{ id: "p1" }];
     retireByIdResult = { ok: false, status: 404, error: {} };

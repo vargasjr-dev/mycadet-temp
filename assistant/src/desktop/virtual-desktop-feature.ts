@@ -5,21 +5,21 @@ import type { ToolContext } from "../tools/types.js";
 
 const VIRTUAL_DESKTOP_FLAG = "assistant-desktop" as const;
 
-export function isVirtualDesktopPlatform(
+export function isVirtualDesktopCloud(
   containerized: boolean = getIsContainerized(),
-  platformHosted: boolean = getIsCloud(),
+  cloudHosted: boolean = getIsCloud(),
 ): boolean {
-  return platformHosted && containerized;
+  return cloudHosted && containerized;
 }
 
-/** Gates desktop streaming and control to enabled, platform-hosted containers. */
+/** Gates desktop streaming and control to enabled, cloud-hosted containers. */
 export function isVirtualDesktopEnabled(
   config?: AssistantConfig,
   containerized: boolean = getIsContainerized(),
-  platformHosted: boolean = getIsCloud(),
+  cloudHosted: boolean = getIsCloud(),
 ): boolean {
   return (
-    isVirtualDesktopPlatform(containerized, platformHosted) &&
+    isVirtualDesktopCloud(containerized, cloudHosted) &&
     isAssistantFeatureFlagEnabled(VIRTUAL_DESKTOP_FLAG, config)
   );
 }

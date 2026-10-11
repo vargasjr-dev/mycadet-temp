@@ -71,7 +71,7 @@ export class DesktopAutomationLease {
   private assertAvailable(): void {
     if (!this.deps.enabled()) {
       throw new Error(
-        "Virtual desktop automation is available only on enabled platform-hosted assistants",
+        "Virtual desktop automation is available only on enabled cloud-hosted assistants",
       );
     }
     if (!this.deps.ready()) {

@@ -61,7 +61,7 @@ afterEach(() => {
 describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () => {
   // `isAuthenticated` is decided entirely by `sessionStatus`: the local gateway
   // is the sole session authority (#35152), so a reachable local user is already
-  // `"authenticated"`. The "a platform 401 does not evict a local user" guarantee
+  // `"authenticated"`. The "a cloud 401 does not evict a local user" guarantee
   // is asserted at the store layer — see auth-store.test.ts, "refreshSession
   // keeps the local gateway session but clears stale platform state on a settled
   // 401".
@@ -69,7 +69,7 @@ describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () =>
   test("an authenticated session is admitted", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      platformSession: "present",
+      cloudSession: "present",
     });
 
     expect(buildNavigationState().isAuthenticated).toBe(true);
@@ -77,10 +77,10 @@ describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () =>
 
   test("a local-only user (authenticated via the gateway, no platform session) is admitted", () => {
     // The realistic post-probe state for a local desktop user: the gateway
-    // authenticated the session and the platform probe settled absent.
+    // authenticated the session and the cloud probe settled absent.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     expect(buildNavigationState().isAuthenticated).toBe(true);
@@ -89,7 +89,7 @@ describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () =>
   test("an unauthenticated session is not admitted", () => {
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     expect(buildNavigationState().isAuthenticated).toBe(false);
@@ -98,27 +98,27 @@ describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () =>
   test("an initializing session is not yet admitted", () => {
     useAuthStore.setState({
       sessionStatus: "initializing",
-      platformSession: "unknown",
+      cloudSession: "unknown",
     });
 
     expect(buildNavigationState().isAuthenticated).toBe(false);
   });
 
-  test("platformSession is surfaced verbatim for the onboarding fork", () => {
-    // The route fork's onboarding wait keys off platformSession === 'unknown';
+  test("cloudSession is surfaced verbatim for the onboarding fork", () => {
+    // The route fork's onboarding wait keys off cloudSession === 'unknown';
     // surfacing isAuthenticated must not disturb that field.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      platformSession: "unknown",
+      cloudSession: "unknown",
     });
 
-    expect(buildNavigationState().platformSession).toBe("unknown");
+    expect(buildNavigationState().cloudSession).toBe("unknown");
   });
 });
 
-describe("buildNavigationState — hasPlatformHostedAssistant", () => {
+describe("buildNavigationState — hasCloudHostedAssistant", () => {
   // The post-checkout provisioning funnel asks a narrower question than
-  // `hasAssistants`: does the ACTIVE ORG have an assistant a managed plan can
+  // `hasAssistants`: does the ACTIVE ORG have an assistant a cloud plan can
   // apply to? Local, Docker, and other-organization entries do not qualify.
 
   const ORG_A = "org-a";
@@ -127,32 +127,32 @@ describe("buildNavigationState — hasPlatformHostedAssistant", () => {
   const local = {
     id: "local-1",
     isLocal: true,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: false,
   };
   const docker = {
     id: "docker-1",
     isLocal: false,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: false,
   };
   const managedInOrgA = {
     id: "managed-a",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     organizationId: ORG_A,
   };
-  // API-sourced entries carry no org — the platform list is already org-scoped.
+  // API-sourced entries carry no org — the cloud list is already org-scoped.
   const managedNoOrg = {
     id: "managed-api",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
   };
 
   test("false with nothing resolved", () => {
-    expect(buildNavigationState().hasPlatformHostedAssistant).toBe(false);
+    expect(buildNavigationState().hasCloudHostedAssistant).toBe(false);
   });
 
   test("false when every entry is self-hosted", () => {
@@ -160,21 +160,21 @@ describe("buildNavigationState — hasPlatformHostedAssistant", () => {
 
     const state = buildNavigationState();
     expect(state.hasAssistants).toBe(true);
-    expect(state.hasPlatformHostedAssistant).toBe(false);
+    expect(state.hasCloudHostedAssistant).toBe(false);
   });
 
   test("true for an org-scoped API entry that names no org", () => {
     useResolvedAssistantsStore.setState({ assistants: [managedNoOrg] });
     useOrganizationStore.setState({ currentOrganizationId: ORG_A });
 
-    expect(buildNavigationState().hasPlatformHostedAssistant).toBe(true);
+    expect(buildNavigationState().hasCloudHostedAssistant).toBe(true);
   });
 
   test("true for a lockfile entry owned by the active org", () => {
     useResolvedAssistantsStore.setState({ assistants: [local, managedInOrgA] });
     useOrganizationStore.setState({ currentOrganizationId: ORG_A });
 
-    expect(buildNavigationState().hasPlatformHostedAssistant).toBe(true);
+    expect(buildNavigationState().hasCloudHostedAssistant).toBe(true);
   });
 
   test("false when the only managed entry belongs to another org", () => {
@@ -183,16 +183,16 @@ describe("buildNavigationState — hasPlatformHostedAssistant", () => {
 
     const state = buildNavigationState();
     expect(state.hasAssistants).toBe(true);
-    expect(state.hasPlatformHostedAssistant).toBe(false);
+    expect(state.hasCloudHostedAssistant).toBe(false);
   });
 
   // The org resolves asynchronously. Narrowing against an unresolved org would
-  // read an established user's own managed assistant as absent and funnel them
+  // read an established user's own cloud assistant as absent and funnel them
   // out of their billing page.
   test("does not narrow by org until the org resolves", () => {
     useResolvedAssistantsStore.setState({ assistants: [managedInOrgA] });
 
-    expect(buildNavigationState().hasPlatformHostedAssistant).toBe(true);
+    expect(buildNavigationState().hasCloudHostedAssistant).toBe(true);
   });
 
   test("falls back to the persisted org id when the store has not hydrated", () => {
@@ -200,7 +200,7 @@ describe("buildNavigationState — hasPlatformHostedAssistant", () => {
     globalThis.sessionStorage.setItem("cadet_active_organization_id", ORG_B);
     useOrganizationStore.setState({ persistedOrganizationId: ORG_B });
 
-    expect(buildNavigationState().hasPlatformHostedAssistant).toBe(false);
+    expect(buildNavigationState().hasCloudHostedAssistant).toBe(false);
   });
 });
 
@@ -211,7 +211,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     id,
     hatchedAt,
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
   });
 

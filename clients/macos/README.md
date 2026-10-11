@@ -399,7 +399,7 @@ The preload script exposes a typed `window.cadet` API to the renderer:
   the lockfile that records them. `hatch(species)` and `retire(assistantId)`
   drive the Cadet CLI as a subprocess; `readLockfile()`,
   `saveLockfileAssistant(assistant, activeAssistant?)`, and
-  `replacePlatformAssistants(platformAssistants)` read and write the lockfile
+  `replaceCloudAssistants(cloudAssistants)` read and write the lockfile
   on disk. Every method is a thin wrapper over [`@mycadet/local-mode`](../../packages/local-mode/),
   the shared host library that also backs the web app's dev-server middleware,
   so the spawn/parse and lockfile logic lives in one place. The renderer-side
@@ -451,7 +451,7 @@ which keeps the renderer-exposed surface narrow and auditable.
 Renderer-side consumers in `clients/web/` should wrap bridge access in a
 per-capability module (see `clients/web/src/runtime/native-biometric.ts` for
 the established shape) rather than reaching into `window.cadet.*`
-directly from feature code. That keeps the platform-branching logic in
+directly from feature code. That keeps the cloud-branching logic in
 one place and makes the cross-platform contract (web / iOS / Electron)
 live in TypeScript types.
 

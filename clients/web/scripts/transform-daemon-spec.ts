@@ -2,7 +2,7 @@
  * Transforms the daemon's OpenAPI spec for web app codegen.
  *
  * The daemon serves endpoints at `/v1/{path}`, but the web app calls them
- * through the platform gateway at `/v1/assistants/{assistant_id}/{path}`.
+ * through the cloud gateway at `/v1/assistants/{assistant_id}/{path}`.
  * This script rewrites daemon spec paths to match the gateway-proxied URLs
  * and adds `assistant_id` as a required path parameter to every operation.
  *
@@ -25,7 +25,7 @@ const OUTPUT_PATH = resolve(WEB_ROOT, "openapi-schemas/daemon.json");
 
 /**
  * Paths to exclude from the web-facing SDK. These are internal, CLI-only,
- * admin, or debug endpoints not proxied through the platform gateway.
+ * admin, or debug endpoints not proxied through the cloud gateway.
  * `/v1/debug` (exact) stays excluded; `/v1/debug/database`
  * is generated so the Debug tab can fetch failed-migration telemetry.
  */
@@ -68,7 +68,7 @@ const ASSISTANT_ID_PARAM = {
   in: "path",
   required: true,
   schema: { type: "string" },
-  description: "The assistant ID (injected by the platform gateway)",
+  description: "The assistant ID (injected by the cloud gateway)",
 };
 
 /**

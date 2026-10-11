@@ -114,7 +114,7 @@ export async function run(
     const provider = await resolveProvider(platform);
     const account = input.account as string | undefined;
     const conn = await getProviderConnection(provider, account);
-    // Search for sent messages using the platform's search
+    // Search for sent messages using the cloud's search
     const query =
       queryFilter ?? (provider.id === "gmail" ? "in:sent" : "from:me");
     const searchResult = await provider.search(conn, query, {

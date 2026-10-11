@@ -153,7 +153,7 @@ export function deriveAnthropicReason(
   const status = error.status;
   const haystack = `${apiType ?? ""} ${error.message ?? ""}`;
 
-  // The managed proxy's daily-limit 402 shares the status with generic credit
+  // The cloud proxy's daily-limit 402 shares the status with generic credit
   // exhaustion; match its specific body code first so it isn't swallowed.
   if (FREE_TIER_DAILY_LIMIT_PATTERNS.some((re) => re.test(haystack))) {
     return "free_tier_daily_limit_reached";

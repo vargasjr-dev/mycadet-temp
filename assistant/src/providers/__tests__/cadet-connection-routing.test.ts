@@ -8,7 +8,7 @@ import { migrateCreateProviderConnections } from "../../persistence/migrations/2
 import { migrateProviderConnectionStatusLabel } from "../../persistence/migrations/244-provider-connection-status-label.js";
 import { migrateProviderConnectionBaseUrlAndModels } from "../../persistence/migrations/250-provider-connection-base-url-and-models.js";
 import * as schema from "../../persistence/schema/index.js";
-import { isCadetManagedConnection } from "../cadet-model-routing.js";
+import { isCadetCloudConnection } from "../cadet-model-routing.js";
 import { createAdapterFromConnection } from "../inference/adapter-factory.js";
 import type { Auth, ProviderConnection } from "../inference/auth.js";
 import type { ResolvedAuth } from "../inference/auth.js";
@@ -43,13 +43,13 @@ const resolvedAuth: ResolvedAuth = {
 };
 
 describe("cadet connection routing", () => {
-  test("isCadetManagedConnection identifies the sentinel connection", () => {
-    expect(isCadetManagedConnection(cadetConnection)).toBe(true);
+  test("isCadetCloudConnection identifies the sentinel connection", () => {
+    expect(isCadetCloudConnection(cadetConnection)).toBe(true);
     // The provider column alone decides: a concrete provider is never the
-    // managed route (platform auth always pairs with provider "cadet";
+    // cloud route (platform auth always pairs with provider "cadet";
     // DB migration 361 reconciles stored rows).
-    expect(isCadetManagedConnection({ provider: "fireworks" })).toBe(false);
-    expect(isCadetManagedConnection({ provider: "cadet" })).toBe(true);
+    expect(isCadetCloudConnection({ provider: "fireworks" })).toBe(false);
+    expect(isCadetCloudConnection({ provider: "cadet" })).toBe(true);
   });
 
   test("the cadet sentinel does not dispatch without an override", () => {
@@ -149,7 +149,7 @@ describe("cadet connection persistence (DB round-trip)", () => {
     const loaded = getConnection(db, "cadet");
     expect(loaded).not.toBeNull();
     expect(loaded?.provider).toBe("cadet");
-    expect(isCadetManagedConnection(loaded!)).toBe(true);
+    expect(isCadetCloudConnection(loaded!)).toBe(true);
   });
 
   test("listConnections includes a persisted cadet row", () => {

@@ -2,13 +2,13 @@ import { useEffect } from "react";
 
 import { Navigate, useNavigate } from "react-router";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { useTranslation } from "@/i18n";
 import {
-  useActiveAssistantIsPlatformHosted,
+  useActiveAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { Card } from "@mycadet/design-library/components/card";
@@ -34,15 +34,15 @@ export function UpgradeCancelPage() {
   // or bookmark navigation can still land a self-hosted user here, together
   // with a stray "upgrade canceled" toast for an upgrade the user never
   // started. Cleaner to short-circuit at this page too.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  // Strict hosting predicate for the side effect below. `platformGate ===
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  // Strict hosting predicate for the side effect below. `cloudGate ===
   // "full"` is the *Render*-tier predicate — it's intentionally permissive
   // during the lifecycle-loading window so the page chrome stays mounted.
   // The cancel-redirect side effect is a *Fetch/Interact*-tier action and
   // must wait for positive hosted resolution; otherwise a self-hosted
   // deep-link user gets the stray cancel redirect (and its toast on the
   // billing page) before `<Navigate />` flips below.
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   // Distinguish the genuine *resolving* window from terminal-non-hosted
   // states. The resolving window lets the existing "Returning you to
   // billing settings…" card render (effect short-circuits, but the auto-
@@ -54,13 +54,13 @@ export function UpgradeCancelPage() {
 
   useEffect(() => {
     // Wait for positive hosted resolution before firing the redirect.
-    // During the lifecycle-loading window `platformGate === "full"` AND
-    // `isPlatformHosted === false`; running the effect here would defeat
+    // During the lifecycle-loading window `cloudGate === "full"` AND
+    // `isCloudHosted === false`; running the effect here would defeat
     // the gate on a self-hosted deep-link. Once lifecycle resolves, either
-    // `isPlatformHosted` flips true (run the effect) or `platformGate`
+    // `isCloudHosted` flips true (run the effect) or `cloudGate`
     // flips to `"gated"` (body's `<Navigate />` takes over, this effect
     // never runs).
-    if (!isPlatformHosted) {
+    if (!isCloudHosted) {
       return;
     }
     // `usageBilling` already carries `?tab=billing`, hence the `&`. The
@@ -71,27 +71,27 @@ export function UpgradeCancelPage() {
       `${routes.settings.usageBilling}&billing_status=cancel&billing_context=upgrade`,
       { replace: true },
     );
-  }, [navigate, isPlatformHosted]);
+  }, [navigate, isCloudHosted]);
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return <Navigate replace to={routes.settings.general} />;
   }
-  if (platformGate === "disabled") {
+  if (cloudGate === "disabled") {
     return (
       <div className="max-w-4xl space-y-6">
-        <PlatformLoginNotice>
+        <CloudLoginNotice>
           {t("upgradeCancelPage.platformLoginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       </div>
     );
   }
 
   // Terminal non-hosted: the auto-redirect effect never runs because
-  // `isPlatformHosted` stays false, and the body's "Returning…" message
+  // `isCloudHosted` stays false, and the body's "Returning…" message
   // would lie. Render a manual escape hatch instead. The lifecycle-
   // loading window still falls through to the body so the auto-redirect
   // fires once resolution lands.
-  if (!isPlatformHosted && !isLifecycleLoading) {
+  if (!isCloudHosted && !isLifecycleLoading) {
     return (
       <div className="max-w-4xl space-y-6">
         <Notice tone="warning">

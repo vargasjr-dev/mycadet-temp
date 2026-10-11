@@ -162,7 +162,7 @@ export function cloudWebHubUrl(env: string | undefined): string {
 
 // The edge serves remote browsers, so the bundle's remote-gateway machinery
 // must always run: it is reached through this self-hosted edge however the
-// cadet itself is hosted. "cloud" is never stamped (the platform serves its
+// cadet itself is hosted. "cloud" is never stamped (the cloud serves its
 // own bundles).
 const EDGE_SERVED_REMOTE: RemoteHost = "custom";
 
@@ -175,8 +175,8 @@ function remoteWebIngressConfig(
   return {
     remote: EDGE_SERVED_REMOTE,
     apiBaseUrl: "/v1",
-    platformDisabled: true,
-    disablePlatform: true,
+    cloudDisabled: true,
+    disableCloud: true,
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
@@ -1147,7 +1147,7 @@ export async function ensureTunnelEdge(opts: {
     case "web-dist-missing":
       throw new Error(
         "Unable to locate built web assets for the remote web edge. " +
-          "Build the SPA (`cd clients/web && VITE_PLATFORM_MODE=false bun run build`) " +
+          "Build the SPA (`cd clients/web && VITE_CLOUD_MODE=false bun run build`) " +
           "or install @mycadet/web so its packaged dist directory is available.",
       );
     case "unreachable":

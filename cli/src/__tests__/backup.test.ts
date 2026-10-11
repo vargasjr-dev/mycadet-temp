@@ -31,26 +31,26 @@ import * as backupOps from "../lib/backup-ops.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import { MigrationInProgressError } from "../lib/local-runtime-client.js";
-import * as platformClient from "../lib/platform-client.js";
+import * as cloudClient from "../lib/cloud-client.js";
 
 const findAssistantByNameMock = spyOn(
   assistantConfig,
   "findAssistantByName",
 ).mockReturnValue(null);
 
-const readPlatformTokenMock = spyOn(
-  platformClient,
-  "readPlatformToken",
+const readCloudTokenMock = spyOn(
+  cloudClient,
+  "readCloudToken",
 ).mockReturnValue("platform-token");
 
-const getPlatformUrlMock = spyOn(
-  platformClient,
-  "getPlatformUrl",
+const getCloudUrlMock = spyOn(
+  cloudClient,
+  "getCloudUrl",
 ).mockReturnValue("https://cloud.mycadet.ai");
 
-const platformRequestSignedUrlMock = spyOn(
-  platformClient,
-  "platformRequestSignedUrl",
+const cloudRequestSignedUrlMock = spyOn(
+  cloudClient,
+  "cloudRequestSignedUrl",
 ).mockImplementation(async (params) => ({
   url:
     params.operation === "upload"
@@ -129,12 +129,12 @@ beforeEach(() => {
 
   findAssistantByNameMock.mockReset();
   findAssistantByNameMock.mockReturnValue(null);
-  readPlatformTokenMock.mockReset();
-  readPlatformTokenMock.mockReturnValue("platform-token");
-  getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
-  platformRequestSignedUrlMock.mockReset();
-  platformRequestSignedUrlMock.mockImplementation(async (params) => ({
+  readCloudTokenMock.mockReset();
+  readCloudTokenMock.mockReturnValue("platform-token");
+  getCloudUrlMock.mockReset();
+  getCloudUrlMock.mockReturnValue("https://cloud.mycadet.ai");
+  cloudRequestSignedUrlMock.mockReset();
+  cloudRequestSignedUrlMock.mockImplementation(async (params) => ({
     url:
       params.operation === "upload"
         ? "https://storage.googleapis.com/bucket/signed-upload"
@@ -179,9 +179,9 @@ afterAll(() => {
   // Restore module-level spies so they don't bleed into other test files
   // when bun test runs the whole suite.
   findAssistantByNameMock.mockRestore();
-  readPlatformTokenMock.mockRestore();
-  getPlatformUrlMock.mockRestore();
-  platformRequestSignedUrlMock.mockRestore();
+  readCloudTokenMock.mockRestore();
+  getCloudUrlMock.mockRestore();
+  cloudRequestSignedUrlMock.mockRestore();
   localRuntimeExportToGcsMock.mockRestore();
   localRuntimeIdentityMock.mockRestore();
   localRuntimePollJobStatusMock.mockRestore();
@@ -305,7 +305,7 @@ describe("cadet backup: --export-timeout flag", () => {
   });
 });
 
-describe("cadet backup <platform-managed>: GCS happy path", () => {
+describe("cadet backup <cloud-managed>: GCS happy path", () => {
   test("requests upload URL → kicks off runtime export → polls → downloads from GCS → writes file", async () => {
     findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
@@ -315,8 +315,8 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
 
     await backup();
 
-    // Upload-URL request to the platform.
-    expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+    // Upload-URL request to the cloud.
+    expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: "upload",
         minRuntimeVersion: "0.6.5",
@@ -355,7 +355,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // bundle to disk for offline storage; there is no target runtime to
     // gate against, and an older CLI must be able to download newer
     // assistant backups.
-    expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+    expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: "download",
         bundleKey: "uploads/org-1/bundle-abc.vbundle",
@@ -363,7 +363,7 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
       "platform-token",
       "https://cloud.mycadet.ai",
     );
-    const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
+    const downloadCall = cloudRequestSignedUrlMock.mock.calls.find(
       (c) => c[0].operation === "download",
     );
     expect(downloadCall).toBeDefined();
@@ -412,16 +412,16 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     expect(outputPath).toMatch(/\.vbundle$/);
   });
 
-  test("signed-URL requests target entry.runtimeUrl, not getPlatformUrl() — regression for staging/dev assistants", async () => {
+  test("signed-URL requests target entry.runtimeUrl, not getCloudUrl() — regression for staging/dev assistants", async () => {
     // Assistant lives on a non-default platform instance (e.g. staging).
-    // `getPlatformUrl()` still returns the default — picking it up for
+    // `getCloudUrl()` still returns the default — picking it up for
     // signed URLs would target the wrong GCS bucket.
     const stagingEntry = {
       ...CADET_ENTRY,
       runtimeUrl: "https://staging-cloud.mycadet.ai",
     };
     findAssistantByNameMock.mockReturnValue(stagingEntry);
-    getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
+    getCloudUrlMock.mockReturnValue("https://cloud.mycadet.ai");
     setArgv("my-platform");
 
     mockGcsDownload(new Uint8Array([9]));
@@ -429,9 +429,9 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     await backup();
 
     // Both upload and download URL requests are pinned to the entry's
-    // runtimeUrl. The signed URLs returned by the platform target the
+    // runtimeUrl. The signed URLs returned by the cloud target the
     // GCS bucket the runtime can reach, not the default platform's.
-    expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+    expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: "upload",
         minRuntimeVersion: "0.6.5",
@@ -440,13 +440,13 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
       "platform-token",
       "https://staging-cloud.mycadet.ai",
     );
-    expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+    expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({ operation: "download" }),
       "platform-token",
       "https://staging-cloud.mycadet.ai",
     );
     // No call should have used the default platform URL.
-    const calls = platformRequestSignedUrlMock.mock.calls;
+    const calls = cloudRequestSignedUrlMock.mock.calls;
     for (const call of calls) {
       expect(call[2]).toBe("https://staging-cloud.mycadet.ai");
     }
@@ -466,20 +466,20 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
       status: "complete",
       result: {},
     }));
-    // Make readPlatformToken return a fresh value on the second call,
+    // Make readCloudToken return a fresh value on the second call,
     // mimicking the "user re-ran `cadet login` in another terminal"
     // scenario. The helper's pollJobUntilDone calls refreshOn401 only
     // when its own request 401s — for the test we drive the refresh
     // directly by overriding the mock to surface a fresh token at the
     // download-step boundary.
-    readPlatformTokenMock.mockReset();
-    readPlatformTokenMock.mockReturnValueOnce("platform-token-old");
-    readPlatformTokenMock.mockReturnValue("platform-token-new");
+    readCloudTokenMock.mockReset();
+    readCloudTokenMock.mockReturnValueOnce("platform-token-old");
+    readCloudTokenMock.mockReturnValue("platform-token-new");
 
     // Hook into pollJobUntilDone via overriding poll to intercept the
     // refresh call. Easier: just verify the second-arg token to the
     // download signed-URL request equals the one we'll inject by
-    // letting backup re-read the platform token mid-flight. The current
+    // letting backup re-read the cloud token mid-flight. The current
     // implementation only re-reads inside pollJobUntilDone's
     // `refreshOn401`, so we simulate a refresh by overriding poll to
     // throw-and-recover. Instead we directly assert the regression
@@ -494,12 +494,12 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
     // All four token-bearing platform calls (upload signed-URL, runtime
     // export-to-gcs kickoff, poll, download signed-URL) must use the
     // same token string. If the download step fell back to the captured
-    // `platformToken` parameter instead of `exportPlatformToken`, a
+    // `cloudToken` parameter instead of `exportPlatformToken`, a
     // future poll-loop refresh would silently break this invariant.
-    const uploadCallToken = platformRequestSignedUrlMock.mock.calls.find(
+    const uploadCallToken = cloudRequestSignedUrlMock.mock.calls.find(
       (c) => c[0].operation === "upload",
     )![1];
-    const downloadCallToken = platformRequestSignedUrlMock.mock.calls.find(
+    const downloadCallToken = cloudRequestSignedUrlMock.mock.calls.find(
       (c) => c[0].operation === "download",
     )![1];
     expect(downloadCallToken).toBe(uploadCallToken);
@@ -510,10 +510,10 @@ describe("cadet backup <platform-managed>: GCS happy path", () => {
   });
 });
 
-describe("cadet backup <platform-managed>: failure cases", () => {
+describe("cadet backup <cloud-managed>: failure cases", () => {
   test("not logged in (no platform token) exits with 'Run cadet login'", async () => {
     findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
-    readPlatformTokenMock.mockReturnValue(null);
+    readCloudTokenMock.mockReturnValue(null);
     setArgv("my-platform");
 
     const consoleErrorSpy = spyOn(console, "error").mockImplementation(
@@ -606,7 +606,7 @@ describe("cadet backup <platform-managed>: failure cases", () => {
 
 // NOTE: The `VersionMismatchError handling` describe block was removed when
 // backup stopped sending `targetRuntimeVersion` on the download signed-URL
-// request — without that field the platform doesn't run the version gate,
+// request — without that field the cloud doesn't run the version gate,
 // so 422 `version_mismatch` is no longer reachable from this code path.
 
 // ---------------------------------------------------------------------------
@@ -623,7 +623,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       callOrder.push("identity");
       return { version: "0.5.9" };
     });
-    platformRequestSignedUrlMock.mockImplementationOnce(async (params) => {
+    cloudRequestSignedUrlMock.mockImplementationOnce(async (params) => {
       callOrder.push("signed-url");
       return {
         url: "https://storage.googleapis.com/bucket/signed-upload",
@@ -639,7 +639,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     expect(callOrder[0]).toBe("identity");
     expect(callOrder[1]).toBe("signed-url");
 
-    expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+    expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: "upload",
         minRuntimeVersion: "0.5.9",
@@ -650,7 +650,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     );
   });
 
-  test("identity is fetched against the platform-managed runtime entry with the platform token", async () => {
+  test("identity is fetched against the cloud-managed runtime entry with the cloud token", async () => {
     findAssistantByNameMock.mockReturnValue(CADET_ENTRY);
     setArgv("my-platform");
 
@@ -683,7 +683,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       await expect(backup()).rejects.toThrow("process.exit:1");
 
       // Signed-URL must NOT have been requested.
-      expect(platformRequestSignedUrlMock).not.toHaveBeenCalled();
+      expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();
       expect(localRuntimeExportToGcsMock).not.toHaveBeenCalled();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(

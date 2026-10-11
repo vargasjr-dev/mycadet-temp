@@ -4,7 +4,7 @@
  * A teleport ends with the source assistant being retired, so each surface
  * snapshots the source before any data leaves it. This module holds the
  * decisions those surfaces must agree on: how fresh an existing backup has to
- * be to stand in for a new one, and how a platform (PVC) snapshot is judged
+ * be to stand in for a new one, and how a cloud (PVC) snapshot is judged
  * restorable. Transport lives with each client; nothing here touches the
  * network or the filesystem.
  */
@@ -43,7 +43,7 @@ export function hasRecentBackup(
   return false;
 }
 
-/** The fields of a platform backup listing entry the policy reads. */
+/** The fields of a cloud backup listing entry the policy reads. */
 export interface ManagedBackupEntry {
   snapshot_name?: string;
   created_at?: string;

@@ -5,8 +5,8 @@
  * (contacts-control-plane-proxy.ts), not the daemon, so they live in the
  * generated gateway SDK rather than the daemon SDK. The gateway client's
  * interceptor forwards them to the self-hosted gateway in local /
- * self-hosted mode and falls through to the platform proxy for
- * platform-hosted assistants.
+ * self-hosted mode and falls through to the cloud proxy for
+ * cloud-hosted assistants.
  */
 
 import { client } from "@/generated/api/client.gen";
@@ -128,8 +128,8 @@ export async function linkContactChannelAccount(
 }
 
 /**
- * Redeem an A2A invite through the platform broker (Django endpoint).
- * This is a platform-only operation — not proxied through the daemon.
+ * Redeem an A2A invite through the cloud broker (Django endpoint).
+ * This is a cloud-only operation — not proxied through the daemon.
  */
 export async function redeemA2AInvite(
   receiverAssistantId: string,

@@ -174,7 +174,7 @@ const MobileSheet: FC<MobileSheetProps> = ({ onKeyDown, children }) => {
  * the keyboard hints, per-item and the ⌘K cap (`usePointerCoarse()`). They come
  * apart on shipped hardware in both directions: a tablet is roomy with no ⌘
  * key, and a desktop window narrowed past the breakpoint still has the whole
- * keyboard. See `docs/PLATFORM_ADAPTATION.md`, and `docs/CAPACITOR.md`
+ * keyboard. See `docs/CLOUD_ADAPTATION.md`, and `docs/CAPACITOR.md`
  * § Keyboard-only affordances for why the pointer is the signal for the second.
  *
  * Accepts items/sections as props — no data fetching is performed internally.

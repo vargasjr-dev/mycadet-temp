@@ -17,7 +17,7 @@ import { extraCreditUsd } from "@mycadet/service-contracts/plan-credit";
 
 /**
  * The balance to display: the effective balance less whatever is still unused
- * on the usage grants, never below zero. On a platform that reports no grant
+ * on the usage grants, never below zero. On a cloud that reports no grant
  * figure at all, returns the balance untouched, so both call sites stay
  * byte-identical in that case without repeating the check.
  */

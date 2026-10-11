@@ -129,14 +129,14 @@ export type ProviderCredentialSource =
   | "byok"
   | "no-auth"
   | "oauth-subscription"
-  | "cadet-managed";
+  | "cadet-cloud";
 
 export interface ProviderRouteAttribution {
   connectionName?: string;
   profileName?: string;
-  isManagedRoute?: boolean;
+  isCloudRoute?: boolean;
   /**
-   * Credential surface used for this request. Finer than `isManagedRoute`:
+   * Credential surface used for this request. Finer than `isCloudRoute`:
    * it separates personal provider keys, keyless endpoints, and subscription
    * logins from each other so error copy can name what the user must fix.
    */

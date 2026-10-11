@@ -22,14 +22,14 @@ import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getLogger } from "../../util/logger.js";
-import { MANAGED_ROUTABLE_PROVIDERS } from "../cadet-model-routing.js";
+import { CLOUD_ROUTABLE_PROVIDERS } from "../cadet-model-routing.js";
 import { isConnectionCompatibleWithModel } from "../connection-model-compat.js";
 import {
   PROVIDERS_REQUIRING_BASE_URL_AND_MODELS,
   ROUTING_IDENTITY_PROVIDERS,
 } from "./auth.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
+  CADET_CLOUD_CONNECTION_NAME,
   createConnection,
   getConnection,
   listConnections,
@@ -73,9 +73,9 @@ function backfillConfigProfiles(db: DrizzleDb): void {
     return;
   }
 
-  const isPlatform =
-    process.env.IS_PLATFORM === "true" || process.env.IS_PLATFORM === "1";
-  const globalMode = isPlatform ? "managed" : "your-own";
+  const isCloud =
+    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
+  const globalMode = isCloud ? "managed" : "your-own";
 
   let changed = false;
 
@@ -200,14 +200,14 @@ function ensureProviderConnection(
   // For user-owned entries, an existing connection for the entry's provider
   // wins over the mode-derived default. Only user-brought connections can
   // match — the canonical `cadet` row carries the `cadet` sentinel
-  // provider, never a concrete upstream. Without this, the managed branch
+  // provider, never a concrete upstream. Without this, the cloud branch
   // would silently switch a connection-less BYOK-intent profile onto the
-  // billed managed connection, and the your-own branch would create a
+  // billed cloud connection, and the your-own branch would create a
   // parallel `-personal` row (pointing at an empty credential slot) when a
   // custom-named connection already exists.
   //
-  // Managed-owned entries are excluded: a managed preset must stay on the
-  // platform-managed route, not start dispatching against a key the user
+  // Managed-owned entries are excluded: a cloud preset must stay on the
+  // cloud route, not start dispatching against a key the user
   // brought for their own profiles. Managed-owned means `source: "managed"`
   // or a canonical managed name without an explicit `source: "user"` —
   // legacy seeders wrote canonical entries source-less, and only an explicit
@@ -228,12 +228,12 @@ function ensureProviderConnection(
     connectionName = existingForProvider.name;
   } else if (
     globalMode === "managed" &&
-    MANAGED_ROUTABLE_PROVIDERS.has(provider)
+    CLOUD_ROUTABLE_PROVIDERS.has(provider)
   ) {
     // All managed-routable providers share the single provider-agnostic
     // `cadet` connection; the upstream is recovered per-request from the
     // profile's `provider` field.
-    connectionName = CADET_MANAGED_CONNECTION_NAME;
+    connectionName = CADET_CLOUD_CONNECTION_NAME;
   } else {
     // "your-own" path (or provider not managed-supported): ensure a
     // personal connection exists. Ollama is keyless, so it gets

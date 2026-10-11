@@ -1,7 +1,7 @@
 /**
- * Cadet identity validation — platform-managed email.
+ * Cadet identity validation — cloud-managed email.
  *
- * The route's edge-scoped auth already authenticates the platform,
+ * The route's edge-scoped auth already authenticates the cloud,
  * so no external API key validation is needed.
  */
 

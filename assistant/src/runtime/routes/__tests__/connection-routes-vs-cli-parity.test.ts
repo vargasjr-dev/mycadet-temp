@@ -99,7 +99,7 @@ describe("CLI vs HTTP route parity", () => {
 
   test("platform connection: CLI createConnection and HTTP POST produce identical DB rows", async () => {
     const payload = {
-      name: "parity-cadet-managed",
+      name: "parity-cadet-cloud",
       provider: "cadet" as const,
       auth: { type: "platform" as const },
     };

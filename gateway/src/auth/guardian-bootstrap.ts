@@ -21,7 +21,7 @@ import {
 } from "../db/schema.js";
 import { readCredential } from "../credential-reader.js";
 import { credentialKey } from "../credential-key.js";
-import { arePlatformFeaturesEnabled } from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
 import { reportGuardianMintRefused } from "../guardian-integrity-reporter.js";
 import { ipcCallAssistant } from "../ipc/assistant-client.js";
 import { getLogger } from "../logger.js";
@@ -1030,40 +1030,40 @@ export function mintAndRecordBrowserTokenPair(params: {
 // ---------------------------------------------------------------------------
 
 /**
- * Attempt to fetch the assistant owner's display name from the platform.
+ * Attempt to fetch the assistant owner's display name from the cloud.
  *
  * Only runs when IS_CLOUD=true. Reads the assistant API key from the
- * credential store, resolves the base URL from CADET_PLATFORM_URL, then calls
+ * credential store, resolves the base URL from CADET_CLOUD_URL, then calls
  * GET /v1/internal/gateway/guardian/ with a 5-second timeout.
  * Returns null on any missing credential, timeout, or network/parse failure —
  * callers fall back to a generated principal ID in that case.
  */
 async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
-  if (!arePlatformFeaturesEnabled()) {
+  if (!areCloudFeaturesEnabled()) {
     log.debug(
       "Platform features disabled — skipping platform owner display name fetch",
     );
     return null;
   }
 
-  const isPlatform =
+  const isCloud =
     process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
     process.env.IS_CLOUD?.trim() === "1";
-  if (!isPlatform) return null;
+  if (!isCloud) return null;
 
   const assistantApiKey = await readCredential(
     credentialKey("cadet", "assistant_api_key"),
   );
-  const platformBaseUrl = (
-    process.env.CADET_PLATFORM_URL?.trim() || ""
+  const cloudBaseUrl = (
+    process.env.CADET_CLOUD_URL?.trim() || ""
   ).replace(/\/+$/, "");
 
-  if (!platformBaseUrl || !assistantApiKey) {
+  if (!cloudBaseUrl || !assistantApiKey) {
     return null;
   }
 
   try {
-    const url = `${platformBaseUrl.replace(/\/+$/, "")}/v1/internal/gateway/guardian/`;
+    const url = `${cloudBaseUrl.replace(/\/+$/, "")}/v1/internal/gateway/guardian/`;
     const response = await fetch(url, {
       headers: { Authorization: `Api-Key ${assistantApiKey}` },
       signal: AbortSignal.timeout(5_000),

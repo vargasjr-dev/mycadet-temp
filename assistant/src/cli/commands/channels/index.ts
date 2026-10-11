@@ -16,7 +16,7 @@
  * `send` is the send door (see ./send.ts): it runs the daemon's one send
  * implementation for the channel, so the post is threaded, rendered, and
  * recorded like every other message the assistant sends there. Posting
- * through `request` instead reaches the platform API and leaves no record.
+ * through `request` instead reaches the cloud API and leaves no record.
  *
  * A mutating `refresh` verb (for reconnecting channels, e.g. supplying
  * fresh Slack tokens) is intentionally not part of this group.

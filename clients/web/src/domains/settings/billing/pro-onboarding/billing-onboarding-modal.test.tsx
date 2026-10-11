@@ -486,7 +486,7 @@ describe("BillingOnboardingModal", () => {
     subscriptionPlanId = "pro";
     // An org whose fleet holds nothing the caller can attach a domain to: the
     // onboarding payload names no primary assistant and there is no active one
-    // either. The platform answers the reconcile `not_applicable` — there is
+    // either. The cloud answers the reconcile `not_applicable` — there is
     // nothing to provision — and the domain POST would 409, so the step must
     // never be offered.
     onboardingResponse = makeOnboarding({ primary_assistant_id: null });

@@ -14,7 +14,7 @@ import { ROUTES } from "./desktop-setup-routes.js";
 import { NotFoundError } from "./errors.js";
 
 const originalContainerized = process.env.IS_CONTAINERIZED;
-const originalPlatform = process.env.IS_PLATFORM;
+const originalPlatform = process.env.IS_CLOUD;
 const status = spyOn(desktopDependencies, "getStatus");
 
 afterAll(() => {
@@ -23,7 +23,7 @@ afterAll(() => {
 
 beforeEach(() => {
   process.env.IS_CONTAINERIZED = "true";
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   status.mockReturnValue({ state: "ready" });
 });
 
@@ -34,9 +34,9 @@ afterEach(() => {
     process.env.IS_CONTAINERIZED = originalContainerized;
   }
   if (originalPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalPlatform;
+    process.env.IS_CLOUD = originalPlatform;
   }
   setOverridesForTesting({});
   status.mockClear();
@@ -62,7 +62,7 @@ describe("desktop setup route feature gate", () => {
     });
 
     test(`${route.method} rejects self-hosted Docker assistants without inspecting dependencies`, () => {
-      process.env.IS_PLATFORM = "false";
+      process.env.IS_CLOUD = "false";
       setOverridesForTesting({ "assistant-desktop": true });
       expect(() => route.handler({})).toThrow(NotFoundError);
       expect(status).not.toHaveBeenCalled();

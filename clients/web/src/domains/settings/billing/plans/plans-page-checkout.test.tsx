@@ -22,7 +22,7 @@
  *
  * Strategy mirrors adjust-plan-modal.test.tsx: mock the generated SDK to
  * capture the upgrade body and return a redirect, mock `openUrl` to capture the
- * redirect target, and force the platform-hosted gate open so the page mounts
+ * redirect target, and force the cloud-hosted gate open so the page mounts
  * its body instead of firing the not-ready redirect effect.
  */
 
@@ -44,7 +44,7 @@ import {
 
 import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
-import * as platformGate from "@/hooks/use-platform-gate";
+import * as cloudGate from "@/hooks/use-cloud-gate";
 import {
   organizationsBillingPlansRetrieveQueryKey,
   organizationsBillingSubscriptionRetrieveQueryKey,
@@ -117,16 +117,16 @@ mock.module("@/runtime/browser", () => ({
   },
 }));
 
-// Force the platform-hosted gate open so the page mounts its pricing body
+// Force the cloud-hosted gate open so the page mounts its pricing body
 // instead of firing the self-hosted / not-ready redirect effect. Mutable so a
 // test can start with hosting unresolved — the state the deep-link effect waits
 // through — and flip it to ready mid-test.
-let platformHosted = true;
+let cloudHosted = true;
 let lifecycleLoading = false;
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGate,
-  usePlatformGate: () => "full",
-  useActiveAssistantIsPlatformHosted: () => platformHosted,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGate,
+  useCloudGate: () => "full",
+  useActiveAssistantIsCloudHosted: () => cloudHosted,
   useActiveAssistantLifecycleIsLoading: () => lifecycleLoading,
 }));
 
@@ -343,7 +343,7 @@ function renderRouted(
 beforeEach(() => {
   upgradeCall = null;
   openedUrl = null;
-  platformHosted = true;
+  cloudHosted = true;
   lifecycleLoading = false;
   serverSubscription = null;
   serverCatalog = null;
@@ -572,9 +572,9 @@ describe("PlansPage — ?package= deep link", () => {
   // No amount of re-reading billing turns a self-hosted assistant into a hosted
   // one, so that bail must not be held behind the deep link's forced reads. It
   // also lands on the plain billing page — there is no adjust-plan upgrade path
-  // without a platform session.
+  // without a cloud session.
   test("self-hosted still bails immediately with the link present", async () => {
-    platformHosted = false;
+    cloudHosted = false;
     const { getByTestId, queryAllByTestId } = renderPage(
       proMightySubscription(),
       "/assistant/plans?package=super",
@@ -593,7 +593,7 @@ describe("PlansPage — ?package= deep link", () => {
     // Hold the effect on unresolved hosting so the param survives the first
     // render; flipping hosting ready is then a real dep change that drives the
     // one and only consume.
-    platformHosted = false;
+    cloudHosted = false;
     lifecycleLoading = true;
     const { client, findByText, findByRole, getByTestId, queryAllByTestId } =
       renderPage(proMightySubscription(), "/assistant/plans?package=super");
@@ -606,7 +606,7 @@ describe("PlansPage — ?package= deep link", () => {
     expect(queryAllByTestId("confirm-package-switch-button").length).toBe(0);
 
     act(() => {
-      platformHosted = true;
+      cloudHosted = true;
       lifecycleLoading = false;
       // Wakes the subscribed component so the hooks re-read the gate. The
       // payload has to differ structurally: React Query's structural sharing

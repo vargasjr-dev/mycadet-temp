@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { pollJobUntilDone } from "../job-polling.js";
-import type { UnifiedJobStatus } from "../platform-client.js";
+import type { UnifiedJobStatus } from "../cloud-client.js";
 
 describe("pollJobUntilDone", () => {
   test("returns terminal 'complete' after N processing polls", async () => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import * as realPlatformClient from "../lib/platform-client.js";
+import * as realCloudClient from "../lib/cloud-client.js";
 
 const calls: string[] = [];
 let verifyResult: "valid" | "rejected" | "unknown" | null = "valid";
@@ -9,9 +9,9 @@ let readResult: { value: string | null; unreachable: boolean } = {
   unreachable: false,
 };
 
-mock.module("../lib/platform-client.js", () => ({
-  ...realPlatformClient,
-  verifyGatewayManagedCredential: mock(async () => {
+mock.module("../lib/cloud-client.js", () => ({
+  ...realCloudClient,
+  verifyGatewayCloudCredential: mock(async () => {
     calls.push("verify");
     return verifyResult;
   }),
@@ -61,13 +61,13 @@ describe("resolveAssistantApiKeyForInjection", () => {
   // The verdict comes first and the key is read after it, so the value
   // returned is the one the verdict covered, never one a concurrent repair
   // has since replaced.
-  test("a stored key the platform accepts is read after the verdict", async () => {
+  test("a stored key the cloud accepts is read after the verdict", async () => {
     const resolved = await resolveAssistantApiKeyForInjection(ARGS);
     expect(resolved).toEqual({ apiKey: "stored-key", source: "stored" });
     expect(calls).toEqual(["verify", "read"]);
   });
 
-  test("a stored key the platform rejects is replaced without being read", async () => {
+  test("a stored key the cloud rejects is replaced without being read", async () => {
     verifyResult = "rejected";
     const resolved = await resolveAssistantApiKeyForInjection(ARGS);
     expect(resolved).toEqual({ apiKey: "fresh-key", source: "reprovisioned" });

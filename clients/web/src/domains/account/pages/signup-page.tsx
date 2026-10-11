@@ -9,7 +9,7 @@ import { useSignupAvailability } from "@/domains/account/hooks/use-signup-availa
  * Signup entry. Renders the branded sign-up screen: a rotating headline with
  * a single CTA that hands off to the WorkOS auth flow (`intent: "signup"`);
  * the post-OAuth name/occupation step lives in `ProviderSignupPage`. While
- * the platform is closed to new accounts it renders `SignupClosedScreen`
+ * the cloud is closed to new accounts it renders `SignupClosedScreen`
  * instead.
  *
  * `useReturnToShortCircuit` owns whether an existing session skips OAuth and

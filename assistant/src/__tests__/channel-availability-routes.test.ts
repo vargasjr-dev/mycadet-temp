@@ -3,7 +3,7 @@
  *
  * The handler returns a fixed base list (`slack`, `telegram`, `discord`,
  * `phone`) and
- * appends `email` when the platform reports at least one registered email
+ * appends `email` when the cloud reports at least one registered email
  * address for this assistant. Platform failures fall back to base-only.
  *
  * Each entry is hydrated with display metadata from `CHANNEL_METADATA`
@@ -36,10 +36,10 @@ let mockEmailAddressesResponse: {
 let mockFetchThrows = false;
 const mockSecureKeys = useMemorySecureKeys();
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => ({
-      platformAssistantId: mockCloudAssistantId,
+      cloudAssistantId: mockCloudAssistantId,
       fetch: async (_path: string) => {
         if (mockFetchThrows) {
           throw new Error("platform unreachable");
@@ -171,7 +171,7 @@ describe("channels/available", () => {
     ]);
   });
 
-  test("base list only when no platformAssistantId on client", async () => {
+  test("base list only when no cloudAssistantId on client", async () => {
     mockCloudAssistantId = null;
 
     const result = (await handler({})) as HandlerResult;

@@ -33,8 +33,8 @@ const preMockModules: ReadonlyArray<[string, Record<string, unknown>]> = [
     { ...(await import("../security/secure-keys.js")) },
   ],
   [
-    "../providers/platform-proxy/context.js",
-    { ...(await import("../providers/platform-proxy/context.js")) },
+    "../providers/cloud-proxy/context.js",
+    { ...(await import("../providers/cloud-proxy/context.js")) },
   ],
   [
     "../providers/inference/connections.js",
@@ -60,15 +60,15 @@ afterAll(() => {
 // Vault mock — keyed by credential name.
 const mockVault = useMemorySecureKeys();
 
-// Managed proxy context — always unavailable in this test (no platform auth).
-mock.module("../providers/platform-proxy/context.js", () => ({
-  buildManagedBaseUrl: async () => null,
-  resolveManagedProxyContext: async () => {
-    throw new Error("managed proxy not available in test");
+// Cloud proxy context — always unavailable in this test (no platform auth).
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  buildCloudBaseUrl: async () => null,
+  resolveCloudProxyContext: async () => {
+    throw new Error("cloud proxy not available in test");
   },
 }));
 
-// DB mock — getConnection returns null (no managed connections seeded yet).
+// DB mock — getConnection returns null (no cloud connections seeded yet).
 const mockGetConnection: Record<string, unknown> = {};
 mock.module("../providers/inference/connections.js", () => ({
   getConnection: (_db: unknown, name: string) =>
@@ -258,20 +258,20 @@ describe("inference-no-mode-boot-e2e: config without services.inference.mode", (
     expect(typeof provider.sendMessage).toBe("function");
   });
 
-  // ── Gate 4: platform-auth connection fails with ConnectionResolutionError ─
+  // ── Gate 4: cloud-auth connection fails with ConnectionResolutionError ─
 
   test("ConnectionResolutionError is exported with expected reason codes", () => {
     const err = new ConnectionResolutionError(
       "anthropic-managed",
       "not_found",
-      'provider_connection "anthropic-managed" not found — managed connections not yet seeded (PR-D)',
+      'provider_connection "anthropic-managed" not found — cloud connections not yet seeded (PR-D)',
     );
     expect(err).toBeInstanceOf(ConnectionResolutionError);
     expect(err.reason).toBe("not_found");
     expect(err.connectionName).toBe("anthropic-managed");
   });
 
-  test("tryResolveProviderForConnectionName throws not_found for an unseed managed connection", async () => {
+  test("tryResolveProviderForConnectionName throws not_found for an unseed cloud connection", async () => {
     // anthropic-managed is not in mockGetConnection (simulates PR-D not yet run).
     const { tryResolveProviderForConnectionName } =
       await import("../providers/connection-resolution.js");

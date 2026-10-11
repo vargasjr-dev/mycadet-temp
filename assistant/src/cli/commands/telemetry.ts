@@ -15,7 +15,7 @@ function describeSkip(reason: string): string {
     case "opted-out":
       return "Telemetry flush skipped: analytics sharing is opted out.";
     case "no-credentials":
-      return "Telemetry flush skipped: not signed in to the platform yet.";
+      return "Telemetry flush skipped: not signed in to the cloud yet.";
     case "unknown-consent":
       return "Telemetry flush skipped: consent not yet resolved (will retry).";
     case "checkpoint-unavailable":
@@ -23,7 +23,7 @@ function describeSkip(reason: string): string {
     case "disabled":
       return "Telemetry flush skipped: telemetry is disabled.";
     case "post-failed":
-      return "Telemetry flush failed: the platform rejected the request.";
+      return "Telemetry flush failed: the cloud rejected the request.";
     default:
       return `Telemetry flush skipped: ${reason}`;
   }

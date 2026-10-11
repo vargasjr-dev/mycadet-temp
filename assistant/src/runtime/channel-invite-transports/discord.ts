@@ -4,7 +4,7 @@
  * Resolves the assistant's Discord bot username for use in invite
  * instructions. Discord invites use the universal 6-digit code path for
  * redemption, so this adapter only implements `resolveChannelHandle`,
- * no `buildShareLink` or `extractInboundToken` needed. The platform
+ * no `buildShareLink` or `extractInboundToken` needed. The cloud
  * constraint that shapes the instruction copy lives with the copy
  * (`invite-instruction-generator.ts`): a person can only DM the bot once
  * they share a server with it.

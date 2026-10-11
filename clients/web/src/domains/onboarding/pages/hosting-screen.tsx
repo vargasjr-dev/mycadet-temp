@@ -12,7 +12,7 @@ import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTranslation } from "@/i18n";
@@ -33,14 +33,14 @@ interface HostingOption {
 const ICON_CLASS = "h-5 w-5 shrink-0";
 
 function useHostingOptions(): HostingOption[] {
-  const hasPlatformSession = useHasPlatformSession();
-  const multiPlatformAssistant =
-    useClientFeatureFlagStore.use.multiPlatformAssistant();
+  const hasCloudSession = useHasCloudSession();
+  const multiCloudAssistant =
+    useClientFeatureFlagStore.use.multiCloudAssistant();
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const hasPlatformAssistant = assistants.some((a) => a.isPlatformHosted);
+  const hasCloudAssistant = assistants.some((a) => a.isCloudHosted);
 
   const cloudDisabled =
-    !hasPlatformSession || (!multiPlatformAssistant && hasPlatformAssistant);
+    !hasCloudSession || (!multiCloudAssistant && hasCloudAssistant);
 
   return [
     {
@@ -52,7 +52,7 @@ function useHostingOptions(): HostingOption[] {
       ...(cloudDisabled
         ? {
             disabled: true,
-            badge: hasPlatformSession ? "Limit Reached" : "Requires Account",
+            badge: hasCloudSession ? "Limit Reached" : "Requires Account",
           }
         : {}),
     },
@@ -71,14 +71,14 @@ export function HostingScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromSelectAssistant = searchParams.get("from") === "select-assistant";
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   const electron = isElectron();
   const options = useHostingOptions();
   const cloudDisabled = options.find(
     (o) => o.mode === "cadet-cloud",
   )?.disabled;
   const [selected, setSelected] = useState<HostingMode>(
-    hasPlatformSession && !cloudDisabled ? "cadet-cloud" : "local",
+    hasCloudSession && !cloudDisabled ? "cadet-cloud" : "local",
   );
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function HostingScreen() {
 
   // Electron mirrors the Swift client's Hosting step, which has no login
   // affordance; its login lives on the wake-up step instead.
-  const showLogin = fromSelectAssistant && !hasPlatformSession && !electron;
+  const showLogin = fromSelectAssistant && !hasCloudSession && !electron;
 
   const onContinue = () => {
     if (selected === "cadet-cloud") {

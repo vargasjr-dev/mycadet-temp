@@ -12,7 +12,7 @@
  * the model must be in the catalog (unless `allowUnlisted`), a referenced
  * connection must exist, and the resulting profile must be able to dispatch
  * (unless `allowUnavailable`). Writes reuse the shared config-write plumbing
- * (`commitConfigWrite` + the managed-profile guards), so a CLI-created profile
+ * (`commitConfigWrite` + the cloud-profile guards), so a CLI-created profile
  * is completed/materialized identically to a UI-created one.
  */
 
@@ -62,8 +62,8 @@ import {
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   commitConfigWrite,
-  normalizeManagedProfileWrites,
-  rejectManagedProfileDeletion,
+  normalizeCloudProfileWrites,
+  rejectCloudProfileDeletion,
 } from "./conversation-query-routes.js";
 import { BadRequestError, ConflictError, NotFoundError } from "./errors.js";
 import {
@@ -656,7 +656,7 @@ async function handleCreateProfile({ body = {} }: RouteHandlerArgs) {
   profiles[name] = entry;
   // Defensive: for a user-owned name this is a no-op; it re-asserts the
   // managed-name protection at the shared write choke point.
-  normalizeManagedProfileWrites({ llm: { profiles: { [name]: entry } } });
+  normalizeCloudProfileWrites({ llm: { profiles: { [name]: entry } } });
 
   await commitConfigWrite(raw, "create inference profile");
 
@@ -698,14 +698,14 @@ async function handleUpdateProfile({
   if (!existing) {
     if (MANAGED_PROFILE_NAMES.has(name)) {
       throw new BadRequestError(
-        `Cannot edit managed profile "${name}". Managed profiles are read-only; duplicate to a custom profile to customize.`,
+        `Cannot edit cloud profile "${name}". Cloud profiles are read-only; duplicate to a custom profile to customize.`,
       );
     }
     throw new NotFoundError(`Profile "${name}" not found.`);
   }
   if (MANAGED_PROFILE_NAMES.has(name) && existing.source === "managed") {
     throw new BadRequestError(
-      `Cannot edit managed profile "${name}". Managed profiles are read-only; duplicate to a custom profile to customize.`,
+      `Cannot edit cloud profile "${name}". Cloud profiles are read-only; duplicate to a custom profile to customize.`,
     );
   }
 
@@ -799,7 +799,7 @@ async function handleUpdateProfile({
   }
 
   profiles[name] = merged;
-  normalizeManagedProfileWrites({ llm: { profiles: { [name]: merged } } });
+  normalizeCloudProfileWrites({ llm: { profiles: { [name]: merged } } });
 
   await commitConfigWrite(raw, "update inference profile");
 
@@ -834,10 +834,10 @@ async function handleDeleteProfile({ pathParams = {} }: RouteHandlerArgs) {
   const llm = asPlainObject(raw.llm);
   const profiles = asPlainObject(llm?.profiles);
 
-  // Reject deletion of a managed default with a clear message before the
+  // Reject deletion of a cloud default with a clear message before the
   // existence check, so `delete balanced` explains itself even when the
   // managed stub is on disk.
-  rejectManagedProfileDeletion({ llm: { profiles: { [name]: null } } });
+  rejectCloudProfileDeletion({ llm: { profiles: { [name]: null } } });
 
   if (!profiles || profiles[name] === undefined) {
     throw new NotFoundError(`Profile "${name}" not found.`);
@@ -997,7 +997,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "400": {
         description:
-          "Invalid fields, a profile that cannot serve requests, or attempt to edit a managed profile",
+          "Invalid fields, a profile that cannot serve requests, or attempt to edit a cloud profile",
       },
       "404": { description: "Profile not found" },
     },
@@ -1018,7 +1018,7 @@ export const ROUTES: RouteDefinition[] = [
     pathParams: [{ name: "name", description: "Profile name" }],
     responseBody: z.object({ ok: z.literal(true), name: z.string() }),
     additionalResponses: {
-      "400": { description: "Attempt to delete a managed profile" },
+      "400": { description: "Attempt to delete a cloud profile" },
       "404": { description: "Profile not found" },
       "409": {
         description:

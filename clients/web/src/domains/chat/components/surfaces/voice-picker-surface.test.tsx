@@ -3,7 +3,7 @@
  * managed-voice picker.
  *
  * Load-bearing behavior:
- *   - a managed assistant gets the fetched voice rows inside the surface card,
+ *   - a cloud assistant gets the fetched voice rows inside the surface card,
  *     scoped by the provider dropdown,
  *   - picking a voice submits no surface action, so auditioning several voices
  *     never fires an assistant turn,
@@ -222,7 +222,7 @@ describe("VoicePickerSurface", () => {
     const rows = voiceRows();
     expect(rows.length).toBe(1);
     expect(rows[0]!.textContent).toContain("Professional, reassuring");
-    // Managed voices bill credits, so the card says so.
+    // Cloud voices bill credits, so the card says so.
     expect(screen.getByText(/Uses Cadet credits/)).toBeTruthy();
   });
 

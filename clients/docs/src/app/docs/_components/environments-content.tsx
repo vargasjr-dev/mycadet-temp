@@ -80,7 +80,7 @@ export function EnvironmentsContent() {
           </p>
           <p className="mb-6 text-stone-600 dark:text-stone-400">
             Cadet handles provisioning, upgrades, scaling, and infrastructure
-            so you can focus on using your assistant. Managed assistants use
+            so you can focus on using your assistant. Cloud assistants use
             Anthropic (Claude) as the default provider, billing is handled
             through your Cadet account, and your workspace is encrypted and
             isolated to you.
@@ -219,7 +219,7 @@ export function EnvironmentsContent() {
                     Cadet Cloud
                   </td>
                   <td className="py-3 pr-4">
-                    Most users. Zero-ops managed hosting, always-on, accessible from anywhere.
+                    Most users. Zero-ops cloud hosting, always-on, accessible from anywhere.
                   </td>
                   <td className="py-3">Cadet account</td>
                 </tr>

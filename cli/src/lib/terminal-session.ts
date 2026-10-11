@@ -6,9 +6,9 @@
  * cross-importing commands (per cli/CONTRIBUTING.md).
  */
 
-import { isManagedCloud } from "./managed-cloud.js";
+import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
-import { getPlatformUrl, readPlatformToken } from "./platform-client.js";
+import { getCloudUrl, readCloudToken } from "./cloud-client.js";
 import {
   closeTerminalSession,
   createTerminalSession,
@@ -24,7 +24,7 @@ import {
 export interface ResolvedManagedAssistant {
   assistantId: string;
   token: string;
-  platformUrl: string;
+  cloudUrl: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ export interface ResolvedManagedAssistant {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve a managed (cloud-hosted) assistant from the lockfile. Exits with
+ * Resolve a cloud (cloud-hosted) assistant from the lockfile. Exits with
  * an error if the assistant is not found, not managed, or the user isn't
  * logged in.
  */
@@ -51,7 +51,7 @@ export function resolveManagedAssistant(
   }
 
   const cloud = entry.cloud;
-  if (!isManagedCloud(cloud)) {
+  if (!isCloudHome(cloud)) {
     if (cloud === "local") {
       console.error(
         "This assistant runs locally on your machine. You can access it directly.",
@@ -68,7 +68,7 @@ export function resolveManagedAssistant(
     process.exit(1);
   }
 
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     console.error(
       "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
@@ -79,7 +79,7 @@ export function resolveManagedAssistant(
   return {
     assistantId: entry.assistantId,
     token,
-    platformUrl: getPlatformUrl(),
+    cloudUrl: getCloudUrl(),
   };
 }
 
@@ -88,8 +88,8 @@ export function resolveManagedAssistant(
 // ---------------------------------------------------------------------------
 
 /**
- * Open an interactive raw-tty terminal session to a managed assistant.
- * Bridges local stdin/stdout to the platform terminal session API.
+ * Open an interactive raw-tty terminal session to a cloud assistant.
+ * Bridges local stdin/stdout to the cloud terminal session API.
  */
 export async function interactiveSession(
   assistant: ResolvedManagedAssistant,
@@ -106,7 +106,7 @@ export async function interactiveSession(
     assistant.assistantId,
     cols,
     rows,
-    assistant.platformUrl,
+    assistant.cloudUrl,
     service,
   );
 
@@ -142,7 +142,7 @@ export async function interactiveSession(
         assistant.token,
         assistant.assistantId,
         sessionId,
-        assistant.platformUrl,
+        assistant.cloudUrl,
       );
     } catch {
       // Best-effort cleanup
@@ -169,7 +169,7 @@ export async function interactiveSession(
       sessionId,
       newCols,
       newRows,
-      assistant.platformUrl,
+      assistant.cloudUrl,
     ).catch(() => {
       // Resize failures are non-fatal
     });
@@ -190,7 +190,7 @@ export async function interactiveSession(
       assistant.assistantId,
       sessionId,
       data,
-      assistant.platformUrl,
+      assistant.cloudUrl,
     ).catch((err) => {
       if (!exiting) {
         console.error(`\r\nInput error: ${err.message}\r\n`);
@@ -214,7 +214,7 @@ export async function interactiveSession(
       assistant.assistantId,
       sessionId,
       initialCommand + "\r",
-      assistant.platformUrl,
+      assistant.cloudUrl,
     );
   }
 
@@ -224,7 +224,7 @@ export async function interactiveSession(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.platformUrl,
+      assistant.cloudUrl,
       abortController.signal,
     )) {
       if (exiting) break;
@@ -271,7 +271,7 @@ export function shellEscapeArgs(args: string[]): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Run a command non-interactively in a managed assistant service. Creates
+ * Run a command non-interactively in a cloud assistant service. Creates
  * an ephemeral terminal session, sends the command wrapped in sentinels for
  * reliable output extraction, captures the result, and exits with the
  * remote command's exit code.
@@ -300,7 +300,7 @@ export async function nonInteractiveExec(
     assistant.assistantId,
     120,
     24,
-    assistant.platformUrl,
+    assistant.cloudUrl,
     options?.service,
   );
 
@@ -333,7 +333,7 @@ export async function nonInteractiveExec(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.platformUrl,
+      assistant.cloudUrl,
       abortController.signal,
     )) {
       eventCount++;
@@ -369,7 +369,7 @@ export async function nonInteractiveExec(
             assistant.assistantId,
             sessionId,
             fullCmd,
-            assistant.platformUrl,
+            assistant.cloudUrl,
           );
         }
       }
@@ -403,7 +403,7 @@ export async function nonInteractiveExec(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.platformUrl,
+      assistant.cloudUrl,
     ).catch(() => {});
   }
 

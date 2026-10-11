@@ -10,7 +10,7 @@ let mockConnections:
   | Array<Record<string, unknown> & { clientId?: string; accountInfo?: string }>
   | undefined;
 let mockAccessToken: string | undefined;
-let mockPlatformClient: Record<string, unknown> | null = null;
+let mockCloudClient: Record<string, unknown> | null = null;
 let syncManualTokenCalls: string[] = [];
 
 // ---------------------------------------------------------------------------
@@ -60,9 +60,9 @@ mock.module("./manual-token-connection.js", () => ({
   },
 }));
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
-    create: async () => mockPlatformClient,
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
+    create: async () => mockCloudClient,
   },
 }));
 
@@ -72,15 +72,15 @@ mock.module("../platform/client.js", () => ({
 
 import { setConfig } from "../__tests__/helpers/set-config.js";
 import { BYOOAuthConnection } from "./byo-connection.js";
+import { CloudOAuthConnection } from "./cloud-connection.js";
 import {
+  cloudProxyBaseUrl,
   formatNoConnectionError,
-  platformProxyBaseUrl,
   resolveEffectiveBaseUrl,
   resolveOAuthConnection,
   resolveOAuthConnectionWithMeta,
   resolveTokenHeader,
 } from "./connection-resolver.js";
-import { PlatformOAuthConnection } from "./platform-connection.js";
 
 /** Seed `services.<key>.mode` entries into the workspace config for real. */
 function seedServiceModes(modes: Record<string, "managed" | "your-own">): void {
@@ -100,7 +100,7 @@ function makeMockClient() {
   return {
     baseUrl: "https://platform.example.com",
     assistantApiKey: "sk-test-key",
-    platformAssistantId: "asst-123",
+    cloudAssistantId: "asst-123",
     fetch: mock(async () => {
       return new Response(
         JSON.stringify({
@@ -117,7 +117,7 @@ function setupDefaults(): void {
     provider: "google",
     baseUrl: "https://gmail.googleapis.com/gmail/v1/users/me",
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
   };
   mockConnection = {
     id: "conn-1",
@@ -131,7 +131,7 @@ function setupDefaults(): void {
   mockAccessToken = "tok-valid";
   seedServiceModes({ "google-oauth": "managed" });
   mockConnections = undefined;
-  mockPlatformClient = makeMockClient();
+  mockCloudClient = makeMockClient();
   syncManualTokenCalls = [];
 }
 
@@ -144,37 +144,37 @@ describe("resolveOAuthConnection", () => {
     setupDefaults();
   });
 
-  test("returns BYOOAuthConnection when provider has no managedServiceConfigKey", async () => {
+  test("returns BYOOAuthConnection when provider has no cloudServiceConfigKey", async () => {
     const result = await resolveOAuthConnection("google");
     expect(result).toBeInstanceOf(BYOOAuthConnection);
     expect(result.id).toBe("conn-1");
     expect(result.provider).toBe("google");
   });
 
-  test("returns PlatformOAuthConnection when managed mode is active", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+  test("returns CloudOAuthConnection when managed mode is active", async () => {
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
 
     const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
     expect(result.id).toBe("google");
     expect(result.provider).toBe("google");
     expect(result.accountInfo).toBeNull();
   });
 
-  test("passes account through to PlatformOAuthConnection", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+  test("passes account through to CloudOAuthConnection", async () => {
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
 
     const result = await resolveOAuthConnection("google", {
       account: "user@example.com",
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
     expect(result.accountInfo).toBe("user@example.com");
   });
 
   test("managed path falls back to displayed account label when account_identifier does not match", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
     const fetchPaths: string[] = [];
-    mockPlatformClient = {
+    mockCloudClient = {
       ...makeMockClient(),
       fetch: mock(async (path: string) => {
         fetchPaths.push(path);
@@ -199,7 +199,7 @@ describe("resolveOAuthConnection", () => {
       account: "alice@example.com",
     });
 
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
     expect(result.accountInfo).toBe("alice@example.com");
     expect(fetchPaths).toEqual([
       "/v1/assistants/asst-123/oauth/connections/?provider=google&status=ACTIVE&account_identifier=alice%40example.com",
@@ -207,19 +207,19 @@ describe("resolveOAuthConnection", () => {
     ]);
   });
 
-  test("returns PlatformOAuthConnection when GitHub is in managed mode", async () => {
+  test("returns CloudOAuthConnection when GitHub is in managed mode", async () => {
     mockProvider!.provider = "github";
-    mockProvider!.managedServiceConfigKey = "github-oauth";
+    mockProvider!.cloudServiceConfigKey = "github-oauth";
     seedServiceModes({ "google-oauth": "managed", "github-oauth": "managed" });
 
     const result = await resolveOAuthConnection("github");
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
     expect(result.id).toBe("github");
     expect(result.provider).toBe("github");
   });
 
   test("returns BYOOAuthConnection when service config mode is your-own", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
     seedServiceModes({ "google-oauth": "your-own" });
 
     const result = await resolveOAuthConnection("google");
@@ -228,21 +228,21 @@ describe("resolveOAuthConnection", () => {
   });
 
   test("managed path does not require a local connection row", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
     mockConnection = undefined;
     mockAccessToken = undefined;
 
     const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("managed path ignores clientId option", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
 
     const result = await resolveOAuthConnection("google", {
       clientId: "some-client-id",
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("BYO path narrows by clientId when provided", async () => {
@@ -266,7 +266,7 @@ describe("resolveOAuthConnection", () => {
       provider: "telegram",
       baseUrl: "https://api.telegram.org",
       authorizeUrl: "urn:manual-token",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
     };
     mockConnection = {
       id: "conn-telegram",
@@ -310,11 +310,11 @@ describe("resolveOAuthConnection scope-awareness", () => {
 
   beforeEach(() => {
     setupDefaults();
-    mockProvider!.managedServiceConfigKey = "google-oauth";
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
   });
 
   test("managed: rejects a Calendar-only connection when Gmail scope is required", async () => {
-    mockPlatformClient = clientReturning([
+    mockCloudClient = clientReturning([
       { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
     ]);
 
@@ -324,18 +324,18 @@ describe("resolveOAuthConnection scope-awareness", () => {
   });
 
   test("managed: resolves when a connection carries the required Gmail scope", async () => {
-    mockPlatformClient = clientReturning([
+    mockCloudClient = clientReturning([
       { id: "full", account_label: null, scopes_granted: FULL_BUNDLE },
     ]);
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("managed: treats full Gmail access as covering Gmail read access", async () => {
-    mockPlatformClient = clientReturning([
+    mockCloudClient = clientReturning([
       {
         id: "full-gmail-access",
         account_label: null,
@@ -346,19 +346,17 @@ describe("resolveOAuthConnection scope-awareness", () => {
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("managed: unknown scope data never blocks (back-compat)", async () => {
     // Older connections report no scopes_granted — must not be rejected.
-    mockPlatformClient = clientReturning([
-      { id: "legacy", account_label: null },
-    ]);
+    mockCloudClient = clientReturning([{ id: "legacy", account_label: null }]);
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("managed: prefers a scope-satisfying connection over a narrow one", async () => {
@@ -366,24 +364,24 @@ describe("resolveOAuthConnection scope-awareness", () => {
       { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
       { id: "full", account_label: null, scopes_granted: FULL_BUNDLE },
     ]);
-    mockPlatformClient = fullClient;
+    mockCloudClient = fullClient;
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
-    // PlatformOAuthConnection is keyed by provider, so assert resolution
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
+    // CloudOAuthConnection is keyed by provider, so assert resolution
     // succeeded (it would have thrown if only the narrow connection matched).
     expect(result.provider).toBe("google");
   });
 
   test("managed: no requiredScopes preserves prior behavior", async () => {
-    mockPlatformClient = clientReturning([
+    mockCloudClient = clientReturning([
       { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
     ]);
 
     const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(PlatformOAuthConnection);
+    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("BYO: rejects when granted scopes are known and missing the requirement", async () => {
@@ -459,8 +457,8 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
   });
 
   test("managed: multiple connections + no account surfaces ambiguity and the selected label", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
-    mockPlatformClient = clientReturning([
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
+    mockCloudClient = clientReturning([
       { id: "conn-personal", account_label: "user@example.com" },
       { id: "conn-work", account_label: "work@example.com" },
     ]);
@@ -475,8 +473,8 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
   });
 
   test("managed: account passed disambiguates and clears the warning", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
-    mockPlatformClient = clientReturning([
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
+    mockCloudClient = clientReturning([
       { id: "conn-work", account_label: "work@example.com" },
     ]);
 
@@ -488,8 +486,8 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
   });
 
   test("managed: single connection is never ambiguous", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
-    mockPlatformClient = clientReturning([
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
+    mockCloudClient = clientReturning([
       { id: "conn-only", account_label: "user@example.com" },
     ]);
 
@@ -632,8 +630,8 @@ describe("no-match error lists available accounts", () => {
   });
 
   test("managed: names the provider's active accounts when the requested account misses", async () => {
-    mockProvider!.managedServiceConfigKey = "google-oauth";
-    mockPlatformClient = clientReturning([
+    mockProvider!.cloudServiceConfigKey = "google-oauth";
+    mockCloudClient = clientReturning([
       { id: "conn-personal", account_label: "user@example.com" },
       { id: "conn-work", account_label: "other@example.org" },
     ]);
@@ -758,29 +756,29 @@ describe("resolveEffectiveBaseUrl", () => {
   });
 });
 
-describe("platformProxyBaseUrl", () => {
+describe("cloudProxyBaseUrl", () => {
   test("forwards a concrete seed base URL", () => {
-    expect(platformProxyBaseUrl("https://api.figma.com")).toBe(
+    expect(cloudProxyBaseUrl("https://api.figma.com")).toBe(
       "https://api.figma.com",
     );
   });
 
-  test("withholds a templated base URL so the platform fills it", () => {
+  test("withholds a templated base URL so the cloud fills it", () => {
     // Shopify's host and QuickBooks' realm are pinned to the connection on
-    // the platform. Forwarding the unfilled template would fail the proxy's
-    // allowlist check and shadow the platform's own default.
-    expect(platformProxyBaseUrl("https://{tenant_host}")).toBeUndefined();
+    // the cloud. Forwarding the unfilled template would fail the proxy's
+    // allowlist check and shadow the cloud's own default.
+    expect(cloudProxyBaseUrl("https://{tenant_host}")).toBeUndefined();
     expect(
-      platformProxyBaseUrl(
+      cloudProxyBaseUrl(
         "https://quickbooks.api.intuit.com/v3/company/{realm_id}",
       ),
     ).toBeUndefined();
   });
 
   test("treats a missing base URL as no override", () => {
-    expect(platformProxyBaseUrl(undefined)).toBeUndefined();
-    expect(platformProxyBaseUrl(null)).toBeUndefined();
-    expect(platformProxyBaseUrl("")).toBeUndefined();
+    expect(cloudProxyBaseUrl(undefined)).toBeUndefined();
+    expect(cloudProxyBaseUrl(null)).toBeUndefined();
+    expect(cloudProxyBaseUrl("")).toBeUndefined();
   });
 });
 

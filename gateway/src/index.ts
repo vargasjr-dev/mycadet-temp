@@ -123,7 +123,7 @@ import { createSlackControlPlaneProxyHandler } from "./http/routes/slack-control
 import { createOAuthAppsProxyHandler } from "./http/routes/oauth-apps-proxy.js";
 import { createOAuthProvidersProxyHandler } from "./http/routes/oauth-providers-proxy.js";
 import { createChannelReadinessProxyHandler } from "./http/routes/channel-readiness-proxy.js";
-import { createPlatformPushProxyHandler } from "./http/routes/platform-push-proxy.js";
+import { createCloudPushProxyHandler } from "./http/routes/cloud-push-proxy.js";
 import { createPsHandler } from "./http/routes/ps.js";
 import { createTunnelStatusHandler } from "./http/routes/tunnel-status.js";
 import { createRuntimeHealthProxyHandler } from "./http/routes/runtime-health-proxy.js";
@@ -233,7 +233,7 @@ import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
 import {
-  arePlatformFeaturesEnabled,
+  areCloudFeaturesEnabled,
   isFeatureFlagEnabled,
 } from "./feature-flag-resolver.js";
 import { isNewCommand, handleNewCommand } from "./webhook-pipeline.js";
@@ -471,7 +471,7 @@ async function main() {
   let cadetReady = false;
   let tunnelStartRequested = false;
 
-  function maybeStartTunnelTunnelForTwilio(
+  function maybeStartTunnelForTwilio(
     reason: string,
     twilioCredentials?: Record<string, string> | null,
   ): boolean {
@@ -493,14 +493,14 @@ async function main() {
    *
    * Tunnel is the browser's ingress for the live-voice WebSocket, but the tunnel
    * was historically only started for Twilio (see
-   * {@link maybeStartTunnelTunnelForTwilio}). Without this, an assistant with no
+   * {@link maybeStartTunnelForTwilio}). Without this, an assistant with no
    * Twilio setup never registers a Tunnel, so the browser's
    * `/v1/live-voice` upgrade fails with "assistant tunnel is not connected".
    * Live voice is available to every assistant, so this runs unconditionally at
    * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
    * tunnel serves both — and `tunnelClient.start()` is idempotent.
    */
-  function startTunnelTunnelForLiveVoice(reason: string): boolean {
+  function startTunnelForLiveVoice(reason: string): boolean {
     if (tunnelStartRequested || !tunnelClient) {
       return tunnelStartRequested;
     }
@@ -519,7 +519,7 @@ async function main() {
    * `tunnelStartRequested` latch — one tunnel serves every ingress consumer —
    * and `tunnelClient.start()` is idempotent.
    */
-  function maybeStartTunnelTunnelForCredentialLink(reason: string): boolean {
+  function maybeStartTunnelForCredentialLink(reason: string): boolean {
     if (tunnelStartRequested || !tunnelClient) {
       return tunnelStartRequested;
     }
@@ -543,7 +543,7 @@ async function main() {
       await enablePublicIngress(configFileCache);
       log.info("Auto-enabled public ingress for credential link creation");
     }
-    maybeStartTunnelTunnelForCredentialLink("credential link minted");
+    maybeStartTunnelForCredentialLink("credential link minted");
   }
 
   async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
@@ -668,7 +668,7 @@ async function main() {
   const oauthAppsProxy = createOAuthAppsProxyHandler(config);
   const oauthProvidersProxy = createOAuthProvidersProxyHandler(config);
   const channelReadinessProxy = createChannelReadinessProxyHandler(config);
-  const platformPushProxy = createPlatformPushProxyHandler(credentialCache);
+  const cloudPushProxy = createCloudPushProxyHandler(credentialCache);
   const psHandler = createPsHandler(config);
   const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
   const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
@@ -1336,7 +1336,7 @@ async function main() {
       //
       // Trailing slash is optional to preserve compatibility with existing
       // pollers. PlatformMigrationClient.pollImportStatus (macOS) and
-      // cli/src/lib/platform-client.ts both hit `.../status/` against the
+      // cli/src/lib/cloud-client.ts both hit `.../status/` against the
       // platform API today; other callers may follow the bare-path
       // convention (`.../status`). Regex routes in the gateway router are
       // NOT trailing-slash-normalized, so the optionality is encoded here.
@@ -1447,7 +1447,7 @@ async function main() {
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
-      handler: (req) => platformPushProxy.handleUpsertPushToken(req),
+      handler: (req) => cloudPushProxy.handleUpsertPushToken(req),
     },
     {
       path: /^\/v1\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
@@ -1455,14 +1455,14 @@ async function main() {
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) =>
-        platformPushProxy.handleDeletePushToken(req, params[0]),
+        cloudPushProxy.handleDeletePushToken(req, params[0]),
     },
     {
       path: /^\/v1\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
-      handler: (req) => platformPushProxy.handleUpsertLiveActivityToken(req),
+      handler: (req) => cloudPushProxy.handleUpsertLiveActivityToken(req),
     },
     {
       path: /^\/v1\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
@@ -1470,7 +1470,7 @@ async function main() {
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) =>
-        platformPushProxy.handleDeleteLiveActivityToken(req, params[0]),
+        cloudPushProxy.handleDeleteLiveActivityToken(req, params[0]),
     },
 
     // ── Channel readiness ──
@@ -1791,7 +1791,7 @@ async function main() {
     // auth is edge-guardian rather than edge-scoped, because approving ingress
     // is the decision the assistant must not make for itself; and there are no
     // assistant-scoped variants, because the guardian reaches these directly
-    // rather than through the platform proxy. Deliberately absent from the IPC
+    // rather than through the cloud proxy. Deliberately absent from the IPC
     // surface for the same reason as the auth choice. Approve and revoke are
     // POST verb paths because a grant has no id of its own until a guardian
     // creates one. The listing is guardian-only for a different reason: it says
@@ -1817,7 +1817,7 @@ async function main() {
 
     // ── Channel ingress: assistant-scoped variants ──
     // Same handlers, same guardian auth, reached through the prefix a client
-    // built on the platform's addressing produces. Approvals are
+    // built on the cloud's addressing produces. Approvals are
     // gateway-global, so the assistant id is matched and discarded, the same
     // precedent as channel-permission-overrides below. These exist because the
     // web client's generated gateway SDK only speaks the prefixed form; the
@@ -1845,7 +1845,7 @@ async function main() {
     // ── Channel permission overrides (matrix cells) — flat routes ──
     // HTTP mirror of the channel-permission IPC surface so configuration
     // clients can read/write cascade cells. Gateway-owned storage; same
-    // platform-proxy path shape as channel-admission-policy above. The
+    // cloud-proxy path shape as channel-admission-policy above. The
     // delete is a POST verb path because cells are keyed by a composite
     // (selector × contact-type), not a row id.
     {
@@ -2320,7 +2320,7 @@ async function main() {
     }
 
     // Reachable both ways: directly on a self-hosted ingress with an actor
-    // edge JWT, and through the tunnel on a managed assistant, which is
+    // edge JWT, and through the tunnel on a cloud assistant, which is
     // why it is in `TUNNEL_ALLOWED_PATHS`. The handler authorizes each shape on
     // its own terms and admits only the guardian either way. A paired
     // assistant has no transport at all and never reaches here.
@@ -2494,12 +2494,12 @@ async function main() {
   // loop, cleanup timer) with no reference to stop it.
   let slackStartGeneration = 0;
 
-  /** Fire-and-forget: notify the platform of inbound Slack activity so the
+  /** Fire-and-forget: notify the cloud of inbound Slack activity so the
    *  idle-sleep timer is reset for this assistant.
    *  Throttled to at most one outbound POST per 30 seconds. */
   let lastRecordActivityTs = 0;
   async function notifyRecordActivity(): Promise<void> {
-    if (!arePlatformFeaturesEnabled()) {
+    if (!areCloudFeaturesEnabled()) {
       log.debug("Platform features disabled — skipping record-activity");
       return;
     }
@@ -2513,12 +2513,12 @@ async function main() {
         credentialCache.get(credentialKey("cadet", "assistant_api_key")),
         resolveCloudAssistantIdOrUndefined(),
       ]);
-      const platformBaseUrl = getCloudBaseUrl();
+      const cloudBaseUrl = getCloudBaseUrl();
 
-      if (!platformBaseUrl || !assistantApiKey || !assistantId) return;
+      if (!cloudBaseUrl || !assistantApiKey || !assistantId) return;
 
       const res = await fetchImpl(
-        `${platformBaseUrl}/v1/assistants/${assistantId}/record-activity/`,
+        `${cloudBaseUrl}/v1/assistants/${assistantId}/record-activity/`,
         {
           method: "POST",
           headers: { Authorization: `Api-Key ${assistantApiKey.trim()}` },
@@ -2570,7 +2570,7 @@ async function main() {
     slackSocketClient = createSlackSocketModeClient(
       { appToken, botToken, gatewayConfig: config, threadMode },
       (normalized) => {
-        // Notify the platform of inbound activity so the idle-sleep timer
+        // Notify the cloud of inbound activity so the idle-sleep timer
         // is reset for this assistant (fire-and-forget).
         notifyRecordActivity();
 
@@ -2931,10 +2931,7 @@ async function main() {
     }
 
     if (changed.has("twilio")) {
-      maybeStartTunnelTunnelForTwilio(
-        "twilio credentials changed",
-        twilioCreds,
-      );
+      maybeStartTunnelForTwilio("twilio credentials changed", twilioCreds);
       syncConfiguredTwilioPhoneNumberWebhooks({
         credentials: credentialCache,
         configFile: configFileCache,
@@ -2943,7 +2940,7 @@ async function main() {
       });
     }
 
-    // Register email callback route with the platform so inbound email
+    // Register email callback route with the cloud so inbound email
     // webhooks are forwarded to this gateway (same pattern as Telegram).
     // Fires on initial credential load and whenever cadet credentials change
     // (key rotation, late provisioning).
@@ -2960,8 +2957,8 @@ async function main() {
       });
 
       // Cadet credentials are load-bearing for the Telegram webhook URL when
-      // the managed callback fallback applies: a cloud connection arriving
-      // or rotating after Telegram setup must repoint Telegram at the managed
+      // the cloud callback fallback applies: a cloud connection arriving
+      // or rotating after Telegram setup must repoint Telegram at the cloud
       // callback route without waiting for an unrelated Telegram or ingress
       // change, or a system wake. Skipped when telegram credentials changed in
       // the same event, since that branch already reconciled above.
@@ -2976,7 +2973,7 @@ async function main() {
 
       // Force an immediate per-assistant feature-flag re-sync. A `cadet`
       // credential change means a warm-pool claim / key rotation / late
-      // provisioning — the assistant identity the platform evaluates flags
+      // provisioning — the assistant identity the cloud evaluates flags
       // for just changed. Without this, flags stay at their previous (often
       // registry-default) values until the next ~5-min poll, which the
       // onboarding auto-greet beats, so first-message flags read stale
@@ -2998,10 +2995,10 @@ async function main() {
       log.error({ err }, "Failed to clear stale Tunnel public URL");
     });
   }
-  maybeStartTunnelTunnelForTwilio("startup", twilioStartupCredentials);
+  maybeStartTunnelForTwilio("startup", twilioStartupCredentials);
   // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
   // up at startup for every assistant (not just for Twilio).
-  startTunnelTunnelForLiveVoice("startup");
+  startTunnelForLiveVoice("startup");
 
   // The credential watcher callback handles credential-backed startup side
   // effects during the initial poll. Stale Tunnel-owned ingress is already
@@ -3046,7 +3043,7 @@ async function main() {
     }
 
     if (event.changedKeys.has("twilio")) {
-      maybeStartTunnelTunnelForTwilio("twilio config changed");
+      maybeStartTunnelForTwilio("twilio config changed");
     }
 
     if (event.changedKeys.has("slack")) {
@@ -3059,7 +3056,7 @@ async function main() {
     }
 
     // Side effect: re-register email callback when ingress URL changes so
-    // the platform callback route points at the new self-hosted URL.
+    // the cloud callback route points at the new self-hosted URL.
     if (
       event.changedKeys.has("ingress") &&
       !onlyTunnelPublicBaseUrlChanged &&

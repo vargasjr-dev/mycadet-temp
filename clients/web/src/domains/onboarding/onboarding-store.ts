@@ -18,7 +18,7 @@
  * `false`.
  *
  * **Server-effective verdicts** (`serverAnalyticsEffective`,
- * `serverDiagnosticsEffective`) are the platform-computed effective consent
+ * `serverDiagnosticsEffective`) are the cloud-computed effective consent
  * values adopted at sync; `null` means no successful sync with a server
  * record yet. In-memory only — never device-persisted, never cross-tab
  * synced — the data-capture gates read them alongside the local tri-state.
@@ -70,7 +70,7 @@ export interface OnboardingState {
   /**
    * PER-TAB by design (like `serverAnalyticsEffective` above): a verdict
    * adopted in one tab reaches others on their own focus/backstop refresh.
-   * The bounded staleness is acceptable because the platform's ingest gate
+   * The bounded staleness is acceptable because the cloud's ingest gate
    * is the enforcement point — uploads from a stale tab under a server
    * opt-out are dropped server-side; the client gate is an efficiency.
    *
@@ -87,7 +87,7 @@ export interface OnboardingState {
   analyticsConsentCurrent: boolean;
   diagnosticsConsentCurrent: boolean;
   /**
-   * Whether the platform has any consent record for this user — mirrors
+   * Whether the cloud has any consent record for this user — mirrors
    * `resolveServerConsent`'s `hasServerRecord`, with the device-ack fallback
    * folded in (a truly-empty server record backfilled from device acks counts
    * as a record).

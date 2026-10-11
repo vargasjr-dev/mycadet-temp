@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { resolveAssistantApiKeyForInjection } from "../lib/assistant-api-key-resolution";
 import {
   findAssistantByName,
@@ -15,20 +15,20 @@ import {
   computeDeviceId,
 } from "../lib/guardian-token.js";
 import {
-  readPlatformToken,
-  getPlatformUrl,
+  readCloudToken,
+  getCloudUrl,
   hatchAssistant,
-  checkExistingPlatformAssistant,
+  checkExistingCloudAssistant,
   platformPollJobStatus,
   platformImportBundleFromGcs,
   platformImportPreflightFromGcs,
-  platformRequestSignedUrl,
+  cloudRequestSignedUrl,
   VersionMismatchError,
   ensureSelfHostedLocalRegistration,
   injectCredentialsIntoAssistant,
   fetchCurrentUser,
   fetchOrganizationId,
-} from "../lib/platform-client.js";
+} from "../lib/cloud-client.js";
 import {
   localRuntimeExportToGcs,
   localRuntimeIdentity,
@@ -387,7 +387,7 @@ interface ImportResponse {
     succeeded: number;
     failed: number;
     failedAccounts: string[];
-    skippedPlatform?: number;
+    skippedCloud?: number;
   };
 }
 
@@ -417,18 +417,18 @@ async function backupSourceBeforeTeleport(
 ): Promise<void> {
   console.log(`Backing up ${displayName} (${cloud})...`);
   try {
-    if (isManagedCloud(cloud)) {
-      const platformToken = readPlatformToken();
-      if (!platformToken) {
+    if (isCloudHome(cloud)) {
+      const cloudToken = readCloudToken();
+      if (!cloudToken) {
         console.error("Not logged in. Run 'cadet login' first.");
         process.exit(1);
       }
-      const createdAts = await listPlatformBackups(entry, platformToken);
+      const createdAts = await listPlatformBackups(entry, cloudToken);
       if (hasRecentBackup(createdAts)) {
         console.log("Recent backup found, reusing it.");
         return;
       }
-      await createPlatformBackup(entry, platformToken);
+      await createPlatformBackup(entry, cloudToken);
       console.log("Backup complete.");
       return;
     }
@@ -465,10 +465,10 @@ async function backupSourceBeforeTeleport(
 async function exportFromAssistant(
   entry: AssistantEntry,
   cloud: string,
-  bundlePlatformUrl?: string,
+  bundleCloudUrl?: string,
 ): Promise<{ bundleKey: string }> {
-  const platformToken = readPlatformToken();
-  if (!platformToken) {
+  const cloudToken = readCloudToken();
+  if (!cloudToken) {
     console.error(
       "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
     );
@@ -497,7 +497,7 @@ async function exportFromAssistant(
       process.exit(1);
     }
 
-    // Request a signed upload URL from the platform instance that will
+    // Request a signed upload URL from the cloud instance that will
     // eventually own the bundle (i.e. the one the importer will read from).
     // Passing the target's runtime URL here keeps upload and download on
     // the same platform — otherwise a non-default/stale platform URL would
@@ -508,15 +508,15 @@ async function exportFromAssistant(
     // is reachable; a docker daemon runs inside a container and reaches the
     // host the same way managed pods do, so its URL must be signed for the
     // runtime-reachable storage endpoint.
-    const { url: uploadUrl, bundleKey } = await platformRequestSignedUrl(
+    const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
       {
         operation: "upload",
         minRuntimeVersion: sourceRuntimeVersion,
         maxRuntimeVersion: null,
         ...(cloud === "docker" ? { consumer: "runtime" as const } : {}),
       },
-      platformToken,
-      bundlePlatformUrl,
+      cloudToken,
+      bundleCloudUrl,
     );
 
     // Wrap the kickoff in a one-shot refresh-and-retry helper so a stale-but-
@@ -579,16 +579,16 @@ async function exportFromAssistant(
     return { bundleKey };
   }
 
-  if (isManagedCloud(cloud)) {
-    // Ask the managed runtime which version it's running so the signed-URL
+  if (isCloudHome(cloud)) {
+    // Ask the cloud runtime which version it's running so the signed-URL
     // request records the bundle's actual `min_runtime_version`. The
-    // platform-managed runtime is the exporter; the CLI version is
+    // cloud-managed runtime is the exporter; the CLI version is
     // unrelated. Routed via the wildcard proxy with platform-token auth
     // (resolveRuntimeUrl + migrationRequestHeaders inside
     // localRuntimeIdentity).
     let sourceRuntimeVersion: string;
     try {
-      const identity = await localRuntimeIdentity(entry, platformToken);
+      const identity = await localRuntimeIdentity(entry, cloudToken);
       sourceRuntimeVersion = identity.version;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -601,26 +601,26 @@ async function exportFromAssistant(
     // Platform source — request a signed upload URL on the same platform
     // instance the bundle will eventually be imported from, then ask the
     // managed runtime to export directly to GCS. The runtime endpoint is
-    // reached via the platform's wildcard runtime proxy at
+    // reached via the cloud's wildcard runtime proxy at
     // `/v1/assistants/<id>/migrations/export-to-gcs` — the
     // `localRuntimeExportToGcs` helper uses `resolveRuntimeMigrationUrl` to
-    // pick that shape for `isManagedCloud(cloud)` and `migrationRequestHeaders`
+    // pick that shape for `isCloudHome(cloud)` and `migrationRequestHeaders`
     // to send platform-token auth (no guardian-token bootstrap).
-    const { url: uploadUrl, bundleKey } = await platformRequestSignedUrl(
+    const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
       {
         operation: "upload",
         minRuntimeVersion: sourceRuntimeVersion,
         maxRuntimeVersion: null,
-        // The managed pod PUTs the bundle, not this CLI — the URL must be
+        // The cloud pod PUTs the bundle, not this CLI — the URL must be
         // signed against the runtime-reachable storage endpoint.
         consumer: "runtime",
       },
-      platformToken,
-      bundlePlatformUrl,
+      cloudToken,
+      bundleCloudUrl,
     );
 
     let jobId: string;
-    let exportPlatformToken = platformToken;
+    let exportPlatformToken = cloudToken;
     try {
       ({ jobId } = await localRuntimeExportToGcs(entry, exportPlatformToken, {
         uploadUrl,
@@ -639,18 +639,18 @@ async function exportFromAssistant(
     console.log(`Export started (job ${jobId})...`);
 
     // Polling also goes through the wildcard proxy — `localRuntimePollJobStatus`
-    // builds `/v1/assistants/<id>/migrations/jobs/<jobId>` for `isManagedCloud(cloud)`
+    // builds `/v1/assistants/<id>/migrations/jobs/<jobId>` for `isCloudHome(cloud)`
     // (the dedicated `/v1/migrations/jobs/{id}/` endpoint queries platform-side
     // ImportJob records and 404s on runtime-created job IDs).
     const terminal = await pollJobUntilDone({
       label: "platform export",
       poll: () => localRuntimePollJobStatus(entry, exportPlatformToken, jobId),
-      // The platform token is normally static per-process, but re-reading the
+      // The cloud token is normally static per-process, but re-reading the
       // on-disk credential covers the case where the user ran `cadet login`
       // in another terminal during a long migration. A persistent 401 after
       // a re-read surfaces to the caller with a clear next step.
       refreshOn401: async () => {
-        const refreshed = readPlatformToken();
+        const refreshed = readCloudToken();
         if (!refreshed) {
           throw new Error(
             "Platform auth expired during export and no credential was found on disk. Run 'cadet login' and retry.",
@@ -683,17 +683,17 @@ async function importToAssistant(
   cloud: string,
   bundleKey: string,
   dryRun: boolean,
-  bundlePlatformUrl?: string,
+  bundleCloudUrl?: string,
 ): Promise<void> {
-  const platformToken = readPlatformToken();
-  if (!platformToken) {
+  const cloudToken = readCloudToken();
+  if (!cloudToken) {
     console.error(
       "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
     );
     process.exit(1);
   }
 
-  if (isManagedCloud(cloud)) {
+  if (isCloudHome(cloud)) {
     // Platform target — the bundle is already in GCS; kick off preflight or
     // async import via the unified job-status endpoint.
     if (dryRun) {
@@ -701,7 +701,7 @@ async function importToAssistant(
 
       const preflight = await platformImportPreflightFromGcs(
         bundleKey,
-        platformToken,
+        cloudToken,
         entry.runtimeUrl,
       );
 
@@ -742,7 +742,7 @@ async function importToAssistant(
 
     const importResult = await platformImportBundleFromGcs(
       bundleKey,
-      platformToken,
+      cloudToken,
       entry.runtimeUrl,
     );
 
@@ -781,13 +781,13 @@ async function importToAssistant(
         process.exit(1);
       }
 
-      let importPlatformToken = platformToken;
+      let importPlatformToken = cloudToken;
       const terminal = await pollJobUntilDone({
         label: "platform import",
         poll: () =>
           platformPollJobStatus(jobId, importPlatformToken, entry.runtimeUrl),
         refreshOn401: async () => {
-          const refreshed = readPlatformToken();
+          const refreshed = readCloudToken();
           if (!refreshed) {
             throw new Error(
               "Platform auth expired during import and no credential was found on disk. Run 'cadet login' and retry.",
@@ -815,7 +815,7 @@ async function importToAssistant(
       console.log("Running preflight analysis...\n");
 
       // Query the target runtime's version before requesting a signed
-      // download URL — the platform uses it for the bundle compatibility check.
+      // download URL — the cloud uses it for the bundle compatibility check.
       let targetRuntimeVersion: string;
       try {
         const identity = await callRuntimeWithAuthRetry(entry, (token) =>
@@ -833,10 +833,10 @@ async function importToAssistant(
 
       let bundleUrl: string;
       try {
-        const result = await platformRequestSignedUrl(
+        const result = await cloudRequestSignedUrl(
           { operation: "download", bundleKey, targetRuntimeVersion },
-          platformToken,
-          bundlePlatformUrl,
+          cloudToken,
+          bundleCloudUrl,
         );
         bundleUrl = result.url;
       } catch (err) {
@@ -854,13 +854,13 @@ async function importToAssistant(
       return;
     }
 
-    // Ask the platform for a signed download URL and hand it to the local
+    // Ask the cloud for a signed download URL and hand it to the local
     // runtime. The runtime streams the bundle straight out of GCS — the CLI
     // never touches the bytes. The URL must target the same platform the
     // bundle was uploaded to; otherwise the object won't exist on this
     // platform's GCS bucket.
     //
-    // The platform's vbundle version gate compares the **target runtime's**
+    // The cloud's vbundle version gate compares the **target runtime's**
     // version against the bundle's compatibility range. The CLI and the
     // target assistant's daemon can diverge (assistants upgrade
     // independently), so we MUST query the target runtime's `/v1/identity`
@@ -887,14 +887,14 @@ async function importToAssistant(
 
     let bundleUrl: string;
     try {
-      const result = await platformRequestSignedUrl(
+      const result = await cloudRequestSignedUrl(
         {
           operation: "download",
           bundleKey,
           targetRuntimeVersion,
         },
-        platformToken,
-        bundlePlatformUrl,
+        cloudToken,
+        bundleCloudUrl,
       );
       bundleUrl = result.url;
     } catch (err) {
@@ -1053,7 +1053,7 @@ export async function resolveOrHatchTarget(
   }
 
   if (targetEnv === "platform") {
-    const token = readPlatformToken();
+    const token = readCloudToken();
     if (!token) {
       console.error("Not logged in. Run 'cadet login' first.");
       process.exit(1);
@@ -1067,13 +1067,13 @@ export async function resolveOrHatchTarget(
     if (reusedExisting) {
       const entry: AssistantEntry = {
         assistantId: result.id,
-        runtimeUrl: getPlatformUrl(),
+        runtimeUrl: getCloudUrl(),
         cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       };
       saveAssistantEntry(entry);
       console.error(
-        `Error: You already have a platform assistant '${result.id}'.`,
+        `Error: You already have a cloud assistant '${result.id}'.`,
       );
       console.error(
         `Retire it first with 'cadet retire ${result.id}', then retry the teleport.`,
@@ -1083,7 +1083,7 @@ export async function resolveOrHatchTarget(
 
     const entry: AssistantEntry = {
       assistantId: result.id,
-      runtimeUrl: getPlatformUrl(),
+      runtimeUrl: getCloudUrl(),
       cloud: "cloud",
       hatchedAt: new Date().toISOString(),
     };
@@ -1173,8 +1173,8 @@ function printImportSummary(result: ImportResponse): void {
   const creds = result.credentialsImported;
   if (creds) {
     console.log(`  Credentials imported: ${creds.succeeded}/${creds.total}`);
-    if (creds.skippedPlatform) {
-      console.log(`  Cadet Cloud credentials skipped: ${creds.skippedPlatform}`);
+    if (creds.skippedCloud) {
+      console.log(`  Cadet Cloud credentials skipped: ${creds.skippedCloud}`);
     }
     if (creds.failed > 0) {
       console.log(`  Credentials failed:  ${creds.failed}`);
@@ -1196,13 +1196,13 @@ function printImportSummary(result: ImportResponse): void {
 
 /**
  * After teleporting to a local/docker target, register the assistant with
- * the platform and inject fresh cloud credentials — mirroring the
+ * the cloud and inject fresh cloud credentials — mirroring the
  * login flow. Non-fatal: failures are logged as warnings.
  */
-async function tryInjectPlatformCredentials(
+async function tryInjectCloudCredentials(
   entry: AssistantEntry,
 ): Promise<void> {
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     console.log("  Skipped cloud credential injection (not logged in).");
     return;
@@ -1216,7 +1216,7 @@ async function tryInjectPlatformCredentials(
       fetchCurrentVersion(entry.runtimeUrl),
       fetchAssistantIngressUrl(entry.runtimeUrl, entry.bearerToken),
     ]);
-    const platformUrl = getPlatformUrl();
+    const cloudUrl = getCloudUrl();
     const registration = await ensureSelfHostedLocalRegistration(
       token,
       orgId,
@@ -1224,14 +1224,14 @@ async function tryInjectPlatformCredentials(
       entry.assistantId,
       "cli",
       assistantVersion,
-      platformUrl,
+      cloudUrl,
       ingressUrl,
     );
     saveAssistantEntry({
       ...entry,
-      platformAssistantId: registration.assistant.id,
-      platformBaseUrl: platformUrl,
-      platformOrganizationId: orgId,
+      cloudAssistantId: registration.assistant.id,
+      cloudBaseUrl: cloudUrl,
+      cloudOrganizationId: orgId,
     });
 
     // Which key to hand the assistant, and why. Shared with login so the two
@@ -1252,8 +1252,8 @@ async function tryInjectPlatformCredentials(
       gatewayUrl: entry.runtimeUrl,
       bearerToken: entry.bearerToken,
       assistantApiKey,
-      platformAssistantId: registration.assistant.id,
-      platformBaseUrl: platformUrl,
+      cloudAssistantId: registration.assistant.id,
+      cloudBaseUrl: cloudUrl,
       organizationId: orgId,
       userId: user.id,
       webhookSecret: registration.webhook_secret,
@@ -1360,7 +1360,7 @@ export const teleport = Object.assign(
       // Nothing to reject — preflight-from-gcs is now implemented for all
       // target topologies including local and docker.
 
-      // Version guard: block platform→non-platform when target is behind
+      // Version guard: block platform→non-cloud when target is behind
       if (fromCloud === "cadet" && toCloud !== "cadet") {
         const [sourceVersion, targetVersion] = await Promise.all([
           fetchCurrentVersion(fromEntry.runtimeUrl),
@@ -1373,7 +1373,7 @@ export const teleport = Object.assign(
         if (cmp !== null && cmp < 0) {
           console.error(
             `Error: Target assistant '${existingTarget.assistantId}' is running ${targetVersion}, ` +
-              `but the platform source is on ${sourceVersion}.`,
+              `but the cloud source is on ${sourceVersion}.`,
           );
           console.error(
             `Upgrade your ${toCloud} assistant first: cadet upgrade ${existingTarget.assistantId}`,
@@ -1386,7 +1386,7 @@ export const teleport = Object.assign(
       // platform targets the bundle is owned by the target platform; for
       // platform sources it's owned by the source platform. Only one of
       // these branches applies at a time (same-env was rejected earlier).
-      const bundlePlatformUrl =
+      const bundleCloudUrl =
         toCloud === "cadet"
           ? existingTarget.runtimeUrl
           : fromCloud === "cadet"
@@ -1397,7 +1397,7 @@ export const teleport = Object.assign(
       const { bundleKey } = await exportFromAssistant(
         fromEntry,
         fromCloud,
-        bundlePlatformUrl,
+        bundleCloudUrl,
       );
       console.log(`Importing to ${existingTarget.assistantId} (${toCloud})...`);
       await importToAssistant(
@@ -1405,7 +1405,7 @@ export const teleport = Object.assign(
         toCloud,
         bundleKey,
         true,
-        bundlePlatformUrl,
+        bundleCloudUrl,
       );
     } else {
       // No existing target — just describe what would happen
@@ -1423,9 +1423,9 @@ export const teleport = Object.assign(
   }
 
   // Platform target: reordered flow — upload to GCS before hatching so that
-  // if export/upload fails, no empty assistant is left dangling on the platform.
+  // if export/upload fails, no empty assistant is left dangling on the cloud.
   if (targetEnv === "platform") {
-    const token = readPlatformToken();
+    const token = readCloudToken();
     if (!token) {
       console.error("Not logged in. Run 'cadet login' first.");
       process.exit(1);
@@ -1447,24 +1447,24 @@ export const teleport = Object.assign(
 
     // Use the existing target's runtimeUrl for all platform calls so the
     // export, upload, and import all hit the same instance.
-    const targetPlatformUrl = existingTarget?.runtimeUrl;
+    const targetCloudUrl = existingTarget?.runtimeUrl;
 
-    // Pre-check: block if the user already has a platform assistant. This
+    // Pre-check: block if the user already has a cloud assistant. This
     // runs BEFORE the expensive export so we don't waste the upload.
     if (!existingTarget) {
-      const existing = await checkExistingPlatformAssistant(
+      const existing = await checkExistingCloudAssistant(
         token,
-        targetPlatformUrl,
+        targetCloudUrl,
       );
       if (existing) {
         saveAssistantEntry({
           assistantId: existing.id,
-          runtimeUrl: getPlatformUrl(),
+          runtimeUrl: getCloudUrl(),
           cloud: "cloud",
           hatchedAt: new Date().toISOString(),
         });
         console.error(
-          `Error: You already have a platform assistant '${existing.id}'.`,
+          `Error: You already have a cloud assistant '${existing.id}'.`,
         );
         console.error(
           `Retire it first with 'cadet retire ${existing.id}', then retry the teleport.`,
@@ -1474,20 +1474,20 @@ export const teleport = Object.assign(
     }
 
     // Export — for local/docker sources this uploads straight into GCS via
-    // the platform's signed URL; for platform sources this runs a server-side
+    // the cloud's signed URL; for platform sources this runs a server-side
     // export and we read the resulting bundle_key.
     // The signed upload URL must be requested from the same platform instance
     // where the import will run. For existing targets that's the lockfile's
-    // runtimeUrl; for fresh hatches it's getPlatformUrl() (which is what
+    // runtimeUrl; for fresh hatches it's getCloudUrl() (which is what
     // resolveOrHatchTarget writes to the new entry).
     await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
     console.log(`Exporting from ${from} (${fromCloud})...`);
-    const bundlePlatformUrl = targetPlatformUrl ?? getPlatformUrl();
+    const bundleCloudUrl = targetCloudUrl ?? getCloudUrl();
     const { bundleKey } = await exportFromAssistant(
       fromEntry,
       fromCloud,
-      bundlePlatformUrl,
+      bundleCloudUrl,
     );
 
     // Hatch (export succeeded — safe to create the target)
@@ -1501,14 +1501,14 @@ export const teleport = Object.assign(
       toCloud,
       bundleKey,
       false,
-      bundlePlatformUrl,
+      bundleCloudUrl,
     );
 
     console.log(`Teleport complete: ${from} → ${toEntry.assistantId}`);
     return;
   }
 
-  // Non-platform targets (local/docker)
+  // Non-cloud targets (local/docker)
   // For local<->docker transfers, stop (sleep) the source to free up ports
   // before hatching the target. We do NOT retire yet — if hatch or import
   // fails, the user can recover by running `cadet wake <source>`.
@@ -1532,7 +1532,7 @@ export const teleport = Object.assign(
       if (cmp !== null && cmp < 0) {
         console.error(
           `Error: Target assistant '${existingTarget.assistantId}' is running ${existingVersion}, ` +
-            `but the platform source is on ${sourceVersion}.`,
+            `but the cloud source is on ${sourceVersion}.`,
         );
         console.error(
           `Upgrade your ${targetEnv} assistant first: cadet upgrade ${existingTarget.assistantId}`,
@@ -1547,10 +1547,10 @@ export const teleport = Object.assign(
   // Pin the bundle's platform instance so upload and download land on the
   // same GCS bucket. For platform sources the bundle is owned by the source
   // platform. For local/docker→local/docker the bundle lives on whatever
-  // platform getPlatformUrl() currently resolves to — we resolve it once
+  // platform getCloudUrl() currently resolves to — we resolve it once
   // here so a lockfile change mid-teleport can't split export and import.
-  const bundlePlatformUrl =
-    fromCloud === "cadet" ? fromEntry.runtimeUrl : getPlatformUrl();
+  const bundleCloudUrl =
+    fromCloud === "cadet" ? fromEntry.runtimeUrl : getCloudUrl();
 
   await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
@@ -1559,7 +1559,7 @@ export const teleport = Object.assign(
   const { bundleKey } = await exportFromAssistant(
     fromEntry,
     fromCloud,
-    bundlePlatformUrl,
+    bundleCloudUrl,
   );
 
   if (sourceIsLocalOrDocker && targetIsLocalOrDocker && !keepSource) {
@@ -1622,7 +1622,7 @@ export const teleport = Object.assign(
       removeAssistantEntry(toEntry.assistantId);
       console.error(
         `Error: Target assistant '${toEntry.assistantId}' was running ${targetVersion}, ` +
-          `but the platform source is on ${sourceVersion}.`,
+          `but the cloud source is on ${sourceVersion}.`,
       );
       console.error(
         `Upgrade your ${toCloud} environment first, then retry the teleport.`,
@@ -1638,14 +1638,14 @@ export const teleport = Object.assign(
     toCloud,
     bundleKey,
     false,
-    bundlePlatformUrl,
+    bundleCloudUrl,
   );
 
   // After successful import, inject fresh cloud credentials if the
   // user is logged in — replaces the source's stale cadet:* credentials
   // that were filtered during import.
   if (fromCloud === "cadet") {
-    await tryInjectPlatformCredentials(toEntry);
+    await tryInjectCloudCredentials(toEntry);
   }
 
   // Retire source after successful import

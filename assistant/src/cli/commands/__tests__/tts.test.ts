@@ -353,7 +353,7 @@ describe("tts voice — active-provider routing", () => {
     expect(setCall!.params.body.value).toBe("aura-2-zeus-en");
   });
 
-  test("an ElevenLabs voice id on a managed assistant still writes cadet.model", async () => {
+  test("an ElevenLabs voice id on a cloud assistant still writes cadet.model", async () => {
     respondProvider("cadet");
 
     const { exitCode } = await runCommand([

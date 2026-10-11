@@ -94,7 +94,7 @@ export const EditProfile: Story = {
   args: { profileName: "my-custom" },
 };
 
-/** Managed profiles open read-only with a "Managed by Cadet" tag and "Save As New". */
-export const ManagedProfile: Story = {
+/** Cloud profiles open read-only with a "Managed by Cadet" tag and "Save As New". */
+export const CloudProfile: Story = {
   args: { profileName: "balanced" },
 };

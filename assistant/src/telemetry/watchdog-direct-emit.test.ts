@@ -8,22 +8,22 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ConsentState } from "../platform/consent-cache.js";
+import type { ConsentState } from "../cloud/consent-cache.js";
 
 let shareAnalytics: ConsentState = true;
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => shareAnalytics,
 }));
 
 let platformEnabled = true;
-mock.module("../platform/feature-gate.js", () => ({
-  arePlatformFeaturesEnabled: () => platformEnabled,
+mock.module("../cloud/feature-gate.js", () => ({
+  areCloudFeaturesEnabled: () => platformEnabled,
 }));
 
 const fetchCalls: Array<{ path: string; body: string }> = [];
 let clientAvailable = true;
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () =>
       clientAvailable
         ? {

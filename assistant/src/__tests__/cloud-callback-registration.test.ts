@@ -1,0 +1,662 @@
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import type { RegisterWebhookRouteIpcParams } from "@mycadet/gateway-client";
+
+import { setIngressPublicBaseUrl } from "../config/env.js";
+import type { IpcRegisterWebhookRouteResult } from "../ipc/gateway-client.js";
+import { credentialKey } from "../security/credential-key.js";
+import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
+
+let mockIsPlatform = true;
+let mockTunnelWebhooksEnabled = false;
+let mockCloudBaseUrl = "";
+let mockCloudAssistantId = "";
+let mockConfig: { ingress?: { publicBaseUrl?: string; enabled?: boolean } } =
+  {};
+
+const REGISTERED_ROUTE = {
+  path: "/webhooks/twilio/voice",
+  type: "twilio_voice",
+  source: null,
+  match: "exact" as const,
+  createdAt: 1,
+  lastRegisteredAt: 1,
+};
+
+let mockRegisterWebhookRouteResult: IpcRegisterWebhookRouteResult = {
+  ok: true,
+  disabled: false,
+  route: REGISTERED_ROUTE,
+};
+let ipcRegisterCalls: RegisterWebhookRouteIpcParams[] = [];
+
+// Bun shares mocked modules across test files in a combined run, so each mock
+// spreads the real module and overrides only what this file drives. Replacing
+// a module wholesale drops the exports peer tests import from it and breaks
+// their ESM named-import validation whenever this mock wins evaluation.
+const actualEnvRegistry = await import("../config/env-registry.js");
+mock.module("../config/env-registry.js", () => ({
+  ...actualEnvRegistry,
+  getIsCloud: () => mockIsPlatform,
+}));
+
+const actualTunnelGate = await import("../inbound/tunnel-webhooks-gate.js");
+mock.module("../inbound/tunnel-webhooks-gate.js", () => ({
+  ...actualTunnelGate,
+  isTunnelWebhooksEnabled: () => mockTunnelWebhooksEnabled,
+}));
+
+const actualEnv = await import("../config/env.js");
+mock.module("../config/env.js", () => ({
+  ...actualEnv,
+  getCloudBaseUrl: () => mockCloudBaseUrl,
+  getCloudAssistantId: () => mockCloudAssistantId,
+}));
+
+const actualGatewayClient = await import("../ipc/gateway-client.js");
+mock.module("../ipc/gateway-client.js", () => ({
+  ...actualGatewayClient,
+  ipcRegisterWebhookRoute: async (input: RegisterWebhookRouteIpcParams) => {
+    ipcRegisterCalls.push(input);
+    return mockRegisterWebhookRouteResult;
+  },
+}));
+
+// The REAL secure-keys module pinned to a faultable memory backend: the
+// unreachable toggle simulates a dead vault, seeds are real credential keys.
+const { store: secureKeyStore, setAllUnreachable } = useFaultableSecureKeyMap();
+
+const actualLoader = await import("../config/loader.js");
+mock.module("../config/loader.js", () => ({
+  ...actualLoader,
+  getConfig: () => mockConfig,
+}));
+
+const originalFetch = globalThis.fetch;
+const originalEnvCredential = process.env.ASSISTANT_API_KEY;
+
+const {
+  registerCallbackRoute,
+  resolveCallbackUrl,
+  resolveCloudCallbackRegistrationContext,
+} = await import("../inbound/cloud-callback-registration.js");
+
+const { PublicIngressDisabledError } =
+  await import("../inbound/public-ingress-urls.js");
+
+describe("platform callback registration", () => {
+  beforeEach(() => {
+    mockIsPlatform = true;
+    mockCloudBaseUrl = "";
+    mockCloudAssistantId = "";
+    secureKeyStore.clear();
+    setAllUnreachable(false);
+    mockConfig = {};
+    setIngressPublicBaseUrl(undefined);
+    delete process.env.ASSISTANT_API_KEY;
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    if (originalEnvCredential === undefined) {
+      delete process.env.ASSISTANT_API_KEY;
+    } else {
+      process.env.ASSISTANT_API_KEY = originalEnvCredential;
+    }
+  });
+
+  test("resolves managed callback context from stored credentials", async () => {
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.enabled).toBe(true);
+    expect(context.isPlatform).toBe(true);
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
+    expect(context.assistantId).toBe("11111111-2222-4333-8444-555555555555");
+    expect(context.hasAssistantApiKey).toBe(true);
+    expect(context.authHeader).toBe("Api-Key ast-managed-key");
+  });
+
+  test("self-hosted assistant with stored credentials is enabled without IS_CLOUD", async () => {
+    mockIsPlatform = false;
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.enabled).toBe(true);
+    expect(context.isPlatform).toBe(false);
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
+    expect(context.assistantId).toBe("22222222-3333-4444-8555-666666666666");
+    expect(context.hasAssistantApiKey).toBe(true);
+    expect(context.authHeader).toBe("Api-Key ast-self-hosted-key");
+  });
+
+  test("uses ASSISTANT_API_KEY env fallback when stored credential is missing", async () => {
+    process.env.ASSISTANT_API_KEY = "env-key";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "33333333-4444-4555-8666-777777777777";
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.enabled).toBe(true);
+    expect(context.cloudBaseUrl).toBe("https://platform.example.com");
+    expect(context.assistantId).toBe("33333333-4444-4555-8666-777777777777");
+    expect(context.hasAssistantApiKey).toBe(true);
+    expect(context.authHeader).toBe("Api-Key env-key");
+  });
+
+  test("reports the key as missing when the store answers and holds none", async () => {
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.hasAssistantApiKey).toBe(false);
+    expect(context.authHeader).toBeNull();
+    expect(context.enabled).toBe(false);
+  });
+
+  test("reports the key state as unknown when the store did not answer", async () => {
+    // A client that provisions a key when it sees none must not be told
+    // "none" by a daemon whose store did not answer.
+    setAllUnreachable(true);
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.hasAssistantApiKey).toBeNull();
+    expect(context.authHeader).toBeNull();
+    expect(context.enabled).toBe(false);
+  });
+
+  test("an environment key counts as present even when the store did not answer", async () => {
+    setAllUnreachable(true);
+    process.env.ASSISTANT_API_KEY = "env-key";
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "44444444-5555-4666-8777-888888888888";
+
+    const context = await resolveCloudCallbackRegistrationContext();
+
+    expect(context.hasAssistantApiKey).toBe(true);
+    expect(context.authHeader).toBe("Api-Key env-key");
+  });
+
+  test("registerCallbackRoute falls back to assistant API key auth", async () => {
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
+
+    globalThis.fetch = mock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe(
+          "https://platform.example.com/v1/internal/gateway/callback-routes/register/",
+        );
+        const headers = new Headers(init?.headers);
+        expect(headers.get("Authorization")).toBe("Api-Key ast-managed-key");
+        expect(headers.get("Content-Type")).toBe("application/json");
+        expect(JSON.parse(String(init?.body))).toEqual({
+          assistant_id: "11111111-2222-4333-8444-555555555555",
+          callback_path: "webhooks/telegram",
+          type: "telegram",
+        });
+
+        return new Response(
+          JSON.stringify({
+            callback_url:
+              "https://platform.example.com/v1/gateway/callbacks/x/",
+            callback_path:
+              "11111111-2222-4333-8444-555555555555/webhooks/telegram",
+            type: "telegram",
+            assistant_id: "11111111-2222-4333-8444-555555555555",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    ) as unknown as typeof fetch;
+
+    await expect(
+      registerCallbackRoute("webhooks/telegram", "telegram"),
+    ).resolves.toBe("https://platform.example.com/v1/gateway/callbacks/x/");
+  });
+
+  test("self-hosted registerCallbackRoute sends configured callback_base_url", async () => {
+    mockIsPlatform = false;
+    mockConfig = {
+      ingress: { publicBaseUrl: "https://my-assistant.example.com" },
+    };
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
+
+    globalThis.fetch = mock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        expect(JSON.parse(String(init?.body))).toEqual({
+          assistant_id: "22222222-3333-4444-8555-666666666666",
+          callback_path: "webhooks/telegram",
+          type: "telegram",
+          callback_base_url: "https://my-assistant.example.com",
+        });
+
+        return new Response(
+          JSON.stringify({
+            callback_url:
+              "https://my-assistant.example.com/v1/gateway/callbacks/x/",
+            callback_path:
+              "22222222-3333-4444-8555-666666666666/webhooks/telegram",
+            type: "telegram",
+            assistant_id: "22222222-3333-4444-8555-666666666666",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    ) as unknown as typeof fetch;
+
+    await expect(
+      registerCallbackRoute("webhooks/telegram", "telegram"),
+    ).resolves.toBe("https://my-assistant.example.com/v1/gateway/callbacks/x/");
+  });
+
+  test("self-hosted registerCallbackRoute sends detected module-level callback_base_url", async () => {
+    mockIsPlatform = false;
+    mockConfig = {};
+    setIngressPublicBaseUrl("https://detected.example.com/");
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
+
+    globalThis.fetch = mock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        expect(JSON.parse(String(init?.body))).toEqual({
+          assistant_id: "22222222-3333-4444-8555-666666666666",
+          callback_path: "webhooks/telegram",
+          type: "telegram",
+          callback_base_url: "https://detected.example.com",
+        });
+
+        return new Response(
+          JSON.stringify({
+            callback_url:
+              "https://detected.example.com/v1/gateway/callbacks/x/",
+            callback_path:
+              "22222222-3333-4444-8555-666666666666/webhooks/telegram",
+            type: "telegram",
+            assistant_id: "22222222-3333-4444-8555-666666666666",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    ) as unknown as typeof fetch;
+
+    await expect(
+      registerCallbackRoute("webhooks/telegram", "telegram"),
+    ).resolves.toBe("https://detected.example.com/v1/gateway/callbacks/x/");
+  });
+
+  test("self-hosted registerCallbackRoute omits callback_base_url when no ingress is available", async () => {
+    mockIsPlatform = false;
+    mockConfig = {};
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "22222222-3333-4444-8555-666666666666";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-self-hosted-key",
+    );
+
+    globalThis.fetch = mock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, string>;
+        expect(body).toEqual({
+          assistant_id: "22222222-3333-4444-8555-666666666666",
+          callback_path: "webhooks/telegram",
+          type: "telegram",
+        });
+        expect(body).not.toHaveProperty("callback_base_url");
+
+        return new Response(
+          JSON.stringify({
+            callback_url:
+              "https://platform.example.com/v1/gateway/callbacks/x/",
+            callback_path:
+              "22222222-3333-4444-8555-666666666666/webhooks/telegram",
+            type: "telegram",
+            assistant_id: "22222222-3333-4444-8555-666666666666",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    ) as unknown as typeof fetch;
+
+    await expect(
+      registerCallbackRoute("webhooks/telegram", "telegram"),
+    ).resolves.toBe("https://platform.example.com/v1/gateway/callbacks/x/");
+  });
+
+  test("cloud-managed registerCallbackRoute omits callback_base_url even when ingress exists", async () => {
+    mockIsPlatform = true;
+    mockConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
+
+    globalThis.fetch = mock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, string>;
+        expect(body).not.toHaveProperty("callback_base_url");
+        expect(body).toEqual({
+          assistant_id: "11111111-2222-4333-8444-555555555555",
+          callback_path: "webhooks/telegram",
+          type: "telegram",
+        });
+
+        return new Response(
+          JSON.stringify({
+            callback_url:
+              "https://platform.example.com/v1/gateway/callbacks/x/",
+            callback_path:
+              "11111111-2222-4333-8444-555555555555/webhooks/telegram",
+            type: "telegram",
+            assistant_id: "11111111-2222-4333-8444-555555555555",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    ) as unknown as typeof fetch;
+
+    await expect(
+      registerCallbackRoute("webhooks/telegram", "telegram"),
+    ).resolves.toBe("https://platform.example.com/v1/gateway/callbacks/x/");
+  });
+});
+
+/**
+ * `resolveCallbackUrl` drives Twilio voice/status callbacks and OAuth redirect
+ * URIs. Its tier order has to match `handleWebhooksRegister` in
+ * `runtime/routes/webhook-routes.ts` and `hasWebhookRoutingConfigured` in
+ * `config/webhook-routing.ts` (LUM-2882).
+ */
+describe("resolveCallbackUrl resolution order", () => {
+  const PLATFORM_URL = "https://platform.example.com/v1/gateway/callbacks/x/";
+
+  /** Stand in for a URL builder that cannot resolve a public ingress URL. */
+  function noIngress(): string {
+    throw new Error(
+      "No public base URL configured. Set ingress.publicBaseUrl in config.",
+    );
+  }
+
+  /** Stand in for a URL builder reached while ingress is switched off. */
+  function ingressDisabled(): string {
+    throw new PublicIngressDisabledError();
+  }
+
+  function seedCloudCredentials(): void {
+    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudAssistantId = "11111111-2222-4333-8444-555555555555";
+    secureKeyStore.set(
+      credentialKey("cadet", "assistant_api_key"),
+      "ast-managed-key",
+    );
+  }
+
+  let registerCalls: number;
+
+  beforeEach(() => {
+    mockIsPlatform = false;
+    mockTunnelWebhooksEnabled = false;
+    mockCloudBaseUrl = "";
+    mockCloudAssistantId = "";
+    secureKeyStore.clear();
+    setAllUnreachable(false);
+    mockConfig = {};
+    setIngressPublicBaseUrl(undefined);
+    delete process.env.ASSISTANT_API_KEY;
+    registerCalls = 0;
+    ipcRegisterCalls = [];
+    mockRegisterWebhookRouteResult = {
+      ok: true,
+      disabled: false,
+      route: REGISTERED_ROUTE,
+    };
+    globalThis.fetch = mock(async () => {
+      registerCalls++;
+      return new Response(
+        JSON.stringify({
+          callback_url: PLATFORM_URL,
+          callback_path: "webhooks/twilio/voice",
+          type: "twilio_voice",
+          assistant_id: "11111111-2222-4333-8444-555555555555",
+        }),
+        { status: 201, headers: { "content-type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  test("cloud pods register with the cloud gateway", async () => {
+    mockIsPlatform = true;
+    seedCloudCredentials();
+
+    // The direct supplier is never evaluated on a pod: there is no ingress of
+    // its own to advertise, and evaluating it would throw.
+    await expect(
+      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
+    mockIsPlatform = true;
+    mockTunnelWebhooksEnabled = true;
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
+        "webhooks/twilio/voice",
+        "twilio_voice",
+        { callSessionId: "conv-xyz" },
+        "+15555550142",
+      ),
+    ).resolves.toBe(
+      "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
+    );
+    expect(registerCalls).toBe(0);
+    expect(ipcRegisterCalls).toEqual([
+      {
+        path: "/webhooks/twilio/voice",
+        type: "twilio_voice",
+        source: "+15555550142",
+      },
+    ]);
+  });
+
+  test("tunnel-webhooks on: a refused claim falls back to the cloud", async () => {
+    mockIsPlatform = true;
+    mockTunnelWebhooksEnabled = true;
+    mockRegisterWebhookRouteResult = { ok: true, disabled: true };
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+    expect(ipcRegisterCalls).toHaveLength(1);
+  });
+
+  test("tunnel-webhooks on: an unreachable gateway falls back to the cloud", async () => {
+    mockIsPlatform = true;
+    mockTunnelWebhooksEnabled = true;
+    mockRegisterWebhookRouteResult = { ok: false, reason: "no_response" };
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        () => "https://tunnel.example.com/assistant-1/webhooks/twilio/voice",
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+    expect(ipcRegisterCalls).toHaveLength(1);
+  });
+
+  test("tunnel-webhooks on: a pod with no published URL still registers with the cloud", async () => {
+    mockIsPlatform = true;
+    mockTunnelWebhooksEnabled = true;
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("tunnel-webhooks on: a pod with ingress disabled falls back instead of throwing", async () => {
+    mockIsPlatform = true;
+    mockTunnelWebhooksEnabled = true;
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        ingressDisabled,
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("tunnel-webhooks on: self-hosted opt-out still surfaces", async () => {
+    mockTunnelWebhooksEnabled = true;
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        ingressDisabled,
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).rejects.toThrow("Public ingress is disabled");
+    expect(registerCalls).toBe(0);
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("tunnel-webhooks on: a self-hosted ingress URL is not claimed on the gateway", async () => {
+    mockTunnelWebhooksEnabled = true;
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        () => "https://tunnel.example.com/webhooks/twilio/voice",
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).resolves.toBe("https://tunnel.example.com/webhooks/twilio/voice");
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("a configured ingress wins over platform connectivity", async () => {
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        () => "https://tunnel.example.com/webhooks/twilio/voice",
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).resolves.toBe("https://tunnel.example.com/webhooks/twilio/voice");
+    expect(registerCalls).toBe(0);
+    expect(ipcRegisterCalls).toEqual([]);
+  });
+
+  test("a cloud-connected assistant with no ingress registers with the cloud", async () => {
+    // LUM-2882: this used to return the direct builder's throw because the
+    // platform branch was gated on IS_CLOUD, which is only true on a pod.
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
+    ).resolves.toBe(PLATFORM_URL);
+    expect(registerCalls).toBe(1);
+  });
+
+  test("query parameters are appended to the cloud URL", async () => {
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice", {
+        callSessionId: "conv-xyz",
+      }),
+    ).resolves.toBe(`${PLATFORM_URL}?callSessionId=conv-xyz`);
+  });
+
+  test("an explicit ingress opt-out is not routed around", async () => {
+    seedCloudCredentials();
+
+    await expect(
+      resolveCallbackUrl(
+        ingressDisabled,
+        "webhooks/twilio/voice",
+        "twilio_voice",
+      ),
+    ).rejects.toThrow("Public ingress is disabled");
+    expect(registerCalls).toBe(0);
+  });
+
+  test("without cloud credentials the ingress error surfaces unchanged", async () => {
+    await expect(
+      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
+    ).rejects.toThrow("No public base URL configured");
+    expect(registerCalls).toBe(0);
+  });
+});

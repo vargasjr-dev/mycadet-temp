@@ -570,7 +570,7 @@ describe("useChangeTiers", () => {
   });
 
   test("a fee-less sub re-submitting its own tiers still dispatches (the fee is added)", async () => {
-    // Only Mighty is sold without the platform fee; a custom plan always
+    // Only Mighty is sold without the cloud fee; a custom plan always
     // carries it, so keeping the tiers is a real change: the fee gets billed.
     subscriptionFixture = proSubscription({ has_platform_fee: false });
     const { result } = setup();

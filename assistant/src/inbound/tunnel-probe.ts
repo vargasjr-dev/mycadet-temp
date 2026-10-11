@@ -84,7 +84,7 @@ const UNMARKED_CONFIG_DETAIL = "not a pairing edge config";
 /**
  * The config a self-hosted edge serves (`remoteWebIngressConfig` in
  * `cli/src/lib/nginx-ingress.ts`). The `remote` field is always stamped by
- * that injector and never carries `"cloud"` — that spelling is the platform's
+ * that injector and never carries `"cloud"` — that spelling is the cloud's
  * own serving, which is not an edge — so the field is the marker separating
  * the edge from any other JSON a live URL serves.
  */

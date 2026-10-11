@@ -99,7 +99,7 @@ export async function generateImageOpenAI(
   const variants = Math.max(1, Math.min(request.variants ?? 1, MAX_VARIANTS));
 
   const client =
-    credentials.type === "managed-proxy"
+    credentials.type === "cloud-proxy"
       ? new OpenAI({
           apiKey: credentials.assistantApiKey,
           baseURL: credentials.baseUrl,

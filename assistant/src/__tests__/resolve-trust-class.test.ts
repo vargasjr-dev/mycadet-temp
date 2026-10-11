@@ -26,7 +26,7 @@ describe("resolveTrustClass", () => {
   });
 
   test("does not elevate a resolved non-guardian actor when HTTP auth is disabled", () => {
-    // DISABLE_HTTP_AUTH is the standing config in platform-managed deployments,
+    // DISABLE_HTTP_AUTH is the standing config in cloud-managed deployments,
     // so a resolved channel actor's class must survive it — otherwise a
     // non-guardian Slack/phone contact would be treated as the guardian
     // (LUM-2669). Only an unresolved (local/native) turn is elevated; see below.

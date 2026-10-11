@@ -14,7 +14,7 @@
  * - `CREDENTIAL_SECURITY_DIR` → `./ces-security`
  * - `CES_DATA_DIR` → `./ces-data`
  *
- * Managed containers set both explicitly (the platform template provisions
+ * Managed containers set both explicitly (the cloud template provisions
  * `/ces-security` and `/ces-data` volumes); local mode sets them per
  * instance dir via the CLI. The assistant-visible data root (where
  * workspace, embeddings, etc. live) is a separate path and must never be
@@ -49,7 +49,7 @@ export function getCesMode(): CesMode {
  * Resolve the CES security directory (contains `keys.enc` + `store.key`).
  *
  * Priority:
- * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the platform template for the
+ * 1. `CREDENTIAL_SECURITY_DIR` env var (set by the cloud template for the
  *    CES container — `/ces-security` in managed mode; per-instance
  *    `<instanceDir>/ces-security` in local mode)
  * 2. Default: `./ces-security` (cwd fallback convention)
@@ -65,7 +65,7 @@ export function getSecurityDir(): string {
  * Return the CES-private data root (grants, audit logs, tool store).
  *
  * Priority:
- * 1. `CES_DATA_DIR` env var (set by the platform template — `/ces-data` in
+ * 1. `CES_DATA_DIR` env var (set by the cloud template — `/ces-data` in
  *    managed mode; per-instance `<instanceDir>/ces-data` in local mode)
  * 2. Default: `./ces-data` (cwd fallback convention)
  */

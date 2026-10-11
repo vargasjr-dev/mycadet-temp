@@ -17,7 +17,7 @@
  * Replaces both the legacy bearer shared-secret check and the
  * actor-token HMAC middleware with a single JWT verification path.
  *
- * When DISABLE_HTTP_AUTH is set (platform-managed deployments), a request
+ * When DISABLE_HTTP_AUTH is set (cloud-managed deployments), a request
  * carrying no bearer gets a synthetic AuthContext so downstream code always
  * has a typed context to consume. A request that carries one is verified
  * normally, and a bad token is refused rather than falling back.

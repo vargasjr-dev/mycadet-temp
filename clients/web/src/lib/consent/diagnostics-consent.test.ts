@@ -210,7 +210,7 @@ describe("applyResolvedDiagnosticsConsent — saved preference", () => {
     expectGate(false);
   });
 
-  // KEY SERVER-AUTHORITY CASES: the platform's effective verdict closes the
+  // KEY SERVER-AUTHORITY CASES: the cloud's effective verdict closes the
   // gate even where the raw value reads enabled — the raw tri-state carries
   // chosen-ness only.
   test("server-effective false with raw null → gate closed, preference untouched", () => {

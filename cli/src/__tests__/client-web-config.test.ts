@@ -12,8 +12,8 @@ import { buildWebInterfaceConfig } from "../commands/client.js";
 
 const BASE = {
   webUrl: "https://app.example.com",
-  platformUrl: "https://platform.example.com",
-  disablePlatform: true,
+  cloudUrl: "https://platform.example.com",
+  disableCloud: true,
 };
 
 describe("cadet client web __config", () => {

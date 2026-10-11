@@ -82,7 +82,7 @@
       "scope": "client",
       "key": "multi-platform-assistant",
       "label": "Multi-Platform Assistant Switcher",
-      "description": "Enable the menu-bar assistant switcher for managing multiple platform-hosted assistants (new/switch/retire)",
+      "description": "Enable the menu-bar assistant switcher for managing multiple cloud-hosted assistants (new/switch/retire)",
       "defaultEnabled": false
     },
     {
@@ -138,7 +138,7 @@
       "scope": "client",
       "key": "fork-from-message",
       "label": "Internal Thread Actions (legacy key)",
-      "description": "Legacy key for `internal-thread-actions`. The client grants the internal thread affordances when either key is enabled, so the platform may serve the gate under either name. Declared here so the flag mapper keeps the value instead of dropping it as undeclared.",
+      "description": "Legacy key for `internal-thread-actions`. The client grants the internal thread affordances when either key is enabled, so the cloud may serve the gate under either name. Declared here so the flag mapper keeps the value instead of dropping it as undeclared.",
       "defaultEnabled": false
     },
     {
@@ -378,7 +378,7 @@
       "scope": "client",
       "key": "push-avatar-sender",
       "label": "Push Avatar Sender",
-      "description": "Native notifications show the assistant's avatar as the icon with the assistant's name on line one. Same key the platform reads for APNs/FCM sender blocks.",
+      "description": "Native notifications show the assistant's avatar as the icon with the assistant's name on line one. Same key the cloud reads for APNs/FCM sender blocks.",
       "defaultEnabled": false
     },
     {
@@ -450,7 +450,7 @@
       "scope": "assistant",
       "key": "tunnel-webhooks",
       "label": "Tunnel Webhooks",
-      "description": "Platform pods resolve webhook callback URLs from the Tunnel-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
+      "description": "Cloud pods resolve webhook callback URLs from the Tunnel-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
       "defaultEnabled": false
     },
     {
@@ -483,7 +483,7 @@
       "scope": "assistant",
       "key": "assistant-desktop",
       "label": "Virtual desktop",
-      "description": "Streams an interactive virtual desktop from a platform-hosted, containerized assistant over /v1/desktop/stream. Requires platform hosting; self-hosted assistants are excluded. Off: the virtual desktop is hidden. On: the chat header offers its viewer and controls.",
+      "description": "Streams an interactive virtual desktop from a cloud-hosted, containerized assistant over /v1/desktop/stream. Requires platform hosting; self-hosted assistants are excluded. Off: the virtual desktop is hidden. On: the chat header offers its viewer and controls.",
       "defaultEnabled": false
     },
     {

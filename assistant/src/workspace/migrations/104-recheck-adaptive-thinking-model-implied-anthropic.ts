@@ -35,7 +35,7 @@ export const recheckAdaptiveThinkingModelImpliedAnthropicMigration: WorkspaceMig
   {
     id: "104-recheck-adaptive-thinking-model-implied-anthropic",
     description:
-      "Re-enable adaptive thinking on managed profiles that imply Anthropic via a known Claude model",
+      "Re-enable adaptive thinking on cloud profiles that imply Anthropic via a known Claude model",
     run(workspaceDir: string): void {
       const configPath = join(workspaceDir, "config.json");
       if (!existsSync(configPath)) {

@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { BackgroundWakeIntentClientResult } from "./cloud-client.js";
 import type { BackgroundWakeIntent } from "./next-wake.js";
-import type { BackgroundWakeIntentClientResult } from "./platform-client.js";
 
 const mockPublishBackgroundWakeIntent = mock(
   async (): Promise<BackgroundWakeIntentClientResult> => ({
@@ -20,7 +20,7 @@ mock.module("./next-wake.js", () => ({
   computeNextBackgroundWakeIntent: () => computedIntent,
 }));
 
-mock.module("./platform-client.js", () => ({
+mock.module("./cloud-client.js", () => ({
   publishBackgroundWakeIntent: mockPublishBackgroundWakeIntent,
   clearBackgroundWakeIntent: mockClearBackgroundWakeIntent,
 }));
@@ -206,7 +206,7 @@ describe("background wake intent publisher hooks", () => {
 
     expect(lifecycleSource).not.toContain("clearBackgroundWakeIntent");
     expect(shutdownSource).not.toContain("clearBackgroundWakeIntent");
-    expect(shutdownSource).not.toContain("background-wake/platform-client");
+    expect(shutdownSource).not.toContain("background-wake/cloud-client");
   });
 });
 

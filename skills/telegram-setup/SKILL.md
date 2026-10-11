@@ -37,7 +37,7 @@ Saving the token in the wizard triggers all of this:
 | Validate the token against `getMe`                 | Automatically, on save        |
 | Store `telegram.botId` and `telegram.botUsername`  | Automatically, on save        |
 | Generate the webhook secret                        | Automatically, on save        |
-| Register the platform callback route               | Automatically, on save        |
+| Register the cloud callback route               | Automatically, on save        |
 | Tell Telegram where to send updates (`setWebhook`) | Automatically, after the save |
 | Install the bot commands (`setMyCommands`)         | Automatically, after the save |
 

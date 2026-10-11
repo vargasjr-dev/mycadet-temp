@@ -121,8 +121,8 @@ function projectProvider(entry: ProviderCatalogEntry): Record<string, unknown> {
   if (entry.credentialsGuide !== undefined) {
     projected.credentialsGuide = entry.credentialsGuide;
   }
-  if (entry.supportsPlatformAuth !== undefined) {
-    projected.supportsPlatformAuth = entry.supportsPlatformAuth;
+  if (entry.supportsCloudAuth !== undefined) {
+    projected.supportsCloudAuth = entry.supportsCloudAuth;
   }
   if (entry.featureFlag !== undefined) {
     projected.featureFlag = entry.featureFlag;

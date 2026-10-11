@@ -143,20 +143,22 @@ async function checkCredential(
 
 /** Check that public ingress is configured and enabled. */
 async function checkIngress(
-  allowManagedCallbacks = false,
+  allowCloudCallbacks = false,
   options: { twilio?: boolean } = {},
 ): Promise<ReadinessCheckResult> {
-  const { configured, usesManagedCallbacks } =
-    await hasWebhookRoutingConfigured(allowManagedCallbacks, options);
+  const { configured, usesCloudCallbacks } = await hasWebhookRoutingConfigured(
+    allowCloudCallbacks,
+    options,
+  );
   return check(
     "ingress",
     configured,
-    usesManagedCallbacks
+    usesCloudCallbacks
       ? "Managed platform callback routing is configured"
       : options.twilio
         ? "Twilio public ingress URL is configured"
         : "Public ingress URL is configured",
-    allowManagedCallbacks
+    allowCloudCallbacks
       ? options.twilio
         ? "No Twilio public ingress URL or managed callback route is configured"
         : "No public ingress URL or managed callback route is configured"
@@ -274,7 +276,7 @@ const emailProbe: ChannelProbe = {
       check(
         "platform_email",
         true,
-        "Email is handled through the platform (Mailgun)",
+        "Email is handled through the cloud (Mailgun)",
         "Email requires platform registration",
       ),
       check(
@@ -283,16 +285,16 @@ const emailProbe: ChannelProbe = {
         "Email invite code redemption is enabled",
         "Email invite code redemption is disabled",
       ),
-      // Managed callbacks allowed: inbound email arrives through the platform
+      // Managed callbacks allowed: inbound email arrives through the cloud
       // callback route the gateway registers (`registerEmailCallbackRoute`,
-      // the same pattern as Telegram's webhook route), so a platform-connected
+      // the same pattern as Telegram's webhook route), so a cloud-connected
       // deployment with no public ingress URL still receives email.
       await checkIngress(true),
     ];
   },
   /**
-   * Ask the platform whether an inbox address is registered, falling back to
-   * a "your own" provider credential. The platform's email-addresses API is
+   * Ask the cloud whether an inbox address is registered, falling back to
+   * a "your own" provider credential. The cloud's email-addresses API is
    * the only writer of managed inbox registrations (nothing about one lands
    * in workspace config), and a BYO deployment's configuration claim is its
    * stored provider API key, so those are the only sources this check may
@@ -305,7 +307,7 @@ const emailProbe: ChannelProbe = {
    */
   async runRemoteChecks(): Promise<ReadinessCheckResult[]> {
     // Imported here rather than at module scope, matching the other probes:
-    // the platform client pulls in a module graph that unrelated consumers of
+    // the cloud client pulls in a module graph that unrelated consumers of
     // this service should not have to mock.
     const { resolveRegisteredInbox } =
       await import("../email/registered-inbox.js");
@@ -357,7 +359,7 @@ const emailProbe: ChannelProbe = {
             name,
             passed: false,
             message:
-              "Email is not configured. Connect to Cadet Cloud for a managed inbox (assistant cloud connect), or configure your own provider",
+              "Email is not configured. Connect to Cadet Cloud for a cloud inbox (assistant cloud connect), or configure your own provider",
           },
         ];
       case "unavailable":
@@ -366,7 +368,7 @@ const emailProbe: ChannelProbe = {
             name,
             passed: true,
             indeterminate: true,
-            message: `Could not reach the platform to check inbox registration (${inbox.detail})`,
+            message: `Could not reach the cloud to check inbox registration (${inbox.detail})`,
           },
         ];
     }

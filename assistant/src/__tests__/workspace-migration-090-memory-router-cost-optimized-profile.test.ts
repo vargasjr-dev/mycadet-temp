@@ -144,7 +144,7 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
   });
 
   test("skips BYOK / non-Anthropic workspaces to avoid breaking memoryRouter", () => {
-    // `cost-optimized` resolves to a managed connection that BYOK installs
+    // `cost-optimized` resolves to a cloud connection that BYOK installs
     // disable. Rewriting there would silently disable memory injection.
     writeConfig({
       llm: {

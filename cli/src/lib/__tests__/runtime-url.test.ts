@@ -49,7 +49,7 @@ describe("resolveRuntimeMigrationUrl", () => {
     );
   });
 
-  test("cadet (platform-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
+  test("cadet (cloud-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
     const entry = makeEntry({
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",

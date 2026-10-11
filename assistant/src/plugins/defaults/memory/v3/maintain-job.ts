@@ -57,7 +57,7 @@
  *   5. **Skill usage-prune (observe-first, default-off)** — REPORT
  *      assistant-authored managed skills unused for at least
  *      {@link SKILL_OBSERVE_WINDOW_DAYS} days (in `prunableSkills`) on every
- *      pass for observability, and DELETE them (via `executeDeleteManagedSkill`)
+ *      pass for observability, and DELETE them (via `executeDeleteCloudSkill`)
  *      only when `memory.maintenance.skillPruneDays` is a positive integer
  *      (default `null` = never prune). `author:"user"` and untagged skills are
  *      always protected. See {@link pruneStaleSkills}.
@@ -89,7 +89,7 @@ import { getMemoryCheckpoint } from "../../../../persistence/checkpoints.js";
 import { EmbeddingBackendUnavailableError } from "../../../../persistence/embeddings/embedding-backend.js";
 import { EmbeddingBillingBlockError } from "../../../../persistence/embeddings/embedding-billing-breaker.js";
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
-import { executeDeleteManagedSkill } from "../../../../tools/skills/delete-managed.js";
+import { executeDeleteCloudSkill } from "../../../../tools/skills/delete-cloud.js";
 import { embedWithBackend } from "../embeddings.js";
 import { getLogger } from "../logging.js";
 import { getWorkspaceDir } from "../paths.js";
@@ -208,14 +208,14 @@ export interface MaintainJobDeps {
   /** Drop the memoized v3 lanes so the next turn rebuilds them. */
   invalidateLanes: () => void;
   /**
-   * The managed (assistant-installed) skills in the catalog, each carrying its
+   * The cloud (assistant-installed) skills in the catalog, each carrying its
    * `installMeta`. The usage-prune stage reads the meta's `author`,
    * `lastUsedAt`, and `installedAt` to find stale assistant-authored skills.
    */
-  listManagedSkills: () => ResolvedSkillEntry[] | Promise<ResolvedSkillEntry[]>;
+  listCloudSkills: () => ResolvedSkillEntry[] | Promise<ResolvedSkillEntry[]>;
   /**
-   * Delete a managed skill by id (dir + companion files + graph node + v2
-   * page/vectors + v3 sections reconcile), as the `delete_managed_skill` tool
+   * Delete a cloud skill by id (dir + companion files + graph node + v2
+   * page/vectors + v3 sections reconcile), as the `delete_cloud_skill` tool
    * does. Called only when deletion is enabled and a skill is stale.
    */
   deleteSkill: (skillId: string) => Promise<void>;
@@ -455,10 +455,10 @@ function defaultDeps(config: AssistantConfig): MaintainJobDeps {
     listIndexedSlugs: () => selectAllPagesFromWorkspace(workspaceDir),
     loadCoreSet: () => realLoadCoreSet(workspaceDir),
     invalidateLanes: realInvalidateLanes,
-    listManagedSkills: async () =>
+    listCloudSkills: async () =>
       (await listInstalledSkills()).filter((s) => s.source === "managed"),
     deleteSkill: async (skillId) => {
-      const result = await executeDeleteManagedSkill(
+      const result = await executeDeleteCloudSkill(
         { skill_id: skillId },
         {
           conversationId: "memory-v3-maintain",
@@ -722,7 +722,7 @@ async function pruneStaleSkills(deps: MaintainJobDeps): Promise<{
   const deleteEnabled =
     typeof skillPruneDays === "number" && skillPruneDays > 0;
 
-  const managed = await deps.listManagedSkills();
+  const managed = await deps.listCloudSkills();
   const prunableSkills: string[] = [];
   const prunedSkills: string[] = [];
   const skillPruneFailures: Array<{ skillId: string; error: string }> = [];
@@ -1167,7 +1167,7 @@ export async function maintainJob(
   // Stage 5: usage-prune assistant-authored skills. OBSERVE-FIRST and
   // DEFAULT-OFF: it always REPORTS assistant-authored managed skills unused for
   // at least SKILL_OBSERVE_WINDOW_DAYS days (prunableSkills) so accumulation is
-  // visible, and only DELETES — via executeDeleteManagedSkill — when
+  // visible, and only DELETES — via executeDeleteCloudSkill — when
   // memory.maintenance.skillPruneDays is a positive integer (default null = never
   // prune). User-authored and untagged skills are always protected. Contained: a
   // failure is logged + recorded without aborting invalidation.

@@ -15,9 +15,9 @@
  *    Format: `local_oauth:<providerKey>/<connectionId>` where providerKey
  *    is the bare provider name (e.g. `google`).
  *
- * 3. **Managed OAuth** — references an OAuth connection managed by the
+ * 3. **Cloud OAuth** — references an OAuth connection managed by the
  *    platform. Format: `platform_oauth:<connectionId>` where connectionId
- *    is the platform-assigned connection identifier.
+ *    is the cloud-assigned connection identifier.
  */
 
 import { z } from "zod";
@@ -96,7 +96,7 @@ export function localOAuthHandle(
 }
 
 /**
- * Build a managed (platform) OAuth credential handle from a connection ID.
+ * Build a cloud (platform) OAuth credential handle from a connection ID.
  */
 export function platformOAuthHandle(connectionId: string): string {
   return `${HandleType.PlatformOAuth}:${connectionId}`;

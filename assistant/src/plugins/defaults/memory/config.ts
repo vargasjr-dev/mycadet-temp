@@ -108,18 +108,18 @@ function deleteLeaf(
 
 /**
  * Deployment-context fill for the memory slice, mirroring the memory entry of
- * the host loader's `getDeploymentContextDefaults()`: platform-managed
- * assistants (IS_PLATFORM) embed via the managed gemini backend unless the
+ * the host loader's `getDeploymentContextDefaults()`: cloud-managed
+ * assistants (IS_CLOUD) embed via the cloud gemini backend unless the
  * provider leaf is explicitly set on disk. Kept local so this module does not
  * import the host loader (whose partial test mocks would otherwise break the
  * import); the parity test compares against the real loader under
- * IS_PLATFORM, so a divergent fill fails loudly there.
+ * IS_CLOUD, so a divergent fill fails loudly there.
  */
 function applyDeploymentContextFill(
   memory: MemoryConfig,
   raw: Record<string, unknown>,
 ): void {
-  if (process.env.IS_PLATFORM !== "true" && process.env.IS_PLATFORM !== "1") {
+  if (process.env.IS_CLOUD !== "true" && process.env.IS_CLOUD !== "1") {
     return;
   }
   const rawEmbeddings = raw.embeddings;

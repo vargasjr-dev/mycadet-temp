@@ -377,7 +377,7 @@ if (dryRun) {
 } else {
   console.log("All images published to dev GCR with prerelease tag.");
   console.log(
-    `\nTo register this prerelease with the platform, run:\n` +
+    `\nTo register this prerelease with the cloud, run:\n` +
     `  curl -X POST "$NONPROD_PLATFORM_API_URL/v1/internal/assistant-image-releases/" \\\n` +
     `    -H "Content-Type: application/json" \\\n` +
     `    -H "X-Internal-Service-Api-Key: $NONPROD_PLATFORM_INTERNAL_SERVICE_API_KEY" \\\n` +

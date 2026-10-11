@@ -68,7 +68,7 @@
  * chooses by deployment kind the way `resolveLiveVoiceWsUrl` does: a
  * self-hosted assistant is dialled straight at the user's gateway ingress with
  * the actor edge JWT in `?token=` (browser WebSockets cannot set an
- * `Authorization` header), and a managed one is dialled through tunnel with a
+ * `Authorization` header), and a cloud one is dialled through tunnel with a
  * short-lived minted token. See `live-voice/connection.ts` for the whole rule
  * set, including the local `/assistant/__gateway/<port>` bypass.
  *
@@ -309,7 +309,7 @@ export function resolveWatchStreamWsUrl(
  * before `ready`.
  *
  * Takes an already-resolved `wsUrl` and stays synchronous, which is the point:
- * resolving it is a network call on the managed path, and everything this
+ * resolving it is a network call on the cloud path, and everything this
  * function does after the first line has to happen in one uninterrupted
  * stretch for the registration order above to mean anything. The await lives
  * in {@link toggleWatch}, where a press that lands during it is already
@@ -873,8 +873,8 @@ export async function toggleWatch(
   /**
    * The transport, resolved last and while the attempt still holds the slot.
    *
-   * On a managed assistant this mints a single-use tunnel token, which is a
-   * round trip to the platform and the one genuinely new wait on this path.
+   * On a cloud assistant this mints a single-use tunnel token, which is a
+   * round trip to the cloud and the one genuinely new wait on this path.
    * It is deliberately the last thing before the dial: the token lives 60
    * seconds, and resolving it ahead of the drain wait above would spend part
    * of that life waiting on the previous session.

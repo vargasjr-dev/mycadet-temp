@@ -20,7 +20,7 @@ import type {
  * Query helpers for the inspector. Two fetch modes:
  *
  * - **Conversation mode** (`messageId` omitted) — calls
- *   `GET /v1/conversations/llm-context`, reachable via the platform's
+ *   `GET /v1/conversations/llm-context`, reachable via the cloud's
  *   `RuntimeProxyWildcardView` at
  *   `/v1/assistants/{assistantId}/conversations/llm-context/`. On
  *   daemons that predate the conversation-scoped endpoint, the client

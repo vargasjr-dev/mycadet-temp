@@ -16,7 +16,7 @@ import type {
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
 
-/** The managed profile the assistant routes per message (`AUTO_PROFILE_KEY`). */
+/** The cloud profile the assistant routes per message (`AUTO_PROFILE_KEY`). */
 export const AUTO_PROFILE_NAME = "auto";
 
 /**
@@ -219,9 +219,9 @@ export function undispatchableProfileReason(p: ProfilePickerEntry): string {
 }
 
 /**
- * The model a Cadet-managed profile currently runs on, as a display name.
+ * The model a Cadet Cloud profile currently runs on, as a display name.
  *
- * Managed profiles are named for the tier they serve ("Balanced", "Speed"),
+ * Cloud profiles are named for the tier they serve ("Balanced", "Speed"),
  * and the model behind a tier moves whenever Cadet repoints the pin, so the
  * profile name alone never says what is about to run. A user profile is named
  * by the person who made it, usually after the model it pins, so naming the

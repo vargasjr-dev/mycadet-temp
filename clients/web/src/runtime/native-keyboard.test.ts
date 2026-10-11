@@ -2,7 +2,7 @@
  * Unit tests for `initNativeKeyboard`, `hideNativeKeyboard` and
  * `subscribeNativeKeyboardHeight`.
  *
- * These pin the platform gates (including the Android half of `hide()`, which
+ * These pin the cloud gates (including the Android half of `hide()`, which
  * the swipe-down dismiss gesture depends on), the backwards-compat contract
  * (shells without the linked `@capacitor/keyboard` plugin reject the call and
  * retain the accessory bar, and boot must not surface that as an error), and

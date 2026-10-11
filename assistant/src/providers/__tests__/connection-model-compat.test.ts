@@ -26,7 +26,7 @@ import type { Auth } from "../inference/auth.js";
 // ---------------------------------------------------------------------------
 
 const apiKeyAuth: Auth = { type: "api_key", credential: "credential/x" };
-const platformAuth: Auth = { type: "platform" };
+const cloudAuth: Auth = { type: "platform" };
 const oauthAuth: Auth = {
   type: "oauth_subscription",
   credential: "credential/x",
@@ -40,7 +40,7 @@ describe("isConnectionCompatibleWithModel", () => {
   });
 
   test("platform connection is compatible with any model", () => {
-    const conn = { auth: platformAuth };
+    const conn = { auth: cloudAuth };
     expect(isConnectionCompatibleWithModel(conn, "gpt-5.4-nano")).toBe(true);
   });
 

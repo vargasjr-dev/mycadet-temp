@@ -399,7 +399,7 @@ describe("AdjustPlanModal upgrade — checkout intent stash", () => {
     useResolvedAssistantsStore.setState({
       activeAssistantId: "a1",
       assistants: [
-        { id: "a1", isLocal: false, isPlatformHosted: true, isPaired: false },
+        { id: "a1", isLocal: false, isCloudHosted: true, isPaired: false },
       ],
       assistantsHydrated: true,
     });
@@ -790,7 +790,7 @@ describe("AdjustPlanModal credit bundle — headline total", () => {
 });
 
 describe("AdjustPlanModal: a fee-less (Mighty) Pro sub", () => {
-  // Only Mighty is sold without the platform fee, and a custom plan always
+  // Only Mighty is sold without the cloud fee, and a custom plan always
   // carries it, so applying the modal's selection adds (and bills) the fee
   // even when every tier stays the same.
   test("prices the fee into the delta and enables Update Plan with untouched tiers", async () => {

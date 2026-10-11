@@ -1,7 +1,7 @@
 /**
  * Declared signature verification for plugin ingress routes.
  *
- * A plugin route that receives third-party webhooks cannot use the platform
+ * A plugin route that receives third-party webhooks cannot use the cloud
  * scheme (`Cadet-Signature`, see `../http/cadet-signature.ts`): the caller is
  * Comms, or Photon, or Stripe, and it signs the way it signs. Before this,
  * such a route could be declared, approved, registered with the vendor, and
@@ -22,10 +22,10 @@
  * - **The credential's service.** A descriptor names a *field*; the service is
  *   composed from the plugin's own directory name by the caller. A manifest
  *   that could name the service could point a route at another plugin's secret,
- *   or at the platform's.
+ *   or at the cloud's.
  * - **Fail-closed parsing.** Anything unrecognized — an unknown `kind`,
  *   algorithm, encoding, or an extra key — fails the manifest rather than
- *   falling back to the platform scheme. A route the plugin believes is
+ *   falling back to the cloud scheme. A route the plugin believes is
  *   verified one way and the gateway verifies another is worse than no route.
  * - **Canonical payload parts.** `body` is the bytes as received. Other
  *   payload parts declare their own canonicalization, so a manifest cannot
@@ -192,7 +192,7 @@ export type VerificationResult =
 /**
  * The public URLs a caller might have signed.
  *
- * The platform callback proxy can preserve the original URL explicitly, while
+ * The cloud callback proxy can preserve the original URL explicitly, while
  * a reverse proxy can expose it through forwarding headers. A configured
  * public base and the raw request URL cover direct deployments. Each distinct
  * candidate is tried because only the caller knows which public spelling it

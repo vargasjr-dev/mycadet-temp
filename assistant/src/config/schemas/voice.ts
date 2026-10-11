@@ -103,7 +103,7 @@ export const VoiceFrontModelConfigSchema = z
       )
       .default(1200)
       .describe(
-        "Hard budget (ms) for the endpoint decision LLM call. This adds to end-of-turn latency when semantic endpointing is on, so keep it as tight as the decider model's real roundtrip allows. Measured Haiku roundtrips through the managed proxy run ~670-1130ms (dev), so tighter budgets turn the feature into a fail-open no-op.",
+        "Hard budget (ms) for the endpoint decision LLM call. This adds to end-of-turn latency when semantic endpointing is on, so keep it as tight as the decider model's real roundtrip allows. Measured Haiku roundtrips through the cloud proxy run ~670-1130ms (dev), so tighter budgets turn the feature into a fail-open no-op.",
       ),
     endpointExtensionMs: z
       .number({

@@ -148,7 +148,7 @@ describe("loadConfig corrupt-file recovery", () => {
 
   // ---------------------------------------------------------------------------
   // Shape-mismatch quarantine — same JSON.parse caveat as `loadRawConfig`.
-  // Without an `isPlainObject` check, downstream code (e.g. the managed-Gemini
+  // Without an `isPlainObject` check, downstream code (e.g. the cloud-Gemini
   // `setNestedValue` block in `loadConfig`) would TypeError on `null` or
   // primitive `fileConfig`, and only the broad try/catch around the migration
   // saved startup. Treating the wrong-shape case as a parse error here moves

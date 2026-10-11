@@ -109,7 +109,7 @@ const { ProfileCard } = await import("@/components/profile-card");
 // ---------------------------------------------------------------------------
 
 function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
-  // OSS Assistant type carries a few more fields than the platform type
+  // OSS Assistant type carries a few more fields than the cloud type
   // (release_channel, access_consented). Populate the union of both so the
   // fixture stays type-safe if either generator regenerates.
   return {

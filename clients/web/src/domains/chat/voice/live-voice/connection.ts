@@ -4,16 +4,16 @@
  * Live voice picks its transport by deployment kind via
  * {@link resolveLiveVoiceWsUrl}:
  *
- * - **Cloud** — streams audio to the platform environment's tunnel (prod
+ * - **Cloud** — streams audio to the cloud environment's tunnel (prod
  *   `tunnel.mycadet.ai`, staging `tunnel-staging.mycadet.ai`, …), which is
  *   cross-origin from the `cloud.mycadet.ai` SPA. A same-origin cookie WS
  *   upgrade is NOT viable: tunnel does no user auth, and the channel gateway
  *   only accepts a local actor edge JWT. So the browser first mints a
- *   short-lived, org+assistant-scoped WS token from the platform and passes it
+ *   short-lived, org+assistant-scoped WS token from the cloud and passes it
  *   to tunnel as a `?token=` query param.
  * - **Self-hosted / local** — when {@link getSelfHostedIngressUrl} returns the
  *   user's gateway ingress, the browser connects directly to that gateway's
- *   `/v1/live-voice`, authenticated with the platform actor edge JWT
+ *   `/v1/live-voice`, authenticated with the cloud actor edge JWT
  *   ({@link getSelfHostedActorToken}) in `?token=`. tunnel is the cloud ingress
  *   only, so there is no token-exchange on this path — it mirrors how the
  *   self-hosted HeyAPI interceptor already routes runtime calls to the gateway.
@@ -25,7 +25,7 @@
  *   POST /v1/auth/live-voice-token/
  *     Auth:     Django SessionAuthentication — session cookie + CSRF
  *               (`X-CSRFToken`) + `Cadet-Organization-Id`, all attached
- *               automatically by the platform HeyAPI client interceptor.
+ *               automatically by the cloud HeyAPI client interceptor.
  *               Do NOT hand-roll an `Authorization` header.
  *     Request:  { assistantId: string }
  *     Response: { token: string; expiresAt: string }   // expiresAt is ISO-8601
@@ -34,7 +34,7 @@
  * requested assistant; tunnel validates it on the WS upgrade.
  *
  * We call the generated platform SDK function `authLiveVoiceTokenCreate`, which
- * routes through the platform `client` — that interceptor attaches the session
+ * routes through the cloud `client` — that interceptor attaches the session
  * cookie + CSRF + `Cadet-Organization-Id`.
  *
  * This module is the route-agnostic gateway WS transport shared by live voice,
@@ -45,7 +45,7 @@ import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import { getPlatformRuntimeUrl } from "@/lib/platform-runtime-url";
+import { getPlatformRuntimeUrl } from "@/lib/cloud-runtime-url";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -54,7 +54,7 @@ import { assertHasResponse } from "@/utils/api-errors";
 
 /**
  * Production tunnel host (no scheme). Fallback when neither the
- * `VITE_TUNNEL_HOST` override nor the platform-host derivation applies.
+ * `VITE_TUNNEL_HOST` override nor the cloud-host derivation applies.
  */
 const DEFAULT_TUNNEL_HOST = "tunnel.mycadet.ai";
 
@@ -91,7 +91,7 @@ function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
  * automatically (see the module doc comment for the contract).
  *
  * Named for tunnel rather than for live voice because the token is not a
- * live-voice token in substance: the platform stores it as an opaque random
+ * live-voice token in substance: the cloud stores it as an opaque random
  * string against a scope of `{user_id, organization_id, assistant_id}` and
  * nothing else (`django/app/auth/live_voice_token.py`). There is no route in
  * the scope, so the same token authorizes any tunnel WebSocket route that
@@ -122,7 +122,7 @@ export async function mintTunnelWsToken(
 
 /**
  * Resolve the tunnel host (no scheme). An explicit `VITE_TUNNEL_HOST` always
- * wins (local `vel up` tunnel); otherwise derive it from the platform runtime
+ * wins (local `vel up` tunnel); otherwise derive it from the cloud runtime
  * URL so one renderer build follows whichever platform environment it is
  * connected to — the Electron web bundle is built without `VITE_TUNNEL_HOST`,
  * and baking the prod default would send a staging assistant's token to prod

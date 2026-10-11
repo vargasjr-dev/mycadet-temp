@@ -34,7 +34,7 @@ export const VERIFIED_VIA_CHALLENGE = "challenge";
 /** `verified_via` written when the guardian direct-trusts a workspace-vouched identity. */
 export const VERIFIED_VIA_MANUAL = "manual";
 
-/** `verified_via` written when the guardian trusts an identity the platform is not vouching for. */
+/** `verified_via` written when the guardian trusts an identity the cloud is not vouching for. */
 export const VERIFIED_VIA_CHANNEL_CLAIM = "manual_channel_claim";
 
 // ---------------------------------------------------------------------------
@@ -48,10 +48,10 @@ export const VERIFIED_VIA_CHANNEL_CLAIM = "manual_channel_claim";
  *
  * - `verified_handshake` — the contact proved control of the channel by
  *   returning a verification code (`verified_via: "challenge"`).
- * - `internal_workspace_match` — the platform authenticated the identity inside
+ * - `internal_workspace_match` — the cloud authenticated the identity inside
  *   the guardian's own workspace; the guardian vouches directly
  *   (`verified_via: "manual"`).
- * - `inbound_channel_claim` — the guardian trusts an identity the platform is
+ * - `inbound_channel_claim` — the guardian trusts an identity the cloud is
  *   NOT vouching for (`verified_via: "manual_channel_claim"`).
  */
 export type BindingStrength =
@@ -101,7 +101,7 @@ const PROVEN_VERIFIED_VIA: ReadonlySet<string> = new Set([
   "invite", // redeemed an invite code / token
   "voice", // returned a voice (DTMF) code
   "bootstrap", // guardian binding (also protected by the guardian-downgrade guard)
-  "platform_auto_register", // guardian binding auto-registered by the platform
+  "platform_auto_register", // guardian binding auto-registered by the cloud
   "webhook_registration", // guardian binding registered via a provider webhook
 ]);
 
@@ -112,7 +112,7 @@ const PROVEN_VERIFIED_VIA: ReadonlySet<string> = new Set([
  * PRD (D4) may land on:
  *
  *   3  proven / possession — {@link PROVEN_VERIFIED_VIA}.
- *   2  workspace-vouched — the platform authenticated the identity but the
+ *   2  workspace-vouched — the cloud authenticated the identity but the
  *      actor did not actively prove control here (`manual`).
  *   1  inbound channel claim — nobody vouches; the guardian trusted an
  *      unproven claim (`manual_channel_claim`).

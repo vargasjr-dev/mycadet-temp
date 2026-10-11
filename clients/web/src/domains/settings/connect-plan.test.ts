@@ -26,7 +26,7 @@ function provider(): OAuthProvider {
     client_id_placeholder: null,
     requires_client_secret: true,
     logo_url: null,
-    supports_managed_mode: true,
+    supports_cloud_mode: true,
     managed_service_is_paid: false,
     feature_flag: null,
     category: "productivity",
@@ -111,44 +111,44 @@ function planOf(
 }
 
 describe("buildConnectPlan", () => {
-  test("puts the provider's MCP server ahead of managed OAuth", () => {
+  test("puts the provider's MCP server ahead of cloud OAuth", () => {
     const plan = planOf(oauthItem([pluginMethod()]), {
-      platformGate: "full",
+      cloudGate: "full",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
 
     expect(plan.primary.kind).toBe("mcp-oauth");
     expect(plan.alternatives.map((method) => method.kind)).toEqual([
-      "managed-oauth",
+      "cloud-oauth",
     ]);
   });
 
-  test("leads with managed OAuth when the catalog has no MCP server", () => {
+  test("leads with cloud OAuth when the catalog has no MCP server", () => {
     const plan = planOf(oauthItem([]), {
-      platformGate: "full",
+      cloudGate: "full",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
 
-    expect(plan.primary.kind).toBe("managed-oauth");
+    expect(plan.primary.kind).toBe("cloud-oauth");
     expect(plan.alternatives).toEqual([]);
   });
 
-  test("keeps managed OAuth but marks it login-required without a session", () => {
+  test("keeps cloud OAuth but marks it login-required without a session", () => {
     const plan = planOf(oauthItem([]), {
-      platformGate: "disabled",
+      cloudGate: "disabled",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
 
-    expect(plan.primary.kind).toBe("managed-oauth");
+    expect(plan.primary.kind).toBe("cloud-oauth");
     expect(plan.primary.availability).toBe("login-required");
   });
 
-  test("drops managed OAuth entirely when the platform is gated", () => {
+  test("drops cloud OAuth entirely when the cloud is gated", () => {
     const plan = planOf(oauthItem([pluginMethod()]), {
-      platformGate: "gated",
+      cloudGate: "gated",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
@@ -161,7 +161,7 @@ describe("buildConnectPlan", () => {
   test("has no plan at all when the last path is dropped", () => {
     expect(
       buildConnectPlan(oauthItem([]), {
-        platformGate: "gated",
+        cloudGate: "gated",
         ownOAuthAvailable: false,
         mcpServersLoaded: true,
       }),
@@ -169,7 +169,7 @@ describe("buildConnectPlan", () => {
   });
 
   test("offers a bring-your-own OAuth app only where one can exist", () => {
-    const context = { platformGate: "full" as const };
+    const context = { cloudGate: "full" as const };
 
     expect(
       planMethods(
@@ -179,7 +179,7 @@ describe("buildConnectPlan", () => {
           mcpServersLoaded: true,
         }),
       ).map((method) => method.kind),
-    ).toEqual(["managed-oauth"]);
+    ).toEqual(["cloud-oauth"]);
 
     expect(
       planMethods(
@@ -189,12 +189,12 @@ describe("buildConnectPlan", () => {
           mcpServersLoaded: true,
         }),
       ).map((method) => method.kind),
-    ).toEqual(["managed-oauth", "own-oauth"]);
+    ).toEqual(["cloud-oauth", "own-oauth"]);
   });
 
   test("stands an installed plugin up on its own once the servers are in", () => {
     const plan = planOf(oauthItem([pluginMethod({ installed: {} })]), {
-      platformGate: "full",
+      cloudGate: "full",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
@@ -209,7 +209,7 @@ describe("buildConnectPlan", () => {
     // "the plugin declared nothing" puts a row on screen that offers to
     // uninstall a plugin whose servers were only unavailable.
     const plan = planOf(oauthItem([pluginMethod({ installed: {} })]), {
-      platformGate: "full",
+      cloudGate: "full",
       ownOAuthAvailable: false,
       mcpServersLoaded: false,
     });
@@ -235,7 +235,7 @@ describe("buildConnectPlan", () => {
           },
         }),
       },
-      { platformGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
+      { cloudGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
     );
 
     expect(plan.primary.kind).toBe("mcp-manual");
@@ -262,7 +262,7 @@ describe("buildConnectPlan", () => {
           logo: "ashby-mcp.png",
         }),
       },
-      { platformGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
+      { cloudGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
     );
 
     // Matched on the substring, not the whole string: `publicAsset()` prefixes
@@ -284,7 +284,7 @@ describe("buildConnectPlan", () => {
         category: "finance",
         method: pluginMethod({ pluginName: "ramp-mcp", logo: "" }),
       },
-      { platformGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
+      { cloudGate: "full", ownOAuthAvailable: false, mcpServersLoaded: true },
     );
 
     expect(plan.logoUrl).toBeNull();
@@ -294,14 +294,14 @@ describe("buildConnectPlan", () => {
 describe("connectableMethods", () => {
   test("keeps an MCP method on offer while nothing is connected to it", () => {
     const plan = planOf(oauthItem([pluginMethod()]), {
-      platformGate: "full",
+      cloudGate: "full",
       ownOAuthAvailable: false,
       mcpServersLoaded: true,
     });
 
     expect(connectableMethods(plan).map((method) => method.kind)).toEqual([
       "mcp-oauth",
-      "managed-oauth",
+      "cloud-oauth",
     ]);
   });
 
@@ -309,7 +309,7 @@ describe("connectableMethods", () => {
     const plan = planOf(
       oauthItem([{ definition: definition(), servers: [connectedServer()] }]),
       {
-        platformGate: "full",
+        cloudGate: "full",
         ownOAuthAvailable: true,
         mcpServersLoaded: true,
       },
@@ -317,11 +317,11 @@ describe("connectableMethods", () => {
 
     expect(planMethods(plan).map((method) => method.kind)).toEqual([
       "mcp-oauth",
-      "managed-oauth",
+      "cloud-oauth",
       "own-oauth",
     ]);
     expect(connectableMethods(plan).map((method) => method.kind)).toEqual([
-      "managed-oauth",
+      "cloud-oauth",
       "own-oauth",
     ]);
   });

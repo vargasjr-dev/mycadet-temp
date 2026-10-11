@@ -43,9 +43,9 @@ export function environmentFromVersion(version: string): string {
  *
  * Per-field env-var overrides are honored on the resolved definition as
  * ad-hoc escape hatches (they do not materialize new environments):
- *   - `CADET_PLATFORM_URL` overrides `platformUrl`
+ *   - `CADET_CLOUD_URL` overrides `cloudUrl`
  *   - `CADET_WEB_URL` overrides `webUrl`
- *   - `CADET_ASSISTANT_PLATFORM_URL` overrides `assistantPlatformUrl`
+ *   - `CADET_ASSISTANT_PLATFORM_URL` overrides `assistantCloudUrl`
  *   - `CADET_LOCKFILE_DIR` overrides `lockfileDirOverride` (legacy e2e
  *     test hook)
  *
@@ -87,9 +87,9 @@ export function getCurrentEnvironment(
 
   const resolved: EnvironmentDefinition = { ...seed };
 
-  const platformUrlOverride = process.env.CADET_PLATFORM_URL?.trim();
-  if (platformUrlOverride) {
-    resolved.platformUrl = platformUrlOverride;
+  const cloudUrlOverride = process.env.CADET_CLOUD_URL?.trim();
+  if (cloudUrlOverride) {
+    resolved.cloudUrl = cloudUrlOverride;
   }
 
   const webUrlOverride = process.env.CADET_WEB_URL?.trim();
@@ -97,10 +97,10 @@ export function getCurrentEnvironment(
     resolved.webUrl = webUrlOverride;
   }
 
-  const assistantPlatformUrlOverride =
+  const assistantCloudUrlOverride =
     process.env.CADET_ASSISTANT_PLATFORM_URL?.trim();
-  if (assistantPlatformUrlOverride) {
-    resolved.assistantPlatformUrl = assistantPlatformUrlOverride;
+  if (assistantCloudUrlOverride) {
+    resolved.assistantCloudUrl = assistantCloudUrlOverride;
   }
 
   const lockfileDirOverride = process.env.CADET_LOCKFILE_DIR?.trim();

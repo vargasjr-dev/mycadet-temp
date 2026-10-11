@@ -1,11 +1,11 @@
-import { isManagedCloud } from "./managed-cloud.js";
+import { isCloudHome } from "./cloud-values.js";
 import type { AssistantEntry } from "./assistant-config.js";
 import {
   authHeaders,
   invalidateOrgIdCache,
   parseUnifiedJobStatus,
   type UnifiedJobStatus,
-} from "./platform-client.js";
+} from "./cloud-client.js";
 import {
   resolveRuntimeMigrationUrl,
   resolveRuntimeUrl,
@@ -49,7 +49,7 @@ function bearerHeaders(token: string): Record<string, string> {
 /**
  * Build the auth + content headers for a runtime migration request.
  *
- * - For `isManagedCloud(cloud)` we go through the platform's wildcard runtime
+ * - For `isCloudHome(cloud)` we go through the cloud's wildcard runtime
  *   proxy, which authenticates user-session / vak_ tokens via DRF's default
  *   authentication classes — `authHeaders()` produces the right combination
  *   (`X-Session-Token` + `Cadet-Organization-Id`, or `Authorization: Bearer
@@ -60,7 +60,7 @@ async function migrationRequestHeaders(
   entry: Pick<AssistantEntry, "cloud" | "runtimeUrl">,
   token: string,
 ): Promise<Record<string, string>> {
-  if (isManagedCloud(entry.cloud)) {
+  if (isCloudHome(entry.cloud)) {
     return {
       ...(await authHeaders(token, entry.runtimeUrl)),
       Accept: "application/json",
@@ -116,10 +116,10 @@ async function throwIfInProgress(
  *
  * For local/docker assistants this POSTs to
  * `{runtimeUrl}/v1/migrations/export-to-gcs` with guardian-token bearer
- * auth. For platform-managed (cloud="cadet") assistants the URL is rewritten
+ * auth. For cloud-managed (cloud="cadet") assistants the URL is rewritten
  * to the wildcard-runtime-proxy shape
- * `{platformUrl}/v1/assistants/<assistantId>/migrations/export-to-gcs` and
- * authenticated via the platform-token header set the platform's DRF auth
+ * `{cloudUrl}/v1/assistants/<assistantId>/migrations/export-to-gcs` and
+ * authenticated via the cloud-token header set the cloud's DRF auth
  * accepts (session / vak_).
  *
  * Returns the 202-accepted `job_id`. On 409 (another export in flight)
@@ -179,10 +179,10 @@ export async function localRuntimeExportToGcs(
  *
  * For local/docker assistants this POSTs to
  * `{runtimeUrl}/v1/migrations/import-from-gcs` with guardian-token bearer
- * auth. For platform-managed (cloud="cadet") assistants the URL is rewritten
+ * auth. For cloud-managed (cloud="cadet") assistants the URL is rewritten
  * to the wildcard-runtime-proxy shape
- * `{platformUrl}/v1/assistants/<assistantId>/migrations/import-from-gcs` and
- * authenticated via the platform token. On 409 throws
+ * `{cloudUrl}/v1/assistants/<assistantId>/migrations/import-from-gcs` and
+ * authenticated via the cloud token. On 409 throws
  * {@link MigrationInProgressError}.
  */
 export async function localRuntimeImportFromGcs(
@@ -261,10 +261,10 @@ export async function localRuntimePreflightFromGcs(
  *
  * For local/docker assistants this GETs
  * `{runtimeUrl}/v1/migrations/jobs/{jobId}` directly (guardian-token
- * bearer). For platform-managed assistants it routes through the wildcard
+ * bearer). For cloud assistants it routes through the wildcard
  * runtime proxy at
- * `{platformUrl}/v1/assistants/<assistantId>/migrations/jobs/{jobId}` with
- * platform-token auth — important: the platform's dedicated
+ * `{cloudUrl}/v1/assistants/<assistantId>/migrations/jobs/{jobId}` with
+ * platform-token auth — important: the cloud's dedicated
  * `/v1/migrations/jobs/{id}/` endpoint queries platform-side ImportJob
  * records and would 404 on runtime-created job IDs.
  */
@@ -320,15 +320,15 @@ export interface RuntimeIdentity {
  * (no filesystem reads), so it's safe to call against any running runtime.
  *
  * For local/docker assistants this GETs `{runtimeUrl}/v1/health` with
- * guardian-token bearer auth. For platform-managed (cloud="cadet")
+ * guardian-token bearer auth. For cloud-managed (cloud="cadet")
  * assistants the URL is rewritten to the wildcard runtime proxy shape
- * `{platformUrl}/v1/assistants/<assistantId>/health` and authenticated via
- * the platform token.
+ * `{cloudUrl}/v1/assistants/<assistantId>/health` and authenticated via
+ * the cloud token.
  *
  * For the cadet target this is the FIRST network call in the
  * teleport/backup export flow, so a stale `Cadet-Organization-Id` cache
  * entry would surface as a hard abort before any retry-friendly call (like
- * `platformRequestSignedUrl`) gets a chance to recover. Mirror that helper's
+ * `cloudRequestSignedUrl`) gets a chance to recover. Mirror that helper's
  * one-shot 401-retry: invalidate the org-ID cache and retry once. Local /
  * docker entries do not use the org-ID cache and are wrapped in
  * `callRuntimeWithAuthRetry` by callers for guardian-token refresh, so the
@@ -353,10 +353,10 @@ export async function localRuntimeIdentity(
     });
 
   let response = await doRequest();
-  if (response.status === 401 && isManagedCloud(entry.cloud)) {
-    // `entry.runtimeUrl` is the platform host for cadet-cloud entries
+  if (response.status === 401 && isCloudHome(entry.cloud)) {
+    // `entry.runtimeUrl` is the cloud host for cadet-cloud entries
     // (the wildcard runtime proxy lives there). Pass it as the cache key
-    // platformUrl so we invalidate the same entry that authHeaders cached.
+    // cloudUrl so we invalidate the same entry that authHeaders cached.
     invalidateOrgIdCache(token, entry.runtimeUrl);
     response = await doRequest();
   }

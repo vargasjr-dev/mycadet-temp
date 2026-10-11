@@ -92,14 +92,14 @@ describe("IntegrationTile", () => {
       definitions: [pluginDefinition()],
       ownOAuthAvailable: true,
     });
-    // The managed sign-in is an alternative here: the provider's own MCP
+    // The cloud sign-in is an alternative here: the provider's own MCP
     // server leads. Failing it must not strand the user on the two ways in
     // that are left.
     const failed = plan.alternatives.find(
-      (method) => method.kind === "managed-oauth",
+      (method) => method.kind === "cloud-oauth",
     );
     if (!failed) {
-      throw new Error("expected a managed alternative in the fixture plan");
+      throw new Error("expected a cloud alternative in the fixture plan");
     }
     tile({
       plan,
@@ -127,10 +127,10 @@ describe("IntegrationTile", () => {
       definitions: [pluginDefinition()],
     });
     const failed = plan.alternatives.find(
-      (method) => method.kind === "managed-oauth",
+      (method) => method.kind === "cloud-oauth",
     );
     if (!failed) {
-      throw new Error("expected a managed alternative in the fixture plan");
+      throw new Error("expected a cloud alternative in the fixture plan");
     }
     tile({
       plan,
@@ -151,7 +151,7 @@ describe("IntegrationTile", () => {
     tile({
       plan: planFor({
         providers: [GOOGLE_PROVIDER],
-        platformGate: "disabled",
+        cloudGate: "disabled",
       }),
     });
 
@@ -340,7 +340,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     });
 
@@ -362,7 +362,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: popupBlocked,
         methodId: googlePlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     });
 
@@ -378,7 +378,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: paragraph,
         methodId: googlePlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     });
 
@@ -398,7 +398,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "",
         methodId: googlePlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     });
 
@@ -412,7 +412,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "managed-oauth",
+        methodKind: "cloud-oauth",
       },
     });
 

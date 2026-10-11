@@ -374,7 +374,7 @@ describe("watch retrospective", () => {
     await runWatchRetro(summary, { dispatch });
 
     const { prompt } = calls[0]!;
-    // `skill-management` is a selector, and a managed or workspace skill of the
+    // `skill-management` is a selector, and a cloud or workspace skill of the
     // same id replaces the bundled one in the catalog. Putting the load ahead
     // of the card is what lets a shadow, or the refusal a clientless wake
     // gives an inline-command load, land before the user has been told
@@ -396,7 +396,7 @@ describe("watch retrospective", () => {
     expect(prompt).toContain("Do not author or scaffold a skill yet");
     // The retro delegates authoring to the skill-management flow rather than
     // naming the tool that writes a skill, so nothing here can reach it.
-    expect(prompt).not.toContain("scaffold_managed_skill");
+    expect(prompt).not.toContain("scaffold_cloud_skill");
   });
 
   test("draws the card from the turn's report call", async () => {

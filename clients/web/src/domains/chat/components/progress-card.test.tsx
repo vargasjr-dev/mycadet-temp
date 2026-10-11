@@ -13,7 +13,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 
-// Pin the platform to a pointer device so the control opens a popover rather
+// Pin the cloud to a pointer device so the control opens a popover rather
 // than the touch bottom sheet, and stub the sweep to a marker: it animates via
 // the Web Animations API, which the test DOM does not implement.
 mock.module("@/hooks/use-is-mobile", () => ({

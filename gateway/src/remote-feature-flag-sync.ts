@@ -4,7 +4,7 @@ import { getDeviceId } from "./device-id.js";
 import { fetchImpl } from "./fetch.js";
 import { loadFeatureFlagDefaults } from "./feature-flag-defaults.js";
 import { writeRemoteFeatureFlags } from "./feature-flag-remote-store.js";
-import { arePlatformFeaturesEnabled } from "./feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "./feature-flag-resolver.js";
 import { getLogger } from "./logger.js";
 
 const log = getLogger("remote-feature-flag-sync");
@@ -49,7 +49,7 @@ export type RemoteFeatureFlagSyncConfig = {
 };
 
 /**
- * Manages the lifecycle of syncing remote feature flags from the platform.
+ * Manages the lifecycle of syncing remote feature flags from the cloud.
  *
  * On start, fetches the current flag state and persists it to disk via the
  * remote feature flag store, then polls with adaptive back-off: starts at
@@ -328,7 +328,7 @@ export class RemoteFeatureFlagSync {
   }
 
   private async fetchRemoteFeatureFlags(): Promise<RemoteFetchResult> {
-    if (!arePlatformFeaturesEnabled()) {
+    if (!areCloudFeaturesEnabled()) {
       log.debug("Remote feature flag sync skipped: platform features disabled");
       return { status: "missing_credentials" };
     }
@@ -348,7 +348,7 @@ export class RemoteFeatureFlagSync {
 
     // The base URL resolves from the environment only — the credential store
     // never carries it.
-    const platformUrl = (process.env.CADET_PLATFORM_URL?.trim() || "").replace(
+    const cloudUrl = (process.env.CADET_CLOUD_URL?.trim() || "").replace(
       /\/+$/,
       "",
     );
@@ -358,7 +358,7 @@ export class RemoteFeatureFlagSync {
       process.env.ASSISTANT_API_KEY?.trim() ||
       undefined;
 
-    if (!platformUrl) {
+    if (!cloudUrl) {
       log.debug("Remote feature flag sync skipped: no platform URL configured");
       return { status: "missing_credentials" };
     }
@@ -374,7 +374,7 @@ export class RemoteFeatureFlagSync {
       return { status: "error" };
     }
 
-    const url = `${platformUrl}/v1/feature-flags/assistant-flag-values/`;
+    const url = `${cloudUrl}/v1/feature-flags/assistant-flag-values/`;
     const headers: Record<string, string> = { Accept: "application/json" };
     if (assistantCredential) {
       headers["Authorization"] = `Api-Key ${assistantCredential}`;
@@ -410,9 +410,9 @@ export class RemoteFeatureFlagSync {
       return { status: "error" };
     }
 
-    // Accept boolean and string values from the platform. Prevent the
+    // Accept boolean and string values from the cloud. Prevent the
     // platform from disabling boolean flags that are already GA
-    // (defaultEnabled: true in the registry). The platform uses a
+    // (defaultEnabled: true in the registry). The cloud uses a
     // blanket-deny posture, sending false for every flag it knows about.
     // GA normalization only applies to boolean false values; string flag
     // values pass through unchanged.

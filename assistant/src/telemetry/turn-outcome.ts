@@ -71,7 +71,7 @@ export function stampTurnOutcome(
   try {
     // The failure* keys are read back by `readTurnFailure` only; the turn
     // telemetry projection (`queryUnreportedTurnEvents`) extracts none of
-    // them, so nothing here changes the platform wire contract.
+    // them, so nothing here changes the cloud wire contract.
     updateMessageMetadata(userMessageId, {
       turnOutcome: outcome,
       ...(extras.batchedInto ? { turnBatchedInto: extras.batchedInto } : {}),

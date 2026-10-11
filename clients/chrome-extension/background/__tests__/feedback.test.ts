@@ -223,7 +223,7 @@ describe("feedback.buildBundleTarGz", () => {
     expect(JSON.parse(member.payload)).toEqual(payload);
 
     // Archive is laid out as header + padded content + 2 zero trailer blocks.
-    // The trailer must be present so the platform's `tarfile.open` stops cleanly.
+    // The trailer must be present so the cloud's `tarfile.open` stops cleanly.
     const trailerStart = tarBytes.length - 1024;
     for (let i = trailerStart; i < tarBytes.length; i++) {
       expect(tarBytes[i]).toBe(0);
@@ -408,7 +408,7 @@ describe("feedback.submitFeedback", () => {
     expect(head[0]).toBe(0x1f);
     expect(head[1]).toBe(0x8b);
 
-    // Decompress and verify the tar header — the platform's
+    // Decompress and verify the tar header — the cloud's
     // `sanitize_tar_gz` validator runs `tarfile.open(..., mode="r|")`, so
     // a plain gzipped JSON blob would be silently dropped on the floor.
     const tarBytes = await decompressGzip(file!);
@@ -452,7 +452,7 @@ describe("feedback.submitFeedback", () => {
     expect(headers["Cadet-Organization-Id"]).toBeUndefined();
   });
 
-  test("throws when the platform returns a non-2xx", async () => {
+  test("throws when the cloud returns a non-2xx", async () => {
     seedStorage(stores, { clientId: "client-uuid" });
     const fetchImpl: typeof fetch = async () =>
       new Response("nope", { status: 500 });

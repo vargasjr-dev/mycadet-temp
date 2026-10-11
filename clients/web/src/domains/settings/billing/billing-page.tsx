@@ -6,7 +6,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { BillingOnboardingModal } from "@/domains/settings/billing/pro-onboarding/billing-onboarding-modal";
 import { shouldShowBillingTab } from "@/domains/settings/billing/billing-tab-visibility";
 import { CheckoutBonusModal } from "@/domains/settings/billing/checkout-bonus-modal";
@@ -26,11 +26,11 @@ import {} from "@/generated/api/@tanstack/react-query.gen";
 import { notifyCheckoutSuccess } from "@/lib/billing/checkout-success";
 import { useTranslation } from "@/i18n";
 import {
-  useActiveAssistantIsPlatformHosted,
+  useActiveAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
-import { useIsPlatformSessionSettled } from "@/stores/auth-store";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
+import { useIsCloudSessionSettled } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { Notice } from "@mycadet/design-library/components/notice";
 import { Tabs } from "@mycadet/design-library/components/tabs";
@@ -81,9 +81,9 @@ function BillingStatusHandler({
 
 function BillingTabContent() {
   const { t } = useTranslation("settings");
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  const billingGate = usePlatformGate();
-  const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const billingGate = useCloudGate();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -119,7 +119,7 @@ function BillingTabContent() {
   useEffect(() => {
     // Only consume the modal-opening params once billing is usable (signed
     // in). While the tab shows the login notice (`"disabled"`), leave them
-    // in the URL so PlatformLoginNotice carries them through sign-in and
+    // in the URL so CloudLoginNotice carries them through sign-in and
     // the target modal opens on return instead of being silently dropped.
     if (billingGate !== "full") {
       return;
@@ -161,9 +161,9 @@ function BillingTabContent() {
   if (billingGate === "disabled") {
     return (
       <div className="space-y-4">
-        <PlatformLoginNotice>
+        <CloudLoginNotice>
           {t("billingPage.platformLoginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       </div>
     );
   }
@@ -179,7 +179,7 @@ function BillingTabContent() {
     );
   }
 
-  const showPlanManagement = isPlatformHosted;
+  const showPlanManagement = isCloudHosted;
   // The pro onboarding wizard is organization-scoped — `useProProvisioning`
   // targets the subscription's `primary_assistant_id` and falls back to the
   // active assistant only when the payload names none — so it is gated on the
@@ -191,7 +191,7 @@ function BillingTabContent() {
   const showProOnboarding =
     showPlanManagement || hasSessionId || proOnboardingOpen;
 
-  if (!isPlatformHosted && platformGate !== "gated") {
+  if (!isCloudHosted && cloudGate !== "gated") {
     return (
       <div className="space-y-4">
         <Notice tone="warning">{t("billingPage.billingUnavailable")}</Notice>
@@ -253,8 +253,8 @@ function BillingTab() {
 
 function UsagePanel() {
   const assistantId = useActiveAssistantId();
-  const chartGate = usePlatformGate({ platformHostedOnly: true });
-  const reachabilityGate = usePlatformGate();
+  const chartGate = useCloudGate({ cloudHostedOnly: true });
+  const reachabilityGate = useCloudGate();
   const showChart = chartGate === "full" && reachabilityGate !== "gated";
 
   return (
@@ -267,7 +267,7 @@ function UsagePanel() {
 
 export function BillingPage() {
   const { t } = useTranslation("settings");
-  const billingGate = usePlatformGate();
+  const billingGate = useCloudGate();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -293,15 +293,15 @@ export function BillingPage() {
   // Keep the active tab explicit in the URL so both tabs are symmetric and
   // the address bar always names what's shown: a bare `/settings/usage` — or
   // a stale `?tab=billing` after signing out — is rewritten to the resolved
-  // tab. Gate on the *platform-session* probe settling, not just session
+  // tab. Gate on the *cloud-session* probe settling, not just session
   // status: the local-gateway path flips `sessionStatus` to authenticated
-  // while `platformSession` is still `"unknown"` (so `usePlatformGate()`
+  // while `cloudSession` is still `"unknown"` (so `useCloudGate()`
   // reads no session and Billing hasn't resolved as the default). Rewriting
   // in that window would lock `?tab=usage` and strand a signed-in viewer on
   // Usage once the session confirms.
-  const isPlatformSessionSettled = useIsPlatformSessionSettled();
+  const isCloudSessionSettled = useIsCloudSessionSettled();
   useEffect(() => {
-    if (!isPlatformSessionSettled) {
+    if (!isCloudSessionSettled) {
       return;
     }
     if (searchParams.get("tab") !== activeTab) {
@@ -309,7 +309,7 @@ export function BillingPage() {
         next.set("tab", activeTab),
       );
     }
-  }, [isPlatformSessionSettled, searchParams, activeTab, navigate, location]);
+  }, [isCloudSessionSettled, searchParams, activeTab, navigate, location]);
 
   const handleTabChange = (value: string) => {
     replaceSearchParams(navigate, location, (next) => next.set("tab", value));

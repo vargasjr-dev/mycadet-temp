@@ -2,12 +2,12 @@
  * Tests for UsageTelemetryReporter.
  *
  * Covers the authenticated send path (and the skip behavior when credentials
- * are absent or the platform is disabled), watermark advancement, error
+ * are absent or the cloud is disabled), watermark advancement, error
  * handling, batch recursion, device ID resolution, and payload shape.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { ConsentState } from "../platform/consent-cache.js";
+import type { ConsentState } from "../cloud/consent-cache.js";
 
 // ---------------------------------------------------------------------------
 // Module mocks (must precede production imports)
@@ -60,11 +60,11 @@ mock.module("./turn-events-store.js", () => ({
   queryUnreportedTurnEvents: mockQueryUnreportedTurnEvents,
 }));
 
-let mockPlatformClient: Record<string, unknown> | null = null;
+let mockCloudClient: Record<string, unknown> | null = null;
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
-    create: async () => mockPlatformClient,
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
+    create: async () => mockCloudClient,
   },
 }));
 
@@ -105,7 +105,7 @@ const mockGetCachedShareDiagnostics = mock(() => false);
 // cases override it with old/empty values.
 const mockGetCachedShareDiagnosticsVersion = mock(() => "2999-01-01");
 
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: mockGetRawShareAnalytics,
   getCachedShareDiagnostics: mockGetCachedShareDiagnostics,
   getCachedShareDiagnosticsVersion: mockGetCachedShareDiagnosticsVersion,
@@ -362,8 +362,8 @@ beforeEach(() => {
   mockQueryUnreportedTurnEvents.mockReturnValue([]);
   getDb().delete(toolInvocations).run();
   getTelemetryDb()!.delete(telemetryEvents).run();
-  delete process.env.CADET_DISABLE_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  delete process.env.CADET_DISABLE_CLOUD;
+  delete process.env.IS_CLOUD;
   mockGetCloudBaseUrl.mockReset();
   mockGetDeviceId.mockReset();
   mockGetDeviceId.mockReturnValue("test-device-id");
@@ -384,19 +384,19 @@ beforeEach(() => {
   // Default to an authenticated client whose fetch delegates to the mockFetch
   // spy, so the existing payload/body assertions keep working. The reporter
   // sends authenticated-only; tests that exercise the no-credentials path
-  // override this with `mockPlatformClient = null`.
-  mockPlatformClient = {
+  // override this with `mockCloudClient = null`.
+  mockCloudClient = {
     baseUrl: "https://test.mycadet.ai",
     assistantApiKey: "test-key",
-    platformAssistantId: "asst-123",
+    cloudAssistantId: "asst-123",
     fetch: (path: string, init?: RequestInit) => mockFetch(path, init),
   };
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
-  delete process.env.CADET_DISABLE_PLATFORM;
-  delete process.env.IS_PLATFORM;
+  delete process.env.CADET_DISABLE_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 // ---------------------------------------------------------------------------
@@ -408,10 +408,10 @@ describe("UsageTelemetryReporter", () => {
     const clientFetchMock = mock(async (_path: string, _init?: RequestInit) => {
       return new Response('{"accepted":2}', { status: 200 });
     });
-    mockPlatformClient = {
+    mockCloudClient = {
       baseUrl: "https://test.mycadet.ai",
       assistantApiKey: "test-key",
-      platformAssistantId: "asst-123",
+      cloudAssistantId: "asst-123",
       fetch: clientFetchMock,
     };
     const events = [makeUsageEvent(), makeUsageEvent()];
@@ -430,7 +430,7 @@ describe("UsageTelemetryReporter", () => {
   test("flush is skipped when no platform credentials are available", async () => {
     // Authenticated-only: with no client, nothing is sent and the watermark is
     // left intact so the backlog ships once credentials resolve.
-    mockPlatformClient = null;
+    mockCloudClient = null;
 
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -445,11 +445,11 @@ describe("UsageTelemetryReporter", () => {
     expect(watermarkCalls.length).toBe(0);
   });
 
-  test("flush is skipped when CADET_DISABLE_PLATFORM is set in local mode", async () => {
-    // The platform-disabled toggle suppresses the send. Unlike the opt-out
+  test("flush is skipped when CADET_DISABLE_CLOUD is set in local mode", async () => {
+    // The cloud-disabled toggle suppresses the send. Unlike the opt-out
     // branch, watermarks are NOT advanced, so the backlog ships once the flag
     // is cleared.
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
 
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -464,12 +464,12 @@ describe("UsageTelemetryReporter", () => {
     expect(mockSetFlushCheckpoint).not.toHaveBeenCalled();
   });
 
-  test("CADET_DISABLE_PLATFORM is ignored when IS_PLATFORM is set (managed mode)", async () => {
-    // Platform-managed assistants always connect to the platform; an inherited
-    // CADET_DISABLE_PLATFORM must not suppress telemetry for them (matches
-    // arePlatformFeaturesEnabled / CadetPlatformClient.create()).
-    process.env.IS_PLATFORM = "true";
-    process.env.CADET_DISABLE_PLATFORM = "true";
+  test("CADET_DISABLE_CLOUD is ignored when IS_CLOUD is set (managed mode)", async () => {
+    // Cloud assistants always connect to the cloud; an inherited
+    // CADET_DISABLE_CLOUD must not suppress telemetry for them (matches
+    // areCloudFeaturesEnabled / CadetCloudClient.create()).
+    process.env.IS_CLOUD = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
 
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -677,7 +677,7 @@ describe("UsageTelemetryReporter", () => {
     mockGetRawShareAnalytics.mockReturnValue(true);
 
     // no-credentials: authenticated-only, no platform client resolved.
-    mockPlatformClient = null;
+    mockCloudClient = null;
     expect(await reporter.flush()).toEqual({
       flushed: false,
       reason: "no-credentials",
@@ -1230,7 +1230,7 @@ describe("UsageTelemetryReporter", () => {
   test("omits the trace when the accepted consent version predates the disclosure threshold (share_diagnostics on)", async () => {
     mockGetCachedShareDiagnostics.mockReturnValue(true);
     // Consent recorded under an older version that never disclosed trace
-    // collection → gate closed, mirroring the platform ingest gate.
+    // collection → gate closed, mirroring the cloud ingest gate.
     mockGetCachedShareDiagnosticsVersion.mockReturnValue("2000-01-01");
     mockQueryUnreportedUsageEvents.mockReturnValue([]);
     mockQueryUnreportedTurnEvents.mockReturnValue(singleTurnEvent());
@@ -1836,12 +1836,12 @@ describe("UsageTelemetryReporter", () => {
   });
 
   test("platform disabled takes precedence over consent off — watermarks NOT advanced", async () => {
-    // CADET_DISABLE_PLATFORM keeps the consent cache false (the consent
-    // refresh can't create a platform client), so both gates would fire. The
+    // CADET_DISABLE_CLOUD keeps the consent cache false (the consent
+    // refresh can't create a cloud client), so both gates would fire. The
     // platform-disabled gate runs first and returns without advancing
     // watermarks, preserving the backlog until the flag is cleared — a
     // deployment toggle must not be treated as a privacy opt-out.
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
     mockGetRawShareAnalytics.mockReturnValue(false);
     const events = [makeUsageEvent()];
     mockQueryUnreportedUsageEvents.mockReturnValue(events);
@@ -1913,7 +1913,7 @@ describe("UsageTelemetryReporter", () => {
   // `APP_VERSION` directly until their respective follow-ups land.
   // Nullable llm_usage cases (legacy rows from before migration 267 ran)
   // fall back to the running binary's `APP_VERSION` rather than emitting
-  // explicit `null` — under the platform contract a present-but-null
+  // explicit `null` — under the cloud contract a present-but-null
   // per-event value would override the envelope, and we'd rather have a
   // concrete version than no version.
   // -------------------------------------------------------------------------
@@ -1960,7 +1960,7 @@ describe("UsageTelemetryReporter", () => {
     );
     // No explicit null on the wire — the running binary's APP_VERSION is
     // stamped instead so a present-but-null value can't override the
-    // envelope under the platform's per-event-wins contract.
+    // envelope under the cloud's per-event-wins contract.
     expect(body.events[0].assistant_version).toBe("1.2.3-test");
   });
 
@@ -1969,7 +1969,7 @@ describe("UsageTelemetryReporter", () => {
     // don't yet carry a per-event version. Until the follow-up migration
     // adds a column to `messages`, we stamp the running binary's
     // APP_VERSION instead of explicit null — matches what the envelope
-    // would have provided but per-event so it survives the platform
+    // would have provided but per-event so it survives the cloud
     // contract that treats present per-event values as winning over the
     // envelope.
     mockQueryUnreportedUsageEvents.mockReturnValue([]);
@@ -2978,7 +2978,7 @@ describe("UsageTelemetryReporter", () => {
   });
 
   test("acknowledge is NOT called when platform credentials are missing", async () => {
-    mockPlatformClient = null;
+    mockCloudClient = null;
     const { source, acknowledge, pending } = makeAckSource("fake_ack", [
       "row-1",
     ]);
@@ -3315,7 +3315,7 @@ describe("UsageTelemetryReporter", () => {
   });
 
   test("expired rows are pruned even when the flush skips for platform-disabled", async () => {
-    process.env.CADET_DISABLE_PLATFORM = "true";
+    process.env.CADET_DISABLE_CLOUD = "true";
     seedExpiredAndFreshRows();
     const reporter = new UsageTelemetryReporter(
       [outboxSource(OUTBOX_NAME)],

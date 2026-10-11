@@ -59,7 +59,7 @@ describe("LLMSchema fallbackProfile", () => {
     expect(result.success).toBe(false);
   });
 
-  test("rejects a managed default pointing anywhere except its code-owned backup", () => {
+  test("rejects a cloud default pointing anywhere except its code-owned backup", () => {
     const profileName = DEFAULT_PROFILE_KEYS[0];
     const result = LLMSchema.safeParse({
       profiles: {
@@ -98,7 +98,7 @@ describe("LLMSchema fallbackProfile", () => {
     }
   });
 
-  test("a code-owned fallback pointer is rejected on a non-managed column", () => {
+  test("a code-owned fallback pointer is rejected on a non-cloud column", () => {
     const profileName = DEFAULT_PROFILE_KEYS[0];
     for (const provider of ["anthropic", "chatgpt"] as const) {
       const result = LLMSchema.safeParse({
@@ -147,7 +147,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
   const managed = { provider: "cadet" } as const;
   const nonManaged = [{ provider: "anthropic" }, { provider: "chatgpt" }];
 
-  test("activeProfile naming a backup parses on the managed column", () => {
+  test("activeProfile naming a backup parses on the cloud column", () => {
     const result = LLMSchema.safeParse({
       default: managed,
       activeProfile: backupKey,
@@ -155,7 +155,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     expect(result.success).toBe(true);
   });
 
-  test("activeProfile naming a backup is rejected on a non-managed column", () => {
+  test("activeProfile naming a backup is rejected on a non-cloud column", () => {
     for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
         default: blob,
@@ -235,11 +235,11 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     }
   });
 
-  test("an absent blob or a non-matrix provider reads as the managed column", () => {
+  test("an absent blob or a non-matrix provider reads as the cloud column", () => {
     // An install predating the blob is managed by definition, so an absent
     // `default` keeps its backups referenceable. A provider value with no
     // matrix column (keyless ollama, user-endpoint openai-compatible) is
-    // clamped to the managed column at read time rather than failing the
+    // clamped to the cloud column at read time rather than failing the
     // blob. A non-string provider is NOT caught — the blob is a plain
     // fragment, so it fails the parse and the loader's leaf recovery strips
     // the bad leaf (covered by the loader tests).
@@ -269,13 +269,13 @@ describe("LLMSchema backup profile references vs llm.default", () => {
   });
 
   // A managed install can persist a thin `{ source: "managed" }` stub for a
-  // backup key: `normalizeManagedProfileWrites` reduces a `config get` ->
+  // backup key: `normalizeCloudProfileWrites` reduces a `config get` ->
   // `config set` echo of the effective profile list to exactly that. The stub
   // holds no body of its own, so it must not carry a reference past the
-  // provider gate once the install moves off the managed column.
+  // provider gate once the install moves off the cloud column.
   const stub = { source: "managed" } as const;
 
-  test("a managed stub does not keep a backup reference alive off the managed column", () => {
+  test("a cloud stub does not keep a backup reference alive off the cloud column", () => {
     for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
         default: blob,
@@ -292,7 +292,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     }
   });
 
-  test("a managed stub does not keep a call-site pin or mix arm alive either", () => {
+  test("a cloud stub does not keep a call-site pin or mix arm alive either", () => {
     for (const blob of nonManaged) {
       const callSitePin = LLMSchema.safeParse({
         default: blob,
@@ -318,7 +318,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     }
   });
 
-  test("a managed stub does not keep a fallbackProfile pointer alive either", () => {
+  test("a cloud stub does not keep a fallbackProfile pointer alive either", () => {
     for (const blob of nonManaged) {
       const result = LLMSchema.safeParse({
         default: blob,
@@ -337,7 +337,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     }
   });
 
-  test("a managed stub keeps its references valid on the managed column", () => {
+  test("a cloud stub keeps its references valid on the cloud column", () => {
     // The stub stands for a body that does resolve here, so nothing about it
     // makes the reference worse than the unmaterialized case.
     const result = LLMSchema.safeParse({

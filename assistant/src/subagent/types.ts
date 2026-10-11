@@ -468,7 +468,7 @@ export function subagentOutputContractText(
  * them, so a correction lands once.
  *
  * Mirrored on the wire as `llm_usage.subagent_spawn_mode`, which is an OPEN
- * string set on the platform side: adding a value here needs no coordinated
+ * string set on the cloud side: adding a value here needs no coordinated
  * platform release.
  */
 export type SubagentSpawnMode =

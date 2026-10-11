@@ -1,10 +1,10 @@
 import { isElectron } from "@/runtime/is-electron";
 
-export async function setMenuPlatformSession(has: boolean): Promise<void> {
+export async function setMenuCloudSession(has: boolean): Promise<void> {
   if (!isElectron()) {
     return;
   }
-  await window.cadet?.menu.setPlatformSession(has);
+  await window.cadet?.menu.setCloudSession(has);
 }
 
 /** One top-level native menu: a stable id plus the shell's own label. */

@@ -1,7 +1,7 @@
 /**
  * Parent-frame navigation bridge for remote-gateway mode.
  *
- * The bundle boots inside an iframe on the platform's origin while the
+ * The bundle boots inside an iframe on the cloud's origin while the
  * router owns the iframe's history. Neither side can observe the other's
  * history directly, so both directions travel over postMessage:
  *

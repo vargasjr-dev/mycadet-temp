@@ -327,7 +327,7 @@ describe("authenticateRequest for /v1/host-browser-result", () => {
 
 // ---------------------------------------------------------------------------
 // Dev bypass covers only a request that supplied no Authorization header. A
-// bearer sent to a platform pod (the gateway's exchange token, or a trusted
+// bearer sent to a cloud pod (the gateway's exchange token, or a trusted
 // contact's) is verified on its own terms.
 // ---------------------------------------------------------------------------
 

@@ -234,7 +234,7 @@ async function installCapabilityBestEffort(
 }
 
 /**
- * Cap on hobbies reported to telemetry. Matches the platform serializer's
+ * Cap on hobbies reported to telemetry. Matches the cloud serializer's
  * `self_reported_hobbies` bound so the two can't disagree.
  */
 const MAX_REPORTED_HOBBIES = 32;

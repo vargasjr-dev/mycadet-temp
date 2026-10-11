@@ -102,7 +102,7 @@ describe("route classification through the active profile", () => {
     ).toBe(true);
   });
 
-  test("profile bound to the managed sentinel connection burns credits", () => {
+  test("profile bound to the cloud sentinel connection burns credits", () => {
     expect(
       classify({
         llm: llmSection({
@@ -140,7 +140,7 @@ describe("route classification through the active profile", () => {
     ).toBe(true);
   });
 
-  test("profile bound to a platform-auth connection burns credits", () => {
+  test("profile bound to a cloud-auth connection burns credits", () => {
     expect(
       classify({
         llm: llmSection({
@@ -194,7 +194,7 @@ describe("route classification through the active profile", () => {
     ).toBeNull();
   });
 
-  test("unbound profile burns credits when its provider has a platform-auth connection", () => {
+  test("unbound profile burns credits when its provider has a cloud-auth connection", () => {
     expect(
       classify({
         llm: llmSection({
@@ -207,7 +207,7 @@ describe("route classification through the active profile", () => {
   });
 
   test("unbound profile is BYOK when its provider only has key connections", () => {
-    // The managed sentinel carries provider "cadet", so it never matches an
+    // The cloud sentinel carries provider "cadet", so it never matches an
     // unbound anthropic profile's provider-scoped fallback dispatch.
     expect(
       classify({
@@ -262,7 +262,7 @@ describe("the BYOK proof standard (connection availability)", () => {
     ).toBeNull();
   });
 
-  test("a managed verdict needs no availability proof", () => {
+  test("a cloud verdict needs no availability proof", () => {
     expect(
       classify({
         llm: llmSection({
@@ -337,7 +337,7 @@ describe("resolver-chain fallthrough", () => {
     ).toBe(true);
   });
 
-  test("a managed conversation override outranks a BYOK active profile", () => {
+  test("a cloud conversation override outranks a BYOK active profile", () => {
     expect(
       classify({
         llm: llmSection({
@@ -424,7 +424,7 @@ describe("mix rungs (per-conversation seeded pick)", () => {
 
   test("an unusable arm stands for the chain below the mix rung", () => {
     // A conversation seeded to the disabled arm skips the whole rung
-    // daemon-side and lands on the next rung (here a managed call-site pin),
+    // daemon-side and lands on the next rung (here a cloud call-site pin),
     // so the mix must classify as managed even though its usable arm is
     // BYOK.
     expect(
@@ -516,7 +516,7 @@ describe("mainAgent call-site tweak composition", () => {
 
   test("a foreign model tweak classifies by the implied provider's connections", () => {
     // Unbound implied dispatch consults the implied provider's connections:
-    // a platform-auth openai connection makes the route managed, while an
+    // a cloud-auth openai connection makes the route managed, while an
     // api-key one leaves a BYOK-looking route whose proof was voided.
     expect(
       classify({
@@ -542,7 +542,7 @@ describe("mainAgent call-site tweak composition", () => {
     ).toBeNull();
   });
 
-  test("an explicit provider tweak voids the BYOK proof but keeps a managed binding decisive", () => {
+  test("an explicit provider tweak voids the BYOK proof but keeps a cloud binding decisive", () => {
     expect(
       classify({
         llm: BYOK_WINNER_LLM({ mainAgent: { provider: "openai" } }),
@@ -705,7 +705,7 @@ describe("anchor fallbacks", () => {
   test("an unset provider_connection binds through the resolved conventional connection", () => {
     // The daemon stamps `resolveDefaultConnectionName` onto default bodies;
     // without it the anchor would misread as unbound and a coexisting
-    // platform-auth row for the provider would classify the route managed.
+    // cloud-auth row for the provider would classify the route managed.
     expect(
       classify({
         llm: llmSection({ default: { provider: "anthropic" } }),

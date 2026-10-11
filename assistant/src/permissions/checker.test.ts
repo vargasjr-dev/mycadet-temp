@@ -885,7 +885,7 @@ describe("Permission Checker (gateway IPC)", () => {
     // ── Memory-retrospective skill-authoring auto-grant ─────────────────────
     // The background retrospective guardian session (sourceChannel "cadet",
     // trustClass "guardian", origin "memory_retrospective") cannot answer
-    // interactive prompts, so `scaffold_managed_skill`, `find_similar_skills`,
+    // interactive prompts, so `scaffold_cloud_skill`, `find_similar_skills`,
     // and `skill_load skill-management` resolve to allow without prompting. The
     // grant is scoped to that origin + those tools, and ONLY fires when the
     // feature is active (`procToSkillsActive: true`).
@@ -898,11 +898,11 @@ describe("Permission Checker (gateway IPC)", () => {
       procToSkillsActive: true,
     };
 
-    test("allows scaffold_managed_skill for the retrospective origin without prompting", async () => {
+    test("allows scaffold_cloud_skill for the retrospective origin without prompting", async () => {
       // High risk would normally force a prompt — the grant short-circuits
       // before classification, so no IPC result is needed.
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         retrospectiveContext,
@@ -960,7 +960,7 @@ describe("Permission Checker (gateway IPC)", () => {
         scopeOptions: [],
       };
       const result = await check(
-        "delete_managed_skill",
+        "delete_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         retrospectiveContext,
@@ -977,7 +977,7 @@ describe("Permission Checker (gateway IPC)", () => {
       };
       // A normal interactive turn carries no retrospective origin signals.
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         { executionContext: "conversation" },
@@ -996,7 +996,7 @@ describe("Permission Checker (gateway IPC)", () => {
       // consolidation origin does not authorize skill authoring; only the
       // retrospective origin holds this grant.
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         {
@@ -1020,7 +1020,7 @@ describe("Permission Checker (gateway IPC)", () => {
       // Same guardian/cadet background trust, but a different origin (e.g.
       // the memory sweep job) must not inherit the retrospective grant.
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         {
@@ -1042,7 +1042,7 @@ describe("Permission Checker (gateway IPC)", () => {
         scopeOptions: [],
       };
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         {
@@ -1067,7 +1067,7 @@ describe("Permission Checker (gateway IPC)", () => {
       // inactive — `procToSkillsActive` is not true — so the grant must NOT
       // fire and the high-risk tool prompts.
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         { ...retrospectiveContext, procToSkillsActive: false },
@@ -1085,7 +1085,7 @@ describe("Permission Checker (gateway IPC)", () => {
 
     /** A bare core tool — `buildPolicyContext` reads only `tool.name`/owner. */
     const scaffoldTool = {
-      name: "scaffold_managed_skill",
+      name: "scaffold_cloud_skill",
     } as unknown as Tool;
 
     /** The ToolContext a memory-retrospective pass produces. */
@@ -1118,7 +1118,7 @@ describe("Permission Checker (gateway IPC)", () => {
       expect(policyContext.procToSkillsActive).toBe(true);
 
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         policyContext,
@@ -1150,7 +1150,7 @@ describe("Permission Checker (gateway IPC)", () => {
       expect(policyContext.requestOrigin).toBeUndefined();
 
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         policyContext,
@@ -1178,7 +1178,7 @@ describe("Permission Checker (gateway IPC)", () => {
       expect(policyContext.requestOrigin).toBe("memory_retrospective");
 
       const result = await check(
-        "scaffold_managed_skill",
+        "scaffold_cloud_skill",
         { skill_id: "deploy-preview" },
         "/home/user/project",
         policyContext,

@@ -58,7 +58,7 @@ const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
         app.focus({ steal: true });
         ensureVisible();
       },
-      getPlatformUrl: () => resolveLocalConfigFromEnv(process.env).platformUrl,
+      getCloudUrl: () => resolveLocalConfigFromEnv(process.env).cloudUrl,
       ipc: { handle, handleSync },
       openExternal: (url) => shell.openExternal(url),
       removeCookie: (url, name) =>

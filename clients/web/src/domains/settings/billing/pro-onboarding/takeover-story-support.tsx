@@ -7,7 +7,7 @@
  * every mount; and the fixture tables the Controls panel selects a row from
  * (the plan move, the captured reconcile failure).
  *
- * The catalog fixture mirrors the platform's real Pro catalog (Mighty on
+ * The catalog fixture mirrors the cloud's real Pro catalog (Mighty on
  * `credits_25`, Super on `credits_45`), so the credits chip quotes the amounts a
  * subscriber is actually billed, and each scenario's dimensions are the ones its
  * packages really carry.

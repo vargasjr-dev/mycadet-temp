@@ -141,7 +141,7 @@ describe("loadAllAssistantsAcrossEnvs", () => {
   function makeEnv(name: string, lockfileDir: string): EnvironmentDefinition {
     return {
       name,
-      platformUrl: "https://example.invalid",
+      cloudUrl: "https://example.invalid",
       webUrl: "https://example.invalid",
       lockfileDirOverride: lockfileDir,
     };

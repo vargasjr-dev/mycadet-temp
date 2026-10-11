@@ -19,9 +19,9 @@ export function AssistantPicker() {
   const { t } = useTranslation("settings");
   const activeAssistantId = useActiveAssistantId();
   const listQuery = useQuery(PLATFORM_LIST_OPTIONS);
-  const platformAssistants = (listQuery.data?.results ?? []) as Assistant[];
+  const cloudAssistants = (listQuery.data?.results ?? []) as Assistant[];
 
-  if (listQuery.isPending || platformAssistants.length < 2) {
+  if (listQuery.isPending || cloudAssistants.length < 2) {
     return null;
   }
 
@@ -31,7 +31,7 @@ export function AssistantPicker() {
       subtitle={t("assistantPicker.subtitle")}
     >
       <div className="space-y-2">
-        {platformAssistants.map((a) => {
+        {cloudAssistants.map((a) => {
           const isActive = a.id === activeAssistantId;
 
           return (

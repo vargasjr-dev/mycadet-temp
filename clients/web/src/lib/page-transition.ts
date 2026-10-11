@@ -57,7 +57,7 @@ export function pageTransitionsEnabled(): boolean {
 }
 
 /**
- * Navigate with a directional slide where the platform supports one, and
+ * Navigate with a directional slide where the cloud supports one, and
  * exactly like `navigate()` everywhere else.
  *
  * `viewTransition` is per-navigation rather than global so a route change that

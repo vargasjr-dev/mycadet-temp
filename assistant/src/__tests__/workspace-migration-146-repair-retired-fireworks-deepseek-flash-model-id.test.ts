@@ -104,7 +104,7 @@ describe("146-repair-retired-fireworks-deepseek-flash-model-id migration", () =>
     // fire on already-repaired leaves.
     expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
     expect(llm.callSites.malformed).toBe(STALE);
-    // Managed profiles stamped provider "cadet" carry Fireworks model IDs.
+    // Cloud profiles stamped provider "cadet" carry Fireworks model IDs.
     expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
     expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
   });

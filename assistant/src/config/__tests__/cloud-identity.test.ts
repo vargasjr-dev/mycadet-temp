@@ -10,7 +10,7 @@ import {
 
 useMemorySecureKeys();
 const {
-  _resetPlatformIdentityEnsureForTests,
+  _resetCloudIdentityEnsureForTests,
   fetchCloudIdentityIds,
   CLOUD_IDENTITY_VALIDATE_PATH,
   resolveCloudAssistantId,
@@ -111,7 +111,7 @@ describe("fetchCloudIdentityIds", () => {
 describe("resolveCloudAssistantId", () => {
   const originalFetch = globalThis.fetch;
   const originalAssistantApiKeyEnv = process.env.ASSISTANT_API_KEY;
-  const originalPlatformUrlEnv = process.env.CADET_PLATFORM_URL;
+  const originalCloudUrlEnv = process.env.CADET_CLOUD_URL;
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
   let fetchImpl: (
     input: RequestInfo | URL,
@@ -131,11 +131,11 @@ describe("resolveCloudAssistantId", () => {
       return fetchImpl(input, init);
     }) as unknown as typeof fetch;
     delete process.env.ASSISTANT_API_KEY;
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
     setCloudAssistantId(undefined);
     setCloudOrganizationId(undefined);
     setCloudUserId(undefined);
-    _resetPlatformIdentityEnsureForTests();
+    _resetCloudIdentityEnsureForTests();
   });
 
   afterEach(() => {
@@ -145,15 +145,15 @@ describe("resolveCloudAssistantId", () => {
     } else {
       process.env.ASSISTANT_API_KEY = originalAssistantApiKeyEnv;
     }
-    if (originalPlatformUrlEnv === undefined) {
-      delete process.env.CADET_PLATFORM_URL;
+    if (originalCloudUrlEnv === undefined) {
+      delete process.env.CADET_CLOUD_URL;
     } else {
-      process.env.CADET_PLATFORM_URL = originalPlatformUrlEnv;
+      process.env.CADET_CLOUD_URL = originalCloudUrlEnv;
     }
     setCloudAssistantId(undefined);
     setCloudOrganizationId(undefined);
     setCloudUserId(undefined);
-    _resetPlatformIdentityEnsureForTests();
+    _resetCloudIdentityEnsureForTests();
   });
 
   test("returns the in-memory override without calling validate", async () => {
@@ -170,7 +170,7 @@ describe("resolveCloudAssistantId", () => {
 
   test("loads ids from validate when the in-memory override is empty", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImpl = async () =>
       new Response(
         JSON.stringify({
@@ -190,7 +190,7 @@ describe("resolveCloudAssistantId", () => {
 
   test("does not retry validate during the cooldown after a failure", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImpl = async () => new Response("down", { status: 503 });
 
     await expect(resolveCloudAssistantId()).resolves.toBe("");
@@ -200,7 +200,7 @@ describe("resolveCloudAssistantId", () => {
 
   test("retries validate inside the cooldown once a different API key is stored", async () => {
     process.env.ASSISTANT_API_KEY = "rejected-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImpl = async () => new Response("no", { status: 401 });
 
     await expect(resolveCloudAssistantId()).resolves.toBe("");
@@ -227,13 +227,13 @@ describe("resolveCloudAssistantId", () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
     // The environment URL outranks the in-memory override (and the test
     // preload sets one), so the base URL is changed through the environment.
-    process.env.CADET_PLATFORM_URL = "https://old.example.com";
+    process.env.CADET_CLOUD_URL = "https://old.example.com";
     fetchImpl = async () => new Response("no", { status: 401 });
 
     await expect(resolveCloudAssistantId()).resolves.toBe("");
     expect(fetchCalls).toHaveLength(1);
 
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImpl = async () =>
       new Response(
         JSON.stringify({
@@ -253,11 +253,11 @@ describe("resolveCloudAssistantId", () => {
 
   test("retries validate after a failed attempt once the cooldown is cleared", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     fetchImpl = async () => new Response("down", { status: 503 });
 
     await expect(resolveCloudAssistantId()).resolves.toBe("");
-    _resetPlatformIdentityEnsureForTests();
+    _resetCloudIdentityEnsureForTests();
     fetchImpl = async () =>
       new Response(
         JSON.stringify({
@@ -274,7 +274,7 @@ describe("resolveCloudAssistantId", () => {
 
   test("concurrent resolves share one in-flight validate", async () => {
     process.env.ASSISTANT_API_KEY = "assistant-key";
-    process.env.CADET_PLATFORM_URL = BASE_URL;
+    process.env.CADET_CLOUD_URL = BASE_URL;
     let release!: (value: Response) => void;
     let notifyFetchStarted!: () => void;
     const fetchStarted = new Promise<void>((resolve) => {

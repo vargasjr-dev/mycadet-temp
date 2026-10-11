@@ -16,7 +16,7 @@ import {
   COMPANION_PICKER_VOICES,
 } from "@mycadet/ipc-contract";
 
-import { useManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import {
   closeCompanionPicker,
   useCompanionPopoverStore,
@@ -29,7 +29,7 @@ import { t } from "@/i18n";
 import {
   groupVoicesByAccent,
   voiceTraitsLabel,
-} from "@/lib/tts/managed-voice-catalog";
+} from "@/lib/tts/cloud-voice-catalog";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getPreferredInputDeviceId,
@@ -119,7 +119,7 @@ export function useCompanionPickers(): void {
   // Handed an assistant only during a call, which is when the call bar asks
   // whether there are voices to offer. Off the call its queries stay off.
   const { available, voices, currentModel, defaultModel, selectModel } =
-    useManagedVoiceSelection(inCall ? activeAssistantId : null);
+    useCloudVoiceSelection(inCall ? activeAssistantId : null);
 
   // Whether the voice chevron has anything to open: an assistant on its own
   // speech provider, or a daemon without voice selection, has no catalog.

@@ -14,7 +14,7 @@ import {
   resolveTwilioPublicBaseUrl,
 } from "@mycadet/service-contracts/twilio-ingress";
 
-import { resolvePlatformCallbackRegistrationContext } from "../inbound/platform-callback-registration.js";
+import { resolveCloudCallbackRegistrationContext } from "../inbound/cloud-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";
 import { isTunnelWebhooksEnabled } from "../inbound/tunnel-webhooks-gate.js";
 import { getIsCloud } from "./env-registry.js";
@@ -68,7 +68,7 @@ function isIngressExplicitlyDisabled(): boolean {
  * reports "no ingress" while `webhooks register` hands back a working callback
  * URL hides a broken registration instead of surfacing it.
  *
- *   1. **Platform pods** (`IS_PLATFORM`) with the `tunnel-webhooks` flag off
+ *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
  *      always use managed callbacks. With the flag on, a configured ingress
  *      (the Tunnel-published URL) wins, and managed callbacks remain the
  *      fallback — including when ingress is explicitly disabled, matching
@@ -76,17 +76,17 @@ function isIngressExplicitlyDisabled(): boolean {
  *   2. **A configured public ingress wins** for everyone else.
  *   3. **Platform-connected assistants with no ingress** fall back to managed
  *      callbacks. Connectivity is decided by credentials (platform base URL +
- *      assistant ID + assistant API key), not by `IS_PLATFORM`, which is only
- *      ever true on a platform pod.
+ *      assistant ID + assistant API key), not by `IS_CLOUD`, which is only
+ *      ever true on a cloud pod.
  *   4. Otherwise nothing is configured.
  *
- * Ingress deliberately precedes the platform fallback: any logged-in local
+ * Ingress deliberately precedes the cloud fallback: any logged-in local
  * assistant holds cloud credentials for the LLM proxy, so treating
  * credential presence as "managed" would misreport an explicitly configured
  * self-hosted webhook as platform-routed. An explicit `ingress.enabled: false`
  * is a decision not to accept inbound webhooks at all and blocks the fallback.
  *
- * `allowManagedCallbacks` gates both platform tiers: channels that can only be
+ * `allowCloudCallbacks` gates both platform tiers: channels that can only be
  * served by a self-hosted ingress pass `false` and never see them.
  *
  * The gateway's Telegram webhook reconciler implements this same resolution
@@ -98,29 +98,29 @@ function isIngressExplicitlyDisabled(): boolean {
  * registered. Change the tiers in both places or not at all.
  */
 export async function hasWebhookRoutingConfigured(
-  allowManagedCallbacks = false,
+  allowCloudCallbacks = false,
   options: { twilio?: boolean } = {},
 ): Promise<{
   configured: boolean;
-  usesManagedCallbacks: boolean;
+  usesCloudCallbacks: boolean;
 }> {
-  const cloudManaged = allowManagedCallbacks && getIsCloud();
+  const cloudManaged = allowCloudCallbacks && getIsCloud();
   if (cloudManaged && !isTunnelWebhooksEnabled()) {
-    return { configured: true, usesManagedCallbacks: true };
+    return { configured: true, usesCloudCallbacks: true };
   }
 
   if (hasIngressConfigured(options)) {
-    return { configured: true, usesManagedCallbacks: false };
+    return { configured: true, usesCloudCallbacks: false };
   }
 
   if (cloudManaged) {
-    return { configured: true, usesManagedCallbacks: true };
+    return { configured: true, usesCloudCallbacks: true };
   }
 
-  if (!allowManagedCallbacks || isIngressExplicitlyDisabled()) {
-    return { configured: false, usesManagedCallbacks: false };
+  if (!allowCloudCallbacks || isIngressExplicitlyDisabled()) {
+    return { configured: false, usesCloudCallbacks: false };
   }
 
-  const { enabled } = await resolvePlatformCallbackRegistrationContext();
-  return { configured: enabled, usesManagedCallbacks: enabled };
+  const { enabled } = await resolveCloudCallbackRegistrationContext();
+  return { configured: enabled, usesCloudCallbacks: enabled };
 }

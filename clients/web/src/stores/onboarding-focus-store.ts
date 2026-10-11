@@ -44,9 +44,9 @@ interface OnboardingFocusState {
   pendingAvatarTraits: CharacterTraits | null;
   setPendingAvatarTraits: (traits: CharacterTraits | null) => void;
   /**
-   * The managed voice belonging to that avatar, staged and applied alongside
+   * The cloud voice belonging to that avatar, staged and applied alongside
    * it. The face and the voice are one pick, so they land together. Null when
-   * the voice catalog never loaded, leaving the assistant on the platform
+   * the voice catalog never loaded, leaving the assistant on the cloud
    * default.
    */
   pendingAvatarVoice: string | null;

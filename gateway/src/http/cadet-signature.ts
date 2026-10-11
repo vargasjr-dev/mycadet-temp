@@ -2,7 +2,7 @@
  * Verification for the `Cadet-Signature` header.
  *
  * The signer computes `HMAC-SHA256(secret, rawBody)` and sends it as
- * `Cadet-Signature: sha256=<hex-digest>`. The scheme is the platform's, but
+ * `Cadet-Signature: sha256=<hex-digest>`. The scheme is the cloud's, but
  * nothing about it is platform-specific — plugin webhook routes verify the
  * same header against the plugin's own secret.
  */

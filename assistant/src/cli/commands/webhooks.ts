@@ -3,7 +3,7 @@
  *
  * Thin IPC wrapper that delegates webhook operations to the daemon.
  *
- * Platform-managed:  daemon registers a callback route and returns the platform URL.
+ * Platform-managed:  daemon registers a callback route and returns the cloud URL.
  * Self-hosted:       daemon resolves ingress.publicBaseUrl and appends the path.
  */
 

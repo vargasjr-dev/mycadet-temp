@@ -24,7 +24,7 @@ import {
 
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
 
-import * as realPlatformClient from "../platform/client.js";
+import * as realCloudClient from "../cloud/client.js";
 import type { AvatarState } from "./avatar-manifest.js";
 import * as realAvatarManifest from "./avatar-manifest.js";
 import * as realEnsureRaster from "./ensure-raster.js";
@@ -39,7 +39,7 @@ import * as realResvgLazy from "./resvg-lazy.js";
 const REAL_AVATAR_MANIFEST = { ...realAvatarManifest };
 const REAL_ENSURE_RASTER = { ...realEnsureRaster };
 const REAL_RESVG_LAZY = { ...realResvgLazy };
-const REAL_PLATFORM_CLIENT = { ...realPlatformClient };
+const REAL_PLATFORM_CLIENT = { ...realCloudClient };
 const realReadContainedAvatarRaster =
   REAL_ENSURE_RASTER.readContainedAvatarRaster;
 
@@ -47,7 +47,7 @@ let mockState: AvatarState;
 let mockRasterPath: string | null;
 let mockClient: {
   baseUrl: string;
-  platformAssistantId: string;
+  cloudAssistantId: string;
   fetch: (path: string, init: RequestInit) => Promise<Response>;
 } | null;
 /** Manifest states the accent backfill persisted during a test. */
@@ -59,8 +59,8 @@ let lastResvgSvg = "";
 let rasterCalls = 0;
 
 function installMocks(): void {
-  mock.module("../platform/client.js", () => ({
-    CadetPlatformClient: { create: async () => mockClient },
+  mock.module("../cloud/client.js", () => ({
+    CadetCloudClient: { create: async () => mockClient },
   }));
 
   mock.module("./avatar-manifest.js", () => ({
@@ -110,7 +110,7 @@ function installMocks(): void {
 }
 
 function restoreRealModules(): void {
-  mock.module("../platform/client.js", () => REAL_PLATFORM_CLIENT);
+  mock.module("../cloud/client.js", () => REAL_PLATFORM_CLIENT);
   mock.module("./avatar-manifest.js", () => REAL_AVATAR_MANIFEST);
   mock.module("./ensure-raster.js", () => REAL_ENSURE_RASTER);
   mock.module("./resvg-lazy.js", () => REAL_RESVG_LAZY);
@@ -121,7 +121,7 @@ installMocks();
 import {
   _resetSyncAvatarStateForTests,
   AVATAR_SYNC_KEY_TTL_MS,
-  syncAvatarToPlatform,
+  syncAvatarToCloud,
 } from "./sync-avatar.js";
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -225,7 +225,7 @@ let respond: () => Response;
 function makeClient(assistantId = "asst-1", baseUrl = "https://platform.a") {
   return {
     baseUrl,
-    platformAssistantId: assistantId,
+    cloudAssistantId: assistantId,
     fetch: async (path: string, init: RequestInit) => {
       patches.push({ path, body: JSON.parse(init.body as string) });
       return respond();
@@ -239,7 +239,7 @@ async function settle(): Promise<void> {
   }
 }
 
-describe("syncAvatarToPlatform", () => {
+describe("syncAvatarToCloud", () => {
   beforeEach(() => {
     rmSync(workspaceDir, { recursive: true, force: true });
     rmSync(join(dir, "platform-sync"), { recursive: true, force: true });
@@ -258,9 +258,9 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("PATCHes the base64 raster once and dedups an unchanged etag", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -271,11 +271,11 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("a changed etag re-sends", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockState = imageState("etag-b");
     mockRasterPath = writeRaster("b.png", png("bb"));
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches.map((p) => p.body.avatar_base64)).toEqual([
@@ -285,10 +285,10 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("a raster overwritten in place re-sends without a manifest change", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     writeRaster("a.png", png("a-rewritten"));
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches.map((p) => p.body.avatar_base64)).toEqual([
@@ -298,12 +298,12 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("re-registering to another assistant id re-sends the same raster", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockClient = makeClient("asst-2");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches.map((p) => p.path)).toEqual([
@@ -314,11 +314,11 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("rapid changes collapse into one PATCH carrying the newest raster", async () => {
-    syncAvatarToPlatform();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
+    syncAvatarToCloud();
     mockState = imageState("etag-c");
     mockRasterPath = writeRaster("c.png", png("c"));
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -327,11 +327,11 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("removing the avatar nulls both images", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockState = NONE;
     mockRasterPath = null;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -350,7 +350,7 @@ describe("syncAvatarToPlatform", () => {
             status: 400,
           })
         : new Response("{}", { status: 200 });
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -364,7 +364,7 @@ describe("syncAvatarToPlatform", () => {
       `|${REMOVAL_KEY}`,
     );
 
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -379,7 +379,7 @@ describe("syncAvatarToPlatform", () => {
       JSON.stringify({ key: LEGACY_REMOVAL_KEY, syncedAt: Date.now() }),
     );
 
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -391,28 +391,28 @@ describe("syncAvatarToPlatform", () => {
       `|${REMOVAL_KEY}`,
     );
 
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
   });
 
   test("an image avatar with a missing PNG is skipped, not cleared", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockRasterPath = null;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
   });
 
   test("a character whose re-render failed is skipped, not cleared", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockState = { ...characterState(), source: null };
     mockRasterPath = null;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -423,7 +423,7 @@ describe("syncAvatarToPlatform", () => {
     writeFileSync(outside, png("secret"));
     mockRasterPath = join(avatarDir, "avatar-image.png");
     symlinkSync(outside, mockRasterPath);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -434,7 +434,7 @@ describe("syncAvatarToPlatform", () => {
       "avatar-image.png",
       Buffer.from("AKIA-not-an-image-at-all"),
     );
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -444,7 +444,7 @@ describe("syncAvatarToPlatform", () => {
     const outside = join(dir, "elsewhere.png");
     writeFileSync(outside, png("elsewhere"));
     mockRasterPath = outside;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -452,7 +452,7 @@ describe("syncAvatarToPlatform", () => {
 
   test("skips oversized rasters when resvg is unavailable", async () => {
     mockRasterPath = writeRaster("big.png", OVERSIZED);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -462,7 +462,7 @@ describe("syncAvatarToPlatform", () => {
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("tiny");
     mockRasterPath = writeRaster("big.png", OVERSIZED);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -475,7 +475,7 @@ describe("syncAvatarToPlatform", () => {
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("tiny");
     mockRasterPath = writeRaster("big.png", OVERSIZED_JPEG);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -490,7 +490,7 @@ describe("syncAvatarToPlatform", () => {
     mockRenderedPng = Buffer.from("tiny");
     lastResvgSvg = "";
     mockRasterPath = writeRaster("big.png", OVERSIZED_WEBP);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -501,7 +501,7 @@ describe("syncAvatarToPlatform", () => {
     mockResvgAvailable = true;
     mockRenderedPng = OVERSIZED;
     mockRasterPath = writeRaster("big.png", OVERSIZED);
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);
@@ -510,7 +510,7 @@ describe("syncAvatarToPlatform", () => {
   test("PATCHes the notification avatar alongside the raster", async () => {
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("disc-a");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -522,7 +522,7 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("omits the notification avatar when resvg is unavailable", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches[0].body).toEqual({
@@ -531,7 +531,7 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("re-sends an unchanged raster once the rasterizer appears", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     expect(patches[0].body).toEqual({
       avatar_base64: png("a").toString("base64"),
@@ -539,7 +539,7 @@ describe("syncAvatarToPlatform", () => {
 
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("disc-a");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -552,14 +552,14 @@ describe("syncAvatarToPlatform", () => {
   test("a changed accent re-sends an unchanged raster", async () => {
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("disc-a");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockState = {
       ...imageState("etag-a"),
       accent: { hex: "#E9642F", source: "custom" },
     };
     mockRenderedPng = Buffer.from("disc-b");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches.map((p) => p.body.notification_avatar_base64)).toEqual([
@@ -574,7 +574,7 @@ describe("syncAvatarToPlatform", () => {
     mockResvgAvailable = true;
     mockRenderedPng = Buffer.from("disc-green");
     mockState = characterState();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -590,7 +590,7 @@ describe("syncAvatarToPlatform", () => {
     mockState = imageState("etag-legacy");
     mockRasterPath = writeRaster("avatar-image.png", RED_PNG);
 
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -608,7 +608,7 @@ describe("syncAvatarToPlatform", () => {
   test("a render that failed after the key promised a disc re-uploads next sync", async () => {
     mockResvgAvailable = true;
     mockRenderThrows = true;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -623,7 +623,7 @@ describe("syncAvatarToPlatform", () => {
 
     mockRenderThrows = false;
     mockRenderedPng = Buffer.from("disc-a");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -642,7 +642,7 @@ describe("syncAvatarToPlatform", () => {
             status: 400,
           })
         : new Response("{}", { status: 200 });
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -652,14 +652,14 @@ describe("syncAvatarToPlatform", () => {
     expect(patches[1].body).toEqual({
       avatar_base64: png("a").toString("base64"),
     });
-    // The disc key, not the disc-less one: the platform judged this render, so
+    // The disc key, not the disc-less one: the cloud judged this render, so
     // a later enqueue must not redraw it and take the same 400.
     expect(JSON.parse(readFileSync(syncStatePath, "utf-8")).key).toEndWith(
       ":disc",
     );
 
     lastResvgSvg = "";
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -671,7 +671,7 @@ describe("syncAvatarToPlatform", () => {
     mockRenderedPng = Buffer.from("disc-a");
     respond = () =>
       new Response('{"avatar_base64":["Too large"]}', { status: 400 });
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -680,12 +680,12 @@ describe("syncAvatarToPlatform", () => {
 
   test("does not render the notification avatar for a deduped payload", async () => {
     mockResvgAvailable = true;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     expect(patches).toHaveLength(1);
 
     lastResvgSvg = "";
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -693,7 +693,7 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("a restart with the same raster and destination does not re-upload", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     expect(JSON.parse(readFileSync(syncStatePath, "utf-8"))).toEqual({
       key: expect.stringMatching(/^https:\/\/platform\.a\|asst-1\|image:/),
@@ -704,7 +704,7 @@ describe("syncAvatarToPlatform", () => {
     ).toBe(false);
 
     _resetSyncAvatarStateForTests();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -712,7 +712,7 @@ describe("syncAvatarToPlatform", () => {
 
   test("an older rendering spec re-uploads the same avatar once", async () => {
     mockResvgAvailable = true;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     const current = JSON.parse(readFileSync(syncStatePath, "utf-8"));
     const previous = {
@@ -726,10 +726,10 @@ describe("syncAvatarToPlatform", () => {
     writeFileSync(syncStatePath, JSON.stringify(previous));
 
     _resetSyncAvatarStateForTests();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     _resetSyncAvatarStateForTests();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -740,17 +740,17 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("a restart re-uploads when the destination or raster changed", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     _resetSyncAvatarStateForTests();
     mockClient = makeClient("asst-2");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     _resetSyncAvatarStateForTests();
     writeRaster("a.png", png("a-rewritten"));
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches.map((p) => p.path)).toEqual([
@@ -764,17 +764,17 @@ describe("syncAvatarToPlatform", () => {
   });
 
   test("a persisted key older than the TTL re-uploads once and is refreshed", async () => {
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     const stale = JSON.parse(readFileSync(syncStatePath, "utf-8"));
     stale.syncedAt = Date.now() - AVATAR_SYNC_KEY_TTL_MS - 24 * 60 * 60 * 1000;
     writeFileSync(syncStatePath, JSON.stringify(stale));
 
     _resetSyncAvatarStateForTests();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     _resetSyncAvatarStateForTests();
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(2);
@@ -787,17 +787,17 @@ describe("syncAvatarToPlatform", () => {
     const start = Date.now();
     setSystemTime(new Date(start));
     try {
-      syncAvatarToPlatform();
+      syncAvatarToCloud();
       await settle();
       setSystemTime(new Date(start + AVATAR_SYNC_KEY_TTL_MS - 1));
-      syncAvatarToPlatform();
+      syncAvatarToCloud();
       await settle();
       expect(patches).toHaveLength(1);
 
       setSystemTime(new Date(start + AVATAR_SYNC_KEY_TTL_MS));
-      syncAvatarToPlatform();
+      syncAvatarToCloud();
       await settle();
-      syncAvatarToPlatform();
+      syncAvatarToCloud();
       await settle();
     } finally {
       setSystemTime();
@@ -828,7 +828,7 @@ describe("syncAvatarToPlatform", () => {
       return realSetTimeout(fn, delay);
     }) as typeof setTimeout);
     try {
-      syncAvatarToPlatform();
+      syncAvatarToCloud();
       await settle();
       expect(patches).toHaveLength(1);
       expect(armed).toHaveLength(1);
@@ -848,7 +848,7 @@ describe("syncAvatarToPlatform", () => {
   test("a corrupt persisted key re-uploads", async () => {
     mkdirSync(dirname(syncStatePath), { recursive: true });
     writeFileSync(syncStatePath, "{not json");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(1);
@@ -856,18 +856,18 @@ describe("syncAvatarToPlatform", () => {
 
   test("a failed PATCH leaves the persisted key untouched", async () => {
     respond = () => new Response("nope", { status: 500 });
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(() => readFileSync(syncStatePath)).toThrow();
   });
 
-  test("no-op without a platform client or assistant id", async () => {
+  test("no-op without a cloud client or assistant id", async () => {
     mockClient = null;
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
     mockClient = makeClient("");
-    syncAvatarToPlatform();
+    syncAvatarToCloud();
     await settle();
 
     expect(patches).toHaveLength(0);

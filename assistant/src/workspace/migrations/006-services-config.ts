@@ -67,7 +67,7 @@ export const servicesConfigMigration: WorkspaceMigration = {
     let inferenceMode: "managed" | "your-own" = "your-own";
     try {
       // Check if the user has ANY inference provider key configured.
-      // If so, keep "your-own" regardless of managed credentials.
+      // If so, keep "your-own" regardless of cloud credentials.
       const inferenceProviders = [
         "anthropic",
         "openai",

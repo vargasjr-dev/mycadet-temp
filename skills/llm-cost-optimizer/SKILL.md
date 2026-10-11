@@ -1,6 +1,6 @@
 ---
 name: "llm-cost-optimizer"
-description: "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to managed profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults."
+description: "Analyze and reduce LLM spend: read usage breakdowns by call site, model, and inference profile, understand single-winner profile resolution, and pin call sites to cloud profiles (Balanced / Quality / Budget / Fast) only where they should deviate from shipped defaults."
 metadata:
   emoji: "💸"
   cadet:
@@ -20,7 +20,7 @@ This skill walks through analyzing and reducing LLM spend on a Cadet assistant. 
    - `latency-optimized` → **Fast** (the low time-to-first-token profile, used by live voice; faster but not cheaper than Budget)
 3. **Call-site profile pins** (`llm.callSites.<id>.profile`) — optional per-task overrides of the shipped defaults.
 
-The concrete model behind each managed profile depends on the install: platform-managed installs and BYOK installs resolve different providers/models, and the catalog changes over time. **Never assume which model a profile maps to** — read `assistant config get llm.profiles` and the usage breakdown by `model` to see what actually ran.
+The concrete model behind each cloud profile depends on the install: cloud-managed installs and BYOK installs resolve different providers/models, and the catalog changes over time. **Never assume which model a profile maps to** — read `assistant config get llm.profiles` and the usage breakdown by `model` to see what actually ran.
 
 ## How model selection works — read this before diagnosing
 
@@ -139,7 +139,7 @@ For each recurring schedule, check which profile its runs use — `assistant sch
 - **Prefer single leaf paths** (`llm.callSites.<site>.profile <value>`). They are surgical and cannot clobber siblings.
 - **Object values replace the whole subtree at that path** (siblings are preserved). `assistant config set llm.callSites.mainAgent '{"profile":"balanced"}'` replaces mainAgent's entire fragment — including any tuning fields that were set — but does not touch other call sites.
 - **Writes are not schema-validated at write time.** A typo'd call-site name, profile name, or field lands in config silently; a bad profile reference just falls through to the shipped default at resolution time, so the "pin" does nothing without an error. After every write, re-read the key (`assistant config get ...`) and pick names from `assistant inference callsites list` / `assistant inference profiles list` output.
-- **Always use profile references, never direct `model` values** on call sites. A direct model shows as "Custom" in the UI, detaches from managed profile updates, and couples config to a model id that will go stale.
+- **Always use profile references, never direct `model` values** on call sites. A direct model shows as "Custom" in the UI, detaches from cloud profile updates, and couples config to a model id that will go stale.
 - `profile` plus tuning fields can coexist on a pin: `effort`, `maxTokens`, `temperature`, `thinking`, `contextWindow` all layer on top of the winning profile.
 
 ## Step 6 — Escalation path (on-demand Quality)
@@ -157,7 +157,7 @@ For the full setup procedure (managed-first, secure key collection, model discov
 
 If the user wants a custom profile on a specific provider, work down this ladder — do not start by asking for a key:
 
-1. **Check for a managed route first.** `assistant inference providers list` — managed entries (`auth=platform`, e.g. `anthropic-managed`) need no API key, and when the user is signed in to Cadet a profile built as `--provider cadet --model <model-id>` (no `--connection`) routes through the platform proxy. If either covers the target model, create the profile that way and skip the rest of this ladder.
+1. **Check for a cloud route first.** `assistant inference providers list` — managed entries (`auth=platform`, e.g. `anthropic-managed`) need no API key, and when the user is signed in to Cadet a profile built as `--provider cadet --model <model-id>` (no `--connection`) routes through the cloud proxy. If either covers the target model, create the profile that way and skip the rest of this ladder.
 2. **Check for an existing stored key.** `assistant credentials list` — if a suitable credential is already in the vault, reference it by vault path instead of prompting for a new one.
 3. **Only then collect a new key — securely, never in chat:**
 
@@ -209,7 +209,7 @@ assistant inference providers update <name> --auth platform
 assistant inference providers delete <name>
 ```
 
-Canonical managed connections are seeded automatically (auth=platform, no key needed).
+Canonical cloud connections are seeded automatically (auth=platform, no key needed).
 
 ## Reference: inference profiles & call sites
 

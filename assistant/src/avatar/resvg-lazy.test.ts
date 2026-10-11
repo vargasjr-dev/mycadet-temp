@@ -2,7 +2,7 @@
  * Tests for resvg-lazy and the writeTraitsAndRenderAvatar fallback it feeds.
  *
  * Covers the graceful-degradation path when the native @resvg/resvg-js binding
- * is missing (e.g. bun install skipped the platform-specific optional
+ * is missing (e.g. bun install skipped the cloud-specific optional
  * dependency). The lazy loader must warn once and report unavailability, and
  * writeTraitsAndRenderAvatar must return `native_unavailable` so the HTTP
  * layer can respond 503 instead of 500.

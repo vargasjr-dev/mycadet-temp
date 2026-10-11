@@ -148,7 +148,7 @@ export const PluginCatalogEntry: Story = {
 };
 
 /**
- * Without a platform session the tile is the one above, glyph for glyph: the
+ * Without a cloud session the tile is the one above, glyph for glyph: the
  * page carries the explanation once, and the click goes to the login flow
  * instead of to the provider.
  */
@@ -156,7 +156,7 @@ export const LoginRequired: Story = {
   args: {
     plan: planFor({
       providers: [GOOGLE_PROVIDER],
-      platformGate: "disabled",
+      cloudGate: "disabled",
     }),
   },
 };
@@ -251,7 +251,7 @@ export const FailedManaged: Story = {
       phase: "failed",
       error: "Google did not return an account.",
       methodId: googlePlan.primary.id,
-      methodKind: "managed-oauth",
+      methodKind: "cloud-oauth",
     },
   },
 };

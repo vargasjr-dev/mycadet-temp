@@ -1,6 +1,6 @@
 /**
- * Registers a `cadet-shared` invite with the platform, which routes the
- * invitee's redemption back to this assistant. The platform receives only the
+ * Registers a `cadet-shared` invite with the cloud, which routes the
+ * invitee's redemption back to this assistant. The cloud receives only the
  * link-token hash and the invite's expiry, never the token itself.
  */
 
@@ -10,7 +10,7 @@ import { credentialKey } from "../credential-key.js";
 import { readCredentialResult } from "../credential-reader.js";
 import { fetchImpl } from "../fetch.js";
 import {
-  arePlatformFeaturesEnabled,
+  areCloudFeaturesEnabled,
   isFeatureFlagEnabled,
 } from "../feature-flag-resolver.js";
 import { getLogger } from "../logger.js";
@@ -26,9 +26,9 @@ const REGISTRATION_TIMEOUT_MS = 10_000;
 export type SharedInviteRegistrationResult =
   /** Registered, or nothing to register for this invite or gateway. */
   | { status: "registered" | "skipped" }
-  /** The platform already holds this hash. */
+  /** The cloud already holds this hash. */
   | { status: "duplicate" }
-  /** The platform refused another outstanding invite. */
+  /** The cloud refused another outstanding invite. */
   | { status: "limit_reached" }
   /** The credential store could not be read. */
   | { status: "unavailable" }
@@ -39,7 +39,7 @@ export type SharedInviteRegistrationResult =
  * Store value when present, else the environment fallback. `unreachable` is
  * set only when the store could not be read and no fallback exists.
  */
-async function readPlatformCredential(
+async function readCloudCredential(
   field: "assistant_api_key",
   envName: string,
 ): Promise<{ value: string; unreachable: boolean }> {
@@ -49,7 +49,7 @@ async function readPlatformCredential(
 }
 
 /**
- * Register the invite's link-token hash and expiry with the platform.
+ * Register the invite's link-token hash and expiry with the cloud.
  *
  * Skipped for any channel other than `cadet-shared`, while the
  * trusted-contacts flag is off, when platform features are disabled, and when
@@ -63,25 +63,25 @@ export async function registerSharedInvite(params: {
   if (
     params.sourceChannel !== SHARED_INVITE_CHANNEL ||
     !isFeatureFlagEnabled(TRUSTED_CONTACTS_FLAG) ||
-    !arePlatformFeaturesEnabled()
+    !areCloudFeaturesEnabled()
   ) {
     return { status: "skipped" };
   }
 
-  const [platformBaseUrl, apiKey] = await Promise.all([
+  const [cloudBaseUrl, apiKey] = await Promise.all([
     Promise.resolve(
-      (process.env.CADET_PLATFORM_URL?.trim() || "").replace(/\/+$/, ""),
+      (process.env.CADET_CLOUD_URL?.trim() || "").replace(/\/+$/, ""),
     ),
-    readPlatformCredential("assistant_api_key", "ASSISTANT_API_KEY"),
+    readCloudCredential("assistant_api_key", "ASSISTANT_API_KEY"),
   ]);
   if (apiKey.unreachable) {
     log.warn("Shared invite registration: credential store unreachable");
     return { status: "unavailable" };
   }
-  if (!platformBaseUrl || !apiKey.value) {
+  if (!cloudBaseUrl || !apiKey.value) {
     log.debug(
       {
-        hasPlatformBaseUrl: !!platformBaseUrl,
+        hasPlatformBaseUrl: !!cloudBaseUrl,
         hasApiKey: !!apiKey.value,
       },
       "Shared invite registration skipped: no cloud credentials",
@@ -89,7 +89,7 @@ export async function registerSharedInvite(params: {
     return { status: "skipped" };
   }
 
-  const url = `${platformBaseUrl}${SHARED_INVITE_REGISTRATION_PATH}`;
+  const url = `${cloudBaseUrl}${SHARED_INVITE_REGISTRATION_PATH}`;
   let response: Response;
   try {
     response = await fetchImpl(url, {
@@ -114,7 +114,7 @@ export async function registerSharedInvite(params: {
   }
   log.warn(
     { status: response.status },
-    "Shared invite registration refused by the platform",
+    "Shared invite registration refused by the cloud",
   );
   if (response.status === 409) {
     return { status: "duplicate" };

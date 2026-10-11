@@ -260,7 +260,7 @@ describe("readActivationAssistantName", () => {
           id: "asst-1",
           name: "Luna",
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
         },
       ],

@@ -77,7 +77,7 @@ describe("130-speech-mode-to-provider", () => {
     expect(numericId(last!)).toBe(highest);
   });
 
-  test("rewrites a managed service to provider cadet", () => {
+  test("rewrites a cloud service to provider cadet", () => {
     writeConfig({
       services: {
         stt: { mode: "managed", provider: "deepgram", providers: {} },
@@ -109,7 +109,7 @@ describe("130-speech-mode-to-provider", () => {
 
   // The pre-migration schema allowed provider "cadet" alongside mode
   // "managed"; that pair must survive rather than double-rewrite.
-  test("preserves an already-cadet managed service", () => {
+  test("preserves an already-cadet cloud service", () => {
     writeConfig({ services: { stt: { mode: "managed", provider: "cadet" } } });
 
     speechModeToProviderMigration.run(workspaceDir);
@@ -146,7 +146,7 @@ describe("130-speech-mode-to-provider", () => {
     expect(() => speechModeToProviderMigration.run(workspaceDir)).not.toThrow();
   });
 
-  // The migrated shape is what the daemon actually parses, so a managed user
+  // The migrated shape is what the daemon actually parses, so a cloud user
   // must land on cadet rather than falling back to a keyless BYOK provider.
   test("migrated output parses to the cadet provider", () => {
     writeConfig({

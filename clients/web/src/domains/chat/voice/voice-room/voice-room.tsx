@@ -1113,7 +1113,7 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
   } as CSSProperties;
 
   // Global Escape, live only while the room is mounted: minimizes the room,
-  // same as the − control — the platform "leave the overlay" key dismisses
+  // same as the − control — the cloud "leave the overlay" key dismisses
   // the surface without hanging up the call (✕ is the end-session control).
   // It fires even when the composer textarea (or any other focused element)
   // still holds focus as the room opens, so it is intentionally not guarded
@@ -1342,7 +1342,7 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
           `object-cover` because the video track's aspect ratio is the camera's,
           not the room's, and letterboxing a viewfinder makes it read as a photo
           already taken. The front camera is mirrored, matching every other
-          selfie viewfinder on the platform; the rear one is not, because it
+          selfie viewfinder on the cloud; the rear one is not, because it
           shows the world and a mirrored world is unusable for aiming.
 
           Muted + playsInline + autoPlay lets the fallback stream start inline;
@@ -1478,7 +1478,7 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
       {/* The sheet's grabber: the whole affordance for the pull-down, and the
           only thing on the surface that says the room can be pulled at all.
           A caption telling the user to swipe would be read by nobody; the bar
-          every sheet on the platform wears is the shape they already know.
+          every sheet on the cloud wears is the shape they already know.
 
           Decorative, and deliberately not a hit target of its own: the drag
           lives on the sheet chrome and so the ENTIRE room answers the gesture,

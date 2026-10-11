@@ -5,7 +5,7 @@ import type { AssistantEvent } from "../api/index.js";
 // Analytics consent is granted so recordActivationEvent writes rows.
 let shareAnalytics = true;
 
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => shareAnalytics,
 }));
 

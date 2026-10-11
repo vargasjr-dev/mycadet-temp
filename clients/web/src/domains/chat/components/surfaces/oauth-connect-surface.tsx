@@ -13,14 +13,14 @@ import { IntegrationIcon } from "@/components/integrations/integration-icon";
 import {
   fetchManagedOAuthProvider,
   type ManagedOAuthProviderSummary,
-} from "@/lib/auth/managed-oauth";
+} from "@/lib/auth/cloud-oauth";
 import {
   type OAuthConnectSurfaceData,
   OAuthConnectSurfaceDataSchema,
 } from "@mycadet/assistant-api";
 
 import type { Surface } from "@/domains/chat/types/types";
-import { useManagedOAuthConnect } from "@/hooks/use-managed-oauth-connect";
+import { useCloudOAuthConnect } from "@/hooks/use-cloud-oauth-connect";
 import { useTenantHostInput } from "@/hooks/use-tenant-host-input";
 import { useTenantHostRequirement } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
@@ -37,7 +37,7 @@ interface OAuthConnectSurfaceProps {
   assistantId?: string | null;
   assistantDisplayName?: string | null;
   /** Injectable connect flow, so tests and stories can drive the card. */
-  useConnect?: typeof useManagedOAuthConnect;
+  useConnect?: typeof useCloudOAuthConnect;
   /** Injectable provider lookup, for the same reason. */
   fetchProvider?: (
     assistantId: string,
@@ -128,7 +128,7 @@ export function OAuthConnectSurface({
   onAction,
   assistantId,
   assistantDisplayName,
-  useConnect = useManagedOAuthConnect,
+  useConnect = useCloudOAuthConnect,
   fetchProvider = fetchManagedOAuthProvider,
 }: OAuthConnectSurfaceProps) {
   const { t } = useTranslation("chat");
@@ -201,7 +201,7 @@ export function OAuthConnectSurface({
   );
   const tenantHostInput = useTenantHostInput(tenantHost);
 
-  // The connection the platform reports is the outcome, whenever and wherever
+  // The connection the cloud reports is the outcome, whenever and wherever
   // it lands: this card, the settings integrations tab, or another device.
   useEffect(() => {
     if (

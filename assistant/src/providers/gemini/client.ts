@@ -309,7 +309,7 @@ export function deriveGeminiReason(error: ApiError): ProviderErrorReason {
     return "network_error";
   }
 
-  // The managed proxy's daily-limit 402 body carries a specific code; match it
+  // The cloud proxy's daily-limit 402 body carries a specific code; match it
   // before the status branches so it isn't classified as a generic 4xx.
   if (FREE_TIER_DAILY_LIMIT_PATTERNS.some((re) => re.test(message))) {
     return "free_tier_daily_limit_reached";
@@ -403,8 +403,8 @@ export async function validateGeminiApiKey(
 
 export interface GeminiProviderOptions {
   streamTimeoutMs?: number;
-  /** When set, routes requests through the managed proxy at this base URL. */
-  managedBaseUrl?: string;
+  /** When set, routes requests through the cloud proxy at this base URL. */
+  cloudBaseUrl?: string;
 }
 
 export class GeminiProvider implements Provider {
@@ -418,11 +418,11 @@ export class GeminiProvider implements Provider {
     model: string,
     options: GeminiProviderOptions = {},
   ) {
-    this.client = options.managedBaseUrl
+    this.client = options.cloudBaseUrl
       ? new GoogleGenAI({
           apiKey,
           httpOptions: {
-            baseUrl: options.managedBaseUrl,
+            baseUrl: options.cloudBaseUrl,
           },
         })
       : new GoogleGenAI({ apiKey });

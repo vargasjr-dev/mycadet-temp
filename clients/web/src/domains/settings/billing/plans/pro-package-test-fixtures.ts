@@ -7,7 +7,7 @@
  * platform repo's `django/app/domain_models/constants.py`, priced by
  * `_build_packages` in `django/app/billing/plan_views.py`: the total is
  * `base + machine + storage + credits`, and `base` is zero unless the package
- * carries the platform fee. Re-check both when a package changes — a value
+ * carries the cloud fee. Re-check both when a package changes — a value
  * here the catalog does not have is a bug in the fixture, not a scenario.
  *
  * One factory per catalog package keeps the surfaces from drifting into subtly

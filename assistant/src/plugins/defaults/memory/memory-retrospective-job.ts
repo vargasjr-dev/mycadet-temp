@@ -543,8 +543,8 @@ export async function runForkBasedRetrospective(
       trustContext: INTERNAL_GUARDIAN_TRUST_CONTEXT,
       callSite: "memoryRetrospective",
       // `remember` saves ordinary facts; the skill-authoring trio
-      // (`scaffold_managed_skill` / `skill_load` / `find_similar_skills`) lets a
-      // pass author or refine a managed skill from an observed procedure. The
+      // (`scaffold_cloud_skill` / `skill_load` / `find_similar_skills`) lets a
+      // pass author or refine a cloud skill from an observed procedure. The
       // allowlist is gated on the same `procToSkillsActive` predicate as the
       // fork instruction and the checker's origin-scoped grant, so an inactive
       // install is remember-only — the authoring trio is not even named on the
@@ -552,7 +552,7 @@ export async function runForkBasedRetrospective(
       allowedTools: procToSkillsActive
         ? [
             "remember",
-            "scaffold_managed_skill",
+            "scaffold_cloud_skill",
             "skill_load",
             "find_similar_skills",
           ]
@@ -584,7 +584,7 @@ export async function runForkBasedRetrospective(
           }
         : {}),
       // Preactivate skill-management so its authoring tools (`find_similar_skills`
-      // / `scaffold_managed_skill` / the `skill_load` target) are in the turn's
+      // / `scaffold_cloud_skill` / the `skill_load` target) are in the turn's
       // active set from turn 1; the checker's origin-scoped grant then makes them
       // callable without an interactive prompt. Same `procToSkillsActive` gate as
       // the allowlist above.
@@ -1042,7 +1042,7 @@ async function finalizeSuccessfulRetrospective(args: {
 
   // Skill cards are not a finalize concern: when the run authors a skill, the
   // scaffold executor enqueues the durable `skill_card_insert` delivery job at
-  // the creation site (see `executeScaffoldManagedSkill` and
+  // the creation site (see `executeScaffoldCloudSkill` and
   // `memory-retrospective-skill-card.ts`), so the GC below can never destroy
   // the card's inputs.
 
@@ -1246,13 +1246,13 @@ async function extractRetrospectiveRunRemembers(
 /**
  * Tool names whose persisted `tool_use` blocks count as durable memory work
  * for the fail-closed advancement gate: `remember` writes the memory buffer,
- * `scaffold_managed_skill` writes a managed skill. Read-only tools on the
+ * `scaffold_cloud_skill` writes a cloud skill. Read-only tools on the
  * retrospective allowlist (`skill_load`, `find_similar_skills`) deliberately
  * do not qualify: a run that only browsed produced nothing durable.
  */
 const DURABLE_RETROSPECTIVE_TOOLS: ReadonlySet<string> = new Set([
   "remember",
-  "scaffold_managed_skill",
+  "scaffold_cloud_skill",
 ]);
 
 /**

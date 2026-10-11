@@ -17,7 +17,7 @@ import {
 import type { CadetCommand } from "@/runtime/is-electron";
 import {
   useAuthStore,
-  useHasPlatformSession,
+  useHasCloudSession,
   useIsSessionInitializing,
 } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -63,14 +63,14 @@ const commandForItem = (item: CommandPaletteItemData): CadetCommand | null => {
 export function CommandPaletteWindowPage() {
   const sessionStatus = useAuthStore.use.sessionStatus();
   const isSessionInitializing = useIsSessionInitializing();
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   // This standalone route bypasses RootLayout; bootstrap theme + feature flags
   // so CSS custom properties resolve to the user's stored preference.
   useAppTheme();
   useClientFeatureFlagSync(!isSessionInitializing);
   useAssistantLifecycle({
     sessionStatus,
-    hasPlatformSession,
+    hasCloudSession,
   });
 
   const assistants = useResolvedAssistantsStore.use.assistants();

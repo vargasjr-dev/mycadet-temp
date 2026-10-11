@@ -85,7 +85,7 @@ export interface FeatureIntroSeen {
  * The one-time intro pattern's memory: a feature's intro modal shows on the
  * first open of the app after the feature lands, and once dismissed, by any
  * route out of it, never again on this device. Kept on the device rather
- * than the platform so the intro costs no request and works before any
+ * than the cloud so the intro costs no request and works before any
  * account data has arrived. Subscribed, so every mount of the gate agrees
  * the moment one of them records the dismissal.
  */

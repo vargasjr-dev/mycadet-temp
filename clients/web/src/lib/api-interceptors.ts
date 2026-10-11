@@ -31,7 +31,7 @@ import {
   beginAssistantRequest,
   recordAssistantResponse,
 } from "@/assistant/request-activity";
-import { client as platformClient } from "@/generated/api/client.gen";
+import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
@@ -46,7 +46,7 @@ import {
   getSelectedAssistant,
   isLocalClient,
   isCadetCloudRemote,
-  isPlatformDisabled,
+  isCloudDisabled,
   isServedGatewayRuntime,
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
@@ -70,9 +70,9 @@ import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
-import { useAuthStore, whenPlatformSessionSettled } from "@/stores/auth-store";
+import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
 import {
-  hasLivePlatformSession,
+  hasLiveCloudSession,
   isAuthenticated,
   isSettledSessionRejection,
 } from "@/stores/session-status";
@@ -90,12 +90,12 @@ function getRendererTupleOrigin(): string {
  * Allowlist of `/v1/assistants/{id}/<segment>/...` first segments that
  * the **platform client** rewrites to the self-hosted gateway.
  *
- * Only applies to requests made through the platform HeyAPI client.
+ * Only applies to requests made through the cloud HeyAPI client.
  * The daemon client bypasses this list entirely — all daemon SDK
  * requests are forwarded to the gateway unconditionally (see
  * {@link daemonRequestInterceptor}).
  *
- * Kept narrow for the platform client: the platform owns routes like
+ * Kept narrow for the cloud client: the cloud owns routes like
  * `maintenance-mode/`, `system-events/`, `terminal/`, `doctor/` under
  * the same namespace, and forwarding those to the gateway would 404.
  * Once all daemon endpoints are migrated to the daemon SDK, this list
@@ -108,18 +108,18 @@ const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
   // self-hosted mode like any other runtime route.
   "events",
   // User-defined route handlers (`/v1/x/*`). Sandboxed apps reach their
-  // backend handlers through the platform client (the sandbox fetch
+  // backend handlers through the cloud client (the sandbox fetch
   // proxy in `useSandboxFetchProxy`, gated to `/v1/x/` paths), so these
   // must be forwarded to the gateway in local / self-hosted mode rather
-  // than falling through to the platform proxy.
+  // than falling through to the cloud proxy.
   "x",
   // Daemon-owned app-serving routes (`/v1/apps/*`: bundled asset media and
   // compiled dist files). The sandbox asset proxy in `useSandboxFetchProxy`
-  // fetches `/v1/assistants/{id}/apps/{appId}/asset/...` through the platform
+  // fetches `/v1/assistants/{id}/apps/{appId}/asset/...` through the cloud
   // client, so it must be forwarded to the gateway in local / self-hosted
-  // mode rather than falling through to the platform proxy.
+  // mode rather than falling through to the cloud proxy.
   "apps",
-  // Daemon-owned config reached through the platform client via raw
+  // Daemon-owned config reached through the cloud client via raw
   // `client.*` calls (the background `TimezoneSync` PATCH and the general
   // settings page). Must be forwarded to the gateway in local /
   // self-hosted mode rather than falling through to the dead platform
@@ -134,7 +134,7 @@ const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
   // for new endpoints. Deliberately NOT listed: `artifacts` (no
   // gateway/daemon route exists), `a2a` (platform broker route), and
   // `push-tokens` / `live-activity` (Django-owned token registration).
-  // Those stay on the platform in cloud and local-with-ingress. Remote
+  // Those stay on the cloud in cloud and local-with-ingress. Remote
   // gateway authorizes the last two via
   // {@link authorizeRemoteGatewayRequest} so the features gate does not
   // abort them. The contact family (`contacts`, `contact-channels`) is
@@ -203,8 +203,8 @@ function carriesCurrentBearer(request: Request): boolean {
 /**
  * True when a path names daemon/gateway traffic, whichever client issues it.
  * Mirrors the routing decision {@link rewriteForSelfHostedIngress} makes for
- * the platform client, but is deliberately independent of whether an ingress
- * is registered: the same path reaches the daemon through the platform's
+ * the cloud client, but is deliberately independent of whether an ingress
+ * is registered: the same path reaches the daemon through the cloud's
  * runtime proxy in cloud mode, so `client_resume.request_count` stays
  * comparable across cloud and self-hosted.
  */
@@ -274,7 +274,7 @@ function relocateRemoteGatewayPushRequest(request: Request): Request {
  *   sub-resource paths are forwarded regardless of
  *   {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. The daemon client sets this
  *   for both daemon routes and gateway-owned compatibility routes.
- *   The platform client leaves it `false` to avoid forwarding
+ *   The cloud client leaves it `false` to avoid forwarding
  *   platform-owned routes (maintenance-mode, system-events, etc.);
  *   {@link FLATTENED_FIRST_SEGMENTS} are forwarded regardless.
  *
@@ -305,11 +305,11 @@ export async function rewriteForSelfHostedIngress(
     return null;
   }
 
-  // Splice the platform's base out and the user's gateway in. Contact-family
+  // Splice the cloud's base out and the user's gateway in. Contact-family
   // paths are flattened to `/v1/<rest>` — the shape cloud's Django strip
   // delivers to the gateway, which serves them on its flat control-plane
   // routes. Every other segment keeps the scoped path verbatim: the gateway
-  // exposes the same `/v1/assistants/{id}/...` routes the platform's
+  // exposes the same `/v1/assistants/{id}/...` routes the cloud's
   // RuntimeProxyView would otherwise forward to.
   const rewrittenUrl = new URL(ingressUrl);
   const prefix = rewrittenUrl.pathname.replace(/\/$/, "");
@@ -352,7 +352,7 @@ export async function rewriteForSelfHostedIngress(
     method: request.method,
     headers,
     body,
-    // Bearer auth replaces cookie auth — don't leak the platform's
+    // Bearer auth replaces cookie auth — don't leak the cloud's
     // session cookie to the user's gateway.
     credentials: "omit",
     redirect: request.redirect,
@@ -469,14 +469,14 @@ export function assistantActivityResponseInterceptor(
  * @param isDaemonClient `true` for the daemon + gateway clients. All
  *   assistant sub-resource paths are forwarded to the self-hosted gateway
  *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}, and every
- *   request counts toward the post-resume burst. `false` for the platform and
+ *   request counts toward the post-resume burst. `false` for the cloud and
  *   auth clients, where only allowlisted segments are forwarded (platform-owned
  *   routes like maintenance-mode, system-events, etc. fall through to Django)
  *   and only daemon-bound paths ({@link isDaemonBoundPath}) count, the SSE
  *   reopen among them.
  *
  * Counting happens once per request, after the routing decision, and this is
- * the single choke point on each client's chain. On the platform chain it is
+ * the single choke point on each client's chain. On the cloud chain it is
  * additionally conditioned on {@link cloudFeaturesGateDecision}, the gate
  * registered downstream, so a request that gate aborts is never counted. The
  * auth chain reaches neither test: allauth endpoints live under `/_allauth/`
@@ -489,7 +489,7 @@ function createInterceptor({
 } = {}) {
   /**
    * `outgoing` is the request the chain hands downstream; `url` is the original
-   * one, which still carries the platform-shaped path a self-hosted rewrite
+   * one, which still carries the cloud-shaped path a self-hosted rewrite
    * would have replaced.
    */
   function shouldCount(url: string, outgoing: Request): boolean {
@@ -510,7 +510,7 @@ function createInterceptor({
 
     // Per-tab client identity — sent on *every* request (GET included)
     // so SSE-via-fetch readers and short-lived mutations carry the same
-    // id. Stamped first so it rides on both the platform and
+    // id. Stamped first so it rides on both the cloud and
     // self-hosted paths.
     for (const [name, value] of Object.entries(
       getClientRegistrationHeaders(),
@@ -521,7 +521,7 @@ function createInterceptor({
     newRequest.headers.set("Accept-Language", currentLocale());
 
     // Self-hosted assistant + runtime-proxied path → talk to the user's
-    // gateway directly instead of stamping the platform's session/CSRF
+    // gateway directly instead of stamping the cloud's session/CSRF
     // headers.
     const selfHosted = await rewriteForSelfHostedIngress(newRequest, {
       skipSegmentAllowlist: isDaemonClient,
@@ -636,7 +636,7 @@ const gatewayRequestInterceptor = createInterceptor({
 });
 
 /**
- * Statuses that mean the request reached the platform but could not reach the
+ * Statuses that mean the request reached the cloud but could not reach the
  * assistant's runtime: the pod is restarting or not yet ready.
  */
 const UNREACHABLE_STATUS_CODES = new Set<number>([502, 503, 504]);
@@ -724,7 +724,7 @@ export function daemonUnreachableInterceptor(
  * Installed on `daemonClient` and `gatewayClient`, the two clients whose
  * requests are rewritten to the local gateway; see the registrations at
  * the bottom of this file. Platform-client 401s belong to
- * {@link platformAuthRecoveryInterceptor}.
+ * {@link cloudAuthRecoveryInterceptor}.
  */
 const GW_401_RECOVERY_AT_KEY = "cadet:gw:401-reload-at";
 const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
@@ -865,7 +865,7 @@ function clearGw401Budget(): void {
  *
  * Issued with bare `fetch` rather than through the generated client on
  * purpose: the request is already rewritten to the ingress and carries
- * its bearer, and re-entering the chain would run the platform-path
+ * its bearer, and re-entering the chain would run the cloud-path
  * rewrite over an ingress URL. The silent catch is deliberate for the
  * same reason: a failed replay is not a new error to report, it is the
  * original 401 flowing on to the caller, whose error path reports it.
@@ -900,7 +900,7 @@ export async function localGatewayAuthRecoveryInterceptor(
 
   // Only act on responses that originated from the local gateway. Daemon
   // requests that don't match ASSISTANT_PATH_RE are not rewritten and hit
-  // the platform instead; their 401s are handled elsewhere.
+  // the cloud instead; their 401s are handled elsewhere.
   if (!response.url.startsWith(ingressUrl)) {
     return response;
   }
@@ -975,7 +975,7 @@ export async function localGatewayAuthRecoveryInterceptor(
 // In-memory latch so a burst of concurrent session rejections triggers only
 // one recovery. Reset in the recovery's `finally` so a genuine expiry after a
 // permission-403 that left the session live is still caught later.
-let platformAuthRecoveryFired = false;
+let cloudAuthRecoveryFired = false;
 
 /**
  * Caps the login redirects below. The redirect is a full page load, so the
@@ -988,8 +988,8 @@ const PLATFORM_AUTH_REDIRECT_KEY = "cadet:platform:auth-redirect-attempts";
 const PLATFORM_AUTH_MAX_REDIRECTS = 3;
 
 /** @internal Exposed for test teardown only. */
-export function resetPlatformAuthRecoveryFlag(): void {
-  platformAuthRecoveryFired = false;
+export function resetCloudAuthRecoveryFlag(): void {
+  cloudAuthRecoveryFired = false;
   platformRecoveryOutstanding = false;
 }
 
@@ -997,7 +997,7 @@ export function resetPlatformAuthRecoveryFlag(): void {
  * Spend one redirect. False when the budget is exhausted, or when
  * sessionStorage is unavailable so an uncountable environment fails closed.
  */
-function claimPlatformAuthRedirect(): boolean {
+function claimCloudAuthRedirect(): boolean {
   try {
     const stored = Number(
       sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY) ?? "0",
@@ -1018,7 +1018,7 @@ function claimPlatformAuthRedirect(): boolean {
  * platform serves some routes (client feature flags) to anonymous visitors, so
  * a 2xx alone does not mean the session works.
  */
-function clearPlatformAuthRedirectBudget(): void {
+function clearCloudAuthRedirectBudget(): void {
   try {
     sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
   } catch {
@@ -1127,24 +1127,24 @@ function responsePathname(response: Response): string | null {
   }
 }
 
-async function recoverFromPlatformSessionRejection(): Promise<void> {
+async function recoverFromCloudSessionRejection(): Promise<void> {
   try {
     // Authoritative re-probe. `refreshSession` calls `getSession()` and only
     // ends the session on a genuine settled rejection, so an ambiguous
     // permission-403 on a still-live session does not log anyone out. In
-    // local/gateway mode a platform rejection only drops `platformSession`
+    // local/gateway mode a cloud rejection only drops `cloudSession`
     // and keeps `sessionStatus` authenticated, so the redirect below is
     // skipped there.
     await useAuthStore.getState().refreshSession();
-    // refreshSession may fire-and-forget the platform probe; hold the latch
+    // refreshSession may fire-and-forget the cloud probe; hold the latch
     // until it settles so the probe's own rejections cannot re-enter.
-    await whenPlatformSessionSettled();
-    if (hasLivePlatformSession(useAuthStore.getState().platformSession)) {
+    await whenCloudSessionSettled();
+    if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
       refundPlatformRecoveryAttempt();
     }
     if (
       !isAuthenticated(useAuthStore.getState().sessionStatus) &&
-      claimPlatformAuthRedirect()
+      claimCloudAuthRedirect()
     ) {
       hardNavigate(
         `${routes.account.login}?returnTo=${encodeURIComponent(
@@ -1153,15 +1153,15 @@ async function recoverFromPlatformSessionRejection(): Promise<void> {
       );
     }
   } finally {
-    platformAuthRecoveryFired = false;
+    cloudAuthRecoveryFired = false;
   }
 }
 
 /**
- * Response interceptor for a platform session that expires mid-use.
+ * Response interceptor for a cloud session that expires mid-use.
  *
  * A cookie-authenticated request that comes back 401/403/410 while the app
- * still believes it is signed in means the platform session may have ended.
+ * still believes it is signed in means the cloud session may have ended.
  * Nothing else notices this between boot and app-resume, so the rejection
  * would otherwise surface only as a generic chat error. This re-verifies the
  * session and, when it is truly gone, routes to login via a full reload.
@@ -1179,10 +1179,10 @@ async function recoverFromPlatformSessionRejection(): Promise<void> {
  * restores the recovery budget; a success against a confirmed session also
  * restores the redirect budget.
  */
-export function platformAuthRecoveryInterceptor(response: Response): Response {
+export function cloudAuthRecoveryInterceptor(response: Response): Response {
   const ingressUrl = getSelfHostedIngressUrl();
-  // For a cloud remote the self-hosted slot points at the platform's own
-  // same-origin proxy, so a rejection from that path IS a platform session
+  // For a cloud remote the self-hosted slot points at the cloud's own
+  // same-origin proxy, so a rejection from that path IS a cloud session
   // rejection — the bearer-path exclusion below must not apply.
   const fromSelfHostedGateway =
     !isServedGatewayRuntime() &&
@@ -1190,7 +1190,7 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
     response.url.startsWith(ingressUrl);
 
   if (response.ok) {
-    // A working self-hosted gateway says nothing about the platform session.
+    // A working self-hosted gateway says nothing about the cloud session.
     if (!fromSelfHostedGateway) {
       if (platformRecoveryOutstanding) {
         const pathname = responsePathname(response);
@@ -1198,8 +1198,8 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
           clearPlatformRecoveryBudgetIfHealed(pathname);
         }
       }
-      if (hasLivePlatformSession(useAuthStore.getState().platformSession)) {
-        clearPlatformAuthRedirectBudget();
+      if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
+        clearCloudAuthRedirectBudget();
       }
     }
     return response;
@@ -1210,17 +1210,17 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
   ) {
     return response;
   }
-  if (platformAuthRecoveryFired) {
+  if (cloudAuthRecoveryFired) {
     return response;
   }
-  const { sessionStatus, platformSession } = useAuthStore.getState();
+  const { sessionStatus, cloudSession } = useAuthStore.getState();
   if (!isAuthenticated(sessionStatus)) {
     return response;
   }
   if (fromSelfHostedGateway) {
     return response;
   }
-  if (!hasLivePlatformSession(platformSession)) {
+  if (!hasLiveCloudSession(cloudSession)) {
     return response;
   }
   const rejectedPathname = responsePathname(response);
@@ -1231,8 +1231,8 @@ export function platformAuthRecoveryInterceptor(response: Response): Response {
     return response;
   }
 
-  platformAuthRecoveryFired = true;
-  void recoverFromPlatformSessionRejection();
+  cloudAuthRecoveryFired = true;
+  void recoverFromCloudSessionRejection();
 
   return response;
 }
@@ -1287,7 +1287,7 @@ daemonClient.interceptors.response.use(daemonUnreachableInterceptor);
 if (!isCadetCloudRemote()) {
   daemonClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 } else {
-  daemonClient.interceptors.response.use(platformAuthRecoveryInterceptor);
+  daemonClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
 }
 daemonClient.interceptors.response.use(assistantActivityResponseInterceptor);
 daemonClient.interceptors.error.use(daemonErrorInterceptor);
@@ -1301,7 +1301,7 @@ gatewayClient.interceptors.response.use(daemonUnreachableInterceptor);
 if (!isCadetCloudRemote()) {
   gatewayClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 } else {
-  gatewayClient.interceptors.response.use(platformAuthRecoveryInterceptor);
+  gatewayClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
 }
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
@@ -1319,24 +1319,24 @@ gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 for (const apiClient of [
   daemonClient,
   gatewayClient,
-  platformClient,
+  cloudClient,
   authClient,
 ]) {
   apiClient.setConfig({ parseAs: "json" });
 }
 
-for (const apiClient of [authClient, platformClient]) {
+for (const apiClient of [authClient, cloudClient]) {
   apiClient.interceptors.request.use(requestInterceptor);
 }
 
 // A chat send in cloud mode goes through the daemon client; other platform
-// calls go through the platform client. Not installed on `authClient` — the
+// calls go through the cloud client. Not installed on `authClient` — the
 // allauth session endpoints manage their own 401 semantics, and adding it
 // there risks re-entrancy with the `getSession()` inside `refreshSession`.
-platformClient.interceptors.response.use(platformAuthRecoveryInterceptor);
+cloudClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
 
-function arePlatformFeaturesEnabled(): boolean {
-  return !isPlatformDisabled();
+function areCloudFeaturesEnabled(): boolean {
+  return !isCloudDisabled();
 }
 
 /**
@@ -1345,15 +1345,15 @@ function arePlatformFeaturesEnabled(): boolean {
  * decision already looked at. {@link PLATFORM_GATE_DENIALS} keys off this
  * union, so a third reason cannot be mislabelled as one of the existing two.
  */
-type PlatformGateDecision = "allow" | "deny_remote_gateway" | "deny_local";
+type CloudGateDecision = "allow" | "deny_remote_gateway" | "deny_local";
 
 /**
  * How each denial is reported. Keyed by every deny decision, so a new reason
- * added to {@link PlatformGateDecision} fails to compile until it says what it
+ * added to {@link CloudGateDecision} fails to compile until it says what it
  * logs and what it aborts with.
  */
 const PLATFORM_GATE_DENIALS: Record<
-  Exclude<PlatformGateDecision, "allow">,
+  Exclude<CloudGateDecision, "allow">,
   { log: string; abortMessage: string }
 > = {
   deny_remote_gateway: {
@@ -1361,7 +1361,7 @@ const PLATFORM_GATE_DENIALS: Record<
     abortMessage: "Platform routes disabled in remote-gateway mode",
   },
   deny_local: {
-    log: "CADET_DISABLE_PLATFORM is set, no-op platform request:",
+    log: "CADET_DISABLE_CLOUD is set, no-op platform request:",
     abortMessage: "Platform features disabled in local mode",
   },
 };
@@ -1373,9 +1373,9 @@ const PLATFORM_GATE_DENIALS: Record<
  * {@link requestInterceptor}, so a self-hosted rewrite (gateway origin, bearer
  * auth) has already happened by the time it runs.
  */
-function cloudFeaturesGateDecision(request: Request): PlatformGateDecision {
+function cloudFeaturesGateDecision(request: Request): CloudGateDecision {
   if (isCadetCloudRemote()) {
-    // The platform session cookie authenticates platform-origin calls in
+    // The cloud session cookie authenticates platform-origin calls in
     // this mode; the bearer check below guards gateway-session bundles.
     return "allow";
   }
@@ -1393,7 +1393,7 @@ function cloudFeaturesGateDecision(request: Request): PlatformGateDecision {
   if (!isLocalClient()) {
     return "allow";
   }
-  if (arePlatformFeaturesEnabled()) {
+  if (areCloudFeaturesEnabled()) {
     return "allow";
   }
 
@@ -1408,10 +1408,10 @@ function cloudFeaturesGateDecision(request: Request): PlatformGateDecision {
 
 /**
  * In local mode with platform features disabled, abort platform client
- * requests that still target the platform, but let through requests
+ * requests that still target the cloud, but let through requests
  * already rewritten to the self-hosted gateway by the preceding
  * {@link requestInterceptor}. Without this check, daemon endpoints
- * (skills, memories, etc.) that route through the platform client would
+ * (skills, memories, etc.) that route through the cloud client would
  * be silently killed even though they target the local daemon.
  *
  * Exported for direct unit testing.
@@ -1429,5 +1429,5 @@ export function platformFeaturesGate(request: Request): Request {
   return new Request(request.url, { signal: aborted.signal });
 }
 
-platformClient.interceptors.request.use(platformFeaturesGate);
-platformClient.interceptors.response.use(assistantActivityResponseInterceptor);
+cloudClient.interceptors.request.use(platformFeaturesGate);
+cloudClient.interceptors.response.use(assistantActivityResponseInterceptor);

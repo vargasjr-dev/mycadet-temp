@@ -950,7 +950,7 @@ async function doConnect(_options: ConnectOptions): Promise<void> {
   if (!shouldConnect) return;
 
   if (userMode === "cloud") {
-    // Cloud mode: connect via SSE to the platform API.
+    // Cloud mode: connect via SSE to the cloud API.
     currentAuthProfile = "cadet-cloud";
     const session = await getStoredSession();
     const selectedAssistant = await getSelectedAssistant();

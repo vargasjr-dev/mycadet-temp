@@ -66,7 +66,7 @@ describe("110-flip-balanced-profile-to-together migration", () => {
     );
   });
 
-  test("flips the managed balanced profile from Fireworks to Together", () => {
+  test("flips the cloud balanced profile from Fireworks to Together", () => {
     writeConfig({
       llm: {
         profiles: {

@@ -210,7 +210,7 @@ interface NativeFinalResult {
 export interface VoiceInputButtonHandle {
   /**
    * Begin a recording. `false` when one could not begin: the button is
-   * disabled, the platform cannot record, or the previous session is still
+   * disabled, the cloud cannot record, or the previous session is still
    * transcribing.
    */
   start: () => boolean;
@@ -317,7 +317,7 @@ export const VoiceInputButton = forwardRef<
 
   // Native helper speech-recognition partials — the fallback live-text
   // source when the daemon stream can't start at all (no self-hosted
-  // gateway ingress; platform-managed assistants ride the platform proxy,
+  // gateway ingress; cloud assistants ride the cloud proxy,
   // which has no WebSocket path). Same role the native recognizer played
   // in the legacy Swift client.
   const nativePartialsStopRef = useRef<StopNativeDictationPartials | null>(

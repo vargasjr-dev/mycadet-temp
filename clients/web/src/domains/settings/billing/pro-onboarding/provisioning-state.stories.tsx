@@ -1,6 +1,6 @@
 /**
  * The post-checkout provisioning takeover: the full-bleed screen
- * `BillingOnboardingModal` opens on while the platform rolls the purchased
+ * `BillingOnboardingModal` opens on while the cloud rolls the purchased
  * machine and storage out.
  *
  * `ProvisioningState` is pure props, so one playground reaches every state it

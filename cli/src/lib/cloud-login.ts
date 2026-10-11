@@ -10,7 +10,7 @@ import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 
-import { isManagedCloud } from "./managed-cloud.js";
+import { isCloudHome } from "./cloud-values.js";
 import {
   resolveAssistant,
   saveAssistantEntry,
@@ -22,11 +22,11 @@ import {
   fetchCurrentUser,
   fetchOrganizationId,
   ensureSelfHostedLocalRegistration,
-  getPlatformUrl,
+  getCloudUrl,
   injectCredentialsIntoAssistant,
-  readPlatformToken,
-  savePlatformToken,
-} from "./platform-client.js";
+  readCloudToken,
+  saveCloudToken,
+} from "./cloud-client.js";
 import { fetchAssistantIngressUrl, fetchCurrentVersion } from "./upgrade-lifecycle.js";
 import {
   CALLBACK_PATH,
@@ -257,8 +257,8 @@ export function startLoopbackListener(
 }
 
 /** App-held WorkOS PKCE login */
-export async function workosPkceLogin(platformUrl: string): Promise<string> {
-  const clientId = await fetchWorkosClientId(platformUrl);
+export async function workosPkceLogin(cloudUrl: string): Promise<string> {
+  const clientId = await fetchWorkosClientId(cloudUrl);
   const { verifier, challenge } = generatePkcePair();
   const state = randomBytes(32).toString("hex");
 
@@ -286,7 +286,7 @@ export async function workosPkceLogin(platformUrl: string): Promise<string> {
       verifier,
     });
     return await exchangeAccessTokenForSession(
-      platformUrl,
+      cloudUrl,
       clientId,
       accessToken,
     );
@@ -307,7 +307,7 @@ export interface CloudLoginSession {
  * validates the resulting token, and persists it.
  */
 export async function ensureCloudLoginInteractive(): Promise<CloudLoginSession> {
-  const existingToken = readPlatformToken();
+  const existingToken = readCloudToken();
   if (existingToken) {
     try {
       const user = await fetchCurrentUser(existingToken);
@@ -317,16 +317,16 @@ export async function ensureCloudLoginInteractive(): Promise<CloudLoginSession> 
     }
   }
 
-  const token = await workosPkceLogin(getPlatformUrl());
+  const token = await workosPkceLogin(getCloudUrl());
   const user = await fetchCurrentUser(token);
-  savePlatformToken(token);
+  saveCloudToken(token);
   return { token, user };
 }
 
 /**
  * TLS failures surface as opaque messages like "unknown certificate
  * verification error" from Bun's fetch. Translate the recognizable ones into
- * something actionable — most commonly the platform host's managed
+ * something actionable — most commonly the cloud host's managed
  * certificate is still provisioning.
  */
 export function describeLoginError(error: unknown): string {
@@ -335,13 +335,13 @@ export function describeLoginError(error: unknown): string {
   if (!tlsish) return raw;
   return (
     `Cadet Cloud is unreachable (${raw}). This usually means ` +
-    `${getPlatformUrl()}'s TLS certificate is missing or still provisioning. ` +
-    "Retry in a few minutes, or point CADET_PLATFORM_URL at a reachable host."
+    `${getCloudUrl()}'s TLS certificate is missing or still provisioning. ` +
+    "Retry in a few minutes, or point CADET_CLOUD_URL at a reachable host."
   );
 }
 
 /**
- * Register the active self-hosted assistant with the platform and inject
+ * Register the active self-hosted assistant with the cloud and inject
  * cloud credentials into its runtime — the post-login half of the desktop
  * app's LocalAssistantBootstrapService flow. Extracted so `cadet hatch` can
  * complete the same flow right after an interactive login on the Cadet Cloud
@@ -355,8 +355,8 @@ export async function registerLocalAssistantWithPlatform(
   const log = options.log ?? console.log;
   const entry = resolveAssistant();
 
-  // Skip managed ("cadet") assistants — they are handled by the platform.
-  if (!entry || isManagedCloud(entry.cloud)) return;
+  // Skip managed ("cadet") assistants — they are handled by the cloud.
+  if (!entry || isCloudHome(entry.cloud)) return;
 
   const orgId = await fetchOrganizationId(token);
   const clientInstallationId = computeDeviceId();
@@ -364,7 +364,7 @@ export async function registerLocalAssistantWithPlatform(
     fetchCurrentVersion(entry.runtimeUrl),
     fetchAssistantIngressUrl(entry.runtimeUrl, options.bearerToken ?? entry.bearerToken),
   ]);
-  const platformUrl = getPlatformUrl();
+  const cloudUrl = getCloudUrl();
   const registration = await ensureSelfHostedLocalRegistration(
     token,
     orgId,
@@ -372,14 +372,14 @@ export async function registerLocalAssistantWithPlatform(
     entry.assistantId,
     "cli",
     assistantVersion,
-    platformUrl,
+    cloudUrl,
     ingressUrl,
   );
   saveAssistantEntry({
     ...entry,
-    platformAssistantId: registration.assistant.id,
-    platformBaseUrl: platformUrl,
-    platformOrganizationId: orgId,
+    cloudAssistantId: registration.assistant.id,
+    cloudBaseUrl: cloudUrl,
+    cloudOrganizationId: orgId,
   });
   log(
     `Registered assistant: ${registration.assistant.name} (${registration.assistant.id})`,
@@ -408,8 +408,8 @@ export async function registerLocalAssistantWithPlatform(
     gatewayUrl: entry.runtimeUrl,
     bearerToken: options.bearerToken ?? entry.bearerToken,
     assistantApiKey,
-    platformAssistantId: registration.assistant.id,
-    platformBaseUrl: platformUrl,
+    cloudAssistantId: registration.assistant.id,
+    cloudBaseUrl: cloudUrl,
     organizationId: orgId,
     userId: user.id,
     webhookSecret: registration.webhook_secret,

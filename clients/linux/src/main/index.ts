@@ -21,7 +21,7 @@ import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/pair
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import {
   executePlatformForwardPlan,
-  planPlatformForward,
+  planCloudForward,
 } from "@mycadet/electron-desktop/platform-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
@@ -180,7 +180,7 @@ const registerAppProtocol = (): void => {
     // cloud platform so managed mode and desktop replay ingest work.
     const platformProxied = await forwardPlatformRequest(
       request,
-      resolvedConfig.platformUrl,
+      resolvedConfig.cloudUrl,
     );
     if (platformProxied) {
       return platformProxied;
@@ -208,10 +208,10 @@ const registerAppProtocol = (): void => {
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
-  platformUrl: resolvedConfig.platformUrl,
-  disablePlatform:
+  cloudUrl: resolvedConfig.cloudUrl,
+  disableCloud:
     ["true", "1"].includes(
-      (process.env.CADET_DISABLE_PLATFORM ?? "").toLowerCase(),
+      (process.env.CADET_DISABLE_CLOUD ?? "").toLowerCase(),
     ) || undefined,
   deviceId: getDeviceId(),
 }));
@@ -221,9 +221,9 @@ const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
 
 const forwardPlatformRequest = async (
   request: GlobalRequest,
-  platformUrl: string,
+  cloudUrl: string,
 ): Promise<Response | null> => {
-  const plan = planPlatformForward(request, platformUrl, {
+  const plan = planCloudForward(request, cloudUrl, {
     allowedOrigin: resolveAllowedOrigin(),
   });
   const target = plan.kind === "forward" ? `${plan.method} ${plan.url}` : "";

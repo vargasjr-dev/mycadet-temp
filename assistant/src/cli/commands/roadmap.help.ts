@@ -14,7 +14,7 @@ Items, upvotes, and comments filed here are attributed to the assistant, not
 to its owner: the assistant signs these calls with its own platform API key.
 The owner's own roadmap identity lives on \`cadet roadmap\`.
 
-Reads work anonymously when the assistant is not connected to the platform
+Reads work anonymously when the assistant is not connected to the cloud
 (the "upvoted" marker is then blank). Every write needs the connection, so
 run \`assistant cloud connect\` first.
 

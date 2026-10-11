@@ -16,15 +16,15 @@ import {
   resolveCatalog,
 } from "../../skills/catalog-install.js";
 import {
+  isSkillCompatibleWithCloud,
+  skillPlatformUnavailableMessage,
+} from "../../skills/cloud-compatibility.js";
+import {
   collectAllMissing,
   indexCatalogById,
   validateIncludeCycles,
 } from "../../skills/include-graph.js";
 import { renderInlineCommands } from "../../skills/inline-command-render.js";
-import {
-  isSkillCompatibleWithPlatform,
-  skillPlatformUnavailableMessage,
-} from "../../skills/platform-compatibility.js";
 import { parseToolManifestFile } from "../../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../../skills/version-hash.js";
 import { getLogger } from "../../util/logger.js";
@@ -213,7 +213,7 @@ export const skillLoadTool = {
 
     const skill = loaded.skill;
 
-    if (!isSkillCompatibleWithPlatform(skill)) {
+    if (!isSkillCompatibleWithCloud(skill)) {
       return {
         content: `Error: ${skillPlatformUnavailableMessage(skill.id, skill)}`,
         isError: true,
@@ -424,7 +424,7 @@ export const skillLoadTool = {
         if (childOutOfPluginScope(child)) {
           continue;
         }
-        if (!isSkillCompatibleWithPlatform(child)) {
+        if (!isSkillCompatibleWithCloud(child)) {
           continue;
         }
         const childFlagKey = skillFlagKey(child);

@@ -293,7 +293,7 @@ describe("InspectPage — gating", () => {
   });
 
   test("accepts the legacy fork-from-message key on its own", () => {
-    // The platform may serve this gate under either key, so a session
+    // The cloud may serve this gate under either key, so a session
     // carrying only the legacy one still gets in.
     internalActionsFlagStub = false;
     legacyForkFlagStub = true;

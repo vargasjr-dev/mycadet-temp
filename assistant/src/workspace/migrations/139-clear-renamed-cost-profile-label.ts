@@ -7,7 +7,7 @@ import type { WorkspaceMigration } from "./types.js";
  * Clear the machinery-written `"Speed"` label off the `cost-optimized`
  * profile so the code catalog's new label ("Cost") reaches existing installs.
  *
- * `label` is workspace-owned overlay state: a managed-source entry's label
+ * `label` is workspace-owned overlay state: a cloud-source entry's label
  * wins over the code default (`WORKSPACE_OWNED_DEFAULT_FIELDS` in
  * `config/default-profile-catalog.ts`). Migration 082 and the pre-catalog
  * seeder both wrote `"Speed"` onto `cost-optimized`, and migration 126
@@ -67,7 +67,7 @@ export const clearRenamedCostProfileLabelMigration: WorkspaceMigration = {
     if (entry === null) {
       return;
     }
-    // Only a managed-source entry carries a machinery-written label. Anything
+    // Only a cloud-source entry carries a machinery-written label. Anything
     // else, a source-less legacy entry included, shadows the default outright
     // (see `getEffectiveProfile`), so its label is the user's.
     if (entry.source !== "managed") {

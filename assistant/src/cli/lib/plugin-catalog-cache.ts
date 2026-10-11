@@ -4,16 +4,16 @@
  * Platform-first: when platform features are enabled the catalog is fetched
  * from Cadet Cloud and any fetch failure propagates (fail hard — no
  * stale-cache smoothing). Successful loads are held per git ref for a short
- * TTL. When `CADET_DISABLE_PLATFORM` disables platform features the bundled
+ * TTL. When `CADET_DISABLE_CLOUD` disables platform features the bundled
  * offline manifest is read instead, with zero network calls.
  */
 
-import { arePlatformFeaturesEnabled } from "../../platform/feature-gate.js";
+import { areCloudFeaturesEnabled } from "../../cloud/feature-gate.js";
+import { fetchPluginCatalogFromPlatform } from "./plugin-catalog-cloud.js";
 import {
   readBundledLocalPluginCatalog,
   readBundledPluginCatalog,
 } from "./plugin-catalog-local.js";
-import { fetchPluginCatalogFromPlatform } from "./plugin-catalog-platform.js";
 import { filterPluginCatalogByFeatureFlags } from "./plugin-catalog-visibility.js";
 import type { PluginCatalog, SearchPluginsDeps } from "./search-plugins.js";
 
@@ -30,9 +30,9 @@ type PluginCatalogLoadDeps = Pick<SearchPluginsDeps, "fetch">;
 const cache = new Map<string, CacheEntry>();
 
 /**
- * Add bundled local packages without overriding platform-authoritative rows.
+ * Add bundled local packages without overriding cloud-authoritative rows.
  * A platform row without an integration borrows the bundled row's
- * integration of the same name, so an integration the platform omits or
+ * integration of the same name, so an integration the cloud omits or
  * serves malformed never disappears from the catalog.
  */
 export function mergePlatformCatalogWithBundledLocals(
@@ -64,7 +64,7 @@ export function mergePlatformCatalogWithBundledLocals(
  *
  * With platform features disabled the bundled manifest is returned directly —
  * an in-memory constant, no network and no TTL. Otherwise the catalog is
- * fetched from the platform and, on success, cached per ref for the TTL; a
+ * fetched from the cloud and, on success, cached per ref for the TTL; a
  * fetch failure propagates so the caller can surface it (e.g. map a rate-limit
  * to 503) — no stale catalog is ever served.
  */
@@ -72,7 +72,7 @@ async function loadPluginCatalog(
   ref: string,
   deps: PluginCatalogLoadDeps,
 ): Promise<PluginCatalog> {
-  if (!arePlatformFeaturesEnabled()) {
+  if (!areCloudFeaturesEnabled()) {
     return { ...readBundledPluginCatalog(), ref };
   }
 

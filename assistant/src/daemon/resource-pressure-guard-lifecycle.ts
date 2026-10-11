@@ -3,7 +3,7 @@
  *
  * Starts the guard at boot and defers the first sample onto a macrotask so it
  * never blocks startup, and stops the guard (cancelling any pending deferred
- * sample) on shutdown. When the guard is disabled (non-platform), no deferred
+ * sample) on shutdown. When the guard is disabled (non-cloud), no deferred
  * sample is scheduled.
  */
 import { getLogger } from "../util/logger.js";

@@ -555,7 +555,7 @@ export function deliverVerificationDiscord(
 // ---------------------------------------------------------------------------
 
 /**
- * Deliver a verification email via the platform email send API.
+ * Deliver a verification email via the cloud email send API.
  * Fire-and-forget wrapper for use in the daemon process (HTTP route handlers).
  */
 export function deliverVerificationEmail(
@@ -566,9 +566,9 @@ export function deliverVerificationEmail(
 ): void {
   (async () => {
     try {
-      const { CadetPlatformClient } = await import("../platform/client.js");
-      const client = await CadetPlatformClient.create();
-      if (!client?.platformAssistantId) {
+      const { CadetCloudClient } = await import("../cloud/client.js");
+      const client = await CadetCloudClient.create();
+      if (!client?.cloudAssistantId) {
         log.error(
           "Cannot deliver verification email: platform client not configured",
         );

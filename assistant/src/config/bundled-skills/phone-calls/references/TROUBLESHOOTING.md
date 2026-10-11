@@ -10,7 +10,7 @@ Run `assistant config set calls.enabled true`.
 
 ## "No public base URL configured"
 
-First check whether this is a managed/platform assistant:
+First check whether this is a cloud/platform assistant:
 
 ```bash
 assistant cloud status --json
@@ -56,7 +56,7 @@ assistant config set ingress.publicBaseUrl "<new-url>"
 
 Or re-run the public-ingress skill to auto-detect and save the new URL.
 
-Do not rotate ngrok to work around a managed Tunnel WebSocket failure. Fix the Tunnel state instead, or restart the assistant/gateway so it re-registers.
+Do not rotate ngrok to work around a cloud Tunnel WebSocket failure. Fix the Tunnel state instead, or restart the assistant/gateway so it re-registers.
 
 ## Tunnel is not registering
 

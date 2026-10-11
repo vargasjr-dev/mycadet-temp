@@ -271,23 +271,23 @@ const CHAT_INFO_QUERY_DEFAULTS = {
 } as const;
 
 /**
- * Holds the `Cadet-Organization-Id` header unresolved: a platform session with
+ * Holds the `Cadet-Organization-Id` header unresolved: a cloud session with
  * no organization id yet. That is the gate the panel's two daemon queries wait
  * on, so a source a caller leaves unseeded stays unresolved with nothing
  * requested. Returns the restore fn.
  */
 export function holdOrgHeaderUnresolved(): () => void {
-  const { platformSession } = useAuthStore.getState();
+  const { cloudSession } = useAuthStore.getState();
   const { status, currentOrganizationId, persistedOrganizationId } =
     useOrganizationStore.getState();
-  useAuthStore.setState({ platformSession: "present" });
+  useAuthStore.setState({ cloudSession: "present" });
   useOrganizationStore.setState({
     status: "loading",
     currentOrganizationId: null,
     persistedOrganizationId: null,
   });
   return () => {
-    useAuthStore.setState({ platformSession });
+    useAuthStore.setState({ cloudSession });
     useOrganizationStore.setState({
       status,
       currentOrganizationId,

@@ -3,7 +3,7 @@
  *
  * `ATTRIBUTION_PARAMS` and `ATTRIBUTION_VALUE_MAX_LENGTH` in
  * `clients/web/src/domains/account/social-auth.ts` are the source of truth for
- * which campaign params reach the platform and how long each may be. Neither
+ * which campaign params reach the cloud and how long each may be. Neither
  * Swift nor Java can import TypeScript, so both native shells embed the list
  * verbatim: `Attribution` in `clients/ios/App/App/Attribution.swift` and
  * `Attribution` in

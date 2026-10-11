@@ -48,7 +48,7 @@ export function isLocalContainerEntry(entry: AssistantEntry): boolean {
 /**
  * Derive the gateway port from an entry's recorded URLs, preferring the
  * loopback `localUrl` over `runtimeUrl`. Undefined when neither carries an
- * explicit port (e.g. a platform-hosted https runtime URL).
+ * explicit port (e.g. a cloud-hosted https runtime URL).
  */
 export function parseGatewayPortFromEntryUrls(
   entry: AssistantEntry | undefined,

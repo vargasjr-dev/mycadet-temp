@@ -1,5 +1,5 @@
 /**
- * Credential CRUD HTTP endpoints for the CES managed service.
+ * Credential CRUD HTTP endpoints for the CES cloud service.
  *
  * Exposes credential management over HTTP so the assistant and gateway
  * can access credentials via the network instead of reading keys.enc

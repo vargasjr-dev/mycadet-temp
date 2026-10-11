@@ -1,7 +1,7 @@
 /**
  * Public markdown alternate URL for a docs page. Lives under /docs/* (e.g.
  * /docs/releases -> /docs/releases.md) because ingress only routes /docs/* to
- * this app; the platform's legacy /md/* URLs would hit the old app.
+ * this app; the cloud's legacy /md/* URLs would hit the old app.
  */
 export function agentMarkdownPathForPage(path: string): string | undefined {
   if (path === "/docs") {

@@ -9,7 +9,7 @@ import type { WorkspaceMigration } from "./types.js";
 // into workspace config, so this migration strips the previously seeded
 // managed entries down to thin stubs holding only the workspace-owned
 // overlay fields (`source`, plus `label`/`status`/`topP` by key-presence —
-// the exact whitelist the effective view reads off a managed-source entry).
+// the exact whitelist the effective view reads off a cloud-source entry).
 //
 // A same-named entry the user explicitly owns (a non-managed `source` tag)
 // is left fully intact — user profiles shadow the code defaults by design.
@@ -29,7 +29,7 @@ const DEFAULT_PROFILE_NAMES = [
 
 const WORKSPACE_OWNED_FIELDS = ["label", "status", "topP"];
 
-export const stripManagedProfileBodiesMigration: WorkspaceMigration = {
+export const stripCloudProfileBodiesMigration: WorkspaceMigration = {
   id: "126-strip-managed-profile-bodies",
   description:
     "Strip seeded managed default-profile bodies down to thin workspace-owned stubs (content is code-owned)",

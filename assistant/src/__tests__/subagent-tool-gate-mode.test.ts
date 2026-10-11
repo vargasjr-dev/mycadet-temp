@@ -1290,7 +1290,7 @@ describe("createResolveToolsCallback: wire tool surface record and replay", () =
   });
 
   test("replays wireToolReplay verbatim on the wire while execution still derives from the fork's own context", () => {
-    projectedSkillToolNames = ["scaffold_managed_skill"];
+    projectedSkillToolNames = ["scaffold_cloud_skill"];
     const replay: ToolDefinition[] = [
       makeToolDef("bash"),
       makeToolDef("remember"),
@@ -1320,7 +1320,7 @@ describe("createResolveToolsCallback: wire tool surface record and replay", () =
     // Execution-side inventory is still the fork's own derivation (plus the
     // preactivated skill tools), never widened by the replayed definitions.
     expect(ctx.allowedToolNames).toEqual(
-      new Set(["remember", "bash", "scaffold_managed_skill"]),
+      new Set(["remember", "bash", "scaffold_cloud_skill"]),
     );
   });
 

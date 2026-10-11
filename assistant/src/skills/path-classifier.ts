@@ -5,10 +5,10 @@ import { getBundledSkillsDir } from "../config/skills.js";
 import { getWorkspaceSkillsDir } from "../util/platform.js";
 
 /**
- * Returns the managed skills root directory. Managed skills are user-installed
+ * Returns the cloud skills root directory. Managed skills are user-installed
  * skills that live under $CADET_WORKSPACE_DIR/skills.
  */
-export function getManagedSkillsRoot(): string {
+export function getCloudSkillsRoot(): string {
   return normalizeDirPath(getWorkspaceSkillsDir());
 }
 
@@ -91,7 +91,7 @@ export function normalizeFilePath(filePath: string): string {
  * be passed via the `extraRoots` parameter.
  */
 export function getSkillRoots(extraRoots?: string[]): string[] {
-  const roots = [getManagedSkillsRoot(), getBundledSkillsRoot()];
+  const roots = [getCloudSkillsRoot(), getBundledSkillsRoot()];
   if (extraRoots) {
     for (const root of extraRoots) {
       roots.push(normalizeDirPath(root));
@@ -103,7 +103,7 @@ export function getSkillRoots(extraRoots?: string[]): string[] {
 /**
  * Checks whether an absolute path falls under any known skill directory.
  *
- * Returns true if the path is inside the managed skills dir, the bundled
+ * Returns true if the path is inside the cloud skills dir, the bundled
  * skills dir, or any of the provided extra roots. The check is
  * symlink-safe: both the candidate path and the skill roots are resolved
  * through realpath when the paths exist on disk.

@@ -5,17 +5,17 @@
  * collected from owners who accepted the diagnostics-sharing consent copy that
  * *discloses* trace collection — identified by its accepted version.
  *
- * This mirrors the platform's authoritative ingest gate in
+ * This mirrors the cloud's authoritative ingest gate in
  * `mycadet-platform`:
  *   - `django/app/core/trace_collection.py` (`is_trace_collection_enabled`)
  *   - `config.settings.TRACE_COLLECTION_MIN_DIAGNOSTICS_CONSENT_VERSION`
  *
  * The daemon applies the same `share_diagnostics_accepted_version >= threshold`
- * check the platform does, so traces for ineligible owners never leave the
- * device. (The platform would drop them anyway, but checking here keeps the PII
+ * check the cloud does, so traces for ineligible owners never leave the
+ * device. (The cloud would drop them anyway, but checking here keeps the PII
  * local — data minimization.)
  *
- * Keep this constant in lockstep with the platform setting. Versions are
+ * Keep this constant in lockstep with the cloud setting. Versions are
  * "YYYY-MM-DD" strings, so the lexicographic compare is chronological; ""
  * (never accepted) and older versions fail closed.
  */

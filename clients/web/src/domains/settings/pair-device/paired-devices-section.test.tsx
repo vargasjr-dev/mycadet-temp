@@ -344,7 +344,7 @@ describe("PairedDevicesSection", () => {
     expect(screen.queryByText(HASH_A.slice(0, 12))).toBeNull();
   });
 
-  test("a device with neither a reported name nor a User-Agent still renders the platform label with the hash inline", async () => {
+  test("a device with neither a reported name nor a User-Agent still renders the cloud label with the hash inline", async () => {
     await renderExpanded([device()]);
 
     expect(screen.getByText("Ios")).toBeTruthy();

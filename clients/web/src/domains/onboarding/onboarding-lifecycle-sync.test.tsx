@@ -2,7 +2,7 @@ import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { type ReactNode } from "react";
 
-import type { PlatformSessionStatus } from "@/stores/session-status";
+import type { CloudSessionStatus } from "@/stores/session-status";
 import { routes } from "@/utils/routes";
 
 let searchParams = new URLSearchParams();
@@ -49,7 +49,7 @@ const connectLocalAssistantMock = mock(async (_assistantId: string) => {});
 
 let isLocalClientValue = false;
 let localGatewayUrlValue: string | undefined = undefined;
-let platformSessionValue: PlatformSessionStatus = "absent";
+let cloudSessionValue: CloudSessionStatus = "absent";
 
 mock.module("react-router", () => ({
   useNavigate: () => navigateMock,
@@ -145,7 +145,7 @@ mock.module("@/lib/navigation/build-state", () => ({
     hasAssistants: false,
     sessionSettled: true,
     isAuthenticated: true,
-    platformSession: platformSessionValue,
+    cloudSession: cloudSessionValue,
     tosAccepted: true,
     privacyConsent: true,
     ...overrides,
@@ -162,10 +162,10 @@ mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => false,
   isServedGatewayRuntime: () => false,
   isLocalAssistant: () => false,
-  isPlatformAssistant: () => false,
-  isPlatformDisabled: () => false,
+  isCloudAssistant: () => false,
+  isCloudDisabled: () => false,
   hasAssistants: () => false,
-  getPlatformAssistants: () => [],
+  getCloudAssistants: () => [],
   getPlatformRuntimeUrl: () => "https://cloud.mycadet.ai",
   getActiveAssistant: () => null,
   getSelectedAssistant: () => undefined,
@@ -238,7 +238,7 @@ mock.module("@/stores/auth-store", () => ({
         lastName: "",
       }),
       sessionStatus: () => "authenticated",
-      platformSession: () => platformSessionValue,
+      cloudSession: () => cloudSessionValue,
     },
     getState: () => ({ connectLocalAssistant: connectLocalAssistantMock }),
   },
@@ -299,7 +299,7 @@ beforeEach(() => {
   getAssistantImpl = async () => assistantResult("active");
   isLocalClientValue = false;
   localGatewayUrlValue = undefined;
-  platformSessionValue = "absent";
+  cloudSessionValue = "absent";
   sessionStorage.clear();
   localStorage.clear();
 

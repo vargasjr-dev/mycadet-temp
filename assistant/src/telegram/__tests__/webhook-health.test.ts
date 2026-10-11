@@ -69,10 +69,10 @@ mock.module("../../config/env-registry.js", () => ({
 }));
 
 const actualRegistration =
-  await import("../../inbound/platform-callback-registration.js");
-mock.module("../../inbound/platform-callback-registration.js", () => ({
+  await import("../../inbound/cloud-callback-registration.js");
+mock.module("../../inbound/cloud-callback-registration.js", () => ({
   ...actualRegistration,
-  resolvePlatformCallbackRegistrationContext: async () => ({
+  resolveCloudCallbackRegistrationContext: async () => ({
     isPlatform,
     cloudBaseUrl: "https://cloud.mycadet.ai",
     assistantId: cloudContextEnabled ? "assistant-123" : "",
@@ -215,8 +215,8 @@ describe("gating", () => {
     expect(emittedSignals).toHaveLength(0);
   });
 
-  test("runs for a platform-connected local assistant with no ingress", async () => {
-    // LUM-2882: `webhooks register telegram` registers a platform callback
+  test("runs for a cloud-connected local assistant with no ingress", async () => {
+    // LUM-2882: `webhooks register telegram` registers a cloud callback
     // route in this exact configuration, so a broken registration is real and
     // the sweep has to verify it rather than skip.
     ingressConfig = {};
@@ -238,7 +238,7 @@ describe("gating", () => {
     expect(result.detail).toContain("contact support");
   });
 
-  test("runs when platform-managed callbacks stand in for public ingress", async () => {
+  test("runs when cloud-managed callbacks stand in for public ingress", async () => {
     isPlatform = true;
     ingressConfig = {};
     setWebhookInfo({

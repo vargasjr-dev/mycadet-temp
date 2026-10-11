@@ -22,7 +22,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 interface MockProviderRow {
   provider: string;
   authorizeUrl: string;
-  managedServiceConfigKey: string | null;
+  cloudServiceConfigKey: string | null;
   baseUrl: string | null;
   injectionTemplates: string | null;
   defaultScopes?: string;
@@ -38,7 +38,7 @@ interface MockProviderRow {
 const baseProvider: MockProviderRow = {
   provider: "google",
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-  managedServiceConfigKey: "google-oauth",
+  cloudServiceConfigKey: "google-oauth",
   baseUrl: "https://api.google.com",
   injectionTemplates: null,
   pingUrl: null,
@@ -54,7 +54,7 @@ let mockAllConnections: Record<string, unknown[]> = {};
 let mockApps: Record<string, unknown> = {};
 let mockTokenValue = "tok-fake";
 let platformAvailable = true;
-let platformAssistantId: string | null = "assistant-1";
+let cloudAssistantId: string | null = "assistant-1";
 let mockFetchImpl: (
   path: string,
   init?: RequestInit,
@@ -145,14 +145,14 @@ mock.module("../oauth/manual-token-connection.js", () => ({
   },
 }));
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => {
       if (!platformAvailable) {
         return null;
       }
       return {
-        platformAssistantId,
+        cloudAssistantId,
         fetch: (path: string, init?: RequestInit) => mockFetchImpl(path, init),
       };
     },
@@ -219,7 +219,7 @@ beforeEach(() => {
   mockApps = {};
   mockTokenValue = "tok-fake";
   platformAvailable = true;
-  platformAssistantId = "assistant-1";
+  cloudAssistantId = "assistant-1";
   mockFetchImpl = async () => ({
     ok: true,
     status: 200,
@@ -363,7 +363,7 @@ describe("GET oauth/mode", () => {
     mockProviders.byo = {
       ...baseProvider,
       provider: "byo",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
     };
     const result = (await getRoute("GET", "oauth/mode").handler(
       makeArgs({ queryParams: { provider: "byo" } }),
@@ -390,7 +390,7 @@ describe("POST oauth/mode", () => {
     mockProviders.byo = {
       ...baseProvider,
       provider: "byo",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
     };
     await expect(
       getRoute("POST", "oauth/mode").handler(
@@ -403,7 +403,7 @@ describe("POST oauth/mode", () => {
     mockProviders.byo = {
       ...baseProvider,
       provider: "byo",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
     };
     const rawBefore = JSON.stringify(loadRawConfig());
     const result = (await getRoute("POST", "oauth/mode").handler(
@@ -501,7 +501,7 @@ describe("GET oauth/status", () => {
       ...baseProvider,
       provider: "telegram",
       authorizeUrl: "urn:manual-token",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
       baseUrl: "https://api.telegram.org",
     };
     mockAllConnections.telegram = [
@@ -877,7 +877,7 @@ describe("POST oauth/request", () => {
     mockProviders.slack_channel = {
       ...baseProvider,
       provider: "slack_channel",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
       baseUrl: "https://slack.com/api",
       injectionTemplates: JSON.stringify([
         {
@@ -906,7 +906,7 @@ describe("POST oauth/request", () => {
     mockProviders.slack_channel = {
       ...baseProvider,
       provider: "slack_channel",
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
       baseUrl: "https://slack.com/api",
       injectionTemplates: JSON.stringify([
         {
@@ -943,7 +943,7 @@ describe("POST oauth/request", () => {
     return {
       ...baseProvider,
       provider,
-      managedServiceConfigKey: null,
+      cloudServiceConfigKey: null,
       baseUrl: seed.baseUrl ?? null,
       injectionTemplates: JSON.stringify(seed.injectionTemplates),
       responseOkField: seed.responseOkField ?? null,
@@ -1178,8 +1178,8 @@ describe("POST oauth/managed-connect/start", () => {
     expect(result.connect_url).toBe("https://mycadet.ai/connect/abc");
   });
 
-  test("forwards tenant_host to the platform only when one is supplied", async () => {
-    // Shopify's endpoints live on the merchant's host, which the platform
+  test("forwards tenant_host to the cloud only when one is supplied", async () => {
+    // Shopify's endpoints live on the merchant's host, which the cloud
     // substitutes into its templates; other providers must not see the key.
     const bodies: Array<Record<string, unknown>> = [];
     mockFetchImpl = async (_path, init) => {

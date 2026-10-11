@@ -37,14 +37,14 @@ export const TTS_PROVIDERS: readonly TTSProvider[] = [
     subtitle:
       "Text-to-speech through your Cadet account — billed to Cadet credits, no separate API key needed.",
     // Deliberately false in the static fallback: this entry stands in for
-    // daemons whose live catalog is unavailable or predates managed voice
+    // daemons whose live catalog is unavailable or predates cloud voice
     // selection, and those daemons ignore `providers.cadet.model` writes.
     // New daemons advertise true via the live catalog fetch.
     supportsVoiceSelection: false,
     apiKeyPlaceholder: "Connected via your Cadet account",
     credentialsGuide: {
       description:
-        "Connect this assistant to your Cadet account; managed speech uses that connection instead of a provider API key.",
+        "Connect this assistant to your Cadet account; cloud speech uses that connection instead of a provider API key.",
       url: "https://cloud.mycadet.ai/",
       linkLabel: "Open Cadet Cloud",
     },
@@ -273,7 +273,7 @@ export const DEFAULT_OPENROUTER_IMAGE_MODEL =
 
 /**
  * Models selectable under a provider. Cadet spans both backends (the daemon
- * derives the managed proxy from the model prefix); BYOK providers list only
+ * derives the cloud proxy from the model prefix); BYOK providers list only
  * the models their key can serve.
  */
 export function imageGenModelsForProvider(provider: string): string[] {

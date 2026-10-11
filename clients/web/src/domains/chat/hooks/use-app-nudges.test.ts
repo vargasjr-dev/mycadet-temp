@@ -1,5 +1,5 @@
 /**
- * Pins the platform leg of the nudge cascade: which device resolves which
+ * Pins the cloud leg of the nudge cascade: which device resolves which
  * promotion, including both desktop app targets.
  *
  * Driven through `navigator.userAgent` rather than a module mock, so the real

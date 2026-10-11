@@ -51,11 +51,11 @@ export interface IngressConfig {
  * True when the user has explicitly switched public ingress off.
  *
  * An explicit opt-out is a decision not to accept inbound webhooks at all, so
- * it must not be silently routed around via platform callbacks. An *absent*
- * ingress config is merely "not set up yet" and is eligible for the platform
+ * it must not be silently routed around via cloud callbacks. An *absent*
+ * ingress config is merely "not set up yet" and is eligible for the cloud
  * fallback, so only a literal `false` counts here.
  *
- * Every consumer that offers a platform-callback fallback has to consult this
+ * Every consumer that offers a cloud-callback fallback has to consult this
  * before falling back, which is why it lives here rather than in each caller.
  */
 export function isPublicIngressDisabled(config: IngressConfig): boolean {

@@ -45,8 +45,8 @@ const LEGACY = [
   "together-managed",
 ];
 
-describe("migration 319 — remove legacy *-managed connections", () => {
-  test("deletes all five legacy managed connections", () => {
+describe("migration 319 — remove legacy *-cloud connections", () => {
+  test("deletes all five legacy cloud connections", () => {
     const db = createTestDb();
     migrateCreateProviderConnections(db); // seeds anthropic/openai/gemini-managed
     for (const name of LEGACY) {

@@ -1,7 +1,7 @@
 import { Loader2, Wrench } from "lucide-react";
 import { useCallback, useState } from "react";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import {
   assistantsMaintenanceModeEnterCreate,
   assistantsMaintenanceModeExitCreate,
@@ -9,8 +9,8 @@ import {
 import type { MaintenanceMode } from "@/generated/api/types.gen";
 import {
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { Button } from "@mycadet/design-library/components/button";
@@ -30,10 +30,10 @@ export function RecoveryModeControls({
   const { t } = useTranslation("settings");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Recovery Mode is platform-managed — self-hosted assistants have no
-  // equivalent, so `platformHostedOnly: true` flips "gated" when the active
-  // assistant is self-hosted regardless of platform-session state.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  // Recovery Mode is cloud-managed — self-hosted assistants have no
+  // equivalent, so `cloudHostedOnly: true` flips "gated" when the active
+  // assistant is self-hosted regardless of cloud-session state.
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
   // Settings routes are NOT mounted under `<ActiveAssistantGate>`, so this
   // panel can render while lifecycle is `{ kind: "loading" }`. Pair the
   // permissive gate value with the lifecycle-loading signal so the
@@ -93,11 +93,11 @@ export function RecoveryModeControls({
     }
   }, [assistantId, onMaintenanceModeChange, t]);
 
-  // Self-hosted assistants don't run platform-managed Recovery Mode.
+  // Self-hosted assistants don't run cloud-managed Recovery Mode.
   // Early return must follow every hook above so that gate transitions
   // (e.g. lifecycle flipping to `self_hosted` after the API resolves)
   // never skip a hook and trigger a hook-order violation.
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return null;
   }
 
@@ -106,7 +106,7 @@ export function RecoveryModeControls({
   // spinner branch already replaces the action button while a mutation is
   // in flight, so reusing it here keeps UX consistent and prevents the
   // race-window click on a fresh deep-link.
-  const isResolving = platformGate === "full" && isLifecycleLoading;
+  const isResolving = cloudGate === "full" && isLifecycleLoading;
   const effectiveLoading = loading || isResolving;
 
   return (
@@ -133,7 +133,7 @@ export function RecoveryModeControls({
         </div>
 
         <div className="ml-4 flex shrink-0 items-center gap-2">
-          {platformGate === "disabled" ? null : effectiveLoading ? (
+          {cloudGate === "disabled" ? null : effectiveLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-[var(--content-disabled)]" />
           ) : isActive ? (
             <Button variant="outlined" onClick={handleExit}>
@@ -147,12 +147,12 @@ export function RecoveryModeControls({
         </div>
       </div>
 
-      {platformGate === "disabled" && (
-        <PlatformLoginNotice>
+      {cloudGate === "disabled" && (
+        <CloudLoginNotice>
           {isActive
             ? t("recoveryModeControls.loginNoticeExit")
             : t("recoveryModeControls.loginNoticeEnter")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       )}
       {error && <Notice tone="error">{error}</Notice>}
     </div>

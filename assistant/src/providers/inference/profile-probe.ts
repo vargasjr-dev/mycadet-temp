@@ -119,7 +119,7 @@ function checkMessage(check: {
 /**
  * Probe a saved profile with one minimal request. Returns `null` when there
  * is no verdict to give: the profile does not exist or is disabled, it rides
- * a managed or routing-identity route (probing would bill managed credits),
+ * a cloud or routing-identity route (probing would bill managed credits),
  * or the probe timed out without an answer.
  */
 export async function probeInferenceProfile(
@@ -164,7 +164,7 @@ export async function probeInferenceProfile(
   // Billing guards run on the fully resolved call-site config — the same
   // composition dispatch consumes (mix arm expanded, call-site overrides
   // applied) — so neither a mix nor an `llm.callSites.inference` provider
-  // tweak can route the probe onto a managed or platform-billed path the
+  // tweak can route the probe onto a cloud or platform-billed path the
   // stored entry hid. Same seed as the dispatch below, so the judged arm is
   // the dispatched arm.
   const resolved = resolveCallSiteConfig("inference", llm, {
@@ -184,7 +184,7 @@ export async function probeInferenceProfile(
     return null;
   }
   // A legacy profile can declare a concrete provider while staying bound to
-  // a platform-billed connection row; the row's auth is the billing fact, so
+  // a cloud-billed connection row; the row's auth is the billing fact, so
   // it gates the probe too.
   const boundRow = connection ? getConnection(getDb(), connection) : null;
   if (boundRow?.auth.type === "platform") {
@@ -213,7 +213,7 @@ export async function probeInferenceProfile(
     // getConfiguredProvider, so only the stamped attribution names the row
     // this request would sign with.
     const route = providerInstance.routeAttribution;
-    if (route?.isManagedRoute) {
+    if (route?.isCloudRoute) {
       return null;
     }
     const routedRow = route?.connectionName

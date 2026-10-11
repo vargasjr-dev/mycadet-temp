@@ -11,7 +11,7 @@ export interface CadetProviderOptions {
 
 /**
  * OpenAI-compatible client for Cadet-hosted GPU inference.
- * Managed requests set `baseURL` to the platform `/v1/runtime-proxy/cadet`
+ * Managed requests set `baseURL` to the cloud `/v1/runtime-proxy/cadet`
  * path and authenticate with the assistant API key. These models have no
  * bring-your-own-key path.
  */

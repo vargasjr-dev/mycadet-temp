@@ -20,11 +20,12 @@ import { getDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyResultAsync } from "../../security/secure-keys.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  CADET_MANAGED_PROVIDER,
-  isCadetManagedConnection,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CADET_CLOUD_CONNECTION_NAME,
+  CADET_CLOUD_PROVIDER,
+  CLOUD_ROUTABLE_PROVIDERS,
+  isCadetCloudConnection,
 } from "../cadet-model-routing.js";
+import { resolveCloudProxyContext } from "../cloud-proxy/context.js";
 import {
   describeSubscriptionModelIncompatibility,
   isConnectionCompatibleWithModel,
@@ -34,7 +35,6 @@ import {
   resolveEntryConnectionName,
 } from "../connection-resolution.js";
 import { PROVIDER_CATALOG } from "../model-catalog.js";
-import { resolveManagedProxyContext } from "../platform-proxy/context.js";
 import {
   ConnectionResolutionError,
   resolveRoutingIdentity,
@@ -70,17 +70,17 @@ export interface ConnectionAvailability {
 const SETTINGS_HINT = "in Settings → Models & Services";
 
 /**
- * Availability of the Cadet-managed platform proxy: signed in and reachable.
+ * Availability of the Cadet Cloud cloud proxy: signed in and reachable.
  */
 export async function cadetConnectionAvailability(): Promise<ConnectionAvailability> {
-  const ctx = await resolveManagedProxyContext();
+  const ctx = await resolveCloudProxyContext();
   if (ctx.enabled) {
     return { status: "ok" };
   }
   if (!ctx.cloudBaseUrl) {
     return {
       status: "cadet_unauthenticated",
-      message: "Not signed in to Cadet — the platform URL is not configured.",
+      message: "Not signed in to Cadet — the cloud URL is not configured.",
     };
   }
   // The context collapses an unreachable credential read into "no key";
@@ -101,17 +101,17 @@ export async function cadetConnectionAvailability(): Promise<ConnectionAvailabil
   return {
     status: "cadet_unauthenticated",
     message:
-      "Not signed in to Cadet — no assistant API key is stored. Log in to use Cadet-managed inference.",
+      "Not signed in to Cadet — no assistant API key is stored. Log in to use Cadet Cloud inference.",
   };
 }
 
-function cadetManagedMismatch(
+function cadetCloudMismatch(
   resolvedConnectionName: string,
   provider: string,
 ): ConnectionAvailability {
   return {
     status: "provider_mismatch",
-    message: `Connection "${resolvedConnectionName}" is the Cadet-managed connection, which cannot serve provider "${provider}". Pick a connection for "${provider}" ${SETTINGS_HINT}.`,
+    message: `Connection "${resolvedConnectionName}" is the Cadet Cloud connection, which cannot serve provider "${provider}". Pick a connection for "${provider}" ${SETTINGS_HINT}.`,
   };
 }
 
@@ -146,23 +146,23 @@ export async function computeConnectionAvailability(
   }
 
   // Mirror the dispatch-time provider check (`tryResolveProviderForConnectionName`):
-  // the provider-agnostic Cadet-managed connection routes managed-routable
-  // providers via platform auth; any other provider mismatch fails there, so
+  // the provider-agnostic Cadet Cloud connection routes managed-routable
+  // providers via cloud auth; any other provider mismatch fails there, so
   // usable credentials must not read as ok.
-  if (isCadetManagedConnection(connection)) {
+  if (isCadetCloudConnection(connection)) {
     if (
-      provider === CADET_MANAGED_PROVIDER ||
-      MANAGED_ROUTABLE_PROVIDERS.has(provider)
+      provider === CADET_CLOUD_PROVIDER ||
+      CLOUD_ROUTABLE_PROVIDERS.has(provider)
     ) {
       return cadetConnectionAvailability();
     }
-    return cadetManagedMismatch(resolvedConnectionName, provider);
+    return cadetCloudMismatch(resolvedConnectionName, provider);
   }
   // Everything routed through the canonical name dispatches on platform auth,
-  // never on a claiming row's credentials, so the platform's own status is the
-  // answer. Scoped to that name: a managed default explicitly pinned to some
+  // never on a claiming row's credentials, so the cloud's own status is the
+  // answer. Scoped to that name: a cloud default explicitly pinned to some
   // other row is a real misconfiguration and still reads as a mismatch below.
-  if (resolvedConnectionName === CADET_MANAGED_CONNECTION_NAME) {
+  if (resolvedConnectionName === CADET_CLOUD_CONNECTION_NAME) {
     return cadetConnectionAvailability();
   }
   // The ChatGPT-subscription row stores the "chatgpt" identity while its
@@ -228,10 +228,10 @@ export async function computeConnectionAvailability(
       };
     }
     case "platform":
-      // The managed proxy only serves managed-routable upstreams
-      // (`resolveAuth` → `buildManagedBaseUrl` has no proxy path for the
+      // The cloud proxy only serves managed-routable upstreams
+      // (`resolveAuth` → `buildCloudBaseUrl` has no proxy path for the
       // rest), so platform auth on e.g. openrouter can never dispatch.
-      if (MANAGED_ROUTABLE_PROVIDERS.has(provider)) {
+      if (CLOUD_ROUTABLE_PROVIDERS.has(provider)) {
         return cadetConnectionAvailability();
       }
       return {

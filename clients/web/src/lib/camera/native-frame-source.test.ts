@@ -2106,7 +2106,7 @@ describe("native frame source bridge deadline", () => {
 
     // The one time two calls are outstanding at once, and it is sanctioned:
     // the older one has been given up on, so whatever it eventually does
-    // reaches nobody, and the platforms hand the next frame to the newer call.
+    // reaches nobody, and the clouds hand the next frame to the newer call.
     expect(capture.maxConcurrent()).toBe(2);
     debug.mockRestore();
     live.stop();

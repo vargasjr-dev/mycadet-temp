@@ -9,8 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { repairAdaptiveThinkingOnManagedProfiles } from "../workspace/adaptive-thinking-repair.js";
-import { enableAdaptiveThinkingManagedProfilesMigration } from "../workspace/migrations/097-enable-adaptive-thinking-managed-profiles.js";
+import { repairAdaptiveThinkingOnCloudProfiles } from "../workspace/adaptive-thinking-repair.js";
+import { enableAdaptiveThinkingCloudProfilesMigration } from "../workspace/migrations/097-enable-adaptive-thinking-managed-profiles.js";
 import { recheckAdaptiveThinkingModelImpliedAnthropicMigration } from "../workspace/migrations/104-recheck-adaptive-thinking-model-implied-anthropic.js";
 
 const ADAPTIVE = { enabled: true, streamThinking: true };
@@ -53,10 +53,10 @@ function profile(name: string): Record<string, unknown> {
 // the same logic (migration modules must stay self-contained). Run every
 // scenario against all of them so the copies can't drift.
 const implementations: Array<[string, (dir: string) => void]> = [
-  ["startup repair", repairAdaptiveThinkingOnManagedProfiles],
+  ["startup repair", repairAdaptiveThinkingOnCloudProfiles],
   [
     "migration 097",
-    (dir) => enableAdaptiveThinkingManagedProfilesMigration.run(dir),
+    (dir) => enableAdaptiveThinkingCloudProfilesMigration.run(dir),
   ],
   [
     "migration 104",

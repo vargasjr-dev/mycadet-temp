@@ -52,7 +52,7 @@ const POLL_INTERVAL_MS = 3000;
 
 /**
  * The "Current" version value, doubling as the 7-tap developer-mode unlock
- * target (see `useDevModeVersionTap`). Shared by both the platform and local
+ * target (see `useDevModeVersionTap`). Shared by both the cloud and local
  * upgrade panels so the unlock lives on the version label that is on screen.
  */
 function CurrentVersionValue({

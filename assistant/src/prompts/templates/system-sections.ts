@@ -27,7 +27,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { getCachedManagedConnections } from "../../credential-execution/managed-catalog.js";
+import { getCachedManagedConnections } from "../../credential-execution/cloud-catalog.js";
 import { listConnections } from "../../oauth/oauth-store.js";
 import type { OnboardingContext } from "../../types/onboarding-context.js";
 import { stripCommentLines } from "../../util/strip-comment-lines.js";
@@ -136,7 +136,7 @@ function renderFirstRunUserContext(onboarding: OnboardingContext): string {
 /**
  * Builds the `# Connected Services` block from the live OAuth caches.
  * Reads local (BYO) connections from the SQLite store via
- * `listConnections()` and platform-managed connections from the
+ * `listConnections()` and cloud connections from the
  * in-memory cache populated at daemon startup.  Provider-level dedup
  * is intentional: this block is a summary for the model, not an
  * exhaustive account list, so multiple accounts on the same provider
@@ -569,7 +569,7 @@ You can still be genuinely helpful — answer general questions, do research, an
     // because the content is derived from live caches rather than a
     // workspace file — the transform pulls from `listConnections()`
     // (SQLite OAuth store) and `getCachedManagedConnections()`
-    // (in-memory cache populated by the managed-catalog refresh job).
+    // (in-memory cache populated by the cloud-catalog refresh job).
     // Returns null when no active connections exist so the renderer's
     // empty-body gate omits the section entirely.
     id: "14-connected-services",

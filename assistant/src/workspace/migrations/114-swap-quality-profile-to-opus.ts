@@ -9,15 +9,15 @@ import type { WorkspaceMigration } from "./types.js";
 // managed `balanced` profile takes over the GLM 5.2 model `quality-optimized`
 // used to serve (migration 113).
 //
-// A migration is needed even though the seeder reconciles managed-profile
+// A migration is needed even though the seeder reconciles cloud-profile
 // content from the templates on every boot, because the seeder only consults a
 // template when it reseeds that profile. Off-platform installs reseed every
-// boot, but a platform workspace keeps the profile it was hatched with (the
+// boot, but a cloud workspace keeps the profile it was hatched with (the
 // seeder skips overlay-supplied profiles, and the overlay is consumed once). A
 // platform workspace whose `quality-optimized` profile resolves to GLM 5.2
 // therefore relies on this migration to move it to Opus.
 //
-// Scope: only the managed `quality-optimized` profile still on the GLM 5.2
+// Scope: only the cloud `quality-optimized` profile still on the GLM 5.2
 // default is rewritten. `quality-optimized` is a canonical name reserved since
 // migration 052, which seeded it source-less, so absent `source` means legacy
 // managed — treat it as ours. An explicit `source: "user"` (a profile the user
@@ -32,7 +32,7 @@ const NEW_MODEL = "claude-opus-4-8";
 export const swapQualityProfileToOpusMigration: WorkspaceMigration = {
   id: "114-swap-quality-profile-to-opus",
   description:
-    "Set the managed quality-optimized profile to Anthropic Opus (matching frontier)",
+    "Set the cloud quality-optimized profile to Anthropic Opus (matching frontier)",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {

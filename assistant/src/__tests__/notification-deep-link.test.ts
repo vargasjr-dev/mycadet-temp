@@ -4,7 +4,7 @@
  * Validates that the CadetAdapter broadcasts notification_intent with
  * deepLinkMetadata, and that the broadcaster correctly passes deepLinkTarget
  * from the decision through to the adapter payload — regardless of whether
- * the conversation was newly created or reused. Also covers the platform
+ * the conversation was newly created or reused. Also covers the cloud
  * (APNs) channel, whose deepLinkTarget must be enriched with the
  * conversationId so remote-push taps can navigate.
  */
@@ -691,14 +691,14 @@ describe("notification deep-link metadata", () => {
 
     // ── Platform (APNs) channel deep-link enrichment ──────────────────
     //
-    // The platform adapter forwards deepLinkTarget verbatim as
+    // The cloud adapter forwards deepLinkTarget verbatim as
     // deep_link_metadata, so the broadcaster must enrich it with the
     // conversationId the same way it does for cadet — otherwise remote-push
     // taps have no routing key and cannot navigate.
 
     test("broadcaster merges pairing conversationId and messageId into deepLinkTarget for platform", async () => {
-      const platformAdapter = new MockAdapter("platform");
-      const broadcaster = new NotificationBroadcaster([platformAdapter]);
+      const cloudAdapter = new MockAdapter("platform");
+      const broadcaster = new NotificationBroadcaster([cloudAdapter]);
 
       nextPairingResult = {
         conversationId: "conv-paired-platform",
@@ -718,16 +718,16 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      expect(platformAdapter.sent).toHaveLength(1);
-      const deepLink = platformAdapter.sent[0].deepLinkTarget;
+      expect(cloudAdapter.sent).toHaveLength(1);
+      const deepLink = cloudAdapter.sent[0].deepLinkTarget;
       expect(deepLink).toBeDefined();
       expect(deepLink!.conversationId).toBe("conv-paired-platform");
       expect(deepLink!.messageId).toBe("msg-paired-platform");
     });
 
     test("platform deep link falls back to signal.sourceContextId when pairing returns no conversation", async () => {
-      const platformAdapter = new MockAdapter("platform");
-      const broadcaster = new NotificationBroadcaster([platformAdapter]);
+      const cloudAdapter = new MockAdapter("platform");
+      const broadcaster = new NotificationBroadcaster([cloudAdapter]);
 
       // Production platform pairing: push_only strategy pairs no conversation.
       nextPairingResult = {
@@ -751,15 +751,15 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      expect(platformAdapter.sent).toHaveLength(1);
-      const deepLink = platformAdapter.sent[0].deepLinkTarget;
+      expect(cloudAdapter.sent).toHaveLength(1);
+      const deepLink = cloudAdapter.sent[0].deepLinkTarget;
       expect(deepLink).toBeDefined();
       expect(deepLink!.conversationId).toBe(originConvId);
     });
 
     test("platform deep link omits conversationId when sourceContextId is a sentinel", async () => {
-      const platformAdapter = new MockAdapter("platform");
-      const broadcaster = new NotificationBroadcaster([platformAdapter]);
+      const cloudAdapter = new MockAdapter("platform");
+      const broadcaster = new NotificationBroadcaster([cloudAdapter]);
 
       nextPairingResult = {
         conversationId: null,
@@ -779,22 +779,22 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      expect(platformAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent).toHaveLength(1);
       expect(
-        platformAdapter.sent[0].deepLinkTarget?.conversationId,
+        cloudAdapter.sent[0].deepLinkTarget?.conversationId,
       ).toBeUndefined();
     });
 
     test("cadet and platform each receive deep-link enrichment in the same broadcast", async () => {
       const cadetAdapter = new MockAdapter("cadet");
-      const platformAdapter = new MockAdapter("platform");
+      const cloudAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         cadetAdapter,
-        platformAdapter,
+        cloudAdapter,
       ]);
 
       // Cadet is ordered first and consumes the queued pairing result;
-      // the platform pairing call then receives the mock's auto-generated
+      // the cloud pairing call then receives the mock's auto-generated
       // conversation, so each channel is enriched from its own pairing.
       nextPairingResult = {
         conversationId: "conv-cadet-paired",
@@ -822,26 +822,26 @@ describe("notification deep-link metadata", () => {
       );
 
       // Platform enriched independently from its own pairing call.
-      expect(platformAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent).toHaveLength(1);
       const platformConvId =
-        platformAdapter.sent[0].deepLinkTarget?.conversationId;
+        cloudAdapter.sent[0].deepLinkTarget?.conversationId;
       expect(String(platformConvId)).toStartWith("mock-conv-");
     });
 
-    // ── Cadet pairing carried into the platform deep link ─────────────
+    // ── Cadet pairing carried into the cloud deep link ─────────────
     //
-    // In production the platform channel is push_only: its own pairing
+    // In production the cloud channel is push_only: its own pairing
     // returns null. When the cadet channel creates (or reuses) a
-    // conversation in the same broadcast, the platform deep link must
+    // conversation in the same broadcast, the cloud deep link must
     // carry that conversation so remote-push taps land in the thread the
     // notification is about (approval requests, guardian questions).
 
     test("platform deep link carries the cadet-created conversation in a mixed broadcast", async () => {
       const cadetAdapter = new MockAdapter("cadet");
-      const platformAdapter = new MockAdapter("platform");
+      const cloudAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         cadetAdapter,
-        platformAdapter,
+        cloudAdapter,
       ]);
 
       pairingResultsByChannel = {
@@ -886,21 +886,21 @@ describe("notification deep-link metadata", () => {
       );
 
       // Platform carries the cadet-created conversation and seed message.
-      expect(platformAdapter.sent).toHaveLength(1);
-      expect(platformAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
+      expect(cloudAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         "conv-cadet-created",
       );
-      expect(platformAdapter.sent[0].deepLinkTarget?.messageId).toBe(
+      expect(cloudAdapter.sent[0].deepLinkTarget?.messageId).toBe(
         "msg-cadet-seed",
       );
     });
 
     test("platform prefers the cadet pairing over the source-context fallback in a mixed broadcast", async () => {
       const cadetAdapter = new MockAdapter("cadet");
-      const platformAdapter = new MockAdapter("platform");
+      const cloudAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         cadetAdapter,
-        platformAdapter,
+        cloudAdapter,
       ]);
 
       pairingResultsByChannel = {
@@ -936,18 +936,18 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      expect(platformAdapter.sent).toHaveLength(1);
-      expect(platformAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
+      expect(cloudAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         "conv-approval-thread",
       );
     });
 
     test("platform deep link carries the conversation from a duplicate cadet delivery on retry", async () => {
       const cadetAdapter = new MockAdapter("cadet");
-      const platformAdapter = new MockAdapter("platform");
+      const cloudAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         cadetAdapter,
-        platformAdapter,
+        cloudAdapter,
       ]);
 
       // Persisted-decision retry: the cadet delivery row already exists
@@ -992,21 +992,21 @@ describe("notification deep-link metadata", () => {
       expect(cadetResult?.conversationId).toBe("conv-from-existing-row");
 
       // Platform still delivers, carrying the existing row's conversation.
-      expect(platformAdapter.sent).toHaveLength(1);
-      expect(platformAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
+      expect(cloudAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         "conv-from-existing-row",
       );
-      expect(platformAdapter.sent[0].deepLinkTarget?.messageId).toBe(
+      expect(cloudAdapter.sent[0].deepLinkTarget?.messageId).toBe(
         "msg-from-existing-row",
       );
     });
 
     test("platform falls back to sourceContextId in a mixed broadcast when cadet pairs no conversation", async () => {
       const cadetAdapter = new MockAdapter("cadet");
-      const platformAdapter = new MockAdapter("platform");
+      const cloudAdapter = new MockAdapter("platform");
       const broadcaster = new NotificationBroadcaster([
         cadetAdapter,
-        platformAdapter,
+        cloudAdapter,
       ]);
 
       // Passive cadet signal: pairing skips conversation creation.
@@ -1041,8 +1041,8 @@ describe("notification deep-link metadata", () => {
 
       await broadcaster.broadcastDecision(signal, decision);
 
-      expect(platformAdapter.sent).toHaveLength(1);
-      expect(platformAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
+      expect(cloudAdapter.sent).toHaveLength(1);
+      expect(cloudAdapter.sent[0].deepLinkTarget?.conversationId).toBe(
         originConvId,
       );
     });

@@ -143,8 +143,8 @@ export function useProfileDeleteFlow(
    * Being told why the obvious target is unavailable beats it silently
    * missing.
    *
-   * Everything that survives is offered, managed profiles included: any
-   * usable profile is a legal destination, and hiding the managed ones
+   * Everything that survives is offered, cloud profiles included: any
+   * usable profile is a legal destination, and hiding the cloud ones
    * would leave a user whose only other profiles are managed staring at a
    * list missing the target they want. Preference between them is a
    * preselection concern, handled in `defaultReplacementFor`.

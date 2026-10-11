@@ -66,7 +66,7 @@ export function resolveSelectedAssistantId(
 /**
  * Reactive read of the selection, shared by every consumer that must agree
  * with the lifecycle on which assistant is selected. The chooser runs on
- * local clients and the platform hub alike, so the stored selection is
+ * local clients and the cloud hub alike, so the stored selection is
  * honored on every surface.
  * Gateway-auth mode and a missing org id return null: callers apply their own
  * fallback. The org id comes from the same derivation the

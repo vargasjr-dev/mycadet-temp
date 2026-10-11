@@ -382,7 +382,7 @@ function AdjustPlanModalContent({
     creditTiersEnabled &&
     selectedCreditTier !== undefined &&
     selectedCreditTier !== currentCreditTier;
-  // A custom plan always carries the platform fee, so a fee-less (Mighty) sub
+  // A custom plan always carries the cloud fee, so a fee-less (Mighty) sub
   // has a pending change even with every tier untouched: applying adds, and
   // bills, the fee.
   const feeAdded = proTierChangeMode && !currentTiers.hasPlatformFee;

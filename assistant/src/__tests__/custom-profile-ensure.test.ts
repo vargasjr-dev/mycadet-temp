@@ -80,7 +80,7 @@ describe("ensureCompleteCustomProfiles", () => {
     expect(saved.provider_connection).toBeUndefined();
   });
 
-  test("inherits the cadet managed connection only onto managed-routable providers", () => {
+  test("inherits the cadet cloud connection only onto managed-routable providers", () => {
     writeConfig({
       llm: {
         default: { ...distinctiveDefault, provider_connection: "cadet" },

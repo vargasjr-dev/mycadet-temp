@@ -102,14 +102,14 @@ const localAssistant: LockfileAssistant = {
   resources: { gatewayPort: 51234, daemonPort: 51235 },
 };
 
-// The platform hardcodes the non-native Stripe `success_url` to this path, and
+// The cloud hardcodes the non-native Stripe `success_url` to this path, and
 // the pricing funnel has a brand-new user pay before an assistant exists.
 // Billing lives under `ActiveAssistantGate`, so admitting the return strands
 // the (paying) user on "Connecting to your assistant…" forever.
 const postCheckoutBilling = `${routes.settings.root}/billing?session_id=cs_test_123`;
 
-// The funnel entry carries the managed-hatch marker so a local-mode client
-// provisions on the platform rather than letting its own gateway answer for
+// The funnel entry carries the cloud-hatch marker so a local-mode client
+// provisions on the cloud rather than letting its own gateway answer for
 // the assistant. Every client lands on the headless research onboarding, which
 // runs the purchased-provisioning wait behind the form.
 const managedFunnel = `${routes.onboarding.research}?hosting=cadet-cloud&post_checkout=1`;
@@ -127,7 +127,7 @@ function makeSelfHostedLocalReturn(): void {
   useAuthStore.setState({
     sessionStatus: "authenticated",
     user: fakeUser,
-    platformSession: "unknown",
+    cloudSession: "unknown",
   });
   useOnboardingStore.setState({ consentHydrated: true });
   useResolvedAssistantsStore.setState({
@@ -135,7 +135,7 @@ function makeSelfHostedLocalReturn(): void {
       {
         id: localAssistant.assistantId,
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
       },
     ] as never[],
     assistantsHydrated: true,
@@ -230,17 +230,17 @@ beforeEach(() => {
 afterEach(async () => {
   // Settle the probe so a re-run armed by a timed-out wait fires and detaches
   // here instead of in the next test, then drain its lazy router import.
-  useAuthStore.setState({ platformSession: "absent" });
+  useAuthStore.setState({ cloudSession: "absent" });
   await tick();
   useAuthStore.setState(initialAuthState, true);
 });
 
 describe("authMiddleware — local-mode onboarding fork", () => {
-  test("waits for the platform-session probe before choosing hosting vs welcome", async () => {
+  test("waits for the cloud-session probe before choosing hosting vs welcome", async () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "unknown",
+      cloudSession: "unknown",
     });
 
     let settled: Response | null = null;
@@ -254,7 +254,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     expect(settled).toBeNull();
 
     // Probe settles with a live platform session.
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
     await pending;
 
     expect(settled).not.toBeNull();
@@ -266,7 +266,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     const res = await runMiddleware(routes.identity);
@@ -278,7 +278,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "unknown",
+      cloudSession: "unknown",
     });
 
     // The probe stays "unknown" for the whole (clamped) wait, so the guard
@@ -292,7 +292,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
 
     const res = await runMiddleware(routes.identity);
@@ -320,33 +320,33 @@ describe("authMiddleware — app-access admit gate", () => {
     makeLocalUserReachable();
     // A local desktop user with no platform identity: the gateway is the sole
     // session authority (#35152), so the local session is 'authenticated' even
-    // though the platform probe settled absent.
+    // though the cloud probe settled absent.
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: null,
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
   });
 
-  test("a platform 401 mid-session does not redirect a local user", async () => {
+  test("a cloud 401 mid-session does not redirect a local user", async () => {
     makeLocalUserReachable();
     // Start admitted as a local user.
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: null,
-      platformSession: "present",
+      cloudSession: "present",
     });
     expect((await runMiddlewareOutcome(routes.identity)).admitted).toBe(true);
 
-    // Platform getSession() returns 401 mid-session: platformSession flips to
+    // Platform getSession() returns 401 mid-session: cloudSession flips to
     // absent, but the local gateway keeps sessionStatus 'authenticated' (the
     // sole session authority, #35152 — asserted in auth-store.test.ts). So the
     // user is not evicted.
     useAuthStore.setState({
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
@@ -361,7 +361,7 @@ describe("authMiddleware — app-access admit gate", () => {
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
       user: null,
-      platformSession: "absent",
+      cloudSession: "absent",
     });
 
     const outcome = await runMiddlewareOutcome("/assistant/identity");
@@ -381,7 +381,7 @@ describe("authMiddleware — post-checkout return with nothing provisioned", () 
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     useOnboardingStore.setState({ consentHydrated: true });
     useResolvedAssistantsStore.setState({
@@ -409,8 +409,8 @@ describe("authMiddleware — post-checkout return with nothing provisioned", () 
   });
 
   // A local assistant satisfies `hasAssistants`, so the gateway-auth bypass
-  // admits the return — but a managed plan has no target in an org whose only
-  // entries are self-hosted. Provision the managed assistant; the lockfile
+  // admits the return — but a cloud plan has no target in an org whose only
+  // entries are self-hosted. Provision the cloud assistant; the lockfile
   // entry is untouched.
   test("funnels a local-mode return whose only assistant is self-hosted", async () => {
     makePaidPlatformReturn();
@@ -422,7 +422,7 @@ describe("authMiddleware — post-checkout return with nothing provisioned", () 
         {
           id: localAssistant.assistantId,
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
         },
       ],
@@ -445,13 +445,13 @@ describe("authMiddleware — post-checkout return with nothing provisioned", () 
     isLocalClientMock.mockImplementation(() => true);
     mockGatewayAuthMode = true;
     mockSelectedAssistant = localAssistant;
-    useAuthStore.setState({ platformSession: "absent" });
+    useAuthStore.setState({ cloudSession: "absent" });
     useResolvedAssistantsStore.setState({
       assistants: [
         {
           id: localAssistant.assistantId,
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
         },
       ],
@@ -462,11 +462,11 @@ describe("authMiddleware — post-checkout return with nothing provisioned", () 
     expect(outcome.admitted).toBe(true);
   });
 
-  test("admits the return once a platform-hosted assistant exists", async () => {
+  test("admits the return once a cloud-hosted assistant exists", async () => {
     makePaidPlatformReturn();
     useResolvedAssistantsStore.setState({
       assistants: [
-        { id: "a-1", isLocal: false, isPlatformHosted: true, isPaired: false },
+        { id: "a-1", isLocal: false, isCloudHosted: true, isPaired: false },
       ],
     });
     useAssistantLifecycleStore.setState({
@@ -492,7 +492,7 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
     await tick();
     expect(settled).toBeNull();
 
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
     await pending;
 
     expect(settled).not.toBeNull();
@@ -512,7 +512,7 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
     await tick();
     expect(decided).toBe(false);
 
-    useAuthStore.setState({ platformSession: "absent" });
+    useAuthStore.setState({ cloudSession: "absent" });
     expect((await pending).admitted).toBe(true);
   });
 
@@ -537,8 +537,8 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
 
     // The probe lands "present" afterwards. Nothing else re-runs route
     // middleware on a store change, so without this the paid return is stranded
-    // on billing with no managed assistant to apply the purchase to.
-    useAuthStore.setState({ platformSession: "present" });
+    // on billing with no cloud assistant to apply the purchase to.
+    useAuthStore.setState({ cloudSession: "present" });
     await tick();
     expect(revalidateMock).toHaveBeenCalledTimes(1);
 
@@ -554,13 +554,13 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
     await runMiddlewareOutcome(postCheckoutBilling);
     await runMiddlewareOutcome(postCheckoutBilling);
 
-    useAuthStore.setState({ platformSession: "present" });
+    useAuthStore.setState({ cloudSession: "present" });
     await tick();
     expect(revalidateMock).toHaveBeenCalledTimes(1);
 
     // A settled probe never reopens "unknown", so no later change re-triggers
     // the re-run — the correction cannot loop.
-    useAuthStore.setState({ platformSession: "absent" });
+    useAuthStore.setState({ cloudSession: "absent" });
     await tick();
     expect(revalidateMock).toHaveBeenCalledTimes(1);
   });
@@ -612,7 +612,7 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
       // The probe lands "present" afterwards. The guard has to re-run for the
       // return to reach provisioning — asserting the redirect, not the call,
       // is what pins that `revalidate()` still re-runs middleware.
-      useAuthStore.setState({ platformSession: "present" });
+      useAuthStore.setState({ cloudSession: "present" });
       await waitUntil(
         () => currentHref(router) === managedFunnel,
         "the re-run guard to funnel the paid return",
@@ -631,7 +631,7 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
 
     try {
       await router.navigate(postCheckoutBilling);
-      useAuthStore.setState({ platformSession: "present" });
+      useAuthStore.setState({ cloudSession: "present" });
       await waitUntil(
         () => currentHref(router) === managedFunnel,
         "the re-run guard to funnel the paid return",
@@ -639,7 +639,7 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
 
       // A settled probe never reopens "unknown", so no later transition
       // re-arms the subscription — the correction cannot loop.
-      useAuthStore.setState({ platformSession: "absent" });
+      useAuthStore.setState({ cloudSession: "absent" });
       await tick();
       await tick();
       expect(revalidateMock).toHaveBeenCalledTimes(1);
@@ -657,7 +657,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     // Simulate consent/assistants fetches that hang: neither store ever
     // reports hydration, so both waits run out their (clamped) timeouts.
@@ -697,7 +697,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     // The boot state a cold deep link sees: nothing read back from the server
     // yet, and the fetch that would never reports.
@@ -726,7 +726,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     consentPrefs.tos = false;
     consentPrefs.privacy = false;
@@ -757,7 +757,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     consentPrefs.tos = false;
     consentPrefs.privacy = false;
@@ -800,7 +800,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     consentPrefs.tos = false;
     consentPrefs.privacy = false;
@@ -841,7 +841,7 @@ describe("authMiddleware — hydration timeout", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
-      platformSession: "present",
+      cloudSession: "present",
     });
     consentPrefs.tos = false;
     consentPrefs.privacy = false;

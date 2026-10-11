@@ -95,7 +95,7 @@ export const ROUTES: RouteDefinition[] = [
       // — fail-closed is the right default for this security boundary.
       // Dev-bypass mode (DISABLE_HTTP_AUTH=true, mirroring
       // require-bound-guardian.ts) preserves the previous "return all" behavior
-      // for platform-managed deployments where the platform handles auth.
+      // for cloud-managed deployments where the cloud handles auth.
       const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
       const filtered = isHttpAuthDisabled()
         ? clients
@@ -274,8 +274,8 @@ export const ROUTES: RouteDefinition[] = [
       // spoof that desktop. Clients with no stored `actorPrincipalId` (legacy
       // SSE subscribers, service-gateway tokens) never match: fail-closed, the
       // same posture as the listing filter above. Dev-bypass mode
-      // (DISABLE_HTTP_AUTH=true) skips the check for platform-managed
-      // deployments where the platform handles auth.
+      // (DISABLE_HTTP_AUTH=true) skips the check for cloud-managed
+      // deployments where the cloud handles auth.
       if (!isHttpAuthDisabled()) {
         const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
         const ownerPrincipalId = client.actorPrincipalId;
@@ -371,8 +371,8 @@ export const ROUTES: RouteDefinition[] = [
       // spoof that tab. Clients with no stored `actorPrincipalId` (legacy SSE
       // subscribers, service-gateway tokens) never match: fail-closed, the
       // same posture as `report_client_presence`. Dev-bypass mode
-      // (DISABLE_HTTP_AUTH=true) skips the check for platform-managed
-      // deployments where the platform handles auth.
+      // (DISABLE_HTTP_AUTH=true) skips the check for cloud-managed
+      // deployments where the cloud handles auth.
       if (!isHttpAuthDisabled()) {
         const callerPrincipalId = headers?.["x-cadet-actor-principal-id"];
         const ownerPrincipalId = client.actorPrincipalId;

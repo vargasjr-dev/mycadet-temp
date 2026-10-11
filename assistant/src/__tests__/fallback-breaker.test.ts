@@ -609,7 +609,7 @@ describe("RetryProvider under an open breaker", () => {
     expect(shouldSkipPrimary(PRIMARY_ROUTE)).toBe(true);
   });
 
-  test("a probe refreshes an expired managed credential before judging the route down", async () => {
+  test("a probe refreshes an expired cloud credential before judging the route down", async () => {
     // The credential expired during the outage. Without the refresh the probe
     // reads its own 401 as the outage continuing, re-trips, and the route can
     // never come back.
@@ -624,7 +624,7 @@ describe("RetryProvider under an open breaker", () => {
     const route = makeRoute(backup.provider);
     let refreshCalls = 0;
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => {
         refreshCalls += 1;
         return refreshed.provider;
@@ -868,7 +868,7 @@ describe("RetryProvider under an open breaker", () => {
   });
 
   test("an upstream outage diverts every model on it", async () => {
-    // A managed credential rejection indicts the upstream, not one model, so
+    // A cloud credential rejection indicts the upstream, not one model, so
     // the healthy model is skipped too.
     const primary = primaryProvider(
       () =>
@@ -879,7 +879,7 @@ describe("RetryProvider under an open breaker", () => {
     const backup = backupProvider();
     const route = makeRoute(backup.provider);
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => null,
       resolveFallbackRoute: route.resolveFallbackRoute,
     });
@@ -1204,7 +1204,7 @@ describe("recovery probe verdicts", () => {
 describe("retry exhaustion accounting", () => {
   /**
    * The primary of a probe that uses both of its repairs before failing for
-   * real. The first send is rejected as an expired managed credential, the
+   * real. The first send is rejected as an expired cloud credential, the
    * refreshed adapter answers the resend with malformed tool arguments, and the
    * corrective resend after that comes back as a stream corruption. Three sends
    * are spent by the time the request reaches the ordinary loop, leaving it
@@ -1245,7 +1245,7 @@ describe("retry exhaustion accounting", () => {
     const backup = backupProvider();
     const route = makeRoute(backup.provider);
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => refreshed.provider,
       resolveFallbackRoute: route.resolveFallbackRoute,
     });
@@ -1271,7 +1271,7 @@ describe("retry exhaustion accounting", () => {
       corruptedStream(),
     );
     const wrapped = new RetryProvider(primary.provider, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => refreshed.provider,
       resolveFallbackRoute: async () => null,
     });

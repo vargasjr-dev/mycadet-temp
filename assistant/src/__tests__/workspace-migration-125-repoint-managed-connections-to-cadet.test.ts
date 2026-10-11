@@ -56,7 +56,7 @@ describe("125-repoint-managed-connections-to-cadet migration", () => {
     );
   });
 
-  test("repoints legacy managed connections across default, profiles, and callSites", () => {
+  test("repoints legacy cloud connections across default, profiles, and callSites", () => {
     writeConfig({
       llm: {
         default: {
@@ -79,7 +79,7 @@ describe("125-repoint-managed-connections-to-cadet migration", () => {
             provider: "together",
             provider_connection: "together-managed",
           },
-          // User-owned copy referencing a managed connection is repointed too.
+          // User-owned copy referencing a cloud connection is repointed too.
           "my-quality": {
             source: "user",
             provider: "openai",
@@ -116,7 +116,7 @@ describe("125-repoint-managed-connections-to-cadet migration", () => {
     expect(profiles["quality-optimized"].provider).toBe("anthropic");
   });
 
-  test("leaves non-managed connections (personal, openrouter) untouched", () => {
+  test("leaves non-cloud connections (personal, openrouter) untouched", () => {
     const original = {
       llm: {
         profiles: {

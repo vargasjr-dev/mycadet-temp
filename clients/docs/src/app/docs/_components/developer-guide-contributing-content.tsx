@@ -150,7 +150,7 @@ cd mycadet
 cadet wake             # start assistant + gateway
 cadet ps               # check process status
 cadet sleep            # stop everything
-cadet terminal         # shell into a managed assistant container
+cadet terminal         # shell into a cloud assistant container
 cadet doctor           # diagnose issues`}
             </pre>
           </section>

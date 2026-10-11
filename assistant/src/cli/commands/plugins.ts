@@ -112,8 +112,8 @@ const libs = {
       "pluginInstallPlatform",
       () =>
         loadModule(
-          "../lib/install-from-platform.js",
-        ) as typeof import("../lib/install-from-platform.js"),
+          "../lib/install-from-cloud.js",
+        ) as typeof import("../lib/install-from-cloud.js"),
     );
   },
   get installed() {
@@ -209,8 +209,8 @@ export function registerPluginsCommand(program: Command): void {
         ) => {
           try {
             const direct = looksLikeGitHubSpec(nameOrUrl);
-            // A plain marketplace install by name is platform-managed: the
-            // content flows through the platform install endpoint (which
+            // A plain marketplace install by name is cloud-managed: the
+            // content flows through the cloud install endpoint (which
             // serves a verified `.tgz`), not a GitHub clone. The advanced
             // pin/ref/allow-unreviewed selectors still resolve a specific
             // reviewed revision through the marketplace-git path, and a
@@ -236,7 +236,7 @@ export function registerPluginsCommand(program: Command): void {
               // self-hosted) there is no platform to call, so resolve the pin
               // from the bundled catalog and install through the GitHub path.
               const platformEnabled =
-                libs.catalogLocal.arePlatformFeaturesEnabled();
+                libs.catalogLocal.areCloudFeaturesEnabled();
               if (platformEnabled) {
                 if (!libs.catalogLocal.isPluginCatalogEntryVisible(nameOrUrl)) {
                   console.error(

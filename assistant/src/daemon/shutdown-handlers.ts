@@ -1,4 +1,5 @@
 import { disposeAcpSessionManager } from "../acp/index.js";
+import { stopConsentRefresh } from "../cloud/consent-cache.js";
 import { stopConversationAutoArchive } from "../conversations/auto-archive.js";
 import { stopCes } from "../credential-execution/ces-runtime.js";
 import { stopHeartbeatService } from "../heartbeat/heartbeat-service.js";
@@ -13,7 +14,6 @@ import {
 import { getSqlite, isDbOpen, resetDb } from "../persistence/db-connection.js";
 import { shutdownEmbeddingBackends } from "../persistence/embeddings/embedding-backend.js";
 import { stopQdrantManager } from "../persistence/embeddings/qdrant-manager.js";
-import { stopConsentRefresh } from "../platform/consent-cache.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import { runHook } from "../plugins/pipeline.js";
 import { stopRouteHost } from "../routes/control.js";

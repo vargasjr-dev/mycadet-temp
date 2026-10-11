@@ -7,7 +7,7 @@
  * or the window is split, so they share one threshold. A viewport query would
  * miss all of that, and a CSS container query cannot hand the boolean to the
  * behavior that reads it: which controls mount, whether a gesture arms, and
- * whether a surface is inert. See `docs/PLATFORM_ADAPTATION.md`.
+ * whether a surface is inert. See `docs/CLOUD_ADAPTATION.md`.
  */
 
 import { useLayoutEffect, useState, type RefObject } from "react";

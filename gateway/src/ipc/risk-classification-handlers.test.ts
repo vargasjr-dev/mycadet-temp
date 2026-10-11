@@ -492,17 +492,17 @@ describe("skill classification", () => {
     expect(result.risk).toBe("low");
   });
 
-  test("scaffold_managed_skill is high risk", async () => {
+  test("scaffold_cloud_skill is high risk", async () => {
     const result = await classify({
-      tool: "scaffold_managed_skill",
+      tool: "scaffold_cloud_skill",
       skill: "new-skill",
     });
     expect(result.risk).toBe("high");
   });
 
-  test("delete_managed_skill is high risk", async () => {
+  test("delete_cloud_skill is high risk", async () => {
     const result = await classify({
-      tool: "delete_managed_skill",
+      tool: "delete_cloud_skill",
       skill: "old-skill",
     });
     expect(result.risk).toBe("high");

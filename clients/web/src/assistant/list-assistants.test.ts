@@ -1,5 +1,5 @@
 /**
- * `listAssistants` follows the platform's `next` chain so an org past one
+ * `listAssistants` follows the cloud's `next` chain so an org past one
  * page size lists every assistant; the chooser and the avatar lookup both
  * read this wrapper.
  */

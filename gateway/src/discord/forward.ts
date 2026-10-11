@@ -24,7 +24,7 @@ export function createDiscordInboundEventHandler(options: {
   const { config, log, notifyRecordActivity, forwardQueue } = options;
 
   return (event, attachmentRefs) => {
-    // Reset the platform idle-sleep timer so inbound Discord activity keeps
+    // Reset the cloud idle-sleep timer so inbound Discord activity keeps
     // the assistant awake like any other channel.
     notifyRecordActivity();
 

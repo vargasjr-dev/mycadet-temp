@@ -52,7 +52,7 @@ export function getExtraToolPathDirs(): string[] {
 }
 
 /**
- * Add missing `dirs` to the PATH entry of `env` in place, using the platform
+ * Add missing `dirs` to the PATH entry of `env` in place, using the cloud
  * delimiter. Windows keys the variable as `Path`, so the existing key is
  * matched case-insensitively rather than assuming `PATH`.
  */
@@ -306,7 +306,7 @@ export function getProcDir(name: string): string {
   return join(getProcsDir(), name);
 }
 
-/** Create (if needed) and return a managed subprocess's runtime directory. */
+/** Create (if needed) and return a cloud subprocess's runtime directory. */
 export function ensureProcDir(name: string): string {
   const dir = getProcDir(name);
   mkdirSync(dir, { recursive: true });
@@ -314,7 +314,7 @@ export function ensureProcDir(name: string): string {
 }
 
 /**
- * The IPC socket a managed subprocess binds and the daemon connects to
+ * The IPC socket a cloud subprocess binds and the daemon connects to
  * (`procs/<name>/ipc.sock`). The basename is fixed — the directory already
  * carries the subprocess name. Keep it short: Unix `sun_path` is ~104–108 bytes.
  */
@@ -322,7 +322,7 @@ export function getProcSocketPath(name: string): string {
   return join(getProcDir(name), "ipc.sock");
 }
 
-/** The PID file a managed subprocess writes on readiness (`procs/<name>/<name>.pid`). */
+/** The PID file a cloud subprocess writes on readiness (`procs/<name>/<name>.pid`). */
 export function getProcPidPath(name: string): string {
   return join(getProcDir(name), `${name}.pid`);
 }
@@ -501,7 +501,7 @@ export function getWorkspaceSystemPromptDir(): string {
   return join(getWorkspaceDir(), "prompts", "system");
 }
 
-// Managed profiler runs live under <workspace>/data/profiler/. These
+// Cloud profiler runs live under <workspace>/data/profiler/. These
 // helpers enforce a single canonical layout so every runtime caller
 // resolves the same paths.
 

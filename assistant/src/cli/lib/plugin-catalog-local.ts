@@ -6,7 +6,7 @@
  * treatment as the feature-flag registry.
  *
  * `getPluginCatalog` selects this reader only when platform features are
- * disabled (air-gapped / self-hosted, `CADET_DISABLE_PLATFORM=true`). Importing
+ * disabled (air-gapped / self-hosted, `CADET_DISABLE_CLOUD=true`). Importing
  * the JSON directly (resolveJsonModule) inlines it into the bundle, so there is
  * no filesystem path resolution and the manifest is always present at runtime —
  * it works identically in dev, Docker, and an npm-packed macOS install.
@@ -30,7 +30,7 @@ import {
 
 // Re-exported so `local`-tagged CLI commands can gate on platform features
 // without importing `platform/` directly (cli/no-daemon-internals allows lib).
-export { arePlatformFeaturesEnabled } from "../../platform/feature-gate.js";
+export { areCloudFeaturesEnabled } from "../../cloud/feature-gate.js";
 export { isPluginCatalogEntryVisible };
 
 let memoizedEntries: readonly MarketplaceEntry[] | undefined;

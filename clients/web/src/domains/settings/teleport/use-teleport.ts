@@ -14,7 +14,7 @@ import { useNavigate } from "react-router";
 
 import { hatchAssistant } from "@/assistant/api";
 import { retireAssistant } from "@/assistant/retire-service";
-import { bootstrapLocalAssistantPlatformIdentity } from "@/lib/local-platform-identity";
+import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import { t } from "@/i18n";
 import { getAppVersionInfo } from "@/runtime/app-info";
 import {
@@ -45,7 +45,7 @@ import {
   type TeleportDestination,
   type TeleportPhase,
 } from "./teleport-types";
-import { exportManagedBundle } from "./managed-export";
+import { exportManagedBundle } from "./cloud-export";
 import {
   exportLocalBundle,
   importLocalBundle,
@@ -57,7 +57,7 @@ import {
   requestSignedDownloadUrl,
   requestSignedUploadUrl,
   uploadToSignedUrl,
-} from "./platform-migration-client";
+} from "./cloud-migration-client";
 
 /** Reference to a teleport endpoint plus how to reach/retire it. */
 interface AssistantRef {
@@ -65,7 +65,7 @@ interface AssistantRef {
   kind: "managed" | "local";
   /**
    * Whether this assistant was created by the teleport itself (a hatched
-   * managed assistant, or a freshly-hatched local target). Only freshly-created
+   * cloud assistant, or a freshly-hatched local target). Only freshly-created
    * targets are retired when the user cancels — never a pre-existing assistant
    * the import wrote into.
    */
@@ -197,17 +197,17 @@ export function useTeleport(): TeleportController {
       try {
         const auth = useAuthStore.getState();
         if (target.kind === "managed") {
-          await auth.connectPlatformAssistant(target.id);
+          await auth.connectCloudAssistant(target.id);
         } else {
           await auth.connectLocalAssistant(target.id);
         }
-        // The platform→local import strips `cadet:*` platform-identity
+        // The cloud→local import strips `cadet:*` platform-identity
         // credentials, so the freshly-imported local has no platform identity.
-        // Now that it's the active assistant, register it with the platform and
+        // Now that it's the active assistant, register it with the cloud and
         // inject those credentials (the web equivalent of the CLI's post-import
         // injection). Successor resolution must finish before the retire
         // below runs: it names the target as the successor for the source's
-        // OAuth connections, and the platform can only hand them to an
+        // OAuth connections, and the cloud can only hand them to an
         // assistant it already knows.
         successorAssistantId = await resolveTeleportSuccessorId(target);
         if (target.kind === "local") {
@@ -222,7 +222,7 @@ export function useTeleport(): TeleportController {
           // Completes or retries the local side of the bootstrap in the
           // background. A fully resolved identity is served from the cache,
           // so this is a no-op on the happy path.
-          bootstrapLocalAssistantPlatformIdentity(target.id, {
+          bootstrapLocalAssistantCloudIdentity(target.id, {
             onError: (error) =>
               captureError(error, {
                 context: "teleport-inject-platform-identity",
@@ -315,8 +315,8 @@ async function teleportToPlatform(
   // stamps it anywhere: exactly one org must be reachable before the upload.
   await resolveOrganizationId();
 
-  // Pre-check before the expensive upload: block if a platform assistant
-  // already exists for this account. Query the platform directly rather than
+  // Pre-check before the expensive upload: block if a cloud assistant
+  // already exists for this account. Query the cloud directly rather than
   // `getAssistant()` — that helper short-circuits to the (local) selected
   // assistant while a local source is active, which would bypass this guard.
   setStep(t("settings:teleportCard.stepCheckingExisting"));
@@ -328,14 +328,14 @@ async function teleportToPlatform(
   if (existingPlatform) {
     throw new TeleportError(
       "existing_platform_assistant",
-      t("settings:teleportCard.existingPlatformAssistant", {
+      t("settings:teleportCard.existingCloudAssistant", {
         id: existingPlatform.id,
       }),
     );
   }
 
   setStep(t("settings:teleportCard.stepUploading"));
-  // Stamp the upload with the source runtime version so the platform records
+  // Stamp the upload with the source runtime version so the cloud records
   // the bundle's compat band for the download-side version-mismatch guard.
   const upload = await requestSignedUploadUrl(source.resources?.runtimeVersion);
   await uploadToSignedUrl(upload.url, bundle, setProgress);
@@ -349,11 +349,11 @@ async function teleportToPlatform(
     );
   }
   if (hatch.status === 200) {
-    // Server deduped to an existing managed assistant — mirror the Swift
+    // Server deduped to an existing cloud assistant — mirror the Swift
     // defensive guard and block rather than silently importing into it.
     throw new TeleportError(
       "existing_platform_assistant",
-      t("settings:teleportCard.existingPlatformAssistant", {
+      t("settings:teleportCard.existingCloudAssistant", {
         id: hatch.data.id,
       }),
     );
@@ -361,7 +361,7 @@ async function teleportToPlatform(
   const managedId = hatch.data.id;
 
   // Record the target now (not just at the end) so a failure during the
-  // remaining steps cleans up this freshly-hatched managed assistant.
+  // remaining steps cleans up this freshly-hatched cloud assistant.
   targetRef.current = { id: managedId, kind: "managed", createdFresh: true };
 
   // Wait for post-hatch provisioning to finish before importing — otherwise the
@@ -536,7 +536,7 @@ async function resolveOrganizationId(): Promise<string> {
   return orgId;
 }
 
-/** Poll operational status until the managed assistant is provisioned/active. */
+/** Poll operational status until the cloud assistant is provisioned/active. */
 async function awaitAssistantProvisioned(assistantId: string): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < PROVISION_TIMEOUT_MS) {
@@ -553,7 +553,7 @@ async function awaitAssistantProvisioned(assistantId: string): Promise<void> {
   // runtime genuinely isn't ready, matching the Swift best-effort wait.
 }
 
-/** Poll a platform migration job until complete, mirroring Swift `importBundleToManaged`. */
+/** Poll a cloud migration job until complete, mirroring Swift `importBundleToManaged`. */
 async function awaitPlatformJob(jobId: string): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < JOB_TIMEOUT_MS) {

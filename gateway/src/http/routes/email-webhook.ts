@@ -154,7 +154,7 @@ export function createEmailWebhookHandler(
 
     // Ingest inline base64 attachments into the assistant's attachment store
     // (which stores them in the conversation workspace) and forward the ids.
-    // A transient upload failure surfaces as 500 so the platform retries.
+    // A transient upload failure surfaces as 500 so the cloud retries.
     let attachmentIds: string[] | undefined;
     try {
       const ingested = await ingestEmailAttachments(config, attachments, tlog);
@@ -222,7 +222,7 @@ export function createEmailWebhookHandler(
           "Gateway intercept — returning reply text to platform",
         );
         // replyText contract: the gateway cannot send email on this path — the
-        // reply rides the HTTP response for the platform (vembda) to deliver,
+        // reply rides the HTTP response for the cloud (vembda) to deliver,
         // and delivery is tracked platform-side.
         return Response.json({
           ok: true,
@@ -269,9 +269,9 @@ export function createEmailWebhookHandler(
       }
 
       // Propagate the runtime's full response (including denied/reason/replyText)
-      // so the platform can decide whether to persist the email and how to respond
+      // so the cloud can decide whether to persist the email and how to respond
       // to the sender. Same replyText contract as above: the gateway cannot send
-      // email here — the platform (vembda) delivers any reply and tracks delivery.
+      // email here — the cloud (vembda) delivers any reply and tracks delivery.
       const runtimeBody = result.runtimeResponse ?? {};
       return Response.json({ ok: true, ...runtimeBody });
     } catch (err) {

@@ -13,7 +13,7 @@
  * or knows anything about the room.
  *
  * A bottom sheet under a thumb and a centred modal under a pointer, forked on
- * the design library's touch-surface signal alone (`docs/PLATFORM_ADAPTATION.md`
+ * the design library's touch-surface signal alone (`docs/CLOUD_ADAPTATION.md`
  * allows exactly that one signal for a sheet-versus-modal pair). The content is
  * the same in both; what differs is the metrics and where the privacy line and
  * the buttons sit.

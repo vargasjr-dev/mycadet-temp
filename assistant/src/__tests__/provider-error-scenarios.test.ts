@@ -356,8 +356,8 @@ describe("RetryProvider — rate limit backoff", () => {
   });
 });
 
-describe("RetryProvider managed credential refresh", () => {
-  test("reloads managed credentials once and keeps the refreshed provider", async () => {
+describe("RetryProvider cloud credential refresh", () => {
+  test("reloads cloud credentials once and keeps the refreshed provider", async () => {
     sleepSpy.mockClear();
     const initial = makeFailing(
       new ProviderError("assistant key expired", "anthropic", 403, {
@@ -372,7 +372,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       connectionName: "cadet",
       refreshCredentialProvider: async () => {
         refreshCalls++;
@@ -393,7 +393,7 @@ describe("RetryProvider managed credential refresh", () => {
     expect(sleepSpy).not.toHaveBeenCalled();
   });
 
-  test("surfaces a managed auth failure when refreshed credentials are also rejected", async () => {
+  test("surfaces a cloud auth failure when refreshed credentials are also rejected", async () => {
     const initial = makeFailing(
       new ProviderError("old key rejected", "gemini", 401),
       "gemini",
@@ -404,7 +404,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       connectionName: "cadet",
       refreshCredentialProvider: async () => {
         refreshCalls++;
@@ -420,7 +420,7 @@ describe("RetryProvider managed credential refresh", () => {
       const providerError = error as ProviderError;
       expect(providerError.message).toBe("new key rejected");
       expect(providerError.routeAttribution).toMatchObject({
-        credentialSource: "cadet-managed",
+        credentialSource: "cadet-cloud",
         connectionName: "cadet",
       });
     }
@@ -450,7 +450,7 @@ describe("RetryProvider managed credential refresh", () => {
     expect(refreshCalls).toBe(0);
   });
 
-  test("does not reload managed credentials for a model restriction", async () => {
+  test("does not reload cloud credentials for a model restriction", async () => {
     const initial = makeFailing(
       new ProviderError("model unavailable", "anthropic", 403, {
         reason: "model_restricted",
@@ -459,7 +459,7 @@ describe("RetryProvider managed credential refresh", () => {
     );
     let refreshCalls = 0;
     const provider = new RetryProvider(initial, {
-      credentialSource: "cadet-managed",
+      credentialSource: "cadet-cloud",
       refreshCredentialProvider: async () => {
         refreshCalls++;
         return null;

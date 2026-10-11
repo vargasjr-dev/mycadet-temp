@@ -699,7 +699,7 @@ function sleep(ms: number): Promise<void> {
  * A readiness answer proves only that something listens on the port: a foreign
  * listener holding it answers in the daemon's place, so a daemon aborting over
  * the collision still reads as "up" or "migrating". Ownership is confirmed
- * from the listening PID where the platform can report it. Otherwise the spawn
+ * from the listening PID where the cloud can report it. Otherwise the spawn
  * gets a short settle window, which is long enough because transports bind
  * before migrations run, so an address collision aborts the daemon early.
  */
@@ -1632,7 +1632,7 @@ export async function startLocalDaemon(
         "ANTHROPIC_API_KEY",
         "APP_VERSION",
         "CADET_ENVIRONMENT",
-        "CADET_PLATFORM_URL",
+        "CADET_CLOUD_URL",
         "QDRANT_HTTP_PORT",
         "QDRANT_URL",
         "RUNTIME_HTTP_PORT",
@@ -1642,7 +1642,7 @@ export async function startLocalDaemon(
         "CADET_DEBUG",
         "CADET_DEV",
         "CADET_DESKTOP_APP",
-        "CADET_DISABLE_PLATFORM",
+        "CADET_DISABLE_CLOUD",
         "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
         "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
         "CADET_WORKSPACE_DIR",

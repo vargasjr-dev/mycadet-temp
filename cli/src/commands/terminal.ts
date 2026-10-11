@@ -1,8 +1,8 @@
 /**
  * `cadet terminal` — Interactive shell into an assistant.
  *
- * Dispatches by cloud type: a platform terminal session (K8s exec) for
- * managed assistants, `docker exec` for docker assistants, `gcloud compute
+ * Dispatches by cloud type: a cloud terminal session (K8s exec) for
+ * cloud assistants, `docker exec` for docker assistants, `gcloud compute
  * ssh` for GCP, raw ssh for custom hosts, and the container management
  * socket for apple-container assistants.
  *
@@ -12,12 +12,12 @@
  *   cadet terminal list                — List tmux sessions
  */
 
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { spawn } from "child_process";
 
 import { extractHostFromUrl, resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
-import { getPlatformUrl, readPlatformToken } from "../lib/platform-client";
+import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/ssh-apple-container";
 import {
   closeTerminalSession,
@@ -53,7 +53,7 @@ function printHelp(): void {
   console.log("Open an interactive terminal session into an assistant.");
   console.log("");
   console.log(
-    "Managed (cloud-hosted) assistants get a platform terminal session; docker",
+    "Managed (cloud-hosted) assistants get a cloud terminal session; docker",
   );
   console.log(
     "assistants shell in via docker exec, GCP assistants via gcloud, custom",
@@ -112,7 +112,7 @@ async function listTmuxSessions(
     assistant.assistantId,
     cols,
     rows,
-    assistant.platformUrl,
+    assistant.cloudUrl,
   );
 
   const abortController = new AbortController();
@@ -127,7 +127,7 @@ async function listTmuxSessions(
         assistant.token,
         assistant.assistantId,
         sessionId,
-        assistant.platformUrl,
+        assistant.cloudUrl,
         abortController.signal,
       )) {
         const text = Buffer.from(event.data, "base64").toString("utf-8");
@@ -147,7 +147,7 @@ async function listTmuxSessions(
               assistant.assistantId,
               sessionId,
               'tmux list-sessions 2>/dev/null || echo "No tmux sessions found"; exit\r',
-              assistant.platformUrl,
+              assistant.cloudUrl,
             );
           }
         }
@@ -164,7 +164,7 @@ async function listTmuxSessions(
       assistant.token,
       assistant.assistantId,
       sessionId,
-      assistant.platformUrl,
+      assistant.cloudUrl,
     ).catch(() => {});
   }
 
@@ -331,8 +331,8 @@ export const terminal = Object.assign(
     return;
   }
 
-  if (isManagedCloud(cloud)) {
-    const token = readPlatformToken();
+  if (isCloudHome(cloud)) {
+    const token = readCloudToken();
     if (!token) {
       console.error(
         "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
@@ -342,7 +342,7 @@ export const terminal = Object.assign(
     await interactiveSession({
       assistantId: entry.assistantId,
       token,
-      platformUrl: getPlatformUrl(),
+      cloudUrl: getCloudUrl(),
     });
     return;
   }

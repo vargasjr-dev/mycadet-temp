@@ -40,7 +40,7 @@ export interface ScriptResult {
 /**
  * Run a shell command and capture its output.
  *
- * Uses the platform shell so the command string supports pipes, redirects,
+ * Uses the cloud shell so the command string supports pipes, redirects,
  * and shell builtins. Windows uses PowerShell and POSIX hosts use Bash. Output
  * is truncated to {@link MAX_OUTPUT_BYTES} to keep schedule_runs rows bounded.
  *

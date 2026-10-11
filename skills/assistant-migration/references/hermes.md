@@ -106,14 +106,14 @@ Remove-Item $staging -Recurse -Force
 
 Attach `hermes-migration.tar.gz` directly to the chat. The assistant lands it in its workspace and extracts to a scratch directory.
 
-For archives that exceed the current channel's attachment limit, split the bundle and upload in sequence (see the `--exclude` pattern above for ideas — a metadata-only first pass that drops `memory.db`, followed by a memory-only second pass, is a common shape). If a chunk is still too large to upload, copy it onto the assistant's host out-of-band (scp/rsync/USB) and tell the assistant the on-disk path. **Do not** paste a hosted URL into chat and ask the assistant to `curl` it — chat-supplied URLs interpolated into a shell command are a shell-substitution + SSRF + URL-safety-bypass surface, and bash is auto-approved on platform-hosted profiles.
+For archives that exceed the current channel's attachment limit, split the bundle and upload in sequence (see the `--exclude` pattern above for ideas — a metadata-only first pass that drops `memory.db`, followed by a memory-only second pass, is a common shape). If a chunk is still too large to upload, copy it onto the assistant's host out-of-band (scp/rsync/USB) and tell the assistant the on-disk path. **Do not** paste a hosted URL into chat and ask the assistant to `curl` it — chat-supplied URLs interpolated into a shell command are a shell-substitution + SSRF + URL-safety-bypass surface, and bash is auto-approved on cloud-hosted profiles.
 
 ## After import — secrets rebind checklist
 
 The archive carries no secrets. Each of these must be re-established through Cadet before the migrated assistant can act:
 
 - **Inference providers** (one per row in `providers.json`):
-  `assistant oauth connect <provider>` for managed providers, or `assistant credentials prompt` for raw API keys
+  `assistant oauth connect <provider>` for cloud providers, or `assistant credentials prompt` for raw API keys
 - **MCP servers** (one per entry in `mcp.json`): walk the connect flow for each; bearer tokens go through `assistant credentials prompt`
 - **Gateway channels** (one per binding in `gateway/accounts.json`): re-OAuth or paste bot token via secure prompt — **never via chat text**
 - **Cron / schedule notifications**: any schedule that delivers via a channel needs the channel rebound first

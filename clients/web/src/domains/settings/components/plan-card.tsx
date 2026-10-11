@@ -485,7 +485,7 @@ export function PlanCard({ onManage, onTierUpgraded }: PlanCardProps) {
   // The cycle end is dated only where one is coming: not for the free plan,
   // whose grant is one-time, not for a sub that is ending rather than
   // renewing, which the header's cancellation line already dates, and not for
-  // a status the platform bears no entitlement for (`unpaid`, `incomplete`,
+  // a status the cloud bears no entitlement for (`unpaid`, `incomplete`,
   // `paused`, a null status), which keeps its last `current_period_end`
   // without renewing on it. A sub holding a credit bundle sees that bundle
   // reset on the date; one holding none only renews (see `UsagePeriodEnd`).
@@ -537,7 +537,7 @@ export function PlanCard({ onManage, onTierUpgraded }: PlanCardProps) {
   //
   // The raw balance answers that, not the hook's `isExhausted`: this surface
   // reports the wallet itself, while the suppression behind that flag exists
-  // for chat banners, where a BYOK route never spends the managed wallet.
+  // for chat banners, where a BYOK route never spends the cloud wallet.
   const walletEmpty = balance != null && Number(balance) <= 0;
   const creditsExhausted = usage != null && usage.ratio >= 1 && walletEmpty;
   const openAddCredits = () => setAddCreditsOpen(true);
@@ -560,10 +560,10 @@ export function PlanCard({ onManage, onTierUpgraded }: PlanCardProps) {
   // The free-tier daily reading, above the overall one, only for an org the
   // platform is enforcing the cap on. Reads as fully used once the overall
   // grant is spent, so the two bars never disagree about today. Its strip,
-  // which says today's free usage is used up, raises only on the platform's
+  // which says today's free usage is used up, raises only on the cloud's
   // own daily-reached flag (a pinned bar over an empty grant is the overall
   // strip's story) and only while nothing but frozen usage credit is left in
-  // the wallet, which is when the platform rejects the next send.
+  // the wallet, which is when the cloud rejects the next send.
   const dailyRatio = freeTierDailyRatio(balanceStatus, usage?.ratio ?? null);
   const dailyExhausted =
     dailyRatio != null &&
@@ -587,7 +587,7 @@ export function PlanCard({ onManage, onTierUpgraded }: PlanCardProps) {
   // The tile trades its price for the usage panel, so the two never state
   // the same allowance twice. Both readings share the one panel, so their
   // bars line up. With no reading to chart (a free account that was never
-  // granted usage, or a platform whose summary reports no grant figures),
+  // granted usage, or a cloud whose summary reports no grant figures),
   // the footer row stays rather than leaving the tile with an empty bottom
   // slot.
   const currentFooter: ReactNode =

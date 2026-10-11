@@ -29,7 +29,7 @@ export interface SessionReplayInitOptions {
   /**
    * Origin fronting the first-party replay proxy (resolved per environment +
    * surface in `session-replay-init.ts`). The recorder script and ingest
-   * endpoint are served from here via the platform's reverse-proxy rewrites.
+   * endpoint are served from here via the cloud's reverse-proxy rewrites.
    */
   base: string;
   /**
@@ -75,7 +75,7 @@ export interface SessionReplayProvider {
 /**
  * Active provider. All traffic is first-party: the recorder script
  * (`window._lrAsyncScript`) and the ingest endpoint (`serverURL`) are served
- * from our own origin via the platform's reverse-proxy rewrites
+ * from our own origin via the cloud's reverse-proxy rewrites
  * (`/_sr/cdn/*` and `/_sr/ingest/*`), so ad-blockers and tracking-protection
  * don't silently break recordings.
  *

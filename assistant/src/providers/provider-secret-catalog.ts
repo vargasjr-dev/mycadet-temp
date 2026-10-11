@@ -42,7 +42,7 @@ import { listCredentialProviderNames as listSttCredentialProviderNames } from ".
  * "keyless"` — the keyless mode is enforced elsewhere; this list is purely
  * about the set of bare-name credential-store keys accepted by
  * `assistant keys ...`. `cadet` is excluded: those models authenticate
- * with the assistant API key on the managed connection, not a user key.
+ * with the assistant API key on the cloud connection, not a user key.
  *
  * Search providers (`brave`, `perplexity`, `tavily`) have no catalog module
  * yet and remain statically declared below.

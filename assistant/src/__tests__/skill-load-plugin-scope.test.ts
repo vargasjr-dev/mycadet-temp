@@ -4,7 +4,7 @@
  * it through when the plugin is in scope (or when there is no restriction).
  *
  * Fixture skills are real directories under the per-process workspace
- * (`plugins/p`, `plugins/q`, and a managed workspace skill for the
+ * (`plugins/p`, `plugins/q`, and a cloud workspace skill for the
  * always-allowed core child), so the real loader discovers them — no module
  * mocks.
  */
@@ -71,7 +71,7 @@ beforeAll(() => {
     body: "CHILD IN BODY",
   });
   // ── Include-path scope fixture ──────────────────────────────────────
-  // An in-scope parent (plugin "p") that includes three children: a managed
+  // An in-scope parent (plugin "p") that includes three children: a cloud
   // workspace child (no plugin owner — always allowed), an in-scope plugin
   // child (plugin "p"), and an out-of-scope plugin child (plugin "q", not in
   // the effective set).

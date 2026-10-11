@@ -4,7 +4,7 @@ import { getSqliteFrom } from "../db-connection.js";
 /**
  * Add the `managed_service_is_paid` column to `oauth_providers`.
  *
- * Flags whether a provider's managed OAuth variant requires a paid plan
+ * Flags whether a provider's cloud OAuth variant requires a paid plan
  * upstream (e.g. Twitter). Defaults to 0 (false) for all existing rows.
  *
  * Mirrors the pattern from migration 178. The raw.exec() call below is

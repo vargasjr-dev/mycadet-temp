@@ -152,10 +152,10 @@ describe("resolveModelFirstOptions", () => {
   });
 
   test("drops a route the active assistant cannot reach, and with it a model nothing else serves", () => {
-    const platformHosted = resolveModelFirstOptions(
+    const cloudHosted = resolveModelFirstOptions(
       input([], { activeAssistantIsSelfHosted: false }),
     );
-    expect(platformHosted.map((option) => option.displayName)).not.toContain(
+    expect(cloudHosted.map((option) => option.displayName)).not.toContain(
       "Llama 3.2",
     );
 
@@ -211,7 +211,7 @@ describe("resolveModelFirstOptions", () => {
     expect(options.some((option) => option.owner === "typesafe")).toBe(false);
   });
 
-  test("surfaces the managed route as one entry rather than its upstreams", () => {
+  test("surfaces the cloud route as one entry rather than its upstreams", () => {
     const option = optionFor([CADET_CONNECTION], "Claude Opus 4.8");
     expect(option.candidates[0]).toMatchObject({
       provider: "cadet",

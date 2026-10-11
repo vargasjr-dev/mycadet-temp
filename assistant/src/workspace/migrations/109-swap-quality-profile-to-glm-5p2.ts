@@ -4,26 +4,26 @@ import { join } from "node:path";
 import type { WorkspaceMigration } from "./types.js";
 
 // Bring an existing workspace's managed inference config in line with the
-// current code templates: the managed `quality-optimized` profile runs GLM 5.2
-// (Fireworks), and the default advisor points at the managed `frontier` (Opus)
+// current code templates: the cloud `quality-optimized` profile runs GLM 5.2
+// (Fireworks), and the default advisor points at the cloud `frontier` (Opus)
 // profile.
 //
-// A migration is needed even though the seeder reconciles managed-profile
+// A migration is needed even though the seeder reconciles cloud-profile
 // content from the templates on every boot, because the seeder only consults a
 // template when it reseeds that profile. Off-platform installs reseed every
-// boot, but a platform workspace keeps the profile it was hatched with (the
+// boot, but a cloud workspace keeps the profile it was hatched with (the
 // seeder skips overlay-supplied profiles, and the overlay is consumed once). A
 // platform workspace whose `quality-optimized` profile resolves to Opus
 // therefore relies on this migration to move it to GLM 5.2.
 //
-// Scope: only the managed `quality-optimized` profile is rewritten — the
+// Scope: only the cloud `quality-optimized` profile is rewritten — the
 // user-owned `custom-quality-optimized` copy is theirs to manage, and an
 // explicitly user-owned `quality-optimized` is left alone. A profile matches
 // only when its model is an Opus id (the OpenRouter-prefixed id included);
 // absent `source` on this canonical name means legacy managed (migration 052
 // seeds it source-less), so it counts as ours.
 //
-// The managed `frontier` profile is materialized by the boot seeder (it is a
+// The cloud `frontier` profile is materialized by the boot seeder (it is a
 // managed template), so this migration only points the default advisor at it,
 // and only when the workspace still carries the seeded `quality-optimized`
 // default and no user-owned `frontier` profile exists.
@@ -38,7 +38,7 @@ const GLM_52_MODEL = "accounts/fireworks/models/glm-5p2";
 export const swapQualityProfileToGlm52Migration: WorkspaceMigration = {
   id: "109-swap-quality-profile-to-glm-5p2",
   description:
-    "Set the managed quality-optimized profile to GLM 5.2 and point the default advisor at frontier",
+    "Set the cloud quality-optimized profile to GLM 5.2 and point the default advisor at frontier",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -66,7 +66,7 @@ export const swapQualityProfileToGlm52Migration: WorkspaceMigration = {
     const profiles = readObject(llm.profiles);
     if (profiles !== null) {
       const profile = readObject(profiles["quality-optimized"]);
-      // Only the managed profile is ours to migrate. `quality-optimized` is a
+      // Only the cloud profile is ours to migrate. `quality-optimized` is a
       // canonical name reserved since migration 052, which seeded it source-less,
       // so absent `source` means legacy managed — treat it as ours. Only an
       // explicit `source: "user"` (a profile the user took ownership of) is left
@@ -90,15 +90,15 @@ export const swapQualityProfileToGlm52Migration: WorkspaceMigration = {
       }
     }
 
-    // Move the default advisor pointer to the new strongest managed profile.
+    // Move the default advisor pointer to the new strongest cloud profile.
     // Only the seeded default (`quality-optimized`) is rewritten; a workspace
     // that picked its own advisor profile keeps it. Skip the rewrite when a
     // user already owns a profile named `frontier`: the seeder leaves that
-    // user profile in place rather than materializing the managed Opus one, so
+    // user profile in place rather than materializing the cloud Opus one, so
     // pointing the advisor at it would consult an arbitrary user model. Leaving
     // the advisor on `quality-optimized` (now managed GLM 5.2) is the safe
     // fallback in that collision case. Any `frontier` present at migration time
-    // is user-owned (the managed one is materialized later, at seed time);
+    // is user-owned (the cloud one is materialized later, at seed time);
     // treat anything not explicitly `source: "managed"` as theirs, since the
     // settings UI saves custom profiles without a `source`.
     const existingFrontier = readObject(profiles?.frontier);

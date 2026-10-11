@@ -335,7 +335,7 @@ describe("the gate", () => {
   });
 
   it("serves a cadet-signed declaration nobody approved", async () => {
-    // Only a caller holding the platform secret can reach it, and the user
+    // Only a caller holding the cloud secret can reach it, and the user
     // extended that trust when they connected their account.
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
@@ -364,7 +364,7 @@ describe("the gate", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("still demands the platform signature on an unapproved cadet route", async () => {
+  it("still demands the cloud signature on an unapproved cadet route", async () => {
     // Skipping approval did not skip authentication.
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
@@ -605,7 +605,7 @@ describe("signature verification", () => {
     expect(calls).toEqual([]);
   });
 
-  it("verifies a cadet-signed route against the platform secret", async () => {
+  it("verifies a cadet-signed route against the cloud secret", async () => {
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
       config: CONFIG,
@@ -645,7 +645,7 @@ describe("signature verification", () => {
     expect(calls).toEqual([]);
   });
 
-  it("does not accept the platform secret on a plugin-signed route", async () => {
+  it("does not accept the cloud secret on a plugin-signed route", async () => {
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
       config: CONFIG,
@@ -826,7 +826,7 @@ describe("declared verification", () => {
     expect(calls).toEqual([]);
   });
 
-  it("stops accepting the platform scheme once a descriptor is declared", async () => {
+  it("stops accepting the cloud scheme once a descriptor is declared", async () => {
     // Otherwise a declared route would have two ways in, and the weaker one
     // would decide.
     const { calls, fetchImpl } = recordingFetch();
@@ -1807,7 +1807,7 @@ describe("HMAC URL and form-encoded inbound", () => {
     expect(gateCalls.events).toEqual([]);
   });
 
-  it("verifies against the platform-injected URL when the raw URL differs", async () => {
+  it("verifies against the cloud-injected URL when the raw URL differs", async () => {
     const { calls, fetchImpl } = recordingFetch();
     const handle = createPluginWebhookHandler({
       config: CONFIG,
@@ -1816,7 +1816,7 @@ describe("HMAC URL and form-encoded inbound", () => {
       fetchImpl,
     });
 
-    // Twilio signed the platform callback URL; the gateway sees localhost.
+    // Twilio signed the cloud callback URL; the gateway sees localhost.
     // The proxy injects the original URL it handed the vendor, and the
     // signature covers that spelling rather than the one on the wire here.
     const injected =

@@ -41,7 +41,7 @@ mock.module("../calls/voice-ingress-preflight.js", () => ({
   }),
 }));
 
-mock.module("../inbound/platform-callback-registration.js", () => ({
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   resolveCallbackUrl: async (fn: () => string) => fn(),
 }));
 

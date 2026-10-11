@@ -23,8 +23,8 @@ import type { Message, ToolDefinition } from "../providers/types.js";
 import type { ActiveSkillEntry } from "../skills/active-skill-tools.js";
 import { deriveActiveSkills } from "../skills/active-skill-tools.js";
 import { getCachedCatalogSync } from "../skills/catalog-cache.js";
+import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
 import { readInstallMeta, touchSkillLastUsed } from "../skills/install-meta.js";
-import { isSkillCompatibleWithPlatform } from "../skills/platform-compatibility.js";
 import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import { recordSkillLoadedEvent } from "../telemetry/skill-loaded-events-store.js";
@@ -218,7 +218,7 @@ function recordSkillLoadedTelemetry(
  * track. Only managed skills carry install metadata; bundled, workspace, and
  * plugin skills are skipped. Best-effort: the underlying write never throws.
  */
-function stampManagedSkillUsage(skill: SkillSummary): void {
+function stampCloudSkillUsage(skill: SkillSummary): void {
   if (skill.source !== "managed") {
     return;
   }
@@ -228,7 +228,7 @@ function stampManagedSkillUsage(skill: SkillSummary): void {
   } catch (err) {
     log.warn(
       { err, skillId: skill.id },
-      "Failed to stamp managed-skill lastUsedAt (non-fatal)",
+      "Failed to stamp cloud-skill lastUsedAt (non-fatal)",
     );
   }
 }
@@ -365,7 +365,7 @@ export function projectSkillTools(
     const skill = catalogById.get(id);
     const flagKey = skill ? skillFlagKey(skill) : undefined;
     if (
-      (!skill || isSkillCompatibleWithPlatform(skill)) &&
+      (!skill || isSkillCompatibleWithCloud(skill)) &&
       (!flagKey || isAssistantFeatureFlagEnabled(flagKey, config))
     ) {
       activeIds.add(id);
@@ -440,7 +440,7 @@ export function projectSkillTools(
       successfulEntries.set(skillId, NO_TOOLS_VERSION);
       if (prevHash === undefined) {
         recordSkillLoadedTelemetry(skill, options?.telemetry);
-        stampManagedSkillUsage(skill);
+        stampCloudSkillUsage(skill);
       }
       continue;
     }
@@ -485,7 +485,7 @@ export function projectSkillTools(
         // activation gaining a TOOLS.json re-registers, which — like a
         // version-hash change — counts as a new load.
         recordSkillLoadedTelemetry(skill, options?.telemetry);
-        stampManagedSkillUsage(skill);
+        stampCloudSkillUsage(skill);
       } else if (prevHash !== currentHash) {
         // Hash changed — unregister stale tools, then re-register with new definitions
         log.info(
@@ -506,7 +506,7 @@ export function projectSkillTools(
         }
         // A version change that re-registers counts as a new skill load.
         recordSkillLoadedTelemetry(skill, options?.telemetry);
-        stampManagedSkillUsage(skill);
+        stampCloudSkillUsage(skill);
       } else {
         // Hash unchanged — filter to only tools that are actually registered
         // for this skill. Some tools may have been skipped during initial

@@ -6,7 +6,7 @@
 
 ## Context
 
-Untrusted agents (managed assistants, delegated workers, third-party skill invocations) need to execute credential-bearing operations (API calls, CLI commands, browser automation with stored secrets) without the agent ever observing plaintext secret material. The existing credential broker (`assistant/src/tools/credentials/broker.ts`) operates inside the assistant process, which means the assistant runtime has theoretical access to secret values during brokered use. For local single-user deployments this is acceptable, but for managed multi-tenant and untrusted-agent scenarios, a stronger isolation boundary is required.
+Untrusted agents (cloud assistants, delegated workers, third-party skill invocations) need to execute credential-bearing operations (API calls, CLI commands, browser automation with stored secrets) without the agent ever observing plaintext secret material. The existing credential broker (`assistant/src/tools/credentials/broker.ts`) operates inside the assistant process, which means the assistant runtime has theoretical access to secret values during brokered use. For local single-user deployments this is acceptable, but for managed multi-tenant and untrusted-agent scenarios, a stronger isolation boundary is required.
 
 ## Decision
 
@@ -76,9 +76,9 @@ These alternatives were evaluated for the v1 key store and rejected. They are re
 
 3. **Pre-decrypt and pass via the RPC socket** — Violates the CES process-boundary isolation guarantee.
 
-### 3. Platform OAuth materialization stays on the platform
+### 3. Platform OAuth materialization stays on the cloud
 
-OAuth tokens managed by the platform (`mycadet-platform`) — including token refresh, revocation, and scope management — continue to be handled by the platform's token management system. CES does not duplicate OAuth lifecycle management. When CES needs an OAuth token, it requests a materialized token from the platform via the existing platform proxy endpoint, using the same mechanism the assistant currently uses.
+OAuth tokens managed by the cloud (`mycadet-platform`) — including token refresh, revocation, and scope management — continue to be handled by the cloud's token management system. CES does not duplicate OAuth lifecycle management. When CES needs an OAuth token, it requests a materialized token from the cloud via the existing cloud proxy endpoint, using the same mechanism the assistant currently uses.
 
 ### 4. Secure generic authenticated HTTP must not run through `run_authenticated_command`
 
@@ -256,7 +256,7 @@ Secret scrubbing in HTTP response bodies and command stdout/stderr uses exact-ma
 
 ### 3. Egress proxy enforcement is process-level, not network-level
 
-The egress proxy relies on `HTTP_PROXY`/`HTTPS_PROXY` environment variables. A subprocess that ignores proxy env vars (e.g., a binary that uses its own HTTP stack or raw sockets) can bypass the proxy. This applies to both local and managed deployments — see Risk 7 for details on the managed case.
+The egress proxy relies on `HTTP_PROXY`/`HTTPS_PROXY` environment variables. A subprocess that ignores proxy env vars (e.g., a binary that uses its own HTTP stack or raw sockets) can bypass the proxy. This applies to both local and managed deployments — see Risk 7 for details on the cloud case.
 
 **Mitigation**: For local deployments, the process-level enforcement is accepted as a reasonable trade-off — the user running the assistant locally already has full host access. For managed deployments, per-container Calico network policies restricting CES egress to the proxy sidecar only are a design goal (see Risk 7 mitigation). Until those policies are in place, the denied-binary list and manifest validation reduce the surface for non-cooperating binaries.
 

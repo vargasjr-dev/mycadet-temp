@@ -860,7 +860,7 @@ describe("isLocalModeHostAvailable", () => {
     expect(isLocalModeHostAvailable()).toBe(true);
   });
 
-  test("false on the managed static build (no injected config)", () => {
+  test("false on the cloud static build (no injected config)", () => {
     delete (window as WindowWithConfig).__CADET_CONFIG__;
     expect(isLocalModeHostAvailable()).toBe(false);
   });

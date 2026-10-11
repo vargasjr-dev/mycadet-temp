@@ -7,7 +7,7 @@ let synthesizeCalls: Array<{
   signal?: AbortSignal;
 }> = [];
 
-mock.module("../../platform/managed-speech.js", () => ({
+mock.module("../../cloud/cloud-speech.js", () => ({
   managedSpeechSynthesize: async (input: {
     text: string;
     format: string;
@@ -97,7 +97,7 @@ describe("cadet TTS adapter", () => {
     expect(result.contentType).toBe("audio/mpeg");
   });
 
-  test("PCM hint maps to the platform's fixed 16 kHz PCM format", async () => {
+  test("PCM hint maps to the cloud's fixed 16 kHz PCM format", async () => {
     const provider = createCadetProvider();
     await provider.synthesize(request({ outputFormat: "pcm" }));
 
@@ -109,7 +109,7 @@ describe("cadet TTS adapter", () => {
     expect(provider.resolveOutputSampleRateHz?.(request())).toBeUndefined();
   });
 
-  test("forwards the abort signal to the platform call", async () => {
+  test("forwards the abort signal to the cloud call", async () => {
     const controller = new AbortController();
     const provider = createCadetProvider();
     await provider.synthesize(request({ signal: controller.signal }));
@@ -236,12 +236,12 @@ describe("cadet TTS definition", () => {
     expect(cadetTtsProviderDefinition.mediaStreamPlayback.outputFormat).toBe(
       "pcm",
     );
-    // True since managed voice selection: clients gate their voice dropdown
+    // True since cloud voice selection: clients gate their voice dropdown
     // on this flag (old daemons report false and show no selector).
     expect(cadetTtsProviderDefinition.supportsVoiceSelection).toBe(true);
   });
 
-  test("requires only the platform connection credential", () => {
+  test("requires only the cloud connection credential", () => {
     expect(cadetTtsProviderDefinition.secretRequirements).toEqual([
       {
         credentialStoreKey: "credential/cadet/assistant_api_key",

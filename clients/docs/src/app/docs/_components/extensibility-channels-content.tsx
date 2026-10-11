@@ -272,7 +272,7 @@ export function ExtensibilityChannelsContent() {
               The credential <strong>service</strong> is the plugin&apos;s
               directory name. The descriptor names only a <strong>field</strong>
               . A manifest cannot point a route at another plugin&apos;s secret
-              or at the platform&apos;s.
+              or at the cloud&apos;s.
             </li>
             <li>
               Store the secret via <code>assistant credentials prompt</code> (or{" "}

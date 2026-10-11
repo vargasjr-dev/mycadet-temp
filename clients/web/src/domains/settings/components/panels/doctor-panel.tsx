@@ -54,7 +54,7 @@ import {
   assistantsDoctorSessionsUserOutcomeCreate,
 } from "@/generated/api/sdk.gen";
 import type { AssistantsDoctorSessionsCreateData } from "@/generated/api/types.gen";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -111,7 +111,7 @@ export function DoctorPanel() {
     reason?: FeedbackReason;
   } | null>(null);
 
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // `/doctor <message>` slash command: the first message to send once the
   // auto-started session becomes active, and a one-shot guard so the
@@ -677,7 +677,7 @@ export function DoctorPanel() {
         <div className="flex items-center gap-2">
           <DoctorSessionMenu
             onShareFeedback={
-              platformGate === "full"
+              cloudGate === "full"
                 ? () => {
                     handleOpenFeedback();
                   }

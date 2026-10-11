@@ -1,7 +1,7 @@
 /**
  * Zod-validated discriminated union for doctor SSE event payloads.
  *
- * Doctor events come from the platform Django backend (not the daemon),
+ * Doctor events come from the cloud Django backend (not the daemon),
  * so they are not in the daemon OpenAPI spec and require manual type
  * definitions with runtime validation at the trust boundary.
  */

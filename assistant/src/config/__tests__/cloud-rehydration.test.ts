@@ -25,7 +25,7 @@ const {
   setCloudOrganizationId,
   setCloudUserId,
 } = await import("../env.js");
-const { _resetPlatformIdentityEnsureForTests } =
+const { _resetCloudIdentityEnsureForTests } =
   await import("../cloud-identity.js");
 const { rehydrateCloudCredentials } = await import("../cloud-rehydration.js");
 
@@ -35,7 +35,7 @@ const ORG_ID = "22222222-3333-4444-8555-666666666666";
 const USER_ID = "33333333-4444-4555-8666-777777777777";
 
 describe("rehydrateCloudCredentials", () => {
-  const originalPlatformUrlEnv = process.env.CADET_PLATFORM_URL;
+  const originalCloudUrlEnv = process.env.CADET_CLOUD_URL;
   const originalOrgEnv = process.env.CLOUD_ORGANIZATION_ID;
   const originalUserEnv = process.env.CLOUD_USER_ID;
   const originalAssistantApiKeyEnv = process.env.ASSISTANT_API_KEY;
@@ -62,7 +62,7 @@ describe("rehydrateCloudCredentials", () => {
     }) as unknown as typeof fetch;
     // Env vars take precedence over the rehydrated overrides for some fields;
     // clear them so the credential-store values are what we observe.
-    delete process.env.CADET_PLATFORM_URL;
+    delete process.env.CADET_CLOUD_URL;
     delete process.env.CLOUD_ORGANIZATION_ID;
     delete process.env.CLOUD_USER_ID;
     delete process.env.ASSISTANT_API_KEY;
@@ -70,15 +70,15 @@ describe("rehydrateCloudCredentials", () => {
     setCloudAssistantId(undefined);
     setCloudOrganizationId(undefined);
     setCloudUserId(undefined);
-    _resetPlatformIdentityEnsureForTests();
+    _resetCloudIdentityEnsureForTests();
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    if (originalPlatformUrlEnv === undefined) {
-      delete process.env.CADET_PLATFORM_URL;
+    if (originalCloudUrlEnv === undefined) {
+      delete process.env.CADET_CLOUD_URL;
     } else {
-      process.env.CADET_PLATFORM_URL = originalPlatformUrlEnv;
+      process.env.CADET_CLOUD_URL = originalCloudUrlEnv;
     }
     if (originalOrgEnv === undefined) {
       delete process.env.PLATFORM_ORGANIZATION_ID;
@@ -115,8 +115,8 @@ describe("rehydrateCloudCredentials", () => {
     expect(getCloudAssistantId()).toBe("");
   });
 
-  test("trades the assistant API key for ids via platform validate", async () => {
-    process.env.CADET_PLATFORM_URL = PROD_URL;
+  test("trades the assistant API key for ids via cloud validate", async () => {
+    process.env.CADET_CLOUD_URL = PROD_URL;
     mockSecureKeys[credentialKey("cadet", "assistant_api_key")] =
       "assistant-key";
     fetchImpl = async () =>

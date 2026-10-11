@@ -32,7 +32,7 @@ import { useAssistantResourceSync } from "@/hooks/use-assistant-resource-sync";
 import { assistantIdentityQueryKey } from "@/hooks/use-assistant-identity-init";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
-import { platformAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
+import { cloudAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
@@ -1079,7 +1079,7 @@ describe("useAssistantResourceSync", () => {
           {
             id: "asst-1",
             isLocal: false,
-            isPlatformHosted: true,
+            isCloudHosted: true,
             isPaired: false,
             avatarUrl: "https://cdn.example/a.png",
           },
@@ -1107,10 +1107,10 @@ describe("useAssistantResourceSync", () => {
     expect(avatarUrl()).toBe("https://cdn.example/a.png");
   });
 
-  test("avatar_updated drops the platform lookup entry without a refetch", async () => {
+  test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(
       key,
       new Map([
@@ -1142,14 +1142,14 @@ describe("useAssistantResourceSync", () => {
         {
           id: "asst-1",
           isLocal: true,
-          isPlatformHosted: false,
+          isCloudHosted: false,
           isPaired: false,
           cloud: "local",
-          platformAssistantId: "uuid-1",
+          cloudAssistantId: "uuid-1",
         },
       ],
     });
-    const key = platformAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey("user-1", null);
     queryClient.setQueryData(
       key,
       new Map([["uuid-1", "https://cdn.example/a.png"]]),

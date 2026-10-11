@@ -41,8 +41,8 @@ export type StoredCloudUserId = {
   unreachable: boolean;
 };
 
-let platformAssistantIdOverride: string | undefined;
-let platformOrganizationIdOverride: string | undefined;
+let cloudAssistantIdOverride: string | undefined;
+let cloudOrganizationIdOverride: string | undefined;
 let platformUserIdOverride: string | undefined;
 let identityBoundToFingerprint: string | undefined;
 let lastAttemptFingerprint: string | undefined;
@@ -64,11 +64,11 @@ function envTrim(name: string): string {
 }
 
 function getCloudAssistantId(): string {
-  return (platformAssistantIdOverride ?? "").trim();
+  return (cloudAssistantIdOverride ?? "").trim();
 }
 
 function getCloudOrganizationId(): string {
-  return (platformOrganizationIdOverride ?? "").trim();
+  return (cloudOrganizationIdOverride ?? "").trim();
 }
 
 function getCloudUserId(): string {
@@ -84,17 +84,17 @@ function identityFingerprint(apiKey: string, baseUrl: string): string {
 }
 
 function clearCloudIdentityOverrides(): void {
-  platformAssistantIdOverride = undefined;
-  platformOrganizationIdOverride = undefined;
+  cloudAssistantIdOverride = undefined;
+  cloudOrganizationIdOverride = undefined;
   platformUserIdOverride = undefined;
 }
 
 export function applyCloudIdentityIds(ids: CloudIdentityIds): void {
   if (ids.assistantId) {
-    platformAssistantIdOverride = ids.assistantId;
+    cloudAssistantIdOverride = ids.assistantId;
   }
   if (ids.organizationId) {
-    platformOrganizationIdOverride = ids.organizationId;
+    cloudOrganizationIdOverride = ids.organizationId;
   }
   if (ids.userId) {
     platformUserIdOverride = ids.userId;
@@ -113,8 +113,8 @@ export function bindCloudIdentityCredentialCache(
 
 /** @internal Test-only: drop in-memory identity and in-flight ensure state. */
 export function _resetCloudIdentityForTests(): void {
-  platformAssistantIdOverride = undefined;
-  platformOrganizationIdOverride = undefined;
+  cloudAssistantIdOverride = undefined;
+  cloudOrganizationIdOverride = undefined;
   platformUserIdOverride = undefined;
   identityBoundToFingerprint = undefined;
   lastAttemptFingerprint = undefined;
@@ -132,7 +132,7 @@ export function _resetLastKnownPlatformUserIdForTest(): void {
 /**
  * Trade an assistant API key for the bound platform ids.
  *
- * Returns null when the platform is unreachable, refuses the key, or the
+ * Returns null when the cloud is unreachable, refuses the key, or the
  * body has no ids. Never throws.
  */
 export async function fetchCloudIdentityIds(
@@ -205,7 +205,7 @@ async function readAuthPrerequisites(): Promise<{
   unreachable: boolean;
 }> {
   const envKey = envTrim("ASSISTANT_API_KEY");
-  const envUrl = envTrim("CADET_PLATFORM_URL").replace(/\/+$/, "");
+  const envUrl = envTrim("CADET_CLOUD_URL").replace(/\/+$/, "");
 
   const apiKeyRead = await readCredentialOrEnv(
     ASSISTANT_API_KEY_ACCOUNT,
@@ -284,7 +284,7 @@ export async function ensureCloudIdentityIds(): Promise<void> {
   await ensureInFlight;
 }
 
-export async function resolvePlatformAssistantId(): Promise<string> {
+export async function resolveCloudAssistantId(): Promise<string> {
   await ensureCloudIdentityIds();
   return getCloudAssistantId();
 }
@@ -297,7 +297,7 @@ export function peekCloudAssistantId(): string | undefined {
 export async function resolveCloudAssistantIdOrUndefined(): Promise<
   string | undefined
 > {
-  const id = await resolvePlatformAssistantId();
+  const id = await resolveCloudAssistantId();
   return id || undefined;
 }
 

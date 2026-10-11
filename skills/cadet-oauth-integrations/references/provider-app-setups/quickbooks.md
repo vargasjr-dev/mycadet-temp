@@ -21,7 +21,7 @@ assistant oauth mode quickbooks --json | jq -r '.mode'
 
 - If the result is `managed`, **stop reading this file** and follow [CONNECTING_ACCOUNTS.md](../CONNECTING_ACCOUNTS.md) instead.
 - If the result is `your-own` and the user already has an active QuickBooks connection (`assistant oauth status quickbooks`), respect it and do not switch modes.
-- Otherwise offer the managed flow before walking through app registration. It is a single Intuit login, against the steps below.
+- Otherwise offer the cloud flow before walking through app registration. It is a single Intuit login, against the steps below.
 
 Only continue here once the user has chosen `your-own`.
 
@@ -31,9 +31,9 @@ QuickBooks scopes every Accounting API call to one **company** (Intuit calls it
 a realm). The user picks the company on Intuit's consent screen, and the API
 path carries its id: `/v3/company/<realmId>/...`.
 
-- **Managed connections** remember the company. `assistant oauth status quickbooks --json`
+- **Cloud connections** remember the company. `assistant oauth status quickbooks --json`
   lists it under each connection as `providerParams.realm_id`, and the
-  account label is the company name. Requests are sent **relative to the company**, because the platform
+  account label is the company name. Requests are sent **relative to the company**, because the cloud
   fills `https://quickbooks.api.intuit.com/v3/company/<realmId>` in for you:
 
   ```bash
@@ -57,7 +57,7 @@ path carries its id: `/v3/company/<realmId>/...`.
   ```
 
 - Add `-H "Accept: application/json"`; the Accounting API answers in XML
-  otherwise (managed connections send it by default).
+  otherwise (cloud connections send it by default).
 - Intuit **development keys** only authorize sandbox companies, whose API lives
   on `sandbox-quickbooks.api.intuit.com`. **Production keys** use
   `quickbooks.api.intuit.com`. Both hosts accept the credential; use the one

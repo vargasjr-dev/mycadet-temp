@@ -6,7 +6,7 @@
  * the section they started in, so a pinned row can't be dropped into a
  * custom group (cross-section moves stay an explicit menu action).
  *
- * Uses the platform drag events (no library) — `PanelItem` forwards
+ * Uses the cloud drag events (no library) — `PanelItem` forwards
  * unknown props to its row element, so callers spread
  * `getItemProps(...)` straight onto it. Touch devices don't fire HTML5
  * drag events, so this is a no-op there; pointer-based reordering on

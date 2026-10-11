@@ -2,7 +2,7 @@
  * CES transport tests.
  *
  * Verifies:
- * 1. The managed entrypoint never opens a general localhost command API —
+ * 1. The cloud entrypoint never opens a general localhost command API —
  *    the only command transport is via the accepted Unix socket stream.
  * 2. Health probes are served on a dedicated HTTP port, separate from
  *    the command transport.
@@ -197,7 +197,7 @@ describe("local entrypoint transport isolation", () => {
     // Socket transport only — no stdio-child transport.
     expect(src).not.toMatch(/process\.stdin/);
     expect(src).not.toMatch(/process\.stdout/);
-    // Bun.serve is only used inside the managed-mode health server block
+    // Bun.serve is only used inside the cloud-mode health server block
     // (startHealthServer), never for RPC transport. The RPC transport uses
     // node:net createServer listening on a Unix socket path.
     const bunServeMatches = src.match(/Bun\.serve\(/g);

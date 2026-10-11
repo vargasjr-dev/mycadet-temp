@@ -1,5 +1,5 @@
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import cliPkg from "../../package.json";
 
 import {
@@ -12,10 +12,10 @@ import { hatchDocker } from "../lib/docker";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import { hatchLocal } from "../lib/hatch-local";
 import {
-  getPlatformUrl,
+  getCloudUrl,
   hatchAssistant,
-  readPlatformToken,
-} from "../lib/platform-client";
+  readCloudToken,
+} from "../lib/cloud-client";
 import { validateAssistantName } from "../lib/retire-archive";
 
 const DEFAULT_REMOTE: RemoteHost = "local";
@@ -30,7 +30,7 @@ interface HatchArgs {
   configValues: Record<string, string>;
   flagEnvVars: Record<string, string>;
   analyze: boolean;
-  disablePlatform: boolean;
+  disableCloud: boolean;
   netnsContainer: string | null;
   gatewayPort: number | null;
   assistantCaCert: string | null;
@@ -41,10 +41,10 @@ function parseArgs(): HatchArgs {
     process.argv.slice(3),
   );
   const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
-  const disablePlatformAmbient =
-    process.env.CADET_DISABLE_PLATFORM?.trim().toLowerCase();
-  let disablePlatform =
-    disablePlatformAmbient === "true" || disablePlatformAmbient === "1";
+  const disableCloudAmbient =
+    process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
+  let disableCloud =
+    disableCloudAmbient === "true" || disableCloudAmbient === "1";
   let verbose = false;
   let keepAlive = false;
   let name: string | null = null;
@@ -91,7 +91,7 @@ function parseArgs(): HatchArgs {
         "  --analyze                 Emit a structured hatch-timing log line on stdout",
       );
       console.log(
-        "  --disable-platform        Suppress all outbound platform API calls",
+        "  --disable-cloud        Suppress all outbound platform API calls",
       );
       console.log(
         "  --netns-container <name>  Join an existing container's network namespace (docker target only) instead of creating a per-instance network. The namespace owner publishes host ports, so --gateway-port is required.",
@@ -162,8 +162,8 @@ function parseArgs(): HatchArgs {
       const value = next.slice(eqIndex + 1);
       configValues[key] = value;
       i++;
-    } else if (arg === "--disable-platform") {
-      disablePlatform = true;
+    } else if (arg === "--disable-cloud") {
+      disableCloud = true;
     } else if (arg === "--netns-container") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
@@ -193,7 +193,7 @@ function parseArgs(): HatchArgs {
       i++;
     } else {
       console.error(
-        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-platform, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
+        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-cloud, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
       );
       process.exit(1);
     }
@@ -209,7 +209,7 @@ function parseArgs(): HatchArgs {
     configValues,
     flagEnvVars,
     analyze,
-    disablePlatform,
+    disableCloud,
     netnsContainer,
     gatewayPort,
     assistantCaCert,
@@ -237,15 +237,15 @@ export const hatch = Object.assign(
     configValues,
     flagEnvVars,
     analyze,
-    disablePlatform,
+    disableCloud,
     netnsContainer,
     gatewayPort,
     assistantCaCert,
   } = parseArgs();
 
-  if (disablePlatform) {
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    flagEnvVars.CADET_DISABLE_PLATFORM = "true";
+  if (disableCloud) {
+    process.env.CADET_DISABLE_CLOUD = "true";
+    flagEnvVars.CADET_DISABLE_CLOUD = "true";
   }
 
   if (watch && remote !== "local" && remote !== "docker") {
@@ -308,7 +308,7 @@ export const hatch = Object.assign(
     return;
   }
 
-  if (isManagedCloud(remote)) {
+  if (isCloudHome(remote)) {
     await hatchCadetPlatform();
     return;
   }
@@ -321,7 +321,7 @@ export const hatch = Object.assign(
 
 
 async function hatchCadetPlatform(): Promise<void> {
-  const token = readPlatformToken();
+  const token = readCloudToken();
   if (!token) {
     console.error("Not logged in. Run `cadet login --token <token>` first.");
     process.exit(1);
@@ -337,11 +337,11 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const { assistant: result } = await hatchAssistant(token);
 
-  const platformUrl = getPlatformUrl();
+  const cloudUrl = getCloudUrl();
 
   saveAssistantEntry({
     assistantId: result.id,
-    runtimeUrl: platformUrl,
+    runtimeUrl: cloudUrl,
     cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });

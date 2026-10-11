@@ -72,7 +72,7 @@ import { enqueueMemoryRetrospectiveOnCompaction } from "../plugins/defaults/memo
 import { runHook } from "../plugins/pipeline.js";
 import {
   dispatchProviderResolvable,
-  isManagedConnectionRoute,
+  isCloudConnectionRoute,
   resolveEntryConnectionName,
 } from "../providers/connection-resolution.js";
 import {
@@ -213,14 +213,14 @@ const DAILY_LIMIT_REACHED_ASSISTANT_REPLY =
   "I had to stop because you hit your daily credit limit. Raise the limit in Settings → Billing and we can pick up where we left off, or I can continue once it resets.";
 
 /**
- * The free-tier counterpart: the cap is the platform's, not a setting, so the
+ * The free-tier counterpart: the cap is the cloud's, not a setting, so the
  * ways forward are the UTC reset, an upgrade, or extra credits.
  */
 const FREE_TIER_DAILY_LIMIT_REACHED_ASSISTANT_REPLY =
   "I had to stop because you've used today's free usage. It resets at midnight UTC, or you can upgrade or add credits in Settings → Billing and we can pick up where we left off.";
 
 /**
- * The assistant-voice text a managed-billing failure persists in place of the
+ * The assistant-voice text a cloud-billing failure persists in place of the
  * classification's own `userMessage`, or `null` when the classification copy is
  * already right for a transcript row.
  */
@@ -688,7 +688,7 @@ export async function runAgentLoopImpl(
   // The Auto profile is a selection over the default profiles, made once per
   // turn: the routed profile stands in for the Auto name on every read, so
   // the whole turn (and any subagent inheriting the override) runs on one
-  // profile. A user profile that shadows the managed name is a profile of
+  // profile. A user profile that shadows the cloud name is a profile of
   // its own and is not routed. Nothing here may throw: the turn's processing
   // state is already held and its release lives in the loop's `finally`
   // further down, so a routing failure degrades to the Auto body instead.
@@ -792,15 +792,15 @@ export async function runAgentLoopImpl(
         resolveEntryConnectionName(resolved.provider) ?? undefined;
       // Managed-ness comes from the connection row, matching what dispatch
       // decides. The profile's own provider can't stand in: a concrete
-      // provider tweak over a managed winner keeps the managed connection
+      // provider tweak over a cloud winner keeps the cloud connection
       // while replacing the provider (`llm-resolver.ts`).
-      const isManagedRoute = connectionName
-        ? isManagedConnectionRoute(connectionName)
+      const isCloudRoute = connectionName
+        ? isCloudConnectionRoute(connectionName)
         : undefined;
       return {
         ...(connectionName ? { connectionName } : {}),
         ...(profileName ? { profileName } : {}),
-        ...(isManagedRoute !== undefined ? { isManagedRoute } : {}),
+        ...(isCloudRoute !== undefined ? { isCloudRoute } : {}),
       };
     } catch {
       return {};
@@ -2067,7 +2067,7 @@ export async function runAgentLoopImpl(
           modeSession: ctx.modeSessions.getTurnOwner(reqId),
         };
         // The persisted row re-enters LLM history and is displayed as
-        // assistant speech, so the managed-billing categories swap the
+        // assistant speech, so the cloud-billing categories swap the
         // banner-voice classification copy for assistant-voice wording.
         const persistedErrorText =
           managedBillingAssistantReply(

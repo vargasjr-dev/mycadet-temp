@@ -26,7 +26,7 @@ export interface RequestHintFacts {
    * request acted as a person through their OAuth integration.
    */
   botChannel?: string;
-  /** The provider runs in platform-managed mode. */
+  /** The provider runs in cloud-managed mode. */
   managed: boolean;
   /**
    * The base URL the request resolved against: an absolute URL's own origin,

@@ -33,7 +33,7 @@ import { MemoryRouter, useLocation } from "react-router";
 
 import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
-import * as platformGateMod from "@/hooks/use-platform-gate";
+import * as cloudGateMod from "@/hooks/use-cloud-gate";
 import * as platformDetection from "@/runtime/platform-detection";
 import * as toastMod from "@mycadet/design-library/components/toast";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
@@ -185,12 +185,12 @@ mock.module("@/runtime/browser", () => ({
   },
 }));
 
-// Force the platform-hosted gate open so the page mounts its pricing body
+// Force the cloud-hosted gate open so the page mounts its pricing body
 // instead of firing the self-hosted / not-ready redirect effect.
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGateMod,
-  usePlatformGate: () => "full",
-  useActiveAssistantIsPlatformHosted: () => true,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGateMod,
+  useCloudGate: () => "full",
+  useActiveAssistantIsCloudHosted: () => true,
   useActiveAssistantLifecycleIsLoading: () => false,
 }));
 
@@ -1140,7 +1140,7 @@ describe("PlansPage — Pro package switch (change-package)", () => {
     useResolvedAssistantsStore.setState({
       activeAssistantId: "a1",
       assistants: [
-        { id: "a1", isLocal: false, isPlatformHosted: true, isPaired: false },
+        { id: "a1", isLocal: false, isCloudHosted: true, isPaired: false },
       ],
       assistantsHydrated: true,
     });

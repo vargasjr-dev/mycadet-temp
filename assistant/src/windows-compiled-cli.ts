@@ -1,8 +1,8 @@
 import { setBundledCliModules } from "./cli/bundled-modules.js";
 import * as pluginDiff from "./cli/lib/diff-plugin.js";
 import * as pluginInspect from "./cli/lib/inspect-plugin.js";
+import * as pluginInstallPlatform from "./cli/lib/install-from-cloud.js";
 import * as pluginInstallGitHub from "./cli/lib/install-from-github.js";
-import * as pluginInstallPlatform from "./cli/lib/install-from-platform.js";
 import * as pluginInstalled from "./cli/lib/list-installed-plugins.js";
 import * as pluginCatalogCache from "./cli/lib/plugin-catalog-cache.js";
 import * as pluginCatalogLocal from "./cli/lib/plugin-catalog-local.js";

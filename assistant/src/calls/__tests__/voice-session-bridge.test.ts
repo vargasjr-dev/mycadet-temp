@@ -546,7 +546,7 @@ describe("startVoiceTurn escalation-continuation persistence", () => {
 
     // `turn-events-store` projects `$.client` onto `TurnTelemetryEvent.client`,
     // so this bag is what makes a voice turn countable per client and joinable
-    // to its session's funnel rows. The platform goes in `os`, the same key
+    // to its session's funnel rows. The cloud goes in `os`, the same key
     // the HTTP send path fills, so voice turns sit in the column existing turn
     // analytics already read.
     expect(fake.lastPersistOpts()?.metadata).toEqual({

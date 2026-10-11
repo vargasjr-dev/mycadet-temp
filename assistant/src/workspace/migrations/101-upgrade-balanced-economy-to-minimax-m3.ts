@@ -6,14 +6,14 @@ import type { WorkspaceMigration } from "./types.js";
 // Switch the Balanced Economy profile from Kimi K2.6 to MiniMax M3.
 //
 // The Fireworks balanced model intent moved to MiniMax M3 (#34726), but the
-// intent map is only consulted when a profile is seeded: off-platform
-// installs reseed managed profiles on every boot, while on-platform
+// intent map is only consulted when a profile is seeded: off-cloud
+// installs reseed cloud profiles on every boot, while on-cloud
 // workspaces keep the profile they were hatched with — the seeder skips
 // existing profiles there. Existing platform assistants would otherwise stay
 // on Kimi K2.6 (including the now-dropped `suppress-cjk` logit-bias preset)
 // until a migration rewrites the profile.
 //
-// Only the managed balanced-economy profile still pointing at the old
+// Only the cloud balanced-economy profile still pointing at the old
 // default model is touched — a profile whose model the user changed is left
 // alone. The rewrite mirrors the new seed template: MiniMax M3, 32K max
 // output tokens, no logit-bias preset.
@@ -24,7 +24,7 @@ const NEW_MODEL = "accounts/fireworks/models/minimax-m3";
 export const upgradeBalancedEconomyToMinimaxM3Migration: WorkspaceMigration = {
   id: "101-upgrade-balanced-economy-to-minimax-m3",
   description:
-    "Switch the managed Balanced Economy profile from Kimi K2.6 to MiniMax M3",
+    "Switch the cloud Balanced Economy profile from Kimi K2.6 to MiniMax M3",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {

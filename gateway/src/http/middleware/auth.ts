@@ -13,7 +13,7 @@ import { AuthFallbackCountTracker } from "../../auth-fallback-count-tracker.js";
 import { AuthFallbackLogThrottle } from "../../auth-fallback-log-throttle.js";
 import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
 import { getLogger } from "../../logger.js";
-import { readStoredCloudUserId } from "../../platform-user-id.js";
+import { readStoredCloudUserId } from "../../cloud-user-id.js";
 import { isLoopbackPeer } from "../../util/is-loopback-address.js";
 import { requestArrivedViaEdgeProxy } from "../edge-forwarded-header.js";
 
@@ -39,12 +39,12 @@ type GetClientIp = () => string;
 //
 // Both flags must be set together to disable JWT validation. DISABLE_HTTP_AUTH
 // alone is insufficient — it closes the accidental misconfig case where the
-// flag gets set on a non-platform deployment (e.g. a leaked dev env var on a
-// public host). When the bypass IS active, the platform vembda sidecar is
+// flag gets set on a non-cloud deployment (e.g. a leaked dev env var on a
+// public host). When the bypass IS active, the cloud vembda sidecar is
 // expected to forward `X-Cadet-User-Id`; the gateway cross-checks that
 // against the bound platform user id. This means reaching the gateway
 // sidecar's port directly (without going through vembda) still requires
-// knowing the bound user id. The platform header alone is not a free-pass.
+// knowing the bound user id. The cloud header alone is not a free-pass.
 
 /** True when DISABLE_HTTP_AUTH=true. */
 export function isHttpAuthDisabled(): boolean {
@@ -58,10 +58,10 @@ function isPlatformManaged(): boolean {
 }
 
 /**
- * True when the platform-managed auth bypass is in effect — both flags set.
+ * True when the cloud-managed auth bypass is in effect — both flags set.
  * Either alone leaves JWT validation in place.
  */
-function isPlatformAuthBypassActive(): boolean {
+function isCloudAuthBypassActive(): boolean {
   return isHttpAuthDisabled() && isPlatformManaged();
 }
 
@@ -82,7 +82,7 @@ export function logAuthBypassState(): void {
     log.warn(
       "DISABLE_HTTP_AUTH is set but IS_CLOUD is NOT — bypass is INACTIVE. " +
         "JWT validation runs as normal. Set IS_CLOUD=true to opt into the " +
-        "platform-managed auth model.",
+        "cloud-managed auth model.",
     );
   }
 }
@@ -94,14 +94,14 @@ export function logAuthBypassState(): void {
  * clients. Each fallback endpoint and failure kind logs once per cooldown
  * window (see `loopbackFallbackLogThrottle`) so callers still missing or
  * failing auth are visible during rollout without per-request log noise. The
- * platform-managed bypass is checked first, so this fallback only applies in
+ * cloud-managed bypass is checked first, so this fallback only applies in
  * default mode.
  *
  *   - `requireEdgeAuth` — validates a JWT bearer token (aud=cadet-gateway)
  *     OR (when bypass is active) cross-checks X-Cadet-User-Id against the
  *     bound platform user id.
  *   - `requireEdgeAuthWithScope` — same, plus a scope-profile check on the
- *     decoded JWT. Under the platform bypass, scope is enforced upstream by
+ *     decoded JWT. Under the cloud bypass, scope is enforced upstream by
  *     vembda; the gateway only verifies the cross-checked user id.
  *   - `requireEdgeGuardianAuth` — same pattern, additionally requires the
  *     authenticated principal to match the bound guardian.
@@ -117,7 +117,7 @@ export function createAuthMiddleware(
 ) {
   /**
    * Cross-check `X-Cadet-User-Id` against the bound platform user id.
-   * Used by all three guards under the platform-managed bypass. Returns
+   * Used by all three guards under the cloud-managed bypass. Returns
    * null on success, or a 4xx/5xx Response.
    */
   async function requirePlatformUserHeader(
@@ -177,7 +177,7 @@ export function createAuthMiddleware(
     req: Request,
     server?: Server<unknown>,
   ): Promise<Response | null> {
-    if (isPlatformAuthBypassActive()) {
+    if (isCloudAuthBypassActive()) {
       return requirePlatformUserHeader(req);
     }
     const hasAuthHeader = hasAuthorizationHeader(req);
@@ -194,7 +194,7 @@ export function createAuthMiddleware(
   /**
    * Validate a JWT bearer token and check that its scope profile includes the
    * required scope. Loopback peers fall back when auth is missing, malformed,
-   * invalid, or under-scoped. Under the platform bypass, scope is enforced
+   * invalid, or under-scoped. Under the cloud bypass, scope is enforced
    * upstream by vembda — the gateway only confirms the user id.
    */
   async function requireEdgeAuthWithScope(
@@ -202,7 +202,7 @@ export function createAuthMiddleware(
     scope: Scope,
     server?: Server<unknown>,
   ): Promise<Response | null> {
-    if (isPlatformAuthBypassActive()) {
+    if (isCloudAuthBypassActive()) {
       return requirePlatformUserHeader(req);
     }
     const hasAuthHeader = hasAuthorizationHeader(req);
@@ -246,7 +246,7 @@ export function createAuthMiddleware(
     req: Request,
     server?: Server<unknown>,
   ): Promise<Response | null> {
-    if (isPlatformAuthBypassActive()) {
+    if (isCloudAuthBypassActive()) {
       return requirePlatformUserHeader(req);
     }
     return requireEdgeGuardianAuthByActorPrincipal(req, server);

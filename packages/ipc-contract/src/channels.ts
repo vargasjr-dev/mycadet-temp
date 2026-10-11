@@ -111,7 +111,7 @@ export const LOCAL_MODE_READ_LOCKFILE = "cadet:localMode:readLockfile";
 export const LOCAL_MODE_SAVE_ASSISTANT =
   "cadet:localMode:saveLockfileAssistant";
 export const LOCAL_MODE_REPLACE_PLATFORM =
-  "cadet:localMode:replacePlatformAssistants";
+  "cadet:localMode:replaceCloudAssistants";
 export const LOCAL_MODE_RETIRE = "cadet:localMode:retire";
 export const LOCAL_MODE_UNPAIR = "cadet:localMode:unpair";
 export const LOCAL_MODE_SLEEP = "cadet:localMode:sleep";
@@ -123,7 +123,7 @@ export const LOCAL_MODE_READ_ASSISTANT_AVATAR =
   "cadet:localMode:readAssistantAvatar";
 
 // Menu
-export const MENU_SET_PLATFORM_SESSION = "cadet:menu:setPlatformSession";
+export const MENU_SET_PLATFORM_SESSION = "cadet:menu:setCloudSession";
 export const MENU_TITLES = "cadet:menu:titles";
 export const MENU_POPUP = "cadet:menu:popup";
 

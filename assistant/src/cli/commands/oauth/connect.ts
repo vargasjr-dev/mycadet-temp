@@ -152,7 +152,7 @@ export function registerConnectCommand(oauth: Command): void {
 
             if (opts.clientId) {
               log.info(
-                `Warning: --client-id is ignored for platform-managed providers. The platform manages OAuth apps for "${provider}".`,
+                `Warning: --client-id is ignored for cloud providers. The cloud manages OAuth apps for "${provider}".`,
               );
             }
 

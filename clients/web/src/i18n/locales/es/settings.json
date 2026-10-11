@@ -128,32 +128,6 @@
     "typePreview": "Vista previa",
     "typeScheduled": "Programada"
   },
-  "assistantLifecyclePanel": {
-    "allAssistantsSubtitle": "{count, plural, one {# asistente encontrado.} other {# asistentes encontrados.}}",
-    "allAssistantsTitle": "Todos los asistentes",
-    "assistantId": "ID del asistente",
-    "created": "Creado",
-    "current": "Actual",
-    "hatch": "Crear",
-    "hatchConfirmMessage": "¿Seguro que quieres crear un asistente nuevo? Esto aprovisionará nueva infraestructura.",
-    "hatchConfirmTitle": "Crear asistente nuevo",
-    "hatchDescription": "Aprovisiona un asistente nuevo. Puede tardar un momento.",
-    "hatchExistingToast": "Ya tienes un asistente. No se creó nada nuevo.",
-    "hatchFailedToast": "No se pudo crear el asistente.",
-    "hatchSubtitle": "Crea una nueva instancia de asistente.",
-    "hatchSuccessToast": "Asistente nuevo creado correctamente.",
-    "hatchTitle": "Crear asistente nuevo",
-    "infoEmpty": "No se encontró ningún asistente. Crea uno para empezar.",
-    "infoLoading": "Cargando información del asistente...",
-    "infoSubtitle": "Detalles del asistente actual.",
-    "infoTitle": "Información del asistente",
-    "lastModified": "Última modificación",
-    "machineId": "ID de la máquina",
-    "name": "Nombre",
-    "status": "Estado",
-    "unnamed": "Sin nombre",
-    "version": "Versión"
-  },
   "assistantPicker": {
     "active": "Activo",
     "subtitle": "Elige qué asistente está activo para esta cuenta.",
@@ -714,7 +688,6 @@
   "developerPage": {
     "sectionsAriaLabel": "Secciones de desarrollador",
     "tabFeatureFlags": "Indicadores de funciones",
-    "tabLifecycle": "Ciclo de vida del asistente",
     "tabMemory": "Memoria"
   },
   "doctorChatBlocks": {
@@ -1869,7 +1842,7 @@
     "dockerDescriptionLinux": "Ejecuta tu asistente en un contenedor Docker en este equipo.",
     "dockerDescriptionMacos": "Ejecuta tu asistente en un contenedor Docker en este Mac.",
     "dockerDescriptionWindows": "Ejecuta tu asistente en un contenedor Docker en este PC.",
-    "existingPlatformAssistant": "Ya tienes un asistente de plataforma «{id}». Retíralo primero y luego reintenta la teleportación.",
+    "existingCloudAssistant": "Ya tienes un asistente de plataforma «{id}». Retíralo primero y luego reintenta la teleportación.",
     "exportTimedOut": "La exportación agotó el tiempo de espera.",
     "importFailed": "La importación falló.",
     "importFailedHttp": "La importación falló (HTTP {status}).",

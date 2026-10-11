@@ -13,8 +13,8 @@
  *  - Local mode: assistant list auto-syncs with the lockfile store via
  *    subscription, so every hatch / sync / retire is reflected.
  *  - Platform mode: populated from the `listAssistants` API by
- *    `reloadPlatformAssistants` (assistant/platform-assistants-sync.ts),
- *    which runs whenever the platform session becomes present.
+ *    `reloadCloudAssistants` (assistant/cloud-assistants-sync.ts),
+ *    which runs whenever the cloud session becomes present.
  *
  * Do NOT confuse with `lockfile-store.ts`, which is the raw on-disk
  * lockfile cache used internally by `lib/local-mode.ts` for host IPC.
@@ -31,7 +31,7 @@ import {
   isLocalClient,
   isLocalAssistant,
   isPairedAssistant,
-  isPlatformAssistant,
+  isCloudAssistant,
 } from "@/lib/local-mode";
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
@@ -59,41 +59,41 @@ export interface ResolvedAssistant {
   releaseChannel?: ReleaseChannelEnum;
   isActiveLockfileAssistant?: boolean;
   isLocal: boolean;
-  isPlatformHosted: boolean;
+  isCloudHosted: boolean;
   isPaired: boolean;
   /** Remote gateway URL for paired entries; only the lockfile carries it. */
   runtimeUrl?: string;
-  /** Public ingress registered with the platform for self-hosted local
-   *  entries; only the API carries it. Null/undefined means the platform has
+  /** Public ingress registered with the cloud for self-hosted local
+   *  entries; only the API carries it. Null/undefined means the cloud has
    *  no route to this assistant. */
   ingressUrl?: string | null;
-  /** Synced avatar thumbnail served by the platform; only the API carries
-   *  it. Null means the platform holds no avatar for this assistant. */
+  /** Synced avatar thumbnail served by the cloud; only the API carries
+   *  it. Null means the cloud holds no avatar for this assistant. */
   avatarUrl?: string | null;
   /** Owning org for platform entries; only the lockfile carries it, so
    *  API-sourced entries leave this undefined. */
   organizationId?: string;
   /** Platform UUID for a locally hatched entry whose `id` is the instance
    *  name; only the lockfile carries it. API rows are already keyed by UUID. */
-  platformAssistantId?: string;
+  cloudAssistantId?: string;
 }
 
 /**
  * A list that lands inside the supersede window may still carry the URL a
  * local read just outranked; keep the row on its live/cache sources until
- * the platform copy can have caught up.
+ * the cloud copy can have caught up.
  */
 function apiAvatarUrl(a: Assistant): string | null | undefined {
   return isAvatarSuperseded(a.id) ? null : a.avatar_url;
 }
 
-/** The id the platform knows `a` by: the lockfile's registration for a local instance, else `a.id`. */
+/** The id the cloud knows `a` by: the lockfile's registration for a local instance, else `a.id`. */
 export function platformIdFor(a: ResolvedAssistant): string {
-  return a.platformAssistantId ?? a.id;
+  return a.cloudAssistantId ?? a.id;
 }
 
 /** {@link platformIdFor} by row id; an id not in the store is its own platform id. */
-export function resolvePlatformAssistantId(assistantId: string): string {
+export function resolveCloudAssistantId(assistantId: string): string {
   const row = useResolvedAssistantsStoreBase
     .getState()
     .assistants.find((a) => a.id === assistantId);
@@ -101,12 +101,12 @@ export function resolvePlatformAssistantId(assistantId: string): string {
 }
 
 /**
- * Whether this device has some transport to the assistant: the platform proxy
+ * Whether this device has some transport to the assistant: the cloud proxy
  * (cloud and paired entries), a lockfile entry (`cloud` is only ever set from
  * the lockfile, so its presence means a local/paired transport exists here),
- * or a platform-registered public ingress (`ingressUrl`, the phone-to-Mac
+ * or a cloud-registered public ingress (`ingressUrl`, the phone-to-Mac
  * self-hosted path). A local API entry with none of these is unreachable from
- * this client (the platform proxy 404s), so list surfaces should not offer
+ * this client (the cloud proxy 404s), so list surfaces should not offer
  * it.
  */
 export function isConnectableFromThisDevice(a: ResolvedAssistant): boolean {
@@ -156,7 +156,7 @@ interface ResolvedAssistantsActions {
   markHydrated: () => void;
   upsertFromApi: (assistant: Assistant) => void;
   /**
-   * Forget the synced thumbnail for one row. The platform copy lags a live
+   * Forget the synced thumbnail for one row. The cloud copy lags a live
    * avatar change, so callers drop it and let the live/cache paths render
    * until the next API load carries the new URL.
    */
@@ -197,11 +197,11 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         releaseChannel: existingById.get(a.assistantId)?.releaseChannel,
         isActiveLockfileAssistant: activeLockfileAssistantId === a.assistantId,
         isLocal: isLocalAssistant(a),
-        isPlatformHosted: isPlatformAssistant(a),
+        isCloudHosted: isCloudAssistant(a),
         isPaired: isPairedAssistant(a),
         runtimeUrl: a.runtimeUrl,
         organizationId: a.organizationId,
-        platformAssistantId: a.platformAssistantId,
+        cloudAssistantId: a.cloudAssistantId,
       }));
       set({ assistants, assistantsHydrated: true });
       // The lockfile carries every org's entries, so an id absent from it is
@@ -211,7 +211,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
       reconcileSelection(get, set);
     },
 
-    // The platform `Assistant` API carries no org field, so API-sourced
+    // The cloud `Assistant` API carries no org field, so API-sourced
     // entries intentionally leave `organizationId` undefined (unlike
     // `setFromLockfile`). Don't "fix" this by inventing an org here.
     //
@@ -232,7 +232,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
               cloud: lockfileFields.cloud,
               runtimeVersion: lockfileFields.runtimeVersion,
               runtimeUrl: lockfileFields.runtimeUrl,
-              platformAssistantId: lockfileFields.platformAssistantId,
+              cloudAssistantId: lockfileFields.cloudAssistantId,
               ingressUrl: a.ingress_url,
               avatarUrl: apiAvatarUrl(a),
               currentReleaseVersion: a.current_release_version,
@@ -278,8 +278,8 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
             runtimeVersion:
               lockfileFields.runtimeVersion ?? prior.runtimeVersion,
             runtimeUrl: lockfileFields.runtimeUrl ?? prior.runtimeUrl,
-            platformAssistantId:
-              lockfileFields.platformAssistantId ?? prior.platformAssistantId,
+            cloudAssistantId:
+              lockfileFields.cloudAssistantId ?? prior.cloudAssistantId,
             isActiveLockfileAssistant:
               lockfileFields.isActiveLockfileAssistant ??
               prior.isActiveLockfileAssistant,
@@ -297,7 +297,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
               organizationId: lockfileFields.organizationId,
               runtimeVersion: lockfileFields.runtimeVersion,
               runtimeUrl: lockfileFields.runtimeUrl,
-              platformAssistantId: lockfileFields.platformAssistantId,
+              cloudAssistantId: lockfileFields.cloudAssistantId,
               isActiveLockfileAssistant:
                 lockfileFields.isActiveLockfileAssistant,
             },
@@ -369,7 +369,7 @@ export const useResolvedAssistantsStore = createSelectors(
 
 /**
  * Classification triplet for an API-shaped entry, honoring the lockfile: a
- * paired entry is neither local nor platform-hosted, whatever the API's
+ * paired entry is neither local nor cloud-hosted, whatever the API's
  * `is_local` claims. `priorIsPaired` carries an already-resolved entry's
  * classification through refreshes where the lockfile is unavailable.
  */
@@ -377,12 +377,12 @@ function classifyApiEntry(
   isLocalFromApi: boolean,
   lockfileIsPaired: boolean | undefined,
   priorIsPaired?: boolean,
-): Pick<ResolvedAssistant, "isLocal" | "isPlatformHosted" | "isPaired"> {
+): Pick<ResolvedAssistant, "isLocal" | "isCloudHosted" | "isPaired"> {
   const isPaired = lockfileIsPaired ?? priorIsPaired ?? false;
   return {
     isPaired,
     isLocal: isPaired ? false : isLocalFromApi,
-    isPlatformHosted: isPaired ? false : !isLocalFromApi,
+    isCloudHosted: isPaired ? false : !isLocalFromApi,
   };
 }
 
@@ -392,7 +392,7 @@ function getLockfileFields(assistantId: string): {
   onboardedAt?: string;
   runtimeVersion?: string;
   runtimeUrl?: string;
-  platformAssistantId?: string;
+  cloudAssistantId?: string;
   isPaired?: boolean;
   isActiveLockfileAssistant?: boolean;
 } {
@@ -407,7 +407,7 @@ function getLockfileFields(assistantId: string): {
     onboardedAt: entry?.onboardedAt,
     runtimeVersion: entry?.resources?.runtimeVersion,
     runtimeUrl: entry?.runtimeUrl,
-    platformAssistantId: entry?.platformAssistantId,
+    cloudAssistantId: entry?.cloudAssistantId,
     isPaired: entry ? isPairedAssistant(entry) : undefined,
     isActiveLockfileAssistant: lockfile
       ? activeLockfileAssistantId === assistantId

@@ -874,7 +874,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       expect(initializeProvidersCalls).toBe(0);
     });
 
-    test("rejects a custom pointer at a managed backup name", async () => {
+    test("rejects a custom pointer at a cloud backup name", async () => {
       await expect(
         replaceProfileRoute.handler({
           pathParams: { name: "custom" },
@@ -987,7 +987,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     // across tests in this file, so a leaked openai-personal would otherwise
     // win the derivation.
     getDb().delete(providerConnections).run();
-    // The single Cadet-managed connection serves managed-routable providers.
+    // The single Cadet Cloud connection serves managed-routable providers.
     createConnection(getDb(), {
       name: "cadet",
       provider: "cadet",
@@ -1021,7 +1021,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     ).profiles.custom;
 
     // No personal openai connection exists, so the route auto-derives the
-    // single Cadet-managed connection for this managed-routable provider.
+    // single Cadet Cloud connection for this managed-routable provider.
     expect(savedProfile.provider_connection).toBe("cadet");
   });
 
@@ -1136,10 +1136,10 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     expect(conn!.provider).toBe("minimax");
   });
 
-  describe("managed profile guard", () => {
+  describe("cloud profile guard", () => {
     beforeEach(() => {
       // Seed two managed-source profiles alongside the existing custom one.
-      // Every managed profile name (including the flag-gated os-beta) is
+      // Every cloud profile name (including the flag-gated os-beta) is
       // invariant while its entry is managed-source: fully read-only except
       // the disabled → active status transition.
       const profiles = (
@@ -1168,9 +1168,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           pathParams: { name: "os-beta" },
           body: { label: "My OS Beta" },
         }),
-      ).rejects.toThrow(
-        /Cannot edit managed profile "os-beta" fields \[label\]/,
-      );
+      ).rejects.toThrow(/Cannot edit cloud profile "os-beta" fields \[label\]/);
       // Guard rejects before any write — the seed label is untouched.
       expect(persistedProfile("os-beta").label).toBe("OS Beta");
     });
@@ -1182,7 +1180,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           body: { status: "disabled" },
         }),
       ).rejects.toThrow(
-        'Cannot edit managed profile "os-beta". Managed profiles are read-only',
+        'Cannot edit cloud profile "os-beta". Cloud profiles are read-only',
       );
       // Guard rejects before any write — the seed status is untouched.
       expect(persistedProfile("os-beta").status).toBe("active");
@@ -1215,10 +1213,10 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       expect(savedProfile.source).toBe("managed");
     });
 
-    // The full commit-time rejection matrix for invariant managed profiles
-    // lives in src/__tests__/managed-profile-guard.test.ts.
+    // The full commit-time rejection matrix for invariant cloud profiles
+    // lives in src/__tests__/cloud-profile-guard.test.ts.
 
-    test("rejects provider edit on managed profile with disallowed-keys error", async () => {
+    test("rejects provider edit on cloud profile with disallowed-keys error", async () => {
       // The handler is `async`, so synchronous BadRequest throws still
       // surface as a rejected promise; assert via `.rejects.toThrow`.
       await expect(
@@ -1227,12 +1225,12 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           body: { provider: "openai", model: "gpt-5" },
         }),
       ).rejects.toThrow(
-        /Cannot edit managed profile "balanced" fields \[provider, model\]/,
+        /Cannot edit cloud profile "balanced" fields \[provider, model\]/,
       );
     });
 
     test("rejects mixed-field bodies without partially applying anything", async () => {
-      // Neither label nor maxTokens is writable on a managed profile — the
+      // Neither label nor maxTokens is writable on a cloud profile — the
       // reject must fire before any write, so the saver is never invoked.
       await expect(
         replaceProfileRoute.handler({
@@ -1240,7 +1238,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           body: { label: "Try", maxTokens: 999 },
         }),
       ).rejects.toThrow(
-        /Cannot edit managed profile "balanced" fields \[maxTokens, label\]/,
+        /Cannot edit cloud profile "balanced" fields \[maxTokens, label\]/,
       );
       // Reject path skips commitConfigWrite entirely — no provider reinit
       // or cache invalidation should fire on a guard rejection.
@@ -1323,7 +1321,7 @@ describe("PATCH /v1/config fallbackProfile write protection", () => {
     expect(initializeProvidersCalls).toBe(0);
   });
 
-  test("rejects a custom pointer at a managed backup name", async () => {
+  test("rejects a custom pointer at a cloud backup name", async () => {
     await expect(
       patchRoute.handler({
         body: {
@@ -1474,7 +1472,7 @@ describe("custom profile write normalization (complete overrides)", () => {
     expect(saved.maxTokens).toBe(12345);
   });
 
-  test("a managed status re-enable stays a thin stub", async () => {
+  test("a cloud status re-enable stays a thin stub", async () => {
     (
       rawConfigFixture.llm as { profiles: Record<string, unknown> }
     ).profiles.balanced = { source: "managed", status: "disabled" };
@@ -1754,7 +1752,7 @@ describe("config invariant flag enrichment", () => {
             label: "OS Beta",
             status: "active",
           },
-          // A user-owned profile sharing a managed name: no invariant flag —
+          // A user-owned profile sharing a cloud name: no invariant flag —
           // the stamp is gated on `source: "managed"` to match the guard.
           "cost-optimized": {
             source: "user",

@@ -13,11 +13,11 @@ mock.module("../runtime/assistant-event.js", () => ({
   buildAssistantEvent: (event: unknown) => event,
 }));
 
-// "balanced"/"cost-optimized" route through the Cadet-managed connection, and
+// "balanced"/"cost-optimized" route through the Cadet Cloud connection, and
 // the open handler's availability guard judges that route for real. Stand in
 // for a signed-in platform session so these tests exercise the healthy path.
-mock.module("../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: true,
     cloudBaseUrl: "https://platform.example",
     assistantApiKey: "key",
@@ -38,7 +38,7 @@ import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
 
-// The Cadet-managed connection row the default profiles resolve to.
+// The Cadet Cloud connection row the default profiles resolve to.
 getDb()
   .insert(providerConnections)
   .values({

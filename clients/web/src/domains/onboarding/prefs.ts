@@ -125,7 +125,7 @@ export function useDiagnosticsConsentCurrent(): [
 }
 
 /**
- * Whether the platform has any consent record for this user, set on session
+ * Whether the cloud has any consent record for this user, set on session
  * sync by the auth store (device acks count as evidence).
  *
  * Consent surfaces must key first-time framing off THIS flag, not off
@@ -221,7 +221,7 @@ export function readSelectedVersion(): string {
 
 /**
  * Persist (or clear) the pinned release version. An empty string clears
- * the key so the next hatch uses the managed "latest" default.
+ * the key so the next hatch uses the cloud "latest" default.
  */
 export function writeSelectedVersion(version: string): void {
   if (typeof window === "undefined") {

@@ -22,7 +22,7 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 
 /**
- * localStorage key the platform marketing site (`web/src/lib/hooks/
+ * localStorage key the cloud marketing site (`web/src/lib/hooks/
  * use-navbar-auth.ts`, `ASSISTANT_NAME_CACHE_KEY`) uses to cache the assistant
  * name for its nav/CTA. Same-origin on the assistant host, so retire clears it
  * here — the two sides must agree on this string.
@@ -55,7 +55,7 @@ function getPostRetireRoute(): string {
  * Routes local vs platform by the **target** assistant's type — the entry in
  * the lockfile with this id — rather than the currently selected assistant.
  * This is what lets a caller (e.g. the tray "Retire <assistant>…" command)
- * retire a managed assistant by id correctly, where the previous settings-only
+ * retire a cloud assistant by id correctly, where the previous settings-only
  * flow always assumed the target was the active assistant.
  *
  * On success performs the shared post-retire cleanup (onboarding flags, and a
@@ -83,9 +83,9 @@ export async function retireAssistant(
     }
     const useLocal = isLocalClient() && !!target && isLocalAssistant(target);
 
-    // Only the platform delete can hand OAuth connections to a successor. The
+    // Only the cloud delete can hand OAuth connections to a successor. The
     // local path retires through the host CLI, and a local→platform import
-    // already clones connections on the platform side.
+    // already clones connections on the cloud side.
     if (useLocal) {
       const result = await retireLocalAssistant(assistantId);
       if (!result.ok) {
@@ -117,7 +117,7 @@ export async function retireAssistant(
     // The completion record goes with it, so a reused id is never pre-marked.
     forgetAssistantOnboarded(assistantId);
     // Drop the marketing nav's cached assistant name (same-origin localStorage,
-    // written by the platform's `useNavbarAuth`). Otherwise the marketing site
+    // written by the cloud's `useNavbarAuth`). Otherwise the marketing site
     // keeps optimistically showing "My Assistant" after a retire until its own
     // list fetch resolves — and the plugin install button mistakes the stale
     // name for an existing assistant.

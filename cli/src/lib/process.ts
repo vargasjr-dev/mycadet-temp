@@ -76,7 +76,7 @@ export function windowsCommandLineLookupArgs(pid: number): string[] {
   ];
 }
 
-/** Read a process command line using the platform's process inspection tool. */
+/** Read a process command line using the cloud's process inspection tool. */
 export function readProcessCommandLine(
   pid: number,
   hostPlatform: NodeJS.Platform = platform(),

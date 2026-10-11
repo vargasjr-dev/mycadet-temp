@@ -33,11 +33,11 @@ import { Toggle } from "@mycadet/design-library/components/toggle";
 const TURN_DETECTING_FAMILY = "flux";
 
 /**
- * Whether a provider is served by the platform connection rather than a key of
+ * Whether a provider is served by the cloud connection rather than a key of
  * the user's own. Managed live voice is the path that defaults to the
  * turn-detecting family, so it is the one whose unset state reads as on.
  */
-function isManagedProvider(provider: string): boolean {
+function isCloudProvider(provider: string): boolean {
   return provider === "cadet";
 }
 
@@ -113,7 +113,7 @@ export function TurnDetectionRow() {
   const named = role ? role.model : stt?.providers?.[provider]?.model;
   const checked =
     named === undefined
-      ? isManagedProvider(provider) && languageOk
+      ? isCloudProvider(provider) && languageOk
       : named === TURN_DETECTING_FAMILY;
 
   const apply = async (next: boolean) => {

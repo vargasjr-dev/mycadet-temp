@@ -148,15 +148,15 @@ const LOCAL_HOST_UNAVAILABLE_ERROR =
 /**
  * Whether a local-mode host (the Electron IPC bridge, the Vite dev server, or
  * the `cadet client` CLI server) backs this runtime and can serve
- * `/assistant/__local/*`. The managed web build and the remote-web tunnel
- * cannot, yet both still surface local / self-hosted assistants via the platform
+ * `/assistant/__local/*`. The cloud web build and the remote-web tunnel
+ * cannot, yet both still surface local / self-hosted assistants via the cloud
  * `is_local` flag — so callers and UI MUST consult this before offering a local
  * action (wake / hatch / retire).
  *
  * Detected from the runtime config the capable hosts inject
  * (`window.__CADET_CONFIG__`): a "local" remote means a host on this device;
  * a served-remote config (a self-hosted gateway edge or the cloud proxy)
- * means none. The managed web build injects nothing at all and has no host
+ * means none. The cloud web build injects nothing at all and has no host
  * either — which is why absence is checked on the raw window instead of
  * through {@link readInjectedConfig}'s local default.
  */
@@ -286,7 +286,7 @@ export async function retireLocalAssistantHost(
  * delete its stored guardian token on this machine. Client-side only: the
  * remote assistant is never touched. Both hosts run the shared package op in a
  * trusted process and return the same `LockfileWriteResult` contract; hosts
- * refuse non-paired entries (local/managed assistants go through
+ * refuse non-paired entries (local/cloud assistants go through
  * {@link retireLocalAssistantHost}). Older Electron hosts that predate the IPC
  * channel degrade to a structured unsupported error, mirroring
  * {@link sleepLocalAssistantHost}.
@@ -644,15 +644,15 @@ export async function fetchGuardianTokenHost(
 
 /**
  * Hand the loopback platform session token to the local web server so its proxy
- * can authenticate to the platform. Called by the loopback callback page only
+ * can authenticate to the cloud. Called by the loopback callback page only
  * after it validates the `state` nonce, so the token is never trusted from an
  * unsolicited redirect. The browser never stores a session cookie.
  */
-export async function registerLocalPlatformSession(
+export async function registerLocalCloudSession(
   token: string,
 ): Promise<boolean> {
   const res = await postLocalCommand<{ ok: boolean }>(
-    "/assistant/__local/platform-session",
+    "/assistant/__local/cloud-session",
     { token },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -662,12 +662,12 @@ export async function registerLocalPlatformSession(
 /**
  * Clear the loopback platform session token on logout. Best-effort.
  */
-export async function clearLocalPlatformSession(): Promise<void> {
+export async function clearLocalCloudSession(): Promise<void> {
   if (!isLocalModeHostAvailable()) {
     return;
   }
   try {
-    await fetch("/assistant/__local/platform-session", { method: "DELETE" });
+    await fetch("/assistant/__local/cloud-session", { method: "DELETE" });
   } catch {
     // best-effort — the server is going away or already cleared.
   }

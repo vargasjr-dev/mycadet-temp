@@ -293,7 +293,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Complete A2A invite (sender side)",
     description:
-      "Called by the platform to finalize the sender side of a link-based A2A connection.",
+      "Called by the cloud to finalize the sender side of a link-based A2A connection.",
     tags: ["integrations"],
     handler: handleCompleteA2AInvite,
     responseBody: CompleteA2AInviteResultSchema,
@@ -308,7 +308,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Redeem A2A invite (receiver side)",
     description:
-      "Called by the platform to create a trusted contact on the receiver side of a link-based A2A connection.",
+      "Called by the cloud to create a trusted contact on the receiver side of a link-based A2A connection.",
     tags: ["integrations"],
     handler: handleRedeemA2AInvite,
     responseBody: RedeemA2AInviteResultSchema,

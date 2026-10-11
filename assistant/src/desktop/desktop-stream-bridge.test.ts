@@ -91,12 +91,12 @@ function slotIsFree(manager: DesktopSessionManager): boolean {
 describe("DesktopStreamBridge", () => {
   test("streams without flag or filesystem checks after connecting", async () => {
     const originalContainerized = process.env.IS_CONTAINERIZED;
-    const originalPlatform = process.env.IS_PLATFORM;
+    const originalPlatform = process.env.IS_CLOUD;
     const h = newFakeDesktop({ profileDir });
     const isEnabled = mock(isVirtualDesktopEnabled);
     const b = newBridge(h.manager, async () => {}, isEnabled);
     process.env.IS_CONTAINERIZED = "true";
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     setOverridesForTesting({ "assistant-desktop": true });
     try {
       b.connectNow();
@@ -139,9 +139,9 @@ describe("DesktopStreamBridge", () => {
         process.env.IS_CONTAINERIZED = originalContainerized;
       }
       if (originalPlatform === undefined) {
-        delete process.env.IS_PLATFORM;
+        delete process.env.IS_CLOUD;
       } else {
-        process.env.IS_PLATFORM = originalPlatform;
+        process.env.IS_CLOUD = originalPlatform;
       }
     }
   });

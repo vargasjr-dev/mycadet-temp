@@ -50,7 +50,7 @@ import {
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { supersedePlatformAvatar } from "@/hooks/use-cloud-avatar-urls";
+import { supersedeCloudAvatar } from "@/hooks/use-cloud-avatar-urls";
 import { getClientId } from "@/lib/telemetry/client-identity";
 import { SYNC_TAGS } from "@/lib/sync/types";
 
@@ -294,13 +294,13 @@ function resetAssistantCapabilities(
 
 /**
  * An avatar change on the connected assistant. Beyond the query sweep, drops
- * the row's synced `avatarUrl` and platform lookup entry: the platform copy
+ * the row's synced `avatarUrl` and platform lookup entry: the cloud copy
  * lags the live change, and while set it keeps the chooser's live/cache paths
  * disabled. The reconnect sweep does not do this, since nothing is known to
  * have changed there.
  */
 function onAvatarChanged(queryClient: QueryClient, assistantId: string): void {
-  supersedePlatformAvatar(queryClient, assistantId);
+  supersedeCloudAvatar(queryClient, assistantId);
   invalidateAvatarQueries(queryClient, assistantId);
 }
 

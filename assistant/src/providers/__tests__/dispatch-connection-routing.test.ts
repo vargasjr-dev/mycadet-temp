@@ -157,7 +157,7 @@ describe("dispatch routes through provider_connection (Phase 1: connection-only)
 
     setLlmConfig({
       profiles: {
-        "anthropic-managed-profile": {
+        "anthropic-cloud-profile": {
           provider: "anthropic",
           provider_connection: "anthropic-managed",
           model: "claude-opus-4-7",
@@ -171,7 +171,7 @@ describe("dispatch routes through provider_connection (Phase 1: connection-only)
     });
 
     const managedResult = await getConfiguredProvider("mainAgent", {
-      overrideProfile: "anthropic-managed-profile",
+      overrideProfile: "anthropic-cloud-profile",
     });
     const personalResult = await getConfiguredProvider("mainAgent", {
       overrideProfile: "anthropic-personal-profile",
@@ -440,7 +440,7 @@ describe("routing identities", () => {
       tag: "managed",
       routeAttribution: {
         connectionName: "cadet",
-        isManagedRoute: true,
+        isCloudRoute: true,
       },
     } as never);
     expect(resolveProviderCalls[0]?.name).toBe("cadet");
@@ -467,7 +467,7 @@ describe("routing identities", () => {
       tag: "gpu",
       routeAttribution: {
         connectionName: "cadet",
-        isManagedRoute: true,
+        isCloudRoute: true,
       },
     } as never);
     expect(resolveProviderOpts[0]?.providerOverride).toBe("cadet");
@@ -499,7 +499,7 @@ describe("routing identities", () => {
       tag: "subscription",
       routeAttribution: {
         connectionName: "chatgpt-subscription",
-        isManagedRoute: false,
+        isCloudRoute: false,
       },
     } as never);
     expect(resolveProviderCalls[0]?.name).toBe("chatgpt-subscription");
@@ -534,7 +534,7 @@ describe("routing identities", () => {
 
     expect(provider?.routeAttribution).toEqual({
       connectionName: "chatgpt-subscription",
-      isManagedRoute: false,
+      isCloudRoute: false,
     });
     expect(resolveProviderCalls[0]?.name).toBe("chatgpt-subscription");
     expect(resolveProviderOpts[0]?.providerOverride).toBe("openai");
@@ -543,7 +543,7 @@ describe("routing identities", () => {
   // A second managed row is creatable under any non-reserved name: only the
   // canonical name is refused at the create route, and `provider: "cadet"`
   // derives platform auth. Managed-ness is the row, never its name.
-  test("a managed row under a non-canonical name carries managed route attribution", async () => {
+  test("a cloud row under a non-canonical name carries cloud route attribution", async () => {
     fakeConnections.set("managed-openai", {
       name: "managed-openai",
       provider: "cadet",
@@ -563,7 +563,7 @@ describe("routing identities", () => {
 
     expect(provider?.routeAttribution).toEqual({
       connectionName: "managed-openai",
-      isManagedRoute: true,
+      isCloudRoute: true,
     });
   });
 
@@ -720,7 +720,7 @@ describe("entry-name providers", () => {
     // Selection treats an unresolvable provider like an incomplete profile:
     // the broken winner loses and the next rung's model AND transport apply
     // together, restoring the pre-open-schema self-healing. The anchor is
-    // the managed default, so the heal lands on the cadet route.
+    // the cloud default, so the heal lands on the cadet route.
     registerConnection(
       { name: "cadet", provider: "cadet", auth: { type: "platform" } },
       { name: "anthropic", tag: "managed-anchor" },
@@ -740,7 +740,7 @@ describe("entry-name providers", () => {
   });
 
   test("healing hands off to the anchor, whose own failures stay loud", async () => {
-    // With the broken profile healed away, resolution rests on the managed
+    // With the broken profile healed away, resolution rests on the cloud
     // anchor; its canonical row missing is a boot-seeding violation and
     // throws explainably rather than masquerading as the ghost profile.
     setLlmConfig({

@@ -44,9 +44,9 @@ const CONVERSATION_ID = "conv-1";
 const PLATFORM_ASSISTANT_ID = "123e4567-e89b-12d3-a456-426614174000";
 const PLATFORM_ASSISTANT: ResolvedAssistant = {
   id: "assistant-1",
-  platformAssistantId: PLATFORM_ASSISTANT_ID,
+  cloudAssistantId: PLATFORM_ASSISTANT_ID,
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
 };
 
@@ -227,7 +227,7 @@ function platformScopeId(): string {
     window.location.href,
   );
   if (!scopeId) {
-    throw new Error("Expected a platform notification scope");
+    throw new Error("Expected a cloud notification scope");
   }
   return scopeId;
 }
@@ -431,14 +431,14 @@ describe("useNotificationIntentSync", () => {
     const assistantA: ResolvedAssistant = {
       id: "local-a",
       isLocal: true,
-      isPlatformHosted: false,
+      isCloudHosted: false,
       isPaired: true,
       runtimeUrl: "https://a.example.com/assistant",
     };
     const assistantB: ResolvedAssistant = {
       id: "local-b",
       isLocal: true,
-      isPlatformHosted: false,
+      isCloudHosted: false,
       isPaired: true,
       runtimeUrl: "https://b.example.com/assistant",
     };

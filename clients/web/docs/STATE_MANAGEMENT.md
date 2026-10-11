@@ -532,7 +532,7 @@ cheap and safe to add defensively.
 
 A platform session whose API calls are conclusively rejected (a
 settled 401/403/410 from the org or assistants endpoints during the
-session probe) settles `platformSession: "absent"`, so bearer-auth
+session probe) settles `cloudSession: "absent"`, so bearer-auth
 (local/paired gateway) connections never stay org-gated behind a
 dead cookie.
 
@@ -562,7 +562,7 @@ const settled =
   orgReadiness !== "resolving" && !catalogLoading && !configLoading;
 ```
 
-`useManagedVoiceSelection` derives its `settled` this way. Surfaces
+`useCloudVoiceSelection` derives its `settled` this way. Surfaces
 read that rather than `available` to decide whether to draw an outcome
 at all, because `available` is false while the answer is in flight as
 well as once it is a no: a surface reading it alone states a

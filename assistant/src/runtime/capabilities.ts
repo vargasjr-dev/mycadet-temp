@@ -48,7 +48,7 @@ export type PromptTrustGuidance =
 export interface CapabilitySet {
   // --- Tool approval mechanism ---
   /**
-   * Auto-approves *ordinary* tool calls (e.g. background/platform-hosted bash)
+   * Auto-approves *ordinary* tool calls (e.g. background/cloud-hosted bash)
    * and honors the actor's own pending-confirmation callback. The
    * sensitive/guardian-required tool path is governed separately by
    * `sensitiveToolApproval`; the two are independent levers.

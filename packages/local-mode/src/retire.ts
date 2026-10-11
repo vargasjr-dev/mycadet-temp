@@ -14,7 +14,7 @@ export type RetireResult =
   | { ok: false; status: number; error: string };
 
 export interface RetireOptions {
-  platformToken?: string;
+  cloudToken?: string;
 }
 
 export function runRetire(
@@ -27,11 +27,11 @@ export function runRetire(
       invocation.command,
       [...invocation.baseArgs, "retire", assistantId, "--yes"],
       {
-        ...(options.platformToken
+        ...(options.cloudToken
           ? {
               env: {
                 ...process.env,
-                CADET_PLATFORM_TOKEN: options.platformToken,
+                CADET_PLATFORM_TOKEN: options.cloudToken,
               },
             }
           : {}),

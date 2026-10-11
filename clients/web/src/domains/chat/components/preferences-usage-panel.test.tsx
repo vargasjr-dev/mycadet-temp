@@ -4,7 +4,7 @@
  * The panel composes the subscription and the billing summary's usage-grant
  * figures; the subscription is driven from the SDK boundary the way the
  * billing hook tests drive it. The wallet status is mocked: the real hook
- * needs the platform gate and the org store, neither of which these tests
+ * needs the cloud gate and the org store, neither of which these tests
  * stand up.
  */
 
@@ -29,7 +29,7 @@ let creditsExhausted = false;
 let effectiveBalance: string | null = null;
 let availableUsageBalance: string | null = null;
 let totalUsageBalance: string | null = null;
-/** The free-tier daily cap, where the platform is enforcing one. */
+/** The free-tier daily cap, where the cloud is enforcing one. */
 let freeTierEnforced = false;
 let freeTierLimit: string | null = null;
 let freeTierSpend: string | null = null;
@@ -73,7 +73,7 @@ mock.module("@/hooks/use-billing-balance-status", () => ({
 // hook owns is only how the verdict gates the extra-credits claim.
 /**
  * Which route the classifier lands on. One knob rather than two: the gate
- * derives `suppress` and `routeBurnsManaged` from the same classification, so
+ * derives `suppress` and `routeBurnsCloud` from the same classification, so
  * separate switches could stage a BYOK route that also burns managed credits,
  * which it never reports.
  */
@@ -83,7 +83,7 @@ mock.module("@/hooks/use-byok-credit-banner-gate", () => ({
     // Only a proven BYOK route with no recent burn holds the banners down.
     suppress: candidate && route === "byok",
     settled: classificationSettled,
-    routeBurnsManaged: route === "managed",
+    routeBurnsCloud: route === "managed",
   }),
 }));
 
@@ -533,9 +533,9 @@ describe("PreferencesUsagePanel", () => {
     ).toContain("width: 40%");
   });
 
-  test("no managed route means no extra-credits claim", async () => {
+  test("no cloud route means no extra-credits claim", async () => {
     // Settled and wallet funded, with suppression down for a reason that is
-    // not a managed route: a read that failed, or a BYOK route with spend on
+    // not a cloud route: a read that failed, or a BYOK route with spend on
     // another surface. `suppress` alone cannot tell either from managed.
     totalUsageBalance = "25.00";
     availableUsageBalance = "0.00";

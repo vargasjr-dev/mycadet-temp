@@ -2,7 +2,7 @@
  * Host computer-use proxy SSE events (`host_cu_request` / `host_cu_cancel`).
  *
  * Server → client instructions that proxy computer-use actions (click,
- * type, screenshot, …) to the desktop client when running as a managed
+ * type, screenshot, …) to the desktop client when running as a cloud
  * assistant. The client executes and POSTs the result back to
  * `/v1/host-cu-result`; `host_cu_cancel` withdraws an in-flight request.
  *

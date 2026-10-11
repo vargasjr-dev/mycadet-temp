@@ -1,4 +1,4 @@
-import { isManagedCloud } from "../lib/managed-cloud.js";
+import { isCloudHome } from "../lib/cloud-values.js";
 import { readFileSync } from "node:fs";
 import { join } from "path";
 
@@ -32,7 +32,7 @@ import { shellArg } from "../lib/shell-arg.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { runTailscaleTunnel } from "../lib/tailscale-tunnel.js";
 
-// `cadet` is the managed option this command owns; the local providers come
+// `cadet` is the cloud option this command owns; the local providers come
 // from the shared registry so validation here cannot drift from what the
 // workspace config accepts.
 const VALID_PROVIDERS = ["cadet", ...TUNNEL_PROVIDERS] as const;
@@ -259,7 +259,7 @@ interface LocalTunnelTarget {
 
 /**
  * Map an entry to its local tunnel target, or null when it has no locally
- * reachable gateway (e.g. platform-hosted). Entries with `resources` carry
+ * reachable gateway (e.g. cloud-hosted). Entries with `resources` carry
  * their own gateway port and instance workspace. Local container entries
  * (docker, apple-container) run locally without host resources: their gateway
  * port comes from localUrl/runtimeUrl and their ingress state lives in the
@@ -284,7 +284,7 @@ function toLocalTunnelTarget(entry: AssistantEntry): LocalTunnelTarget | null {
 
 function describeUntunnelableEntry(entry: AssistantEntry): string {
   const reference = formatAssistantReference(entry);
-  return isManagedCloud(entry.cloud)
+  return isCloudHome(entry.cloud)
     ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
     : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
 }
@@ -292,7 +292,7 @@ function describeUntunnelableEntry(entry: AssistantEntry): string {
 /**
  * Resolve the assistant whose gateway and workspace the tunnel edge fronts.
  * Tunnels only make sense for assistants with a local gateway; when the
- * resolved entry has none (e.g. the active assistant is platform-hosted) and
+ * resolved entry has none (e.g. the active assistant is cloud-hosted) and
  * no name was given, fall back to the sole local target, otherwise exit with
  * an error naming the local assistants to pass explicitly.
  */

@@ -1,7 +1,7 @@
 /**
  * `getConfiguredProvider` is part of the public `@mycadet/plugin-api` runtime
  * surface, so a user-installable plugin can run inference through the
- * workspace's configured profiles/credentials (managed-proxy or BYOK) without
+ * workspace's configured profiles/credentials (cloud-proxy or BYOK) without
  * supplying its own API key.
  */
 import { describe, expect, test } from "bun:test";

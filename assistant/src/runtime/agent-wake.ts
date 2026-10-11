@@ -1301,7 +1301,7 @@ export async function wakeAgentForOpportunity(
       // `provider_error` fires at the provider-call site; `error` fires from
       // the loop's generic catch — check both so a rewrapping retry layer
       // can't hide the signal. The heuristic check also catches adapter
-      // paths (e.g. managed-proxy rewrappers) that surface the overflow as
+      // paths (e.g. cloud-proxy rewrappers) that surface the overflow as
       // an untyped error the typed `instanceof` check would miss.
       if (
         suppressAutoCompaction &&

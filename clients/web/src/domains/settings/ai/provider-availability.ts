@@ -1,10 +1,10 @@
 import { MODELS_BY_PROVIDER } from "@/assistant/llm-model-catalog";
-import { useActiveAssistantIsSelfHosted } from "@/hooks/use-platform-gate";
+import { useActiveAssistantIsSelfHosted } from "@/hooks/use-cloud-gate";
 
 import {
   CHATGPT_CONNECTION_PROVIDER,
   INFERENCE_PROVIDERS,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CLOUD_ROUTABLE_PROVIDERS,
   OPENAI_COMPATIBLE_PROVIDER,
   CADET_CONNECTION_PROVIDER,
 } from "@/domains/settings/ai/constants";
@@ -17,7 +17,7 @@ import type {
 
 /**
  * Providers whose runtime lives on the user's own machine, so a
- * platform-hosted assistant has nothing to reach. Pickers keep listing them
+ * cloud-hosted assistant has nothing to reach. Pickers keep listing them
  * and disable the row instead of dropping it: an absent row reads as "not
  * supported yet" rather than "not applicable to this assistant".
  */
@@ -47,7 +47,7 @@ export function connectionServesProvider(
   }
   return (
     connectionProvider === CADET_CONNECTION_PROVIDER &&
-    MANAGED_ROUTABLE_PROVIDERS.has(selectedProvider)
+    CLOUD_ROUTABLE_PROVIDERS.has(selectedProvider)
   );
 }
 
@@ -96,7 +96,7 @@ export function useSelectableConnectionProviders(): ConnectionProvider[] {
 /**
  * Profile providers a set of connections can dispatch through, in
  * canonical picker order. A connection backs its own `provider`; the
- * Cadet-managed connection surfaces as a single "Cadet" entry (listed
+ * Cadet Cloud connection surfaces as a single "Cadet" entry (listed
  * first) rather than expanding into the upstreams it routes to — which
  * provider actually serves a Cadet model is an implementation detail users
  * never see. A BYOK provider (e.g. Anthropic) still surfaces for a user who

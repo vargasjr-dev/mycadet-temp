@@ -66,7 +66,7 @@ clients/web/src/runtime/dock.ts                              ← imperative brid
 clients/web/src/domains/chat/hooks/use-electron-dock-sync.ts ← domain hook
 ```
 
-The chat domain knows what counts as "unread" (see [`utils/conversation-predicates.ts`](../src/utils/conversation-predicates.ts)); only the chat domain should decide when to call the bridge. Putting the hook in `runtime/` would invert that — the runtime layer would need to import domain types and predicates, which couples the platform-shim to feature semantics.
+The chat domain knows what counts as "unread" (see [`utils/conversation-predicates.ts`](../src/utils/conversation-predicates.ts)); only the chat domain should decide when to call the bridge. Putting the hook in `runtime/` would invert that — the runtime layer would need to import domain types and predicates, which couples the cloud-shim to feature semantics.
 
 See [`clients/web/src/domains/chat/hooks/use-electron-dock-sync.ts`](../src/domains/chat/hooks/use-electron-dock-sync.ts).
 

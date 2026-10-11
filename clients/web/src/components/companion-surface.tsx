@@ -2208,7 +2208,7 @@ function Avatar({
             // eyes to animate.
             //
             // Undraggable, because the avatar is the surface's drag handle. An
-            // image is natively draggable, and the platform's own HTML5 image drag
+            // image is natively draggable, and the cloud's own HTML5 image drag
             // takes the pointer and ends the `mousemove` stream the surface's drag
             // runs on, so pressing a custom avatar would move nothing where
             // pressing a composed creature moves the window. WebKit honours the CSS

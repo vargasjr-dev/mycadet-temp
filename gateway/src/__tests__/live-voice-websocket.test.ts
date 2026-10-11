@@ -36,7 +36,7 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
   findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
-// The managed/tunnel path cross-checks the attested caller against the stored
+// The cloud/tunnel path cross-checks the attested caller against the stored
 // `platform_user_id`. Default the credential to `TUNNEL_USER_ID` so the tunnel
 // success cases match; negative cases override this mock.
 let mockReadCredential = mock(
@@ -45,7 +45,7 @@ let mockReadCredential = mock(
 mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
 }));
-mock.module("../platform-user-id.js", () => ({
+mock.module("../cloud-user-id.js", () => ({
   readStoredCloudUserId: async () => {
     const userId = await mockReadCredential("cadet:platform_user_id");
     return { userId, unreachable: false };
@@ -319,9 +319,9 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
   });
 
   /**
-   * Tunnel attests a platform user, not an actor principal, so this path has
+   * Tunnel attests a cloud user, not an actor principal, so this path has
    * no principal in the request at all. The binding supplies it, which is
-   * what lets the managed deployment carry an identity downstream rather than
+   * what lets the cloud deployment carry an identity downstream rather than
    * leaving the daemon to resolve one of its own.
    */
   test("managed mode carries the bound guardian's principal on the socket", async () => {
@@ -456,7 +456,7 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
   /**
    * A locally hosted assistant reaches the mobile app through a tunnel
    * with IS_CLOUD unset. The attestation arrives through the same bridge
-   * as on a managed pod, so the tunnel, not the env var, is what admits it.
+   * as on a cloud pod, so the tunnel, not the env var, is what admits it.
    */
   test("a locally hosted gateway with a tunnel trusts an attested caller with bridge proof", async () => {
     setPlatform(false);

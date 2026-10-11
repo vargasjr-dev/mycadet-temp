@@ -4,7 +4,7 @@ import { isElectron } from "@/runtime/is-electron";
  * Per-capability wrapper for the Electron host's native Share Sheet. Matches
  * the pattern in `dock.ts` / `native-biometric.ts`: the renderer never touches
  * `window.cadet.*` directly. The cross-platform `shareFile` (native-file.ts)
- * calls this, and the platform branch lives here.
+ * calls this, and the cloud branch lives here.
  *
  * Only the *share* intent routes here. A "Download" action goes through
  * `saveFile`, which never presents this sheet. See the intent split documented

@@ -13,9 +13,9 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 
 import type { OAuthConnection } from "@/generated/api/types.gen";
 import type {
-  UseManagedOAuthConnectOptions,
-  UseManagedOAuthConnectResult,
-} from "@/hooks/use-managed-oauth-connect";
+  UseCloudOAuthConnectOptions,
+  UseCloudOAuthConnectResult,
+} from "@/hooks/use-cloud-oauth-connect";
 
 const CONNECTION = {
   id: "conn-1",
@@ -24,12 +24,12 @@ const CONNECTION = {
   scopes_granted: ["https://www.googleapis.com/auth/calendar.events"],
 } as OAuthConnection;
 
-let connectResult: Partial<UseManagedOAuthConnectResult> = {};
-let capturedOptions: UseManagedOAuthConnectOptions | null = null;
+let connectResult: Partial<UseCloudOAuthConnectResult> = {};
+let capturedOptions: UseCloudOAuthConnectOptions | null = null;
 const connectMock = mock(() => {});
 
-mock.module("@/hooks/use-managed-oauth-connect", () => ({
-  useManagedOAuthConnect: (options: UseManagedOAuthConnectOptions) => {
+mock.module("@/hooks/use-cloud-oauth-connect", () => ({
+  useCloudOAuthConnect: (options: UseCloudOAuthConnectOptions) => {
     capturedOptions = options;
     return {
       connect: connectMock,

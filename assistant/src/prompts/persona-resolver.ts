@@ -475,7 +475,7 @@ function resolveOnboardingWriteTarget(): string {
 }
 
 /**
- * Write a managed `## Onboarding Context` section to the guardian persona
+ * Write a cloud `## Onboarding Context` section to the guardian persona
  * file (or fallback target). Idempotent: replaces the section in-place if
  * it already exists, appends if not, and creates the file when missing.
  *

@@ -156,7 +156,7 @@
     "subtitle": "Настройка отправки и получения почты ассистентом",
     "title": "Почта"
   },
-  "emailManagedContent": {
+  "emailCloudContent": {
     "addressLabel": "Адрес",
     "checkingSubscription": "Проверка подписки…",
     "completeSetup": "Завершить настройку домена",

@@ -1,4 +1,4 @@
-import type { UseManagedVoiceSelection } from "@/components/speech/use-managed-voice-selection";
+import type { UseCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import type { UseSttLanguageSelection } from "@/components/speech/use-stt-language-selection";
 /**
  * Captions and turn-taking cards on the Voice settings page.
@@ -27,13 +27,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 
 // The voice-picker card reads the active assistant id (throws outside the
-// gate) and the managed-voice catalog. Neither is under test here; seed a
+// gate) and the cloud-voice catalog. Neither is under test here; seed a
 // fixed id and report no managed catalog so the card takes its inert
 // BYO branch.
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "asst-test",
 }));
-const voiceSelection: UseManagedVoiceSelection = {
+const voiceSelection: UseCloudVoiceSelection = {
   available: false,
   isByok: false,
   settled: true,
@@ -43,8 +43,8 @@ const voiceSelection: UseManagedVoiceSelection = {
   selectModel: () => {},
   selecting: false,
 };
-mock.module("@/components/speech/use-managed-voice-selection", () => ({
-  useManagedVoiceSelection: () => voiceSelection,
+mock.module("@/components/speech/use-cloud-voice-selection", () => ({
+  useCloudVoiceSelection: () => voiceSelection,
 }));
 
 // The listening-language card reads daemon config through React Query too.
@@ -365,7 +365,7 @@ describe("VoiceSections voice mode shortcut", () => {
     );
   }
 
-  test("offers the platform chord as the default binding", () => {
+  test("offers the cloud chord as the default binding", () => {
     renderPage();
 
     expect(screen.getByRole("button", { name: defaultChord })).toBeTruthy();

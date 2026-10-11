@@ -82,7 +82,7 @@ describe("103-upgrade-quality-profile-to-opus-4-8 migration", () => {
     expect(profile.label).toBe("Quality");
   });
 
-  test("upgrades the managed profile but not the user-owned custom copy", () => {
+  test("upgrades the cloud profile but not the user-owned custom copy", () => {
     writeConfig({
       llm: {
         profiles: {

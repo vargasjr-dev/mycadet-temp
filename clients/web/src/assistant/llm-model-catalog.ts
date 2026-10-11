@@ -1393,10 +1393,10 @@ export function vendorDisplayName(vendor: string): string {
 }
 
 /**
- * Whether each provider supports Cadet-managed (`platform`) auth.
+ * Whether each provider supports Cadet Cloud (`platform`) auth.
  * Covers every provider in the daemon catalog so the connection
  * editor can filter the auth-type dropdown for providers like
- * Fireworks and OpenRouter that have no managed proxy route.
+ * Fireworks and OpenRouter that have no cloud proxy route.
  * Missing entries are treated as `false`.
  */
 export const PROVIDER_SUPPORTS_PLATFORM_AUTH: Record<string, boolean> = {
@@ -1423,10 +1423,10 @@ export const PROVIDER_SUPPORTS_PLATFORM_AUTH: Record<string, boolean> = {
 export const MANAGED_MODELS = MODELS_BY_PROVIDER.anthropic;
 
 /**
- * Providers the Cadet-managed entry can route to. Single source of truth for
- * the web (the settings-domain MANAGED_ROUTABLE_PROVIDERS set derives from
+ * Providers the Cadet Cloud entry can route to. Single source of truth for
+ * the web (the settings-domain CLOUD_ROUTABLE_PROVIDERS set derives from
  * it); mirrors the daemon's managed-routable set in
- * assistant/src/providers/platform-proxy/constants.ts.
+ * assistant/src/providers/cloud-proxy/constants.ts.
  */
 export const CADET_SERVED_PROVIDERS = [
   "anthropic",
@@ -1439,7 +1439,7 @@ export const CADET_SERVED_PROVIDERS = [
 ] as const;
 
 /**
- * The Cadet entry's model list: the union of the managed-routable providers'
+ * The Cadet entry's model list: the union of the cloud-routable providers'
  * catalogs, deduplicated by id in CADET_SERVED_PROVIDERS order. Users pick
  * "Cadet" + a model; which upstream serves it is an implementation detail.
  */
@@ -1466,7 +1466,7 @@ const CADET_MODELS: readonly LlmCatalogModel[] = (() => {
 })();
 
 /**
- * The managed upstream that serves a model picked under the Cadet entry —
+ * The cloud upstream that serves a model picked under the Cadet entry —
  * the first CADET_SERVED_PROVIDERS member whose catalog lists the id. Used
  * at profile-save time to derive the wire-shape provider for
  * provider_connection: "cadet" profiles.
@@ -1490,7 +1490,7 @@ export function parseCadetRoutedModel(modelId: string): {
   return provider && model ? { provider, model } : null;
 }
 
-export function getManagedUpstreamForModel(
+export function getCloudUpstreamForModel(
   modelId: string,
 ): (typeof CADET_SERVED_PROVIDERS)[number] | undefined {
   const routed = parseCadetRoutedModel(modelId);
@@ -1616,6 +1616,6 @@ export function getDefaultModelForProvider(
   return DEFAULT_MODEL_BY_PROVIDER[provider as LlmProviderId];
 }
 
-export function providerSupportsPlatformAuth(provider: string): boolean {
+export function providerSupportsCloudAuth(provider: string): boolean {
   return PROVIDER_SUPPORTS_PLATFORM_AUTH[provider] === true;
 }

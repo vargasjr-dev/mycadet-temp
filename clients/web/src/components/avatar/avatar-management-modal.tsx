@@ -599,7 +599,7 @@ interface AccentRowProps {
 
 /**
  * The accent over an uploaded image, styled like a {@link TraitCycleRow}: the
- * swatch is the native colour input itself, so the picker is the platform's
+ * swatch is the native colour input itself, so the picker is the cloud's
  * own and keyboard-operable, and a reset returns to the colour read out of
  * the image. The row is only offered when the daemon holds an accent, since
  * that is also when it has a route to save one to.

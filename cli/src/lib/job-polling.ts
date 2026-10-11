@@ -1,4 +1,4 @@
-import type { UnifiedJobStatus } from "./platform-client.js";
+import type { UnifiedJobStatus } from "./cloud-client.js";
 
 /**
  * Terminal status returned by {@link pollJobUntilDone}. Callers decide

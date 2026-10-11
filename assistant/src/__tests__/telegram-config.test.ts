@@ -28,11 +28,11 @@ const registerCallbackRouteMock = mock(
 // Spread the real module: it is a shared barrel and replacing it wholesale
 // breaks unrelated importers pulled in by the module under test.
 const actualPlatformCallbackRegistration =
-  await import("../inbound/platform-callback-registration.js");
-mock.module("../inbound/platform-callback-registration.js", () => ({
+  await import("../inbound/cloud-callback-registration.js");
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   ...actualPlatformCallbackRegistration,
   registerCallbackRoute: registerCallbackRouteMock,
-  resolvePlatformCallbackRegistrationContext: async () => ({
+  resolveCloudCallbackRegistrationContext: async () => ({
     isPlatform: false,
     cloudBaseUrl: "",
     assistantId: cloudContextEnabled ? "assistant-123" : "",
@@ -145,11 +145,11 @@ describe("Telegram config handler", () => {
     expect(oauthConnectionStore["telegram"]?.accountInfo).toBe("@testbot");
   });
 
-  // A platform-connected local assistant (IS_PLATFORM unset, valid platform
+  // A platform-connected local assistant (IS_CLOUD unset, valid platform
   // credentials, no public ingress) receives Telegram webhooks only through
   // managed platform callbacks, so saving the bot token must register the
   // route.
-  test("set registers the platform callback route for a platform-connected local assistant", async () => {
+  test("set registers the cloud callback route for a cloud-connected local assistant", async () => {
     cloudContextEnabled = true;
     globalThis.fetch = mockTelegramApi();
 
@@ -164,7 +164,7 @@ describe("Telegram config handler", () => {
     );
   });
 
-  test("set does not register a platform callback route when not platform-connected", async () => {
+  test("set does not register a cloud callback route when not platform-connected", async () => {
     globalThis.fetch = mockTelegramApi();
 
     const result = await setTelegramConfig(
@@ -177,7 +177,7 @@ describe("Telegram config handler", () => {
 
   // A logged-in local assistant holds cloud credentials for the LLM proxy,
   // so credential presence must not override an explicitly configured ingress.
-  test("set does not register a platform callback route when a public ingress is configured", async () => {
+  test("set does not register a cloud callback route when a public ingress is configured", async () => {
     cloudContextEnabled = true;
     setIngressPublicBaseUrl("https://abc.ngrok.io");
     globalThis.fetch = mockTelegramApi();

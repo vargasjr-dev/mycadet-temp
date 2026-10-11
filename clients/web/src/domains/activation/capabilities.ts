@@ -33,12 +33,12 @@ import {
  *   this client. The daemon's home-state capability tiers
  *   (`GET /v1/home/state`) are the closest thing, and they are projected only
  *   for Google connections, so gating on them would hide four rows from every
- *   Outlook and IMAP user. The platform's OAuth connections list is
- *   platform-hosted only and keyed by provider, so it misses IMAP too. Until
+ *   Outlook and IMAP user. The cloud's OAuth connections list is
+ *   cloud-hosted only and keyed by provider, so it misses IMAP too. Until
  *   the daemon publishes "an inbox is connected" and "a calendar is
  *   connected" without naming a provider, these fail open.
  * - `image-generation`: no negative signal exists. Image generation is served
- *   by the managed provider on every assistant unless the user replaces it in
+ *   by the cloud provider on every assistant unless the user replaces it in
  *   settings, and a configured replacement is still image generation.
  * - `shopping`: likewise. Shopping tasks run through browsing and skills,
  *   which every assistant has.

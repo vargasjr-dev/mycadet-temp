@@ -37,8 +37,8 @@ import { isLocalClient } from "@/lib/local-mode";
 import { POST_CHECKOUT_HATCH_PARAM } from "@/lib/navigation/navigation-resolver";
 import {
   useAuthStore,
-  useHasPlatformSession,
-  useIsPlatformSessionSettled,
+  useHasCloudSession,
+  useIsCloudSessionSettled,
 } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
@@ -68,7 +68,7 @@ import {
   writeResearchSnapshot,
   type ResearchStep,
 } from "@/domains/onboarding/research-onboarding-persistence";
-import { stampAssistantOnboarded } from "@/domains/onboarding/stamp-assistant-onboarded";
+import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { shouldSkipOnboardingResearch } from "@/domains/onboarding/should-skip-onboarding-research";
 import {
   emitResearchOnboardingStepCompleted,
@@ -296,9 +296,9 @@ export function ResearchOnboardingRoute() {
   // called on submit and internally awaits the hatch.
   // A local-hosting onboarding (hosting=local/docker) already provisioned its
   // assistant in the hatching screen, so the background hatch ADOPTS it rather
-  // than running a managed hatch; when the query string is missing, a live
+  // than running a cloud hatch; when the query string is missing, a live
   // gateway-auth session is the same evidence (see
-  // `shouldAdoptExistingAssistant`). Cadet-Cloud onboarding runs the managed
+  // `shouldAdoptExistingAssistant`). Cadet-Cloud onboarding runs the cloud
   // hatch.
   const [searchParams] = useSearchParams();
   const hostingParam = searchParams.get("hosting");
@@ -320,10 +320,10 @@ export function ResearchOnboardingRoute() {
   // run with no platform session at all (the assistant itself is fully
   // local), where that connect can only fail — skip the calendar steps
   // entirely and go straight to the research reveal. Cadet-cloud onboarding
-  // keeps them: a managed hatch implies a platform session.
+  // keeps them: a cloud hatch implies a cloud session.
   const skipCheckinSteps = adoptExistingAssistant;
   // The claim-credits step ("integration") promises managed free credits,
-  // which only a platform account can hold. A self-hosted onboarding with no
+  // which only a cloud account can hold. A self-hosted onboarding with no
   // platform login has no account to credit, so the promise would be empty:
   // skip the step. A signed-in self-hosted user keeps it (their platform
   // account is real, credits and all), and so does the probe's pre-settle
@@ -331,10 +331,10 @@ export function ResearchOnboardingRoute() {
   // transition with no later correction, so only a settled absent session may
   // take it; every settle path resolves "unknown", including local gateway
   // boot, which settles "absent" directly.
-  const hasPlatformSession = useHasPlatformSession();
-  const platformSessionSettled = useIsPlatformSessionSettled();
+  const hasCloudSession = useHasCloudSession();
+  const cloudSessionSettled = useIsCloudSessionSettled();
   const skipClaimCreditsStep =
-    adoptExistingAssistant && platformSessionSettled && !hasPlatformSession;
+    adoptExistingAssistant && cloudSessionSettled && !hasCloudSession;
   // Where "personality" advances to: the claim-credits step, or, when that's
   // skipped, straight to the research reveal (skipping credits implies a
   // self-hosted flow, which skips the calendar steps too).
@@ -796,7 +796,9 @@ export function ResearchOnboardingRoute() {
     // resume snapshot so a later visit starts clean instead of resuming this one.
     clearResearchSnapshot(userId);
     // The completion record this assistant is judged by from here on.
-    stampAssistantOnboarded(hatchedAssistantId);
+    if (hatchedAssistantId) {
+      markAssistantOnboarded(hatchedAssistantId);
+    }
 
     const { firstName, lastName, role, hobbies } = values;
     const fullName = [firstName.trim(), lastName.trim()]
@@ -862,7 +864,7 @@ export function ResearchOnboardingRoute() {
     // the assistant is hatched (they're not part of the pre-chat context).
     setPendingAvatarTraits(face?.traits ?? null);
     // ...and the voice that avatar was auditioned in, so the assistant speaks
-    // as the character the user picked rather than in the platform default.
+    // as the character the user picked rather than in the cloud default.
     // Null (no catalog) leaves the default in place.
     setPendingAvatarVoice(face?.voiceModel ?? null);
 
@@ -1340,7 +1342,9 @@ export function ResearchOnboardingRoute() {
           );
           clearResearchSnapshot(userId);
           // Keeping an established assistant settles its onboarding too.
-          stampAssistantOnboarded(hatchedAssistantId);
+          if (hatchedAssistantId) {
+            markAssistantOnboarded(hatchedAssistantId);
+          }
           // Pin the selection to the adopted assistant, then enter the app —
           // with no pre-chat context, kickoff, or persona write of any kind.
           void lifecycleService

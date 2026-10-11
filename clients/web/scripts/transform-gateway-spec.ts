@@ -2,7 +2,7 @@
  * Transforms the gateway's OpenAPI spec for web app codegen.
  *
  * The gateway serves endpoints at `/v1/{path}`, but the web app calls them
- * through the platform gateway at `/v1/assistants/{assistant_id}/{path}`.
+ * through the cloud gateway at `/v1/assistants/{assistant_id}/{path}`.
  * This script rewrites gateway spec paths to match the proxied URLs
  * and adds `assistant_id` as a required path parameter to every operation.
  *
@@ -27,7 +27,7 @@ const ASSISTANT_ID_PARAM = {
   in: "path",
   required: true,
   schema: { type: "string" },
-  description: "The assistant ID (injected by the platform gateway)",
+  description: "The assistant ID (injected by the cloud gateway)",
 };
 
 // ---------------------------------------------------------------------------

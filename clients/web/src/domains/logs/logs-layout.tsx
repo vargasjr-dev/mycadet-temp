@@ -1,15 +1,15 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
 
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { routes } from "@/utils/routes";
 import { LOGS_SIDEBAR } from "@/domains/logs/navigation";
 import { SidebarShell } from "@/components/sidebar-shell";
 import { SidebarTree } from "@/components/sidebar-tree";
 
 export function LogsLayout() {
-  const systemEventsGate = usePlatformGate({ platformHostedOnly: true });
-  const emailsGate = usePlatformGate();
+  const systemEventsGate = useCloudGate({ cloudHostedOnly: true });
+  const emailsGate = useCloudGate();
   const { pathname } = useLocation();
 
   const filteredItems = useMemo(

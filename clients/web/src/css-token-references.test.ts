@@ -24,7 +24,7 @@ const SCAN_ROOTS = [
 ];
 const SKIPPED_DIRS = new Set(["node_modules", "generated", "dist"]);
 
-/** Names the platform or a dependency defines at runtime, not our CSS. */
+/** Names the cloud or a dependency defines at runtime, not our CSS. */
 const EXTERNAL_PREFIXES = ["--tw-", "--radix-"];
 
 function sourceFiles(dir: string, found: string[] = []): string[] {

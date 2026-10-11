@@ -58,13 +58,13 @@ const connectPairedAssistantMock = mock(async (_id: string) => {
   }
 });
 const connectLocalAssistantMock = mock(async (_id: string) => {});
-const connectPlatformAssistantMock = mock(async (_id: string) => {});
+const connectCloudAssistantMock = mock(async (_id: string) => {});
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
     getState: () => ({
       connectPairedAssistant: connectPairedAssistantMock,
       connectLocalAssistant: connectLocalAssistantMock,
-      connectPlatformAssistant: connectPlatformAssistantMock,
+      connectCloudAssistant: connectCloudAssistantMock,
     }),
   },
 }));
@@ -107,7 +107,7 @@ beforeEach(() => {
   loadLockfileMock.mockClear();
   connectPairedAssistantMock.mockClear();
   connectLocalAssistantMock.mockClear();
-  connectPlatformAssistantMock.mockClear();
+  connectCloudAssistantMock.mockClear();
   setSelectedAssistantMock.mockClear();
   setActiveAssistantIdMock.mockClear();
   forgetAssistantAvatarMock.mockClear();
@@ -124,7 +124,7 @@ describe("switchToAssistant", () => {
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("a managed entry goes through the platform selection path", async () => {
+  test("a cloud entry goes through the cloud selection path", async () => {
     lockfileAssistants = [{ assistantId: "m1", cloud: "cadet" }];
 
     const outcome = await switchToAssistant("m1");
@@ -184,7 +184,7 @@ describe("switchToResolvedAssistant", () => {
     > & { id: string },
   ) => ({
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     ...overrides,
   });
@@ -195,13 +195,13 @@ describe("switchToResolvedAssistant", () => {
         id: "pr1",
         isPaired: true,
         isLocal: false,
-        isPlatformHosted: false,
+        isCloudHosted: false,
       }),
     );
 
     expect(connectPairedAssistantMock).toHaveBeenCalledWith("pr1");
     expect(connectLocalAssistantMock).not.toHaveBeenCalled();
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
   });
 
@@ -209,29 +209,29 @@ describe("switchToResolvedAssistant", () => {
     localClient = true;
 
     await switchToResolvedAssistant(
-      resolved({ id: "lo1", isLocal: true, isPlatformHosted: false }),
+      resolved({ id: "lo1", isLocal: true, isCloudHosted: false }),
     );
 
     expect(connectLocalAssistantMock).toHaveBeenCalledWith("lo1");
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("a hub-listed local entry takes the platform path", async () => {
+  test("a hub-listed local entry takes the cloud path", async () => {
     localClient = false;
 
     await switchToResolvedAssistant(
-      resolved({ id: "lo2", isLocal: true, isPlatformHosted: false }),
+      resolved({ id: "lo2", isLocal: true, isCloudHosted: false }),
     );
 
-    expect(connectPlatformAssistantMock).toHaveBeenCalledWith("lo2");
+    expect(connectCloudAssistantMock).toHaveBeenCalledWith("lo2");
     expect(connectLocalAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("a platform-hosted entry takes the platform path", async () => {
+  test("a cloud-hosted entry takes the cloud path", async () => {
     await switchToResolvedAssistant(resolved({ id: "m1" }));
 
-    expect(connectPlatformAssistantMock).toHaveBeenCalledWith("m1");
+    expect(connectCloudAssistantMock).toHaveBeenCalledWith("m1");
     expect(connectPairedAssistantMock).not.toHaveBeenCalled();
   });
 
@@ -244,7 +244,7 @@ describe("switchToResolvedAssistant", () => {
           id: "pr1",
           isPaired: true,
           isLocal: false,
-          isPlatformHosted: false,
+          isCloudHosted: false,
         }),
       ),
     ).rejects.toThrow("guardian lease failed");

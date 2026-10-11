@@ -38,7 +38,7 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import * as platformClient from "../lib/platform-client.js";
+import * as cloudClient from "../lib/cloud-client.js";
 import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import * as backupOps from "../lib/backup-ops.js";
 import * as teleportBackup from "../lib/teleport-backup.js";
@@ -49,7 +49,7 @@ import * as teleportBackup from "../lib/teleport-backup.js";
 const realAssistantConfig = { ...assistantConfig };
 const realGuardianToken = { ...guardianToken };
 
-const realPlatformClient = { ...platformClient };
+const realCloudClient = { ...cloudClient };
 const realLocalRuntimeClient = { ...localRuntimeClient };
 const realBackupOps = { ...backupOps };
 const realTeleportBackup = { ...teleportBackup };
@@ -101,15 +101,15 @@ mock.module("../lib/guardian-token.js", () => ({
   computeDeviceId: computeDeviceIdMock,
 }));
 
-const readPlatformTokenMock = mock<typeof platformClient.readPlatformToken>(
+const readCloudTokenMock = mock<typeof cloudClient.readCloudToken>(
   () => "platform-token",
 );
 
-const getPlatformUrlMock = mock<typeof platformClient.getPlatformUrl>(
+const getCloudUrlMock = mock<typeof cloudClient.getCloudUrl>(
   () => "https://cloud.mycadet.ai",
 );
 
-const hatchAssistantMock = mock<typeof platformClient.hatchAssistant>(
+const hatchAssistantMock = mock<typeof cloudClient.hatchAssistant>(
   async () => ({
     assistant: {
       id: "platform-new-id",
@@ -121,7 +121,7 @@ const hatchAssistantMock = mock<typeof platformClient.hatchAssistant>(
 );
 
 const platformPollJobStatusMock = mock<
-  typeof platformClient.platformPollJobStatus
+  typeof cloudClient.platformPollJobStatus
 >(async () => ({
   jobId: "platform-job-1",
   type: "export",
@@ -129,8 +129,8 @@ const platformPollJobStatusMock = mock<
   bundleKey: "platform-bundle-key-abc",
 }));
 
-const platformRequestSignedUrlMock = mock<
-  typeof platformClient.platformRequestSignedUrl
+const cloudRequestSignedUrlMock = mock<
+  typeof cloudClient.cloudRequestSignedUrl
 >(async (params) => ({
   url:
     params.operation === "upload"
@@ -141,7 +141,7 @@ const platformRequestSignedUrlMock = mock<
 }));
 
 const platformImportBundleFromGcsMock = mock<
-  typeof platformClient.platformImportBundleFromGcs
+  typeof cloudClient.platformImportBundleFromGcs
 >(async () => ({
   statusCode: 200,
   body: {
@@ -157,7 +157,7 @@ const platformImportBundleFromGcsMock = mock<
 }));
 
 const platformImportPreflightFromGcsMock = mock<
-  typeof platformClient.platformImportPreflightFromGcs
+  typeof cloudClient.platformImportPreflightFromGcs
 >(async () => ({
   statusCode: 200,
   body: {
@@ -171,12 +171,12 @@ const platformImportPreflightFromGcsMock = mock<
   },
 }));
 
-const checkExistingPlatformAssistantMock = mock<
-  typeof platformClient.checkExistingPlatformAssistant
+const checkExistingCloudAssistantMock = mock<
+  typeof cloudClient.checkExistingCloudAssistant
 >(async () => null);
 
 const ensureSelfHostedLocalRegistrationMock = mock<
-  typeof platformClient.ensureSelfHostedLocalRegistration
+  typeof cloudClient.ensureSelfHostedLocalRegistration
 >(async () => ({
   assistant: { id: "platform-assistant-1", name: "my-assistant" },
   registration: {
@@ -189,10 +189,10 @@ const ensureSelfHostedLocalRegistrationMock = mock<
 }));
 
 const injectCredentialsIntoAssistantMock = mock<
-  typeof platformClient.injectCredentialsIntoAssistant
+  typeof cloudClient.injectCredentialsIntoAssistant
 >(async () => true);
 
-const fetchCurrentUserMock = mock<typeof platformClient.fetchCurrentUser>(
+const fetchCurrentUserMock = mock<typeof cloudClient.fetchCurrentUser>(
   async () => ({
     id: "user-1",
     email: "test@example.com",
@@ -200,20 +200,20 @@ const fetchCurrentUserMock = mock<typeof platformClient.fetchCurrentUser>(
   }),
 );
 
-const fetchOrganizationIdMock = mock<typeof platformClient.fetchOrganizationId>(
+const fetchOrganizationIdMock = mock<typeof cloudClient.fetchOrganizationId>(
   async () => "org-1",
 );
 
-mock.module("../lib/platform-client.js", () => ({
-  ...realPlatformClient,
-  readPlatformToken: readPlatformTokenMock,
-  getPlatformUrl: getPlatformUrlMock,
+mock.module("../lib/cloud-client.js", () => ({
+  ...realCloudClient,
+  readCloudToken: readCloudTokenMock,
+  getCloudUrl: getCloudUrlMock,
   hatchAssistant: hatchAssistantMock,
   platformPollJobStatus: platformPollJobStatusMock,
-  platformRequestSignedUrl: platformRequestSignedUrlMock,
+  cloudRequestSignedUrl: cloudRequestSignedUrlMock,
   platformImportBundleFromGcs: platformImportBundleFromGcsMock,
   platformImportPreflightFromGcs: platformImportPreflightFromGcsMock,
-  checkExistingPlatformAssistant: checkExistingPlatformAssistantMock,
+  checkExistingCloudAssistant: checkExistingCloudAssistantMock,
   ensureSelfHostedLocalRegistration: ensureSelfHostedLocalRegistrationMock,
   injectCredentialsIntoAssistant: injectCredentialsIntoAssistantMock,
   fetchCurrentUser: fetchCurrentUserMock,
@@ -383,11 +383,11 @@ import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 afterAll(() => {
   // Restore the real module exports so the mocks do not leak into sibling
-  // test files (e.g. guardian-token.test.ts, platform-client tests) that
+  // test files (e.g. guardian-token.test.ts, cloud-client tests) that
   // run in the same `bun test` invocation.
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
-  mock.module("../lib/platform-client.js", () => realPlatformClient);
+  mock.module("../lib/cloud-client.js", () => realCloudClient);
   mock.module("../lib/local-runtime-client.js", () => realLocalRuntimeClient);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/teleport-backup.js", () => realTeleportBackup);
@@ -456,10 +456,10 @@ beforeEach(() => {
   );
   leaseGuardianTokenMock.mockReset();
 
-  readPlatformTokenMock.mockReset();
-  readPlatformTokenMock.mockReturnValue("platform-token");
-  getPlatformUrlMock.mockReset();
-  getPlatformUrlMock.mockReturnValue("https://cloud.mycadet.ai");
+  readCloudTokenMock.mockReset();
+  readCloudTokenMock.mockReturnValue("platform-token");
+  getCloudUrlMock.mockReset();
+  getCloudUrlMock.mockReturnValue("https://cloud.mycadet.ai");
   hatchAssistantMock.mockReset();
   hatchAssistantMock.mockResolvedValue({
     assistant: {
@@ -476,8 +476,8 @@ beforeEach(() => {
     status: "complete",
     bundleKey: "platform-bundle-key-abc",
   });
-  platformRequestSignedUrlMock.mockReset();
-  platformRequestSignedUrlMock.mockImplementation(async (params) => ({
+  cloudRequestSignedUrlMock.mockReset();
+  cloudRequestSignedUrlMock.mockImplementation(async (params) => ({
     url:
       params.operation === "upload"
         ? "https://storage.googleapis.com/bucket/signed-upload"
@@ -512,8 +512,8 @@ beforeEach(() => {
       },
     },
   });
-  checkExistingPlatformAssistantMock.mockReset();
-  checkExistingPlatformAssistantMock.mockResolvedValue(null);
+  checkExistingCloudAssistantMock.mockReset();
+  checkExistingCloudAssistantMock.mockResolvedValue(null);
   ensureSelfHostedLocalRegistrationMock.mockReset();
   ensureSelfHostedLocalRegistrationMock.mockResolvedValue({
     assistant: { id: "platform-assistant-1", name: "my-assistant" },
@@ -885,17 +885,17 @@ describe("resolveOrHatchTarget", () => {
   });
 
   test("platform with existing ID -> returns existing without hatching", async () => {
-    const platformEntry = makeEntry("uuid-123", {
+    const cloudEntry = makeEntry("uuid-123", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "uuid-123") return platformEntry;
+      if (name === "uuid-123") return cloudEntry;
       return null;
     });
 
     const result = await resolveOrHatchTarget("platform", "uuid-123");
-    expect(result).toBe(platformEntry);
+    expect(result).toBe(cloudEntry);
     expect(hatchAssistantMock).not.toHaveBeenCalled();
   });
 
@@ -922,7 +922,7 @@ describe("resolveOrHatchTarget", () => {
       "process.exit:1",
     );
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("already have a platform assistant"),
+      expect.stringContaining("already have a cloud assistant"),
     );
   });
 
@@ -971,9 +971,9 @@ describe("unified GCS flow — four directions", () => {
     try {
       await teleport();
 
-      // Signed-URL request for upload — pinned to the platform target's URL
+      // Signed-URL request for upload — pinned to the cloud target's URL
       // so upload and download land on the same platform.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.6.5",
@@ -1009,7 +1009,7 @@ describe("unified GCS flow — four directions", () => {
 
       // No download-URL request on the import side (platform target pulls
       // directly from GCS).
-      const downloadOps = platformRequestSignedUrlMock.mock.calls.filter(
+      const downloadOps = cloudRequestSignedUrlMock.mock.calls.filter(
         (call) => call[0].operation === "download",
       );
       expect(downloadOps.length).toBe(0);
@@ -1021,7 +1021,7 @@ describe("unified GCS flow — four directions", () => {
   test("platform → local: drives platform export, reads bundle_key, requests download URL for runtime import", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
@@ -1031,7 +1031,7 @@ describe("unified GCS flow — four directions", () => {
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1047,7 +1047,7 @@ describe("unified GCS flow — four directions", () => {
     // The bundle key now flows from the upload signed-URL request rather than
     // the job-status payload — pin it so the download-URL assertion below
     // still uses the same expected key.
-    platformRequestSignedUrlMock.mockImplementation(async (params) => ({
+    cloudRequestSignedUrlMock.mockImplementation(async (params) => ({
       url:
         params.operation === "upload"
           ? "https://storage.googleapis.com/bucket/signed-upload"
@@ -1063,7 +1063,7 @@ describe("unified GCS flow — four directions", () => {
 
       // Platform side: requested an upload URL, kicked off a runtime export to
       // GCS, and polled the unified job status.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.6.5",
@@ -1072,7 +1072,7 @@ describe("unified GCS flow — four directions", () => {
         "platform-token",
         "https://cloud.mycadet.ai",
       );
-      // For platform sources, export-to-gcs is reached via the platform's
+      // For platform sources, export-to-gcs is reached via the cloud's
       // wildcard runtime proxy. The helper builds the assistant-scoped URL
       // from the entry (`/v1/assistants/<id>/migrations/export-to-gcs`) and
       // sends platform-token auth — no guardian-token bootstrap.
@@ -1110,7 +1110,7 @@ describe("unified GCS flow — four directions", () => {
       // `/v1/identity` (mocked to "0.6.5"), NOT from the CLI's package
       // version. The local target's daemon can be on a different version
       // than the CLI orchestrating the teleport.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "download",
           bundleKey: "platform-exports/org-1/bundle-abc.vbundle",
@@ -1171,8 +1171,8 @@ describe("unified GCS flow — four directions", () => {
 
       // Export and import must pin the same platform URL so the bundle
       // lives in one place end-to-end. For local→docker neither side is
-      // platform, so we default to getPlatformUrl() (resolved once).
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      // platform, so we default to getCloudUrl() (resolved once).
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.6.5",
@@ -1186,7 +1186,7 @@ describe("unified GCS flow — four directions", () => {
       // Import: download-URL for the docker target, then runtime import.
       // targetRuntimeVersion comes from the docker target's runtime
       // identity (mocked to "0.6.5"), not from cliPkg.version.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "download",
           bundleKey: "bundle-key-123",
@@ -1250,7 +1250,7 @@ describe("unified GCS flow — four directions", () => {
 
       // Export leg: upload-URL (pinned to the same platform as import),
       // then runtime export.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.6.5",
@@ -1299,16 +1299,16 @@ describe("signed-URL request targets the bundle-owning platform", () => {
     setArgv("--from", "my-local", "--platform", "existing-platform");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
-    // Crucially, the target's runtimeUrl is NOT the default getPlatformUrl()
+    // Crucially, the target's runtimeUrl is NOT the default getCloudUrl()
     // return value — this is the regression case Codex flagged.
-    const platformEntry = makeEntry("existing-platform", {
+    const cloudEntry = makeEntry("existing-platform", {
       cloud: "cadet",
       runtimeUrl: "https://staging-cloud.mycadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
       if (name === "my-local") return localEntry;
-      if (name === "existing-platform") return platformEntry;
+      if (name === "existing-platform") return cloudEntry;
       return null;
     });
 
@@ -1318,7 +1318,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
 
       // The signed-URL request for upload MUST target the existing
       // platform assistant's runtimeUrl, not the default platform URL.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.6.5",
@@ -1337,7 +1337,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
 
       // Assert none of the signed-URL calls used the default URL — if any
       // did, upload and download would hit different platforms.
-      for (const call of platformRequestSignedUrlMock.mock.calls) {
+      for (const call of cloudRequestSignedUrlMock.mock.calls) {
         expect(call[2]).toBe("https://staging-cloud.mycadet.ai");
       }
     } finally {
@@ -1348,14 +1348,14 @@ describe("signed-URL request targets the bundle-owning platform", () => {
   test("platform → local with non-default source runtimeUrl: download URL pinned to source's runtimeUrl", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://dev-cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1369,7 +1369,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
 
     // Bundle key flows from the upload signed-URL request now; pin it so the
     // download-URL assertion below uses the same key.
-    platformRequestSignedUrlMock.mockImplementation(async (params) => ({
+    cloudRequestSignedUrlMock.mockImplementation(async (params) => ({
       url:
         params.operation === "upload"
           ? "https://storage.googleapis.com/bucket/signed-upload"
@@ -1386,7 +1386,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
       // the bundle was written by the runtime export), not the default.
       // targetRuntimeVersion comes from the local target's `/v1/identity`
       // (mocked to "0.6.5"), not from cliPkg.version.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "download",
           bundleKey: "dev-bundle-key",
@@ -1441,14 +1441,14 @@ describe("CLI never buffers bundle bytes", () => {
   test("platform → local: no fetch call carries a bundle-sized body", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1544,14 +1544,14 @@ describe("polling", () => {
   test("local-runtime import failure → teleport exits 1", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1641,14 +1641,14 @@ describe("MigrationInProgressError handling", () => {
   test("local-runtime import already in flight → fail fast with existing job id", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1691,7 +1691,7 @@ describe("MigrationInProgressError handling", () => {
 });
 
 // ---------------------------------------------------------------------------
-// VersionMismatchError handling — 422 from platformRequestSignedUrl on the
+// VersionMismatchError handling — 422 from cloudRequestSignedUrl on the
 // download leg is terminal: surface a friendly message + exit 1, no retry.
 // ---------------------------------------------------------------------------
 
@@ -1699,14 +1699,14 @@ describe("VersionMismatchError handling", () => {
   test("local target: 422 on download signed-URL exits 1 with friendly message", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1719,9 +1719,9 @@ describe("VersionMismatchError handling", () => {
     });
 
     // Upload signed-URL succeeds; download signed-URL throws version-mismatch.
-    platformRequestSignedUrlMock.mockImplementation(async (params) => {
+    cloudRequestSignedUrlMock.mockImplementation(async (params) => {
       if (params.operation === "download") {
-        throw new platformClient.VersionMismatchError(
+        throw new cloudClient.VersionMismatchError(
           { min_runtime_version: "99.0.0", max_runtime_version: null },
           "0.7.1",
         );
@@ -1743,7 +1743,7 @@ describe("VersionMismatchError handling", () => {
       );
 
       // Terminal: no retry of the download signed-URL request.
-      const downloadCalls = platformRequestSignedUrlMock.mock.calls.filter(
+      const downloadCalls = cloudRequestSignedUrlMock.mock.calls.filter(
         (c) => c[0].operation === "download",
       );
       expect(downloadCalls).toHaveLength(1);
@@ -1775,9 +1775,9 @@ describe("VersionMismatchError handling", () => {
       return [localEntry];
     });
 
-    platformRequestSignedUrlMock.mockImplementation(async (params) => {
+    cloudRequestSignedUrlMock.mockImplementation(async (params) => {
       if (params.operation === "download") {
-        throw new platformClient.VersionMismatchError(
+        throw new cloudClient.VersionMismatchError(
           { min_runtime_version: "99.0.0", max_runtime_version: null },
           "0.7.1",
         );
@@ -1806,14 +1806,14 @@ describe("VersionMismatchError handling", () => {
   test("non-VersionMismatchError on download signed-URL re-raises", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1825,7 +1825,7 @@ describe("VersionMismatchError handling", () => {
       bundleKey: "platform-bundle-key-abc",
     });
 
-    platformRequestSignedUrlMock.mockImplementation(async (params) => {
+    cloudRequestSignedUrlMock.mockImplementation(async (params) => {
       if (params.operation === "download") {
         throw new Error("network blew up");
       }
@@ -1855,14 +1855,14 @@ describe("target runtime version fetch", () => {
   test("local target: targetRuntimeVersion comes from /v1/identity, not cliPkg", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1882,7 +1882,7 @@ describe("target runtime version fetch", () => {
     try {
       await teleport();
 
-      const downloadCall = platformRequestSignedUrlMock.mock.calls.find(
+      const downloadCall = cloudRequestSignedUrlMock.mock.calls.find(
         (c) => c[0].operation === "download",
       );
       expect(downloadCall).toBeDefined();
@@ -1907,14 +1907,14 @@ describe("target runtime version fetch", () => {
   test("identity fetch failure aborts before requesting download URL", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -1947,7 +1947,7 @@ describe("target runtime version fetch", () => {
       );
 
       // No download signed-URL request was made — we aborted before that.
-      const downloadCalls = platformRequestSignedUrlMock.mock.calls.filter(
+      const downloadCalls = cloudRequestSignedUrlMock.mock.calls.filter(
         (c) => c[0].operation === "download",
       );
       expect(downloadCalls).toHaveLength(0);
@@ -1992,14 +1992,14 @@ describe("dry-run", () => {
     );
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
-    const platformEntry = makeEntry("existing-platform", {
+    const cloudEntry = makeEntry("existing-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
       if (name === "my-local") return localEntry;
-      if (name === "existing-platform") return platformEntry;
+      if (name === "existing-platform") return cloudEntry;
       return null;
     });
 
@@ -2020,14 +2020,14 @@ describe("dry-run", () => {
   test("dry-run with existing local target calls preflight-from-gcs on runtime", async () => {
     setArgv("--from", "my-platform", "--local", "my-local", "--dry-run");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2173,13 +2173,13 @@ describe("pre-export source backup", () => {
 
   test("platform source: takes a PVC snapshot through the source platform before exporting", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2217,13 +2217,13 @@ describe("pre-export source backup", () => {
 
   test("platform source with a recent ready snapshot: reuses it", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2267,13 +2267,13 @@ describe("pre-export source backup", () => {
 
   test("platform snapshot failure (never ready) aborts too", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2317,7 +2317,7 @@ describe("pre-check: existing platform assistant", () => {
       name === "my-local" ? localEntry : null,
     );
 
-    checkExistingPlatformAssistantMock.mockResolvedValue({
+    checkExistingCloudAssistantMock.mockResolvedValue({
       id: "existing-platform-id",
       name: "existing-platform",
       status: "active",
@@ -2325,17 +2325,17 @@ describe("pre-check: existing platform assistant", () => {
 
     await expect(teleport()).rejects.toThrow("process.exit:1");
 
-    expect(checkExistingPlatformAssistantMock).toHaveBeenCalledWith(
+    expect(checkExistingCloudAssistantMock).toHaveBeenCalledWith(
       "platform-token",
       undefined,
     );
     // No signed-URL or runtime calls
-    expect(platformRequestSignedUrlMock).not.toHaveBeenCalled();
+    expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();
     expect(localRuntimeExportToGcsMock).not.toHaveBeenCalled();
     expect(hatchAssistantMock).not.toHaveBeenCalled();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("already have a platform assistant"),
+      expect.stringContaining("already have a cloud assistant"),
     );
   });
 });
@@ -2348,14 +2348,14 @@ describe("version guard", () => {
   test("blocks platform→local when local version is behind", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2379,14 +2379,14 @@ describe("version guard", () => {
   test("allows equal versions", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2413,21 +2413,21 @@ describe("version guard", () => {
   test("newly hatched target is cleaned up when version check fails", async () => {
     setArgv("--from", "my-platform", "--local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const newLocalEntry = makeEntry("new-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-platform" ? platformEntry : null,
+      name === "my-platform" ? cloudEntry : null,
     );
 
     loadAllAssistantsMock.mockImplementation(() => {
       if (hatchLocalMock.mock.calls.length > 0) {
-        return [platformEntry, newLocalEntry];
+        return [cloudEntry, newLocalEntry];
       }
-      return [platformEntry];
+      return [cloudEntry];
     });
 
     platformPollJobStatusMock.mockResolvedValue({
@@ -2527,7 +2527,7 @@ describe("platform credential injection", () => {
   test("platform→local teleport calls ensureSelfHostedLocalRegistration and injectCredentialsIntoAssistant", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
@@ -2537,7 +2537,7 @@ describe("platform credential injection", () => {
     });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2559,15 +2559,15 @@ describe("platform credential injection", () => {
         "my-local",
         "cli",
         undefined, // assistantVersion (gateway unreachable in test)
-        expect.any(String), // platformUrl from getPlatformUrl()
+        expect.any(String), // cloudUrl from getCloudUrl()
         undefined, // ingressUrl (gateway unreachable in test)
       );
       expect(injectCredentialsIntoAssistantMock).toHaveBeenCalledWith({
         gatewayUrl: "http://localhost:7821",
         bearerToken: "local-bearer",
         assistantApiKey: "api-key-123",
-        platformAssistantId: "platform-assistant-1",
-        platformBaseUrl: "https://cloud.mycadet.ai",
+        cloudAssistantId: "platform-assistant-1",
+        cloudBaseUrl: "https://cloud.mycadet.ai",
         organizationId: "org-1",
         userId: "user-1",
         webhookSecret: "webhook-secret-123",
@@ -2575,9 +2575,9 @@ describe("platform credential injection", () => {
       expect(saveAssistantEntryMock).toHaveBeenCalledWith(
         expect.objectContaining({
           assistantId: "my-local",
-          platformAssistantId: "platform-assistant-1",
-          platformBaseUrl: "https://cloud.mycadet.ai",
-          platformOrganizationId: "org-1",
+          cloudAssistantId: "platform-assistant-1",
+          cloudBaseUrl: "https://cloud.mycadet.ai",
+          cloudOrganizationId: "org-1",
         }),
       );
     } finally {
@@ -2660,14 +2660,14 @@ describe("auth + transient-error resilience", () => {
   test("runtime 401 on import kickoff triggers token refresh and retry", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2853,7 +2853,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       callOrder.push("identity");
       return { version: "0.5.9" };
     });
-    platformRequestSignedUrlMock.mockImplementationOnce(async (params) => {
+    cloudRequestSignedUrlMock.mockImplementationOnce(async (params) => {
       callOrder.push("signed-url");
       return {
         url: "https://storage.googleapis.com/bucket/signed-upload",
@@ -2871,7 +2871,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
 
       // Upload request stamps minRuntimeVersion with the daemon's version,
       // NOT cliPkg.version.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.5.9",
@@ -2902,7 +2902,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       await expect(teleport()).rejects.toThrow("process.exit:1");
 
       // Must NOT have proceeded to signed URL or export.
-      expect(platformRequestSignedUrlMock).not.toHaveBeenCalled();
+      expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();
       expect(localRuntimeExportToGcsMock).not.toHaveBeenCalled();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -2916,14 +2916,14 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   test("platform source: managed runtime's identity is fetched and recorded", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2941,8 +2941,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     try {
       await teleport();
 
-      // Identity was fetched against the platform-managed runtime entry
-      // (cloud=cadet) with the platform token — not via guardian token.
+      // Identity was fetched against the cloud-managed runtime entry
+      // (cloud=cadet) with the cloud token — not via guardian token.
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({
           cloud: "cadet",
@@ -2952,8 +2952,8 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
         "platform-token",
       );
 
-      // The recorded version came from the platform runtime, not the CLI.
-      expect(platformRequestSignedUrlMock).toHaveBeenCalledWith(
+      // The recorded version came from the cloud runtime, not the CLI.
+      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: "upload",
           minRuntimeVersion: "0.7.2",
@@ -2970,14 +2970,14 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   test("platform source: identity fetch failure aborts before signed-URL request", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
-    const platformEntry = makeEntry("my-platform", {
+    const cloudEntry = makeEntry("my-platform", {
       cloud: "cadet",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-platform") return platformEntry;
+      if (name === "my-platform") return cloudEntry;
       if (name === "my-local") return localEntry;
       return null;
     });
@@ -2991,7 +2991,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       await expect(teleport()).rejects.toThrow("process.exit:1");
 
       // Signed-URL upload request must not have happened.
-      const uploadCalls = platformRequestSignedUrlMock.mock.calls.filter(
+      const uploadCalls = cloudRequestSignedUrlMock.mock.calls.filter(
         (call) => call[0].operation === "upload",
       );
       expect(uploadCalls.length).toBe(0);

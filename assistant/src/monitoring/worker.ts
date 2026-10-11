@@ -15,10 +15,10 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
+import { startConsentRefresh } from "../cloud/consent-cache.js";
 import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
 import { getConfig } from "../config/loader.js";
 import { resetDb } from "../persistence/db-connection.js";
-import { startConsentRefresh } from "../platform/consent-cache.js";
 import { disableStreamSeqStamping } from "../runtime/assistant-stream-state.js";
 import {
   startConfigSnapshotReporter,
@@ -91,10 +91,10 @@ async function main(): Promise<void> {
     "Resource monitor process started",
   );
 
-  // Rehydrate the platform base URL and IDs from the credential store before
+  // Rehydrate the cloud base URL and IDs from the credential store before
   // the telemetry reporter starts. The daemon does this in
   // initializeProvidersAndTools(); this standalone process must do it itself so
-  // the non-turn telemetry it flushes carries the platform organization and
+  // the non-turn telemetry it flushes carries the cloud organization and
   // user context instead of shipping with those fields empty.
   await rehydrateCloudCredentials();
 

@@ -10,7 +10,7 @@ import { Button } from "@mycadet/design-library/components/button";
 /**
  * The way off the welcome screen that isn't logging in. Local onboarding
  * offers a route past the account entirely ("Continue without account");
- * the platform's `/account/login` offers signup, which is a real navigation
+ * the cloud's `/account/login` offers signup, which is a real navigation
  * and so carries an `href` rather than a handler.
  */
 export type WelcomeSecondaryAction =
@@ -69,7 +69,7 @@ export function WelcomeScreenShell({
  *
  * Exported because the two front doors reach the provider by different
  * routes. The browser navigates the page away (`useOnboardingLogin`); the
- * Capacitor shells stay mounted and hand off to the platform browser through
+ * Capacitor shells stay mounted and hand off to the cloud browser through
  * their own `NativeAuth` plugin, because Google refuses OAuth in an embedded
  * WebView. The screen either one puts around that handoff is the same, so it
  * lives here and each caller supplies only its own buttons.
@@ -142,7 +142,7 @@ export function WelcomeScreenCopy({
 /**
  * The screen a visit that has not signed in yet starts on, shared by the two
  * front doors that offer it: `/assistant/welcome` (local clients) and
- * `/account/login` (the platform). Both put the same log-in button on screen
+ * `/account/login` (the cloud). Both put the same log-in button on screen
  * and differ only in what they offer beside it, so the copy, the layout, and
  * the OAuth handoff live here once rather than drifting apart in two places.
  *

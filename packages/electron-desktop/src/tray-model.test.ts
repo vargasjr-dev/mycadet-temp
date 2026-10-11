@@ -308,7 +308,7 @@ describe("installTray", () => {
     expect(labels).toContain("Re-pair Assistant");
   });
 
-  test("the companion item is absent on a platform with no companion surface", () => {
+  test("the companion item is absent on a cloud with no companion surface", () => {
     companionSupported = false;
     installTray(handlers);
     handlerFor(trays[0], "right-click")?.();
@@ -318,7 +318,7 @@ describe("installTray", () => {
     expect(template.map((item) => item.label)).not.toContain("Show Companion");
   });
 
-  test("the companion item is present on a platform that has one", () => {
+  test("the companion item is present on a cloud that has one", () => {
     installTray(handlers);
     handlerFor(trays[0], "right-click")?.();
     const template = buildFromTemplateMock.mock.calls[0]?.[0] as Array<{
@@ -515,7 +515,7 @@ describe("assistant switcher", () => {
     });
   });
 
-  test("a managed active entry keeps the Retire item and offers no Remove", async () => {
+  test("a cloud active entry keeps the Retire item and offers no Remove", async () => {
     watchedLockfile = {
       assistants: [managedEntry],
       activeAssistant: "managed-1",
@@ -540,7 +540,7 @@ describe("assistant switcher", () => {
     ).toBe(false);
   });
 
-  test("an empty switcher shows the managed-or-paired empty state", () => {
+  test("an empty switcher shows the cloud-or-paired empty state", () => {
     const empty = popMenu().find(
       (i) => i.label === "No managed or paired assistants",
     );
@@ -560,7 +560,7 @@ describe("companion toggle", () => {
   };
 
   const popCompanionItem = (): MenuItem | undefined => {
-    // The item exists only where the platform has a surface; these cases are
+    // The item exists only where the cloud has a surface; these cases are
     // about what it then does, and the gate itself is covered above.
     installTray(handlers);
     handlerFor(trays[0], "right-click")?.();
@@ -642,7 +642,7 @@ describe("companion toggle", () => {
     }
   });
 
-  test("is absent entirely on a platform with no companion surface", () => {
+  test("is absent entirely on a cloud with no companion surface", () => {
     companionSupported = false;
     installTray(handlers);
     handlerFor(trays[0], "right-click")?.();

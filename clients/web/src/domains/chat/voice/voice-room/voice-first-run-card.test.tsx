@@ -47,8 +47,8 @@ mock.module("@/components/speech/voice-list", () => ({
 
 // The Voices view reads managed-voice availability (for the credits subtitle)
 // off the daemon config graph; stub it so the card renders without React Query.
-mock.module("@/components/speech/use-managed-voice-selection", () => ({
-  useManagedVoiceSelection: () => ({
+mock.module("@/components/speech/use-cloud-voice-selection", () => ({
+  useCloudVoiceSelection: () => ({
     available: true,
     voices: [],
     currentModel: "",

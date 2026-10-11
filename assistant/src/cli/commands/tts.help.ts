@@ -92,7 +92,7 @@ Examples:
         {
           name: "[id...]",
           description:
-            "Voice/model id to set (joined with spaces). ElevenLabs voice id for elevenlabs; managed voice model id (ElevenLabs id or Deepgram Aura model like aura-2-thalia-en) for cadet; Aura model id for deepgram",
+            "Voice/model id to set (joined with spaces). ElevenLabs voice id for elevenlabs; cloud voice model id (ElevenLabs id or Deepgram Aura model like aura-2-thalia-en) for cadet; Aura model id for deepgram",
         },
       ],
       options: [
@@ -105,11 +105,11 @@ Examples:
       helpText: `
 Set the assistant's TTS voice on whichever provider is currently active
 (services.tts.provider). This writes to the config key that provider actually
-reads — e.g. services.tts.providers.cadet.model for managed speech — so the
+reads — e.g. services.tts.providers.cadet.model for cloud speech — so the
 change takes effect on the next spoken turn.
 
 Prefer this over 'assistant config set services.tts.providers.elevenlabs.voiceId'
-directly: on a managed (cadet) assistant that field is ignored, so the voice
+directly: on a cloud (cadet) assistant that field is ignored, so the voice
 would silently not change.
 
 Examples:

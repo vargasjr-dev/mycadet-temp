@@ -1,5 +1,5 @@
 /**
- * On-demand preview of a managed voice via its hosted sample.
+ * On-demand preview of a cloud voice via its hosted sample.
  *
  * Stands on its own because two unrelated surfaces audition voices: the voice
  * pickers, which preview a row of a list, and the onboarding face step, which
@@ -15,12 +15,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import { t } from "@/i18n";
-import { type ManagedVoiceOption } from "@/lib/tts/use-managed-voices";
+import { type CloudVoiceOption } from "@/lib/tts/use-cloud-voices";
 
 export interface UseVoiceSamplePreview {
   /** The model currently playing, or null. */
   previewingModel: string | null;
-  play: (voice: ManagedVoiceOption) => void;
+  play: (voice: CloudVoiceOption) => void;
   stop: () => void;
 }
 
@@ -51,7 +51,7 @@ export function useVoiceSamplePreview(): UseVoiceSamplePreview {
     [],
   );
 
-  function play(voice: ManagedVoiceOption): void {
+  function play(voice: CloudVoiceOption): void {
     if (!voice.sampleUrl) {
       return;
     }

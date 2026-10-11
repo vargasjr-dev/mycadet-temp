@@ -106,9 +106,9 @@ function parseWrappedResponse<TData>(
 }
 
 /**
- * Hatch a managed assistant.
+ * Hatch a cloud assistant.
  *
- * `mode` maps to the platform's hatch semantics:
+ * `mode` maps to the cloud's hatch semantics:
  *   - `ensure` (server default when omitted): return an existing managed
  *     assistant when possible, else create one. This is the auto-hatch /
  *     first-run behavior — callers should leave `mode` unset for it.
@@ -194,7 +194,7 @@ export async function getAssistant(
     };
   }
 
-  // No ID provided — prefer platform-managed assistants, fall back to local.
+  // No ID provided — prefer cloud assistants, fall back to local.
   // Query platform first to avoid pagination issues with hosting=all.
   const platformResult = await assistantsList({
     query: { hosting: "platform" },
@@ -355,7 +355,7 @@ function parseDaemonBackups(data: unknown): AssistantBackup[] {
       : {};
 
   // Defensive: if the daemon SDK request fell through to Django
-  // (platform-hosted, no gateway intercept) it returns
+  // (cloud-hosted, no gateway intercept) it returns
   // `{ backups: BackupItem[] }` instead of the daemon format.
   if (Array.isArray(raw.backups)) {
     return raw.backups as AssistantBackup[];
@@ -418,8 +418,8 @@ function parsePlatformBackups(data: unknown): AssistantBackup[] {
 export async function listAssistantBackups(
   assistantId: string,
 ): Promise<ListBackupsResult> {
-  // For platform-hosted assistants the K8s PVC backups are managed by
-  // the platform (vembda), not the daemon. Fetch both in parallel when
+  // For cloud-hosted assistants the K8s PVC backups are managed by
+  // the cloud (vembda), not the daemon. Fetch both in parallel when
   // no self-hosted ingress is configured.
   const needsPlatform = !getSelfHostedIngressUrl();
 
@@ -466,7 +466,7 @@ export async function listAssistantBackups(
     }
 
     // Platform call failed. If the daemon also returned nothing, surface
-    // the platform error so the user doesn't see a silent empty list.
+    // the cloud error so the user doesn't see a silent empty list.
     if (daemonSnapshots.length === 0 && platformResult.response) {
       return {
         ok: false,
@@ -492,10 +492,10 @@ export async function createAssistantBackup(
 ): Promise<CreateBackupResult> {
   // When a self-hosted ingress URL is set, the daemon SDK client's
   // request interceptor rewrites the URL to the assistant's gateway
-  // (skipSegmentAllowlist=true). The platform SDK client does NOT
+  // (skipSegmentAllowlist=true). The cloud SDK client does NOT
   // rewrite "backups" paths, so we must use the daemon SDK for any
   // self-hosted assistant — whether accessed locally or via the
-  // platform web app. For pure platform-hosted assistants (no ingress
+  // platform web app. For pure cloud-hosted assistants (no ingress
   // URL), backup creation goes through Django → vembda.
   // Same ownership note as listAssistantBackups: self-hosted create is
   // served by the gateway's assistant-scoped mirror, platform create by
@@ -609,8 +609,8 @@ export type RetireResult =
 
 export interface RetireAssistantOptions {
   /**
-   * Platform id of the assistant that inherits this one's managed OAuth
-   * connections (a teleport target). The platform moves the rows before it
+   * Platform id of the assistant that inherits this one's cloud OAuth
+   * connections (a teleport target). The cloud moves the rows before it
    * revokes the retiring assistant's credentials, so this is the only moment
    * they can follow the user to the new assistant.
    */

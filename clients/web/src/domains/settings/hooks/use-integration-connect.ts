@@ -9,7 +9,7 @@ import { useTranslation } from "@/i18n";
 import { invalidatePluginQueries } from "@/lib/invalidate-plugin-queries";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
-import type { ManagedConnectReport } from "../components/managed-connect-controller";
+import type { ManagedConnectReport } from "../components/cloud-connect-controller";
 import type { ConnectAttempt } from "../components/integration-connect-modal";
 import type { TileConnectState } from "../components/integration-tile";
 import {
@@ -48,7 +48,7 @@ interface AttemptInstall {
   landed: Promise<boolean>;
 }
 
-/** The managed authorization a tile started. */
+/** The cloud authorization a tile started. */
 export interface ManagedAttemptRecord {
   itemId: string;
   methodId: string;
@@ -131,7 +131,7 @@ export interface IntegrationConnect {
  * One connect attempt at a time, for a whole page of integrations.
  *
  * The two machines that run an attempt are singletons by construction: the
- * daemon's MCP sign-in is one state machine per assistant, and a managed
+ * daemon's MCP sign-in is one state machine per assistant, and a cloud
  * authorization holds listeners a forty-row list must not hold forty of. So
  * the page owns the attempt and each tile only renders it. What a tile hands
  * over is a method; what it gets back is a phase.
@@ -213,7 +213,7 @@ export function useIntegrationConnect({
     }
   }, [authAttempt?.phase]);
 
-  // The connection the platform reports moves the integration to the
+  // The connection the cloud reports moves the integration to the
   // connected list on its own; all that is left to say is that it landed.
   useEffect(() => {
     if (!managed || managedReport?.status !== "connected") {
@@ -441,7 +441,7 @@ export function useIntegrationConnect({
         startMcp(item, plan, method);
         return;
       }
-      if (method.kind === "managed-oauth") {
+      if (method.kind === "cloud-oauth") {
         startManaged(item, plan, method, options);
       }
     },
@@ -552,7 +552,7 @@ export function useIntegrationConnect({
             phase: "failed",
             error: managedReport.errorMessage,
             methodId: managed.methodId,
-            methodKind: "managed-oauth",
+            methodKind: "cloud-oauth",
           };
         }
         return { phase: "waiting", canCancel: true };

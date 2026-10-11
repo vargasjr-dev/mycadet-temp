@@ -7,7 +7,7 @@ import {
   hatchAssistant,
 } from "@/assistant/api";
 import {
-  isPlatformHostedDisabled,
+  isCloudHostedDisabled,
   PLATFORM_HOSTED_DISABLED_MESSAGE,
   resolveAssistantLifecycleState,
   shouldRecoverFromHatchFailure,
@@ -63,12 +63,12 @@ export interface UseBackgroundHatchOptions {
   /**
    * Adopt an assistant that was ALREADY provisioned in the foreground (the
    * local-hosting path: hosting pick → hatching screen → local daemon), instead
-   * of running the managed `hatchAssistant()` here. When true we skip step 1 and
+   * of running the cloud `hatchAssistant()` here. When true we skip step 1 and
    * discover that live assistant via `getAssistant()`.
    *
    * This must NOT be conflated with `isLocalClient()` (a build-time value): the
    * desktop app runs in local mode but can still onboard a Cadet-Cloud
-   * (managed) assistant, which needs the managed hatch. Derive this from the
+   * (managed) assistant, which needs the cloud hatch. Derive this from the
    * chosen HOSTING, not the build (see the research route's `?hosting` read).
    */
   adoptExisting?: boolean;
@@ -94,17 +94,17 @@ export interface UseBackgroundHatchOptions {
  *
  * `start()` is ref-guarded so the hatch fires at most once per hook instance
  * regardless of how many times it's called. The flow reuses the
- * hatching-screen machinery: hatch the managed assistant, poll `getAssistant`
+ * hatching-screen machinery: hatch the cloud assistant, poll `getAssistant`
  * until it reports `active`, then poll `getAssistantHealthz` until the daemon
  * is reachable. `ready` only flips after the health check passes — never on
  * the hatch return.
  *
- * When `adoptExisting` is set (a local-hosting onboarding), the managed hatch is
+ * When `adoptExisting` is set (a local-hosting onboarding), the cloud hatch is
  * skipped and we adopt the already-live assistant instead. When
  * `postCheckoutReturn` is set, `ready` additionally waits on the purchased
  * machine/storage resize so the paid user never starts on a baseline assistant.
  *
- * Terminal failures (platform-hosted disabled, non-recoverable hatch errors,
+ * Terminal failures (cloud-hosted disabled, non-recoverable hatch errors,
  * lifecycle errors, timeout) set `error` and reject `awaitReady()`.
  * Recoverable failures (5xx / network) keep polling.
  *
@@ -260,7 +260,7 @@ export function useBackgroundHatch({
       // discovery (platform getAssistant + gateway probe) is not just wasted
       // work: at mount the gateway token / selection may not be observable
       // yet, in which case getAssistant misses its lockfile short-circuit and
-      // polls the PLATFORM for an assistant that only exists locally,
+      // polls the CLOUD for an assistant that only exists locally,
       // stranding the flow on the "Waking up" gate until timeout. A stale id
       // (retired between the handoff and here) has no lockfile entry and
       // falls through to the discovery + readyz path below.
@@ -279,9 +279,9 @@ export function useBackgroundHatch({
       // the FOREGROUND by the hatching screen (hosting pick → local daemon)
       // BEFORE the research flow mounts, so there's nothing to hatch here. We
       // fall straight through to step 2, which discovers that already-active
-      // assistant via getAssistant(). Running the managed `hatchAssistant()`
+      // assistant via getAssistant(). Running the cloud `hatchAssistant()`
       // there would provision a SECOND (managed) assistant. Cadet-Cloud
-      // onboarding (adoptExisting=false) still runs the managed hatch, even
+      // onboarding (adoptExisting=false) still runs the cloud hatch, even
       // though the desktop build reports `isLocalClient()` — that's why this keys
       // on the chosen hosting, not the build.
       // When adopting, seed discovery with the id the hatching screen handed
@@ -296,7 +296,7 @@ export function useBackgroundHatch({
         if (!(await awaitOrgHeader())) {
           return;
         }
-        // A managed hatch in a local-mode build must address the platform, not
+        // A managed hatch in a local-mode build must address the cloud, not
         // the machine's own gateway: `getAssistant()` answers from the selected
         // lockfile entry while a gateway token is held, and daemon SDK calls
         // (the healthz probe below, and the research/personality writes that
@@ -324,7 +324,7 @@ export function useBackgroundHatch({
               );
             }
           } else {
-            if (isPlatformHostedDisabled(result.status, result.error)) {
+            if (isCloudHostedDisabled(result.status, result.error)) {
               settleError(PLATFORM_HOSTED_DISABLED_MESSAGE);
               return;
             }

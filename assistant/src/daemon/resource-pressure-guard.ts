@@ -1,5 +1,5 @@
 /**
- * Sustained CPU/memory pressure guard for platform-hosted assistants.
+ * Sustained CPU/memory pressure guard for cloud-hosted assistants.
  *
  * Samples container CPU utilization and working-set memory against the
  * container's allocation on a fixed cadence and reports an `elevated` state
@@ -8,7 +8,7 @@
  * sustained run of samples below a lower clear threshold (hysteresis), so the
  * state never flaps while usage hovers near a threshold.
  *
- * The guard is platform-gated: off-platform there is no plan allocation to
+ * The guard is platform-gated: off-cloud there is no plan allocation to
  * measure against, so the guard stays disabled and samples nothing.
  */
 import {

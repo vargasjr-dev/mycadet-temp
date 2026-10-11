@@ -65,7 +65,7 @@ const SUSPECT_SOCKET_AFTER_MS = 30_000;
 let hiddenTeardownGraceOverrideMs: number | null = null;
 
 // Resolved when the grace timer is armed rather than at module load, so
-// the platform probe cannot run before the Capacitor bridge is ready.
+// the cloud probe cannot run before the Capacitor bridge is ready.
 const resolveHiddenTeardownGraceMs = (): number => {
   if (hiddenTeardownGraceOverrideMs !== null) {
     return hiddenTeardownGraceOverrideMs;
@@ -76,7 +76,7 @@ const resolveHiddenTeardownGraceMs = (): number => {
 /**
  * Override the hidden-teardown grace window. Test-only seam so specs can
  * exercise the debounce without real-time waits; pass `null` to restore
- * the platform default. Never call from production code.
+ * the cloud default. Never call from production code.
  * @internal
  */
 export function __setHiddenTeardownGraceMsForTesting(ms: number | null): void {

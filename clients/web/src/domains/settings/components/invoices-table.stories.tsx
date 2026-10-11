@@ -2,7 +2,7 @@
  * The Invoices section of the billing page: a card whose table sits behind a
  * Show Invoices toggle and lists each invoice's date, amount, status tag, and
  * view or download actions, with the first four rows shown and the rest
- * behind Show more. The rows come from an infinite query on the platform
+ * behind Show more. The rows come from an infinite query on the cloud
  * client, so each story seeds that query's cache in its own client, and a
  * play step opens the section the way a user would. The stories cover a
  * populated list with every status Stripe reports and an account with no

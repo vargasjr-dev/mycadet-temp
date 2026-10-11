@@ -24,7 +24,7 @@ import { switchToResolvedAssistant } from "@/assistant/switch-service";
 import { useSwitchableAssistants } from "@/assistant/use-switchable-assistants";
 import { AssistantNavItem } from "@/domains/chat/components/assistant-nav-item";
 import { AssistantSwitcherRow } from "@/domains/chat/components/assistant-switcher-row";
-import { canFetchRowAvatarViaPlatformProxy } from "@/hooks/use-chooser-row-avatar";
+import { canFetchRowAvatarViaCloudProxy } from "@/hooks/use-chooser-row-avatar";
 import { versionSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -244,7 +244,7 @@ export function AssistantSwitcher({
               supportsAvatarManifest={versionSupportsAvatarStateManifest(
                 assistant.runtimeVersion ?? assistant.currentReleaseVersion,
               )}
-              avatarEnabled={canFetchRowAvatarViaPlatformProxy(assistant)}
+              avatarEnabled={canFetchRowAvatarViaCloudProxy(assistant)}
               onSelect={() => void handleSwitch(assistant)}
             />
           ))}

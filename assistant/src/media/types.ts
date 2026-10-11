@@ -4,12 +4,12 @@ export interface DirectCredentials {
   type: "direct";
   apiKey: string;
 }
-export interface ManagedProxyCredentials {
-  type: "managed-proxy";
+export interface CloudProxyCredentials {
+  type: "cloud-proxy";
   assistantApiKey: string;
   baseUrl: string;
 }
-export type ImageGenCredentials = DirectCredentials | ManagedProxyCredentials;
+export type ImageGenCredentials = DirectCredentials | CloudProxyCredentials;
 
 export interface ImageGenerationRequest {
   prompt: string;

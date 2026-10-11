@@ -14,7 +14,7 @@ mock.module("../../providers/inference/connections.js", () => ({
     connectionRows.get(name) ?? null,
 }));
 
-import { CADET_MANAGED_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../../providers/cadet-model-routing.js";
 import { completeCustomProfile } from "../profile-materialization.js";
 import { LLMConfigBase, ProfileEntry } from "../schemas/llm.js";
 
@@ -164,10 +164,10 @@ describe("completeCustomProfile", () => {
     expect(completed.provider_connection).toBeUndefined();
   });
 
-  test("a managed default's binding becomes the routing identity, never a stamped field", () => {
+  test("a cloud default's binding becomes the routing identity, never a stamped field", () => {
     const managedDefault = LLMConfigBase.parse({
       ...fullDefault,
-      provider_connection: CADET_MANAGED_CONNECTION_NAME,
+      provider_connection: CADET_CLOUD_CONNECTION_NAME,
     });
     const implied = completeCustomProfile(managedDefault, { model: "gpt-5.5" });
     expect(implied.provider).toBe("cadet");
@@ -223,16 +223,16 @@ describe("completeCustomProfile", () => {
     }
   });
 
-  test("a managed default binding is not inherited when the identity cannot serve the model", () => {
+  test("a cloud default binding is not inherited when the identity cannot serve the model", () => {
     const managedDefault = LLMConfigBase.parse({
       ...fullDefault,
-      provider_connection: CADET_MANAGED_CONNECTION_NAME,
+      provider_connection: CADET_CLOUD_CONNECTION_NAME,
     });
     const completed = completeCustomProfile(managedDefault, {
       model: "totally-custom-model",
     });
     // Dispatch auto-resolves by vendor instead of pinning an unservable
-    // managed route.
+    // cloud route.
     expect(completed.provider).toBe("anthropic");
     expect(completed.provider_connection).toBeUndefined();
   });
@@ -248,7 +248,7 @@ describe("completeCustomProfile", () => {
     expect(completeCustomProfile(fullDefault, mix)).toBe(mix);
   });
 
-  test("passes managed profiles through untouched", () => {
+  test("passes cloud profiles through untouched", () => {
     const managed: ProfileEntry = { source: "managed", topP: 0.9 };
     expect(completeCustomProfile(fullDefault, managed)).toBe(managed);
   });

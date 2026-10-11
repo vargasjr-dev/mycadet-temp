@@ -19,10 +19,10 @@ describe("SkillLoadRiskClassifier", () => {
     expect(result.matchType).toBe("registry");
   });
 
-  test("scaffold_managed_skill is always High risk", async () => {
+  test("scaffold_cloud_skill is always High risk", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "scaffold_managed_skill",
+      toolName: "scaffold_cloud_skill",
     });
     expect(result.riskLevel).toBe("high");
     expect(result.reason).toBe(
@@ -32,10 +32,10 @@ describe("SkillLoadRiskClassifier", () => {
     expect(result.matchType).toBe("registry");
   });
 
-  test("delete_managed_skill is always High risk", async () => {
+  test("delete_cloud_skill is always High risk", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "delete_managed_skill",
+      toolName: "delete_cloud_skill",
     });
     expect(result.riskLevel).toBe("high");
     expect(result.reason).toBe(
@@ -55,19 +55,19 @@ describe("SkillLoadRiskClassifier", () => {
     expect(result.reason).toBe("Skill load (default)");
   });
 
-  test("scaffold_managed_skill with skillSelector is still High risk", async () => {
+  test("scaffold_cloud_skill with skillSelector is still High risk", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "scaffold_managed_skill",
+      toolName: "scaffold_cloud_skill",
       skillSelector: "new-skill",
     });
     expect(result.riskLevel).toBe("high");
   });
 
-  test("delete_managed_skill with skillSelector is still High risk", async () => {
+  test("delete_cloud_skill with skillSelector is still High risk", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "delete_managed_skill",
+      toolName: "delete_cloud_skill",
       skillSelector: "old-skill",
     });
     expect(result.riskLevel).toBe("high");
@@ -163,56 +163,56 @@ describe("allowlistOptions", () => {
     ]);
   });
 
-  test("scaffold_managed_skill produces skill-specific + wildcard options", async () => {
+  test("scaffold_cloud_skill produces skill-specific + wildcard options", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "scaffold_managed_skill",
+      toolName: "scaffold_cloud_skill",
       skillSelector: "new-skill",
     });
     expect(result.allowlistOptions).toEqual([
       {
         label: "new-skill",
         description: "This skill only",
-        pattern: "scaffold_managed_skill:new-skill",
+        pattern: "scaffold_cloud_skill:new-skill",
       },
       {
-        label: "scaffold_managed_skill:*",
+        label: "scaffold_cloud_skill:*",
         description: "All managed skill scaffolds",
-        pattern: "scaffold_managed_skill:*",
+        pattern: "scaffold_cloud_skill:*",
       },
     ]);
   });
 
-  test("delete_managed_skill produces skill-specific + wildcard options", async () => {
+  test("delete_cloud_skill produces skill-specific + wildcard options", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "delete_managed_skill",
+      toolName: "delete_cloud_skill",
       skillSelector: "old-skill",
     });
     expect(result.allowlistOptions).toEqual([
       {
         label: "old-skill",
         description: "This skill only",
-        pattern: "delete_managed_skill:old-skill",
+        pattern: "delete_cloud_skill:old-skill",
       },
       {
-        label: "delete_managed_skill:*",
+        label: "delete_cloud_skill:*",
         description: "All managed skill deletes",
-        pattern: "delete_managed_skill:*",
+        pattern: "delete_cloud_skill:*",
       },
     ]);
   });
 
-  test("scaffold_managed_skill without selector produces only wildcard", async () => {
+  test("scaffold_cloud_skill without selector produces only wildcard", async () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({
-      toolName: "scaffold_managed_skill",
+      toolName: "scaffold_cloud_skill",
     });
     expect(result.allowlistOptions).toEqual([
       {
-        label: "scaffold_managed_skill:*",
+        label: "scaffold_cloud_skill:*",
         description: "All managed skill scaffolds",
-        pattern: "scaffold_managed_skill:*",
+        pattern: "scaffold_cloud_skill:*",
       },
     ]);
   });
@@ -228,8 +228,8 @@ describe("singleton", () => {
   test("singleton produces same results as fresh instance", async () => {
     const inputs: SkillClassifierInput[] = [
       { toolName: "skill_load" },
-      { toolName: "scaffold_managed_skill" },
-      { toolName: "delete_managed_skill" },
+      { toolName: "scaffold_cloud_skill" },
+      { toolName: "delete_cloud_skill" },
     ];
 
     const fresh = new SkillLoadRiskClassifier();

@@ -41,8 +41,8 @@ import {
   credentialRequestExpiryToEpochMs,
 } from "./credential-requests-api";
 
-/** A platform-managed credential from the credentials list. Read-only. */
-interface ManagedCredentialRow {
+/** A cloud credential from the credentials list. Read-only. */
+interface CloudCredentialRow {
   handle: string;
   provider: string;
   accountInfo: string | null;
@@ -112,7 +112,7 @@ function CredentialsPageInner() {
       });
       return {
         credentials: data.credentials as StoredCredential[],
-        managedCredentials: data.managedCredentials as ManagedCredentialRow[],
+        cloudCredentials: data.cloudCredentials as CloudCredentialRow[],
       };
     },
     enabled: isOrgReady,
@@ -123,13 +123,13 @@ function CredentialsPageInner() {
     () => listQuery.data?.credentials ?? [],
     [listQuery.data],
   );
-  // Managed credentials are provisioned by Cadet and can only be read here, so
-  // the list and the managed/personal split are developer-mode surfaces.
+  // Cloud credentials are provisioned by Cadet and can only be read here, so
+  // the list and the cloud/personal split are developer-mode surfaces.
   // Standard users see just the credentials they can act on.
   const isDeveloperMode =
     useAssistantFeatureFlagStore.use.settingsDeveloperNav();
-  const managedCredentials = useMemo(
-    () => (isDeveloperMode ? (listQuery.data?.managedCredentials ?? []) : []),
+  const cloudCredentials = useMemo(
+    () => (isDeveloperMode ? (listQuery.data?.cloudCredentials ?? []) : []),
     [isDeveloperMode, listQuery.data],
   );
 
@@ -209,15 +209,15 @@ function CredentialsPageInner() {
     }
   }, [credentials.length]);
 
-  // When the own credential list is empty but managed credentials exist, default
+  // When the own credential list is empty but cloud credentials exist, default
   // to the Managed tab so users see their credentials instead of an empty state.
   // The user can still switch to "Your own" to add one — this only fires when the
   // data changes, not on every view toggle.
   useEffect(() => {
-    if (credentials.length === 0 && managedCredentials.length > 0) {
+    if (credentials.length === 0 && cloudCredentials.length > 0) {
       setCredentialView("managed");
     }
-  }, [credentials.length, managedCredentials.length]);
+  }, [credentials.length, cloudCredentials.length]);
 
   // --- Handlers ---
 
@@ -303,7 +303,7 @@ function CredentialsPageInner() {
   }
 
   const hasCredentials = credentials.length > 0;
-  const hasManaged = managedCredentials.length > 0;
+  const hasManaged = cloudCredentials.length > 0;
 
   // Search stays hidden for short lists where scanning is faster than typing;
   // it only earns its place once the list is long enough to get unwieldy.
@@ -351,7 +351,7 @@ function CredentialsPageInner() {
       >
         {showManaged ? (
           <div className="space-y-2">
-            {managedCredentials.map((managed) => (
+            {cloudCredentials.map((managed) => (
               <Card.Root key={managed.handle}>
                 <Card.Body
                   padding="sm"

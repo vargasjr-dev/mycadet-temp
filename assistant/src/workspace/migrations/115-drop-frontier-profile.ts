@@ -3,11 +3,11 @@ import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
 
-// Reclaim the managed `frontier` inference profile. It ran Anthropic Opus on
-// `anthropic-managed` — the same model and config as the managed
+// Reclaim the cloud `frontier` inference profile. It ran Anthropic Opus on
+// `anthropic-managed` — the same model and config as the cloud
 // `quality-optimized` profile, which the seeder reconciles from the templates
 // on every boot. The seeder never deletes a profile, so this migration deletes
-// the managed `frontier` object and repoints every reference to it — its
+// the cloud `frontier` object and repoints every reference to it — its
 // `profileOrder` entry, the `activeProfile` and `advisorProfile` selections,
 // call-site `profile` overrides, and mix-profile arms — onto `quality-optimized`,
 // which resolves to the same Opus route. A `frontier` profile that the user owns
@@ -19,7 +19,7 @@ const REPLACEMENT = "quality-optimized";
 export const dropFrontierProfileMigration: WorkspaceMigration = {
   id: "115-drop-frontier-profile",
   description:
-    "Remove the managed Frontier profile and repoint its references to Quality",
+    "Remove the cloud Frontier profile and repoint its references to Quality",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -46,7 +46,7 @@ export const dropFrontierProfileMigration: WorkspaceMigration = {
     const frontier = profiles !== null ? readObject(profiles[FRONTIER]) : null;
 
     // A user-owned profile that happens to use this name keeps everything,
-    // references included — only the managed profile is reclaimed.
+    // references included — only the cloud profile is reclaimed.
     if (frontier !== null && frontier.source !== "managed") {
       return;
     }

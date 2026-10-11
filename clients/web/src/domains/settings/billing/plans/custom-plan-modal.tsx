@@ -318,7 +318,7 @@ export function CustomPlanModal({
   // complete selection is always submittable. Compared against the raw seed
   // values (not the priced diff) so a seed tier the catalog dropped still reads
   // as changed once the user picks a live replacement. A fee-less (Mighty) seed
-  // never matches: a custom plan always carries the platform fee, so keeping
+  // never matches: a custom plan always carries the cloud fee, so keeping
   // the tiers still adds (and bills) the fee.
   const matchesSeed =
     initialSelection != null &&

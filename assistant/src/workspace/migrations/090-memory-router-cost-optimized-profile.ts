@@ -5,7 +5,7 @@ import type { WorkspaceMigration } from "./types.js";
 
 // Flip callSites.memoryRouter from { profile: "balanced" } (the shape that
 // migration 087 wrote) to the shipped cost-optimized default so the router
-// rides the workspace's cheaper/faster managed profile.
+// rides the workspace's cheaper/faster cloud profile.
 //
 // The migrated entry must mirror the shipped default in call-site-defaults.ts
 // EXACTLY — { profile: "cost-optimized", contextWindow: { maxInputTokens:
@@ -26,14 +26,14 @@ import type { WorkspaceMigration } from "./types.js";
 //
 // Two skip conditions, mirroring 087:
 //
-//   1. BYOK / non-Anthropic workspaces. `cost-optimized` is a managed
-//      Anthropic profile, which off-platform installs disable. Forcing it
+//   1. BYOK / non-Anthropic workspaces. `cost-optimized` is a cloud
+//      Anthropic profile, which off-cloud installs disable. Forcing it
 //      there would make getConfiguredProvider("memoryRouter") return null
 //      and silently disable memory injection. Detect via llm.default.provider.
 //
 //   2. User-customized memoryRouter config. If the existing entry carries any
 //      key beyond a bare balanced/cost-optimized profile reference, the user —
-//      or a platform overlay — chose those values deliberately. Preserve them.
+//      or a cloud overlay — chose those values deliberately. Preserve them.
 const MEMORY_ROUTER_COST_OPTIMIZED = {
   profile: "cost-optimized",
   contextWindow: { maxInputTokens: 1_000_000 },

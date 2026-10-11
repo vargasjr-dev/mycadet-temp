@@ -1,29 +1,29 @@
 import { Navigate } from "react-router";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { EmailsTab } from "@/domains/logs/components/emails-tab";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { routes } from "@/utils/routes";
 
 import { useTranslation } from "@/i18n";
 
 export function EmailsPage() {
   const { t } = useTranslation("logs");
-  const platformGate = usePlatformGate();
+  const cloudGate = useCloudGate();
   const assistantId = useActiveAssistantId();
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return <Navigate replace to={routes.logs.root} />;
   }
 
-  if (platformGate === "disabled") {
+  if (cloudGate === "disabled") {
     return (
-      <PlatformLoginNotice>
+      <CloudLoginNotice>
         {t("emailsPage.platformLoginNotice")}
-      </PlatformLoginNotice>
+      </CloudLoginNotice>
     );
   }
 
-  return <EmailsTab assistantId={assistantId} platformGate={platformGate} />;
+  return <EmailsTab assistantId={assistantId} cloudGate={cloudGate} />;
 }

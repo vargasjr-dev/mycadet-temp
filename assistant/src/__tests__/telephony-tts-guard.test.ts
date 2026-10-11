@@ -192,10 +192,10 @@ mock.module("../calls/audio-store.js", () => ({
   },
 }));
 
-let mockManagedSpeechAvailable = true;
+let mockCloudSpeechAvailable = true;
 
-mock.module("../platform/managed-speech.js", () => ({
-  managedSpeechAvailable: async () => mockManagedSpeechAvailable,
+mock.module("../cloud/cloud-speech.js", () => ({
+  managedSpeechAvailable: async () => mockCloudSpeechAvailable,
 }));
 
 mock.module("../inbound/public-ingress-urls.js", () => ({
@@ -470,10 +470,10 @@ describe("resolveCallTtsProvider with requiresPcmAudio", () => {
     expect(result.audioFormat).toBe("mp3");
   });
 
-  test("managed speech stands in for a configured provider whose credential is missing", async () => {
+  test("cloud speech stands in for a configured provider whose credential is missing", async () => {
     testConfig.services.tts.provider = "deepgram";
-    // No deepgram key, managed speech available: the phone speaks through
-    // managed speech, the same substitution live voice makes.
+    // No deepgram key, cloud speech available: the phone speaks through
+    // cloud speech, the same substitution live voice makes.
     registerStubProvider("deepgram", async () => {
       throw new Error("should not be used");
     });
@@ -486,8 +486,8 @@ describe("resolveCallTtsProvider with requiresPcmAudio", () => {
     expect(result.useSynthesizedPath).toBe(true);
   });
 
-  test("without managed speech a credential-less configured provider is kept", async () => {
-    mockManagedSpeechAvailable = false;
+  test("without cloud speech a credential-less configured provider is kept", async () => {
+    mockCloudSpeechAvailable = false;
     try {
       testConfig.services.tts.provider = "deepgram";
       registerStubProvider("deepgram", async () => {
@@ -497,7 +497,7 @@ describe("resolveCallTtsProvider with requiresPcmAudio", () => {
       const result = await resolveCallTtsProvider();
       expect(result.provider?.id).toBe("deepgram");
     } finally {
-      mockManagedSpeechAvailable = true;
+      mockCloudSpeechAvailable = true;
     }
   });
 });
@@ -795,21 +795,21 @@ describe("speakSystemPrompt aborted synthesis", () => {
 });
 
 describe("cadet managed playability", () => {
-  test("playable only when the platform identity is fully provisioned", async () => {
+  test("playable only when the cloud identity is fully provisioned", async () => {
     // The stored secret resolves, but availability decides.
     storedKeys["cadet"] = "stored";
-    mockManagedSpeechAvailable = true;
+    mockCloudSpeechAvailable = true;
     const playable = await evaluateTelephonyTtsPlayability("cadet");
     expect(playable.status).toBe("playable");
   });
 
   test("half-connected platform (secret without identity) is not playable", async () => {
     storedKeys["cadet"] = "stored";
-    mockManagedSpeechAvailable = false;
+    mockCloudSpeechAvailable = false;
     const playable = await evaluateTelephonyTtsPlayability("cadet");
     expect(playable).toMatchObject({
       status: "not-playable",
-      reason: "missing-platform-connection",
+      reason: "missing-cloud-connection",
     });
   });
 });

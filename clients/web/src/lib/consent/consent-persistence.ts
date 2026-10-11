@@ -390,7 +390,7 @@ export function resolveServerConsent(consent: UserConsent | null | undefined): {
   shareAnalytics: boolean | null;
   shareDiagnostics: boolean | null;
   /**
-   * The platform's single-policy-module effective verdicts (opt-out
+   * The cloud's single-policy-module effective verdicts (opt-out
    * semantics: null/never-asked = enabled). The data-capture gates consume
    * these; the raw `share*` fields above carry chosen-ness only.
    */
@@ -476,11 +476,11 @@ export function resolveServerConsent(consent: UserConsent | null | undefined): {
         required.aiDataSharing,
       ),
     // Raw tri-state chosen-ness: null = never asked, boolean = explicit
-    // choice. The platform stores explicit choices only, so the value can be
+    // choice. The cloud stores explicit choices only, so the value can be
     // consumed verbatim.
     shareAnalytics: consent.share_analytics,
     shareDiagnostics: consent.share_diagnostics,
-    // The platform computes effective consent in its single policy module
+    // The cloud computes effective consent in its single policy module
     // and serves it as `share_*_effective`. The data-capture gates consume
     // these verdicts verbatim; the raw values carry chosen-ness only.
     // `??` is a runtime guard only — the contract guarantees the effective
@@ -534,7 +534,7 @@ function writeConsent(
     shareAnalytics?: boolean;
     shareDiagnostics?: boolean;
   },
-  opts: { userId: string | null; hasPlatformSession: boolean },
+  opts: { userId: string | null; hasCloudSession: boolean },
 ): void {
   const { legal, shareAnalytics, shareDiagnostics } = fields;
   const store = useOnboardingStore.getState();
@@ -572,7 +572,7 @@ function writeConsent(
     // in flight.
     store.setHasConsentRecord(true);
     store.setConsentHydrated(true);
-  } else if (opts.hasPlatformSession) {
+  } else if (opts.hasCloudSession) {
     if (shareAnalytics !== undefined) {
       store.setAnalyticsConsentCurrent(true);
     }
@@ -584,11 +584,11 @@ function writeConsent(
   // The versioned diagnostics ack ("confirmed under the current version") is
   // earned by a consent-screen review, or by a toggle change made with a live
   // session to record it against. Analytics has no device ack.
-  if (shareDiagnostics !== undefined && (legal || opts.hasPlatformSession)) {
+  if (shareDiagnostics !== undefined && (legal || opts.hasCloudSession)) {
     persistDiagnosticsAck(opts.userId);
   }
 
-  if (opts.hasPlatformSession) {
+  if (opts.hasCloudSession) {
     void patchConsent({
       ...(legal
         ? {
@@ -635,7 +635,7 @@ export function saveConsent(opts: {
   shareAnalytics: boolean | null;
   /** See {@link shareAnalytics}. */
   shareDiagnostics: boolean | null;
-  hasPlatformSession: boolean;
+  hasCloudSession: boolean;
 }): void {
   writeConsent(
     {
@@ -647,14 +647,14 @@ export function saveConsent(opts: {
         ? { shareDiagnostics: opts.shareDiagnostics }
         : {}),
     },
-    { userId: opts.userId, hasPlatformSession: opts.hasPlatformSession },
+    { userId: opts.userId, hasCloudSession: opts.hasCloudSession },
   );
 }
 
 export function savePreferenceToggle(
   field: "share_analytics" | "share_diagnostics",
   value: boolean,
-  opts: { userId: string | null; hasPlatformSession: boolean },
+  opts: { userId: string | null; hasCloudSession: boolean },
 ): void {
   writeConsent(
     field === "share_analytics"

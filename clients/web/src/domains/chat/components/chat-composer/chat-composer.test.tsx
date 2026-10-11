@@ -46,7 +46,7 @@ import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-st
 // The two device-side axes are driven by stubbing `window.matchMedia`, not by
 // mocking `use-is-mobile`, so a test says which signal the composer actually
 // consults and the crossed shapes (roomy touch tablet, narrow mouse window)
-// are expressible at all. See `docs/PLATFORM_ADAPTATION.md`.
+// are expressible at all. See `docs/CLOUD_ADAPTATION.md`.
 const viewport = viewportAxesStub();
 
 let mockIsElectron = false;
@@ -902,7 +902,7 @@ const PLUS_LABEL = "Add to chat";
  * rather than parameterised on a single flag because the crossed shapes are the
  * point: a phone is narrow AND coarse, a window dragged under the breakpoint is
  * narrow with a mouse still driving it, and a tablet is coarse with room to
- * spare. See `docs/PLATFORM_ADAPTATION.md`.
+ * spare. See `docs/CLOUD_ADAPTATION.md`.
  */
 function renderPhoneComposer(props: RenderComposerProps = {}) {
   viewport.set({ narrow: true, coarsePointer: true });
@@ -2139,7 +2139,7 @@ describe("ChatComposer: the mobile row holds focus through a press", () => {
       input: "hello",
     });
 
-    // THEN the press behaves as the platform intends
+    // THEN the press behaves as the cloud intends
     expect(fireEvent.mouseDown(control(container, "Send message")!)).toBe(true);
   });
 });

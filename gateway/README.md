@@ -210,9 +210,9 @@ The assistant runtime uses this URL to construct all webhook and OAuth callback 
 
 ### Tunnel for Twilio Testing
 
-Tunnel is a managed ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Tunnel registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
+Tunnel is a cloud ingress transport for assistant-hosted HTTP and WebSocket traffic. The gateway starts the Tunnel only after Twilio setup has been started in the workspace, or when existing Twilio config shows it was set up before. When Tunnel registration succeeds, the gateway writes the registered public assistant URL to `ingress.publicBaseUrl` and marks it with `ingress.publicBaseUrlManagedBy: "tunnel"`. Twilio URL builders use that public base URL for voice, status, and media-stream endpoints.
 
-Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades through the platform-managed tunnel:
+Use Tunnel when testing Twilio voice webhooks or Twilio WebSocket upgrades through the cloud-managed tunnel:
 
 1. In `mycadet-platform`, start the local Tunnel service:
 
@@ -248,7 +248,7 @@ bun -e 'const ws = new WebSocket(process.argv[1]); ws.onopen = () => { console.l
   "wss://<tunnel-host>/<assistant-id>/webhooks/twilio/media-stream/session-123/<edge-token>"
 ```
 
-For a real Twilio call, expose local Tunnel with a public HTTPS/WSS tunnel and configure the platform Tunnel service with that origin as `TUNNEL_PUBLIC_BASE_URL`. After the assistant re-registers, Twilio should fetch `/webhooks/twilio/voice` and open `/webhooks/twilio/media-stream/...` through the Tunnel URL. Use ngrok or another custom tunnel in `ingress.publicBaseUrl` only for local/self-hosted workflows that are not routed through Tunnel.
+For a real Twilio call, expose local Tunnel with a public HTTPS/WSS tunnel and configure the cloud Tunnel service with that origin as `TUNNEL_PUBLIC_BASE_URL`. After the assistant re-registers, Twilio should fetch `/webhooks/twilio/voice` and open `/webhooks/twilio/media-stream/...` through the Tunnel URL. Use ngrok or another custom tunnel in `ingress.publicBaseUrl` only for local/self-hosted workflows that are not routed through Tunnel.
 
 ## Ingress Boundary Guarantees
 

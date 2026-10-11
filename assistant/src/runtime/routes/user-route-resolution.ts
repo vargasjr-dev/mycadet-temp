@@ -14,7 +14,7 @@
  * - `plugins/defaults/<name>/routes/<path>` (the app source tree) — a
  *   first-party default plugin's routes, served in the same
  *   `/x/plugins/<name>/<path>` namespace, where `<name>` is the plugin's
- *   `default-…` manifest name (e.g. `default-platform-hosted`) — the same name
+ *   `default-…` manifest name (e.g. `default-cloud-hosted`) — the same name
  *   its `.disabled` sentinel is keyed by. Default plugins live in the binary's
  *   source, not the workspace, so their routes resolve from the source tree.
  *   An installed plugin of the same name takes precedence (it can override a

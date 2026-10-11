@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
-import type { PlatformConnectResponse } from "../../../runtime/routes/platform-routes.js";
+import type { PlatformConnectResponse } from "../../../runtime/routes/cloud-routes.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
@@ -34,7 +34,7 @@ export function registerCloudConnectCommand(platform: Command): void {
           // stops at "already logged in" before the credential pass runs;
           // --force runs it.
           log.info(
-            "The stored cloud credential was rejected by the platform. " +
+            "The stored cloud credential was rejected by the cloud. " +
               "Run 'cadet login --force' to sign in again and replace it.",
           );
         } else {

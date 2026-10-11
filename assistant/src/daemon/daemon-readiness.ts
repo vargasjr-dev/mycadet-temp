@@ -78,7 +78,7 @@ export const DB_MIGRATION_FAILED_STATE_EXEMPT_OPERATIONS: ReadonlySet<string> =
     "migrations/import",
     "migrations_import_post",
     // Restore has three transports; all must stay repair-capable. The
-    // preflights are read-only analysis; the GCS import is the managed
+    // preflights are read-only analysis; the GCS import is the cloud
     // platform's restore path and is job-based, so its job-status GET (a
     // parameterized route, matched by prefix in isDbMigrationGateBypassed)
     // must answer too.

@@ -6,7 +6,7 @@ import { mock } from "bun:test";
 // Stub the background-wake publisher so these store-level unit tests stay
 // hermetic. `notifySchedulesChanged()` fires a debounced background-wake
 // refresh on every mutation; left real, that 250ms timer performs a
-// synchronous DB read plus a platform-client lookup which compete with the
+// synchronous DB read plus a cloud-client lookup which compete with the
 // serialized async event delivery and can push a `sync_changed` past the
 // wait deadline on loaded runners. Background-wake behavior is covered by the
 // background-wake tests.

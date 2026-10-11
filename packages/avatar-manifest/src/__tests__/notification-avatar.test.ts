@@ -246,7 +246,7 @@ describe("notificationAvatarGeometry", () => {
 });
 
 describe("the transport contract", () => {
-  test("caps a notification PNG at 128 KB for the platform sync", () => {
+  test("caps a notification PNG at 128 KB for the cloud sync", () => {
     expect(NOTIFICATION_AVATAR_MAX_BYTES).toBe(128 * 1024);
   });
 

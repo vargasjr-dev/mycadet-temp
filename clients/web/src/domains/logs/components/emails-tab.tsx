@@ -14,7 +14,7 @@ import type {
   EmailAddressUsage,
   EmailMessage,
 } from "@/generated/api/types.gen";
-import type { PlatformGateState } from "@/hooks/use-platform-gate";
+import type { CloudGateState } from "@/hooks/use-cloud-gate";
 import { routes } from "@/utils/routes";
 
 import { useTranslation } from "@/i18n";
@@ -192,12 +192,12 @@ function EmailRow({ email }: { email: EmailMessage }) {
 
 interface EmailsTabProps {
   assistantId: string;
-  platformGate: PlatformGateState;
+  cloudGate: CloudGateState;
 }
 
-export function EmailsTab({ assistantId, platformGate }: EmailsTabProps) {
+export function EmailsTab({ assistantId, cloudGate }: EmailsTabProps) {
   const { t } = useTranslation("logs");
-  const gateEnabled = platformGate === "full";
+  const gateEnabled = cloudGate === "full";
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions({

@@ -791,8 +791,8 @@ export async function startOAuth2Flow(
     // No public URL configured
   }
 
-  // When containerized with a platform, callback routes are registered
-  // through the platform gateway — treat as having a public URL.
+  // When containerized with a cloud, callback routes are registered
+  // through the cloud gateway — treat as having a public URL.
   if (!hasPublicUrl && getIsCloud()) {
     hasPublicUrl = true;
   }

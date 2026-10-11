@@ -32,7 +32,7 @@ public-ingress transport (currently Tunnel).
 
 The tunnel is ONLY used to route inbound Twilio webhooks and live voice/audio
 WebSockets through to this assistant. It has nothing to do with platform
-credentials, the managed LLM proxy, or text channels. If you are not using
+credentials, the cloud LLM proxy, or text channels. If you are not using
 Twilio voice or live audio, a "not connected" tunnel is expected and harmless.
 
 JSON output (--json):

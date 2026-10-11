@@ -166,7 +166,7 @@ describe("resolveFreshBearerToken", () => {
     expect(refresh.hit()).toBe(false);
   });
 
-  test("never refreshes on the platform session-auth path", async () => {
+  test("never refreshes on the cloud session-auth path", async () => {
     seed({ accessToken: "old-acc", refreshToken: "ref", refreshAfter: past() });
     const refresh = stubRefresh(true);
 

@@ -11,8 +11,8 @@ import type { WorkspaceMigration } from "./types.js";
 //
 // Two skip conditions guard against runtime regressions:
 //
-//   1. BYOK / non-Anthropic workspaces. `balanced` resolves to the managed
-//      Anthropic connection (see seedInferenceProfiles), which off-platform
+//   1. BYOK / non-Anthropic workspaces. `balanced` resolves to the cloud
+//      Anthropic connection (see seedInferenceProfiles), which off-cloud
 //      installs explicitly disable. Forcing `balanced` there would make
 //      getConfiguredProvider("memoryRouter") return null and silently
 //      disable memory injection. Detect this by inspecting llm.default.provider
@@ -20,7 +20,7 @@ import type { WorkspaceMigration } from "./types.js";
 //
 //   2. User-customized memoryRouter config. If the existing entry isn't the
 //      exact 077-seeded shape (and isn't already {profile: "balanced"}), the
-//      user — or a platform overlay — chose those values deliberately. Match
+//      user — or a cloud overlay — chose those values deliberately. Match
 //      077's pattern of preserving any prior config.
 export const memoryRouterBalancedProfileMigration: WorkspaceMigration = {
   id: "087-memory-router-balanced-profile",

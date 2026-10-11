@@ -199,7 +199,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
           (v): HostEnv => ({ kind: "host", name: v }),
         ),
         { kind: "host", name: "CADET_ENVIRONMENT" },
-        { kind: "host", name: "CADET_PLATFORM_URL" },
+        { kind: "host", name: "CADET_CLOUD_URL" },
       ],
       volumeMounts: [
         { volumeName: "assistant-workspace",  mountPath: "/workspace" },
@@ -227,7 +227,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "secret", name: "ACTOR_TOKEN_SIGNING_KEY",   secret: "signingKey" },
         { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         { kind: "host",   name: "CADET_ENVIRONMENT" },
-        { kind: "host",   name: "CADET_PLATFORM_URL" },
+        { kind: "host",   name: "CADET_CLOUD_URL" },
         { kind: "host",   name: "TUNNEL_BASE_URL" },
       ],
       volumeMounts: [

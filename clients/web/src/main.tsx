@@ -26,7 +26,7 @@ import { markBoot } from "@/lib/telemetry/boot-telemetry";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { initSessionReplay } from "@/lib/session-replay/session-replay-init";
-import { setupPlatformAssistantsSync } from "@/assistant/platform-assistants-sync";
+import { setupCloudAssistantsSync } from "@/assistant/cloud-assistants-sync";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
 import { setupOrganizationStore } from "@/stores/organization-store";
 import { router } from "./routes";
@@ -80,12 +80,12 @@ async function boot() {
   // when either moves.
   setupClientFlagScopeSync();
   // Register before initSession so the boot `unknown → present` transition it
-  // drives is caught and the platform assistants list is loaded.
-  setupPlatformAssistantsSync();
+  // drives is caught and the cloud assistants list is loaded.
+  setupCloudAssistantsSync();
   // The camera gates are built outside React, so what a restored tuning
   // session applies to them is decided here rather than by a mounted panel.
   setupCameraGateHudAccessSync();
-  // The platform host mirrors iframe navigations into the browser URL and
+  // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
   // boot route is announced.
   setupRemoteGatewayNavBridge();

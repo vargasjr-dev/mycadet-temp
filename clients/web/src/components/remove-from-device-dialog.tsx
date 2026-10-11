@@ -21,7 +21,7 @@ export function RemoveFromDeviceDialog({
 }: {
   open: boolean;
   /**
-   * Which removal copy applies: a pairing, a platform listing, or a
+   * Which removal copy applies: a pairing, a cloud listing, or a
    * remembered remote origin.
    */
   kind: "paired" | "platform" | "origin";

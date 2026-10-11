@@ -155,7 +155,7 @@ function snapshotKey(
  * The unread count prefers the assistant's server-side count and falls back
  * to the loaded rows, the same resolution the Electron Dock badge uses, so
  * the two surfaces never disagree about the number. The count query is gated
- * on the platform and on the assistant being active: `ChatLayout` mounts
+ * on the cloud and on the assistant being active: `ChatLayout` mounts
  * before the assistant finishes starting, and querying a starting assistant
  * spends the retry budget on a request that cannot succeed.
  *
@@ -509,7 +509,7 @@ export function useNativeWidgetSnapshotSync(
     if (switchedAssistant) {
       syncedAssistantIdRef.current = null;
       lastPayloadRef.current = null;
-      // A heartbeat the platform coalesced past this run must never put the
+      // A heartbeat the cloud coalesced past this run must never put the
       // previous assistant's rows back on a Home Screen that was just cleared.
       desiredContentRef.current = null;
       inFlightPayloadRef.current = null;

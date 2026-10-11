@@ -10,7 +10,7 @@
  * without email, the design's perks, plan notice and Plans / Upgrade to
  * Super; on a plan with it, the perks and the way into setup.
  *
- * Nothing here talks to a platform: the avatar is a fixture, and the
+ * Nothing here talks to a cloud: the avatar is a fixture, and the
  * handlers log to the Actions panel.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";

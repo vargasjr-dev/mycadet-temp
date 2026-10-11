@@ -1637,7 +1637,7 @@ describe("AssistantConfigSchema", () => {
   });
 
   // Legacy config objects on disk may carry a `mode` key. Parsing must strip
-  // it rather than reject the config — and must not treat it as a managed
+  // it rather than reject the config — and must not treat it as a cloud
   // selection, which is what migration 130 rewrites to `provider: "cadet"`.
   test("ignores a legacy tts mode key", () => {
     const result = AssistantConfigSchema.parse({
@@ -1799,7 +1799,7 @@ describe("AssistantConfigSchema", () => {
   });
 
   // Legacy config objects on disk may carry a `mode` key. Parsing must strip
-  // it rather than reject the config — and must not treat it as a managed
+  // it rather than reject the config — and must not treat it as a cloud
   // selection, which is what migration 130 rewrites to `provider: "cadet"`.
   test("ignores a legacy stt mode key", () => {
     const result = AssistantConfigSchema.parse({
@@ -2098,7 +2098,7 @@ describe("TTS provider catalog integration", () => {
       const resolved = resolveTtsConfig(config);
       expect(resolved.provider).toBe(providerId);
       if (providerId === "cadet") {
-        // The cadet config block is intentionally empty — the platform
+        // The cadet config block is intentionally empty — the cloud
         // pins the voice and model.
         expect(resolved.providerConfig).toEqual({});
       } else {

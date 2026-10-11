@@ -272,7 +272,7 @@ export const TtsXaiProviderConfigSchema = z
 export type TtsXaiProviderConfig = z.infer<typeof TtsXaiProviderConfigSchema>;
 
 /**
- * Cadet managed provider configuration under `services.tts.providers`.
+ * Cadet Cloud provider configuration under `services.tts.providers`.
  */
 const TtsCadetProviderConfigSchema = z
   .object({
@@ -280,17 +280,17 @@ const TtsCadetProviderConfigSchema = z
       .string()
       .optional()
       .describe(
-        "Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the platform's default voice. The platform rejects voices it does not offer.",
+        "Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the cloud's default voice. The cloud rejects voices it does not offer.",
       ),
     languageVoices: languageVoicesSchema(
       "cadet",
       "values are managed TTS voice models (e.g. aura-2-thalia-en) and must " +
-        "be voices offered by the platform rate card: an unpriced model is " +
+        "be voices offered by the cloud rate card: an unpriced model is " +
         "rejected by the relay (missing_price), the same contract as " +
         "services.tts.providers.cadet.model.",
     ),
   })
-  .describe("Cadet managed provider configuration under services.tts");
+  .describe("Cadet Cloud provider configuration under services.tts");
 
 export type TtsCadetProviderConfig = z.infer<
   typeof TtsCadetProviderConfigSchema
@@ -344,7 +344,7 @@ for (const id of schemaKeys) {
 /**
  * Canonical TTS service configuration.
  *
- * `provider` is the only axis: `"cadet"` synthesizes through the platform,
+ * `provider` is the only axis: `"cadet"` synthesizes through the cloud,
  * billed to Cadet credits; any other provider uses the user's own API key.
  */
 export const TtsServiceSchema = z

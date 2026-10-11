@@ -1,7 +1,7 @@
 /**
  * Tests for the Live Activity phase reporter.
  *
- * The dispatch itself reaches the platform, so these cover the decisions made
+ * The dispatch itself reaches the cloud, so these cover the decisions made
  * before it: which frames move the phase, which repeats are suppressed, and
  * that ending is latched. The suppression is the load-bearing part —
  * `tts_audio` arrives many times a second and ActivityKit silently drops
@@ -258,7 +258,7 @@ describe("LiveActivityReporter", () => {
     });
   });
 
-  // A session can end more than one way and the platform deletes the
+  // A session can end more than one way and the cloud deletes the
   // registration on the first, so a second end would push at an activity that
   // is already gone.
   test("ending twice pushes once", async () => {

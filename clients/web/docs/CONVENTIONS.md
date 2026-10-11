@@ -1020,7 +1020,7 @@ codegen, generated hooks, and when to bypass them.
 
 ### HeyAPI for OpenAPI client generation
 
-The API client is generated from the platform's OpenAPI spec using
+The API client is generated from the cloud's OpenAPI spec using
 [HeyAPI (`@hey-api/openapi-ts`)](https://heyapi.dev/). The public-facing
 specs (`openapi-schemas/platform.yaml`, `openapi-schemas/auth.yaml`) are
 committed to this repo so anyone can regenerate the client locally:
@@ -1265,7 +1265,7 @@ wrapping the SPA.
 
 "Platform" here means Cadet Cloud (hosting and auth), not the device
 platform. For surfaces that differ across desktop, iOS, and Android, see
-[`PLATFORM_ADAPTATION.md`](./PLATFORM_ADAPTATION.md).
+[`CLOUD_ADAPTATION.md`](./CLOUD_ADAPTATION.md).
 
 The web app can run in three auth/hosting configurations that affect
 which UI surfaces are available:
@@ -1273,8 +1273,8 @@ which UI surfaces are available:
 | Signal                 | Where                      | What it means                                                                                                                                                                        |
 | ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `isLocalClient()`      | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not Cadet Cloud                                                            |
-| `hasPlatformSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with Cadet Cloud (set asynchronously after probing the allauth session endpoint)                                                     |
-| `isPlatformDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_CADET_DISABLE_PLATFORM` or `__CADET_CONFIG__.disablePlatform`). When `true` in local mode, the API interceptor no-ops all platform client requests |
+| `hasCloudSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with Cadet Cloud (set asynchronously after probing the allauth session endpoint)                                                     |
+| `isCloudDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_CADET_DISABLE_CLOUD` or `__CADET_CONFIG__.disableCloud`). When `true` in local mode, the API interceptor no-ops all platform client requests |
 
 ### The five user states
 
@@ -1284,16 +1284,16 @@ which UI surfaces are available:
 4. **Self-hosted + platform features ON + NOT logged in** — platform-dependent UI is _disabled_
 5. **Self-hosted + platform features OFF** — platform-dependent UI is _gated_ (hidden entirely)
 
-### `usePlatformGate()` hook
+### `useCloudGate()` hook
 
-`src/hooks/use-platform-gate.ts` encapsulates the decision tree and
+`src/hooks/use-cloud-gate.ts` encapsulates the decision tree and
 returns one of three states:
 
 | Return value | Meaning                                      | When                                                             |
 | ------------ | -------------------------------------------- | ---------------------------------------------------------------- |
-| `"full"`     | Feature is fully functional                  | `hasPlatformSession` is `true`                                   |
-| `"disabled"` | Show the UI but disable it (prompt re-login) | `hasPlatformSession` is `false`, platform features still enabled |
-| `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_CADET_DISABLE_PLATFORM` is set             |
+| `"full"`     | Feature is fully functional                  | `hasCloudSession` is `true`                                   |
+| `"disabled"` | Show the UI but disable it (prompt re-login) | `hasCloudSession` is `false`, platform features still enabled |
+| `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_CADET_DISABLE_CLOUD` is set             |
 
 Use this hook for any UI surface that depends on the Cadet Cloud
 API. The three actions map to concrete UI patterns:
@@ -1301,31 +1301,31 @@ API. The three actions map to concrete UI patterns:
 - **Full** — render normally.
 - **Disabled** — render the container/chrome but replace interactive
   content with a `<Notice tone="info">` prompting platform login.
-  Disable platform API queries (`enabled: platformGate === "full"`).
+  Disable platform API queries (`enabled: cloudGate === "full"`).
 - **Gated** — don't render the component at all. If a parent container
-  (e.g. a settings card with a managed/your-own toggle) would be empty
-  without the gated content, render only the non-platform portion
+  (e.g. a settings card with a cloud/your-own toggle) would be empty
+  without the gated content, render only the non-cloud portion
   without the toggle.
 
 ### Platform-hosted-only features
 
-Some UI surfaces only make sense on platform-hosted assistants — plan
+Some UI surfaces only make sense on cloud-hosted assistants — plan
 management, machine sizing, release channels, sleep policy, system
 events. They have no meaningful behavior on a self-hosted assistant
 and should be hidden whenever the active assistant is self-hosted,
-regardless of platform login or the `VITE_CADET_DISABLE_PLATFORM` env var.
+regardless of platform login or the `VITE_CADET_DISABLE_CLOUD` env var.
 
-Pass `{ platformHostedOnly: true }` to `usePlatformGate` for these:
+Pass `{ cloudHostedOnly: true }` to `useCloudGate` for these:
 
 ```ts
-const gate = usePlatformGate({ platformHostedOnly: true });
+const gate = useCloudGate({ cloudHostedOnly: true });
 if (gate === "gated") return <Navigate replace to={routes.settings.general} />;
-if (gate === "disabled") return <PlatformLoginNotice />;
+if (gate === "disabled") return <CloudLoginNotice />;
 // gate === "full" — render normally
 ```
 
 **Whole-page gates redirect, section-level gates render null.** When a
-_page_ is fully platform-hosted-only (notifications, billing, etc.),
+_page_ is fully cloud-hosted-only (notifications, billing, etc.),
 return `<Navigate replace />` to a reasonable sibling route — a
 bookmark or shared link to that page should land somewhere sensible
 on a self-hosted assistant. When a _section component_ inside a mixed
@@ -1335,13 +1335,13 @@ gated, return `null` and let the parent page render the rest.
 The decision is "is the **active assistant** self-hosted?" — not "is the
 app running in local mode?" Two cases this matters for:
 
-1. A **local-mode app** can be acting on a platform-hosted assistant
-   (lockfile entry with `cloud === "cadet"`). The platform billing /
+1. A **local-mode app** can be acting on a cloud-hosted assistant
+   (lockfile entry with `cloud === "cadet"`). The cloud billing /
    plan UI for that assistant IS meaningful.
 2. A **platform-mode app** can be acting on a self-hosted assistant —
-   when the platform API returns `is_local: true`,
+   when the cloud API returns `is_local: true`,
    `resolveAssistantLifecycleState` projects `kind: "self_hosted"` and
-   the user is effectively connected to a daemon. The platform billing /
+   the user is effectively connected to a daemon. The cloud billing /
    plan UI for that assistant is NOT meaningful.
 
 The reactive source is `useAssistantLifecycleStore.assistantState`. The
@@ -1351,45 +1351,45 @@ gate fires `"gated"` when the lifecycle state is either:
 - `{ kind: "active", isLocal: true }` (gateway-auth short-circuit fired
   in local mode).
 
-Truth table when `platformHostedOnly` is `true`:
+Truth table when `cloudHostedOnly` is `true`:
 
 | Active assistant            | Platform session | Result       |
 | --------------------------- | ---------------- | ------------ |
-| platform-hosted             | yes              | `"full"`     |
-| platform-hosted             | no               | `"disabled"` |
+| cloud-hosted             | yes              | `"full"`     |
+| cloud-hosted             | no               | `"disabled"` |
 | self-hosted                 | any              | `"gated"`    |
 | none resolved (loading etc) | yes              | `"full"`     |
 | none resolved               | no               | `"disabled"` |
 
-The `VITE_CADET_DISABLE_PLATFORM` env var does NOT apply to this
+The `VITE_CADET_DISABLE_CLOUD` env var does NOT apply to this
 branch — that setting gates the daemon-side API interceptor in local
 mode, which is orthogonal to "is this UI's target assistant
-platform-hosted?"
+cloud-hosted?"
 
-#### Gating network fetches: pair the gate with `useActiveAssistantIsPlatformHosted`
+#### Gating network fetches: pair the gate with `useActiveAssistantIsCloudHosted`
 
 The truth table above shows `"full"` for _none resolved + platform
 session_ on purpose: settings routes are NOT mounted under
-`<ActiveAssistantGate>`, so a fresh deep-link to a platform-hosted-only
+`<ActiveAssistantGate>`, so a fresh deep-link to a cloud-hosted-only
 page renders with the lifecycle still in `{ kind: "loading" }`. We
 want the UI to render normally (no flicker), but we do NOT want to
 fire platform-API requests against a daemon that might later resolve
 to `self_hosted`.
 
 Pair the gate's `"full"` value with a strict "lifecycle positively
-resolved as platform-hosted" check on the query's `enabled`:
+resolved as cloud-hosted" check on the query's `enabled`:
 
 ```ts
-const platformGate = usePlatformGate({ platformHostedOnly: true });
-const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+const cloudGate = useCloudGate({ cloudHostedOnly: true });
+const isCloudHosted = useActiveAssistantIsCloudHosted();
 
 const query = useQuery({
   ...someOrgScopedOptions(),
-  enabled: platformGate === "full" && isPlatformHosted,
+  enabled: cloudGate === "full" && isCloudHosted,
 });
 ```
 
-`useActiveAssistantIsPlatformHosted` returns `true` only when the
+`useActiveAssistantIsCloudHosted` returns `true` only when the
 lifecycle has projected `{ kind: "platform_hosted" }` or
 `{ kind: "active", isLocal: false }` — `false` for `loading` and every
 other state. The rendering decision (gate) and the fetch decision
@@ -1404,7 +1404,7 @@ evaluate to "enabled" during the resolution race — and a click on the
 control fires the mutation the gate exists to prevent. The fix needs
 two predicates, doing two different jobs:
 
-1. **`disabled` is strict** on `!isPlatformHosted` — it covers every
+1. **`disabled` is strict** on `!isCloudHosted` — it covers every
    state where the mutation has no meaningful target, including both
    the deep-link race window AND already-resolved non-hosted states
    (`retired`, `error`, `awaiting_version_selection`, `self_hosted`).
@@ -1416,18 +1416,18 @@ two predicates, doing two different jobs:
    through to its empty / error state, not stick on a spinner.
 
 ```ts
-const platformGate = usePlatformGate({ platformHostedOnly: true });
-const isPlatformHosted = useActiveAssistantIsPlatformHosted();
+const cloudGate = useCloudGate({ cloudHostedOnly: true });
+const isCloudHosted = useActiveAssistantIsCloudHosted();
 const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
 
 const disabled =
-  platformGate !== "full" ||
-  !isPlatformHosted ||           // strict — every non-hosted state
+  cloudGate !== "full" ||
+  !isCloudHosted ||           // strict — every non-hosted state
   isLoading ||
   isError ||
   mutation.isPending;
 
-const isResolving = platformGate === "full" && isLifecycleLoading;
+const isResolving = cloudGate === "full" && isLifecycleLoading;
 
 // Hide whole sub-trees during the race window only (not in retired etc):
 {!isResolving && <MutationFiringPopoverTrigger />}
@@ -1443,9 +1443,9 @@ UX cue for "we're working on it."** Conflating the two breaks UX in
 already-decided non-hosted states (permanent spinner, permanent
 disabled button with no explanation).
 
-This applies to every UI surface gated by `platformHostedOnly: true`:
+This applies to every UI surface gated by `cloudHostedOnly: true`:
 toggles, popover triggers, "mark all as read" buttons, etc. Mutation
-must be impossible while `!isPlatformHosted`; loading UX must reflect
+must be impossible while `!isCloudHosted`; loading UX must reflect
 only the genuine `lifecycleIsLoading` window.
 
 ##### Deferred-action UI: dialog/popover lifetime spans gate transitions
@@ -1453,7 +1453,7 @@ only the genuine `lifecycleIsLoading` window.
 Disabling only the **opener** isn't enough when the action is deferred
 behind a modal dialog or a persistent popover with its own confirm
 button. The dialog can be opened while the assistant is resolved as
-platform-hosted, the lifecycle can then drop back to `loading` (assistant
+cloud-hosted, the lifecycle can then drop back to `loading` (assistant
 switch, refresh), and the user can press Confirm during that window —
 firing the mutation against an assistant that may resolve as self-hosted.
 
@@ -1486,10 +1486,10 @@ handles the long window (user opens dialog, walks away, lifecycle
 changes); onclick-guard handles the millisecond edge where the click
 event arrives the same tick `isResolving` flips.
 
-### Daemon-owned endpoints routed through the platform proxy
+### Daemon-owned endpoints routed through the cloud proxy
 
-Many features use the platform API client but actually hit
-daemon-owned endpoints via `RuntimeProxyWildcardView` (the platform
+Many features use the cloud API client but actually hit
+daemon-owned endpoints via `RuntimeProxyWildcardView` (the cloud
 proxies `/v1/assistants/{id}/<path>` → daemon `/v1/<path>`). In local
 mode, the self-hosted ingress rewrite in `api-interceptors.ts` already
 reroutes these to the gateway directly — the
@@ -1501,7 +1501,7 @@ Home, Workspace, Contacts.
 ### Organization store
 
 The organization store (`src/stores/organization-store.ts`) only
-fetches when `hasPlatformSession` is `true`. Organizations are a
+fetches when `hasCloudSession` is `true`. Organizations are a
 platform concept — in self-hosted mode the interceptor already strips
 the `Cadet-Organization-Id` header and uses bearer auth instead.
 

@@ -7,7 +7,7 @@
  * `/v1/assistants/{id}/push/dispatch/` endpoint, which fans them out to every
  * native device token registered for the bound user. This module is the missing
  * client half: it asks the OS for an APNs or FCM token via
- * `@capacitor/push-notifications`, then upserts that token to the platform.
+ * `@capacitor/push-notifications`, then upserts that token to the cloud.
  *
  * Why this matters for reminders specifically: the in-app local-notification
  * path (`runtime/notifications.ts`) only fires while the JS runtime is alive
@@ -18,9 +18,9 @@
  * Lifecycle:
  *   - {@link registerForRemotePush} — call once an assistant is active. Requests
  *     notification permission, registers for APNs or FCM, and upserts the resulting
- *     token to the platform. Idempotent and safe to call on every mount.
+ *     token to the cloud. Idempotent and safe to call on every mount.
  *   - {@link unregisterFromRemotePush} — call from the logout path BEFORE the
- *     session cookie is cleared (see `stores/auth-store.ts`) so the platform
+ *     session cookie is cleared (see `stores/auth-store.ts`) so the cloud
  *     delete is authenticated. Removes the token for the bound assistant.
  *   - Tap routing — a `pushNotificationActionPerformed` listener publishes
  *     `deeplink.openThread` when the tapped notification carries a
@@ -47,7 +47,7 @@ import {
 } from "@/generated/api/sdk.gen";
 import type { AssistantsPushTokensUpsertData } from "@/generated/api/types.gen";
 import { publish } from "@/lib/event-bus";
-import { resolvePlatformAssistantId } from "@/lib/platform-assistant-id";
+import { resolveCloudAssistantId } from "@/lib/cloud-assistant-id";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { ensureAndroidAlertsChannel } from "@/runtime/android-notification-channels";
 import {
@@ -112,7 +112,7 @@ function parseRegisteredToken(raw: string): RegisteredToken | null {
  * storage. Module memory alone is insufficient: the WebView/app process can
  * reload (dropping `lastRegistered`) before `usePushRegistration` re-runs, and
  * `/logout` is a standalone route outside `RootLayout` — so logout could fire
- * with empty module state and skip the platform DELETE, leaving a signed-out
+ * with empty module state and skip the cloud DELETE, leaving a signed-out
  * device still receiving remote pushes. The `cadet:` (user) scope is cleared
  * by the logout storage sweep, and we also remove it explicitly after delete.
  *
@@ -181,10 +181,10 @@ export function isRemotePushSupported(): boolean {
 
 /**
  * What this Android build can do with a push, sent on the Android upsert as
- * `capabilities` and stored on the token row once the platform's schema
- * carries the field; until then the platform drops it as an unknown field.
+ * `capabilities` and stored on the token row once the cloud's schema
+ * carries the field; until then the cloud drops it as an unknown field.
  *
- * The platform sends data-only FCM messages only to tokens claiming
+ * The cloud sends data-only FCM messages only to tokens claiming
  * `native-notification-render`, so an older shell whose plugin lacks the
  * method must report nothing and keep receiving notification-block pushes.
  *
@@ -214,13 +214,13 @@ type AndroidUpsertBody = Extract<
 >;
 
 /**
- * Upsert a freshly-minted native token to the platform for the given assistant.
+ * Upsert a freshly-minted native token to the cloud for the given assistant.
  * Best-effort: a non-2xx response or thrown error is reported and swallowed.
  */
 async function upsertToken(token: string, assistantId: string): Promise<void> {
   try {
-    const platformAssistantId = await resolvePlatformAssistantId(assistantId);
-    if (platformAssistantId === null) {
+    const cloudAssistantId = await resolveCloudAssistantId(assistantId);
+    if (cloudAssistantId === null) {
       return;
     }
     // `@capacitor/app` is a plugin Proxy — destructure inline (see CAPACITOR.md).
@@ -246,7 +246,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
           };
 
     const result = await assistantsPushTokensUpsert({
-      path: { assistant_id: platformAssistantId },
+      path: { assistant_id: cloudAssistantId },
       body,
       throwOnError: false,
     });
@@ -264,7 +264,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
     lastRegistered = {
       token,
       bundleId,
-      assistantId: platformAssistantId,
+      assistantId: cloudAssistantId,
       runtimeAssistantId: assistantId,
     };
     persistedRegistration.save(lastRegistered);
@@ -287,7 +287,7 @@ async function upsertToken(token: string, assistantId: string): Promise<void> {
 
 /**
  * Conversation id a tapped push routes to: `data.deep_link.conversationId`
- * (daemon `deep_link_metadata`, relayed by the platform into the APNs
+ * (daemon `deep_link_metadata`, relayed by the cloud into the APNs
  * payload), falling back to a top-level `conversationId`. Undefined for
  * absent/malformed shapes — the tap then just foregrounds the app.
  */
@@ -550,7 +550,7 @@ async function ensureListeners(): Promise<void> {
 
 /**
  * Request notification permission, register with APNs or FCM, and upsert the
- * resulting device token to the platform for `assistantId`.
+ * resulting device token to the cloud for `assistantId`.
  *
  * Safe to call repeatedly (e.g. on every mount or assistant switch): the OS
  * shows the permission prompt at most once, `register()` re-emits the cached token,
@@ -607,9 +607,9 @@ export async function registerForRemotePush(
 }
 
 /**
- * Delete the last-registered device token from the platform. Call this from the
+ * Delete the last-registered device token from the cloud. Call this from the
  * logout flow BEFORE the session cookie is cleared so the request is
- * authenticated (the platform delete is keyed on the still-valid session).
+ * authenticated (the cloud delete is keyed on the still-valid session).
  *
  * Best-effort and idempotent: no-ops when nothing was registered or off native
  * mobile, and reports (does not throw) delete failures.
@@ -668,9 +668,9 @@ export async function unregisterFromRemotePush(): Promise<void> {
  * only when an upsert succeeded after this process started).
  *
  * Deliberately ignores the persisted-storage registration: a record from an
- * earlier session only proves an upsert once succeeded, not that the platform
+ * earlier session only proves an upsert once succeeded, not that the cloud
  * still holds a token row for this device (provider invalid-token responses
- * prune rows server-side). A session-confirmed upsert proves the platform
+ * prune rows server-side). A session-confirmed upsert proves the cloud
  * held a live token row for this device at mount time, which is the evidence
  * the remote-push banner dedup in `runtime/notifications.ts` needs before
  * suppressing a local banner. The logout path is different: deleting a

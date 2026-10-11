@@ -89,7 +89,7 @@ mock.module("@mycadet/plugin-api", () => ({
 mock.module("../../../../../providers/registry.js", () => ({
   ...registryReal,
   getProviderRoutingSource: (providerName: string) =>
-    providerName === "managed" ? "managed-proxy" : "user-key",
+    providerName === "managed" ? "cloud-proxy" : "user-key",
 }));
 
 mock.module("../../../../../util/logger.js", () => ({
@@ -536,7 +536,7 @@ describe("selectPool — infrastructure failures throw", () => {
     expect(failure.turn?.recentContext).toBe("");
   });
 
-  test("managed provider 402 attaches a non-terminal credits notice", async () => {
+  test("cloud provider 402 attaches a non-terminal credits notice", async () => {
     providerStub = {
       name: "managed",
       sendMessage: async (messages, options) => {

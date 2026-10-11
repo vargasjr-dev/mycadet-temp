@@ -21,7 +21,7 @@ interface HatchErrorOverlayProps {
  * trapping focus or swallowing pointer events, so the funnel keeps both its
  * collected state and its own escapes (each step's back chevron, the calendar
  * step's "Skip for now") while the failure is up, and a successful retry
- * resumes in place. Retrying can't help while managed hosting is at capacity,
+ * resumes in place. Retrying can't help while cloud hosting is at capacity,
  * so that case offers the local-assistant off-ramp instead.
  *
  * Portaled to `document.body` so no step's stacking or clipping context can
@@ -36,7 +36,7 @@ interface HatchErrorOverlayProps {
 export function HatchErrorOverlay({ error, onRetry }: HatchErrorOverlayProps) {
   const { t } = useTranslation("onboarding");
   const desktopAppPlatform = useDesktopAppPlatform();
-  const platformHostedDisabled = error === PLATFORM_HOSTED_DISABLED_MESSAGE;
+  const cloudHostedDisabled = error === PLATFORM_HOSTED_DISABLED_MESSAGE;
   return createPortal(
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px))+5rem)]">
       <Notice
@@ -44,7 +44,7 @@ export function HatchErrorOverlay({ error, onRetry }: HatchErrorOverlayProps) {
         title={t("hatchingScreen.genericFailure")}
         className="pointer-events-auto w-auto max-w-[480px] shadow-xl"
         actions={
-          platformHostedDisabled ? (
+          cloudHostedDisabled ? (
             <Button asChild variant="primary" size="regular">
               <a href={`${window.location.origin}/download`}>
                 {t(getDesktopAppDownloadActionKey(desktopAppPlatform))}
@@ -58,7 +58,7 @@ export function HatchErrorOverlay({ error, onRetry }: HatchErrorOverlayProps) {
         }
       >
         {error}
-        {platformHostedDisabled ? (
+        {cloudHostedDisabled ? (
           <p className="mt-1 text-[color:var(--content-default)]">
             {t("hatchingScreen.localFallbackPitch")}
           </p>

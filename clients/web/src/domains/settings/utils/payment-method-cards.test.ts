@@ -61,7 +61,7 @@ describe("paymentMethodCards", () => {
     ]);
   });
 
-  test("reads the expiry the platform sends", () => {
+  test("reads the expiry the cloud sends", () => {
     expect(paymentMethodCards(WITH_EXPIRY)).toEqual([
       {
         id: "primary",

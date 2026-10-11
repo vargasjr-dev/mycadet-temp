@@ -736,7 +736,7 @@ describe("resolveCallSiteConfig", () => {
     expect(resolved.model).toBe(resolveModelIntent("openai", "cost-optimized"));
   });
 
-  test("BYOK full-workspace: every call site resolves through the default provider, never the managed connection", () => {
+  test("BYOK full-workspace: every call site resolves through the default provider, never the cloud connection", () => {
     const byokConfig = LLMSchema.parse({
       profiles: {
         balanced: { source: "managed", status: "disabled" },

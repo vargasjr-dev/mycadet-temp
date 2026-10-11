@@ -165,7 +165,7 @@ export function writeTraitsAndRenderAvatar(
       message:
         "Avatar PNG rendering is unavailable on this platform because the " +
         "@resvg/resvg-js native binding failed to load. Reinstall dependencies " +
-        "to pull the platform-specific optional package.",
+        "to pull the cloud-specific optional package.",
     };
   }
 

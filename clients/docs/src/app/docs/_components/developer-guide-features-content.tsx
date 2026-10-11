@@ -17,7 +17,7 @@ export function DeveloperGuideFeaturesContent() {
     <>
       <DocsContent title="Features & Capabilities" breadcrumb="Docs / Developer Guide / Features">
         <p className="mb-8 text-zinc-600">
-          A deep dive into the platform&apos;s major feature areas — integrations, skill authoring, browser automation,
+          A deep dive into the cloud&apos;s major feature areas — integrations, skill authoring, browser automation,
           file attachments, and media embeds.
         </p>
 
@@ -52,9 +52,9 @@ export function DeveloperGuideFeaturesContent() {
           </p>
           <ol className="mb-6 list-decimal space-y-2 pl-6 text-zinc-600">
             <li><strong>Evaluate</strong> — drafts a TypeScript snippet, tests in a sandbox via <code className="text-sm">evaluate_typescript_code</code>. Iterates until it passes.</li>
-            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">$CADET_WORKSPACE_DIR/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_managed_skill</code>.</li>
+            <li><strong>Persist</strong> — writes the skill to <code className="text-sm">$CADET_WORKSPACE_DIR/skills/&lt;id&gt;/</code> via <code className="text-sm">scaffold_cloud_skill</code>.</li>
             <li><strong>Load</strong> — calls <code className="text-sm">skill_load</code> to activate the new skill.</li>
-            <li><strong>Delete</strong> — removes via <code className="text-sm">delete_managed_skill</code>.</li>
+            <li><strong>Delete</strong> — removes via <code className="text-sm">delete_cloud_skill</code>.</li>
           </ol>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -72,14 +72,14 @@ export function DeveloperGuideFeaturesContent() {
                   <td className="py-2">Run a TypeScript snippet in a sandbox</td>
                 </tr>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-4"><code className="text-xs">scaffold_managed_skill</code></td>
+                  <td className="py-2 pr-4"><code className="text-xs">scaffold_cloud_skill</code></td>
                   <td className="py-2 pr-4">High</td>
-                  <td className="py-2">Write a managed skill with SKILL.md frontmatter</td>
+                  <td className="py-2">Write a cloud skill with SKILL.md frontmatter</td>
                 </tr>
                 <tr>
-                  <td className="py-2 pr-4"><code className="text-xs">delete_managed_skill</code></td>
+                  <td className="py-2 pr-4"><code className="text-xs">delete_cloud_skill</code></td>
                   <td className="py-2 pr-4">High</td>
-                  <td className="py-2">Remove a managed skill directory and index entry</td>
+                  <td className="py-2">Remove a cloud skill directory and index entry</td>
                 </tr>
               </tbody>
             </table>

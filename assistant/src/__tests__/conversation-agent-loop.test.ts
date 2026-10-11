@@ -2797,7 +2797,7 @@ describe("session-agent-loop", () => {
     });
 
     test("attributes a fallback serve to the profile that actually served", async () => {
-      // The turn resolved to the primary managed profile, the request hit an
+      // The turn resolved to the primary cloud profile, the request hit an
       // outage-shaped failure, and `RetryProvider` escalated to a backup
       // profile on a different provider, stamping `actualProvider` and
       // `actualInferenceProfile` on the response it returns.
@@ -4054,7 +4054,7 @@ describe("session-agent-loop", () => {
       });
     });
 
-    test("does not persist managed credential refresh failures as assistant text", async () => {
+    test("does not persist cloud credential refresh failures as assistant text", async () => {
       mockConversationErrorClassification = {
         code: "MANAGED_KEY_INVALID",
         userMessage: "Couldn't refresh assistant credentials.",

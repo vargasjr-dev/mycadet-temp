@@ -23,7 +23,7 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 let mockReadCredential = mock(
   async (_key: string): Promise<string | undefined> => TUNNEL_USER_ID,
 );
-mock.module("../platform-user-id.js", () => ({
+mock.module("../cloud-user-id.js", () => ({
   readStoredCloudUserId: async () => ({
     userId: await mockReadCredential("cadet:platform_user_id"),
     unreachable: false,
@@ -130,7 +130,7 @@ describe("authorizeGuardianStream: the actor token path", () => {
 });
 
 /**
- * The managed path, where tunnel validated the browser's token and injected the
+ * The cloud path, where tunnel validated the browser's token and injected the
  * caller. The attestation proves the caller is *a* platform user who traversed
  * tunnel, not that they are this assistant's guardian, so it is cross-checked
  * against the stored `platform_user_id`.
@@ -205,7 +205,7 @@ describe("authorizeGuardianStream: the tunnel-attested managed path", () => {
     expect(res!.status).toBe(403);
   });
 
-  test("answers 503 when the platform user lookup fails", async () => {
+  test("answers 503 when the cloud user lookup fails", async () => {
     mockReadCredential = mock(async () => {
       throw new Error("credential store down");
     });
@@ -280,7 +280,7 @@ describe("authorizeGuardianStream: the tunnel-attested managed path", () => {
   });
 
   /**
-   * The managed path skips the shared gate, so the upgrade header is checked
+   * The cloud path skips the shared gate, so the upgrade header is checked
    * before it: a plain managed request must get 426, not a failed upgrade.
    */
   test("answers 426 for a plain request even when tunnel attests the guardian", async () => {

@@ -46,7 +46,7 @@ import {
 const DEFAULT_PROVIDER = "default";
 
 /**
- * Web Fetch service card. Unlike Web Search there is no managed proxy, so the
+ * Web Fetch service card. Unlike Web Search there is no cloud proxy, so the
  * card is mode-less (`ByoServiceCard`): pick the built-in fetcher or a BYOK
  * provider that scrapes via its hosted API. BYOK providers reuse the same
  * stored credential as Web Search.

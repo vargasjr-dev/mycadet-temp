@@ -879,7 +879,7 @@ async function notifyRequesterOfDenial(params: {
  *   verification session so the requester proves control of the channel.
  * - `trust`: activates the contact directly, no code. `verifiedVia` records
  *   the binding strength: `manual` for a workspace-vouched identity,
- *   `manual_channel_claim` for an external/stranger the platform is not
+ *   `manual_channel_claim` for an external/stranger the cloud is not
  *   vouching for.
  * - `leave_unverified` (also reached via `reject`): persists the sender as an
  *   `unverified_contact` so discovery does not re-fire.
@@ -985,7 +985,7 @@ const accessRequestResolver: GuardianRequestResolver = {
     }
 
     // Direct trust: activate the contact without a handshake. The binding
-    // strength is derived from the platform's identity signals — a
+    // strength is derived from the cloud's identity signals — a
     // workspace-vouched identity records `manual` (internal_workspace_match);
     // an external/stranger records `manual_channel_claim`
     // (inbound_channel_claim), never handshake-equivalent provenance.

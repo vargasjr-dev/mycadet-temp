@@ -96,7 +96,7 @@ describe("migration 296: rewrite balanced-economy profile pins", () => {
     expect(pin(sqlite, "conversations", "c1")).toBe("balanced-economy");
   });
 
-  test("rewrites pins when balanced-economy is the managed profile in config", () => {
+  test("rewrites pins when balanced-economy is the cloud profile in config", () => {
     writeWorkspaceConfig({
       llm: { profiles: { "balanced-economy": { source: "managed" } } },
     });

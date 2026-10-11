@@ -416,7 +416,7 @@ export function createCesRpcClient(
       assistantApiKey: string,
       assistantId?: string,
     ): Promise<{ updated: boolean }> {
-      return call(CesRpcMethod.UpdateManagedCredential, {
+      return call(CesRpcMethod.UpdateCloudCredential, {
         assistantApiKey,
         ...(assistantId ? { assistantId } : {}),
       });

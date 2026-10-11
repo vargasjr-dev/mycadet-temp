@@ -125,7 +125,7 @@ describe("maintainJob", () => {
       },
       // Skill usage-prune stage off by default: no managed skills ⇒ nothing to
       // report or delete. The dedicated usage-prune tests below override these.
-      listManagedSkills: () => [],
+      listCloudSkills: () => [],
       deleteSkill: async () => {},
       nowMs: () => Date.now(),
     };
@@ -1202,7 +1202,7 @@ describe("maintainJob skill usage-prune", () => {
       listIndexedSlugs: async () => [],
       loadCoreSet: () => [],
       invalidateLanes: () => {},
-      listManagedSkills: () =>
+      listCloudSkills: () =>
         skills.map((s) => ({ ...s, installMeta: metas[s.id] ?? null })),
       deleteSkill: async (id) => {
         deletedSkills.push(id);
@@ -1259,7 +1259,7 @@ describe("maintainJob skill usage-prune", () => {
     });
   });
 
-  describe("enabled (skillPruneDays: 30) — deletes via executeDeleteManagedSkill", () => {
+  describe("enabled (skillPruneDays: 30) — deletes via executeDeleteCloudSkill", () => {
     test("prunes a stale assistant skill via deleteSkill", async () => {
       memoryV3LiveSlot = true;
       const {

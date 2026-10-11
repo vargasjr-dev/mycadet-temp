@@ -148,12 +148,12 @@ layers that work together — follow this checklist when adding or modifying tok
    multiple CSS properties (like the `text-title-large` typography classes)
    should be registered with `@utility` at the bottom of the file.
 
-**Tokens not yet migrated from the platform repo:**
-The platform's `globals.css` includes additional token categories (spacing scale,
+**Tokens not yet migrated from the cloud repo:**
+The cloud's `globals.css` includes additional token categories (spacing scale,
 border-radius scale, shadows, color ramps like Moss/Stone/Forest/Amber) that
 have not been brought into the design library yet. These should be added
 incrementally as components that need them are migrated. When adding them, follow
-the same three-step pattern above and keep values in sync with the platform's
+the same three-step pattern above and keep values in sync with the cloud's
 [`appTheme.css`](<https://github.com/vargasjr-dev/mycadet-platform/blob/main/web/src/app/(app)/appTheme.css>)
 and [`globals.css`](https://github.com/vargasjr-dev/mycadet-platform/blob/main/web/src/app/globals.css).
 

@@ -111,7 +111,7 @@ export function registerGatewayCommand(program: Command): void {
         log.info(
           "  live voice/audio WebSockets. It is not needed for text channels or",
         );
-        log.info("  the managed LLM proxy.");
+        log.info("  the cloud LLM proxy.");
       });
 
       const logs = subcommand(gateway, "logs");

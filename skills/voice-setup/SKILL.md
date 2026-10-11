@@ -93,7 +93,7 @@ Check the active provider first with `assistant config get services.tts.provider
 voice_config_update setting="tts_provider" value="deepgram"
 ```
 
-The managed `cadet` provider accepts both supported ElevenLabs and Deepgram voice IDs, so it does not require a provider switch. Then follow the matching included voice skill.
+The cloud `cadet` provider accepts both supported ElevenLabs and Deepgram voice IDs, so it does not require a provider switch. Then follow the matching included voice skill.
 
 The active provider's voice setting controls both in-app TTS and phone calls.
 
@@ -113,7 +113,7 @@ Desktop Talk starts a live voice session. Its audio is transcribed through the a
 
 1. Ask whether Cadet shows a microphone permission warning and whether the recording indicator appears. If access is denied or capture does not start, follow the microphone permission flow.
 2. Confirm which shortcut the user configured. Legacy PTT applies only on macOS. Verify desktop Talk in the Voice tab.
-3. Apply the platform-specific checks:
+3. Apply the cloud-specific checks:
    - **macOS:** Fn requires the native helper and may require Input Monitoring. The Globe key can also be assigned to macOS Dictation or the emoji picker, so suggest a custom chord if both actions fire.
    - **Windows:** Fn cannot work. A Ctrl+Shift or Alt tap requires Cadet to be focused. For use from another app, record a custom global chord and make sure no other app owns it.
 4. If the user reports Speech Recognition permission as denied or not determined, call `open_system_settings` with `pane: "speech_recognition"` and the current `platform`.
@@ -131,7 +131,7 @@ Desktop Talk starts a live voice session. Its audio is transcribed through the a
 
 This path applies to the microphone button's one-shot dictation, not Desktop Talk.
 
-1. If the user reports Speech Recognition permission as denied or unknown, open the platform's privacy page with `open_system_settings`.
+1. If the user reports Speech Recognition permission as denied or unknown, open the cloud's privacy page with `open_system_settings`.
 2. Ask whether dictation partials appear. If capture starts without partials, troubleshoot the native helper and local recognizer.
 3. On Windows, the helper uses an installed Windows speech recognizer and prefers the current Windows display language. If no matching recognizer is installed, add that language's speech feature or select an installed language.
 4. Reduce background noise or move closer to the microphone.

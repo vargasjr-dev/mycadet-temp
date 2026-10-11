@@ -20,7 +20,7 @@ interface CheckinConnectScreenProps {
  * SPIKE — checkin-onboarding flow.
  *
  * "Let's chat tomorrow" page: invites the user to connect Google Calendar
- * (calendar.events plus the openid/userinfo.email identity scopes the managed
+ * (calendar.events plus the openid/userinfo.email identity scopes the cloud
  * flow needs — no Gmail/Drive) so the assistant can schedule a Day 2 Check-in.
  * Connect/skip are driven by the parent route, which fires the check-in prompt
  * and continues the onboarding handoff.

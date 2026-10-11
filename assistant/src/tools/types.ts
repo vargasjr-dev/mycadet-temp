@@ -440,7 +440,7 @@ export interface ToolContext {
    */
   toolUseId?: string;
   /**
-   * True when the assistant is running as a platform-managed remote instance. Used to auto-approve sandboxed bash tools.
+   * True when the assistant is running as a cloud-managed remote instance. Used to auto-approve sandboxed bash tools.
    * @legacy
    */
   isCloudHosted?: boolean;

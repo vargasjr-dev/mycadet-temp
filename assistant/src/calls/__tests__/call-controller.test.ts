@@ -51,10 +51,10 @@ function seedDefaultResolvableKeys(): void {
   }
 }
 
-// Managed-speech defaulting reaches the platform client and the credential
+// Managed-speech defaulting reaches the cloud client and the credential
 // store. The controller tests drive the bridge mock on a microtask budget, so
 // the configured providers stand as the effective ones here.
-mock.module("../../config/managed-speech-defaults.js", () => ({
+mock.module("../../config/cloud-speech-defaults.js", () => ({
   resolveEffectiveSpeechProviders: async (config?: {
     services: { stt: { provider: string }; tts: { provider: string } };
   }) => {

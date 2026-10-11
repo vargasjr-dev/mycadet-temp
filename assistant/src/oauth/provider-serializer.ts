@@ -36,7 +36,7 @@ export interface SerializedProviderSummary {
   client_id_placeholder: string | null;
   requires_client_secret: boolean;
   logo_url: string | null;
-  supports_managed_mode: boolean;
+  supports_cloud_mode: boolean;
   managed_service_is_paid: boolean;
   feature_flag: string | null;
   /**
@@ -46,7 +46,7 @@ export interface SerializedProviderSummary {
   category: IntegrationCategory | null;
   /**
    * Per-tenant providers only (Shopify): what a client must collect before
-   * starting a managed connect, since the provider's OAuth endpoints live on
+   * starting a cloud connect, since the provider's OAuth endpoints live on
    * the customer's own host. `null` for providers with one global host.
    */
   tenant_host: { pattern: string; label: string; placeholder: string } | null;
@@ -116,7 +116,7 @@ function _serializeProvider(
     logoUrl: row.logoUrl ?? null,
     clientIdPlaceholder: row.clientIdPlaceholder ?? null,
     requiresClientSecret: !!(row.requiresClientSecret ?? 1),
-    supportsManagedMode: !!row.managedServiceConfigKey,
+    supportsManagedMode: !!row.cloudServiceConfigKey,
     managedServiceIsPaid: !!row.managedServiceIsPaid,
     defaultScopes: row.defaultScopes ? JSON.parse(row.defaultScopes) : [],
     availableScopes: row.availableScopes
@@ -176,7 +176,7 @@ export function serializeProviderSummary(
     client_id_placeholder: row.clientIdPlaceholder ?? null,
     requires_client_secret: !!(row.requiresClientSecret ?? 1),
     logo_url: row.logoUrl ?? null,
-    supports_managed_mode: !!row.managedServiceConfigKey,
+    supports_cloud_mode: !!row.cloudServiceConfigKey,
     managed_service_is_paid: !!row.managedServiceIsPaid,
     feature_flag: row.featureFlag ?? null,
     category: PROVIDER_SEED_DATA[row.provider]?.category ?? null,

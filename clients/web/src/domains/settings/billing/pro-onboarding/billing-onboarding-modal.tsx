@@ -189,7 +189,7 @@ export function BillingOnboardingModal({
 
   // Domain/email/guardian registration must run while the assistant's machine
   // is online: registering the email triggers a guardian-channel write to the
-  // machine's gateway. The platform auto-resizes (and restarts) the machine
+  // machine's gateway. The cloud auto-resizes (and restarts) the machine
   // right after checkout, so the takeover's exits stay guarded while that
   // resize is in flight, including a stall, where the machine may still be
   // mid-restart.

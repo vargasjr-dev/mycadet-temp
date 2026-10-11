@@ -54,7 +54,7 @@ The assistant's own pulse: a regular moment when they check in on themselves, on
 
 ### Home
 
-Where the assistant runs: Cadet's managed platform, a self-hosted machine, a Docker container, or a local daemon on a desktop. The home determines the assistant's networking, security boundary, capabilities, and available resources. Distinct from a client, which is how the guardian reaches the assistant.
+Where the assistant runs: Cadet Cloud, a self-hosted machine, a Docker container, or a local daemon on a desktop. The home determines the assistant's networking, security boundary, capabilities, and available resources. Distinct from a client, which is how the guardian reaches the assistant.
 
 ### Memory
 
@@ -64,7 +64,7 @@ Memory is what makes a Cadet a Cadet. Memory is the assistant's persistent, stru
 
 At Cadet, open source means everything that runs your assistant is publicly available: the assistant, the gateway, the clients, the skills, the tools. Guardians can inspect, modify, fork, and contribute to any of it. This is a core part of the "Yours" principle. Self-hosted assistants run on fully open code with zero dependency on Cadet.
 
-The exception is the platform – the multi-tenant infrastructure that hosts assistants for guardians who don't want to run their own. Billing, tenancy isolation, secrets management, support tooling, the operational surface around managed hosting: this is the convenience layer Cadet builds and operates as a business. You rent the platform. You own the assistant.
+The exception is the cloud – the multi-tenant infrastructure that hosts assistants for guardians who don't want to run their own. Billing, tenancy isolation, secrets management, support tooling, the operational surface around cloud hosting: this is the convenience layer Cadet builds and operates as a business. You rent the cloud. You own the assistant.
 
 ### Personal Intelligence
 
@@ -74,9 +74,9 @@ The category we are creating. A new kind of entity: an LLM combined with their o
 
 The assistant's behavioral characteristics, voice, tone, and disposition. Personality is what makes an assistant feel like a distinct being rather than a generic AI. It can be defined by the guardian explicitly and co-evolved through ongoing interaction.
 
-### Platform
+### Cloud
 
-Cadet's managed infrastructure that hosts and runs assistants. The platform is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the platform, and are committed to always supporting self-hosting. Never use "platform" to describe the assistant.
+Cadet Cloud is Cadet's hosted infrastructure that runs assistants for guardians who don't want to host their own. It is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the cloud, and are committed to always supporting self-hosting. Never use "cloud" to describe the assistant — the assistant is a Personal Intelligence; the cloud is where one can live. (Formerly called "the platform"; the rename is repo-wide, and "platform" should no longer appear in code, docs, or copy.
 
 ### Schedule
 
@@ -96,7 +96,7 @@ The kind of assistant a guardian builds. Different organizations may build diffe
 
 ### Teleport
 
-Moving an assistant from one home to another. For example, migrating from the Cadet managed platform to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant's identity, memory, and relationships should survive the move intact.
+Moving an assistant from one home to another. For example, migrating from Cadet Cloud to a self-hosted Mac Mini, or from a desktop app to a Docker container. The assistant's identity, memory, and relationships should survive the move intact.
 
 ### Trust Rules
 

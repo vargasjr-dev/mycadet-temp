@@ -130,15 +130,15 @@ mock.module("@/lib/local-mode", () => ({
   getLocalGatewayUrl: getLocalGatewayUrlMock,
   getPairedGatewayUrl: getPairedGatewayUrlMock,
   getLockfile: () => ({ assistants: [], activeAssistant: null }),
-  getPlatformAssistants: () => [],
+  getCloudAssistants: () => [],
   getPlatformRuntimeUrl: () => window.location.origin,
   getSelectedAssistant: getSelectedAssistantMock,
   hasAssistants: () => false,
   isLocalAssistant: () => false,
   isPairedAssistant: () => false,
   isLocalClient: isLocalClientMock,
-  isPlatformAssistant: () => false,
-  isPlatformDisabled: () => false,
+  isCloudAssistant: () => false,
+  isCloudDisabled: () => false,
   isCadetCloudRemote: isCadetCloudRemoteMock,
   isServedGatewayRuntime: isServedGatewayRuntimeMock,
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
@@ -148,7 +148,7 @@ mock.module("@/lib/local-mode", () => ({
   retireLocalAssistant: async () => ({ ok: false }),
   saveLockfileAssistant: async () => {},
   setActiveLockfileAssistant: async () => {},
-  syncPlatformAssistantsToLockfile: async () => {},
+  syncCloudAssistantsToLockfile: async () => {},
 }));
 
 const refreshRemoteGatewaySessionMock = mock(async () => true);
@@ -197,7 +197,7 @@ function makeQueryClient(): QueryClient {
 
 const baseInputs = {
   sessionStatus: "authenticated" as const,
-  hasPlatformSession: true,
+  hasCloudSession: true,
 };
 
 beforeEach(() => {
@@ -499,9 +499,9 @@ describe("lifecycleService — bootstrap branches", () => {
     });
   });
 
-  test("gateway-auth mode does NOT reset on a platform sessionStatus flip to unauthenticated", async () => {
+  test("gateway-auth mode does NOT reset on a cloud sessionStatus flip to unauthenticated", async () => {
     // Local (gateway) and platform are independent session authorities:
-    // a platform identity loss must not tear down a local lifecycle.
+    // a cloud identity loss must not tear down a local lifecycle.
     isGatewayAuthModeMock.mockImplementation(() => true);
 
     // Drive into the gateway-auth active (self-hosted/local) state.
@@ -516,7 +516,7 @@ describe("lifecycleService — bootstrap branches", () => {
       "active",
     );
 
-    // Flip the platform session unauthenticated and reconcile — the
+    // Flip the cloud session unauthenticated and reconcile — the
     // gateway authority drives the lifecycle, so no reset happens.
     lifecycleService.setInputs({
       ...baseInputs,
@@ -537,7 +537,7 @@ describe("lifecycleService — bootstrap branches", () => {
   });
 
   test("platform mode (not gateway-auth) still resets on a sessionStatus flip to unauthenticated", async () => {
-    // Drive into an active state through the platform path.
+    // Drive into an active state through the cloud path.
     getAssistantMock.mockImplementationOnce(async () => ({
       ok: true,
       status: 200,
@@ -1539,7 +1539,7 @@ describe("lifecycleService — selection subscription", () => {
   });
 
   test("no republish outside gateway-auth mode", async () => {
-    // Drive to active via the platform path.
+    // Drive to active via the cloud path.
     getAssistantMock.mockImplementationOnce(async () => ({
       ok: true,
       status: 200,
@@ -1634,7 +1634,7 @@ describe("lifecycleService — transport-shaped failures", () => {
     };
   }
 
-  /** The structured 502 the Electron platform proxy synthesizes. */
+  /** The structured 502 the Electron cloud proxy synthesizes. */
   const proxyNetworkErrorResult = {
     ok: false as const,
     status: 502,

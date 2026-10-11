@@ -6,7 +6,7 @@
  *   WebSocket relay to the same gateway. Used for locally running
  *   assistants where the extension can reach the gateway over loopback
  *   (or a user-provided URL).
- * - `cadet-cloud` — Cadet-cloud-managed assistant. Auth relies on the
+ * - `cadet-cloud` — Cadet Cloud assistant. Auth relies on the
  *   WorkOS session token and the SSE `/events` transport.
  * - `unsupported` — the topology is not recognised by this version of
  *   the extension.

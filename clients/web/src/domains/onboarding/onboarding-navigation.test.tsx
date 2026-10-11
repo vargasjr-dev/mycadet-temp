@@ -86,11 +86,11 @@ mock.module("@/domains/onboarding/provider-key", () => ({
 }));
 
 mock.module("@/stores/auth-store", () => ({
-  useHasPlatformSession: () => true,
+  useHasCloudSession: () => true,
 }));
 mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {
-    use: { multiPlatformAssistant: () => true },
+    use: { multiCloudAssistant: () => true },
   },
 }));
 mock.module("@/stores/resolved-assistants-store", () => ({

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let providerRoutingSources: Record<string, "user-key" | "managed-proxy"> = {};
+let providerRoutingSources: Record<string, "user-key" | "cloud-proxy"> = {};
 
 mock.module("../providers/registry.js", () => ({
   getProviderRoutingSource: (provider: string) =>
@@ -125,7 +125,7 @@ describe("classifyConversationError", () => {
       });
     }
 
-    it("classifies managed-proxy daily quota responses as MANAGED_USAGE_LIMIT", () => {
+    it("classifies cloud-proxy daily quota responses as MANAGED_USAGE_LIMIT", () => {
       const err = new ProviderError(
         'Anthropic API error (429): 429 {"code":"daily_quota_exceeded","detail":"You\'ve reached your usage limit for today. You\'ve made 1000 requests, but your current plan allows 1000 per day.","provider":"anthropic"}',
         "anthropic",
@@ -136,13 +136,13 @@ describe("classifyConversationError", () => {
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
       expect(result.retryable).toBe(true);
-      expect(result.userMessage).toContain("Cadet managed inference");
+      expect(result.userMessage).toContain("Cadet Cloud inference");
       expect(result.userMessage).toContain("not an AI provider outage");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
 
-    it("classifies managed-proxy routed 429s as MANAGED_USAGE_LIMIT", () => {
-      providerRoutingSources.anthropic = "managed-proxy";
+    it("classifies cloud-proxy routed 429s as MANAGED_USAGE_LIMIT", () => {
+      providerRoutingSources.anthropic = "cloud-proxy";
       const err = new ProviderError(
         "Anthropic API error (429): Too many requests",
         "anthropic",
@@ -152,7 +152,7 @@ describe("classifyConversationError", () => {
       const result = classifyConversationError(err, baseCtx);
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
-      expect(result.userMessage).toContain("Cadet managed inference");
+      expect(result.userMessage).toContain("Cadet Cloud inference");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
 
@@ -172,7 +172,7 @@ describe("classifyConversationError", () => {
     });
 
     it("uses the ChatGPT OAuth route instead of the OpenAI registry default", () => {
-      providerRoutingSources.openai = "managed-proxy";
+      providerRoutingSources.openai = "cloud-proxy";
       const err = new ProviderError(
         "OpenAI API error (429): Too many requests",
         "openai",
@@ -183,7 +183,7 @@ describe("classifyConversationError", () => {
       const result = classifyConversationError(err, {
         ...baseCtx,
         connectionName: "chatgpt-subscription",
-        isManagedRoute: false,
+        isCloudRoute: false,
       });
 
       expect(result.code).toBe("PROVIDER_RATE_LIMIT");
@@ -192,7 +192,7 @@ describe("classifyConversationError", () => {
     });
 
     it("prefers the failed call's direct route over stale managed turn attribution", () => {
-      providerRoutingSources.openai = "managed-proxy";
+      providerRoutingSources.openai = "cloud-proxy";
       const err = new ProviderError(
         "OpenAI API error (429): Too many requests",
         "openai",
@@ -202,14 +202,14 @@ describe("classifyConversationError", () => {
       err.attachRouteAttribution({
         connectionName: "chatgpt-subscription",
         profileName: "chatgpt",
-        isManagedRoute: false,
+        isCloudRoute: false,
       });
 
       const result = classifyConversationError(err, {
         ...baseCtx,
         connectionName: "cadet",
         profileName: "managed",
-        isManagedRoute: true,
+        isCloudRoute: true,
       });
 
       expect(result.code).toBe("PROVIDER_RATE_LIMIT");
@@ -217,7 +217,7 @@ describe("classifyConversationError", () => {
       expect(result.errorCategory).toBe("rate_limit");
     });
 
-    it("prefers the failed call's managed fallback over stale direct turn attribution", () => {
+    it("prefers the failed call's cloud fallback over stale direct turn attribution", () => {
       const err = new ProviderError(
         "Anthropic API error (429): Too many requests",
         "anthropic",
@@ -226,27 +226,27 @@ describe("classifyConversationError", () => {
       );
       err.attachRouteAttribution({
         profileName: "direct",
-        isManagedRoute: true,
+        isCloudRoute: true,
       });
 
       const result = classifyConversationError(err, {
         ...baseCtx,
         connectionName: "anthropic-key",
         profileName: "direct",
-        isManagedRoute: false,
+        isCloudRoute: false,
       });
 
       expect(result.code).toBe("MANAGED_USAGE_LIMIT");
-      expect(result.userMessage).toContain("Cadet managed inference");
+      expect(result.userMessage).toContain("Cadet Cloud inference");
       expect(result.errorCategory).toBe("managed_usage_limit");
     });
 
-    it("does not apply a managed LLM route to a plain rate-limit error", () => {
+    it("does not apply a cloud LLM route to a plain rate-limit error", () => {
       const result = classifyConversationError(
         new Error("429 Too Many Requests from a tool API"),
         {
           ...baseCtx,
-          isManagedRoute: true,
+          isCloudRoute: true,
         },
       );
 
@@ -854,8 +854,8 @@ describe("classifyConversationError", () => {
       expect(result.userMessage).not.toContain("API key");
     });
 
-    it("classifies managed-proxy auth failures as managed credential refresh failures", () => {
-      providerRoutingSources.anthropic = "managed-proxy";
+    it("classifies cloud-proxy auth failures as cloud credential refresh failures", () => {
+      providerRoutingSources.anthropic = "cloud-proxy";
       const err = new ProviderError(
         'Anthropic API error (403): {"detail":"API key has expired."}',
         "anthropic",
@@ -872,14 +872,14 @@ describe("classifyConversationError", () => {
       expect(result.errorCategory).toBe("managed_key_invalid");
     });
 
-    it("keeps credential-shaped 4xx failures on the request's managed route", () => {
+    it("keeps credential-shaped 4xx failures on the request's cloud route", () => {
       providerRoutingSources.anthropic = "user-key";
       const err = new ProviderError(
         "Authentication error: invalid API key",
         "anthropic",
         400,
       );
-      err.attachRouteAttribution({ credentialSource: "cadet-managed" });
+      err.attachRouteAttribution({ credentialSource: "cadet-cloud" });
 
       const result = classifyConversationError(err, baseCtx);
 
@@ -926,8 +926,8 @@ describe("classifyConversationError", () => {
       );
     });
 
-    it("uses the request's BYOK attribution when the same provider also has a managed route", () => {
-      providerRoutingSources.anthropic = "managed-proxy";
+    it("uses the request's BYOK attribution when the same provider also has a cloud route", () => {
+      providerRoutingSources.anthropic = "cloud-proxy";
       const err = new ProviderError("Unauthorized", "anthropic", 401);
       err.attachRouteAttribution({
         credentialSource: "byok",
@@ -947,7 +947,7 @@ describe("classifyConversationError", () => {
       providerRoutingSources.anthropic = "user-key";
       const err = new ProviderError("Unauthorized", "anthropic", 401);
       err.attachRouteAttribution({
-        credentialSource: "cadet-managed",
+        credentialSource: "cadet-cloud",
         connectionName: "cadet",
       });
 
@@ -959,8 +959,8 @@ describe("classifyConversationError", () => {
       );
     });
 
-    it("uses subscription-specific recovery when the same provider also has a managed route", () => {
-      providerRoutingSources.openai = "managed-proxy";
+    it("uses subscription-specific recovery when the same provider also has a cloud route", () => {
+      providerRoutingSources.openai = "cloud-proxy";
       const err = new ProviderError("Unauthorized", "openai", 401, {
         reason: "invalid_credentials",
       });
@@ -981,7 +981,7 @@ describe("classifyConversationError", () => {
     });
 
     it("explains when a no-auth endpoint rejects an unauthenticated request", () => {
-      providerRoutingSources["openai-compatible"] = "managed-proxy";
+      providerRoutingSources["openai-compatible"] = "cloud-proxy";
       const err = new ProviderError("Unauthorized", "openai-compatible", 401, {
         reason: "invalid_credentials",
       });
@@ -1053,8 +1053,8 @@ describe("classifyConversationError", () => {
   });
 
   describe("OpenRouter billing classification", () => {
-    it("keeps managed-proxy OpenRouter 402 responses as credits_exhausted", () => {
-      providerRoutingSources.openrouter = "managed-proxy";
+    it("keeps cloud-proxy OpenRouter 402 responses as credits_exhausted", () => {
+      providerRoutingSources.openrouter = "cloud-proxy";
       const err = new ProviderError(
         "OpenRouter API error (402): Payment Required",
         "openrouter",
@@ -1140,8 +1140,8 @@ describe("classifyConversationError", () => {
       expect(result.code).not.toBe("PROVIDER_INVALID_KEY");
     });
 
-    it("classifies managed-proxy OpenRouter insufficient_balance bodies as credits_exhausted", () => {
-      providerRoutingSources.openrouter = "managed-proxy";
+    it("classifies cloud-proxy OpenRouter insufficient_balance bodies as credits_exhausted", () => {
+      providerRoutingSources.openrouter = "cloud-proxy";
       const err = new ProviderError(
         'OpenRouter API error (402): {"code":"insufficient_balance","detail":"Managed balance exhausted"}',
         "openrouter",
@@ -1256,8 +1256,8 @@ describe("classifyConversationError", () => {
       );
     });
 
-    it("routes reason=invalid_credentials to MANAGED_KEY_INVALID under managed-proxy", () => {
-      providerRoutingSources["vercel-ai-gateway"] = "managed-proxy";
+    it("routes reason=invalid_credentials to MANAGED_KEY_INVALID under cloud-proxy", () => {
+      providerRoutingSources["vercel-ai-gateway"] = "cloud-proxy";
       const err = new ProviderError(
         "Vercel AI Gateway API error (401): unauthorized",
         "vercel-ai-gateway",
@@ -1288,7 +1288,7 @@ describe("classifyConversationError", () => {
     });
 
     it("overlays reason=rate_limited both ways (managed vs user)", () => {
-      providerRoutingSources.openrouter = "managed-proxy";
+      providerRoutingSources.openrouter = "cloud-proxy";
       const managed = classifyConversationError(
         new ProviderError("rate limited", "openrouter", 429, {
           reason: "rate_limited",
@@ -1309,7 +1309,7 @@ describe("classifyConversationError", () => {
       expect(user.errorCategory).toBe("rate_limit");
     });
 
-    it("classifies reason=rate_limited managed quota bodies as MANAGED_USAGE_LIMIT even without a managed routing source", () => {
+    it("classifies reason=rate_limited managed quota bodies as MANAGED_USAGE_LIMIT even without a cloud routing source", () => {
       // Per-connection platform auth path leaves routingSource unset, so the
       // managed quota body pattern must still win over PROVIDER_RATE_LIMIT.
       providerRoutingSources.openai = "user-key";
@@ -1338,8 +1338,8 @@ describe("classifyConversationError", () => {
       expect(result.errorCategory).toBe("context_too_large");
     });
 
-    it("routes reason=daily_limit_reached to PROVIDER_BILLING/daily_limit_reached under managed-proxy", () => {
-      providerRoutingSources["vercel-ai-gateway"] = "managed-proxy";
+    it("routes reason=daily_limit_reached to PROVIDER_BILLING/daily_limit_reached under cloud-proxy", () => {
+      providerRoutingSources["vercel-ai-gateway"] = "cloud-proxy";
       const err = new ProviderError(
         'Vercel AI Gateway API error (402): {"code":"daily_limit_reached","detail":"Daily credit limit reached"}',
         "vercel-ai-gateway",
@@ -1375,8 +1375,8 @@ describe("classifyConversationError", () => {
     });
 
     it("classifies reason=daily_limit_reached as daily_limit_reached even when the routing map says user-key", () => {
-      // Per-connection platform-auth routes can leave the global routing map
-      // at user-key; the stamped reason comes only from the platform proxy's
+      // Per-connection cloud-auth routes can leave the global routing map
+      // at user-key; the stamped reason comes only from the cloud proxy's
       // body code, so it must win regardless of the map.
       providerRoutingSources.openai = "user-key";
       const err = new ProviderError(
@@ -1393,8 +1393,8 @@ describe("classifyConversationError", () => {
       expect(result.retryable).toBe(false);
     });
 
-    it("keeps a plain managed-proxy 402 without the daily-limit code as credits_exhausted", () => {
-      providerRoutingSources.openrouter = "managed-proxy";
+    it("keeps a plain cloud-proxy 402 without the daily-limit code as credits_exhausted", () => {
+      providerRoutingSources.openrouter = "cloud-proxy";
       const err = new ProviderError(
         "OpenRouter API error (402): Payment Required",
         "openrouter",
@@ -1765,7 +1765,7 @@ describe("ConnectionResolutionError classification", () => {
     expect(result.userMessage).toContain('profile "custom-fast"');
   });
 
-  it("classifies platform_unauthenticated with a log-in fix on a non-platform install", () => {
+  it("classifies platform_unauthenticated with a log-in fix on a non-cloud install", () => {
     const err = new ConnectionResolutionError(
       "cadet",
       "platform_unauthenticated",
@@ -1776,19 +1776,19 @@ describe("ConnectionResolutionError classification", () => {
     expect(result.userMessage).toContain("Log in");
   });
 
-  it("classifies platform_unauthenticated as a re-provision hint on a platform-managed assistant", () => {
+  it("classifies platform_unauthenticated as a re-provision hint on a cloud assistant", () => {
     const err = new ConnectionResolutionError(
       "cadet",
       "platform_unauthenticated",
       "unavailable",
     );
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
     try {
       const result = classifyConversationError(err, errCtx);
       expect(result.userMessage).toContain("re-provisioned");
       expect(result.userMessage).not.toContain("Log in");
     } finally {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     }
   });
 

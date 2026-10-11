@@ -19,7 +19,7 @@ export interface EmailReferenceParticipant {
 }
 
 export interface EmailReference {
-  /** The platform's message id, which the assistant's email tooling takes. */
+  /** The cloud's message id, which the assistant's email tooling takes. */
   id: string;
   direction: EmailReferenceDirection;
   from: EmailReferenceParticipant;

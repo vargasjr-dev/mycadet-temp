@@ -18,6 +18,10 @@ import { initReactI18next } from "react-i18next";
 import { i18nextInitOptions } from "./src/i18n/config";
 import { FALLBACK_CATALOGS } from "./src/i18n/catalogs";
 
+// Build-split flag default for tests: no vite `define` runs here, so seed
+// the desktop shape (everything included) — what route-tree tests assert.
+(globalThis as Record<string, unknown>).__INCLUDES_ACCOUNT__ = true;
+
 GlobalRegistrator.register();
 
 // Vite asset-URL query suffixes (`?worker&url`, `?url`, `?worker`) aren't
@@ -40,7 +44,7 @@ plugin(viteAssetUrlStub);
 
 // Tests default to platform mode (matching CI/CD builds). Individual tests
 // that need local mode should mock isLocalClient() instead.
-process.env.VITE_PLATFORM_MODE = "true";
+process.env.VITE_CLOUD_MODE = "true";
 
 // Set a base URL so relative fetch requests (e.g. "/v1/assistants/...")
 // resolve correctly instead of failing against "about:blank".

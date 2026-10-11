@@ -28,8 +28,8 @@ import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
 import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
-const isLocalClientMock = mock(() => !process.env.VITE_PLATFORM_MODE);
-const isPlatformDisabledMock = mock(() => false);
+const isLocalClientMock = mock(() => !process.env.VITE_CLOUD_MODE);
+const isCloudDisabledMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
 const servedGatewayRuntimeFromConfig = (): boolean =>
   window.__CADET_CONFIG__?.remote === "docker" ||
@@ -48,14 +48,14 @@ mock.module(
     getLocalAssistants: () => [],
     getLocalGatewayUrl: () => undefined,
     getLockfile: () => ({ assistants: [], activeAssistant: null }),
-    getPlatformAssistants: () => [],
+    getCloudAssistants: () => [],
     getPlatformRuntimeUrl: () => window.location.origin,
     getSelectedAssistant: () => selectedAssistantImpl(),
     hasAssistants: () => false,
     isLocalAssistant: () => false,
     isLocalClient: isLocalClientMock,
-    isPlatformDisabled: isPlatformDisabledMock,
-    isPlatformAssistant: () => false,
+    isCloudDisabled: isCloudDisabledMock,
+    isCloudAssistant: () => false,
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
     loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
@@ -71,24 +71,24 @@ mock.module(
 // store's heavy dependency graph. `subscribe` is a no-op the (unrelated)
 // organization-store binds but never calls in these tests.
 type MockSessionStatus = "initializing" | "authenticated" | "unauthenticated";
-type MockPlatformSession = "unknown" | "present" | "absent";
+type MockCloudSession = "unknown" | "present" | "absent";
 
 const mockAuthState: {
   sessionStatus: MockSessionStatus;
-  platformSession: MockPlatformSession;
+  cloudSession: MockCloudSession;
   refreshSession: () => Promise<boolean>;
 } = {
   sessionStatus: "authenticated",
-  platformSession: "present",
+  cloudSession: "present",
   refreshSession: async () => true,
 };
 
 // Controls the probe-settle wait the recovery path awaits after
 // `refreshSession`. Defaults to already-settled; a test swaps in a pending
 // promise to model the fire-and-forget probe still being in flight.
-let whenPlatformSessionSettledImpl: () => Promise<void> = async () => {};
-const whenPlatformSessionSettledMock = mock(() =>
-  whenPlatformSessionSettledImpl(),
+let whenCloudSessionSettledImpl: () => Promise<void> = async () => {};
+const whenCloudSessionSettledMock = mock(() =>
+  whenCloudSessionSettledImpl(),
 );
 
 mock.module("@/stores/auth-store", () => ({
@@ -96,7 +96,7 @@ mock.module("@/stores/auth-store", () => ({
     getState: () => mockAuthState,
     subscribe: () => () => {},
   },
-  whenPlatformSessionSettled: whenPlatformSessionSettledMock,
+  whenCloudSessionSettled: whenCloudSessionSettledMock,
 }));
 
 const hardNavigateMock = mock((_url: string) => {});
@@ -152,7 +152,7 @@ import {
   resetAssistantRequestActivity,
   useAssistantRequestActivity,
 } from "@/assistant/request-activity";
-import { client as platformClient } from "@/generated/api/client.gen";
+import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import {
@@ -162,11 +162,11 @@ import {
   daemonRequestInterceptor,
   daemonUnreachableInterceptor,
   localGatewayAuthRecoveryInterceptor,
-  platformAuthRecoveryInterceptor,
+  cloudAuthRecoveryInterceptor,
   platformFeaturesGate,
   requestInterceptor,
   resetGw401RecoveryState,
-  resetPlatformAuthRecoveryFlag,
+  resetCloudAuthRecoveryFlag,
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
 import { GatewayTokenError, getGatewayToken } from "@/lib/auth/gateway-session";
@@ -323,10 +323,10 @@ describe("api-interceptors / Electron session-token header", () => {
 // When the assistant resolves to `{ kind: "self_hosted" }`, the lifecycle
 // hook calls `setSelfHostedConnection({ url, token })`. From that point
 // on, allowlisted runtime-proxied `/v1/assistants/{id}/<segment>/...`
-// calls leave the platform's base URL behind and go directly to the
+// calls leave the cloud's base URL behind and go directly to the
 // user's gateway.
 //
-// The platform client uses the segment allowlist — only explicitly
+// The cloud client uses the segment allowlist — only explicitly
 // listed segments are rewritten. Platform-owned routes like
 // `maintenance-mode/`, `system-events/`, `terminal/`,
 // `doctor/` fall through to Django.
@@ -380,9 +380,9 @@ describe("api-interceptors / self-hosted rewriting", () => {
   });
 
   test("rewrites the live events SSE stream to the ingress", async () => {
-    // The events stream opens through the platform client; in local /
+    // The events stream opens through the cloud client; in local /
     // self-hosted mode it must route to the gateway like conversations
-    // rather than fall through to the platform proxy.
+    // rather than fall through to the cloud proxy.
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const eventsPath = `/v1/assistants/${SELF_HOSTED_ID}/events/`;
     const input = new Request(
@@ -398,9 +398,9 @@ describe("api-interceptors / self-hosted rewriting", () => {
 
   test("rewrites user-defined route handler (`/x/`) calls to the ingress", async () => {
     // Sandboxed apps POST to their backend handlers under `/v1/x/*`
-    // through the platform client; in local / self-hosted mode these
+    // through the cloud client; in local / self-hosted mode these
     // must route to the gateway rather than fall through to the
-    // platform proxy.
+    // cloud proxy.
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const userRoutePath = `/v1/assistants/${SELF_HOSTED_ID}/x/us-vs-the-world`;
     const input = new Request(`https://platform.test${userRoutePath}`, {
@@ -413,11 +413,11 @@ describe("api-interceptors / self-hosted rewriting", () => {
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
   });
 
-  test("rewrites daemon/gateway-owned segments reached via the platform client", async () => {
-    // config is daemon-owned and still called through the platform client
+  test("rewrites daemon/gateway-owned segments reached via the cloud client", async () => {
+    // config is daemon-owned and still called through the cloud client
     // via raw `client.*` requests (the background `TimezoneSync` PATCH).
     // In local / self-hosted mode it must route to the gateway like
-    // conversations rather than fall through to the dead platform proxy
+    // conversations rather than fall through to the dead cloud proxy
     // and flood the console with 502s. (artifacts is NOT listed — its
     // assistant-scoped routes aren't served by the gateway or daemon, so
     // forwarding it would only 404.)
@@ -518,7 +518,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
     // Symmetric to the "token-null" window: an assistant can be
     // `is_local=true` with a token already bootstrapped but no public
     // gateway hostname yet. Without an ingress to rewrite to, the
-    // request falls through to the platform proxy view — which 404s,
+    // request falls through to the cloud proxy view — which 404s,
     // surfacing as the chat error state one HTTP hop sooner.
     setSelfHostedConnection({ url: null, token: ACTOR_TOKEN });
     const input = new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`);
@@ -528,7 +528,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
   });
 
   test("does NOT rewrite first segments outside the allowlist", async () => {
-    // The platform client's narrow allowlist ensures platform-owned routes
+    // The cloud client's narrow allowlist ensures platform-owned routes
     // (and runtime routes not yet mirrored on the gateway) fall through
     // rather than being rewritten. Pin the non-rewriting contract for the
     // routes most likely to get mistakenly captured.
@@ -547,7 +547,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       "domains",
       "email-addresses",
       "oauth",
-      // `/a2a/invites/redeem` is a platform broker (Django) route.
+      // `/a2a/invites/redeem` is a cloud broker (Django) route.
       "a2a",
       // Device and Live Activity token registration is Django-owned. Cloud
       // and local-with-ingress keep the session path; remote-gateway
@@ -568,7 +568,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       // Platform path keeps stamping org + CSRF as before.
       expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
       expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
-      // And never leaks the gateway token onto a platform-bound
+      // And never leaks the gateway token onto a cloud-bound
       // request, even when the connection slot is populated.
       expect(output.headers.get("Authorization")).toBeNull();
     }
@@ -576,7 +576,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
 
   test("does NOT rewrite the bare retrieve route", async () => {
     // `/v1/assistants/{id}/` is the canonical retrieve — the assistant
-    // record lives on the platform regardless of where the runtime
+    // record lives on the cloud regardless of where the runtime
     // runs. Routing it to ingress would 404.
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const input = new Request(
@@ -617,7 +617,7 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
     setSelfHostedConnection(null);
   });
 
-  test("rewrites daemon paths that are NOT in the platform allowlist", async () => {
+  test("rewrites daemon paths that are NOT in the cloud allowlist", async () => {
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     for (const path of [
       DAEMON_SKILLS_PATH,
@@ -930,7 +930,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(authorizeRemoteGatewayRequest(input)).toBeNull();
   });
 
-  test("authorizes platform-client push-token upserts with the paired browser token", async () => {
+  test("authorizes cloud-client push-token upserts with the paired browser token", async () => {
     setSelfHostedConnection({
       url: window.location.origin,
       token: ACTOR_TOKEN,
@@ -951,7 +951,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 
-  test("authorizes platform-client live-activity upserts with the paired browser token", async () => {
+  test("authorizes cloud-client live-activity upserts with the paired browser token", async () => {
     setSelfHostedConnection({
       url: window.location.origin,
       token: ACTOR_TOKEN,
@@ -967,7 +967,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
 
-  test("preserves a remote ingress path prefix for platform-client push-token upserts", async () => {
+  test("preserves a remote ingress path prefix for cloud-client push-token upserts", async () => {
     setSelfHostedConnection({
       url: `${window.location.origin}/assistant-123`,
       token: ACTOR_TOKEN,
@@ -1011,31 +1011,31 @@ describe("api-interceptors / remote gateway direct requests", () => {
 // In local mode with platform features disabled, the abort interceptor
 // must NOT kill requests already rewritten to the self-hosted gateway.
 //
-// The test preload sets VITE_PLATFORM_MODE=true (platform mode).
+// The test preload sets VITE_CLOUD_MODE=true (platform mode).
 // These tests temporarily clear it so isLocalClient() returns true.
 
 describe("api-interceptors / platform features gate", () => {
   let savedPlatformMode: string | undefined;
 
   beforeAll(() => {
-    savedPlatformMode = process.env.VITE_PLATFORM_MODE;
-    delete process.env.VITE_PLATFORM_MODE;
+    savedPlatformMode = process.env.VITE_CLOUD_MODE;
+    delete process.env.VITE_CLOUD_MODE;
   });
 
   afterAll(() => {
     if (savedPlatformMode !== undefined) {
-      process.env.VITE_PLATFORM_MODE = savedPlatformMode;
+      process.env.VITE_CLOUD_MODE = savedPlatformMode;
     }
   });
 
   afterEach(() => {
     window.__CADET_CONFIG__ = undefined;
     setSelfHostedConnection(null);
-    isPlatformDisabledMock.mockImplementation(() => false);
+    isCloudDisabledMock.mockImplementation(() => false);
   });
 
   test("aborts platform-bound requests when platform is disabled", () => {
-    isPlatformDisabledMock.mockImplementation(() => true);
+    isCloudDisabledMock.mockImplementation(() => true);
     const input = new Request("https://platform.test/v1/organizations/");
     const output = platformFeaturesGate(input);
     expect(output.signal.aborted).toBe(true);
@@ -1045,7 +1045,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("passes through gateway-rewritten requests when platform is disabled", () => {
-    isPlatformDisabledMock.mockImplementation(() => true);
+    isCloudDisabledMock.mockImplementation(() => true);
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     // Simulate a request already rewritten to the gateway by requestInterceptor
     const input = new Request(`${INGRESS}${DAEMON_SKILLS_PATH}`);
@@ -1055,7 +1055,7 @@ describe("api-interceptors / platform features gate", () => {
   });
 
   test("passes through all requests when platform is not disabled", () => {
-    isPlatformDisabledMock.mockImplementation(() => false);
+    isCloudDisabledMock.mockImplementation(() => false);
     const input = new Request("https://platform.test/v1/organizations/");
     const output = platformFeaturesGate(input);
     expect(output.signal.aborted).toBe(false);
@@ -1241,11 +1241,11 @@ describe("api-interceptors / recovery interceptor registration", () => {
     );
   });
 
-  test("the platform client does not carry it", () => {
-    // Platform 401s are session rejections owned by the platform recovery,
+  test("the cloud client does not carry it", () => {
+    // Platform 401s are session rejections owned by the cloud recovery,
     // and gateway-origin responses reaching that client are its own guard's
     // job to leave alone.
-    expect(responseFns(platformClient)).not.toContain(
+    expect(responseFns(cloudClient)).not.toContain(
       localGatewayAuthRecoveryInterceptor,
     );
   });
@@ -1364,7 +1364,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       configurable: true,
       value: originalReload,
     });
-    isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
+    isLocalClientMock.mockImplementation(() => !process.env.VITE_CLOUD_MODE);
     isCadetCloudRemoteMock.mockImplementation(() => false);
     isServedGatewayRuntimeMock.mockImplementation(
       servedGatewayRuntimeFromConfig,
@@ -1409,7 +1409,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     /**
      * A recovery must not null the cached token while the mint is in
      * flight: `isGatewayAuthMode()` reads it, and a session refresh or a
-     * lifecycle pass landing in that window would take the platform
+     * lifecycle pass landing in that window would take the cloud
      * branch and could log a local-gateway user out.
      */
 
@@ -1762,7 +1762,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
 
   test("a failed recovery leaves the slot alone once the selection has moved", async () => {
     /**
-     * A switch to a platform assistant, or a logout, clears the slot
+     * A switch to a cloud assistant, or a logout, clears the slot
      * legitimately while the re-prime is in flight. Restoring the old
      * ingress then would route the new selection's requests to the old
      * local gateway, so the restore is gated on the selection the
@@ -1772,7 +1772,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     // GIVEN the recovery started for assistant A
     selectedAssistantImpl = () => ({ assistantId: "asst-a", cloud: "local" });
 
-    // AND, mid-prime, the selection moves to a platform assistant and the
+    // AND, mid-prime, the selection moves to a cloud assistant and the
     // lifecycle clears the slot, then the prime fails
     primeGatewayWithRepairImpl = async () => {
       selectedAssistantImpl = () => ({
@@ -1842,7 +1842,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
 
   test("does not recover when not in local mode", async () => {
     /**
-     * Validates that 401s from platform-hosted assistants are ignored;
+     * Validates that 401s from cloud-hosted assistants are ignored;
      * they are handled by the auth store / allauth instead.
      */
 
@@ -1874,7 +1874,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(reloadCalls).toBe(0);
   });
 
-  test("does not recover when 401 originates from the platform, not the gateway", async () => {
+  test("does not recover when 401 originates from the cloud, not the gateway", async () => {
     /**
      * Validates that daemon requests which were NOT rewritten to the
      * gateway (e.g. non-assistant paths) don't trigger recovery.
@@ -2117,21 +2117,21 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
 // the local consumer (a busy dev server) drains the pipe slowly — the symptom
 // being image/file uploads above ~1.5 MB hanging on "Stalled". A Blob is
 // passed by reference (blob handle), so there is no renderer-side data pipe to
-// block on. The preload sets VITE_PLATFORM_MODE=true; these tests clear it so
+// block on. The preload sets VITE_CLOUD_MODE=true; these tests clear it so
 // isLocalClient() returns true and the buffering path runs.
 
 describe("api-interceptors / local-mode body buffering", () => {
   let savedPlatformMode: string | undefined;
 
   beforeAll(() => {
-    savedPlatformMode = process.env.VITE_PLATFORM_MODE;
-    delete process.env.VITE_PLATFORM_MODE;
+    savedPlatformMode = process.env.VITE_CLOUD_MODE;
+    delete process.env.VITE_CLOUD_MODE;
     useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
   });
 
   afterAll(() => {
     if (savedPlatformMode !== undefined) {
-      process.env.VITE_PLATFORM_MODE = savedPlatformMode;
+      process.env.VITE_CLOUD_MODE = savedPlatformMode;
     }
   });
 
@@ -2194,7 +2194,7 @@ describe("api-interceptors / local-mode body buffering", () => {
 // Self-hosted / remote-gateway bearer 401s are left to
 // `localGatewayAuthRecoveryInterceptor`.
 
-describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
+describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   const PLATFORM_URL = "https://platform.test/v1/assistants/123/messages";
   const LOGIN_PREFIX = "/account/login?returnTo=";
 
@@ -2234,7 +2234,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
    */
   function armUnrefundedRefresh() {
     const refreshSession = mock(async () => {
-      mockAuthState.platformSession = "unknown";
+      mockAuthState.cloudSession = "unknown";
       return true;
     });
     mockAuthState.refreshSession = refreshSession;
@@ -2242,27 +2242,27 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   }
 
   beforeEach(() => {
-    resetPlatformAuthRecoveryFlag();
+    resetCloudAuthRecoveryFlag();
     setSelfHostedConnection(null);
     sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_AT_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
     mockAuthState.sessionStatus = "authenticated";
-    mockAuthState.platformSession = "present";
+    mockAuthState.cloudSession = "present";
     mockAuthState.refreshSession = mock(async () => true);
-    whenPlatformSessionSettledImpl = async () => {};
+    whenCloudSessionSettledImpl = async () => {};
     hardNavigateMock.mockClear();
   });
 
   afterEach(() => {
-    resetPlatformAuthRecoveryFlag();
+    resetCloudAuthRecoveryFlag();
     setSelfHostedConnection(null);
     sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_AT_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    whenPlatformSessionSettledImpl = async () => {};
+    whenCloudSessionSettledImpl = async () => {};
   });
 
   /** Drive one full rejection→recovery round trip against a dead session. */
@@ -2277,7 +2277,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     expireRecoveryCooldown();
     sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
     sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    platformAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
     await flush();
   };
 
@@ -2289,7 +2289,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     mockAuthState.refreshSession = refreshSession;
 
     const response = makeResponse(401, PLATFORM_URL);
-    expect(platformAuthRecoveryInterceptor(response)).toBe(response);
+    expect(cloudAuthRecoveryInterceptor(response)).toBe(response);
     await flush();
 
     expect(refreshSession).toHaveBeenCalledTimes(1);
@@ -2299,10 +2299,10 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     );
   });
 
-  test("platform-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
+  test("cloud-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
     isCadetCloudRemoteMock.mockImplementation(() => true);
-    // The slot points at the platform's own same-origin proxy, whose URL
-    // prefixes the platform URL exactly as /web/<v> does in production —
+    // The slot points at the cloud's own same-origin proxy, whose URL
+    // prefixes the cloud URL exactly as /web/<v> does in production —
     // under the bearer-path exclusion this rejection would be skipped.
     setSelfHostedConnection({
       url: "https://test-cloud.mycadet.io",
@@ -2315,7 +2315,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     mockAuthState.refreshSession = refreshSession;
 
     const response = makeResponse(401, PLATFORM_URL);
-    expect(platformAuthRecoveryInterceptor(response)).toBe(response);
+    expect(cloudAuthRecoveryInterceptor(response)).toBe(response);
     await flush();
 
     expect(refreshSession).toHaveBeenCalledTimes(1);
@@ -2330,7 +2330,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     const refreshSession = mock(async () => true); // session stays authenticated
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
 
     expect(refreshSession).toHaveBeenCalledTimes(1);
@@ -2339,7 +2339,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     // Latch reopened → a later genuine rejection (outside the cooldown
     // window) triggers another re-probe.
     expireRecoveryCooldown();
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(2);
   });
@@ -2348,8 +2348,8 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    platformAuthRecoveryInterceptor(makeResponse(502, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(502, PLATFORM_URL));
     await flush();
 
     expect(refreshSession).not.toHaveBeenCalled();
@@ -2362,7 +2362,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
 
     for (const status of ["initializing", "unauthenticated"] as const) {
       mockAuthState.sessionStatus = status;
-      platformAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
+      cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
     }
     await flush();
 
@@ -2375,7 +2375,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     const refreshSession = mock(async () => false);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(
+    cloudAuthRecoveryInterceptor(
       makeResponse(401, `${INGRESS}/v1/assistants/123/messages`),
     );
     await flush();
@@ -2394,8 +2394,8 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     );
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
-    platformAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
 
     // Latch set synchronously on the first hit → the second short-circuits.
     expect(refreshSession).toHaveBeenCalledTimes(1);
@@ -2417,7 +2417,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     expect(hardNavigateMock).toHaveBeenCalledTimes(PLATFORM_AUTH_MAX_REDIRECTS);
   });
 
-  test("a platform 2xx on a confirmed session restores the redirect budget", async () => {
+  test("a cloud 2xx on a confirmed session restores the redirect budget", async () => {
     sessionStorage.setItem(
       PLATFORM_AUTH_REDIRECT_KEY,
       String(PLATFORM_AUTH_MAX_REDIRECTS),
@@ -2426,25 +2426,25 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     await rejectOnce();
     expect(hardNavigateMock).not.toHaveBeenCalled();
 
-    mockAuthState.platformSession = "present";
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    mockAuthState.cloudSession = "present";
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY)).toBeNull();
 
     await rejectOnce();
     expect(hardNavigateMock).toHaveBeenCalledTimes(1);
   });
 
-  test("a 2xx without a platform session does not restore the budget", async () => {
-    // The platform serves some routes to anonymous visitors, and the login
+  test("a 2xx without a cloud session does not restore the budget", async () => {
+    // The cloud serves some routes to anonymous visitors, and the login
     // screen loads one: `AccountLayout` syncs client feature flags. Treating
     // that as proof of a live session would refill the budget on every bounce.
-    mockAuthState.platformSession = "absent";
+    mockAuthState.cloudSession = "absent";
     sessionStorage.setItem(
       PLATFORM_AUTH_REDIRECT_KEY,
       String(PLATFORM_AUTH_MAX_REDIRECTS),
     );
 
-    platformAuthRecoveryInterceptor(
+    cloudAuthRecoveryInterceptor(
       makeResponse(200, "https://platform.test/v1/feature-flags/"),
     );
 
@@ -2453,15 +2453,15 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     );
   });
 
-  test("a self-hosted gateway 2xx does not restore the platform budget", async () => {
+  test("a self-hosted gateway 2xx does not restore the cloud budget", async () => {
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    mockAuthState.platformSession = "present";
+    mockAuthState.cloudSession = "present";
     sessionStorage.setItem(
       PLATFORM_AUTH_REDIRECT_KEY,
       String(PLATFORM_AUTH_MAX_REDIRECTS),
     );
 
-    platformAuthRecoveryInterceptor(
+    cloudAuthRecoveryInterceptor(
       makeResponse(200, `${INGRESS}/v1/assistants/123/messages`),
     );
 
@@ -2470,45 +2470,45 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     );
   });
 
-  test("holds the latch until the platform probe settles", async () => {
-    // `refreshSession` in gateway-auth mode fire-and-forgets the platform
+  test("holds the latch until the cloud probe settles", async () => {
+    // `refreshSession` in gateway-auth mode fire-and-forgets the cloud
     // probe, whose own requests 403 against a half-dead cookie. Those
     // rejections arrive after `refreshSession` resolved; if the latch were
     // already released, each would start the next recovery cycle.
     let settleProbe: () => void = () => {};
-    whenPlatformSessionSettledImpl = () =>
+    whenCloudSessionSettledImpl = () =>
       new Promise((resolve) => {
         settleProbe = resolve;
       });
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
     // A probe-spawned 403 during the settle window must not recover again.
     expireRecoveryCooldown();
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
     // Once the probe settles the latch reopens for a later genuine cycle.
-    whenPlatformSessionSettledImpl = async () => {};
+    whenCloudSessionSettledImpl = async () => {};
     settleProbe();
     await flush();
     expireRecoveryCooldown();
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(2);
   });
 
   test("a settled-absent platform session never triggers recovery", async () => {
-    mockAuthState.platformSession = "absent";
+    mockAuthState.cloudSession = "absent";
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
 
     expect(refreshSession).not.toHaveBeenCalled();
@@ -2516,14 +2516,14 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   });
 
   test("an unsettled (unknown) platform session does not recover", async () => {
-    // While platformSession is "unknown" the boot probe is already evaluating
+    // While cloudSession is "unknown" the boot probe is already evaluating
     // this same rejection evidence, so spending a claim here would only nest
     // a redundant refreshSession cycle on every dead-cookie boot.
-    mockAuthState.platformSession = "unknown";
+    mockAuthState.cloudSession = "unknown";
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
 
     expect(refreshSession).not.toHaveBeenCalled();
@@ -2534,12 +2534,12 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
     // Latch is reopened, but the attempt timestamp is fresh.
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
   });
@@ -2552,9 +2552,9 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
 
     // Each round expires the cooldown so only the budget can stop it.
     for (let i = 0; i < PLATFORM_RECOVERY_MAX_ATTEMPTS + 1; i++) {
-      mockAuthState.platformSession = "present";
+      mockAuthState.cloudSession = "present";
       expireRecoveryCooldown();
-      platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
       await flush();
     }
     expect(refreshSession).toHaveBeenCalledTimes(
@@ -2563,7 +2563,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   });
 
   test("a live-confirmed recovery refunds the count but keeps the cooldown", async () => {
-    // platformSession stays "present" (beforeEach default): the probe keeps
+    // cloudSession stays "present" (beforeEach default): the probe keeps
     // confirming the session is live, so a route-level permission 403 must
     // not eat the budget a later real expiry needs.
     const refreshSession = mock(async () => true);
@@ -2571,7 +2571,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
 
     for (let i = 0; i < PLATFORM_RECOVERY_MAX_ATTEMPTS + 2; i++) {
       expireRecoveryCooldown();
-      platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
       await flush();
     }
 
@@ -2586,7 +2586,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY)).toBeNull();
 
     // The cooldown survives the refund: an immediate rejection stays paced.
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(
       PLATFORM_RECOVERY_MAX_ATTEMPTS + 2,
@@ -2594,7 +2594,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
 
     // With no remembered pathname, a later 2xx on that route cannot clear
     // the cooldown the refund kept.
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
   });
 
@@ -2602,23 +2602,23 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     // Unrefunded claims keep the budget spent, so only the heal can clear it.
     const refreshSession = armUnrefundedRefresh();
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
     // Inside the cooldown a rejection cannot recover.
-    mockAuthState.platformSession = "present";
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    mockAuthState.cloudSession = "present";
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
     // The same route succeeding is proof it healed; the cooldown clears and
     // the next rejection may recover immediately.
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).toBeNull();
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(2);
   });
@@ -2626,20 +2626,20 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   test("an unrelated platform 2xx leaves an outstanding claim; the rejected route's clears it", async () => {
     const refreshSession = armUnrefundedRefresh();
 
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);
 
-    // A route the platform serves without the session (feature-flag polling)
+    // A route the cloud serves without the session (feature-flag polling)
     // keeps succeeding; it must not clear the cooldown or the count.
-    platformAuthRecoveryInterceptor(
+    cloudAuthRecoveryInterceptor(
       makeResponse(200, "https://platform.test/v1/client-feature-flags/"),
     );
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBe("1");
 
     // The rejected route healing clears the whole bound.
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).toBeNull();
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY)).toBeNull();
@@ -2648,13 +2648,13 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
   test("a refund resets the outstanding claim, so a later matching 2xx keeps the cooldown", async () => {
     // Default refreshSession confirms the session live, so the claim is
     // refunded and no heal is outstanding.
-    platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
 
     // The matching 2xx must not clear the retained cooldown that paces
     // re-probing while the permission 403 persists.
-    platformAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
+    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
   });
 
@@ -2665,7 +2665,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
       String(PLATFORM_RECOVERY_MAX_ATTEMPTS),
     );
 
-    platformAuthRecoveryInterceptor(
+    cloudAuthRecoveryInterceptor(
       makeResponse(200, `${INGRESS}/v1/assistants/123/messages`),
     );
 
@@ -2688,7 +2688,7 @@ describe("api-interceptors / platformAuthRecoveryInterceptor", () => {
     });
 
     try {
-      platformAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
+      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
       await flush();
     } finally {
       Object.defineProperty(sessionStorage, "getItem", {
@@ -2718,8 +2718,8 @@ describe("api-interceptors / post-resume request counting", () => {
     resumeWindowOpen = true;
     setSelfHostedConnection(null);
     window.__CADET_CONFIG__ = undefined;
-    isLocalClientMock.mockImplementation(() => !process.env.VITE_PLATFORM_MODE);
-    isPlatformDisabledMock.mockImplementation(() => false);
+    isLocalClientMock.mockImplementation(() => !process.env.VITE_CLOUD_MODE);
+    isCloudDisabledMock.mockImplementation(() => false);
   });
 
   test("notes daemon requests", async () => {
@@ -2734,9 +2734,9 @@ describe("api-interceptors / post-resume request counting", () => {
     expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
   });
 
-  test("notes daemon routes issued through the platform client", async () => {
-    // `subscribeEvents` opens the SSE stream through the platform client, so
-    // the reopen in a resume burst is only counted if the platform chain
+  test("notes daemon routes issued through the cloud client", async () => {
+    // `subscribeEvents` opens the SSE stream through the cloud client, so
+    // the reopen in a resume burst is only counted if the cloud chain
     // counts its daemon-bound paths.
     const url = `https://platform.test/v1/assistants/${SELF_HOSTED_ID}/events/`;
     await requestInterceptor(new Request(url));
@@ -2776,9 +2776,9 @@ describe("api-interceptors / post-resume request counting", () => {
     expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
   });
 
-  test("does not count a platform request the features gate aborts", async () => {
+  test("does not count a cloud request the features gate aborts", async () => {
     isLocalClientMock.mockImplementation(() => true);
-    isPlatformDisabledMock.mockImplementation(() => true);
+    isCloudDisabledMock.mockImplementation(() => true);
     // No ingress registered, so the daemon-bound path is not rewritten and the
     // gate downstream aborts it. An aborted request never reaches the network.
     const input = new Request(
@@ -2791,7 +2791,7 @@ describe("api-interceptors / post-resume request counting", () => {
     expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
   });
 
-  test("does not count a platform request aborted in remote-gateway mode", async () => {
+  test("does not count a cloud request aborted in remote-gateway mode", async () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     const input = new Request(
       `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/conversations/`,
@@ -2805,7 +2805,7 @@ describe("api-interceptors / post-resume request counting", () => {
 
   test("counts a gate-passing platform request exactly once", async () => {
     isLocalClientMock.mockImplementation(() => true);
-    isPlatformDisabledMock.mockImplementation(() => true);
+    isCloudDisabledMock.mockImplementation(() => true);
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     const url = `https://platform.test${RUNTIME_PROXIED_PATH}`;
 
@@ -2834,7 +2834,7 @@ describe("api-interceptors / post-resume request counting", () => {
 describe("daemon request activity", () => {
   beforeEach(() => {
     resetAssistantRequestActivity("123");
-    isPlatformDisabledMock.mockReturnValue(false);
+    isCloudDisabledMock.mockReturnValue(false);
     setSelfHostedConnection(null);
     setCsrfCookie("test-csrf-token");
   });
@@ -2870,8 +2870,8 @@ describe("daemon request activity", () => {
     [daemonClient, "events", false],
     [daemonClient, "background-wake/prepare-sleep", false],
     [gatewayClient, "future-gateway-route", false],
-    [platformClient, "operational/status/", false],
-    [platformClient, "conversations", true],
+    [cloudClient, "operational/status/", false],
+    [cloudClient, "conversations", true],
   ] as const)(
     "SDK route %s %s proves readiness: %s",
     async (client, path, expected) => {

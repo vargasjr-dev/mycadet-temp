@@ -33,7 +33,7 @@ interface ProvidersSectionProps {
 
 /**
  * The inline Providers list of the Language Model card (Figma
- * 7412:133535): the managed Cadet row first, then BYOK/custom
+ * 7412:133535): the cloud Cadet row first, then BYOK/custom
  * connections. Rows open the sidepanel editor; the kebab carries Set as
  * default / Edit / Delete per row eligibility.
  */

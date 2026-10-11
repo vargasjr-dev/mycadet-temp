@@ -2,7 +2,7 @@
  * JS ↔ native bridge for the `VoiceLiveActivity` Capacitor plugin implemented
  * by both mobile shells.
  *
- * The plugin mirrors a running live-voice session into the platform status
+ * The plugin mirrors a running live-voice session into the cloud status
  * surface: an ActivityKit Live Activity on iOS or an ongoing notification on
  * Android. It holds at most one surface, so calling
  * {@link startVoiceLiveActivity} twice updates the running one.
@@ -193,7 +193,7 @@ async function callVoiceLiveActivity<T>(
 /**
  * Show a Live Activity for a session that just became active. Resolves whether
  * one is now running. Returns `false` off native mobile, on a shell without
- * the plugin, and when the user has disabled the platform status surface.
+ * the plugin, and when the user has disabled the cloud status surface.
  *
  * Safe to call when one is already running: the plugin updates it rather than
  * requesting a second island. Pair every call with {@link endVoiceLiveActivity}
@@ -232,7 +232,7 @@ export async function updateVoiceLiveActivity(
 }
 
 /**
- * Dismiss the platform status surface at the end of a session. A no-op when
+ * Dismiss the cloud status surface at the end of a session. A no-op when
  * none is running, off native mobile, and on an older shell. Never throws.
  */
 export async function endVoiceLiveActivity(): Promise<void> {
@@ -248,7 +248,7 @@ export async function endVoiceLiveActivity(): Promise<void> {
  * The token is what lets the *server* update the island. Every local push in
  * this module originates on the JS main thread, which WebKit throttles and
  * eventually suspends once the app is backgrounded — the only state in which
- * the island is ever on screen. Registering this token with the platform gives
+ * the island is ever on screen. Registering this token with the cloud gives
  * the session a second path to the same activity, one that does not need this
  * web view to be running at all.
  *

@@ -1,5 +1,5 @@
 /**
- * Cadet managed TTS WebSocket streaming session.
+ * Cadet Cloud TTS WebSocket streaming session.
  *
  * Runs a single-utterance synthesis session against the gateway's managed
  * speech relay (`/v1/speech/tts/stream`, gateway → tunnel → Deepgram; tunnel
@@ -100,7 +100,7 @@ export interface CadetTtsSocketOptions extends StreamReadTimeouts {
 }
 
 /**
- * Synthesize one utterance over the managed speech relay, resolving with
+ * Synthesize one utterance over the cloud speech relay, resolving with
  * the complete audio. Binary chunks are forwarded to `onChunk` as they
  * arrive. Abort sends `Clear` (barge-in: discard buffered synthesis)
  * before closing the socket.

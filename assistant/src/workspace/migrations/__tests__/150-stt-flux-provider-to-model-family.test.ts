@@ -29,7 +29,7 @@ describe("150-stt-flux-provider-to-model-family", () => {
     });
   });
 
-  test("rewrites the managed pair the same way", () => {
+  test("rewrites the cloud pair the same way", () => {
     const dir = workspaceWith({
       services: { stt: { provider: "cadet-flux", providers: {} } },
     });

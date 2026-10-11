@@ -1,7 +1,7 @@
 /**
  * Tests for the live-voice preflight and session-end routes.
  *
- * The handler must run managed-speech defaulting first, then return the
+ * The handler must run cloud-speech defaulting first, then return the
  * live-voice credential readiness verdict verbatim:
  * - ready → { status: "ready" }
  * - not-ready → passes through the missing gaps + userMessage
@@ -23,8 +23,8 @@ const calls: string[] = [];
 let readiness: LiveVoiceCredentialReadiness = { status: "ready" };
 let releaseResult: LiveVoiceSessionReleaseResult = { released: false };
 
-mock.module("../../config/managed-speech-defaults.js", () => ({
-  maybeDefaultSpeechToManaged: async () => {
+mock.module("../../config/cloud-speech-defaults.js", () => ({
+  maybeDefaultSpeechToCloud: async () => {
     calls.push("default");
   },
 }));
@@ -80,7 +80,7 @@ describe("live_voice_preflight_post", () => {
     expect(result).toEqual(readiness);
   });
 
-  test("runs managed-speech defaulting before resolving readiness", async () => {
+  test("runs cloud-speech defaulting before resolving readiness", async () => {
     calls.length = 0;
     readiness = { status: "ready" };
 

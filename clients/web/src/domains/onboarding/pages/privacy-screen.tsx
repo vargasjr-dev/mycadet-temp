@@ -39,7 +39,7 @@ import {
 } from "@/domains/onboarding/prefs";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativePlatform } from "@/runtime/native-auth";
-import { useAuthStore, useHasPlatformSession } from "@/stores/auth-store";
+import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { saveConsent } from "@/lib/consent/consent-persistence";
 import { useTranslation } from "@/i18n";
@@ -60,7 +60,7 @@ export function PrivacyScreen() {
   const shareDiagnosticsChecked = shareDiagnostics ?? true;
   const [tosAccepted, setTosAcceptedReal] = useTosAccepted();
   const [privacyConsent, setPrivacyConsentReal] = usePrivacyConsent();
-  const hasPlatformSession = useHasPlatformSession();
+  const hasCloudSession = useHasCloudSession();
   const takeover = useMarketingPricingTakeover();
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export function PrivacyScreen() {
         privacy: privacyConsent,
         shareAnalytics: null,
         shareDiagnostics: shareDiagnosticsChecked,
-        hasPlatformSession,
+        hasCloudSession,
       });
       emitOnboardingFunnelStepCompleted(ONBOARDING_FUNNEL_STEPS.privacyTos, {
         userId,
@@ -102,7 +102,7 @@ export function PrivacyScreen() {
       // A completed checkout with nothing provisioned is funneled to the hatching
       // screen; an unconsented user is bounced here, and the funnel URL rides
       // along as `returnTo`. With consent now recorded, resume it rather than the
-      // standard onboarding step: that step carries neither the managed-hatch nor
+      // standard onboarding step: that step carries neither the cloud-hatch nor
       // the paid-return marker, so the purchased machine and storage would never
       // be waited for. Money has already changed hands, which is why this outranks
       // the pending-package resume below.
@@ -193,7 +193,7 @@ export function PrivacyScreen() {
     },
     [
       privacyConsent,
-      hasPlatformSession,
+      hasCloudSession,
       isPreview,
       navigate,
       searchParams,
@@ -285,7 +285,7 @@ export function PrivacyScreen() {
            * hosting is the screen that leads here (welcome → hosting → privacy),
            * so go there deterministically rather than `navigate(-1)`. In platform
            * mode privacy IS the funnel entrypoint — hosting is local-only
-           * (`enforceModeBoundary` bounces a platform user off it to `/assistant`,
+           * (`enforceModeBoundary` bounces a cloud user off it to `/assistant`,
            * which trips a non-onboarding hatch) — so Back lands on the onboarding
            * `start` welcome screen instead. It must NOT leave the SPA for the
            * marketing host (`/`): on a Capacitor staging/dev shell that host's CTA

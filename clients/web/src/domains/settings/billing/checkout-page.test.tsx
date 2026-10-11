@@ -2,7 +2,7 @@
  * Tests for the deep-link CheckoutPage.
  *
  * Mirrors plans-page.test.tsx's interaction harness: the generated SDK, the
- * browser runtime, and the platform gate are `mock.module()`'d, and
+ * browser runtime, and the cloud gate are `mock.module()`'d, and
  * `CheckoutPage` is dynamically imported after the mocks register. A
  * `LocationProbe` reads the router location so redirects can be asserted.
  */
@@ -19,8 +19,8 @@ import * as browserRuntime from "@/runtime/browser";
 import * as platformDetection from "@/runtime/platform-detection";
 import * as orgReadyMod from "@/hooks/use-is-org-ready";
 import type { OrgHeaderReadiness } from "@/hooks/use-is-org-ready";
-import * as platformGateMod from "@/hooks/use-platform-gate";
-import type { PlatformGateStateWithPending } from "@/hooks/use-platform-gate";
+import * as cloudGateMod from "@/hooks/use-cloud-gate";
+import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
 import * as takeoverMod from "@/hooks/use-marketing-pricing-takeover";
 import type { MarketingPricingTakeoverState } from "@/hooks/use-marketing-pricing-takeover";
 
@@ -37,9 +37,9 @@ const CUSTOM_ENTRY =
 type Captured = { body?: unknown };
 const upgradeCalls: Captured[] = [];
 let openedUrl: string | null = null;
-// Gate value the mocked `usePlatformGateWithPending` returns (default:
+// Gate value the mocked `useCloudGateWithPending` returns (default:
 // session-only full).
-let gateValue: PlatformGateStateWithPending = "full";
+let gateValue: CloudGateStateWithPending = "full";
 // Org-header readiness the mocked hooks report (default: hydrated/ready).
 let orgReadinessValue: OrgHeaderReadiness = "ready";
 // Re-runs of the org fetch, which is what a retry with no organization does.
@@ -107,9 +107,9 @@ mock.module("@/runtime/platform-detection", () => ({
   useIsNativeAndroid: () => nativeAndroid,
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGateMod,
-  usePlatformGateWithPending: () => gateValue,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGateMod,
+  useCloudGateWithPending: () => gateValue,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -480,7 +480,7 @@ describe("CheckoutPage", () => {
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 
-  test("a session without a platform login drops the stash on the way out", async () => {
+  test("a session without a cloud login drops the stash on the way out", async () => {
     gateValue = "disabled";
     // The signup carry's marked stash is still in place: the hand-off, which
     // rewrites it without the marker, never ran. Nothing was bought, so the

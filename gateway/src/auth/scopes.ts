@@ -54,7 +54,7 @@ const PROFILE_SCOPES: Record<ScopeProfile, ReadonlySet<Scope>> = {
   // Mirrors the daemon profile a short-lived OAuth passthrough grant is
   // minted with; the gateway resolves it on the IPC fast path.
   oauth_proxy_v1: new Set<Scope>(["oauth.proxy"]),
-  // Managed speech relay only (ATL-1033): the daemon's relay-dial token must
+  // Cloud speech relay only (ATL-1033): the daemon's relay-dial token must
   // not open any other edge-scoped route.
   speech_relay_v1: new Set<Scope>(["speech.relay"]),
   ui_page_v1: new Set<Scope>(["settings.read"]),

@@ -59,7 +59,7 @@ mock.module("@/domains/chat/transcript/use-history-pagination", () => ({
   useHistoryPagination: () => paginationStub(),
 }));
 
-// Drives the platform gate on the turn-end billing-summary invalidation; the
+// Drives the cloud gate on the turn-end billing-summary invalidation; the
 // real gate reads auth/lifecycle/org stores that are out of scope here.
 let billingSummaryEnabled = true;
 

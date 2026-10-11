@@ -281,7 +281,7 @@ export class PermissionChecker {
       ) {
         log.info(
           { toolName: name, riskLevel },
-          "Auto-approving bash tool for platform-hosted guardian session",
+          "Auto-approving bash tool for cloud-hosted guardian session",
         );
         return {
           allowed: true,

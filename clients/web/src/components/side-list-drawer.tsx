@@ -33,7 +33,7 @@ interface SideListDrawerProps {
  * and this is mounted only while the substitution is on. Hiding it in CSS
  * instead would put the threshold in two places, and the gap between them is a
  * width where the list has no surface at all. See
- * `docs/PLATFORM_ADAPTATION.md`.
+ * `docs/CLOUD_ADAPTATION.md`.
  */
 export function SideListDrawer({
   open,

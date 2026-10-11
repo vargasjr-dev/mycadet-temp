@@ -272,17 +272,17 @@ mock.module("../providers/registry.js", () => ({
   resolveProviderFromConnection: async () => anthropicStub,
 }));
 
-import { CADET_MANAGED_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
+import { CADET_CLOUD_CONNECTION_NAME } from "../providers/cadet-model-routing.js";
 
 // Connection-aware resolver path: satisfy
 // `tryResolveProviderForConnectionName` lookups so resolveDefaultProvider
 // returns a usable provider for any connection name the winning profile
-// references. The managed connection must be the platform-auth sentinel row:
-// a managed profile routing through anything else resolves to the platform
+// references. The cloud connection must be the cloud-auth sentinel row:
+// a cloud profile routing through anything else resolves to the cloud
 // instead. Other names behave as personal anthropic connections.
 mock.module("../providers/inference/connections.js", () => ({
   getConnection: (_db: unknown, name: string) =>
-    name === CADET_MANAGED_CONNECTION_NAME
+    name === CADET_CLOUD_CONNECTION_NAME
       ? {
           id: 1,
           name,

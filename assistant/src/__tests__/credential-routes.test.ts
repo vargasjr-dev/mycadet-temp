@@ -113,8 +113,8 @@ mock.module("../oauth/oauth-store.js", () => ({
   }),
 }));
 
-mock.module("../credential-execution/managed-catalog.js", () => ({
-  fetchManagedCatalog: mock(async () => ({ ok: true, descriptors: [] })),
+mock.module("../credential-execution/cloud-catalog.js", () => ({
+  fetchCloudCatalog: mock(async () => ({ ok: true, descriptors: [] })),
 }));
 
 mock.module("../daemon/credential-transcript-scrub.js", () => ({
@@ -175,7 +175,7 @@ type ListResponse = {
     scrubbedValue: string;
     hasSecret: boolean;
   }>;
-  managedCredentials: unknown[];
+  cloudCredentials: unknown[];
 };
 type DeleteResponse = {
   service: string;
@@ -849,15 +849,15 @@ describe("credentials routes", () => {
     });
   });
 
-  describe("platform-managed credentials", () => {
+  describe("cloud credentials", () => {
     const PLATFORM_KEY = "vk-platform-provisioned-key";
 
     /**
-     * The platform provisions the pod's own credentials by POSTing them to
+     * The cloud provisions the pod's own credentials by POSTing them to
      * `/v1/secrets` as `credential` entries, which land in the same secure
      * store and metadata table as a user's own credentials.
      */
-    function seedPlatformCredential(field: string, value: string): string {
+    function seedCloudCredential(field: string, value: string): string {
       // The secure store speaks the REAL credentialKey format; the metadata
       // mock keeps its own service:field addressing.
       secureStore.set(seedKey("cadet", field), value);
@@ -876,8 +876,8 @@ describe("credentials routes", () => {
     }
 
     test("the listing omits cloud credentials and keeps the user's own", async () => {
-      // GIVEN the platform's provisioned credentials alongside a user's
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      // GIVEN the cloud's provisioned credentials alongside a user's
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
@@ -892,12 +892,12 @@ describe("credentials routes", () => {
       expect(JSON.stringify(result)).not.toContain(PLATFORM_KEY);
     });
 
-    test("reveal refuses the platform API key for every principal", async () => {
+    test("reveal refuses the cloud API key for every principal", async () => {
       /**
        * Both farming paths land on this handler: the assistant's own tool
        * shell arrives as `local`, a Settings click as `user`.
        */
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       for (const principal of ["local", "user", "svc_gateway"]) {
         await expect(
@@ -910,7 +910,7 @@ describe("credentials routes", () => {
     });
 
     test("reveal refuses a cloud credential looked up by UUID", async () => {
-      const credentialId = seedPlatformCredential(
+      const credentialId = seedCloudCredential(
         "assistant_api_key",
         PLATFORM_KEY,
       );
@@ -924,7 +924,7 @@ describe("credentials routes", () => {
     });
 
     test("inspect refuses cloud credentials", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         inspectRoute!.handler({
@@ -935,9 +935,9 @@ describe("credentials routes", () => {
 
     test("set refuses cloud credentials", async () => {
       /**
-       * The managed key is owned by the platform's own provisioning; a
+       * The cloud key is owned by the cloud's own provisioning; a
        * hand-set key would spend Cadet's inference budget on a caller the
-       * writer chose. The platform's own provisioning does not come through
+       * writer chose. The cloud's own provisioning does not come through
        * this route; it writes over `POST /v1/secrets`.
        */
       await expect(
@@ -956,7 +956,7 @@ describe("credentials routes", () => {
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         setRoute!.handler({
@@ -974,7 +974,7 @@ describe("credentials routes", () => {
     });
 
     test("delete refuses cloud credentials", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         deleteRoute!.handler({
@@ -1004,7 +1004,7 @@ describe("credentials routes", () => {
     });
 
     test("a user credential still inspects and reveals", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
@@ -1022,15 +1022,15 @@ describe("credentials routes", () => {
     });
   });
 
-  describe("platform-managed credentials", () => {
+  describe("cloud credentials", () => {
     const PLATFORM_KEY = "vk-platform-provisioned-key";
 
     /**
-     * The platform provisions the pod's own credentials by POSTing them to
+     * The cloud provisions the pod's own credentials by POSTing them to
      * `/v1/secrets` as `credential` entries, which land in the same secure
      * store and metadata table as a user's own credentials.
      */
-    function seedPlatformCredential(field: string, value: string): string {
+    function seedCloudCredential(field: string, value: string): string {
       // The secure store speaks the REAL credentialKey format; the metadata
       // mock keeps its own service:field addressing.
       secureStore.set(seedKey("cadet", field), value);
@@ -1049,8 +1049,8 @@ describe("credentials routes", () => {
     }
 
     test("the listing omits cloud credentials and keeps the user's own", async () => {
-      // GIVEN the platform's provisioned credentials alongside a user's
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      // GIVEN the cloud's provisioned credentials alongside a user's
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });
@@ -1065,12 +1065,12 @@ describe("credentials routes", () => {
       expect(JSON.stringify(result)).not.toContain(PLATFORM_KEY);
     });
 
-    test("reveal refuses the platform API key for every principal", async () => {
+    test("reveal refuses the cloud API key for every principal", async () => {
       /**
        * Both farming paths land on this handler: the assistant's own tool
        * shell arrives as `local`, a Settings click as `user`.
        */
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       for (const principal of ["local", "user", "svc_gateway"]) {
         await expect(
@@ -1083,7 +1083,7 @@ describe("credentials routes", () => {
     });
 
     test("reveal refuses a cloud credential looked up by UUID", async () => {
-      const credentialId = seedPlatformCredential(
+      const credentialId = seedCloudCredential(
         "assistant_api_key",
         PLATFORM_KEY,
       );
@@ -1097,7 +1097,7 @@ describe("credentials routes", () => {
     });
 
     test("inspect refuses cloud credentials", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         inspectRoute!.handler({
@@ -1108,9 +1108,9 @@ describe("credentials routes", () => {
 
     test("set refuses cloud credentials", async () => {
       /**
-       * The managed key is owned by the platform's own provisioning; a
+       * The cloud key is owned by the cloud's own provisioning; a
        * hand-set key would spend Cadet's inference budget on a caller the
-       * writer chose. The platform's own provisioning does not come through
+       * writer chose. The cloud's own provisioning does not come through
        * this route; it writes over `POST /v1/secrets`.
        */
       await expect(
@@ -1129,7 +1129,7 @@ describe("credentials routes", () => {
     });
 
     test("set does not overwrite an already-provisioned cloud credential", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         setRoute!.handler({
@@ -1147,7 +1147,7 @@ describe("credentials routes", () => {
     });
 
     test("delete refuses cloud credentials", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
 
       await expect(
         deleteRoute!.handler({
@@ -1177,7 +1177,7 @@ describe("credentials routes", () => {
     });
 
     test("a user credential still inspects and reveals", async () => {
-      seedPlatformCredential("assistant_api_key", PLATFORM_KEY);
+      seedCloudCredential("assistant_api_key", PLATFORM_KEY);
       await setRoute!.handler({
         body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
       });

@@ -208,7 +208,7 @@ describe("channelCanStreamReply", () => {
 
 describe("createChannelReplySession", () => {
   test("a start the channel refuses falls back without streaming", async () => {
-    // Whether THIS conversation can carry a growing reply is the platform's
+    // Whether THIS conversation can carry a growing reply is the cloud's
     // rule, answered by the transport's own reply to `start`. Slack refusing
     // a turn with no thread, and Telegram refusing a chat that is not
     // private, both arrive here as the same not-ok.

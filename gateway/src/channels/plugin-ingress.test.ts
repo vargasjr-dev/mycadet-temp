@@ -112,7 +112,7 @@ describe("parsePluginIngressManifest", () => {
   });
 
   it("defaults an undeclared signer to the plugin's own secret", () => {
-    // The safe default: a plugin gets no reach against the platform's key
+    // The safe default: a plugin gets no reach against the cloud's key
     // unless it asks for it and a guardian approves that declaration.
     const manifest = parsePluginIngressManifest(JSON.parse(VALID));
     expect(manifest.routes[0]!.signer).toBe("plugin");
@@ -238,7 +238,7 @@ describe("parsePluginIngressManifest", () => {
   });
 
   it("leaves verification undeclared when the manifest omits it", () => {
-    // Absent means the platform scheme, exactly as before the field existed.
+    // Absent means the cloud scheme, exactly as before the field existed.
     const manifest = parsePluginIngressManifest(JSON.parse(VALID));
     expect(manifest.routes[0]!.verification).toBeUndefined();
   });
@@ -339,7 +339,7 @@ describe("parsePluginIngressManifest", () => {
   });
 
   it("rejects a verification descriptor the gateway cannot run", () => {
-    // Fail the manifest rather than falling back to the platform scheme: a
+    // Fail the manifest rather than falling back to the cloud scheme: a
     // route verified differently than declared is worse than no route.
     expect(() =>
       parsePluginIngressManifest({

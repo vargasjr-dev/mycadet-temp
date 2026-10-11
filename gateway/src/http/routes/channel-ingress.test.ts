@@ -607,7 +607,7 @@ describe("list", () => {
 
   it("reports a cadet-signed route as served while its source waits", async () => {
     // Approval is the general gate, and a cadet-signed route is the
-    // exception: only a caller holding the platform secret can open it. A
+    // exception: only a caller holding the cloud secret can open it. A
     // listing that read servability off the source's state would call a live
     // route dormant, and say nothing about which half of a mixed declaration
     // is already reachable.

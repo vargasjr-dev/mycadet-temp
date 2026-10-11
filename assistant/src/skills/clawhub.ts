@@ -12,7 +12,7 @@ import {
 const log = getLogger("clawhub");
 
 // ClaWHub project root — clawhub creates a `skills/` subdir inside its cwd,
-// so we use the parent of the managed skills dir as the project root.
+// so we use the parent of the cloud skills dir as the project root.
 function getClawhubProjectRoot(): string {
   return dirname(getWorkspaceSkillsDir());
 }

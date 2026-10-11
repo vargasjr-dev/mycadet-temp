@@ -3,18 +3,18 @@ import { join } from "node:path";
 
 import type { WorkspaceMigration } from "./types.js";
 
-// Move the managed `balanced` profile from Fireworks MiniMax M3 to Together AI.
+// Move the cloud `balanced` profile from Fireworks MiniMax M3 to Together AI.
 //
 // Together serves MiniMax M3 with correct forced-`tool_choice` and object-typed
 // tool-arg handling; the Fireworks copy collapses object args to `{}`. The boot
-// seeder reconciles managed-profile content from the templates, but only when
-// it reseeds a profile: off-platform installs reseed every boot, while a
+// seeder reconciles cloud-profile content from the templates, but only when
+// it reseeds a profile: off-cloud installs reseed every boot, while a
 // platform workspace keeps the profile it was hatched with (the seeder skips
 // overlay-supplied profiles, and the overlay is consumed once). A platform
 // workspace whose `balanced` profile still resolves to Fireworks MiniMax M3
 // therefore relies on this migration to move it to Together.
 //
-// Scope: only the managed `balanced` profile still on the Fireworks MiniMax M3
+// Scope: only the cloud `balanced` profile still on the Fireworks MiniMax M3
 // default is rewritten. A user-owned `balanced` (`source: "user"`) or one whose
 // model the user changed is left alone. Migration 052 seeds `balanced`
 // source-less, so absent `source` means legacy managed — treat it as ours. The
@@ -27,7 +27,7 @@ const NEW_MODEL = "MiniMaxAI/MiniMax-M3";
 export const flipBalancedProfileToTogetherMigration: WorkspaceMigration = {
   id: "110-flip-balanced-profile-to-together",
   description:
-    "Move the managed balanced profile from Fireworks to Together AI (MiniMax M3)",
+    "Move the cloud balanced profile from Fireworks to Together AI (MiniMax M3)",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {
@@ -56,7 +56,7 @@ export const flipBalancedProfileToTogetherMigration: WorkspaceMigration = {
     }
 
     const profile = readObject(profiles["balanced"]);
-    // Only the managed profile still on the Fireworks MiniMax M3 default is
+    // Only the cloud profile still on the Fireworks MiniMax M3 default is
     // ours to migrate. `balanced` is seeded source-less by migration 052, so
     // absent `source` means legacy managed; only an explicit `source: "user"`
     // is left untouched. Matching on the old model id leaves a user-retargeted

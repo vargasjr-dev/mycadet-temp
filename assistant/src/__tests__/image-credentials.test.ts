@@ -14,8 +14,8 @@ const secureKeys = useMemorySecureKeyMap();
 let mockCloudBaseUrl = "";
 let mockAssistantApiKey = "";
 
-mock.module("../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: async () => ({
+mock.module("../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: async () => ({
     enabled: !!mockCloudBaseUrl && !!mockAssistantApiKey,
     cloudBaseUrl: mockCloudBaseUrl,
     assistantApiKey: mockAssistantApiKey,
@@ -36,7 +36,7 @@ describe("resolveImageGenCredentials", () => {
   });
 
   describe("managed mode", () => {
-    test("returns managed-proxy credentials when context is enabled", async () => {
+    test("returns cloud-proxy credentials when context is enabled", async () => {
       mockCloudBaseUrl = "https://platform.example.com";
       mockAssistantApiKey = "sk-assistant-key";
 
@@ -47,7 +47,7 @@ describe("resolveImageGenCredentials", () => {
 
       expect(result.errorHint).toBeUndefined();
       expect(result.credentials).toEqual({
-        type: "managed-proxy",
+        type: "cloud-proxy",
         assistantApiKey: "sk-assistant-key",
         baseUrl: "https://platform.example.com/v1/runtime-proxy/gemini",
       });
@@ -252,6 +252,6 @@ describe("resolveImageGenRouting", () => {
     });
 
     expect(result.credentials).toBeUndefined();
-    expect(result.errorHint).toContain("Managed proxy is not available");
+    expect(result.errorHint).toContain("Cloud proxy is not available");
   });
 });

@@ -239,7 +239,7 @@ describe("secure-keys", () => {
   //
   // The reconnect callback runs while the credential resolver is waiting on
   // `_reconnectInFlight`. A nested `getSecureKeyAsync()` from inside the
-  // callback — e.g. `resolveManagedProxyContext()` reading the assistant API
+  // callback — e.g. `resolveCloudProxyContext()` reading the assistant API
   // key for the handshake — would recursively `await` the same in-flight
   // promise and deadlock for 45 seconds until `CREDENTIAL_OP_TIMEOUT_MS`
   // fires. The guard in `attemptCesReconnection` short-circuits that

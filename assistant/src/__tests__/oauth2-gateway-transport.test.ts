@@ -63,10 +63,10 @@ mock.module("../config/env-registry.js", () => ({
   getIsCloud: () => false,
 }));
 
-// Mock platform-callback-registration to avoid cold-start latency from its
+// Mock cloud-callback-registration to avoid cold-start latency from its
 // transitive dependencies (config/env.js) which can cause the 10ms timer in
 // the auto-detection test to fire before openUrl is called.
-mock.module("../inbound/platform-callback-registration.js", () => ({
+mock.module("../inbound/cloud-callback-registration.js", () => ({
   registerCallbackRoute: () => Promise.reject(new Error("not containerized")),
   resolveCallbackUrl: (directUrl: () => string) => Promise.resolve(directUrl()),
 }));

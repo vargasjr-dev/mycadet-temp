@@ -23,7 +23,7 @@ import { detectElectronHostOS } from "@/runtime/platform-detection";
  *   completed report carries the reveal id for a "Show in Finder" /
  *   "Show in File Explorer" action.
  * - Capacitor iOS/Android otherwise publish nothing: a presented share
- *   sheet is the platform's own feedback and dismissing it must not claim a
+ *   sheet is the cloud's own feedback and dismissing it must not claim a
  *   file was saved.
  *
  * Mounted once by `RootLayout`, alongside the bus init that wires the

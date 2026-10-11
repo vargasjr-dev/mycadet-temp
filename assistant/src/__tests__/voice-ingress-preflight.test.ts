@@ -90,7 +90,7 @@ describe("voice ingress preflight", () => {
   });
 
   test("credential readiness gates platform-callback deployments too", async () => {
-    // The platform short-circuit covers only the ingress-URL half — the
+    // The cloud short-circuit covers only the ingress-URL half — the
     // daemon still performs STT/TTS on platform deployments.
     mockGetIsPlatform = () => true;
     setConfig("ingress", { enabled: false });
@@ -104,7 +104,7 @@ describe("voice ingress preflight", () => {
     }
   });
 
-  test("runs the credential readiness check on the platform success path", async () => {
+  test("runs the credential readiness check on the cloud success path", async () => {
     mockGetIsPlatform = () => true;
     setConfig("ingress", { enabled: false });
 

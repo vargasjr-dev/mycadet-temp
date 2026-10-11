@@ -44,7 +44,7 @@ describe("resolveAssistantEmailIntro", () => {
     ).toBeNull();
   });
 
-  test("off the platform, or once seen, nothing shows", () => {
+  test("off the cloud, or once seen, nothing shows", () => {
     expect(
       resolveAssistantEmailIntro({ ...READY, status: "unavailable" }),
     ).toBeNull();

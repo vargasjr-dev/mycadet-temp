@@ -419,7 +419,7 @@ const TRACK_RECT = {
  * Which presentation a mount gets.
  *
  * Two terms, and both matter. The window has to be short of room, which is the
- * shared narrow-window signal rather than the pointer or the platform; and the
+ * shared narrow-window signal rather than the pointer or the cloud; and the
  * mount has to have said its slot can stand a strip, since only the mount knows
  * the layout it sits in.
  */

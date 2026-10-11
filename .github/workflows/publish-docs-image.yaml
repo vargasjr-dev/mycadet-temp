@@ -1,7 +1,7 @@
 name: Publish Docs Image
 
 # Builds and publishes the docs-site image to each environment's Artifact
-# Registry, then dispatches the platform repo's docs-cd workflow so the docs
+# Registry, then dispatches the cloud repo's docs-cd workflow so the docs
 # Deployment (and nothing else) rolls to the freshly published SHA. Pushes to main publish to dev,
 # staging, and production so every environment's registry always has the
 # latest main build; `workflow_dispatch` republishes (and redeploys) a single

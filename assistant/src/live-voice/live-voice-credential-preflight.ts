@@ -21,8 +21,8 @@ import {
   fishAudioReferenceIdConfigured,
   ttsSecretResolves,
 } from "../calls/telephony-tts-capability.js";
-import { resolveEffectiveSpeechProviders } from "../config/managed-speech-defaults.js";
-import { managedSpeechAvailable } from "../platform/managed-speech.js";
+import { managedSpeechAvailable } from "../cloud/cloud-speech.js";
+import { resolveEffectiveSpeechProviders } from "../config/cloud-speech-defaults.js";
 import { getProviderEntry } from "../providers/speech-to-text/provider-catalog.js";
 import {
   resolveStreamingTranscriber,
@@ -144,7 +144,7 @@ async function resolveSttGap(
       },
       clause:
         entry.credentialProvider === "cadet"
-          ? `a Cadet Cloud connection for managed speech (run 'assistant cloud connect')`
+          ? `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect')`
           : `an API key for the speech-to-text provider "${entry.id}"`,
     };
   }
@@ -197,7 +197,7 @@ async function resolveTtsGap(
     };
   }
 
-  // Managed speech authenticates via the cloud connection — full
+  // Cloud speech authenticates via the cloud connection — full
   // availability (API key + assistant ID) is the credential, so the
   // stored-secret loop below would pass half-connected states that
   // synthesis rejects.
@@ -207,9 +207,9 @@ async function resolveTtsGap(
         gap: {
           kind: "tts",
           providerId: entry.id,
-          reason: `TTS provider "${entry.id}" needs a Cadet Cloud connection for managed speech`,
+          reason: `TTS provider "${entry.id}" needs a Cadet Cloud connection for cloud speech`,
         },
-        clause: `a Cadet Cloud connection for managed speech (run 'assistant cloud connect')`,
+        clause: `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect')`,
       };
     }
     return null;

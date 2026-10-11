@@ -18,11 +18,11 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import * as authStore from "@/stores/auth-store";
 import * as nativeAuth from "@/runtime/native-auth";
-import type { PlatformSessionStatus } from "@/stores/session-status";
+import type { CloudSessionStatus } from "@/stores/session-status";
 
 export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
-/** Served by the platform's Next.js app — a `<Navigate>` here dead-ends. */
+/** Served by the cloud's Next.js app — a `<Navigate>` here dead-ends. */
 const IMPORT_FUNNEL = "/import?foo=1";
 const CADET_URL = "https://mycadet.ai/x";
 
@@ -74,8 +74,8 @@ export const mockHardNavigate = () => ({
   },
 });
 
-function setPlatformSession(platformSession: PlatformSessionStatus) {
-  authStore.useAuthStore.setState({ platformSession });
+function setCloudSession(cloudSession: CloudSessionStatus) {
+  authStore.useAuthStore.setState({ cloudSession });
 }
 
 /** Registers the per-scenario reset and teardown the helpers below assume. */
@@ -87,7 +87,7 @@ export function setupAuthEntry() {
     authEntry.authFlowCalls = [];
     authEntry.hardNavigateCalls = [];
     authEntry.nativeLoginError = null;
-    setPlatformSession("present");
+    setCloudSession("present");
     useAssistantLifecycleStore.setState({
       assistantState: { kind: "loading" },
     });
@@ -155,9 +155,9 @@ export function describeAuthEntryContract(
       expect(authEntry.hardNavigateCalls).toHaveLength(0);
     });
 
-    test("a platform-dependent returnTo without a platform session still signs in", () => {
+    test("a cloud-dependent returnTo without a cloud session still signs in", () => {
       authEntry.authenticated = true;
-      setPlatformSession("absent");
+      setCloudSession("absent");
       const entry = entryUrl(route, CHECKOUT);
       renderEntry(entry);
 
@@ -167,7 +167,7 @@ export function describeAuthEntryContract(
 
     test("a self-hosted assistant with no platform session still signs in", () => {
       authEntry.authenticated = true;
-      setPlatformSession("absent");
+      setCloudSession("absent");
       useAssistantLifecycleStore.setState({
         assistantState: { kind: "self_hosted" },
       });
@@ -178,9 +178,9 @@ export function describeAuthEntryContract(
       expect(authScreen()).toBeTruthy();
     });
 
-    test("a platform-dependent returnTo waits out the platform-session probe", () => {
+    test("a cloud-dependent returnTo waits out the cloud-session probe", () => {
       authEntry.authenticated = true;
-      setPlatformSession("unknown");
+      setCloudSession("unknown");
       const entry = entryUrl(route, CHECKOUT);
       renderEntry(entry);
 

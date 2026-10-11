@@ -37,7 +37,7 @@ const setSearchParamsMock = mock(
     _opts?: { replace?: boolean },
   ) => {},
 );
-let hasPlatformSessionValue = false;
+let hasCloudSessionValue = false;
 let assistantsValue: ResolvedAssistant[] = [];
 let localModeHostAvailableValue = false;
 let isLocalClientValue = true;
@@ -57,7 +57,7 @@ const removePairedAssistantFromLockfileMock = mock(
 );
 const connectPairedAssistantMock = mock(async (_id: string) => {});
 const connectLocalAssistantMock = mock(async (_id: string) => {});
-const connectPlatformAssistantMock = mock(async (_id: string) => {});
+const connectCloudAssistantMock = mock(async (_id: string) => {});
 
 const hydrateOriginsMock = mock(async () => {});
 // Success path mirrors the real store: the removed entry leaves the list.
@@ -107,13 +107,13 @@ mock.module("react-router", () => ({
   useSearchParams: () => [searchParams, setSearchParamsMock],
 }));
 
-// The screen refreshes the platform assistants list on mount; the real module
+// The screen refreshes the cloud assistants list on mount; the real module
 // drags in @/assistant/api and the event bus, so it is fully mocked here.
-const refreshPlatformAssistantsIfStaleMock = mock(async () => {});
-mock.module("@/assistant/platform-assistants-sync", () => ({
-  refreshPlatformAssistantsIfStale: refreshPlatformAssistantsIfStaleMock,
-  reloadPlatformAssistants: async () => {},
-  setupPlatformAssistantsSync: () => () => {},
+const refreshCloudAssistantsIfStaleMock = mock(async () => {});
+mock.module("@/assistant/cloud-assistants-sync", () => ({
+  refreshCloudAssistantsIfStale: refreshCloudAssistantsIfStaleMock,
+  reloadCloudAssistants: async () => {},
+  setupCloudAssistantsSync: () => () => {},
 }));
 
 mock.module("@/assistant/selection", () => ({
@@ -335,10 +335,10 @@ mock.module("@/stores/auth-store", () => ({
     getState: () => ({
       connectPairedAssistant: connectPairedAssistantMock,
       connectLocalAssistant: connectLocalAssistantMock,
-      connectPlatformAssistant: connectPlatformAssistantMock,
+      connectCloudAssistant: connectCloudAssistantMock,
     }),
   },
-  useHasPlatformSession: () => hasPlatformSessionValue,
+  useHasCloudSession: () => hasCloudSessionValue,
 }));
 
 mock.module("@/stores/organization-store", () => ({
@@ -459,14 +459,14 @@ function makePairedAssistant(
     id: PAIRED_ID,
     name: "Office Mac",
     isLocal: false,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: true,
     runtimeUrl: "https://remote-host.example:8443",
     ...overrides,
   };
 }
 
-function makePlatformAssistant(
+function makeCloudAssistant(
   overrides: Partial<ResolvedAssistant> = {},
 ): ResolvedAssistant {
   return {
@@ -474,7 +474,7 @@ function makePlatformAssistant(
     name: "Cloud Helper",
     cloud: "cadet",
     isLocal: false,
-    isPlatformHosted: true,
+    isCloudHosted: true,
     isPaired: false,
     ...overrides,
   };
@@ -489,7 +489,7 @@ function makeLocalAssistant(
     name: "Desk Helper",
     cloud: "local",
     isLocal: true,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: false,
     ...overrides,
   };
@@ -522,10 +522,10 @@ beforeEach(() => {
   connectPairedAssistantMock.mockClear();
   connectPairedAssistantMock.mockImplementation(async () => {});
   connectLocalAssistantMock.mockClear();
-  connectPlatformAssistantMock.mockClear();
+  connectCloudAssistantMock.mockClear();
   searchParams = new URLSearchParams();
   setSearchParamsMock.mockClear();
-  hasPlatformSessionValue = false;
+  hasCloudSessionValue = false;
   assistantsValue = [];
   localModeHostAvailableValue = false;
   isElectronValue = false;
@@ -561,7 +561,7 @@ beforeEach(() => {
   forgetAssistantAvatarMock.mockClear();
   activeAssistantIdValue = null;
   setActiveAssistantIdMock.mockClear();
-  refreshPlatformAssistantsIfStaleMock.mockClear();
+  refreshCloudAssistantsIfStaleMock.mockClear();
   __resetConnectDialogForTesting();
 });
 
@@ -569,7 +569,7 @@ afterEach(cleanup);
 
 describe("SelectAssistantScreen paired assistants", () => {
   test("a paired card renders unlocked with the paired subtitle and no login button while logged out", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -585,7 +585,7 @@ describe("SelectAssistantScreen paired assistants", () => {
   test("a paired entry with no parseable runtimeUrl falls back to the plain Paired subtitle", () => {
     assistantsValue = [
       makePairedAssistant({ runtimeUrl: undefined }),
-      makePlatformAssistant(),
+      makeCloudAssistant(),
     ];
 
     render(<SelectAssistantScreen />);
@@ -594,11 +594,11 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("a cloud platform card stays locked while logged out", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
-    // The platform card is not a radio and carries the login affordance.
+    // The cloud card is not a radio and carries the login affordance.
     const radios = screen.getAllByRole("radio");
     expect(radios.some((r) => r.textContent?.includes("Cloud Helper"))).toBe(
       false,
@@ -607,7 +607,7 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("Continue connects the selected paired assistant via connectPairedAssistant", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -623,11 +623,11 @@ describe("SelectAssistantScreen paired assistants", () => {
       }),
     );
     expect(connectLocalAssistantMock).not.toHaveBeenCalled();
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
   });
 
   test("an expired pairing (GuardianTokenError 401) surfaces the re-pair copy", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     connectPairedAssistantMock.mockImplementation(async () => {
       throw new MockGuardianTokenError(401);
     });
@@ -641,7 +641,7 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("a non-token paired connect failure keeps the generic error", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     connectPairedAssistantMock.mockImplementation(async () => {
       throw new Error("network down");
     });
@@ -688,7 +688,7 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("a paired card offers the remove menu when the local-mode host is available", () => {
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -696,7 +696,7 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("a paired card offers no remove menu without a local-mode host", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -704,11 +704,11 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("confirming a paired removal shows the pairing copy and calls removePairedAssistantFromLockfile", async () => {
-    // A pairing is device-local, so the affordance survives a platform
-    // session (which locks out the platform-card removal instead).
+    // A pairing is device-local, so the affordance survives a cloud
+    // session (which locks out the cloud-card removal instead).
     localModeHostAvailableValue = true;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -732,8 +732,8 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("removing the lifecycle-active paired entry clears the active id", async () => {
     localModeHostAvailableValue = true;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     activeAssistantIdValue = PAIRED_ID;
 
     render(<SelectAssistantScreen />);
@@ -748,8 +748,8 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("removing a non-active paired entry leaves the active id alone", async () => {
     localModeHostAvailableValue = true;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     activeAssistantIdValue = "some-other-assistant";
 
     render(<SelectAssistantScreen />);
@@ -765,8 +765,8 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("a paired removal failure surfaces the host error in the dialog", async () => {
     localModeHostAvailableValue = true;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     removePairedAssistantFromLockfileMock.mockImplementation(async () => ({
       ok: false,
       error: "Unpair is not supported by this app version",
@@ -811,7 +811,7 @@ describe("SelectAssistantScreen paired assistants", () => {
   });
 
   test("the connect-a-remote-assistant affordance is hidden without a local-mode host", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -820,7 +820,7 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("the connect-a-remote-assistant affordance opens the dialog when a local-mode host is available", () => {
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -833,7 +833,7 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("a successful import connects the new pairing and navigates", async () => {
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -859,7 +859,7 @@ describe("SelectAssistantScreen paired assistants", () => {
       .getState()
       .openConnectDialog({ initialAddress: "https://gw.example.com" });
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -872,7 +872,7 @@ describe("SelectAssistantScreen paired assistants", () => {
       .getState()
       .openConnectDialog({ guidanceKind: "legacy" });
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -884,7 +884,7 @@ describe("SelectAssistantScreen paired assistants", () => {
       .getState()
       .openConnectDialog({ initialAddress: "https://gw.example.com" });
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -900,7 +900,7 @@ describe("SelectAssistantScreen paired assistants", () => {
       .getState()
       .openConnectDialog({ initialAddress: "https://gw.example.com" });
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -991,7 +991,7 @@ describe("SelectAssistantScreen paired assistants", () => {
 
   test("a successful platform removal forgets the assistant's avatar", async () => {
     localModeHostAvailableValue = true;
-    assistantsValue = [makePlatformAssistant()];
+    assistantsValue = [makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1011,7 +1011,7 @@ describe("SelectAssistantScreen paired assistants", () => {
 describe("SelectAssistantScreen remembered origins", () => {
   test("origin cards render from the store", () => {
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1022,7 +1022,7 @@ describe("SelectAssistantScreen remembered origins", () => {
 
   test("an unnamed origin falls back to its hostname as the title", () => {
     originsValue = [makeOrigin({ name: undefined })];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1031,7 +1031,7 @@ describe("SelectAssistantScreen remembered origins", () => {
 
   test("Continue on a selected origin card performs the origin switch", async () => {
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1044,13 +1044,13 @@ describe("SelectAssistantScreen remembered origins", () => {
       ),
     );
     expect(connectPairedAssistantMock).not.toHaveBeenCalled();
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
   });
 
   test("the current-origin card shows Current and Continue stays in-app", async () => {
     currentOriginUrl = "https://assistant.example.com";
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1073,7 +1073,7 @@ describe("SelectAssistantScreen remembered origins", () => {
     isNativeMobileValue = true;
     currentOriginUrl = "https://assistant.example.com";
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1085,7 +1085,7 @@ describe("SelectAssistantScreen remembered origins", () => {
     // the page, so the user keeps the affordance.
     currentOriginUrl = "https://assistant.example.com";
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1094,7 +1094,7 @@ describe("SelectAssistantScreen remembered origins", () => {
 
   test("removing an origin shows the origin copy and forgets the entry", async () => {
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1116,7 +1116,7 @@ describe("SelectAssistantScreen remembered origins", () => {
 
   test("a persistence failure keeps the dialog open with an error", async () => {
     originsValue = [makeOrigin()];
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     // The store's removeOrigin resolves silently on failure and leaves the
     // entry listed, which is the screen's failure signal.
     removeOriginMock.mockImplementation(async () => {});
@@ -1272,7 +1272,7 @@ describe("SelectAssistantScreen native mobile", () => {
 
   test("no Cadet Cloud card when the shell already serves the baked origin", async () => {
     isNativeMobileValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1284,7 +1284,7 @@ describe("SelectAssistantScreen native mobile", () => {
 
   test("no Cadet Cloud card on a browser surface", async () => {
     nativeCloudOriginValue = BAKED_CLOUD_URL;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1297,7 +1297,7 @@ describe("SelectAssistantScreen native mobile", () => {
 
 describe("SelectAssistantScreen add-remote-assistant affordance", () => {
   test("renders on hostless surfaces and opens the dialog", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1310,10 +1310,10 @@ describe("SelectAssistantScreen add-remote-assistant affordance", () => {
     expect(screen.getByText("Add origin dialog open")).toBeTruthy();
   });
 
-  test("renders on the platform hub", () => {
+  test("renders on the cloud hub", () => {
     isLocalClientValue = false;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1322,7 +1322,7 @@ describe("SelectAssistantScreen add-remote-assistant affordance", () => {
 
   test("is hidden where a local-mode host offers the pairing connect instead", () => {
     localModeHostAvailableValue = true;
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1331,7 +1331,7 @@ describe("SelectAssistantScreen add-remote-assistant affordance", () => {
   });
 
   test("an added origin closes the dialog and switches to it", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1348,7 +1348,7 @@ describe("SelectAssistantScreen add-remote-assistant affordance", () => {
   });
 
   test("a pasted pairing link carries its device code into the switch", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1364,7 +1364,7 @@ describe("SelectAssistantScreen add-remote-assistant affordance", () => {
   });
 
   test("closing the dialog leaves the chooser untouched", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
@@ -1384,7 +1384,7 @@ describe("SelectAssistantScreen register handoff", () => {
   }
 
   test("a valid register param records the origin with its label and strips the params through the router", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     searchParams = new URLSearchParams(
       "register=https%3A%2F%2Fhost.example%2Fassistant-1&name=Homelab&keep=1",
     );
@@ -1410,7 +1410,7 @@ describe("SelectAssistantScreen register handoff", () => {
   });
 
   test("a failed add keeps the register params for a retry", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     searchParams = new URLSearchParams(
       "register=https%3A%2F%2Fhost.example%2Fassistant-1&name=Homelab",
     );
@@ -1425,7 +1425,7 @@ describe("SelectAssistantScreen register handoff", () => {
   });
 
   test("a name-less register param records the origin without a label", async () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     searchParams = new URLSearchParams(
       "register=https%3A%2F%2Fhost.example%2Fassistant-1",
     );
@@ -1447,7 +1447,7 @@ describe("SelectAssistantScreen register handoff", () => {
   ])(
     "an invalid register value is ignored without error UI: %s",
     async (value) => {
-      assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+      assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
       searchParams = new URLSearchParams([["register", value]]);
 
       render(<SelectAssistantScreen />);
@@ -1467,8 +1467,8 @@ describe("SelectAssistantScreen register handoff", () => {
 describe("SelectAssistantScreen platform hub", () => {
   beforeEach(() => {
     isLocalClientValue = false;
-    hasPlatformSessionValue = true;
-    assistantsValue = [makePlatformAssistant()];
+    hasCloudSessionValue = true;
+    assistantsValue = [makeCloudAssistant()];
   });
 
   test("the hub renders the chooser and never auto-connects", async () => {
@@ -1477,7 +1477,7 @@ describe("SelectAssistantScreen platform hub", () => {
     await waitFor(() =>
       expect(screen.getByText("Choose an Assistant")).toBeTruthy(),
     );
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -1501,7 +1501,7 @@ describe("SelectAssistantScreen platform hub", () => {
   });
 });
 
-describe("SelectAssistantScreen local registrations on the platform hub", () => {
+describe("SelectAssistantScreen local registrations on the cloud hub", () => {
   // API-sourced self-hosted entries as the hub sees them: no lockfile behind
   // them, so `cloud` is unset and reachability hinges on `ingressUrl`.
   const makeLocalRegistration = (
@@ -1510,19 +1510,19 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
     id: "local-reg-1",
     name: "Mac Mini",
     isLocal: true,
-    isPlatformHosted: false,
+    isCloudHosted: false,
     isPaired: false,
     ...overrides,
   });
 
   beforeEach(() => {
     isLocalClientValue = false;
-    hasPlatformSessionValue = true;
+    hasCloudSessionValue = true;
   });
 
   test("hides a local registration with no ingress", async () => {
     assistantsValue = [
-      makePlatformAssistant(),
+      makeCloudAssistant(),
       makeLocalRegistration({ ingressUrl: null }),
     ];
 
@@ -1537,9 +1537,9 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
     expect(screen.queryByText("Mac Mini")).toBeNull();
   });
 
-  test("a local registration with an ingress renders and connects through the platform path", async () => {
+  test("a local registration with an ingress renders and connects through the cloud path", async () => {
     assistantsValue = [
-      makePlatformAssistant(),
+      makeCloudAssistant(),
       makeLocalRegistration({ ingressUrl: "https://mac.example.com" }),
     ];
 
@@ -1556,7 +1556,7 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
     fireEvent.click(screen.getByText("Continue"));
 
     await waitFor(() =>
-      expect(connectPlatformAssistantMock).toHaveBeenCalledWith("local-reg-1"),
+      expect(connectCloudAssistantMock).toHaveBeenCalledWith("local-reg-1"),
     );
     expect(connectLocalAssistantMock).not.toHaveBeenCalled();
   });
@@ -1574,8 +1574,8 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
     expect(screen.queryByText("On this computer")).toBeNull();
   });
 
-  test("locks an ingress-backed local entry behind login when the platform session is gone", async () => {
-    hasPlatformSessionValue = false;
+  test("locks an ingress-backed local entry behind login when the cloud session is gone", async () => {
+    hasCloudSessionValue = false;
     assistantsValue = [
       makeLocalRegistration({ ingressUrl: "https://mac.example.com" }),
     ];
@@ -1592,10 +1592,10 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
 
   test("a local entry on a local client still connects through the local path", async () => {
     isLocalClientValue = true;
-    hasPlatformSessionValue = false;
+    hasCloudSessionValue = false;
     assistantsValue = [
       makeLocalRegistration({ id: "asst-local", cloud: "local" }),
-      makePlatformAssistant(),
+      makeCloudAssistant(),
     ];
 
     render(<SelectAssistantScreen />);
@@ -1610,23 +1610,23 @@ describe("SelectAssistantScreen local registrations on the platform hub", () => 
     await waitFor(() =>
       expect(connectLocalAssistantMock).toHaveBeenCalledWith("asst-local"),
     );
-    expect(connectPlatformAssistantMock).not.toHaveBeenCalled();
+    expect(connectCloudAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("refreshes the platform assistants list on mount", async () => {
-    assistantsValue = [makePlatformAssistant()];
+  test("refreshes the cloud assistants list on mount", async () => {
+    assistantsValue = [makeCloudAssistant()];
 
     render(<SelectAssistantScreen />);
 
     await waitFor(() =>
-      expect(refreshPlatformAssistantsIfStaleMock).toHaveBeenCalledTimes(1),
+      expect(refreshCloudAssistantsIfStaleMock).toHaveBeenCalledTimes(1),
     );
   });
 });
 
 describe("SelectAssistantScreen assistant avatars", () => {
   test("a row with avatar data renders the chip in place of the glyph", () => {
-    assistantsValue = [makePlatformAssistant()];
+    assistantsValue = [makeCloudAssistant()];
     rowAvatars.set(PLATFORM_ID, {
       traits: { bodyShape: "round", eyeStyle: "dot", color: "blue" },
       imageUrl: null,
@@ -1637,7 +1637,7 @@ describe("SelectAssistantScreen assistant avatars", () => {
   });
 
   test("an image-backed row's radio is named by its title, not the alt", () => {
-    assistantsValue = [makePairedAssistant(), makePlatformAssistant()];
+    assistantsValue = [makePairedAssistant(), makeCloudAssistant()];
     rowAvatars.set(PAIRED_ID, {
       traits: null,
       imageUrl: "https://example.test/a.png",
@@ -1696,7 +1696,7 @@ describe("SelectAssistantScreen assistant labels", () => {
 
   test("an unnamed hub local registration keeps the generic fallback, not its UUID", () => {
     // API-sourced hub row: no lockfile entry behind it, so no `cloud`, and
-    // its id is the platform assistant record's UUID.
+    // its id is the cloud assistant record's UUID.
     const HUB_LOCAL_UUID = "3f8a1c2e-9b4d-4e6f-8a70-1d2c3b4a5e6f";
     assistantsValue = [
       makeLocalAssistant({ name: undefined }),
@@ -1704,7 +1704,7 @@ describe("SelectAssistantScreen assistant labels", () => {
         id: HUB_LOCAL_UUID,
         name: undefined,
         isLocal: true,
-        isPlatformHosted: false,
+        isCloudHosted: false,
         isPaired: false,
         ingressUrl: "https://mac.example.com",
       },
@@ -1719,7 +1719,7 @@ describe("SelectAssistantScreen assistant labels", () => {
   });
 
   test("an unnamed cloud entry keeps the generic Cloud Assistant fallback", () => {
-    assistantsValue = [makePlatformAssistant({ name: undefined })];
+    assistantsValue = [makeCloudAssistant({ name: undefined })];
 
     render(<SelectAssistantScreen />);
 

@@ -193,7 +193,7 @@ export function resolveDestinations(
         break;
       }
       case "platform": {
-        // Platform delivery goes through the daemon's CadetPlatformClient —
+        // Platform delivery goes through the daemon's CadetCloudClient —
         // no external binding needed. Include guardianPrincipalId so the
         // adapter can scope guardian-sensitive notifications.
         const platformGuardian = resolveGuardian(guardians, "cadet");

@@ -94,7 +94,7 @@ function enterCpuElevated(): ResourcePressureStatus {
   return status;
 }
 
-const originalIsPlatform = process.env.IS_PLATFORM;
+const originalIsPlatform = process.env.IS_CLOUD;
 
 beforeEach(() => {
   __resetResourcePressureGuardForTests();
@@ -104,22 +104,22 @@ beforeEach(() => {
   mockedMemoryLimitBytes = null;
   mockedMemoryUsageBytes = null;
   mockedMemoryStat = null;
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
 });
 
 afterEach(() => {
   __resetResourcePressureGuardForTests();
   broadcasts.length = 0;
   if (originalIsPlatform === undefined) {
-    delete process.env.IS_PLATFORM;
+    delete process.env.IS_CLOUD;
   } else {
-    process.env.IS_PLATFORM = originalIsPlatform;
+    process.env.IS_CLOUD = originalIsPlatform;
   }
 });
 
 describe("resource pressure guard", () => {
-  test("stays disabled off-platform: no timer, no samples, no broadcasts", () => {
-    delete process.env.IS_PLATFORM;
+  test("stays disabled off-cloud: no timer, no samples, no broadcasts", () => {
+    delete process.env.IS_CLOUD;
 
     const started = startResourcePressureGuard();
 

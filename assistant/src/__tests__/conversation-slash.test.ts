@@ -57,7 +57,7 @@ describe("/model list", () => {
     expect(message).not.toContain("(DeepSeek V4 Flash)");
   });
 
-  test("descriptions use the managed column without a default provider", async () => {
+  test("descriptions use the cloud column without a default provider", async () => {
     const message = ((await resolveSlash("/model")) as { message: string })
       .message;
     // The quality tier is the column discriminator now that cost-optimized
@@ -72,7 +72,7 @@ describe("/model list", () => {
 });
 
 describe("/model switch", () => {
-  test("rejects a managed backup profile as a direct selection", async () => {
+  test("rejects a cloud backup profile as a direct selection", async () => {
     const result = await resolveSlash("/model balanced-backup");
     expect(result.kind).toBe("unknown");
     expect((result as { message: string }).message).toContain(

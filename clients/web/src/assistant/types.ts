@@ -9,7 +9,7 @@ export type MaintenanceModeInfo = {
  * requests, consumed by the chat overlay), while `health` only ever
  * reflects a completed probe — so the status banner doesn't flash on
  * transient bounces. For local / self-hosted assistants the service
- * maintains it with a steady heartbeat; for platform-hosted assistants
+ * maintains it with a steady heartbeat; for cloud-hosted assistants
  * the centralized operational-status API is the health surface and
  * this field is only touched by event-driven probes.
  */

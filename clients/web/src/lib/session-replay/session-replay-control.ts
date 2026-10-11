@@ -108,7 +108,7 @@ export function syncSessionReplay(config: SessionReplayConfig): void {
 /**
  * Install listeners so the replay client re-applies the gate whenever an input
  * changes — the effective reporting gate (`device:diagnostics_reporting`) or a
- * platform-session transition — and re-identifies when the authenticated user
+ * cloud-session transition — and re-identifies when the authenticated user
  * changes. Reuses the same signals the diagnostics gate watches, so platform-side revokes
  * picked up by `consent-refresh.ts` flow through here with no extra wiring.
  *
@@ -122,9 +122,9 @@ export function installSessionReplayControlListeners(
   );
   const stopSessionWatch = useAuthStore.subscribe((state, prevState) => {
     if (
-      state.platformSession !== prevState.platformSession ||
-      state.platformSessionRestoredOffline !==
-        prevState.platformSessionRestoredOffline
+      state.cloudSession !== prevState.cloudSession ||
+      state.cloudSessionRestoredOffline !==
+        prevState.cloudSessionRestoredOffline
     ) {
       syncSessionReplay(config);
     } else if (state.user?.id !== prevState.user?.id) {

@@ -48,7 +48,7 @@ function parseDefaultProviderResponse(value: unknown): DefaultProviderResponse {
  * Ask the active assistant which provider it routes by default
  * (`GET /v1/config/llm/default-provider`), so `cadet setup` without
  * `--provider` configures the connection the assistant actually uses —
- * e.g. the keyless Cadet Cloud managed connection picked at hatch —
+ * e.g. the keyless Cadet Cloud cloud connection picked at hatch —
  * instead of blindly prompting for an API key. Falls back to cadet
  * when the runtime is unreachable or predates the endpoint; the
  * returned warning says why, for the caller to render.
@@ -184,7 +184,7 @@ export const setup = Object.assign(
 
   // Respect the assistant's configured default provider (e.g. Cadet Cloud
   // chosen at hatch) unless the caller named one explicitly — the runtime's
-  // keyless managed connection should not be greeted by an API-key prompt.
+  // keyless cloud connection should not be greeted by an API-key prompt.
   let provider = parsed.provider;
   if (!provider) {
     const resolved = await resolveDefaultProvider(gatewayUrl, bearerToken);

@@ -17,7 +17,7 @@ metadata:
       - "User wants to set up, connect, or reconnect the Notion OAuth integration for the first time; load cadet-oauth-integrations instead"
 ---
 
-You have access to the Notion API via the managed OAuth connection or an internal integration secret stored in the credential vault. Both paths inject the Authorization header automatically. Never reveal credential values or echo token values into the shell.
+You have access to the Notion API via the cloud OAuth connection or an internal integration secret stored in the credential vault. Both paths inject the Authorization header automatically. Never reveal credential values or echo token values into the shell.
 
 ## Authentication
 
@@ -29,7 +29,7 @@ assistant credentials list
 
 Look at the results to decide which path to use:
 
-- **Managed OAuth (preferred):** No `service: "notion"` entry is needed in the vault. The OAuth connection is managed by the platform. Use **Path A** below.
+- **Managed OAuth (preferred):** No `service: "notion"` entry is needed in the vault. The OAuth connection is managed by the cloud. Use **Path A** below.
 - **Internal integration secret:** An entry with `service: "notion"` and `field: "internal_secret"` is present. Use **Path A** below (recommended) or **Path B** if the credential has the required metadata (see Path B for details).
 - **Neither configured:** Tell the user: "Notion is not connected yet. Load the **cadet-oauth-integrations** skill to set it up first."
 
@@ -301,7 +301,7 @@ When a response includes `"has_more": true`, pass `"start_cursor": response.next
 - **404 Not Found**: The page or database ID doesn't exist or the integration can't see it. Verify the ID and check sharing settings.
 - **400 Bad Request**: Check the request body structure. The Notion API error response includes a `message` field with details.
 - **429 Too Many Requests**: Wait a few seconds and retry.
-- **`credential tool policy denied`**: The credential is missing `bash` in `allowedTools` or an `injection_templates` entry for `api.notion.com`, so the proxy cannot inject the Authorization header. Switch to **Path A** (managed OAuth), which bypasses credential metadata requirements entirely.
+- **`credential tool policy denied`**: The credential is missing `bash` in `allowedTools` or an `injection_templates` entry for `api.notion.com`, so the proxy cannot inject the Authorization header. Switch to **Path A** (cloud OAuth), which bypasses credential metadata requirements entirely.
 
 ## Tips
 

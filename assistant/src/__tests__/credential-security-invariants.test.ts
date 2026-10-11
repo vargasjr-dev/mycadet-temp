@@ -179,7 +179,7 @@ describe("Invariant 2: no generic plaintext secret read API", () => {
       "runtime/routes/inference-provider-connection-routes.ts", // connection delete removes its dedicated per-connection key slot (deleteSecureKeyAsync only; no reads)
       "daemon/handlers/config-slack-channel.ts", // Slack channel config credential management
       "daemon/handlers/config-discord-channel.ts", // Discord channel bot token management
-      "providers/platform-proxy/context.ts", // managed proxy API key lookup for provider initialization
+      "providers/cloud-proxy/context.ts", // cloud proxy API key lookup for provider initialization
       "platform/client.ts", // platform client credential store fallback for standalone CLI auth
       "mcp/mcp-header-store.ts", // MCP static auth header persistence (credential store CRUD + legacy migration)
       "mcp/mcp-oauth-provider.ts", // MCP OAuth token/client/discovery persistence
@@ -223,9 +223,9 @@ describe("Invariant 2: no generic plaintext secret read API", () => {
       "runtime/routes/credential-prompt-routes.ts", // Route for secure credential prompt (stores secret via setSecureKeyAsync)
       "runtime/routes/credential-routes.ts", // CLI credential management routes (CLI-migrated to IPC)
       "runtime/routes/sanity-routes.ts", // Sanity connect/discover routes (reads stored api_token from credential store)
-      "runtime/routes/platform-routes.ts", // CLI platform connect/disconnect/status routes (CLI-migrated to IPC)
+      "runtime/routes/cloud-routes.ts", // CLI platform connect/disconnect/status routes (CLI-migrated to IPC)
       "runtime/routes/roadmap-routes.ts", // signs public-roadmap calls with the assistant API key (outbound Authorization header only; the value never reaches a response, a log, or the CLI process)
-      "inbound/platform-callback-registration.ts", // managed API key lookup for callback registration
+      "inbound/cloud-callback-registration.ts", // managed API key lookup for callback registration
       "tts/providers/elevenlabs-provider.ts", // ElevenLabs TTS API key lookup
       "tts/providers/deepgram-provider.ts", // Deepgram TTS API key lookup
       "tts/providers/xai-provider.ts", // xAI TTS API key lookup

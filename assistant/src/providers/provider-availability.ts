@@ -2,7 +2,7 @@
  * Provider availability checks.
  *
  * Determines which LLM providers are usable by checking secure storage,
- * environment variable fallbacks, and managed proxy availability.
+ * environment variable fallbacks, and cloud proxy availability.
  */
 
 import { getConfig } from "../config/loader.js";
@@ -10,14 +10,14 @@ import {
   getProviderKeyAsync,
   getSecureKeyResultAsync,
 } from "../security/secure-keys.js";
+import { managedFallbackEnabledFor } from "./cloud-proxy/context.js";
 import { PROVIDER_CATALOG } from "./model-catalog.js";
-import { managedFallbackEnabledFor } from "./platform-proxy/context.js";
 import { getVisibleProviderCatalog } from "./provider-catalog-visibility.js";
 import { API_KEY_PROVIDERS } from "./provider-secret-catalog.js";
 
 /**
  * Check whether a single provider is usable — via a user-provided key
- * (secure storage or env var) or via the managed proxy fallback.
+ * (secure storage or env var) or via the cloud proxy fallback.
  * Ollama is always considered available because it does not require an API key.
  */
 export async function isProviderAvailable(provider: string): Promise<boolean> {
@@ -32,7 +32,7 @@ export async function isProviderAvailable(provider: string): Promise<boolean> {
 
 /**
  * Build the list of providers that are usable — via a user-provided key
- * (secure storage or env var) or via the managed proxy fallback.
+ * (secure storage or env var) or via the cloud proxy fallback.
  * Feature-flagged LLM providers that are currently disabled are excluded.
  * Ollama is always included because it does not require an API key.
  */

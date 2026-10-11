@@ -80,7 +80,7 @@ describe("memory_v2_list_concept_pages handler", () => {
       {
         slug: "people/carol",
         frontmatter: { edges: ["alice"], ref_files: [], ref_urls: [] },
-        body: "Carol leads the platform team.\n",
+        body: "Carol leads the cloud team.\n",
       },
     ];
     for (const page of pages) {

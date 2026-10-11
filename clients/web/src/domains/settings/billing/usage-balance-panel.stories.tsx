@@ -92,7 +92,7 @@ export const ExhaustedWithoutCta: Story = {
 };
 
 /**
- * A free-tier account under the platform's daily cap: today's reading above
+ * A free-tier account under the cloud's daily cap: today's reading above
  * the overall one, in the one panel. The labels and the percentages differ in
  * width, and the shared columns keep both bars starting and ending on the
  * same lines.

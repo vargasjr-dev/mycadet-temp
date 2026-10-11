@@ -24,7 +24,7 @@ type CredentialEntry = {
 type CredentialEnvelope = {
   ok?: boolean;
   credentials?: CredentialEntry[];
-  managedCredentials?: CredentialEntry[];
+  cloudCredentials?: CredentialEntry[];
 };
 
 /** Report that the check could not run, which is not the same as "no token". */
@@ -78,13 +78,13 @@ async function checkCadet(): Promise<void> {
     return;
   }
 
-  // The CLI emits an object envelope: { ok, credentials, managedCredentials }.
+  // The CLI emits an object envelope: { ok, credentials, cloudCredentials }.
   // Older builds may have emitted a raw array — handle both shapes.
   const entries: CredentialEntry[] = Array.isArray(parsed)
     ? (parsed as CredentialEntry[])
     : [
         ...((parsed as CredentialEnvelope).credentials ?? []),
-        ...((parsed as CredentialEnvelope).managedCredentials ?? []),
+        ...((parsed as CredentialEnvelope).cloudCredentials ?? []),
       ];
 
   const hasToken = entries.some(

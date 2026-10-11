@@ -210,7 +210,7 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   "/v1/remote-web/pairing-requests",
   "/v1/remote-web/pairing-requests/approve",
   "/v1/remote-web/pairing-requests/deny",
-  // Shared-invite redemption, called by the platform on an invitee's behalf;
+  // Shared-invite redemption, called by the cloud on an invitee's behalf;
   // not part of the public gateway API
   "/v1/shared/invites/redeem",
   // Loopback-only device management — not part of the public gateway API

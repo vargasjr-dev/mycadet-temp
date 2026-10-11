@@ -87,7 +87,7 @@ const ENTITY_LINKS = [
 /**
  * The list a skill link is validated against. Installed skills only:
  * `include: "catalog"` would pull the whole remote skills.sh catalog to
- * answer a local existence check, and a managed skill (the only kind a
+ * answer a local existence check, and a cloud skill (the only kind a
  * skill-update notification names) is always `installed`. Same key as the
  * identity stats card's read, so every reader shares one entry.
  */

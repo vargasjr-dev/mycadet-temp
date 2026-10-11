@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { DebugBundleExport } from "@/domains/settings/components/debug-bundle-export";
 import {
   formatRelativeAge,
@@ -15,9 +15,9 @@ import { assistantsAccessConsentDetailPartialUpdate } from "@/generated/api/sdk.
 import {
   useActiveAssistantIsSelfHosted,
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
-import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
+import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useTranslation } from "@/i18n";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { Button } from "@mycadet/design-library/components/button";
@@ -32,8 +32,8 @@ export function AccessConsentSetting() {
   // The grant applies to hosted and self-hosted assistants alike: staff
   // open a hosted assistant's disk directly, and a self-hosted one through
   // the debug bundle the owner exports below. So the standard gate, not
-  // `platformHostedOnly`.
-  const platformGate = usePlatformGate();
+  // `cloudHostedOnly`.
+  const cloudGate = useCloudGate();
   const isSelfHosted = useActiveAssistantIsSelfHosted();
   // Race-window indicator used for the spinner UX only. Narrow to
   // `kind: "loading"` so already-resolved lifecycle states (`retired`,
@@ -45,9 +45,9 @@ export function AccessConsentSetting() {
   // slug; platform routes take only the registered UUID, so resolve it
   // first (a UUID resolves to itself).
   const activeId = useResolvedAssistantsStore.use.activeAssistantId();
-  const { platformAssistantId: assistantId, isLoading: isResolvingId } =
-    usePlatformAssistantId(activeId, platformGate === "full");
-  const canQuery = platformGate === "full" && assistantId !== null;
+  const { cloudAssistantId: assistantId, isLoading: isResolvingId } =
+    useCloudAssistantId(activeId, cloudGate === "full");
+  const canQuery = cloudGate === "full" && assistantId !== null;
 
   const { data, isLoading, isError } = useQuery({
     ...assistantsAccessConsentDetailReadOptions({
@@ -131,7 +131,7 @@ export function AccessConsentSetting() {
   // Early return must follow every hook above so gate transitions never
   // skip a hook. The trailing divider in `privacy-page.tsx` is gated on
   // the same condition so the layout doesn't render two adjacent dividers.
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return null;
   }
 
@@ -139,10 +139,10 @@ export function AccessConsentSetting() {
   // disabled state, and is narrowed to the genuine lifecycle-loading
   // window so it doesn't get stuck in `retired` / `error`.
   const isResolving =
-    platformGate === "full" && (isLifecycleLoading || isResolvingId);
+    cloudGate === "full" && (isLifecycleLoading || isResolvingId);
   const checked = data?.access_consented ?? false;
   const disabled =
-    platformGate !== "full" ||
+    cloudGate !== "full" ||
     assistantId === null ||
     isLoading ||
     isError ||
@@ -158,7 +158,7 @@ export function AccessConsentSetting() {
           <p className="mt-1 text-body-small-lighter text-[var(--content-tertiary)]">
             {t("accessConsentSetting.description")}
           </p>
-          {platformGate === "full" && isError && (
+          {cloudGate === "full" && isError && (
             <p className="mt-1 text-body-small-lighter text-[var(--system-negative-strong)]">
               {t("accessConsentSetting.loadError")}
             </p>
@@ -234,7 +234,7 @@ export function AccessConsentSetting() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {platformGate === "disabled" ? null : (
+          {cloudGate === "disabled" ? null : (
             <>
               {(updateConsent.isPending || isResolving) && (
                 <Loader2 className="h-4 w-4 animate-spin text-[var(--content-tertiary)]" />
@@ -252,10 +252,10 @@ export function AccessConsentSetting() {
           )}
         </div>
       </div>
-      {platformGate === "disabled" && (
-        <PlatformLoginNotice className="mt-3">
+      {cloudGate === "disabled" && (
+        <CloudLoginNotice className="mt-3">
           {t("accessConsentSetting.loginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       )}
     </div>
   );

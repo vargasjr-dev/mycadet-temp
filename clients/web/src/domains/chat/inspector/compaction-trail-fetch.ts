@@ -3,7 +3,7 @@
  *
  * Talks to the assistant's per-conversation route at
  * `GET /v1/assistants/{assistantId}/conversations/{conversationId}/compaction?callId=…`,
- * routed via the platform's `RuntimeProxyWildcardView`. Handler:
+ * routed via the cloud's `RuntimeProxyWildcardView`. Handler:
  * `assistant/src/runtime/routes/conversation-compaction-routes.ts`.
  *
  * The assistant scopes the result **server-side** to the open window
@@ -13,7 +13,7 @@
  * floor/ceiling semantics.
  *
  * Calls the generated daemon SDK function `conversationsByIdCompactionGet`,
- * which the platform gateway proxies to the assistant route. The
+ * which the cloud gateway proxies to the assistant route. The
  * response type is derived from the route's `responseBody` schema.
  */
 

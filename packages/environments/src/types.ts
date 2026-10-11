@@ -21,14 +21,14 @@ export interface PortMap {
 
 /**
  * A resolved environment definition. Required fields are `name` and
- * `platformUrl`. All other fields are optional and declared upfront — new
+ * `cloudUrl`. All other fields are optional and declared upfront — new
  * fields are additive, never breaking. `name` is intentionally typed as
  * `string` (not `keyof SEEDS`) so custom environments can be represented by
  * future layers (user config file, ad-hoc env vars, etc.).
  */
 export interface EnvironmentDefinition {
   name: string;
-  platformUrl: string;
+  cloudUrl: string;
 
   /**
    * The web app (Next.js) base URL for browser-facing pages like
@@ -41,13 +41,13 @@ export interface EnvironmentDefinition {
   webUrl: string;
 
   /**
-   * Override for the platform URL the assistant process itself uses. Only
-   * differs from `platformUrl` when the assistant runs in a different network
+   * Override for the cloud URL the assistant process itself uses. Only
+   * differs from `cloudUrl` when the assistant runs in a different network
    * namespace than the host (e.g. Docker on macOS, where the host's localhost
-   * is reached via `host.docker.internal`). Falls back to `platformUrl` when
+   * is reached via `host.docker.internal`). Falls back to `cloudUrl` when
    * unset.
    */
-  assistantPlatformUrl?: string;
+  assistantCloudUrl?: string;
 
   /** Human-readable label for UI surfaces. */
   displayName?: string;

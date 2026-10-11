@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router";
 
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { BillingErrorBanner } from "@/domains/chat/components/billing-error-banner";
 import { useIsFreePlan } from "@/hooks/use-is-free-plan";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useAddCreditsModalStore } from "@/stores/add-credits-modal-store";
 import { routes } from "@/utils/routes";
 import { useTranslation } from "@/i18n";
@@ -35,37 +35,37 @@ export function CreditsUpsellCard() {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
 
-  // Managed credits are platform-hosted billing, so the card follows the
-  // platform-hosted gate (like `MaintenanceModeBanner` and the billing
+  // Managed credits are cloud-hosted billing, so the card follows the
+  // cloud-hosted gate (like `MaintenanceModeBanner` and the billing
   // settings tab): "full" renders the real CTA, "disabled" renders the login
   // treatment, "gated" renders nothing. The gate also keys the subscription
-  // fetch inside `useIsFreePlan`: without a platform session `useIsOrgReady`
+  // fetch inside `useIsFreePlan`: without a cloud session `useIsOrgReady`
   // still reports ready, so an ungated fetch would fire unauthenticated.
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
-  const isFreePlan = useIsFreePlan(platformGate === "full");
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const isFreePlan = useIsFreePlan(cloudGate === "full");
   // Upgrade CTA shows ONLY for a free-plan org; an unknown/unresolved plan
   // counts as paid.
   const isUpgrade = isFreePlan === true;
   const copy = isUpgrade ? UPGRADE_COPY : ADD_CREDITS_COPY;
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     // Self-hosted active assistant: every recovery action the card could
-    // offer targets the platform, so there is nothing useful to render.
+    // offer targets the cloud, so there is nothing useful to render.
     // Defensive rail: every mount point (transcript substitution, proactive
     // tail, empty state) keys off `useBillingBalanceStatus().isExhausted`,
-    // which stays false without a platform billing read, so gated contexts
+    // which stays false without a cloud billing read, so gated contexts
     // never mount the card through a normal path.
     return null;
   }
 
-  if (platformGate === "disabled") {
+  if (cloudGate === "disabled") {
     // Platform reachable but no platform session (e.g. it expired): the
     // add-credits / view-plans CTAs cannot complete a billing request, so
     // offer the shared login affordance instead of a dead-end CTA.
     return (
-      <PlatformLoginNotice className="mx-auto max-w-[calc(100%-24px)]">
+      <CloudLoginNotice className="mx-auto max-w-[calc(100%-24px)]">
         {t("creditsUpsellCard.loginToAddCredits")}
-      </PlatformLoginNotice>
+      </CloudLoginNotice>
     );
   }
 

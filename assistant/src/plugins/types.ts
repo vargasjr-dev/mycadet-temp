@@ -148,7 +148,7 @@ export interface TurnContext {
   readonly interfaceName?: string;
   /**
    * Client OS surface, reported independently of the transport interface.
-   * Rendered as the `client_os:` line so the model knows the platform even
+   * Rendered as the `client_os:` line so the model knows the cloud even
    * though browser, mobile, and desktop apps share one `"web"`
    * transport interface.
    */

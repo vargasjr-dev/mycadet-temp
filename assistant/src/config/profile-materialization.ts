@@ -1,8 +1,8 @@
 import { getDb } from "../persistence/db-connection.js";
 import {
-  CADET_MANAGED_CONNECTION_NAME,
-  getManagedUpstream,
-  MANAGED_ROUTABLE_PROVIDERS,
+  CADET_CLOUD_CONNECTION_NAME,
+  CLOUD_ROUTABLE_PROVIDERS,
+  getCloudUpstream,
 } from "../providers/cadet-model-routing.js";
 import { catalogProviderForProfile } from "../providers/connection-resolution.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../providers/inference/auth.js";
@@ -33,7 +33,7 @@ import {
  * - A model-only profile gets the provider the catalog implies: the base
  *   provider when it serves the model, else the model's catalog owner.
  *
- * Mix profiles (no config fields, schema-enforced) and managed profiles
+ * Mix profiles (no config fields, schema-enforced) and cloud profiles
  * (bodies owned by the code catalog) pass through untouched. Idempotent,
  * pure, and the result never aliases `dflt`'s nested objects.
  */
@@ -144,14 +144,14 @@ export function completeCustomProfile(
     profile.provider_connection === undefined &&
     dflt.provider_connection !== undefined
   ) {
-    if (dflt.provider_connection === CADET_MANAGED_CONNECTION_NAME) {
-      // Only managed-servable pairs inherit the managed binding; anything
+    if (dflt.provider_connection === CADET_CLOUD_CONNECTION_NAME) {
+      // Only managed-servable pairs inherit the cloud binding; anything
       // else inherits nothing and lets dispatch auto-resolve by vendor,
       // matching the pre-entries inheritance contract.
       if (
-        MANAGED_ROUTABLE_PROVIDERS.has(completed.provider) &&
+        CLOUD_ROUTABLE_PROVIDERS.has(completed.provider) &&
         completed.model !== undefined &&
-        getManagedUpstream(completed.model) !== null
+        getCloudUpstream(completed.model) !== null
       ) {
         completed.provider = "cadet";
       }

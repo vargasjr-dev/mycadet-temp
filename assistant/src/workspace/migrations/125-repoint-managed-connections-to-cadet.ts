@@ -7,10 +7,10 @@ import type { WorkspaceMigration } from "./types.js";
 // `*-managed` connection onto the single provider-agnostic `cadet`
 // connection.
 //
-// The five managed connections (anthropic/openai/gemini/fireworks/together)
+// The five cloud connections (anthropic/openai/gemini/fireworks/together)
 // are collapsed into one `cadet` row and are no longer seeded (a follow-up
 // migration deletes the orphaned rows), so any config still pointing at them
-// would fail to resolve. Managed profiles also self-heal via the boot-time
+// would fail to resolve. Cloud profiles also self-heal via the boot-time
 // template reconcile, but `llm.default`, per-call-site overrides, and
 // user-owned copies are rewritten here.
 //
@@ -31,7 +31,7 @@ const CADET_CONNECTION = "cadet";
 export const repointManagedConnectionsToCadetMigration: WorkspaceMigration = {
   id: "125-repoint-managed-connections-to-cadet",
   description:
-    "Repoint provider_connection from the per-provider *-managed connections to the single cadet connection",
+    "Repoint provider_connection from the per-provider *-cloud connections to the single cadet connection",
   run(workspaceDir: string): void {
     const configPath = join(workspaceDir, "config.json");
     if (!existsSync(configPath)) {

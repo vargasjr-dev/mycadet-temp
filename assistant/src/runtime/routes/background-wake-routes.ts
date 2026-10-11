@@ -20,7 +20,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 /** The scheduler and heartbeat surface the drain-due lease needs. */
 type BackgroundWakeRuntime = {
   scheduler: Pick<SchedulerHandle, "runOnce" | "runDueWorkOnce">;
-  heartbeat: Pick<HeartbeatService, "nextRunAt" | "runManagedWakeIfDue">;
+  heartbeat: Pick<HeartbeatService, "nextRunAt" | "runCloudWakeIfDue">;
 };
 
 const PREPARE_SLEEP_DEFER_WINDOW_MS = 60_000;
@@ -127,7 +127,7 @@ function parseDrainDueBody(body: Record<string, unknown>): DrainDueRequest {
 
 async function defaultRenewWakeLease(leaseId: string): Promise<unknown> {
   const { renewBackgroundWakeLease } =
-    await import("../../background-wake/platform-client.js");
+    await import("../../background-wake/cloud-client.js");
   return renewBackgroundWakeLease(leaseId);
 }
 
@@ -135,7 +135,7 @@ async function defaultCompleteWakeLease(
   args: Parameters<CompleteWakeLease>[0],
 ): Promise<unknown> {
   const { completeBackgroundWakeLease } =
-    await import("../../background-wake/platform-client.js");
+    await import("../../background-wake/cloud-client.js");
   return completeBackgroundWakeLease(args);
 }
 
@@ -242,7 +242,7 @@ async function performDrainDue(
 
   if (heartbeatDue) {
     if (hasStartBudget(request.deadlineAt)) {
-      await runtime.heartbeat.runManagedWakeIfDue({
+      await runtime.heartbeat.runCloudWakeIfDue({
         now,
         toleranceMs: HEARTBEAT_DUE_TOLERANCE_MS,
         scheduledFor: request.startedAt,

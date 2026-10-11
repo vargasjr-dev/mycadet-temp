@@ -248,9 +248,9 @@ describe("createResolveToolsCallback — config.tools.exclude", () => {
 });
 
 test("managed browser guidance follows each turn without changing native or shared tool definitions", () => {
-  const platform = process.env.IS_PLATFORM;
+  const platform = process.env.IS_CLOUD;
   const containerized = process.env.IS_CONTAINERIZED;
-  process.env.IS_PLATFORM = "true";
+  process.env.IS_CLOUD = "true";
   process.env.IS_CONTAINERIZED = "true";
   setOverridesForTesting({ "assistant-desktop": true });
   const bash = def("bash");
@@ -281,9 +281,9 @@ test("managed browser guidance follows each turn without changing native or shar
   } finally {
     setOverridesForTesting({});
     if (platform === undefined) {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     } else {
-      process.env.IS_PLATFORM = platform;
+      process.env.IS_CLOUD = platform;
     }
     if (containerized === undefined) {
       delete process.env.IS_CONTAINERIZED;

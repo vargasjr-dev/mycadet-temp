@@ -15,7 +15,7 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
   let baseUrl: string;
   let restoreAuthEnv: () => void;
   const originalContainerized = process.env.IS_CONTAINERIZED;
-  const originalPlatform = process.env.IS_PLATFORM;
+  const originalPlatform = process.env.IS_CLOUD;
 
   beforeEach(async () => {
     restoreAuthEnv = requireHttpAuth();
@@ -23,7 +23,7 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
     server = new RuntimeHttpServer({ port, hostname: "127.0.0.1" });
     await server.start();
     baseUrl = `127.0.0.1:${server.actualPort}`;
-    process.env.IS_PLATFORM = "true";
+    process.env.IS_CLOUD = "true";
   });
 
   afterEach(async () => {
@@ -35,9 +35,9 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
       process.env.IS_CONTAINERIZED = originalContainerized;
     }
     if (originalPlatform === undefined) {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     } else {
-      process.env.IS_PLATFORM = originalPlatform;
+      process.env.IS_CLOUD = originalPlatform;
     }
     setOverridesForTesting({});
   });
@@ -78,7 +78,7 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
     const closed = await waitForClose(ws);
     expect(closed.code).toBe(4008);
     expect(closed.reason).toBe(
-      "Virtual desktop is available only on enabled platform-hosted assistants",
+      "Virtual desktop is available only on enabled cloud-hosted assistants",
     );
   });
   for (const flag of [false, undefined]) {
@@ -93,20 +93,20 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
       const closed = await waitForClose(ws);
       expect(closed.code).toBe(4008);
       expect(closed.reason).toBe(
-        "Virtual desktop is available only on enabled platform-hosted assistants",
+        "Virtual desktop is available only on enabled cloud-hosted assistants",
       );
     });
   }
 });
 
 test("self-hosted containers cannot stream with the feature flag enabled", async () => {
-  const originalPlatform = process.env.IS_PLATFORM;
+  const originalPlatform = process.env.IS_CLOUD;
   const originalContainerized = process.env.IS_CONTAINERIZED;
   const restoreAuth = requireHttpAuth();
   const server = new RuntimeHttpServer({ port: 0, hostname: "127.0.0.1" });
   try {
     await server.start();
-    process.env.IS_PLATFORM = "false";
+    process.env.IS_CLOUD = "false";
     process.env.IS_CONTAINERIZED = "true";
     setOverridesForTesting({ "assistant-desktop": true });
     const baseUrl = `127.0.0.1:${server.actualPort}`;
@@ -118,9 +118,9 @@ test("self-hosted containers cannot stream with the feature flag enabled", async
     await server.stop();
     restoreAuth();
     if (originalPlatform === undefined) {
-      delete process.env.IS_PLATFORM;
+      delete process.env.IS_CLOUD;
     } else {
-      process.env.IS_PLATFORM = originalPlatform;
+      process.env.IS_CLOUD = originalPlatform;
     }
     if (originalContainerized === undefined) {
       delete process.env.IS_CONTAINERIZED;

@@ -8,8 +8,8 @@
 import { z } from "zod";
 
 import { sanitizeForTts } from "../../calls/tts-text-sanitizer.js";
+import { managedSpeechVoices } from "../../cloud/cloud-speech.js";
 import { getConfig } from "../../config/loader.js";
-import { managedSpeechVoices } from "../../platform/managed-speech.js";
 import { listCatalogProvidersForDisplay } from "../../tts/provider-catalog.js";
 import {
   synthesizeText,
@@ -132,7 +132,7 @@ function handleListTtsProviders() {
   return { providers: listCatalogProvidersForDisplay() };
 }
 
-async function handleListManagedVoices() {
+async function handleListCloudVoices() {
   const result = await managedSpeechVoices();
   if (!result.ok) {
     if (result.kind === "unavailable") {
@@ -244,7 +244,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List managed TTS voices",
     description:
-      "Return the voices offered by Cadet managed TTS, fetched live from the platform. Only currently-usable voices are returned; defaultModel is always one of them (null when none are offered).",
+      "Return the voices offered by Cadet Cloud TTS, fetched live from the cloud. Only currently-usable voices are returned; defaultModel is always one of them (null when none are offered).",
     tags: ["tts"],
     responseBody: z.object({
       voices: z.array(
@@ -258,7 +258,7 @@ export const ROUTES: RouteDefinition[] = [
       ),
       defaultModel: z.string().nullable(),
     }),
-    handler: handleListManagedVoices,
+    handler: handleListCloudVoices,
   },
   {
     operationId: "tts_synthesize",

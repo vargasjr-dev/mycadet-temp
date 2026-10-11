@@ -2,13 +2,13 @@ import { Terminal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getAssistant } from "@/assistant/api";
-import { PlatformLoginNotice } from "@/components/platform-login-notice";
+import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { TerminalPanel } from "@/components/terminal-panel";
 import type { MaintenanceMode } from "@/generated/api/types.gen";
 import {
   useActiveAssistantLifecycleIsLoading,
-  usePlatformGate,
-} from "@/hooks/use-platform-gate";
+  useCloudGate,
+} from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@mycadet/design-library";
@@ -18,17 +18,17 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
-  // The terminal session is a platform-routed exec channel — `platformHostedOnly`
+  // The terminal session is a cloud-routed exec channel — `cloudHostedOnly`
   // flips "gated" when the active assistant is self-hosted, even on a
   // platform-mode app where the standard gate would still resolve to "full".
-  const platformGate = usePlatformGate({ platformHostedOnly: true });
+  const cloudGate = useCloudGate({ cloudHostedOnly: true });
   // Settings routes are NOT mounted under `<ActiveAssistantGate>`, so the
   // gate intentionally returns "full" during the lifecycle `loading`
   // window on a deep-link / hard refresh. Pair with the lifecycle-loading
   // signal so we hold in the loading branch during the race; once the
   // lifecycle resolves to `self_hosted` the gate flips to `gated` and we
   // early-return null, structurally blocking TerminalPanel from mounting
-  // a platform-routed exec connection against a self-hosted target.
+  // a cloud-routed exec connection against a self-hosted target.
   const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [maintenanceMode, setMaintenanceMode] =
@@ -74,7 +74,7 @@ export function AssistantTerminalPanel() {
 
   // `getAssistant` is a daemon-side call (safe in every lifecycle state
   // where we have a daemon connection), so fire it eagerly whenever the
-  // gate is open. The platform-routed exec connection — the actual
+  // gate is open. The cloud-routed exec connection — the actual
   // Trap-5 concern — lives inside `<TerminalPanel>` and is structurally
   // blocked from mounting in two ways: the gate flips to `"gated"` and
   // returns null when the lifecycle resolves to self-hosted, and the
@@ -82,23 +82,23 @@ export function AssistantTerminalPanel() {
   // When disabled we render the panel chrome plus a Notice without
   // firing the fetch.
   useEffect(() => {
-    if (platformGate !== "full") {
+    if (cloudGate !== "full") {
       return;
     }
     void fetchAssistant();
-  }, [fetchAssistant, platformGate]);
+  }, [fetchAssistant, cloudGate]);
 
-  if (platformGate === "gated") {
+  if (cloudGate === "gated") {
     return null;
   }
 
   // Treat ONLY the genuine lifecycle-loading window as still-resolving.
   // Already-resolved non-hosted kinds (`retired`, `error`) must
   // fall through to the existing
-  // "No assistant found" empty state — gating those on `!isPlatformHosted`
+  // "No assistant found" empty state — gating those on `!isCloudHosted`
   // would stick the panel on the spinner forever because `fetchAssistant`
   // never clears `loading` for an assistant that doesn't exist.
-  const isResolving = platformGate === "full" && isLifecycleLoading;
+  const isResolving = cloudGate === "full" && isLifecycleLoading;
   const showLoading = loading || isResolving;
 
   return (
@@ -127,10 +127,10 @@ export function AssistantTerminalPanel() {
         )}
       </div>
 
-      {platformGate === "disabled" ? (
-        <PlatformLoginNotice>
+      {cloudGate === "disabled" ? (
+        <CloudLoginNotice>
           {t("assistantTerminalPanel.loginNotice")}
-        </PlatformLoginNotice>
+        </CloudLoginNotice>
       ) : showLoading ? (
         <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />

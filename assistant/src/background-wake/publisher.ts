@@ -1,12 +1,12 @@
 import { getLogger } from "../util/logger.js";
 import {
+  clearBackgroundWakeIntent,
+  publishBackgroundWakeIntent,
+} from "./cloud-client.js";
+import {
   type BackgroundWakeIntent,
   computeNextBackgroundWakeIntent,
 } from "./next-wake.js";
-import {
-  clearBackgroundWakeIntent,
-  publishBackgroundWakeIntent,
-} from "./platform-client.js";
 
 const log = getLogger("background-wake-publisher");
 const REFRESH_DEBOUNCE_MS = 250;

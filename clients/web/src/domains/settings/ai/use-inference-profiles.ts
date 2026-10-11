@@ -40,7 +40,7 @@ export function useInferenceProfileList(
   });
 
   // Retain the last non-empty profile map so a transient empty config payload
-  // can't blank the fallback list (managed profiles are always seeded, so an
+  // can't blank the fallback list (cloud profiles are always seeded, so an
   // empty map is never a steady state).
   const { profiles, profileOrder } = useStickyProfiles(
     config?.llm,

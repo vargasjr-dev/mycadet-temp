@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // columns: only a confirmed `false` NULLs them.
 let shareAnalytics: boolean | "unknown" = true;
 
-mock.module("../platform/consent-cache.js", () => ({
+mock.module("../cloud/consent-cache.js", () => ({
   getRawShareAnalytics: () => shareAnalytics,
 }));
 

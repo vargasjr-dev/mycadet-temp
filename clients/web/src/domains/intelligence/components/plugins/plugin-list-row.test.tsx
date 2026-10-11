@@ -402,7 +402,7 @@ describe("PluginListRow", () => {
     expect(container.textContent).toContain("🦴");
   });
 
-  test("available row renders a platform-hosted iconUrl as an <img> without the version gate", () => {
+  test("available row renders a cloud-hosted iconUrl as an <img> without the version gate", () => {
     // Version stays null: the catalog icon is a plain URL, not the daemon's
     // bundled-icon endpoint, so the gate must not suppress it.
     const url = "https://assets.example/coffee/icon.png?v=abc";

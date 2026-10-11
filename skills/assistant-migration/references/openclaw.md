@@ -103,7 +103,7 @@ Identical to Hermes: attach `openclaw-migration.tar.gz` directly to the conversa
 ## After import — secrets rebind checklist
 
 - **OpenClaw gateway auth token** (`openclaw config get gateway.auth.token` on the source machine): the migration assistant never sees the value. Creator re-binds via `assistant credentials prompt` after import.
-- **Inference providers** (entries in `openclaw-config.json` under `agents.defaults.model.*`): `assistant oauth connect <provider>` for managed providers, or vault prompt per provider for raw keys.
+- **Inference providers** (entries in `openclaw-config.json` under `agents.defaults.model.*`): `assistant oauth connect <provider>` for cloud providers, or vault prompt per provider for raw keys.
 - **MCP servers**: per entry in `mcp.json`, walk the connect flow; bearer tokens go through the secure prompt.
 - **Channel bindings** (per `gateway/<channel>/account`): re-OAuth or paste token via secure prompt.
 - **`SPECIES` env var**: not migrated. Cadet sets `process.env.SPECIES` on its own daemon; the OpenClaw value is informational only.

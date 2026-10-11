@@ -50,7 +50,7 @@ function makeProviderRow(
     pingBody: null,
     revokeUrl: null,
     revokeBodyTemplate: null,
-    managedServiceConfigKey: null,
+    cloudServiceConfigKey: null,
     managedServiceIsPaid: false,
     displayLabel: null,
     description: null,

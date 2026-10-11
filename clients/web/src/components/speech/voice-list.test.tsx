@@ -1,5 +1,5 @@
 /**
- * Tests for `VoiceList` — the managed-voice selection + per-voice audition
+ * Tests for `VoiceList` — the cloud-voice selection + per-voice audition
  * shared by the first-run card (inline) and the "Choose a voice" modal.
  *
  * Load-bearing behavior:
@@ -7,7 +7,7 @@
  *     traits-first with the accent as a quiet suffix (no proper name, no source),
  *   - selecting a voice PATCHes `services.tts.providers.cadet.model`,
  *   - each row previews its own voice via the hosted sample,
- *   - renders nothing for a non-managed assistant.
+ *   - renders nothing for a non-cloud assistant.
  *
  * The daemon queries + config PATCH + audio playback are mocked.
  */
@@ -291,7 +291,7 @@ describe("VoiceList", () => {
     expect(configPatchCalls.length).toBe(0);
   });
 
-  test("renders nothing for a non-managed assistant", () => {
+  test("renders nothing for a non-cloud assistant", () => {
     daemonConfigData = { services: { tts: { provider: "elevenlabs" } } };
     renderList();
     expect(screen.queryByRole("listbox")).toBeNull();

@@ -4,8 +4,8 @@
  * The helper runs on-device recognition (`SFSpeechRecognizer` on macOS,
  * `System.Speech` on Windows) and streams cumulative partial
  * transcriptions — the dictation overlay's live-text source when daemon
- * streaming STT is unreachable (platform-managed assistants whose runtime
- * traffic rides the platform proxy have no gateway WebSocket the renderer
+ * streaming STT is unreachable (cloud assistants whose runtime
+ * traffic rides the cloud proxy have no gateway WebSocket the renderer
  * could stream against).
  *
  * Audio source: when the caller provides the recording `MediaStream` (and

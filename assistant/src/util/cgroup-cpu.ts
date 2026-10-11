@@ -78,7 +78,7 @@ export function parseK8sCpuCores(value: string): number | null {
  * 4. os.cpus().length as last resort.
  */
 export function getContainerCpuCores(): number {
-  // 1. Prefer the explicit env var set by the platform StatefulSet template.
+  // 1. Prefer the explicit env var set by the cloud StatefulSet template.
   try {
     const envLimit = getCpuLimit();
     if (envLimit) {
@@ -101,7 +101,7 @@ export function getContainerCpuCores(): number {
       if (!isNaN(quota) && !isNaN(period) && period > 0 && quota > 0) {
         const cores = quota / period;
         // Sanity check: if the value looks like the node's full CPU count
-        // and we're on a platform pod, it's likely gVisor leaking the host value.
+        // and we're on a cloud pod, it's likely gVisor leaking the host value.
         if (cores < cpus().length * 0.9 || !getIsCloud()) {
           return cores;
         }

@@ -19,11 +19,11 @@ mock.module("@/domains/chat/components/chat-markdown-message", () => ({
   ),
 }));
 
-// Keep the platform-id resolution deterministic: the surface resolves the
+// Keep the cloud-id resolution deterministic: the surface resolves the
 // assistant's platform id before invalidating the connections query, and the
 // real resolver reaches into local-mode/gateway state.
-mock.module("@/lib/local-platform-identity", () => ({
-  resolveLocalAssistantPlatformIdentity: mock(async (id: string) => id),
+mock.module("@/lib/local-cloud-identity", () => ({
+  resolveLocalAssistantCloudIdentity: mock(async (id: string) => id),
 }));
 
 import { ChoiceSurface } from "@/domains/chat/components/surfaces/choice-surface";
@@ -31,9 +31,9 @@ import { CopyBlockSurface } from "@/domains/chat/components/surfaces/copy-block-
 import { OAuthConnectSurface } from "@/domains/chat/components/surfaces/oauth-connect-surface";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";
 import type {
-  UseManagedOAuthConnectOptions,
-  UseManagedOAuthConnectResult,
-} from "@/hooks/use-managed-oauth-connect";
+  UseCloudOAuthConnectOptions,
+  UseCloudOAuthConnectResult,
+} from "@/hooks/use-cloud-oauth-connect";
 import type { OAuthConnection } from "@/generated/api/types.gen";
 import type { Surface } from "@/domains/chat/types/types";
 
@@ -239,11 +239,11 @@ describe("OAuthConnectSurface", () => {
    * what the card actually renders from: the real hook derives it from the
    * connections list rather than from the authorization window.
    */
-  function stubConnect(overrides: Partial<UseManagedOAuthConnectResult> = {}) {
+  function stubConnect(overrides: Partial<UseCloudOAuthConnectResult> = {}) {
     const connect = mock(() => {});
     const dismiss = mock(() => {});
-    const options: UseManagedOAuthConnectOptions[] = [];
-    const useConnect = (opts: UseManagedOAuthConnectOptions) => {
+    const options: UseCloudOAuthConnectOptions[] = [];
+    const useConnect = (opts: UseCloudOAuthConnectOptions) => {
       options.push(opts);
       return {
         connect,
@@ -284,7 +284,7 @@ describe("OAuthConnectSurface", () => {
 
     // Connect waits for the provider summary, which says whether the
     // provider needs a host collected first; a click before it settles
-    // would start a request the platform may reject.
+    // would start a request the cloud may reject.
     await waitFor(() =>
       expect(
         (getByRole("button", { name: "Connect" }) as HTMLButtonElement)

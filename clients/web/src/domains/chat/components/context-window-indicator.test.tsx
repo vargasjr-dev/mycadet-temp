@@ -8,7 +8,7 @@
  *
  * They also pin which axis chooses the presentation. The ring reveals its
  * detail on hover under a mouse and opens a tappable sheet under a thumb,
- * which is input capability, not window size: see `docs/PLATFORM_ADAPTATION.md`.
+ * which is input capability, not window size: see `docs/CLOUD_ADAPTATION.md`.
  * Uses happy-dom via the bun:test preload configured in `web/bunfig.toml`.
  */
 

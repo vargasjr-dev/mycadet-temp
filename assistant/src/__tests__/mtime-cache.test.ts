@@ -731,7 +731,7 @@ describe("plugin runtime activation", () => {
       getAllToolDefinitions().some((t) => t.name === "teardown-tool"),
     ).toBe(true);
 
-    // This is the daemon uninstall route's teardown path: the managed uninstall
+    // This is the daemon uninstall route's teardown path: the cloud uninstall
     // runs `shutdown` itself (while the files are present) and removes the
     // directory, then reconciles. The reconcile here only mirrors the removal —
     // it drops the plugin's tools/hooks but must NOT run `shutdown` a second
@@ -766,7 +766,7 @@ describe("plugin runtime activation", () => {
   });
 
   test("an out-of-band directory removal unregisters tools but runs no shutdown", async () => {
-    // A raw `rm` (bypassing the managed uninstall) is only noticed by the
+    // A raw `rm` (bypassing the cloud uninstall) is only noticed by the
     // monitor after the files are gone, so there's no `shutdown` to resolve —
     // the reconcile just evicts. A managed uninstall runs `shutdown` before
     // removal (see uninstall-plugin.test.ts).

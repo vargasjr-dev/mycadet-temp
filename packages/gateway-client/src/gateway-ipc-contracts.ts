@@ -483,7 +483,7 @@ export type RegisterWebhookRouteIpcParams = z.infer<
 /**
  * A refusal is a normal result rather than an error: the daemon reads
  * `disabled` as "this assistant is not serving its own webhooks" and falls
- * back to the platform's callback routes.
+ * back to the cloud's callback routes.
  */
 export const RegisterWebhookRouteIpcResponseSchema = z.union([
   z.object({ disabled: z.literal(true) }),

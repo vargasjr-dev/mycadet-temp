@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { insertTelemetryOutboxEvents } from "../telemetry/telemetry-events-outbox.js";
 import type { AuthFallbackTelemetryEvent } from "../telemetry/types.js";
 import { APP_VERSION } from "../version.js";

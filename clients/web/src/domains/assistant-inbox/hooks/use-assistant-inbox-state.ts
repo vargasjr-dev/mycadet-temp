@@ -10,22 +10,22 @@ import {
   organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { usePlatformAssistantId } from "@/hooks/use-platform-assistant-id";
-import { usePlatformGateWithPending } from "@/hooks/use-platform-gate";
+import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
+import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
 import { resolveInboxStatus, type InboxStatus } from "../resolve-inbox-status";
 
 export interface AssistantInboxState {
   status: InboxStatus;
-  /** The id the platform's assistant routes key on; `null` until resolved. */
-  platformAssistantId: string | null;
-  /** The assistant as the platform lists it; falls back to the name given. */
+  /** The id the cloud's assistant routes key on; `null` until resolved. */
+  cloudAssistantId: string | null;
+  /** The assistant as the cloud lists it; falls back to the name given. */
   assistantName: string;
   /** The public handle, which is the subdomain of the address. */
   handle: string;
   /**
-   * When the platform made the assistant, as an ISO instant; `null` until
+   * When the cloud made the assistant, as an ISO instant; `null` until
    * the listing has answered. What says whether a user was here before a
    * feature landed.
    */
@@ -43,10 +43,10 @@ export interface AssistantInboxState {
 
 /**
  * Everything the inbox needs to know to pick a state, read from the caches
- * that own it: the platform gate, the billing subscription's entitlements,
- * the platform's assistant listing (for the handle and name), and the
- * assistant's address and domain lists. Managed email lives on the platform
- * API, whose assistant routes key on the platform UUID, so the local id is
+ * that own it: the cloud gate, the billing subscription's entitlements,
+ * the cloud's assistant listing (for the handle and name), and the
+ * assistant's address and domain lists. Managed email lives on the cloud
+ * API, whose assistant routes key on the cloud UUID, so the local id is
  * resolved to that first; the reads that need it wait on it.
  */
 export function useAssistantInboxState(
@@ -54,12 +54,12 @@ export function useAssistantInboxState(
   fallbackName: string,
 ): AssistantInboxState {
   const queryClient = useQueryClient();
-  const gate = usePlatformGateWithPending({ platformHostedOnly: true });
+  const gate = useCloudGateWithPending({ cloudHostedOnly: true });
   const onPlatform = gate === "full" && !!assistantId;
   const orgReady = useIsOrgReady();
   const rootDomain = useEnvironmentStore.use.emailRootDomain();
 
-  const { platformAssistantId } = usePlatformAssistantId(
+  const { cloudAssistantId } = useCloudAssistantId(
     assistantId,
     onPlatform,
   );
@@ -82,14 +82,14 @@ export function useAssistantInboxState(
   });
   const listed =
     assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === platformAssistantId,
+      (candidate) => candidate.id === cloudAssistantId,
     ) ?? assistantsQuery.data?.results?.[0];
 
-  const addressPath = { path: { assistant_id: platformAssistantId ?? "" } };
+  const addressPath = { path: { assistant_id: cloudAssistantId ?? "" } };
   const readsEnabled =
-    onPlatform && orgReady && !!platformAssistantId && !!entitlements
+    onPlatform && orgReady && !!cloudAssistantId && !!entitlements
       ? entitlements.managed_email === true
-      : onPlatform && orgReady && !!platformAssistantId && subscriptionFailed;
+      : onPlatform && orgReady && !!cloudAssistantId && subscriptionFailed;
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions(addressPath),
@@ -115,18 +115,18 @@ export function useAssistantInboxState(
     // The query key above is built from the id, so a change of assistant
     // rebuilds it; the callback only needs the id itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient, platformAssistantId]);
+  }, [queryClient, cloudAssistantId]);
 
   return {
     status: resolveInboxStatus({
       gate,
-      platformAssistantId,
+      cloudAssistantId,
       entitlements,
       subscriptionFailed,
       addressCount: addresses?.length,
       domainsSettled: domainsQuery.isFetched,
     }),
-    platformAssistantId,
+    cloudAssistantId,
     assistantName: listed?.name || fallbackName,
     handle: domain?.subdomain ?? listed?.handle ?? "",
     createdAt: listed?.created ?? null,

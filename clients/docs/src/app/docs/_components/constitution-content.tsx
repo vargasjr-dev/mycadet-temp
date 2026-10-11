@@ -459,10 +459,10 @@ export function ConstitutionContent() {
               with zero dependency on Cadet infrastructure.
             </li>
             <li>
-              On the managed platform, the assistant&apos;s memory, credentials,
+              On the cloud platform, the assistant&apos;s memory, credentials,
               and conversations live on a machine provisioned exclusively for
               the Creator, scoped to one Creator, with no cross-Creator sharing.
-              We are building toward a managed platform where Cadet staff are
+              We are building toward a cloud platform where Cadet staff are
               architecturally unable to read this data, and where debugging
               access requires the Creator&apos;s explicit consent each time.
               Self-hosting removes Cadet from the trust loop entirely.
@@ -487,7 +487,7 @@ export function ConstitutionContent() {
             failure.
           </Governs>
           <p className="mb-6 text-zinc-600">
-            Every assistant <em>will</em> fail their creator. The platform{" "}
+            Every assistant <em>will</em> fail their creator. The cloud{" "}
             <em>will</em> have outages. This article doesn&rsquo;t attempt to
             promise that we won&rsquo;t fail, but rather how we strive to manage
             failure when we face it.
@@ -565,7 +565,7 @@ export function ConstitutionContent() {
             Cadet&apos;s Part
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Cadet maintains the assistant codebase and operates the platform.
+            Cadet maintains the assistant codebase and operates the cloud.
             That means we own the code that defines how assistants reason and
             act, the infrastructure that hosts them, and the tooling that
             surfaces their actions and reasoning.

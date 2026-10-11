@@ -9,9 +9,9 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { getSqliteFrom, getTelemetryDb } from "../persistence/db-connection.js";
 import { telemetryEvents } from "../persistence/schema/index.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { APP_VERSION } from "../version.js";
 import type {
   OutboxTelemetryEventName,
@@ -221,7 +221,7 @@ export function discardPendingTelemetryOutboxEvents(name: string): void {
 /**
  * Distinct event names with at least one pending row in the outbox. Used by the
  * orphan-drain source to find rows whose type is no longer in the wire contract
- * (e.g. recorded before the platform removed/renamed a type) so they can be
+ * (e.g. recorded before the cloud removed/renamed a type) so they can be
  * flushed instead of stranded. Empty when the telemetry DB is unavailable.
  */
 export function queryDistinctOutboxEventNames(): string[] {

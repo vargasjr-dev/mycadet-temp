@@ -49,7 +49,7 @@ mock.module("@/lib/auth/allauth-client", () => ({
 const refreshSession = mock(async () => true);
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: { getState: () => ({ refreshSession }) },
-  whenPlatformSessionSettled: async () => {},
+  whenCloudSessionSettled: async () => {},
 }));
 
 const {
@@ -157,7 +157,7 @@ describe("resolveNativePostAuthDestination", () => {
           id: "asst-1",
           hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -179,7 +179,7 @@ describe("resolveNativePostAuthDestination", () => {
           id: "asst-1",
           hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -200,7 +200,7 @@ describe("resolveNativePostAuthDestination", () => {
           id: "asst-1",
           hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
           isLocal: false,
-          isPlatformHosted: true,
+          isCloudHosted: true,
           isPaired: false,
         },
       ],
@@ -265,7 +265,7 @@ describe("startAuthFlow on Electron", () => {
     windowWithBridge.cadet = {
       platform: "electron",
       auth: { startOAuth },
-      menu: { setPlatformSession: async () => {} },
+      menu: { setCloudSession: async () => {} },
     };
     refreshSession.mockImplementationOnce(async () => {
       useResolvedAssistantsStore.setState({
@@ -276,7 +276,7 @@ describe("startAuthFlow on Electron", () => {
               Date.now() - ONBOARDED_HATCH_AGE_MS,
             ).toISOString(),
             isLocal: false,
-            isPlatformHosted: true,
+            isCloudHosted: true,
             isPaired: false,
           },
         ],
@@ -455,7 +455,7 @@ describe("startAuthFlow attribution on native", () => {
 
     await runSignup();
 
-    // The platform stores a row as one coherent source, so the stored
+    // The cloud stores a row as one coherent source, so the stored
     // referrer's fields must not be spliced into the URL's.
     expect(lastStartAuthOptions().attribution).toEqual({
       utm_source: "newsletter",

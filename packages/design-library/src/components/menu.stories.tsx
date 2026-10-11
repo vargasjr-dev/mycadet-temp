@@ -66,7 +66,7 @@ export const WithIcons: Story = {
 };
 
 /**
- * Items take the accelerator, not the glyphs. Each row draws the platform's
+ * Items take the accelerator, not the glyphs. Each row draws the cloud's
  * key symbols and announces the same binding through `aria-keyshortcuts`, so
  * the two cannot drift apart.
  */

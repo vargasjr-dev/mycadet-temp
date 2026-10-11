@@ -1,5 +1,5 @@
 import type { DrizzleDb } from "../persistence/db-connection.js";
-import { CADET_MANAGED_PROVIDER } from "../providers/cadet-model-routing.js";
+import { CADET_CLOUD_PROVIDER } from "../providers/cadet-model-routing.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../providers/inference/auth.js";
 import {
   createConnection,
@@ -48,12 +48,12 @@ export type SeedInferenceProfilesOptions = {
  *    `<provider>-personal` connection backed by the user's API key in CES.
  *    The BYOK columns of the intent × provider matrix stamp exactly that
  *    connection name (via `resolveDefaultConnectionName`), so the default
- *    profiles dispatch through it. Skipped for the managed provider — the
+ *    profiles dispatch through it. Skipped for the cloud provider — the
  *    `cadet` column routes through the canonical platform-backed row, never
  *    a user key, so no `cadet-personal` connection exists or is needed.
  *
  * 2. **`llm.default`**: the base blob's `provider` field is written once at
- *    hatch time, mirroring the platform/managed/BYOK decision, and never
+ *    hatch time, mirroring the cloud/managed/BYOK decision, and never
  *    overwritten afterward. The default profiles resolve through this
  *    provider's matrix column.
  *
@@ -67,10 +67,10 @@ export function seedInferenceProfiles(
   const llm = config.llm;
   const profiles = llm.profiles;
 
-  const isPlatform =
-    process.env.IS_PLATFORM === "true" || process.env.IS_PLATFORM === "1";
+  const isCloud =
+    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
 
-  // A hatch overlay that explicitly selected a managed connection routes the
+  // A hatch overlay that explicitly selected a cloud connection routes the
   // default provider through cadet rather than the entered BYOK key.
   const hatchSelectedManagedConnection = didHatchSelectManagedConnection(
     llm,
@@ -78,18 +78,18 @@ export function seedInferenceProfiles(
     options,
   );
 
-  // 1. Personal provider connection: only at hatch time for off-platform
+  // 1. Personal provider connection: only at hatch time for off-cloud
   //    installations, backed by the user's API key in CES. The BYOK columns
   //    of the intent × provider matrix stamp `<provider>-personal` (via
   //    `resolveDefaultConnectionName`), so the connection must exist for the
   //    default profiles to dispatch.
   let usableHatchProvider: string | undefined;
-  if (options.isHatch && !isPlatform) {
+  if (options.isHatch && !isCloud) {
     // The hatch overlay writes `llm.default.provider` directly.
     const hatchProvider = llm.default?.provider;
     if (
       hatchProvider &&
-      hatchProvider !== CADET_MANAGED_PROVIDER &&
+      hatchProvider !== CADET_CLOUD_PROVIDER &&
       hatchProvider !== "ollama" &&
       !PROVIDERS_REQUIRING_BASE_URL_AND_MODELS.has(hatchProvider)
     ) {
@@ -138,7 +138,7 @@ export function seedInferenceProfiles(
     llm.default = {
       ...blob,
       provider: resolveHatchDefaultProvider(
-        isPlatform,
+        isCloud,
         hatchSelectedManagedConnection,
         usableHatchProvider,
       ),
@@ -150,8 +150,8 @@ export function seedInferenceProfiles(
   // Profile lookups below go through the effective view: a default profile
   // resolves from the code catalog whether or not the workspace carries a
   // stub for it, and a stub contributes only its status/label overlays.
-  // Resolved against `llm.default` so the managed backups count as
-  // available only on the managed column, matching what the schema accepts
+  // Resolved against `llm.default` so the cloud backups count as
+  // available only on the cloud column, matching what the schema accepts
   // as a reference: an `activeProfile` naming a backup on a BYOK install
   // fails the typed load's leaf recovery, reads here as no selection, and
   // is repaired to `balanced` below.
@@ -186,7 +186,7 @@ export function seedInferenceProfiles(
     requestedAdvisorProfile === undefined ||
     requestedAdvisorIsDisabledManaged
   ) {
-    const defaultAdvisorProfile = firstActiveManagedProfile(effectiveProfiles, [
+    const defaultAdvisorProfile = firstActiveCloudProfile(effectiveProfiles, [
       "quality-optimized",
       "balanced",
       "cost-optimized",
@@ -201,7 +201,7 @@ export function seedInferenceProfiles(
   // Profile ordering: ensure all seeded profiles appear in the order array.
   // A managed key absent from a workspace's order is placed next to the
   // sibling that precedes it in the catalog rather than appended, so the
-  // managed profiles stay grouped in catalog order even on a workspace whose
+  // cloud profiles stay grouped in catalog order even on a workspace whose
   // order already lists custom profiles. Entries already in the order keep
   // their relative positions, so a user arrangement survives.
   const profileOrder = [...llm.profileOrder];
@@ -246,13 +246,13 @@ export function readObject(value: unknown): Record<string, unknown> | null {
 }
 
 function resolveHatchDefaultProvider(
-  isPlatform: boolean,
+  isCloud: boolean,
   selectedManagedConnection: boolean,
   hatchProvider: string | undefined,
 ): string {
   // Platform mode and an explicit managed-connection selection both route
   // through cadet.
-  if (isPlatform || selectedManagedConnection) {
+  if (isCloud || selectedManagedConnection) {
     return "cadet";
   }
   if (hatchProvider !== undefined && isDefaultProviderChoice(hatchProvider)) {
@@ -331,7 +331,7 @@ function pruneRemovedProfileReferences(
   }
 }
 
-function firstActiveManagedProfile(
+function firstActiveCloudProfile(
   profiles: Record<string, ProfileEntry>,
   names: string[],
 ): string | undefined {
@@ -363,8 +363,8 @@ function didHatchSelectManagedConnection(
     return MANAGED_CONNECTION_NAMES.has(explicitConnection);
   }
 
-  // A default-profile name with no explicit connection selects the managed
-  // route: the cadet column IS the managed column, and its profiles route
+  // A default-profile name with no explicit connection selects the cloud
+  // route: the cadet column IS the cloud column, and its profiles route
   // through the canonical cadet row.
   return MANAGED_PROFILE_TEMPLATES[activeProfile] !== undefined;
 }

@@ -361,7 +361,7 @@ export function buildSubagentTerminalMessage(opts: {
 
 // ── Manager ─────────────────────────────────────────────────────────────
 
-interface ManagedSubagent {
+interface CloudSubagent {
   /** Live conversation — null after the subagent reaches a terminal state and is released. */
   conversation: Conversation | null;
   state: SubagentState;
@@ -467,8 +467,8 @@ export class SubagentSpawnCancelledError extends Error {
 }
 
 export class SubagentManager {
-  /** subagentId → ManagedSubagent */
-  private subagents = new Map<string, ManagedSubagent>();
+  /** subagentId → CloudSubagent */
+  private subagents = new Map<string, CloudSubagent>();
   /** parentConversationId → Set<subagentId> */
   private parentToChildren = new Map<string, Set<string>>();
   /** `${parentConversationId}:${normalizedLabel}` → subagentId */
@@ -566,7 +566,7 @@ export class SubagentManager {
     config: Omit<SubagentConfig, "id">,
     parentSendToClient: (msg: AssistantEvent) => void,
     opts?: { synchronous?: boolean },
-  ): Promise<{ subagentId: string; managed: ManagedSubagent }> {
+  ): Promise<{ subagentId: string; managed: CloudSubagent }> {
     // ── Limit checks ────────────────────────────────────────────────
 
     // Depth check: prevent subagents from spawning nested subagents.
@@ -703,9 +703,9 @@ export class SubagentManager {
       usage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     };
 
-    // Store the managed subagent early so the wrapper can read the mutable
+    // Store the cloud subagent early so the wrapper can read the mutable
     // parentSendToClient reference — this ensures reconnects are picked up.
-    const managed: ManagedSubagent = {
+    const managed: CloudSubagent = {
       // Placeholder — replaced with the real Conversation a few lines below, before
       // any code reads this field. Using null! avoids the `as unknown as` cast.
       conversation: null! as Conversation,
@@ -1195,7 +1195,7 @@ export class SubagentManager {
    * without `maxRuntimeMs` is unbounded in time, which is right for delegated
    * work whose length is the point.
    */
-  private armRuntimeBudget(managed: ManagedSubagent): void {
+  private armRuntimeBudget(managed: CloudSubagent): void {
     const maxRuntimeMs = managed.state.config.maxRuntimeMs;
     if (maxRuntimeMs === undefined || maxRuntimeMs <= 0) {
       return;
@@ -1208,7 +1208,7 @@ export class SubagentManager {
     }, maxRuntimeMs);
   }
 
-  private clearRuntimeBudget(managed: ManagedSubagent): void {
+  private clearRuntimeBudget(managed: CloudSubagent): void {
     if (managed.runtimeTimer) {
       clearTimeout(managed.runtimeTimer);
       managed.runtimeTimer = undefined;
@@ -1226,7 +1226,7 @@ export class SubagentManager {
    * hook inside the agent loop.
    */
   private countToolCallAgainstBudget(
-    managed: ManagedSubagent,
+    managed: CloudSubagent,
     msg: AssistantEvent,
   ): void {
     const maxToolCalls = managed.state.config.maxToolCalls;
@@ -1258,7 +1258,7 @@ export class SubagentManager {
    * {@link notifyParentBudgetStop} sends it from the run's `finally`, once the
    * loop has unwound.
    */
-  private stopForBudget(managed: ManagedSubagent, reason: string): void {
+  private stopForBudget(managed: CloudSubagent, reason: string): void {
     const { id } = managed.state.config;
     const stopped = this.abort(id, managed.parentSendToClient, undefined, {
       suppressNotification: true,
@@ -1289,7 +1289,7 @@ export class SubagentManager {
    * pointer is kept for the run that wrote nothing.
    */
   private notifyParentBudgetStop(
-    managed: ManagedSubagent,
+    managed: CloudSubagent,
     finalText: string,
   ): void {
     const reason = managed.pendingBudgetStopNotice;
@@ -1742,7 +1742,7 @@ export class SubagentManager {
    * nothing measured to report, and a zero taken mid-flight would read as
    * "this subagent used no tools" rather than "not measured yet".
    */
-  private refreshToolStats(managed: ManagedSubagent): void {
+  private refreshToolStats(managed: CloudSubagent): void {
     if (managed.conversation && managed.state.stats) {
       managed.state.stats = snapshotToolStats(managed.conversation);
     }
@@ -1843,7 +1843,7 @@ export class SubagentManager {
    * lightweight metadata (state, config, usage) for later queries.
    * The conversation's output is already persisted in the database.
    */
-  private releaseConversation(managed: ManagedSubagent): void {
+  private releaseConversation(managed: CloudSubagent): void {
     if (!managed.conversation) {
       return;
     }
@@ -2005,7 +2005,7 @@ export class SubagentManager {
         status: settleUnsupervisedStatus(mapped.status),
       };
 
-      const managed: ManagedSubagent = {
+      const managed: CloudSubagent = {
         conversation: null,
         state,
         parentSendToClient: () => {},
@@ -2153,7 +2153,7 @@ export class SubagentManager {
    * on the result directly rather than issuing a `subagent_read` call.
    */
   private notifyParentTerminal(
-    managed: ManagedSubagent,
+    managed: CloudSubagent,
     outcome: "completed" | "failed",
     finalText?: string,
     deniedTools?: string[],

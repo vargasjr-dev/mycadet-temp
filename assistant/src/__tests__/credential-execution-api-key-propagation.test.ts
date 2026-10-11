@@ -136,31 +136,31 @@ describe("handshake schema includes assistantApiKey", () => {
 
 describe("update_managed_credential RPC contract", () => {
   test("RPC method constant exists", () => {
-    expect(CesRpcMethod.UpdateManagedCredential).toBe(
+    expect(CesRpcMethod.UpdateCloudCredential).toBe(
       "update_managed_credential",
     );
   });
 
   test("request schema validates correct payload", () => {
-    const schema = CesRpcSchemas[CesRpcMethod.UpdateManagedCredential].request;
+    const schema = CesRpcSchemas[CesRpcMethod.UpdateCloudCredential].request;
     const result = schema.safeParse({ assistantApiKey: "test-key-123" });
     expect(result.success).toBe(true);
   });
 
   test("request schema rejects missing assistantApiKey", () => {
-    const schema = CesRpcSchemas[CesRpcMethod.UpdateManagedCredential].request;
+    const schema = CesRpcSchemas[CesRpcMethod.UpdateCloudCredential].request;
     const result = schema.safeParse({});
     expect(result.success).toBe(false);
   });
 
   test("response schema validates correct payload", () => {
-    const schema = CesRpcSchemas[CesRpcMethod.UpdateManagedCredential].response;
+    const schema = CesRpcSchemas[CesRpcMethod.UpdateCloudCredential].response;
     const result = schema.safeParse({ updated: true });
     expect(result.success).toBe(true);
   });
 
   test("response schema rejects missing updated field", () => {
-    const schema = CesRpcSchemas[CesRpcMethod.UpdateManagedCredential].response;
+    const schema = CesRpcSchemas[CesRpcMethod.UpdateCloudCredential].response;
     const result = schema.safeParse({});
     expect(result.success).toBe(false);
   });

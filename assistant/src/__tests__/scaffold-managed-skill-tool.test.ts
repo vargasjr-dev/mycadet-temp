@@ -52,7 +52,7 @@ mock.module(
 );
 
 // Skill-card enqueue recorder. Snapshot + override (rather than a full module
-// replacement) because other modules in this import graph (e.g. the managed
+// replacement) because other modules in this import graph (e.g. the cloud
 // store's capability seeding) import sibling jobs-store exports that must
 // keep working.
 import * as realJobsStore from "../persistence/jobs-store.js";
@@ -95,11 +95,11 @@ function catalogSeam(...entries: { id: string; source: SkillSource }[]) {
 import { loadSkillCatalog } from "../config/skills.js";
 import { readInstallMeta, writeInstallMeta } from "../skills/install-meta.js";
 import { validateInputAgainstSchema } from "../skills/validate-input.js";
-import { executeScaffoldManagedSkill } from "../tools/skills/scaffold-managed.js";
+import { executeScaffoldCloudSkill } from "../tools/skills/scaffold-cloud.js";
 import type { ToolContext } from "../tools/types.js";
 
 /**
- * scaffold_managed_skill requires activation hints. Tests that are not about
+ * scaffold_cloud_skill requires activation hints. Tests that are not about
  * hints pass this fixed set so the input they exercise stays the subject.
  */
 const HINTS = ["user asks to run the procedure under test"];
@@ -124,7 +124,7 @@ function installMetaFor(skillId: string) {
   return readInstallMeta(join(TEST_DIR, "skills", skillId));
 }
 
-/** The scaffold_managed_skill entry as declared in the skill-management manifest. */
+/** The scaffold_cloud_skill entry as declared in the skill-management manifest. */
 function readScaffoldToolEntry(): {
   input_schema: {
     properties: Record<string, unknown>;
@@ -141,7 +141,7 @@ function readScaffoldToolEntry(): {
     ),
   );
   return tools.tools.find(
-    (tool: { name: string }) => tool.name === "scaffold_managed_skill",
+    (tool: { name: string }) => tool.name === "scaffold_cloud_skill",
   );
 }
 
@@ -158,7 +158,7 @@ afterEach(() => {
   rmSync(join(TEST_DIR, "skills"), { recursive: true, force: true });
 });
 
-describe("scaffold_managed_skill tool", () => {
+describe("scaffold_cloud_skill tool", () => {
   test("keeps legacy index control as a deprecated no-op schema field", () => {
     const scaffoldTool = readScaffoldToolEntry();
 
@@ -171,7 +171,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("an overwrite through the tool keeps frontmatter it does not restate", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "edited",
         name: "Edited",
@@ -187,7 +187,7 @@ describe("scaffold_managed_skill tool", () => {
     );
 
     // The usual "change step 3" edit: body and hints, nothing else restated.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "edited",
         name: "Edited",
@@ -209,7 +209,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("an overwrite through the tool clears a field passed empty, and hints stay required", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "cleared",
         name: "Cleared",
@@ -222,7 +222,7 @@ describe("scaffold_managed_skill tool", () => {
       makeContext(),
     );
 
-    const noHints = await executeScaffoldManagedSkill(
+    const noHints = await executeScaffoldCloudSkill(
       {
         skill_id: "cleared",
         name: "Cleared",
@@ -238,7 +238,7 @@ describe("scaffold_managed_skill tool", () => {
     expect(noHints.isError).toBe(true);
     expect(noHints.content).toContain("activation_hints is required");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "cleared",
         name: "Cleared",
@@ -266,7 +266,7 @@ describe("scaffold_managed_skill tool", () => {
     expect(scaffoldTool.input_schema.required).toContain("activation_hints");
 
     const result = validateInputAgainstSchema(
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       {
         skill_id: "s",
         name: "N",
@@ -282,7 +282,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("creates a valid skill discovered from its SKILL.md directory", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "test-skill",
         name: "Test Skill",
@@ -324,7 +324,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("accepts legacy add_to_index input without returning index metadata", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "legacy-input",
         name: "Legacy Input",
@@ -345,7 +345,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects duplicate unless overwrite=true", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "dupe",
         name: "Original",
@@ -356,7 +356,7 @@ describe("scaffold_managed_skill tool", () => {
       makeContext(),
     );
 
-    const result2 = await executeScaffoldManagedSkill(
+    const result2 = await executeScaffoldCloudSkill(
       {
         skill_id: "dupe",
         name: "Duplicate",
@@ -369,7 +369,7 @@ describe("scaffold_managed_skill tool", () => {
     expect(result2.isError).toBe(true);
     expect(result2.content).toContain("already exists");
 
-    const result3 = await executeScaffoldManagedSkill(
+    const result3 = await executeScaffoldCloudSkill(
       {
         skill_id: "dupe",
         name: "Overwritten",
@@ -398,13 +398,13 @@ describe("scaffold_managed_skill tool", () => {
     ];
 
     for (const input of cases) {
-      const result = await executeScaffoldManagedSkill(input, makeContext());
+      const result = await executeScaffoldCloudSkill(input, makeContext());
       expect(result.isError).toBe(true);
     }
   });
 
   test("sanitizes embedded newlines in name/description/emoji to prevent frontmatter injection", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "inject-test",
         name: 'Test\ninjected_field: "evil"',
@@ -433,7 +433,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("creates a skill with includes metadata", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "parent-skill",
         name: "Parent",
@@ -454,7 +454,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("normalizes includes — trims and deduplicates", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "norm-skill",
         name: "Normalized",
@@ -475,7 +475,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects includes with non-string elements", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "bad-includes",
         name: "Bad",
@@ -492,7 +492,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects includes with empty string elements", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "empty-includes",
         name: "Empty",
@@ -509,7 +509,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects includes with whitespace-only elements", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "ws-includes",
         name: "Whitespace",
@@ -526,7 +526,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("omits includes when not provided", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-includes",
         name: "Solo",
@@ -544,7 +544,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("writes activation_hints and avoid_when metadata that round-trips into the catalog", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "hinted-skill",
         name: "Hinted",
@@ -577,7 +577,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("normalizes activation_hints — trims and deduplicates", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "norm-hints",
         name: "Normalized Hints",
@@ -601,7 +601,7 @@ describe("scaffold_managed_skill tool", () => {
     // activation_hints are concatenated verbatim into capability memory text, so
     // an embedded newline would otherwise inject a standalone line into a future
     // turn. It must be collapsed like name/description are.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "inject-hints",
         name: "Inject Hints",
@@ -630,7 +630,7 @@ describe("scaffold_managed_skill tool", () => {
       ["ok", ""],
       ["ok", "  "],
     ]) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: "bad-hints",
           name: "Bad Hints",
@@ -646,7 +646,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects non-array activation_hints", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "bad-hints-type",
         name: "Bad Hints Type",
@@ -661,7 +661,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("omits avoid-when when not provided", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-avoid",
         name: "No Avoid",
@@ -690,7 +690,7 @@ describe("scaffold_managed_skill tool", () => {
     ];
     for (const context of [makeContext(), makeRetrospectiveContext()]) {
       for (const extra of inputs) {
-        const result = await executeScaffoldManagedSkill(
+        const result = await executeScaffoldCloudSkill(
           {
             name: "No Hints",
             description: "No triggers",
@@ -711,7 +711,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("an overwrite that omits activation_hints is rejected and leaves the skill untouched", async () => {
     const hints = ["user asks to deploy staging", "user asks to cut a release"];
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "keep-hints",
         name: "Keep Hints",
@@ -722,7 +722,7 @@ describe("scaffold_managed_skill tool", () => {
       makeContext(),
     );
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "keep-hints",
         name: "Keep Hints",
@@ -748,7 +748,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("passes category through to the written skill, lowercased and trimmed", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "categorized",
         name: "Categorized",
@@ -772,7 +772,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects non-string category", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "bad-category",
         name: "Bad Category",
@@ -789,7 +789,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("omits category when not provided", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-category",
         name: "No Category",
@@ -809,7 +809,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects invalid skill_id", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "../escape",
         name: "Bad",
@@ -825,7 +825,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("writes companion files under the skill dir", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "files-skill",
         name: "Files Skill",
@@ -859,7 +859,7 @@ describe("scaffold_managed_skill tool", () => {
     const sourcePath = join(TEST_DIR, "proven-script.py");
     writeFileSync(sourcePath, "print('ok')\n", "utf-8");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "copy-from-skill",
         name: "Copy From Skill",
@@ -890,7 +890,7 @@ describe("scaffold_managed_skill tool", () => {
     const sourcePath = join(TEST_DIR, "dupe.py");
     writeFileSync(sourcePath, "x", "utf-8");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "copy-from-both",
         name: "Both",
@@ -910,7 +910,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects a non-string copy_from", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "copy-from-type",
         name: "Bad Type",
@@ -927,7 +927,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("rejects companion file path traversal with no partial writes", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "files-traversal",
         name: "Traversal",
@@ -959,7 +959,7 @@ describe("scaffold_managed_skill tool", () => {
     ];
 
     for (const files of cases) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: "bad-files",
           name: "Bad",
@@ -975,7 +975,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("e2e: scaffold child then parent with includes, verify file discovery", async () => {
-    const childResult = await executeScaffoldManagedSkill(
+    const childResult = await executeScaffoldCloudSkill(
       {
         skill_id: "e2e-child",
         name: "E2E Child",
@@ -987,7 +987,7 @@ describe("scaffold_managed_skill tool", () => {
     );
     expect(childResult.isError).toBe(false);
 
-    const parentResult = await executeScaffoldManagedSkill(
+    const parentResult = await executeScaffoldCloudSkill(
       {
         skill_id: "e2e-parent",
         name: "E2E Parent",
@@ -1018,7 +1018,7 @@ describe("scaffold_managed_skill tool", () => {
   // ── Authorship tagging + user-skill protection ────────────────────────────
 
   test('tags author "assistant" under the retrospective origin', async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "retro-skill",
         name: "Retro Skill",
@@ -1043,7 +1043,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test('tags author "user" for a normal (non-retrospective) scaffold', async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "user-skill",
         name: "User Skill",
@@ -1060,7 +1060,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("retrospective refuses to overwrite an author:user skill", async () => {
     // A user authors the skill first.
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "protected",
         name: "Protected",
@@ -1073,7 +1073,7 @@ describe("scaffold_managed_skill tool", () => {
     expect(installMetaFor("protected")?.author).toBe("user");
 
     // The retrospective tries to overwrite it — refused.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "protected",
         name: "Protected",
@@ -1094,7 +1094,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("retrospective refuses to write companion files into an author:user skill", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "protected-files",
         name: "Protected Files",
@@ -1105,7 +1105,7 @@ describe("scaffold_managed_skill tool", () => {
       makeContext(),
     );
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "protected-files",
         name: "Protected Files",
@@ -1130,7 +1130,7 @@ describe("scaffold_managed_skill tool", () => {
   test("retrospective refuses to overwrite an untagged (no-author) skill", async () => {
     // Simulate a skill created via a path that does not tag author (e.g. the
     // createSkill API route): install-meta with no author field.
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "untagged",
         name: "Untagged",
@@ -1148,7 +1148,7 @@ describe("scaffold_managed_skill tool", () => {
     expect(installMetaFor("untagged")?.author).toBeUndefined();
 
     // The retrospective must not overwrite a skill it does not own.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "untagged",
         name: "Untagged",
@@ -1169,7 +1169,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("retrospective MAY overwrite its own author:assistant skill", async () => {
     // The retrospective authors a skill, then refines it later.
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "assistant-owned",
         name: "Assistant Owned",
@@ -1181,7 +1181,7 @@ describe("scaffold_managed_skill tool", () => {
     );
     expect(installMetaFor("assistant-owned")?.author).toBe("assistant");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "assistant-owned",
         name: "Assistant Owned",
@@ -1221,7 +1221,7 @@ describe("scaffold_managed_skill tool", () => {
   // ── Conversation lineage (retrospective-authored skills) ───────────────────
 
   test("retrospective scaffold records source + retrospective conversation lineage", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "lineage-skill",
         name: "Lineage Skill",
@@ -1247,7 +1247,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("user scaffold records no conversation lineage and never looks up the conversation", async () => {
     const lookup = mock(() => ({ forkParentConversationId: "source-conv" }));
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "user-no-lineage",
         name: "User No Lineage",
@@ -1279,7 +1279,7 @@ describe("scaffold_managed_skill tool", () => {
     ];
 
     for (const { skillId, lookup } of cases) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: skillId,
           name: "Orphan Lineage",
@@ -1301,7 +1301,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("a throwing conversation lookup never fails the retrospective scaffold", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "lookup-throws",
         name: "Lookup Throws",
@@ -1330,7 +1330,7 @@ describe("scaffold_managed_skill tool", () => {
     // Some runtime callers construct a partial context without a conversation.
     delete (context as { conversationId?: string }).conversationId;
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-conversation",
         name: "No Conversation",
@@ -1353,7 +1353,7 @@ describe("scaffold_managed_skill tool", () => {
   // ── Ownership backstop: never shadow/overwrite a non-managed skill ─────────
 
   test("retrospective refuses to CREATE a skill whose id is owned by a bundled skill", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "deep-research",
         name: "Deep Research",
@@ -1375,7 +1375,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("retrospective refuses to OVERWRITE a skill whose id is owned by a bundled skill", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "blitz",
         name: "Blitz",
@@ -1395,7 +1395,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("retrospective refuses an id owned by a plugin or workspace skill", async () => {
     for (const source of ["plugin", "workspace"] as const) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: "covered-proc",
           name: "Covered",
@@ -1412,10 +1412,10 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("retrospective fails closed on an existing managed skill with missing install-meta", async () => {
-    // Seed a managed skill on disk, then strip its install metadata so author
+    // Seed a cloud skill on disk, then strip its install metadata so author
     // is unverifiable. The seam keeps it managed (no non-managed collision), so
     // the disk fail-closed branch is what must refuse.
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "no-meta",
         name: "No Meta",
@@ -1429,7 +1429,7 @@ describe("scaffold_managed_skill tool", () => {
     rmSync(join(dir, "install-meta.json"));
     expect(installMetaFor("no-meta")).toBeNull();
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-meta",
         name: "No Meta",
@@ -1450,7 +1450,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("retrospective fails closed on an existing managed skill with corrupt install-meta", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "corrupt-meta",
         name: "Corrupt Meta",
@@ -1463,7 +1463,7 @@ describe("scaffold_managed_skill tool", () => {
     const dir = join(TEST_DIR, "skills", "corrupt-meta");
     writeFileSync(join(dir, "install-meta.json"), "{not valid json");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "corrupt-meta",
         name: "Corrupt Meta",
@@ -1485,7 +1485,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("retrospective MAY create a fresh skill whose id is free of any catalog collision", async () => {
     // Catalog holds only an unrelated bundled skill — no collision on the id.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "fresh-proc",
         name: "Fresh Proc",
@@ -1517,7 +1517,7 @@ describe("scaffold_managed_skill tool", () => {
   }
 
   test("retrospective CREATE enqueues one skill_card_insert job with the normalized payload and resolved source id", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: " card-skill ",
         name: "  Card\nSkill  ",
@@ -1550,7 +1550,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("a whitespace-only emoji is omitted from the card payload", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "no-emoji-card",
         name: "No Emoji",
@@ -1593,7 +1593,7 @@ describe("scaffold_managed_skill tool", () => {
     ];
 
     for (const { skillId, lookup } of cases) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: skillId,
           name: "No Card",
@@ -1615,7 +1615,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("retrospective overwrite of an EXISTING skill (a refinement) does not enqueue a card", async () => {
     // First pass: genuine create — enqueues.
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "refined-skill",
         name: "Refined Skill",
@@ -1630,7 +1630,7 @@ describe("scaffold_managed_skill tool", () => {
     skillCardJobUpserts = [];
 
     // Second pass: overwrite of the pre-existing skill — a refinement, no card.
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "refined-skill",
         name: "Refined Skill",
@@ -1649,7 +1649,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("retrospective overwrite:true on a skill that did NOT previously exist is still a create and enqueues", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "overwrite-fresh",
         name: "Overwrite Fresh",
@@ -1674,7 +1674,7 @@ describe("scaffold_managed_skill tool", () => {
   });
 
   test("user-origin create never enqueues a card, even with resolvable lineage", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "user-no-card",
         name: "User No Card",
@@ -1693,7 +1693,7 @@ describe("scaffold_managed_skill tool", () => {
   test("a throwing enqueue never fails the scaffold — the skill is already created", async () => {
     skillCardUpsertThrows = true;
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "enqueue-throws",
         name: "Enqueue Throws",
@@ -1714,7 +1714,7 @@ describe("scaffold_managed_skill tool", () => {
 
   test("two creates in the same run enqueue one upsert per skill under the same run id (merge happens in the jobs store)", async () => {
     for (const skillId of ["run-skill-a", "run-skill-b"]) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: skillId,
           name: `Skill ${skillId}`,
@@ -1753,7 +1753,7 @@ describe("scaffold_managed_skill tool", () => {
 describe("background skill update notification", () => {
   /** Seed an assistant-authored skill the background pass may overwrite. */
   async function seedAssistantSkill(id: string, body: string): Promise<void> {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: id,
         name: "Weekly Report Export",
@@ -1784,7 +1784,7 @@ describe("background skill update notification", () => {
   test("a background overwrite of an existing skill records a receipt entry keyed to the tool call", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -1823,7 +1823,7 @@ describe("background skill update notification", () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
     for (const body of ["1. Refined steps.", "1. Refined again."]) {
-      await executeScaffoldManagedSkill(
+      await executeScaffoldCloudSkill(
         {
           skill_id: "weekly-export",
           name: "Weekly Report Export",
@@ -1848,7 +1848,7 @@ describe("background skill update notification", () => {
     await seedAssistantSkill("weekly-export", "Old body.");
     recordUpdateFails = true;
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -1879,7 +1879,7 @@ describe("background skill update notification", () => {
   test("the entry body is the pass's change_summary, so the receipt says what changed", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -1910,7 +1910,7 @@ describe("background skill update notification", () => {
       // Whitespace-only reads as missing, not as an empty notice.
       { change_summary: "   \n " },
     ]) {
-      const result = await executeScaffoldManagedSkill(
+      const result = await executeScaffoldCloudSkill(
         {
           skill_id: "weekly-export",
           name: "Weekly Report Export",
@@ -1938,7 +1938,7 @@ describe("background skill update notification", () => {
   test("a background call on an existing skill without overwrite hears the overwrite error, not the summary requirement", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -1959,7 +1959,7 @@ describe("background skill update notification", () => {
   });
 
   test("the ownership backstop speaks before the change_summary requirement", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "user-owned",
         name: "User Owned",
@@ -1970,7 +1970,7 @@ describe("background skill update notification", () => {
       makeContext(),
     );
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "user-owned",
         name: "User Owned",
@@ -1988,7 +1988,7 @@ describe("background skill update notification", () => {
   });
 
   test("a user-directed overwrite needs no change_summary: it records no entry", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "user-skill",
         name: "User Skill",
@@ -1999,7 +1999,7 @@ describe("background skill update notification", () => {
       makeContext(),
     );
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "user-skill",
         name: "User Skill",
@@ -2017,7 +2017,7 @@ describe("background skill update notification", () => {
   test("change_summary is sanitized like any notification body", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -2046,7 +2046,7 @@ describe("background skill update notification", () => {
   test("a non-string change_summary is a self-correcting error", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -2079,7 +2079,7 @@ describe("background skill update notification", () => {
     expect(scaffoldTool.input_schema.required).not.toContain("change_summary");
 
     const result = validateInputAgainstSchema(
-      "scaffold_managed_skill",
+      "scaffold_cloud_skill",
       {
         skill_id: "s",
         name: "N",
@@ -2097,7 +2097,7 @@ describe("background skill update notification", () => {
   test("an entry whose fork lineage does not resolve carries no source, never the run", async () => {
     await seedAssistantSkill("weekly-export", "Old body.");
 
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "weekly-export",
         name: "Weekly Report Export",
@@ -2118,7 +2118,7 @@ describe("background skill update notification", () => {
   });
 
   test("a background CREATE gets the skill card instead, with no duplicate signal", async () => {
-    const result = await executeScaffoldManagedSkill(
+    const result = await executeScaffoldCloudSkill(
       {
         skill_id: "brand-new-skill",
         name: "Brand New Skill",
@@ -2136,7 +2136,7 @@ describe("background skill update notification", () => {
   });
 
   test("a user-directed overwrite records no receipt entry: it is not unattended work", async () => {
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "user-skill",
         name: "User Skill",
@@ -2148,7 +2148,7 @@ describe("background skill update notification", () => {
     );
     recordedUpdates = [];
 
-    await executeScaffoldManagedSkill(
+    await executeScaffoldCloudSkill(
       {
         skill_id: "user-skill",
         name: "User Skill",

@@ -9,7 +9,7 @@
  *
  * Imperative readers (middleware, lifecycle, route resolvers) call these
  * predicates directly with a status value. Reactive components read the
- * matching hooks (`useIsAuthenticated`, `useHasPlatformSession`) from the auth
+ * matching hooks (`useIsAuthenticated`, `useHasCloudSession`) from the auth
  * store, which compose these predicates over the store's atomic selectors.
  */
 
@@ -29,7 +29,7 @@
  * unrepresentable, which is the ambiguity that let missing-session readers
  * silently treat the pre-settle window as a confirmed negative.
  */
-export type PlatformSessionStatus = "unknown" | "absent" | "present";
+export type CloudSessionStatus = "unknown" | "absent" | "present";
 
 /**
  * Session lifecycle as a single discriminated state, not a pair of booleans.
@@ -42,7 +42,7 @@ export type PlatformSessionStatus = "unknown" | "absent" | "present";
  *
  * Modeling this as one value makes the contradictory `(isLoggedIn: true,
  * isLoading: true)` state — "logged in but still loading" — unrepresentable,
- * the same illegal-state-elimination this store applies to `platformSession`.
+ * the same illegal-state-elimination this store applies to `cloudSession`.
  */
 export type SessionStatus =
   "initializing" | "authenticated" | "unauthenticated";
@@ -50,7 +50,7 @@ export type SessionStatus =
 /**
  * Read predicates — the single place each session-state question is answered.
  *
- * Consumers read meaning (`isAuthenticated(status)` / `hasLivePlatformSession`)
+ * Consumers read meaning (`isAuthenticated(status)` / `hasLiveCloudSession`)
  * instead of re-encoding the enum literals (`=== "authenticated"`,
  * `=== "present"`) at every call site, so the encoding never leaks into readers.
  */
@@ -62,30 +62,30 @@ export const isSessionSettled = (status: SessionStatus): boolean =>
   status !== "initializing";
 
 /** A live platform session has been confirmed by the probe. */
-export const hasLivePlatformSession = (
-  status: PlatformSessionStatus,
+export const hasLiveCloudSession = (
+  status: CloudSessionStatus,
 ): boolean => status === "present";
 
 /**
- * The platform-session probe has settled — `platformSession` left the
+ * The cloud-session probe has settled — `cloudSession` left the
  * `"unknown"` window and is now a definite `"present"` / `"absent"`. Distinct
  * from {@link isSessionSettled}: the local-gateway path flips `sessionStatus`
- * to `"authenticated"` before `getSession()` resolves `platformSession`, so a
- * consumer whose behavior turns on platform-session liveness must wait on this,
+ * to `"authenticated"` before `getSession()` resolves `cloudSession`, so a
+ * consumer whose behavior turns on cloud-session liveness must wait on this,
  * not on the (earlier) `sessionStatus` settlement.
  */
-export const isPlatformSessionSettled = (
-  status: PlatformSessionStatus,
+export const isCloudSessionSettled = (
+  status: CloudSessionStatus,
 ): boolean => status !== "unknown";
 
 /**
  * A platform session a live probe confirmed — `"present"` AND not a believed
- * offline restore (LUM-2412). Stricter than {@link hasLivePlatformSession}:
+ * offline restore (LUM-2412). Stricter than {@link hasLiveCloudSession}:
  * telemetry consent gates on this so it never enables on a restored-offline
  * launch that no live probe has revalidated.
  */
-export const isConfirmedPlatformSession = (
-  status: PlatformSessionStatus,
+export const isConfirmedCloudSession = (
+  status: CloudSessionStatus,
   restoredOffline: boolean,
 ): boolean => status === "present" && !restoredOffline;
 
@@ -100,7 +100,7 @@ const SETTLED_SESSION_REJECTION_STATUSES = new Set([401, 403, 410]);
  * allowed to end the session. Everything else that isn't ok says nothing
  * about the session and must be treated as non-authoritative (LUM-2412):
  * a request that never completed (`status` undefined), rate limiting
- * (429), and gateway/outage 5xx including the Electron platform proxy's
+ * (429), and gateway/outage 5xx including the Electron cloud proxy's
  * synthesized offline 502 (`proxy_network_error` — see
  * `clients/macos/src/main/platform-forward.ts`). A session check that
  * throws outright (fetch rejection) is classified the same way by

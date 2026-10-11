@@ -38,10 +38,10 @@ let mcpAuthCompletes = false;
 let heldPluginRemoval: (() => void) | null = null;
 let holdPluginRemoval = false;
 let assistantAvailable = true;
-let platformGate = "full";
+let cloudGate = "full";
 let allowAdd = true;
 let hydrated = true;
-let platformHosted = true;
+let cloudHosted = true;
 let managedStatus: "idle" | "attempting" | "connected" = "attempting";
 let managedError: string | null = null;
 let seededTools: {
@@ -167,18 +167,18 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
     isPending: false,
   }),
 }));
-mock.module("@/hooks/use-platform-assistant-id", () => ({
-  usePlatformAssistantId: () => ({
-    platformAssistantId: platformGate === "full" ? "platform-123" : null,
+mock.module("@/hooks/use-cloud-assistant-id", () => ({
+  useCloudAssistantId: () => ({
+    cloudAssistantId: cloudGate === "full" ? "platform-123" : null,
     isLoading: false,
     error: null,
   }),
 }));
-const platformGateActual = await import("@/hooks/use-platform-gate");
-mock.module("@/hooks/use-platform-gate", () => ({
-  ...platformGateActual,
-  usePlatformGate: () => platformGate,
-  useActiveAssistantIsPlatformHosted: () => platformHosted,
+const cloudGateActual = await import("@/hooks/use-cloud-gate");
+mock.module("@/hooks/use-cloud-gate", () => ({
+  ...cloudGateActual,
+  useCloudGate: () => cloudGate,
+  useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
 mock.module("@/hooks/use-onboarding-login", () => ({
   useOnboardingLogin: () => ({
@@ -188,8 +188,8 @@ mock.module("@/hooks/use-onboarding-login", () => ({
     cancel: () => {},
   }),
 }));
-mock.module("@/hooks/use-managed-oauth-connect", () => ({
-  useManagedOAuthConnect: () => ({
+mock.module("@/hooks/use-cloud-oauth-connect", () => ({
+  useCloudOAuthConnect: () => ({
     connect: managedConnect,
     dismiss: managedDismiss,
     status: managedStatus,
@@ -316,7 +316,7 @@ function provider(overrides: Partial<OAuthProvider> = {}): OAuthProvider {
     client_id_placeholder: null,
     requires_client_secret: true,
     logo_url: null,
-    supports_managed_mode: true,
+    supports_cloud_mode: true,
     managed_service_is_paid: false,
     feature_flag: null,
     category: "productivity",
@@ -407,8 +407,8 @@ afterEach(() => {
   holdPluginRemoval = false;
   heldPluginRemoval = null;
   assistantAvailable = true;
-  platformGate = "full";
-  platformHosted = true;
+  cloudGate = "full";
+  cloudHosted = true;
   managedStatus = "attempting";
   managedError = null;
   allowAdd = true;
@@ -719,7 +719,7 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("starts a managed authorization from a tile with no other way in", async () => {
+  test("starts a cloud authorization from a tile with no other way in", async () => {
     seededProviders = [provider()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
 
@@ -732,7 +732,7 @@ describe("IntegrationsPage", () => {
   });
 
   test("gives a self-hosted assistant the split connect action", async () => {
-    platformHosted = false;
+    cloudHosted = false;
     seededProviders = [provider()];
     seededCatalog = [
       catalogMatch({
@@ -802,7 +802,7 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("holds every other connect action while a managed authorization is open", async () => {
+  test("holds every other connect action while a cloud authorization is open", async () => {
     seededProviders = [provider()];
     seededServers = [server({ id: "custom-mcp", status: "needs-auth" })];
     render(<IntegrationsPage />, { wrapper: Wrapper });
@@ -812,7 +812,7 @@ describe("IntegrationsPage", () => {
     await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
 
     // The rows and cards that predate the tiles gate on the MCP machine
-    // alone, which a managed authorization never touches.
+    // alone, which a cloud authorization never touches.
     await waitFor(() =>
       expect(
         (
@@ -865,7 +865,7 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("keeps the other ways out of sight on a platform-hosted assistant", async () => {
+  test("keeps the other ways out of sight on a cloud-hosted assistant", async () => {
     seededProviders = [provider()];
     seededCatalog = [
       catalogMatch({
@@ -887,7 +887,7 @@ describe("IntegrationsPage", () => {
   });
 
   test("sends a connect with no platform session to the login flow", async () => {
-    platformGate = "disabled";
+    cloudGate = "disabled";
     seededProviders = [provider()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
 
@@ -929,7 +929,7 @@ describe("IntegrationsPage", () => {
   });
 
   test("MCP connections remain available without platform login", async () => {
-    platformGate = "disabled";
+    cloudGate = "disabled";
     seededServers = [server()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
     await screen.findByText("example-integration");
@@ -1104,7 +1104,7 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("disconnecting a managed account revokes it at the platform", async () => {
+  test("disconnecting a cloud account revokes it at the cloud", async () => {
     seededProviders = [provider()];
     seededConnections = [connection()];
     render(<IntegrationsPage />, { wrapper: Wrapper });

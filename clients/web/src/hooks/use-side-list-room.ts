@@ -49,7 +49,7 @@ export interface SideListRoom {
  * cheaper rung, but it cannot hand the boolean to the drawer's open state,
  * focus trap, and scroll lock. Two surfaces that substitute for each other are
  * one decision, so both read this instead of one hiding itself in CSS while the
- * other mirrors the threshold in JavaScript. See `docs/PLATFORM_ADAPTATION.md`.
+ * other mirrors the threshold in JavaScript. See `docs/CLOUD_ADAPTATION.md`.
  *
  * This is the window-size axis alone. Which overlay a trigger opens is the
  * pointer's question and is not asked here.

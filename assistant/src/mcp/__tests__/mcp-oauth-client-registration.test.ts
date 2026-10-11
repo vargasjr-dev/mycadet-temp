@@ -24,7 +24,7 @@ const CLIENT_METADATA_URL = `${PUBLIC_BASE_URL}/oauth/client-metadata.json`;
 let resolvedCallbackUrl = CALLBACK_URL;
 let publicBaseUrl: string | undefined = PUBLIC_BASE_URL;
 
-mock.module("../../inbound/platform-callback-registration.js", () => ({
+mock.module("../../inbound/cloud-callback-registration.js", () => ({
   resolveCallbackUrl: async () => resolvedCallbackUrl,
 }));
 
@@ -247,7 +247,7 @@ describe("McpOAuthProvider client metadata", () => {
     expect(provider.clientMetadataUrl).toBe(CLIENT_METADATA_URL);
   });
 
-  test("preserves DCR fallback for a platform-relayed callback", async () => {
+  test("preserves DCR fallback for a cloud-relayed callback", async () => {
     const provider = newProvider();
 
     await provider.startCallbackServer();

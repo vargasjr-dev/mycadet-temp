@@ -128,32 +128,6 @@
     "typePreview": "Preview",
     "typeScheduled": "Scheduled"
   },
-  "assistantLifecyclePanel": {
-    "allAssistantsSubtitle": "{count, plural, one {# assistant found.} other {# assistants found.}}",
-    "allAssistantsTitle": "All Assistants",
-    "assistantId": "Assistant ID",
-    "created": "Created",
-    "current": "Current",
-    "hatch": "Hatch",
-    "hatchConfirmMessage": "Are you sure you want to create a new assistant? This will provision new infrastructure.",
-    "hatchConfirmTitle": "Hatch New Assistant",
-    "hatchDescription": "Provision a new assistant. This may take a moment.",
-    "hatchExistingToast": "You already have an assistant. Nothing new was created.",
-    "hatchFailedToast": "Failed to hatch assistant.",
-    "hatchSubtitle": "Create a new assistant instance.",
-    "hatchSuccessToast": "New assistant hatched successfully.",
-    "hatchTitle": "Hatch New Assistant",
-    "infoEmpty": "No assistant found. Hatch an assistant to get started.",
-    "infoLoading": "Loading assistant info...",
-    "infoSubtitle": "Current assistant details.",
-    "infoTitle": "Assistant Info",
-    "lastModified": "Last Modified",
-    "machineId": "Machine ID",
-    "name": "Name",
-    "status": "Status",
-    "unnamed": "Unnamed",
-    "version": "Version"
-  },
   "assistantPicker": {
     "active": "Active",
     "subtitle": "Choose which assistant is active for this account.",
@@ -613,7 +587,7 @@
     "searchPlaceholder": "Search credentials",
     "segmentManaged": "Managed",
     "segmentYourOwn": "Your own",
-    "subtitleManaged": "Provided through your Cadet-managed integrations. These are read-only here.",
+    "subtitleManaged": "Provided through your Cadet Cloud integrations. These are read-only here.",
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
   },
@@ -721,7 +695,6 @@
   "developerPage": {
     "sectionsAriaLabel": "Developer sections",
     "tabFeatureFlags": "Feature Flags",
-    "tabLifecycle": "Assistant Lifecycle",
     "tabMemory": "Memory"
   },
   "doctorChatBlocks": {
@@ -1736,7 +1709,7 @@
     "localTag": "Local",
     "localTagTitle": "Runs models on this machine.",
     "managedTag": "Managed",
-    "managedTagTitle": "Runs on Cadet's managed credentials.",
+    "managedTagTitle": "Runs on Cadet's cloud credentials.",
     "openProviderAriaLabel": "Open provider {displayName}",
     "setAsDefault": "Set as default"
   },
@@ -1961,7 +1934,7 @@
     "dockerDescriptionLinux": "Run your assistant in a Docker container on this computer.",
     "dockerDescriptionMacos": "Run your assistant in a Docker container on this Mac.",
     "dockerDescriptionWindows": "Run your assistant in a Docker container on this PC.",
-    "existingPlatformAssistant": "You already have a platform assistant “{id}”. Retire it first, then retry the teleport.",
+    "existingCloudAssistant": "You already have a cloud assistant “{id}”. Retire it first, then retry the teleport.",
     "exportTimedOut": "Export timed out.",
     "importFailed": "Import failed.",
     "importFailedHttp": "Import failed (HTTP {status}).",

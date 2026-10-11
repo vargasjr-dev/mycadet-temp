@@ -17,7 +17,7 @@ export interface LocalEndpointConfig {
   lockfilePaths: string[];
   configDir: string;
   webUrl: string;
-  platformUrl: string;
+  cloudUrl: string;
 }
 
 /**
@@ -36,7 +36,7 @@ export function resolveLocalConfigFromEnv(
     lockfilePaths: resolveLockfilePaths(env, options),
     configDir: resolveConfigDir(env, options),
     webUrl: env.CADET_WEB_URL || seed.webUrl,
-    platformUrl: env.CADET_PLATFORM_URL || seed.platformUrl,
+    cloudUrl: env.CADET_CLOUD_URL || seed.cloudUrl,
   };
 }
 

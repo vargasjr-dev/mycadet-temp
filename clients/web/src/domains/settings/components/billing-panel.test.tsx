@@ -116,13 +116,13 @@ describe("BillingPanel balance tile", () => {
     expect(getByTestId("effective-balance").textContent).toBe("$0");
   });
 
-  test("a platform reporting no grant figure keeps today's number", () => {
+  test("a cloud reporting no grant figure keeps today's number", () => {
     const { getByTestId } = renderPanel(summary());
 
     expect(getByTestId("effective-balance").textContent).toBe("$34.65");
   });
 
-  test("a platform reporting no grant figure keeps the negative rendering", () => {
+  test("a cloud reporting no grant figure keeps the negative rendering", () => {
     const { getByTestId } = renderPanel(
       summary({ effective_balance: "-2.50" }),
     );

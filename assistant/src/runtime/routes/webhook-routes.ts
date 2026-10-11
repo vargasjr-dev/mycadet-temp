@@ -6,7 +6,7 @@
  *     for a webhook type. See `handleWebhooksRegister` for the resolution
  *     order.
  *   - webhooks_list (GET webhooks): List all webhook callback routes registered
- *     with the platform for this assistant.
+ *     with the cloud for this assistant.
  */
 
 import { z } from "zod";
@@ -16,8 +16,8 @@ import { getConfig } from "../../config/loader.js";
 import {
   registerCallbackRoute,
   registerLocalWebhookRoute,
-  resolvePlatformCallbackRegistrationContext,
-} from "../../inbound/platform-callback-registration.js";
+  resolveCloudCallbackRegistrationContext,
+} from "../../inbound/cloud-callback-registration.js";
 import { resolveClaimedPodWebhookUrl } from "../../inbound/pod-webhook-claim.js";
 import {
   getPublicBaseUrl,
@@ -83,7 +83,7 @@ function deriveWebhookPath(type: string): string {
 }
 
 /**
- * Register `webhookPath` with the platform gateway, mapping failures onto the
+ * Register `webhookPath` with the cloud gateway, mapping failures onto the
  * route error vocabulary.
  */
 async function registerWithPlatform(
@@ -112,8 +112,8 @@ async function registerWithPlatform(
  * Resolve a stable callback URL for a webhook type.
  *
  * Resolution order:
- *   1. **Platform pods** (`IS_PLATFORM`) with the `tunnel-webhooks` flag off
- *      always register with the platform gateway. With the flag on, the
+ *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
+ *      always register with the cloud gateway. With the flag on, the
  *      Tunnel-published `ingress.publicBaseUrl` wins and platform
  *      registration is the fallback for any failure to resolve it —
  *      including an explicit `ingress.enabled: false`, matching
@@ -127,12 +127,12 @@ async function registerWithPlatform(
  *   3. **Platform-connected assistants with no ingress** register with the
  *      platform gateway rather than failing. Connectivity is decided by
  *      credentials (platform base URL + assistant ID + assistant API key), not
- *      by `IS_PLATFORM`, which is only ever true on a platform pod.
+ *      by `IS_CLOUD`, which is only ever true on a cloud pod.
  *
  * Ingress deliberately precedes platform registration: any logged-in local
  * assistant holds cloud credentials (it needs them for the LLM proxy), so
  * treating credential presence as "managed" would silently reroute an
- * explicitly configured self-hosted webhook through the platform. The gateway's
+ * explicitly configured self-hosted webhook through the cloud. The gateway's
  * Telegram and email registrars order the same two tiers the same way.
  */
 async function handleWebhooksRegister(
@@ -186,9 +186,9 @@ async function handleWebhooksRegister(
     ingressError = err as Error;
   }
 
-  // No ingress configured. Fall back to the platform gateway when this
-  // assistant is connected to the platform.
-  const context = await resolvePlatformCallbackRegistrationContext();
+  // No ingress configured. Fall back to the cloud gateway when this
+  // assistant is connected to the cloud.
+  const context = await resolveCloudCallbackRegistrationContext();
   if (context.enabled) {
     return registerWithPlatform(webhookPath, type, sourceIdentifier);
   }
@@ -199,7 +199,7 @@ async function handleWebhooksRegister(
 async function handleWebhooksList(
   _args: RouteHandlerArgs,
 ): Promise<WebhooksListResponse> {
-  const context = await resolvePlatformCallbackRegistrationContext();
+  const context = await resolveCloudCallbackRegistrationContext();
 
   if (!context.cloudBaseUrl || !context.authHeader) {
     throw new UnprocessableEntityError(
@@ -258,7 +258,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Register a webhook callback URL",
     description:
-      "Resolves a stable callback URL for a webhook type. On platform-managed assistants, registers the route with the platform gateway. Otherwise uses the configured ingress.publicBaseUrl, falling back to the platform gateway when no ingress is configured and the assistant is connected to the platform.",
+      "Resolves a stable callback URL for a webhook type. On cloud assistants, registers the route with the cloud gateway. Otherwise uses the configured ingress.publicBaseUrl, falling back to the cloud gateway when no ingress is configured and the assistant is connected to the cloud.",
     tags: ["webhooks"],
     requestBody: WebhooksRegisterRequestSchema,
     responseBody: WebhooksRegisterResponseSchema,
@@ -274,7 +274,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "List registered webhook callback routes",
     description:
-      "Lists all webhook callback routes registered with the platform for this assistant.",
+      "Lists all webhook callback routes registered with the cloud for this assistant.",
     tags: ["webhooks"],
     responseBody: WebhooksListResponseSchema,
     handler: handleWebhooksList,

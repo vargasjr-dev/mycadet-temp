@@ -75,7 +75,7 @@ export interface IntegrationTileProps {
    * self-hosted assistant, where the choice between the provider's server,
    * Cadet's hosted sign-in, and your own OAuth app is a real one the user is
    * expected to make, so a caller reads it from
-   * `useActiveAssistantIsSelfHosted()` (`@/hooks/use-platform-gate`). With one
+   * `useActiveAssistantIsSelfHosted()` (`@/hooks/use-cloud-gate`). With one
    * method there is nothing to choose, so the button stays plain whatever
    * this says.
    */
@@ -116,7 +116,7 @@ export interface IntegrationTileProps {
  * have decided; on a phone it is worth less than knowing there is a sign-in
  * waiting for them in another tab.
  *
- * On a platform-hosted assistant the other ways to connect stay out of sight
+ * On a cloud-hosted assistant the other ways to connect stay out of sight
  * until the recommended one fails: offering the choice up front asks every
  * user to understand our plumbing to answer a question that answers itself
  * nearly every time. A self-hosted assistant sets `showAlternatives`, and the
@@ -155,7 +155,7 @@ export function IntegrationTile({
     return connectMethodMenuItems(methods, methodLabel, startMethod);
   }
 
-  // One button, whatever the assistant is signed in to. Without a platform
+  // One button, whatever the assistant is signed in to. Without a cloud
   // session the click goes to the login flow instead of to the provider,
   // rather than the tile spending a line of its own explaining that.
   const connectButton =
@@ -301,7 +301,7 @@ function FailureText({
  * still has that are not the one that just failed. It is a menu rather than a
  * row of buttons because a row of buttons is two more lines, and two more
  * lines on one tile is empty space on every tile in the row. With nothing
- * behind it the chevron is not drawn, so a managed sign-in that has nowhere
+ * behind it the chevron is not drawn, so a cloud sign-in that has nowhere
  * else to go keeps a plain square retry.
  */
 function RetryAction({

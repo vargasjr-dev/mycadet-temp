@@ -7,7 +7,7 @@ import * as switchServiceRuntime from "@/assistant/switch-service";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import {
   resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationPlatformId,
+  resolveAssistantNotificationCloudId,
 } from "@/hooks/use-assistant-avatar";
 import { __resetForTesting, subscribe } from "@/lib/event-bus";
 import { createNotificationIdentity } from "@/runtime/notification-avatar";
@@ -27,16 +27,16 @@ import {
 
 const ASSISTANT_A: ResolvedAssistant = {
   id: "assistant-a",
-  platformAssistantId: "123e4567-e89b-12d3-a456-426614174000",
+  cloudAssistantId: "123e4567-e89b-12d3-a456-426614174000",
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
 };
 const ASSISTANT_B: ResolvedAssistant = {
   id: "assistant-b",
-  platformAssistantId: "123e4567-e89b-12d3-a456-426614174001",
+  cloudAssistantId: "123e4567-e89b-12d3-a456-426614174001",
   isLocal: false,
-  isPlatformHosted: true,
+  isCloudHosted: true,
   isPaired: false,
 };
 
@@ -83,7 +83,7 @@ function platformIdentity(
     ? createNotificationIdentity(
         scopeId,
         assistant.id,
-        resolveAssistantNotificationPlatformId(assistant),
+        resolveAssistantNotificationCloudId(assistant),
       )
     : null;
   if (!identity) {
@@ -394,7 +394,7 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([{ threadId: "conv-cold" }]);
   });
 
-  test("waits for the platform organization owner before validating", async () => {
+  test("waits for the cloud organization owner before validating", async () => {
     const identity = platformIdentity(ASSISTANT_A);
     useOrganizationStore.setState({
       currentOrganizationId: null,
@@ -437,7 +437,7 @@ describe("useNotificationTapNavigation", () => {
       id: "local-a",
       runtimeUrl: "https://assistant.example.com",
       isLocal: true,
-      isPlatformHosted: false,
+      isCloudHosted: false,
       isPaired: false,
     };
     const scopeId = resolveAssistantAvatarOwnerScopeId(

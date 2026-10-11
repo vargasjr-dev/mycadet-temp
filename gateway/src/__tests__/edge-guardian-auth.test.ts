@@ -21,7 +21,7 @@ let mockPlatformUserIdUnreachable = false;
 mock.module("../credential-reader.js", () => ({
   readCredential: (key: string) => mockReadCredential(key),
 }));
-mock.module("../platform-user-id.js", () => ({
+mock.module("../cloud-user-id.js", () => ({
   readStoredCloudUserId: async () => {
     if (mockPlatformUserIdUnreachable) {
       return { userId: undefined, unreachable: true };
@@ -162,7 +162,7 @@ describe("requireEdgeGuardianAuth — platform header mode", () => {
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
 
-  test("uses platform header check when a platform bearer is also forwarded", async () => {
+  test("uses platform header check when a cloud bearer is also forwarded", async () => {
     mockReadCredential = mock(async () => PLATFORM_USER_ID);
     const { requireEdgeGuardianAuth } = makeMiddleware();
     const res = await requireEdgeGuardianAuth(

@@ -21,14 +21,14 @@ import { z } from "zod";
 import type { ClientOs } from "../channels/types.js";
 import { getDefaultPluginSkillRoots } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
-import { parseFrontmatterFields } from "../skills/frontmatter.js";
-import type { InlineCommandExpansion } from "../skills/inline-command-expansions.js";
-import { parseInlineCommandExpansions } from "../skills/inline-command-expansions.js";
 import {
   normalizeSkillPlatforms,
   SKILL_PLATFORM_VALUES,
   type SkillPlatform,
-} from "../skills/platform-compatibility.js";
+} from "../skills/cloud-compatibility.js";
+import { parseFrontmatterFields } from "../skills/frontmatter.js";
+import type { InlineCommandExpansion } from "../skills/inline-command-expansions.js";
+import { parseInlineCommandExpansions } from "../skills/inline-command-expansions.js";
 import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import type { OwnerInfo } from "../tools/types.js";

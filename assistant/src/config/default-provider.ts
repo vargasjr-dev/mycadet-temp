@@ -41,7 +41,7 @@ const StoredDefaultBlobSchema = z
  * `setDefaultProvider` persists into the blob. Kept separate from the stored
  * blob shape on purpose — the route rejects anything the matrix cannot
  * implement (a partial blob tolerates it and clamps at read), so a bogus
- * provider fails loudly here instead of silently resolving to the managed
+ * provider fails loudly here instead of silently resolving to the cloud
  * column.
  */
 export const DefaultProviderSelectionSchema = z.object({

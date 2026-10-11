@@ -3,7 +3,7 @@
  *
  * At the default ref, the catalog entry is resolved from the gated plugin
  * catalog (the same source search and install-by-name use): these tests run
- * with platform features disabled (`CADET_DISABLE_PLATFORM`) so the catalog is
+ * with platform features disabled (`CADET_DISABLE_CLOUD`) so the catalog is
  * the bundled manifest — real plugin names / pinned SHAs, zero network. An
  * explicit historical `ref` instead reads the GitHub `plugins/marketplace.json`
  * at that revision (a git lookup, matching pin history / inspect). GitHub is
@@ -15,7 +15,7 @@
  *   - directory listings (`/contents/<path>` → entry array or 404),
  *   - raw file downloads (a listing entry's `download_url`).
  *
- * A separate suite drives the platform-enabled path with a failing catalog
+ * A separate suite drives the cloud-enabled path with a failing catalog
  * fetch to prove the detail view degrades (local + repo fallback) on an outage.
  */
 
@@ -143,8 +143,8 @@ function sha16(buf: Buffer): string {
 }
 
 const ORIGINAL_ENV = {
-  IS_PLATFORM: process.env.IS_PLATFORM,
-  CADET_DISABLE_PLATFORM: process.env.CADET_DISABLE_PLATFORM,
+  IS_CLOUD: process.env.IS_CLOUD,
+  CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
 };
 
 function restoreEnv(): void {
@@ -163,8 +163,8 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    process.env.CADET_DISABLE_PLATFORM = "true";
-    delete process.env.IS_PLATFORM;
+    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.IS_CLOUD;
   });
 
   afterEach(() => {
@@ -729,7 +729,7 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
 });
 
 describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
-  // A fetch that always rejects — the platform catalog fetch fails, and no
+  // A fetch that always rejects — the cloud catalog fetch fails, and no
   // GitHub enrichment should be attempted for the degraded cases below.
   const failingFetch = (async () => {
     throw new Error("network down");
@@ -738,8 +738,8 @@ describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    delete process.env.IS_PLATFORM;
-    delete process.env.CADET_DISABLE_PLATFORM;
+    delete process.env.IS_CLOUD;
+    delete process.env.CADET_DISABLE_CLOUD;
   });
 
   afterEach(() => {
@@ -801,7 +801,7 @@ describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
   }
 
   test("404s a not-installed plugin whose only catalog row has a malformed source", async () => {
-    // GIVEN a platform catalog row pinned to a mutable ref (not a full SHA) —
+    // GIVEN a cloud catalog row pinned to a mutable ref (not a full SHA) —
     // platform rows are not source-validated, so this reaches the detail view;
     // install-by-name would refuse it
     const fetch = platformCatalogFetch({

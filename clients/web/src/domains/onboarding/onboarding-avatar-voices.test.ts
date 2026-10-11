@@ -1,6 +1,6 @@
 /**
  * Tests for the avatar→voice pairing. The pairing is a *preference* resolved
- * against whatever the platform actually serves, so what needs guarding is the
+ * against whatever the cloud actually serves, so what needs guarding is the
  * degradation: a delisted voice must cost the pairing, not the audition.
  */
 
@@ -11,9 +11,9 @@ import {
   AVATAR_VOICE_MODELS,
   resolveAvatarVoice,
 } from "@/domains/onboarding/onboarding-avatar-voices";
-import { type ManagedVoiceOption } from "@/lib/tts/use-managed-voices";
+import { type CloudVoiceOption } from "@/lib/tts/use-cloud-voices";
 
-function voice(model: string): ManagedVoiceOption {
+function voice(model: string): CloudVoiceOption {
   return {
     model,
     label: model,

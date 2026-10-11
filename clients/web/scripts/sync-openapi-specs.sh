@@ -7,7 +7,7 @@ set -euo pipefail
 # anyone — including open-source contributors — can run `bun run openapi-ts`
 # without access to the private platform repo.
 #
-# Cadet developers: run this script after the platform repo regenerates
+# Cadet developers: run this script after the cloud repo regenerates
 # its specs to update the committed copies here.
 #
 # Usage:

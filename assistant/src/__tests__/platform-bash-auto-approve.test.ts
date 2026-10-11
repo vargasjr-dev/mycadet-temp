@@ -1,8 +1,8 @@
 /**
- * Tests for platform-hosted bash auto-approval.
+ * Tests for cloud-hosted bash auto-approval.
  *
  * Verifies that bash and host_bash tools are auto-approved without prompting
- * when running in platform-hosted mode (IS_PLATFORM=true) for guardian actors.
+ * when running in cloud-hosted mode (IS_CLOUD=true) for guardian actors.
  * Also verifies that deny rules, non-guardian actors, requireFreshApproval,
  * and non-bash tools are unaffected by this auto-approval path.
  */
@@ -126,7 +126,7 @@ afterAll(() => {
 // Platform-hosted bash auto-approval
 // ---------------------------------------------------------------------------
 
-describe("platform-hosted bash auto-approval", () => {
+describe("cloud-hosted bash auto-approval", () => {
   beforeEach(() => {
     fakeToolResult = { content: "ok", isError: false };
     checkResultOverride = undefined;
@@ -136,7 +136,7 @@ describe("platform-hosted bash auto-approval", () => {
 
   afterEach(() => {});
 
-  test("bash auto-approved in platform-hosted mode", async () => {
+  test("bash auto-approved in cloud-hosted mode", async () => {
     checkResultOverride = { decision: "prompt", reason: "Needs approval" };
 
     let promptCalled = false;
@@ -161,7 +161,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(result.isError).toBe(false);
   });
 
-  test("host_bash NOT auto-approved in platform-hosted mode", async () => {
+  test("host_bash NOT auto-approved in cloud-hosted mode", async () => {
     checkResultOverride = { decision: "prompt", reason: "Needs approval" };
 
     let promptCalled = false;
@@ -185,7 +185,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(promptCalled).toBe(true);
   });
 
-  test("bash NOT auto-approved when not platform-hosted", async () => {
+  test("bash NOT auto-approved when not cloud-hosted", async () => {
     checkResultOverride = { decision: "prompt", reason: "Needs approval" };
 
     let promptCalled = false;
@@ -213,7 +213,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(promptCalled).toBe(true);
   });
 
-  test("bash NOT auto-approved for non-guardian actors via platform path (trusted_contact requires grant)", async () => {
+  test("bash NOT auto-approved for non-guardian actors via cloud path (trusted_contact requires grant)", async () => {
     checkResultOverride = { decision: "prompt", reason: "Needs approval" };
 
     const trackingPrompter = {
@@ -270,7 +270,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(promptCalled).toBe(true);
   });
 
-  test("deny rules still respected in platform-hosted mode", async () => {
+  test("deny rules still respected in cloud-hosted mode", async () => {
     checkResultOverride = { decision: "deny", reason: "Explicitly denied" };
 
     const executor = new ToolExecutor(makePrompter());
@@ -288,7 +288,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(result.content).toContain("Explicitly denied");
   });
 
-  test("high-risk bash auto-approved in platform-hosted mode", async () => {
+  test("high-risk bash auto-approved in cloud-hosted mode", async () => {
     riskOverride = "high";
     checkResultOverride = { decision: "prompt", reason: "High risk command" };
 
@@ -314,7 +314,7 @@ describe("platform-hosted bash auto-approval", () => {
     expect(result.isError).toBe(false);
   });
 
-  test("non-bash tools NOT auto-approved in platform-hosted mode", async () => {
+  test("non-bash tools NOT auto-approved in cloud-hosted mode", async () => {
     checkResultOverride = { decision: "prompt", reason: "Needs approval" };
 
     let promptCalled = false;

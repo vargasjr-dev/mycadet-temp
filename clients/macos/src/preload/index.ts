@@ -371,9 +371,9 @@ const bridge: CadetBridge = {
   downloads: createDownloadsBridge(ipcRenderer),
   localMode: createLocalModeBridge(ipcRenderer),
   menu: {
-    setPlatformSession: (has: boolean): Promise<void> =>
+    setCloudSession: (has: boolean): Promise<void> =>
       ipcRenderer.invoke(
-        "cadet:menu:setPlatformSession",
+        "cadet:menu:setCloudSession",
         has,
       ) as Promise<void>,
   },
@@ -758,8 +758,8 @@ contextBridge.exposeInMainWorld("cadet", bridge);
 
 const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
-  platformUrl: string;
-  disablePlatform?: boolean;
+  cloudUrl: string;
+  disableCloud?: boolean;
   deviceId: string | null;
 } | null;
 if (cadetConfig) {

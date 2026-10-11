@@ -37,7 +37,7 @@ import {
   isLocalBuildRef,
   loadImageViaHost,
 } from "./host-image-loader.js";
-import { resolveOwnImageRefs } from "./platform-releases.js";
+import { resolveOwnImageRefs } from "./cloud-releases.js";
 import { isDevVersion } from "./version-compat.js";
 import {
   configureHatchProviderApiKey,
@@ -1541,9 +1541,9 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       : ownSecret;
 
     emitProgress(4, 6, "Starting containers...");
-    if (flagEnvVars.CADET_DISABLE_PLATFORM) {
-      extraAssistantEnv.CADET_DISABLE_PLATFORM =
-        flagEnvVars.CADET_DISABLE_PLATFORM;
+    if (flagEnvVars.CADET_DISABLE_CLOUD) {
+      extraAssistantEnv.CADET_DISABLE_CLOUD =
+        flagEnvVars.CADET_DISABLE_CLOUD;
     }
     const hostDeviceId = getOrCreateHostDeviceId();
     extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;

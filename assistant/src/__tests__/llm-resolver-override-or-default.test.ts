@@ -250,7 +250,7 @@ describe("shipped call-site tuning", () => {
     expect(resolved.model).not.toBe("jev-latest");
   });
 
-  test("a BYOK Jev call-site override replaces the managed default", () => {
+  test("a BYOK Jev call-site override replaces the cloud default", () => {
     const llm = LLMSchema.parse({
       ...anthropicDp,
       profiles: {
@@ -438,7 +438,7 @@ describe("composition", () => {
     expect(resolved.provider_connection).toBeUndefined();
   });
 
-  test("a provider-pinning tweak over the cadet default keeps the managed routing", () => {
+  test("a provider-pinning tweak over the cadet default keeps the cloud routing", () => {
     const llm = LLMSchema.parse({
       callSites: {
         conversationSummarization: {
@@ -452,7 +452,7 @@ describe("composition", () => {
     });
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     // The tweak wins the fields it sets; the identity winner contributes its
-    // routing through the provider-agnostic managed connection.
+    // routing through the provider-agnostic cloud connection.
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.model).toBe("claude-opus-4-6");
     expect(resolved.provider_connection).toBe("cadet");

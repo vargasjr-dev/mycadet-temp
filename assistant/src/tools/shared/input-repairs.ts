@@ -16,8 +16,8 @@
  * states.
  *
  * Rules describe the first-party tools that ship in `bundled-skills/`, and
- * tool names are not reserved: a managed, workspace, extra, or plugin skill
- * may define its own `scaffold_managed_skill` with a different contract. The
+ * tool names are not reserved: a cloud, workspace, extra, or plugin skill
+ * may define its own `scaffold_cloud_skill` with a different contract. The
  * `bundled` prefix on the export is the reminder that callers must establish
  * bundled provenance before applying a repair.
  */
@@ -30,7 +30,7 @@ interface ToolInputRepairRules {
    *
    * Each entry is a name the prose around the tool uses for a parameter the
    * schema declares under a different one, and models follow prose over
-   * schema. `scaffold_managed_skill` declares `body_markdown` while the
+   * schema. `scaffold_cloud_skill` declares `body_markdown` while the
    * skill-authoring prose talks throughout about writing "the body"; the
    * retrospective prompt tells the model to call `find_similar_skills` with a
    * short description, which the schema declares as `goal`.
@@ -44,7 +44,7 @@ interface ToolInputRepairRules {
 }
 
 const REPAIR_RULES: Readonly<Record<string, ToolInputRepairRules>> = {
-  scaffold_managed_skill: {
+  scaffold_cloud_skill: {
     aliases: {
       body: "body_markdown",
       content: "body_markdown",

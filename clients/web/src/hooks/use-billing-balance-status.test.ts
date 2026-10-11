@@ -1,7 +1,7 @@
 /**
  * Tests for `useBillingBalanceStatus`. The generated billing-summary query
  * options are `mock.module`-replaced so the hook reads a seeded fixture and
- * its fetches can be counted; the platform-gate and org-ready hooks are
+ * its fetches can be counted; the cloud-gate and org-ready hooks are
  * mocked so each gating leg can be flipped independently. The QueryClient
  * uses `staleTime/gcTime: Infinity` + `retry: false` so a seeded cache
  * resolves synchronously and an unseeded query stays unresolved (its
@@ -13,7 +13,7 @@ import { act, renderHook } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type { BillingSummaryResponse } from "@/generated/api/types.gen";
-import type { PlatformGateState } from "@/hooks/use-platform-gate";
+import type { CloudGateState } from "@/hooks/use-cloud-gate";
 
 // Sentinel query key shared by the mocked options and the seeded cache.
 const BILLING_SUMMARY_KEY = ["billing-summary"];
@@ -25,8 +25,8 @@ let summaryFetches = 0;
 // When true, the query never resolves, modeling the first load still in flight.
 let summaryHangs = false;
 // Drive the mocked gating hooks; the hook folds all three into `enabled`.
-let platformGate: PlatformGateState = "full";
-let isPlatformHosted = true;
+let cloudGate: CloudGateState = "full";
+let isCloudHosted = true;
 let orgReady = true;
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
@@ -42,9 +42,9 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
   organizationsBillingSummaryRetrieveQueryKey: () => BILLING_SUMMARY_KEY,
 }));
 
-mock.module("@/hooks/use-platform-gate", () => ({
-  usePlatformGate: () => platformGate,
-  useActiveAssistantIsPlatformHosted: () => isPlatformHosted,
+mock.module("@/hooks/use-cloud-gate", () => ({
+  useCloudGate: () => cloudGate,
+  useActiveAssistantIsCloudHosted: () => isCloudHosted,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -142,8 +142,8 @@ describe("useBillingBalanceStatus", () => {
     summaryFetches = 0;
     summaryHangs = false;
     summaryFixture = summary();
-    platformGate = "full";
-    isPlatformHosted = true;
+    cloudGate = "full";
+    isCloudHosted = true;
     orgReady = true;
     byokSuppression = false;
     byokGateCandidates = [];
@@ -184,7 +184,7 @@ describe("useBillingBalanceStatus", () => {
     expect(result.current.totalUsageBalance).toBe("5.00");
   });
 
-  test("usage grants: a platform reporting neither reads as unknown", () => {
+  test("usage grants: a cloud reporting neither reads as unknown", () => {
     // An older self-hosted platform omits both fields, which has to read as
     // "no grant information" rather than a zeroed one.
     const { result } = setup({ seed: summary() });
@@ -306,7 +306,7 @@ describe("useBillingBalanceStatus", () => {
       seed: summary({ ...reached, effective_balance: "12.00" }),
     });
     expect(frozenOnly.result.current.freeTierDailyLimitBlocked).toBe(true);
-    // $8 bought on top of the $12 grant: the platform keeps admitting sends.
+    // $8 bought on top of the $12 grant: the cloud keeps admitting sends.
     const withExtra = setup({
       seed: summary({ ...reached, effective_balance: "20.00" }),
     });
@@ -370,7 +370,7 @@ describe("useBillingBalanceStatus", () => {
   test("a gated-off hook never raises the daily-limit banner", () => {
     // Cached summary, gated-off query: the inert status keeps the banner down
     // for self-hosted and org-not-ready contexts.
-    isPlatformHosted = false;
+    isCloudHosted = false;
     const { result } = setup({ seed: summary({ daily_limit_reached: true }) });
     expect(result.current.dailyLimitReached).toBe(false);
     expect(
@@ -440,21 +440,21 @@ describe("useBillingBalanceStatus", () => {
 
   test.each([
     [
-      "the platform gate is not full",
+      "the cloud gate is not full",
       () => {
-        platformGate = "gated";
+        cloudGate = "gated";
       },
     ],
     [
-      "the platform gate is disabled",
+      "the cloud gate is disabled",
       () => {
-        platformGate = "disabled";
+        cloudGate = "disabled";
       },
     ],
     [
-      "the assistant is not platform-hosted",
+      "the assistant is not cloud-hosted",
       () => {
-        isPlatformHosted = false;
+        isCloudHosted = false;
       },
     ],
     [
@@ -538,7 +538,7 @@ describe("useBillingBalanceStatus", () => {
   test("stays inert on cached data when gated off", () => {
     // Even with a seeded (stale) summary in the cache, a gated-off hook must
     // not surface it: unknown/ineligible state never flashes a billing card.
-    isPlatformHosted = false;
+    isCloudHosted = false;
     const { result } = setup({
       seed: summary({ effective_balance: "0.00", low_balance_warning: true }),
     });

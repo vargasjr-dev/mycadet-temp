@@ -55,8 +55,8 @@ export type SttProviderId =
   | "xai"
   | "cadet"
   /**
-   * Managed Flux: the same conversational model as `deepgram-flux`, reached
-   * through the platform's speech relay instead of a Deepgram key. Dials the
+   * Cloud Flux: the same conversational model as `deepgram-flux`, reached
+   * through the cloud's speech relay instead of a Deepgram key. Dials the
    * relay's STT v2 endpoint asking for native Flux frames, so it keeps the
    * turn events the relay's default v1-shaped translation drops.
    */
@@ -208,7 +208,7 @@ export class SttError extends Error {
   /**
    * When true, {@link message} is already user-facing, provider-appropriate
    * copy and must be surfaced verbatim rather than rewritten by
-   * `describeSttFailure`. Set by adapters (e.g. managed speech) whose failures
+   * `describeSttFailure`. Set by adapters (e.g. cloud speech) whose failures
    * carry specific remediation — a credit top-up or platform reconnect — that
    * the generic BYOK "check your API key" copy would erase.
    */

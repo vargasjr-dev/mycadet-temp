@@ -91,7 +91,7 @@ const AuthConfigurationSchema = z.object({
 export type AuthConfiguration = z.infer<typeof AuthConfigurationSchema>;
 
 /**
- * The allauth configuration the platform exposes to its frontends. Public: no
+ * The allauth configuration the cloud exposes to its frontends. Public: no
  * session needed. A payload missing the consumed fields is an error result,
  * never a partial success.
  */

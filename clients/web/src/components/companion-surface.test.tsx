@@ -140,7 +140,7 @@ describe("the creature carrying the state", () => {
  * The avatar is the surface's drag handle, and it renders as one of two very
  * different things: a composed creature of SVG and divs, or a bare `<img>` for
  * a custom uploaded avatar. Only the image is natively draggable, so only the
- * image can hand the press to the platform's own HTML5 drag and starve the
+ * image can hand the press to the cloud's own HTML5 drag and starve the
  * surface of the `mousemove` stream its drag runs on.
  *
  * jsdom implements no native image drag, so what a test can hold is the opt

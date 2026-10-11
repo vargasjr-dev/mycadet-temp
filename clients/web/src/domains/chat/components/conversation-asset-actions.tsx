@@ -23,7 +23,7 @@ import type { DocumentSummary } from "@/types/document-types";
  * The options menu ("dots") the Chat Info panel's app and file tiles reveal
  * over their preview: an `Ellipsis` button opening an `ActionMenu`, which
  * resolves to a sheet on touch and a dropdown under a pointer (see
- * `docs/PLATFORM_ADAPTATION.md`).
+ * `docs/CLOUD_ADAPTATION.md`).
  *
  * Apps get the gallery's actions (Pin / Share / Delete). Documents get
  * Open / Download PDF: the daemon has no document-delete endpoint, so

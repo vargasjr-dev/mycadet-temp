@@ -12,9 +12,9 @@ const log = getLogger("gateway-flag-listener");
 
 /**
  * Refresh the flag-overrides cache from the gateway, then reconcile the
- * flag-gated managed profile (OS Beta). Both the `feature_flags_changed` event
+ * flag-gated cloud profile (OS Beta). Both the `feature_flags_changed` event
  * and a reconnect refresh the cache; `reconcileFlagGatedProfiles` then adds or
- * removes the managed profile and, when it reports a change, a `config_changed`
+ * removes the cloud profile and, when it reports a change, a `config_changed`
  * broadcast refreshes the profile picker on clients. The reconcile runs only
  * when the refresh confirmed flags loaded from the gateway — a transient IPC
  * failure leaves the cache unset and resolves `os-beta` to its registry default
@@ -109,7 +109,7 @@ function connectToGateway(): void {
     currentBackoffMs = INITIAL_BACKOFF_MS;
     socket = conn;
     // A reconnect may have missed a flag flip while disconnected, so reconcile
-    // the managed profile too — not just the cache.
+    // the cloud profile too — not just the cache.
     refreshFlagsAndReconcileProfiles("reconnect");
   });
 

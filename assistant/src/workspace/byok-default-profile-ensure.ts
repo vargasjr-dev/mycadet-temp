@@ -90,7 +90,7 @@ type HatchEraProfileKey = (typeof HATCH_ERA_PROFILE_KEYS)[number];
  * carried off a retired copy by this pass) is user overlay state and stays.
  * The carry arm below never writes the frozen label, so a match is always
  * hatch-written modulo the status toggle. A managed-source entry with any
- * other key (a platform overlay body) is not a stub and is likewise left
+ * other key (a cloud overlay body) is not a stub and is likewise left
  * alone.
  */
 const STUB_ONLY_KEYS = new Set(["source", "status", "label", "thinking"]);
@@ -101,7 +101,7 @@ const HATCH_STUB_LABELS: Record<HatchEraProfileKey, string> = {
 };
 
 /**
- * Migration 097 and `repairAdaptiveThinkingOnManagedProfiles` stamp exactly
+ * Migration 097 and `repairAdaptiveThinkingOnCloudProfiles` stamp exactly
  * this `thinking` value onto managed anthropic-backed entries, hatch stubs
  * included, so live stubs commonly carry it (confirmed on real workspaces).
  * A stub's `thinking` must equal this frozen shape byte-for-byte to count as
@@ -162,7 +162,7 @@ function foldPersonalEntryName(provider: string): string {
  * copies, verified against `providers/model-intents.ts` git history. Hatch
  * seeding materializes a copy's model exactly once (`custom-*` seeding began
  * 2026-05-05, #29755), and the profile-model migrations (100, 103, 109, 113,
- * 123) deliberately rewrite only the managed default entries (`custom-*` is
+ * 123) deliberately rewrite only the cloud default entries (`custom-*` is
  * the user's to manage), so an untouched copy still carries whichever value
  * its hatch-era intent resolved to. Migrations 136 and 146 are the
  * exceptions: they rewrite stale Fireworks pins (`custom-*` included) in
@@ -275,7 +275,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
     return;
   }
   // The selection lives in the `llm.default` blob; a value the matrix
-  // cannot implement reads as the managed column and converts nothing.
+  // cannot implement reads as the cloud column and converts nothing.
   const blob = RawDefaultSelectionSchema.parse(llm.default);
   const defaultProvider = blob.provider;
   if (defaultProvider == null || !isDefaultProviderChoice(defaultProvider)) {
@@ -620,7 +620,7 @@ function repointRetiredReferences(
 }
 
 /**
- * Advisor fallback order, mirroring the managed list `seedInferenceProfiles`
+ * Advisor fallback order, mirroring the cloud list `seedInferenceProfiles`
  * repairs from.
  */
 const ADVISOR_FALLBACK_ORDER = [

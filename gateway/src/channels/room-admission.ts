@@ -14,11 +14,11 @@
  * admits is a chat, not a person: who may be answered there is the
  * trust-class admission floor's decision downstream.
  *
- * The candidate is neutral on purpose. How a platform proves "direct" (Discord
+ * The candidate is neutral on purpose. How a cloud proves "direct" (Discord
  * by the absence of a guild, Telegram by `chat.type`) and "addressed" (a
  * mentions array, text entities, a reply to the bot's post) is the adapter's
  * side of the seam, built in `discord/admit.ts` and `telegram/admit.ts`. This
- * module never reads a platform field.
+ * module never reads a cloud field.
  */
 
 import type { AdmissionDropLogLevel } from "./admission-drop-log.js";

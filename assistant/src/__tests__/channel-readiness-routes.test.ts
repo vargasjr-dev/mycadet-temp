@@ -108,7 +108,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
       expect(ingressCheck!.passed).toBe(false);
     });
 
-    test("ready when the platform reports a registered inbox", async () => {
+    test("ready when the cloud reports a registered inbox", async () => {
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,
@@ -125,7 +125,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
     });
 
     test("platform registration decides the check; local config cannot", async () => {
-      // Registration lives on the platform. A stray local `email.address`
+      // Registration lives on the cloud. A stray local `email.address`
       // config value (a key nothing writes) must not make an unregistered
       // inbox pass.
       setConfig("ingress", {
@@ -143,7 +143,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
       );
     });
 
-    test("not ready when the platform reports no inbox (remote check)", async () => {
+    test("not ready when the cloud reports no inbox (remote check)", async () => {
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,
@@ -186,7 +186,7 @@ describe("channel readiness routes — email and WhatsApp probes", () => {
       expect(snapshot.reasons).toHaveLength(0);
     });
 
-    test("a your-own credential decides even when the platform is unreachable", async () => {
+    test("a your-own credential decides even when the cloud is unreachable", async () => {
       setConfig("ingress", {
         publicBaseUrl: "https://example.com",
         enabled: true,

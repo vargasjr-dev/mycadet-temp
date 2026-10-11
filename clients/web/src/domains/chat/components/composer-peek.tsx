@@ -180,7 +180,7 @@ export function ComposerPeek({
   const nativeMobile = useIsNativeMobile();
   // The window-size axis, for the banner rule below: it is a question of the
   // room left over the card, and the settings row that competes for the same
-  // strip is gated the same way. See `docs/PLATFORM_ADAPTATION.md`.
+  // strip is gated the same way. See `docs/CLOUD_ADAPTATION.md`.
   const isMobile = useIsMobile();
   const [rect, setRect] = useState<TargetRect | null>(null);
   const [mode, setMode] = useState<Mode>("rest");

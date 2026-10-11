@@ -1,7 +1,7 @@
 /**
  * Slack messaging provider adapter.
  *
- * Maps Slack API responses to the platform-agnostic messaging types and
+ * Maps Slack API responses to the cloud-agnostic messaging types and
  * implements the MessagingProvider interface.
  */
 

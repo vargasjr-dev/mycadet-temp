@@ -96,7 +96,7 @@ function makeConsent(overrides: Partial<UserConsent> = {}): UserConsent {
     ...overrides,
   };
   // Mirror the wire contract unless a test overrides the effective fields
-  // directly: the platform computes effective = value ?? true (opt-out).
+  // directly: the cloud computes effective = value ?? true (opt-out).
   return {
     ...base,
     share_analytics_effective:
@@ -266,7 +266,7 @@ describe("resolveServerConsent", () => {
   });
 
   test("effective fields win over the raw values when they disagree", () => {
-    // The platform owns the effective computation; the resolver must not
+    // The cloud owns the effective computation; the resolver must not
     // re-derive it from the raw value when the server sent one.
     const r = resolveServerConsent(
       makeConsent({
@@ -704,7 +704,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: true,
       shareDiagnostics: false,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     expect(patchConsentMock).toHaveBeenCalledTimes(1);
     const body = patchConsentMock.mock.calls[0][0];
@@ -723,7 +723,7 @@ describe("saveConsent", () => {
       privacy: false,
       shareAnalytics: true,
       shareDiagnostics: true,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect(body.tos_accepted_version).toBe(TOS_CONSENT_VERSION);
@@ -739,7 +739,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: true,
       shareDiagnostics: true,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect(body.tos_accepted_version).toBe("");
@@ -754,7 +754,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: true,
       shareDiagnostics: true,
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(storeState.setAnalyticsConsentCurrent).toHaveBeenCalledWith(true);
     expect(storeState.setDiagnosticsConsentCurrent).toHaveBeenCalledWith(true);
@@ -772,7 +772,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: true,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect("share_analytics" in body).toBe(false);
@@ -797,7 +797,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: null,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect("share_diagnostics" in body).toBe(false);
@@ -822,7 +822,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: true,
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(setDeviceBoolMock).toHaveBeenCalledWith(
       "diagnosticsReporting",
@@ -837,7 +837,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: false,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     expect(setDeviceBoolMock).toHaveBeenCalledWith(
       "diagnosticsReporting",
@@ -860,7 +860,7 @@ describe("saveConsent", () => {
       privacy: true,
       shareAnalytics: true,
       shareDiagnostics: true,
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(storeState.setConsentHydrated).toHaveBeenCalledWith(true);
   });
@@ -870,7 +870,7 @@ describe("savePreferenceToggle", () => {
   test("stamps the analytics version server-side and sets its flag only (no device ack)", () => {
     savePreferenceToggle("share_analytics", true, {
       userId: "user-1",
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     expect(storeState.setShareAnalytics).toHaveBeenCalledWith(true);
     expect(storeState.setAnalyticsConsentCurrent).toHaveBeenCalledWith(true);
@@ -888,7 +888,7 @@ describe("savePreferenceToggle", () => {
   test("stamps the diagnostics version and sets its flag only", () => {
     savePreferenceToggle("share_diagnostics", false, {
       userId: "user-1",
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     expect(storeState.setDiagnosticsConsentCurrent).toHaveBeenCalledWith(true);
     expect(storeState.setAnalyticsConsentCurrent).not.toHaveBeenCalled();
@@ -902,7 +902,7 @@ describe("savePreferenceToggle", () => {
   test("offline persists the on/off value but skips the currency stamp, ack key, and server patch", () => {
     savePreferenceToggle("share_analytics", true, {
       userId: "user-1",
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     // The chosen value is still recorded (the store setter persists the
     // device key)...
@@ -916,7 +916,7 @@ describe("savePreferenceToggle", () => {
   test("an offline diagnostics opt-out still closes the reporting gate (opt-out follows the preference)", () => {
     savePreferenceToggle("share_diagnostics", false, {
       userId: "user-1",
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(storeState.setShareDiagnostics).toHaveBeenCalledWith(false);
     expect(setDeviceBoolMock).toHaveBeenCalledWith(
@@ -930,7 +930,7 @@ describe("savePreferenceToggle", () => {
   test("an offline diagnostics opt-in opens the reporting gate", () => {
     savePreferenceToggle("share_diagnostics", true, {
       userId: "user-1",
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(setDeviceBoolMock).toHaveBeenCalledWith(
       "diagnosticsReporting",
@@ -1050,7 +1050,7 @@ describe("server-supplied required versions", () => {
       privacy: true,
       shareAnalytics: true,
       shareDiagnostics: true,
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect(body.tos_accepted_version).toBe(BUMPED_VERSION);
@@ -1089,7 +1089,7 @@ describe("server-supplied required versions", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: null,
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(localStorage.getItem(privacyPolicyAckKey("user-1"))).toBe(
       "2026-08-01",
@@ -1123,7 +1123,7 @@ describe("server-supplied required versions", () => {
       privacy: true,
       shareAnalytics: null,
       shareDiagnostics: true,
-      hasPlatformSession: false,
+      hasCloudSession: false,
     });
     expect(restoreConsentForUser("user-1")).toEqual({
       tos: true,
@@ -1149,7 +1149,7 @@ describe("server-supplied required versions", () => {
     resolveServerConsent(makeConsent({ required_versions: {} }));
     savePreferenceToggle("share_diagnostics", true, {
       userId: "user-1",
-      hasPlatformSession: true,
+      hasCloudSession: true,
     });
     const body = patchConsentMock.mock.calls[0][0];
     expect(body.share_diagnostics_accepted_version).toBe(

@@ -11,7 +11,7 @@ const log = getLogger("migrations/133-collapse-provider-connections");
 //
 // - `provider_connection: "cadet"` entries become `provider: "cadet"` (the
 //   routing identity) and lose the connection field — dispatch derives the
-//   managed upstream from the model.
+//   cloud upstream from the model.
 // - `provider_connection: "chatgpt-subscription"` entries become
 //   `provider: "chatgpt"` when their model is a Codex subscription model.
 // - The conventional `<provider>-personal` reference is dropped: the
@@ -178,7 +178,7 @@ export const collapseProviderConnectionsMigration: WorkspaceMigration = {
     // the field is stripped on read, so any raw value is dead weight the
     // resolver has never honored. It is deleted verbatim, never used as a
     // rewrite signal: flipping a call site's provider from a schema-dead
-    // "cadet" string would move a BYOK call site onto the managed route.
+    // "cadet" string would move a BYOK call site onto the cloud route.
     const callSites = readObject(llm.callSites);
     if (callSites !== null) {
       for (const key of Object.keys(callSites)) {
@@ -309,7 +309,7 @@ function rewriteEntry(entry: Record<string, unknown>, label: string): boolean {
  * Decode an encoded `<managed-provider>/<model>` routing string to its native
  * model id, or null when the value is not an encoded id for a known managed
  * model. Fireworks/together native ids contain slashes but their prefixes
- * ("accounts", "MiniMaxAI") are not managed provider names, so they pass
+ * ("accounts", "MiniMaxAI") are not cloud provider names, so they pass
  * through untouched.
  */
 function decodeRoutedModel(value: unknown): string | null {

@@ -2,17 +2,17 @@
  * The cloud leg of a live-voice session: minting a tunnel WS token and building
  * the URL it opens.
  *
- * A platform-hosted assistant is not reachable the way a local one is. Its
+ * A cloud-hosted assistant is not reachable the way a local one is. Its
  * gateway sits behind tunnel, tunnel performs no user authentication of its own,
  * and the gateway upstream accepts only an actor edge JWT or a tunnel
  * attestation. The CLI holds neither for a cloud instance: what it has is a
  * platform session token, which is the wrong credential for the socket but the
- * right one for the platform.
+ * right one for the cloud.
  *
  * So the connection is made in two hops, the same two the web voice room makes
  * (`clients/web/src/domains/chat/voice/live-voice/connection.ts`):
  *
- *  1. POST the platform for a short-lived, org+assistant-scoped WS token.
+ *  1. POST the cloud for a short-lived, org+assistant-scoped WS token.
  *  2. Open `wss://<tunnel>/<assistantId>/v1/live-voice?token=<wsToken>`.
  *
  * tunnel consumes the token on the upgrade and injects the authenticated user
@@ -30,9 +30,9 @@
 
 import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
-import { authHeaders } from "../platform-client.js";
+import { authHeaders } from "../cloud-client.js";
 
-/** Production tunnel, when the platform host implies nothing more specific. */
+/** Production tunnel, when the cloud host implies nothing more specific. */
 const DEFAULT_TUNNEL_HOST = "tunnel.mycadet.ai";
 
 /** Give up on the mint rather than hang the session behind a stalled platform. */
@@ -53,20 +53,20 @@ export class TunnelWsTokenError extends Error {
  *
  * `CADET_TUNNEL_HOST` wins when set, which is how a local `vel up` stack is
  * reached: its tunnel is a loopback port that no naming convention predicts.
- * Otherwise the deployment convention maps the platform host onto its sibling
+ * Otherwise the deployment convention maps the cloud host onto its sibling
  * (`cloud.mycadet.ai` to `tunnel.mycadet.ai`, `dev-cloud.mycadet.ai` to
  * `tunnel-dev.mycadet.ai`). A host outside that convention, including localhost,
  * yields the production default, because guessing a tunnel for it would be
  * worse than dialing the one host that certainly exists.
  */
-export function tunnelHostForPlatformUrl(platformUrl: string): string {
+export function tunnelHostForCloudUrl(cloudUrl: string): string {
   const override = process.env.CADET_TUNNEL_HOST?.trim();
   if (override) {
     return override;
   }
   try {
     return (
-      tunnelHostForPlatformHost(new URL(platformUrl).host) ??
+      tunnelHostForPlatformHost(new URL(cloudUrl).host) ??
       DEFAULT_TUNNEL_HOST
     );
   } catch {
@@ -106,11 +106,11 @@ export function tunnelWsScheme(host: string): "ws" | "wss" {
  * credential anywhere tunnel reads except the query string.
  */
 export function buildTunnelLiveVoiceUrl(args: {
-  platformUrl: string;
+  cloudUrl: string;
   assistantId: string;
   token: string;
 }): string {
-  const host = tunnelHostForPlatformUrl(args.platformUrl);
+  const host = tunnelHostForCloudUrl(args.cloudUrl);
   const url = new URL(
     `${tunnelWsScheme(host)}://${host}/${args.assistantId}/v1/live-voice`,
   );
@@ -131,22 +131,22 @@ interface LiveVoiceTokenResponse {
  * (`SessionAuthentication` and `XSessionTokenAuthentication`) and deliberately
  * excludes API-key auth, so `X-Session-Token` is the CLI's way in and a
  * `vak_` key is not: a caller holding only an API key cannot mint here, by
- * design on the platform's side.
+ * design on the cloud's side.
  *
  * Throws {@link TunnelWsTokenError} carrying the HTTP status, so the caller can
- * tell "sign in again" (401) from "not your assistant" (403) from a platform
+ * tell "sign in again" (401) from "not your assistant" (403) from a cloud
  * that is simply down.
  */
 export async function mintTunnelWsToken(args: {
-  platformUrl: string;
+  cloudUrl: string;
   assistantId: string;
   sessionToken: string;
 }): Promise<string> {
-  const url = `${args.platformUrl.replace(/\/+$/, "")}/v1/auth/live-voice-token/`;
+  const url = `${args.cloudUrl.replace(/\/+$/, "")}/v1/auth/live-voice-token/`;
   // `authHeaders` resolves `Cadet-Organization-Id`, which the endpoint needs
   // to scope the token, and which is cached per token so a session does not
   // pay for an extra round trip.
-  const headers = await authHeaders(args.sessionToken, args.platformUrl);
+  const headers = await authHeaders(args.sessionToken, args.cloudUrl);
 
   let response: Response;
   try {

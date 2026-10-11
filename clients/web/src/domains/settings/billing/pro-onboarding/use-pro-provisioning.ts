@@ -640,7 +640,7 @@ export function useProProvisioning({
       ? MACHINE_FLOOR_SIZE
       : null;
 
-  // The managed-email entitlement alone doesn't make the domain step offerable:
+  // The cloud-email entitlement alone doesn't make the domain step offerable:
   // the domain POST re-resolves the caller's primary assistant server-side and
   // rejects with 409 when there is none, so the payload must also name one. The
   // active-assistant fallback that resolves `assistantId` is deliberately not
@@ -764,7 +764,7 @@ export function useProProvisioning({
   }, [open, displayTargetsMet, assistantId]);
 
   // Pairs the same questions the state machine pairs globally, per dimension.
-  // Met-ness alone would not do: the platform persists the effective sizes at
+  // Met-ness alone would not do: the cloud persists the effective sizes at
   // resize acceptance, before the pod restarts, so a dimension reads met
   // mid-rollout. Nor would met-ness plus the marker, because the assistant and
   // status queries poll independently: in the window where the assistant poll

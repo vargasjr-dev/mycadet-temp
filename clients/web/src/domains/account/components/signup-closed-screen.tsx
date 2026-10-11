@@ -11,7 +11,7 @@ interface SignupClosedScreenProps {
 }
 
 /**
- * Shown on `/account/signup` while the platform is not accepting new
+ * Shown on `/account/signup` while the cloud is not accepting new
  * accounts. Existing users keep their way in through the sign-in link, which
  * carries the sanitized `returnTo` and the URL-borne attribution params, so
  * signing in still lands where the visit was headed and stays attributed.

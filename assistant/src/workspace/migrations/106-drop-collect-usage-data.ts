@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
- * Drops the `collectUsageData` config key (gating is governed by the platform
+ * Drops the `collectUsageData` config key (gating is governed by the cloud
  * `share_analytics` consent). An explicit local opt-out (`collectUsageData:
  * false`) is preserved as `legacyTelemetryOptOut: true` so telemetry stays off
  * regardless of platform consent, which defaults to opt-in and cannot be

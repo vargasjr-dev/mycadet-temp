@@ -3,7 +3,7 @@
  * it into a manifest written before accents were persisted.
  *
  * Separate from the avatar store so a reader that must announce nothing (the
- * state route, the platform sync) can repair the accent without reaching the
+ * state route, the cloud sync) can repair the accent without reaching the
  * store's client and platform fan-out.
  */
 import type { AvatarAccent } from "@mycadet/avatar-manifest";

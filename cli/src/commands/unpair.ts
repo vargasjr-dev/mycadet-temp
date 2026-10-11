@@ -4,7 +4,7 @@
  * Forget a pairing imported from another machine via `cadet connect import`:
  * remove its lockfile entry and stored guardian token from THIS machine. Only
  * paired assistants (`cloud: "paired"`) can be unpaired — `cadet retire` owns
- * local and managed assistants.
+ * local and cloud assistants.
  *
  * This is client-side only: it forgets the connection here but does not revoke
  * the device on the host. (Host-side revocation is `cadet devices`.)
@@ -37,7 +37,7 @@ OPTIONS:
 
 Removes the local connection (lockfile entry + stored token). Only paired
 assistants (imported via 'cadet connect import') can be unpaired; use
-'cadet retire' for local or managed assistants.
+'cadet retire' for local or cloud assistants.
 
 EXAMPLES:
     cadet unpair paired-desk
@@ -72,7 +72,7 @@ export const unpair = Object.assign(
 
   if (entry.cloud !== "paired") {
     console.error(
-      `Error: '${name}' is not a paired assistant. Use \`cadet retire\` to remove a local or managed assistant.`,
+      `Error: '${name}' is not a paired assistant. Use \`cadet retire\` to remove a local or cloud assistant.`,
     );
     process.exit(1);
   }

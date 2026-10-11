@@ -29,7 +29,7 @@ import { z } from "zod";
  *  - `local` — on-machine daemon
  *  - `docker` — local container
  *  - `apple-container` — macOS-app-managed container
- *  - `cloud` — platform-managed (uses the X-Session-Token auth path);
+ *  - `cloud` — cloud-managed (uses the X-Session-Token auth path);
  *    canonical since the Cadet rebrand
  *  - `cadet` — legacy alias of `cloud`, still read from existing lockfiles
  *  - `gcp` / `aws` / `custom` — remote, SSH-managed
@@ -80,12 +80,12 @@ export function resolveCloud(raw: {
 }
 
 /**
- * Whether a cloud value denotes the platform-managed topology. `cloud` is
+ * Whether a cloud value denotes the cloud-managed topology. `cloud` is
  * canonical; `cadet` is the legacy spelling kept for entries written before
  * the rebrand. Every reader that used to compare `=== "cadet"` switches on
  * this instead so both spellings dispatch identically.
  */
-export function isManagedCloud(cloud: unknown): boolean {
+export function isCloudHome(cloud: unknown): boolean {
   return cloud === "cloud" || cloud === "cadet";
 }
 
@@ -200,10 +200,15 @@ export const LockfileAssistantSchema = z.object({
   /** Owning org for platform assistants; absent for local ones. */
   organizationId: z.string().optional(),
   /** Platform assistant UUID for a self-hosted local assistant registration. */
-  platformAssistantId: z.string().optional(),
+  cloudAssistantId: z.string().optional(),
   /** Platform base URL used for a self-hosted local assistant registration. */
-  platformBaseUrl: z.string().optional(),
+  cloudBaseUrl: z.string().optional(),
   /** Platform organization UUID used for a self-hosted local assistant registration. */
+  cloudOrganizationId: z.string().optional(),
+  /** Pre-rename spellings of the cloud* fields above; readers fall back to
+   *  them so lockfiles written before the platform→cloud rename still resolve. */
+  platformAssistantId: z.string().optional(),
+  platformBaseUrl: z.string().optional(),
   platformOrganizationId: z.string().optional(),
   /**
    * Public https URL a `cadet tunnel` provider recorded for this assistant

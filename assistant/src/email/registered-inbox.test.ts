@@ -1,6 +1,6 @@
 /**
  * Tests for the shared registered-inbox reader: the single answer to "does
- * this assistant have a managed inbox?", read from the platform
+ * this assistant have a cloud inbox?", read from the cloud
  * email-addresses API (the only writer of managed registrations).
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
@@ -15,8 +15,8 @@ let mockFetchThrows: boolean;
 let mockCreateThrows: boolean;
 let fetchCallCount: number;
 
-mock.module("../platform/client.js", () => ({
-  CadetPlatformClient: {
+mock.module("../cloud/client.js", () => ({
+  CadetCloudClient: {
     create: async () => {
       if (mockCreateThrows) {
         throw new Error("credential store unavailable");
@@ -27,7 +27,7 @@ mock.module("../platform/client.js", () => ({
 }));
 
 const clientStub = () => ({
-  platformAssistantId: mockCloudAssistantId,
+  cloudAssistantId: mockCloudAssistantId,
   fetch: async (_path: string) => {
     fetchCallCount += 1;
     if (mockFetchThrows) {
@@ -45,15 +45,15 @@ const clientStub = () => ({
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { CadetPlatformClient } from "../platform/client.js";
+import { CadetCloudClient } from "../cloud/client.js";
 import {
   invalidateRegisteredInboxCache,
   listEmailAddresses,
   resolveRegisteredInbox,
 } from "./registered-inbox.js";
 
-async function testClient(): Promise<CadetPlatformClient> {
-  const client = await CadetPlatformClient.create();
+async function testClient(): Promise<CadetCloudClient> {
+  const client = await CadetCloudClient.create();
   if (!client) {
     throw new Error("mocked create returned null");
   }
@@ -85,7 +85,7 @@ describe("resolveRegisteredInbox", () => {
     });
   });
 
-  test("registered when the platform lists an address", async () => {
+  test("registered when the cloud lists an address", async () => {
     mockResponse = {
       ok: true,
       status: 200,
@@ -103,7 +103,7 @@ describe("resolveRegisteredInbox", () => {
     });
   });
 
-  test("none when the platform lists no addresses", async () => {
+  test("none when the cloud lists no addresses", async () => {
     const state = await resolveRegisteredInbox();
 
     expect(state).toEqual({ status: "none" });
@@ -125,7 +125,7 @@ describe("resolveRegisteredInbox", () => {
     expect(state).toEqual({ status: "unavailable", detail: "HTTP 503" });
   });
 
-  test("unavailable when the platform fetch throws", async () => {
+  test("unavailable when the cloud fetch throws", async () => {
     mockFetchThrows = true;
 
     const state = await resolveRegisteredInbox();
@@ -231,7 +231,7 @@ describe("listEmailAddresses", () => {
     });
   });
 
-  test("returns the platform's rows with ids", async () => {
+  test("returns the cloud's rows with ids", async () => {
     mockResponse = {
       ok: true,
       status: 200,
@@ -246,7 +246,7 @@ describe("listEmailAddresses", () => {
     });
   });
 
-  test("carries the platform's status on a non-ok response", async () => {
+  test("carries the cloud's status on a non-ok response", async () => {
     mockResponse = { ok: false, status: 503, body: { detail: "boom" } };
 
     const list = await listEmailAddresses(await testClient());

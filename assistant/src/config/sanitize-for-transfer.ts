@@ -90,7 +90,7 @@ export function sanitizeConfigForTransfer(configJson: string): string {
   // config is misleading and brittle. Preserve an explicit
   // `enabled: false` opt-out, though — the schema default is `true`,
   // so unconditionally stripping this subobject would re-enable
-  // auto-attach after a platform→local teleport.
+  // auto-attach after a cloud→local teleport.
   if (config.hostBrowser && typeof config.hostBrowser === "object") {
     const hostBrowser = config.hostBrowser as Record<string, unknown>;
     if (hostBrowser.cdpInspect && typeof hostBrowser.cdpInspect === "object") {

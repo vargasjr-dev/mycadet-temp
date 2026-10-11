@@ -679,7 +679,7 @@ describe("POST inference/provider-connections (create)", () => {
     });
   });
 
-  test("throws 400 on the reserved managed connection name", async () => {
+  test("throws 400 on the reserved cloud connection name", async () => {
     await expect(
       call(findHandler("inference_provider_connections_create"), {
         body: {
@@ -1400,7 +1400,7 @@ describe("PATCH with label", () => {
 
 // ── Managed-connection write protection ──────────────────────────────────────
 
-describe("Managed connection write protection", () => {
+describe("Cloud connection write protection", () => {
   const MANAGED_NAMES = ["cadet"] as const;
 
   describe("DELETE", () => {
@@ -1424,8 +1424,8 @@ describe("Managed connection write protection", () => {
     }
 
     test("managed protection short-circuits before reference checks", async () => {
-      // Even though a profile references the managed connection, the error
-      // should be the managed-protection 400, not the references-409.
+      // Even though a profile references the cloud connection, the error
+      // should be the cloud-protection 400, not the references-409.
       seedConnection({
         name: "cadet",
         provider: "cadet",
@@ -1446,7 +1446,7 @@ describe("Managed connection write protection", () => {
       expect((err as BadRequestError).message).toContain("managed");
     });
 
-    test("a user-owned row claiming the managed name stays deletable", async () => {
+    test("a user-owned row claiming the cloud name stays deletable", async () => {
       // Boot seeding refuses to overwrite it and managed routing ignores it,
       // so deleting is the only way to restore the canonical row. The cadet
       // default resolves to this same name, and that guard must not block the
@@ -1525,16 +1525,16 @@ describe("Managed connection write protection", () => {
           pathParams: { name: "cadet" },
           body: {
             auth: { type: "platform" },
-            label: "Cadet-managed Anthropic",
+            label: "Cadet Cloud Anthropic",
           },
         },
       )) as { label: string | null };
-      expect(result.label).toBe("Cadet-managed Anthropic");
+      expect(result.label).toBe("Cadet Cloud Anthropic");
     });
   });
 
   describe("PATCH label (allowed)", () => {
-    test("allows relabeling a managed connection", async () => {
+    test("allows relabeling a cloud connection", async () => {
       seedConnection({
         name: "cadet",
         provider: "cadet",
@@ -1634,7 +1634,7 @@ describe("isManaged flag on connection responses", () => {
   });
 
   describe("GET single", () => {
-    test("returns isManaged: true for a managed name", async () => {
+    test("returns isManaged: true for a cloud name", async () => {
       seedConnection({
         name: "cadet",
         provider: "cadet",
@@ -1649,7 +1649,7 @@ describe("isManaged flag on connection responses", () => {
       expect(result.isManaged).toBe(true);
     });
 
-    test("returns isManaged: false for a user-owned row claiming a managed name", async () => {
+    test("returns isManaged: false for a user-owned row claiming a cloud name", async () => {
       // Clients gate edit and delete on this flag, so a claiming row must
       // report as the ordinary connection it is or the collision cannot be
       // cleared from the UI.
@@ -1701,7 +1701,7 @@ describe("isManaged flag on connection responses", () => {
   });
 
   describe("PATCH update", () => {
-    test("returns isManaged: true after relabeling a managed connection", async () => {
+    test("returns isManaged: true after relabeling a cloud connection", async () => {
       seedConnection({
         name: "cadet",
         provider: "cadet",

@@ -461,7 +461,7 @@ export function TheWorkspaceContent() {
           <p className="mb-4 text-zinc-600">
             Credentials, API keys, OAuth tokens, and trust configuration are
             stored in a protected vault that lives outside the workspace.
-            On Cloud, this is the managed credential vault tied to your
+            On Cloud, this is the cloud credential vault tied to your
             account. On local, it&apos;s a separate directory at{" "}
             <code>~/.cadet/protected/</code>.
           </p>

@@ -121,7 +121,7 @@ mock.module("../prompts/system-prompt.js", () => ({
 // `provider_connection` exclusively. `getProvider` throws while this file's
 // tests run (the production code under test must not call it), and delegates
 // to the real registry afterwards: `mock.module` patches persist for the rest
-// of the `bun test` process, and later test files (e.g. the platform-proxy
+// of the `bun test` process, and later test files (e.g. the cloud-proxy
 // integration suite) call the real `getProvider`. The real function is
 // snapshotted before `mock.module` rebinds the import.
 const anthropicStub = { name: "anthropic" };

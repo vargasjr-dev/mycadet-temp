@@ -106,7 +106,7 @@ export const IngressRouteSchema = z.object({
    * `webhook_secret`, so a plugin can receive third-party callbacks it has
    * arranged itself, and a guardian decides whether that route is served.
    *
-   * `cadet` verifies against the platform's `webhook_secret`, for routes
+   * `cadet` verifies against the cloud's `webhook_secret`, for routes
    * only Cadet calls, which would otherwise need a per-plugin secret
    * provisioned for a caller we already authenticate. Such a route is
    * served without a guardian approval: the trust it relies on was given
@@ -120,7 +120,7 @@ export const IngressRouteSchema = z.object({
   /**
    * How the caller proves it holds the signing secret.
    *
-   * `signed-headers` (the default) is the platform's scheme: the signature
+   * `signed-headers` (the default) is the cloud's scheme: the signature
    * travels in `Cadet-Signature`, over the body for HTTP and over
    * `<timestamp>.<pathname>` for a WebSocket upgrade.
    *
@@ -142,7 +142,7 @@ export const IngressRouteSchema = z.object({
   /**
    * How a third-party caller's signature is checked, when it is not ours.
    *
-   * Absent (the default) means the platform scheme: `Cadet-Signature` over
+   * Absent (the default) means the cloud scheme: `Cadet-Signature` over
    * the body, keyed by whichever `webhook_secret` {@link signer} selects.
    * That is right for a caller Cadet controls and wrong for every other one
    * — Comms signs `X-Osis-Signature`, Photon signs `X-Spectrum-Signature` over

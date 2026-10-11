@@ -4,14 +4,14 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 
 import { useTranslation } from "@/i18n";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { usePlatformGate } from "@/hooks/use-platform-gate";
+import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useCanUseInternalThreadActions } from "@/lib/auth/internal-thread-actions";
 import { useSupportsBookmarks } from "@/lib/backwards-compat/use-supports-bookmarks";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { isBrowserNotificationHost } from "@/runtime/notifications";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
-import { useHasPlatformSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTitleBarStore } from "@/stores/title-bar-store";
@@ -57,13 +57,13 @@ export function SettingsLayout() {
   // The Usage item is never hidden: the Usage tab reads from the local daemon
   // and works for every assistant. Its label only gains "Billing &" when the
   // Billing tab is actually shown — i.e. signed in to Cadet Cloud
-  // (`usePlatformGate() === "full"`), matching billing-page.tsx's
+  // (`useCloudGate() === "full"`), matching billing-page.tsx's
   // `showBillingTab`. Signed-out / self-hosted users see just "Usage".
-  const billingGate = usePlatformGate();
+  const billingGate = useCloudGate();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  // Show Log Out when a platform session exists, Log In otherwise.
-  const hasPlatformSession = useHasPlatformSession();
+  // Show Log Out when a cloud session exists, Log In otherwise.
+  const hasCloudSession = useHasCloudSession();
   const { login } = useOnboardingLogin();
 
   const getSidebarLabel = useCallback(
@@ -162,7 +162,7 @@ export function SettingsLayout() {
     }
     // The auth action is pinned to the very bottom of the nav.
     items.push(
-      hasPlatformSession
+      hasCloudSession
         ? {
             id: "logout",
             label: t("sidebar.logout", "Log Out"),
@@ -180,7 +180,7 @@ export function SettingsLayout() {
   }, [
     settingsDeveloperNav,
     cadetHostedInference,
-    hasPlatformSession,
+    hasCloudSession,
     navigate,
     login,
     t,

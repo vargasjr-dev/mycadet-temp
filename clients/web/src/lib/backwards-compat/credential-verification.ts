@@ -1,8 +1,8 @@
 /**
- * Backwards-compat gate: on-demand managed-credential verification
+ * Backwards-compat gate: on-demand cloud-credential verification
  * (`POST /v1/platform/verify-credential`).
  *
- * The route asks the platform whether the assistant's stored managed
+ * The route asks the cloud whether the assistant's stored managed
  * credential authenticates. The in-app repair for a rejected credential calls
  * it after rotating and storing a replacement, so that "repaired" means the
  * replacement works and not merely that the write landed.

@@ -30,7 +30,7 @@ import {
   readInstalledPlugin,
 } from "./list-installed-plugins.js";
 import {
-  arePlatformFeaturesEnabled,
+  areCloudFeaturesEnabled,
   readBundledLocalPluginCatalog,
 } from "./plugin-catalog-local.js";
 import { isPluginCatalogEntryVisible } from "./plugin-catalog-visibility.js";
@@ -348,7 +348,7 @@ export async function inspectPlugin(
   let remoteError: string | null = null;
   const installedLocalSource = local?.source?.kind === "local";
   const useBundledLocalCatalog =
-    installedLocalSource || (!installed && !arePlatformFeaturesEnabled());
+    installedLocalSource || (!installed && !areCloudFeaturesEnabled());
   try {
     if (useBundledLocalCatalog) {
       const catalog = deps.localCatalog ?? readBundledLocalPluginCatalog();

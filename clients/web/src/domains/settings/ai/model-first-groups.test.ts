@@ -147,11 +147,11 @@ describe("resolveModelFirstGroups", () => {
   test("omits a section whose models the assistant cannot use", () => {
     // Ollama serves Llama 3.2, which only a self-hosted assistant reaches.
     expect(namesOf([], "meta")).toContain("Llama 3.2");
-    const platformHosted = resolveModelFirstGroups(
+    const cloudHosted = resolveModelFirstGroups(
       input([], { activeAssistantIsSelfHosted: false }),
     ).find((group) => group.key === "meta");
     expect(
-      platformHosted?.options.map((option) => option.displayName),
+      cloudHosted?.options.map((option) => option.displayName),
     ).not.toContain("Llama 3.2");
   });
 

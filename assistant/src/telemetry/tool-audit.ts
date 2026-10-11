@@ -26,11 +26,11 @@
  * are unaffected — `tool_invocations` is a local always-on audit log.
  */
 
+import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import {
   type LifecycleEventAttributes,
   recordLifecycleEvent,
 } from "../persistence/lifecycle-events-store.js";
-import { getRawShareAnalytics } from "../platform/consent-cache.js";
 import { redactJsonStringLeaves } from "../security/redact-json.js";
 import { redactSensitiveFields } from "../security/redaction.js";
 import { redactSecrets } from "../security/secret-scanner.js";

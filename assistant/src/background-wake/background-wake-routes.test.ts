@@ -13,7 +13,7 @@ import type { BackgroundWakeIntent } from "./next-wake.js";
 // the heartbeat mock exposes that too.
 type BackgroundWakeRuntime = {
   scheduler: Pick<SchedulerHandle, "runOnce" | "runDueWorkOnce">;
-  heartbeat: Pick<HeartbeatService, "nextRunAt" | "runManagedWakeIfDue">;
+  heartbeat: Pick<HeartbeatService, "nextRunAt" | "runCloudWakeIfDue">;
 };
 
 let mockScheduler: BackgroundWakeRuntime["scheduler"] | null = null;
@@ -214,7 +214,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: dueAt,
       reason: "mixed",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -226,7 +226,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: dueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 2),
@@ -240,11 +240,11 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).toHaveBeenCalledTimes(1);
-    expect(heartbeatRunManaged).toHaveBeenCalledWith(
+    expect(heartbeatRunCloud).toHaveBeenCalledTimes(1);
+    expect(heartbeatRunCloud).toHaveBeenCalledWith(
       expect.objectContaining({ scheduledFor: NOW }),
     );
-    expect(firstCallArg(heartbeatRunManaged)).not.toHaveProperty("assumeDue");
+    expect(firstCallArg(heartbeatRunCloud)).not.toHaveProperty("assumeDue");
     expect(schedulerRunDue).toHaveBeenCalledTimes(1);
     expect(response).toEqual(acceptedResponse({ reason: "mixed" }));
     expect(lastCompletionPayload()).toEqual({
@@ -255,7 +255,7 @@ describe("background wake runtime routes", () => {
   });
 
   test("drain-due skips heartbeat when it is not due and reports no scheduler work", async () => {
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -264,7 +264,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 5 * 60_000,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 0),
@@ -276,7 +276,7 @@ describe("background wake runtime routes", () => {
     const response = await handler({ body: drainBodyFixture() });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).not.toHaveBeenCalled();
+    expect(heartbeatRunCloud).not.toHaveBeenCalled();
     expect(schedulerRunDue).toHaveBeenCalledTimes(1);
     expect(response).toEqual(acceptedResponse());
     expect(lastCompletionPayload()).toMatchObject({
@@ -297,7 +297,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: null,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -328,7 +328,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: dueAt,
       reason: "heartbeat",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -340,7 +340,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: dueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 1),
@@ -354,12 +354,12 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).toHaveBeenCalledWith(
+    expect(heartbeatRunCloud).toHaveBeenCalledWith(
       expect.objectContaining({
         scheduledFor: NOW,
       }),
     );
-    expect(firstCallArg(heartbeatRunManaged)).not.toHaveProperty("assumeDue");
+    expect(firstCallArg(heartbeatRunCloud)).not.toHaveProperty("assumeDue");
     expect(schedulerRunDue).toHaveBeenCalledTimes(1);
     expect(response).toEqual(acceptedResponse({ reason: "heartbeat" }));
     expect(lastCompletionPayload()).toMatchObject({
@@ -370,7 +370,7 @@ describe("background wake runtime routes", () => {
   });
 
   test("drain-due does not rerun heartbeat for stale heartbeat drain requests", async () => {
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -379,7 +379,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 30 * 60_000,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 0),
@@ -393,7 +393,7 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).not.toHaveBeenCalled();
+    expect(heartbeatRunCloud).not.toHaveBeenCalled();
     expect(schedulerRunDue).not.toHaveBeenCalled();
     expect(response).toEqual(acceptedResponse({ reason: "heartbeat" }));
     expect(lastCompletionPayload()).toMatchObject({
@@ -409,7 +409,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: dueAt,
       reason: "heartbeat",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -417,7 +417,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: dueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 0),
@@ -431,10 +431,10 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).toHaveBeenCalledWith(
+    expect(heartbeatRunCloud).toHaveBeenCalledWith(
       expect.objectContaining({ scheduledFor: NOW }),
     );
-    expect(firstCallArg(heartbeatRunManaged)).not.toHaveProperty("assumeDue");
+    expect(firstCallArg(heartbeatRunCloud)).not.toHaveProperty("assumeDue");
     expect(response).toEqual(acceptedResponse({ reason: "refresh" }));
   });
 
@@ -451,7 +451,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 60_000,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -490,7 +490,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: scheduleDueAt,
       reason: "schedule",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -502,7 +502,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: heartbeatDueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 1),
@@ -516,7 +516,7 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).toHaveBeenCalledWith(
+    expect(heartbeatRunCloud).toHaveBeenCalledWith(
       expect.objectContaining({ scheduledFor: NOW }),
     );
     expect(schedulerRunDue).toHaveBeenCalledTimes(1);
@@ -529,7 +529,7 @@ describe("background wake runtime routes", () => {
   });
 
   test("drain-due does no work for refresh-only wakes with no due intent", async () => {
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -540,7 +540,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 60_000,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 1),
@@ -554,7 +554,7 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).not.toHaveBeenCalled();
+    expect(heartbeatRunCloud).not.toHaveBeenCalled();
     expect(schedulerRunDue).not.toHaveBeenCalled();
     expect(response).toEqual(acceptedResponse({ reason: "refresh" }));
     expect(lastCompletionPayload()).toMatchObject({
@@ -570,7 +570,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: dueAt,
       reason: "mixed",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -581,7 +581,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: dueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 0),
@@ -598,7 +598,7 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).not.toHaveBeenCalled();
+    expect(heartbeatRunCloud).not.toHaveBeenCalled();
     expect(schedulerRunDue).toHaveBeenCalledWith(
       expect.objectContaining({ minStartBudgetMs: 5_000 }),
     );
@@ -619,7 +619,7 @@ describe("background wake runtime routes", () => {
       actualNextDueAt: dueAt,
       reason: "mixed",
     });
-    const heartbeatRunManaged = mock(async () => ({
+    const heartbeatRunCloud = mock(async () => ({
       due: true,
       completed: 1,
       skipped: 0,
@@ -630,7 +630,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: dueAt,
-        runManagedWakeIfDue: heartbeatRunManaged,
+        runCloudWakeIfDue: heartbeatRunCloud,
       },
       scheduler: {
         runOnce: mock(async () => 1),
@@ -647,7 +647,7 @@ describe("background wake runtime routes", () => {
     });
     await flushBackgroundWakeDrainsForTest();
 
-    expect(heartbeatRunManaged).not.toHaveBeenCalled();
+    expect(heartbeatRunCloud).not.toHaveBeenCalled();
     expect(schedulerRunDue).not.toHaveBeenCalled();
     expect(response).toMatchObject({
       accepted: true,
@@ -669,7 +669,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 60_000,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -735,7 +735,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: Date.now() + 60_000,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -766,7 +766,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: null,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -802,7 +802,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: null,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,
@@ -831,7 +831,7 @@ describe("background wake runtime routes", () => {
     setBackgroundWakeRuntime({
       heartbeat: {
         nextRunAt: null,
-        runManagedWakeIfDue: mock(async () => ({
+        runCloudWakeIfDue: mock(async () => ({
           due: false,
           completed: 0,
           skipped: 0,

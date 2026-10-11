@@ -23,14 +23,14 @@ import {
 import type { CharacterTraits } from "@/types/avatar";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 
-function platformAssistant(id: string, name: string): ResolvedAssistant {
-  return { id, name, isLocal: false, isPlatformHosted: true, isPaired: false };
+function cloudAssistant(id: string, name: string): ResolvedAssistant {
+  return { id, name, isLocal: false, isCloudHosted: true, isPaired: false };
 }
 
 const ASSISTANTS: ResolvedAssistant[] = [
-  platformAssistant("asst-1", "Alice"),
-  platformAssistant("asst-2", "Bob"),
-  platformAssistant("asst-3", "Carol"),
+  cloudAssistant("asst-1", "Alice"),
+  cloudAssistant("asst-2", "Bob"),
+  cloudAssistant("asst-3", "Carol"),
 ];
 
 const TRAITS: Record<string, CharacterTraits> = {
@@ -61,9 +61,9 @@ function seedStores(assistants: ResolvedAssistant[]): void {
     assistantsHydrated: true,
     activeAssistantId: "asst-1",
   });
-  /* `useSwitchableAssistants` only counts platform entries where a platform
+  /* `useSwitchableAssistants` only counts platform entries where a cloud
      session is live; a story has no session of its own. */
-  useAuthStore.setState({ platformSession: "present" });
+  useAuthStore.setState({ cloudSession: "present" });
 }
 
 const meta: Meta<typeof AssistantSwitcher> = {

@@ -17,8 +17,8 @@ import type { WorkspaceMigration } from "./types.js";
  * the provider's handling for thinking-only models.
  *
  * Provider guard: the stale ID belongs to the `fireworks` provider and also
- * appears in managed profiles stamped `provider: "cadet"` (which route
- * Fireworks-account model IDs through the managed proxy). Under the entries
+ * appears in cloud profiles stamped `provider: "cadet"` (which route
+ * Fireworks-account model IDs through the cloud proxy). Under the entries
  * model (migration 145) `provider` can also hold a `provider_connections`
  * entry name whose row kind drives dispatch. A fragment is repaired when
  * its `provider` is `"fireworks"`, `"cadet"`, absent, or an entry name

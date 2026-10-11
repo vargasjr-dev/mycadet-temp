@@ -15,9 +15,9 @@ import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
  * hydrates, so the affordances appear once the real value lands rather than
  * flashing and disappearing.
  *
- * The platform serves this gate under either `internal-thread-actions` or the
+ * The cloud serves this gate under either `internal-thread-actions` or the
  * legacy `fork-from-message` key, and either one grants access. Both are
- * declared in the registry so the flag mapper keeps whichever the platform
+ * declared in the registry so the flag mapper keeps whichever the cloud
  * sends (`use-client-feature-flag-sync.ts` drops keys the registry does not
  * declare).
  */

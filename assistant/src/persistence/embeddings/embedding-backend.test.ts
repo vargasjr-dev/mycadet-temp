@@ -34,11 +34,11 @@ const DISABLED_PROXY_CONTEXT = {
   cloudBaseUrl: "",
   assistantApiKey: "",
 };
-const resolveManagedProxyContextMock = mock(async () => DISABLED_PROXY_CONTEXT);
-mock.module("../../providers/platform-proxy/context.js", () => ({
-  resolveManagedProxyContext: resolveManagedProxyContextMock,
-  hasManagedProxyPrereqs: mock(async () => false),
-  buildManagedBaseUrl: mock(async () => undefined),
+const resolveCloudProxyContextMock = mock(async () => DISABLED_PROXY_CONTEXT);
+mock.module("../../providers/cloud-proxy/context.js", () => ({
+  resolveCloudProxyContext: resolveCloudProxyContextMock,
+  hasCloudProxyPrereqs: mock(async () => false),
+  buildCloudBaseUrl: mock(async () => undefined),
   managedFallbackEnabledFor: mock(async () => false),
 }));
 
@@ -285,13 +285,13 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
-describe("managed-proxy Gemini fallback to direct key", () => {
+describe("cloud-proxy Gemini fallback to direct key", () => {
   const originalFetch = globalThis.fetch;
   let fetchMock: ReturnType<typeof mock>;
 
   beforeEach(() => {
     clearEmbeddingBackendCache();
-    // Managed-proxy requests (proxy.example.com) are rejected like a platform
+    // Managed-proxy requests (proxy.example.com) are rejected like a cloud
     // proxy with a bad credential; direct Google API requests succeed.
     fetchMock = mock(async (url: string | URL) => {
       if (String(url).startsWith("https://proxy.example.com/")) {
@@ -306,14 +306,14 @@ describe("managed-proxy Gemini fallback to direct key", () => {
     globalThis.fetch = originalFetch;
     clearEmbeddingBackendCache();
     secureKeys.clear();
-    resolveManagedProxyContextMock.mockReset();
-    resolveManagedProxyContextMock.mockImplementation(
+    resolveCloudProxyContextMock.mockReset();
+    resolveCloudProxyContextMock.mockImplementation(
       async () => DISABLED_PROXY_CONTEXT,
     );
   });
 
-  test("falls back to the direct key when the managed-proxy primary fails", async () => {
-    resolveManagedProxyContextMock.mockImplementation(
+  test("falls back to the direct key when the cloud-proxy primary fails", async () => {
+    resolveCloudProxyContextMock.mockImplementation(
       async () => ENABLED_PROXY_CONTEXT,
     );
     setKey("gemini", "direct-key");
@@ -339,8 +339,8 @@ describe("managed-proxy Gemini fallback to direct key", () => {
     expect(directUrl).toContain("key=direct-key");
   });
 
-  test("surfaces the managed-proxy error when no direct key exists", async () => {
-    resolveManagedProxyContextMock.mockImplementation(
+  test("surfaces the cloud-proxy error when no direct key exists", async () => {
+    resolveCloudProxyContextMock.mockImplementation(
       async () => ENABLED_PROXY_CONTEXT,
     );
 
@@ -350,7 +350,7 @@ describe("managed-proxy Gemini fallback to direct key", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  test("uses the direct key as primary when the managed proxy is disabled", async () => {
+  test("uses the direct key as primary when the cloud proxy is disabled", async () => {
     setKey("gemini", "direct-key");
 
     const result = await embedWithBackend(GEMINI_CONFIG, ["another input"]);

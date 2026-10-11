@@ -215,7 +215,7 @@ export function createChannelVerificationSessionProxyHandler(
       // auth bypass — vembda authenticates the caller before forwarding.
       // Adding a fail-closed guard here on `IS_CLOUD=true && !secret`
       // would brick every platform deployment.
-      const isManaged =
+      const isCloud =
         process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
         process.env.IS_CLOUD?.trim() === "1";
 
@@ -223,7 +223,7 @@ export function createChannelVerificationSessionProxyHandler(
       // bootstrap secret the lockfile is the sole guard, so a remote
       // client that can reach the gateway (e.g. via ngrok) must not be
       // able to race the legitimate local user.
-      if (!isManaged && expectedSecrets.length === 0) {
+      if (!isCloud && expectedSecrets.length === 0) {
         // A genuine local bootstrap caller connects directly over loopback and
         // never sets X-Forwarded-For. Its presence means the request was
         // relayed by a proxy — and when GATEWAY_TRUST_PROXY is enabled the

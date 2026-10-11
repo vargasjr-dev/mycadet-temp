@@ -239,7 +239,7 @@ async function forwardToAssistant(
   caches?: TwilioValidationCaches,
 ): Promise<Response> {
   try {
-    const platformAssistantId = await resolveCloudAssistantIdOrUndefined();
+    const cloudAssistantId = await resolveCloudAssistantIdOrUndefined();
     const runtimeResponse = await forwardTwilioVoiceWebhook(
       config,
       params,
@@ -247,7 +247,7 @@ async function forwardToAssistant(
       resolvePublicBaseWssUrl(
         config,
         caches?.configFile,
-        platformAssistantId,
+        cloudAssistantId,
         validatedPublicUrl,
       ),
     );

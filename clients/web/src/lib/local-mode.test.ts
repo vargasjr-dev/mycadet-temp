@@ -58,7 +58,7 @@ import {
   getLocalAssistants,
   getLockfile,
   getPairedGatewayUrl,
-  getPlatformAssistants,
+  getCloudAssistants,
   getRemoteAssistantDisplayName,
   getSelectedAssistant,
   cancelAssistantPairing,
@@ -69,7 +69,7 @@ import {
   isLocalGatewayAssistant,
   isPairedAssistant,
   isCadetCloudRemote,
-  isPlatformAssistant,
+  isCloudAssistant,
   isRetryablePairingFailure,
   loadLockfile,
   LOCAL_GATEWAY_STARTUP_RETRY,
@@ -130,16 +130,16 @@ function setLockfile(lockfile: Lockfile): void {
   useLockfileStore.setState({ lockfile });
 }
 
-// Tests default to platform mode (test-setup.ts pins VITE_PLATFORM_MODE).
+// Tests default to platform mode (test-setup.ts pins VITE_CLOUD_MODE).
 // Local-mode behaviour is opt-in per test; the afterEach restores the default.
 function enableLocalMode(): void {
-  process.env.VITE_PLATFORM_MODE = "";
+  process.env.VITE_CLOUD_MODE = "";
 }
 
 afterEach(() => {
   globalThis.fetch = realFetch;
   window.__CADET_CONFIG__ = undefined;
-  process.env.VITE_PLATFORM_MODE = "true";
+  process.env.VITE_CLOUD_MODE = "true";
   useLockfileStore.setState({ lockfile: null, committed: false });
   localStorage.removeItem(LOCKFILE_STORAGE_KEY);
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
@@ -171,7 +171,7 @@ describe("remote gateway mode", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     expect(isCadetCloudRemote()).toBe(false);
 
-    // The cloud remote is the only one behind the platform cookie scheme.
+    // The cloud remote is the only one behind the cloud cookie scheme.
     window.__CADET_CONFIG__ = { remote: "cloud" };
     expect(isCadetCloudRemote()).toBe(true);
   });
@@ -562,20 +562,20 @@ describe("loadLockfile host-failure fallback", () => {
 });
 
 describe("assistant classification", () => {
-  test("a cadet-cloud entry is a platform assistant, not local", () => {
-    expect(isPlatformAssistant(platform)).toBe(true);
+  test("a cadet-cloud entry is a cloud assistant, not local", () => {
+    expect(isCloudAssistant(platform)).toBe(true);
     expect(isLocalAssistant(platform)).toBe(false);
   });
 
   test("a local-cloud entry with a gateway port is local, not platform", () => {
     expect(isLocalAssistant(localA)).toBe(true);
-    expect(isPlatformAssistant(localA)).toBe(false);
+    expect(isCloudAssistant(localA)).toBe(false);
   });
 
   test("a local-cloud entry without a gateway port is still local (identity, not connectivity)", () => {
     const portless = { assistantId: "x", cloud: "local" } as LockfileAssistant;
     expect(isLocalAssistant(portless)).toBe(true);
-    expect(isPlatformAssistant(portless)).toBe(false);
+    expect(isCloudAssistant(portless)).toBe(false);
   });
 
   test("externally-managed container runtimes are not web-client local", () => {
@@ -617,7 +617,7 @@ describe("assistant classification", () => {
     for (const cloud of ["paired", "gcp", "aws", "custom"]) {
       const remote = { assistantId: `r-${cloud}`, cloud } as LockfileAssistant;
       expect(isLocalAssistant(remote)).toBe(false);
-      expect(isPlatformAssistant(remote)).toBe(false);
+      expect(isCloudAssistant(remote)).toBe(false);
     }
   });
 
@@ -628,7 +628,7 @@ describe("assistant classification", () => {
     }
   });
 
-  test("getLocalAssistants / getPlatformAssistants partition by cloud, excluding remote", () => {
+  test("getLocalAssistants / getCloudAssistants partition by cloud, excluding remote", () => {
     const paired = {
       assistantId: "paired-a",
       cloud: "paired",
@@ -638,7 +638,7 @@ describe("assistant classification", () => {
       activeAssistant: null,
     });
     expect(getLocalAssistants()).toEqual([localA]);
-    expect(getPlatformAssistants()).toEqual([platform]);
+    expect(getCloudAssistants()).toEqual([platform]);
   });
 });
 
@@ -703,7 +703,7 @@ describe("getLocalGatewayUrl", () => {
     expect(getLocalGatewayUrl(bare)).toBeUndefined();
   });
 
-  test("is undefined for a platform assistant", () => {
+  test("is undefined for a cloud assistant", () => {
     enableLocalMode();
     expect(getLocalGatewayUrl(platform)).toBeUndefined();
   });
@@ -804,7 +804,7 @@ describe("getAuthGatewayIngressUrl", () => {
     );
   });
 
-  test("is undefined for a platform entry", () => {
+  test("is undefined for a cloud entry", () => {
     enableLocalMode();
     expect(getAuthGatewayIngressUrl(platform)).toBeUndefined();
   });
@@ -847,7 +847,7 @@ describe("isCliWakeableAssistant", () => {
     expect(isCliWakeableAssistant("dk")).toBe(false);
   });
 
-  test("a platform (cadet) entry is not CLI-wakeable", () => {
+  test("a cloud (cadet) entry is not CLI-wakeable", () => {
     setLockfile({ assistants: [platform], activeAssistant: "platform-a" });
     expect(isCliWakeableAssistant("platform-a")).toBe(false);
   });
@@ -878,7 +878,7 @@ describe("primeLocalGatewayConnection", () => {
     );
   });
 
-  test("is a no-op for a platform assistant even in local mode", async () => {
+  test("is a no-op for a cloud assistant even in local mode", async () => {
     enableLocalMode();
     await expect(
       primeLocalGatewayConnection(platform),
@@ -944,7 +944,7 @@ describe("primeLocalGatewayConnection", () => {
   test("paired re-prime keeps the connection live while the readiness probe is in flight", async () => {
     // A re-prime of the assistant the slot already points at must not open a
     // window in which the slot is empty: requests issued then would fall
-    // through to the platform and gateway-auth predicates would read false.
+    // through to the cloud and gateway-auth predicates would read false.
     enableLocalMode();
     setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
     const ingressUrl = `${window.location.origin}/assistant/__gateway-paired/paired-a`;

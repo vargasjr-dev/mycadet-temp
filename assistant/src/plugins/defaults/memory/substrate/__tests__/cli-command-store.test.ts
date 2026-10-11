@@ -324,7 +324,7 @@ describe("seedV2CliCommandEntries", () => {
   });
 
   test("populates the cache from the declarative help on the first seed even when the embedding backend is unavailable (cold-start needle resilience)", async () => {
-    // Cold-start race: the startup seed runs before the managed embedding
+    // Cold-start race: the startup seed runs before the cloud embedding
     // credential is provisioned, so the first `embedWithBackend` throws. The
     // in-memory cache (read by the v3 needle lane and the page index) must
     // still populate from the declarative help so CLI commands are

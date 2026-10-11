@@ -946,7 +946,7 @@ describe("registering the activity for server-driven updates", () => {
   });
 
   // iOS reissues tokens mid-activity and each value invalidates the last, so a
-  // rotation the platform never hears about leaves it pushing at a token APNs
+  // rotation the cloud never hears about leaves it pushing at a token APNs
   // has stopped honouring.
   test("re-registers when the token rotates", async () => {
     renderMirror();
@@ -964,7 +964,7 @@ describe("registering the activity for server-driven updates", () => {
     });
   });
 
-  // The platform composes every push from the registration, so a mute the
+  // The cloud composes every push from the registration, so a mute the
   // registration never heard about is a mute the island loses the moment a
   // server-driven update lands, which is to say the moment it matters.
   test("re-registers when the mute state changes", async () => {
@@ -986,14 +986,14 @@ describe("registering the activity for server-driven updates", () => {
     });
   });
 
-  // The platform words every background push by looking a phase up in the
+  // The cloud words every background push by looking a phase up in the
   // label table the registration carried, so a language switch the registration
   // never heard about leaves the island reading the language the user just
   // left. Nothing in the session moves on a switch, which is why the mirror has
   // to key on the locale itself. The table is built inside the upsert from the
   // language active when the call is made (pinned by
   // `live-activity-push-registration.test.ts`), so the locale recorded here is
-  // the language the platform ends up holding.
+  // the language the cloud ends up holding.
   test("re-registers in the new language when the app's language changes", async () => {
     const localesRegisteredIn: string[] = [];
     registerLiveActivityPushToken.mockImplementation(async () => {
@@ -1036,7 +1036,7 @@ describe("registering the activity for server-driven updates", () => {
     expect(registerLiveActivityPushToken).not.toHaveBeenCalled();
   });
 
-  // A registration that outlives its activity lets the platform push a phase
+  // A registration that outlives its activity lets the cloud push a phase
   // at an island that no longer exists.
   test("retires the registration when the session ends", async () => {
     renderMirror();

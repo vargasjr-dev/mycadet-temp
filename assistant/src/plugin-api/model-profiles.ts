@@ -7,7 +7,7 @@ import type { ModelProfileInfo } from "./types.js";
 /**
  * List the workspace inference profiles a plugin can route to, in the order a
  * user-facing model picker presents them (`llm.profileOrder` first, then the
- * rest alphabetically). Managed backup routes and the managed Jev profile
+ * rest alphabetically). Managed backup routes and the cloud Jev profile
  * are omitted with the rest of the conversation view: a plugin routes
  * conversation turns, and a decision model cannot answer them.
  * Metadata-only entries without a provider, model, or mix are not routing
