@@ -27,7 +27,10 @@ const { webSearchTool } = await import("../tools/network/web-search.js");
 
 type Provider = "brave" | "perplexity" | "tavily";
 
-async function executeWebSearch(input: Record<string, unknown>, provider: Provider) {
+async function executeWebSearch(
+  input: Record<string, unknown>,
+  provider: Provider,
+) {
   setConfig("services", { "web-search": { provider } });
   return webSearchTool.execute(input, {} as never);
 }
@@ -350,10 +353,7 @@ describe("WebSearchTool", () => {
         },
       });
 
-      const result = await executeWebSearch(
-        { query: "test" },
-        "perplexity",
-      );
+      const result = await executeWebSearch({ query: "test" }, "perplexity");
       expect(result.isError).toBe(false);
       expect(result.content).toContain("Perplexity found this information");
       expect(result.content).toContain("https://example.com/source1");
@@ -395,7 +395,10 @@ describe("WebSearchTool", () => {
       const req = http.lastCall();
       expect(req?.headers["Authorization"]).toBe("Bearer pplx-key");
       expect(req?.headers["Content-Type"]).toBe("application/json");
-      const body = req?.body as { model: string; messages: Array<{ content: string }> };
+      const body = req?.body as {
+        model: string;
+        messages: Array<{ content: string }>;
+      };
       expect(body.model).toBe("sonar");
       expect(body.messages[0]?.content).toBe("test query");
     });
@@ -465,10 +468,7 @@ describe("WebSearchTool", () => {
       const http = mockHttp();
       http.on("api.tavily.com", { status: 200, body: { results: [] } });
 
-      const result = await executeWebSearch(
-        { query: "noresults" },
-        "tavily",
-      );
+      const result = await executeWebSearch({ query: "noresults" }, "tavily");
       expect(result.isError).toBe(false);
       expect(result.content).toContain("No results found");
     });
