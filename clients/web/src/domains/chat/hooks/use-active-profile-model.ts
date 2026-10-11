@@ -33,7 +33,12 @@ export interface ActiveProfileModel {
 
 type ProfileEntry = NonNullable<
   NonNullable<ConfigGetResponse["llm"]>["profiles"]
->[string];
+>[string] & {
+  // Stamped onto the response by the daemon's wire enrichment; the
+  // persisted schema strips it on writes, so it's absent from the
+  // generated type.
+  supportsVision?: boolean;
+};
 
 /**
  * @param pendingProfile Profile stashed in the composer for a conversation

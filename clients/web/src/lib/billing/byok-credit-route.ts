@@ -9,6 +9,7 @@ import type {
   ProfileConnectionAvailability,
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
+import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 type LlmConfig = ConfigGetResponse["llm"];
 
@@ -183,8 +184,7 @@ function composedMainAgentRoute(
       const implied = catalogProviderForModel(tweakModel);
       if (implied && implied !== entry.provider) {
         const managedConnectionSurvives =
-          entry.provider_connection === "cadet" &&
-          CLOUD_ROUTABLE.has(implied);
+          entry.provider_connection === "cadet" && CLOUD_ROUTABLE.has(implied);
         route = {
           provider: implied,
           ...(managedConnectionSurvives
@@ -260,7 +260,9 @@ export function defaultChatRouteBurnsManagedCredits(
       return classifyAnchor(evidence);
     }
     const name = rungNames[index];
-    const entry = name ? llm?.profiles?.[name] : undefined;
+    const entry: WireProfileEntry | undefined = name
+      ? llm?.profiles?.[name]
+      : undefined;
     if (!name || !entry) {
       return classifyFromRung(index + 1);
     }
@@ -270,7 +272,8 @@ export function defaultChatRouteBurnsManagedCredits(
       }
       return anyBurns(
         entry.mix.map((arm) => {
-          const armEntry = llm?.profiles?.[arm.profile];
+          const armEntry: WireProfileEntry | undefined =
+            llm?.profiles?.[arm.profile];
           const armUsable =
             !!armEntry &&
             armEntry.status !== "disabled" &&

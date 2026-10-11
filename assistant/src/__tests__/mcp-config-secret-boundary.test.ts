@@ -88,7 +88,6 @@ mock.module("../persistence/embeddings/embedding-backend.js", () => ({
 
 const { ROUTES } =
   await import("../runtime/routes/conversation-query-routes.js");
-const { BadRequestError } = await import("../runtime/routes/errors.js");
 
 function findRoute(operationId: string) {
   const route = ROUTES.find((r) => r.operationId === operationId);
@@ -220,25 +219,30 @@ describe("MCP config secret boundary", () => {
     });
   });
 
-  test("config_patch rejects MCP transport headers so generic writes cannot reintroduce plaintext credentials", async () => {
-    await expect(
-      configPatchRoute.handler({
-        body: {
-          mcp: {
-            servers: {
-              remote: {
-                transport: {
-                  type: "streamable-http",
-                  url: "https://mcp.example.com",
-                  headers: { Authorization: "Bearer mcp-secret" },
-                },
+  test("config_patch strips MCP transport headers so generic writes cannot persist plaintext credentials", async () => {
+    const result = await configPatchRoute.handler({
+      body: {
+        mcp: {
+          servers: {
+            remote: {
+              transport: {
+                type: "streamable-http",
+                url: "https://mcp.example.com",
+                headers: { Authorization: "Bearer mcp-secret" },
               },
             },
           },
         },
-      }),
-    ).rejects.toThrow(BadRequestError);
-    expect(committedRaw()).toBeNull();
+      },
+    });
+
+    // `mcp` is not an AssistantConfigSchema key: the write's schema parse
+    // strips it, so the secret never reaches disk — and the response's
+    // projected workspace view carries no such server either.
+    expect(committedRaw()?.mcp).toBeUndefined();
+    expect(
+      (result as { mcp: { servers: Record<string, unknown> } }).mcp.servers,
+    ).toEqual({});
   });
 
   test("config_patch strips mcp so a full-config round trip cannot write it back", async () => {
@@ -263,34 +267,34 @@ describe("MCP config secret boundary", () => {
     ).toEqual({});
   });
 
-  test("config_set rejects MCP server writes", async () => {
-    await expect(
-      configSetRoute.handler({
-        body: {
-          path: "mcp.servers",
-          value: {
-            remote: {
-              transport: {
-                type: "streamable-http",
-                url: "https://mcp.example.com",
-              },
+  test("config_set drops MCP server writes", async () => {
+    const result = await configSetRoute.handler({
+      body: {
+        path: "mcp.servers",
+        value: {
+          remote: {
+            transport: {
+              type: "streamable-http",
+              url: "https://mcp.example.com",
             },
           },
         },
-      }),
-    ).rejects.toThrow(BadRequestError);
-    expect(committedRaw()).toBeNull();
+      },
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(committedRaw()?.mcp).toBeUndefined();
   });
 
-  test("config_set rejects direct MCP transport header paths", async () => {
-    await expect(
-      configSetRoute.handler({
-        body: {
-          path: "mcp.servers.remote.transport.headers.Authorization",
-          value: "Bearer mcp-secret",
-        },
-      }),
-    ).rejects.toThrow(BadRequestError);
-    expect(committedRaw()).toBeNull();
+  test("config_set drops direct MCP transport header paths", async () => {
+    const result = await configSetRoute.handler({
+      body: {
+        path: "mcp.servers.remote.transport.headers.Authorization",
+        value: "Bearer mcp-secret",
+      },
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(committedRaw()?.mcp).toBeUndefined();
   });
 });

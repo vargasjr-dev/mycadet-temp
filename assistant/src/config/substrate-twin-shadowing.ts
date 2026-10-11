@@ -2,7 +2,7 @@
 // Memory substrate — twin-namespace shadowing detection
 // ---------------------------------------------------------------------------
 
-import { z } from "zod";
+import { getConfig } from "./loader.js";
 
 /** One `memory.v2` tunable's `memory.substrate` twin. */
 interface SubstrateTwin {
@@ -96,33 +96,21 @@ export type SubstrateShadowing = {
 };
 
 /**
- * Presence-preserving slice parse for the raw `memory` section — the zod
- * replacement for the deleted hand-rolled plain-object narrowing. A zod
- * record keeps every persisted key (including explicit `null` values, which
- * `resolveSubstrateTuning` treats as present) and rejects non-object
- * sections exactly like the narrowing did.
- */
-const MemoryShadowSliceSchema = z
-  .object({ substrate: z.record(z.string(), z.unknown()).optional() })
-  .passthrough();
-
-/**
  * The `memory.substrate` twin covering `path`, or `undefined` when `path` is
  * not a shadowable `memory.v2` tunable or its twin is unset.
  *
  * `memory.substrate` is override-only and wins for substrate recall whenever
- * its key is present — including when it holds an explicit `null`, which
- * `resolveSubstrateTuning` treats as present. Detection therefore keys on
- * presence, not truthiness. What that means for the `memory.v2` key depends on
- * `alsoReadByV2Engine`: for a substrate-only twin the `memory.v2` value has no
- * remaining consumer, while for the three engine-read twins it still tunes v2
- * injection.
+ * its key is set. Detection keys on presence in the RUNNING config — the same
+ * typed view `resolveSubstrateTuning` consults, so the check can never
+ * disagree with runtime precedence: a key absent from the parsed config is
+ * absent for the resolver too.
  *
- * `raw` is the unparsed config object (`loadRawConfig()` / the `config_get`
- * payload), so the check sees exactly what is persisted.
+ * What a set twin means for the `memory.v2` key depends on
+ * {@link SubstrateTwin.alsoReadByV2Engine}: for a substrate-only twin the
+ * `memory.v2` value has no remaining consumer, while for the three
+ * engine-read twins it still tunes v2 injection.
  */
 export function findSubstrateShadowing(
-  raw: Record<string, unknown>,
   path: string,
 ): SubstrateShadowing | undefined {
   const segments = path.split(".");
@@ -137,9 +125,8 @@ export function findSubstrateShadowing(
   if (twin === undefined) {
     return undefined;
   }
-  const memory = MemoryShadowSliceSchema.safeParse(raw.memory);
-  const substrate = memory.success ? memory.data.substrate : undefined;
-  if (!substrate || !(twin.substrateKey in substrate)) {
+  const substrate: Record<string, unknown> = getConfig().memory.substrate;
+  if (!(twin.substrateKey in substrate)) {
     return undefined;
   }
   return {

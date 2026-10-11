@@ -153,7 +153,7 @@ export function registerConfigCommand(program: Command): void {
           // the value above cannot be mistaken for the effective one.
           const { describeShadowedConfigGet, findSubstrateShadowing } =
             await import("../../config/substrate-twin-shadowing.js");
-          const shadowing = findSubstrateShadowing(raw, key);
+          const shadowing = findSubstrateShadowing(key);
           if (shadowing) {
             log.warn(describeShadowedConfigGet(shadowing, key));
           }

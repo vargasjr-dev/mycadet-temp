@@ -5,9 +5,7 @@ import {
   configGetQueryKey,
   inferenceProviderconnectionsGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import type {
-  ProviderConnection,
-} from "@/generated/daemon/types.gen";
+import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import { createStoryQueryClient } from "@/lib/story-query-cache";
 import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 
@@ -29,11 +27,12 @@ const CONFIG = makeConfigFixture({
   llm: {
     profiles: {
       balanced: {
+        // The managed source alone renders view mode (the daemon's
+        // invariant stamp and the source coincide for cloud stubs).
         label: "Balanced",
         provider: "cadet",
         model: "glm-5.2",
         source: "managed",
-        invariant: true,
       },
       "my-custom": {
         label: "My Custom",

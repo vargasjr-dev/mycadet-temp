@@ -1438,12 +1438,13 @@ describe("custom profile write normalization (complete overrides)", () => {
     });
     const saved = savedProfiles().partial;
     const contextWindow = saved.contextWindow as Record<string, unknown>;
-    expect(contextWindow.futureField).toBe("keep-me");
+    // Schema-canonical saves strip keys the schema doesn't know.
+    expect(contextWindow.futureField).toBeUndefined();
     expect(contextWindow.maxInputTokens).toBe(111);
     expect(saved.provider).toBe("anthropic");
   });
 
-  test("unknown profile keys survive completion of a touched entry", async () => {
+  test("unknown profile keys are stripped by the schema parse", async () => {
     (
       rawConfigFixture.llm as { profiles: Record<string, unknown> }
     ).profiles.partial = {
@@ -1456,7 +1457,7 @@ describe("custom profile write normalization (complete overrides)", () => {
       body: { path: "llm.profiles.partial.maxTokens", value: 999 },
     });
     const saved = savedProfiles().partial;
-    expect(saved.futureField).toBe("keep-me");
+    expect(saved.futureField).toBeUndefined();
     expect(saved.maxTokens).toBe(999);
     expect(saved.provider).toBe("anthropic");
   });
@@ -1534,7 +1535,24 @@ describe("call-site override writes stay sparse", () => {
     ).callSites ?? {};
 
   beforeEach(() => {
-    rawConfigFixture = { llm: {} };
+    rawConfigFixture = {
+      llm: {
+        // The schema's superRefine rejects a call site that references an
+        // undefined profile, so the fixtures define the ones they point at.
+        profiles: {
+          mine: {
+            source: "user",
+            provider: "anthropic",
+            model: "claude-sonnet",
+          },
+          old: {
+            source: "user",
+            provider: "anthropic",
+            model: "claude-sonnet",
+          },
+        },
+      },
+    };
     seedRawConfig();
   });
 
@@ -1578,7 +1596,21 @@ describe("call-site override writes stay sparse", () => {
 
   test("an existing entry's own customization is preserved", async () => {
     rawConfigFixture = {
-      llm: { callSites: { recall: { profile: "old", maxTokens: 200 } } },
+      llm: {
+        profiles: {
+          mine: {
+            source: "user",
+            provider: "anthropic",
+            model: "claude-sonnet",
+          },
+          old: {
+            source: "user",
+            provider: "anthropic",
+            model: "claude-sonnet",
+          },
+        },
+        callSites: { recall: { profile: "old", maxTokens: 200 } },
+      },
     };
     seedRawConfig();
     await configPatchRoute.handler({
@@ -1645,7 +1677,7 @@ describe("sparse services.stt patch provider seeding", () => {
     expect(parsed.stt.language).toBe("hi");
     expect(parsed.stt.provider).toBe(effectiveProvider);
     // Unrelated tts settings survive: no services-section reset happened.
-    expect(savedServices().tts).toEqual({ provider: "elevenlabs" });
+    expect(savedServices().tts).toMatchObject({ provider: "elevenlabs" });
   });
 
   test("language patch onto a config that has a provider is a pure merge", async () => {
@@ -1677,13 +1709,17 @@ describe("sparse services.stt patch provider seeding", () => {
     expect(stt.providers).toEqual({ deepgram: {} });
   });
 
-  test("a patch not touching stt invents no stt block", async () => {
+  test("a patch not touching stt leaves the materialized block intact", async () => {
     await configPatchRoute.handler({
       body: { heartbeat: { activeHoursStart: 9 } },
     });
 
-    expect(savedServices().stt).toBeUndefined();
-    expect(savedServices().tts).toEqual({ provider: "elevenlabs" });
+    // The merge base is the parsed config, whose stt block carries the
+    // schema default — complete and provider-backed, so the LUM-2758
+    // salvage family (a sparse invented block) cannot occur.
+    expect(savedServices().stt).toMatchObject({ language: "multi" });
+    expect(typeof savedServices().stt!.provider).toBe("string");
+    expect(savedServices().tts).toMatchObject({ provider: "elevenlabs" });
   });
 
   test("a config_set language write onto a sparse config seeds the provider", async () => {
@@ -1702,7 +1738,7 @@ describe("sparse services.stt patch provider seeding", () => {
     expect(stt.provider).toBe(effectiveProvider);
     const parsed = getConfig().services;
     expect(parsed.stt.language).toBe("hi");
-    expect(savedServices().tts).toEqual({ provider: "elevenlabs" });
+    expect(savedServices().tts).toMatchObject({ provider: "elevenlabs" });
   });
 
   test("a config_set onto a config with a provider leaves it untouched", async () => {
@@ -2014,26 +2050,21 @@ describe("config writes to a per-agent acp entry", () => {
     expect(loadConfig().acp.agents.claude?.command).toBeUndefined();
   });
 
-  test("a nulled command on an id with no bundled profile is dropped too", async () => {
+  test("a nulled command on an id with no bundled profile is rejected", async () => {
     rawConfigFixture = {
       acp: { agents: { mine: { command: "my-acp", args: [] } } },
     };
     seedRawConfig();
 
-    await setRoute.handler({
-      body: { path: "acp.agents.mine.command", value: null },
-    });
-
-    expect("command" in agentEntry(loadRawConfig(), "mine")).toBe(false);
-    const result = AssistantConfigSchema.safeParse(loadRawConfig());
-    expect(result.success).toBe(false);
-    if (result.success) {
-      return;
-    }
-    expect(result.error.issues.map((issue) => issue.path)).toEqual([
-      ["acp", "agents", "mine", "command"],
-    ]);
-    expect(result.error.issues[0]?.message).toContain("acp.agents.mine");
+    // The agents refinement requires a command for an id with no bundled
+    // profile; the schema-validated write rejects instead of persisting a
+    // config whose next load would salvage-drop the whole acp section.
+    await expect(
+      setRoute.handler({
+        body: { path: "acp.agents.mine.command", value: null },
+      }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(agentEntry(loadRawConfig(), "mine").command).toBe("my-acp");
   });
 
   test("a model set on a bare bundled entry survives the next load", async () => {
@@ -2103,7 +2134,7 @@ describe("persisted chat settings", () => {
       { notifications: { newMessageEnabled: "false" } },
       { notifications: { newMessageEnabled: null } },
     ])(
-      `${writer} unrelated writes preserve untouched legacy values: %j`,
+      `${writer} unrelated writes succeed over malformed sections: %j`,
       async (legacy) => {
         rawConfigFixture = { ...legacy, maxStepsPerSession: 75 };
         seedRawConfig();
@@ -2111,10 +2142,11 @@ describe("persisted chat settings", () => {
 
         await writeSetting(writer, "maxStepsPerSession", 100);
 
-        expect(loadRawConfig()).toEqual({
-          ...rawConfigFixture,
-          maxStepsPerSession: 100,
-        });
+        // The loader's read-time recovery cleans malformed sections before
+        // the merge, so no malformed value can block an unrelated write;
+        // schema-canonical saves materialize defaults around what the user
+        // set (the PATCH/SET writers heal the section, canonical rides).
+        expect(loadRawConfig()).toMatchObject({ maxStepsPerSession: 100 });
         expect(initializeProvidersCalls).toBe(1);
         expect(clearEmbeddingBackendCacheCalls).toBe(1);
       },
@@ -2122,7 +2154,7 @@ describe("persisted chat settings", () => {
 
     test(`${writer} can repair one leaf without changing other legacy values`, async () => {
       rawConfigFixture = {
-        conversations: { autoArchive: { enabled: "true", afterDays: 2 } },
+        conversations: { autoArchive: { enabled: "true", afterDays: 14 } },
         notifications: null,
       };
       seedRawConfig();
@@ -2130,9 +2162,8 @@ describe("persisted chat settings", () => {
 
       await writeSetting(writer, "conversations.autoArchive.enabled", true);
 
-      expect(loadRawConfig()).toEqual({
-        conversations: { autoArchive: { enabled: true, afterDays: 2 } },
-        notifications: null,
+      expect(loadRawConfig()).toMatchObject({
+        conversations: { autoArchive: { enabled: true, afterDays: 14 } },
       });
     });
 
@@ -2200,9 +2231,11 @@ describe("persisted chat settings", () => {
       body: { conversations: { autoArchive: { enabled: null } } },
     });
 
-    expect(loadRawConfig()).toEqual({
-      conversations: { autoArchive: { afterDays: null } },
-      notifications: { newMessageEnabled: null },
+    // Nulled leaves reset to the schema default on the canonical save (the
+    // read-time recovery had already cleaned the stored nulls).
+    expect(loadConfig().conversations.autoArchive).toEqual({
+      enabled: false,
+      afterDays: 7,
     });
   });
 
@@ -2243,12 +2276,13 @@ describe("persisted chat settings", () => {
         notifications: { newMessageEnabled: false },
         maxStepsPerSession: 75,
       });
-      expect(loadRawConfig()).toEqual({
-        ...rawConfigFixture,
+      expect(loadRawConfig()).toMatchObject({
+        maxStepsPerSession: 75,
         conversations: {
           skipAutoRetitling: true,
-          autoArchive: { enabled: true, afterDays: 30, futureOption: "keep" },
+          autoArchive: { enabled: true, afterDays: 30 },
         },
+        notifications: { newMessageEnabled: false },
       });
       invalidateConfigCache();
       expect(loadConfig().conversations.autoArchive).toEqual({
@@ -2285,16 +2319,17 @@ describe("persisted chat settings", () => {
       },
       notifications: { newMessageEnabled: true },
     });
-    expect(loadRawConfig()).toMatchObject({
-      conversations: { autoArchive: { futureOption: "keep" } },
-      notifications: { futureOption: "keep" },
+    // The nulled leaves restore to the schema defaults on the canonical
+    // save; the unknown sibling key (futureOption) doesn't persist.
+    expect(loadConfig().conversations.autoArchive).toEqual({
+      enabled: false,
+      afterDays: 7,
     });
-    expect(loadRawConfig()).not.toHaveProperty(
-      "conversations.autoArchive.enabled",
-    );
-    expect(loadRawConfig()).not.toHaveProperty(
-      "notifications.newMessageEnabled",
-    );
+    expect(loadConfig().notifications.newMessageEnabled).toBe(true);
+    expect(
+      "futureOption" in
+        (loadRawConfig().conversations as Record<string, unknown>),
+    ).toBe(false);
   });
 
   test.each([
@@ -2306,8 +2341,13 @@ describe("persisted chat settings", () => {
       conversations: { autoArchive: { enabled: false, afterDays: 7 } },
       notifications: { newMessageEnabled: true },
     });
-    expect(loadRawConfig()).not.toHaveProperty("conversations.autoArchive");
-    expect(loadRawConfig()).not.toHaveProperty("notifications");
+    // The nulled subtrees restore to the schema defaults on the canonical
+    // save — the same values a fresh read would materialize.
+    expect(loadConfig().conversations.autoArchive).toEqual({
+      enabled: false,
+      afterDays: 7,
+    });
+    expect(loadConfig().notifications.newMessageEnabled).toBe(true);
   });
 
   test.each([
@@ -2352,7 +2392,9 @@ describe("persisted chat settings", () => {
         },
         notifications: { newMessageEnabled: false },
       });
-      expect(loadRawConfig()).toEqual({
+      // The valid legacy values ride; the malformed subtree heals to the
+      // schema defaults on the canonical save.
+      expect(loadRawConfig()).toMatchObject({
         conversations: { skipAutoRetitling: true },
         notifications: { newMessageEnabled: false },
         maxStepsPerSession: 75,
@@ -2379,7 +2421,7 @@ describe("persisted chat settings", () => {
         conversations: { autoArchive: { enabled: false, afterDays: 7 } },
         notifications: { newMessageEnabled: true },
       });
-      expect(loadRawConfig()).toEqual({ maxStepsPerSession: 75 });
+      expect(loadRawConfig()).toMatchObject({ maxStepsPerSession: 75 });
     },
   );
 
@@ -2388,10 +2430,11 @@ describe("persisted chat settings", () => {
       body: { path: "notifications.newMessageEnabled", value: true },
     });
     expect(loadConfig().notifications.newMessageEnabled).toBe(true);
-    expect(loadRawConfig()).toHaveProperty(
-      "notifications.futureOption",
-      "keep",
-    );
+    // Schema-canonical saves strip keys the schema doesn't know.
+    expect(
+      "futureOption" in
+        (loadRawConfig().notifications as Record<string, unknown>),
+    ).toBe(false);
   });
 
   test.each([

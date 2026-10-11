@@ -131,11 +131,16 @@ describe("LLMSchema fallbackProfile", () => {
       io: "input",
     });
     expect(json).toMatchObject({
+      // Id-carrying nested schemas (ProfileEntry et al. from the `.meta` ids)
+      // render as `$defs` with `$ref`s pointing at them.
+      $defs: {
+        ProfileEntry: {
+          properties: { fallbackProfile: { readOnly: true } },
+        },
+      },
       properties: {
         profiles: {
-          additionalProperties: {
-            properties: { fallbackProfile: { readOnly: true } },
-          },
+          additionalProperties: { $ref: "#/$defs/ProfileEntry" },
         },
       },
     });

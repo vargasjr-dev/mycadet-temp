@@ -85,13 +85,13 @@ describe("config_set route - request validation", () => {
   });
 
   test("accepts body with explicit null value", async () => {
-    seedRawConfig({ heartbeat: { activeHoursStart: 9 } });
+    seedRawConfig({ heartbeat: { timezone: "America/New_York" } });
     const result = await configSetRoute.handler({
-      body: { path: "heartbeat.activeHoursStart", value: null },
+      body: { path: "heartbeat.timezone", value: null },
     });
     expect(result).toEqual({ ok: true });
     const heartbeat = loadRawConfig().heartbeat as Record<string, unknown>;
-    expect(heartbeat.activeHoursStart).toBeNull();
+    expect(heartbeat.timezone).toBeNull();
   });
 
   test("rejects body missing path field", async () => {
@@ -192,12 +192,16 @@ describe("config_set route - request validation", () => {
       body: { path: "memory.cleanup.conversationRetentionDays", value: 30 },
     });
     const saved = loadRawConfig();
-    expect(saved.llm).toEqual({ default: { provider: "anthropic" } });
-    expect(saved.calls).toEqual({ enabled: true });
-    expect(saved.heartbeat).toEqual({
-      activeHoursStart: 9,
-      activeHoursEnd: 22,
+    // The write is schema-canonical: the parse materializes section defaults
+    // around what the user set. The contract under test — a nested set may
+    // not drop or mangle unrelated top-level keys — is asserted leaf-wise.
+    expect((saved.llm as Record<string, unknown>).default).toEqual({
+      provider: "anthropic",
     });
+    expect((saved.calls as Record<string, unknown>).enabled).toBe(true);
+    const heartbeat = saved.heartbeat as Record<string, unknown>;
+    expect(heartbeat.activeHoursStart).toBe(9);
+    expect(heartbeat.activeHoursEnd).toBe(22);
   });
 });
 

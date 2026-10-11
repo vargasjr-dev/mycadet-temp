@@ -28,17 +28,15 @@ import {
 } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type {
-  ConfigGetResponse,
-  ProfileEntry,
-} from "@/generated/daemon/types.gen";
+import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
+import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
 
 let configPatchBodies: unknown[] = [];
-let profilesState: Record<string, ProfileEntry> = {};
+let profilesState: Record<string, WireProfileEntry> = {};
 let activeProfileState: string | null = null;
 let advisorProfileState: string | null = null;
 let activeProfileBodies: unknown[] = [];

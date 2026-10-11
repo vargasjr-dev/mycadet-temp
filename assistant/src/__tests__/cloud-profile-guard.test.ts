@@ -592,12 +592,12 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
     });
 
     expect(result).toHaveProperty("ingress");
-    expect(committedRaw()).toEqual({
-      ingress: {
-        publicBaseUrl: "https://manual.example.test",
-        publicBaseUrlManagedBy: "tunnel",
-      },
-    });
+    const committed = committedRaw() as Record<string, any>;
+    expect(committed.ingress.publicBaseUrl).toBe("https://manual.example.test");
+    expect(committed.ingress.publicBaseUrlManagedBy).toBe("tunnel");
+    expect("lastTunnel" in committed.ingress).toBe(false);
+    expect("pairingTunnel" in committed.ingress).toBe(false);
+    expect("assistantId" in committed.ingress).toBe(false);
   });
 
   test("allows patches that modify a cloud profile (non-null)", async () => {
@@ -756,7 +756,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       patchRoute.handler({
         body: { llm: { profiles: { balanced: "junk" } } },
       }),
-    ).rejects.toThrow('Cannot delete or replace cloud profile "balanced".');
+    ).rejects.toThrow("expected object, received string");
     expectNothingCommitted();
   });
 
@@ -765,7 +765,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       patchRoute.handler({
         body: { llm: { profiles: { balanced: ["disabled"] } } },
       }),
-    ).rejects.toThrow('Cannot delete or replace cloud profile "balanced".');
+    ).rejects.toThrow("expected object, received array");
     expectNothingCommitted();
   });
 
@@ -806,10 +806,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       patchRoute.handler({
         body: { llm: { profiles: { balanced: { status: "weird" } } } },
       }),
-    ).rejects.toThrow(
-      'Cannot set status "weird" on cloud profile "balanced". ' +
-        'Only re-enabling (status "active") is allowed.',
-    );
+    ).rejects.toThrow('llm.profiles.balanced.status: Invalid option');
     expectNothingCommitted();
   });
 
@@ -818,7 +815,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       setRoute.handler({
         body: { path: "llm.profiles.balanced.status", value: 123 },
       }),
-    ).rejects.toThrow('Cannot set status 123 on cloud profile "balanced"');
+    ).rejects.toThrow('llm.profiles.balanced.status: Invalid option');
     expectNothingCommitted();
   });
 });
@@ -939,12 +936,12 @@ describe("default-profile invariant guard — allowed writes", () => {
 
   test("PATCH non-profile llm writes are unaffected", async () => {
     const result = await patchRoute.handler({
-      body: { llm: { activeProfile: "custom" } },
+      body: { llm: { activeProfile: "balanced" } },
     });
     expect(result).toHaveProperty("llm");
     expectOneCommitCycle();
     expect((committedRaw() as Record<string, any>).llm.activeProfile).toBe(
-      "custom",
+      "balanced",
     );
     // The invariant profiles are untouched by an unrelated llm write.
     expect(savedProfile("balanced")).toEqual(
@@ -1004,12 +1001,13 @@ describe("wire-only profile keys are stripped from writes", () => {
     expect(profile.model).toBe("claude-sonnet");
   });
 
-  test("SET of a wire-only leaf path is dropped without writing", async () => {
+  test("SET of a wire-only leaf path never persists the key", async () => {
     const result = await setRoute.handler({
       body: { path: "llm.profiles.balanced.supportsVision", value: true },
     });
     expect(result).toEqual({ ok: true });
-    expectNothingCommitted();
+    expectOneCommitCycle();
+    expect("supportsVision" in savedProfile("balanced")).toBe(false);
   });
 
   // -------------------------------------------------------------------------
@@ -1425,7 +1423,11 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
       string,
       Record<string, Record<string, unknown>>
     >;
-    expect(raw.services["image-generation"]).toEqual({ provider: "cadet" });
-    expect(raw.services["web-search"]).toEqual({ provider: "cadet" });
+    // The section schemas are closed: the parse strips the legacy `mode`
+    // key and materializes the section's defaults around the user's values.
+    expect("mode" in raw.services["image-generation"]!).toBe(false);
+    expect(raw.services["image-generation"]!.provider).toBe("cadet");
+    expect("mode" in raw.services["web-search"]!).toBe(false);
+    expect(raw.services["web-search"]!.provider).toBe("cadet");
   });
 });

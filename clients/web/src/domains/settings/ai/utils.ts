@@ -4,12 +4,13 @@ import { WEB_SEARCH_PROVIDER_KEY_STORAGE } from "@/assistant/generated/web-searc
 import type { ProfileEntry } from "@/generated/daemon/types.gen";
 
 import { TOKEN_SLIDER_MIN_TOKENS } from "@/domains/settings/ai/constants";
+import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 // ---------------------------------------------------------------------------
 // Domain types
 // ---------------------------------------------------------------------------
 
-export type ProfileWithName = { name: string } & ProfileEntry;
+export type ProfileWithName = { name: string } & WireProfileEntry;
 
 export interface InferenceTokenBudgetState {
   maxOutputTokens: number;

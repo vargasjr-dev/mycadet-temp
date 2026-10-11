@@ -1,3 +1,5 @@
+import { utimesSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { MemorySubstrateConfigSchema } from "../schemas/memory-substrate.js";
@@ -8,6 +10,18 @@ import {
   findSubstrateShadowing,
   SUBSTRATE_TWIN_BY_V2_KEY,
 } from "../substrate-twin-shadowing.js";
+
+/**
+ * Write `raw` to the workspace config.json as the state the loader serves.
+ * A distinct mtime per write keeps the loader's file-signature cache from
+ * reading two consecutive seeds as identical.
+ */
+function seedRawConfig(raw: Record<string, unknown>): void {
+  const path = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
+  writeFileSync(path, JSON.stringify(raw));
+  const stamp = new Date(Date.now() + Math.random());
+  utimesSync(path, stamp, stamp);
+}
 
 describe("substrate twin table", () => {
   test("pairs exactly the memory.substrate schema's keys", () => {
@@ -44,15 +58,15 @@ describe("substrate twin table", () => {
 
 describe("findSubstrateShadowing", () => {
   test("reports the winning substrate twin for a shadowed memory.v2 key", () => {
-    const raw = {
+    seedRawConfig({
       memory: {
         v2: { consolidation_interval_hours: 4 },
         substrate: { consolidation_interval_hours: 876000 },
       },
-    };
+    });
 
     expect(
-      findSubstrateShadowing(raw, "memory.v2.consolidation_interval_hours"),
+      findSubstrateShadowing("memory.v2.consolidation_interval_hours"),
     ).toEqual({
       substratePath: "memory.substrate.consolidation_interval_hours",
       substrateValue: 876000,
@@ -61,29 +75,31 @@ describe("findSubstrateShadowing", () => {
   });
 
   test("maps the renamed spread keys to their substrate names", () => {
-    const raw = { memory: { v2: {}, substrate: { spread_k: 0.4 } } };
+    seedRawConfig({ memory: { v2: {}, substrate: { spread_k: 0.4 } } });
 
-    expect(findSubstrateShadowing(raw, "memory.v2.k")).toEqual({
+    expect(findSubstrateShadowing("memory.v2.k")).toEqual({
       substratePath: "memory.substrate.spread_k",
       substrateValue: 0.4,
       alsoReadByV2Engine: true,
     });
     // hops has no twin set, so nothing shadows it.
-    expect(findSubstrateShadowing(raw, "memory.v2.hops")).toBeUndefined();
+    expect(findSubstrateShadowing("memory.v2.hops")).toBeUndefined();
   });
 
   test("treats an explicit null twin as set, matching resolveSubstrateTuning", () => {
     // `orV2` falls back only on `undefined`, so a null substrate value wins —
-    // and it is exactly the value the consolidation freeze writes.
-    const raw = {
+    // and it is exactly the value the consolidation freeze writes. The field
+    // is nullable in the schema, so the null survives the loader's parse and
+    // stays present in the running config.
+    seedRawConfig({
       memory: {
         v2: { consolidation_max_buffer_lines: 100 },
         substrate: { consolidation_max_buffer_lines: null },
       },
-    };
+    });
 
     expect(
-      findSubstrateShadowing(raw, "memory.v2.consolidation_max_buffer_lines"),
+      findSubstrateShadowing("memory.v2.consolidation_max_buffer_lines"),
     ).toEqual({
       substratePath: "memory.substrate.consolidation_max_buffer_lines",
       substrateValue: null,
@@ -92,29 +108,23 @@ describe("findSubstrateShadowing", () => {
   });
 
   test("returns nothing for unshadowed paths", () => {
-    const raw = {
+    // No memory.substrate subtree at all.
+    seedRawConfig({ memory: { v2: { bm25_b: 0.6 } } });
+    expect(findSubstrateShadowing("memory.v2.bm25_b")).toBeUndefined();
+
+    seedRawConfig({
       memory: {
         v2: { bm25_b: 0.6, enabled: true },
         substrate: { bm25_b: 0.3 },
       },
-    };
-
-    // No memory.substrate subtree at all.
-    expect(
-      findSubstrateShadowing(
-        { memory: { v2: { bm25_b: 0.6 } } },
-        "memory.v2.bm25_b",
-      ),
-    ).toBeUndefined();
+    });
     // A v2 key with no substrate twin.
-    expect(findSubstrateShadowing(raw, "memory.v2.enabled")).toBeUndefined();
+    expect(findSubstrateShadowing("memory.v2.enabled")).toBeUndefined();
     // The substrate key itself is what wins — writing it is never shadowed.
-    expect(
-      findSubstrateShadowing(raw, "memory.substrate.bm25_b"),
-    ).toBeUndefined();
+    expect(findSubstrateShadowing("memory.substrate.bm25_b")).toBeUndefined();
     // Paths outside the memory namespace, and the wrong depth.
-    expect(findSubstrateShadowing(raw, "memory.v2")).toBeUndefined();
-    expect(findSubstrateShadowing(raw, "llm.v2.bm25_b")).toBeUndefined();
+    expect(findSubstrateShadowing("memory.v2")).toBeUndefined();
+    expect(findSubstrateShadowing("llm.v2.bm25_b")).toBeUndefined();
   });
 });
 

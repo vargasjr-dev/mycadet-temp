@@ -1,4 +1,22 @@
+import {
+  INGRESS_ASSISTANT_ID_KEY,
+  INGRESS_LAST_TUNNEL_KEY,
+  INGRESS_PAIRING_TUNNEL_KEY,
+  TUNNEL_PROVIDERS,
+} from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
+
+/**
+ * A recorded tunnel under `ingress.lastTunnel` / `ingress.pairingTunnel`.
+ * The CLI writes these records (validated by `parseTunnelRecord` in
+ * service-contracts — the single source for the key names, the provider
+ * allowlist, and record validation); the schema carries them so schema-
+ * canonical config writes preserve live tunnel state instead of dropping it.
+ */
+const TunnelRecordSchema = z.object({
+  provider: z.enum(TUNNEL_PROVIDERS),
+  publicBaseUrl: z.string(),
+});
 
 function emptyOrAbsoluteHttpUrl(fieldPath: string) {
   return z
@@ -101,6 +119,18 @@ const IngressBaseSchema = z
       .default(5_000)
       .describe(
         "Time in milliseconds to drain in-flight requests during graceful shutdown",
+      ),
+    [INGRESS_ASSISTANT_ID_KEY]: z
+      .string()
+      .optional()
+      .describe("The assistant id the tunnel fronted (CLI-owned record)"),
+    [INGRESS_LAST_TUNNEL_KEY]: TunnelRecordSchema.optional(),
+    [INGRESS_PAIRING_TUNNEL_KEY]: TunnelRecordSchema.optional(),
+    publicBaseUrlManagedBy: z
+      .string()
+      .optional()
+      .describe(
+        'Who owns the current publicBaseUrl — "tunnel" when the tunnel machinery stamped it, anything else is user-managed (CLI/route-owned bookkeeping)',
       ),
   })
   .describe(

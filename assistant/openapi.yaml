@@ -45141,14 +45141,6 @@ components:
               type: string
               minLength: 1
             - type: "null"
-        supportsVision:
-          anyOf:
-            - type: boolean
-            - type: "null"
-        invariant:
-          anyOf:
-            - type: boolean
-            - type: "null"
       additionalProperties: {}
     InputModalities:
       type: object
@@ -45501,10 +45493,6 @@ components:
           readOnly: true
           type: string
           minLength: 1
-        supportsVision:
-          type: boolean
-        invariant:
-          type: boolean
     ConnectionProvider:
       type: string
       enum:
@@ -46285,10 +46273,6 @@ components:
           readOnly: true
           type: string
           minLength: 1
-        supportsVision:
-          type: boolean
-        invariant:
-          type: boolean
       additionalProperties: false
     InputModalitiesOutput:
       type: object

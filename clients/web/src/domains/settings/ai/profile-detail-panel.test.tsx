@@ -14,10 +14,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type {
-  ProfileEntry,
-  ProviderConnection,
-} from "@/generated/daemon/types.gen";
+import type { ProviderConnection } from "@/generated/daemon/types.gen";
+import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -25,7 +23,7 @@ import type {
 
 let toastSuccessCalls: string[] = [];
 let configPatchBodies: unknown[] = [];
-let profilesState: Record<string, ProfileEntry> = {};
+let profilesState: Record<string, WireProfileEntry> = {};
 
 function configPayload() {
   return {

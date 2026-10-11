@@ -209,8 +209,13 @@ interface TierKeyExemption {
  *   tuning when building the graph view.
  * - `src/memory-v2-routes.ts` (v2) — the v2 tuning routes read and merge
  *   `memory.v2` config directly.
+ * - `config/substrate-twin-shadowing.ts` (substrate) — the operator-facing
+ *   twin detector: it reads substrate PRESENCE so a `memory.v2` write can
+ *   warn that the twin namespace wins. It never resolves a tunable itself —
+ *   resolution stays in `substrate/tuning.ts`.
  */
 const TIER_KEY_READ_ALLOWLIST: readonly TierKeyExemption[] = [
+  { path: "src/config/substrate-twin-shadowing.ts", keys: ["substrate"] },
   { path: "src/config/loader.ts", keys: ["v3"] },
   { path: "src/config/memory-v3-gate.ts", keys: ["v2", "v3"] },
   {
