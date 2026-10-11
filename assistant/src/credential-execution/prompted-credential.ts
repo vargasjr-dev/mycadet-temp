@@ -206,18 +206,11 @@ export async function persistPromptedCredential(args: {
   // (the 06-credential-security rail promises that pasted message is
   // scrubbed after storage). Run the scrub right after the store succeeds,
   // best-effort and invisible to the caller, mirroring credentials_set.
-  try {
-    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-    log.info(
-      { service, field, ...scrubbed },
-      "Prompted credential stored; scrubbed value from recent transcripts",
-    );
-  } catch (err) {
-    log.warn(
-      { service, field, err },
-      "Prompted credential stored, but transcript scrub failed",
-    );
-  }
+  const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+  log.info(
+    { service, field, ...scrubbed },
+    "Prompted credential stored; scrubbed value from recent transcripts",
+  );
 
   try {
     upsertCredentialMetadata(service, field, {

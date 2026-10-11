@@ -1,5 +1,5 @@
 /**
- * `platform_disconnected` SSE event.
+ * `cloud_disconnected` SSE event.
  *
  * Emitted by the cloud-disconnect route after stored platform
  * credentials are deleted, notifying connected clients that the cloud
@@ -13,7 +13,7 @@
 import { z } from "zod";
 
 export const CloudDisconnectedEventSchema = z.object({
-  type: z.literal("platform_disconnected"),
+  type: z.literal("cloud_disconnected"),
 });
 
 export type CloudDisconnectedEvent = z.infer<

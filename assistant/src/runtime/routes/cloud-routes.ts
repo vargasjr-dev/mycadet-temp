@@ -8,8 +8,8 @@
  *   - platform_connect (POST platform/connect): reports whether the stored
  *     credentials still connect, and when the stored key has been rejected,
  *     says so, so the caller can tell the user what replaces it.
- *   - platform_disconnect (POST platform/disconnect): deletes stored platform
- *     credentials and emits platform_disconnected signal.
+ *   - platform_disconnect (POST platform/disconnect): deletes stored cloud
+ *     credentials and emits cloud_disconnected signal.
  *   - platform_callback_routes_register (POST platform/callback-routes/register):
  *     registers a callback route with the cloud gateway.
  *   - platform_callback_routes_list (GET platform/callback-routes): lists
@@ -115,13 +115,11 @@ export type PlatformConnectResponse = z.infer<
   typeof PlatformConnectResponseSchema
 >;
 
-const PlatformDisconnectResponseSchema = z.object({
+const CloudDisconnectResponseSchema = z.object({
   disconnected: z.literal(true),
   previousBaseUrl: z.string().nullable(),
 });
-type PlatformDisconnectResponse = z.infer<
-  typeof PlatformDisconnectResponseSchema
->;
+type CloudDisconnectResponse = z.infer<typeof CloudDisconnectResponseSchema>;
 
 const CallbackRouteRegisterRequestSchema = z.object({
   path: z.string(),
@@ -397,9 +395,9 @@ async function handlePlatformVerifyCredential(
   return { status: await verifyStoredCredential() };
 }
 
-async function handlePlatformDisconnect(
+async function handleCloudDisconnect(
   _args: RouteHandlerArgs,
-): Promise<PlatformDisconnectResponse> {
+): Promise<CloudDisconnectResponse> {
   // Reject if running inside a cloud host
   if (isCloudRemote()) {
     throw new UnprocessableEntityError(
@@ -445,7 +443,7 @@ async function handlePlatformDisconnect(
   setCloudUserId(undefined);
 
   // Notify connected clients
-  broadcastMessage({ type: "platform_disconnected" });
+  broadcastMessage({ type: "cloud_disconnected" });
 
   return {
     disconnected: true,
@@ -943,10 +941,10 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Disconnect from Cadet Cloud",
     description:
-      "Deletes stored cloud credentials and emits platform_disconnected signal to connected clients.",
+      "Deletes stored cloud credentials and emits cloud_disconnected signal to connected clients.",
     tags: ["platform"],
-    handler: handlePlatformDisconnect,
-    responseBody: PlatformDisconnectResponseSchema,
+    handler: handleCloudDisconnect,
+    responseBody: CloudDisconnectResponseSchema,
   },
   {
     operationId: "platform_callback_routes_register",

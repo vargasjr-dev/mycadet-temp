@@ -93,24 +93,31 @@ export async function scrubStoredCredentialFromTranscripts(
     dbMessagesScrubbed: 0,
     residentMessagesScrubbed: 0,
   };
-  if (value.trim().length < MIN_SCRUB_VALUE_LENGTH) {
-    return result;
-  }
-  const targets = buildSearchTargets(value);
   try {
-    result.dbMessagesScrubbed = sweepDbMessages(targets);
+    if (value.trim().length < MIN_SCRUB_VALUE_LENGTH) {
+      return result;
+    }
+    const targets = buildSearchTargets(value);
+    try {
+      result.dbMessagesScrubbed = sweepDbMessages(targets);
+    } catch (err) {
+      log.warn(
+        { err, valueLength: value.length },
+        "Credential transcript DB sweep failed; continuing with in-memory sweep",
+      );
+    }
+    try {
+      result.residentMessagesScrubbed = sweepResidentConversations(targets);
+    } catch (err) {
+      log.warn(
+        { err, valueLength: value.length },
+        "Credential transcript in-memory sweep failed",
+      );
+    }
   } catch (err) {
     log.warn(
       { err, valueLength: value.length },
-      "Credential transcript DB sweep failed; continuing with in-memory sweep",
-    );
-  }
-  try {
-    result.residentMessagesScrubbed = sweepResidentConversations(targets);
-  } catch (err) {
-    log.warn(
-      { err, valueLength: value.length },
-      "Credential transcript in-memory sweep failed",
+      "Credential transcript scrub failed",
     );
   }
   return result;

@@ -595,7 +595,7 @@ export function useStreamEventHandler(
         // are consumed by the settings surfaces, not the conversation stream.
         case "oauth_connect_result":
         case "show_platform_login":
-        case "platform_disconnected":
+        case "cloud_disconnected":
           break;
         // Notification-created broadcasts and recording lifecycle
         // instructions. The web chat handler is a no-op for these — they target

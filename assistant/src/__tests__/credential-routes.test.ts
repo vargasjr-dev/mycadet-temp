@@ -18,7 +18,6 @@ let syncRejects: boolean;
 let disconnectedProviders: string[];
 let credentialIdCounter: number;
 let scrubbedValues: string[];
-let scrubRejects: boolean;
 let liveRecordsUnreachable: boolean;
 
 function metaKey(service: string, field: string): string {
@@ -120,9 +119,6 @@ mock.module("../credential-execution/cloud-catalog.js", () => ({
 mock.module("../daemon/credential-transcript-scrub.js", () => ({
   scrubStoredCredentialFromTranscripts: mock(async (value: string) => {
     scrubbedValues.push(value);
-    if (scrubRejects) {
-      throw new Error("transcript sweep failed");
-    }
     return { dbMessagesScrubbed: 0, residentMessagesScrubbed: 0 };
   }),
 }));
@@ -195,7 +191,6 @@ describe("credentials routes", () => {
     disconnectedProviders = [];
     credentialIdCounter = 0;
     scrubbedValues = [];
-    scrubRejects = false;
     liveRecordsUnreachable = false;
     _resetRevealSuccessRegistryForTest();
     resetForChatMintRegistryForTest();
@@ -612,28 +607,6 @@ describe("credentials routes", () => {
       ).rejects.toThrow("simulated oauth-store failure");
 
       // THEN the secret was stored and the scrub ran despite the failure
-      expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(
-        SECRET_VALUE,
-      );
-      expect(scrubbedValues).toEqual([SECRET_VALUE]);
-    });
-
-    test("the set still succeeds when the transcript scrub rejects", async () => {
-      /**
-       * The scrub is post-store hygiene: the credential IS stored, so a
-       * scrub failure is logged and must stay invisible to the caller.
-       */
-      // GIVEN a scrub that rejects
-      scrubRejects = true;
-
-      // WHEN a credential is stored
-      const result = (await setRoute!.handler({
-        body: { service: "vercel", field: "api_token", value: SECRET_VALUE },
-      })) as SetResponse;
-
-      // THEN the route still returns success and the secret is persisted
-      expect(result.service).toBe("vercel");
-      expect(result.credentialId).toBe("cred-1");
       expect(secureStore.get(seedKey("vercel", "api_token"))).toBe(
         SECRET_VALUE,
       );

@@ -139,18 +139,11 @@ export async function storeCredentialValue(
   if (!input.skipTranscriptScrub) {
     const { scrubStoredCredentialFromTranscripts } =
       await import("../../daemon/credential-transcript-scrub.js");
-    try {
-      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-      log.info(
-        { service, field, ...scrubbed },
-        "Credential stored; scrubbed value from recent transcripts",
-      );
-    } catch (err) {
-      log.warn(
-        { err, service, field },
-        "Credential stored, but transcript scrub failed",
-      );
-    }
+    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+    log.info(
+      { service, field, ...scrubbed },
+      "Credential stored; scrubbed value from recent transcripts",
+    );
   }
 
   const metadata = upsertCredentialMetadata(service, field, {
