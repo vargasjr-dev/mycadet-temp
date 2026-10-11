@@ -3,7 +3,6 @@ import { Navigate, useSearchParams } from "react-router";
 import { Tabs } from "@mycadet/design-library/components/tabs";
 
 import { MemoryCard } from "@/domains/settings/components/memory-card";
-import { AssistantLifecyclePanel } from "@/domains/settings/components/panels/assistant-lifecycle-panel";
 import { EnvironmentConfigPanel } from "@/domains/settings/components/panels/environment-config-panel";
 import { FeatureFlagsPanel } from "@/domains/settings/components/panels/feature-flags-panel";
 import { useTranslation } from "@/i18n";
@@ -12,7 +11,6 @@ import { routes } from "@/utils/routes";
 
 const ALL_TABS = [
   { id: "feature-flags", labelKey: "developerPage.tabFeatureFlags" },
-  { id: "lifecycle", labelKey: "developerPage.tabLifecycle" },
   { id: "memory", labelKey: "developerPage.tabMemory" },
 ] as const;
 
@@ -76,9 +74,6 @@ export function DeveloperPage() {
             <FeatureFlagsPanel />
             <EnvironmentConfigPanel />
           </div>
-        </Tabs.Panel>
-        <Tabs.Panel value="lifecycle" className={PANEL_CLASS}>
-          <AssistantLifecyclePanel />
         </Tabs.Panel>
         <Tabs.Panel value="memory" className={PANEL_CLASS}>
           <div className="space-y-4">

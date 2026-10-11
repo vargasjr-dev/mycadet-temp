@@ -114,32 +114,6 @@
     "typePreview": "Preview",
     "typeScheduled": "По расписанию"
   },
-  "assistantLifecyclePanel": {
-    "allAssistantsSubtitle": "{count, plural, one {Найден # ассистент.} few {Найдено # ассистента.} many {Найдено # ассистентов.} other {Найдено # ассистента.}}",
-    "allAssistantsTitle": "Все ассистенты",
-    "assistantId": "ID ассистента",
-    "created": "Создан",
-    "current": "Текущий",
-    "hatch": "Создать",
-    "hatchConfirmMessage": "Точно создать нового ассистента? Будет развёрнута новая инфраструктура.",
-    "hatchConfirmTitle": "Создать нового ассистента",
-    "hatchDescription": "Развернуть нового ассистента. Это может занять немного времени.",
-    "hatchExistingToast": "Ассистент уже есть. Новый не создан.",
-    "hatchFailedToast": "Не удалось создать ассистента.",
-    "hatchSubtitle": "Создать новый экземпляр ассистента.",
-    "hatchSuccessToast": "Новый ассистент успешно создан.",
-    "hatchTitle": "Создать нового ассистента",
-    "infoEmpty": "Ассистент не найден. Создание ассистента, чтобы начать.",
-    "infoLoading": "Загрузка сведений об ассистенте...",
-    "infoSubtitle": "Сведения о текущем ассистенте.",
-    "infoTitle": "Сведения об ассистенте",
-    "lastModified": "Последнее изменение",
-    "machineId": "ID машины",
-    "name": "Имя",
-    "status": "Статус",
-    "unnamed": "Без имени",
-    "version": "Версия"
-  },
   "assistantPicker": {
     "active": "Активный",
     "subtitle": "Выбор ассистента, активного для этого аккаунта.",
@@ -700,7 +674,6 @@
   "developerPage": {
     "sectionsAriaLabel": "Разделы для разработчиков",
     "tabFeatureFlags": "Флаги функций",
-    "tabLifecycle": "Жизненный цикл ассистента",
     "tabMemory": "Память"
   },
   "doctorChatBlocks": {
