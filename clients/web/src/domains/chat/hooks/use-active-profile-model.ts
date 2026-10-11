@@ -4,41 +4,36 @@ import { useMemo } from "react";
 import {
   configGetOptions,
   conversationsByIdGetOptions,
+  inferenceProfilesGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
+import type { InferenceProfileSummary } from "@/generated/daemon/types.gen";
 
 /**
  * Resolves the (provider, model) pair currently in effect for a chat
- * conversation by reading the assistant's LLM config and the optional
- * per-conversation profile override.
+ * conversation by reading the assistant's LLM config for the active-profile
+ * selection and the profiles API for the effective profile body.
  *
- * Both queries share their respective TanStack Query cache entries with
+ * The queries share their respective TanStack Query cache entries with
  * the rest of the app (settings domain, composer settings menu, etc.) so
- * invalidating the config or conversation cache from any consumer also
- * refreshes this hook's derivation.
+ * invalidating any of them from a consumer also refreshes this hook's
+ * derivation.
  *
  * Used by the chat composer to gate behaviors that depend on model
  * capabilities (e.g. image attachments require a vision-capable model).
  * Returns `null` when the data isn't loaded yet or the active profile
  * doesn't declare a provider/model.
  *
- * `supportsVision` is resolved server-side by the daemon from its model
- * catalog and embedded on each profile entry in the config response.
+ * The profile body comes from `GET /inference/profiles` — the effective
+ * view the daemon resolves from its model catalog — because managed
+ * profiles persist in the config as thin stubs. `supportsVision` is
+ * resolved server-side on that same view: the catalog's answer, with the
+ * profile's `inputModalities.image` override winning.
  */
 export interface ActiveProfileModel {
   provider: string;
   model: string;
   supportsVision?: boolean;
 }
-
-type ProfileEntry = NonNullable<
-  NonNullable<ConfigGetResponse["llm"]>["profiles"]
->[string] & {
-  // Stamped onto the response by the daemon's wire enrichment; the
-  // persisted schema strips it on writes, so it's absent from the
-  // generated type.
-  supportsVision?: boolean;
-};
 
 /**
  * @param pendingProfile Profile stashed in the composer for a conversation
@@ -65,30 +60,33 @@ export function useActiveProfileModel(
     enabled: !!assistantId && !!conversationId,
   });
 
-  return useMemo(() => {
-    if (!config) {
-      return null;
-    }
-    const llm = config.llm;
-    const profiles = llm?.profiles ?? {};
-    const globalActive = llm?.activeProfile ?? null;
+  const { data: profilesData } = useQuery({
+    ...inferenceProfilesGetOptions({
+      path: { assistant_id: assistantId ?? "" },
+    }),
+    enabled: !!assistantId,
+    staleTime: 30_000,
+  });
 
+  return useMemo(() => {
+    const globalActive = config?.llm?.activeProfile ?? null;
     const convOverride = convData?.conversation.inferenceProfile ?? null;
     const effective = convOverride ?? pendingProfile ?? globalActive;
 
     if (!effective) {
       return null;
     }
-    const entry: ProfileEntry | undefined = profiles[effective];
-    if (!entry?.provider || !entry.model) {
+    const summary: InferenceProfileSummary | undefined =
+      profilesData?.profiles.find((profile) => profile.name === effective);
+    if (!summary?.provider || !summary.model) {
       return null;
     }
     return {
-      provider: entry.provider,
-      model: entry.model,
-      ...(typeof entry.supportsVision === "boolean"
-        ? { supportsVision: entry.supportsVision }
+      provider: summary.provider,
+      model: summary.model,
+      ...(typeof summary.supportsVision === "boolean"
+        ? { supportsVision: summary.supportsVision }
         : {}),
     };
-  }, [config, convData, pendingProfile]);
+  }, [config, convData, profilesData, pendingProfile]);
 }

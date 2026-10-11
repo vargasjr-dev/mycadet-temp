@@ -24,14 +24,12 @@ import {
 } from "@/domains/settings/ai/overrides-call-site-list";
 import { useSelectableInferenceProviders } from "@/domains/settings/ai/provider-availability";
 import { useOverrideDrafts } from "@/domains/settings/ai/use-override-drafts";
-import {
-  buildOrderedProfiles,
-  profileDisplayLabel,
-} from "@/domains/settings/ai/utils";
+import { profileDisplayLabel } from "@/domains/settings/ai/utils";
 import {
   configGetOptions,
   configLlmCallsitesGetOptions,
   inferenceProviderconnectionsGetOptions,
+  inferenceProfilesGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
@@ -67,21 +65,19 @@ export function OverridesDetailPanel({
     staleTime: 30_000,
   });
 
-  const profiles = useMemo(
-    () => daemonConfig?.llm?.profiles ?? {},
-    [daemonConfig?.llm?.profiles],
-  );
-  const profileOrder = useMemo(
-    () => daemonConfig?.llm?.profileOrder ?? [],
-    [daemonConfig?.llm?.profileOrder],
-  );
   const persistedOverrides = useMemo(
     () => daemonConfig?.llm?.callSites ?? {},
     [daemonConfig?.llm?.callSites],
   );
+  // The summaries are the effective catalog in the daemon's presentation
+  // order — the same rows the pickers show.
+  const { data: profilesData } = useQuery({
+    ...inferenceProfilesGetOptions({ path: { assistant_id: assistantId } }),
+    staleTime: 30_000,
+  });
   const orderedProfiles = useMemo(
-    () => buildOrderedProfiles(profiles, profileOrder),
-    [profiles, profileOrder],
+    () => profilesData?.profiles ?? [],
+    [profilesData],
   );
   const selectableInferenceProviders = useSelectableInferenceProviders();
   // Older assistants live-inherit blank profile fields at resolution time,

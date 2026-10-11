@@ -7,9 +7,9 @@ import type {
   ConfigGetResponse,
   DefaultProviderStatus,
   ProfileConnectionAvailability,
+  ProfileEntry,
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
-import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 type LlmConfig = ConfigGetResponse["llm"];
 
@@ -260,7 +260,7 @@ export function defaultChatRouteBurnsManagedCredits(
       return classifyAnchor(evidence);
     }
     const name = rungNames[index];
-    const entry: WireProfileEntry | undefined = name
+    const entry: ProfileEntry | undefined = name
       ? llm?.profiles?.[name]
       : undefined;
     if (!name || !entry) {
@@ -272,7 +272,7 @@ export function defaultChatRouteBurnsManagedCredits(
       }
       return anyBurns(
         entry.mix.map((arm) => {
-          const armEntry: WireProfileEntry | undefined =
+          const armEntry: ProfileEntry | undefined =
             llm?.profiles?.[arm.profile];
           const armUsable =
             !!armEntry &&
@@ -284,24 +284,24 @@ export function defaultChatRouteBurnsManagedCredits(
             return classifyNamedLeaf(arm.profile);
           }
           // Arms expand through the same stale-stub exception as rungs
-          // (`providerAwareEntry` daemon-side), so an unusable invariant
-          // stub resolves to the default-provider route; any other
-          // unusable arm skips this whole rung for its seeds and stands
-          // for the rest of the chain.
-          return armEntry?.invariant === true
+          // (`providerAwareEntry` daemon-side), so an unusable
+          // managed-source stub resolves to the default-provider route;
+          // any other unusable arm skips this whole rung for its seeds and
+          // stands for the rest of the chain.
+          return armEntry?.source === "managed"
             ? classifyStaleDefaultStub(evidence)
             : classifyFromRung(index + 1);
         }),
       );
     }
     if (entry.status === "disabled" || !entry.provider || !entry.model) {
-      // An unusable managed-source stub of a code-owned default (the wire
-      // marks those `invariant`) does NOT fall through: the daemon's
+      // An unusable managed-source stub of a code-owned default (its
+      // `source` is `managed`) does NOT fall through: the daemon's
       // `providerAwareEntry` ignores the stale stub (defaults cannot be
       // disabled through any write path) and resolves the pure catalog body
       // through `llm.default`, so this rung classifies as that
       // route instead.
-      if (entry.invariant === true) {
+      if (entry.source === "managed") {
         return classifyStaleDefaultStub(evidence);
       }
       return classifyFromRung(index + 1);

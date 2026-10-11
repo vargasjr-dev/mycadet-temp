@@ -217,12 +217,12 @@ export function useProfileEditor({
   const [effectiveMode, setEffectiveMode] = useState<ProfileEditorMode>(mode);
   // Cloud profiles are read-only: no rename, no reshaping, no disabling -
   // the only interactive control is the enable-only status flip when the
-  // profile is disabled. The lock keys off the server-stamped `invariant`
-  // wire flag, so it must hold even if the host opens the editor in edit
-  // mode. Customization goes through "Save As New", which switches
+  // profile is disabled. The lock keys off the managed `source` marker, so
+  // it must hold even if the host opens the editor in edit mode.
+  // Customization goes through "Save As New", which switches
   // `effectiveMode` to "create" and therefore drops the lock on the duplicate.
   const isInvariant =
-    initialValues?.invariant === true && effectiveMode !== "create";
+    initialValues?.source === "managed" && effectiveMode !== "create";
   // The invariant lock forces read-only handling even in edit mode, so Save
   // takes the partial-merge path and never the delete/recreate cycle the
   // daemon rejects for cloud profiles.

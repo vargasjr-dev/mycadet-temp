@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 
 import { isDispatchableProfile } from "@/assistant/profile-pickers";
@@ -9,11 +9,9 @@ import {
   movesSchedules,
 } from "@/domains/settings/ai/manage-profiles-blocked-delete-modal";
 import { useProfileActions } from "@/domains/settings/ai/use-profile-actions";
+import type { ProfilePickerEntry } from "@/assistant/profile-pickers";
 import {
-  buildOrderedProfiles,
-  type ProfileWithName,
-} from "@/domains/settings/ai/utils";
-import {
+  inferenceProfilesGetOptions,
   schedulesGetOptions,
   schedulesGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
@@ -40,7 +38,7 @@ export interface ProfileDeleteFlow {
   /** Spread onto a `<BlockedDeleteModal />` render. */
   blockedDeleteModalProps: {
     blocked: BlockedDeleteState | null;
-    availableReplacements: ProfileWithName[];
+    availableReplacements: ProfilePickerEntry[];
     replacement: string;
     onReplacementChange: (value: string) => void;
     error: string | null;
@@ -109,10 +107,14 @@ export function useProfileDeleteFlow(
     () => config?.llm?.profileOrder ?? [],
     [config?.llm?.profileOrder],
   );
-  const orderedProfiles = useMemo(
-    () => buildOrderedProfiles(profiles, profileOrder),
-    [profiles, profileOrder],
-  );
+  // Replacement candidates come from the effective catalog (the summaries
+  // arrive in the daemon's presentation order), not the raw config map —
+  // managed profiles persist as thin stubs there.
+  const { data: profilesData } = useQuery({
+    ...inferenceProfilesGetOptions({ path: { assistant_id: assistantId } }),
+    staleTime: 30_000,
+  });
+  const orderedProfiles = profilesData?.profiles ?? [];
 
   const [blocked, setBlocked] = useState<BlockedDeleteState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +151,9 @@ export function useProfileDeleteFlow(
    * list missing the target they want. Preference between them is a
    * preselection concern, handled in `defaultReplacementFor`.
    */
-  function replacementCandidates(deleting: string | null): ProfileWithName[] {
+  function replacementCandidates(
+    deleting: string | null,
+  ): ProfilePickerEntry[] {
     return orderedProfiles.filter((p) => {
       if (p.name === deleting) {
         return false;

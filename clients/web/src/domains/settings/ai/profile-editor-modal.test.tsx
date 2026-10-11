@@ -1882,11 +1882,11 @@ describe("ProfileEditorModal — Top P wiring", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Invariant (managed) profiles — server-stamped `invariant: true`
+// Invariant (managed) profiles — locked by their managed `source`
 // ---------------------------------------------------------------------------
 
 describe("ProfileEditorModal — invariant cloud profiles in view mode", () => {
-  // A server-stamped cloud profile. Anthropic opus → visibility.topP is
+  // A managed cloud profile. Anthropic opus → visibility.topP is
   // true, so the Top P control renders and we can assert it is locked.
   const invariantProfile = {
     name: "default-a",
@@ -1894,7 +1894,6 @@ describe("ProfileEditorModal — invariant cloud profiles in view mode", () => {
     provider: "anthropic",
     model: "claude-opus-4-8",
     source: "managed",
-    invariant: true,
     topP: 0.9,
   };
 
@@ -1957,9 +1956,9 @@ describe("ProfileEditorModal — invariant cloud profiles in view mode", () => {
   });
 
   test("an invariant profile opened in edit mode keeps the lock (defense-in-depth)", () => {
-    // The lock keys off the server-stamped wire flag alone, so even if a
-    // parent opens an invariant profile in edit mode the lock must hold:
-    // locked label and Top P, no delete/recreate save path.
+    // The lock keys off the managed source alone, so even if a parent
+    // opens a managed profile in edit mode the lock must hold: locked
+    // label and Top P, no delete/recreate save path.
     renderEdit(invariantProfile);
 
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").disabled).toBe(true);

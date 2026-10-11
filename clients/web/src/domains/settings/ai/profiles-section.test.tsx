@@ -28,15 +28,17 @@ import {
 } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
-import type { WireProfileEntry } from "@/lib/config-wire-profile";
+import type {
+  ConfigGetResponse,
+  ProfileEntry,
+} from "@/generated/daemon/types.gen";
 
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
 
 let configPatchBodies: unknown[] = [];
-let profilesState: Record<string, WireProfileEntry> = {};
+let profilesState: Record<string, ProfileEntry> = {};
 let activeProfileState: string | null = null;
 let advisorProfileState: string | null = null;
 let activeProfileBodies: unknown[] = [];
@@ -195,14 +197,12 @@ function seedProfiles() {
     balanced: {
       label: "Balanced",
       source: "managed",
-      invariant: true,
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
     "speed-tier": {
       label: "Speed",
       source: "managed",
-      invariant: true,
       status: "disabled",
       provider: "anthropic",
       model: "claude-haiku-4-5",

@@ -1108,7 +1108,7 @@ describe("wire-only profile keys are stripped from writes", () => {
 const getRoute = ROUTES.find((r) => r.operationId === "config_get")!;
 
 describe("code-owned default profiles — wire view and write normalization", () => {
-  test("GET materializes catalog bodies over thin stubs (wire-only)", async () => {
+  test("GET serves thin stubs verbatim — materialization lives on the profiles API", async () => {
     seedRawConfig({
       llm: {
         profiles: { balanced: { source: "managed", status: "disabled" } },
@@ -1116,16 +1116,13 @@ describe("code-owned default profiles — wire view and write normalization", ()
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
     const wireBalanced = response.llm.profiles.balanced;
-    expect(wireBalanced.model).toBe("accounts/fireworks/models/glm-5p3-flash");
-    expect(wireBalanced.provider).toBe("cadet");
-    expect(wireBalanced.provider_connection).toBeUndefined();
-    expect(wireBalanced.status).toBe("disabled");
-    expect(wireBalanced.invariant).toBe(true);
-    // Absent defaults are materialized too — the catalog owns their content.
-    expect(response.llm.profiles["quality-optimized"].model).toBeDefined();
+    expect(wireBalanced).toEqual({ source: "managed", status: "disabled" });
+    // Catalog-only defaults (no on-disk stub) do not appear at all — the
+    // profiles API's list serves their resolved bodies.
+    expect(response.llm.profiles["quality-optimized"]).toBeUndefined();
   });
 
-  test("GET → PATCH round-trip of the wire view is accepted and keeps disk stubs thin", async () => {
+  test("GET → PATCH round-trip of the raw profiles is accepted and keeps disk stubs thin", async () => {
     seedRawConfig({
       llm: {
         profiles: {
@@ -1144,8 +1141,8 @@ describe("code-owned default profiles — wire view and write normalization", ()
       source: "managed",
       status: "disabled",
     });
-    // Echoes of absent defaults reduce to a no-op managed stub.
-    expect(savedProfile("quality-optimized")).toEqual({ source: "managed" });
+    // The raw response carries no absent-default echoes to strip.
+    expect(savedProfile("quality-optimized")).toBeUndefined();
     expect(savedProfile("my-custom")).toEqual({
       provider: "openai",
       model: "gpt-4o",
@@ -1251,21 +1248,15 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
   // intent × provider matrix that actually dispatches — not the cadet
   // column — and the write path must echo-strip against that same view or an
   // honest GET → write round-trip is rejected.
-  test("GET materializes the default provider's column for default profiles", async () => {
+  test("GET serves no catalog-only defaults — the profiles API materializes the column", async () => {
     seedRawConfig({
       llm: { default: { provider: "anthropic" }, profiles: {} },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
-    const wireBalanced = response.llm.profiles.balanced;
-    expect(wireBalanced.provider).toBe("anthropic");
-    expect(wireBalanced.model).toBe("claude-sonnet-4-6");
-    expect(wireBalanced.provider_connection).toBe("anthropic-personal");
-    expect(response.llm.profiles["quality-optimized"].provider).toBe(
-      "anthropic",
-    );
+    expect(response.llm.profiles).toEqual({});
   });
 
-  test("GET → PATCH round-trip of the BYO wire view is accepted and keeps disk stubs thin", async () => {
+  test("GET → PATCH round-trip of the raw profiles is accepted on a BYO install too", async () => {
     seedRawConfig({
       llm: {
         default: { provider: "anthropic" },
@@ -1282,11 +1273,11 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
       source: "managed",
       status: "disabled",
     });
-    // Echoes of absent defaults reduce to a no-op managed stub.
-    expect(savedProfile("quality-optimized")).toEqual({ source: "managed" });
+    // No absent-default echoes exist to reduce — nothing else is written.
+    expect(savedProfile("quality-optimized")).toBeUndefined();
   });
 
-  test("GET → SET llm round-trip of the BYO wire view is accepted", async () => {
+  test("GET → SET llm round-trip of the raw view is accepted and writes no stubs", async () => {
     seedRawConfig({
       llm: { default: { provider: "anthropic" }, profiles: {} },
     });
@@ -1295,7 +1286,9 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
       body: { path: "llm", value: response.llm },
     });
     expect(result).toHaveProperty("ok");
-    expect(savedProfile("balanced")).toEqual({ source: "managed" });
+    // The raw response carries no materialized catalog bodies, so the
+    // catalog-only default stays catalog-only.
+    expect(savedProfile("balanced")).toBeUndefined();
   });
 });
 
@@ -1362,10 +1355,9 @@ describe("code-owned default profiles — echoes over stale on-disk bodies", () 
       llm: { profiles: { balanced: structuredClone(staleBody) } },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
-    // The wire view serves catalog content, not the stale body.
-    expect(response.llm.profiles.balanced.model).toBe(
-      "accounts/fireworks/models/glm-5p3-flash",
-    );
+    // The response serves the stored body verbatim — the raw echo is what
+    // the guard then recognizes as a no-op.
+    expect(response.llm.profiles.balanced.model).toBe("claude-sonnet");
     const result = await patchRoute.handler({
       body: { llm: { profiles: response.llm.profiles } },
     });

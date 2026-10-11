@@ -793,6 +793,107 @@ describe("GET inference/profiles honors the llm.default blob", () => {
   });
 });
 
+// ── resolved vision capability on the list ────────────────────────────────────
+
+describe("GET inference/profiles resolves supportsVision per entry", () => {
+  type Listed = { profiles: Array<{ name: string; supportsVision?: boolean }> };
+
+  test("a vision-capable (provider, model) carries supportsVision: true", async () => {
+    setConfig("llm", {
+      profiles: {
+        vision: {
+          source: "user",
+          provider: "anthropic",
+          model: "claude-fable-5-1",
+        },
+      },
+    });
+
+    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const entry = listed.profiles.find((p) => p.name === "vision");
+    expect(entry?.supportsVision).toBe(true);
+  });
+
+  test("the entry's inputModalities.image override beats the catalog", async () => {
+    setConfig("llm", {
+      profiles: {
+        gated: {
+          source: "user",
+          provider: "anthropic",
+          model: "claude-fable-5-1",
+          inputModalities: { image: { enabled: false } },
+        },
+      },
+    });
+
+    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const entry = listed.profiles.find((p) => p.name === "gated");
+    expect(entry?.supportsVision).toBe(false);
+  });
+
+  test("an override can enable image on a catalog-non-vision model", async () => {
+    setConfig("llm", {
+      profiles: {
+        forced: {
+          source: "user",
+          provider: "ollama",
+          model: "llama3.2",
+          inputModalities: { image: { enabled: true, supported: true } },
+        },
+      },
+    });
+
+    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const entry = listed.profiles.find((p) => p.name === "forced");
+    expect(entry?.supportsVision).toBe(true);
+  });
+
+  test("profiles without a provider or model stay unflagged", async () => {
+    setConfig("llm", {
+      profiles: {
+        sparse: { source: "managed" },
+      },
+    });
+
+    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const entry = listed.profiles.find((p) => p.name === "sparse");
+    expect(entry).toBeDefined();
+    expect(entry).not.toHaveProperty("supportsVision");
+  });
+
+  test("mix profiles carry their arms so pickers can judge dispatchability", async () => {
+    setConfig("llm", {
+      profiles: {
+        "arm-a": {
+          source: "user",
+          provider: "anthropic",
+          model: "claude-fable-5-1",
+        },
+        "arm-b": { source: "user", provider: "ollama", model: "llama3.2" },
+        blend: {
+          source: "user",
+          mix: [
+            { profile: "arm-a", weight: 1 },
+            { profile: "arm-b", weight: 1 },
+          ],
+        },
+      },
+    });
+
+    const listed = (await call("inference_profiles_list", {})) as {
+      profiles: Array<{
+        name: string;
+        mix?: Array<{ profile: string; weight: number }>;
+      }>;
+    };
+    const entry = listed.profiles.find((p) => p.name === "blend");
+    expect(entry?.mix).toEqual([
+      { profile: "arm-a", weight: 1 },
+      { profile: "arm-b", weight: 1 },
+    ]);
+  });
+});
+
 // ── active-profile setter validation (Finding 3) ──────────────────────────────
 
 describe("POST inference/profiles/:name/validate billing guards", () => {

@@ -3,19 +3,15 @@ import { useMemo } from "react";
 
 import {
   type ProfileDispatchOptions,
+  type ProfilePickerEntry,
   type ProfilePickerIssue,
   profilePickerIssue,
   profilePickerLabel,
   undispatchableProfileReason,
   visibleProfilesForPicker,
 } from "@/assistant/profile-pickers";
-import { buildOrderedProfiles } from "@/domains/settings/ai/utils";
-import { configGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
+import { inferenceProfilesGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
-
-import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
-
-type LlmConfig = ConfigGetResponse["llm"];
 
 export interface ProfileOption {
   readonly value: string | null;
@@ -27,15 +23,14 @@ export interface ProfileOption {
 }
 
 export function buildProfileOptions(
-  llm: LlmConfig | undefined,
+  summaries: ReadonlyArray<ProfilePickerEntry>,
   selectedProfile: string | null | undefined,
   options: ProfileDispatchOptions,
 ): ProfileOption[] {
-  const profiles = llm?.profiles ?? {};
-  const profileOrder = llm?.profileOrder ?? [];
-  const orderedProfiles = buildOrderedProfiles(profiles, profileOrder);
+  // The summaries arrive in the daemon's presentation order, the same one
+  // the pickers have always shown.
   const visibleProfiles = visibleProfilesForPicker(
-    orderedProfiles,
+    summaries,
     [selectedProfile],
     options,
   );
@@ -43,7 +38,7 @@ export function buildProfileOptions(
   return [
     { value: null, label: "Default" },
     ...visibleProfiles.map((profile) => {
-      const issue = profilePickerIssue(profile, orderedProfiles, options);
+      const issue = profilePickerIssue(profile, summaries, options);
       return {
         value: profile.name,
         label: profilePickerLabel(profile),
@@ -60,8 +55,8 @@ export function useProfileOptions(
   assistantId: string,
   selectedProfile?: string | null,
 ): ProfileOption[] {
-  const { data: daemonConfig } = useQuery({
-    ...configGetOptions({ path: { assistant_id: assistantId } }),
+  const { data: profilesData } = useQuery({
+    ...inferenceProfilesGetOptions({ path: { assistant_id: assistantId } }),
     enabled: Boolean(assistantId),
     staleTime: 60_000,
   });
@@ -70,9 +65,9 @@ export function useProfileOptions(
 
   return useMemo(
     () =>
-      buildProfileOptions(daemonConfig?.llm, selectedProfile, {
+      buildProfileOptions(profilesData?.profiles ?? [], selectedProfile, {
         requireOwnProviderAndModel,
       }),
-    [daemonConfig?.llm, selectedProfile, requireOwnProviderAndModel],
+    [profilesData, selectedProfile, requireOwnProviderAndModel],
   );
 }

@@ -25,6 +25,11 @@ import {
   resolveDefaultProfileForProvider,
 } from "../../config/default-profile-catalog.js";
 import {
+  catalogEntryFor,
+  modalitiesOf,
+  resolveModalityOverride,
+} from "../../config/input-modalities.js";
+import {
   getConfig,
   getConfigReadOnly,
   loadRawConfig,
@@ -113,6 +118,21 @@ const profileSummarySchema = z
     status: z.enum(["active", "disabled"]),
     source: z.enum(["managed", "user"]),
     provider_connection: z.string().optional(),
+    /**
+     * Whether the entry's (provider, model) accepts image input: the model
+     * catalog's answer, with the entry's `inputModalities.image` override
+     * winning. Absent when the profile has no provider or model to judge
+     * (mix profiles, sparse stubs).
+     */
+    supportsVision: z.boolean().optional(),
+    /**
+     * Present when the profile is a mix: the weighted arm list the resolver
+     * expands per dispatch, carried so pickers can judge mix
+     * dispatchability from the summary. Absent for standard profiles.
+     */
+    mix: z
+      .array(z.object({ profile: z.string(), weight: z.number() }))
+      .optional(),
     /** Null when the profile has no provider to judge (e.g. mix profiles). */
     availability: availabilitySchema.nullable(),
     config_issue: profileConfigIssueSchema.optional(),
@@ -122,7 +142,8 @@ const profileSummarySchema = z
 const profileDetailSchema = z
   .object({
     name: z.string(),
-    entry: z.record(z.string(), z.unknown()),
+    /** The full effective body, resolved through the catalog like the list. */
+    entry: ProfileEntry,
     availability: availabilitySchema.nullable(),
     config_issue: profileConfigIssueSchema.optional(),
   })
@@ -531,6 +552,7 @@ async function handleListProfiles() {
     orderProfileKeys(effective, config.llm.profileOrder).map(async (name) => {
       const record = effective[name] as Record<string, unknown>;
       const configIssue = profileConfigIssue(record);
+      const supportsVision = resolveSupportsVision(effective[name]);
       return {
         name,
         label: typeof record.label === "string" ? record.label : null,
@@ -541,12 +563,34 @@ async function handleListProfiles() {
         ...(typeof record.provider_connection === "string"
           ? { provider_connection: record.provider_connection }
           : {}),
+        ...(record.mix != null ? { mix: record.mix } : {}),
+        ...(supportsVision === undefined ? {} : { supportsVision }),
         availability: await computeProfileAvailability(record),
         ...(configIssue ? { config_issue: configIssue } : {}),
       };
     }),
   );
   return { profiles };
+}
+
+/**
+ * Resolve whether the entry's (provider, model) accepts image input: the
+ * model catalog's answer, with the entry's `inputModalities.image` override
+ * winning. Unknown (provider, model) pairs with no override default to
+ * `true` (fail-open) so image upload stays available for custom / unlisted
+ * models. Undefined when the entry has no provider or model to judge.
+ */
+function resolveSupportsVision(
+  entry: ProfileEntry | undefined,
+): boolean | undefined {
+  const provider = entry?.provider;
+  const model = entry?.model;
+  if (provider == null || model == null) {
+    return undefined;
+  }
+  const catalogVision = catalogEntryFor(provider, model)?.supportsVision;
+  const imageOverride = modalitiesOf(entry)?.image;
+  return resolveModalityOverride(imageOverride, catalogVision) ?? true;
 }
 
 async function handleGetProfile({ pathParams = {} }: RouteHandlerArgs) {

@@ -9,6 +9,7 @@ import { Typography } from "@mycadet/design-library/components/typography";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import {
+  type ProfilePickerEntry,
   profilePickerLabel,
   visibleProfilesForPicker,
 } from "@/assistant/profile-pickers";
@@ -18,10 +19,7 @@ import {
 } from "@/domains/settings/ai/call-site-helpers";
 import { useLlmConfigPatch } from "@/domains/settings/ai/use-llm-config-patch";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
-import {
-  profileDisplayLabel,
-  type ProfileWithName,
-} from "@/domains/settings/ai/utils";
+import { profileDisplayLabel } from "@/domains/settings/ai/utils";
 import type {
   CallSiteOverrideDraft,
   ConfigGetResponse,
@@ -47,7 +45,7 @@ export interface BulkOverrideSwapModalProps {
   callSites: ReadonlyArray<CallSiteEntry>;
   domains: ReadonlyArray<CallSiteDomain>;
   persistedOverrides: PersistedOverrides;
-  orderedProfiles: ProfileWithName[];
+  orderedProfiles: ProfilePickerEntry[];
   onClose: () => void;
   /** Fires after a successful apply, before the modal closes. */
   onApplied: () => void;

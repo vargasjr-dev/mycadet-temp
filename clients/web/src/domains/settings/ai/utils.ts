@@ -3,14 +3,14 @@ import { WEB_FETCH_PROVIDER_KEY_STORAGE } from "@/assistant/generated/web-fetch-
 import { WEB_SEARCH_PROVIDER_KEY_STORAGE } from "@/assistant/generated/web-search-provider-catalog.gen";
 import type { ProfileEntry } from "@/generated/daemon/types.gen";
 
+import { type ProfilePickerEntry } from "@/assistant/profile-pickers";
 import { TOKEN_SLIDER_MIN_TOKENS } from "@/domains/settings/ai/constants";
-import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 // ---------------------------------------------------------------------------
 // Domain types
 // ---------------------------------------------------------------------------
 
-export type ProfileWithName = { name: string } & WireProfileEntry;
+export type ProfileWithName = { name: string } & ProfileEntry;
 
 export interface InferenceTokenBudgetState {
   maxOutputTokens: number;
@@ -49,7 +49,7 @@ export function buildOrderedProfiles(
  * raw name when the entry is missing or unlabeled.
  */
 export function profileDisplayLabel(
-  profiles: ReadonlyArray<ProfileWithName>,
+  profiles: ReadonlyArray<ProfilePickerEntry>,
   name: string,
 ): string {
   return profiles.find((p) => p.name === name)?.label ?? name;

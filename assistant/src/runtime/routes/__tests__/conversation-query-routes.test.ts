@@ -52,7 +52,6 @@ mock.module("../../../persistence/embeddings/embedding-backend.js", () => ({
 }));
 
 import type { AssistantEventEnvelope } from "../../../api/index.js";
-import { BACKUP_PROFILE_KEYS } from "../../../config/default-profile-names.js";
 import {
   getConfig,
   invalidateConfigCache,
@@ -1758,7 +1757,7 @@ describe("sparse services.stt patch provider seeding", () => {
   });
 });
 
-describe("config invariant flag enrichment", () => {
+describe("config GET serves profiles verbatim", () => {
   const configGetRoute = ROUTES.find((r) => r.operationId === "config_get")!;
   const configPatchRoute = ROUTES.find(
     (r) => r.operationId === "config_patch",
@@ -1788,8 +1787,6 @@ describe("config invariant flag enrichment", () => {
             label: "OS Beta",
             status: "active",
           },
-          // A user-owned profile sharing a cloud name: no invariant flag —
-          // the stamp is gated on `source: "managed"` to match the guard.
           "cost-optimized": {
             source: "user",
             provider: "anthropic",
@@ -1805,43 +1802,32 @@ describe("config invariant flag enrichment", () => {
     seedRawConfig();
   });
 
-  test("GET /v1/config marks managed-source profiles invariant (incl. os-beta), not user-owned ones", async () => {
+  test("GET /v1/config returns profile entries verbatim — no wire-only flags stamped", async () => {
+    // The response is the raw loaded config: managed-ness reads off the
+    // entry's own `source`, and capabilities come from the profiles API
+    // (`GET inference/profiles`), not from flags stamped here.
     const body = await configGetRoute.handler({});
     const profiles = wireProfiles(body);
 
-    expect(profiles.balanced!.invariant).toBe(true);
-    expect(profiles["os-beta"]!.invariant).toBe(true);
-    expect(profiles["cost-optimized"]!).not.toHaveProperty("invariant");
-    expect(profiles.custom!).not.toHaveProperty("invariant");
-  });
-
-  test("every managed default is invariant on the wire, Fast included", async () => {
-    // The clients drive their read-only lock off this flag, so a default that
-    // resolves from the catalog with no workspace stub must still carry it.
-    const body = await configGetRoute.handler({});
-    const profiles = wireProfiles(body);
-
-    for (const name of ["balanced", "quality-optimized", "latency-optimized"]) {
-      expect(profiles[name]!.invariant).toBe(true);
+    expect(profiles.balanced!.source).toBe("managed");
+    expect(profiles.balanced!.provider).toBe("fireworks");
+    expect(profiles.balanced!.model).toBe("accounts/fireworks/models/glm-5p2");
+    expect(profiles.custom!.provider).toBe("anthropic");
+    for (const profile of Object.values(profiles)) {
+      expect(profile).not.toHaveProperty("invariant");
+      expect(profile).not.toHaveProperty("supportsVision");
     }
   });
 
-  test("GET /v1/config hides managed backups from the picker catalog", async () => {
-    const body = await configGetRoute.handler({});
-    const profiles = wireProfiles(body);
-
-    for (const name of BACKUP_PROFILE_KEYS) {
-      expect(profiles).not.toHaveProperty(name);
-    }
-    expect(profiles.balanced).toBeDefined();
-  });
-
-  test("PATCH /v1/config stamps the flag on the response but never persists it", async () => {
+  test("PATCH /v1/config response serves profiles verbatim and never persists wire-only keys", async () => {
     const body = await configPatchRoute.handler({
       body: { memory: { enabled: true } },
     });
     const profiles = wireProfiles(body);
-    expect(profiles.balanced!.invariant).toBe(true);
+    for (const profile of Object.values(profiles)) {
+      expect(profile).not.toHaveProperty("invariant");
+      expect(profile).not.toHaveProperty("supportsVision");
+    }
 
     const savedProfiles = (
       loadRawConfig().llm as { profiles: WireProfiles } | undefined
@@ -1849,6 +1835,7 @@ describe("config invariant flag enrichment", () => {
     expect(savedProfiles).toBeDefined();
     for (const profile of Object.values(savedProfiles!)) {
       expect(profile).not.toHaveProperty("invariant");
+      expect(profile).not.toHaveProperty("supportsVision");
     }
   });
 });

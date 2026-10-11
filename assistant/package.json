@@ -20,7 +20,7 @@
     "probe:skill-retrieval": "bun run scripts/probe-skill-retrieval.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "bun run lint:skills && bun run lint:openapi && eslint --max-warnings 3006",
+    "lint": "bun run lint:skills && bun run lint:openapi && eslint --max-warnings 3004",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "lint:circular": "bun run scripts/check-circular-deps.ts",
     "lint:unused:production": "knip --production --include exports",

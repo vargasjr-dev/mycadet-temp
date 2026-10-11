@@ -14,8 +14,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { ProviderConnection } from "@/generated/daemon/types.gen";
-import type { WireProfileEntry } from "@/lib/config-wire-profile";
+import type {
+  ProfileEntry,
+  ProviderConnection,
+} from "@/generated/daemon/types.gen";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -23,7 +25,7 @@ import type { WireProfileEntry } from "@/lib/config-wire-profile";
 
 let toastSuccessCalls: string[] = [];
 let configPatchBodies: unknown[] = [];
-let profilesState: Record<string, WireProfileEntry> = {};
+let profilesState: Record<string, ProfileEntry> = {};
 
 function configPayload() {
   return {
@@ -236,7 +238,6 @@ describe("ProfileDetailPanel - cloud profiles", () => {
       balanced: {
         label: "Balanced",
         source: "managed",
-        invariant: true,
         provider: "anthropic",
         model: "claude-opus-4-8",
       },

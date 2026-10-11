@@ -15,6 +15,8 @@ import { useProfileSave } from "@/domains/settings/ai/use-profile-save";
 import type { ProfileWithName } from "@/domains/settings/ai/utils";
 import {
   configGetOptions,
+  inferenceProfilesByNameGetOptions,
+  inferenceProfilesGetOptions,
   inferenceProviderconnectionsGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useTranslation } from "@/i18n";
@@ -55,29 +57,55 @@ export function ProfileDetailPanel({
   });
   const connections = connectionsData?.connections;
 
+  // The effective catalog: the complete name set (including catalog-only
+  // defaults with no on-disk stub) and the full resolved body for the open
+  // profile — managed profiles persist as thin stubs in the config.
+  const { data: profilesData } = useQuery({
+    ...inferenceProfilesGetOptions({ path: { assistant_id: assistantId } }),
+    staleTime: 30_000,
+  });
+  const summaries = useMemo(() => profilesData?.profiles ?? [], [profilesData]);
+
   const profiles = useMemo(
     () => config?.llm?.profiles ?? {},
     [config?.llm?.profiles],
   );
-  const existingNames = Object.keys(profiles);
+  const existingNames = useMemo(
+    () => [
+      ...new Set([...Object.keys(profiles), ...summaries.map((s) => s.name)]),
+    ],
+    [profiles, summaries],
+  );
+
+  const { data: detailData } = useQuery({
+    ...inferenceProfilesByNameGetOptions({
+      path: { assistant_id: assistantId, name: profileName ?? "" },
+    }),
+    enabled: profileName != null,
+    staleTime: 30_000,
+  });
 
   const initialValues: ProfileWithName | undefined = useMemo(() => {
     if (profileName == null) {
       return undefined;
     }
+    // The resolved effective body wins; the stored entry backfills what an
+    // older daemon's detail response doesn't serve.
+    const effective = detailData?.entry;
+    if (effective != null) {
+      return { name: profileName, ...effective };
+    }
     const entry = profiles[profileName];
-    return entry ? { name: profileName, ...entry } : undefined;
-  }, [profileName, profiles]);
+    return entry != null ? { name: profileName, ...entry } : undefined;
+  }, [profileName, profiles, detailData]);
 
-  // Cloud profiles AND invariant-flagged profiles open in view mode. The
-  // daemon stamps `invariant` only on managed-source entries, so the two
-  // checks normally coincide; keeping both is defensive. A user-owned
-  // profile sharing a cloud name carries neither marker and opens fully
-  // editable - the daemon accepts every write to it.
+  // Managed profiles open in view mode — read off the entry's own `source`.
+  // A user-owned profile sharing a cloud name carries a user source and
+  // opens fully editable - the daemon accepts every write to it.
   const mode =
     profileName == null
       ? "create"
-      : initialValues?.source === "managed" || initialValues?.invariant === true
+      : initialValues?.source === "managed"
         ? "view"
         : "edit";
 
@@ -104,9 +132,13 @@ export function ProfileDetailPanel({
   // The open profile can vanish underneath the panel (deleted from a row
   // kebab, or removed on another device). Close rather than editing a ghost.
   // The edit save path transiently deletes the entry mid-cycle, so hold off
-  // while a save is in flight.
+  // while a save is in flight. Catalog-only defaults (no on-disk stub) live
+  // in the summaries, not the config map.
   const profileMissing =
-    profileName != null && config != null && !(profileName in profiles);
+    profileName != null &&
+    config != null &&
+    !(profileName in profiles) &&
+    !summaries.some((summary) => summary.name === profileName);
   useEffect(() => {
     if (profileMissing && !editor.saving && !savePending) {
       onClose();

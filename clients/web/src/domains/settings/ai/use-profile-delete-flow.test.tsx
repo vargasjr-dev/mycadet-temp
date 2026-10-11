@@ -20,8 +20,10 @@ import {
 } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
-import type { WireProfileEntry } from "@/lib/config-wire-profile";
+import type {
+  ConfigGetResponse,
+  ProfileEntry,
+} from "@/generated/daemon/types.gen";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -31,7 +33,7 @@ let configPatchBodies: unknown[] = [];
 let reassignBodies: Array<{ from: string; to: string }> = [];
 let reassignFails = false;
 let scheduleScanFails = false;
-let profilesState: Record<string, WireProfileEntry> = {};
+let profilesState: Record<string, ProfileEntry> = {};
 let activeProfileState: string | null = null;
 let schedulesByProfile: Record<
   string,
@@ -242,7 +244,6 @@ beforeEach(() => {
     balanced: {
       label: "Balanced",
       source: "managed",
-      invariant: true,
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
@@ -450,7 +451,6 @@ describe("profile delete flow - replacement preselection", () => {
     profilesState["quality"] = {
       label: "Quality",
       source: "managed",
-      invariant: true,
       provider: "anthropic",
       model: "claude-opus-4-8",
     };
@@ -472,7 +472,6 @@ describe("profile delete flow - replacement preselection", () => {
     profilesState["quality"] = {
       label: "Quality",
       source: "managed",
-      invariant: true,
       provider: "anthropic",
       model: "claude-opus-4-8",
     };

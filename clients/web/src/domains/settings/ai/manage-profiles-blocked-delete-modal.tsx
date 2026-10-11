@@ -4,7 +4,7 @@ import { Modal } from "@mycadet/design-library/components/modal";
 import { Typography } from "@mycadet/design-library/components/typography";
 
 import { profilePickerLabel } from "@/assistant/profile-pickers";
-import type { ProfileWithName } from "@/domains/settings/ai/utils";
+import type { ProfilePickerEntry } from "@/assistant/profile-pickers";
 import { t, useTranslation } from "@/i18n";
 
 // ---------------------------------------------------------------------------
@@ -165,7 +165,7 @@ export function BlockedDeleteModal({
   onConfirm,
 }: {
   blocked: BlockedDeleteState | null;
-  availableReplacements: ProfileWithName[];
+  availableReplacements: ProfilePickerEntry[];
   replacement: string;
   onReplacementChange: (value: string) => void;
   error: string | null;

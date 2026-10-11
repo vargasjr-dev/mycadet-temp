@@ -572,20 +572,19 @@ function readSanitizedConfig(): Record<string, unknown> | undefined {
     // Project the workspace MCP servers onto the export, read through the
     // module's API. Raw on purpose: the walk below redacts transport
     // headers and env, which must be present to sanitize.
-    config.mcp = loadWorkspaceMcpConfig();
-    const mcpServers = asRecord(asRecord(config.mcp)?.servers);
-    for (const server of Object.values(mcpServers ?? {})) {
-      const transport = asRecord(asRecord(server)?.transport);
-      if (!transport) {
+    const mcp = loadWorkspaceMcpConfig();
+    config.mcp = mcp;
+    const mcpServers = mcp.servers;
+    for (const server of Object.values(mcpServers)) {
+      const transport = server.transport;
+      if (transport.type === "stdio") {
+        if (transport.env) {
+          transport.env = redactValueMap(transport.env);
+        }
         continue;
       }
-      const headers = asRecord(transport.headers);
-      if (headers) {
-        transport.headers = redactValueMap(headers);
-      }
-      const env = asRecord(transport.env);
-      if (env) {
-        transport.env = redactValueMap(env);
+      if (transport.headers) {
+        transport.headers = redactValueMap(transport.headers);
       }
     }
 
