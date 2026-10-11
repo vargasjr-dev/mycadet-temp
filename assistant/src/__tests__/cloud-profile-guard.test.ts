@@ -806,7 +806,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       patchRoute.handler({
         body: { llm: { profiles: { balanced: { status: "weird" } } } },
       }),
-    ).rejects.toThrow('llm.profiles.balanced.status: Invalid option');
+    ).rejects.toThrow("llm.profiles.balanced.status: Invalid option");
     expectNothingCommitted();
   });
 
@@ -815,7 +815,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
       setRoute.handler({
         body: { path: "llm.profiles.balanced.status", value: 123 },
       }),
-    ).rejects.toThrow('llm.profiles.balanced.status: Invalid option');
+    ).rejects.toThrow("llm.profiles.balanced.status: Invalid option");
     expectNothingCommitted();
   });
 });
