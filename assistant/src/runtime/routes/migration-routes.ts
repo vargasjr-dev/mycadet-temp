@@ -119,7 +119,7 @@ import { RouteResponse } from "./types.js";
 const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
 
 /**
- * Platform-identity fields that the cloud runtime expects to see in CES.
+ * Cloud-identity fields that the cloud runtime expects to see in CES.
  * On a cloud assistant the cloud provisions these after hatch (most via
  * `POST /v1/secrets`). A signed-in client may additionally (re)assert some of
  * them on teleport / local→managed transfer. Either set of writes can race with
@@ -128,8 +128,12 @@ const PLATFORM_CREDENTIAL_PREFIX = credentialKey("cadet", "");
  * import we reconcile metadata.json against CES so any field CES already holds
  * a value for gets a matching metadata entry.
  */
-const CADET_PLATFORM_IDENTITY_FIELDS = [
+const CADET_CLOUD_IDENTITY_FIELDS = [
   "assistant_api_key",
+  "cloud_assistant_id",
+  // Installs provisioned before the cloud_* rename hold the assistant id
+  // under this legacy spelling; the reconcile is add-only, so checking it is
+  // a no-op when absent.
   "platform_assistant_id",
   "webhook_secret",
 ] as const;
@@ -145,7 +149,7 @@ const CADET_PLATFORM_IDENTITY_FIELDS = [
 export async function reconcileCadetMetadataFromCes(warningSink: {
   warnings: string[];
 }): Promise<void> {
-  for (const field of CADET_PLATFORM_IDENTITY_FIELDS) {
+  for (const field of CADET_CLOUD_IDENTITY_FIELDS) {
     try {
       const value = await getSecureKeyAsync(credentialKey("cadet", field));
       if (!value) {

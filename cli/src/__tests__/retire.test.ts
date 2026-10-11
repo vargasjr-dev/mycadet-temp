@@ -363,7 +363,7 @@ describe("cadet retire", () => {
 
     expect(readGatewayCredentialMock).toHaveBeenCalledWith(
       entry.localUrl ?? entry.runtimeUrl,
-      "cadet:platform_assistant_id",
+      "cadet:cloud_assistant_id",
       entry.bearerToken,
     );
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(

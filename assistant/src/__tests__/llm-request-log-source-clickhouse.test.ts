@@ -302,7 +302,7 @@ describe("ClickHouseLlmRequestLogSource", () => {
     );
   });
 
-  test("missing cadet:platform_assistant_id surfaces a clear error", async () => {
+  test("a missing Cadet Cloud assistant id surfaces a clear error", async () => {
     const src = new ClickHouseLlmRequestLogSource(DEFAULT_CONFIG, {
       resolveUrl: async () => "https://ch.example.test",
       resolvePassword: async () => "x",
@@ -310,7 +310,7 @@ describe("ClickHouseLlmRequestLogSource", () => {
       fetchImpl: fakeFetchReturning(""),
     });
     await expect(src.getRequestLogById("log-1")).rejects.toThrow(
-      /cadet:platform_assistant_id credential is required/,
+      /Cadet Cloud assistant id is required/,
     );
   });
 });

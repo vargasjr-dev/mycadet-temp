@@ -155,11 +155,26 @@ async function readSelfHostedPlatformRegistration(
 ): Promise<SelfHostedPlatformRegistration | null> {
   const fallback = lockfileSelfHostedPlatformRegistration(entry);
   const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
-  const cloudRegistration = await readGatewayCredential(
+  // The assistant id provisions under its canonical cloud_* spelling on
+  // updated installs and the legacy platform_* one otherwise — try both.
+  let cloudRegistration = await readGatewayCredential(
     gatewayUrl,
-    "cadet:platform_assistant_id",
+    "cadet:cloud_assistant_id",
     entry.bearerToken,
   );
+  if (
+    !cloudRegistration.unreachable &&
+    nonEmptyString(cloudRegistration.value) === null
+  ) {
+    const legacy = await readGatewayCredential(
+      gatewayUrl,
+      "cadet:platform_assistant_id",
+      entry.bearerToken,
+    );
+    if (!legacy.unreachable) {
+      cloudRegistration = legacy;
+    }
+  }
   if (cloudRegistration.unreachable) {
     if (fallback) {
       console.warn(
@@ -183,11 +198,25 @@ async function readSelfHostedPlatformRegistration(
       "cadet:platform_base_url",
       entry.bearerToken,
     ),
-    readGatewayCredential(
-      gatewayUrl,
-      "cadet:platform_organization_id",
-      entry.bearerToken,
-    ),
+    (async () => {
+      const canonical = await readGatewayCredential(
+        gatewayUrl,
+        "cadet:cloud_organization_id",
+        entry.bearerToken,
+      );
+      if (
+        !canonical.unreachable &&
+        nonEmptyString(canonical.value) !== null
+      ) {
+        return canonical;
+      }
+      const legacy = await readGatewayCredential(
+        gatewayUrl,
+        "cadet:platform_organization_id",
+        entry.bearerToken,
+      );
+      return legacy.unreachable ? canonical : legacy;
+    })(),
   ]);
 
   return {

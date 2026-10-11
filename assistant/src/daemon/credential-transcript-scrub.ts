@@ -41,6 +41,7 @@ import { enqueueLexicalIndexForMessage } from "../persistence/job-handlers/messa
 import { resolveInlineBlockArray } from "../persistence/message-content-file.js";
 import { messages } from "../persistence/schema/conversations.js";
 import type { ContentBlock } from "../providers/types.js";
+import { isCloudIdentityField } from "../security/credential-key.js";
 import { getLogger } from "../util/logger.js";
 import {
   credentialValueEncodings,
@@ -124,11 +125,11 @@ export async function scrubStoredCredentialFromTranscripts(
  * (`credentials_set` and the `/v1/secrets` credential branch) consult this
  * one exemption so they cannot drift.
  */
-export function isNonSecretPlatformField(
+export function isNonSecretCloudIdentityField(
   service: string,
   field: string,
 ): boolean {
-  return service === "cadet" && field === "platform_assistant_id";
+  return service === "cadet" && isCloudIdentityField(field);
 }
 
 /**

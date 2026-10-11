@@ -361,9 +361,17 @@ describe("secret routes cloud proxy registry sync", () => {
     await expect(
       addCredential("cadet:platform_base_url", "https://managed.example.com"),
     ).rejects.toThrow("Unknown cadet credential: platform_base_url");
+    // The canonical cloud_* spellings are equally non-writable — identity
+    // credentials are provisioned by the cloud, never by the runtime.
+    await expect(
+      addCredential("cadet:cloud_assistant_id", "asst-1"),
+    ).rejects.toThrow("Unknown cadet credential: cloud_assistant_id");
 
     expect(
       secureKeyStore.get(credentialKey("cadet", "platform_assistant_id")),
+    ).toBeUndefined();
+    expect(
+      secureKeyStore.get(credentialKey("cadet", "cloud_assistant_id")),
     ).toBeUndefined();
     expect(
       secureKeyStore.get(credentialKey("cadet", "platform_organization_id")),

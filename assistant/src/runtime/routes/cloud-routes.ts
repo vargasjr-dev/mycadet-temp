@@ -54,7 +54,10 @@ import {
   registerCallbackRoute,
   resolveCloudCallbackRegistrationContext,
 } from "../../inbound/cloud-callback-registration.js";
-import { credentialKey } from "../../security/credential-key.js";
+import {
+  cloudIdentityFieldSpellings,
+  credentialKey,
+} from "../../security/credential-key.js";
 import {
   deleteSecureKeyAsync,
   getSecureKeyAsync,
@@ -76,7 +79,10 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const CREDENTIAL_KEYS = {
   apiKey: { service: "cadet", field: "assistant_api_key" },
-  assistantId: { service: "cadet", field: "platform_assistant_id" },
+  assistantId: {
+    service: "cadet",
+    field: "cloud_assistant_id",
+  },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -421,9 +427,14 @@ async function handlePlatformDisconnect(
   }
 
   // Delete all cloud credentials
+  // Installs provisioned before the cloud_* rename hold the assistant id
+  // under the legacy spelling — clear both so disconnect fully cleans up.
   const keysToDelete = [
     CREDENTIAL_KEYS.apiKey,
-    CREDENTIAL_KEYS.assistantId,
+    ...cloudIdentityFieldSpellings("assistantId").map((field) => ({
+      service: CREDENTIAL_KEYS.assistantId.service,
+      field,
+    })),
   ] as const;
 
   const failedKeys: string[] = [];

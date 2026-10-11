@@ -22,7 +22,7 @@ import { getConfig } from "../../config/loader.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import type { CesClient } from "../../credential-execution/client.js";
 import {
-  isNonSecretPlatformField,
+  isNonSecretCloudIdentityField,
   scrubStoredCredentialFromTranscripts,
 } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
@@ -97,7 +97,7 @@ async function persistCredential(
       `Failed to store credential in secure storage (backend: ${getActiveBackendName()})`,
     );
   }
-  if (!isNonSecretPlatformField(service, field)) {
+  if (!isNonSecretCloudIdentityField(service, field)) {
     try {
       const scrubbed = await scrubStoredCredentialFromTranscripts(value);
       log.info(

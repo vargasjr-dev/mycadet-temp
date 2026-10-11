@@ -35,7 +35,10 @@ import {
   type OAuthProviderRow,
 } from "../oauth/oauth-store.js";
 import { missingScopesForStoredToken } from "../oauth/scope-utils.js";
-import { credentialKey } from "../security/credential-key.js";
+import {
+  cloudIdentityFieldSpellings,
+  credentialKey,
+} from "../security/credential-key.js";
 import {
   getSecureKeyAsync,
   getSecureKeyResultAsync,
@@ -674,10 +677,15 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
     // A workspace that was never connected to the cloud has no managed
     // credential and is not unhealthy. Only an install that already carries
     // the rest of a cloud identity is missing something.
-    const assistantId = await getSecureKeyAsync(
-      credentialKey("cadet", "platform_assistant_id"),
+    // Identities provisioned before the cloud_* rename still sit under the
+    // legacy spelling, so either spelling proves the install has a cloud
+    // identity bound.
+    const [assistantId, legacyAssistantId] = await Promise.all(
+      cloudIdentityFieldSpellings("assistantId").map((field) =>
+        getSecureKeyAsync(credentialKey("cadet", field)),
+      ),
     );
-    if (!assistantId) {
+    if (!(assistantId ?? legacyAssistantId)) {
       return null;
     }
     return {

@@ -623,7 +623,7 @@ describe("credentials routes", () => {
        * Platform identity ids are benign UUIDs that legitimately appear in
        * transcripts; scrubbing them would redact ordinary conversation
        * content. Shares the exemption with the /v1/secrets credential branch
-       * via isNonSecretPlatformField.
+       * via isNonSecretCloudIdentityField.
       for (const field of [
         "platform_assistant_id",
         "platform_organization_id",

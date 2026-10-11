@@ -258,7 +258,7 @@ export class ClickHouseLlmRequestLogSink implements LlmRequestLogWriter {
     const val = await this.resolveAssistantId();
     if (!val) {
       throw new Error(
-        "cadet:platform_assistant_id credential is required when readSource=clickhouse",
+        "Cadet Cloud assistant id is required when readSource=clickhouse",
       );
     }
     this.cachedAssistantId = val;
