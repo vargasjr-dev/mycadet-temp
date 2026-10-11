@@ -18,20 +18,14 @@ import {
   assertAcpCredentialFormat,
 } from "../acp/acp-credentials.js";
 import { getConfig } from "../config/loader.js";
-import {
-  isNonSecretCloudIdentityField,
-  scrubStoredCredentialFromTranscripts,
-} from "../daemon/credential-transcript-scrub.js";
+import { scrubStoredCredentialFromTranscripts } from "../daemon/credential-transcript-scrub.js";
 import {
   setSlackChannelConfig,
   type SlackChannelConfigResult,
 } from "../daemon/handlers/config-slack-channel.js";
 import { syncManualTokenConnection } from "../oauth/manual-token-connection.js";
 import type { SecretDelivery } from "../permissions/secret-prompt-types.js";
-import {
-  credentialKey,
-  normalizeCloudIdentityField,
-} from "../security/credential-key.js";
+import { credentialKey } from "../security/credential-key.js";
 import { setSecureKeyAsync } from "../security/secure-keys.js";
 import { credentialBroker } from "../tools/credentials/broker.js";
 import {
@@ -124,13 +118,7 @@ export async function persistPromptedCredential(args: {
   delivery: SecretDelivery;
   policy: PromptedCredentialPolicy;
 }): Promise<PersistPromptedCredentialResult> {
-  const { service, field: requestedField, value, delivery, policy } = args;
-  // Same write-side rule as credentials_set: a legacy-spelling write of a
-  // cadet cloud-identity credential lands under the canonical cloud_* name.
-  const field =
-    service === "cadet"
-      ? normalizeCloudIdentityField(requestedField)
-      : requestedField;
+  const { service, field, value, delivery, policy } = args;
 
   // Reject an Anthropic API key pasted into the ACP OAuth-token field before any
   // persistence, surfacing the guard message through the existing error channel.
@@ -218,19 +206,17 @@ export async function persistPromptedCredential(args: {
   // (the 06-credential-security rail promises that pasted message is
   // scrubbed after storage). Run the scrub right after the store succeeds,
   // best-effort and invisible to the caller, mirroring credentials_set.
-  if (!isNonSecretCloudIdentityField(service, field)) {
-    try {
-      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-      log.info(
-        { service, field, ...scrubbed },
-        "Prompted credential stored; scrubbed value from recent transcripts",
-      );
-    } catch (err) {
-      log.warn(
-        { service, field, err },
-        "Prompted credential stored, but transcript scrub failed",
-      );
-    }
+  try {
+    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+    log.info(
+      { service, field, ...scrubbed },
+      "Prompted credential stored; scrubbed value from recent transcripts",
+    );
+  } catch (err) {
+    log.warn(
+      { service, field, err },
+      "Prompted credential stored, but transcript scrub failed",
+    );
   }
 
   try {

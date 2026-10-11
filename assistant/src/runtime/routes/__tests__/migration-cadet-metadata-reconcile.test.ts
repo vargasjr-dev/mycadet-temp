@@ -2,13 +2,12 @@
  * Tests for the post-import cadet metadata reconciliation helper.
  *
  * After every bundle import, `reconcileCadetMetadataFromCes` walks the
- * cloud-identity fields the gateway requires and, for each one that
+ * cadet credentials the gateway requires and, for each one that
  * CES already holds a value for, ensures `metadata.json` lists a
  * matching entry. This closes the race where a provisioning write to
  * CES completes successfully but its metadata upsert gets clobbered by
  * the import's in-place clear or atomic swap. The reconciled set covers
- * the Django-provisioned fields (assistant_api_key, platform_assistant_id,
- * webhook_secret).
+ * the Django-provisioned credentials (assistant_api_key, webhook_secret).
  *
  * We test the reconcile logic in isolation by mocking the secure-keys
  * and metadata-store modules — the real migration handler wires the
@@ -38,11 +37,7 @@ type MetadataRecord = {
   updatedAt: number;
 };
 
-const CADET_FIELDS = [
-  "assistant_api_key",
-  "platform_assistant_id",
-  "webhook_secret",
-] as const;
+const CADET_FIELDS = ["assistant_api_key", "webhook_secret"] as const;
 
 const upsertCalls: Array<{ service: string; field: string }> = [];
 let metadataStore: Map<string, MetadataRecord> = new Map();
@@ -171,7 +166,6 @@ describe("reconcileCadetMetadataFromCes", () => {
     const reconciled = new Set(upsertCalls.map((c) => c.field));
     // Django-provisioned trio.
     expect(reconciled).toContain("assistant_api_key");
-    expect(reconciled).toContain("platform_assistant_id");
     expect(reconciled).toContain("webhook_secret");
   });
 

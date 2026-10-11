@@ -168,7 +168,11 @@ describe("cadet retire", () => {
   beforeEach(() => {
     process.env.CADET_LOCKFILE_DIR = testDir;
     delete process.env.CADET_PLATFORM_TOKEN;
-    for (const name of ["lockfile.json", ".cadet.lock.json", ".cadet.lockfile.json"]) {
+    for (const name of [
+      "lockfile.json",
+      ".cadet.lock.json",
+      ".cadet.lockfile.json",
+    ]) {
       rmSync(join(testDir, name), { force: true });
     }
     process.argv = ["bun", "cadet", "retire"];
@@ -252,122 +256,25 @@ describe("cadet retire", () => {
     );
   });
 
-  test("local retire unregisters the self-hosted platform record first", async () => {
-    const entry = makeEntry("assistant-1", { name: "Example Assistant" });
-    writeLockfile([entry]);
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test/api");
-    readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://platform.example.test", unreachable: false };
-      }
-      if (name === "cadet:platform_organization_id") {
-        return { value: "org-123", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(readGatewayCredentialMock).toHaveBeenCalledWith(
-      entry.localUrl ?? entry.runtimeUrl,
-      "cadet:platform_assistant_id",
-      entry.bearerToken,
-    );
-    expect(authHeadersMock).not.toHaveBeenCalled();
-    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/api/v1/assistants/platform-assistant-1/retire/",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Token": "session-token",
-          "Cadet-Organization-Id": "org-123",
-        },
-      },
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-  });
-
-  test("local retire reads platform registration through the loopback gateway URL", async () => {
-    const localGatewayUrl = "http://127.0.0.1:7831";
+  test("local retire unregisters the cloud record straight from the lockfile entry", async () => {
     const entry = makeEntry("assistant-1", {
       name: "Example Assistant",
-      runtimeUrl: "http://assistant-1.local:7831",
-      localUrl: localGatewayUrl,
-    });
-    writeLockfile([entry]);
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    readGatewayCredentialMock.mockImplementation(async (gatewayUrl, name) => {
-      expect(gatewayUrl).toBe(localGatewayUrl);
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://platform.example.test", unreachable: false };
-      }
-      if (name === "cadet:platform_organization_id") {
-        return { value: "org-123", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(readGatewayCredentialMock).toHaveBeenCalledWith(
-      localGatewayUrl,
-      "cadet:platform_assistant_id",
-      entry.bearerToken,
-    );
-    expect(readGatewayCredentialMock).toHaveBeenCalledWith(
-      localGatewayUrl,
-      "cadet:platform_base_url",
-      entry.bearerToken,
-    );
-    expect(readGatewayCredentialMock).toHaveBeenCalledWith(
-      localGatewayUrl,
-      "cadet:platform_organization_id",
-      entry.bearerToken,
-    );
-    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/platform-assistant-1/retire/",
-      expect.any(Object),
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-  });
-
-  test("local retire uses saved platform registration when local credentials are unreachable", async () => {
-    const entry = makeEntry("assistant-1", {
-      name: "Example Assistant",
-      cloudAssistantId: "platform-assistant-1",
-      cloudBaseUrl: "https://platform.example.test",
+      localUrl: "http://127.0.0.1:7831",
+      cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });
     writeLockfile([entry]);
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    readGatewayCredentialMock.mockResolvedValue({
-      value: null,
-      unreachable: true,
-    });
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
-    expect(readGatewayCredentialMock).toHaveBeenCalledWith(
-      entry.localUrl ?? entry.runtimeUrl,
-      "cadet:cloud_assistant_id",
-      entry.bearerToken,
-    );
+    // The cloud record resolves from the entry + env — the local gateway
+    // credential store is never consulted.
+    expect(readGatewayCredentialMock).not.toHaveBeenCalled();
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/platform-assistant-1/retire/",
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
       {
         method: "DELETE",
         headers: {
@@ -377,111 +284,71 @@ describe("cadet retire", () => {
         },
       },
     );
-    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "using saved platform registration",
+    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
+    expect(loadAllAssistants()).toEqual([]);
+  });
+
+  test("local retire resolves the organization via the cloud when the entry omits it", async () => {
+    const entry = makeEntry("assistant-1", {
+      name: "Example Assistant",
+      cloudAssistantId: "cloud-asst-1",
+    });
+    writeLockfile([entry]);
+    readCloudTokenMock.mockReturnValue("session-token");
+    getCloudUrlMock.mockReturnValue("https://platform.example.test");
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
+
+    await retire();
+
+    expect(authHeadersMock).toHaveBeenCalledWith(
+      "session-token",
+      "https://platform.example.test",
+    );
+    expect(authHeadersForKnownOrganizationMock).not.toHaveBeenCalled();
+    expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": "session-token",
+        },
+      },
     );
     expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
     expect(loadAllAssistants()).toEqual([]);
   });
 
-  test("local retire continues when local credentials are unreachable and no saved cloud registration exists", async () => {
-    const entry = makeEntry("assistant-1", { name: "Example Assistant" });
-    writeLockfile([entry]);
-    readCloudTokenMock.mockReturnValue("session-token");
-    readGatewayCredentialMock.mockResolvedValue({
-      value: null,
-      unreachable: true,
-    });
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
-    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "no saved cloud registration is available",
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-    expect(loadAllAssistants()).toEqual([]);
-  });
-
-  test("local retire skips platform unregister when stored platform URL origin mismatches", async () => {
-    const entry = makeEntry("assistant-1", { name: "Example Assistant" });
-    writeLockfile([entry]);
-    readCloudTokenMock.mockReturnValue("session-token");
-    getCloudUrlMock.mockReturnValue("https://platform.example.com");
-    readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://malicious.example.test", unreachable: false };
-      }
-      if (name === "cadet:platform_organization_id") {
-        return { value: "org-123", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
-    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
-
-    await retire();
-
-    expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
-    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "Stored platform URL does not match the configured platform URL",
-    );
-    expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
-  });
-
-  test("local retire skips platform unregister when stored organization ID is missing", async () => {
+  test("local retire skips the cloud unregister when no assistant id is bound", async () => {
     const entry = makeEntry("assistant-1", { name: "Example Assistant" });
     writeLockfile([entry]);
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://platform.example.test", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
     expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
-    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "Could not read platform organization ID",
-    );
     expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
     expect(loadAllAssistants()).toEqual([]);
   });
 
   test("local retire uses injected platform token from the app host", async () => {
-    const entry = makeEntry("assistant-1", { name: "Example Assistant" });
+    const entry = makeEntry("assistant-1", {
+      name: "Example Assistant",
+      cloudAssistantId: "cloud-asst-1",
+      cloudOrganizationId: "org-123",
+    });
     writeLockfile([entry]);
     process.env.CADET_PLATFORM_TOKEN = "host-session-token";
     readCloudTokenMock.mockReturnValue(null);
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://platform.example.test", unreachable: false };
-      }
-      if (name === "cadet:platform_organization_id") {
-        return { value: "org-123", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
     process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
-      "https://platform.example.test/v1/assistants/platform-assistant-1/retire/",
+      "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
       {
         method: "DELETE",
         headers: {
@@ -494,23 +361,15 @@ describe("cadet retire", () => {
     expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
   });
 
-  test("local retire continues when self-hosted platform unregister fails", async () => {
-    const entry = makeEntry("assistant-1", { name: "Example Assistant" });
+  test("local retire continues when the cloud unregister fails", async () => {
+    const entry = makeEntry("assistant-1", {
+      name: "Example Assistant",
+      cloudAssistantId: "cloud-asst-1",
+      cloudOrganizationId: "org-123",
+    });
     writeLockfile([entry]);
     readCloudTokenMock.mockReturnValue("session-token");
     getCloudUrlMock.mockReturnValue("https://platform.example.test");
-    readGatewayCredentialMock.mockImplementation(async (_gatewayUrl, name) => {
-      if (name === "cadet:platform_assistant_id") {
-        return { value: "platform-assistant-1", unreachable: false };
-      }
-      if (name === "cadet:platform_base_url") {
-        return { value: "https://platform.example.test", unreachable: false };
-      }
-      if (name === "cadet:platform_organization_id") {
-        return { value: "org-123", unreachable: false };
-      }
-      return { value: null, unreachable: false };
-    });
     loopbackSafeFetchMock.mockResolvedValue(
       new Response("platform unavailable", { status: 503 }),
     );

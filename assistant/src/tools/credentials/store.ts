@@ -29,10 +29,7 @@ import {
   assertAcpCredentialFormat,
 } from "../../acp/acp-credentials.js";
 import { invalidateEmailReadinessForByoCredential } from "../../email/byo-email-credential.js";
-import {
-  credentialKey,
-  normalizeCloudIdentityField,
-} from "../../security/credential-key.js";
+import { credentialKey } from "../../security/credential-key.js";
 import { normalizeSecretValue } from "../../security/secret-normalize.js";
 import {
   getActiveBackendName,
@@ -112,13 +109,7 @@ export interface StoredCredential {
 export async function storeCredentialValue(
   input: StoreCredentialValueInput,
 ): Promise<StoredCredential> {
-  const { service, field: requestedField } = input;
-  // Writes of the cadet cloud-identity credentials land under the canonical
-  // cloud_* spelling — the legacy platform_* names are read-only compat.
-  const field =
-    service === "cadet"
-      ? normalizeCloudIdentityField(requestedField)
-      : requestedField;
+  const { service, field } = input;
 
   const value = normalizeSecretValue(input.value);
   if (value.length === 0) {
@@ -146,23 +137,19 @@ export async function storeCredentialValue(
   // also fires on OAuth refresh rotations and MCP header writes whose values
   // never transited a transcript.
   if (!input.skipTranscriptScrub) {
-    const {
-      isNonSecretCloudIdentityField,
-      scrubStoredCredentialFromTranscripts,
-    } = await import("../../daemon/credential-transcript-scrub.js");
-    if (!isNonSecretCloudIdentityField(service, field)) {
-      try {
-        const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-        log.info(
-          { service, field, ...scrubbed },
-          "Credential stored; scrubbed value from recent transcripts",
-        );
-      } catch (err) {
-        log.warn(
-          { err, service, field },
-          "Credential stored, but transcript scrub failed",
-        );
-      }
+    const { scrubStoredCredentialFromTranscripts } =
+      await import("../../daemon/credential-transcript-scrub.js");
+    try {
+      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+      log.info(
+        { service, field, ...scrubbed },
+        "Credential stored; scrubbed value from recent transcripts",
+      );
+    } catch (err) {
+      log.warn(
+        { err, service, field },
+        "Credential stored, but transcript scrub failed",
+      );
     }
   }
 

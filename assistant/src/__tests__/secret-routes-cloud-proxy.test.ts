@@ -349,38 +349,14 @@ describe("secret routes cloud proxy registry sync", () => {
     cloudOrganizationIdOverride = "existing-org";
     platformUserIdOverride = "existing-user";
 
-    await expect(
-      addCredential("cadet:platform_assistant_id", "asst-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
-    await expect(
-      addCredential("cadet:platform_organization_id", "org-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_organization_id");
-    await expect(
-      addCredential("cadet:platform_user_id", "user-1"),
-    ).rejects.toThrow("Unknown cadet credential: platform_user_id");
-    await expect(
-      addCredential("cadet:platform_base_url", "https://managed.example.com"),
-    ).rejects.toThrow("Unknown cadet credential: platform_base_url");
-    // The canonical cloud_* spellings are equally non-writable — identity
-    // credentials are provisioned by the cloud, never by the runtime.
+    // Identity ids are not credentials at all — they resolve from the
+    // assistant_api_key via validate and live in the in-memory identity.
     await expect(
       addCredential("cadet:cloud_assistant_id", "asst-1"),
     ).rejects.toThrow("Unknown cadet credential: cloud_assistant_id");
 
     expect(
-      secureKeyStore.get(credentialKey("cadet", "platform_assistant_id")),
-    ).toBeUndefined();
-    expect(
       secureKeyStore.get(credentialKey("cadet", "cloud_assistant_id")),
-    ).toBeUndefined();
-    expect(
-      secureKeyStore.get(credentialKey("cadet", "platform_organization_id")),
-    ).toBeUndefined();
-    expect(
-      secureKeyStore.get(credentialKey("cadet", "platform_user_id")),
-    ).toBeUndefined();
-    expect(
-      secureKeyStore.get(credentialKey("cadet", "platform_base_url")),
     ).toBeUndefined();
     expect(metadataUpserts).toEqual([]);
     expect(cloudAssistantIdOverride).toBe("existing-asst");
@@ -391,13 +367,13 @@ describe("secret routes cloud proxy registry sync", () => {
   });
 
   test("an unknown cadet credential does not delete leftover vault copies", async () => {
-    const key = credentialKey("cadet", "platform_assistant_id");
+    const key = credentialKey("cadet", "cloud_assistant_id");
     secureKeyStore.set(key, "leftover-asst");
     cloudAssistantIdOverride = "asst-1";
 
     await expect(
-      addCredential("cadet:platform_assistant_id", "   "),
-    ).rejects.toThrow("Unknown cadet credential: platform_assistant_id");
+      addCredential("cadet:cloud_assistant_id", "   "),
+    ).rejects.toThrow("Unknown cadet credential: cloud_assistant_id");
 
     expect(secureKeyStore.get(key)).toBe("leftover-asst");
     expect(cloudAssistantIdOverride).toBe("asst-1");

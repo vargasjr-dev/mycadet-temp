@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setCloudAssistantId } from "../config/env.js";
 import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ── Mutable state for mocks ──────────────────────────────────────────
@@ -773,7 +774,10 @@ describe("credential-health-service", () => {
 
   describe("cloud assistant credential", () => {
     const KEY = "credential/cadet/assistant_api_key";
-    const ASSISTANT_ID = "credential/cadet/platform_assistant_id";
+
+    afterEach(() => {
+      setCloudAssistantId(undefined);
+    });
 
     // Checked directly rather than through `checkAllCredentials`: the cloud
     // credential is not enrolled in the heartbeat pass yet, because the alert
@@ -785,8 +789,8 @@ describe("credential-health-service", () => {
       expect(await assistantKeyResult()).toBeNull();
     });
 
-    test("is missing_token when a cloud identity exists without a key", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
+    test("is missing_token when a cloud identity is bound without a key", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
 
       const result = await assistantKeyResult();
       expect(result!.status).toBe("missing_token");
@@ -794,7 +798,6 @@ describe("credential-health-service", () => {
     });
 
     test("is healthy when the cloud accepts the stored key", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "valid";
 
@@ -802,7 +805,6 @@ describe("credential-health-service", () => {
     });
 
     test("is revoked when the cloud rejects the stored key", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "rejected";
 
@@ -818,7 +820,6 @@ describe("credential-health-service", () => {
     // error, transport failure) must degrade to `unreachable`, which the
     // heartbeat drops before notifying.
     test("an unsettled platform answer is unreachable, never revoked", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "unknown";
 
@@ -826,14 +827,12 @@ describe("credential-health-service", () => {
     });
 
     test("an unreadable credential store is unreachable, never revoked", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       markUnreachable(KEY);
 
       expect((await assistantKeyResult())!.status).toBe("unreachable");
     });
 
     test("is unreachable when the cloud client cannot be built", async () => {
-      secureKeyValues.set(ASSISTANT_ID, "11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       cloudClientAvailable = false;
 

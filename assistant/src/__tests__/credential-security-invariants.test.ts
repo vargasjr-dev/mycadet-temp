@@ -12,7 +12,6 @@ import {
   describe,
   expect,
   mock,
-  spyOn,
   test,
 } from "bun:test";
 
@@ -56,16 +55,7 @@ mock.module("../tools/registry.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { DEFAULT_CONFIG } from "../config/defaults.js";
-import * as conversationStore from "../daemon/conversation-store.js";
-import * as scrub from "../daemon/credential-transcript-scrub.js";
-import * as manualToken from "../oauth/manual-token-connection.js";
-import {
-  CLOUD_IDENTITY_FIELDS,
-  cloudIdentityFieldSpellings,
-  credentialKey,
-  isCloudIdentityField,
-  normalizeCloudIdentityField,
-} from "../security/credential-key.js";
+import { credentialKey } from "../security/credential-key.js";
 import { redactSensitiveFields } from "../security/redaction.js";
 import {
   getSecureKeyAsync,
@@ -77,7 +67,6 @@ import {
   getCredentialMetadata,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { storeCredentialValue } from "../tools/credentials/store.js";
 
 /**
  * Security invariant test harness for credential storage hardening.
@@ -583,104 +572,6 @@ describe("Invariant 6: oauth2ClientSecret not in metadata, only in secure store"
     );
     expect(raw.credentials[0]).not.toHaveProperty("oauth2ClientSecret");
     expect(raw.version).toBe(5);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Invariant 7 — cloud-identity credentials are cloud-provisioned
-// ---------------------------------------------------------------------------
-
-describe("Invariant 7: cloud-identity credentials are cloud-provisioned", () => {
-  let syncSpy: ReturnType<typeof spyOn>;
-  let evictSpy: ReturnType<typeof spyOn>;
-  let scrubSpy: ReturnType<typeof spyOn>;
-
-  beforeEach(() => {
-    mkdirSync(TEST_DIR, { recursive: true });
-    _resetBackend();
-    useMemorySecureKeys();
-    _setMetadataPath(join(TEST_DIR, "metadata.json"));
-    syncSpy = spyOn(
-      manualToken,
-      "syncManualTokenConnection",
-    ).mockImplementation(async () => {});
-    evictSpy = spyOn(
-      conversationStore,
-      "evictConversationsForReload",
-    ).mockImplementation(() => {});
-    scrubSpy = spyOn(
-      scrub,
-      "scrubStoredCredentialFromTranscripts",
-    ).mockImplementation(async () => ({
-      dbMessagesScrubbed: 0,
-      residentMessagesScrubbed: 0,
-    }));
-  });
-
-  afterEach(() => {
-    syncSpy.mockRestore();
-    evictSpy.mockRestore();
-    scrubSpy.mockRestore();
-    _setMetadataPath(null);
-    _resetBackend();
-    rmSync(TEST_DIR, { recursive: true, force: true });
-  });
-
-  test("the alias map keeps canonical cloud_* distinct from legacy platform_* spellings", () => {
-    expect(Object.keys(CLOUD_IDENTITY_FIELDS)).toEqual([
-      "assistantId",
-      "organizationId",
-      "userId",
-    ]);
-    for (const spelling of Object.values(CLOUD_IDENTITY_FIELDS)) {
-      expect(spelling.canonical).toMatch(/^cloud_/);
-      expect(spelling.legacy).toMatch(/^platform_/);
-      expect(spelling.canonical).not.toBe(spelling.legacy);
-    }
-  });
-
-  test("reads and scrub coverage treat both spellings as the same identity field", () => {
-    const [canonical, legacy] = cloudIdentityFieldSpellings("assistantId");
-    expect(canonical).toBe("cloud_assistant_id");
-    expect(legacy).toBe("platform_assistant_id");
-    expect(isCloudIdentityField(canonical)).toBe(true);
-    expect(isCloudIdentityField(legacy)).toBe(true);
-    expect(isCloudIdentityField("assistant_api_key")).toBe(false);
-  });
-
-  test("normalizeCloudIdentityField maps legacy spellings to canonical and passes the rest through", () => {
-    expect(normalizeCloudIdentityField("platform_assistant_id")).toBe(
-      "cloud_assistant_id",
-    );
-    expect(normalizeCloudIdentityField("platform_organization_id")).toBe(
-      "cloud_organization_id",
-    );
-    expect(normalizeCloudIdentityField("platform_user_id")).toBe(
-      "cloud_user_id",
-    );
-    expect(normalizeCloudIdentityField("cloud_assistant_id")).toBe(
-      "cloud_assistant_id",
-    );
-    expect(normalizeCloudIdentityField("assistant_api_key")).toBe(
-      "assistant_api_key",
-    );
-  });
-
-  test("a legacy-spelling write lands under the canonical key, never the old name", async () => {
-    await storeCredentialValue({
-      service: "cadet",
-      field: "platform_assistant_id",
-      value: "asst_legacy-write",
-      skipTranscriptScrub: true,
-    });
-
-    const [canonical, legacy] = cloudIdentityFieldSpellings("assistantId");
-    expect(await getSecureKeyAsync(credentialKey("cadet", canonical))).toBe(
-      "asst_legacy-write",
-    );
-    expect(await getSecureKeyAsync(credentialKey("cadet", legacy))).toBe(
-      undefined,
-    );
   });
 });
 

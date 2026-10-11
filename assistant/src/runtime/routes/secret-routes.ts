@@ -21,10 +21,7 @@ import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import type { CesClient } from "../../credential-execution/client.js";
-import {
-  isNonSecretCloudIdentityField,
-  scrubStoredCredentialFromTranscripts,
-} from "../../daemon/credential-transcript-scrub.js";
+import { scrubStoredCredentialFromTranscripts } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
 import { maybeReseedCapabilitiesAfterCloudCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";
 import { validateAnthropicApiKey } from "../../providers/anthropic/client.js";
@@ -97,19 +94,17 @@ async function persistCredential(
       `Failed to store credential in secure storage (backend: ${getActiveBackendName()})`,
     );
   }
-  if (!isNonSecretCloudIdentityField(service, field)) {
-    try {
-      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-      log.info(
-        { service, field, ...scrubbed },
-        "Credential stored; scrubbed value from recent transcripts",
-      );
-    } catch (err) {
-      log.warn(
-        { err, service, field },
-        "Credential stored, but transcript scrub failed",
-      );
-    }
+  try {
+    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+    log.info(
+      { service, field, ...scrubbed },
+      "Credential stored; scrubbed value from recent transcripts",
+    );
+  } catch (err) {
+    log.warn(
+      { err, service, field },
+      "Credential stored, but transcript scrub failed",
+    );
   }
   upsertCredentialMetadata(service, field, {});
   await syncManualTokenConnection(service);
