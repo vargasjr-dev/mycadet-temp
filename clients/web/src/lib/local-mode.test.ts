@@ -561,6 +561,34 @@ describe("loadLockfile host-failure fallback", () => {
   });
 });
 
+describe("loadLockfile on a cloud-hosted cadet", () => {
+  test("commits an empty lockfile without touching the local host", async () => {
+    window.__CADET_CONFIG__ = { remote: "cloud" };
+    useLockfileStore
+      .getState()
+      .setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+
+    const result = await loadLockfile();
+
+    expect(loadLockfileHost).not.toHaveBeenCalled();
+    expect(result.assistants).toEqual([]);
+    expect(result.activeAssistant).toBeNull();
+    expect(useLockfileStore.getState().committed).toBe(true);
+  });
+
+  test("a non-cloud remote still reads the host", async () => {
+    window.__CADET_CONFIG__ = { remote: "local" };
+    loadLockfileHost.mockImplementationOnce(async () => ({
+      assistants: [localA],
+      activeAssistant: "local-a",
+    }));
+
+    const result = await loadLockfile();
+
+    expect(result.assistants.map((a) => a.assistantId)).toEqual(["local-a"]);
+  });
+});
+
 describe("assistant classification", () => {
   test("a cadet-cloud entry is a cloud assistant, not local", () => {
     expect(isCloudAssistant(platform)).toBe(true);

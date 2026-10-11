@@ -189,6 +189,17 @@ export async function loadLockfile(): Promise<Lockfile> {
     return lockfile;
   }
 
+  // A cloud-hosted cadet has no local-mode host: the bundle is served by the
+  // platform, so /assistant/__local/* would land on the platform's web app
+  // instead of a local daemon. Commit an empty lockfile without fetching —
+  // the assistant list comes from the cloud API, and stale persisted local
+  // entries must not leak into a cloud session.
+  if (isCadetCloudRemote()) {
+    const empty = { ...EMPTY_LOCKFILE };
+    setCachedLockfile(empty);
+    return empty;
+  }
+
   try {
     const data = await loadLockfileHost();
     commitLockfile(data);
