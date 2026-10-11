@@ -471,7 +471,7 @@ async function main() {
   let cadetReady = false;
   let tunnelStartRequested = false;
 
-  function maybeStartTunnelTunnelForTwilio(
+  function maybeStartTunnelForTwilio(
     reason: string,
     twilioCredentials?: Record<string, string> | null,
   ): boolean {
@@ -493,14 +493,14 @@ async function main() {
    *
    * Tunnel is the browser's ingress for the live-voice WebSocket, but the tunnel
    * was historically only started for Twilio (see
-   * {@link maybeStartTunnelTunnelForTwilio}). Without this, an assistant with no
+   * {@link maybeStartTunnelForTwilio}). Without this, an assistant with no
    * Twilio setup never registers a Tunnel, so the browser's
    * `/v1/live-voice` upgrade fails with "assistant tunnel is not connected".
    * Live voice is available to every assistant, so this runs unconditionally at
    * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
    * tunnel serves both — and `tunnelClient.start()` is idempotent.
    */
-  function startTunnelTunnelForLiveVoice(reason: string): boolean {
+  function startTunnelForLiveVoice(reason: string): boolean {
     if (tunnelStartRequested || !tunnelClient) {
       return tunnelStartRequested;
     }
@@ -519,7 +519,7 @@ async function main() {
    * `tunnelStartRequested` latch — one tunnel serves every ingress consumer —
    * and `tunnelClient.start()` is idempotent.
    */
-  function maybeStartTunnelTunnelForCredentialLink(reason: string): boolean {
+  function maybeStartTunnelForCredentialLink(reason: string): boolean {
     if (tunnelStartRequested || !tunnelClient) {
       return tunnelStartRequested;
     }
@@ -543,7 +543,7 @@ async function main() {
       await enablePublicIngress(configFileCache);
       log.info("Auto-enabled public ingress for credential link creation");
     }
-    maybeStartTunnelTunnelForCredentialLink("credential link minted");
+    maybeStartTunnelForCredentialLink("credential link minted");
   }
 
   async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
@@ -2931,10 +2931,7 @@ async function main() {
     }
 
     if (changed.has("twilio")) {
-      maybeStartTunnelTunnelForTwilio(
-        "twilio credentials changed",
-        twilioCreds,
-      );
+      maybeStartTunnelForTwilio("twilio credentials changed", twilioCreds);
       syncConfiguredTwilioPhoneNumberWebhooks({
         credentials: credentialCache,
         configFile: configFileCache,
@@ -2998,10 +2995,10 @@ async function main() {
       log.error({ err }, "Failed to clear stale Tunnel public URL");
     });
   }
-  maybeStartTunnelTunnelForTwilio("startup", twilioStartupCredentials);
+  maybeStartTunnelForTwilio("startup", twilioStartupCredentials);
   // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
   // up at startup for every assistant (not just for Twilio).
-  startTunnelTunnelForLiveVoice("startup");
+  startTunnelForLiveVoice("startup");
 
   // The credential watcher callback handles credential-backed startup side
   // effects during the initial poll. Stale Tunnel-owned ingress is already
@@ -3046,7 +3043,7 @@ async function main() {
     }
 
     if (event.changedKeys.has("twilio")) {
-      maybeStartTunnelTunnelForTwilio("twilio config changed");
+      maybeStartTunnelForTwilio("twilio config changed");
     }
 
     if (event.changedKeys.has("slack")) {
