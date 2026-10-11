@@ -110,7 +110,10 @@ describe("initFeatureFlagOverrides", () => {
     // Change what IPC would return — if the guard is broken and init
     // re-fetches, "first-call" would flip to false.
     resetRequestMockChannels();
-    gateway.on("get_feature_flags", { "first-call": false, "second-call": true });
+    gateway.on("get_feature_flags", {
+      "first-call": false,
+      "second-call": true,
+    });
 
     await initFeatureFlagOverrides();
 
