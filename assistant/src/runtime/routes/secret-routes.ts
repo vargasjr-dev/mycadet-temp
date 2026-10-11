@@ -94,11 +94,7 @@ async function persistCredential(
       `Failed to store credential in secure storage (backend: ${getActiveBackendName()})`,
     );
   }
-  const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-  log.info(
-    { service, field, ...scrubbed },
-    "Credential stored; scrubbed value from recent transcripts",
-  );
+  await scrubStoredCredentialFromTranscripts(value, { service, field });
   upsertCredentialMetadata(service, field, {});
   await syncManualTokenConnection(service);
 }
@@ -308,18 +304,7 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
         );
       }
 
-      // The stored plaintext may already sit in recent transcripts (a pasted
-      // key echoed by a tool result or persisted tool_use input). The scrub
-      // runs immediately after the secure-store write, BEFORE the provider
-      // refresh: that side effect can throw, and a stored-but-unscrubbed key
-      // must not depend on it succeeding. The key IS stored at this point;
-      // the scrub is best-effort hygiene and must stay invisible to the
-      // Counts only — never the value.
-      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-      log.info(
-        { provider: name, ...scrubbed },
-        "API key stored; scrubbed value from recent transcripts",
-      );
+      await scrubStoredCredentialFromTranscripts(value, { provider: name });
 
       await refreshProvidersAfterSecretChange();
       log.info({ provider: name }, "API key updated via HTTP");

@@ -594,7 +594,7 @@ export function useStreamEventHandler(
         // no-op — OAuth-connect completion and platform login/disconnect signals
         // are consumed by the settings surfaces, not the conversation stream.
         case "oauth_connect_result":
-        case "show_platform_login":
+        case "show_cloud_login":
         case "cloud_disconnected":
           break;
         // Notification-created broadcasts and recording lifecycle

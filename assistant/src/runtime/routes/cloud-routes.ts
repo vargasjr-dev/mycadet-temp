@@ -352,7 +352,7 @@ async function handlePlatformConnect(
   // The outcome travels in the response, where the CLI reads it and tells the
   // user what to do. Nothing shipped consumes the signal below, so the
   // response is the only path the answer reaches anyone by.
-  broadcastMessage({ type: "show_platform_login" });
+  broadcastMessage({ type: "show_cloud_login" });
 
   return credentialRejected
     ? { showPlatformLogin: true, credentialRejected: true }
@@ -947,7 +947,7 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: CloudDisconnectResponseSchema,
   },
   {
-    operationId: "platform_callback_routes_register",
+    operationId: "cloud_callback_routes_register",
     endpoint: "platform/callback-routes/register",
     method: "POST",
     policy: {
@@ -957,7 +957,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Register a cloud callback route",
     description:
       "Registers a callback route with the cloud gateway for inbound provider webhooks.",
-    tags: ["platform"],
+    tags: ["cloud"],
     handler: handleCallbackRoutesRegister,
     requestBody: CallbackRouteRegisterRequestSchema,
     responseBody: CallbackRouteRegisterResponseSchema,

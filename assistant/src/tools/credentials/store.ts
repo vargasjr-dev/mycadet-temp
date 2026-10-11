@@ -131,19 +131,10 @@ export async function storeCredentialValue(
     );
   }
 
-  // The stored plaintext may already sit in recent transcripts: the user
-  // message that pasted it, the persisted tool_use input, the tool result
-  // echoing the command. This is the scrub seam, not setSecureKeyAsync, which
-  // also fires on OAuth refresh rotations and MCP header writes whose values
-  // never transited a transcript.
   if (!input.skipTranscriptScrub) {
     const { scrubStoredCredentialFromTranscripts } =
       await import("../../daemon/credential-transcript-scrub.js");
-    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-    log.info(
-      { service, field, ...scrubbed },
-      "Credential stored; scrubbed value from recent transcripts",
-    );
+    await scrubStoredCredentialFromTranscripts(value, { service, field });
   }
 
   const metadata = upsertCredentialMetadata(service, field, {

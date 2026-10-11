@@ -86,8 +86,15 @@ export interface TranscriptScrubResult {
  * Never throws — partial failures are logged (counts only, never content)
  * and reflected in the best-effort result.
  */
+export interface TranscriptScrubContext {
+  service?: string;
+  field?: string;
+  provider?: string;
+}
+
 export async function scrubStoredCredentialFromTranscripts(
   value: string,
+  context: TranscriptScrubContext = {},
 ): Promise<TranscriptScrubResult> {
   const result: TranscriptScrubResult = {
     dbMessagesScrubbed: 0,
@@ -120,6 +127,10 @@ export async function scrubStoredCredentialFromTranscripts(
       "Credential transcript scrub failed",
     );
   }
+  log.info(
+    { ...context, ...result },
+    "Credential stored; scrubbed value from recent transcripts",
+  );
   return result;
 }
 

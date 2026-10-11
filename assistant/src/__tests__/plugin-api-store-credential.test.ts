@@ -198,7 +198,10 @@ describe("storeCredential", () => {
 
   test("scrubs the stored value from recent transcripts", async () => {
     await asPlugin(() => storeCredential("acme/api_key", "sk-secret"));
-    expect(scrubSpy).toHaveBeenCalledWith("sk-secret");
+    expect(scrubSpy).toHaveBeenCalledWith("sk-secret", {
+      service: "acme",
+      field: "api_key",
+    });
   });
 
   test("skips the transcript scrub when asked", async () => {

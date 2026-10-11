@@ -1,5 +1,5 @@
 /**
- * `show_platform_login` SSE event.
+ * `show_cloud_login` SSE event.
  *
  * Emitted by the cloud-connect route when no cloud credentials are
  * stored yet, signalling connected clients to surface the cloud login UI.
@@ -12,7 +12,7 @@
 import { z } from "zod";
 
 export const ShowCloudLoginEventSchema = z.object({
-  type: z.literal("show_platform_login"),
+  type: z.literal("show_cloud_login"),
 });
 
 export type ShowCloudLoginEvent = z.infer<typeof ShowCloudLoginEventSchema>;

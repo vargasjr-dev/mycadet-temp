@@ -146,11 +146,11 @@ const GLOBAL_STREAM_EVENT_TYPE_NAMES = [
   "client_settings_update",
   "config_changed",
   "sounds_config_updated",
-  // Integration/platform lifecycle broadcasts — OAuth-connect completion,
-  // platform login prompt, and platform disconnect notice — are app-wide and
+  // Integration/cloud lifecycle broadcasts — OAuth-connect completion,
+  // cloud login prompt, and cloud disconnect notice — are app-wide and
   // carry no `conversationId`, so gate them as global.
   "oauth_connect_result",
-  "show_platform_login",
+  "show_cloud_login",
   "cloud_disconnected",
   // Notification-created broadcasts and recording lifecycle instructions are not
   // tied to the active conversation stream (they carry no top-level

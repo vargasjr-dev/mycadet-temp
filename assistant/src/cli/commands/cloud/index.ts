@@ -260,7 +260,7 @@ export function registerCloudCommand(program: Command): void {
             callbackUrl: string;
             callbackPath: string;
             type: string;
-          }>("platform_callback_routes_register", {
+          }>("cloud_callback_routes_register", {
             body: { path: opts.path, type: opts.type },
           });
           if (!r.ok) {

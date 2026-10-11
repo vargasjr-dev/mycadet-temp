@@ -66,7 +66,7 @@ describe("assistant cloud callback-routes list", () => {
     expect((thrown as Error).message).toBe("exitFromIpcResult called");
   });
 
-  test("callback-routes register calls platform_callback_routes_register", async () => {
+  test("callback-routes register calls cloud_callback_routes_register", async () => {
     ipc.response = {
       ok: true,
       result: {
@@ -87,7 +87,7 @@ describe("assistant cloud callback-routes list", () => {
       "--json",
     ]);
 
-    expect(ipc.calls[0][0]).toBe("platform_callback_routes_register");
+    expect(ipc.calls[0][0]).toBe("cloud_callback_routes_register");
     expect((ipc.calls[0][1].body as Record<string, unknown>).path).toBe(
       "webhooks/telegram",
     );

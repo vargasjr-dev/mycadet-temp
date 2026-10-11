@@ -32738,7 +32738,7 @@ paths:
       summary: Register a cloud callback route
       description: Registers a callback route with the cloud gateway for inbound provider webhooks.
       tags:
-        - platform
+        - cloud
       requestBody:
         required: true
         content:

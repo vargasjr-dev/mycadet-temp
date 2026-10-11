@@ -25,6 +25,7 @@
 
 import { isTokenExpired } from "@mycadet/credential-storage";
 
+import { getCloudAssistantId } from "../config/env.js";
 import type { Services } from "../config/schemas/services.js";
 import { getConnectionAccessTokenResult } from "../oauth/credential-token-resolver.js";
 import {
@@ -668,10 +669,18 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
 
   if (stored.value == null) {
     // A workspace that was never connected to the cloud has no managed
-    // credential and is not unhealthy. The identity ids resolve from the
-    // api key via the validate endpoint, so a missing key means nothing is
-    // bound — there is nothing to check.
-    return null;
+    // credential and is not unhealthy. Only an install whose in-memory
+    // cloud identity is still bound is missing something.
+    if (!getCloudAssistantId()) {
+      return null;
+    }
+    return {
+      ...base,
+      status: "missing_token",
+      details:
+        "No Cadet Cloud credentials are stored yet. Log in to Cadet Cloud to set them up.",
+      canAutoRecover: true,
+    };
   }
 
   const { CadetCloudClient } = await import("../cloud/client.js");
