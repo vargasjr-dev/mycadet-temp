@@ -25,7 +25,6 @@ import {
   authHeaders,
   authHeadersForKnownOrganization,
   getCloudUrl,
-  readGatewayCredential,
   readCloudToken,
 } from "../lib/cloud-client.js";
 import { retireDocker, dockerResourceNames } from "../lib/docker.js";
@@ -51,12 +50,6 @@ interface RetireArgs {
   yes: boolean;
 }
 
-interface SelfHostedPlatformRegistration {
-  cloudAssistantId: string;
-  cloudBaseUrl: string | null;
-  organizationId: string | null;
-}
-
 const CLOUD_TOKEN_ENV = "CADET_CLOUD_TOKEN";
 const LEGACY_CLOUD_TOKEN_ENV = "CADET_PLATFORM_TOKEN";
 
@@ -68,52 +61,9 @@ function readPlatformRetireToken(): string | null {
   return readCloudToken();
 }
 
-function platformOrigin(cloudUrl: string): string | null {
-  try {
-    return new URL(cloudUrl).origin;
-  } catch {
-    return null;
-  }
-}
-
-function resolveTrustedSelfHostedCloudUrl(
-  storedCloudUrl: string | null,
-): string | null {
-  const configuredCloudUrl = getCloudUrl();
-  if (!storedCloudUrl) return configuredCloudUrl;
-
-  const storedOrigin = platformOrigin(storedCloudUrl);
-  const configuredOrigin = platformOrigin(configuredCloudUrl);
-  if (storedOrigin && configuredOrigin && storedOrigin === configuredOrigin) {
-    return configuredCloudUrl;
-  }
-
-  console.warn(
-    "⚠️  Stored platform URL does not match the configured platform URL; skipping platform unregister.",
-  );
-  return null;
-}
-
 function nonEmptyString(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
-}
-
-function lockfileSelfHostedPlatformRegistration(
-  entry: AssistantEntry,
-): SelfHostedPlatformRegistration | null {
-  const cloudAssistantId = nonEmptyString(
-    entry.cloudAssistantId ?? entry.cloudAssistantId,
-  );
-  if (!cloudAssistantId) return null;
-
-  return {
-    cloudAssistantId,
-    cloudBaseUrl: nonEmptyString(entry.cloudBaseUrl ?? entry.platformBaseUrl),
-    organizationId: nonEmptyString(
-      entry.cloudOrganizationId ?? entry.platformOrganizationId,
-    ),
-  };
 }
 
 async function deleteCloudAssistant(
@@ -150,85 +100,23 @@ async function deleteCloudAssistant(
   }
 }
 
-async function readSelfHostedPlatformRegistration(
-  entry: AssistantEntry,
-): Promise<SelfHostedPlatformRegistration | null> {
-  const fallback = lockfileSelfHostedPlatformRegistration(entry);
-  const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
-  const cloudRegistration = await readGatewayCredential(
-    gatewayUrl,
-    "cadet:platform_assistant_id",
-    entry.bearerToken,
-  );
-  if (cloudRegistration.unreachable) {
-    if (fallback) {
-      console.warn(
-        "\u26a0\ufe0f  Could not read platform registration from the local assistant; using saved platform registration.",
-      );
-      return fallback;
-    }
-    console.warn(
-      "\u26a0\ufe0f  Could not read cloud registration from the local assistant and no saved cloud registration is available; skipping cloud unregister.",
-    );
-    return null;
-  }
-
-  const cloudAssistantId =
-    nonEmptyString(cloudRegistration.value) ?? fallback?.cloudAssistantId;
-  if (!cloudAssistantId) return null;
-
-  const [cloudBaseUrl, organizationId] = await Promise.all([
-    readGatewayCredential(
-      gatewayUrl,
-      "cadet:platform_base_url",
-      entry.bearerToken,
-    ),
-    readGatewayCredential(
-      gatewayUrl,
-      "cadet:platform_organization_id",
-      entry.bearerToken,
-    ),
-  ]);
-
-  return {
-    cloudAssistantId,
-    cloudBaseUrl:
-      nonEmptyString(cloudBaseUrl.value) ??
-      fallback?.cloudBaseUrl ??
-      null,
-    organizationId:
-      nonEmptyString(organizationId.value) ?? fallback?.organizationId ?? null,
-  };
-}
-
 async function unregisterSelfHostedLocalPlatformRecord(
   entry: AssistantEntry,
 ): Promise<void> {
   const token = readPlatformRetireToken();
   if (!token) return;
 
-  const registration = await readSelfHostedPlatformRegistration(entry);
-  if (!registration) return;
+  const cloudAssistantId = nonEmptyString(entry.cloudAssistantId);
+  if (!cloudAssistantId) return;
 
-  const cloudUrl = resolveTrustedSelfHostedCloudUrl(
-    registration.cloudBaseUrl,
-  );
-  if (!cloudUrl) return;
-  if (!registration.organizationId) {
-    console.warn(
-      "⚠️  Could not read platform organization ID from the local assistant; skipping platform unregister.",
-    );
-    return;
-  }
-
-  await deleteCloudAssistant(registration.cloudAssistantId, {
+  await deleteCloudAssistant(cloudAssistantId, {
     token,
-    cloudUrl,
-    organizationId: registration.organizationId,
+    cloudUrl: getCloudUrl(),
+    organizationId: nonEmptyString(entry.cloudOrganizationId) ?? undefined,
     label: "Platform self-hosted unregister",
-    successMessage: "\u2705 Platform self-hosted registration unregistered.",
+    successMessage: "✅ Platform self-hosted registration unregistered.",
     alreadyGoneMessage:
-      "\u2705 Platform self-hosted registration already unregistered (404).",
+      "✅ Platform self-hosted registration already unregistered (404).",
   });
 }
 
@@ -331,8 +219,8 @@ function printRetireTarget(entry: AssistantEntry, cloud: string): void {
         : {}),
       ...(entry.cloud === "docker"
         ? {
-            container:
-              dockerResourceNames(entry.assistantId).assistantContainer,
+            container: dockerResourceNames(entry.assistantId)
+              .assistantContainer,
           }
         : {}),
     },
@@ -373,28 +261,29 @@ function teeConsoleToLogFile(fd: number | "ignore"): void {
 
 export const retire = Object.assign(
   async function retire(): Promise<void> {
-  if (process.env.CADET_DESKTOP_APP) {
-    resetLogFile("retire.log");
-  }
-  const logFd = process.env.CADET_DESKTOP_APP
-    ? openLogFile("retire.log")
-    : "ignore";
-  teeConsoleToLogFile(logFd);
+    if (process.env.CADET_DESKTOP_APP) {
+      resetLogFile("retire.log");
+    }
+    const logFd = process.env.CADET_DESKTOP_APP
+      ? openLogFile("retire.log")
+      : "ignore";
+    teeConsoleToLogFile(logFd);
 
-  try {
-    await retireInner();
-  } finally {
-    closeLogFile(logFd);
-  }
-},
+    try {
+      await retireInner();
+    } finally {
+      closeLogFile(logFd);
+    }
+  },
   { description: "Delete an assistant instance" },
 );
-
 
 async function retireInner(): Promise<void> {
   const args = process.argv.slice(3);
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet retire [<name-or-id>] [--source <source>] [--yes]");
+    console.log(
+      "Usage: cadet retire [<name-or-id>] [--source <source>] [--yes]",
+    );
     console.log("");
     console.log("Delete an assistant instance and archive its data.");
     console.log(
@@ -422,7 +311,9 @@ async function retireInner(): Promise<void> {
     console.error(
       "Error: No assistant specified and no active assistant. Pass a name or ID, or pick one with `cadet use <name>`.",
     );
-    console.error("Usage: cadet retire <name-or-id> [--source <source>] [--yes]");
+    console.error(
+      "Usage: cadet retire <name-or-id> [--source <source>] [--yes]",
+    );
     process.exit(1);
   }
 

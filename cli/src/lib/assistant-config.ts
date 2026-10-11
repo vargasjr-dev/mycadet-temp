@@ -152,8 +152,27 @@ interface LockfileData {
   assistants?: Record<string, unknown>[];
   activeAssistant?: string;
   cloudBaseUrl?: string;
+  tunnel?: RootProcessRecord;
+  app?: RootProcessRecord;
   [key: string]: unknown;
 }
+
+/**
+ * A CLI-managed OS process recorded at the lockfile root, keyed by what it is
+ * for — `tunnel` (the auto-tunnel agent fronting the edge) and `app` (the
+ * nginx ingress edge). `cadet ps` renders these alongside the per-assistant
+ * process trees, and the stop paths verify the pid before signaling it.
+ */
+export interface RootProcessRecord {
+  pid: number;
+  /** Which tunnel provider owns the process; "tunnel" entries only. */
+  provider?: string;
+  /** The assistant the process fronts, so `cadet ps` can nest the row. */
+  assistantId?: string;
+  startedAt: string;
+}
+
+export type RootProcessKind = "tunnel" | "app";
 
 /**
  * Derive the daemon PID file path from a resources object. The PID file
@@ -214,6 +233,40 @@ function withCliLockfileLock<T>(fn: () => T): T {
   );
   if (!locked.ok) throw new Error(locked.error);
   return locked.value;
+}
+
+/** Record a CLI-managed root process (tunnel agent, app edge) by pid. */
+export function stampRootProcess(
+  kind: RootProcessKind,
+  record: RootProcessRecord,
+): void {
+  withCliLockfileLock(() => {
+    const data = readLockfile();
+    data[kind] = record;
+    writeLockfileUnlocked(data);
+  });
+}
+
+/** Drop the recorded root process entry, e.g. once the process is stopped. */
+export function clearRootProcess(kind: RootProcessKind): void {
+  withCliLockfileLock(() => {
+    const data = readLockfile();
+    if (data[kind] === undefined) return;
+    delete data[kind];
+    writeLockfileUnlocked(data);
+  });
+}
+
+/**
+ * Read the root-level process entries for `cadet ps`. Read-only: no lock, so
+ * a concurrently-updating lockfile is fine — the pid is verified separately.
+ */
+export function readRootProcesses(): {
+  tunnel?: RootProcessRecord;
+  app?: RootProcessRecord;
+} {
+  const data = readLockfile();
+  return { tunnel: data.tunnel, app: data.app };
 }
 
 /**

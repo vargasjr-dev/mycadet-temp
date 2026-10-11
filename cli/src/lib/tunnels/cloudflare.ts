@@ -1,11 +1,13 @@
+import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 
-import { GATEWAY_PORT } from "./constants.js";
+import { GATEWAY_PORT } from "../constants.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
   saveIngressUrl,
-} from "./ingress-config.js";
+} from "../ingress-config.js";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
 
@@ -135,7 +137,7 @@ export interface RunCloudflareTunnelOptions {
 
 export async function runCloudflareTunnel(
   opts: RunCloudflareTunnelOptions = {},
-): Promise<void> {
+): Promise<ProviderTunnelResult> {
   const version = getCloudflareTunnelVersion();
   if (!version) {
     console.error("Error: cloudflared is not installed.");
@@ -226,7 +228,16 @@ export async function runCloudflareTunnel(
   console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
 
   // Keep running until cloudflared exits (e.g., network error or user Ctrl+C)
-  await new Promise<void>((resolve) => {
+  const waitForExit = new Promise<void>((resolve) => {
     child.on("exit", () => resolve());
   });
+  return { publicUrl, waitForExit };
 }
+
+/** Per-provider copy `cadet tunnel`'s help renders for cloudflare. */
+export const CLOUDFLARE_TUNNEL_META: ProviderMeta = {
+  reach: "Public tunnel that webhook integrations can reach",
+  install: "install: brew install cloudflare/cloudflare/cloudflared",
+  notes: ["No Cloudflare account required for quick tunnels."],
+  supportsReservedDomain: false,
+};

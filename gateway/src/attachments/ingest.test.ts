@@ -29,7 +29,6 @@ function config(overrides?: Partial<GatewayConfig>): GatewayConfig {
     runtimeMaxRetries: 0,
     runtimeProxyRequireAuth: false,
     runtimeTimeoutMs: 1000,
-    shutdownDrainMs: 1000,
     trustProxy: false,
   };
   return { ...base, ...overrides };

@@ -845,7 +845,7 @@ async function mutateGatewayConfigFile(
 
 const TUNNEL_MANAGED_BY = "tunnel";
 
-async function writeManagedPublicBaseUrl(
+export async function writeManagedPublicBaseUrl(
   publicUrl: string,
   configFile: ConfigFileCache,
 ): Promise<void> {

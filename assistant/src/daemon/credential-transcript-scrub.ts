@@ -93,42 +93,34 @@ export async function scrubStoredCredentialFromTranscripts(
     dbMessagesScrubbed: 0,
     residentMessagesScrubbed: 0,
   };
-  if (value.trim().length < MIN_SCRUB_VALUE_LENGTH) {
-    return result;
-  }
-  const targets = buildSearchTargets(value);
   try {
-    result.dbMessagesScrubbed = sweepDbMessages(targets);
+    if (value.trim().length < MIN_SCRUB_VALUE_LENGTH) {
+      return result;
+    }
+    const targets = buildSearchTargets(value);
+    try {
+      result.dbMessagesScrubbed = sweepDbMessages(targets);
+    } catch (err) {
+      log.warn(
+        { err, valueLength: value.length },
+        "Credential transcript DB sweep failed; continuing with in-memory sweep",
+      );
+    }
+    try {
+      result.residentMessagesScrubbed = sweepResidentConversations(targets);
+    } catch (err) {
+      log.warn(
+        { err, valueLength: value.length },
+        "Credential transcript in-memory sweep failed",
+      );
+    }
   } catch (err) {
     log.warn(
       { err, valueLength: value.length },
-      "Credential transcript DB sweep failed; continuing with in-memory sweep",
-    );
-  }
-  try {
-    result.residentMessagesScrubbed = sweepResidentConversations(targets);
-  } catch (err) {
-    log.warn(
-      { err, valueLength: value.length },
-      "Credential transcript in-memory sweep failed",
+      "Credential transcript scrub failed",
     );
   }
   return result;
-}
-
-/**
- * The Cadet Cloud identity ids and base URL are stored through the
- * credential routes but are not secrets — they are UUIDs/URLs that
- * legitimately appear in conversation text, so scrubbing them would redact
- * benign transcript content. Both credential write paths
- * (`credentials_set` and the `/v1/secrets` credential branch) consult this
- * one exemption so they cannot drift.
- */
-export function isNonSecretPlatformField(
-  service: string,
-  field: string,
-): boolean {
-  return service === "cadet" && field === "platform_assistant_id";
 }
 
 /**

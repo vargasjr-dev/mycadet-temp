@@ -1,11 +1,10 @@
-import type { ChildProcess } from "child_process";
-
-import { selectRestartTunnelRecord } from "@mycadet/service-contracts/ingress";
-
 import {
+  clearRootProcess,
   loadAllAssistants,
   loadAllAssistantsAcrossEnvs,
+  readRootProcesses,
   type AssistantEntry,
+  type RootProcessRecord,
 } from "./assistant-config.js";
 
 import {
@@ -14,7 +13,6 @@ import {
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
-import { IngressConfigSchema } from "./ngrok.js";
 import {
   ensureTunnelEdge,
   formatEdgeMode,
@@ -23,8 +21,187 @@ import {
   type TunnelEdge,
 } from "./nginx-ingress.js";
 import { waitForDaemonReady } from "./http-client.js";
-import { hasWebhookIntegrations, maybeStartNgrokTunnel } from "./ngrok.js";
+import {
+  hasWebhookIntegrations,
+  IngressConfigSchema,
+  isNgrokProcess,
+  maybeStartNgrokTunnel,
+  NGROK_TUNNEL_META,
+  runNgrokTunnel,
+  saveNgrokDomain,
+} from "./tunnels/ngrok.js";
+import { stopProcess } from "./process.js";
 import { shellArg } from "./shell-arg.js";
+import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
+import {
+  selectRestartTunnelRecord,
+  type TunnelProviderName,
+} from "@mycadet/service-contracts/ingress";
+import { runCadetTunnel, CADET_TUNNEL_META } from "./tunnels/cadet.js";
+import {
+  runCloudflareTunnel,
+  CLOUDFLARE_TUNNEL_META,
+} from "./tunnels/cloudflare.js";
+import {
+  runTailscaleTunnel,
+  TAILSCALE_TUNNEL_META,
+} from "./tunnels/tailscale.js";
+
+/**
+ * The provider the automatic tunnel paths start when no provider is named.
+ * ngrok today; the north star has the managed `cadet` tunnel as the eventual
+ * default, at which point only this constant flips.
+ */
+export const DEFAULT_TUNNEL_PROVIDER: TunnelProviderName = "ngrok";
+
+/** Per-provider copy `cadet tunnel`'s help renders. */
+export interface ProviderMeta {
+  /** How far the tunnel URL reaches. */
+  reach: string;
+  /** Install instruction line, rendered under the provider entry. */
+  install: string;
+  /** Extra behavior notes, rendered under the install line. */
+  notes?: string[];
+  /** Example reserved-domain value, for providers that support `--domain`. */
+  domainExample?: string;
+  /** Whether `--domain`/`--clear-domain` can bind a reserved domain. */
+  supportsReservedDomain: boolean;
+  /**
+   * Listed but not yet implemented: the command refuses it before starting
+   * any infrastructure, so `--provider <name>` fails fast with the
+   * coming-soon copy instead of building an edge nothing will use.
+   */
+  comingSoon?: boolean;
+}
+
+/**
+ * The registry: each provider's copy lives in its own `tunnels/<provider>.ts`
+ * module and is assembled here, so `cadet tunnel`'s help, `--provider`
+ * validation, and dispatch all read one shape.
+ */
+export const PROVIDER_META: Record<TunnelProviderName, ProviderMeta> = {
+  cadet: CADET_TUNNEL_META,
+  ngrok: NGROK_TUNNEL_META,
+  cloudflare: CLOUDFLARE_TUNNEL_META,
+  tailscale: TAILSCALE_TUNNEL_META,
+};
+
+/**
+ * Registry check that tolerates any provider spelling: only providers whose
+ * meta claims reserved-domain support accept `--domain`/`--clear-domain`.
+ */
+export function providerSupportsReservedDomain(provider: string): boolean {
+  for (const [name, meta] of Object.entries(PROVIDER_META)) {
+    if (name === provider) return meta.supportsReservedDomain;
+  }
+  return false;
+}
+
+/** Options every provider tunnel accepts; `runProviderTunnel` maps them. */
+export interface ProviderTunnelOptions {
+  port: number;
+  assistantId?: string;
+  workspaceDir: string;
+  /** Reserved domain to bind (providers that support one only). */
+  domain?: string;
+  /** Tailnet-only runs keep the webhook callback base as it is. */
+  preserveIngressUrl?: boolean;
+}
+
+/**
+ * What every tunnel provider's run hands back: the public URL it established
+ * or adopted, and the promise that settles when the run ends. Conformance is
+ * the point — the tunnel level can notify the gateway the same way no matter
+ * which provider ran.
+ */
+export interface ProviderTunnelResult {
+  publicUrl: string;
+  waitForExit: Promise<void>;
+}
+
+/**
+ * Run a tunnel provider by name — the dispatch `cadet tunnel` uses, so the
+ * command layer never names a provider implementation directly. Notifies the
+ * gateway of the resulting public URL identically for every provider, then
+ * holds until the run ends.
+ */
+export async function runProviderTunnel(
+  provider: TunnelProviderName,
+  opts: ProviderTunnelOptions,
+): Promise<{ publicUrl: string }> {
+  const result = await runProvider(provider, opts);
+  await notifyGatewayOfPublicUrl(result.publicUrl, opts.assistantId);
+  await result.waitForExit;
+  return { publicUrl: result.publicUrl };
+}
+
+/** Map the provider name onto its run — no gateway notification here. */
+function runProvider(
+  provider: TunnelProviderName,
+  opts: ProviderTunnelOptions,
+): Promise<ProviderTunnelResult> {
+  const base = {
+    port: opts.port,
+    assistantId: opts.assistantId,
+    workspaceDir: opts.workspaceDir,
+  };
+  if (provider === "ngrok") {
+    return runNgrokTunnel({
+      ...base,
+      ...(opts.domain ? { domain: opts.domain } : {}),
+    });
+  }
+  if (provider === "cadet") {
+    return runCadetTunnel(opts);
+  }
+  if (provider === "cloudflare") {
+    return runCloudflareTunnel(base);
+  }
+  return runTailscaleTunnel({
+    ...base,
+    ...(opts.preserveIngressUrl
+      ? { preserveIngressUrl: opts.preserveIngressUrl }
+      : {}),
+  });
+}
+
+/** Drop the saved reserved-domain record (providers that keep one). */
+export function clearReservedDomain(): void {
+  saveNgrokDomain(null);
+}
+
+/**
+ * Stop a tunnel agent this CLI started, per the root lockfile's `tunnel`
+ * entry. The pid is verified against the provider's process identity before
+ * signaling — a stale entry after PID reuse must not kill an unrelated
+ * process.
+ */
+export async function stopTunnelProcess(): Promise<void> {
+  const recorded: RootProcessRecord | undefined = readRootProcesses().tunnel;
+  if (!recorded) return;
+  if (isNgrokProcess(recorded.pid)) {
+    await stopProcess(recorded.pid, "tunnel");
+  }
+  clearRootProcess("tunnel");
+}
+
+/**
+ * The `cadet tunnel --detach` copy for a run that adopted an already-running
+ * agent: killing the supervisor does not stop a tunnel it did not spawn.
+ */
+export function adoptedTunnelStopNotice(pid: number | undefined): string {
+  return (
+    `That ngrok agent was already running outside this command, so \`kill ${pid}\` only ` +
+    "stops this supervisor, not the ngrok tunnel or its saved ingress URL. Stop the ngrok agent " +
+    "directly to end the tunnel."
+  );
+}
+
+export {
+  ADOPTED_TUNNEL_RE,
+  hasWebhookIntegrationsConfigured,
+} from "./tunnels/ngrok.js";
+export { cadetTunnelComingSoonError } from "./tunnels/cadet.js";
 
 /** Matches the Docker hatch path's service-readiness allowance. */
 export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
@@ -221,8 +398,9 @@ function ownsSharedIngress(
  * survived across sleep (a tailnet serve, a reserved ngrok domain) reaches the
  * gateway again without a manual `cadet tunnel`.
  *
- * No webhook auto-tunnel here. Container wakes have never tracked a spawned
- * ngrok PID, so starting one would leak it past the next sleep.
+ * The auto-tunnel runs here too, matching the local wake path: the spawned
+ * agent records itself in the root lockfile under `tunnel`, so `cadet ps` and
+ * the stop paths can see it instead of it leaking past the next sleep.
  */
 export async function restoreContainerTunnelEdge(
   entry: AssistantEntry,
@@ -257,20 +435,30 @@ export async function restoreContainerTunnelEdge(
     );
     return;
   }
-  await restoreTunnelEdge(entry.assistantId, gatewayPort, workspaceDir, false);
+  await restoreTunnelEdgeAndAutoTunnel(
+    entry.assistantId,
+    gatewayPort,
+    workspaceDir,
+  );
 }
 
+/**
+ * Restore the nginx edge, then start the default provider's tunnel at it
+ * (the gateway port when the edge is down, keeping webhook delivery alive).
+ * The spawned agent records itself in the root lockfile under `tunnel`;
+ * adopting an already-running one clears any stale entry.
+ */
 export async function restoreTunnelEdgeAndAutoTunnel(
   assistantId: string,
   gatewayPort: number,
   workspaceDir: string,
-): Promise<ChildProcess | null> {
+): Promise<void> {
   const edgePort = await restoreTunnelEdge(
     assistantId,
     gatewayPort,
     workspaceDir,
   );
-  return maybeStartNgrokTunnel(
+  await maybeStartNgrokTunnel(
     edgePort ?? gatewayPort,
     workspaceDir,
     assistantId,

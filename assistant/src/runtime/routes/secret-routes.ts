@@ -21,10 +21,7 @@ import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import type { CesClient } from "../../credential-execution/client.js";
-import {
-  isNonSecretPlatformField,
-  scrubStoredCredentialFromTranscripts,
-} from "../../daemon/credential-transcript-scrub.js";
+import { scrubStoredCredentialFromTranscripts } from "../../daemon/credential-transcript-scrub.js";
 import { syncManualTokenConnection } from "../../oauth/manual-token-connection.js";
 import { maybeReseedCapabilitiesAfterCloudCredential } from "../../plugins/defaults/memory/substrate/boot-maintenance.js";
 import { validateAnthropicApiKey } from "../../providers/anthropic/client.js";
@@ -97,20 +94,11 @@ async function persistCredential(
       `Failed to store credential in secure storage (backend: ${getActiveBackendName()})`,
     );
   }
-  if (!isNonSecretPlatformField(service, field)) {
-    try {
-      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-      log.info(
-        { service, field, ...scrubbed },
-        "Credential stored; scrubbed value from recent transcripts",
-      );
-    } catch (err) {
-      log.warn(
-        { err, service, field },
-        "Credential stored, but transcript scrub failed",
-      );
-    }
-  }
+  const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+  log.info(
+    { service, field, ...scrubbed },
+    "Credential stored; scrubbed value from recent transcripts",
+  );
   upsertCredentialMetadata(service, field, {});
   await syncManualTokenConnection(service);
 }
@@ -326,19 +314,12 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
       // refresh: that side effect can throw, and a stored-but-unscrubbed key
       // must not depend on it succeeding. The key IS stored at this point;
       // the scrub is best-effort hygiene and must stay invisible to the
-      // caller. Counts only — never the value.
-      try {
-        const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-        log.info(
-          { provider: name, ...scrubbed },
-          "API key stored; scrubbed value from recent transcripts",
-        );
-      } catch (err) {
-        log.warn(
-          { err, provider: name },
-          "API key stored, but transcript scrub failed",
-        );
-      }
+      // Counts only — never the value.
+      const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+      log.info(
+        { provider: name, ...scrubbed },
+        "API key stored; scrubbed value from recent transcripts",
+      );
 
       await refreshProvidersAfterSecretChange();
       log.info({ provider: name }, "API key updated via HTTP");

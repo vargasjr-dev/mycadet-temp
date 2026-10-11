@@ -20,7 +20,7 @@ import * as httpClient from "../lib/http-client.js";
 import * as ingressConfig from "../lib/ingress-config.js";
 import * as local from "../lib/local.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
-import * as ngrok from "../lib/ngrok.js";
+import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
@@ -157,7 +157,7 @@ const maybeStartNgrokTunnelMock = mock<typeof ngrok.maybeStartNgrokTunnel>(
   async () => null,
 );
 
-mock.module("../lib/ngrok", () => ({
+mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   maybeStartNgrokTunnel: maybeStartNgrokTunnelMock,
 }));
@@ -329,7 +329,7 @@ afterAll(() => {
   mock.module("../lib/process", () => realProcessLib);
   mock.module("../lib/port-allocator.js", () => realPortAllocator);
   mock.module("../lib/local", () => realLocal);
-  mock.module("../lib/ngrok", () => realNgrok);
+  mock.module("../lib/tunnels/ngrok", () => realNgrok);
   mock.module("../lib/ingress-config.js", () => realIngressConfig);
   mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);
@@ -956,9 +956,13 @@ describe("cadet wake — tunnel edge restore", () => {
         workspaceDir: defaultWorkspace,
         gatewayPort: 7930,
       });
-      // Container wakes never tracked a spawned ngrok PID, so the auto-tunnel
-      // stays out of this path.
-      expect(maybeStartNgrokTunnelMock).not.toHaveBeenCalled();
+      // Container wakes run the same auto-tunnel as local wakes (docker
+      // parity); the spawned agent records itself in the root lockfile.
+      expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
+        7840,
+        defaultWorkspace,
+        "docker-1",
+      );
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -1093,7 +1097,7 @@ describe("cadet wake — tunnel edge restore", () => {
     }
   });
 
-  test("a failed docker edge restore does not claim webhooks still work", async () => {
+  test("a failed docker edge restore falls back to the gateway tunnel", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
@@ -1112,11 +1116,14 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
+      // Docker wakes get the same tunnel logic as local ones: when the edge
+      // cannot be rebuilt, the auto-tunnel still fronts the gateway port so
+      // webhook delivery survives.
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("webhook delivery are unavailable"),
+        expect.stringContaining("Webhooks still work"),
       );
       expect(warnSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining("Webhooks still work"),
+        expect.stringContaining("webhook delivery are unavailable"),
       );
     } finally {
       if (originalWorkspaceDir === undefined) {

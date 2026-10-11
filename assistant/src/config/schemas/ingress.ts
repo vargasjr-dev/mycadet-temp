@@ -112,14 +112,6 @@ const IngressBaseSchema = z
     rateLimit: IngressRateLimitConfigSchema.default(
       IngressRateLimitConfigSchema.parse({}),
     ),
-    shutdownDrainMs: z
-      .number({ error: "ingress.shutdownDrainMs must be a number" })
-      .int("ingress.shutdownDrainMs must be an integer")
-      .nonnegative("ingress.shutdownDrainMs must be a non-negative integer")
-      .default(5_000)
-      .describe(
-        "Time in milliseconds to drain in-flight requests during graceful shutdown",
-      ),
     [INGRESS_ASSISTANT_ID_KEY]: z
       .string()
       .optional()

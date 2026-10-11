@@ -23,9 +23,11 @@
  * - A function response receives the recorded request and returns the
  *   response dynamically.
  * - An unmatched request throws `NoMockMatchError` listing the request and
- *   the registered handlers (CLI channel + HTTP). The gateway channel falls
- *   through to the legacy `mock-gateway-ipc` behavior instead, because
- *   incidental `get_feature_flags` calls are ubiquitous in this suite.
+ *   the registered handlers (CLI channel + HTTP). The gateway transport is
+ *   the exception: it answers every method — registrations are consulted
+ *   first, then per-test transport defaults, then a kernel
+ *   `get_feature_flags` sentinel — because incidental `get_feature_flags`
+ *   calls are ubiquitous in this suite.
  *
  * Channels reset automatically after every test (`afterEach` registered in
  * test-preload.ts), so registrations are per-test: anything registered at
@@ -38,6 +40,7 @@
  * the real-socket tests rely on that.
  */
 
+import { EventEmitter } from "node:events";
 import { mock } from "bun:test";
 
 // ---------------------------------------------------------------------------
@@ -299,16 +302,50 @@ export interface IpcMockController {
   lastCall(method?: string): IpcCallRecord | undefined;
 }
 
+/**
+ * Transport-level controls unique to the gateway channel. The fake answers
+ * every method (it never throws `NoMockMatchError` — incidental gateway
+ * calls are ubiquitous in the suite), so tests shape what the transport says
+ * to UN-registered requests instead.
+ */
+export interface GatewayTransportControls {
+  /**
+   * Results answered for methods no `.on` registration claimed. A key mapped
+   * to `undefined` suppresses even the `get_feature_flags` sentinel for that
+   * method. Replaces any previously set defaults.
+   */
+  setDefaults(results: Record<string, unknown>): void;
+  /**
+   * Simulate a failed socket connect: the persistent client throws
+   * `IpcConnectError`, the one-shot `ipcCall` returns `undefined` (mirroring
+   * the real module).
+   */
+  failConnect(opts?: { code?: string }): void;
+  /**
+   * Throw a transient (retryable) connect error for the first `n`
+   * persistent-client calls; with `ipcCallError`, a non-retryable
+   * `IpcCallError` instead. Consulted AFTER `.on` registrations, so a
+   * registered response is never "failed" by these knobs.
+   */
+  failFirstN(n: number, opts?: { ipcCallError?: boolean }): void;
+  /** Persistent-client `.call` invocations for `method` since the last reset. */
+  persistentCallCount(method: string): number;
+}
+
 export type IpcMockChannel = "cli" | "gateway";
 
 export async function mockIpc(
+  channel: "gateway",
+): Promise<IpcMockController & GatewayTransportControls>;
+export async function mockIpc(channel: "cli"): Promise<IpcMockController>;
+export async function mockIpc(
   channel: IpcMockChannel,
-): Promise<IpcMockController> {
+): Promise<IpcMockController & Partial<GatewayTransportControls>> {
   if (channel === "cli") {
     await ensureCliClientMock();
   }
   const target = channel === "cli" ? cliChannel : gatewayChannel;
-  return {
+  const base: IpcMockController = {
     on: (matcher, response) => target.on(matcher, response),
     calls: (method) => filterIpcCalls(target, method),
     callCount: (method) => filterIpcCalls(target, method).length,
@@ -316,6 +353,26 @@ export async function mockIpc(
       const list = filterIpcCalls(target, method);
       return list[list.length - 1];
     },
+  };
+  if (channel !== "gateway") {
+    return base;
+  }
+  return {
+    ...base,
+    setDefaults: (results) => {
+      gatewayDefaults = { ...results };
+    },
+    failConnect: (opts) => {
+      gatewayConnectError = true;
+      if (opts?.code !== undefined) {
+        gatewayConnectErrorCode = opts.code;
+      }
+    },
+    failFirstN: (n, opts) => {
+      gatewayFailFirstN = n;
+      gatewayFailFirstNIpcCallError = opts?.ipcCallError ?? false;
+    },
+    persistentCallCount: (method) => gatewayPersistentCallCounts[method] ?? 0,
   };
 }
 
@@ -346,10 +403,10 @@ export function ipcError(
 }
 
 /**
- * Hook for `mock-gateway-ipc.ts`: consult the gateway channel FIRST, falling
- * through to the legacy sentinel/results-map behavior when nothing matches.
- * An `Error`-instance response comes back as the resolved value so the caller
- * can apply the one-shot/persistent failure contract.
+ * Hook for the gateway transport fake (below): consult the gateway channel
+ * FIRST, falling through to the per-test transport defaults when nothing
+ * matches. An `Error`-instance response comes back as the resolved value so
+ * the caller can apply the one-shot/persistent failure contract.
  */
 export function dispatchGatewayIpcRequest(
   method: string,
@@ -369,6 +426,163 @@ export function dispatchGatewayIpcRequest(
     }
     return { handled: true, value: error };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Gateway transport fake (installed globally once by test-preload.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sentinel answered for `get_feature_flags` when neither a registration nor
+ * a per-test default covers it. Keeps the response non-empty so
+ * `initFeatureFlagOverrides()` does not enter its 7.75 s empty-result retry
+ * loop in tests that build the CLI program or otherwise trigger flag
+ * initialization. The key starts with a double underscore so it cannot
+ * collide with any real registry-declared flag.
+ */
+const GET_FEATURE_FLAGS_SENTINEL: Record<string, boolean> = {
+  __test_default__: false,
+};
+
+class FakeIpcCallError extends Error {
+  readonly statusCode?: number;
+  readonly errorCode?: string;
+  readonly errorDetails?: unknown;
+
+  constructor(
+    message: string,
+    fields: {
+      statusCode?: number;
+      errorCode?: string;
+      errorDetails?: unknown;
+    } = {},
+  ) {
+    super(message);
+    this.name = "IpcCallError";
+    if (fields.statusCode !== undefined) {
+      this.statusCode = fields.statusCode;
+    }
+    if (fields.errorCode !== undefined) {
+      this.errorCode = fields.errorCode;
+    }
+    if (fields.errorDetails !== undefined) {
+      this.errorDetails = fields.errorDetails;
+    }
+  }
+}
+
+class FakeIpcConnectError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "IpcConnectError";
+    if (code !== undefined) {
+      this.code = code;
+    }
+  }
+}
+
+const RETRYABLE_CONNECT_CODES = new Set(["ENOENT", "ECONNREFUSED"]);
+
+function isRetryableIpcConnectError(err: unknown): boolean {
+  if (typeof err === "object" && err !== null && "code" in err) {
+    const code = (err as { code?: unknown }).code;
+    return typeof code === "string" && RETRYABLE_CONNECT_CODES.has(code);
+  }
+  return false;
+}
+
+// Per-test transport state — cleared by resetRequestMockChannels.
+let gatewayDefaults: Record<string, unknown> = {};
+let gatewayConnectError = false;
+let gatewayConnectErrorCode: string | undefined;
+let gatewayFailFirstN = 0;
+let gatewayFailFirstNIpcCallError = false;
+const gatewayPersistentCallCounts: Record<string, number> = {};
+
+function mockConnectError(): FakeIpcConnectError {
+  return new FakeIpcConnectError(
+    "Mock IPC socket error",
+    gatewayConnectErrorCode ?? "ENOENT",
+  );
+}
+
+/** The transport's answer for a method no `.on` registration claimed. */
+function gatewayDefaultAnswer(method: string): unknown {
+  if (method in gatewayDefaults) {
+    return gatewayDefaults[method];
+  }
+  if (method === "get_feature_flags") {
+    return GET_FEATURE_FLAGS_SENTINEL;
+  }
+  return undefined;
+}
+
+class FakePersistentIpcClient extends EventEmitter {
+  async call(
+    method: string,
+    _params?: Record<string, unknown>,
+    _timeoutMs?: number,
+  ): Promise<unknown> {
+    gatewayPersistentCallCounts[method] =
+      (gatewayPersistentCallCounts[method] ?? 0) + 1;
+    const dispatched = dispatchGatewayIpcRequest(method, _params);
+    if (dispatched.handled) {
+      if (dispatched.value instanceof Error) {
+        throw dispatched.value;
+      }
+      return dispatched.value;
+    }
+    if (gatewayFailFirstN > 0) {
+      gatewayFailFirstN--;
+      if (gatewayFailFirstNIpcCallError) {
+        throw new FakeIpcCallError("Mock deterministic gateway error");
+      }
+      throw mockConnectError();
+    }
+    if (gatewayConnectError) {
+      throw mockConnectError();
+    }
+    return gatewayDefaultAnswer(method);
+  }
+
+  destroy(): void {
+    /* no-op */
+  }
+}
+
+/**
+ * Swap `@mycadet/gateway-client/ipc-client` for the channel-backed fake.
+ * Registered once in the test preload so every test file gets a no-op IPC
+ * layer by default — no test accidentally connects to a real gateway socket.
+ */
+export function installGatewayIpcMock(): void {
+  // Named exports here must cover every ipc-client symbol the package barrel
+  // re-exports. Bun's mock replaces that module for relative and package
+  // imports, so a missing name fails assistant tests at load time.
+  mock.module("@mycadet/gateway-client/ipc-client", () => ({
+    ipcCall: async (
+      _socketPath: string,
+      method: string,
+      params?: Record<string, unknown>,
+    ): Promise<unknown> => {
+      const dispatched = dispatchGatewayIpcRequest(method, params);
+      if (dispatched.handled) {
+        // Real ipcCall returns undefined on failure — mirror that behavior.
+        return dispatched.value instanceof Error ? undefined : dispatched.value;
+      }
+      if (gatewayConnectError) {
+        // Real ipcCall returns undefined on failure — mirror that behavior.
+        return undefined;
+      }
+      return gatewayDefaultAnswer(method);
+    },
+    IpcCallError: FakeIpcCallError,
+    IpcConnectError: FakeIpcConnectError,
+    isRetryableIpcConnectError,
+    PersistentIpcClient: FakePersistentIpcClient,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -742,6 +956,14 @@ export function mockHttp(): HttpMockController {
 export function resetRequestMockChannels(): void {
   cliChannel.reset();
   gatewayChannel.reset();
+  gatewayDefaults = {};
+  gatewayConnectError = false;
+  gatewayConnectErrorCode = undefined;
+  gatewayFailFirstN = 0;
+  gatewayFailFirstNIpcCallError = false;
+  for (const key of Object.keys(gatewayPersistentCallCounts)) {
+    delete gatewayPersistentCallCounts[key];
+  }
   if (originalFetch !== undefined) {
     globalThis.fetch = originalFetch;
     originalFetch = undefined;

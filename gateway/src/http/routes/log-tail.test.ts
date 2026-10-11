@@ -79,7 +79,6 @@ function makeConfig(dir: string | undefined): GatewayConfig {
     runtimeMaxRetries: 2,
     runtimeProxyRequireAuth: true,
     runtimeTimeoutMs: 30000,
-    shutdownDrainMs: 5000,
     trustProxy: false,
   } as GatewayConfig;
 }

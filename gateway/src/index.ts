@@ -104,6 +104,7 @@ import {
   handleListDevices,
   handleRevokeDevice,
 } from "./http/routes/devices.js";
+import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
 import { handlePair } from "./http/routes/pair.js";
 import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
 import {
@@ -886,6 +887,15 @@ async function main() {
       method: "GET",
       auth: "edge",
       handler: () => psHandler.handlePs(),
+    },
+
+    // ── Ingress domain recording (localhost CLI only, bearer-authed) ──
+    {
+      path: "/v1/ingress/domains",
+      method: "POST",
+      auth: "edge",
+      handler: (req, _params, getClientIp) =>
+        handleSaveIngressDomain(req, getClientIp(), configFileCache),
     },
 
     // ── Tunnel status ──
@@ -3171,7 +3181,7 @@ async function main() {
     // Force-reconnect Slack WebSocket (may be half-open after sleep)
     slackSocketClient?.forceReconnect();
 
-    // Invalidate caches so next read picks up any config changes (e.g. new ngrok URL)
+    // Invalidate caches so next read picks up any config changes (e.g. a new tunnel URL)
     configFileCache.invalidate();
     credentialCache.invalidate();
 
@@ -3189,8 +3199,6 @@ async function main() {
     }
   });
   sleepWakeDetector.start();
-
-  const drainMs = config.shutdownDrainMs;
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
@@ -3225,7 +3233,7 @@ async function main() {
         server.stop(true);
         process.exit(0);
       });
-    }, drainMs);
+    }, 5_000);
   });
 }
 

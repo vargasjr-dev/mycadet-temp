@@ -6,7 +6,7 @@ import { isCompiledCli } from "./local.js";
 import { getLogDir, openLogFile, resetLogFile } from "./xdg-log.js";
 
 export interface RelaunchDetachedOptions {
-  /** argv for the re-invoked CLI command, e.g. ["tunnel", "--provider", "ngrok"]. */
+  /** argv for the re-invoked CLI command, e.g. ["tunnel", "--provider", "cloudflare"]. */
   args: string[];
   /** Log file basename under the XDG log dir; truncated before spawn. */
   logFile: string;

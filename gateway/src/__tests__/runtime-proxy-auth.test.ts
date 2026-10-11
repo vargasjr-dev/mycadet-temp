@@ -45,7 +45,6 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
-    shutdownDrainMs: 5000,
     runtimeTimeoutMs: 30000,
     runtimeMaxRetries: 2,
     runtimeInitialBackoffMs: 500,
@@ -412,7 +411,9 @@ describe("runtime proxy OAuth grant path rewrite", () => {
       },
     );
 
-    expect(url).toBe("http://localhost:7821/v1/oauth/proxy/stripe_link/v1/charges");
+    expect(url).toBe(
+      "http://localhost:7821/v1/oauth/proxy/stripe_link/v1/charges",
+    );
   });
 
   test("does not rewrite a host-absolute path without a proxy grant", async () => {

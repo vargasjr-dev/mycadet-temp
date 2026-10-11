@@ -36,7 +36,6 @@ export type GatewayConfig = {
   runtimeMaxRetries: number;
   runtimeProxyRequireAuth: boolean;
   runtimeTimeoutMs: number;
-  shutdownDrainMs: number;
   /** When true, trust X-Forwarded-For for client IP resolution (set when behind a reverse proxy). */
   trustProxy: boolean;
 };
@@ -226,7 +225,6 @@ export function loadConfig(): GatewayConfig {
     runtimeMaxRetries: 2,
     runtimeProxyRequireAuth,
     runtimeTimeoutMs,
-    shutdownDrainMs: 5000,
     trustProxy,
   };
 }

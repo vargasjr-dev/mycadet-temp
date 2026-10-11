@@ -2,8 +2,8 @@
  * Tests for initFeatureFlagOverrides() — the async IPC call that
  * pre-populates the feature flag cache before CLI program construction.
  *
- * Uses the shared mock-gateway-ipc utility (installed in test-preload.ts)
- * which mocks node:net so no test connects to a real gateway socket.
+ * Uses the requests-mock gateway channel (transport installed in
+ * test-preload.ts) so no test connects to a real gateway socket.
  */
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
@@ -13,21 +13,23 @@ import {
   isAssistantFeatureFlagEnabled,
   refreshOverridesFromGateway,
 } from "../config/assistant-feature-flags.js";
-import { mockGatewayIpc, resetMockGatewayIpc } from "./mock-gateway-ipc.js";
+import { mockIpc, resetRequestMockChannels } from "./requests-mock.js";
 
 beforeEach(() => {
   clearFeatureFlagOverridesCache();
-  resetMockGatewayIpc();
 });
 
 afterEach(() => {
   clearFeatureFlagOverridesCache();
-  resetMockGatewayIpc();
 });
 
 describe("initFeatureFlagOverrides", () => {
   it("populates cache from gateway IPC response", async () => {
-    mockGatewayIpc({ "foo-enabled": true, "bar-enabled": true });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", {
+      "foo-enabled": true,
+      "bar-enabled": true,
+    });
 
     await initFeatureFlagOverrides();
 
@@ -37,7 +39,8 @@ describe("initFeatureFlagOverrides", () => {
   });
 
   it("falls back gracefully when gateway socket is unavailable", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
 
     // Disable retries — production retries the IPC fetch on failure to
     // dodge the daemon-vs-gateway startup race, but here we're explicitly
@@ -51,7 +54,11 @@ describe("initFeatureFlagOverrides", () => {
   });
 
   it("respects false values from gateway IPC", async () => {
-    mockGatewayIpc({ "gated-feature": true, "disabled-feature": false });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", {
+      "gated-feature": true,
+      "disabled-feature": false,
+    });
 
     await initFeatureFlagOverrides();
 
@@ -63,7 +70,8 @@ describe("initFeatureFlagOverrides", () => {
   });
 
   it("does not cache empty gateway response", async () => {
-    mockGatewayIpc({});
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", {});
 
     // Disable retries — this test explicitly simulates a sustained empty
     // response (gateway up but reporting zero flags) and should not wait
@@ -80,10 +88,11 @@ describe("initFeatureFlagOverrides", () => {
     // returns empty (gateway not yet ready), but a later attempt sees
     // the populated flag map. The retry loop in init should bridge this
     // gap without losing the flag.
-    mockGatewayIpc({});
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", {});
     setTimeout(() => {
-      resetMockGatewayIpc();
-      mockGatewayIpc({ "retry-test-flag": true });
+      resetRequestMockChannels();
+      gateway.on("get_feature_flags", { "retry-test-flag": true });
     }, 50);
 
     await initFeatureFlagOverrides({ retryBackoffsMs: [200] });
@@ -93,14 +102,18 @@ describe("initFeatureFlagOverrides", () => {
   });
 
   it("does not re-fetch when cache is already populated", async () => {
-    mockGatewayIpc({ "first-call": true });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", { "first-call": true });
 
     await initFeatureFlagOverrides();
 
     // Change what IPC would return — if the guard is broken and init
     // re-fetches, "first-call" would flip to false.
-    resetMockGatewayIpc();
-    mockGatewayIpc({ "first-call": false, "second-call": true });
+    resetRequestMockChannels();
+    gateway.on("get_feature_flags", {
+      "first-call": false,
+      "second-call": true,
+    });
 
     await initFeatureFlagOverrides();
 
@@ -114,11 +127,12 @@ describe("initFeatureFlagOverrides", () => {
 
 describe("refreshOverridesFromGateway", () => {
   it("replaces the cache with the new gateway values", async () => {
-    mockGatewayIpc({ "moving-flag": true });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", { "moving-flag": true });
     await initFeatureFlagOverrides();
 
-    resetMockGatewayIpc();
-    mockGatewayIpc({ "moving-flag": false });
+    resetRequestMockChannels();
+    gateway.on("get_feature_flags", { "moving-flag": false });
 
     expect(await refreshOverridesFromGateway()).toBe(true);
 
@@ -127,11 +141,12 @@ describe("refreshOverridesFromGateway", () => {
   });
 
   it("keeps the last known values when the refresh fails", async () => {
-    mockGatewayIpc({ "moving-flag": true });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", { "moving-flag": true });
     await initFeatureFlagOverrides();
 
-    resetMockGatewayIpc();
-    mockGatewayIpc(null, { error: true });
+    resetRequestMockChannels();
+    gateway.failConnect();
 
     expect(await refreshOverridesFromGateway()).toBe(false);
 
@@ -143,11 +158,12 @@ describe("refreshOverridesFromGateway", () => {
   });
 
   it("keeps the cache readable for the whole call", async () => {
-    mockGatewayIpc({ "moving-flag": true });
+    const gateway = await mockIpc("gateway");
+    gateway.on("get_feature_flags", { "moving-flag": true });
     await initFeatureFlagOverrides();
 
-    resetMockGatewayIpc();
-    mockGatewayIpc({ "moving-flag": false });
+    resetRequestMockChannels();
+    gateway.on("get_feature_flags", { "moving-flag": false });
 
     const config = {} as any;
     const inFlight = refreshOverridesFromGateway();

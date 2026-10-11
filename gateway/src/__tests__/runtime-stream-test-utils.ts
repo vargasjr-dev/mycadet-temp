@@ -50,7 +50,6 @@ export function makeConfig(
     routingEntries: [],
     port: 7830,
     runtimeProxyRequireAuth: true,
-    shutdownDrainMs: 5000,
     runtimeTimeoutMs: 30000,
     runtimeMaxRetries: 2,
     runtimeInitialBackoffMs: 500,

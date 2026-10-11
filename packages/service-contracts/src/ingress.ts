@@ -100,11 +100,17 @@ export const INGRESS_PAIRING_TUNNEL_KEY = "pairingTunnel";
 export const INGRESS_ASSISTANT_ID_KEY = "assistantId";
 
 /**
- * The local tunnel providers the CLI can start, in the order they are offered.
- * `cadet tunnel`'s accepted `--provider` values and the persisted-record
- * validation below both derive from it.
+ * The tunnel providers the CLI offers, in the order they are presented —
+ * the managed `cadet` tunnel first (listed, not yet implemented), then the
+ * local ones. `cadet tunnel`'s accepted `--provider` values and the
+ * persisted-record validation below both derive from it.
  */
-export const TUNNEL_PROVIDERS = ["ngrok", "cloudflare", "tailscale"] as const;
+export const TUNNEL_PROVIDERS = [
+  "cadet",
+  "ngrok",
+  "cloudflare",
+  "tailscale",
+] as const;
 
 export type TunnelProviderName = (typeof TUNNEL_PROVIDERS)[number];
 

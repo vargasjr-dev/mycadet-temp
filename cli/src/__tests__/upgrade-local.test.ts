@@ -20,7 +20,7 @@ import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as local from "../lib/local.js";
 import * as loopbackFetch from "../lib/loopback-fetch.js";
-import * as ngrok from "../lib/ngrok.js";
+import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
 
 const realAssistantConfig = { ...assistantConfig };
@@ -157,7 +157,7 @@ const maybeStartNgrokTunnelMock = mock<typeof ngrok.maybeStartNgrokTunnel>(
   async () => null,
 );
 
-mock.module("../lib/ngrok.js", () => ({
+mock.module("../lib/tunnels/ngrok.js", () => ({
   ...realNgrok,
   maybeStartNgrokTunnel: maybeStartNgrokTunnelMock,
 }));
@@ -302,7 +302,7 @@ afterAll(() => {
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
   mock.module("../lib/local.js", () => realLocal);
   mock.module("../lib/loopback-fetch.js", () => realLoopbackFetch);
-  mock.module("../lib/ngrok.js", () => realNgrok);
+  mock.module("../lib/tunnels/ngrok.js", () => realNgrok);
   mock.module("../lib/upgrade-lifecycle.js", () => realUpgradeLifecycle);
 });
 

@@ -110,7 +110,7 @@ describe("migration import credential filtering", () => {
   test("platform (cadet:*) credentials are excluded", () => {
     const cadetFields = [
       "assistant_api_key",
-      "platform_assistant_id",
+      "cloud_assistant_id",
       "webhook_secret",
     ] as const;
     const cadetPaths = cadetFields.map((f) =>
@@ -163,7 +163,7 @@ describe("migration import credential filtering", () => {
 
   test("mixed bundle with both platform and user credentials correctly splits", () => {
     const cadetApiKey = credentialKey("cadet", "assistant_api_key");
-    const cadetUserId = credentialKey("cadet", "platform_assistant_id");
+    const cadetUserId = credentialKey("cadet", "cloud_assistant_id");
     const openaiKey = credentialKey("openai", "api_key");
     const anthropicKey = credentialKey("anthropic", "api_key");
     const githubToken = credentialKey("github", "api_token");
@@ -203,7 +203,7 @@ describe("migration import credential filtering", () => {
 
   test("skippedCloud count is accurate with mixed credentials", () => {
     const cadetApiKey = credentialKey("cadet", "assistant_api_key");
-    const cadetAssistantId = credentialKey("cadet", "platform_assistant_id");
+    const cadetAssistantId = credentialKey("cadet", "cloud_assistant_id");
     const cadetWebhook = credentialKey("cadet", "webhook_secret");
     const userKey = credentialKey("github", "api_token");
 

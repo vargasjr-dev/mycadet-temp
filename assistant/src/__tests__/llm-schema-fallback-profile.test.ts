@@ -130,17 +130,18 @@ describe("LLMSchema fallbackProfile", () => {
       unrepresentable: "any",
       io: "input",
     });
+    // ProfileEntry carries a named meta id (#172), so zod v4 hoists it into
+    // top-level $defs and the profiles record references it by $ref — the
+    // fallbackProfile readOnly marker the docs surface lives in the $defs copy.
     expect(json).toMatchObject({
-      // Id-carrying nested schemas (ProfileEntry et al. from the `.meta` ids)
-      // render as `$defs` with `$ref`s pointing at them.
-      $defs: {
-        ProfileEntry: {
-          properties: { fallbackProfile: { readOnly: true } },
-        },
-      },
       properties: {
         profiles: {
           additionalProperties: { $ref: "#/$defs/ProfileEntry" },
+        },
+      },
+      $defs: {
+        ProfileEntry: {
+          properties: { fallbackProfile: { readOnly: true } },
         },
       },
     });

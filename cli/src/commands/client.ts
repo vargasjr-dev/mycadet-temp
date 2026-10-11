@@ -1223,7 +1223,7 @@ const WEB_BACKGROUND_START_TIMEOUT_MS = 30_000;
  * The port is resolved up front (explicit --port must be free; otherwise the
  * first free port at/above 3000) and pinned via `--port` on the child so the
  * URL printed here is the one the child binds. The child's stdout/stderr go to
- * `<xdg-log-dir>/client-web.log` — same detach idiom as the nginx/ngrok
+ * `<xdg-log-dir>/client-web.log` — same detach idiom as the nginx/tunnel
  * spawns. Success is only reported once the child is accepting connections on
  * the port; an early child exit (e.g. missing @mycadet/web assets) or a
  * startup timeout fails with a pointer at the log file.

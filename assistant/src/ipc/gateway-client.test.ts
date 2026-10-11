@@ -8,11 +8,7 @@
  */
 import { afterEach, describe, expect, test } from "bun:test";
 
-import {
-  getMockPersistentCallCount,
-  mockGatewayIpc,
-  resetMockGatewayIpc,
-} from "../__tests__/mock-gateway-ipc.js";
+import { mockIpc } from "../__tests__/requests-mock.js";
 import { ServiceUnavailableError } from "../runtime/routes/errors.js";
 import {
   ipcCall,
@@ -25,7 +21,6 @@ import {
 
 afterEach(() => {
   resetPersistentClient();
-  resetMockGatewayIpc();
 });
 
 // ---------------------------------------------------------------------------
@@ -34,22 +29,24 @@ afterEach(() => {
 
 describe("ipcCall", () => {
   test("delegates to package ipcCall and returns result", async () => {
-    mockGatewayIpc(null, {
-      results: { test_method: { key: "value" } },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({ test_method: { key: "value" } });
 
     const result = await ipcCall("test_method");
     expect(result).toEqual({ key: "value" });
   });
 
   test("returns undefined when mock simulates error", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
 
     const result = await ipcCall("test_method");
     expect(result).toBeUndefined();
   });
 
   test("returns undefined for unconfigured methods", async () => {
+    await mockIpc("gateway");
+
     const result = await ipcCall("unconfigured_method");
     expect(result).toBeUndefined();
   });
@@ -61,16 +58,16 @@ describe("ipcCall", () => {
 
 describe("ipcCallPersistent", () => {
   test("returns result from persistent client", async () => {
-    mockGatewayIpc(null, {
-      results: { persistent_test: "persistent-result" },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({ persistent_test: "persistent-result" });
 
     const result = await ipcCallPersistent("persistent_test");
     expect(result).toBe("persistent-result");
   });
 
   test("maps a missing gateway socket to ServiceUnavailableError", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
 
     await expect(ipcCallPersistent("any_method")).rejects.toBeInstanceOf(
       ServiceUnavailableError,
@@ -92,21 +89,23 @@ describe("ipcCallPersistent", () => {
 
 describe("ipcGetFeatureFlags", () => {
   test("parses boolean flag values from IPC response", async () => {
-    mockGatewayIpc({ "flag-a": true, "flag-b": false });
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({
+      get_feature_flags: { "flag-a": true, "flag-b": false },
+    });
 
     const flags = await ipcGetFeatureFlags();
     expect(flags).toEqual({ "flag-a": true, "flag-b": false });
   });
 
   test("accepts boolean and string values, filters other types from response", async () => {
-    mockGatewayIpc(null, {
-      results: {
-        get_feature_flags: {
-          valid: true,
-          number: 42,
-          string: "yes",
-          nested: { deep: true },
-        },
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({
+      get_feature_flags: {
+        valid: true,
+        number: 42,
+        string: "yes",
+        nested: { deep: true },
       },
     });
 
@@ -115,25 +114,26 @@ describe("ipcGetFeatureFlags", () => {
   });
 
   test("returns empty record when IPC returns undefined", async () => {
-    // Explicitly suppress the mock's default `get_feature_flags` sentinel
-    // (which exists to short-circuit `initFeatureFlagOverrides()`'s retry
-    // loop) so this test exercises the underlying-undefined path.
-    mockGatewayIpc(null, { results: { get_feature_flags: undefined } });
+    // Explicitly suppress the transport's default `get_feature_flags`
+    // sentinel (which exists to short-circuit `initFeatureFlagOverrides()`'s
+    // retry loop) so this test exercises the underlying-undefined path.
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({ get_feature_flags: undefined });
     const flags = await ipcGetFeatureFlags();
     expect(flags).toEqual({});
   });
 
   test("returns empty record when IPC returns array", async () => {
-    mockGatewayIpc(null, {
-      results: { get_feature_flags: [true, false] },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({ get_feature_flags: [true, false] });
 
     const flags = await ipcGetFeatureFlags();
     expect(flags).toEqual({});
   });
 
   test("returns empty record on error", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
 
     const flags = await ipcGetFeatureFlags();
     expect(flags).toEqual({});
@@ -142,12 +142,11 @@ describe("ipcGetFeatureFlags", () => {
 
 describe("ipcGetTunnelStatus", () => {
   test("parses the shared Tunnel status response", async () => {
-    mockGatewayIpc(null, {
-      results: {
-        get_tunnel_status: {
-          connected: true,
-          publicUrl: "https://example.test",
-        },
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({
+      get_tunnel_status: {
+        connected: true,
+        publicUrl: "https://example.test",
       },
     });
 
@@ -158,10 +157,9 @@ describe("ipcGetTunnelStatus", () => {
   });
 
   test("keeps connected status when publicUrl is malformed", async () => {
-    mockGatewayIpc(null, {
-      results: {
-        get_tunnel_status: { connected: false, publicUrl: 42 },
-      },
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({
+      get_tunnel_status: { connected: false, publicUrl: 42 },
     });
 
     expect(await ipcGetTunnelStatus()).toEqual({
@@ -171,9 +169,8 @@ describe("ipcGetTunnelStatus", () => {
   });
 
   test("returns null when connected is missing or malformed", async () => {
-    mockGatewayIpc(null, {
-      results: { get_tunnel_status: { connected: "yes" } },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.setDefaults({ get_tunnel_status: { connected: "yes" } });
 
     expect(await ipcGetTunnelStatus()).toBeNull();
   });
@@ -193,38 +190,37 @@ describe("ipcClassifyRisk retry", () => {
   const emptyParams = {} as unknown as Parameters<typeof ipcClassifyRisk>[0];
 
   test("retries a transient failure and then succeeds", async () => {
-    mockGatewayIpc(null, {
-      failFirstN: 1,
-      results: { classify_risk: CLASSIFY_OK },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.failFirstN(1);
+    gateway.setDefaults({ classify_risk: CLASSIFY_OK });
 
     const result = await ipcClassifyRisk(emptyParams);
     expect(result?.risk).toBe("low");
-    expect(getMockPersistentCallCount("classify_risk")).toBe(2);
+    expect(gateway.persistentCallCount("classify_risk")).toBe(2);
   });
 
   test("returns undefined after exhausting retries (3 attempts)", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
 
     const result = await ipcClassifyRisk(emptyParams);
     expect(result).toBeUndefined();
-    expect(getMockPersistentCallCount("classify_risk")).toBe(3);
+    expect(gateway.persistentCallCount("classify_risk")).toBe(3);
   });
 
   test("does NOT retry a structured IpcCallError (fails after 1 attempt)", async () => {
-    mockGatewayIpc(null, {
-      failFirstN: 3,
-      ipcCallError: true,
-      results: { classify_risk: CLASSIFY_OK },
-    });
+    const gateway = await mockIpc("gateway");
+    gateway.failFirstN(3, { ipcCallError: true });
+    gateway.setDefaults({ classify_risk: CLASSIFY_OK });
 
     const result = await ipcClassifyRisk(emptyParams);
     expect(result).toBeUndefined();
-    expect(getMockPersistentCallCount("classify_risk")).toBe(1);
+    expect(gateway.persistentCallCount("classify_risk")).toBe(1);
   });
 
   test("stops retrying once the signal is aborted", async () => {
-    mockGatewayIpc(null, { error: true });
+    const gateway = await mockIpc("gateway");
+    gateway.failConnect();
     const controller = new AbortController();
     controller.abort();
 
@@ -232,6 +228,6 @@ describe("ipcClassifyRisk retry", () => {
     expect(result).toBeUndefined();
     // An already-aborted signal short-circuits the retry loop after the first
     // failed attempt rather than exhausting all three.
-    expect(getMockPersistentCallCount("classify_risk")).toBe(1);
+    expect(gateway.persistentCallCount("classify_risk")).toBe(1);
   });
 });

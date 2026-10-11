@@ -1,18 +1,31 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
-import { GATEWAY_PORT } from "./constants.js";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+
+import { GATEWAY_PORT } from "../constants.js";
+import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
-  loadNgrokDomain,
   loadRawConfig,
   saveIngressUrl,
-  saveNgrokDomain,
-} from "./ingress-config.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
+} from "../ingress-config.js";
+import { getConfigDir } from "../environments/paths.js";
+import { getCurrentEnvironment } from "../environments/resolve.js";
+import { loopbackSafeFetch } from "../loopback-fetch.js";
+import { readProcessCommandLine } from "../process.js";
 import { z } from "zod";
+import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_POLL_INTERVAL_MS = 500;
@@ -41,6 +54,14 @@ export const IngressConfigSchema = z.object({
   enabled: z.boolean().optional(),
   publicBaseUrl: z.string().optional(),
 });
+
+/** Per-provider copy `cadet tunnel`'s help renders for ngrok. */
+export const NGROK_TUNNEL_META: ProviderMeta = {
+  reach: "Public tunnel that webhook integrations can reach",
+  install: "install: brew install ngrok/ngrok/ngrok",
+  domainExample: "my-assistant.ngrok.app",
+  supportsReservedDomain: true,
+};
 
 /**
  * Check whether ngrok is installed and accessible on the PATH.
@@ -118,8 +139,105 @@ function staleAgentDiagnostic(tunnels: NgrokTunnel[], port: number): string {
 
 /** Recovery copy for a saved domain whose reservation may have lapsed. */
 function savedDomainRecoveryHint(domain: string): string {
-  return `The saved ngrok domain '${domain}' (ingress.ngrok.domain in the workspace config) may no longer be reserved. Run \`cadet tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
+  return `The saved ngrok domain '${domain}' (${ngrokConfigPath()}) may no longer be reserved. Run \`cadet tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
 }
+
+const NGROK_TUNNEL_NAME = "cadet";
+
+const NgrokTunnelDefSchema = z.looseObject({
+  proto: z.string().optional(),
+  addr: z.string().optional(),
+  domain: z.string().optional(),
+});
+
+const NgrokConfigFileSchema = z.looseObject({
+  version: z.string().optional(),
+  tunnels: z.record(z.string(), NgrokTunnelDefSchema).optional(),
+});
+
+type NgrokConfigFile = z.infer<typeof NgrokConfigFileSchema>;
+type NgrokTunnelDef = z.infer<typeof NgrokTunnelDefSchema>;
+
+/**
+ * The ngrok-format config file this CLI owns in the XDG config dir, layered
+ * over the user's root ngrok config at spawn time (`--config` files merge in
+ * order, later wins; the user's authtoken keeps living in their root config).
+ * It is also the source of truth for the reserved domain at this layer — the
+ * workspace config no longer records one.
+ */
+export function ngrokConfigPath(): string {
+  return join(getConfigDir(getCurrentEnvironment()), "tunnels", "ngrok.yaml");
+}
+
+function readNgrokConfigFile(): NgrokConfigFile {
+  const path = ngrokConfigPath();
+  if (!existsSync(path)) return {};
+  try {
+    const parsed = NgrokConfigFileSchema.safeParse(
+      parseYaml(readFileSync(path, "utf-8")),
+    );
+    return parsed.success ? parsed.data : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeNgrokConfigFile(config: NgrokConfigFile): void {
+  const path = ngrokConfigPath();
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, stringifyYaml(config));
+}
+
+/**
+ * Persist a reserved ngrok domain in the XDG ngrok config; null clears it.
+ *
+ * The reserved domain is an ngrok reservation concept (cloudflare quick
+ * tunnels and tailscale serve have no equivalent), which is why this lives in
+ * the ngrok provider module rather than the shared ingress-config helpers.
+ */
+export function saveNgrokDomain(domain: string | null): void {
+  const config = readNgrokConfigFile();
+  const cadet: NgrokTunnelDef = {
+    ...config.tunnels?.[NGROK_TUNNEL_NAME],
+    proto: "http",
+  };
+  if (domain) {
+    cadet.domain = domain;
+  } else {
+    delete cadet.domain;
+  }
+  const tunnels: Record<string, NgrokTunnelDef> = { ...config.tunnels };
+  tunnels[NGROK_TUNNEL_NAME] = cadet;
+  const next: NgrokConfigFile = { ...config, version: config.version ?? "2" };
+  next.tunnels = tunnels;
+  writeNgrokConfigFile(next);
+}
+
+/** Read the reserved ngrok domain from the XDG ngrok config, if saved. */
+export function loadNgrokDomain(): string | null {
+  const domain = readNgrokConfigFile().tunnels?.[NGROK_TUNNEL_NAME]?.domain;
+  return domain?.trim() ? domain : null;
+}
+
+/**
+ * Check whether a PID belongs to an ngrok process via its command line, so a
+ * recorded pid is verified before it is signaled (PID reuse guard).
+ */
+export function isNgrokProcess(pid: number): boolean {
+  try {
+    return /ngrok/i.test(readProcessCommandLine(pid));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Matches the adoption line the tunnel workflows print when they find an
+ * already-running tunnel, so the detached-tunnel supervisor can detect
+ * adoption without this module's implementation details leaking into the
+ * command layer.
+ */
+export const ADOPTED_TUNNEL_RE = /Found existing ngrok tunnel: (\S+)/;
 
 /** Whether a tunnel public URL's host equals the given reserved domain. */
 function urlMatchesDomain(publicUrl: string, domain: string): boolean {
@@ -133,15 +251,42 @@ function urlMatchesDomain(publicUrl: string, domain: string): boolean {
 }
 
 /**
- * Start an ngrok process tunneling HTTP traffic to the given local port.
+ * Write the cadet-owned XDG ngrok config for this run: the tunnel definition
+ * `ngrok start` reads, carrying the loopback target and — when reserved — the
+ * bound domain. The file is layered over the user's root ngrok config at
+ * spawn, so their authtoken and settings keep applying untouched.
+ */
+function writeNgrokConfig(targetPort: number, domain?: string): void {
+  const config = readNgrokConfigFile();
+  const cadet: NgrokTunnelDef = {
+    ...config.tunnels?.[NGROK_TUNNEL_NAME],
+    proto: "http",
+    // Explicit over a bare port, which ngrok expands to `localhost`, whose
+    // ::1 answer resolves first on macOS and races the edge's IPv4 bind.
+    addr: `127.0.0.1:${targetPort}`,
+  };
+  if (domain) {
+    cadet.domain = domain;
+  }
+  const tunnels: Record<string, NgrokTunnelDef> = { ...config.tunnels };
+  tunnels[NGROK_TUNNEL_NAME] = cadet;
+  const next: NgrokConfigFile = { ...config, version: config.version ?? "2" };
+  next.tunnels = tunnels;
+  writeNgrokConfigFile(next);
+}
+
+/**
+ * Start an ngrok process tunneling HTTP traffic to the given local port, via
+ * the cadet-owned XDG config (`ngrok start cadet`) so the agent never collides
+ * with the host machine's root ngrok config.
  *
  * When `logFilePath` is provided, stdout/stderr are redirected to that file
  * instead of being piped. This avoids keeping pipe handles open in the
  * parent process — which would either prevent the CLI from exiting (if
  * handles are left open) or send SIGPIPE to ngrok (if destroyed).
  *
- * When `domain` is set, the tunnel binds that reserved ngrok domain via
- * `--domain=<domain>`.
+ * When `domain` is set, the spawned tunnel binds that reserved ngrok domain,
+ * recorded in the XDG config alongside the loopback target.
  *
  * Returns the spawned child process.
  */
@@ -159,12 +304,13 @@ export function startNgrokProcess(
     stdio = ["ignore", fd, fd];
   }
 
-  // Explicit over a bare port, which ngrok expands to `localhost`, whose ::1
-  // answer resolves first on macOS and races the edge's IPv4 bind.
-  const args = ["http", `127.0.0.1:${targetPort}`, "--log=stdout"];
-  if (domain) {
-    args.push(`--domain=${domain}`);
-  }
+  writeNgrokConfig(targetPort, domain);
+  const args = [
+    "start",
+    NGROK_TUNNEL_NAME,
+    `--config=${ngrokConfigPath()}`,
+    "--log=stdout",
+  ];
 
   const child = spawn("ngrok", args, {
     detached: true,
@@ -225,10 +371,7 @@ export function hasWebhookIntegrations(
   const telegram = TelegramIntegrationSchema.safeParse(config.telegram);
   if (telegram.success && telegram.data.botUsername) return true;
   const twilio = TwilioIntegrationSchema.safeParse(config.twilio);
-  if (
-    twilio.success &&
-    (twilio.data.accountSid || twilio.data.phoneNumber)
-  ) {
+  if (twilio.success && (twilio.data.accountSid || twilio.data.phoneNumber)) {
     return true;
   }
   return false;
@@ -295,7 +438,7 @@ export async function maybeStartNgrokTunnel(
   const version = getNgrokVersion();
   if (!version) return null;
 
-  const savedDomain = loadNgrokDomain(workspaceDir) ?? undefined;
+  const savedDomain = loadNgrokDomain() ?? undefined;
 
   // Reuse an existing tunnel if one is already running
   const runningTunnels = (await queryNgrokTunnels()) ?? [];
@@ -312,6 +455,10 @@ export async function maybeStartNgrokTunnel(
     }
     console.log(`   Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, assistantId, "ngrok");
+    await notifyGatewayOfPublicUrl(existingUrl, assistantId);
+    // The adopted tunnel belongs to some other agent we do not own a pid for,
+    // so any recorded tunnel process entry would be stale from here on.
+    clearRootProcess("tunnel");
     return null;
   }
   if (runningTunnels.length > 0) {
@@ -339,6 +486,15 @@ export async function maybeStartNgrokTunnel(
   try {
     const publicUrl = await waitForNgrokUrl(targetPort, savedDomain);
     saveIngressUrl(workspaceDir, publicUrl, assistantId, "ngrok");
+    await notifyGatewayOfPublicUrl(publicUrl, assistantId);
+    if (ngrokProcess.pid) {
+      stampRootProcess("tunnel", {
+        pid: ngrokProcess.pid,
+        provider: "ngrok",
+        startedAt: new Date().toISOString(),
+        assistantId,
+      });
+    }
     console.log(`   Tunnel established: ${publicUrl}`);
 
     return ngrokProcess;
@@ -350,6 +506,7 @@ export async function maybeStartNgrokTunnel(
       console.warn(`   ⚠ ${savedDomainRecoveryHint(savedDomain)}`);
     }
     if (!ngrokProcess.killed) ngrokProcess.kill("SIGTERM");
+    clearRootProcess("tunnel");
     return null;
   }
 }
@@ -370,11 +527,13 @@ export interface RunNgrokTunnelOptions {
 
 /**
  * Run the ngrok tunnel workflow: check installation, find or start a tunnel,
- * save the public URL to config, and block until exit or signal.
+ * and save the public URL to config. Hands the URL back so the tunnel level
+ * can notify the gateway of it; `waitForExit` settles when the run ends
+ * (process exit, signal, or detach).
  */
 export async function runNgrokTunnel(
   opts: RunNgrokTunnelOptions = {},
-): Promise<void> {
+): Promise<ProviderTunnelResult> {
   const version = getNgrokVersion();
   if (!version) {
     console.error("Error: ngrok is not installed.");
@@ -397,7 +556,7 @@ export async function runNgrokTunnel(
 
   // The saved domain is standing intent: a run without --domain reuses it,
   // and only an explicit --domain rewrites it.
-  const domain = opts.domain ?? loadNgrokDomain(workspaceDir) ?? undefined;
+  const domain = opts.domain ?? loadNgrokDomain() ?? undefined;
   if (domain && !opts.domain) {
     console.log(`Using saved ngrok domain: ${domain}`);
   }
@@ -426,8 +585,10 @@ export async function runNgrokTunnel(
     }
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
+    // Not our child process: a recorded entry would be stale or foreign.
+    clearRootProcess("tunnel");
     if (opts.domain) {
-      saveNgrokDomain(workspaceDir, opts.domain);
+      saveNgrokDomain(opts.domain);
     }
     console.log("Ingress URL saved to config.");
     console.log("");
@@ -436,11 +597,11 @@ export async function runNgrokTunnel(
     );
 
     // Block until SIGINT/SIGTERM
-    await new Promise<void>((resolve) => {
+    const waitForExit = new Promise<void>((resolve) => {
       process.on("SIGINT", () => resolve());
       process.on("SIGTERM", () => resolve());
     });
-    return;
+    return { publicUrl: existingUrl, waitForExit };
   }
 
   console.log(`Starting ngrok tunnel to localhost:${port}...`);
@@ -453,6 +614,7 @@ export async function runNgrokTunnel(
     if (!ngrokProcess.killed) {
       ngrokProcess.kill("SIGTERM");
     }
+    clearRootProcess("tunnel");
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
       clearIngressUrl(workspaceDir, opts.assistantId);
@@ -510,15 +672,24 @@ export async function runNgrokTunnel(
   // The domain is standing intent, not tunnel state: cleanup clears the
   // ingress URL but leaves the domain saved for wake/daemon restores.
   saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
+  if (ngrokProcess.pid) {
+    stampRootProcess("tunnel", {
+      pid: ngrokProcess.pid,
+      provider: "ngrok",
+      startedAt: new Date().toISOString(),
+      assistantId: opts.assistantId,
+    });
+  }
   if (opts.domain) {
-    saveNgrokDomain(workspaceDir, opts.domain);
+    saveNgrokDomain(opts.domain);
   }
   console.log("Ingress URL saved to config.");
   console.log("");
   console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
 
   // Keep running until the ngrok process exits or we receive a signal
-  await new Promise<void>((resolve) => {
+  const waitForExit = new Promise<void>((resolve) => {
     ngrokProcess.on("exit", () => resolve());
   });
+  return { publicUrl, waitForExit };
 }

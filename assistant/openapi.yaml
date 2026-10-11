@@ -32933,7 +32933,7 @@ paths:
     post:
       operationId: platform_disconnect_post
       summary: Disconnect from Cadet Cloud
-      description: Deletes stored cloud credentials and emits platform_disconnected signal to connected clients.
+      description: Deletes stored cloud credentials and emits cloud_disconnected signal to connected clients.
       tags:
         - platform
       responses:

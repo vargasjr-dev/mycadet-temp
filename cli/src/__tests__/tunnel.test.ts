@@ -25,40 +25,58 @@ import { join } from "node:path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
-import * as cloudflareTunnel from "../lib/cloudflare-tunnel.js";
-import * as ngrok from "../lib/ngrok.js";
+import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
+import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
+import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
-import * as tailscaleTunnel from "../lib/tailscale-tunnel.js";
+import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { getLogDir } from "../lib/xdg-log.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
+const realGatewayNotify = { ...gatewayNotify };
 const realNgrok = { ...ngrok };
 const realNginxIngress = { ...nginxIngress };
 const realTailscaleTunnel = { ...tailscaleTunnel };
 const realChildProcess = { ...childProcess };
 
+/** What a mocked provider run hands back: a URL and an already-settled exit. */
+const fakeTunnelResult = (publicUrl: string) => ({
+  publicUrl,
+  waitForExit: Promise.resolve(),
+});
+
 const runCloudflareTunnelMock = mock<
   typeof cloudflareTunnel.runCloudflareTunnel
->(async () => {});
-mock.module("../lib/cloudflare-tunnel.js", () => ({
+>(async () => fakeTunnelResult("https://test.example.cloudflare.dev"));
+mock.module("../lib/tunnels/cloudflare.js", () => ({
   ...realCloudflareTunnel,
   runCloudflareTunnel: runCloudflareTunnelMock,
 }));
 
-const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {});
-mock.module("../lib/ngrok", () => ({
+const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () =>
+  fakeTunnelResult("https://test.example.ngrok.dev"),
+);
+mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   runNgrokTunnel: runNgrokTunnelMock,
 }));
 
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
-  async () => {},
+  async () => fakeTunnelResult("https://test-machine.tailnet.ts.net"),
 );
-mock.module("../lib/tailscale-tunnel.js", () => ({
+mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
+}));
+
+const notifyGatewayOfPublicUrlMock = mock<
+  typeof gatewayNotify.notifyGatewayOfPublicUrl
+>(async () => {});
+mock.module("../lib/tunnels/gateway-notify.js", () => ({
+  ...realGatewayNotify,
+  notifyGatewayOfPublicUrl: notifyGatewayOfPublicUrlMock,
 }));
 
 const EDGE_PORT = 18080;
@@ -75,6 +93,7 @@ const { tunnel } = await import("../commands/tunnel.js");
 
 const originalArgv = [...process.argv];
 const originalFetch = globalThis.fetch;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
@@ -227,12 +246,24 @@ describe("tunnel edge targeting", () => {
     globalThis.fetch = withPreconnect(async () => {
       throw new Error("gateway unavailable");
     });
+    // The ngrok config file lives under the XDG config dir; a fresh one per
+    // test keeps the saved-domain state hermetic.
+    const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
+    tempDirs.push(configHome);
+    process.env.XDG_CONFIG_HOME = configHome;
     runCloudflareTunnelMock.mockReset();
-    runCloudflareTunnelMock.mockResolvedValue(undefined);
+    runCloudflareTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test.example.cloudflare.dev"),
+    );
     runNgrokTunnelMock.mockReset();
-    runNgrokTunnelMock.mockResolvedValue(undefined);
+    runNgrokTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test.example.ngrok.dev"),
+    );
     runTailscaleTunnelMock.mockReset();
-    runTailscaleTunnelMock.mockResolvedValue(undefined);
+    runTailscaleTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test-machine.tailnet.ts.net"),
+    );
+    notifyGatewayOfPublicUrlMock.mockReset();
     ensureTunnelEdgeMock.mockReset();
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
@@ -244,6 +275,12 @@ describe("tunnel edge targeting", () => {
   afterEach(() => {
     process.argv = originalArgv;
     globalThis.fetch = originalFetch;
+    rmSync(realNgrok.ngrokConfigPath(), { force: true });
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
+    }
     if (originalLockfileDir === undefined) {
       delete process.env.CADET_LOCKFILE_DIR;
     } else {
@@ -260,9 +297,9 @@ describe("tunnel edge targeting", () => {
   });
 
   afterAll(() => {
-    mock.module("../lib/cloudflare-tunnel.js", () => realCloudflareTunnel);
-    mock.module("../lib/ngrok", () => realNgrok);
-    mock.module("../lib/tailscale-tunnel.js", () => realTailscaleTunnel);
+    mock.module("../lib/tunnels/cloudflare.js", () => realCloudflareTunnel);
+    mock.module("../lib/tunnels/ngrok", () => realNgrok);
+    mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
     mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   });
 
@@ -288,6 +325,20 @@ describe("tunnel edge targeting", () => {
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
     expect(logs).toContain("serves remote web + webhooks");
+  });
+
+  test("the tunnel level notifies the gateway of the provider's public URL", async () => {
+    writeLockfile(makeLocalEntry());
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+
+    await runTunnelCapturingLogs();
+
+    // The provider hands its URL back; the notification is the tunnel
+    // level's job, so it holds no matter which provider ran.
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
+      "https://test.example.ngrok.dev",
+      "assistant-1",
+    );
   });
 
   test("an active cloud assistant falls back to the sole local entry with a note", async () => {
@@ -625,46 +676,40 @@ describe("tunnel edge targeting", () => {
     expect(logs).toContain("serves webhooks only");
   });
 
-  test("a bare invocation exits listing the providers to choose from", async () => {
-    writeLockfile(makeLocalEntry());
+  test("a bare invocation tunnels the default provider", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
     process.argv = ["bun", "cadet", "tunnel"];
 
-    const { exited, errors } = await runTunnelExpectingExit1();
+    const logs = await runTunnelCapturingLogs();
 
-    expect(exited).toBe(true);
-    expect(errors).toContain("--provider is required");
-    expect(errors).toContain("cadet tunnel --provider ngrok");
-    expect(errors).toContain("cadet tunnel --provider cloudflare");
-    expect(errors).toContain("cadet tunnel --provider tailscale");
-    // Nothing is started and nothing is recorded until the user has chosen.
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(logs).toContain("Using the default provider: ngrok");
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      assistantId: "assistant-1",
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+    });
+    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("a named assistant without --provider exits before resolving it", async () => {
-    writeLockfile(makeLocalEntry());
+  test("a named assistant without --provider tunnels it with the default provider", async () => {
+    const entry = makeLocalEntry();
+    entry.name = "Ada";
+    writeLockfile(entry);
     process.argv = ["bun", "cadet", "tunnel", "Ada"];
 
-    const { exited, errors } = await runTunnelExpectingExit1();
+    const logs = await runTunnelCapturingLogs();
 
-    expect(exited).toBe(true);
-    expect(errors).toContain("--provider is required");
-    // The suggestions keep the assistant that was asked for, so pasting one
-    // cannot tunnel the active assistant instead.
-    expect(errors).toContain("cadet tunnel Ada --provider ngrok");
-    expect(errors).toContain("cadet tunnel Ada --provider tailscale");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
-  });
-
-  test("a shell-sensitive assistant name is quoted in the suggestions", async () => {
-    writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "cadet", "tunnel", "Bob&Alice"];
-
-    const { errors } = await runTunnelExpectingExit1();
-
-    expect(errors).toContain("cadet tunnel 'Bob&Alice' --provider ngrok");
+    expect(logs).toContain("Using the default provider: ngrok");
+    // The assistant that was asked for is the one tunneled.
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+    });
+    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
   });
 
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
@@ -819,7 +864,7 @@ describe("tunnel edge targeting", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain(
-      "--domain is only supported with --provider ngrok",
+      "--domain is not supported with --provider cloudflare",
     );
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
@@ -830,10 +875,7 @@ describe("tunnel edge targeting", () => {
     writeLockfile(entry);
     const workspaceDir = join(entry.resources!.instanceDir, "workspace");
     mkdirSync(workspaceDir, { recursive: true });
-    writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify({ ingress: { ngrok: { domain: "dead.ngrok.app" } } }),
-    );
+    realNgrok.saveNgrokDomain("dead.ngrok.app");
     process.argv = [
       "bun",
       "cadet",
@@ -845,11 +887,9 @@ describe("tunnel edge targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(logs).toContain("Cleared the saved ngrok domain");
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.ngrok).toBeUndefined();
+    expect(logs).toContain("Cleared the saved reserved domain");
+    // The saved domain lives in the XDG ngrok config, not the workspace config.
+    expect(realNgrok.loadNgrokDomain()).toBeNull();
     // The run proceeds domainless: no `domain` key reaches runNgrokTunnel.
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
@@ -891,7 +931,7 @@ describe("tunnel edge targeting", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain(
-      "--clear-domain is only supported with --provider ngrok",
+      "--clear-domain is not supported with --provider cloudflare",
     );
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
@@ -975,11 +1015,22 @@ describe("ngrok --domain spawn args", () => {
     spawnMock.mockClear();
     lastChild = null;
     delete process.env.IS_CONTAINERIZED;
+    // The ngrok config file lives under the XDG config dir; a fresh one per
+    // test keeps the saved-domain state hermetic.
+    const configHome = mkdtempSync(join(tmpdir(), "cadet-ngrok-xdg-"));
+    tempDirs.push(configHome);
+    process.env.XDG_CONFIG_HOME = configHome;
     mockNgrokApiFetch([{ tunnels: [] }]);
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    rmSync(realNgrok.ngrokConfigPath(), { force: true });
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
+    }
     if (originalContainerized === undefined) {
       delete process.env.IS_CONTAINERIZED;
     } else {
@@ -1089,17 +1140,18 @@ describe("ngrok --domain spawn args", () => {
     const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
     expect(args).toEqual([
-      "http",
-      "127.0.0.1:7831",
+      "start",
+      "cadet",
+      `--config=${realNgrok.ngrokConfigPath()}`,
       "--log=stdout",
-      "--domain=foo.ngrok.app",
     ]);
+    // The reserved domain rides the XDG config the agent loads, not a flag.
+    expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
 
     const config = IngressTestConfigSchema.parse(
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
     expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
   });
 
   function mockTunnelListFetch(publicUrl: string, addr: string): void {
@@ -1188,14 +1240,12 @@ describe("ngrok --domain spawn args", () => {
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
     expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
+    expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
   test("maybeStartNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
-    const ws = makeWorkspace({
-      telegram: { botUsername: "example_bot" },
-      ingress: { ngrok: { domain: "foo.ngrok.app" } },
-    });
+    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+    realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
     const warnings: string[] = [];
@@ -1229,7 +1279,7 @@ describe("ngrok --domain spawn args", () => {
     // The mismatched tunnel is not blessed in config…
     expect(config.ingress?.publicBaseUrl).toBeUndefined();
     // …and the reserved domain stays saved as standing intent.
-    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
+    expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
   test("an adopted automatic tunnel records the assistant it fronts", async () => {
@@ -1359,10 +1409,8 @@ describe("ngrok --domain spawn args", () => {
   });
 
   test("maybeStartNgrokTunnel passes the saved domain to the spawn args", async () => {
-    const ws = makeWorkspace({
-      telegram: { botUsername: "example_bot" },
-      ingress: { ngrok: { domain: "foo.ngrok.app" } },
-    });
+    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+    realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockNgrokApiFetch([
       { tunnels: [] },
       {
@@ -1383,10 +1431,10 @@ describe("ngrok --domain spawn args", () => {
     const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
     expect(args).toEqual([
-      "http",
-      "127.0.0.1:7830",
+      "start",
+      "cadet",
+      `--config=${realNgrok.ngrokConfigPath()}`,
       "--log=stdout",
-      "--domain=foo.ngrok.app",
     ]);
 
     const config = IngressTestConfigSchema.parse(
@@ -1396,9 +1444,8 @@ describe("ngrok --domain spawn args", () => {
   });
 
   test("runNgrokTunnel without --domain reuses the saved domain and does not delete it", async () => {
-    const ws = makeWorkspace({
-      ingress: { ngrok: { domain: "foo.ngrok.app" } },
-    });
+    const ws = makeWorkspace({});
+    realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockNgrokApiFetch([
       { tunnels: [] },
       {
@@ -1422,17 +1469,17 @@ describe("ngrok --domain spawn args", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const [, args] = spawnMock.mock.calls[0];
     expect(args).toEqual([
-      "http",
-      "127.0.0.1:7831",
+      "start",
+      "cadet",
+      `--config=${realNgrok.ngrokConfigPath()}`,
       "--log=stdout",
-      "--domain=foo.ngrok.app",
     ]);
 
     const config = IngressTestConfigSchema.parse(
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
     expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
-    expect(config.ingress?.ngrok?.domain).toBe("foo.ngrok.app");
+    expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 });
 

@@ -90,7 +90,6 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
     runtimeMaxRetries: 2,
     runtimeProxyRequireAuth: false,
     runtimeTimeoutMs: 30000,
-    shutdownDrainMs: 5000,
     trustProxy: false,
     ...overrides,
   } as GatewayConfig;

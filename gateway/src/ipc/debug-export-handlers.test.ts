@@ -40,7 +40,6 @@ function makeConfig(logDir: string | undefined): GatewayConfig {
     runtimeMaxRetries: 0,
     runtimeProxyRequireAuth: true,
     runtimeTimeoutMs: 1000,
-    shutdownDrainMs: 1,
     trustProxy: false,
   } as GatewayConfig;
 }

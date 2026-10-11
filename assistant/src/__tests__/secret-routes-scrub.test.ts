@@ -6,7 +6,6 @@
  *   - scrubs the stored value exactly once, immediately after the
  *     secure-store write
  *   - never scrubs when validation rejects the request (nothing was stored)
- *   - still succeeds when the scrub itself rejects (best-effort hygiene)
  */
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
@@ -21,7 +20,6 @@ import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 const secureStore = useMemorySecureKeyMap();
 
 let scrubbedValues: string[];
-let scrubRejects: boolean;
 let anthropicKeyValid: boolean;
 let providersRefreshed: number;
 
@@ -32,9 +30,6 @@ let providersRefreshed: number;
 mock.module("../daemon/credential-transcript-scrub.js", () => ({
   scrubStoredCredentialFromTranscripts: mock(async (value: string) => {
     scrubbedValues.push(value);
-    if (scrubRejects) {
-      throw new Error("transcript sweep failed");
-    }
     return { dbMessagesScrubbed: 0, residentMessagesScrubbed: 0 };
   }),
 }));
@@ -87,7 +82,6 @@ describe("secrets_add api_key transcript scrub", () => {
   beforeEach(() => {
     secureStore.clear();
     scrubbedValues = [];
-    scrubRejects = false;
     anthropicKeyValid = true;
     providersRefreshed = 0;
   });
@@ -104,6 +98,8 @@ describe("secrets_add api_key transcript scrub", () => {
       API_KEY_VALUE,
     );
     expect(scrubbedValues).toEqual([API_KEY_VALUE]);
+    // The provider refresh still happens after the scrub.
+    expect(providersRefreshed).toBe(1);
   });
 
   test("an unknown provider is rejected and never triggers a scrub", async () => {
@@ -134,23 +130,6 @@ describe("secrets_add api_key transcript scrub", () => {
     expect(secureStore.size).toBe(0);
     expect(scrubbedValues).toEqual([]);
   });
-
-  test("the route still succeeds (and refreshes providers) when the scrub rejects", async () => {
-    scrubRejects = true;
-
-    const result = await addRoute.handler({
-      body: { type: "api_key", name: "fireworks", value: API_KEY_VALUE },
-    });
-
-    expect(result).toEqual(expect.objectContaining({ success: true }));
-    expect(secureStore.get(credentialKey("fireworks", "api_key"))).toBe(
-      API_KEY_VALUE,
-    );
-    // The scrub ran (once) even though it failed, and the failure stayed
-    // invisible to the caller — the provider refresh still happened.
-    expect(scrubbedValues).toEqual([API_KEY_VALUE]);
-    expect(providersRefreshed).toBe(1);
-  });
 });
 
 const CREDENTIAL_VALUE = "synthetic-credential-value-0987654321";
@@ -159,30 +138,11 @@ describe("secrets_add credential transcript scrub", () => {
   beforeEach(() => {
     secureStore.clear();
     scrubbedValues = [];
-    scrubRejects = false;
     anthropicKeyValid = true;
     providersRefreshed = 0;
   });
 
   test("a successful credential set scrubs the stored value exactly once", async () => {
-    const result = await addRoute.handler({
-      body: {
-        type: "credential",
-        name: "github:api_token",
-        value: CREDENTIAL_VALUE,
-      },
-    });
-
-    expect(result).toEqual(expect.objectContaining({ success: true }));
-    expect(secureStore.get(credentialKey("github", "api_token"))).toBe(
-      CREDENTIAL_VALUE,
-    );
-    expect(scrubbedValues).toEqual([CREDENTIAL_VALUE]);
-  });
-
-  test("the route still succeeds when the credential scrub rejects", async () => {
-    scrubRejects = true;
-
     const result = await addRoute.handler({
       body: {
         type: "credential",

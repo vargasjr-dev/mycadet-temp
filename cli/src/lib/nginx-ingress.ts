@@ -19,8 +19,10 @@ import { join } from "node:path";
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import {
+  clearRootProcess,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
+  stampRootProcess,
   type AssistantEntry,
 } from "./assistant-config.js";
 import type { RemoteHost } from "./constants.js";
@@ -360,7 +362,7 @@ http {
   # remote client cannot smuggle one. Every caller reaches this loopback-only
   # listener through the TLS-terminating front (tunnel agent), so the raw peer
   # is always 127.0.0.1; the front records the real client as the RIGHTMOST
-  # X-Forwarded-For entry (ngrok/cloudflared append, tailscale serve sets it),
+  # X-Forwarded-For entry (tunnel providers append one; tailscale serve sets it),
   # which the remote client cannot control. Fall back to the raw peer when the
   # front sets no X-Forwarded-For.
   map $http_x_forwarded_for $cadet_edge_client_ip {
@@ -494,7 +496,8 @@ export function getNginxVersion(): string | null {
  * process.ts helpers: stopProcessByPidFile's isCadetProcess() guard only
  * matches command lines containing a cadet path, which fails for a custom
  * CADET_WORKSPACE_DIR and would silently leave nginx running (the same
- * reason local.ts kills ngrok directly). This module is also imported by
+ * reason local.ts stops the tunnel agent directly). This module is also
+ * imported by
  * sleep/retire, whose tests mock.module() process.js process-globally —
  * depending on it here would couple this lib's behavior to those mocks.
  */
@@ -625,13 +628,15 @@ function clearIngressState(workspaceDir: string): void {
 function clearStoppedIngress(workspaceDir: string, pidPath: string): void {
   clearIngressState(workspaceDir);
   rmSync(pidPath, { force: true });
+  // The edge is gone; drop the root lockfile's process entry with it.
+  clearRootProcess("app");
 }
 
 /**
- * Write the nginx config and spawn nginx detached (same idiom as the ngrok
- * spawn in ngrok.ts: stdout/stderr to a log file, fd closed after spawn,
- * caller unrefs). nginx runs with `daemon off` so the spawned process is the
- * master; it writes its pid to nginx.pid under the prefix dir.
+ * Write the nginx config and spawn nginx detached (stdout/stderr to a log
+ * file, fd closed after spawn, caller unrefs). nginx runs with `daemon off`
+ * so the spawned process is the master; it writes its pid to nginx.pid under
+ * the prefix dir.
  */
 export function startIngressNginx(opts: {
   workspaceDir: string;
@@ -1035,8 +1040,22 @@ export async function stopContainerTunnelEdge(
   return stopIngressNginx(workspaceDir);
 }
 
-/** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */
-export interface TunnelEdge {
+/** Record the running edge's pid in the root lockfile for `cadet ps`. */
+function stampAppProcessEntry(
+  workspaceDir: string,
+  assistantId?: string,
+): void {
+  const pid = getIngressPid(workspaceDir);
+  if (pid !== null) {
+    stampRootProcess("app", {
+      pid,
+      startedAt: new Date().toISOString(),
+      assistantId,
+    });
+  }
+}
+
+/** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */ export interface TunnelEdge {
   /** Loopback listen port the HTTPS front should forward to. */
   port: number;
   /** True when this call started the edge, false when a running one was reused. */
@@ -1099,6 +1118,7 @@ export async function ensureTunnelEdge(opts: {
 
   switch (result.status) {
     case "started":
+      stampAppProcessEntry(opts.workspaceDir, opts.assistantId);
       return {
         port: result.listenPort,
         started: true,
@@ -1132,6 +1152,7 @@ export async function ensureTunnelEdge(opts: {
             stuckEdgeRecoveryHint(opts.workspaceDir),
         );
       }
+      stampAppProcessEntry(opts.workspaceDir, opts.assistantId);
       return {
         port: result.listenPort,
         started: false,

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
 
-import { waitForCloudflareTunnelUrl } from "../lib/cloudflare-tunnel.js";
+import { waitForCloudflareTunnelUrl } from "../lib/tunnels/cloudflare.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

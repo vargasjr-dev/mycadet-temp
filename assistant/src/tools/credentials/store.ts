@@ -137,22 +137,13 @@ export async function storeCredentialValue(
   // also fires on OAuth refresh rotations and MCP header writes whose values
   // never transited a transcript.
   if (!input.skipTranscriptScrub) {
-    const { isNonSecretPlatformField, scrubStoredCredentialFromTranscripts } =
+    const { scrubStoredCredentialFromTranscripts } =
       await import("../../daemon/credential-transcript-scrub.js");
-    if (!isNonSecretPlatformField(service, field)) {
-      try {
-        const scrubbed = await scrubStoredCredentialFromTranscripts(value);
-        log.info(
-          { service, field, ...scrubbed },
-          "Credential stored; scrubbed value from recent transcripts",
-        );
-      } catch (err) {
-        log.warn(
-          { err, service, field },
-          "Credential stored, but transcript scrub failed",
-        );
-      }
-    }
+    const scrubbed = await scrubStoredCredentialFromTranscripts(value);
+    log.info(
+      { service, field, ...scrubbed },
+      "Credential stored; scrubbed value from recent transcripts",
+    );
   }
 
   const metadata = upsertCredentialMetadata(service, field, {

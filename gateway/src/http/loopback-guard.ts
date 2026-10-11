@@ -91,7 +91,7 @@ export function enforceLoopbackOnly(
     return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
   }
 
-  // The self-hosted nginx edge (e.g. the SPA over an ngrok tunnel) sets this
+  // The self-hosted nginx edge (e.g. the SPA over a tunnel) sets this
   // marker unconditionally; it cannot be spoofed or stripped by the client.
   if (requestArrivedViaEdgeProxy(req)) {
     auditDeny(req, clientIp, auditTag, "edge_proxy_forwarded");

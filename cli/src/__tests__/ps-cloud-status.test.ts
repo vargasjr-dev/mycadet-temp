@@ -32,6 +32,10 @@ const loadAllAssistantsMock = spyOn(
   assistantConfig,
   "loadAllAssistants",
 ).mockReturnValue([]);
+const readRootProcessesMock = spyOn(
+  assistantConfig,
+  "readRootProcesses",
+).mockReturnValue({});
 const getActiveAssistantMock = spyOn(
   assistantConfig,
   "getActiveAssistant",
@@ -99,6 +103,8 @@ beforeEach(() => {
   }) as typeof process.stdout.write;
 });
 
+const NL = String.fromCharCode(10);
+
 afterEach(() => {
   console.log = originalLog;
   console.error = originalError;
@@ -116,6 +122,7 @@ afterEach(() => {
   fetchCloudAssistantsMock.mockResolvedValue([]);
   checkManagedHealthMock.mockReset();
   checkManagedHealthMock.mockResolvedValue({ status: "healthy", detail: null });
+  readRootProcessesMock.mockReturnValue({});
 });
 
 afterAll(() => {
@@ -215,6 +222,52 @@ describe("cadet ps — platform status line", () => {
     } finally {
       delete process.env.CADET_ENVIRONMENT;
     }
+  });
+
+  test("CLI-managed root processes nest under the assistant they front", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      {
+        assistantId: "assistant-123",
+        name: "Alice",
+        runtimeUrl: "https://platform.example",
+        cloud: "cadet",
+      },
+      {
+        assistantId: "assistant-456",
+        name: "Bob",
+        runtimeUrl: "https://platform.example/b",
+        cloud: "cadet",
+      },
+    ]);
+    getActiveAssistantMock.mockReturnValue(null);
+    checkManagedHealthMock.mockImplementation(async () => ({
+      status: "healthy",
+      detail: null,
+    }));
+    // The tunnel fronts Alice (recorded id); the edge records no assistant.
+    readRootProcessesMock.mockReturnValue({
+      tunnel: {
+        pid: 4242,
+        provider: "ngrok",
+        startedAt: "2026-10-11T00:00:00.000Z",
+        assistantId: "assistant-123",
+      },
+      app: { pid: 77, startedAt: "2026-10-11T00:00:00.000Z" },
+    });
+
+    await listAllAssistants(false);
+
+    const output = stdout.join(NL);
+    // The tunnel nests under Alice — its name is just the provider now…
+    expect(output).toContain("└ ngrok");
+    // …the unattributed edge renders machine-level…
+    expect(output).toContain("nginx edge");
+    // …the type column distinguishes the three process kinds…
+    expect(output).toContain("🧑‍🚀 Assistant");
+    expect(output).toContain("🚇 Tunnel");
+    expect(output).toContain("🌐 App");
+    // …and the second table is gone: one header row only.
+    expect(output.match(/NAME/g)?.length).toBe(1);
   });
 
   test("assistant rows use display name as primary label and keep id visible", async () => {

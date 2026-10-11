@@ -1,7 +1,6 @@
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
-import { writeFileSync } from "fs";
 import { join } from "path";
 
 import cliPkg from "../../package.json";
@@ -77,7 +76,7 @@ import {
   startLocalDaemon,
   stopLocalProcesses,
 } from "../lib/local.js";
-import { restoreTunnelEdgeAndAutoTunnel } from "../lib/tunnel-edge.js";
+import { restoreTunnelEdgeAndAutoTunnel } from "../lib/tunnel.js";
 import {
   leaseGuardianToken,
   resetGuardianBootstrap,
@@ -1018,17 +1017,11 @@ async function upgradeLocal(
   console.log("✅ Local assistant processes started\n");
 
   const workspaceDir = join(entry.resources.instanceDir, "workspace");
-  const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
+  await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     entry.resources.gatewayPort,
     workspaceDir,
   );
-  if (ngrokChild?.pid) {
-    writeFileSync(
-      join(entry.resources.instanceDir, "ngrok.pid"),
-      String(ngrokChild.pid),
-    );
-  }
 
   console.log("Waiting for assistant to become ready...");
   const ready = await waitForReady(adminUrl);

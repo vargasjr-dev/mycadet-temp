@@ -11,6 +11,7 @@ import {
   getDaemonPidPath,
   loadAllAssistants,
   lookupAssistantByIdentifier,
+  readRootProcesses,
   type AssistantEntry,
 } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -44,14 +45,21 @@ import {
 
 // ── Table formatting helpers ────────────────────────────────────
 
+/** What each row's `type` column says: the KIND of process the row describes. */
+const ASSISTANT_TYPE = "🧑‍🚀 Assistant";
+const TUNNEL_TYPE = "🚇 Tunnel";
+const APP_TYPE = "🌐 App";
+
 interface TableRow {
   name: string;
+  type: string;
   status: string;
   info: string;
 }
 
 interface ColWidths {
   name: number;
+  type: number;
   status: number;
   info: number;
 }
@@ -62,27 +70,38 @@ function pad(s: string, w: number): string {
 
 function computeColWidths(
   rows: TableRow[],
-  headers: TableRow = { name: "NAME", status: "STATUS", info: "INFO" },
+  headers: TableRow = {
+    name: "NAME",
+    type: "TYPE",
+    status: "STATUS",
+    info: "INFO",
+  },
 ): ColWidths {
   const all = [headers, ...rows];
   return {
     name: Math.max(...all.map((r) => r.name.length)),
+    type: Math.max(...all.map((r) => r.type.length)),
     status: Math.max(...all.map((r) => r.status.length), "checking...".length),
     info: Math.max(...all.map((r) => r.info.length)),
   };
 }
 
 function formatRow(r: TableRow, colWidths: ColWidths): string {
-  return `  ${pad(r.name, colWidths.name)}  ${pad(r.status, colWidths.status)}  ${r.info}`;
+  return `  ${pad(r.name, colWidths.name)}  ${pad(r.type, colWidths.type)}  ${pad(r.status, colWidths.status)}  ${r.info}`;
 }
 
 function printTable(
   rows: TableRow[],
-  headers: TableRow = { name: "PROCESS", status: "STATUS", info: "INFO" },
+  headers: TableRow = {
+    name: "PROCESS",
+    type: "TYPE",
+    status: "STATUS",
+    info: "INFO",
+  },
 ): void {
   const colWidths = computeColWidths(rows, headers);
   console.log(formatRow(headers, colWidths));
-  const sep = `  ${"-".repeat(colWidths.name)}  ${"-".repeat(colWidths.status)}  ${"-".repeat(colWidths.info)}`;
+  const sep = `  ${"-".repeat(colWidths.name)}  ${"-".repeat(colWidths.type)}  ${"-".repeat(colWidths.status)}  ${"-".repeat(colWidths.info)}`;
   console.log(sep);
   for (const row of rows) {
     console.log(formatRow(row, colWidths));
@@ -108,6 +127,7 @@ function flattenProcessTree(
     rows.push({
       name:
         depth === 0 ? entry.name : `${"  ".repeat(depth - 1)}├─ ${entry.name}`,
+      type: ASSISTANT_TYPE,
       status: withStatusEmoji(STATUS_LABELS[entry.status]),
       info: entry.info ?? "",
     });
@@ -118,6 +138,7 @@ function flattenProcessTree(
       const prefix = `${"  ".repeat(depth)}${isLast ? "└─" : "├─"} ${child.name}`;
       rows.push({
         name: prefix,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(STATUS_LABELS[child.status]),
         info: child.info ?? "",
       });
@@ -284,9 +305,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   // tree (assistant + every child it owns, built from the OS process table)
   // with the gateway's own entry appended — no hard-coded subsystem list to
   // drift out of sync with what the assistant actually spawns.
-  const tree = gatewayUrl
-    ? await fetchGatewayPs(gatewayUrl, token)
-    : null;
+  const tree = gatewayUrl ? await fetchGatewayPs(gatewayUrl, token) : null;
 
   const rows: TableRow[] =
     tree && tree.length > 0
@@ -303,6 +322,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   });
   rows.push({
     name: "credential-executor",
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(ces.running ? "running" : "not running"),
     info: ces.running ? formatDetectionInfo(ces) : "not detected",
   });
@@ -349,6 +369,7 @@ async function detectLocalProcessesFallback(
 
   return results.map((proc, i) => ({
     name: allSpecs[i].name,
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(proc.running ? "running" : "not running"),
     info: proc.running ? formatDetectionInfo(proc) : "not detected",
   }));
@@ -393,12 +414,14 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
       if (!state) {
         return {
           name,
+          type: ASSISTANT_TYPE,
           status: withStatusEmoji("not found"),
           info: `container ${containerName}`,
         };
       }
       return {
         name,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(state === "running" ? "running" : state),
         info: `container ${containerName}`,
       };
@@ -412,6 +435,7 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
     const alive = isLocalProcessAlive(watcherPid);
     results.push({
       name: "file-watcher",
+      type: ASSISTANT_TYPE,
       status: withStatusEmoji(alive ? "running" : "not running"),
       info: alive ? `PID ${watcherPid}` : "not detected",
     });
@@ -430,22 +454,20 @@ function locationFor(entry: AssistantEntry): string {
   return entry.runtimeUrl ?? "unknown — no runtime URL recorded";
 }
 
-async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
+async function getAssistantProcessRows(
+  entry: AssistantEntry,
+): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
   console.log(`Processes for ${formatAssistantReference(entry)} (${cloud}):`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
-    const rows = await getLocalProcesses(entry);
-    printTable(rows);
-    return;
+    return getLocalProcesses(entry);
   }
 
   if (cloud === "docker") {
-    const rows = await getDockerProcesses(entry);
-    printTable(rows);
-    return;
+    return getDockerProcesses(entry);
   }
 
   if (isCloudHome(cloud)) {
@@ -454,20 +476,17 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
 
     if (!psData) {
-      const rows: TableRow[] = [
+      return [
         {
           name: "assistant",
+          type: ASSISTANT_TYPE,
           status: withStatusEmoji("unreachable"),
           info: "could not reach Cadet Cloud API — run `cadet login`",
         },
       ];
-      printTable(rows);
-      return;
     }
 
-    const rows = flattenProcessTree(psData.processes);
-    printTable(rows);
-    return;
+    return flattenProcessTree(psData.processes);
   }
 
   if (cloud === "apple-container") {
@@ -476,6 +495,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     const rows: TableRow[] = [
       {
         name: "container",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(socketAlive ? "running" : "not running"),
         info: socketAlive
           ? `mgmt ${mgmtSocket}`
@@ -487,12 +507,12 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
       const health = await checkHealth(entry.runtimeUrl, token);
       rows.push({
         name: "gateway",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(health.status),
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       });
     }
-    printTable(rows);
-    return;
+    return rows;
   }
 
   if (cloud === "paired") {
@@ -500,15 +520,14 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     // list — probe the remote gateway's health over the bearer token instead.
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
     const health = await checkHealth(entry.runtimeUrl, token);
-    const rows: TableRow[] = [
+    return [
       {
         name: "gateway",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(health.status),
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       },
     ];
-    printTable(rows);
-    return;
   }
 
   let output: string;
@@ -525,7 +544,7 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("timed out")) {
       console.warn(`Warning: remote process listing timed out — ${msg}`);
-      return;
+      return [];
     }
     console.error(`Failed to list processes: ${msg}`);
     process.exit(1);
@@ -535,16 +554,93 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
 
   if (procs.length === 0) {
     console.log("No cadet processes found on the remote instance.");
-    return;
+    return [];
   }
 
-  const rows: TableRow[] = procs.map((p) => ({
+  return procs.map((p) => ({
     name: classifyProcess(p.command),
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji("running"),
     info: `PID ${p.pid} | ${p.command.slice(0, 80)}`,
   }));
+}
 
-  printTable(rows);
+// ── Root-managed process rows (tunnel agent, app edge) ──────────
+
+/** A CLI-managed process row, plus the assistant it fronts (when recorded). */
+interface RootManagedRow {
+  row: TableRow;
+  assistantId?: string;
+}
+
+/**
+ * Rows for the CLI-managed processes recorded at the lockfile root: the
+ * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
+ * stale entry reads as not running rather than as a lie. Each row carries the
+ * assistant it fronts so the listing can nest it under that assistant.
+ */
+async function getRootManagedRows(): Promise<RootManagedRow[]> {
+  const { tunnel, app } = readRootProcesses();
+  const rows: RootManagedRow[] = [];
+
+  if (tunnel) {
+    const alive = isLocalProcessAlive(tunnel.pid);
+    rows.push({
+      assistantId: tunnel.assistantId,
+      row: {
+        name: tunnel.provider ?? "unknown provider",
+        type: TUNNEL_TYPE,
+        status: withStatusEmoji(alive ? "running" : "not running"),
+        info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
+      },
+    });
+  }
+  if (app) {
+    const alive = isLocalProcessAlive(app.pid);
+    rows.push({
+      assistantId: app.assistantId,
+      row: {
+        name: "nginx edge",
+        type: APP_TYPE,
+        status: withStatusEmoji(alive ? "running" : "not running"),
+        info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
+      },
+    });
+  }
+  return rows;
+}
+
+/**
+ * Fold the CLI-managed process rows into ONE table with the assistant rows:
+ * a process fronts an assistant when it recorded that assistant's id, and
+ * those rows nest under it; anything unattributed (or fronting an assistant
+ * this environment no longer lists) renders at the bottom, machine-level.
+ */
+async function assistantRowsWithRootProcesses(
+  assistants: AssistantEntry[],
+  healths: AssistantHealth[],
+  activeAssistantId: string | null,
+): Promise<TableRow[]> {
+  const nestedByAssistant = new Map<string, TableRow[]>();
+  const unattributed: TableRow[] = [];
+  const knownIds = new Set(assistants.map((entry) => entry.assistantId));
+  for (const managed of await getRootManagedRows()) {
+    if (managed.assistantId && knownIds.has(managed.assistantId)) {
+      const nested = nestedByAssistant.get(managed.assistantId) ?? [];
+      nested.push({ ...managed.row, name: `  └ ${managed.row.name}` });
+      nestedByAssistant.set(managed.assistantId, nested);
+    } else {
+      unattributed.push(managed.row);
+    }
+  }
+
+  const rows: TableRow[] = [];
+  assistants.forEach((entry, i) => {
+    rows.push(formatAssistantListRow(entry, activeAssistantId, healths[i]!));
+    rows.push(...(nestedByAssistant.get(entry.assistantId) ?? []));
+  });
+  rows.push(...unattributed);
+  return rows;
 }
 
 // ── List all assistants (no arg) ────────────────────────────────
@@ -611,6 +707,7 @@ function formatAssistantListRow(
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";
   return {
     name: prefix + getAssistantDisplayName(entry),
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(health.status),
     info: infoParts.join(" | "),
   };
@@ -654,6 +751,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
       console.log("\nOrphaned processes detected:\n");
       const rows: TableRow[] = orphans.map((o) => ({
         name: o.name,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji("running"),
         info: `PID ${o.pid} (from ${o.source})`,
       }));
@@ -666,60 +764,71 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     return;
   }
 
-  const rows = await Promise.all(
-    assistants.map(async (entry) =>
-      formatAssistantListRow(
-        entry,
-        activeAssistantId,
-        await getAssistantListHealth(entry),
-      ),
-    ),
+  const healths = await Promise.all(
+    assistants.map((entry) => getAssistantListHealth(entry)),
   );
 
-  printTable(rows, { name: "NAME", status: "STATUS", info: "INFO" });
-  console.log("");
+  printTable(
+    await assistantRowsWithRootProcesses(
+      assistants,
+      healths,
+      activeAssistantId,
+    ),
+    { name: "NAME", type: "TYPE", status: "STATUS", info: "INFO" },
+  );
 }
 
 // ── Entry point ─────────────────────────────────────────────────
 
 export const ps = Object.assign(
   async function ps(): Promise<void> {
-  const args = process.argv.slice(3);
-  if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
-    console.log("");
-    console.log(
-      "List all assistants, or show processes for a specific assistant.",
-    );
-    console.log("");
-    console.log("Arguments:");
-    console.log(
-      "  <name-or-id> Show processes for the assistant display name or ID",
-    );
-    console.log("");
-    console.log("Options:");
-    console.log(
-      "  --verbose    Show diagnostic logs (platform sync, auth issues)",
-    );
-    process.exit(0);
-  }
+    const args = process.argv.slice(3);
+    if (args.includes("--help") || args.includes("-h")) {
+      console.log("Usage: cadet ps [<name-or-id>] [--verbose]");
+      console.log("");
+      console.log(
+        "List all assistants, or show processes for a specific assistant.",
+      );
+      console.log("");
+      console.log("Arguments:");
+      console.log(
+        "  <name-or-id> Show processes for the assistant display name or ID",
+      );
+      console.log("");
+      console.log("Options:");
+      console.log(
+        "  --verbose    Show diagnostic logs (platform sync, auth issues)",
+      );
+      process.exit(0);
+    }
 
-  const verbose = args.includes("--verbose");
-  const assistantIdentifier = parseAssistantTargetArg(args);
+    const verbose = args.includes("--verbose");
+    const assistantIdentifier = parseAssistantTargetArg(args);
 
-  if (!assistantIdentifier) {
-    await listAllAssistants(verbose);
-    return;
-  }
+    if (!assistantIdentifier) {
+      await listAllAssistants(verbose);
+      return;
+    }
 
-  const result = lookupAssistantByIdentifier(assistantIdentifier);
-  if (result.status !== "found") {
-    console.error(formatAssistantLookupError(assistantIdentifier, result));
-    process.exit(1);
-  }
+    const result = lookupAssistantByIdentifier(assistantIdentifier);
+    if (result.status !== "found") {
+      console.error(formatAssistantLookupError(assistantIdentifier, result));
+      process.exit(1);
+    }
 
-  await showAssistantProcesses(result.entry);
-},
+    const rows = await getAssistantProcessRows(result.entry);
+    // The CLI-managed processes (root lockfile) that front THIS assistant ride
+    // the same table; ones fronting another assistant stay in the list view.
+    for (const managed of await getRootManagedRows()) {
+      if (
+        managed.assistantId &&
+        managed.assistantId !== result.entry.assistantId
+      ) {
+        continue;
+      }
+      rows.push(managed.row);
+    }
+    printTable(rows);
+  },
   { description: "List assistants (or processes for a specific assistant)" },
 );
-

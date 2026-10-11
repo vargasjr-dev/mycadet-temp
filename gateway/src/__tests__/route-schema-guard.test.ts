@@ -227,6 +227,9 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   "/v1/speech/stt/stream",
   "/v2/speech/stt/stream",
   "/v1/speech/tts/stream",
+  // Loopback-only ingress domain recording — the local CLI reports its
+  // tunnel's public URL (bearer-authed); not part of the public gateway API
+  "/v1/ingress/domains",
   // Plugin-declared webhooks — which paths exist is decided at runtime by the
   // installed plugins and the guardian's approvals, so there is no fixed set
   // to document. The declaration schema is the contract, not this path.

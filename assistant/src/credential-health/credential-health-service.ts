@@ -36,10 +36,7 @@ import {
 } from "../oauth/oauth-store.js";
 import { missingScopesForStoredToken } from "../oauth/scope-utils.js";
 import { credentialKey } from "../security/credential-key.js";
-import {
-  getSecureKeyAsync,
-  getSecureKeyResultAsync,
-} from "../security/secure-keys.js";
+import { getSecureKeyResultAsync } from "../security/secure-keys.js";
 import {
   TokenExpiredError,
   withValidToken,
@@ -636,13 +633,12 @@ const ASSISTANT_API_KEY_CONNECTION_ID = "cadet:assistant_api_key";
  * observed here and acted on by a client.
  *
  * Statuses map onto the shared vocabulary:
- *   - `missing_token`: no key is stored, so managed inference cannot run.
  *   - `revoked`: the cloud settled that the stored key is not accepted.
  *   - `unreachable`: the credential store or the cloud did not answer, so
  *     health is unknown. The heartbeat drops these before notifying, which is
  *     what keeps a transient outage from raising a credential alert.
  *
- * `canAutoRecover` is true for both failure statuses: recovery needs no
+ * `canAutoRecover` is true for the revoked status: recovery needs no
  * re-authorization from the user, only a signed-in client to rotate the key.
  */
 export async function checkAssistantApiKey(): Promise<CredentialHealthResult | null> {
@@ -672,21 +668,10 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
 
   if (stored.value == null) {
     // A workspace that was never connected to the cloud has no managed
-    // credential and is not unhealthy. Only an install that already carries
-    // the rest of a cloud identity is missing something.
-    const assistantId = await getSecureKeyAsync(
-      credentialKey("cadet", "platform_assistant_id"),
-    );
-    if (!assistantId) {
-      return null;
-    }
-    return {
-      ...base,
-      status: "missing_token",
-      details:
-        "No Cadet Cloud credentials are stored yet. Log in to Cadet Cloud to set them up.",
-      canAutoRecover: true,
-    };
+    // credential and is not unhealthy. The identity ids resolve from the
+    // api key via the validate endpoint, so a missing key means nothing is
+    // bound — there is nothing to check.
+    return null;
   }
 
   const { CadetCloudClient } = await import("../cloud/client.js");
