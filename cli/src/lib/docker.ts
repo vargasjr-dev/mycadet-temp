@@ -40,6 +40,7 @@ import {
 import { resolveOwnImageRefs } from "./cloud-releases.js";
 import { isDevVersion } from "./version-compat.js";
 import {
+  collectProviderApiKey,
   configureHatchProviderApiKey,
   formatProviderName,
   promptProviderChoice,
@@ -340,12 +341,94 @@ export function resolveDockerProviderCredentialSetupAction(options: {
   provider: string | null | undefined;
   guardianAccessToken?: string;
   detached: boolean;
+  /**
+   * Key — or an explicit skip ("") — collected from the user right after
+   * they picked the provider. When present (even empty), the user already
+   * answered at the prompt, so detached hatches configure (or report the
+   * missing key) instead of deferring to a second `cadet setup` run.
+   */
+  precollectedKey?: string;
 }): DockerProviderCredentialSetupAction {
   if (options.provider === undefined) return "skip";
   if (options.provider === null) return options.detached ? "skip" : "configure";
-  if (options.detached) return "defer";
+  if (options.detached) {
+    if (options.precollectedKey !== undefined) {
+      return options.guardianAccessToken ? "configure" : "missing-token";
+    }
+    return "defer";
+  }
   if (!options.guardianAccessToken) return "missing-token";
   return "configure";
+}
+
+/** Time to wait for the Docker daemon to answer `docker info` after a Colima start. */
+const COLIMA_SETTLE_TIMEOUT_MS = 15_000;
+
+/** Poll `docker info` until the daemon answers or the timeout elapses. */
+async function waitForDockerDaemon(
+  execFn: typeof exec,
+  timeoutMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      await execFn("docker", ["info"]);
+      return true;
+    } catch {
+      if (Date.now() >= deadline) return false;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+}
+
+/**
+ * Start Colima and wait for the Docker daemon to actually answer.
+ *
+ * `colima start` exiting 0 only means Colima's own state file says the VM is
+ * up — that state can be stale (zombie VM after a host sleep or crash), in
+ * which case start is a no-op ("already running, ignoring") while the daemon
+ * inside stays dead. So success is decided by re-probing `docker info`, and a
+ * failed probe triggers the manual-fix cycle: force-stop and start fresh.
+ * Never `colima delete` — the VM disk holds every container image and volume.
+ * `startArgs` carries extra flags (e.g. `--memory`) for a first start; the
+ * wake path starts an existing instance bare.
+ */
+async function startColimaAndAwaitDaemon(
+  execFn: typeof exec,
+  log: (msg: string) => void,
+  opts: { startArgs?: string[]; settleTimeoutMs?: number } = {},
+): Promise<void> {
+  const startArgs = opts.startArgs ?? [];
+  const settleTimeoutMs = opts.settleTimeoutMs ?? COLIMA_SETTLE_TIMEOUT_MS;
+
+  try {
+    await execFn("colima", ["start", ...startArgs]);
+  } catch (err) {
+    // exec captures the child's output and only surfaces it in the error —
+    // print it so a failed start is never silent.
+    log(`⚠️  colima start failed: ${err instanceof Error ? err.message : err}`);
+  }
+
+  if (await waitForDockerDaemon(execFn, settleTimeoutMs)) return;
+
+  log(
+    "🔄 Colima state looks stale — restarting the VM (colima stop --force, then start)...",
+  );
+  await execFn("colima", ["stop", "--force"]).catch(() => {});
+  try {
+    await execFn("colima", ["start", ...startArgs]);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Failed to restart Colima. Please run 'colima stop --force && colima start' manually.\n${message}`,
+    );
+  }
+  if (!(await waitForDockerDaemon(execFn, settleTimeoutMs))) {
+    throw new Error(
+      "Docker daemon is still not reachable after restarting Colima. " +
+        "Check `colima status` and `docker info`, then try again.",
+    );
+  }
 }
 
 /**
@@ -418,41 +501,9 @@ async function ensureDockerInstalled(): Promise<void> {
     }
 
     console.log("🚀 Docker daemon not running. Starting Colima...");
-    try {
-      await exec("colima", [
-        "start",
-        "--memory",
-        String(COLIMA_DEFAULT_MEMORY_GIB),
-      ]);
-    } catch {
-      // Colima may fail if a previous VM instance is in a corrupt state.
-      // Attempt to delete the stale instance and retry once.
-      console.log(
-        "⚠️  Colima start failed — attempting to reset stale VM state...",
-      );
-      try {
-        await exec("colima", ["stop", "--force"]).catch(() => {});
-        await exec("colima", ["delete", "--force"]);
-      } catch {
-        // If delete also fails, fall through to the retry which will
-        // produce a clear error message.
-      }
-
-      try {
-        console.log("🔄 Retrying colima start...");
-        await exec("colima", [
-          "start",
-          "--memory",
-          String(COLIMA_DEFAULT_MEMORY_GIB),
-        ]);
-      } catch (retryErr) {
-        const message =
-          retryErr instanceof Error ? retryErr.message : String(retryErr);
-        throw new Error(
-          `Failed to start Colima after resetting stale VM state. Please run 'colima start' manually.\n${message}`,
-        );
-      }
-    }
+    await startColimaAndAwaitDaemon(exec, console.log, {
+      startArgs: ["--memory", String(COLIMA_DEFAULT_MEMORY_GIB)],
+    });
   }
 }
 
@@ -483,6 +534,56 @@ export async function removeContainer(containerName: string): Promise<void> {
     await exec("docker", ["rm", containerName]);
   } catch {
     // container may not exist or already removed
+  }
+}
+
+/**
+ * Error signatures Docker Hub returns when the host has STALE Docker Hub
+ * credentials: an expired personal access token saved by a past
+ * `docker login` gets attached to the pull, and Hub rejects the request
+ * instead of falling back to anonymous access for a public image.
+ */
+export function isExpiredDockerHubCredentialError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /personal access token is expired|authentication required|unauthorized/i.test(
+    message,
+  );
+}
+
+/**
+ * Pull an image, retrying once without stale credentials when Docker Hub
+ * rejects the pull with an expired-token/auth error — public pulls need no
+ * login, so `docker logout` (clears the stored Docker Hub credentials the
+ * docker CLI attaches to pulls) costs nothing. Other failures propagate raw;
+ * a still-failing auth retry is rethrown with actionable copy.
+ */
+export async function pullImage(
+  ref: string,
+  log: (msg: string) => void = console.log,
+  execFn: typeof exec = exec,
+): Promise<void> {
+  try {
+    await execFn("docker", ["pull", ref]);
+    return;
+  } catch (err) {
+    if (!isExpiredDockerHubCredentialError(err)) throw err;
+    log(
+      `⚠️  Docker Hub rejected the pull of ${ref} with an expired-credential ` +
+        `error — clearing stale Docker Hub login and retrying (public images ` +
+        `need no credentials)...`,
+    );
+    await execFn("docker", ["logout"]).catch(() => {});
+  }
+  try {
+    await execFn("docker", ["pull", ref]);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Failed to pull ${ref}.\n${message}\n` +
+        `If the Docker daemon is not running, start it (macOS: 'colima start'). ` +
+        `If the error mentions authentication, run 'docker logout' and check your ` +
+        `Docker Hub credentials — public image pulls need none.`,
+    );
   }
 }
 
@@ -846,7 +947,7 @@ export async function recreateDockerContainers(entry: AssistantEntry): Promise<v
   // already-present image is a cheap no-op.
   for (const image of [info.assistantImage, info.gatewayImage, info.cesImage]) {
     log(`📦 Pulling ${image}...`);
-    await exec("docker", ["pull", image]);
+    await pullImage(image, log);
   }
 
   const gatewayPort = parseGatewayPort(entry.runtimeUrl) ??
@@ -912,6 +1013,7 @@ function parseGatewayPort(runtimeUrl: string): number | null {
  */
 export async function ensureDockerDaemonRunning(
   execFn: typeof exec = exec,
+  opts: { settleTimeoutMs?: number } = {},
 ): Promise<void> {
   ensureLocalBinOnPath();
 
@@ -924,12 +1026,10 @@ export async function ensureDockerDaemonRunning(
     // No daemon reachable — fall through to the Colima fallback below.
   }
 
-  try {
-    await execFn("colima", ["status"]);
-  } catch {
-    console.log("🚀 Docker daemon not running. Starting Colima...");
-    await execFn("colima", ["start"]);
-  }
+  // Deliberately no `colima status` probe: it trusts Colima's own state file,
+  // which can be stale (zombie VM) — daemon reachability is the oracle.
+  console.log("🚀 Docker daemon not running. Starting Colima...");
+  await startColimaAndAwaitDaemon(execFn, console.log, opts);
 }
 
 /**
@@ -1234,6 +1334,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
   let provider = setupProviderCredentials
     ? resolveHatchProvider(configValues)
     : undefined;
+  let precollectedApiKey: string | undefined;
 
   if (
     shouldPromptForHatchProvider({
@@ -1246,6 +1347,9 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const picked = await promptProviderChoice();
     if (picked) {
       provider = picked;
+      // Collect the key immediately, while the choice is fresh — the
+      // startup logs are quiet now, so nothing separates the two prompts.
+      precollectedApiKey = await collectProviderApiKey(picked);
     }
   }
 
@@ -1427,7 +1531,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           const MAX_PULL_RETRIES = 3;
           for (let attempt = 1; attempt <= MAX_PULL_RETRIES; attempt++) {
             try {
-              await exec("docker", ["pull", ref]);
+              await pullImage(ref, log);
               break;
             } catch (err) {
               if (attempt === MAX_PULL_RETRIES) throw err;
@@ -1631,6 +1735,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         provider,
         guardianAccessToken,
         detached: waitDetached,
+        precollectedKey: precollectedApiKey,
       });
 
       if (providerSetupAction === "defer" && provider !== null) {
@@ -1657,6 +1762,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           provider,
           bearerToken: guardianAccessToken,
           env: process.env,
+          precollectedKey: precollectedApiKey,
           log,
         });
       }

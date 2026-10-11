@@ -19,6 +19,7 @@ import {
   GATEWAY_INTERNAL_PORT,
   ASSISTANT_INTERNAL_PORT,
   dockerResourceNames,
+  pullImage,
   startContainers,
   stopContainers,
 } from "../lib/docker";
@@ -46,7 +47,6 @@ import {
 } from "../lib/backup-ops.js";
 import { emitCliError, categorizeUpgradeError } from "../lib/cli-error.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { exec } from "../lib/step-runner.js";
 import {
   broadcastUpgradeEvent,
   attemptFailedStateRestore,
@@ -406,7 +406,7 @@ async function upgradeDocker(
   try {
     for (const [service, image] of pullImages) {
       console.log(`   Pulling ${service}: ${image}`);
-      await exec("docker", ["pull", image]);
+      await pullImage(image);
     }
   } catch (pullErr) {
     const detail = pullErr instanceof Error ? pullErr.message : String(pullErr);
