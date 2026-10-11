@@ -749,7 +749,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/deploy-platform-web-spa.yaml
+    uses: ./.github/workflows/deploy-cloud-web-spa.yaml
     with:
       environment: dev
     secrets: inherit
@@ -767,7 +767,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/deploy-platform-web-spa.yaml
+    uses: ./.github/workflows/deploy-cloud-web-spa.yaml
     with:
       environment: production
       channel: preview
