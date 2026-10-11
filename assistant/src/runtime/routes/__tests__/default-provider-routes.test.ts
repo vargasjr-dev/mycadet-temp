@@ -147,7 +147,7 @@ describe("GET config/llm/default-provider", () => {
     managedProxyBaseUrl = "";
     const result = await get();
     expect(availability(result).status).toBe("cadet_unauthenticated");
-    expect(availability(result).message).toContain("platform URL");
+    expect(availability(result).message).toContain("cloud URL");
   });
 
   test("cadet default with no canonical row → missing_connection", async () => {

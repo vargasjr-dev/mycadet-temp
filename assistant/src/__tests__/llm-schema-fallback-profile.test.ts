@@ -115,7 +115,7 @@ describe("LLMSchema fallbackProfile", () => {
         const issue = result.error.issues.find((i) =>
           i.path.join(".").endsWith("fallbackProfile"),
         );
-        expect(issue?.message).toContain("managed backup profile");
+        expect(issue?.message).toContain("cloud backup profile");
         expect(issue?.path).toEqual([
           "profiles",
           profileName,
@@ -166,7 +166,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
         const issue = result.error.issues.find(
           (i) => i.path.join(".") === "activeProfile",
         );
-        expect(issue?.message).toContain("managed backup profile");
+        expect(issue?.message).toContain("cloud backup profile");
       }
     }
   });
@@ -211,7 +211,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
         const issue = result.error.issues.find(
           (i) => i.path.join(".") === "callSites.recall.profile",
         );
-        expect(issue?.message).toContain("managed backup profile");
+        expect(issue?.message).toContain("cloud backup profile");
       }
     }
   });
@@ -287,7 +287,7 @@ describe("LLMSchema backup profile references vs llm.default", () => {
         const issue = result.error.issues.find(
           (i) => i.path.join(".") === "activeProfile",
         );
-        expect(issue?.message).toContain("managed backup profile");
+        expect(issue?.message).toContain("cloud backup profile");
       }
     }
   });

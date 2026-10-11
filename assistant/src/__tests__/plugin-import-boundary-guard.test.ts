@@ -49,6 +49,7 @@ const DEFAULTS_ABS = join(process.cwd(), DEFAULTS_REL);
  */
 const BASELINE: Record<string, readonly string[]> = {
   channel: ["../../types.js", "../injector-order.js"],
+  "cloud-hosted": ["node:fs/promises", "node:path"],
   compaction: [
     "../../../config/loader.js",
     "../../../config/schemas/compaction.js",
@@ -105,11 +106,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../config/assistant-feature-flags.js",
     "../../../../config/default-profile-catalog.js",
     "../../../../config/loader.js",
-    // Sibling of the already-sanctioned memory-v3-gate: `memoryTier()` is
-    // defined as fully derived from that module's predicates, and the stats
-    // route reports both (`graph_supported` is exactly `tier === "v3"`).
-    // Re-deriving the tier inside the plugin would reintroduce exactly the
-    // drift the shared module exists to prevent. No plugin-api equivalent.
     "../../../../config/memory-tier.js",
     "../../../../config/memory-v3-gate.js",
     "../../../../config/schema.js",
@@ -117,11 +113,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../config/skill-state.js",
     "../../../../config/skills.js",
     "../../../../config/types.js",
-    // Same host module the retrospective job couples to (the `../../../`
-    // entry below): the sweep job and v2 router warm the guardian-delivery
-    // cache before their sync `resolveUserName` reads so worker-process
-    // prompts address the guardian instead of the default profile. No
-    // plugin-api equivalent.
     "../../../../contacts/guardian-delivery-reader.js",
     "../../../../context/token-estimator.js",
     "../../../../daemon/conversation-error.js",
@@ -131,8 +122,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../daemon/embedding-reconcile.js",
     "../../../../daemon/trust-context.js",
     "../../../../daemon/turn-latency-sub-spans.js",
-    // mcp-setup capability cards list configured server names from the
-    // workspace mcp.json document. No plugin-api equivalent.
     "../../../../mcp/workspace-mcp-config.js",
     "../../../../notifications/background-failure-signal.js",
     "../../../../persistence/checkpoints.js",
@@ -164,15 +153,15 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../security/secret-scanner.js",
     "../../../../skills/catalog-cache.js",
     "../../../../telemetry/watchdog-events-store.js",
-    "../../../../tools/skills/delete-managed.js",
+    "../../../../tools/skills/delete-cloud.js",
     "../../../../util/json.js",
     "../../../../util/logger.js",
     "../../../../util/platform.js",
     "../../../api/remember-tool.js",
     "../../../channels/types.js",
+    "../../../config/cloud-rehydration.js",
     "../../../config/loader.js",
     "../../../config/memory-v3-gate.js",
-    "../../../config/cloud-rehydration.js",
     "../../../config/schema.js",
     "../../../config/schemas/memory.js",
     "../../../config/types.js",
@@ -181,9 +170,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../context/strip-injections.js",
     "../../../context/token-estimator.js",
     "../../../conversations/job-handlers/summarization.js",
-    // The standalone memory worker hosts real agent conversations, so its
-    // entry point starts the same eviction sweep the daemon starts at
-    // startup. No plugin-api equivalent.
     "../../../daemon/conversation-evictor.js",
     "../../../daemon/date-context.js",
     "../../../daemon/disk-pressure-background-gate.js",
@@ -196,8 +182,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../daemon/trust-context.js",
     "../../../home/job-handlers/conversation-starters.js",
     "../../../media/job-handlers/media-processing.js",
-    // The skill-update receipt job announces a burst through the
-    // notification pipeline's single entry point. No plugin-api equivalent.
     "../../../notifications/emit-signal.js",
     "../../../permissions/types.js",
     "../../../persistence/auto-analysis-constants.js",
@@ -219,15 +203,7 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../persistence/job-handlers/message-lexical.js",
     "../../../persistence/job-utils.js",
     "../../../persistence/jobs-store.js",
-    // The retrospective cursor is a `(createdAt, id)` bound that must keep
-    // working after its message row is deleted. The resolver lives beside
-    // the persistence after-reads it also drives, so the plugin's
-    // accounting imports it rather than re-deriving the bound. No
-    // plugin-api equivalent.
     "../../../persistence/message-cursor.js",
-    // Named any-state `createdAt` lookup the cursor bookkeeping uses for
-    // forks and the timestamp backfill; the messages-read boundary guard
-    // requires the read to live in persistence. No plugin-api equivalent.
     "../../../persistence/message-reads.js",
     "../../../persistence/raw-query.js",
     "../../../persistence/schema/index.js",
@@ -258,10 +234,6 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../util/worker-memory.js",
     "../../../util/worker-process.js",
     "../../types.js",
-    // The memory jobs worker runs as its own OS process and hosts real agent
-    // conversations, so it registers the host's default-plugin hook and
-    // injector surface at startup (hooks only, no init hooks). Host-owned
-    // composition with no plugin-api equivalent.
     "../../worker-plugin-surface.js",
     "../injection-presence.js",
     "../injector-order.js",
@@ -277,17 +249,14 @@ const BASELINE: Record<string, readonly string[]> = {
     "yaml",
     "zod",
   ],
-  "cloud-hosted": ["node:fs/promises", "node:path"],
-  // Host-internal surface snapshot and task_progress parser. UI surfaces
-  // stay host-owned, so there is no plugin-api equivalent.
-  "task-progress": [
-    "../../../../daemon/conversation-surface-snapshots.js",
-    "../../../../runtime/task-progress.js",
-  ],
   session: [
     "../../../config/loader.js",
     "../../types.js",
     "../injector-order.js",
+  ],
+  "task-progress": [
+    "../../../../daemon/conversation-surface-snapshots.js",
+    "../../../../runtime/task-progress.js",
   ],
   "title-generate": [
     "../../../../config/loader.js",

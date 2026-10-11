@@ -228,7 +228,7 @@ describe("POST inference/provider-connections (create)", () => {
     ).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("platform");
+    expect((err as BadRequestError).message).toContain("Cadet Cloud");
     expect((err as BadRequestError).message).toContain("cadet");
   });
 
@@ -820,7 +820,7 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
     ).catch((e: unknown) => e);
 
     expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("platform");
+    expect((err as BadRequestError).message).toContain("Cadet Cloud");
   });
 
   // A persisted row whose provider and auth disagree stays editable: both the
@@ -1419,7 +1419,7 @@ describe("Cloud connection write protection", () => {
 
         expect(err).toBeInstanceOf(BadRequestError);
         expect((err as BadRequestError).message).toContain(name);
-        expect((err as BadRequestError).message).toContain("managed");
+        expect((err as BadRequestError).message).toContain("Cadet Cloud");
       });
     }
 
@@ -1443,7 +1443,7 @@ describe("Cloud connection write protection", () => {
       ).catch((e: unknown) => e);
 
       expect(err).toBeInstanceOf(BadRequestError);
-      expect((err as BadRequestError).message).toContain("managed");
+      expect((err as BadRequestError).message).toContain("Cadet Cloud");
     });
 
     test("a user-owned row claiming the cloud name stays deletable", async () => {
@@ -1489,7 +1489,9 @@ describe("Cloud connection write protection", () => {
 
         expect(err).toBeInstanceOf(BadRequestError);
         expect((err as BadRequestError).message).toContain(name);
-        expect((err as BadRequestError).message).toContain("platform");
+        expect((err as BadRequestError).message).toContain(
+          "cloud-authenticated",
+        );
       });
 
       test(`rejects auth change on ${name} from platform to none with 400`, async () => {

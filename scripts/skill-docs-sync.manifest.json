@@ -35,7 +35,7 @@
     },
     "messaging": {
       "docsSlug": "messaging",
-      "sha256": "993c9f468d014da84812f4ac37139eef6de7d14b1d3bb70447d2ce7735a26688"
+      "sha256": "9346c354e9c904a1bc1667e37b9bf57cf7c707ac0fd0ac2fb2b5dafa9a97ea1e"
     },
     "phone-calls": {
       "docsSlug": "phone-calls",
@@ -51,7 +51,7 @@
     },
     "skill-management": {
       "docsSlug": "skill-management",
-      "sha256": "a17e039047fdabbb8711e74ae511252f2b15c5d72ee26db88112917f1dc48cd3"
+      "sha256": "6abb15f70c60de3b2f9b15ca2dbe638e947be097977bb0d9d36e62fa25c944fa"
     },
     "subagent": {
       "docsSlug": "subagent",
