@@ -170,15 +170,11 @@ export function saveWorkspaceMcpConfig(config: McpConfig): void {
 }
 
 /**
- * Replace `config.mcp` on a settings/export payload with the projected
- * workspace servers (transport only, headers stripped). Old clients that
- * still read `mcp.servers` from `/v1/config` keep seeing the same shape.
+ * The projected workspace servers (transport only, headers stripped) as a
+ * fresh subtree — the pure core of {@link overlayWorkspaceMcpForConfigRead}.
+ * Never reads the config, so the returned object is safe to serve as-is.
  */
-export function overlayWorkspaceMcpForConfigRead(config: unknown): void {
-  if (config === null || typeof config !== "object" || Array.isArray(config)) {
-    return;
-  }
-  const root = config as Record<string, unknown>;
+export function workspaceMcpWireView(): { servers: Record<string, unknown> } {
   const { servers } = loadWorkspaceMcpConfig();
   const projected: Record<string, unknown> = {};
   for (const [id, server] of Object.entries(servers)) {
@@ -188,5 +184,17 @@ export function overlayWorkspaceMcpForConfigRead(config: unknown): void {
     >;
     projected[id] = { transport: safeTransport };
   }
-  root.mcp = { servers: projected };
+  return { servers: projected };
+}
+
+/**
+ * Replace `config.mcp` on a settings/export payload with the projected
+ * workspace servers (transport only, headers stripped). Old clients that
+ * still read `mcp.servers` from `/v1/config` keep seeing the same shape.
+ */
+export function overlayWorkspaceMcpForConfigRead(config: unknown): void {
+  if (config === null || typeof config !== "object" || Array.isArray(config)) {
+    return;
+  }
+  (config as Record<string, unknown>).mcp = workspaceMcpWireView();
 }

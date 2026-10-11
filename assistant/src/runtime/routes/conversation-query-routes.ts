@@ -100,7 +100,7 @@ import {
   log,
 } from "../../daemon/handlers/shared.js";
 import { rescheduleHeartbeatIfTimezoneChanged } from "../../heartbeat/heartbeat-service.js";
-import { overlayWorkspaceMcpForConfigRead } from "../../mcp/workspace-mcp-config.js";
+import { workspaceMcpWireView } from "../../mcp/workspace-mcp-config.js";
 import {
   getAssistantMessageIdsInTurn,
   getConversation,
@@ -680,38 +680,46 @@ const ConfigGetResponseSchema = AssistantConfigSchema.pick({
 
 function handleGetConfig() {
   try {
-    // The overlays stamp wire-only state (catalog bodies, effective chat
-    // settings, capability flags) onto the returned object. Clone first so
-    // the loader's cached config — and every other `getConfig()` reader,
-    // including the config-write merge base — never sees the wire view.
-    const config = structuredClone(loadConfig());
-    overlayWorkspaceMcpForConfigRead(config);
-    overlayEffectiveProfilesForWire(config);
-    enrichProfilesForWire(config);
-    overlayChatSettingsForWire(config);
-    return config;
+    // The wire view is a pure derivation of the cached config: every view
+    // function below returns a NEW subtree and nothing here mutates what it
+    // reads, so the loader's cached config — and every other `getConfig()`
+    // reader, including the config-write merge base — never sees wire-only
+    // state. The old clone existed only to protect the cache from in-place
+    // overlay mutation; a derivation needs no clone.
+    const config = loadConfig();
+    return {
+      ...config,
+      mcp: workspaceMcpWireView(),
+      llm: { ...config.llm, profiles: wireProfilesView(config.llm) },
+      ...wireChatSettingsView(config),
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new InternalError(`Failed to read config: ${message}`);
   }
 }
-function overlayChatSettingsForWire(config: AssistantConfig): void {
+function wireChatSettingsView(config: AssistantConfig): {
+  conversations: AssistantConfig["conversations"];
+  notifications: AssistantConfig["notifications"];
+} {
   const effective = getConfig();
-  config.conversations = {
-    ...config.conversations,
-    autoArchive: {
-      ...config.conversations?.autoArchive,
-      ...effective.conversations.autoArchive,
+  return {
+    conversations: {
+      ...config.conversations,
+      autoArchive: {
+        ...config.conversations?.autoArchive,
+        ...effective.conversations.autoArchive,
+      },
     },
-  };
-  config.notifications = {
-    ...config.notifications,
-    newMessageEnabled: effective.notifications.newMessageEnabled,
+    notifications: {
+      ...config.notifications,
+      newMessageEnabled: effective.notifications.newMessageEnabled,
+    },
   };
 }
 
 /**
- * Replace `llm.profiles` in an outgoing config response with the effective
+ * Build `llm.profiles` for an outgoing config response: the effective
  * profile view (code-catalog default bodies + workspace overlays). Default
  * profile CONTENT is code-owned and the workspace holds at most a thin stub,
  * but clients (settings UI, sticky-profile pickers) need the full bodies to
@@ -727,12 +735,49 @@ function overlayChatSettingsForWire(config: AssistantConfig): void {
  * through the real `LLMSchema`, whose `isDefaultProviderChoice` clamp
  * shields the matrix lookup from a persisted value the matrix cannot
  * implement, which a raw read would feed straight into resolution.
+ *
+ * The wire-only flags (`invariant`, `supportsVision`) are derived in this
+ * same pass — each from state the entry already carries (its name,
+ * `(provider, model)`, modality override) — so serving the config get needs
+ * no second traversal of re-lookups, and the flags land on fresh copies:
+ * the selectable view can alias the cached config's own entry objects, and
+ * the cache must never grow wire-only fields.
+ *
+ * - `supportsVision`: resolved from the model catalog, with a profile
+ *   `inputModalities.image` override winning when set. Unknown (provider,
+ *   model) pairs with no override default to `true` (fail-open) so image
+ *   upload remains available for custom / unlisted models. Entries without
+ *   a provider or model stay unflagged.
+ * - `invariant`: `true` for managed-source entries of the cloud profile
+ *   names (`INVARIANT_PROFILE_NAMES`); absent otherwise. Source-gated to
+ *   match `assertInvariantProfilesPreserved` — a user-owned profile sharing
+ *   a cloud name is fully editable, so it must render as a normal custom
+ *   profile.
  */
-function overlayEffectiveProfilesForWire(config: AssistantConfig): void {
-  const parsedLlm = LLMSchema.safeParse(config.llm);
-  config.llm.profiles = getUserSelectableProfilesForProvider(
+function wireProfilesView(
+  llm: AssistantConfig["llm"],
+): Record<string, WireProfileEntry> {
+  const parsedLlm = LLMSchema.safeParse(llm);
+  const selectable = getUserSelectableProfilesForProvider(
     parsedLlm.success ? parsedLlm.data : undefined,
   );
+  for (const [name, entry] of Object.entries(selectable)) {
+    const wire: WireProfileEntry = { ...entry };
+    if (INVARIANT_PROFILE_NAMES.has(name) && entry.source === "managed") {
+      wire.invariant = true;
+    }
+    if (entry.provider != null && entry.model != null) {
+      const catalogModel = catalogEntryFor(entry.provider, entry.model);
+      const catalogVision = catalogModel?.supportsVision;
+      const imageOverride = modalitiesOf({
+        inputModalities: entry.inputModalities,
+      })?.image;
+      wire.supportsVision =
+        resolveModalityOverride(imageOverride, catalogVision) ?? true;
+    }
+    selectable[name] = wire;
+  }
+  return selectable;
 }
 
 /**
@@ -792,7 +837,7 @@ export function normalizeCloudProfileWrites(
     }
 
     // Must resolve through the same provider column as
-    // `overlayEffectiveProfilesForWire`, or an echo of the wire view would
+    // `wireProfilesView`, or an echo of the wire view would
     // not match `effective` and an honest round-trip would be rejected.
     const resolved = resolveDefaultProfileForProvider(
       typedCurrent?.success ? typedCurrent.data : undefined,
@@ -880,7 +925,7 @@ export function normalizeCloudProfileWrites(
 
 /**
  * The enriched profile shape clients consume: {@link ProfileEntry} plus the
- * wire-only flags `enrichProfilesForWire` stamps onto config-read responses.
+ * wire-only flags {@link wireProfilesView} derives onto config-read responses.
  * The flags are deliberately absent from `ProfileEntry` — the persisted
  * schema — so a config write's schema parse strips echoed copies instead of
  * persisting them.
@@ -889,41 +934,6 @@ type WireProfileEntry = ProfileEntry & {
   invariant?: boolean;
   supportsVision?: boolean;
 };
-
-/**
- * Annotate each profile in `config.llm.profiles` with wire-only flags —
- * never persisted to disk:
- *
- * - `supportsVision`: resolved from the model catalog, with a profile
- *   `inputModalities.image` override winning when set. Unknown (provider,
- *   model) pairs with no override default to `true` (fail-open) so image
- *   upload remains available for custom / unlisted models.
- * - `invariant`: `true` for managed-source entries of the cloud profile
- *   names (`INVARIANT_PROFILE_NAMES`); absent otherwise. Source-gated to
- *   match `assertInvariantProfilesPreserved` — a user-owned profile sharing
- *   a cloud name is fully editable, so it must render as a normal custom
- *   profile.
- */
-function enrichProfilesForWire(config: AssistantConfig): void {
-  const profiles: Record<string, WireProfileEntry> = config.llm.profiles;
-  for (const [name, entry] of Object.entries(profiles)) {
-    if (INVARIANT_PROFILE_NAMES.has(name) && entry.source === "managed") {
-      entry.invariant = true;
-    }
-
-    if (entry.provider == null || entry.model == null) {
-      continue;
-    }
-
-    const catalogModel = catalogEntryFor(entry.provider, entry.model);
-    const catalogVision = catalogModel?.supportsVision;
-    const imageOverride = modalitiesOf({
-      inputModalities: entry.inputModalities,
-    })?.image;
-    entry.supportsVision =
-      resolveModalityOverride(imageOverride, catalogVision) ?? true;
-  }
-}
 
 /**
  * Return the JSON Schema for the assistant config (full or scoped).
