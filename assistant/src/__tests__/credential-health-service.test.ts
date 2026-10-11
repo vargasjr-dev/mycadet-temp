@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setCloudAssistantId } from "../config/env.js";
 import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ── Mutable state for mocks ──────────────────────────────────────────
@@ -775,23 +774,13 @@ describe("credential-health-service", () => {
   describe("cloud assistant credential", () => {
     const KEY = "credential/cadet/assistant_api_key";
 
-    afterEach(() => {
-      setCloudAssistantId(undefined);
-    });
-
     // Checked directly rather than through `checkAllCredentials`: the cloud
     // credential is not enrolled in the heartbeat pass yet, because the alert
     // that pass raises has nowhere to send the reader until the notification
     // carries the repair.
     const assistantKeyResult = checkAssistantApiKey;
 
-    test("is not reported when the workspace was never connected", async () => {
-      expect(await assistantKeyResult()).toBeNull();
-    });
-
-    test("is missing_token when a cloud identity is bound without a key", async () => {
-      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
-
+    test("is missing_token when no key is stored, connected or not", async () => {
       const result = await assistantKeyResult();
       expect(result!.status).toBe("missing_token");
       expect(result!.canAutoRecover).toBe(true);
