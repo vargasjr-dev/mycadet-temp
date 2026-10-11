@@ -375,7 +375,7 @@ export async function runTailscaleTunnel(
     "This URL is reachable only from devices signed in to your tailnet.",
   );
   console.log(
-    "For public webhook ingress, use --provider ngrok or --provider cloudflare.",
+    "For public webhook ingress, run `cadet tunnel --help` to see the public providers.",
   );
   console.log("");
   console.log(

@@ -74,11 +74,10 @@ import {
   executableName,
   isProcessAlive,
   pathListDelimiter,
-  readProcessCommandLine,
   resolveProcessState,
-  stopProcess,
   stopProcessByPidFile,
 } from "./process.js";
+import { stopTunnelProcess } from "./tunnel.js";
 import { stripVersionPrefix } from "./version-compat.js";
 import { openLogFile, pipeToLogFile } from "./xdg-log.js";
 
@@ -1931,16 +1930,6 @@ export async function startGateway(
   return gatewayUrl;
 }
 
-/** Check whether a PID belongs to an ngrok process via its command line. */
-function isNgrokProcess(pid: number): boolean {
-  try {
-    const output = readProcessCommandLine(pid);
-    return /ngrok/i.test(output);
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Stop any locally-running daemon and gateway processes
  * and clean up PID files. Called when hatch fails partway through
@@ -1969,22 +1958,13 @@ export async function stopLocalProcesses(
   const cesPidFile = join(cadetDir, "ces.pid");
   await stopProcessByPidFile(cesPidFile, "credential-executor");
 
-  // Kill ngrok directly by PID rather than using stopProcessByPidFile, because
-  // isCadetProcess() won't match the ngrok binary — resulting in a no-op that
-  // leaves ngrok running. Verify the PID still belongs to ngrok before killing
-  // to avoid hitting an unrelated process if the OS has reused the PID.
-  const ngrokPidFile = join(cadetDir, "ngrok.pid");
-  if (existsSync(ngrokPidFile)) {
-    try {
-      const pid = parseInt(readFileSync(ngrokPidFile, "utf-8").trim(), 10);
-      if (!isNaN(pid) && isNgrokProcess(pid)) {
-        await stopProcess(pid, "ngrok");
-      }
-      unlinkSync(ngrokPidFile);
-    } catch {}
-  }
+  // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry,
+  // falling back to the legacy pid file), verifying the pid still belongs to
+  // the provider's binary before signaling it — PID reuse must never send an
+  // unrelated process a signal.
+  await stopTunnelProcess(cadetDir);
 
   // Stop the nginx ingress if one is fronting this gateway (it guards against
-  // PID reuse itself, mirroring the ngrok handling above).
+  // PID reuse itself).
   await stopIngressNginx(join(cadetDir, "workspace"));
 }

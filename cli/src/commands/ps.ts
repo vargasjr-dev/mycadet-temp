@@ -11,6 +11,7 @@ import {
   getDaemonPidPath,
   loadAllAssistants,
   lookupAssistantByIdentifier,
+  readRootProcesses,
   type AssistantEntry,
 } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -547,6 +548,35 @@ async function showAssistantProcesses(entry: AssistantEntry): Promise<void> {
   printTable(rows);
 }
 
+// ── Root-managed process rows (tunnel agent, app edge) ──────────
+
+/**
+ * Rows for the CLI-managed processes recorded at the lockfile root: the
+ * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
+ * stale entry reads as not running rather than as a lie.
+ */
+async function getRootManagedRows(): Promise<TableRow[]> {  const { tunnel, app } = readRootProcesses();
+  const rows: TableRow[] = [];
+
+  if (tunnel) {
+    const alive = isLocalProcessAlive(tunnel.pid);
+    rows.push({
+      name: `tunnel (${tunnel.provider ?? "unknown provider"})`,
+      status: withStatusEmoji(alive ? "running" : "not running"),
+      info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
+    });
+  }
+  if (app) {
+    const alive = isLocalProcessAlive(app.pid);
+    rows.push({
+      name: "app (nginx edge)",
+      status: withStatusEmoji(alive ? "running" : "not running"),
+      info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
+    });
+  }
+  return rows;
+}
+
 // ── List all assistants (no arg) ────────────────────────────────
 
 type AssistantHealth = {
@@ -678,6 +708,20 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
   printTable(rows, { name: "NAME", status: "STATUS", info: "INFO" });
   console.log("");
+  await printRootManagedProcesses();
+}
+
+/**
+ * Print the root lockfile's CLI-managed processes, when any are recorded —
+ * the `tunnel` agent and the `app` nginx edge are machine-level, so they
+ * appear no matter which assistant was asked about.
+ */
+async function printRootManagedProcesses(): Promise<void> {
+  const rows = await getRootManagedRows();
+  if (rows.length === 0) return;
+  console.log("CLI-managed processes (root lockfile):");
+  printTable(rows);
+  console.log("");
 }
 
 // ── Entry point ─────────────────────────────────────────────────
@@ -719,6 +763,7 @@ export const ps = Object.assign(
   }
 
   await showAssistantProcesses(result.entry);
+  await printRootManagedProcesses();
 },
   { description: "List assistants (or processes for a specific assistant)" },
 );

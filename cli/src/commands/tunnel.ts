@@ -4,7 +4,6 @@ import { join } from "path";
 
 import {
   TUNNEL_PROVIDERS,
-  type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
 import {
@@ -14,37 +13,34 @@ import {
   type AssistantEntry,
 } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { runCloudflareTunnel } from "../lib/cloudflare-tunnel.js";
 import { relaunchDetached } from "../lib/detached-process.js";
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
   parseGatewayPortFromEntryUrls,
-  saveNgrokDomain,
 } from "../lib/ingress-config.js";
 import {
   ensureTunnelEdge,
   formatEdgeMode,
   type TunnelEdge,
 } from "../lib/nginx-ingress.js";
-import { hasWebhookIntegrationsConfigured, runNgrokTunnel } from "../lib/ngrok";
-import { shellArg } from "../lib/shell-arg.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
-import { runTailscaleTunnel } from "../lib/tailscale-tunnel.js";
+import {
+  ADOPTED_TUNNEL_RE,
+  DEFAULT_TUNNEL_PROVIDER,
+  PROVIDER_META,
+  adoptedTunnelStopNotice,
+  clearReservedDomain,
+  hasWebhookIntegrationsConfigured,
+  providerSupportsReservedDomain,
+  runProviderTunnel,
+} from "../lib/tunnel.js";
 
 // `cadet` is the cloud option this command owns; the local providers come
 // from the shared registry so validation here cannot drift from what the
 // workspace config accepts.
 const VALID_PROVIDERS = ["cadet", ...TUNNEL_PROVIDERS] as const;
 type TunnelProvider = (typeof VALID_PROVIDERS)[number];
-
-// How far each provider's URL reaches, for the chooser a missing `--provider`
-// prints. Keyed off the registry so a new provider cannot ship unoffered.
-const PROVIDER_REACH: Record<TunnelProviderName, string> = {
-  ngrok: "Public tunnel that webhook integrations can reach",
-  cloudflare: "Public tunnel that webhook integrations can reach",
-  tailscale: "Tailnet-only tunnel, reachable from your own devices",
-};
 
 interface TunnelArgs {
   assistantName: string | null;
@@ -76,14 +72,13 @@ function parseArgs(): TunnelArgs {
       );
       console.log("");
       console.log(
-        "How far that URL reaches depends on the provider, so --provider is required.",
+        "How far that URL reaches depends on the provider; omit --provider for",
       );
+      console.log("the default. A tailscale tunnel is reachable only from your");
       console.log(
-        "A tailscale tunnel is reachable only from your own tailnet; webhook",
+        "own tailnet; webhook integrations need a public tunnel (see Providers",
       );
-      console.log(
-        "integrations need a public tunnel: --provider ngrok or --provider cloudflare.",
-      );
+      console.log("below).");
       console.log("");
       console.log(
         "The tunnel always fronts the local nginx edge, which is started automatically.",
@@ -99,19 +94,21 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Options:");
       console.log(
-        `  --provider <provider>         Required. Tunnel provider: ${VALID_PROVIDERS.join(", ")}`,
+        `  --provider <provider>         Tunnel provider: ${VALID_PROVIDERS.join(", ")}`,
+      );
+      console.log(`                                (default: ${DEFAULT_TUNNEL_PROVIDER})`);
+      console.log(
+        "  --domain <domain>             Reserved domain to bind, for providers that support",
       );
       console.log(
-        "  --domain <domain>             Reserved ngrok domain to bind (ngrok provider only).",
+        "                                one. Saved to the workspace config so `cadet wake` restores",
+      );
+      console.log("                                reuse it.");
+      console.log(
+        "  --clear-domain                Clear the saved reserved domain (same providers) and",
       );
       console.log(
-        "                                Saved to the workspace config so `cadet wake` restores reuse it.",
-      );
-      console.log(
-        "  --clear-domain                Clear the saved ngrok domain (ngrok provider only) and tunnel",
-      );
-      console.log(
-        "                                without one. Cannot be combined with --domain.",
+        "                                tunnel without one. Cannot be combined with --domain.",
       );
       console.log(
         `  -d, --detach                  Run the tunnel in the background. Waits up to ${TUNNEL_BACKGROUND_START_TIMEOUT_MS / 1000}s for the`,
@@ -123,7 +120,7 @@ function parseArgs(): TunnelArgs {
         "                                the CLI log directory. Stop it with `kill <pid>`, except when it",
       );
       console.log(
-        "                                adopted an already-running ngrok tunnel (started outside this",
+        "                                adopted an already-running tunnel (started outside this",
       );
       console.log(
         "                                command): killing the supervisor then leaves that tunnel running.",
@@ -133,37 +130,31 @@ function parseArgs(): TunnelArgs {
       console.log(
         "  cadet       Managed tunnel via Cadet Cloud (not yet available)",
       );
-      console.log(
-        "  ngrok        ngrok tunnel — install: brew install ngrok/ngrok/ngrok",
-      );
-      console.log(
-        "  cloudflare   Cloudflare quick tunnel — install: brew install cloudflare/cloudflare/cloudflared",
-      );
-      console.log(
-        "               No Cloudflare account required for quick tunnels.",
-      );
-      console.log(
-        "  tailscale    Tailscale serve. Install: https://tailscale.com/download, then run `tailscale up`",
-      );
-      console.log(
-        "               Reachable only from your own tailnet (private; LetsEncrypt cert).",
-      );
-      console.log(
-        "               When webhook integrations are configured it records its URL for device",
-      );
-      console.log(
-        "               pairing only, leaving the saved webhook callback base as it is.",
-      );
+      for (const name of TUNNEL_PROVIDERS) {
+        const meta = PROVIDER_META[name];
+        console.log(`  ${name.padEnd(12)}${meta.reach}`);
+        console.log(`  ${" ".repeat(12)}${meta.install}`);
+        for (const note of meta.notes ?? []) {
+          console.log(`  ${" ".repeat(12)}${note}`);
+        }
+      }
       console.log("");
       console.log("Examples:");
-      console.log("  $ cadet tunnel --provider ngrok");
-      console.log(
-        "  $ cadet tunnel --provider ngrok --domain my-assistant.ngrok.app",
-      );
-      console.log("  $ cadet tunnel --provider ngrok --clear-domain");
+      console.log(`  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER}`);
+      const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
+      if (domainExample) {
+        console.log(
+          `  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
+        );
+        console.log(
+          `  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER} --clear-domain`,
+        );
+      }
       console.log("  $ cadet tunnel --provider cloudflare");
       console.log("  $ cadet tunnel my-assistant --provider tailscale");
-      console.log("  $ cadet tunnel --provider ngrok --detach");
+      console.log(
+        `  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER} --detach`,
+      );
       process.exit(0);
     } else if (arg === "--provider") {
       const next = args[i + 1];
@@ -187,8 +178,9 @@ function parseArgs(): TunnelArgs {
     } else if (arg === "--domain") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
+        const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
         console.error(
-          "Error: --domain requires a value, e.g. --domain my-assistant.ngrok.app",
+          `Error: --domain requires a value${domainExample ? `, e.g. --domain ${domainExample}` : ""}`,
         );
         process.exit(1);
       }
@@ -210,32 +202,22 @@ function parseArgs(): TunnelArgs {
     parseAssistantTargetArg(args, FLAGS_WITH_VALUES) ?? null;
 
   if (provider === null) {
-    console.error(
-      "Error: --provider is required. How far the tunnel URL reaches depends on it, so there is no default.",
+    provider = DEFAULT_TUNNEL_PROVIDER;
+    console.log(
+      `Using the default provider: ${provider} (pass --provider to choose another).`,
     );
-    console.error("");
-    console.error("Run one of:");
-    // Carries the assistant through: dropping it would suggest a command that
-    // tunnels the active assistant instead of the one that was asked for.
-    const target = assistantName ? ` ${shellArg(assistantName)}` : "";
-    for (const name of TUNNEL_PROVIDERS) {
-      console.error(
-        `  cadet tunnel${target} --provider ${name.padEnd(13)}${PROVIDER_REACH[name]}`,
-      );
-    }
-    process.exit(1);
   }
 
-  if (domain && provider !== "ngrok") {
+  if (domain && !providerSupportsReservedDomain(provider)) {
     console.error(
-      `Error: --domain is only supported with --provider ngrok (got '${provider}').`,
+      `Error: --domain is not supported with --provider ${provider} (reserved domains have no equivalent there).`,
     );
     process.exit(1);
   }
 
-  if (clearDomain && provider !== "ngrok") {
+  if (clearDomain && !providerSupportsReservedDomain(provider)) {
     console.error(
-      `Error: --clear-domain is only supported with --provider ngrok (got '${provider}').`,
+      `Error: --clear-domain is not supported with --provider ${provider} (reserved domains have no equivalent there).`,
     );
     process.exit(1);
   }
@@ -350,8 +332,8 @@ function guardTailnetOnlyWebhookIngress(workspaceDir: string): boolean {
   console.warn(
     "⚠ Webhook integrations are configured, and the tailscale tunnel is reachable only from your own tailnet, " +
       "so it cannot serve their callbacks. The saved ingress base URL stays as it is and the tailnet URL is " +
-      "recorded for device pairing only. For a tunnel those integrations can reach too, use --provider ngrok " +
-      "or --provider cloudflare.",
+      "recorded for device pairing only. For a tunnel those integrations can reach too, run `cadet tunnel --help` " +
+      "to see the public providers.",
   );
   return true;
 }
@@ -359,16 +341,15 @@ function guardTailnetOnlyWebhookIngress(workspaceDir: string): boolean {
 // Generous cap so a slow provider handshake (e.g. cloudflared's own ~30s
 // quick-tunnel timeout) still counts as a successful, if slow, start.
 const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
-// Matches the "just established" line every provider prints, or ngrok's
-// "found an already-running agent" adoption line (captured separately since
-// that case does not own the tunnel it adopted).
+// Matches the "just established" line every provider prints, or the adoption
+// line printed when a run adopts an already-running agent's tunnel (captured
+// separately since that case does not own the tunnel it adopted).
 const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
-const TUNNEL_ADOPTED_RE = /Found existing ngrok tunnel: (\S+)/;
 
 /**
  * Re-invoke `cadet tunnel` (without `-d`/`--detach`) as a detached background
  * process via `relaunchDetached`, waiting for the child to either print its
- * "Tunnel established"/"Found existing ngrok tunnel" line (readiness) or
+ * "Tunnel established" or adopted-tunnel line (readiness) or
  * exit early (failure), so a misconfigured provider still fails loudly in
  * the terminal that ran `-d`.
  *
@@ -404,7 +385,7 @@ async function spawnDetachedTunnel(): Promise<void> {
         publicUrl = established[1];
         return true;
       }
-      const adoptedMatch = TUNNEL_ADOPTED_RE.exec(logText);
+      const adoptedMatch = ADOPTED_TUNNEL_RE.exec(logText);
       if (adoptedMatch) {
         publicUrl = adoptedMatch[1];
         adopted = true;
@@ -430,11 +411,7 @@ async function spawnDetachedTunnel(): Promise<void> {
   }
   console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
   if (adopted) {
-    console.log(
-      `That ngrok agent was already running outside this command, so \`kill ${child.pid}\` only ` +
-        "stops this supervisor, not the ngrok tunnel or its saved ingress URL. Stop the ngrok agent " +
-        "directly to end the tunnel.",
-    );
+    console.log(adoptedTunnelStopNotice(child.pid));
   } else {
     console.log(`Stop with: kill ${child.pid}`);
   }
@@ -463,8 +440,8 @@ export const tunnel = Object.assign(
     provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
 
   if (clearDomain) {
-    saveNgrokDomain(workspaceDir, null);
-    console.log("Cleared the saved ngrok domain from the workspace config.");
+    clearReservedDomain(workspaceDir);
+    console.log("Cleared the saved reserved domain from the workspace config.");
   }
 
   let edge: TunnelEdge;
@@ -490,21 +467,9 @@ export const tunnel = Object.assign(
     workspaceDir,
   };
 
-  if (provider === "ngrok") {
-    await runNgrokTunnel({
-      ...baseTunnelOpts,
-      ...(domain ? { domain } : {}),
-    });
-    return;
-  }
-
-  if (provider === "cloudflare") {
-    await runCloudflareTunnel(baseTunnelOpts);
-    return;
-  }
-
-  await runTailscaleTunnel({
+  await runProviderTunnel(provider, {
     ...baseTunnelOpts,
+    ...(domain ? { domain } : {}),
     ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
   });
 },

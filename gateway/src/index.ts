@@ -3171,7 +3171,7 @@ async function main() {
     // Force-reconnect Slack WebSocket (may be half-open after sleep)
     slackSocketClient?.forceReconnect();
 
-    // Invalidate caches so next read picks up any config changes (e.g. new ngrok URL)
+    // Invalidate caches so next read picks up any config changes (e.g. a new tunnel URL)
     configFileCache.invalidate();
     credentialCache.invalidate();
 

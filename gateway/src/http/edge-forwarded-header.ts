@@ -13,7 +13,7 @@
  * Loopback-only endpoints (`/v1/guardian/init`, `/v1/pair`) treat its presence
  * as proof that the request did NOT arrive directly from a local loopback
  * client: it was forwarded by the edge proxy, possibly from a remote browser
- * over a tunnel (e.g. ngrok). Because every hop in that chain is loopback
+ * over a tunnel (e.g. a third-party tunnel). Because every hop in that chain is loopback
  * (browser → tunnel agent → nginx@127.0.0.1 → gateway@127.0.0.1), the raw TCP
  * peer is 127.0.0.1 and a peer-IP loopback check alone would misclassify the
  * caller as local. This marker is the reliable signal instead — and crucially

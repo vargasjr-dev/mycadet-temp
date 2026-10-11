@@ -1,17 +1,24 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, openSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
-import { GATEWAY_PORT } from "./constants.js";
+import { GATEWAY_PORT } from "../constants.js";
+import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
-  loadNgrokDomain,
   loadRawConfig,
   saveIngressUrl,
-  saveNgrokDomain,
-} from "./ingress-config.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
+  saveRawConfig,
+} from "../ingress-config.js";
+import { loopbackSafeFetch } from "../loopback-fetch.js";
+import { readProcessCommandLine } from "../process.js";
 import { z } from "zod";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
@@ -121,6 +128,77 @@ function savedDomainRecoveryHint(domain: string): string {
   return `The saved ngrok domain '${domain}' (ingress.ngrok.domain in the workspace config) may no longer be reserved. Run \`cadet tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
 }
 
+/**
+ * Persist a reserved ngrok domain under `ingress.ngrok.domain`; null clears it.
+ *
+ * The reserved domain is an ngrok reservation concept (cloudflare quick
+ * tunnels and tailscale serve have no equivalent), which is why this lives in
+ * the ngrok provider module rather than the shared ingress-config helpers.
+ */
+export function saveNgrokDomain(
+  workspaceDir: string,
+  domain: string | null,
+): void {
+  const config = loadRawConfig(workspaceDir);
+  const ingress = (config.ingress ?? {}) as Record<string, unknown>;
+  if (domain) {
+    ingress.ngrok = { domain };
+  } else {
+    delete ingress.ngrok;
+  }
+  config.ingress = ingress;
+  saveRawConfig(workspaceDir, config);
+}
+
+/** Read the reserved ngrok domain from the workspace config, if saved. */
+export function loadNgrokDomain(workspaceDir: string): string | null {
+  const ingress = loadRawConfig(workspaceDir).ingress as
+    | Record<string, unknown>
+    | undefined;
+  const ngrok = ingress?.ngrok as Record<string, unknown> | undefined;
+  const domain = ngrok?.domain;
+  return typeof domain === "string" && domain.trim() ? domain : null;
+}
+
+/**
+ * Pid file written by CLIs before the root lockfile tracked tunnel processes.
+ * Still honored by the stop path so an ngrok agent spawned by an older CLI is
+ * not orphaned across the upgrade.
+ */
+export const LEGACY_NGROK_PID_FILENAME = "ngrok.pid";
+
+/** Read the legacy pid file, returning a live-recorded pid or null. */
+export function readLegacyNgrokPid(cadetDir: string): number | null {
+  const pidPath = join(cadetDir, LEGACY_NGROK_PID_FILENAME);
+  if (!existsSync(pidPath)) return null;
+  try {
+    const pid = parseInt(readFileSync(pidPath, "utf-8").trim(), 10);
+    return Number.isInteger(pid) && pid > 0 ? pid : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check whether a PID belongs to an ngrok process via its command line, so a
+ * recorded pid is verified before it is signaled (PID reuse guard).
+ */
+export function isNgrokProcess(pid: number): boolean {
+  try {
+    return /ngrok/i.test(readProcessCommandLine(pid));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Matches the adoption line the tunnel workflows print when they find an
+ * already-running tunnel, so the detached-tunnel supervisor can detect
+ * adoption without this module's implementation details leaking into the
+ * command layer.
+ */
+export const ADOPTED_TUNNEL_RE = /Found existing ngrok tunnel: (\S+)/;
+
 /** Whether a tunnel public URL's host equals the given reserved domain. */
 function urlMatchesDomain(publicUrl: string, domain: string): boolean {
   try {
@@ -225,10 +303,7 @@ export function hasWebhookIntegrations(
   const telegram = TelegramIntegrationSchema.safeParse(config.telegram);
   if (telegram.success && telegram.data.botUsername) return true;
   const twilio = TwilioIntegrationSchema.safeParse(config.twilio);
-  if (
-    twilio.success &&
-    (twilio.data.accountSid || twilio.data.phoneNumber)
-  ) {
+  if (twilio.success && (twilio.data.accountSid || twilio.data.phoneNumber)) {
     return true;
   }
   return false;
@@ -312,6 +387,9 @@ export async function maybeStartNgrokTunnel(
     }
     console.log(`   Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, assistantId, "ngrok");
+    // The adopted tunnel belongs to some other agent we do not own a pid for,
+    // so any recorded tunnel process entry would be stale from here on.
+    clearRootProcess("tunnel");
     return null;
   }
   if (runningTunnels.length > 0) {
@@ -339,6 +417,13 @@ export async function maybeStartNgrokTunnel(
   try {
     const publicUrl = await waitForNgrokUrl(targetPort, savedDomain);
     saveIngressUrl(workspaceDir, publicUrl, assistantId, "ngrok");
+    if (ngrokProcess.pid) {
+      stampRootProcess("tunnel", {
+        pid: ngrokProcess.pid,
+        provider: "ngrok",
+        startedAt: new Date().toISOString(),
+      });
+    }
     console.log(`   Tunnel established: ${publicUrl}`);
 
     return ngrokProcess;
@@ -350,6 +435,7 @@ export async function maybeStartNgrokTunnel(
       console.warn(`   ⚠ ${savedDomainRecoveryHint(savedDomain)}`);
     }
     if (!ngrokProcess.killed) ngrokProcess.kill("SIGTERM");
+    clearRootProcess("tunnel");
     return null;
   }
 }
@@ -426,6 +512,8 @@ export async function runNgrokTunnel(
     }
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
+    // Not our child process: a recorded entry would be stale or foreign.
+    clearRootProcess("tunnel");
     if (opts.domain) {
       saveNgrokDomain(workspaceDir, opts.domain);
     }
@@ -453,6 +541,7 @@ export async function runNgrokTunnel(
     if (!ngrokProcess.killed) {
       ngrokProcess.kill("SIGTERM");
     }
+    clearRootProcess("tunnel");
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
       clearIngressUrl(workspaceDir, opts.assistantId);
@@ -510,6 +599,13 @@ export async function runNgrokTunnel(
   // The domain is standing intent, not tunnel state: cleanup clears the
   // ingress URL but leaves the domain saved for wake/daemon restores.
   saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
+  if (ngrokProcess.pid) {
+    stampRootProcess("tunnel", {
+      pid: ngrokProcess.pid,
+      provider: "ngrok",
+      startedAt: new Date().toISOString(),
+    });
+  }
   if (opts.domain) {
     saveNgrokDomain(workspaceDir, opts.domain);
   }

@@ -166,7 +166,7 @@ export function createChannelVerificationSessionProxyHandler(
       }
 
       // Defense-in-depth: reject requests forwarded by the self-hosted nginx
-      // edge (e.g. the SPA reached over an ngrok tunnel). Every hop in that
+      // edge (e.g. the SPA reached over a tunnel). Every hop in that
       // chain is loopback, so the raw peer IP would otherwise misclassify a
       // remote caller as local. The edge sets this marker unconditionally and
       // it cannot be spoofed or stripped by the client. Only the self-hosted
@@ -221,7 +221,7 @@ export function createChannelVerificationSessionProxyHandler(
 
       // Bare-metal mode: restrict to loopback callers only. Without a
       // bootstrap secret the lockfile is the sole guard, so a remote
-      // client that can reach the gateway (e.g. via ngrok) must not be
+      // client that can reach the gateway (e.g. via a tunnel) must not be
       // able to race the legitimate local user.
       if (!isCloud && expectedSecrets.length === 0) {
         // A genuine local bootstrap caller connects directly over loopback and

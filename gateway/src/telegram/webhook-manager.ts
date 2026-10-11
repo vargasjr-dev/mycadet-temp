@@ -395,7 +395,7 @@ async function reconcileTelegramWebhookNow(
     expectedUrl = await resolveExpectedTelegramWebhookUrl(caches);
   } catch (err) {
     // Managed callback route registration failed — this is a cloud-side
-    // issue. Do not suggest ngrok or other tunnel options; they are not
+    // issue. Do not suggest third-party tunnel options; they are not
     // usable in containerized deployments.
     const detail = err instanceof Error ? err.message : String(err);
     log.error(

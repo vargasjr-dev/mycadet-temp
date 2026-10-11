@@ -26,7 +26,7 @@ import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/cloudflare-tunnel.js";
-import * as ngrok from "../lib/ngrok.js";
+import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tailscale-tunnel.js";
 import { getLogDir } from "../lib/xdg-log.js";
@@ -48,7 +48,7 @@ mock.module("../lib/cloudflare-tunnel.js", () => ({
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {});
-mock.module("../lib/ngrok", () => ({
+mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   runNgrokTunnel: runNgrokTunnelMock,
 }));
@@ -261,7 +261,7 @@ describe("tunnel edge targeting", () => {
 
   afterAll(() => {
     mock.module("../lib/cloudflare-tunnel.js", () => realCloudflareTunnel);
-    mock.module("../lib/ngrok", () => realNgrok);
+    mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/tailscale-tunnel.js", () => realTailscaleTunnel);
     mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   });
@@ -625,46 +625,40 @@ describe("tunnel edge targeting", () => {
     expect(logs).toContain("serves webhooks only");
   });
 
-  test("a bare invocation exits listing the providers to choose from", async () => {
-    writeLockfile(makeLocalEntry());
+  test("a bare invocation tunnels the default provider", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
     process.argv = ["bun", "cadet", "tunnel"];
 
-    const { exited, errors } = await runTunnelExpectingExit1();
+    const logs = await runTunnelCapturingLogs();
 
-    expect(exited).toBe(true);
-    expect(errors).toContain("--provider is required");
-    expect(errors).toContain("cadet tunnel --provider ngrok");
-    expect(errors).toContain("cadet tunnel --provider cloudflare");
-    expect(errors).toContain("cadet tunnel --provider tailscale");
-    // Nothing is started and nothing is recorded until the user has chosen.
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(logs).toContain("Using the default provider: ngrok");
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      assistantId: "assistant-1",
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+    });
+    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("a named assistant without --provider exits before resolving it", async () => {
-    writeLockfile(makeLocalEntry());
+  test("a named assistant without --provider tunnels it with the default provider", async () => {
+    const entry = makeLocalEntry();
+    entry.name = "Ada";
+    writeLockfile(entry);
     process.argv = ["bun", "cadet", "tunnel", "Ada"];
 
-    const { exited, errors } = await runTunnelExpectingExit1();
+    const logs = await runTunnelCapturingLogs();
 
-    expect(exited).toBe(true);
-    expect(errors).toContain("--provider is required");
-    // The suggestions keep the assistant that was asked for, so pasting one
-    // cannot tunnel the active assistant instead.
-    expect(errors).toContain("cadet tunnel Ada --provider ngrok");
-    expect(errors).toContain("cadet tunnel Ada --provider tailscale");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
-  });
-
-  test("a shell-sensitive assistant name is quoted in the suggestions", async () => {
-    writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "cadet", "tunnel", "Bob&Alice"];
-
-    const { errors } = await runTunnelExpectingExit1();
-
-    expect(errors).toContain("cadet tunnel 'Bob&Alice' --provider ngrok");
+    expect(logs).toContain("Using the default provider: ngrok");
+    // The assistant that was asked for is the one tunneled.
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+    });
+    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
   });
 
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
@@ -819,7 +813,7 @@ describe("tunnel edge targeting", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain(
-      "--domain is only supported with --provider ngrok",
+      "--domain is not supported with --provider cloudflare",
     );
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
@@ -845,7 +839,7 @@ describe("tunnel edge targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(logs).toContain("Cleared the saved ngrok domain");
+    expect(logs).toContain("Cleared the saved reserved domain");
     const config = IngressTestConfigSchema.parse(
       JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
     );
@@ -891,7 +885,7 @@ describe("tunnel edge targeting", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain(
-      "--clear-domain is only supported with --provider ngrok",
+      "--clear-domain is not supported with --provider cloudflare",
     );
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();

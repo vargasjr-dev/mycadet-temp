@@ -2,7 +2,6 @@ import {
   SigningKeyContinuityError,
   resolveExistingLocalSigningKey,
 } from "@mycadet/local-mode";
-import { writeFileSync } from "fs";
 import { join } from "path";
 
 import {
@@ -47,7 +46,7 @@ import {
   DOCKER_GATEWAY_READY_TIMEOUT_MS,
   restoreContainerTunnelEdge,
   restoreTunnelEdgeAndAutoTunnel,
-} from "../lib/tunnel-edge.js";
+} from "../lib/tunnel.js";
 
 export const wake = Object.assign(
   async function wake(): Promise<void> {
@@ -582,18 +581,15 @@ async function wakeAssistant(
     }
   }
 
-  // Restore the nginx edge and point the webhook auto-tunnel at it. Non-fatal:
-  // a down edge is a degraded remote-web/webhook path, not a broken assistant.
+  // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
+  // records itself in the root lockfile under `tunnel`. Non-fatal: a down
+  // edge is a degraded remote-web/webhook path, not a broken assistant.
   const workspaceDir = join(resources.instanceDir, "workspace");
-  const ngrokChild = await restoreTunnelEdgeAndAutoTunnel(
+  await restoreTunnelEdgeAndAutoTunnel(
     entry.assistantId,
     resources.gatewayPort,
     workspaceDir,
   );
-  if (ngrokChild?.pid) {
-    const ngrokPidFile = join(resources.instanceDir, "ngrok.pid");
-    writeFileSync(ngrokPidFile, String(ngrokChild.pid));
-  }
 
   if (daemonMigrationsFailed) {
     console.log(
