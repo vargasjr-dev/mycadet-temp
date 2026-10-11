@@ -22,9 +22,10 @@ import {
 } from "../lib/ingress-config.js";
 import {
   ensureTunnelEdge,
-  formatEdgeMode,
+  getNginxVersion,
   type TunnelEdge,
 } from "../lib/nginx-ingress.js";
+import { ensureBinaryInstalled } from "../lib/ensure-binary.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   ADOPTED_TUNNEL_RE,
@@ -73,7 +74,9 @@ function parseArgs(): TunnelArgs {
       console.log(
         "How far that URL reaches depends on the provider; omit --provider for",
       );
-      console.log("the default. A tailscale tunnel is reachable only from your");
+      console.log(
+        "the default. A tailscale tunnel is reachable only from your",
+      );
       console.log(
         "own tailnet; webhook integrations need a public tunnel (see Providers",
       );
@@ -83,7 +86,7 @@ function parseArgs(): TunnelArgs {
         "The tunnel always fronts the local nginx edge, which is started automatically.",
       );
       console.log(
-        "nginx must be installed (macOS: brew install nginx, Linux: sudo apt install nginx).",
+        "nginx must be installed; if it is missing, cadet offers to install it.",
       );
       console.log("");
       console.log("Arguments:");
@@ -95,7 +98,9 @@ function parseArgs(): TunnelArgs {
       console.log(
         `  --provider <provider>         Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")}`,
       );
-      console.log(`                                (default: ${DEFAULT_TUNNEL_PROVIDER})`);
+      console.log(
+        `                                (default: ${DEFAULT_TUNNEL_PROVIDER})`,
+      );
       console.log(
         "  --domain <domain>             Reserved domain to bind, for providers that support",
       );
@@ -137,7 +142,8 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Examples:");
       console.log(`  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER}`);
-      const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
+      const domainExample =
+        PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
       if (domainExample) {
         console.log(
           `  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
@@ -174,7 +180,8 @@ function parseArgs(): TunnelArgs {
     } else if (arg === "--domain") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
-        const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
+        const domainExample =
+          PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
         console.error(
           `Error: --domain requires a value${domainExample ? `, e.g. --domain ${domainExample}` : ""}`,
         );
@@ -199,9 +206,7 @@ function parseArgs(): TunnelArgs {
 
   if (provider === null) {
     provider = DEFAULT_TUNNEL_PROVIDER;
-    console.log(
-      `Using the default provider: ${provider} (pass --provider to choose another).`,
-    );
+    console.log(`Using the default provider: ${provider}.`);
   }
 
   if (domain && !providerSupportsReservedDomain(provider)) {
@@ -415,57 +420,78 @@ async function spawnDetachedTunnel(): Promise<void> {
 
 export const tunnel = Object.assign(
   async function tunnel(): Promise<void> {
-  const { assistantName, provider, domain, clearDomain, detach } = parseArgs();
+    const { assistantName, provider, domain, clearDomain, detach } =
+      parseArgs();
 
-  if (detach) {
-    await spawnDetachedTunnel();
-    return;
-  }
+    if (detach) {
+      await spawnDetachedTunnel();
+      return;
+    }
 
-  if (PROVIDER_META[provider].comingSoon) {
-    throw cadetTunnelComingSoonError(provider);
-  }
+    if (PROVIDER_META[provider].comingSoon) {
+      throw cadetTunnelComingSoonError(provider);
+    }
 
-  const { entry, gatewayPort, workspaceDir } =
-    resolveLocalTunnelTarget(assistantName);
+    const { entry, gatewayPort, workspaceDir } =
+      resolveLocalTunnelTarget(assistantName);
 
-  const preserveIngressUrl =
-    provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
+    const preserveIngressUrl =
+      provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
 
-  if (clearDomain) {
-    clearReservedDomain();
-    console.log("Cleared the saved reserved domain.");
-  }
+    if (clearDomain) {
+      clearReservedDomain();
+      console.log("Cleared the saved reserved domain.");
+    }
 
-  let edge: TunnelEdge;
-  try {
-    edge = await ensureTunnelEdge({
+    const nginxVersion = await ensureBinaryInstalled({
+      binary: "nginx",
+      purpose: "the tunnel edge",
+      packages: {
+        brew: ["brew", "install", "nginx"],
+        "apt-get": ["sudo", "apt-get", "install", "-y", "nginx"],
+        dnf: ["sudo", "dnf", "install", "-y", "nginx"],
+        pacman: ["sudo", "pacman", "-S", "--noconfirm", "nginx"],
+        zypper: ["sudo", "zypper", "install", "-y", "nginx"],
+        choco: ["choco", "install", "-y", "nginx"],
+      },
+      manualHint:
+        "Install nginx (macOS: brew install nginx; Debian/Ubuntu: sudo apt install nginx) or point NGINX_BIN at an existing binary.",
+      probe: getNginxVersion,
+    });
+    if (!nginxVersion) {
+      console.error("Error: nginx is required to run the tunnel edge.");
+      process.exit(1);
+    }
+
+    let edge: TunnelEdge;
+    try {
+      edge = await ensureTunnelEdge({
+        assistantId: entry.assistantId,
+        workspaceDir,
+        gatewayPort,
+      });
+    } catch (err) {
+      console.error(
+        `Error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      process.exit(1);
+    }
+
+    console.log(
+      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port}.`,
+    );
+
+    const baseTunnelOpts = {
+      port: edge.port,
       assistantId: entry.assistantId,
       workspaceDir,
-      gatewayPort,
+    };
+
+    await runProviderTunnel(provider, {
+      ...baseTunnelOpts,
+      ...(domain ? { domain } : {}),
+      ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
     });
-  } catch (err) {
-    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  }
-
-  console.log(
-    `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port} ` +
-      `(serves ${formatEdgeMode(edge.includesWebApp)}).`,
-  );
-
-  const baseTunnelOpts = {
-    port: edge.port,
-    assistantId: entry.assistantId,
-    workspaceDir,
-  };
-
-  await runProviderTunnel(provider, {
-    ...baseTunnelOpts,
-    ...(domain ? { domain } : {}),
-    ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
-  });
-},
+  },
   { description: "Create a tunnel for a locally hosted assistant" },
 );
-

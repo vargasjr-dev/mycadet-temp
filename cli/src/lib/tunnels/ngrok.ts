@@ -13,6 +13,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { GATEWAY_PORT } from "../constants.js";
 import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
+import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
@@ -78,6 +79,52 @@ export function getNgrokVersion(): string | null {
     return output.trim();
   } catch {
     return null;
+  }
+}
+
+/** Whether captured agent output says the startup failure was authentication. */
+export function isNgrokAuthError(output: string): boolean {
+  return /authtoken|authenticat|unauthorized|usage limit|ERR_NGROK_10\d\d|ERR_NGROK_40\d\d/i.test(
+    output,
+  );
+}
+
+/** An ngrok agent that exited during startup, with its captured output. */
+export class NgrokStartupError extends Error {
+  readonly exitCode: number;
+  readonly output: string;
+
+  constructor(exitCode: number, output: string) {
+    super(`ngrok exited with code ${exitCode}`);
+    this.exitCode = exitCode;
+    this.output = output;
+  }
+}
+
+/** Paste-in attempts before the tunnel command gives up and says how. */
+const MAX_AUTH_RETRIES = 2;
+
+/**
+ * Run `ngrok config add-authtoken <token>` — writing the user's default
+ * ngrok config, which is exactly the config the tunnel spawn loads. The
+ * token is never echoed: output is piped and any failure message has the
+ * token scrubbed.
+ */
+export function saveNgrokAuthToken(token: string): boolean {
+  try {
+    execFileSync("ngrok", ["config", "add-authtoken", token], {
+      encoding: "utf-8",
+      timeout: 10_000,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+    return true;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      `⚠ Couldn't save the authtoken: ${message.replaceAll(token, "***")}`,
+    );
+    return false;
   }
 }
 
@@ -159,11 +206,11 @@ type NgrokConfigFile = z.infer<typeof NgrokConfigFileSchema>;
 type NgrokTunnelDef = z.infer<typeof NgrokTunnelDefSchema>;
 
 /**
- * The ngrok-format config file this CLI owns in the XDG config dir, layered
- * over the user's root ngrok config at spawn time (`--config` files merge in
- * order, later wins; the user's authtoken keeps living in their root config).
- * It is also the source of truth for the reserved domain at this layer — the
- * workspace config no longer records one.
+ * The ngrok-format config file this CLI owns in the XDG config dir. It no
+ * longer participates in spawning (plain `ngrok http` loads the user's
+ * default config, keeping their authtoken in play); it is the source of
+ * truth for the reserved domain at this layer — the workspace config no
+ * longer records one.
  */
 export function ngrokConfigPath(): string {
   return join(getConfigDir(getCurrentEnvironment()), "tunnels", "ngrok.yaml");
@@ -250,43 +297,34 @@ function urlMatchesDomain(publicUrl: string, domain: string): boolean {
   }
 }
 
-/**
- * Write the cadet-owned XDG ngrok config for this run: the tunnel definition
- * `ngrok start` reads, carrying the loopback target and — when reserved — the
- * bound domain. The file is layered over the user's root ngrok config at
- * spawn, so their authtoken and settings keep applying untouched.
- */
-function writeNgrokConfig(targetPort: number, domain?: string): void {
-  const config = readNgrokConfigFile();
-  const cadet: NgrokTunnelDef = {
-    ...config.tunnels?.[NGROK_TUNNEL_NAME],
-    proto: "http",
-    // Explicit over a bare port, which ngrok expands to `localhost`, whose
-    // ::1 answer resolves first on macOS and races the edge's IPv4 bind.
-    addr: `127.0.0.1:${targetPort}`,
-  };
+/** The argv for an ngrok agent forwarding the edge port, domain when set. */
+export function buildNgrokSpawnArgs(
+  targetPort: number,
+  domain?: string,
+): string[] {
+  const args = ["http", `127.0.0.1:${targetPort}`, "--log=stdout"];
   if (domain) {
-    cadet.domain = domain;
+    args.push(`--domain=${domain}`);
   }
-  const tunnels: Record<string, NgrokTunnelDef> = { ...config.tunnels };
-  tunnels[NGROK_TUNNEL_NAME] = cadet;
-  const next: NgrokConfigFile = { ...config, version: config.version ?? "2" };
-  next.tunnels = tunnels;
-  writeNgrokConfigFile(next);
+  return args;
 }
 
 /**
- * Start an ngrok process tunneling HTTP traffic to the given local port, via
- * the cadet-owned XDG config (`ngrok start cadet`) so the agent never collides
- * with the host machine's root ngrok config.
+ * Start an ngrok process tunneling HTTP traffic to the given local port.
+ *
+ * Plain `ngrok http` is spawned deliberately: ngrok only loads the user's
+ * default config — where `ngrok config add-authtoken` writes — when no
+ * `--config` is passed, so this is what keeps the authtoken in play. The
+ * explicit `127.0.0.1:` host avoids a bare port, which ngrok expands to
+ * `localhost`, whose ::1 answer resolves first on macOS and races the edge's
+ * IPv4 bind.
  *
  * When `logFilePath` is provided, stdout/stderr are redirected to that file
  * instead of being piped. This avoids keeping pipe handles open in the
  * parent process — which would either prevent the CLI from exiting (if
  * handles are left open) or send SIGPIPE to ngrok (if destroyed).
  *
- * When `domain` is set, the spawned tunnel binds that reserved ngrok domain,
- * recorded in the XDG config alongside the loopback target.
+ * When `domain` is set, the spawned tunnel binds that reserved ngrok domain.
  *
  * Returns the spawned child process.
  */
@@ -304,15 +342,7 @@ export function startNgrokProcess(
     stdio = ["ignore", fd, fd];
   }
 
-  writeNgrokConfig(targetPort, domain);
-  const args = [
-    "start",
-    NGROK_TUNNEL_NAME,
-    `--config=${ngrokConfigPath()}`,
-    "--log=stdout",
-  ];
-
-  const child = spawn("ngrok", args, {
+  const child = spawn("ngrok", buildNgrokSpawnArgs(targetPort, domain), {
     detached: true,
     stdio,
     windowsHide: true,
@@ -534,18 +564,27 @@ export interface RunNgrokTunnelOptions {
 export async function runNgrokTunnel(
   opts: RunNgrokTunnelOptions = {},
 ): Promise<ProviderTunnelResult> {
-  const version = getNgrokVersion();
+  const version = await ensureBinaryInstalled({
+    binary: "ngrok",
+    purpose: "the ngrok tunnel",
+    packages: {
+      brew: ["brew", "install", "ngrok/ngrok/ngrok"],
+      snap: ["sudo", "snap", "install", "ngrok"],
+      choco: ["choco", "install", "-y", "ngrok"],
+      winget: [
+        "winget",
+        "install",
+        "--silent",
+        "--accept-package-agreements",
+        "--accept-source-agreements",
+        "ngrok.ngrok",
+      ],
+    },
+    manualHint:
+      "Install it (macOS: brew install ngrok/ngrok/ngrok; Linux: sudo snap install ngrok) — see https://ngrok.com/download.",
+    probe: getNgrokVersion,
+  });
   if (!version) {
-    console.error("Error: ngrok is not installed.");
-    console.error("");
-    console.error("Install ngrok:");
-    console.error("  macOS:  brew install ngrok/ngrok/ngrok");
-    console.error("  Linux:  sudo snap install ngrok");
-    console.error("");
-    console.error("Then authenticate: ngrok config add-authtoken <your-token>");
-    console.error(
-      "  Get your token at: https://dashboard.ngrok.com/get-started/your-authtoken",
-    );
     process.exit(1);
   }
 
@@ -607,12 +646,14 @@ export async function runNgrokTunnel(
   console.log(`Starting ngrok tunnel to localhost:${port}...`);
 
   let publicUrl: string | undefined;
-
-  const ngrokProcess = startNgrokProcess(port, undefined, domain);
+  // Points at the live agent across auth retries; signals and cleanup act on
+  // whichever attempt is current.
+  let currentNgrok: ChildProcess | null = null;
+  let authAttempts = 0;
 
   const cleanup = () => {
-    if (!ngrokProcess.killed) {
-      ngrokProcess.kill("SIGTERM");
+    if (currentNgrok && !currentNgrok.killed) {
+      currentNgrok.kill("SIGTERM");
     }
     clearRootProcess("tunnel");
     if (publicUrl) {
@@ -630,66 +671,116 @@ export async function runNgrokTunnel(
     process.exit(0);
   });
 
-  ngrokProcess.on("error", (err: Error) => {
-    console.error(`ngrok process error: ${err.message}`);
-    process.exit(1);
-  });
+  while (publicUrl === undefined) {
+    const ngrokProcess = startNgrokProcess(port, undefined, domain);
+    currentNgrok = ngrokProcess;
 
-  ngrokProcess.on("exit", (code: number | null) => {
-    if (code !== null && code !== 0) {
-      console.error(`ngrok exited with code ${code}.`);
-      console.error(
-        "Check that ngrok is authenticated: ngrok config add-authtoken <token>",
-      );
+    // Captured per attempt so an authentication failure can be told apart
+    // from other startup failures and recovered with a pasted-in token.
+    const ngrokOutput: string[] = [];
+
+    ngrokProcess.on("error", (err: Error) => {
+      console.error(`ngrok process error: ${err.message}`);
       process.exit(1);
-    }
-  });
-
-  // Pipe ngrok stdout/stderr to console for visibility
-  ngrokProcess.stdout?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[ngrok] ${line}`);
-  });
-  ngrokProcess.stderr?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.error(`[ngrok] ${line}`);
-  });
-
-  try {
-    publicUrl = await waitForNgrokUrl(port, domain);
-  } catch (err) {
-    cleanup();
-    if (domain && !opts.domain) {
-      console.error(savedDomainRecoveryHint(domain));
-    }
-    throw err;
-  }
-
-  console.log("");
-  console.log(`Tunnel established: ${publicUrl}`);
-  console.log(`Forwarding to:     localhost:${port}`);
-
-  // The domain is standing intent, not tunnel state: cleanup clears the
-  // ingress URL but leaves the domain saved for wake/daemon restores.
-  saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
-  if (ngrokProcess.pid) {
-    stampRootProcess("tunnel", {
-      pid: ngrokProcess.pid,
-      provider: "ngrok",
-      startedAt: new Date().toISOString(),
-      assistantId: opts.assistantId,
     });
-  }
-  if (opts.domain) {
-    saveNgrokDomain(opts.domain);
-  }
-  console.log("Ingress URL saved to config.");
-  console.log("");
-  console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
 
-  // Keep running until the ngrok process exits or we receive a signal
-  const waitForExit = new Promise<void>((resolve) => {
-    ngrokProcess.on("exit", () => resolve());
-  });
-  return { publicUrl, waitForExit };
+    // Pipe ngrok stdout/stderr to console for visibility
+    ngrokProcess.stdout?.on("data", (data: Buffer) => {
+      const line = data.toString().trim();
+      if (line) {
+        ngrokOutput.push(line);
+        console.log(`[ngrok] ${line}`);
+      }
+    });
+    ngrokProcess.stderr?.on("data", (data: Buffer) => {
+      const line = data.toString().trim();
+      if (line) {
+        ngrokOutput.push(line);
+        console.error(`[ngrok] ${line}`);
+      }
+    });
+
+    // An agent that exits during startup rejects this instead of leaving
+    // waitForNgrokUrl to poll a dead API for its full timeout.
+    const exitFailure = new Promise<never>((_, reject) => {
+      ngrokProcess.on("exit", (code: number | null) => {
+        if (code !== null && code !== 0) {
+          reject(new NgrokStartupError(code, ngrokOutput.join("\n")));
+        }
+      });
+    });
+
+    let url: string;
+    try {
+      url = await Promise.race([waitForNgrokUrl(port, domain), exitFailure]);
+    } catch (err) {
+      if (err instanceof NgrokStartupError && isNgrokAuthError(err.output)) {
+        if (authAttempts >= MAX_AUTH_RETRIES) {
+          console.error("\nngrok still rejects the tunnel as unauthenticated.");
+          console.error(
+            "Authenticate manually: ngrok config add-authtoken <your-token>",
+          );
+          console.error(
+            "  Get your token at: https://dashboard.ngrok.com/get-started/your-authtoken",
+          );
+          process.exit(1);
+        }
+        console.log("");
+        console.log("⚠ ngrok rejected the tunnel: it isn't authenticated.");
+        console.log(
+          "  Get your authtoken at: https://dashboard.ngrok.com/get-started/your-authtoken",
+        );
+        const token = (
+          await readLineText(
+            "Paste your ngrok authtoken to continue (Enter to cancel): ",
+          )
+        ).trim();
+        if (!token) {
+          console.log("No authtoken entered.");
+          process.exit(1);
+        }
+        authAttempts++;
+        if (saveNgrokAuthToken(token)) {
+          console.log("✅ ngrok authtoken saved. Retrying the tunnel...");
+        }
+        continue;
+      }
+      cleanup();
+      if (domain && !opts.domain) {
+        console.error(savedDomainRecoveryHint(domain));
+      }
+      throw err;
+    }
+    publicUrl = url;
+
+    console.log("");
+    console.log(`Tunnel established: ${publicUrl}`);
+    console.log(`Forwarding to:     localhost:${port}`);
+
+    // The domain is standing intent, not tunnel state: cleanup clears the
+    // ingress URL but leaves the domain saved for wake/daemon restores.
+    saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
+    if (ngrokProcess.pid) {
+      stampRootProcess("tunnel", {
+        pid: ngrokProcess.pid,
+        provider: "ngrok",
+        startedAt: new Date().toISOString(),
+        assistantId: opts.assistantId,
+      });
+    }
+    if (opts.domain) {
+      saveNgrokDomain(opts.domain);
+    }
+    console.log("Ingress URL saved to config.");
+    console.log("");
+    console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
+
+    // Keep running until the ngrok process exits or we receive a signal
+    const waitForExit = new Promise<void>((resolve) => {
+      ngrokProcess.on("exit", () => resolve());
+    });
+    return { publicUrl, waitForExit };
+  }
+  // Unreachable: the loop only exits via return, process.exit, or a throw.
+  throw new Error("ngrok tunnel did not start.");
 }
