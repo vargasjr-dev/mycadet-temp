@@ -26,6 +26,7 @@ import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
+import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
@@ -34,31 +35,48 @@ import type { AssistantEntry } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
+const realGatewayNotify = { ...gatewayNotify };
 const realNgrok = { ...ngrok };
 const realNginxIngress = { ...nginxIngress };
 const realTailscaleTunnel = { ...tailscaleTunnel };
 const realChildProcess = { ...childProcess };
 
+/** What a mocked provider run hands back: a URL and an already-settled exit. */
+const fakeTunnelResult = (publicUrl: string) => ({
+  publicUrl,
+  waitForExit: Promise.resolve(),
+});
+
 const runCloudflareTunnelMock = mock<
   typeof cloudflareTunnel.runCloudflareTunnel
->(async () => {});
+>(async () => fakeTunnelResult("https://test.example.cloudflare.dev"));
 mock.module("../lib/tunnels/cloudflare.js", () => ({
   ...realCloudflareTunnel,
   runCloudflareTunnel: runCloudflareTunnelMock,
 }));
 
-const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {});
+const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () =>
+  fakeTunnelResult("https://test.example.ngrok.dev"),
+);
 mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   runNgrokTunnel: runNgrokTunnelMock,
 }));
 
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
-  async () => {},
+  async () => fakeTunnelResult("https://test-machine.tailnet.ts.net"),
 );
 mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
+}));
+
+const notifyGatewayOfPublicUrlMock = mock<
+  typeof gatewayNotify.notifyGatewayOfPublicUrl
+>(async () => {});
+mock.module("../lib/tunnels/gateway-notify.js", () => ({
+  ...realGatewayNotify,
+  notifyGatewayOfPublicUrl: notifyGatewayOfPublicUrlMock,
 }));
 
 const EDGE_PORT = 18080;
@@ -234,11 +252,18 @@ describe("tunnel edge targeting", () => {
     tempDirs.push(configHome);
     process.env.XDG_CONFIG_HOME = configHome;
     runCloudflareTunnelMock.mockReset();
-    runCloudflareTunnelMock.mockResolvedValue(undefined);
+    runCloudflareTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test.example.cloudflare.dev"),
+    );
     runNgrokTunnelMock.mockReset();
-    runNgrokTunnelMock.mockResolvedValue(undefined);
+    runNgrokTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test.example.ngrok.dev"),
+    );
     runTailscaleTunnelMock.mockReset();
-    runTailscaleTunnelMock.mockResolvedValue(undefined);
+    runTailscaleTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test-machine.tailnet.ts.net"),
+    );
+    notifyGatewayOfPublicUrlMock.mockReset();
     ensureTunnelEdgeMock.mockReset();
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
@@ -300,6 +325,20 @@ describe("tunnel edge targeting", () => {
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
     expect(logs).toContain("serves remote web + webhooks");
+  });
+
+  test("the tunnel level notifies the gateway of the provider's public URL", async () => {
+    writeLockfile(makeLocalEntry());
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+
+    await runTunnelCapturingLogs();
+
+    // The provider hands its URL back; the notification is the tunnel
+    // level's job, so it holds no matter which provider ran.
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
+      "https://test.example.ngrok.dev",
+      "assistant-1",
+    );
   });
 
   test("an active cloud assistant falls back to the sole local entry with a note", async () => {

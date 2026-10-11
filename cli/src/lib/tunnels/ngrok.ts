@@ -12,24 +12,20 @@ import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { GATEWAY_PORT } from "../constants.js";
-import {
-  clearRootProcess,
-  lookupAssistantByIdentifier,
-  stampRootProcess,
-} from "../assistant-config.js";
+import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
   loadRawConfig,
   saveIngressUrl,
 } from "../ingress-config.js";
-import { loadGuardianToken } from "../guardian-token.js";
 import { getConfigDir } from "../environments/paths.js";
 import { getCurrentEnvironment } from "../environments/resolve.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine } from "../process.js";
 import { z } from "zod";
-import type { ProviderMeta } from "../tunnel.js";
+import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_POLL_INTERVAL_MS = 500;
@@ -415,56 +411,6 @@ function hasNonNgrokIngressUrl(workspaceDir: string): boolean {
 }
 
 /**
- * Where the gateway for this run's assistant answers. The entry's recorded
- * loopback URL when one resolves; the global gateway port otherwise.
- */
-function gatewayUrlFor(assistantId: string | undefined): string {
-  if (assistantId) {
-    const result = lookupAssistantByIdentifier(assistantId);
-    if (result.status === "found") {
-      const url = result.entry.localUrl ?? result.entry.runtimeUrl;
-      if (url) return url;
-    }
-  }
-  return `http://127.0.0.1:${GATEWAY_PORT}`;
-}
-
-/**
- * Tell the gateway the tunnel's public URL so it records the ingress domain
- * in its own config, the same way its own tunnel machinery does. Best-effort:
- * a gateway that is down never fails the tunnel that fronts it.
- */
-async function notifyGatewayOfPublicUrl(
-  publicUrl: string,
-  assistantId: string | undefined,
-): Promise<void> {
-  try {
-    const token = assistantId
-      ? loadGuardianToken(assistantId)?.accessToken
-      : undefined;
-    const res = await loopbackSafeFetch(
-      `${gatewayUrlFor(assistantId)}/v1/ingress/domains`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ publicBaseUrl: publicUrl }),
-        signal: AbortSignal.timeout(5_000),
-      },
-    );
-    if (!res.ok) {
-      throw new Error(`gateway responded ${res.status}`);
-    }
-  } catch (err) {
-    console.warn(
-      `   ⚠ Could not record the ingress domain with the gateway: ${err instanceof Error ? err.message : String(err)}. The tunnel still runs.`,
-    );
-  }
-}
-
-/**
  * Auto-start an ngrok tunnel if webhook integrations are configured and no
  * non-ngrok ingress URL is present. Designed to be called during daemon/gateway
  * startup. Non-fatal: if ngrok is unavailable or fails, startup continues.
@@ -581,11 +527,13 @@ export interface RunNgrokTunnelOptions {
 
 /**
  * Run the ngrok tunnel workflow: check installation, find or start a tunnel,
- * save the public URL to config, and block until exit or signal.
+ * and save the public URL to config. Hands the URL back so the tunnel level
+ * can notify the gateway of it; `waitForExit` settles when the run ends
+ * (process exit, signal, or detach).
  */
 export async function runNgrokTunnel(
   opts: RunNgrokTunnelOptions = {},
-): Promise<void> {
+): Promise<ProviderTunnelResult> {
   const version = getNgrokVersion();
   if (!version) {
     console.error("Error: ngrok is not installed.");
@@ -637,7 +585,6 @@ export async function runNgrokTunnel(
     }
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
-    await notifyGatewayOfPublicUrl(existingUrl, opts.assistantId);
     // Not our child process: a recorded entry would be stale or foreign.
     clearRootProcess("tunnel");
     if (opts.domain) {
@@ -650,11 +597,11 @@ export async function runNgrokTunnel(
     );
 
     // Block until SIGINT/SIGTERM
-    await new Promise<void>((resolve) => {
+    const waitForExit = new Promise<void>((resolve) => {
       process.on("SIGINT", () => resolve());
       process.on("SIGTERM", () => resolve());
     });
-    return;
+    return { publicUrl: existingUrl, waitForExit };
   }
 
   console.log(`Starting ngrok tunnel to localhost:${port}...`);
@@ -725,7 +672,6 @@ export async function runNgrokTunnel(
   // The domain is standing intent, not tunnel state: cleanup clears the
   // ingress URL but leaves the domain saved for wake/daemon restores.
   saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
-  await notifyGatewayOfPublicUrl(publicUrl, opts.assistantId);
   if (ngrokProcess.pid) {
     stampRootProcess("tunnel", {
       pid: ngrokProcess.pid,
@@ -742,7 +688,8 @@ export async function runNgrokTunnel(
   console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
 
   // Keep running until the ngrok process exits or we receive a signal
-  await new Promise<void>((resolve) => {
+  const waitForExit = new Promise<void>((resolve) => {
     ngrokProcess.on("exit", () => resolve());
   });
+  return { publicUrl, waitForExit };
 }

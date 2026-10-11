@@ -24,6 +24,6 @@ export function cadetTunnelComingSoonError(provider: string): Error {
 /** Refuse the run: the managed tunnel is not something the CLI can start. */
 export async function runCadetTunnel(
   _opts: ProviderTunnelOptions,
-): Promise<void> {
+): Promise<never> {
   throw cadetTunnelComingSoonError("cadet");
 }

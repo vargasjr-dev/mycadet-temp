@@ -258,10 +258,14 @@ describe("cadet ps — platform status line", () => {
     await listAllAssistants(false);
 
     const output = stdout.join(NL);
-    // The tunnel nests under Alice…
-    expect(output).toContain("└ tunnel (ngrok)");
+    // The tunnel nests under Alice — its name is just the provider now…
+    expect(output).toContain("└ ngrok");
     // …the unattributed edge renders machine-level…
-    expect(output).toContain("app (nginx edge)");
+    expect(output).toContain("nginx edge");
+    // …the type column distinguishes the three process kinds…
+    expect(output).toContain("🧑‍🚀 Assistant");
+    expect(output).toContain("🚇 Tunnel");
+    expect(output).toContain("🌐 App");
     // …and the second table is gone: one header row only.
     expect(output.match(/NAME/g)?.length).toBe(1);
   });

@@ -32,6 +32,7 @@ import {
 } from "./tunnels/ngrok.js";
 import { stopProcess } from "./process.js";
 import { shellArg } from "./shell-arg.js";
+import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
   selectRestartTunnelRecord,
   type TunnelProviderName,
@@ -108,34 +109,55 @@ export interface ProviderTunnelOptions {
 }
 
 /**
+ * What every tunnel provider's run hands back: the public URL it established
+ * or adopted, and the promise that settles when the run ends. Conformance is
+ * the point — the tunnel level can notify the gateway the same way no matter
+ * which provider ran.
+ */
+export interface ProviderTunnelResult {
+  publicUrl: string;
+  waitForExit: Promise<void>;
+}
+
+/**
  * Run a tunnel provider by name — the dispatch `cadet tunnel` uses, so the
- * command layer never names a provider implementation directly.
+ * command layer never names a provider implementation directly. Notifies the
+ * gateway of the resulting public URL identically for every provider, then
+ * holds until the run ends.
  */
 export async function runProviderTunnel(
   provider: TunnelProviderName,
   opts: ProviderTunnelOptions,
-): Promise<void> {
+): Promise<{ publicUrl: string }> {
+  const result = await runProvider(provider, opts);
+  await notifyGatewayOfPublicUrl(result.publicUrl, opts.assistantId);
+  await result.waitForExit;
+  return { publicUrl: result.publicUrl };
+}
+
+/** Map the provider name onto its run — no gateway notification here. */
+function runProvider(
+  provider: TunnelProviderName,
+  opts: ProviderTunnelOptions,
+): Promise<ProviderTunnelResult> {
   const base = {
     port: opts.port,
     assistantId: opts.assistantId,
     workspaceDir: opts.workspaceDir,
   };
   if (provider === "ngrok") {
-    await runNgrokTunnel({
+    return runNgrokTunnel({
       ...base,
       ...(opts.domain ? { domain: opts.domain } : {}),
     });
-    return;
   }
   if (provider === "cadet") {
-    await runCadetTunnel(opts);
-    return;
+    return runCadetTunnel(opts);
   }
   if (provider === "cloudflare") {
-    await runCloudflareTunnel(base);
-    return;
+    return runCloudflareTunnel(base);
   }
-  await runTailscaleTunnel({
+  return runTailscaleTunnel({
     ...base,
     ...(opts.preserveIngressUrl
       ? { preserveIngressUrl: opts.preserveIngressUrl }

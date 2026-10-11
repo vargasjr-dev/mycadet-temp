@@ -1,4 +1,4 @@
-import type { ProviderMeta } from "../tunnel.js";
+import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
 
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 
@@ -137,7 +137,7 @@ export interface RunCloudflareTunnelOptions {
 
 export async function runCloudflareTunnel(
   opts: RunCloudflareTunnelOptions = {},
-): Promise<void> {
+): Promise<ProviderTunnelResult> {
   const version = getCloudflareTunnelVersion();
   if (!version) {
     console.error("Error: cloudflared is not installed.");
@@ -228,9 +228,10 @@ export async function runCloudflareTunnel(
   console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
 
   // Keep running until cloudflared exits (e.g., network error or user Ctrl+C)
-  await new Promise<void>((resolve) => {
+  const waitForExit = new Promise<void>((resolve) => {
     child.on("exit", () => resolve());
   });
+  return { publicUrl, waitForExit };
 }
 
 /** Per-provider copy `cadet tunnel`'s help renders for cloudflare. */

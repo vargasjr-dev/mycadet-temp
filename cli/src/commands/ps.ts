@@ -45,14 +45,21 @@ import {
 
 // ── Table formatting helpers ────────────────────────────────────
 
+/** What each row's `type` column says: the KIND of process the row describes. */
+const ASSISTANT_TYPE = "🧑‍🚀 Assistant";
+const TUNNEL_TYPE = "🚇 Tunnel";
+const APP_TYPE = "🌐 App";
+
 interface TableRow {
   name: string;
+  type: string;
   status: string;
   info: string;
 }
 
 interface ColWidths {
   name: number;
+  type: number;
   status: number;
   info: number;
 }
@@ -63,27 +70,38 @@ function pad(s: string, w: number): string {
 
 function computeColWidths(
   rows: TableRow[],
-  headers: TableRow = { name: "NAME", status: "STATUS", info: "INFO" },
+  headers: TableRow = {
+    name: "NAME",
+    type: "TYPE",
+    status: "STATUS",
+    info: "INFO",
+  },
 ): ColWidths {
   const all = [headers, ...rows];
   return {
     name: Math.max(...all.map((r) => r.name.length)),
+    type: Math.max(...all.map((r) => r.type.length)),
     status: Math.max(...all.map((r) => r.status.length), "checking...".length),
     info: Math.max(...all.map((r) => r.info.length)),
   };
 }
 
 function formatRow(r: TableRow, colWidths: ColWidths): string {
-  return `  ${pad(r.name, colWidths.name)}  ${pad(r.status, colWidths.status)}  ${r.info}`;
+  return `  ${pad(r.name, colWidths.name)}  ${pad(r.type, colWidths.type)}  ${pad(r.status, colWidths.status)}  ${r.info}`;
 }
 
 function printTable(
   rows: TableRow[],
-  headers: TableRow = { name: "PROCESS", status: "STATUS", info: "INFO" },
+  headers: TableRow = {
+    name: "PROCESS",
+    type: "TYPE",
+    status: "STATUS",
+    info: "INFO",
+  },
 ): void {
   const colWidths = computeColWidths(rows, headers);
   console.log(formatRow(headers, colWidths));
-  const sep = `  ${"-".repeat(colWidths.name)}  ${"-".repeat(colWidths.status)}  ${"-".repeat(colWidths.info)}`;
+  const sep = `  ${"-".repeat(colWidths.name)}  ${"-".repeat(colWidths.type)}  ${"-".repeat(colWidths.status)}  ${"-".repeat(colWidths.info)}`;
   console.log(sep);
   for (const row of rows) {
     console.log(formatRow(row, colWidths));
@@ -109,6 +127,7 @@ function flattenProcessTree(
     rows.push({
       name:
         depth === 0 ? entry.name : `${"  ".repeat(depth - 1)}├─ ${entry.name}`,
+      type: ASSISTANT_TYPE,
       status: withStatusEmoji(STATUS_LABELS[entry.status]),
       info: entry.info ?? "",
     });
@@ -119,6 +138,7 @@ function flattenProcessTree(
       const prefix = `${"  ".repeat(depth)}${isLast ? "└─" : "├─"} ${child.name}`;
       rows.push({
         name: prefix,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(STATUS_LABELS[child.status]),
         info: child.info ?? "",
       });
@@ -302,6 +322,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   });
   rows.push({
     name: "credential-executor",
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(ces.running ? "running" : "not running"),
     info: ces.running ? formatDetectionInfo(ces) : "not detected",
   });
@@ -348,6 +369,7 @@ async function detectLocalProcessesFallback(
 
   return results.map((proc, i) => ({
     name: allSpecs[i].name,
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(proc.running ? "running" : "not running"),
     info: proc.running ? formatDetectionInfo(proc) : "not detected",
   }));
@@ -392,12 +414,14 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
       if (!state) {
         return {
           name,
+          type: ASSISTANT_TYPE,
           status: withStatusEmoji("not found"),
           info: `container ${containerName}`,
         };
       }
       return {
         name,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(state === "running" ? "running" : state),
         info: `container ${containerName}`,
       };
@@ -411,6 +435,7 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
     const alive = isLocalProcessAlive(watcherPid);
     results.push({
       name: "file-watcher",
+      type: ASSISTANT_TYPE,
       status: withStatusEmoji(alive ? "running" : "not running"),
       info: alive ? `PID ${watcherPid}` : "not detected",
     });
@@ -454,6 +479,7 @@ async function getAssistantProcessRows(
       return [
         {
           name: "assistant",
+          type: ASSISTANT_TYPE,
           status: withStatusEmoji("unreachable"),
           info: "could not reach Cadet Cloud API — run `cadet login`",
         },
@@ -469,6 +495,7 @@ async function getAssistantProcessRows(
     const rows: TableRow[] = [
       {
         name: "container",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(socketAlive ? "running" : "not running"),
         info: socketAlive
           ? `mgmt ${mgmtSocket}`
@@ -480,6 +507,7 @@ async function getAssistantProcessRows(
       const health = await checkHealth(entry.runtimeUrl, token);
       rows.push({
         name: "gateway",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(health.status),
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       });
@@ -495,6 +523,7 @@ async function getAssistantProcessRows(
     return [
       {
         name: "gateway",
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji(health.status),
         info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
       },
@@ -530,6 +559,7 @@ async function getAssistantProcessRows(
 
   return procs.map((p) => ({
     name: classifyProcess(p.command),
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji("running"),
     info: `PID ${p.pid} | ${p.command.slice(0, 80)}`,
   }));
@@ -558,7 +588,8 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     rows.push({
       assistantId: tunnel.assistantId,
       row: {
-        name: `tunnel (${tunnel.provider ?? "unknown provider"})`,
+        name: tunnel.provider ?? "unknown provider",
+        type: TUNNEL_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
         info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
       },
@@ -569,7 +600,8 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     rows.push({
       assistantId: app.assistantId,
       row: {
-        name: "app (nginx edge)",
+        name: "nginx edge",
+        type: APP_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
         info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
       },
@@ -675,6 +707,7 @@ function formatAssistantListRow(
   const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";
   return {
     name: prefix + getAssistantDisplayName(entry),
+    type: ASSISTANT_TYPE,
     status: withStatusEmoji(health.status),
     info: infoParts.join(" | "),
   };
@@ -718,6 +751,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
       console.log("\nOrphaned processes detected:\n");
       const rows: TableRow[] = orphans.map((o) => ({
         name: o.name,
+        type: ASSISTANT_TYPE,
         status: withStatusEmoji("running"),
         info: `PID ${o.pid} (from ${o.source})`,
       }));
@@ -740,7 +774,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
       healths,
       activeAssistantId,
     ),
-    { name: "NAME", status: "STATUS", info: "INFO" },
+    { name: "NAME", type: "TYPE", status: "STATUS", info: "INFO" },
   );
 }
 

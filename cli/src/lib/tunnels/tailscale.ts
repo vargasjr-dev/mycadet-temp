@@ -1,4 +1,4 @@
-import type { ProviderMeta } from "../tunnel.js";
+import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
 
 import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
@@ -353,7 +353,7 @@ export function stopTailscaleServe(
  */
 export async function runTailscaleTunnel(
   opts: RunTailscaleTunnelOptions = {},
-): Promise<void> {
+): Promise<ProviderTunnelResult> {
   const deps = realTailscaleDeps();
   // What this run publishes, and therefore what Ctrl+C takes back.
   const publishedLabel = opts.preserveIngressUrl
@@ -431,7 +431,8 @@ export async function runTailscaleTunnel(
   // Hold the process open until a signal fires. The serve itself lives in
   // tailscaled, so there is no child process to await — the registered signal
   // listeners keep the event loop alive.
-  await new Promise<void>(() => {});
+  const waitForExit = new Promise<void>(() => {});
+  return { publicUrl, waitForExit };
 }
 
 /** Per-provider copy `cadet tunnel`'s help renders for tailscale. */

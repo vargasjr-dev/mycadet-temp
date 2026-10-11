@@ -40,12 +40,10 @@ import {
 
 // The accepted `--provider` values ARE the shared registry, so validation
 // here cannot drift from what the workspace config accepts.
-const VALID_PROVIDERS = TUNNEL_PROVIDERS;
-type TunnelProvider = TunnelProviderName;
 
 interface TunnelArgs {
   assistantName: string | null;
-  provider: TunnelProvider;
+  provider: TunnelProviderName;
   domain: string | null;
   clearDomain: boolean;
   detach: boolean;
@@ -55,7 +53,7 @@ const FLAGS_WITH_VALUES = ["--provider", "--domain"] as const;
 
 function parseArgs(): TunnelArgs {
   const args = process.argv.slice(3);
-  let provider: TunnelProvider | null = null;
+  let provider: TunnelProviderName | null = null;
   let domain: string | null = null;
   let clearDomain = false;
   let detach = false;
@@ -95,7 +93,7 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Options:");
       console.log(
-        `  --provider <provider>         Tunnel provider: ${VALID_PROVIDERS.join(", ")}`,
+        `  --provider <provider>         Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")}`,
       );
       console.log(`                                (default: ${DEFAULT_TUNNEL_PROVIDER})`);
       console.log(
@@ -158,20 +156,20 @@ function parseArgs(): TunnelArgs {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
         console.error(
-          `Error: --provider requires one of: ${VALID_PROVIDERS.join(", ")}`,
+          `Error: --provider requires one of: ${TUNNEL_PROVIDERS.join(", ")}`,
         );
         process.exit(1);
       }
-      if (!VALID_PROVIDERS.includes(next as TunnelProvider)) {
+      if (!TUNNEL_PROVIDERS.includes(next as TunnelProviderName)) {
         console.error(
-          `Error: unknown tunnel provider '${next}'. Valid providers: ${VALID_PROVIDERS.join(", ")}.`,
+          `Error: unknown tunnel provider '${next}'. Valid providers: ${TUNNEL_PROVIDERS.join(", ")}.`,
         );
         console.error(
           `If this provider is documented, ${STALE_CLI_UPDATE_HINT}`,
         );
         process.exit(1);
       }
-      provider = next as TunnelProvider;
+      provider = next as TunnelProviderName;
       i++;
     } else if (arg === "--domain") {
       const next = args[i + 1];
