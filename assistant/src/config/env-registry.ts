@@ -20,7 +20,7 @@ function str(name: string): string | undefined {
 }
 
 function flag(name: string): boolean {
-  const raw = str(name);
+  const raw = str(name)?.toLowerCase();
   return raw === "true" || raw === "1";
 }
 
@@ -65,14 +65,7 @@ export function getIsContainerized(): boolean {
  * deployments provisioned before the rename keep working.
  */
 export function getIsCloud(): boolean {
-  return flag("IS_CLOUD") || flag("IS_CLOUD");
-}
-
-/**
- * Whether this assistant is running as a Cadet Cloud-managed remote instance.
- */
-export function isCloudRemote(): boolean {
-  return getIsCloud();
+  return flag("IS_CLOUD");
 }
 
 /**

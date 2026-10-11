@@ -49,7 +49,7 @@ import {
   setCloudOrganizationId,
   setCloudUserId,
 } from "../../config/env.js";
-import { isCloudRemote } from "../../config/env-registry.js";
+import { getIsCloud } from "../../config/env-registry.js";
 import {
   registerCallbackRoute,
   resolveCloudCallbackRegistrationContext,
@@ -399,7 +399,7 @@ async function handleCloudDisconnect(
   _args: RouteHandlerArgs,
 ): Promise<CloudDisconnectResponse> {
   // Reject if running inside a cloud host
-  if (isCloudRemote()) {
+  if (getIsCloud()) {
     throw new UnprocessableEntityError(
       "Cannot disconnect from the cloud on a cloud-hosted assistant.",
     );

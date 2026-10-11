@@ -83,7 +83,7 @@ export const backfillDefaultProviderMigration: WorkspaceMigration = {
       return;
     }
 
-    const provider = isPlatform() ? "cadet" : resolveProviderSignal(llm);
+    const provider = isCloud() ? "cadet" : resolveProviderSignal(llm);
     if (provider === undefined) {
       return;
     }
@@ -117,7 +117,7 @@ function isValidDefaultProvider(value: unknown): boolean {
 
 // Frozen copy of config/env-registry.ts's IS_CLOUD read — migration
 // modules must not import from config modules (workspace/migrations/AGENTS.md).
-function isPlatform(): boolean {
+function isCloud(): boolean {
   return process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
 }
 
