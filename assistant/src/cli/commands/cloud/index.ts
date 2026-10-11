@@ -46,7 +46,7 @@ interface CloudSubscriptionResult {
     customized: boolean;
   } | null;
   entitlements: {
-    managedEmail: boolean;
+    cloudEmail: boolean;
     phoneNumber: boolean;
   };
 }
@@ -187,7 +187,7 @@ export function registerCloudCommand(program: Command): void {
               log.info(`Credit tier: ${result.selectedCreditTier}`);
             }
             const ent: string[] = [];
-            if (result.entitlements.managedEmail) {
+            if (result.entitlements.cloudEmail) {
               ent.push("managed email");
             }
             if (result.entitlements.phoneNumber) {

@@ -39,7 +39,7 @@ function subscription(planId: SubscriptionResponse["plan_id"]): SubscriptionResp
     current_period_end: null,
     cancel_at_period_end: false,
     cancel_at: null,
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 

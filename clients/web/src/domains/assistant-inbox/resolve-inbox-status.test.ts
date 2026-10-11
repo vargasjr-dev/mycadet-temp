@@ -8,7 +8,7 @@ import {
 const BASE: InboxStatusInputs = {
   gate: "full",
   cloudAssistantId: "asst-platform",
-  entitlements: { managed_email: true },
+  entitlements: { cloud_email: true },
   subscriptionFailed: false,
   addressCount: 1,
   domainsSettled: true,
@@ -35,7 +35,7 @@ describe("resolveInboxStatus", () => {
   test("upgrade when the entitlements explicitly omit managed email", () => {
     expect(resolveInboxStatus({ ...BASE, entitlements: {} })).toBe("upgrade");
     expect(
-      resolveInboxStatus({ ...BASE, entitlements: { managed_email: false } }),
+      resolveInboxStatus({ ...BASE, entitlements: { cloud_email: false } }),
     ).toBe("upgrade");
   });
 

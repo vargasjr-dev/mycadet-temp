@@ -3,7 +3,7 @@
  * web client. Everything else that upsells is a resource wall (credits,
  * storage) or plan management.
  *
- * The gate reads `entitlements.managed_email` off the billing subscription
+ * The gate reads `entitlements.cloud_email` off the billing subscription
  * rather than the plan id (`email-cloud-content.tsx:86-91`), because an admin
  * override can grant a Base org the entitlement. It is deliberately tri-state:
  * entitled / explicitly-not-entitled / unknown, and only the middle one shows
@@ -31,7 +31,7 @@ const NOT_ENTITLED: SubscriptionResponse = {
   current_period_end: null,
   cancel_at_period_end: false,
   cancel_at: null,
-  entitlements: { managed_email: false, phone_number: false },
+  entitlements: { cloud_email: false, phone_number: false },
 };
 
 const meta: Meta<typeof EmailCloudContent> = {

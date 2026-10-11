@@ -93,7 +93,7 @@ export function EmailCloudContent({
   });
 
   // -- Subscription gate (managed mode requires the cloud_email entitlement)
-  // We read the `managed_email` entitlement directly rather than inferring it
+  // We read the `cloud_email` entitlement directly rather than inferring it
   // from the plan, so an admin `EntitlementOverride` (which flips a Base org to
   // entitled) is honored in-product. We separate "definitely not entitled"
   // from "unknown" so a failed subscription fetch (transient 5xx, network
@@ -109,9 +109,9 @@ export function EmailCloudContent({
   });
   const subscriptionData = subscriptionQuery.data;
   const entitlements = subscriptionData?.entitlements;
-  const hasManagedEmail = entitlements?.managed_email === true;
+  const hasManagedEmail = entitlements?.cloud_email === true;
   // Only an explicit denial when the server returned an entitlements object that
-  // omits managed_email. A successful payload lacking entitlements entirely
+  // omits cloud_email. A successful payload lacking entitlements entirely
   // (older platform deploy / partial response) is treated as unknown and fails
   // open, preserving the definitely-not vs unknown split.
   const isExplicitlyNotEntitled = !!entitlements && !hasManagedEmail;

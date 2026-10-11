@@ -138,7 +138,7 @@ function makeSubscription(): SubscriptionResponse {
     current_period_end: null,
     cancel_at_period_end: false,
     cancel_at: null,
-    entitlements: { managed_email: true, phone_number: false },
+    entitlements: { cloud_email: true, phone_number: false },
   };
 }
 

@@ -220,7 +220,7 @@ function baseSubscription(): SubscriptionResponse {
     current_period_end: BASE_PERIOD_END,
     cancel_at_period_end: false,
     cancel_at: null,
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 
@@ -246,7 +246,7 @@ function proMightySubscription(): SubscriptionResponse {
     cancel_at: null,
     package: { key: "mighty", name: "Mighty", version: 1, customized: false },
     selected_credit_tier: "credits_25",
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 
@@ -303,7 +303,7 @@ function proUltraSubscription(): SubscriptionResponse {
     cancel_at: null,
     package: { key: "ultra", name: "Ultra", version: 1, customized: false },
     selected_credit_tier: "credits_115",
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 

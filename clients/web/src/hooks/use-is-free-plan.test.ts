@@ -53,7 +53,7 @@ function subscription(
     cancel_at: null,
     selected_credit_tier: null,
     package: { key: "super", name: "Super", version: 1, customized: false },
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
     ...overrides,
   };
 }

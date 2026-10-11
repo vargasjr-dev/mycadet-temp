@@ -62,7 +62,7 @@ const NOT_ENTITLED: SubscriptionResponse = {
   current_period_end: null,
   cancel_at_period_end: false,
   cancel_at: null,
-  entitlements: { managed_email: false, phone_number: false },
+  entitlements: { cloud_email: false, phone_number: false },
 };
 
 const withNotEntitledSubscription = withQueryCache((client) => {
@@ -332,7 +332,7 @@ export const ResourceAndEntitlementWalls: Story = {
       <Group heading="Entitlement wall">
         <WallCase
           wall="Managed email not included"
-          trigger="entitlements.managed_email is false on the subscription. Read off the entitlement, not the plan. An admin override can grant it to a Base org."
+          trigger="entitlements.cloud_email is false on the subscription. Read off the entitlement, not the plan. An admin override can grant it to a Base org."
           cta="Upgrade"
           destination="/assistant/plans"
         >

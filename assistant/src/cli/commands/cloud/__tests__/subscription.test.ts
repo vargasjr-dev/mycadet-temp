@@ -18,7 +18,7 @@ describe("assistant cloud subscription", () => {
         cancelAt: null,
         selectedCreditTier: "credits_50",
         package: { key: "super", name: "Super", version: 2, customized: false },
-        entitlements: { managedEmail: true, phoneNumber: false },
+        entitlements: { cloudEmail: true, phoneNumber: false },
       },
     };
   });
@@ -32,7 +32,7 @@ describe("assistant cloud subscription", () => {
     expect(parsed.planId).toBe("pro");
     expect(parsed.status).toBe("active");
     expect(parsed.package.name).toBe("Super");
-    expect(parsed.entitlements.managedEmail).toBe(true);
+    expect(parsed.entitlements.cloudEmail).toBe(true);
   });
 
   test("plain text mode does not emit JSON to stdout", async () => {

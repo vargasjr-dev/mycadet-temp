@@ -88,7 +88,7 @@ export function useAssistantInboxState(
   const addressPath = { path: { assistant_id: cloudAssistantId ?? "" } };
   const readsEnabled =
     onPlatform && orgReady && !!cloudAssistantId && !!entitlements
-      ? entitlements.managed_email === true
+      ? entitlements.cloud_email === true
       : onPlatform && orgReady && !!cloudAssistantId && subscriptionFailed;
 
   const addressesQuery = useQuery({

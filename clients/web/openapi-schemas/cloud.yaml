@@ -9992,12 +9992,12 @@ components:
         EntitlementOverride grants are reflected here regardless of plan.
         Scope matches ADMIN_GRANTABLE_FEATURES.
       properties:
-        managed_email:
+        cloud_email:
           type: boolean
         phone_number:
           type: boolean
       required:
-      - managed_email
+      - cloud_email
       - phone_number
     SubscriptionPackage:
       type: object

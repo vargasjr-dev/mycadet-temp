@@ -191,7 +191,7 @@ function freeSubscription(): SubscriptionResponse {
     current_period_end: "2026-07-10T00:00:00Z",
     cancel_at_period_end: false,
     cancel_at: null,
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 
@@ -205,7 +205,7 @@ function proMightySubscription(): SubscriptionResponse {
     cancel_at_period_end: false,
     cancel_at: null,
     package: { key: "mighty", name: "Mighty", version: 1, customized: false },
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 

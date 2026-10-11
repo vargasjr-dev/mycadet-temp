@@ -271,7 +271,7 @@ const PlatformSubscriptionResponseSchema = z.object({
   selectedCreditTier: z.string().nullable(),
   package: SubscriptionPackageSchema.nullable(),
   entitlements: z.object({
-    managedEmail: z.boolean(),
+    cloudEmail: z.boolean(),
     phoneNumber: z.boolean(),
   }),
 });
@@ -704,7 +704,7 @@ interface BillingSubscriptionData {
     version: number;
     customized: boolean;
   } | null;
-  entitlements: { managed_email: boolean; phone_number: boolean };
+  entitlements: { cloud_email: boolean; phone_number: boolean };
 }
 
 function fetchBillingSubscription(): Promise<BillingSubscriptionData> {
@@ -736,7 +736,7 @@ async function handlePlatformSubscription(
         }
       : null,
     entitlements: {
-      managedEmail: data.entitlements.managed_email,
+      cloudEmail: data.entitlements.cloud_email,
       phoneNumber: data.entitlements.phone_number,
     },
   };

@@ -105,7 +105,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
       data: {
         plan_id: "pro",
         status: "active",
-        entitlements: { managed_email: true, phone_number: false },
+        entitlements: { cloud_email: true, phone_number: false },
       },
       response: { ok: true },
     }),

@@ -170,7 +170,7 @@ function makeSubscription(
     cancel_at_period_end: false,
     cancel_at: null,
     package: pkg ?? null,
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 

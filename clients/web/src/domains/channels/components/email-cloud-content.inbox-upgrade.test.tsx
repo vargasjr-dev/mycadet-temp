@@ -33,7 +33,7 @@ const { EmailCloudContent } = await import("./email-cloud-content");
 const NOT_ENTITLED = {
   plan_id: "base",
   status: "active",
-  entitlements: { managed_email: false, phone_number: false },
+  entitlements: { cloud_email: false, phone_number: false },
 } as unknown as SubscriptionResponse;
 
 function renderNotEntitled() {
@@ -67,7 +67,7 @@ function renderNotEntitled() {
 const ENTITLED = {
   plan_id: "pro",
   status: "active",
-  entitlements: { managed_email: true, phone_number: false },
+  entitlements: { cloud_email: true, phone_number: false },
 } as unknown as SubscriptionResponse;
 
 const PLATFORM_ASSISTANT_ID = "platform-assistant";

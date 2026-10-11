@@ -136,7 +136,7 @@ Fields:
   selectedCreditTier  The selected Pro credit bundle tier, or null
   package             The named Pro package pin ({ key, name, version,
                       customized }), or null
-  entitlements        Plan-gated features ({ managedEmail, phoneNumber })
+  entitlements        Plan-gated features ({ cloudEmail, phoneNumber })
 
 For the credit balance (not the plan), use 'assistant cloud credits'. For
 plan pricing, use 'assistant cloud plans'.

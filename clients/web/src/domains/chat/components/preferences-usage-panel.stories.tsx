@@ -56,7 +56,7 @@ const SUBSCRIPTION: SubscriptionResponse = {
   cancel_at_period_end: false,
   cancel_at: null,
   package: { key: "mighty", name: "Mighty", version: 1, customized: false },
-  entitlements: { managed_email: false, phone_number: false },
+  entitlements: { cloud_email: false, phone_number: false },
 };
 
 /** A free (base) sub: no package and no billing cycle. */
@@ -69,7 +69,7 @@ const FREE_SUBSCRIPTION: SubscriptionResponse = {
   cancel_at_period_end: false,
   cancel_at: null,
   package: null,
-  entitlements: { managed_email: false, phone_number: false },
+  entitlements: { cloud_email: false, phone_number: false },
 };
 
 interface UsagePanelStoryArgs {

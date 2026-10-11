@@ -33124,12 +33124,12 @@ paths:
                   entitlements:
                     type: object
                     properties:
-                      managedEmail:
+                      cloudEmail:
                         type: boolean
                       phoneNumber:
                         type: boolean
                     required:
-                      - managedEmail
+                      - cloudEmail
                       - phoneNumber
                     additionalProperties: false
                 required:

@@ -34,7 +34,7 @@ function gracePeriodSubscription(): SubscriptionResponse {
     cancel_at_period_end: true,
     cancel_at: "2026-09-01T00:00:00Z",
     package: null,
-    entitlements: { managed_email: false, phone_number: false },
+    entitlements: { cloud_email: false, phone_number: false },
   };
 }
 

@@ -1,7 +1,7 @@
 /**
  * Gate tests for `EmailChannelSection`'s managed-email subscription gate.
  *
- * The gate keys off the `managed_email` entitlement, NOT `plan_id`, so an
+ * The gate keys off the `cloud_email` entitlement, NOT `plan_id`, so an
  * admin `EntitlementOverride` that grants managed email to a Base org is
  * honored in-product. We verify both directions:
  *
@@ -91,7 +91,7 @@ function makeSubscription(
     current_period_end: null,
     cancel_at_period_end: false,
     cancel_at: null,
-    entitlements: { managed_email: managedEmail, phone_number: false },
+    entitlements: { cloud_email: managedEmail, phone_number: false },
   };
 }
 

@@ -128,7 +128,7 @@ export function EmailChannelSection() {
     mode === "managed" &&
     managedAssistantId !== null &&
     !!subscription?.entitlements &&
-    subscription.entitlements.managed_email !== true;
+    subscription.entitlements.cloud_email !== true;
 
   // -- Handlers --------------------------------------------------------------
   const handleModeChange = useCallback((next: ServiceMode) => {
