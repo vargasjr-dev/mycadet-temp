@@ -37,7 +37,6 @@ import {
 } from "../../config/chat-settings.js";
 import {
   catalogEntryFor,
-  type InputModalities,
   modalitiesOf,
   resolveModalityOverride,
 } from "../../config/input-modalities.js";
@@ -523,88 +522,58 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
   }
 }
 
-function readPlainObject(value: unknown): Record<string, unknown> | undefined {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    return undefined;
-  }
-  return value as Record<string, unknown>;
-}
-
-function stripTransportHeadersRecursively(value: unknown): void {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      stripTransportHeadersRecursively(item);
-    }
-    return;
-  }
-
-  const object = readPlainObject(value);
-  if (!object) {
-    return;
-  }
-  const transport = readPlainObject(object.transport);
-  if (transport) {
-    delete transport.headers;
-  }
-  for (const child of Object.values(object)) {
-    stripTransportHeadersRecursively(child);
-  }
-}
+/**
+ * Tolerant shape parses for raw config-write fragments — zod replaces the
+ * hand-rolled plain-object narrowing (`readPlainObject`) at every guard.
+ * They model exactly the fields each guard reads and pass everything else
+ * through, so a write guard sees intent even when the surrounding payload
+ * is sparse or malformed. A parse copies, so mutating guards write the
+ * normalized slice back onto the caller's object instead of relying on
+ * shared references.
+ */
+const JsonRecordSchema = z.record(z.string(), z.unknown());
+const RawProfileEntrySchema = z.record(z.string(), z.unknown());
+const RawLlmWriteSliceSchema = z
+  .object({
+    default: z.unknown().optional(),
+    profiles: z.record(z.string(), z.unknown()).nullable().optional(),
+  })
+  .passthrough();
 
 function containsTransportHeadersRecursively(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((item) => containsTransportHeadersRecursively(item));
   }
 
-  const object = readPlainObject(value);
-  if (!object) {
+  const object = JsonRecordSchema.safeParse(value);
+  if (!object.success) {
     return false;
   }
-  const transport = readPlainObject(object.transport);
-  if (transport && Object.hasOwn(transport, "headers")) {
+  const transport = JsonRecordSchema.safeParse(object.data.transport);
+  if (transport.success && "headers" in transport.data) {
     return true;
   }
-  return Object.values(object).some((child) =>
+  return Object.values(object.data).some((child) =>
     containsTransportHeadersRecursively(child),
   );
 }
 
-function sanitizeMcpTransportHeadersForSettingsRead(config: unknown): void {
-  const root = readPlainObject(config);
-  if (!root) {
-    return;
-  }
-  const mcp = readPlainObject(root.mcp);
-  if (!mcp || !Object.hasOwn(mcp, "servers")) {
-    return;
-  }
-  if (Array.isArray(mcp.servers)) {
-    stripTransportHeadersRecursively(mcp.servers);
-    return;
-  }
-  const servers = readPlainObject(mcp.servers);
-  if (!servers) {
-    return;
-  }
-  for (const server of Object.values(servers)) {
-    stripTransportHeadersRecursively(server);
-  }
-}
-
 function patchContainsMcpTransportHeaders(patch: unknown): boolean {
-  const root = readPlainObject(patch);
-  const mcp = readPlainObject(root?.mcp);
-  if (!mcp || !Object.hasOwn(mcp, "servers")) {
+  const root = JsonRecordSchema.safeParse(patch);
+  const mcp = root.success
+    ? JsonRecordSchema.safeParse(root.data.mcp)
+    : undefined;
+  if (!mcp?.success || !Object.hasOwn(mcp.data, "servers")) {
     return false;
   }
-  if (Array.isArray(mcp.servers)) {
-    return containsTransportHeadersRecursively(mcp.servers);
+  if (Array.isArray(mcp.data.servers)) {
+    return containsTransportHeadersRecursively(mcp.data.servers);
   }
-  const servers = readPlainObject(mcp.servers);
-  if (!servers) {
+  const servers = JsonRecordSchema.safeParse(mcp.data.servers);
+  if (!servers.success) {
     return false;
   }
-  return Object.values(servers).some((server) =>
+  return Object.values(servers.data).some((server) =>
     containsTransportHeadersRecursively(server),
   );
 }
@@ -792,7 +761,6 @@ function handleGetConfig() {
   try {
     const config = loadConfig();
     overlayWorkspaceMcpForConfigRead(config);
-    sanitizeMcpTransportHeadersForSettingsRead(config);
     overlayEffectiveProfilesForWire(config);
     enrichProfilesForWire(config);
     overlayChatSettingsForWire(config);
@@ -802,7 +770,6 @@ function handleGetConfig() {
     throw new InternalError(`Failed to read config: ${message}`);
   }
 }
-
 function overlayChatSettingsForWire(config: AssistantConfig): void {
   const effective = getConfig();
   config.conversations = {
@@ -854,24 +821,26 @@ const WIRE_ONLY_PROFILE_KEYS = new Set(["invariant", "supportsVision"]);
 
 /**
  * Delete the wire-only keys ({@link WIRE_ONLY_PROFILE_KEYS}) from every
- * profile entry in a config-write fragment, in place.
+ * profile entry in a config-write fragment. The llm slice is parsed through
+ * {@link RawLlmWriteSliceSchema} and written back — a zod parse copies, so
+ * the normalized slice must be reassigned for the caller's patch to carry it.
  */
-function stripWireOnlyProfileKeys(patch: unknown): void {
-  const root = readPlainObject(patch);
-  const llm = readPlainObject(root?.llm);
-  const profiles = readPlainObject(llm?.profiles);
-  if (!profiles) {
+function stripWireOnlyProfileKeys(patch: Record<string, unknown>): void {
+  const llm = RawLlmWriteSliceSchema.safeParse(patch.llm);
+  if (!llm.success || !llm.data.profiles) {
     return;
   }
-  for (const profile of Object.values(profiles)) {
-    const entry = readPlainObject(profile);
-    if (!entry) {
+  for (const [name, profile] of Object.entries(llm.data.profiles)) {
+    const entry = RawProfileEntrySchema.safeParse(profile);
+    if (!entry.success) {
       continue;
     }
     for (const key of WIRE_ONLY_PROFILE_KEYS) {
-      delete entry[key];
+      delete entry.data[key];
     }
+    llm.data.profiles[name] = entry.data;
   }
+  patch.llm = llm.data;
 }
 
 /**
@@ -893,33 +862,39 @@ function stripWireOnlyProfileKeys(patch: unknown): void {
  *   shadowed or given content. A clean echo reduces to a no-op
  *   `{source: "managed"}` stub.
  *
- * Entries are mutated (never replaced) so the normalization also reaches
- * `handleSetConfig`'s `raw` write, which shares object references with the
- * inspected patch shape.
+ * The llm slice is parsed through {@link RawLlmWriteSliceSchema} and the
+ * normalized slice written back — a zod parse copies, so the write-back (not
+ * shared references) is what carries the normalization to the caller's patch.
+ * `handleSetConfig` reads the written-back shape for entry-level SETs.
  */
-export function normalizeCloudProfileWrites(patch: unknown): void {
-  const root = readPlainObject(patch);
-  const llm = readPlainObject(root?.llm);
-  const profiles = readPlainObject(llm?.profiles);
-  if (!profiles) {
+export function normalizeCloudProfileWrites(
+  patch: Record<string, unknown>,
+): void {
+  const llm = RawLlmWriteSliceSchema.safeParse(patch.llm);
+  if (!llm.success || !llm.data.profiles) {
     return;
   }
+  const profiles = llm.data.profiles;
 
-  const currentProfiles = readPlainObject(
-    readPlainObject(loadRawConfig().llm)?.profiles,
-  ) as Record<string, ProfileEntry> | undefined;
+  const currentLlm = RawLlmWriteSliceSchema.safeParse(loadRawConfig().llm);
+  const typedCurrent = currentLlm.success
+    ? LLMSchema.shape.profiles.safeParse(currentLlm.data.profiles)
+    : undefined;
+  const currentProfiles: Record<string, unknown> | undefined =
+    typedCurrent?.success ? typedCurrent.data : undefined;
 
   for (const name of Object.keys(profiles)) {
     if (!MANAGED_PROFILE_NAMES.has(name)) {
       continue;
     }
-    const entry = readPlainObject(profiles[name]);
-    if (!entry) {
+    const entry = RawProfileEntrySchema.safeParse(profiles[name]);
+    if (!entry.success) {
       continue;
     }
 
-    const current = readPlainObject(currentProfiles?.[name]);
-    if (current && current.source !== "managed") {
+    const current = RawProfileEntrySchema.safeParse(currentProfiles?.[name]);
+
+    if (current.success && current.data.source !== "managed") {
       // Legacy user-owned shadow: fully editable, normal custom-profile rules.
       continue;
     }
@@ -927,26 +902,27 @@ export function normalizeCloudProfileWrites(patch: unknown): void {
     // Must resolve through the same provider column as
     // `overlayEffectiveProfilesForWire`, or an echo of the wire view would
     // not match `effective` and an honest round-trip would be rejected.
-    const effective = readPlainObject(
-      resolveDefaultProfileForProvider(
-        currentProfiles,
-        name,
-        getConfig().llm.default,
-      ),
+    const resolved = resolveDefaultProfileForProvider(
+      typedCurrent?.success ? typedCurrent.data : undefined,
+      name,
+      getConfig().llm.default,
     );
-    for (const key of Object.keys(entry)) {
+    const effective: Record<string, unknown> | undefined = resolved
+      ? { ...resolved }
+      : undefined;
+    for (const key of Object.keys(entry.data)) {
       if (key === "source" || key === "status") {
         continue;
       }
       const matchesEffective =
         effective != null &&
         key in effective &&
-        isDeepStrictEqual(entry[key], effective[key]);
-      if (current == null || !(key in current)) {
+        isDeepStrictEqual(entry.data[key], effective[key]);
+      if (!current.success || !(key in current.data)) {
         // Not on disk: a value matching the wire view is a client echo of
         // catalog content — drop it. Anything else stays for the guard.
         if (matchesEffective) {
-          delete entry[key];
+          delete entry.data[key];
         }
         continue;
       }
@@ -956,35 +932,39 @@ export function normalizeCloudProfileWrites(patch: unknown): void {
       // from disk is pinned back to the on-disk value (no change for the
       // guard to reject); everything else is left for the guard's
       // frozen-field comparison.
-      if (matchesEffective && !isDeepStrictEqual(entry[key], current[key])) {
-        entry[key] = current[key];
+      if (
+        matchesEffective &&
+        !isDeepStrictEqual(entry.data[key], current.data[key])
+      ) {
+        entry.data[key] = current.data[key];
       }
     }
 
-    if (current) {
+    if (current.success) {
       // Existing stub: the guard compares the merged result against it and
       // rejects everything but the status re-enable.
-      if (entry.source === undefined) {
-        entry.source = "managed";
+      if (entry.data.source === undefined) {
+        entry.data.source = "managed";
       }
+      profiles[name] = entry.data;
       continue;
     }
 
     // No on-disk entry: the name is catalog-owned. Nothing but a clean echo
     // (which reduced to source/status above) may pass.
-    if ("source" in entry && entry.source !== "managed") {
+    if ("source" in entry.data && entry.data.source !== "managed") {
       throw new BadRequestError(
         `Cannot create profile "${name}" — the name is reserved for a code-defined default profile.`,
       );
     }
     if (
-      "status" in entry &&
-      entry.status != null &&
-      entry.status !== "active"
+      "status" in entry.data &&
+      entry.data.status != null &&
+      entry.data.status !== "active"
     ) {
       throw new BadRequestError(`Cannot disable cloud profile "${name}".`);
     }
-    const residual = Object.keys(entry).filter(
+    const residual = Object.keys(entry.data).filter(
       (key) => key !== "source" && key !== "status",
     );
     if (residual.length > 0) {
@@ -993,8 +973,11 @@ export function normalizeCloudProfileWrites(patch: unknown): void {
           `Cloud profiles are read-only; duplicate to a custom profile to customize.`,
       );
     }
-    entry.source = "managed";
+    entry.data.source = "managed";
+    profiles[name] = entry.data;
   }
+
+  patch.llm = llm.data;
 }
 
 /**
@@ -1011,38 +994,20 @@ export function normalizeCloudProfileWrites(patch: unknown): void {
  *   a cloud name is fully editable, so it must render as a normal custom
  *   profile.
  */
-function enrichProfilesForWire(config: unknown): void {
-  const root = readPlainObject(config);
-  if (!root) {
-    return;
-  }
-  const llm = readPlainObject(root.llm);
-  if (!llm) {
-    return;
-  }
-  const profiles = readPlainObject(llm.profiles);
-  if (!profiles) {
-    return;
-  }
-
-  for (const [name, profile] of Object.entries(profiles)) {
-    const entry = readPlainObject(profile);
-    if (!entry) {
-      continue;
-    }
+function enrichProfilesForWire(config: AssistantConfig): void {
+  for (const [name, entry] of Object.entries(config.llm.profiles)) {
     if (INVARIANT_PROFILE_NAMES.has(name) && entry.source === "managed") {
       entry.invariant = true;
     }
-    const provider = entry.provider;
-    const model = entry.model;
-    if (typeof provider !== "string" || typeof model !== "string") {
+
+    if (entry.provider == null || entry.model == null) {
       continue;
     }
 
-    const catalogModel = catalogEntryFor(provider, model);
+    const catalogModel = catalogEntryFor(entry.provider, entry.model);
     const catalogVision = catalogModel?.supportsVision;
     const imageOverride = modalitiesOf({
-      inputModalities: entry.inputModalities as InputModalities | null,
+      inputModalities: entry.inputModalities,
     })?.image;
     entry.supportsVision =
       resolveModalityOverride(imageOverride, catalogVision) ?? true;
@@ -1084,20 +1049,23 @@ function handleGetConfigSchema({ queryParams = {} }: RouteHandlerArgs) {
 export function rejectCloudProfileDeletion(
   body: Record<string, unknown>,
 ): void {
-  const llm = asMutablePlainObject(body.llm);
-  if (!llm) {
+  const llm = RawLlmWriteSliceSchema.safeParse(body.llm);
+  if (!llm.success) {
     return;
   }
-  if ("profiles" in llm && llm.profiles === null) {
+  if (llm.data.profiles === null) {
     throw new BadRequestError(
       "Cannot null llm.profiles — cloud profiles would be deleted.",
     );
   }
-  const profiles = asMutablePlainObject(llm.profiles);
+  const profiles = llm.data.profiles;
   if (!profiles) {
     return;
   }
-  const existingProfiles = asMutablePlainObject(getConfig().llm.profiles) ?? {};
+  const existingLlm = RawLlmWriteSliceSchema.safeParse(getConfig().llm);
+  const existingProfiles = existingLlm.success
+    ? (existingLlm.data.profiles ?? {})
+    : {};
   for (const name of Object.keys(profiles)) {
     if (profiles[name] !== null || !MANAGED_PROFILE_NAMES.has(name)) {
       continue;
@@ -1105,8 +1073,8 @@ export function rejectCloudProfileDeletion(
     // Only block deletion when the on-disk entry is Cadet Cloud. A
     // user-owned profile sharing a cloud name carries a non-managed `source`
     // and is freely deletable.
-    const existing = asMutablePlainObject(existingProfiles[name]);
-    if (existing?.source === "managed") {
+    const existing = RawProfileEntrySchema.safeParse(existingProfiles[name]);
+    if (existing.success && existing.data.source === "managed") {
       throw new BadRequestError(`Cannot delete cloud profile "${name}".`);
     }
   }
@@ -1222,17 +1190,17 @@ function completeChangedCustomProfiles(
   preWrite: Record<string, unknown>,
   raw: Record<string, unknown>,
 ): void {
-  const profiles = asMutablePlainObject(readPlainObject(raw.llm)?.profiles);
-  if (!profiles) {
+  const llm = RawLlmWriteSliceSchema.safeParse(raw.llm);
+  if (!llm.success || !llm.data.profiles) {
     return;
   }
-  const parsedDefault = LLMConfigBase.safeParse(
-    readPlainObject(raw.llm)?.default ?? {},
-  );
+  const profiles = llm.data.profiles;
+  const parsedDefault = LLMConfigBase.safeParse(llm.data.default ?? {});
   if (!parsedDefault.success) {
     return;
   }
-  const prior = readPlainObject(readPlainObject(preWrite.llm)?.profiles) ?? {};
+  const priorLlm = RawLlmWriteSliceSchema.safeParse(preWrite.llm);
+  const prior = priorLlm.success ? (priorLlm.data.profiles ?? {}) : {};
   for (const [name, entry] of Object.entries(profiles)) {
     if (isDeepStrictEqual(entry, prior[name])) {
       continue;
@@ -1252,14 +1220,20 @@ function completeChangedCustomProfiles(
     // depth: `safeParse` strips keys the schema doesn't know (top-level and
     // inside nested objects like `contextWindow`), and dropping them here
     // would delete forward-compatible fields whenever the entry is edited.
+    const entryRecord = RawProfileEntrySchema.safeParse(entry);
+    if (!entryRecord.success) {
+      continue;
+    }
     profiles[name] = mergePreservingUnknownKeys(
-      readPlainObject(entry) ?? {},
+      entryRecord.data,
       completeCustomProfile(parsedDefault.data, entryData) as Record<
         string,
         unknown
       >,
     );
   }
+  // A zod parse copies — write the completed slice back so `raw` carries it.
+  raw.llm = llm.data;
 }
 
 /**
@@ -1359,13 +1333,15 @@ function assertRoutableIdentityEntries(
  * `null`.
  */
 function assertCodeOwnedFallbackProfiles(raw: Record<string, unknown>): void {
-  const llm = readPlainObject(raw.llm);
-  const profiles = readPlainObject(llm?.profiles);
+  const llm = RawLlmWriteSliceSchema.safeParse(raw.llm);
+  if (!llm.success) {
+    return;
+  }
   // The sibling `llm.default` decides whether the cloud backups are valid
   // fallback targets: they resolve on the cloud column alone.
   const issues = collectFallbackProfileIssues(
-    profiles ?? undefined,
-    llm?.default,
+    llm.data.profiles ?? undefined,
+    llm.data.default,
   );
   if (issues.length > 0) {
     throw new BadRequestError(issues.map((issue) => issue.message).join(" "));
@@ -1477,8 +1453,11 @@ function scrubRemovedServiceModes(raw: Record<string, unknown>): void {
  * provider write is never silently rewritten.
  */
 function seedSttProviderForSparseBlock(raw: Record<string, unknown>): void {
-  const services = readPlainObject(raw.services);
-  const stt = readPlainObject(services?.stt);
+  const services = z
+    .object({ stt: z.record(z.string(), z.unknown()).optional() })
+    .passthrough()
+    .safeParse(raw.services);
+  const stt = services.success ? services.data.stt : undefined;
   if (!stt) {
     return;
   }
@@ -1487,37 +1466,44 @@ function seedSttProviderForSparseBlock(raw: Record<string, unknown>): void {
     return;
   }
   stt.provider = getConfig().services.stt.provider;
+  // A zod parse copies — write the seeded slice back so `raw` carries it.
+  raw.services = services.data;
 }
 
 async function handlePatchConfig({ body }: RouteHandlerArgs) {
-  if (
-    !body ||
-    typeof body !== "object" ||
-    Array.isArray(body) ||
-    Object.keys(body).length === 0
-  ) {
+  const patch = JsonRecordSchema.safeParse(body);
+  if (!patch.success || Object.keys(patch.data).length === 0) {
     throw new BadRequestError("Body must be a non-empty JSON object");
   }
-  const chatSettings = ChatSettingsPatchSchema.safeParse(body);
+  const chatSettings = ChatSettingsPatchSchema.safeParse(patch.data);
   if (!chatSettings.success) {
     throw new BadRequestError(chatSettings.error.message);
   }
-  stripWireOnlyProfileKeys(body);
-  normalizeCloudProfileWrites(body);
-  rejectCloudProfileDeletion(body as Record<string, unknown>);
-  rejectMcpTransportHeaderWrite(body);
-  stripMcpFromConfigWrite(body as Record<string, unknown>);
+  stripWireOnlyProfileKeys(patch.data);
+  normalizeCloudProfileWrites(patch.data);
+  rejectCloudProfileDeletion(patch.data);
+  rejectMcpTransportHeaderWrite(patch.data);
+  stripMcpFromConfigWrite(patch.data);
 
   const raw = loadRawConfig();
-  const patch = body as Record<string, unknown>;
-  const patchedIngressUrl = readPlainObject(patch.ingress)?.publicBaseUrl;
+  const ingress = z
+    .object({ publicBaseUrl: z.unknown().optional() })
+    .passthrough()
+    .safeParse(patch.data.ingress);
+  const patchedIngressUrl = ingress.success
+    ? ingress.data.publicBaseUrl
+    : undefined;
   if (patchedIngressUrl !== undefined) {
-    dropTunnelRecordsForNewUrl(readPlainObject(raw.ingress), patchedIngressUrl);
+    const rawIngress = JsonRecordSchema.safeParse(raw.ingress);
+    if (rawIngress.success) {
+      dropTunnelRecordsForNewUrl(rawIngress.data, patchedIngressUrl);
+      raw.ingress = rawIngress.data;
+    }
   }
-  deepMergeOverwrite(raw, patch);
+  deepMergeOverwrite(raw, patch.data);
   scrubRemovedServiceModes(raw);
   scrubNulledAcpAgentLeaves(raw);
-  scrubNulledChatSettings(raw, patch);
+  scrubNulledChatSettings(raw, patch.data);
   seedSttProviderForSparseBlock(raw);
 
   await commitConfigWrite(raw, "patch");
@@ -1586,11 +1572,11 @@ async function handleSetConfig({ body }: RouteHandlerArgs) {
 
   const raw = loadRawConfig();
   // A SET below the entry level (`llm.profiles.<name>.<leaf>`) writes the
-  // primitive leaf directly into `raw`, bypassing the by-reference
-  // normalization above — creating an entry for a cloud-owned name would
-  // leave it source-less, and a source-less entry reads as a user shadow
-  // that blocks the catalog body. Stamp the cloud marker onto the written
-  // entry when the name was absent or managed-owned before this write.
+  // primitive leaf directly into `raw`, bypassing the entry normalization
+  // above — creating an entry for a cloud-owned name would leave it
+  // source-less, and a source-less entry reads as a user shadow that blocks
+  // the catalog body. Stamp the cloud marker onto the written entry when the
+  // name was absent or managed-owned before this write.
   const managedEntryName =
     pathSegments[0] === "llm" &&
     pathSegments[1] === "profiles" &&
@@ -1598,26 +1584,50 @@ async function handleSetConfig({ body }: RouteHandlerArgs) {
     MANAGED_PROFILE_NAMES.has(pathSegments[2]!)
       ? pathSegments[2]!
       : undefined;
-  const priorManagedEntry = managedEntryName
-    ? readPlainObject(
-        readPlainObject(readPlainObject(raw.llm)?.profiles)?.[managedEntryName],
-      )
-    : undefined;
+  const rawLlm = RawLlmWriteSliceSchema.safeParse(raw.llm);
+  const priorManagedEntry =
+    managedEntryName != null
+      ? RawProfileEntrySchema.safeParse(
+          rawLlm.success ? rawLlm.data.profiles?.[managedEntryName] : undefined,
+        )
+      : undefined;
   // `assistant config set ingress.publicBaseUrl <url>`, what the webhook
   // diagnostics tell users to run, retargets ingress like the settings route.
   if (path === "ingress.publicBaseUrl") {
-    dropTunnelRecordsForNewUrl(readPlainObject(raw.ingress), value);
+    const rawIngress = JsonRecordSchema.safeParse(raw.ingress);
+    if (rawIngress.success) {
+      dropTunnelRecordsForNewUrl(rawIngress.data, value);
+      raw.ingress = rawIngress.data;
+    }
   }
-  setNestedValue(raw, path, value);
+  // Profile entry-level SETs write the guards' normalized entry: the write
+  // guards parse and write the llm slice back onto `patchShape` (a zod parse
+  // copies), so the normalized entry lives there, never on the raw value.
+  const patchLlm = RawLlmWriteSliceSchema.safeParse(patchShape.llm);
+  const normalizedEntry =
+    pathSegments[0] === "llm" &&
+    pathSegments[1] === "profiles" &&
+    pathSegments.length === 3 &&
+    patchLlm.success
+      ? patchLlm.data.profiles?.[pathSegments[2]!]
+      : undefined;
+  setNestedValue(raw, path, normalizedEntry ?? value);
   if (
-    managedEntryName &&
-    (priorManagedEntry == null || priorManagedEntry.source === "managed")
+    managedEntryName != null &&
+    (!priorManagedEntry?.success || priorManagedEntry.data.source === "managed")
   ) {
-    const written = readPlainObject(
-      readPlainObject(readPlainObject(raw.llm)?.profiles)?.[managedEntryName],
-    );
-    if (written && written.source === undefined) {
-      written.source = "managed";
+    const writtenLlm = RawLlmWriteSliceSchema.safeParse(raw.llm);
+    const written = writtenLlm.success
+      ? RawProfileEntrySchema.safeParse(
+          writtenLlm.data.profiles?.[managedEntryName],
+        )
+      : undefined;
+    if (writtenLlm.success && writtenLlm.data.profiles && written?.success) {
+      if (written.data.source === undefined) {
+        written.data.source = "managed";
+        writtenLlm.data.profiles[managedEntryName] = written.data;
+        raw.llm = writtenLlm.data;
+      }
     }
   }
   scrubNulledAcpAgentLeaves(raw);

@@ -2,6 +2,8 @@
 // Memory substrate — twin-namespace shadowing detection
 // ---------------------------------------------------------------------------
 
+import { z } from "zod";
+
 /** One `memory.v2` tunable's `memory.substrate` twin. */
 interface SubstrateTwin {
   /** The twin's `memory.substrate` key, e.g. `spread_k` for `k`. */
@@ -93,11 +95,16 @@ export type SubstrateShadowing = {
   alsoReadByV2Engine: boolean;
 };
 
-function readPlainObject(value: unknown): Record<string, unknown> | undefined {
-  return value != null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
+/**
+ * Presence-preserving slice parse for the raw `memory` section — the zod
+ * replacement for the deleted hand-rolled plain-object narrowing. A zod
+ * record keeps every persisted key (including explicit `null` values, which
+ * `resolveSubstrateTuning` treats as present) and rejects non-object
+ * sections exactly like the narrowing did.
+ */
+const MemoryShadowSliceSchema = z
+  .object({ substrate: z.record(z.string(), z.unknown()).optional() })
+  .passthrough();
 
 /**
  * The `memory.substrate` twin covering `path`, or `undefined` when `path` is
@@ -130,7 +137,8 @@ export function findSubstrateShadowing(
   if (twin === undefined) {
     return undefined;
   }
-  const substrate = readPlainObject(readPlainObject(raw.memory)?.substrate);
+  const memory = MemoryShadowSliceSchema.safeParse(raw.memory);
+  const substrate = memory.success ? memory.data.substrate : undefined;
   if (!substrate || !(twin.substrateKey in substrate)) {
     return undefined;
   }
