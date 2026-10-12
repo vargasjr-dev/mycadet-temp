@@ -660,35 +660,23 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
 }
 
 /**
- * Fold the CLI-managed process rows into ONE table with the assistant rows:
- * a process fronts an assistant when it recorded that assistant's id, and
- * those rows nest under it; anything unattributed (or fronting an assistant
- * this environment no longer lists) renders at the bottom, machine-level.
+ * Fold the CLI-managed process rows into ONE table with the assistant rows.
+ * Tunnel agents and the nginx edge are root resources of the machine, not
+ * children of whichever assistant they front — especially as the web bundle
+ * splits into /app and /ui — so every CLI-managed row renders machine-level.
  */
 async function assistantRowsWithRootProcesses(
   assistants: AssistantEntry[],
   healths: AssistantHealth[],
   activeAssistantId: string | null,
 ): Promise<TableRow[]> {
-  const nestedByAssistant = new Map<string, TableRow[]>();
-  const unattributed: TableRow[] = [];
-  const knownIds = new Set(assistants.map((entry) => entry.assistantId));
-  for (const managed of await getRootManagedRows()) {
-    if (managed.assistantId && knownIds.has(managed.assistantId)) {
-      const nested = nestedByAssistant.get(managed.assistantId) ?? [];
-      nested.push({ ...managed.row, name: `  └ ${managed.row.name}` });
-      nestedByAssistant.set(managed.assistantId, nested);
-    } else {
-      unattributed.push(managed.row);
-    }
-  }
+  const rootRows = (await getRootManagedRows()).map((managed) => managed.row);
 
   const rows: TableRow[] = [];
   assistants.forEach((entry, i) => {
     rows.push(formatAssistantListRow(entry, activeAssistantId, healths[i]!));
-    rows.push(...(nestedByAssistant.get(entry.assistantId) ?? []));
   });
-  rows.push(...unattributed);
+  rows.push(...rootRows);
   return rows;
 }
 
