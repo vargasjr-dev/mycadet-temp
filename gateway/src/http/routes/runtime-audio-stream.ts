@@ -35,6 +35,7 @@ import {
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { parseSub } from "../../auth/subject.js";
 import type { GatewayConfig } from "../../config.js";
+import { isWebsocketUpgradeRequest } from "../utils.js";
 
 /**
  * Cap on frames held while the upstream socket is still connecting, so a
@@ -83,7 +84,7 @@ export function authorizeRuntimeAudioStream(
   config: GatewayConfig,
   log: Logger,
 ): RuntimeAudioStreamAuth {
-  if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+  if (!isWebsocketUpgradeRequest(req)) {
     return {
       ok: false,
       response: new Response("Upgrade Required", { status: 426 }),

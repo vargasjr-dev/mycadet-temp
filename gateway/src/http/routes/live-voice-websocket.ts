@@ -16,6 +16,7 @@ import {
   requireBoundGuardian,
   requireManagedGuardian,
 } from "./guardian-pin.js";
+import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const log = getLogger("live-voice-ws");
 
@@ -53,7 +54,7 @@ export function createLiveVoiceWebsocketHandler(config: GatewayConfig) {
     req: Request,
     server: import("bun").Server<unknown>,
   ): Promise<Response | undefined> {
-    if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    if (!isWebsocketUpgradeRequest(req)) {
       return new Response("Upgrade Required", { status: 426 });
     }
 

@@ -13,6 +13,7 @@ import {
   isPluginWebhookSocketData,
   type PluginWebhookSocketData,
 } from "./plugin-webhook-websocket.js";
+import { IngressRoute } from "../../channels/plugin-ingress.js";
 
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
 
@@ -53,17 +54,9 @@ function resolution(
   return { approved: [], pending: [], problems: [], ...overrides };
 }
 
-function approvedWith(
-  routes: {
-    path: string;
-    kind: "http" | "websocket";
-    signer: "plugin" | "cadet";
-    handshake: "signed-headers" | "signed-query";
-    description: string;
-  }[],
-): PluginIngressResolution {
+function approvedWith(routes: IngressRoute[]): PluginIngressResolution {
   return resolution({
-    approved: [{ plugin: "meeting-bot", routes, digest: "d".repeat(32) }],
+    approved: [{ plugin: "example", routes, digest: "d".repeat(32) }],
   });
 }
 
@@ -128,13 +121,13 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
     expect(res).toBeUndefined();
     expect(upgrades).toHaveLength(1);
-    expect(upgrades[0]!.plugin).toBe("meeting-bot");
+    expect(upgrades[0]!.plugin).toBe("example");
     expect(isPluginWebhookSocketData(upgrades[0])).toBe(true);
   });
 
@@ -145,7 +138,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest({ upgrade: false }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -158,7 +151,7 @@ describe("upgrade gate", () => {
       resolve: () =>
         resolution({
           pending: [
-            { plugin: "meeting-bot", routes: [ROUTE], digest: "d".repeat(32) },
+            { plugin: "example", routes: [ROUTE], digest: "d".repeat(32) },
           ],
         }),
     });
@@ -167,7 +160,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -183,7 +176,7 @@ describe("upgrade gate", () => {
         resolution({
           pending: [
             {
-              plugin: "meeting-bot",
+              plugin: "example",
               routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
@@ -195,7 +188,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest({ secret: CADET_SECRET }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -210,7 +203,7 @@ describe("upgrade gate", () => {
         resolution({
           pending: [
             {
-              plugin: "meeting-bot",
+              plugin: "example",
               routes: [{ ...ROUTE, signer: "cadet" as const }],
               digest: "d".repeat(32),
             },
@@ -222,7 +215,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest({ secret: PLUGIN_SECRET }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -240,7 +233,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -255,7 +248,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest({ path: "/webhooks/plugins/meeting-bot/admin" }),
       server,
-      "meeting-bot",
+      "example",
       "admin",
     );
 
@@ -274,7 +267,7 @@ describe("upgrade gate", () => {
     const res = await handle(
       upgradeRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -291,7 +284,7 @@ describe("handshake signature", () => {
     const res = await handle(
       upgradeRequest({ secret: "" }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -306,7 +299,7 @@ describe("handshake signature", () => {
     const res = await handle(
       upgradeRequest({ secret: "nope" }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -324,7 +317,7 @@ describe("handshake signature", () => {
         timestamp: String(Math.floor(Date.now() / 1000) - 3600),
       }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -339,7 +332,7 @@ describe("handshake signature", () => {
     const res = await handle(
       upgradeRequest({ timestamp: "" }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -355,7 +348,7 @@ describe("handshake signature", () => {
     const res = await handle(
       upgradeRequest({ signPath: "/webhooks/plugins/meeting-bot/other" }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -370,7 +363,7 @@ describe("handshake signature", () => {
     const res = await handle(
       upgradeRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -388,7 +381,7 @@ describe("handshake signature", () => {
       await handle(
         upgradeRequest({ secret: CADET_SECRET }),
         server,
-        "meeting-bot",
+        "example",
         "realtime",
       ),
     ).toBeUndefined();
@@ -397,7 +390,7 @@ describe("handshake signature", () => {
     const rejected = await handle(
       upgradeRequest({ secret: PLUGIN_SECRET }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
     expect(rejected?.status).toBe(403);
@@ -433,7 +426,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       signedQueryRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -454,7 +447,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       new Request(url.toString(), { headers: { upgrade: "websocket" } }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -469,7 +462,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       signedQueryRequest({ secret: "not-the-plugin-secret" }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -487,7 +480,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       signedQueryRequest(),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -503,7 +496,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       upgradeRequest({ secret: PLUGIN_SECRET }),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -523,7 +516,7 @@ describe("signed-query handshake", () => {
     const res = await handle(
       new Request(url.toString()),
       server,
-      "meeting-bot",
+      "example",
       "realtime",
     );
 
@@ -551,7 +544,7 @@ function socketData(
   return {
     wsType: "plugin-webhook",
     config: CONFIG,
-    plugin: "meeting-bot",
+    plugin: "example",
     path: "realtime",
     queue: [],
     queuedBytes: 0,

@@ -40,6 +40,7 @@ import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import type { GatewayConfig } from "../../config.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 import { readStoredCloudUserId } from "../../cloud-user-id.js";
+import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const TUNNEL_USER_ID_HEADER = "x-tunnel-user-id";
 const TUNNEL_ORG_ID_HEADER = "x-tunnel-org-id";
@@ -175,7 +176,7 @@ export async function authorizeGuardianStream(
   // Checked here as well as in the shared gate, because the cloud path
   // below skips that gate entirely: without this, a cloud caller sending a
   // plain request would fall through to `server.upgrade` and get a 500.
-  if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+  if (!isWebsocketUpgradeRequest(req)) {
     return new Response("Upgrade Required", { status: 426 });
   }
 

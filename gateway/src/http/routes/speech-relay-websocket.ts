@@ -33,6 +33,7 @@ import { getLogger } from "../../logger.js";
 import { getCloudBaseUrl } from "../../cloud-url.js";
 import { TUNNEL_FORWARDED_HEADER } from "../../tunnel/bridge-utils.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
+import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const log = getLogger("speech-relay-ws");
 
@@ -325,7 +326,7 @@ export function createSpeechRelayUpgradeHandler(
 
     // Non-upgrade request: this is the daemon's dial-failure probe.
     // Replay the gate and hand back tunnel's own rejection.
-    if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    if (!isWebsocketUpgradeRequest(req)) {
       const apiKey = await readAssistantApiKey(deps);
       if (!apiKey) {
         return jsonError(

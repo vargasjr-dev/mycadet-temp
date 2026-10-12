@@ -41,6 +41,7 @@ import {
   timestampWithinTolerance,
   verifyCadetSignature,
 } from "../cadet-signature.js";
+import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const log = getLogger("plugin-webhook-ws");
 
@@ -131,7 +132,7 @@ export function createPluginWebhookWebsocketHandler(deps: PluginWebhookWsDeps) {
     plugin: string,
     path: string,
   ): Promise<Response | undefined> {
-    if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    if (!isWebsocketUpgradeRequest(req)) {
       return new Response("Upgrade Required", { status: 426 });
     }
 

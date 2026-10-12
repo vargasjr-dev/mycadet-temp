@@ -278,6 +278,7 @@ import {
   enablePublicIngress,
 } from "./tunnel/client.js";
 import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
+import { isWebsocketUpgradeRequest } from "./http/utils.js";
 
 const log = getLogger("main");
 
@@ -2309,7 +2310,7 @@ async function main() {
     // Plugin ingress declared as `websocket`. Claimed only for a genuine
     // upgrade — a plain request to the same path stays with the route table,
     // where the HTTP half 404s it for not being an approved HTTP route.
-    if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
+    if (isWebsocketUpgradeRequest(req)) {
       const match = url.pathname.match(PLUGIN_WEBHOOK_PATH_PATTERN);
       if (match) {
         const upgradeResult = await handlePluginWebhookWs(
