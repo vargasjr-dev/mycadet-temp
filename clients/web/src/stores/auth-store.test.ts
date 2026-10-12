@@ -279,7 +279,7 @@ const clearUserScopedStorageMock = mock(() => {});
 
 const patchConsentMock = mock(async (_consent: unknown) => {});
 
-mock.module("@/domains/account/profile", () => ({
+mock.module("@/lib/consent/consent-api", () => ({
   fetchConsent: fetchConsentMock,
   patchConsent: patchConsentMock,
 }));
