@@ -8,8 +8,8 @@
  */
 import type { AvatarAccent } from "@mycadet/avatar-manifest";
 
+import { getAvatarImagePath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarImagePath } from "../util/platform.js";
 import {
   deriveAccentHexFromImage,
   derivedAccent,

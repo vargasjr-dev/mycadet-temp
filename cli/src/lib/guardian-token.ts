@@ -429,7 +429,7 @@ export async function refreshGuardianTokenResult(
     console.warn(
       `Refusing to refresh the guardian token over an insecure URL (${gatewayUrl}). ` +
         "The refresh token is only sent over https or a loopback address: " +
-        "use an https URL (e.g. a tunnel) or connect over loopback.",
+        "use an https URL, e.g. a tunnel, or connect over loopback.",
     );
     return {
       ok: false,

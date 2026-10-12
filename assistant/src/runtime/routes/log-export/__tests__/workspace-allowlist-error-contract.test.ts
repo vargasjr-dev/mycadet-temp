@@ -35,7 +35,7 @@ mock.module("../../../../persistence/conversation-directories.js", () => ({
   },
 }));
 
-import { getConversationsDir } from "../../../../util/platform.js";
+import { getConversationsDir } from "../../../../util/layout.js";
 import { collectWorkspaceData } from "../workspace-allowlist.js";
 
 let staging: string;

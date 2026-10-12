@@ -9,7 +9,7 @@ import {
   listPluginApps,
   resolveAppSource,
 } from "../apps/app-store.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 let workspaceDir: string;
 

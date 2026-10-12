@@ -75,10 +75,6 @@ import type {
 } from "../daemon/conversation-mode-session.js";
 import { isRefusedInReadOnlyPass } from "../daemon/conversation-tool-setup.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import {
-  recordLiveVoiceSessionEnded,
-  recordLiveVoiceSessionStarted,
-} from "../onboarding/onboarding-events-store.js";
 import { isInstalledStaticSkillLoad } from "../permissions/checker.js";
 import {
   attachmentExists,
@@ -113,11 +109,6 @@ import type {
 } from "../stt/types.js";
 import { getSubagentManager } from "../subagent/index.js";
 import type { SubagentParentNotification } from "../subagent/parent-notification.js";
-import {
-  liveVoiceEndScreen,
-  liveVoiceSilenceReason,
-  liveVoiceStartScreen,
-} from "../telemetry/live-voice-funnel.js";
 import { getTool, getToolOwner } from "../tools/registry.js";
 import { resolveSkillExecuteInvocation } from "../tools/skills/resolve-execute-invocation.js";
 import {
@@ -1250,13 +1241,8 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
    * teardown has already destroyed by then: `state` has moved on, the current
    * utterance is gone, and the turn detector is disposed.
    *
-   * A quarter of sessions end with no turn at all, and these three booleans are
-   * what separate a microphone that never opened from one that was muted from a
-   * user who simply left. See `telemetry/live-voice-funnel.ts`.
+   * A quarter of sessions end with no turn at all.
    */
-  private reachedActive = false;
-  private receivedAudio = false;
-  private detectedSpeech = false;
   private dispatchedTurn = false;
   // Loudest server-VAD chunk not attributed to assistant playback, on the
   // gate's own scale. Logged with a silent session's end so `no_speech` can
@@ -1591,18 +1577,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
       return;
     }
 
-    // Before the preflight, not after: a session rejected for missing
-    // credentials is precisely the one the failure rate needs to count, and
-    // recording the start only once `ready` goes out would hide every such
-    // session from both the numerator and the denominator.
-    recordLiveVoiceSessionStarted({
-      sessionId: this.context.sessionId,
-      screen: liveVoiceStartScreen(
-        this.context.startFrame.client,
-        this.context.startFrame.entry,
-      ),
-    });
-
     if (this.resolveCredentialReadiness) {
       const readiness = await this.resolveCredentialReadiness();
       if (readiness.status === "not-ready") {
@@ -1644,7 +1618,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     // through the pending/pre-roll paths and flushes on arm. An arm failure
     // surfaces as a non-recoverable error frame instead of a start rejection.
     this.state = "active";
-    this.reachedActive = true;
     if (this.turnDetector) {
       this.logInputDiagnostic("voice_input_started");
     }
@@ -2140,33 +2113,7 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
       });
     }
 
-    // Recorded first, and independently of `shouldEmitSessionEndMetrics`
-    // below: that flag governs the client-facing `metrics` frame, and a
-    // failed session (which suppresses the frame) is the one whose end
-    // telemetry matters most. Session duration downstream is this row's
-    // `recorded_at` minus the started row's, so it must be written before the
-    // teardown below, which waits for the active turn and can run long.
-    const failed = this.state === "failed";
-    // Only a session that never dispatched a turn gets a silence reason; for
-    // every other session the question is meaningless.
-    const silenceReason = this.dispatchedTurn
-      ? null
-      : liveVoiceSilenceReason({
-          reachedActive: this.reachedActive,
-          audioInput: this.audioInput,
-          receivedAudio: this.receivedAudio,
-          detectedSpeech: this.detectedSpeech,
-        });
-    recordLiveVoiceSessionEnded({
-      sessionId: this.context.sessionId,
-      screen: liveVoiceEndScreen(
-        reason,
-        failed ? this.failureCode : null,
-        silenceReason,
-      ),
-      outcome: failed ? "failed" : "completed",
-    });
-    if (silenceReason !== null) {
+    if (!this.dispatchedTurn) {
       // The levels behind a silent session, on the gate's scale, since the
       // end event carries only the classification. A peak below `speechGate`
       // on a `no_speech` session is a microphone the gate could not hear.
@@ -2174,7 +2121,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
         {
           sessionId: this.context.sessionId,
           reason,
-          silenceReason,
           peakChunkAmplitude: Math.round(this.peakChunkAmplitude),
           noiseFloor:
             this.roomNoiseFloor.floor === null
@@ -2527,12 +2473,10 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     // early returns below. The question it answers is "did the microphone ever
     // open", which a chunk arriving at all settles regardless of what the
     // session then does with it.
-    this.receivedAudio = true;
     // A text-only session armed no transcriber, so there is nothing downstream
     // to route this into. Dropped rather than errored: the client was told on
     // `ready` that the microphone leg is dead, and a client still streaming is
-    // one that has not caught up, not one to end the session over. The flag
-    // above is still set, so telemetry keeps seeing that the mic did open.
+    // one that has not caught up, not one to end the session over.
     if (!this.audioInput) {
       return;
     }
@@ -2554,10 +2498,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     // The chunk belongs to an utterance the user is still holding the button
     // for, whether or not the transcriber has produced any text for it yet.
     utterance.manualAudioCaptured = true;
-    // Manual sessions have no VAD, so the user holding the talk button is
-    // the only speech signal available. Without this every abandoned manual
-    // session would be misfiled as `no_turn` instead of `no_speech`.
-    this.detectedSpeech = true;
     this.collectUserAudio(utterance, chunk);
     if (utterance.phase === "pending") {
       // The transcriber is still arming (session start overlaps the STT
@@ -2798,7 +2738,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     // resets it.
     if (hasSpeech || this.vadPreRollHasSpeech) {
       utterance.speechRouted = true;
-      this.detectedSpeech = true;
     }
     for (const preRollChunk of this.takeVadPreRoll()) {
       await this.routeVadAudio(utterance, preRollChunk);
@@ -3110,7 +3049,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     if (preRollHadSpeech) {
       utterance.preDialBargeInGuard = preRollBargeInGuard;
       utterance.speechRouted = true;
-      this.detectedSpeech = true;
     }
   }
 
@@ -4917,7 +4855,6 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     }
     if (this.providerTurnStartActive) {
       utterance.speechRouted = true;
-      this.detectedSpeech = true;
       this.markSpeechStart(utterance);
       this.handleSpeechStart("provider");
     }

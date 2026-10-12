@@ -16,15 +16,11 @@ import {
   getCloudSkillDir,
 } from "../../skills/cloud-store.js";
 import { readInstallMeta } from "../../skills/install-meta.js";
-import { recordWatchdogEvent } from "../../telemetry/watchdog-events-store.js";
 import { getLogger } from "../../util/logger.js";
 import { throwIfCancelled } from "../shared/abort.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 
 const log = getLogger("scaffold-cloud-skill");
-
-/** Watchdog check_name for the per-creation skill-authoring counter. */
-const SKILL_AUTHORED_CHECK_NAME = "skill_authored";
 
 /** Strip embedded newlines/carriage returns to prevent YAML frontmatter injection. */
 function sanitizeFrontmatterValue(value: string): string {
@@ -91,10 +87,6 @@ function normalizeOptionalStringArray(
   }
   return { value: normalized };
 }
-
-/** Watchdog check_name counted when a receipt entry could not be recorded. */
-const SKILL_UPDATE_RECEIPT_RECORD_FAILED_CHECK_NAME =
-  "skill_update_receipt_record_failed";
 
 /**
  * Record that a background pass changed a skill the user already has.
@@ -166,15 +158,6 @@ function recordBackgroundSkillUpdate(args: {
       },
       "skill update receipt recording failed; the skill write stands and no receipt will name this update",
     );
-    try {
-      recordWatchdogEvent({
-        checkName: SKILL_UPDATE_RECEIPT_RECORD_FAILED_CHECK_NAME,
-        value: 1,
-      });
-    } catch {
-      // recordWatchdogEvent already no-ops on opt-out and a missing
-      // telemetry DB; anything past that is not worth surfacing here.
-    }
   }
 }
 
@@ -499,21 +482,6 @@ export async function executeScaffoldCloudSkill(
   // customer or procedure), and watchdog events are metadata-only with no
   // deletion-redaction tie to the source conversation. Never throws: a
   // telemetry failure must not fail a scaffold that already succeeded.
-  if (!managedSkillExistedBefore) {
-    try {
-      recordWatchdogEvent({
-        checkName: SKILL_AUTHORED_CHECK_NAME,
-        value: 1,
-        detail: {
-          authored_by: fromRetrospective ? "retrospective" : "user",
-        },
-      });
-    } catch {
-      // recordWatchdogEvent already no-ops on opt-out and a missing
-      // telemetry DB; anything past that is not worth surfacing here.
-    }
-  }
-
   // A background pass changed a skill that already existed. Creates announce
   // themselves through the skill card below; updates land on the skill-update
   // receipt that announces the whole burst. Covers an explicit

@@ -29,7 +29,7 @@ import {
   loadConfig,
   withSuppressedConfigDiskWritesSync,
 } from "../config/loader.js";
-import { getConfigValidationResetNoticePath } from "../util/platform.js";
+import { getConfigValidationResetNoticePath } from "../util/layout.js";
 
 const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");

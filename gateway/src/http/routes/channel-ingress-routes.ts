@@ -110,7 +110,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     pathParameters: [
       {
         name: "source",
-        description: "The declaring ingress source (today, a plugin name)",
+        description: "The declaring ingress source, today a plugin name",
       },
     ],
     requestBody: ApproveChannelIngressRequestSchema,
@@ -127,7 +127,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     pathParameters: [
       {
         name: "source",
-        description: "The declaring ingress source (today, a plugin name)",
+        description: "The declaring ingress source, today a plugin name",
       },
     ],
     responseBody: z.object({ source: z.string(), revoked: z.boolean() }),

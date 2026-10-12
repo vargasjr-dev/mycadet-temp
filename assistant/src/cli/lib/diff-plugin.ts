@@ -39,7 +39,7 @@ import { join } from "node:path";
 import { createTwoFilesPatch } from "diff";
 
 import { PRESERVED_ENTRIES } from "../../plugins/plugin-tree-walk.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import type { FetchLike } from "./fetch-like.js";
 import {
   type GitRunner,

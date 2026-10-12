@@ -12,7 +12,7 @@ import {
   getWorkspaceSystemPromptDir,
   getWorkspaceToolsDir,
   getWorkspaceWorkflowsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
 
 /**
  * Resolve a path to its canonical form. A trailing (possibly dangling)

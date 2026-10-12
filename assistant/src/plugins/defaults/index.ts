@@ -34,6 +34,9 @@ import { channelInjectors } from "./channel/injectors.js";
 import channelPkg from "./channel/package.json" with { type: "json" };
 import cloudHostedPkg from "./cloud-hosted/package.json" with { type: "json" };
 import compactionPkg from "./compaction/package.json" with { type: "json" };
+import discordInit from "./discord/hooks/init.js";
+import discordShutdown from "./discord/hooks/shutdown.js";
+import discordPkg from "./discord/package.json" with { type: "json" };
 import { documentsInjectors } from "./documents/injectors.js";
 import documentsPkg from "./documents/package.json" with { type: "json" };
 import emptyResponsePostModelCall from "./empty-response/hooks/post-model-call.js";
@@ -286,6 +289,18 @@ export const defaultCloudHostedPlugin: Plugin = {
   },
 };
 
+/** `discord` — Phase-1 skeleton of the gateway→plugin migration: manifest plus no-op init/shutdown hooks; channel behavior lands in later phases. */
+export const defaultDiscordPlugin: Plugin = {
+  manifest: {
+    name: discordPkg.name,
+    version: discordPkg.version,
+  },
+  hooks: {
+    init: discordInit,
+    shutdown: discordShutdown,
+  },
+};
+
 /**
  * `image-recovery` — recovers from a provider image-too-large rejection. The
  * `post-model-call` hook handles the rejection, downscaling the oversized image
@@ -460,6 +475,7 @@ export function getAllDefaultPlugins(): readonly Plugin[] {
     defaultChannelPlugin,
     defaultSessionPlugin,
     defaultCloudHostedPlugin,
+    defaultDiscordPlugin,
     defaultImageFallbackPlugin,
     defaultToolResultTruncatePlugin,
     defaultEmptyResponsePlugin,

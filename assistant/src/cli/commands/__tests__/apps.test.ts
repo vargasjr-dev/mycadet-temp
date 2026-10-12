@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mockIpc } from "../../../__tests__/requests-mock.js";
 import { createApp, getAppDirPath } from "../../../apps/app-store.js";
 import { writeAppSourceFingerprint } from "../../../apps/source-fingerprint.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { runCliCommand } from "./cli-test-harness.js";
 
 const ipc = await mockIpc("cli");

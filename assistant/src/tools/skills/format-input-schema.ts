@@ -1,4 +1,4 @@
-import { getWorkspaceDirDisplay } from "../../util/platform.js";
+import { getWorkspaceDirDisplay } from "../../util/layout.js";
 
 /** Preserve nested fields and alternatives when disclosing a skill's input. */
 export function formatSkillInputSchema(schema: object): string {

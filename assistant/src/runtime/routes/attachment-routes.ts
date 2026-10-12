@@ -38,7 +38,7 @@ import {
   jpegFilenameFor,
   normalizeImageBytes,
 } from "../../util/image-conversion.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { ACTOR_PRINCIPALS, LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,

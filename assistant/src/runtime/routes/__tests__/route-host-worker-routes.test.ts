@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { getProcPidPath } from "../../../util/platform.js";
+import { getProcPidPath } from "../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
 

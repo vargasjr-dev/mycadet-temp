@@ -6,7 +6,7 @@ import {
   SYNC_TAGS,
 } from "../../daemon/message-types/sync.js";
 import { resolveConversationTitle } from "../../i18n/index.js";
-import { getAvatarImagePath } from "../../util/platform.js";
+import { getAvatarImagePath } from "../../util/layout.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { isStreamSeqStampingDisabled } from "../assistant-stream-state.js";
 import { publishSyncInvalidation } from "./sync-publisher.js";

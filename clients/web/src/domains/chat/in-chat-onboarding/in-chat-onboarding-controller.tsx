@@ -16,10 +16,6 @@ import {
 } from "./avatar-tour";
 import { TourOverlay } from "./tour-overlay";
 import { type TourStep } from "./tour-steps";
-import {
-  emitInChatTourCompleted,
-  emitInChatTourSkipped,
-} from "./tour-telemetry";
 import { useTranslation } from "@/i18n";
 
 /**
@@ -66,7 +62,6 @@ export function InChatOnboardingController() {
     // Skip's own event was emitted at click time; a natural end past the
     // last beat is a completion.
     if (!skippedRef.current) {
-      emitInChatTourCompleted();
     }
     skippedRef.current = false;
     setNarrationStep(null);
@@ -99,7 +94,6 @@ export function InChatOnboardingController() {
       variant="ghost"
       onClick={() => {
         skippedRef.current = true;
-        emitInChatTourSkipped(progress?.index ?? 0, progress?.count ?? 0);
         tourRef.current?.skip();
       }}
       // Contrast-toned over the intro's avatar-colored flood.

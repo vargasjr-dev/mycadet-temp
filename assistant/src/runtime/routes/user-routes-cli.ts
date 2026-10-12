@@ -13,7 +13,7 @@ import { z } from "zod";
 
 import { getConfig } from "../../config/loader.js";
 import { getPublicBaseUrl } from "../../inbound/public-ingress-urls.js";
-import { getWorkspaceDir, getWorkspaceRoutesDir } from "../../util/platform.js";
+import { getWorkspaceDir, getWorkspaceRoutesDir } from "../../util/layout.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { NotFoundError } from "./errors.js";
 import { parseBody } from "./parse-body.js";

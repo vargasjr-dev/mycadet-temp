@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { getDataDir } from "./platform.js";
+import { getDataDir } from "./layout.js";
 
 /**
  * Path to the dedicated SQLite file that houses heavy append-only tables

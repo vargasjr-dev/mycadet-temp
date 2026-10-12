@@ -100,7 +100,7 @@ function printHelp(): void {
   console.log(
     "The source and target must be different environments. Same-environment",
   );
-  console.log("transfers (e.g. local to local) are not supported.");
+  console.log("transfers such as local to local are not supported.");
   console.log("");
   console.log(
     "Before exporting, the source assistant is backed up. Platform sources",
@@ -159,7 +159,7 @@ function printHelp(): void {
     "      Import data from my-local into existing docker assistant my-docker",
   );
   console.log(
-    "      (or hatch a new docker assistant named my-docker if it doesn't exist)",
+    "      or hatch a new docker assistant named my-docker if it doesn't exist",
   );
   console.log("");
   console.log("  cadet teleport --from my-local --platform");
@@ -415,7 +415,7 @@ async function backupSourceBeforeTeleport(
   cloud: string,
   displayName: string,
 ): Promise<void> {
-  console.log(`Backing up ${displayName} (${cloud})...`);
+  console.log(`Backing up ${displayName} on ${cloud}...`);
   try {
     if (isCloudHome(cloud)) {
       const cloudToken = readCloudToken();
@@ -443,7 +443,7 @@ async function backupSourceBeforeTeleport(
       timeoutMs: LOCAL_SOURCE_BACKUP_TIMEOUT_MS,
     });
     if (!backupPath) {
-      throw new Error("backup export failed (see warning above)");
+      throw new Error("backup export failed — see the warning above");
     }
     pruneOldBackups(entry.assistantId, 3, "pre-teleport");
     console.log(`Backup saved: ${backupPath}`);
@@ -470,7 +470,7 @@ async function exportFromAssistant(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }
@@ -688,7 +688,7 @@ async function importToAssistant(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first (required for GCS-based teleport).",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }
@@ -990,7 +990,7 @@ export async function resolveOrHatchTarget(
         );
         process.exit(1);
       }
-      console.log(`Target: ${targetName} (${targetEnv})`);
+      console.log(`Target: ${targetName} — ${targetEnv}`);
       return existing;
     }
 
@@ -1204,7 +1204,7 @@ async function tryInjectCloudCredentials(
 ): Promise<void> {
   const token = readCloudToken();
   if (!token) {
-    console.log("  Skipped cloud credential injection (not logged in).");
+    console.log("  Skipped cloud credential injection — not logged in.");
     return;
   }
 
@@ -1393,13 +1393,13 @@ export const teleport = Object.assign(
             ? fromEntry.runtimeUrl
             : undefined;
 
-      console.log(`Exporting from ${from} (${fromCloud})...`);
+      console.log(`Exporting from ${from} on ${fromCloud}...`);
       const { bundleKey } = await exportFromAssistant(
         fromEntry,
         fromCloud,
         bundleCloudUrl,
       );
-      console.log(`Importing to ${existingTarget.assistantId} (${toCloud})...`);
+      console.log(`Importing to ${existingTarget.assistantId} on ${toCloud}...`);
       await importToAssistant(
         existingTarget,
         toCloud,
@@ -1410,7 +1410,7 @@ export const teleport = Object.assign(
     } else {
       // No existing target — just describe what would happen
       console.log("Dry run summary:");
-      console.log(`  Would export data from: ${from} (${fromCloud})`);
+      console.log(`  Would export data from: ${from} on ${fromCloud}`);
       console.log(`  Would upload bundle via signed URL`);
       console.log(
         `  Would hatch a new ${targetEnv} assistant${targetName ? ` named '${targetName}'` : ""}`,
@@ -1482,7 +1482,7 @@ export const teleport = Object.assign(
     // resolveOrHatchTarget writes to the new entry).
     await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
-    console.log(`Exporting from ${from} (${fromCloud})...`);
+    console.log(`Exporting from ${from} on ${fromCloud}...`);
     const bundleCloudUrl = targetCloudUrl ?? getCloudUrl();
     const { bundleKey } = await exportFromAssistant(
       fromEntry,
@@ -1495,7 +1495,7 @@ export const teleport = Object.assign(
     const toCloud = toEntry.cloud;
 
     // Import from GCS
-    console.log(`Importing to ${toEntry.assistantId} (${toCloud})...`);
+    console.log(`Importing to ${toEntry.assistantId} on ${toCloud}...`);
     await importToAssistant(
       toEntry,
       toCloud,
@@ -1555,7 +1555,7 @@ export const teleport = Object.assign(
   await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
   // Export from source (bundle lives in GCS after this returns).
-  console.log(`Exporting from ${from} (${fromCloud})...`);
+  console.log(`Exporting from ${from} on ${fromCloud}...`);
   const { bundleKey } = await exportFromAssistant(
     fromEntry,
     fromCloud,
@@ -1632,7 +1632,7 @@ export const teleport = Object.assign(
   }
 
   // Import to target (also GCS-driven)
-  console.log(`Importing to ${toEntry.assistantId} (${toCloud})...`);
+  console.log(`Importing to ${toEntry.assistantId} on ${toCloud}...`);
   await importToAssistant(
     toEntry,
     toCloud,
@@ -1660,7 +1660,7 @@ export const teleport = Object.assign(
       removeAssistantEntry(fromEntry.assistantId);
       console.log(`Source assistant '${from}' retired.`);
     } else {
-      console.log(`Source assistant '${from}' kept (--keep-source).`);
+      console.log(`Source assistant '${from}' kept via --keep-source.`);
     }
   }
 

@@ -24,7 +24,7 @@ import {
 } from "../daemon/conversation-runtime-assembly.js";
 import { registerDefaultPluginInjectors } from "../plugins/defaults/index.js";
 import type { Message } from "../providers/types.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // The injector chain is registered by the daemon bootstrap in production; do

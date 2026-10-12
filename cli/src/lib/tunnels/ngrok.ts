@@ -580,8 +580,7 @@ export async function runNgrokTunnel(
         "ngrok.ngrok",
       ],
     },
-    manualHint:
-      "Install it (macOS: brew install ngrok/ngrok/ngrok; Linux: sudo snap install ngrok) — see https://ngrok.com/download.",
+    manualHint: "See https://ngrok.com/download for how to install",
     probe: getNgrokVersion,
   });
   if (!version) {

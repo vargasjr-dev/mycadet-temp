@@ -75,7 +75,7 @@ import {
   ROUTES,
 } from "../runtime/routes/attachment-routes.js";
 import type { RouteHandlerArgs } from "../runtime/routes/types.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { fakeHeifHeaderBytes, PNG_1PX_BYTES } from "./heic-fixture.js";
 
 const uploadRoute = ROUTES.find((r) => r.operationId === "attachment_upload")!;

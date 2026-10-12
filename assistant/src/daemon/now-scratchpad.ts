@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 
 /**

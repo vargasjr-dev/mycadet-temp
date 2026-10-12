@@ -86,7 +86,7 @@ import type { TurnContext } from "../plugins/types.js";
 import type { Message } from "../providers/types.js";
 import { getSubagentManager } from "../subagent/index.js";
 import type { SubagentState } from "../subagent/types.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // `applyRuntimeInjections` self-resolves the Slack active-thread focus block

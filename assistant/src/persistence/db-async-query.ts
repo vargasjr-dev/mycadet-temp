@@ -29,8 +29,8 @@
 import { spawn } from "node:child_process";
 import { Database } from "bun:sqlite";
 
+import { getDbPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDbPath } from "../util/platform.js";
 import { findSqlite3 } from "../util/sqlite3-runtime.js";
 import { getSqlite, SQLITE_BUSY_TIMEOUT_MS } from "./db-connection.js";
 

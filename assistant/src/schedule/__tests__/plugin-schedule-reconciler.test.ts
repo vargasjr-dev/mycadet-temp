@@ -68,7 +68,7 @@ import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helper
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { listInstalledPluginDirs } from "../../plugins/installed-plugin-dirs.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   reconcilePluginSchedules,
   resetDefinitionErrorEmitGuardForTests,

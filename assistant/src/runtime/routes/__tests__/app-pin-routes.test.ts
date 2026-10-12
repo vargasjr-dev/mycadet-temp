@@ -29,7 +29,7 @@ import {
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import { appPins } from "../../../persistence/schema/index.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { ROUTES as APP_ROUTES } from "../app-management-routes.js";
 import { BadRequestError } from "../errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";

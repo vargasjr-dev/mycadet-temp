@@ -36,7 +36,7 @@ import { cloudAvatarUrlsQueryKey } from "@/hooks/use-cloud-avatar-urls";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import type { SyncChangedEvent } from "@/lib/sync/types";
 import { __resetForTesting, publish } from "@/lib/event-bus";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 function createWrapper(queryClient: QueryClient) {

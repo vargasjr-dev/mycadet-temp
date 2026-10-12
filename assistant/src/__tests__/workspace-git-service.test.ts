@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { getWorkspaceConfigPath } from "../util/platform.js";
+import { getWorkspaceConfigPath } from "../util/layout.js";
 import {
   _getConsecutiveFailures,
   _getInitConsecutiveFailures,

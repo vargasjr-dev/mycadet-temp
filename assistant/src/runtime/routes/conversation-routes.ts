@@ -109,7 +109,6 @@ import {
   type SlackMessageMetadata,
 } from "../../messaging/providers/slack/message-metadata.js";
 import { readProviderMetadata } from "../../messaging/read-provider-metadata.js";
-import { recordOnboardingEvent } from "../../onboarding/onboarding-events-store.js";
 import {
   classifyKind,
   getAttachmentById,
@@ -167,11 +166,8 @@ import {
   isHeicFilename,
   normalizeImageBase64,
 } from "../../util/image-conversion.js";
+import { getWorkspaceDir, getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import {
-  getWorkspaceDir,
-  getWorkspacePromptPath,
-} from "../../util/platform.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
 import { getCurrentSeq } from "../assistant-stream-state.js";
@@ -2267,18 +2263,6 @@ export async function handleSendMessage(
 
       if (isFirstOnboarding) {
         persistOnboardingArtifacts(body.onboarding!);
-        try {
-          recordOnboardingEvent({
-            screen: "complete",
-            tools: body.onboarding!.tools,
-            tasks: body.onboarding!.tasks,
-            tone: body.onboarding!.tone,
-            googleConnected: body.onboarding!.googleConnected,
-            googleScopes: body.onboarding!.googleScopes,
-          });
-        } catch (err) {
-          log.warn({ err }, "Failed to record onboarding telemetry event");
-        }
       }
 
       scheduleCannedReplyRelease({
@@ -2360,18 +2344,6 @@ export async function handleSendMessage(
 
   if (isFirstOnboarding) {
     persistOnboardingArtifacts(body.onboarding!);
-    try {
-      recordOnboardingEvent({
-        screen: "complete",
-        tools: body.onboarding!.tools,
-        tasks: body.onboarding!.tasks,
-        tone: body.onboarding!.tone,
-        googleConnected: body.onboarding!.googleConnected,
-        googleScopes: body.onboarding!.googleScopes,
-      });
-    } catch (err) {
-      log.warn({ err }, "Failed to record onboarding telemetry event");
-    }
   }
 
   // When the scan path rewrote the first message, prefer the rewritten

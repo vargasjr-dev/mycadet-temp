@@ -37,7 +37,6 @@ import { handleEmitEventSignal } from "../signals/emit-event.js";
 import { handleUserMessageSignal } from "../signals/user-message.js";
 import { WORKSPACE_THEME_RELATIVE_PATH } from "../theme/workspace-theme.js";
 import { DebouncerMap } from "../util/debounce.js";
-import { getLogger } from "../util/logger.js";
 import {
   getAvatarDir,
   getSignalsDir,
@@ -45,7 +44,8 @@ import {
   getWorkspaceDir,
   getWorkspacePromptPath,
   WORKSPACE_MCP_FILENAME,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { evictConversationsForReload } from "./conversation-store.js";
 import { parseIdentityFields } from "./handlers/identity.js";
 import { reloadMcpServers } from "./mcp-reload-service.js";

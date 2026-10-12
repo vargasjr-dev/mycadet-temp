@@ -16,8 +16,8 @@ import {
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
+import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDataDir } from "../../util/platform.js";
 import type { CompletedBackgroundTool } from "../background-tool-registry.js";
 import {
   generateBackgroundToolId,

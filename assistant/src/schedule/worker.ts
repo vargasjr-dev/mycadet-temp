@@ -26,8 +26,8 @@ import { resetDb } from "../persistence/db-connection.js";
 import { registerWorkerPluginSurface } from "../plugins/worker-plugin-surface.js";
 import { disableStreamSeqStamping } from "../runtime/assistant-stream-state.js";
 import { initializeTools } from "../tools/registry.js";
+import { getScheduleWorkerPidPath, getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getScheduleWorkerPidPath, getSignalsDir } from "../util/platform.js";
 import {
   cleanupWorkerPidFile,
   startWorkerPidFileGuard,

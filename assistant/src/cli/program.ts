@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { Command } from "commander";
 
 import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { APP_VERSION } from "../version.js";
 import { registerAppsCommand } from "./commands/apps.js";
 import { registerAttachmentCommand } from "./commands/attachment.js";
@@ -47,7 +47,6 @@ import { registerSequenceCommand } from "./commands/sequence.js";
 import { registerSkillsCommand } from "./commands/skills.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerSttCommand } from "./commands/stt.js";
-import { registerTelemetryCommand } from "./commands/telemetry.js";
 import { registerToolsCommand } from "./commands/tools.js";
 import { registerTrustCommand } from "./commands/trust.js";
 import { registerTtsCommand } from "./commands/tts.js";
@@ -145,7 +144,6 @@ Examples:
   registerStatusCommand(program);
   registerSkillsCommand(program);
   registerSttCommand(program);
-  registerTelemetryCommand(program);
   registerToolsCommand(program);
   registerTrustCommand(program);
   registerTtsCommand(program);

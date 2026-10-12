@@ -13,7 +13,7 @@ import { getDb } from "../../persistence/db-connection.js";
 import { getMaxRollbackVersion } from "../../persistence/migrations/run-migrations.js";
 import { rollbackMemoryMigration } from "../../persistence/migrations/validate-migration-state.js";
 import { migrationSteps } from "../../persistence/steps.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { WORKSPACE_MIGRATIONS } from "../../workspace/migrations/registry.js";
 import {
   getLastWorkspaceMigrationId,

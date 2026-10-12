@@ -9,40 +9,22 @@
  * This is the "conversation-agent-loop integration" half of the
  * inference-profiles plumbing — the resolver/provider/agent-loop layers are
  * exercised separately by their own tests.
+ *
+ * Zero-leak: the REAL `resolveOverrideProfile` (pure over the conversation
+ * fields, which the ctx stub carries) drives every profile read, including
+ * the mid-turn re-resolution between model calls. The turn runs against a
+ * REAL conversation row — messages, usage, request logs, and the disk view
+ * all persist to the per-process test DB — and the only fake is the ctx
+ * object itself (the loop's own parameter, not a module mock).
  */
 
-import { createRequire } from "node:module";
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import type { Message, ToolDefinition } from "../providers/types.js";
-// Snapshot the real `conversation-crud` exports before `mock.module()` below
-// replaces them. We use a synchronous CJS-style require (via `createRequire`)
-// because static `import` is hoisted above `mock.module()` calls — but bun's
-// own `mock.module()` is NOT hoisted, so the only way to grab the real
-// exports at this exact line is the synchronous require. The spread freezes
-// each function reference — holding the module object directly would yield
-// the *mocked* values after `mock.module` runs, since the require'd object
-// is a live binding. `afterAll` re-mocks with this snapshot so downstream
-// files in the same `bun test` run get the real exports back (Bun's
-// `mock.module()` persists across files; `mock.restore()` does not restore
-// module mocks).
-const conversationCrudRealSnapshot = {
-  ...(createRequire(import.meta.url)(
-    "../persistence/conversation-crud.js",
-  ) as Record<string, unknown>),
-};
-const conversationDiskViewRealSnapshot = {
-  ...(createRequire(import.meta.url)(
-    "../persistence/conversation-disk-view.js",
-  ) as Record<string, unknown>),
-};
-
-// ── Module mocks (must precede imports of the module under test) ─────
-
 import { setConfig } from "./helpers/set-config.js";
 
 // Seed the workspace config for real: a named profile the tests pin as the
@@ -60,258 +42,26 @@ setConfig("llm", {
   },
 });
 setConfig("workspaceGit", { turnCommitMaxWaitMs: 10 });
-
-mock.module("../context/token-estimator.js", () => ({
-  estimatePromptTokens: () => 1000,
-  estimatePromptTokensRaw: () => 1000,
-  // The preflight overflow gate calls this calibrated wrapper directly; stub
-  // it alongside the others so it returns the same small value.
-  estimatePromptTokensWithTools: () => 1000,
-  estimateToolsTokens: () => 0,
-}));
-
-mock.module(
-  "../plugins/defaults/compaction/context-overflow-reducer.js",
-  () => ({
-    createInitialReducerState: () => ({
-      appliedTiers: [],
-      injectionMode: "full" as const,
-      exhausted: false,
-    }),
-    reduceContextOverflow: async (msgs: Message[]) => ({
-      messages: msgs,
-      tier: "forced_compaction",
-      state: {
-        appliedTiers: ["forced_compaction"],
-        injectionMode: "full",
-        exhausted: true,
-      },
-      estimatedTokens: 1000,
-    }),
-  }),
-);
-
-mock.module("../plugins/defaults/compaction/overflow-policy.js", () => ({
-  resolveOverflowAction: () => "fail_gracefully",
-}));
-
-// Mutable conversation-row stub so each test can drive the column values
-// the loop reads. `null` simulates an evicted/missing row.
-let mockConversationRow: {
-  id: string;
-  conversationType?: string;
-  inferenceProfile?: string | null;
-  [key: string]: unknown;
-} | null = {
-  id: "conv-1",
-  conversationType: "standard",
-  inferenceProfile: null,
-  contextSummary: null,
-  contextCompactedMessageCount: 0,
-  totalInputTokens: 0,
-  totalOutputTokens: 0,
-  totalEstimatedCost: 0,
-  title: null,
-};
-
-mock.module("../persistence/conversation-crud.js", () => ({
-  setConversationProcessingStartedAt: () => {},
-  isConversationProcessing: () => false,
-  setConversationOriginChannelIfUnset: () => {},
-  setConversationHistoryStrippedAt: () => {},
-  updateConversationUsage: () => {},
-  updateMessageMetadata: () => {},
-  getMessages: () => [],
-  getConversation: () => mockConversationRow,
-  resolveOverrideProfile: (
-    fields: {
-      conversationType?: string | null;
-      inferenceProfile?: string | null;
-      inferenceProfileExpiresAt?: number | null;
-    } | null,
-  ) => {
-    if (
-      fields?.conversationType === "background" ||
-      fields?.conversationType === "scheduled"
-    ) {
-      return undefined;
-    }
-    if (
-      fields?.inferenceProfileExpiresAt != null &&
-      fields.inferenceProfileExpiresAt <= Date.now()
-    ) {
-      return undefined;
-    }
-    return fields?.inferenceProfile ?? undefined;
-  },
-  provenanceFromTrustContext: () => ({
-    source: "user",
-    trustContext: undefined,
-  }),
-  getConversationOriginInterface: () => null,
-  addMessage: () => ({ id: "mock-msg-id" }),
-  deleteMessageById: () => {},
-  updateConversationContextWindow: () => {},
-  updateConversationTitle: () => {},
-  getConversationOriginChannel: () => null,
-  getMessageById: () => null,
-  getLastUserTimestampBefore: () => 0,
-  setLastNotifiedInferenceProfile: () => {},
-  reserveMessage: mock(async () => ({ id: "msg-reserve" })),
-}));
-
-mock.module("../persistence/conversation-disk-view.js", () => ({
-  syncMessageToDisk: () => {},
-  rebuildConversationDiskViewFromDbState: () => {},
-}));
-
-mock.module("../daemon/conversation-memory.js", () => ({
-  prepareMemoryContext: async () => ({
-    runMessages: [],
-    recall: {
-      enabled: false,
-      degraded: false,
-      injectedText: "",
-      semanticHits: 0,
-      injectedTokens: 0,
-      latencyMs: 0,
-      tier1Count: 0,
-      tier2Count: 0,
-      hybridSearchMs: 0,
-    },
-  }),
-}));
-
-mock.module("../daemon/conversation-runtime-assembly.js", () => ({
-  applyRuntimeInjections: async (msgs: Message[]) => ({
-    messages: msgs,
-    blocks: {},
-  }),
-  stripInjectionsForCompaction: (msgs: Message[]) => msgs,
-  isSlackChannelConversation: () => false,
-  getSlackCompactionWatermarkForPrefix: () => null,
-  loadSlackChronologicalContext: () => null,
-  loadSlackChronologicalMessages: () => null,
-  loadSlackActiveThreadFocusBlock: () => null,
-  assembleSlackChronologicalMessages: () => null,
-  assembleSlackActiveThreadFocusBlock: () => null,
-}));
-
-mock.module("../daemon/date-context.js", () => ({
-  formatTurnTimestamp: () => "2026-01-01 (Thursday) 00:00:00 +00:00 (UTC)",
-}));
-
-mock.module("../agent/history-repair/history-repair.js", () => ({
-  repairHistory: (msgs: Message[]) => ({
-    messages: msgs,
-    stats: {
-      assistantToolResultsMigrated: 0,
-      missingToolResultsInserted: 0,
-      orphanToolResultsDowngraded: 0,
-      consecutiveSameRoleMerged: 0,
-    },
-  }),
-  deepRepairHistory: (msgs: Message[]) => ({ messages: msgs, stats: {} }),
-  isRepairableOrderingError: () => false,
-}));
-
-mock.module("../daemon/conversation-usage.js", () => ({
-  recordUsage: () => {},
-}));
-
-mock.module("../daemon/conversation-attachments.js", () => ({
-  resolveAssistantAttachments: async () => ({
-    assistantAttachments: [],
-    emittedAttachments: [],
-    directiveWarnings: [],
-    persistedFiles: [],
-    linkedAttachmentIds: [],
-    computerUseScreenshotAttachmentIds: [],
-  }),
-  approveHostAttachmentRead: async () => true,
-  formatAttachmentWarnings: () => "",
-}));
-
-mock.module("../daemon/assistant-attachments.js", () => ({
-  cleanAssistantContent: (content: unknown[]) => ({
-    cleanedContent: content,
-    directives: [],
-    warnings: [],
-  }),
-  drainDirectiveDisplayBuffer: (buffer: string) => ({
-    emitText: buffer,
-    bufferedRemainder: "",
-  }),
-}));
-
-mock.module("../daemon/conversation-media-retry.js", () => ({
-  stripMediaPayloadsForRetry: (msgs: Message[]) => ({
-    messages: msgs,
-    modified: false,
-    replacedBlocks: 0,
-    latestUserIndex: null,
-  }),
-  raceWithTimeout: async () => "completed" as const,
-}));
-
-mock.module("../workspace/turn-commit.js", () => ({
-  commitTurnChanges: async () => {},
-}));
-
-mock.module("../workspace/git-service.js", () => ({
-  getWorkspaceGitService: () => ({
-    ensureInitialized: async () => {},
-  }),
-}));
-
-mock.module("../daemon/conversation-error.js", () => ({
-  classifyConversationError: () => ({
-    code: "CONVERSATION_PROCESSING_FAILED",
-    userMessage: "Something went wrong processing your message.",
-    retryable: false,
-    errorCategory: "processing_failed",
-  }),
-  isUserCancellation: () => false,
-  buildConversationErrorMessage: (
-    conversationId: string,
-    classified: Record<string, unknown>,
-  ) => ({
-    type: "conversation_error",
-    conversationId,
-    ...classified,
-  }),
-  isContextTooLarge: () => false,
-}));
-
-mock.module("../util/truncate.js", () => ({
-  truncate: (s: string) => s,
-}));
-
-mock.module("../agent/message-types.js", () => ({
-  createAssistantMessage: (text: string) => ({
-    role: "assistant" as const,
-    content: [{ type: "text", text }],
-  }),
-}));
-
-mock.module("../memory/archive-store.js", () => ({
-  insertCompactionEpisode: () => ({
-    episodeId: "mock-episode-id",
-    jobId: "mock-job-id",
-  }),
-}));
-
-mock.module("../persistence/llm-request-log-store.js", () => ({
-  recordRequestLog: () => {},
-  backfillMessageIdOnLogs: () => {},
-}));
-
-// ── Imports (after mocks) ────────────────────────────────────────────
+// No second-pass retitling keeps the real title write out of the loop teardown.
+setConfig("conversations", { skipAutoRetitling: true });
 
 import type { Conversation } from "../daemon/conversation.js";
 import { runAgentLoopImpl } from "../daemon/conversation-agent-loop.js";
 import type { QueueDrainReason } from "../daemon/conversation-queue-manager.js";
+import {
+  ensureConversationExists,
+  setConversationInferenceProfile,
+} from "../persistence/conversation-crud.js";
+import { initializeDb } from "../persistence/db-init.js";
 import { asConversation } from "./helpers/mock-conversation.js";
+
+beforeAll(async () => {
+  await initializeDb();
+});
+
+// The loop reads conversation rows by id; the makeCtx stub pins this one id
+// so the real crud paths (usage, request logs, disk view) always find it.
+const TEST_CONV_ID = "test-conv";
 
 // ── Test helpers ─────────────────────────────────────────────────────
 
@@ -351,7 +101,7 @@ function makeCtx(
   };
 
   return asConversation({
-    conversationId: "test-conv",
+    conversationId: TEST_CONV_ID,
     messages: [
       { role: "user", content: [{ type: "text", text: "Hello" }] },
     ] as Message[],
@@ -481,34 +231,12 @@ function makeCtx(
 // ── Tests ────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  // Reset the conversation-row stub before each test. Defaults match a
-  // standard, profile-less interactive conversation.
-  mockConversationRow = {
-    id: "conv-1",
-    conversationType: "standard",
-    inferenceProfile: null,
-    contextSummary: null,
-    contextCompactedMessageCount: 0,
-    totalInputTokens: 0,
-    totalOutputTokens: 0,
-    totalEstimatedCost: 0,
-    title: null,
-  };
+  // Real rows persist across tests in this file — reset the profile pin so
+  // each test starts from a standard, profile-less conversation.
+  ensureConversationExists(TEST_CONV_ID, "cadet");
+  setConversationInferenceProfile(TEST_CONV_ID, null);
   mutateBeforeResolveOverrideProfile = undefined;
   resetPluginRegistryAndRegisterDefaults();
-});
-
-afterAll(() => {
-  // Restore real module mocks for downstream files; see the snapshot
-  // block near the top of this file for why this is necessary.
-  mock.module(
-    "../persistence/conversation-crud.js",
-    () => conversationCrudRealSnapshot,
-  );
-  mock.module(
-    "../persistence/conversation-disk-view.js",
-    () => conversationDiskViewRealSnapshot,
-  );
 });
 
 describe("runAgentLoopImpl — per-conversation inferenceProfile", () => {

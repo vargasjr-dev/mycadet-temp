@@ -462,7 +462,7 @@ The guardian system adds a cryptographic trust layer for channel-based interacti
 
 #### Canonical Assistant ID Scoping
 
-The daemon uses the fixed constant `DAEMON_INTERNAL_ASSISTANT_ID` (`"self"`) from `runtime/assistant-scope.ts` for all assistant-scoped storage keys. Public/external assistant IDs are a gateway/platform concern and never leak into daemon scoping logic. The `normalizeAssistantId()` function in `util/platform.ts` exists solely for the gateway layer to canonicalize inbound requests before proxying -- daemon and runtime code must not call it or accept an `assistantId` parameter for scoping.
+The daemon uses the fixed constant `DAEMON_INTERNAL_ASSISTANT_ID` (`"self"`) from `runtime/assistant-scope.ts` for all assistant-scoped storage keys. Public/external assistant IDs are a gateway/platform concern and never leak into daemon scoping logic. Assistant-ID canonicalization is a gateway-only concern -- daemon and runtime code must not accept an `assistantId` parameter for scoping.
 
 #### Guardian Verify Code Parsing
 

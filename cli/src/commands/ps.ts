@@ -508,7 +508,7 @@ async function getAssistantProcessRows(
 ): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
-  console.log(`Processes for ${formatAssistantReference(entry)} (${cloud}):`);
+  console.log(`Processes for ${formatAssistantReference(entry)} — ${cloud}:`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
@@ -879,5 +879,5 @@ export const ps = Object.assign(
     }
     printTable(rows);
   },
-  { description: "List assistants (or processes for a specific assistant)" },
+  { description: "List assistants" },
 );

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { getAllDefaultPlugins } from "../plugins/defaults/index.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import { getEffectiveEnabledPluginSet } from "./conversation-tool-setup.js";
 
 const DEFAULT_NAMES = getAllDefaultPlugins().map((p) => p.manifest.name);

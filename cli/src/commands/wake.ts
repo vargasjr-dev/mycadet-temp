@@ -58,7 +58,7 @@ export const wake = Object.assign(
     console.log("");
     console.log("Arguments:");
     console.log(
-      "  <name>    Name of the assistant to start (default: active or only local)",
+      "  <name>    Name of the assistant to start, defaults to active or only local",
     );
     console.log("");
     console.log("Options:");
@@ -122,7 +122,7 @@ export const wake = Object.assign(
   // Foreground blocking is a single-assistant concern (--all refuses the
   // flag), and the docker path already warned that foreground is ignored.
   if (foreground && entry.cloud !== "docker") {
-    console.log("Running in foreground (Ctrl+C to stop)...\n");
+    console.log("Running in the foreground, Ctrl+C to stop...\n");
     // Block forever — the daemon is running with inherited stdio so its
     // output streams to this terminal. When the user hits Ctrl+C, SIGINT
     // propagates to the daemon child and both exit.
@@ -213,7 +213,7 @@ async function wakeAssistant(
         .filter(Boolean)
         .join(" and ");
       console.warn(
-        `Warning: ${ignored} ignored for Docker instances (not supported).`,
+        `Warning: ${ignored} ignored for Docker instances.`,
       );
     }
     const res = dockerResourceNames(entry.assistantId);
@@ -364,7 +364,7 @@ async function wakeAssistant(
       daemonMigrationsFailed = daemonState.status === "migration_failed";
       if (watch) {
         console.log(
-          `Assistant running (pid ${daemonState.pid}) — watch mode not available (no source files). Keeping existing process.`,
+          `Assistant running (pid ${daemonState.pid}) — watch mode not available, no source files. Keeping existing process.`,
         );
       } else if (daemonMigrationsFailed) {
         console.log(
@@ -488,7 +488,7 @@ async function wakeAssistant(
       } else {
         if (watch) {
           console.log(
-            `Gateway running (pid ${gatewayState.pid}) — watch mode not available (no source files). Keeping existing process.`,
+            `Gateway running (pid ${gatewayState.pid}) — watch mode not available, no source files. Keeping existing process.`,
           );
         } else {
           console.log(`Gateway already running (pid ${gatewayState.pid}).`);
@@ -569,7 +569,7 @@ async function wakeAssistant(
           await new Promise((r) => setTimeout(r, 2000 * 2 ** (attempt - 1)));
         } else {
           console.warn(
-            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ? " (not retrying — a malformed 200 will not fix itself)" : ` after ${maxAttempts} attempts`}: ${err}`,
+            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ?", not retrying — a malformed 200 will not fix itself" : ` after ${maxAttempts} attempts`}: ${err}`,
           );
           // The user explicitly confirmed this destructive repair — a
           // success exit here would make callers (the web recovery flow)

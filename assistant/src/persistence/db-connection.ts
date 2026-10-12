@@ -5,9 +5,9 @@ import { Database } from "bun:sqlite";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { ensureDataDir, getDbPath } from "../util/layout.js";
 import { getLogsDbPath } from "../util/logs-db-path.js";
 import { getMemoryDbPath } from "../util/memory-db-path.js";
-import { ensureDataDir, getDbPath } from "../util/platform.js";
 import { getTelemetryDbPath } from "../util/telemetry-db-path.js";
 import { clearStoredDb, getStoredDb, setStoredDb } from "./db-singleton.js";
 import * as schema from "./schema/index.js";
@@ -321,5 +321,15 @@ export function resetDb(): void {
   clearStoredDb("main-readonly");
   clearStoredDb("logs");
   clearStoredDb("memory");
+  clearStoredDb("telemetry");
+}
+
+/**
+ * Close only the telemetry connection. Migration 387 deletes the telemetry
+ * database file outright; closing its handle first lets that unlink succeed
+ * on platforms that lock open files, without disturbing the other dedicated
+ * connections the way the broader `resetDb()` would.
+ */
+export function closeTelemetryDb(): void {
   clearStoredDb("telemetry");
 }

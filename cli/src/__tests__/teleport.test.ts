@@ -2821,7 +2821,7 @@ describe("auth + transient-error resilience", () => {
       await teleport();
       expect(pollCalls).toBeGreaterThanOrEqual(2);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("polling failed, retrying"),
+        expect.stringContaining("polling failed:"),
       );
     } finally {
       restoreFetch();

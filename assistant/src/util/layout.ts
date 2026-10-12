@@ -3,9 +3,9 @@
  * writes, all rooted at the workspace ($CADET_WORKSPACE_DIR) and its
  * internal data directory.
  *
- * Extracted from `util/platform.ts` — these are directory-layout concerns,
- * not platform-detection concerns. `platform.ts` re-exports this module for
- * backward compatibility; new code should import from here directly.
+ * Extracted from `util/platform.ts` (now deleted) — these are
+ * directory-layout concerns, not platform-detection concerns; the OS
+ * detection and PATH helpers live in `./os.js`.
  */
 
 import { chmodSync, existsSync, mkdirSync } from "node:fs";

@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { z } from "zod";
 
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   LEGACY_PLUGIN_MANIFEST,
   readPluginManifest,

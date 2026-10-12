@@ -28,7 +28,7 @@ import {
   registerWorkspaceTools,
 } from "../tools/registry.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 interface ToolListEntry {
   name: string;

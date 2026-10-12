@@ -31,12 +31,12 @@ import {
   importRouteModule,
   sourceRootForHandler,
 } from "../runtime/routes/user-route-import.js";
-import { getLogger } from "../util/logger.js";
 import {
   ensureProcDir,
   getProcPidPath,
   getProcSocketPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import {
   cleanupWorkerPidFile,
   startWorkerPidFileGuard,

@@ -102,7 +102,7 @@ describe("cadet uninstall", () => {
         // not an assistant guard.
         await expect(uninstall()).rejects.toThrow("process.exit:1");
         expect(warnSpy).toHaveBeenCalledWith(
-          expect.stringContaining("1 assistant(s) still exist"),
+          expect.stringContaining("1 assistant still exists"),
         );
         expect(warnSpy).toHaveBeenCalledWith(
           expect.stringContaining("will be retired now"),

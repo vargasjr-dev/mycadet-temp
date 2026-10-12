@@ -1,7 +1,7 @@
 import { existsSync, unlinkSync } from "node:fs";
 
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
 
 const log = getLogger("bootstrap-cleanup");
 

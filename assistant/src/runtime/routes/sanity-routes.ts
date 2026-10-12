@@ -15,7 +15,7 @@ import { z } from "zod";
 
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";

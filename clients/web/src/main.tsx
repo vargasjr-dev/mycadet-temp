@@ -22,7 +22,6 @@ import { setupClientFlagScopeSync } from "@/lib/feature-flags/client-flag-scope"
 import { installConsentRefreshListeners } from "@/lib/consent/consent-refresh";
 import { isLocalClient, loadLockfile } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { markBoot } from "@/lib/telemetry/boot-telemetry";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { initSessionReplay } from "@/lib/session-replay/session-replay-init";
@@ -52,8 +51,6 @@ async function boot() {
   initWindowsTitleBarOverlay();
   await initSafeAreaBridge();
   // First render waits on this bridge, so it is the first boot gate worth a
-  // number. See `lib/telemetry/boot-telemetry.ts` for the mark family.
-  markBoot("safe_area_ready");
   void initNativeKeyboard();
   // Awaited before the first render so no component observes an uninitialized
   // i18next and no raw key path is ever painted. English is bundled in this
@@ -98,14 +95,11 @@ async function boot() {
   setupAuthListeners();
   // Local mode awaits the lockfile read and `initSession()` above, so this
   // separates "session was the boot cost" from "the app tree was".
-  markBoot("session_ready");
 
   const rootEl = document.getElementById("root");
   if (!rootEl) {
     throw new Error("Root element #root not found");
   }
-
-  markBoot("react_mount");
   createRoot(rootEl).render(
     <StrictMode>
       <ErrorBoundary fallback={<StartupFailure />}>

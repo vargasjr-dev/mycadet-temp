@@ -937,7 +937,7 @@ async function startDaemonWatchFromSource(
   }
   writeFileSync(pidFile, String(daemonPid), "utf-8");
 
-  console.log("   Assistant started in watch mode (bun --watch)");
+  console.log("   Assistant started in watch mode with bun --watch");
   return trackDaemonSpawn(child);
 }
 

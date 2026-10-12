@@ -19,7 +19,6 @@ import {
 
 import { VIRTUAL_CENTER } from "@/domains/intelligence/components/constellation-view/constants";
 import { memoryGraphOptions } from "@/domains/intelligence/memory-graph/get-memory-graph";
-import { emitMemoryEvent } from "@/domains/intelligence/memory-telemetry";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library";
 
@@ -357,7 +356,6 @@ export function ConceptGraphView({
   // is a tracked memory interaction. Route every open through here so
   // "node_opened" is emitted exactly once per open, from one place.
   const openNodeDetail = useCallback((node: ConceptDetailNode) => {
-    emitMemoryEvent("node_opened");
     setTrail((t) => [...t, node]);
   }, []);
   // The trail's current concept, mirrored into a ref the 60fps render loop and
@@ -1558,7 +1556,6 @@ export function ConceptGraphView({
                       // Key on the trimmed value so whitespace-only input, which the
                       // graph treats as no search, doesn't latch/emit prematurely.
                       if (value.trim() && !searchEmittedRef.current) {
-                        emitMemoryEvent("search");
                         searchEmittedRef.current = true;
                       }
                       setSearch(value);

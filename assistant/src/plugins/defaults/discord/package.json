@@ -1,0 +1,14 @@
+{
+  "name": "default-discord",
+  "version": "1.0.0",
+  "description": "Connect Cadet to Discord: your assistant joins your server and answers mentions and DMs.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "peerDependencies": {
+    "@mycadet/plugin-api": "^0.12.7"
+  }
+}

@@ -21,7 +21,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { getMonitoringDataDir } from "../util/platform.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 
 /**
  * Sentinel filename, under the monitoring data directory

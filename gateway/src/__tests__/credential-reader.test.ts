@@ -53,7 +53,7 @@ function getMachineEntropy(): string {
   } catch {
     parts.push("unknown-user");
   }
-  // Must match assistant/src/util/platform.ts#getPlatformName.
+  // Must match assistant/src/util/os.ts#getPlatformName.
   parts.push(process.platform);
   parts.push(process.arch);
   try {

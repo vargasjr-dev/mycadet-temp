@@ -69,8 +69,8 @@ import {
   injectActivityField,
 } from "../../tools/schema-transforms.js";
 import { pathExists } from "../../util/fs.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspaceDir } from "../../util/platform.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError, NotFoundError } from "./errors.js";

@@ -19,7 +19,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { llmUsageEvents } from "../persistence/schema/index.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { ROUTES } from "../runtime/routes/log-export-routes.js";
-import { getLogsDir } from "../util/platform.js";
+import { getLogsDir } from "../util/layout.js";
 
 await initializeDb();
 

@@ -23,7 +23,7 @@ import type { TrustContext } from "../../../daemon/trust-context-types.js";
 import {
   getConfigQuarantineNoticePath,
   getConfigValidationResetNoticePath,
-} from "../../../util/platform.js";
+} from "../../../util/layout.js";
 import {
   type InjectionBlock,
   type Injector,

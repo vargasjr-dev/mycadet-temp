@@ -42,8 +42,8 @@ import {
   type UsageAttributionInput,
 } from "../usage/attribution.js";
 import { createAbortReason } from "../util/abort-reasons.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const conversationCrudRealSnapshot = {

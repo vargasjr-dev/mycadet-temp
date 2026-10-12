@@ -69,12 +69,12 @@ import {
   withTimeout,
 } from "../plugins/surface-import.js";
 import type { HookEntry } from "../plugins/types.js";
-import { getLogger } from "../util/logger.js";
 import {
   getWorkspaceDir,
   getWorkspaceHooksDir,
   getWorkspacePluginsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { APP_VERSION } from "../version.js";
 
 const log = getLogger("hook-loader");

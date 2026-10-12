@@ -364,7 +364,7 @@ export async function createInviteNative(
     }
     if (!isValidE164(input.expectedExternalUserId)) {
       throw new InviteNativeError(
-        "expectedExternalUserId must be in E.164 format (e.g., +15551234567)",
+        "expectedExternalUserId must be in E.164 format, e.g. +15551234567",
         400,
         "BAD_REQUEST",
       );

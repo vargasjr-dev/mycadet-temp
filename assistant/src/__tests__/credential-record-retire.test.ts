@@ -21,7 +21,7 @@ import {
   setCredentialRecordBackend,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { getDataDir } from "../util/platform.js";
+import { getDataDir } from "../util/layout.js";
 
 function leftoverPath(): string {
   return join(getDataDir(), "credentials", "metadata.json");

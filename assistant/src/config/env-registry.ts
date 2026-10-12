@@ -6,7 +6,7 @@
  *
  * IMPORTANT: This module has NO internal imports (no logger, no platform
  * utilities) so it can be safely imported from bootstrap-level code like
- * util/platform.ts and util/logger.ts without circular dependencies.
+ * util/layout.ts and util/logger.ts without circular dependencies.
  *
  * Higher-level env vars that depend on the logger or config system live in
  * config/env.ts, which re-exports selected accessors from this module.
@@ -20,7 +20,7 @@ function str(name: string): string | undefined {
 }
 
 function flag(name: string): boolean {
-  const raw = str(name);
+  const raw = str(name)?.toLowerCase();
   return raw === "true" || raw === "1";
 }
 
@@ -65,14 +65,7 @@ export function getIsContainerized(): boolean {
  * deployments provisioned before the rename keep working.
  */
 export function getIsCloud(): boolean {
-  return flag("IS_CLOUD") || flag("IS_CLOUD");
-}
-
-/**
- * Whether this assistant is running as a Cadet Cloud-managed remote instance.
- */
-export function isCloudRemote(): boolean {
-  return getIsCloud();
+  return flag("IS_CLOUD");
 }
 
 /**

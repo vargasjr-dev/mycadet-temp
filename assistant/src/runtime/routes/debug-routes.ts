@@ -17,7 +17,7 @@ import {
   listProviders,
 } from "../../providers/registry.js";
 import { countSchedules } from "../../schedule/schedule-store.js";
-import { getDbPath } from "../../util/platform.js";
+import { getDbPath } from "../../util/layout.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import type { RouteDefinition } from "./types.js";
 

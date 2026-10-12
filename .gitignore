@@ -154,3 +154,5 @@ evals/
 __pycache__/
 *.pyc
 
+.vscode/
+

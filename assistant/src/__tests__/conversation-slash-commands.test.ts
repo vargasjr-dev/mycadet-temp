@@ -7,7 +7,7 @@ import {
   resolveSlash,
   type SlashContext,
 } from "../daemon/conversation-slash.js";
-import { getWorkspaceConfigPath } from "../util/platform.js";
+import { getWorkspaceConfigPath } from "../util/layout.js";
 
 function makeSlashContext(overrides: Partial<SlashContext> = {}): SlashContext {
   return {

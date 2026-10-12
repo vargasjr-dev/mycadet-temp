@@ -52,7 +52,6 @@ import { sequenceHelp } from "./commands/sequence.help.js";
 import { skillsHelp } from "./commands/skills.help.js";
 import { statusHelp } from "./commands/status.help.js";
 import { sttHelp } from "./commands/stt.help.js";
-import { telemetryHelp } from "./commands/telemetry.help.js";
 import { toolsHelp } from "./commands/tools.help.js";
 import { trustHelp } from "./commands/trust.help.js";
 import { ttsHelp } from "./commands/tts.help.js";
@@ -105,7 +104,6 @@ export const CLI_COMMAND_HELP: readonly CliCommandHelp[] = [
   skillsHelp,
   statusHelp,
   sttHelp,
-  telemetryHelp,
   toolsHelp,
   trustHelp,
   ttsHelp,

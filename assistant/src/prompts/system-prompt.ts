@@ -12,17 +12,15 @@ import { getIsContainerized } from "../config/env-registry.js";
 import type { ChannelCapabilities } from "../daemon/conversation-runtime-assembly.js";
 import { resolveTrustClass } from "../daemon/trust-context.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
-import { markActivationSession } from "../plugins/defaults/memory/activation-session-store.js";
 import { derivePersonaTrustFlags } from "../runtime/trust-class.js";
-import { ACTIVATION_RAIL_BOOTSTRAP_TEMPLATE } from "../telemetry/activation-funnel.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
 import { resolveBundledDir } from "../util/bundled-asset.js";
-import { getLogger } from "../util/logger.js";
 import {
   getConversationsDir,
   getWorkspaceDir,
   getWorkspacePromptPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import { cleanupBootstrapFiles } from "./bootstrap-cleanup.js";
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "./cache-boundary.js";
@@ -336,40 +334,11 @@ export function maybeReseedBootstrap(templateFileName: string): boolean {
 
 /**
  * Reseed BOOTSTRAP.md from the requested onboarding template (one-shot,
- * idempotent) and, when that template is the activation rail AND the rail is
- * now the active bootstrap, mark the conversation as an activation session.
- *
- * Marking happens here — at the single point where the bootstrap selection is
- * known — so it lands BEFORE the agent loop resolves tools and BEFORE the model
- * can call the emit tool on the first activation-rail turn. (`resolveTools`
- * runs before the system-prompt build in the loop, so the system-prompt build is
- * too late to be the *only* marking site.) The marker write is best-effort and
- * idempotent (`markActivationSession` swallows errors and dedups on the PK), so
- * calling this from both `setOnboardingContext` and `buildSystemPrompt` is safe.
- *
- * The activation mark is gated on the rail actually being the active bootstrap —
- * either this call just installed it, OR BOOTSTRAP.md already holds the
- * activation-rail template. When the reseed no-ops because BOOTSTRAP.md is
- * missing or customized to something else, the rail is NOT active, so we must
- * NOT mark (otherwise non-rail conversations would pollute activation
- * telemetry).
+ * idempotent). No-op when the workspace's BOOTSTRAP.md is missing or has been
+ * customized away from the generic template.
  */
-export function applyBootstrapTemplate(
-  bootstrapTemplate: string,
-  conversationId?: string,
-): void {
-  const installedActivationRail = maybeReseedBootstrap(bootstrapTemplate);
-  if (
-    bootstrapTemplate === ACTIVATION_RAIL_BOOTSTRAP_TEMPLATE &&
-    conversationId &&
-    (installedActivationRail ||
-      isTemplateContent(
-        readPromptFile(getWorkspacePromptPath("BOOTSTRAP.md")),
-        ACTIVATION_RAIL_BOOTSTRAP_TEMPLATE,
-      ))
-  ) {
-    markActivationSession(conversationId);
-  }
+export function applyBootstrapTemplate(bootstrapTemplate: string): void {
+  maybeReseedBootstrap(bootstrapTemplate);
 }
 
 /**
@@ -460,13 +429,12 @@ export interface BuildSystemPromptOptions {
  * file-backed bodies, and runtime-computed transforms.
  */
 export function buildSystemPrompt(options?: BuildSystemPromptOptions): string {
-  // One-shot bootstrap reseed + activation-rail marking. The marking also runs
-  // earlier, at `setOnboardingContext`, so the activation session is recorded
-  // before the agent loop resolves tools on the first turn; this call is a
-  // harmless idempotent backstop for prompt builds outside that path.
+  // One-shot bootstrap reseed, at prompt build for prompt paths outside the
+  // onboarding-context entry point (idempotent — no-op once BOOTSTRAP.md is
+  // customized).
   const bootstrapTemplate = options?.onboardingContext?.bootstrapTemplate;
   if (bootstrapTemplate) {
-    applyBootstrapTemplate(bootstrapTemplate, options?.conversationId);
+    applyBootstrapTemplate(bootstrapTemplate);
   }
 
   // Slugs used by the persona sections (`10-user-persona`,

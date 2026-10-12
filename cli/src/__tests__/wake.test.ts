@@ -1503,14 +1503,14 @@ describe("cadet wake — tunnel edge restore", () => {
     loadRawConfigMock.mockReturnValue(webhookConfig);
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error(
-        "nginx is not installed, so the tunnel edge cannot start. Install it (macOS: `brew install nginx`, Linux: `sudo apt install nginx`) or point NGINX_BIN at an existing binary.",
+        "nginx is not installed, so the tunnel edge cannot start. See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
       ),
     );
 
     await wake();
 
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("brew install nginx"),
+      expect.stringContaining("https://nginx.org/en/docs/install.html"),
     );
     // No tunnel is recorded here, so no provider can be named and the advice
     // points at the help that lists them.

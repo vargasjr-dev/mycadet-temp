@@ -42,8 +42,8 @@ import {
   PLUGIN_API_EXPORTS,
   PLUGIN_API_REGISTRY_KEY,
 } from "../embedded/plugin-api.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 
 const log = getLogger("plugin-api-shim");
 

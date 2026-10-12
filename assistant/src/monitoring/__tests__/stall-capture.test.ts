@@ -9,7 +9,7 @@ import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getMonitoringDataDir } from "../../util/platform.js";
+import { getMonitoringDataDir } from "../../util/layout.js";
 import { getDaemonHeartbeatPath } from "../daemon-heartbeat.js";
 import type { ResourceSample } from "../resource-sample-types.js";
 import {

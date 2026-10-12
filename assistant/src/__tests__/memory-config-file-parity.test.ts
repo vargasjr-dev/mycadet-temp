@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { getConfig } from "../config/loader.js";
 import { getMemoryConfig } from "../plugins/defaults/memory/config.js";
-import { getWorkspaceConfigPath } from "../util/platform.js";
+import { getWorkspaceConfigPath } from "../util/layout.js";
 
 const configPath = getWorkspaceConfigPath();
 const savedIsPlatform = process.env.IS_CLOUD;

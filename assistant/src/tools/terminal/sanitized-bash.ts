@@ -15,7 +15,7 @@ import {
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import { buildSanitizedEnv } from "./safe-env.js";
 

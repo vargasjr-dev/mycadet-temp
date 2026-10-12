@@ -26,7 +26,7 @@ import { join } from "node:path";
 
 import type { AssistantEventEnvelope } from "../api/index.js";
 import { getIsContainerized } from "../config/env-registry.js";
-import { getSignalsDir } from "../util/platform.js";
+import { getSignalsDir } from "../util/layout.js";
 
 // ── Write side (daemon) ──────────────────────────────────────────────
 

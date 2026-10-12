@@ -20,7 +20,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import type { McpConfig } from "../../config/schemas/mcp.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   buildEffectiveMcpConfig,
   pluginMcpServersChangedSinceLastBuild,

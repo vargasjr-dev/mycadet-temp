@@ -18,7 +18,7 @@ import {
   setMemoryCheckpoint,
 } from "../persistence/checkpoints.js";
 import { resolveGuardianPersona } from "../prompts/persona-resolver.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { getScheduleWorkerPidPath } from "../../../util/platform.js";
+import { getScheduleWorkerPidPath } from "../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
 

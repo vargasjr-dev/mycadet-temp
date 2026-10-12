@@ -18,7 +18,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { getWorkspaceRoutesDir } from "../../../util/platform.js";
+import { getWorkspaceRoutesDir } from "../../../util/layout.js";
 import type { RouteHandlerArgs, RouteResponse } from "../types.js";
 import { ROUTES } from "../user-routes.js";
 

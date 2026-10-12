@@ -136,7 +136,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { conversations } from "../persistence/schema/index.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { runLeaf, WorkflowUnknownProfileError } from "./leaf-runner.js";
 
 await initializeDb();

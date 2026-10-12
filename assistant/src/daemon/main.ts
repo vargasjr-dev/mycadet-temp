@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 process.title = "cadet-daemon";
 
+import { getDataDir, getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDataDir, getWorkspaceDir } from "../util/platform.js";
 import { runDaemon } from "./lifecycle.js";
 import { emitDaemonError } from "./startup-error.js";
 

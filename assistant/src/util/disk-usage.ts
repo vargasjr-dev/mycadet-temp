@@ -7,7 +7,7 @@ import {
   getIsContainerized,
   getMinikubeStorageSize,
 } from "../config/env-registry.js";
-import { getWorkspaceDir } from "./platform.js";
+import { getWorkspaceDir } from "./layout.js";
 
 const execFileAsync = promisify(execFile);
 

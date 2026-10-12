@@ -38,8 +38,8 @@ import {
 } from "../persistence/attachments-store.js";
 import { getOrCreateConversation as getOrCreateConversationKey } from "../persistence/conversation-key-store.js";
 import { checkIngressForSecrets } from "../security/secret-ingress.js";
+import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSignalsDir } from "../util/platform.js";
 
 const log = getLogger("signal:user-message");
 

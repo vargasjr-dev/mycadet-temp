@@ -25,7 +25,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { activationProgressGetSetQueryData } from "@/generated/daemon/@tanstack/react-query.gen";
 import { activationDismissPost } from "@/generated/daemon/sdk.gen";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { emitActivationEvent } from "@/utils/activation-telemetry";
 
 import {
   activationProgressQueryKey,
@@ -57,7 +56,6 @@ export function useDismissActivation(
       }
       // Which surface was put away rides the event: closing the celebration
       // retires the checklist, and closing the welcome modal only defers it.
-      emitActivationEvent("activation_modal_dismissed", { kind });
       void (async () => {
         // A progress read already in flight was issued before the dismissal,
         // so its answer would land on top of the seed below and put the

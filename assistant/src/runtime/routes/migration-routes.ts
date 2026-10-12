@@ -33,7 +33,6 @@ import {
   getDb,
   getLogsSqlite,
   getMemorySqlite,
-  getTelemetrySqlite,
   resetDb,
 } from "../../persistence/db-connection.js";
 import { validateMigrationState } from "../../persistence/migrations/validate-migration-state.js";
@@ -49,8 +48,8 @@ import {
   getCredentialMetadata,
   upsertCredentialMetadata,
 } from "../../tools/credentials/metadata-store.js";
+import { getWorkspaceDir, getWorkspaceHooksDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspaceDir, getWorkspaceHooksDir } from "../../util/platform.js";
 import { APP_VERSION } from "../../version.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -197,7 +196,7 @@ async function checkpointDbsForExport(): Promise<void> {
   for (const [label, sqlite] of [
     ["logs", getLogsSqlite()],
     ["memory", getMemorySqlite()],
-    ["telemetry", getTelemetrySqlite()],
+    // (no telemetry: migration 387 deletes that database file outright)
   ] as const) {
     if (!sqlite) {
       log.warn(

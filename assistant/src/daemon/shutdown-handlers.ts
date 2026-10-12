@@ -20,7 +20,6 @@ import { stopRouteHost } from "../routes/control.js";
 import { stopRuntimeHttpServer } from "../runtime/http-server.js";
 import { stopScheduler } from "../schedule/scheduler.js";
 import { getSubagentManager } from "../subagent/index.js";
-import { stopUsageTelemetryReporter } from "../telemetry/usage-telemetry-reporter.js";
 import { browserManager } from "../tools/browser/browser-manager.js";
 import { getLogger } from "../util/logger.js";
 import { APP_VERSION } from "../version.js";
@@ -150,15 +149,6 @@ async function shutdown(): Promise<void> {
     await getEnrichmentService().shutdown();
   } catch (err) {
     log.warn({ err }, "Enrichment service shutdown failed (non-fatal)");
-  }
-
-  try {
-    const timeout = new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error("Telemetry flush timed out")), 3_000),
-    );
-    await Promise.race([stopUsageTelemetryReporter(), timeout]);
-  } catch (err) {
-    log.warn({ err }, "Telemetry reporter shutdown failed (non-fatal)");
   }
 
   await stopRuntimeHttpServer();

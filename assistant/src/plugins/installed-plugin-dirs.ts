@@ -21,7 +21,7 @@
 import { readdirSync, realpathSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
 
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
 
 export interface InstalledPluginDir {

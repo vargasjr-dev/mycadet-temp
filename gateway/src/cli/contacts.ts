@@ -204,7 +204,9 @@ export async function executeContactsCommand(
       );
     }
     console.log("");
-    console.log(`${contacts.length} contact(s)`);
+    console.log(
+      `${contacts.length} ${contacts.length === 1 ? "contact" : "contacts"}`,
+    );
     return 0;
   }
 

@@ -18,6 +18,7 @@
  */
 
 import { MANAGED_PROFILE_NAMES } from "../../config/default-profile-catalog.js";
+import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { credentialKey } from "../../security/credential-key.js";
@@ -73,8 +74,7 @@ function backfillConfigProfiles(db: DrizzleDb): void {
     return;
   }
 
-  const isCloud =
-    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
+  const isCloud = getIsCloud();
   const globalMode = isCloud ? "managed" : "your-own";
 
   let changed = false;

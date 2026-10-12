@@ -8,7 +8,7 @@ let mockCredentialReadiness: Record<string, unknown>;
 let credentialReadinessCalls = 0;
 
 // Spread the real env-registry so the config loader's transitive
-// `util/platform` imports still resolve; only getIsCloud is driven per test.
+// `util/layout` imports still resolve; only getIsCloud is driven per test.
 mock.module("../config/env-registry.js", () => ({
   ...realEnvRegistry,
   getIsCloud: () => mockGetIsPlatform(),

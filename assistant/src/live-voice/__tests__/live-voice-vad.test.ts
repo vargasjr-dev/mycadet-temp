@@ -30,7 +30,7 @@ import {
   unregisterSkillTools,
 } from "../../tools/registry.js";
 import { finalizeTool } from "../../tools/tool-defaults.js";
-import { getWorkspaceSkillsDir } from "../../util/platform.js";
+import { getWorkspaceSkillsDir } from "../../util/layout.js";
 import type { LiveVoiceContinuationJudge } from "../continuation-judge.js";
 import type { LiveVoiceContinuationLabeler } from "../continuation-label.js";
 import type { LiveVoiceAudioArchiveResult } from "../live-voice-archive.js";

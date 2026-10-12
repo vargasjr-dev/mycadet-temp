@@ -30,12 +30,10 @@ import {
   ACTIVATION_PROGRESS_ALL_DONE,
   ACTIVATION_PROGRESS_DISMISSED,
   ACTIVATION_PROGRESS_EMPTY,
-  doneTaskProgress,
 } from "@/domains/activation/activation-test-fixtures";
 import {
   installActivationFetchStub,
   mockActivationProgress,
-  recordActivationFunnelEvents,
   resetActivationFlagStore,
   seedActivationIdentity,
   setActivationArm,
@@ -48,14 +46,11 @@ import { useBannerVisibilityStore } from "@/stores/banner-visibility-store";
 import { useInChatOnboardingStore } from "@/stores/in-chat-onboarding-store";
 
 const progressMock = await mockActivationProgress();
-const funnel = await recordActivationFunnelEvents();
-const { events } = funnel;
 
 // Both mocks outlive this file otherwise, and the surfaces that read the same
 // modules elsewhere would read this file's leftovers instead of their own.
 afterAll(() => {
   progressMock.restore();
-  funnel.restore();
 });
 
 const { ActivationController } =
@@ -96,7 +91,6 @@ function renderSurfaces(): ReturnType<typeof render> {
 }
 
 beforeEach(() => {
-  funnel.clear();
   fetchStub = installActivationFetchStub();
   progressMock.set(ACTIVATION_PROGRESS_EMPTY);
   setActivationArm("smb");
@@ -142,9 +136,6 @@ describe("ActivationController", () => {
     // A render the modal is already open across: opening another row re-renders
     // the tree, and an event per render would multiply the funnel's first step.
     fireEvent.click(getByText(starters[1]!.title));
-    expect(events.map((event) => [event.step_name, event.screen])).toEqual([
-      ["activation_modal_shown", "smb"],
-    ]);
   });
 
   test("Do it Later records the dismissal against the shown list", async () => {
@@ -226,9 +217,7 @@ describe("ActivationController", () => {
   test("shows the celebration once every starter is done", () => {
     progressMock.set(ACTIVATION_PROGRESS_ALL_DONE);
     const { getByRole, queryByRole } = renderSurfaces();
-    expect(
-      getByRole("button", { name: "See the full list" }),
-    ).not.toBeNull();
+    expect(getByRole("button", { name: "See the full list" })).not.toBeNull();
     expect(queryByRole("button", { name: "Do it Later" })).toBeNull();
   });
 });
@@ -238,45 +227,6 @@ describe("ActivationController", () => {
  * daemon-side, so the completion step is observed here, where the rest of the
  * funnel is emitted.
  */
-describe("activation completion telemetry", () => {
-  test("reports a task the daemon finishes while the session is open", () => {
-    const { rerender } = renderSurfaces();
-    expect(events.map((event) => event.step_name)).toEqual([
-      "activation_modal_shown",
-    ]);
-
-    act(() => {
-      progressMock.set({
-        ...ACTIVATION_PROGRESS_EMPTY,
-        tasks: { [starters[0]!.id]: doneTaskProgress() },
-      });
-    });
-    rerender(
-      <>
-        <ActivationSuggestionsPillHost />
-        <ActivationController />
-      </>,
-    );
-
-    const completions = events.filter(
-      (event) => event.step_name === "activation_task_completed",
-    );
-    expect(completions.map((event) => event.screen)).toEqual([
-      `smb/${starters[0]!.id}`,
-    ]);
-  });
-
-  // A reload after finishing a task must not re-report it: the first snapshot
-  // a session sees is the baseline, not a transition.
-  test("reports nothing for a task already done when the session opened", () => {
-    progressMock.set(ACTIVATION_PROGRESS_DISMISSED);
-    renderSurfaces();
-
-    expect(
-      events.filter((event) => event.step_name === "activation_task_completed"),
-    ).toEqual([]);
-  });
-});
 
 describe("ActivationSuggestionsPillHost", () => {
   test("shows the pill once the modal has been put off", () => {
@@ -310,10 +260,6 @@ describe("ActivationSuggestionsPillHost", () => {
     // The daemon already holds the dismissal; reopening must not rewrite it.
     expect(dismissals()).toEqual([]);
     expect(getByRole("button", { name: "Do it Later" })).not.toBeNull();
-    expect(events.map((event) => event.step_name)).toEqual([
-      "activation_pill_clicked",
-      "activation_modal_shown",
-    ]);
   });
 
   // A modal reopened from the pill closes locally and nothing else: the

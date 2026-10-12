@@ -17,7 +17,7 @@ import {
   test,
 } from "bun:test";
 
-import { getProcPidPath, getProcSocketPath } from "../../util/platform.js";
+import { getProcPidPath, getProcSocketPath } from "../../util/layout.js";
 import {
   RouteHostClient,
   RouteHostTimeoutError,

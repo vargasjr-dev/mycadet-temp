@@ -59,7 +59,7 @@ function printFlagTable(flags: FeatureFlagEntry[]): void {
     console.log(formatRow(row));
   }
   console.log("");
-  console.log("* = overridden (differs from default)");
+  console.log("* = overridden");
 }
 
 function printHelp(): void {
@@ -67,7 +67,7 @@ function printHelp(): void {
   console.log("");
   console.log("Show and toggle feature flags for the active assistant.");
   console.log(
-    "Reads from the gateway's merged flag state (persisted overrides > remote > defaults).",
+    "Reads from the gateway's merged flag state.",
   );
   console.log("");
   console.log("Subcommands:");

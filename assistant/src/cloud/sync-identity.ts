@@ -12,8 +12,8 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import { parseIdentityFields } from "../daemon/handlers/identity.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
 import { createCloudPatchQueue } from "./cloud-patch-queue.js";
 
 const log = getLogger("sync-identity");

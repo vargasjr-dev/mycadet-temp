@@ -14,7 +14,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ResourceSample } from "../../../monitoring/resource-sample-types.js";
-import { getMonitoringPidPath } from "../../../util/platform.js";
+import { getMonitoringPidPath } from "../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
 

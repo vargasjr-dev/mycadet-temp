@@ -15,7 +15,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 /**
  * Return `true` when the `.disabled` sentinel exists for `pluginName`.

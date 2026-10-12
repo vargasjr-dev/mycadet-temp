@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { createApp } from "../apps/app-store.js";
 import { resolveAppQuery } from "../apps/resolve-app.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 let workspaceDir: string;
 let previousWorkspaceDir: string | undefined;

@@ -19,8 +19,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { getMonitoringDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getMonitoringDataDir } from "../util/platform.js";
 import { readDaemonHeartbeat } from "./daemon-heartbeat.js";
 import { readStallWaitState, type StallWaitState } from "./proc-wait-state.js";
 import { prunePrefixedJsonFiles } from "./prune-snapshots.js";

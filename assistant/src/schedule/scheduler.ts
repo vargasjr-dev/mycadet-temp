@@ -14,6 +14,7 @@ import { emitNotificationSignal } from "../notifications/emit-signal.js";
 import { emitScheduleResultNotification } from "../notifications/schedule-result-producer.js";
 import { getConversation } from "../persistence/conversation-crud.js";
 import { isLifecycleQuiesced } from "../persistence/lifecycle-quiesce.js";
+import type { TurnFailure } from "../persistence/turn-outcome.js";
 import { invalidateAssistantInferredItemsForConversation } from "../plugins/defaults/memory/task-memory-cleanup.js";
 import { dispatchProviderResolvable } from "../providers/provider-resolvability.js";
 import {
@@ -28,8 +29,6 @@ import {
 import { publishConversationListChanged } from "../runtime/sync/resource-sync-events.js";
 import { runSequencesOnce } from "../sequence/engine.js";
 import { getSubagentManager } from "../subagent/index.js";
-import type { TurnFailure } from "../telemetry/turn-outcome.js";
-import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import {
   cancelBackgroundTools,
   hasBackgroundToolWork,
@@ -506,21 +505,12 @@ export function startScheduler(): SchedulerHandle {
         { pid },
         "Schedule worker was not running — respawned by watchdog",
       );
-      recordWatchdogEvent({
-        checkName: "schedule_worker_respawn",
-        detail: { pid },
-      });
     },
     onPersistentFailure: (consecutiveFailures, err) => {
       log.error(
         { err, consecutiveFailures },
         "Schedule worker repeatedly failed to respawn — schedules are paused",
       );
-      recordWatchdogEvent({
-        checkName: "schedule_worker_down",
-        value: consecutiveFailures,
-        detail: { consecutiveFailures },
-      });
       emitScheduleWorkerDownNotification(consecutiveFailures);
     },
   });

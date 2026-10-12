@@ -339,9 +339,7 @@ export class UserRouteDispatcher {
   ): Promise<Response> {
     try {
       return await Promise.race([
-        Promise.resolve(
-          handler(request, buildDeprecatedRouteContext(routePath)),
-        ),
+        Promise.resolve(handler(request, buildDeprecatedRouteContext())),
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(new Error("Handler timed out")),

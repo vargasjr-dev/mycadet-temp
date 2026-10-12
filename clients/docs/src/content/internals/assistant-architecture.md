@@ -2307,7 +2307,7 @@ These endpoints allow the cloud (via vembda proxy) to enumerate, inspect, export
 | `src/runtime/routes/profiler-routes.ts`    | HTTP route handlers for profiler run management                          |
 | `src/runtime/routes/archive-utils.ts`      | Shared tar.gz creation and size-cap utilities                            |
 | `src/config/env-registry.ts`               | Profiler env var accessors (`getProfilerRunId`, `getProfilerMode`, etc.) |
-| `src/util/platform.ts`                     | Profiler directory path helpers                                          |
+| `src/util/layout.ts`                       | Profiler directory path helpers                                          |
 | `src/__tests__/profiler-run-store.test.ts` | Profiler store unit tests                                                |
 | `src/__tests__/profiler-routes.test.ts`    | Profiler HTTP route tests                                                |
 

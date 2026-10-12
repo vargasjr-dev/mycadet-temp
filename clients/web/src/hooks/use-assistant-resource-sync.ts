@@ -51,7 +51,7 @@ import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { chooserRowAvatarQueryKeyPrefix } from "@/hooks/use-chooser-row-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { supersedeCloudAvatar } from "@/hooks/use-cloud-avatar-urls";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import { SYNC_TAGS } from "@/lib/sync/types";
 
 /**

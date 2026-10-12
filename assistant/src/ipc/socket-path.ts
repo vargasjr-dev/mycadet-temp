@@ -1,6 +1,6 @@
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 export function resolveIpcSocketPath(socketName: string): {
   path: string;

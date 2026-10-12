@@ -59,12 +59,7 @@ import {
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
 import { currentLocale } from "@/i18n";
-import { getClientRegistrationHeaders } from "@/lib/telemetry/client-identity";
-import {
-  installResumeRequestCounter,
-  isResumeWindowOpen,
-  noteDaemonApiRequest,
-} from "@/lib/telemetry/resume-request-counter";
+import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
 import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
@@ -198,26 +193,6 @@ function applySelfHostedBearer(headers: Headers): void {
 /** True when the request went out with the bearer the slot holds now. */
 function carriesCurrentBearer(request: Request): boolean {
   return request.headers.get("Authorization") === currentSelfHostedBearer();
-}
-
-/**
- * True when a path names daemon/gateway traffic, whichever client issues it.
- * Mirrors the routing decision {@link rewriteForSelfHostedIngress} makes for
- * the cloud client, but is deliberately independent of whether an ingress
- * is registered: the same path reaches the daemon through the cloud's
- * runtime proxy in cloud mode, so `client_resume.request_count` stays
- * comparable across cloud and self-hosted.
- */
-function isDaemonBoundPath(url: string): boolean {
-  const match = ASSISTANT_PATH_RE.exec(new URL(url).pathname);
-  if (!match) {
-    return false;
-  }
-  const firstSegment = match[2];
-  return (
-    RUNTIME_PROXIED_FIRST_SEGMENTS.has(firstSegment) ||
-    FLATTENED_FIRST_SEGMENTS.has(firstSegment)
-  );
 }
 
 function isPlatformPushPath(url: string): boolean {
@@ -492,18 +467,6 @@ function createInterceptor({
    * one, which still carries the cloud-shaped path a self-hosted rewrite
    * would have replaced.
    */
-  function shouldCount(url: string, outgoing: Request): boolean {
-    // Cheapest test first: outside a resume window nothing here parses a URL.
-    if (!isResumeWindowOpen()) {
-      return false;
-    }
-    if (isDaemonClient) {
-      return true;
-    }
-    return (
-      isDaemonBoundPath(url) && cloudFeaturesGateDecision(outgoing) === "allow"
-    );
-  }
 
   const route = async (request: Request): Promise<Request> => {
     const newRequest = new Request(request);
@@ -606,13 +569,6 @@ function createInterceptor({
         provesReadiness:
           observeDaemonActivity && !NON_SERVING_DAEMON_PATHS.has(match[2]),
       });
-    }
-    try {
-      if (shouldCount(request.url, outgoing)) {
-        noteDaemonApiRequest(request.url);
-      }
-    } catch {
-      // Telemetry must never fail a request.
     }
     return outgoing;
   };
@@ -1280,7 +1236,6 @@ export function daemonErrorInterceptor(
 // subscriber the React tree adds and the requests they fire synchronously on
 // resume are counted. See the function's docstring for why a React effect
 // cannot give that guarantee.
-installResumeRequestCounter();
 
 daemonClient.interceptors.request.use(daemonRequestInterceptor);
 daemonClient.interceptors.response.use(daemonUnreachableInterceptor);

@@ -31,7 +31,7 @@ import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { parsePluginManifest } from "../plugins/external-plugin-loader.js";
 import { isInsidePluginRoot } from "../plugins/installed-plugin-dirs.js";
 import { FRONTMATTER_REGEX } from "../skills/frontmatter.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import {
   computeNextRunAt,
   isSingleFireRRule,

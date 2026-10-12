@@ -26,10 +26,6 @@ import {
 import { capPayloadForRender, capPayloadForStorage } from "./payload-bounds.js";
 import { getWatcherProvider } from "./provider-registry.js";
 import {
-  recordWatcherInventoryIfDue,
-  recordWatcherLlmProcessed,
-} from "./telemetry.js";
-import {
   claimDueWatchers,
   completeWatcherPoll,
   disableWatcher,
@@ -228,8 +224,6 @@ export async function runWatchersOnce(
 ): Promise<number> {
   const now = Date.now();
   let processed = 0;
-
-  recordWatcherInventoryIfDue(now);
 
   // ── Phase 1: Poll providers for new events ──────────────────────
   const claimed = claimDueWatchers(now);
@@ -473,7 +467,6 @@ export async function runWatchersOnce(
     // is empty) — otherwise we'd overwrite a valid prior id with "".
     if (result.conversationId !== "") {
       setWatcherConversationId(watcher.id, result.conversationId);
-      recordWatcherLlmProcessed(watcher.providerId, result.conversationId);
     }
 
     if (result.ok) {

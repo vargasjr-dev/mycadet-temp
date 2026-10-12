@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getSignalsDir } from "../../util/platform.js";
+import { getSignalsDir } from "../../util/layout.js";
 import { MCP_RELOAD_SIGNAL_FILE, signalMcpReloaded } from "../reload-signal.js";
 
 const signalPath = () => join(getSignalsDir(), MCP_RELOAD_SIGNAL_FILE);

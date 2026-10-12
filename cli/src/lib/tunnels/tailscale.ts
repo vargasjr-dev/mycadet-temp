@@ -55,7 +55,7 @@ export function getTailscaleInstallMessage(
     hostPlatform === "win32"
       ? "  Windows: winget install Tailscale.Tailscale"
       : hostPlatform === "darwin"
-        ? "  macOS:  brew install tailscale   (or install the Tailscale app)"
+        ? "  macOS:  brew install tailscale, or install the Tailscale app"
         : "  Linux:  https://tailscale.com/download/linux";
   return [
     "Tailscale is not installed or could not be found.",

@@ -18,7 +18,7 @@ import { runShutdownHook } from "../../hooks/hook-loader.js";
 import { MESSAGE_KEYS, t } from "../../i18n/index.js";
 import { isPluginDisabled } from "../../plugins/disabled-state.js";
 import { PLUGIN_MCP_MANIFEST } from "../../plugins/mcp-servers.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   InvalidPluginNameError,
   readInstallMeta,

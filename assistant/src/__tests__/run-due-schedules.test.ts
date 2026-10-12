@@ -64,7 +64,7 @@ import {
   upsertDeclaredSchedule,
 } from "../schedule/schedule-store.js";
 import { runDueSchedulesOnce } from "../schedule/scheduler.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
 await initializeDb();

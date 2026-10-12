@@ -1,8 +1,8 @@
 import { statSync } from "node:fs";
 
 import { getConfig } from "../config/loader.js";
+import { getDbPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDbPath } from "../util/platform.js";
 import { sweepOrphanedWatchTimelineEntries } from "../watch/watch-timeline.js";
 import { pruneRuns } from "../workflows/journal-store.js";
 import { getMemoryCheckpoint, setMemoryCheckpoint } from "./checkpoints.js";

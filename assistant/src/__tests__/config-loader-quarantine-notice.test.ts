@@ -26,7 +26,7 @@ import {
   invalidateConfigCache,
   loadConfig,
 } from "../config/loader.js";
-import { getConfigQuarantineNoticePath } from "../util/platform.js";
+import { getConfigQuarantineNoticePath } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

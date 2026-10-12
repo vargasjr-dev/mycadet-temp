@@ -11,7 +11,6 @@ mock.module("../config/env-registry.js", () => ({
   getDebugStdoutLogs: () => false,
   getIsContainerized: () => false,
   getIsCloud: () => false,
-  isCloudRemote: () => false,
   getCpuLimit: () => undefined,
   getMinikubeStorageSize: () => undefined,
   getProfilerRunId: () => undefined,

@@ -25,7 +25,7 @@ import {
 import { PLUGIN_ADMISSION_DENIED_NOTICE_PATH } from "@mycadet/gateway-client";
 
 // Route policies are only evaluated when HTTP auth is on.
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import type { AuthContext, ScopeProfile } from "../../auth/types.js";
 import { HttpRouter } from "../../http-router.js";

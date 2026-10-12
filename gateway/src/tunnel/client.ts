@@ -33,6 +33,7 @@ import {
   TUNNEL_BINARY_WEBSOCKET_HEADER,
 } from "./binary-websocket.js";
 import { TunnelWebSocketBridge } from "./websocket-bridge.js";
+import { getIsCloud } from "../cloud-url.js";
 
 const log = getLogger("tunnel-client");
 
@@ -793,9 +794,7 @@ export function createTunnelClient(
   },
 ): TunnelClient | undefined {
   if (!config.tunnelBaseUrl) {
-    const isCloud =
-      process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
-      process.env.IS_CLOUD?.trim() === "1";
+    const isCloud = getIsCloud();
     if (isCloud) {
       log.warn(
         "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",

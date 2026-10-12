@@ -40,7 +40,7 @@ mock.module("../../plugins/mcp-servers.js", () => ({
   readPluginMcpServers: () => ({ servers: [], issues: [] }),
 }));
 
-const { getSignalsDir } = await import("../../util/platform.js");
+const { getSignalsDir } = await import("../../util/layout.js");
 const { MCP_RELOAD_SIGNAL_FILE } = await import("../reload-signal.js");
 const { reloadMcpServers } = await import("../../daemon/mcp-reload-service.js");
 

@@ -3,8 +3,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { AvatarState } from "@mycadet/avatar-manifest";
 
 import { isTemplateContent } from "../prompts/template-detection.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
 import { safeStringSlice } from "../util/unicode.js";
 
 const log = getLogger("identity-avatar");

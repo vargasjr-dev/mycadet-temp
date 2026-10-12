@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { ensureBun } from "../../util/bun-runtime.js";
+import { getExternalDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getExternalDir } from "../../util/platform.js";
 
 const log = getLogger("runtime-check");
 

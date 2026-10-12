@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { initializeDb } from "../../persistence/db-init.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { AssistantIpcServer } from "../assistant-server.js";
 import { cliIpcCall } from "../cli-client.js";
 

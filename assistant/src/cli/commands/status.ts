@@ -4,7 +4,7 @@ import type { Command } from "commander";
 
 import { cliIpcCall } from "../../ipc/cli-client.js";
 import { getAssistantSocketPath } from "../../ipc/socket-path.js";
-import { getWorkspaceDirDisplay } from "../../util/platform.js";
+import { getWorkspaceDirDisplay } from "../../util/layout.js";
 import { APP_VERSION } from "../../version.js";
 import { applyCommandHelp } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";

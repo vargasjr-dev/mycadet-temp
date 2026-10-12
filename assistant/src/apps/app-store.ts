@@ -41,8 +41,8 @@ import { rawAll } from "../persistence/raw-query.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import type { EditEngineResult } from "../tools/shared/filesystem/edit-engine.js";
 import { applyEdit } from "../tools/shared/filesystem/edit-engine.js";
+import { getDataDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDataDir, getWorkspacePluginsDir } from "../util/platform.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
 
 const log = getLogger("app-store");

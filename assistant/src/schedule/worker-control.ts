@@ -8,8 +8,8 @@
  * path and entry point.
  */
 
+import { getScheduleWorkerPidPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getScheduleWorkerPidPath } from "../util/platform.js";
 import {
   probeWorkerPidFile,
   spawnWorkerProcess,

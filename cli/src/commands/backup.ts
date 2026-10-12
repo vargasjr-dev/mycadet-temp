@@ -42,10 +42,10 @@ export const backup = Object.assign(
     console.log("Options:");
     console.log("  --output <path>          Path to save the .vbundle file");
     console.log(
-      "                           (default: ~/.local/share/cadet/backups/<name>-<timestamp>.vbundle)",
+      "                           defaults to ~/.local/share/cadet/backups/<name>-<timestamp>.vbundle",
     );
     console.log(
-      `  --export-timeout <secs>  Export request timeout in seconds (default: ${DEFAULT_EXPORT_TIMEOUT_MS / 1000})`,
+      `  --export-timeout <secs>  Export request timeout in seconds, defaults to ${DEFAULT_EXPORT_TIMEOUT_MS / 1000}`,
     );
     console.log("");
     console.log("Examples:");
@@ -254,7 +254,7 @@ async function backupPlatform(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first (required for cloud-managed backup).",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }

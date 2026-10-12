@@ -16,7 +16,7 @@ import { trackDaemonActivity } from "../daemon/activity-trail.js";
 import { isFileUnheld } from "../util/file-use.js";
 import { getLogger } from "../util/logger.js";
 import { Mutex } from "../util/mutex.js";
-import { addToPathEnv, getExtraToolPathDirs } from "../util/platform.js";
+import { addToPathEnv, getExtraToolPathDirs } from "../util/os.js";
 import { PromiseGuard } from "../util/promise-guard.js";
 import {
   collectDirtyPathsFromPorcelain,

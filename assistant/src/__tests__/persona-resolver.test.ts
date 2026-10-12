@@ -3,7 +3,7 @@
  * `resolveGuardianPersonaPath` and `ensureGuardianPersonaFile`.
  *
  * The module under test reads/writes files under `getWorkspaceDir()`,
- * so these tests stub `util/platform.js` to point at an ephemeral temp
+ * so these tests stub `util/layout.js` to point at an ephemeral temp
  * directory and stub `contacts/contact-store.js` to control which
  * guardian (if any) is returned by the resolver.
  */

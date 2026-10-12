@@ -80,8 +80,8 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 
+import { getWorkspaceToolsDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspaceToolsDir } from "../../util/platform.js";
 import { isProviderSafeToolName } from "../provider-tool-name.js";
 import {
   getCoreToolOverride,

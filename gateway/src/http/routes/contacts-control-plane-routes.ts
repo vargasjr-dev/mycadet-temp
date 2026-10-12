@@ -36,7 +36,7 @@ const ContactChannelPayloadSchema = z.object({
   externalChatId: z.string().nullable(),
   externalUserId: z
     .string()
-    .describe("Compat alias for address (older macOS clients)"),
+    .describe("Compat alias for address, for older macOS clients"),
   status: z.string().nullable(),
   policy: z.string().nullable(),
   verifiedAt: z.number().nullable(),
@@ -69,7 +69,7 @@ const ContactPayloadSchema = z.object({
   interactionCount: z.number(),
   lastInteraction: z.number().nullable(),
   autoApproveThreshold: RiskThresholdSchema.nullable().describe(
-    "Per-contact auto-approve ceiling. Null means unset (inherit cascade).",
+    "Per-contact auto-approve ceiling. Null means unset, inheriting the cascade.",
   ),
   assistantMetadata: AssistantContactMetadataSchema.nullable(),
   channels: z.array(ContactChannelPayloadSchema),
@@ -92,7 +92,7 @@ const UpsertContactChannelInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Delivery chat id. Omit to preserve the stored value. A legacy explicit null is accepted for compatibility and treated as omitted; clearing is not supported (a stored null is indistinguishable from never-learned, so no consumer could tell a clear from a gap).",
+      "Delivery chat id. Omit to preserve the stored value. A legacy explicit null is accepted for compatibility and treated as omitted; clearing is not supported: a stored null is indistinguishable from never-learned, so no consumer could tell a clear from a gap.",
     ),
   status: z.string().optional(),
   policy: z.string().optional(),
@@ -200,7 +200,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "contactsUpsert",
     summary: "Create or update a contact",
     description:
-      "Gateway-native contact upsert (dual-writes the gateway ACL store and the assistant info mirror). Matches by id, then by any provided (type, address) channel, else creates.",
+      "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
     tags: ["contacts"],
     requestBody: UpsertContactRequestSchema,
     responseBody: z.object({
@@ -265,7 +265,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "contactChannelVerify",
     summary: "Manually verify a contact channel",
     description:
-      "Guardian-only manual attestation: marks the channel active/verified in the gateway store (source of truth) with a best-effort assistant mirror. Idempotent.",
+      "Guardian-only manual attestation: marks the channel active/verified in the gateway store, the source of truth, with a best-effort assistant mirror. Idempotent.",
     tags: ["contacts"],
     pathParameters: [
       { name: "channel_id", description: "The contact-channel id" },

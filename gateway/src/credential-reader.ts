@@ -46,7 +46,7 @@ type StoreFile = StoreFileV1 | StoreFileV2;
 const STORE_KEY_FILENAME = "store.key";
 
 function getPlatformName(): string {
-  // Must match assistant/src/util/platform.ts#getPlatformName exactly.
+  // Must match assistant/src/util/os.ts#getPlatformName exactly.
   // Using user-friendly labels like "macOS" here changes PBKDF2 entropy and
   // makes gateway unable to decrypt credentials written by the daemon.
   return process.platform;

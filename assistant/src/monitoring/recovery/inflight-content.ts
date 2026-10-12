@@ -43,8 +43,8 @@ import {
   resolveContentRefPath,
   resolveMessageContentBlocks,
 } from "../../persistence/message-content-file.js";
+import { getConversationsDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getConversationsDir } from "../../util/platform.js";
 import { openRecoveryDb } from "./db.js";
 
 const log = getLogger("recovery-inflight-content");

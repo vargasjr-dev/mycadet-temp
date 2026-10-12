@@ -35,10 +35,6 @@ import {
   isInChatTourOn,
   readInChatTourVariant,
 } from "@/domains/chat/in-chat-onboarding/in-chat-tour-flag";
-import {
-  emitInChatTourExposed,
-  emitInChatTourStarted,
-} from "@/domains/chat/in-chat-onboarding/tour-telemetry";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { routes } from "@/utils/routes";
 
@@ -105,10 +101,8 @@ export function useOnboardingOrchestrator(): UseOnboardingOrchestratorResult {
     // hydrated long ago during the onboarding flow itself, and the
     // signal is one-shot.
     if (!isMobile && !isNative) {
-      emitInChatTourExposed();
       if (isInChatTourOn(readInChatTourVariant())) {
         useInChatOnboardingStore.getState().startPrototype();
-        emitInChatTourStarted();
       }
     }
     void navigate(routes.conversation(draftId), { replace: true });

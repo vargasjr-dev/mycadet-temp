@@ -126,7 +126,7 @@ export function createFeatureFlagsPatchHandler(onFlagChanged?: () => void) {
       return Response.json(
         {
           error:
-            "Invalid flag key format. Must be a simple kebab-case string (e.g., 'browser', 'contacts')",
+            "Invalid flag key format. Must be a simple kebab-case string, e.g. 'browser' or 'contacts'",
         },
         { status: 400 },
       );

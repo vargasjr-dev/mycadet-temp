@@ -101,8 +101,8 @@ import {
   reconcilePluginSourcesNow,
 } from "../../plugins/mtime-cache.js";
 import { getLocalCategorySlugs } from "../../skills/categories-cache.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   getOriginClientId,

@@ -14,8 +14,8 @@ import { join } from "node:path";
 
 import { getIsContainerized } from "../config/env-registry.js";
 import { undoLastMessage } from "../daemon/handlers/conversations.js";
+import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSignalsDir } from "../util/platform.js";
 
 const log = getLogger("signal:conversation-undo");
 

@@ -10,8 +10,8 @@
 import { existsSync } from "node:fs";
 import { Database } from "bun:sqlite";
 
+import { getDbPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDbPath } from "../../util/platform.js";
 import { readDaemonBootTime } from "../daemon-boot-time.js";
 
 const log = getLogger("recovery-db");

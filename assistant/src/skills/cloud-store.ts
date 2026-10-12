@@ -17,9 +17,9 @@ import { stringify as stringifyYaml } from "yaml";
 import { parseFrontmatter } from "../config/skills.js";
 import { deleteSkillCapabilityNode } from "../plugins/defaults/memory/graph/capability-seed.js";
 import { isDeniedBasename } from "../tools/shared/filesystem/path-policy.js";
+import { getWorkspaceDir, getWorkspaceSkillsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { isPlainObject } from "../util/object.js";
-import { getWorkspaceDir, getWorkspaceSkillsDir } from "../util/platform.js";
 import { parseFrontmatterFields } from "./frontmatter.js";
 import { writeInstallMeta } from "./install-meta.js";
 

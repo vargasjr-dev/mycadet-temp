@@ -50,6 +50,6 @@ export function formatWebApproveFailure(
   return [
     `${rejection} ${gatewayUrl} (assistant "${assistantReference}", environment "${envName}").`,
     `Codes are minted by the gateway that serves the pair page, expire after ${CODE_TTL_MINUTES} minutes, and are single-use.`,
-    "If the pair page came from a different assistant or environment (e.g. the desktop app's), re-run with that environment's CADET_ENVIRONMENT and that assistant's name.",
+    "If the pair page came from a different assistant or environment, such as the desktop app's, re-run with that environment's CADET_ENVIRONMENT and that assistant's name.",
   ].join("\n");
 }

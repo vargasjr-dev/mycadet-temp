@@ -26,8 +26,8 @@ import {
   normalizeImageBytes,
   sniffImageFileMimeType,
 } from "../util/image-conversion.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { getConversationAttachmentsDirPath } from "./conversation-directories.js";
 import { getDb } from "./db-connection.js";
 import { rawAll, rawGet, rawRun } from "./raw-query.js";

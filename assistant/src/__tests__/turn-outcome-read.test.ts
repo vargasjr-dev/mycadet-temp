@@ -20,7 +20,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import {
   readTurnFailure,
   stampTurnOutcome,
-} from "../telemetry/turn-outcome.js";
+} from "../persistence/turn-outcome.js";
 
 await initializeDb();
 

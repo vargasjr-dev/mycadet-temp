@@ -55,7 +55,7 @@ import { notifyAppSurfacesChanged } from "../../daemon/app-change-notify.js";
 import { compareSemver } from "../../daemon/handlers/shared.js";
 import { computeContentId } from "../../util/content-id.js";
 import { getLogger } from "../../util/logger.js";
-import { getUserAppDataDir } from "../../util/platform.js";
+import { getUserAppDataDir } from "../../util/os.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   getOriginClientId,

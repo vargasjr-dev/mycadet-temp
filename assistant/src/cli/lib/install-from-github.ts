@@ -45,12 +45,12 @@ import {
   stripPreservedUserState,
 } from "../../plugins/plugin-tree-walk.js";
 import { ensureBun } from "../../util/bun-runtime.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   addToPathEnv,
   getExtraToolPathDirs,
-  getWorkspacePluginsDir,
   isWindows,
-} from "../../util/platform.js";
+} from "../../util/os.js";
 import {
   getPluginManifestInstallAction,
   readPluginManifest,

@@ -9,7 +9,7 @@ import {
   parseGreetingsSection,
   readWorkspaceGreetings,
 } from "../runtime/routes/workspace-greetings.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 // Real SOUL.md in the preload's per-process workspace; dropped after each
 // test so absence assertions are honest.

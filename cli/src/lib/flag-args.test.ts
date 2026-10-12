@@ -75,7 +75,7 @@ describe("parseFeatureFlagArgs", () => {
       "process.exit",
     );
     expect(errorSpy).toHaveBeenCalledWith(
-      'Error: invalid flag key "UPPER". Keys must be kebab-case (e.g. "browser")',
+      'Error: invalid flag key "UPPER". Keys must be kebab-case, e.g. "browser"',
     );
 
     exitSpy.mockRestore();

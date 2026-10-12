@@ -15,8 +15,8 @@ import {
   getDebugStdoutLogs,
   getIsContainerized,
 } from "../config/env-registry.js";
+import { getLogsDir } from "./layout.js";
 import { logSerializers } from "./log-redact.js";
-import { getLogsDir } from "./platform.js";
 
 const loadModule = createRequire(import.meta.url);
 let bundledPino: typeof import("pino") | undefined;

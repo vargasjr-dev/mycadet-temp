@@ -39,7 +39,7 @@ import {
   loadRawConfig,
   saveRawConfig,
 } from "../../../config/loader.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { getMemoryDb } from "../../db-connection.js";
 import { initializeDb } from "../../db-init.js";
 import { memoryJobs } from "../../schema/index.js";

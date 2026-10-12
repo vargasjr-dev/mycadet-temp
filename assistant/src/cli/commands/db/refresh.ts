@@ -20,9 +20,9 @@ import { execFileSync } from "node:child_process";
 
 import type { Command } from "commander";
 
+import { getDbPath } from "../../../util/layout.js";
 import { getLogsDbPath } from "../../../util/logs-db-path.js";
 import { getMemoryDbPath } from "../../../util/memory-db-path.js";
-import { getDbPath } from "../../../util/platform.js";
 import { getTelemetryDbPath } from "../../../util/telemetry-db-path.js";
 import { dim, green, red } from "../../lib/cli-colors.js";
 import { subcommand } from "../../lib/cli-command-help.js";

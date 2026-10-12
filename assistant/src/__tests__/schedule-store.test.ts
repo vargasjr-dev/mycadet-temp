@@ -52,7 +52,7 @@ import {
   upsertDeclaredSchedule,
 } from "../schedule/schedule-store.js";
 import { UserError } from "../util/errors.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 await initializeDb();
 

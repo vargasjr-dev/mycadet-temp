@@ -1,6 +1,6 @@
 import { IntegrityError } from "../../util/errors.js";
+import { getDbPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDbPath } from "../../util/platform.js";
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 import {
   getStepName,

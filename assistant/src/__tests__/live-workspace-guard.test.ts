@@ -1,5 +1,5 @@
 /**
- * Tests for the live-workspace guard in util/platform.ts: a test process must
+ * Tests for the live-workspace guard in util/layout.ts: a test process must
  * never resolve the workspace to a directory outside os.tmpdir().
  */
 
@@ -8,7 +8,7 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const originalAllowReal = process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;

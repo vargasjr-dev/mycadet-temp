@@ -118,12 +118,12 @@ function parseArgs(): UpgradeArgs {
       console.log("");
       console.log("Arguments:");
       console.log(
-        "  <name>               Name of the assistant to upgrade (default: active or only assistant)",
+        "  <name>               Name of the assistant to upgrade, defaults to active or only assistant",
       );
       console.log("");
       console.log("Options:");
       console.log(
-        "  --version <version>  Target version to upgrade to (default: CLI version)",
+        "  --version <version>  Target version to upgrade to, defaults to the CLI version",
       );
       console.log(
         "  --latest             Upgrade to the latest stable release, updating the CLI first if needed",
@@ -316,7 +316,7 @@ async function upgradeDocker(
       );
       return;
     }
-    console.log(`🔁 Reinstalling ${versionTag} (--force)...\n`);
+    console.log(`🔁 Reinstalling ${versionTag} with --force...\n`);
   }
 
   console.log("🔍 Resolving image references...");
@@ -453,7 +453,7 @@ async function upgradeDocker(
     // Clean up old pre-upgrade backups, keep last 3
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    console.warn("⚠️  Pre-upgrade backup failed (continuing with upgrade)\n");
+    console.warn("⚠️  Pre-upgrade backup failed, continuing with upgrade\n");
   }
 
   // Persist the backup path so `cadet rollback` can restore the exact backup
@@ -891,7 +891,7 @@ async function upgradeLocal(
       );
       return;
     }
-    console.log(`🔁 Reinstalling ${targetVersion} (--force)...\n`);
+    console.log(`🔁 Reinstalling ${targetVersion} with --force...\n`);
   }
 
   console.log(
@@ -933,7 +933,7 @@ async function upgradeLocal(
     console.log(`   Backup saved: ${backupPath}\n`);
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    console.warn("⚠️  Pre-upgrade backup failed (continuing with upgrade)\n");
+    console.warn("⚠️  Pre-upgrade backup failed, continuing with upgrade\n");
   }
 
   let bootstrapSecret = entry.guardianBootstrapSecret;

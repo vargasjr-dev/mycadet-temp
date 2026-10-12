@@ -28,8 +28,8 @@ import { emitBackgroundFailureSignal } from "../notifications/background-failure
 import { bootstrapConversation } from "../persistence/conversation-bootstrap.js";
 import { addMessage } from "../persistence/conversation-crud.js";
 import type { TitleOrigin } from "../persistence/conversation-title-service.js";
+import type { TurnFailure } from "../persistence/turn-outcome.js";
 import { dispatchProviderResolvable } from "../providers/provider-resolvability.js";
-import type { TurnFailure } from "../telemetry/turn-outcome.js";
 import { getLogger } from "../util/logger.js";
 import { hasReceivedUserMessage } from "./pre-first-message-gate.js";
 

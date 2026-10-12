@@ -31,13 +31,29 @@ import type {
 import { createDocument } from "zod-openapi";
 
 import { ROUTES } from "../src/runtime/routes/index.js";
-import { jsonValueSchema } from "../src/telemetry/telemetry-wire.generated.js";
 
-// The recursive wire JSON-value schema (`claims`/`suggestions` item type) must
-// be hoisted into a named component so it can `$ref` itself; without a
-// registered id zod-openapi falls back to an anonymous `__schema0`. Name it
-// explicitly so the spec + generated SDK read as `TelemetryJsonValue`.
-z.globalRegistry.add(jsonValueSchema, { id: "TelemetryJsonValue" });
+// The recursive JSON-value schema (`claims`/`suggestions` item type) must be
+// hoisted into a named component so it can `$ref` itself; without a registered
+// id zod-openapi falls back to an anonymous `__schema0`. Name it explicitly so
+// the spec + generated SDK read as `JsonValue`.
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
+);
+z.globalRegistry.add(jsonValueSchema, { id: "JsonValue" });
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUTPUT_PATH = join(ROOT, "openapi.yaml");

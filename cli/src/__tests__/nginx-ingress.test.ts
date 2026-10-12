@@ -2095,8 +2095,9 @@ describe("ensureTunnelEdge", () => {
       gatewayPort: 7830,
     });
 
-    await expect(promise).rejects.toThrow("brew install nginx");
-    await expect(promise).rejects.toThrow("apt install nginx");
+    await expect(promise).rejects.toThrow(
+      "See https://nginx.org/en/docs/install.html for how to install",
+    );
     await expect(promise).rejects.toThrow("NGINX_BIN");
     expect(spawnMock).not.toHaveBeenCalled();
   });

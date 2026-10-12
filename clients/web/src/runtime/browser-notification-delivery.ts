@@ -2,7 +2,7 @@ import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
 import { subscribe } from "@/lib/event-bus";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { mintRandomId } from "@/lib/telemetry/random-id";
+import { mintRandomId } from "@/lib/random-id";
 
 const STORAGE_KEY = "cadet:browser-notification-deliveries:v1";
 const SOUND_STORAGE_KEY = "cadet:browser-notification-sounds:v1";

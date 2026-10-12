@@ -22,8 +22,8 @@ import { getConversation } from "../../persistence/conversation-crud.js";
 import { getUsageCostForConversationWindow } from "../../persistence/llm-usage-store.js";
 import { resolveScheduleTimezone } from "../../schedule/schedule-timezone.js";
 import { readTextFileSync } from "../../util/fs.js";
+import { getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspacePromptPath } from "../../util/platform.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError } from "./errors.js";
 import {

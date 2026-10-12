@@ -4,7 +4,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import { getWorkspaceConfigPath } from "../../util/platform.js";
+import { getWorkspaceConfigPath } from "../../util/layout.js";
 import * as schema from "../schema.js";
 import { migrateRewriteFrontierProfilePins } from "./306-rewrite-frontier-profile-pins.js";
 

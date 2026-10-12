@@ -34,7 +34,7 @@ const {
   parseChangesFromStdout,
 } = await import("../../../../persistence/db-async-query.js");
 const { findSqlite3 } = await import("../../../../util/sqlite3-runtime.js");
-const { getDbPath } = await import("../../../../util/platform.js");
+const { getDbPath } = await import("../../../../util/layout.js");
 
 await initializeDb();
 

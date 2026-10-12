@@ -12,10 +12,6 @@ import {
   type SurfaceType,
   SurfaceTypeSchema,
 } from "../api/surfaces.js";
-import {
-  type ActivationMomentParam,
-  isActivationMomentParam,
-} from "../telemetry/activation-funnel.js";
 import { isPlainObject } from "../util/object.js";
 
 /** Action snapshot stored with a surface (style stays a loose string). */
@@ -48,14 +44,6 @@ export type SurfaceStateEntry = {
     data: SurfaceDataByType[K];
     title?: string;
     actions?: StoredSurfaceAction[];
-    /**
-     * Activation-rail telemetry tag (daemon-only). When the model tags a
-     * `ui_show` surface as an activation funnel moment, the token is captured
-     * here so the milestone can be recorded deterministically when the user
-     * commits the surface (`handleSurfaceAction`). Never forwarded to the
-     * client.
-     */
-    activationMoment?: ActivationMomentParam;
   };
 }[SurfaceType];
 
@@ -70,12 +58,6 @@ export type CurrentTurnSurface = {
     display?: string;
     persistent?: boolean;
     toolCallId?: string;
-    /**
-     * Commit-timing activation-rail tag (daemon-only). Carried through to the
-     * persisted `ui_surface` history block so it survives a reload — never sent
-     * to the client.
-     */
-    activationMoment?: ActivationMomentParam;
     /**
      * Completion stamped when the user answers the surface before this turn's
      * message lands. The snapshot is the only record of the surface at that
@@ -171,18 +153,6 @@ export function parseStoredActions(
 }
 
 /**
- * The daemon-only commit-timing activation tag from a persisted block,
- * validated and dropped if malformed. This field never reaches the client.
- */
-export function parseActivationMomentTag(
-  value: unknown,
-): ActivationMomentParam | undefined {
-  return typeof value === "string" && isActivationMomentParam(value)
-    ? value
-    : undefined;
-}
-
-/**
  * Map a persisted `ui_surface` history block to a live `surfaceState` entry.
  * The block is untyped JSON from the messages table: both `surfaceType` and
  * `data` are preserved VERBATIM. Only a missing/blank `surfaceType` falls
@@ -209,13 +179,10 @@ export function restoreSurfaceStateEntry(
     typeof b.surfaceType === "string" && b.surfaceType.trim().length > 0
       ? b.surfaceType
       : "dynamic_page";
-  const activationMoment = parseActivationMomentTag(b.activationMoment);
-
   return {
     surfaceType,
     data: coerceSurfaceDataRecord(b.data),
     title: typeof b.title === "string" ? b.title : undefined,
     actions: parseStoredActions(b.actions),
-    ...(activationMoment ? { activationMoment } : {}),
   } as SurfaceStateEntry;
 }

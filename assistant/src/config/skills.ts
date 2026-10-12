@@ -33,12 +33,12 @@ import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import type { OwnerInfo } from "../tools/types.js";
 import { isBunVirtualPath } from "../util/bundled-asset.js";
-import { getLogger } from "../util/logger.js";
 import {
   getWorkspaceDirDisplay,
   getWorkspacePluginsDir,
   getWorkspaceSkillsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import {
   hasPluginManifest,
   readPluginManifest,

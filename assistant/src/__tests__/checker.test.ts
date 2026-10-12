@@ -74,7 +74,7 @@ import { _clearGlobalCacheForTesting } from "../permissions/gateway-threshold-re
 import { RiskLevel } from "../permissions/types.js";
 import { registerSkillTools, registerTool } from "../tools/registry.js";
 import type { Tool } from "../tools/types.js";
-import * as platformModule from "../util/platform.js";
+import * as platformModule from "../util/layout.js";
 
 /** Default gateway thresholds matching the old config fallback defaults. */
 const DEFAULT_GATEWAY_THRESHOLDS = {

@@ -11,7 +11,7 @@ import { describe, expect, test } from "bun:test";
 
 import { contentBlockArraySchema } from "../../providers/content-block-schema.js";
 import type { ContentBlock } from "../../providers/types.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import {
   appendContentDeltas,
   foldContentDeltas,

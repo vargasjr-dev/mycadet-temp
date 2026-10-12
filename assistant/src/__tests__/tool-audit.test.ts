@@ -1,50 +1,19 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-// Tri-state share_analytics consent consulted when populating the telemetry
-// columns: only a confirmed `false` NULLs them.
-let shareAnalytics: boolean | "unknown" = true;
-
-mock.module("../cloud/consent-cache.js", () => ({
-  getRawShareAnalytics: () => shareAnalytics,
-}));
-
-// Capture the audit rows the terminals would insert, and the lifecycle events
-// they would record, without touching the database.
+// Capture the audit rows the terminals would insert, without touching the
+// database.
 const records: Array<Record<string, unknown>> = [];
-const lifecycleEvents: Array<{
-  eventName: string;
-  attributes: Record<string, unknown>;
-}> = [];
-const lifecycleEventNames = (): string[] =>
-  lifecycleEvents.map((event) => event.eventName);
-// Simulates the telemetry store failing (degraded DB) for the one test that
-// asserts the terminals swallow it.
-let lifecycleRecorderThrows = false;
 
-mock.module("../telemetry/tool-usage-store.js", () => ({
+mock.module("../persistence/tool-usage-store.js", () => ({
   recordToolInvocation: (record: Record<string, unknown>) =>
     records.push(record),
-}));
-
-mock.module("../persistence/lifecycle-events-store.js", () => ({
-  recordLifecycleEvent: (
-    eventName: string,
-    attributes: Record<string, unknown> = {},
-  ) => {
-    if (lifecycleRecorderThrows) {
-      throw new Error("telemetry db down");
-    }
-    lifecycleEvents.push({ eventName, attributes });
-  },
 }));
 
 import {
   recordToolDenied,
   recordToolError,
   recordToolExecuted,
-  recordToolPermissionDecided,
-  recordToolPermissionPrompted,
-} from "../telemetry/tool-audit.js";
+} from "../persistence/tool-audit.js";
 import {
   OPENAI_PROJECT_KEY_REDACTION_MARKER,
   SYNTHETIC_OPENAI_PROJECT_KEY,
@@ -64,10 +33,7 @@ const ATTRIBUTION = {
 
 describe("tool audit terminals", () => {
   beforeEach(() => {
-    shareAnalytics = true;
-    lifecycleRecorderThrows = false;
     records.length = 0;
-    lifecycleEvents.length = 0;
   });
 
   test("records executed rows with truncated output", () => {
@@ -333,87 +299,6 @@ describe("tool audit terminals", () => {
     );
   });
 
-  test("persists NULL telemetry columns when share_analytics is opted out", () => {
-    shareAnalytics = false;
-
-    recordToolExecuted({
-      conversationId: "conv-opt-out",
-      toolName: "file_read",
-      input: { path: "/tmp/a" },
-      resultContent: "ok",
-      resultBytes: 99,
-      decision: "allow",
-      riskLevel: "low",
-      durationMs: 12,
-      attribution: ATTRIBUTION,
-    });
-    recordToolError({
-      conversationId: "conv-opt-out",
-      toolName: "file_read",
-      input: { path: "/tmp/b" },
-      errorMessage: "boom",
-      isExpected: false,
-      riskLevel: "low",
-      durationMs: 9,
-      attribution: ATTRIBUTION,
-    });
-
-    // Telemetry columns are NULL — the tool_executed projection's
-    // arg_bytes IS NOT NULL filter makes these rows permanently unreportable.
-    expect(records).toHaveLength(2);
-    for (const record of records) {
-      expect(record.argBytes).toBeNull();
-      expect(record.resultBytes).toBeNull();
-      expect(record.provider).toBeNull();
-      expect(record.model).toBeNull();
-      expect(record.inferenceProfile).toBeNull();
-      expect(record.inferenceProfileSource).toBeNull();
-    }
-    // The audit row itself is unaffected by the opt-out.
-    expect(records[0]).toMatchObject({
-      conversationId: "conv-opt-out",
-      toolName: "file_read",
-      input: JSON.stringify({ path: "/tmp/a" }),
-      result: "ok",
-      decision: "allow",
-      durationMs: 12,
-    });
-    expect(records[1]).toMatchObject({
-      result: "error: boom",
-      decision: "error",
-      durationMs: 9,
-    });
-  });
-
-  test("populates telemetry columns under unknown consent (cold cache)", () => {
-    // NULL columns are permanently excluded by the projection's
-    // arg_bytes IS NOT NULL filter, so only a CONFIRMED opt-out may NULL
-    // them — unknown records, and flush-time consent gating decides later.
-    shareAnalytics = "unknown";
-
-    recordToolExecuted({
-      conversationId: "conv-unknown",
-      toolName: "file_read",
-      input: { path: "/tmp/a" },
-      resultContent: "ok",
-      resultBytes: 99,
-      decision: "allow",
-      riskLevel: "low",
-      durationMs: 12,
-      attribution: ATTRIBUTION,
-    });
-
-    expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({
-      argBytes: Buffer.byteLength(JSON.stringify({ path: "/tmp/a" }), "utf8"),
-      resultBytes: 99,
-      provider: "anthropic",
-      model: "model-a",
-      inferenceProfile: "balanced",
-      inferenceProfileSource: "active",
-    });
-  });
-
   test("maps attribution onto executed rows and leaves denied rows null", () => {
     recordToolExecuted({
       conversationId: "conv-attr",
@@ -462,120 +347,5 @@ describe("tool audit terminals", () => {
     expect(records[2].provider).toBeUndefined();
     expect(records[2].argBytes).toBeUndefined();
     expect(records[2].resultBytes).toBeUndefined();
-  });
-
-  test("audit terminals record no permission lifecycle telemetry", () => {
-    recordToolExecuted({
-      conversationId: "conv-prompt",
-      toolName: "bash",
-      input: { command: "ls" },
-      resultContent: "ok",
-      resultBytes: 2,
-      decision: "allow",
-      riskLevel: "high",
-      durationMs: 3,
-      attribution: null,
-    });
-    recordToolDenied({
-      conversationId: "conv-prompt",
-      toolName: "bash",
-      input: { command: "rm -rf /" },
-      reason: "Permission denied by user",
-      riskLevel: "high",
-      durationMs: 1,
-    });
-
-    expect(lifecycleEvents).toEqual([]);
-  });
-
-  test("prompt and decision carry the same grouping dimensions", () => {
-    const prompt = {
-      toolName: "bash",
-      riskLevel: "high",
-      riskThreshold: "low",
-      surface: "slack",
-      conversationId: "conv-prompt",
-    };
-
-    recordToolPermissionPrompted(prompt);
-    recordToolPermissionDecided(prompt, "deny");
-
-    expect(lifecycleEventNames()).toEqual([
-      "permission_prompt:bash",
-      "permission_decided:bash:deny",
-    ]);
-    for (const event of lifecycleEvents) {
-      expect(event.attributes).toEqual({
-        toolName: "bash",
-        riskLevel: "high",
-        riskThreshold: "low",
-        surface: "slack",
-        conversationId: "conv-prompt",
-      });
-    }
-  });
-
-  test("optional grouping dimensions are left unset when unknown", () => {
-    recordToolPermissionPrompted({ toolName: "file_read", riskLevel: "low" });
-
-    const attributes = lifecycleEvents[0]!.attributes;
-    expect(attributes.toolName).toBe("file_read");
-    expect(attributes.riskLevel).toBe("low");
-    expect(attributes.riskThreshold).toBeUndefined();
-    expect(attributes.surface).toBeUndefined();
-    expect(attributes.conversationId).toBeUndefined();
-  });
-
-  test("records an abandoned decision distinctly from a user denial", () => {
-    const prompt = { toolName: "bash", riskLevel: "medium" };
-
-    recordToolPermissionPrompted(prompt);
-    recordToolPermissionDecided(prompt, "abandoned");
-
-    expect(lifecycleEventNames()).toEqual([
-      "permission_prompt:bash",
-      "permission_decided:bash:abandoned",
-    ]);
-  });
-
-  test("truncates a long tool name to the wire event-name bound", () => {
-    const toolName = `mcp__${"a".repeat(80)}__run`;
-    const prompt = { toolName, riskLevel: "high" };
-
-    recordToolPermissionPrompted(prompt);
-    recordToolPermissionDecided(prompt, "abandoned");
-
-    for (const event of lifecycleEvents) {
-      expect(event.eventName.length).toBeLessThanOrEqual(64);
-      // The full name still joins the pair.
-      expect(event.attributes.toolName).toBe(toolName);
-    }
-    expect(lifecycleEvents[1]!.eventName.endsWith(":abandoned")).toBe(true);
-  });
-
-  test("clamps a tool name past the wire tool_name bound", () => {
-    // A field over its bound fails validation, and a failed event is acked and
-    // discarded rather than retried.
-    const toolName = `mcp__${"a".repeat(300)}__run`;
-
-    recordToolPermissionPrompted({ toolName, riskLevel: "high" });
-
-    expect(lifecycleEvents[0]!.attributes.toolName).toBe(
-      toolName.slice(0, 255),
-    );
-  });
-
-  test("a failing lifecycle recorder never propagates out of the terminals", () => {
-    lifecycleRecorderThrows = true;
-
-    expect(() =>
-      recordToolPermissionPrompted({ toolName: "bash", riskLevel: "high" }),
-    ).not.toThrow();
-    expect(() =>
-      recordToolPermissionDecided(
-        { toolName: "bash", riskLevel: "high" },
-        "abandoned",
-      ),
-    ).not.toThrow();
   });
 });

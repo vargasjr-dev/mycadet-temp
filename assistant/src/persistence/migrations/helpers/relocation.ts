@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 
+import { getDbPath } from "../../../util/layout.js";
 import { getLogger } from "../../../util/logger.js";
-import { getDbPath } from "../../../util/platform.js";
 import {
   parseChangesFromStdout,
   runAsyncSqlite,

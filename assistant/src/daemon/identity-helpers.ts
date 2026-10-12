@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { resolveGuardianPersonaStrict } from "../prompts/persona-resolver.js";
 import { DECLINED_BY_USER_SENTINEL } from "../prompts/user-reference.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 /** Read the assistant's name from IDENTITY.md for personalized responses. */
 export function getAssistantName(): string | null {

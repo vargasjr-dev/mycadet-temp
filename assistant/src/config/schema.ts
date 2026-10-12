@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getDataDir } from "../util/platform.js";
+import { getDataDir } from "../util/layout.js";
 
 // Re-export domain schemas that have external consumers
 export { VALID_CALLER_IDENTITY_MODES } from "./schemas/calls.js";
@@ -146,12 +146,6 @@ export const AssistantConfigSchema = z.object({
   pluginUpdates: PluginUpdatesConfigSchema.default(
     PluginUpdatesConfigSchema.parse({}),
   ),
-  legacyTelemetryOptOut: z
-    .boolean()
-    .optional()
-    .describe(
-      "Fail-closed telemetry marker: set for a workspace that had an explicit local usage-data opt-out before telemetry moved to platform share_analytics consent. While set, usage telemetry stays disabled regardless of platform consent.",
-    ),
   legacyDiagnosticsOptOut: z
     .boolean()
     .optional()

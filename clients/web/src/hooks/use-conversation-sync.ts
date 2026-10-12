@@ -42,7 +42,7 @@ import {
   conversationListQueryFilter,
   isArchivedFilter,
 } from "@/utils/conversation-list-keys";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import {
   parseConversationSyncTag,
   SYNC_TAGS,

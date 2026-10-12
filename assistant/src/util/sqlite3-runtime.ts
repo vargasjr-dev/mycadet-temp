@@ -24,7 +24,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { isWindows } from "./platform.js";
+import { isWindows } from "./os.js";
 
 let cachedSqlite3Path: string | undefined | null;
 

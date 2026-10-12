@@ -3,7 +3,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
-import { isWindows } from "../../../../util/platform.js";
+import { isWindows } from "../../../../util/os.js";
 
 const PANES = {
   microphone: {

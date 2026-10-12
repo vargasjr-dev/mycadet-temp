@@ -56,7 +56,7 @@ function getMachineEntropy(): string {
   } catch {
     parts.push("unknown-user");
   }
-  // Must mirror assistant/src/util/platform.ts#getPlatformName (raw platform).
+  // Must mirror assistant/src/util/os.ts#getPlatformName (raw platform).
   parts.push(process.platform);
   parts.push(process.arch);
   try {

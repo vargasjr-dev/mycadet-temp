@@ -419,7 +419,7 @@ export async function waitForReady(runtimeUrl: string): Promise<boolean> {
       const parts = [body?.status].filter(Boolean);
       if (body?.upstream != null) parts.push(`upstream=${body.upstream}`);
       const detail = parts.length > 0 ? ` — ${parts.join(", ")}` : "";
-      console.log(`Readiness check: ${resp.status}${detail} (retrying...)`);
+      console.log(`Readiness check: ${resp.status}${detail}, retrying...`);
     } catch {
       // Connection refused / timeout — not up yet
     }
@@ -755,7 +755,7 @@ export async function performDockerRollback(
     console.log(`   Backup saved: ${preRollbackBackupPath}\n`);
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    console.warn("⚠️  Pre-rollback backup failed (continuing with rollback)\n");
+    console.warn("⚠️  Pre-rollback backup failed, continuing with rollback\n");
   }
 
   const {

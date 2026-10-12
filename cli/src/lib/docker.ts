@@ -580,7 +580,7 @@ export async function pullImage(
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(
       `Failed to pull ${ref}.\n${message}\n` +
-        `If the Docker daemon is not running, start it (macOS: 'colima start'). ` +
+        `If the Docker daemon is not running, start it, e.g. 'colima start' on macOS. ` +
         `If the error mentions authentication, run 'docker logout' and check your ` +
         `Docker Hub credentials — public image pulls need none.`,
     );

@@ -22,12 +22,10 @@ import {
 import type { Message, ToolDefinition } from "../providers/types.js";
 import type { ActiveSkillEntry } from "../skills/active-skill-tools.js";
 import { deriveActiveSkills } from "../skills/active-skill-tools.js";
-import { getCachedCatalogSync } from "../skills/catalog-cache.js";
 import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
-import { readInstallMeta, touchSkillLastUsed } from "../skills/install-meta.js";
+import { touchSkillLastUsed } from "../skills/install-meta.js";
 import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
-import { recordSkillLoadedEvent } from "../telemetry/skill-loaded-events-store.js";
 import {
   getTool,
   getToolOwner,
@@ -35,8 +33,6 @@ import {
   unregisterSkillTools,
 } from "../tools/registry.js";
 import { createSkillToolsFromManifest } from "../tools/skills/skill-tool-factory.js";
-import type { UsageAttributionSnapshot } from "../usage/attribution.js";
-import { toAttributionColumns } from "../usage/attribution.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("conversation-skill-tools");
@@ -125,11 +121,6 @@ export interface ProjectSkillToolsOptions {
    * conversation's resolution; non-plugin skills are unaffected.
    */
   effectiveEnabledPluginSet?: Set<string> | null;
-  /** Telemetry context for skill_loaded events; absent disables recording. */
-  telemetry?: {
-    conversationId: string;
-    attribution: UsageAttributionSnapshot | null;
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -161,62 +152,10 @@ function loadManifestForSkill(skill: SkillSummary): SkillToolManifest | null {
 }
 
 /**
- * Whether a skill is Cadet-produced for `skill_loaded` telemetry purposes:
- * bundled skills always are; managed skills only when their install metadata
- * records a `cadet` origin (legacy version.json installs are inferred as
- * cadet by `readInstallMeta`). All other sources (workspace, extra, plugin)
- * never emit.
- */
-function isCadetProducedSkill(skill: SkillSummary): boolean {
-  if (skill.source === "bundled") {
-    return true;
-  }
-  if (skill.source === "managed") {
-    return readInstallMeta(skill.directoryPath)?.origin === "cadet";
-  }
-  return false;
-}
-
-/**
- * Record a `skill_loaded` telemetry event for a newly-activated Cadet-produced
- * skill. Metadata only — never skill output or conversation content.
- * `skill_updated_at` comes from the cached merged catalog (sync accessor —
- * this runs on the hot tool-projection path). Failures are swallowed at
- * debug level: recording must never break tool projection.
- */
-function recordSkillLoadedTelemetry(
-  skill: SkillSummary,
-  telemetry: ProjectSkillToolsOptions["telemetry"],
-): void {
-  if (!telemetry) {
-    return;
-  }
-  try {
-    if (!isCadetProducedSkill(skill)) {
-      return;
-    }
-    const catalogEntry = getCachedCatalogSync().find((s) => s.id === skill.id);
-    recordSkillLoadedEvent({
-      conversationId: telemetry.conversationId,
-      skillName: skill.id,
-      skillUpdatedAt: catalogEntry?.updatedAt,
-      ...toAttributionColumns(telemetry.attribution),
-    });
-  } catch (err) {
-    log.debug(
-      { err, skillId: skill.id },
-      "Failed to record skill_loaded telemetry event (non-fatal)",
-    );
-  }
-}
-
-/**
  * Stamp `lastUsedAt` (day-debounced) on a newly-loaded managed skill's
- * install metadata. Independent of telemetry consent and the
- * `isCadetProducedSkill` gate — those suppress `origin: "custom"` skills,
- * which are exactly the assistant-authored skills the usage-based prune must
- * track. Only managed skills carry install metadata; bundled, workspace, and
- * plugin skills are skipped. Best-effort: the underlying write never throws.
+ * install metadata. Only managed skills carry install metadata; bundled,
+ * workspace, and plugin skills are skipped. Best-effort: the underlying
+ * write never throws.
  */
 function stampCloudSkillUsage(skill: SkillSummary): void {
   if (skill.source !== "managed") {
@@ -439,7 +378,6 @@ export function projectSkillTools(
       }
       successfulEntries.set(skillId, NO_TOOLS_VERSION);
       if (prevHash === undefined) {
-        recordSkillLoadedTelemetry(skill, options?.telemetry);
         stampCloudSkillUsage(skill);
       }
       continue;
@@ -481,10 +419,6 @@ export function projectSkillTools(
           // skill_loaded record below) is retried next turn.
           continue;
         }
-        // A first successful registration counts as the load; a manifest-less
-        // activation gaining a TOOLS.json re-registers, which — like a
-        // version-hash change — counts as a new load.
-        recordSkillLoadedTelemetry(skill, options?.telemetry);
         stampCloudSkillUsage(skill);
       } else if (prevHash !== currentHash) {
         // Hash changed — unregister stale tools, then re-register with new definitions
@@ -504,8 +438,6 @@ export function projectSkillTools(
           // Don't add to successfulEntries — will be cleaned up as transiently-failed
           continue;
         }
-        // A version change that re-registers counts as a new skill load.
-        recordSkillLoadedTelemetry(skill, options?.telemetry);
         stampCloudSkillUsage(skill);
       } else {
         // Hash unchanged — filter to only tools that are actually registered

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getDataDir } from "../util/platform.js";
+import { getDataDir } from "../util/layout.js";
 
 const HATCHED_SIDECAR_FILENAME = "hatched.json";
 const HatchedSidecarSchema = z.object({

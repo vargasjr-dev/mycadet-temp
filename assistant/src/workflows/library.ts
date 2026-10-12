@@ -22,8 +22,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { getWorkspaceWorkflowsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceWorkflowsDir } from "../util/platform.js";
 import { extractWorkflowMeta, type WorkflowMeta } from "./engine.js";
 
 const log = getLogger("workflow-library");

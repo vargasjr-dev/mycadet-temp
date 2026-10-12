@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { DEFAULT_INJECTOR_ORDER } from "../plugins/defaults/injector-order.js";
 import { workspaceInjectors } from "../plugins/defaults/workspace/injectors.js";
 import type { Injector, TurnContext } from "../plugins/types.js";
-import { getConfigQuarantineNoticePath } from "../util/platform.js";
+import { getConfigQuarantineNoticePath } from "../util/layout.js";
 
 function findInjector(name: string): Injector {
   const injector = workspaceInjectors.find(

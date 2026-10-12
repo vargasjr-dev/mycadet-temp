@@ -51,12 +51,12 @@ function parseArgs(): { name: string | null; version: string | null } {
       console.log("");
       console.log("Arguments:");
       console.log(
-        "  <name>               Name of the assistant (default: active or only assistant)",
+        "  <name>               Name of the assistant, defaults to active or only assistant",
       );
       console.log("");
       console.log("Options:");
       console.log(
-        "  --version <version>  Target version (optional for managed — omit to roll back to previous)",
+        "  --version <version>  Target version, optional for managed — omit to roll back to previous",
       );
       console.log("");
       console.log("Examples:");

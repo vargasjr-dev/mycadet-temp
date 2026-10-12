@@ -19,7 +19,6 @@ import {
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useAutoGreetGate } from "@/domains/chat/hooks/use-auto-greet-gate";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useActiveConversation } from "@/domains/chat/hooks/use-active-conversation";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -90,7 +89,6 @@ import { useConversationChangeEffects } from "@/domains/chat/hooks/use-conversat
 import { useSubagentReconcile } from "@/domains/chat/hooks/use-subagent-reconcile";
 import { useComposerKeyboard } from "@/domains/chat/hooks/use-composer-keyboard";
 import { useAutoSendEffects } from "@/domains/chat/hooks/use-auto-send-effects";
-import { useOnboardingAttribution } from "@/hooks/use-onboarding-attribution";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 
@@ -157,7 +155,6 @@ export function ActiveChatView() {
   // store via atomic selectors per `docs/STATE_MANAGEMENT.md` rather
   // than maintaining its own local copy.
   const assistantName = useAssistantIdentityStore.use.name();
-  const authUserId = useAuthStore.use.user()?.id ?? null;
 
   // -------------------------------------------------------------------------
   // Pin-sync side-effect
@@ -401,14 +398,6 @@ export function ActiveChatView() {
     [sendMessage],
   );
   useAcpAutoContinue(sendAcpContinue);
-
-  // Onboarding deep-link attribution: emit the research-onboarding check-in
-  // funnel step when the user lands here from the Day-2 calendar event's CTA.
-  useOnboardingAttribution({
-    searchParams,
-    setSearchParams,
-    userId: authUserId,
-  });
 
   useEffect(() => {
     if (reachability.state.phase !== "failed") {
