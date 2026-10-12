@@ -889,11 +889,11 @@ async function main() {
       handler: () => psHandler.handlePs(),
     },
 
-    // ── Ingress domain recording (localhost CLI only, bearer-authed) ──
+    // ── Ingress domain recording (guardian bearer, loopback fallback) ──
     {
       path: "/v1/ingress/domains",
       method: "POST",
-      auth: "edge",
+      auth: "edge-guardian",
       handler: (req, _params, getClientIp) =>
         handleSaveIngressDomain(req, getClientIp(), configFileCache),
     },

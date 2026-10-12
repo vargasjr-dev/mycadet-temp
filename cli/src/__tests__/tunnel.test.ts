@@ -245,7 +245,14 @@ async function runTunnelCapturingLogs(): Promise<string> {
 
 describe("tunnel edge targeting", () => {
   beforeEach(() => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "tailscale",
+      "--foreground",
+    ];
     writeLockfile(makeLocalEntry());
     globalThis.fetch = withPreconnect(async () => {
       throw new Error("gateway unavailable");
@@ -311,7 +318,14 @@ describe("tunnel edge targeting", () => {
     const entry = makeLocalEntry();
     entry.runtimeUrl = "https://stale-tunnel.ngrok-free.dev";
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -332,7 +346,14 @@ describe("tunnel edge targeting", () => {
 
   test("the tunnel level notifies the gateway of the provider's public URL", async () => {
     writeLockfile(makeLocalEntry());
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -348,7 +369,14 @@ describe("tunnel edge targeting", () => {
     const cloud = makeCloudEntry();
     const local = makeLocalEntry();
     writeLockfile([cloud, local], cloud.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -380,6 +408,7 @@ describe("tunnel edge targeting", () => {
       "docker-1",
       "--provider",
       "ngrok",
+      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -400,7 +429,14 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const docker = makeDockerEntry();
     writeLockfile(docker, docker.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -420,7 +456,14 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const cloud = makeCloudEntry();
     writeLockfile([cloud, makeDockerEntry()], cloud.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -437,7 +480,14 @@ describe("tunnel edge targeting", () => {
 
   test("an active cloud assistant with no local entries exits with an error", async () => {
     writeLockfile(makeCloudEntry());
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -456,7 +506,14 @@ describe("tunnel edge targeting", () => {
       [cloud, makeLocalEntry("assistant-a"), makeLocalEntry("assistant-b")],
       cloud.assistantId,
     );
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -474,7 +531,15 @@ describe("tunnel edge targeting", () => {
   test("a positional cloud assistant name errors without auto-fallback", async () => {
     const local = makeLocalEntry();
     writeLockfile([makeCloudEntry(), local], local.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "cloud-1", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "cloud-1",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -493,7 +558,15 @@ describe("tunnel edge targeting", () => {
     const local = makeLocalEntry();
     local.name = "Ada";
     writeLockfile([makeCloudEntry(), local], "cloud-1");
-    process.argv = ["bun", "cadet", "tunnel", "Ada", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "Ada",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -517,6 +590,7 @@ describe("tunnel edge targeting", () => {
       "Lovelace",
       "--provider",
       "ngrok",
+      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -533,7 +607,15 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile([local, makeAppleContainerEntry()], local.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "apple-1", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "apple-1",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -553,7 +635,14 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const cloud = makeCloudEntry();
     writeLockfile([cloud, makeAppleContainerEntry()], cloud.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -585,6 +674,7 @@ describe("tunnel edge targeting", () => {
       "assistant-b",
       "--provider",
       "ngrok",
+      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -599,7 +689,15 @@ describe("tunnel edge targeting", () => {
     cloud.name = "Cloudy";
     const local = makeLocalEntry();
     writeLockfile([cloud, local], local.assistantId);
-    process.argv = ["bun", "cadet", "tunnel", "Cloudy", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "Cloudy",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -620,7 +718,15 @@ describe("tunnel edge targeting", () => {
     const second = makeLocalEntry("assistant-b");
     second.name = "Ada";
     writeLockfile([first, second], "assistant-a");
-    process.argv = ["bun", "cadet", "tunnel", "Ada", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "Ada",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -633,7 +739,15 @@ describe("tunnel edge targeting", () => {
   });
 
   test("an unknown positional name errors", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "nope", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "nope",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -646,7 +760,14 @@ describe("tunnel edge targeting", () => {
   test("targets the edge port for cloudflare", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "cloudflare"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "cloudflare",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -661,7 +782,14 @@ describe("tunnel edge targeting", () => {
   test("targets the edge port for tailscale and notes a reused webhooks-only edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "tailscale",
+      "--foreground",
+    ];
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: false,
@@ -681,7 +809,7 @@ describe("tunnel edge targeting", () => {
   test("a bare invocation tunnels the default provider", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel"];
+    process.argv = ["bun", "cadet", "tunnel", "--foreground"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -700,7 +828,7 @@ describe("tunnel edge targeting", () => {
     const entry = makeLocalEntry();
     entry.name = "Ada";
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "Ada"];
+    process.argv = ["bun", "cadet", "tunnel", "Ada", "--foreground"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -720,7 +848,14 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "tailscale",
+      "--foreground",
+    ];
 
     const warnings: string[] = [];
     const warnSpy = spyOn(console, "warn").mockImplementation(
@@ -751,7 +886,14 @@ describe("tunnel edge targeting", () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     const workspaceDir = writeEntryWorkspaceConfig(entry, {});
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "tailscale",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -768,7 +910,14 @@ describe("tunnel edge targeting", () => {
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
 
     await runTunnelCapturingLogs();
 
@@ -780,7 +929,14 @@ describe("tunnel edge targeting", () => {
   });
 
   test("missing nginx aborts before any provider spawn", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "ngrok",
+      "--foreground",
+    ];
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error(
         "nginx is not installed, so the tunnel edge cannot start. " +
@@ -801,7 +957,14 @@ describe("tunnel edge targeting", () => {
   });
 
   test("rejects an unknown --provider with a stale-CLI hint", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "bogus"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "bogus",
+      "--foreground",
+    ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -818,7 +981,14 @@ describe("tunnel edge targeting", () => {
     try {
       for (const provider of TUNNEL_PROVIDERS) {
         writeLockfile(makeLocalEntry());
-        process.argv = ["bun", "cadet", "tunnel", "--provider", provider];
+        process.argv = [
+          "bun",
+          "cadet",
+          "tunnel",
+          "--provider",
+          provider,
+          "--foreground",
+        ];
 
         const { exited, errors } = await runTunnelExpectingExit1();
 
@@ -841,6 +1011,7 @@ describe("tunnel edge targeting", () => {
       "ngrok",
       "--domain",
       "foo.ngrok.app",
+      "--foreground",
     ];
 
     await runTunnelCapturingLogs();
@@ -862,6 +1033,7 @@ describe("tunnel edge targeting", () => {
       "cloudflare",
       "--domain",
       "foo.ngrok.app",
+      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -887,6 +1059,7 @@ describe("tunnel edge targeting", () => {
       "--provider",
       "ngrok",
       "--clear-domain",
+      "--foreground",
     ];
 
     const logs = await runTunnelCapturingLogs();
@@ -912,6 +1085,7 @@ describe("tunnel edge targeting", () => {
       "--domain",
       "foo.ngrok.app",
       "--clear-domain",
+      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -929,6 +1103,7 @@ describe("tunnel edge targeting", () => {
       "--provider",
       "cloudflare",
       "--clear-domain",
+      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -949,6 +1124,7 @@ describe("tunnel edge targeting", () => {
       "--provider",
       "ngrok",
       "--domain",
+      "--foreground",
     ];
 
     const { exited, errors } = await runTunnelExpectingExit1();
@@ -961,7 +1137,14 @@ describe("tunnel edge targeting", () => {
   test("a not-yet-implemented provider error carries the stale-CLI hint", async () => {
     // `cadet` stays valid-but-unimplemented, so it hits this path rather
     // than the unknown-provider one.
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "cadet"];
+    process.argv = [
+      "bun",
+      "cadet",
+      "tunnel",
+      "--provider",
+      "cadet",
+      "--foreground",
+    ];
 
     let err: Error | undefined;
     try {
@@ -1490,7 +1673,7 @@ describe("ngrok --domain spawn args", () => {
   });
 });
 
-describe("tunnel --detach", () => {
+describe("tunnel background mode", () => {
   const originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
 
   function makeFakeChild(pid: number): ChildProcess {
@@ -1512,13 +1695,22 @@ describe("tunnel --detach", () => {
     ): ChildProcess => makeFakeChild(9999),
   );
 
-  // spawnDetachedTunnel() scopes the log filename to its own (parent) pid,
-  // which in-process is this test runner's pid.
   function detachedLogPath(): string {
-    return join(getLogDir(), `tunnel-${process.pid}.log`);
+    return join(getLogDir(), "tunnel.log");
   }
 
   beforeAll(() => {
+    // The edge-targeting describe's afterAll restores the REAL provider
+    // modules; re-establish the fakes the foreground test here needs.
+    mock.module("../lib/tunnels/ngrok", () => ({
+      ...realNgrok,
+      runNgrokTunnel: runNgrokTunnelMock,
+    }));
+    mock.module("../lib/nginx-ingress.js", () => ({
+      ...realNginxIngress,
+      ensureTunnelEdge: ensureTunnelEdgeMock,
+      getNginxVersion: getNginxVersionMock,
+    }));
     mock.module("node:child_process", () => ({
       ...realChildProcess,
       spawn: spawnMock,
@@ -1527,10 +1719,22 @@ describe("tunnel --detach", () => {
 
   afterAll(() => {
     mock.module("node:child_process", () => realChildProcess);
+    mock.module("../lib/tunnels/ngrok", () => realNgrok);
+    mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   });
 
   beforeEach(() => {
     spawnMock.mockClear();
+    runNgrokTunnelMock.mockReset();
+    runNgrokTunnelMock.mockResolvedValue(
+      fakeTunnelResult("https://test.example.ngrok.dev"),
+    );
+    ensureTunnelEdgeMock.mockReset();
+    ensureTunnelEdgeMock.mockResolvedValue({
+      port: EDGE_PORT,
+      started: true,
+      includesWebApp: true,
+    });
     const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
     tempDirs.push(configHome);
     process.env.XDG_CONFIG_HOME = configHome;
@@ -1548,15 +1752,8 @@ describe("tunnel --detach", () => {
     }
   });
 
-  test("--detach re-invokes without the flag as a detached child and reports readiness", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "--provider",
-      "ngrok",
-      "--detach",
-    ];
+  test("runs detached by default: re-invokes itself as a detached child and reports readiness", async () => {
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
 
     // Simulate the detached child writing its readiness line to the log file
     // the moment it is spawned.
@@ -1575,8 +1772,10 @@ describe("tunnel --detach", () => {
     expect(args).toContain("tunnel");
     expect(args).toContain("--provider");
     expect(args).toContain("ngrok");
-    expect(args).not.toContain("--detach");
-    expect(args).not.toContain("-d");
+    // The child runs the foreground path (it IS the background daemon); the
+    // parent must not hand the default through or the child would daemonize
+    // again.
+    expect(args).toContain("--foreground");
     expect(opts?.detached).toBe(true);
 
     expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
@@ -1589,32 +1788,25 @@ describe("tunnel --detach", () => {
     expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
   });
 
-  test("-d is equivalent to --detach", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "tailscale", "-d"];
-    spawnMock.mockImplementationOnce(() => {
-      appendFileSync(
-        detachedLogPath(),
-        "Tunnel established: https://tailnet.example.ts.net\n",
-      );
-      return makeFakeChild(1234);
-    });
-
-    await runTunnelCapturingLogs();
-
-    const [, args] = spawnMock.mock.calls[0];
-    expect(args).not.toContain("-d");
-    expect(args).not.toContain("--detach");
-  });
-
-  test("reports an early child exit instead of hanging", async () => {
+  test("--foreground runs the tunnel in this process instead of a detached child", async () => {
     process.argv = [
       "bun",
       "cadet",
       "tunnel",
       "--provider",
       "ngrok",
-      "--detach",
+      "--foreground",
     ];
+
+    await runTunnelCapturingLogs();
+
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
+    expect(runNgrokTunnelMock).toHaveBeenCalled();
+  });
+
+  test("reports an early child exit instead of hanging", async () => {
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
     spawnMock.mockImplementationOnce(() => {
       const child = makeFakeChild(4242);
       // Listeners attach synchronously right after spawn() returns; defer the
@@ -1631,14 +1823,7 @@ describe("tunnel --detach", () => {
   });
 
   test("an adopted ngrok tunnel gets an accurate stop message, not a false kill claim", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "--provider",
-      "ngrok",
-      "--detach",
-    ];
+    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
     spawnMock.mockImplementationOnce(() => {
       appendFileSync(
         detachedLogPath(),

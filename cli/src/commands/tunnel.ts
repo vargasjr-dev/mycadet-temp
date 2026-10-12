@@ -47,7 +47,7 @@ interface TunnelArgs {
   provider: TunnelProviderName;
   domain: string | null;
   clearDomain: boolean;
-  detach: boolean;
+  foreground: boolean;
 }
 
 const FLAGS_WITH_VALUES = ["--provider", "--domain"] as const;
@@ -57,7 +57,7 @@ function parseArgs(): TunnelArgs {
   let provider: TunnelProviderName | null = null;
   let domain: string | null = null;
   let clearDomain = false;
-  let detach = false;
+  let foreground = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -112,19 +112,22 @@ function parseArgs(): TunnelArgs {
         "                                tunnel without one. Cannot be combined with --domain.",
       );
       console.log(
-        `  -d, --detach                  Run the tunnel in the background. Waits up to ${TUNNEL_BACKGROUND_START_TIMEOUT_MS / 1000}s for the`,
+        `  --foreground                  Stream the tunnel's logs to this terminal. By default the tunnel`,
       );
       console.log(
-        "                                initial established/failed status before returning; logs go to",
+        "                                runs in the background: the command returns after printing the public",
       );
       console.log(
-        "                                the CLI log directory. Stop it with `kill <pid>`, except when it",
+        `                                URL, and logs stream to tunnel.log in the CLI log directory. A background`,
       );
       console.log(
-        "                                adopted an already-running tunnel (started outside this",
+        "                                tunnel stops with `kill <pid>`, except when it adopted an already-running",
       );
       console.log(
-        "                                command): killing the supervisor then leaves that tunnel running.",
+        "                                tunnel (started outside this command): killing the supervisor then",
+      );
+      console.log(
+        "                                leaves that tunnel running.",
       );
       console.log("");
       console.log("Providers:");
@@ -151,9 +154,6 @@ function parseArgs(): TunnelArgs {
       }
       console.log("  $ cadet tunnel --provider cloudflare");
       console.log("  $ cadet tunnel my-assistant --provider tailscale");
-      console.log(
-        `  $ cadet tunnel --provider ${DEFAULT_TUNNEL_PROVIDER} --detach`,
-      );
       process.exit(0);
     } else if (arg === "--provider") {
       const next = args[i + 1];
@@ -188,8 +188,8 @@ function parseArgs(): TunnelArgs {
       i++;
     } else if (arg === "--clear-domain") {
       clearDomain = true;
-    } else if (arg === "-d" || arg === "--detach") {
-      detach = true;
+    } else if (arg === "--foreground") {
+      foreground = true;
     } else if (arg.startsWith("-")) {
       console.error(`Error: Unknown option '${arg}'.`);
       process.exit(1);
@@ -227,7 +227,7 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  return { assistantName, provider, domain, clearDomain, detach };
+  return { assistantName, provider, domain, clearDomain, foreground };
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
@@ -345,31 +345,31 @@ const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
 const TUNNEL_ESTABLISHED_RE = /Tunnel established: (\S+)/;
 
 /**
- * Re-invoke `cadet tunnel` (without `-d`/`--detach`) as a detached background
- * process via `relaunchDetached`, waiting for the child to either print its
- * "Tunnel established" or adopted-tunnel line (readiness) or
- * exit early (failure), so a misconfigured provider still fails loudly in
- * the terminal that ran `-d`.
+ * Re-invoke `cadet tunnel --foreground` as a detached background process via
+ * `relaunchDetached`, waiting for the child to either print its
+ * "Tunnel established" or adopted-tunnel line (readiness) or exit early
+ * (failure), so a misconfigured provider still fails loudly in the terminal
+ * that ran `cadet tunnel`.
  *
- * The log filename is scoped to this (parent) process's pid so concurrent
- * `-d` runs (e.g. tunneling two different local assistants at once) don't
- * truncate and read each other's readiness output.
+ * The log file is the fixed `tunnel.log` so there is one stable path to tail;
+ * concurrent tunnel runs share (and truncate) it.
  */
 async function spawnDetachedTunnel(): Promise<void> {
   const childArgs: string[] = ["tunnel"];
   for (const arg of process.argv.slice(3)) {
-    if (arg === "-d" || arg === "--detach") {
+    if (arg === "--foreground") {
       continue;
     }
     childArgs.push(arg);
   }
+  childArgs.push("--foreground");
 
   let publicUrl: string | undefined;
   let adopted = false;
 
   const { child, logPath, ready, exitCode } = await relaunchDetached({
     args: childArgs,
-    logFile: `tunnel-${process.pid}.log`,
+    logFile: "tunnel.log",
     timeoutMs: TUNNEL_BACKGROUND_START_TIMEOUT_MS,
     isReady: (logPath) => {
       let logText = "";
@@ -417,10 +417,10 @@ async function spawnDetachedTunnel(): Promise<void> {
 
 export const tunnel = Object.assign(
   async function tunnel(): Promise<void> {
-    const { assistantName, provider, domain, clearDomain, detach } =
+    const { assistantName, provider, domain, clearDomain, foreground } =
       parseArgs();
 
-    if (detach) {
+    if (!foreground) {
       await spawnDetachedTunnel();
       return;
     }

@@ -27,6 +27,7 @@ import {
   ASSISTANT_INTERNAL_PORT,
   getDefaultPorts,
 } from "./environments/paths.js";
+import { green, yellow } from "./color.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { leaseGuardianToken } from "./guardian-token";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
@@ -42,7 +43,6 @@ import { isDevVersion } from "./version-compat.js";
 import {
   collectProviderApiKey,
   configureHatchProviderApiKey,
-  formatProviderName,
   promptProviderChoice,
   resolveHatchProvider,
   shouldPromptForHatchProvider,
@@ -1544,7 +1544,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           }
         }
       }
-      log("✅ Docker images acquired");
+      log(green("✅ Docker images acquired", process.stdout));
     }
 
     const res = dockerResourceNames(instanceName);
@@ -1745,18 +1745,16 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         );
       } else if (providerSetupAction === "missing-token" && provider !== null) {
         log(
-          `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
-            `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
+          yellow(
+            `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
+              `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
+            process.stdout,
+          ),
         );
       } else if (
         providerSetupAction === "configure" &&
         provider !== undefined
       ) {
-        log(
-          provider === null
-            ? "Checking provider credentials..."
-            : `Checking ${formatProviderName(provider)} credentials...`,
-        );
         await configureHatchProviderApiKey({
           gatewayUrl: runtimeUrl,
           provider,
@@ -1855,25 +1853,12 @@ async function waitForGatewayAndLease(opts: {
   };
 
   if (detached) {
-    log("\n✅ Docker assistant hatched!\n");
-    log("Instance details:");
-    printInstanceDetails(
-      {
-        name: instanceName,
-        runtime: runtimeUrl,
-        container: containerName,
-      },
-      log,
-    );
-    log("");
-    log(`Stop with: cadet retire ${instanceName}`);
-
-    // Lease a guardian token even in detached mode so that `cadet ps`,
-    // `cadet exec`, and other CLI commands can authenticate to the
-    // gateway. Skip the /readyz readiness poll (the caller asked to detach
-    // and not block) but retry the lease itself since the gateway may need
-    // a moment to accept connections after the container starts.
-    const leaseStart = Date.now();
+    // Lease a guardian token BEFORE declaring the assistant hatched so the
+    // banner means `cadet ps`, `cadet exec`, and other CLI commands can
+    // already authenticate. Skip the /readyz readiness poll (the caller
+    // asked to detach and not block) but retry the lease silently since
+    // the gateway may need a moment to accept connections after the
+    // container starts; only a final failure surfaces to the user.
     const leaseDeadline = containersUpAt + DOCKER_READY_TIMEOUT_MS;
     let guardianAccessToken: string | undefined;
     while (Date.now() < leaseDeadline) {
@@ -1884,27 +1869,33 @@ async function waitForGatewayAndLease(opts: {
           bootstrapSecret,
         );
         guardianAccessToken = tokenData.accessToken;
-        const leaseElapsed = ((Date.now() - leaseStart) / 1000).toFixed(1);
-        log(
-          `Guardian token lease: success after ${leaseElapsed}s (principalId=${tokenData.guardianPrincipalId})`,
-        );
         break;
-      } catch (err) {
-        const elapsed = ((Date.now() - leaseStart) / 1000).toFixed(0);
-        const msg = err instanceof Error ? err.message : String(err);
-        log(
-          `Guardian token lease: attempt failed after ${elapsed}s (${msg.split("\n")[0]}), retrying...`,
-        );
+      } catch {
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
     if (!guardianAccessToken) {
       log(
-        `⚠️  Guardian token lease failed after ${DOCKER_READY_TIMEOUT_MS / 1000}s.\n` +
-          `   The assistant is running but CLI commands (cadet ps, cadet exec) will not authenticate.\n` +
-          `   Re-hatch or run \`cadet setup\` to recover.`,
+        yellow(
+          `⚠️  Guardian token lease failed after ${DOCKER_READY_TIMEOUT_MS / 1000}s.\n` +
+            `   The assistant is running but CLI commands (cadet ps, cadet exec) will not authenticate.\n` +
+            `   Re-hatch or run \`cadet setup\` to recover.`,
+          process.stdout,
+        ),
       );
     }
+
+    log(`\n${green("✅ Docker assistant hatched!", process.stdout)}\n`);
+    log("Instance details:");
+    printInstanceDetails(
+      {
+        name: instanceName,
+        runtime: runtimeUrl,
+        container: containerName,
+      },
+      log,
+    );
+    log("");
     return { ready: true, guardianAccessToken };
   }
 
@@ -1985,7 +1976,6 @@ async function waitForGatewayAndLease(opts: {
   // Lease guardian token. The /readyz check confirms both gateway and
   // assistant are reachable. Retry with backoff in case there is a brief
   // window where readiness passes but the guardian endpoint is not yet ready.
-  log(`Guardian token lease: starting for ${instanceName} at ${runtimeUrl}`);
   const leaseStart = Date.now();
   const leaseDeadline = start + DOCKER_READY_TIMEOUT_MS;
   let leaseSuccess = false;
@@ -1999,38 +1989,30 @@ async function waitForGatewayAndLease(opts: {
         instanceName,
         bootstrapSecret,
       );
-      const leaseElapsed = ((Date.now() - leaseStart) / 1000).toFixed(1);
-      log(
-        `Guardian token lease: success after ${leaseElapsed}s (principalId=${tokenData.guardianPrincipalId}, expiresAt=${tokenData.accessTokenExpiresAt})`,
-      );
       guardianAccessToken = tokenData.accessToken;
       leaseSuccess = true;
       break;
     } catch (err) {
       lastLeaseError =
         err instanceof Error ? (err.stack ?? err.message) : String(err);
-      // Log periodically so the user knows we're still trying
-      const elapsed = ((Date.now() - leaseStart) / 1000).toFixed(0);
-      log(
-        `Guardian token lease: attempt failed after ${elapsed}s (${
-          lastLeaseError.split("\n")[0]
-        }), retrying...`,
-      );
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
 
   if (!leaseSuccess) {
     log(
-      `\u26a0\ufe0f  Guardian token lease: FAILED after ${(
-        (Date.now() - leaseStart) /
-        1000
-      ).toFixed(1)}s — ${lastLeaseError ?? "unknown error"}`,
+      yellow(
+        `\u26a0\ufe0f  Guardian token lease: FAILED after ${(
+          (Date.now() - leaseStart) /
+          1000
+        ).toFixed(1)}s — ${lastLeaseError ?? "unknown error"}`,
+        process.stdout,
+      ),
     );
   }
 
   log("");
-  log(`\u2705 Docker containers are up and running!`);
+  log(green(`\u2705 Docker containers are up and running!`, process.stdout));
   log(`   Name: ${instanceName}`);
   log(`   Runtime: ${runtimeUrl}`);
   log("");

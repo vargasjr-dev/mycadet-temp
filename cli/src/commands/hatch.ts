@@ -6,6 +6,7 @@ import {
   saveAssistantEntry,
   setActiveAssistant,
 } from "../lib/assistant-config";
+import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
@@ -347,7 +348,9 @@ async function hatchCadetPlatform(): Promise<void> {
   });
   setActiveAssistant(result.id);
 
-  console.log(`   ${HATCHED_EMOJI}  Your assistant has hatched!`);
+  console.log(
+    "   " + green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
+  );
   console.log("");
   console.log(`   ID:     ${result.id}`);
   console.log(`   Name:   ${result.name}`);
