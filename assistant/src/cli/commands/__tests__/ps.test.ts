@@ -12,6 +12,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
+import { MAX_COMMAND_LABEL_LENGTH } from "../../../util/process-tree.js";
+
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -262,5 +264,70 @@ describe("ps command — failures", () => {
     mockResponse = { ok: false, error: "boom", statusCode: 500 };
     const { exitCode } = await runPsCommand();
     expect(exitCode).toBe(1);
+  });
+});
+
+describe("ps command — long labels stay bounded", () => {
+  const longName =
+    "bun x -y @some/org/deeply-nested-mcp-server --stdio --port 8080 --verbose";
+
+  test("caps a command-derived name that runs long, keeping head and tail", async () => {
+    mockResponse = {
+      ok: true,
+      result: {
+        processes: [{ name: longName, status: "running", origin: "workspace" }],
+      },
+    };
+
+    await runPsCommand();
+    const line = logLines.find((l) => l.trimStart().startsWith("bun x"))!;
+
+    // The interpreter survives at the head, the args' tail stays intact ahead
+    // of the origin column, and the middle collapses to one ellipsis so no
+    // column runs unbounded.
+    expect(line).toBeDefined();
+    expect(line.trimStart().startsWith(longName.slice(0, 16))).toBe(true);
+    expect(line).toContain("--stdio --port 8080 --verbose");
+    expect(line).toContain("…");
+    // Bounded end to end: capped label + two-space gutter + origin column.
+    expect(line.trimStart().length).toBeLessThanOrEqual(
+      MAX_COMMAND_LABEL_LENGTH + 2 + "workspace".length,
+    );
+  });
+
+  test("keeps the hierarchy indentation on a capped child label", async () => {
+    mockResponse = {
+      ok: true,
+      result: {
+        processes: [
+          {
+            name: "assistant",
+            status: "running",
+            origin: "workspace",
+            children: [
+              { name: longName, status: "running", origin: "workspace" },
+            ],
+          },
+        ],
+      },
+    };
+
+    await runPsCommand();
+    const line = logLines.find((l) => l.trimStart().startsWith("bun x"))!;
+    expect(line).toMatch(/^ {2}bun x/);
+  });
+
+  test("leaves short labels untouched", async () => {
+    mockResponse = {
+      ok: true,
+      result: {
+        processes: [{ name: "qdrant", status: "running", origin: "workspace" }],
+      },
+    };
+
+    await runPsCommand();
+    const line = logLines.find((l) => l.trimStart().startsWith("qdrant"))!;
+    expect(line).not.toContain("…");
+    expect(line.trimStart().startsWith("qdrant")).toBe(true);
   });
 });

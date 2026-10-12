@@ -10,6 +10,7 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { truncateCommandLabel } from "../../util/process-tree.js";
 import { applyCommandHelp } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -43,9 +44,11 @@ interface Row {
 /** Flatten the tree into rows, indenting each name to reflect tree depth. */
 function flattenEntries(entry: ProcessEntry, depth: number, rows: Row[]): void {
   rows.push({
-    name: "  ".repeat(depth) + entry.name,
+    // Command-derived labels (and the `pid N` info line) are capped at
+    // render time: a long label pads every row and stretches the table.
+    name: "  ".repeat(depth) + truncateCommandLabel(entry.name),
     origin: entry.origin,
-    info: entry.info ?? "",
+    info: entry.info ? truncateCommandLabel(entry.info) : "",
   });
   for (const child of entry.children ?? []) {
     flattenEntries(child, depth + 1, rows);

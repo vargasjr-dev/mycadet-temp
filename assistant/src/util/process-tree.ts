@@ -130,6 +130,25 @@ export function deriveName(command: string): string {
 }
 
 /**
+ * Display cap for command-derived labels in `ps` output. `deriveName` can
+ * surface a whole argument list when an interpreter runs without a script
+ * (`bun x -y @scope/server --stdio …`), and a super-long label pads every
+ * row and stretches the whole table. The cap keeps the head (the interpreter
+ * or binary) and the tail (the identifying end), collapsing the middle to
+ * one ellipsis.
+ */
+export const MAX_COMMAND_LABEL_LENGTH = 60;
+
+export function truncateCommandLabel(label: string): string {
+  if (label.length <= MAX_COMMAND_LABEL_LENGTH) {
+    return label;
+  }
+  const head = 16;
+  const tail = MAX_COMMAND_LABEL_LENGTH - head - 1; // 1 char for the ellipsis
+  return `${label.slice(0, head)}…${label.slice(-tail)}`;
+}
+
+/**
  * Redacted command descriptor for a live PID from `/proc/<pid>/cmdline`, or
  * null when the process is gone or its `/proc` entry is unreadable. Kernel
  * threads have an empty command line and read as `(unknown)`.
