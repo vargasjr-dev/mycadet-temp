@@ -604,7 +604,6 @@ export interface CredentialInjectionParams {
   bearerToken?: string;
   assistantApiKey?: string | null;
   cloudAssistantId: string;
-  cloudBaseUrl: string;
   organizationId: string;
   userId?: string;
   webhookSecret?: string | null;
@@ -630,8 +629,6 @@ export async function injectCredentialsIntoAssistant(
   if (params.assistantApiKey) {
     promises.push(inject("cadet:assistant_api_key", params.assistantApiKey));
   }
-
-  promises.push(inject("cadet:platform_base_url", params.cloudBaseUrl));
 
   if (params.webhookSecret) {
     promises.push(inject("cadet:webhook_secret", params.webhookSecret));

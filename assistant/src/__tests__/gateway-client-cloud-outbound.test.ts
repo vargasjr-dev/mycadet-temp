@@ -38,7 +38,7 @@ describe("gateway-client managed outbound lane", () => {
 
   test("translates managed callback URL into managed outbound-send request", async () => {
     await deliverChannelReply(
-      "https://platform.test/v1/internal/managed-gateway/outbound-send/?route_id=route-123&assistant_id=assistant-123&source_channel=phone&source_update_id=CA-inbound-123&callback_token=runtime-token",
+      "https://test-cloud.mycadet.ai/v1/internal/managed-gateway/outbound-send/?route_id=route-123&assistant_id=assistant-123&source_channel=phone&source_update_id=CA-inbound-123&callback_token=runtime-token",
       {
         chatId: "+15550001111",
         text: "hello from runtime",
@@ -48,7 +48,7 @@ describe("gateway-client managed outbound lane", () => {
     expect(calls).toHaveLength(1);
     const call = calls[0];
     expect(call.url).toBe(
-      "https://platform.test/v1/internal/managed-gateway/outbound-send/",
+      "https://test-cloud.mycadet.ai/v1/internal/managed-gateway/outbound-send/",
     );
 
     const headers = call.init.headers as Record<string, string>;
@@ -112,7 +112,7 @@ describe("gateway-client managed outbound lane", () => {
     ) as unknown as typeof globalThis.fetch;
 
     await deliverChannelReply(
-      "https://platform.test/v1/internal/managed-gateway/outbound-send/?route_id=route-retry&assistant_id=assistant-retry&source_channel=phone&source_update_id=CA-retry",
+      "https://test-cloud.mycadet.ai/v1/internal/managed-gateway/outbound-send/?route_id=route-retry&assistant_id=assistant-retry&source_channel=phone&source_update_id=CA-retry",
       {
         chatId: "+15550002222",
         text: "retry this outbound send",

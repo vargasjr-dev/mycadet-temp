@@ -152,7 +152,7 @@ beforeEach(() => {
   fetchCalls = [];
   mockCatalog = [];
   mockRepoSkillsDir = undefined;
-  mockCloudBaseUrl = "https://platform.test";
+  mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
 });
 
 afterEach(() => {
@@ -314,7 +314,7 @@ describe("readCatalogSkillFiles (dev mode)", () => {
     // called against the preview endpoint.
     expect(fetchCalls.length).toBe(1);
     expect(fetchCalls[0]!.url).toBe(
-      "https://platform.test/v1/skills/my-skill/files/",
+      "https://test-cloud.mycadet.ai/v1/skills/my-skill/files/",
     );
   });
 
@@ -354,7 +354,9 @@ describe("readCatalogSkillFiles (dev mode)", () => {
     expect(fetchCalls.length).toBe(1);
     const url = fetchCalls[0]!.url;
     expect(
-      url.startsWith("https://platform.test/v1/skills/my-skill/files/content/"),
+      url.startsWith(
+        "https://test-cloud.mycadet.ai/v1/skills/my-skill/files/content/",
+      ),
     ).toBe(true);
   });
 
@@ -430,7 +432,7 @@ describe("readCatalogSkillFiles (platform mode)", () => {
     // URL + headers
     expect(fetchCalls.length).toBe(1);
     expect(fetchCalls[0]!.url).toBe(
-      "https://platform.test/v1/skills/remote-skill/files/",
+      "https://test-cloud.mycadet.ai/v1/skills/remote-skill/files/",
     );
     const headers = (fetchCalls[0]!.init?.headers ?? {}) as Record<
       string,
@@ -734,7 +736,7 @@ describe("readCatalogSkillFileContent (platform mode)", () => {
     const url = fetchCalls[0]!.url;
     expect(
       url.startsWith(
-        "https://platform.test/v1/skills/remote-skill/files/content/",
+        "https://test-cloud.mycadet.ai/v1/skills/remote-skill/files/content/",
       ),
     ).toBe(true);
     expect(url).toContain("path=SKILL.md");

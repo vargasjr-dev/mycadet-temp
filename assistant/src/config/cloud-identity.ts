@@ -3,11 +3,10 @@
  *
  * Django maps an assistant API key to these ids via
  * `POST /v1/internal/assistants/validate/`. Process startup rehydrates from
- * that endpoint into the in-memory overrides. Resolution reads those
- * overrides (and `CLOUD_ORGANIZATION_ID` / `CLOUD_USER_ID` when set).
- * When the in-memory assistant id is empty, the next resolve retries
- * validate (single-flight, with a cooldown after a failed attempt that holds
- * only while the same API key and base URL are stored).
+ * that endpoint into the in-memory overrides. Resolution reads only those
+ * overrides. When the in-memory assistant id is empty, the next resolve
+ * retries validate (single-flight, with a cooldown after a failed attempt
+ * that holds only while the same API key and base URL are stored).
  */
 
 import { credentialKey } from "../security/credential-key.js";
@@ -174,6 +173,14 @@ export async function ensureCloudIdentityIds(): Promise<void> {
         failedFingerprint = null;
         nextEnsureAttemptAt = 0;
         log.info("Loaded platform identity from platform validate");
+      } catch (err) {
+        // Startup rehydration must never take a process down: an
+        // unreachable credential store only means identity is not bound
+        // yet, and the next resolve retries.
+        log.warn(
+          { error: err instanceof Error ? err.message : String(err) },
+          "Failed to ensure cloud identity ids (non-fatal)",
+        );
       } finally {
         ensureInFlight = null;
       }

@@ -185,7 +185,6 @@ function printHelp(): void {
 
 export function parseArgs(argv: string[]): {
   from: string | undefined;
-  to: string | undefined;
   targetEnv: "local" | "docker" | "platform" | undefined;
   targetName: string | undefined;
   keepSource: boolean;
@@ -193,7 +192,6 @@ export function parseArgs(argv: string[]): {
   help: boolean;
 } {
   let from: string | undefined;
-  let to: string | undefined;
   let targetEnv: "local" | "docker" | "platform" | undefined;
   let targetName: string | undefined;
   let keepSource = false;
@@ -209,11 +207,6 @@ export function parseArgs(argv: string[]): {
         continue;
       }
       from = argv[++i];
-    } else if (arg === "--to" && i + 1 < argv.length) {
-      if (argv[i + 1].startsWith("--")) {
-        continue;
-      }
-      to = argv[++i];
     } else if (
       arg === "--local" ||
       arg === "--docker" ||
@@ -242,7 +235,7 @@ export function parseArgs(argv: string[]): {
     process.exit(1);
   }
 
-  return { from, to, targetEnv, targetName, keepSource, dryRun, help };
+  return { from, targetEnv, targetName, keepSource, dryRun, help };
 }
 
 // ---------------------------------------------------------------------------
@@ -1253,7 +1246,6 @@ async function tryInjectCloudCredentials(
       bearerToken: entry.bearerToken,
       assistantApiKey,
       cloudAssistantId: registration.assistant.id,
-      cloudBaseUrl: cloudUrl,
       organizationId: orgId,
       userId: user.id,
       webhookSecret: registration.webhook_secret,
@@ -1277,23 +1269,12 @@ async function tryInjectCloudCredentials(
 export const teleport = Object.assign(
   async function teleport(): Promise<void> {
   const args = process.argv.slice(3);
-  const { from, to, targetEnv, targetName, keepSource, dryRun, help } =
+  const { from, targetEnv, targetName, keepSource, dryRun, help } =
     parseArgs(args);
 
   if (help) {
     printHelp();
     process.exit(0);
-  }
-
-  // Legacy --to flag deprecation
-  if (to) {
-    console.error("Error: --to is deprecated. Use environment flags instead:");
-    console.error(
-      "  cadet teleport --from <source> --local|--docker|--platform [name]",
-    );
-    console.error("");
-    console.error("Run 'cadet teleport --help' for details.");
-    process.exit(1);
   }
 
   if (!from) {

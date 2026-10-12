@@ -409,7 +409,6 @@ export async function registerLocalAssistantWithPlatform(
     bearerToken: options.bearerToken ?? entry.bearerToken,
     assistantApiKey,
     cloudAssistantId: registration.assistant.id,
-    cloudBaseUrl: cloudUrl,
     organizationId: orgId,
     userId: user.id,
     webhookSecret: registration.webhook_secret,

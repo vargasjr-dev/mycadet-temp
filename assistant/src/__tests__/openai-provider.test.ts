@@ -1369,13 +1369,13 @@ describe("custom baseURL initialization", () => {
 
   test("OpenAIProvider forwards a custom baseURL", () => {
     const managed = new OpenAIProvider("ast-key-123", "gpt-4o", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/openai",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openai",
     });
 
     expect(managed.name).toBe("openai");
     expectOpenAIConstructorOptions({
       apiKey: "ast-key-123",
-      baseURL: "https://platform.example.com/v1/runtime-proxy/openai",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openai",
       timeout: DEFAULT_SDK_TIMEOUT_MS,
     });
   });
@@ -1407,14 +1407,14 @@ describe("custom baseURL initialization", () => {
       "ast-key-123",
       "accounts/fireworks/models/llama-v3p1-70b-instruct",
       {
-        baseURL: "https://platform.example.com/v1/runtime-proxy/fireworks",
+        baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/fireworks",
       },
     );
 
     expect(managed.name).toBe("fireworks");
     expectOpenAIConstructorOptions({
       apiKey: "ast-key-123",
-      baseURL: "https://platform.example.com/v1/runtime-proxy/fireworks",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/fireworks",
       timeout: DEFAULT_SDK_TIMEOUT_MS,
     });
   });
@@ -1434,13 +1434,13 @@ describe("custom baseURL initialization", () => {
 
   test("OpenRouterProvider forwards a custom baseURL", () => {
     const managed = new OpenRouterProvider("ast-key-123", "openai/gpt-4o", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/openrouter",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openrouter",
     });
 
     expect(managed.name).toBe("openrouter");
     expectOpenAIConstructorOptions({
       apiKey: "ast-key-123",
-      baseURL: "https://platform.example.com/v1/runtime-proxy/openrouter",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openrouter",
       timeout: DEFAULT_SDK_TIMEOUT_MS,
     });
   });
@@ -1457,13 +1457,13 @@ describe("custom baseURL initialization", () => {
 
   test("MinimaxProvider forwards a custom baseURL", () => {
     const managed = new MinimaxProvider("ast-key-123", "MiniMax-M2.7", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/minimax",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/minimax",
     });
 
     expect(managed.name).toBe("minimax");
     expectOpenAIConstructorOptions({
       apiKey: "ast-key-123",
-      baseURL: "https://platform.example.com/v1/runtime-proxy/minimax",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/minimax",
       timeout: DEFAULT_SDK_TIMEOUT_MS,
     });
   });

@@ -30,7 +30,7 @@ import {
   readInstallMeta,
 } from "../install-from-github.js";
 
-const PLATFORM = "https://platform.test";
+const PLATFORM = "https://test-cloud.mycadet.ai";
 
 // ─── Tar/gzip fixtures ───────────────────────────────────────────────────────
 

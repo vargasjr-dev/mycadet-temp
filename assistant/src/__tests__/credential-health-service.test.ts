@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { setCloudAssistantId } from "../config/env.js";
 import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 // ── Mutable state for mocks ──────────────────────────────────────────
@@ -266,6 +267,7 @@ describe("credential-health-service", () => {
     managedPingOutcome = { kind: "status", status: 200 };
     assistantKeyVerdict = "valid";
     cloudClientAvailable = true;
+    setCloudAssistantId(undefined);
   });
 
   test("returns empty report when no providers exist", async () => {
@@ -780,13 +782,20 @@ describe("credential-health-service", () => {
     // carries the repair.
     const assistantKeyResult = checkAssistantApiKey;
 
-    test("is missing_token when no key is stored, connected or not", async () => {
+    test("is not reported when the workspace was never connected", async () => {
+      expect(await assistantKeyResult()).toBeNull();
+    });
+
+    test("is missing_token when a cloud identity exists without a key", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
+
       const result = await assistantKeyResult();
       expect(result!.status).toBe("missing_token");
       expect(result!.canAutoRecover).toBe(true);
     });
 
     test("is healthy when the cloud accepts the stored key", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "valid";
 
@@ -794,6 +803,7 @@ describe("credential-health-service", () => {
     });
 
     test("is revoked when the cloud rejects the stored key", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "rejected";
 
@@ -809,6 +819,7 @@ describe("credential-health-service", () => {
     // error, transport failure) must degrade to `unreachable`, which the
     // heartbeat drops before notifying.
     test("an unsettled platform answer is unreachable, never revoked", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       assistantKeyVerdict = "unknown";
 
@@ -816,12 +827,14 @@ describe("credential-health-service", () => {
     });
 
     test("an unreadable credential store is unreachable, never revoked", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
       markUnreachable(KEY);
 
       expect((await assistantKeyResult())!.status).toBe("unreachable");
     });
 
     test("is unreachable when the cloud client cannot be built", async () => {
+      setCloudAssistantId("11111111-2222-4333-8444-555555555555");
       secureKeyValues.set(KEY, "stored-key");
       cloudClientAvailable = false;
 

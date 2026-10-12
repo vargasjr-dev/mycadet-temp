@@ -39,7 +39,7 @@ const cadetConnection = {
 const resolvedAuth: ResolvedAuth = {
   kind: "header",
   headers: { Authorization: "Bearer test-key" },
-  baseUrl: "https://platform.example/v1/runtime-proxy/fireworks",
+  baseUrl: "https://test-cloud.mycadet.ai/v1/runtime-proxy/fireworks",
 };
 
 describe("cadet connection routing", () => {
@@ -76,7 +76,7 @@ describe("cadet connection routing", () => {
       {
         kind: "header",
         headers: { Authorization: "Bearer test-key" },
-        baseUrl: "https://platform.example/v1/runtime-proxy/cadet",
+        baseUrl: "https://test-cloud.mycadet.ai/v1/runtime-proxy/cadet",
       },
       {
         model: "qwen/qwen3-8b",

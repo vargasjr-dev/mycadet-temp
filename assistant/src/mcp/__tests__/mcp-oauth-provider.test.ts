@@ -6,12 +6,12 @@ import { describe, expect, mock, test } from "bun:test";
 
 mock.module("../../inbound/cloud-callback-registration.js", () => ({
   resolveCallbackUrl: async () =>
-    "https://platform.example/v1/gateway/callbacks/abc/webhooks/oauth/callback/",
+    "https://test-cloud.mycadet.ai/v1/gateway/callbacks/abc/webhooks/oauth/callback/",
 }));
 
 mock.module("../../inbound/public-ingress-urls.js", () => ({
   getOAuthCallbackUrl: () =>
-    "https://platform.example/v1/gateway/callbacks/abc/webhooks/oauth/callback/",
+    "https://test-cloud.mycadet.ai/v1/gateway/callbacks/abc/webhooks/oauth/callback/",
   getMcpOAuthClientMetadataUrl: () =>
     "http://localhost/oauth/client-metadata.json",
 }));

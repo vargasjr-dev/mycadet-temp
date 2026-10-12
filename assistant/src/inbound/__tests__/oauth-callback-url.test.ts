@@ -51,7 +51,7 @@ describe("resolveMcpOAuthClientMetadataUrl", () => {
   test("returns undefined for a callback served somewhere else", () => {
     expect(
       resolveMcpOAuthClientMetadataUrl(
-        "https://platform.example/v1/gateway/callbacks/assistant-123/webhooks/oauth/callback",
+        "https://test-cloud.mycadet.ai/v1/gateway/callbacks/assistant-123/webhooks/oauth/callback",
       ),
     ).toBeUndefined();
   });

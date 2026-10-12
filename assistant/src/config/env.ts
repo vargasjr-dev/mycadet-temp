@@ -232,11 +232,12 @@ export function setCloudOrganizationId(value: string | undefined): void {
 }
 
 /**
- * CLOUD_ORGANIZATION_ID — UUID of the organization this assistant belongs to.
- * Used for platform tagging and API calls.
+ * Organization ID — UUID of the organization this assistant belongs to.
+ * Resolved from the in-memory override (populated by cloud identity
+ * validation); the API key resolves the credentials.
  */
 export function getCloudOrganizationId(): string {
-  return str("CLOUD_ORGANIZATION_ID") ?? _cloudOrganizationIdOverride ?? "";
+  return _cloudOrganizationIdOverride ?? "";
 }
 
 let _platformUserIdOverride: string | undefined;
@@ -246,11 +247,12 @@ export function setCloudUserId(value: string | undefined): void {
 }
 
 /**
- * CLOUD_USER_ID — UUID of the user who owns this assistant.
- * Used for telemetry and platform API calls.
+ * User ID — UUID of the user who owns this assistant.
+ * Resolved from the in-memory override (populated by cloud identity
+ * validation); the API key resolves the credentials.
  */
 export function getCloudUserId(): string {
-  return str("CLOUD_USER_ID") ?? _platformUserIdOverride ?? "";
+  return _platformUserIdOverride ?? "";
 }
 
 // ── Startup validation ──────────────────────────────────────────────────────

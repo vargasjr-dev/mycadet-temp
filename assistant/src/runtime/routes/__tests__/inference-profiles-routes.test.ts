@@ -38,7 +38,7 @@ let managedProxyEnabled = true;
 mock.module("../../../providers/cloud-proxy/context.js", () => ({
   resolveCloudProxyContext: async () => ({
     enabled: managedProxyEnabled,
-    cloudBaseUrl: "https://platform.example",
+    cloudBaseUrl: "https://test-cloud.mycadet.ai",
     assistantApiKey: managedProxyEnabled ? "key" : "",
   }),
 }));

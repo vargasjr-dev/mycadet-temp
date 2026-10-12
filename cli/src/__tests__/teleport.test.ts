@@ -2567,7 +2567,6 @@ describe("platform credential injection", () => {
         bearerToken: "local-bearer",
         assistantApiKey: "api-key-123",
         cloudAssistantId: "platform-assistant-1",
-        cloudBaseUrl: "https://cloud.mycadet.ai",
         organizationId: "org-1",
         userId: "user-1",
         webhookSecret: "webhook-secret-123",
@@ -3008,17 +3007,3 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   });
 });
 
-// ---------------------------------------------------------------------------
-// Misc: legacy --to deprecation
-// ---------------------------------------------------------------------------
-
-describe("misc", () => {
-  test("legacy --to flag shows deprecation message", async () => {
-    setArgv("--from", "source", "--to", "target");
-
-    await expect(teleport()).rejects.toThrow("process.exit:1");
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("--to is deprecated"),
-    );
-  });
-});

@@ -17,7 +17,7 @@ import {
   initFeatureFlagOverrides,
   refreshOverridesFromGateway,
 } from "../config/assistant-feature-flags.js";
-import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
+import { ensureCloudIdentityIds } from "../config/cloud-identity.js";
 import { getConfig } from "../config/loader.js";
 import { startConversationEvictor } from "../daemon/conversation-evictor.js";
 import { stopMcpServerManager } from "../mcp/manager.js";
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   // the persisted platform environment instead of the CADET_ENVIRONMENT
   // default — otherwise valid credentials are sent to the wrong platform and
   // rejected for both inference and background-wake requests.
-  await rehydrateCloudCredentials();
+  await ensureCloudIdentityIds();
 
   // This process is the sole runner of schedule execution and hosts real agent
   // conversations (wake, execute, and workflow modes), so it needs the default

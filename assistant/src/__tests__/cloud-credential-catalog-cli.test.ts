@@ -89,7 +89,7 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("returns empty descriptors when API key is missing", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.delete(ASSISTANT_API_KEY);
 
     const result = await fetchCloudCatalog();
@@ -98,7 +98,7 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("returns empty descriptors when assistant ID is missing", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "";
 
@@ -108,12 +108,12 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("parses platform catalog response into descriptors with correct handles", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
-      "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
+      "https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
       {
         status: 200,
         body: [
@@ -156,12 +156,12 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("handles empty connections list from platform", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
-      "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
+      "https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
       {
         status: 200,
         body: [],
@@ -174,12 +174,12 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("handles platform returning HTTP error gracefully", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
-      "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
+      "https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
       {
         status: 500,
         body: { detail: "Internal server error" },
@@ -193,12 +193,12 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("handles platform returning unexpected format gracefully", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
-      "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
+      "https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
       {
         status: 200,
         body: { unexpected: "shape" },
@@ -211,12 +211,12 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("defaults missing optional fields in catalog entries", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-test-key");
     mockCloudAssistantId = "ast-uuid-1234";
 
     mockFetchResponses.set(
-      "https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
+      "https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/",
       {
         status: 200,
         body: [
@@ -242,7 +242,7 @@ describe("fetchCloudCatalog", () => {
   });
 
   test("error messages never contain sensitive details", async () => {
-    mockCloudBaseUrl = "https://platform.example.com";
+    mockCloudBaseUrl = "https://test-cloud.mycadet.ai";
     secureKeys.set(ASSISTANT_API_KEY, "sk-super-secret-key-12345");
     mockCloudAssistantId = "ast-uuid-1234";
 
@@ -251,7 +251,7 @@ describe("fetchCloudCatalog", () => {
     const errorFetch: typeof fetch = Object.assign(
       async () => {
         throw new Error(
-          "Connect failed to https://platform.example.com/v1/assistants/ast-uuid-1234/oauth/managed/catalog/ with Bearer sk-super-secret-key-12345",
+          "Connect failed to https://test-cloud.mycadet.ai/v1/assistants/ast-uuid-1234/oauth/managed/catalog/ with Bearer sk-super-secret-key-12345",
         );
       },
       { preconnect: savedFetch.preconnect },

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { UnprocessableEntityError } from "../errors.js";
 
-let cloudBaseUrl = "https://platform.test";
+let cloudBaseUrl = "https://test-cloud.mycadet.ai";
 let authHeader: string | null = "Api-Key test";
 
 // Spread the real module: replacing it wholesale breaks unrelated importers
@@ -33,9 +33,10 @@ const creditsHandler = ROUTES.find(
   (r) => r.operationId === "platform_credits",
 )!.handler;
 
-const SUMMARY_URL = "https://platform.test/v1/organizations/billing/summary/";
+const SUMMARY_URL =
+  "https://test-cloud.mycadet.ai/v1/organizations/billing/summary/";
 const SUBSCRIPTION_URL =
-  "https://platform.test/v1/organizations/billing/subscription/";
+  "https://test-cloud.mycadet.ai/v1/organizations/billing/subscription/";
 
 const FULL_SUMMARY = {
   settled_balance_usd: "50.00",
@@ -84,7 +85,7 @@ function stubFetch(
 }
 
 beforeEach(() => {
-  cloudBaseUrl = "https://platform.test";
+  cloudBaseUrl = "https://test-cloud.mycadet.ai";
   authHeader = "Api-Key test";
   fetchedUrls = [];
 });

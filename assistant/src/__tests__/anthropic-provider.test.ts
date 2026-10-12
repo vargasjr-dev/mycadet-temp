@@ -2960,13 +2960,13 @@ describe("AnthropicProvider — Cloud Proxy Fallback", () => {
 
   test("constructor passes baseURL to Anthropic SDK when provided", () => {
     new AnthropicProvider("managed-key", "claude-sonnet-4-6", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/anthropic",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/anthropic",
     });
 
     expect(lastConstructorArgs).not.toBeNull();
     expect(lastConstructorArgs!.apiKey).toBe("managed-key");
     expect(lastConstructorArgs!.baseURL).toBe(
-      "https://platform.example.com/v1/runtime-proxy/anthropic",
+      "https://test-cloud.mycadet.ai/v1/runtime-proxy/anthropic",
     );
   });
 
@@ -2980,7 +2980,7 @@ describe("AnthropicProvider — Cloud Proxy Fallback", () => {
 
   test("managed mode provider preserves tool-pairing behavior", async () => {
     const provider = new AnthropicProvider("managed-key", "claude-sonnet-4-6", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/anthropic",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/anthropic",
     });
 
     const messages: Message[] = [
@@ -3003,7 +3003,7 @@ describe("AnthropicProvider — Cloud Proxy Fallback", () => {
 
   test("managed mode provider preserves cache-control behavior", async () => {
     const provider = new AnthropicProvider("managed-key", "claude-sonnet-4-6", {
-      baseURL: "https://platform.example.com/v1/runtime-proxy/anthropic",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/anthropic",
     });
 
     await provider.sendMessage([userMsg("Hi")], {
@@ -3286,13 +3286,13 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
       "ast-key",
       "anthropic/claude-opus-4.6",
       {
-        baseURL: "https://platform.example.com/v1/runtime-proxy/openrouter/v1",
+        baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openrouter/v1",
       },
     );
     await provider.sendMessage([userMsg("hi")]);
 
     expect(lastConstructorArgs).toMatchObject({
-      baseURL: "https://platform.example.com/v1/runtime-proxy/openrouter",
+      baseURL: "https://test-cloud.mycadet.ai/v1/runtime-proxy/openrouter",
     });
   });
 

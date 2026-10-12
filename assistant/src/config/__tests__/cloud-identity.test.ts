@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
+import { useFaultableSecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
+import { credentialKey } from "../../security/credential-key.js";
 import {
+  getCloudAssistantId,
   getCloudBaseUrl,
   setCloudAssistantId,
   setCloudOrganizationId,
   setCloudUserId,
 } from "../env.js";
 
-useMemorySecureKeys();
+const { setUnreachableKey } = useFaultableSecureKeyMap();
 const {
   _resetCloudIdentityEnsureForTests,
+  ensureCloudIdentityIds,
   fetchCloudIdentityIds,
   CLOUD_IDENTITY_VALIDATE_PATH,
   resolveCloudAssistantId,
@@ -304,5 +307,15 @@ describe("resolveCloudAssistantId", () => {
     await expect(first).resolves.toBe(ASSISTANT_ID);
     await expect(second).resolves.toBe(ASSISTANT_ID);
     expect(fetchCalls).toHaveLength(1);
+  });
+});
+
+describe("ensureCloudIdentityIds", () => {
+  test("an unreachable credential store is non-fatal — identity stays unbound", async () => {
+    process.env.CADET_PLATFORM_URL = BASE_URL;
+    setUnreachableKey(credentialKey("cadet", "assistant_api_key"));
+
+    await expect(ensureCloudIdentityIds()).resolves.toBeUndefined();
+    expect(getCloudAssistantId()).toBe("");
   });
 });

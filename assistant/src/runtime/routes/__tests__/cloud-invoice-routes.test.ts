@@ -12,7 +12,7 @@ import {
   UnprocessableEntityError,
 } from "../errors.js";
 
-let cloudBaseUrl = "https://platform.test";
+let cloudBaseUrl = "https://test-cloud.mycadet.ai";
 let authHeader: string | null = "Api-Key test";
 
 // Spread the real module: replacing it wholesale breaks unrelated importers
@@ -41,7 +41,8 @@ const getHandler = ROUTES.find(
   (r) => r.operationId === "platform_invoices_by_id_get",
 )!.handler;
 
-const INVOICES_URL = "https://platform.test/v1/organizations/billing/invoices/";
+const INVOICES_URL =
+  "https://test-cloud.mycadet.ai/v1/organizations/billing/invoices/";
 
 function invoice(id: string) {
   return {
@@ -103,7 +104,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 beforeEach(() => {
-  cloudBaseUrl = "https://platform.test";
+  cloudBaseUrl = "https://test-cloud.mycadet.ai";
   authHeader = "Api-Key test";
   fetchCalls = [];
 });

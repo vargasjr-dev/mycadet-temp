@@ -1,4 +1,4 @@
-import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
+import { ensureCloudIdentityIds } from "../config/cloud-identity.js";
 import { maybeDefaultSpeechToCloud } from "../config/cloud-speech-defaults.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getMcpServerManager } from "../mcp/manager.js";
@@ -32,7 +32,7 @@ export async function initializeProvidersAndTools(
   // Rehydrate the cloud base URL and IDs from the credential store so
   // cloud proxy activation survives assistant restarts. The in-memory
   // overrides are normally only set by the secret-routes handlers at runtime.
-  await rehydrateCloudCredentials();
+  await ensureCloudIdentityIds();
 
   // Speech defaulting normally fires when the cloud credentials land
   // (secret-routes); evaluating it once per boot also covers assistants whose

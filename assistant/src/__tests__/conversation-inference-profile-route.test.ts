@@ -7,7 +7,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 mock.module("../providers/cloud-proxy/context.js", () => ({
   resolveCloudProxyContext: async () => ({
     enabled: true,
-    cloudBaseUrl: "https://platform.example",
+    cloudBaseUrl: "https://test-cloud.mycadet.ai",
     assistantApiKey: "key",
   }),
 }));

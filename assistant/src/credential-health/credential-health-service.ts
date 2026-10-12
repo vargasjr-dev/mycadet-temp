@@ -25,6 +25,7 @@
 
 import { isTokenExpired } from "@mycadet/credential-storage";
 
+import { getCloudAssistantId } from "../config/env.js";
 import type { Services } from "../config/schemas/services.js";
 import { getConnectionAccessTokenResult } from "../oauth/credential-token-resolver.js";
 import {
@@ -633,12 +634,13 @@ const ASSISTANT_API_KEY_CONNECTION_ID = "cadet:assistant_api_key";
  * observed here and acted on by a client.
  *
  * Statuses map onto the shared vocabulary:
+ *   - `missing_token`: no key is stored, so managed inference cannot run.
  *   - `revoked`: the cloud settled that the stored key is not accepted.
  *   - `unreachable`: the credential store or the cloud did not answer, so
  *     health is unknown. The heartbeat drops these before notifying, which is
  *     what keeps a transient outage from raising a credential alert.
  *
- * `canAutoRecover` is true for the revoked status: recovery needs no
+ * `canAutoRecover` is true for both failure statuses: recovery needs no
  * re-authorization from the user, only a signed-in client to rotate the key.
  */
 export async function checkAssistantApiKey(): Promise<CredentialHealthResult | null> {
@@ -667,8 +669,13 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
   }
 
   if (stored.value == null) {
-    // A workspace that was never connected to the cloud has no managed
-    // credential yet — missing, not unhealthy.
+    // A workspace that was never connected to the cloud has no bound cloud
+    // identity and is not unhealthy. Only an install that already carries a
+    // cloud identity is missing something — identity resolves from the API
+    // key via the cloud validation API, never from a stored credential.
+    if (!getCloudAssistantId()) {
+      return null;
+    }
     return {
       ...base,
       status: "missing_token",

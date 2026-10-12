@@ -20,7 +20,7 @@ let providerRefreshCalls = 0;
 let identitySyncCalls = 0;
 let avatarSyncCalls = 0;
 
-const CLOUD_BASE_URL = "https://platform.example.com";
+const CLOUD_BASE_URL = "https://test-cloud.mycadet.ai";
 const ASSISTANT_API_KEY_PATH = credentialKey("cadet", "assistant_api_key");
 const MANAGED_PROVIDERS = [
   "anthropic",

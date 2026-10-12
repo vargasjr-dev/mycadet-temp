@@ -19,7 +19,7 @@ mock.module("../runtime/assistant-event.js", () => ({
 mock.module("../providers/cloud-proxy/context.js", () => ({
   resolveCloudProxyContext: async () => ({
     enabled: true,
-    cloudBaseUrl: "https://platform.example",
+    cloudBaseUrl: "https://test-cloud.mycadet.ai",
     assistantApiKey: "key",
   }),
 }));

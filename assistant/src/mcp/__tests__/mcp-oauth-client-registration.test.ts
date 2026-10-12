@@ -16,7 +16,7 @@ import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 
 const CALLBACK_URL =
-  "https://platform.example/v1/gateway/callbacks/abc/webhooks/oauth/callback/";
+  "https://test-cloud.mycadet.ai/v1/gateway/callbacks/abc/webhooks/oauth/callback/";
 const PUBLIC_BASE_URL = "https://tunnel.example/assistant-123";
 const DIRECT_CALLBACK_URL = `${PUBLIC_BASE_URL}/webhooks/oauth/callback`;
 const CLIENT_METADATA_URL = `${PUBLIC_BASE_URL}/oauth/client-metadata.json`;

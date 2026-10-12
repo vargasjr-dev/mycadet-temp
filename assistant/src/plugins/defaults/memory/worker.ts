@@ -12,7 +12,7 @@
 
 import { writeFileSync } from "node:fs";
 
-import { rehydrateCloudCredentials } from "../../../config/cloud-rehydration.js";
+import { ensureCloudIdentityIds } from "../../../config/cloud-identity.js";
 import { getConfig } from "../../../config/loader.js";
 import { isMemoryEnabled } from "../../../config/memory-v3-gate.js";
 import { startConversationEvictor } from "../../../daemon/conversation-evictor.js";
@@ -63,7 +63,7 @@ async function main(): Promise<void> {
   // conversations whose inference and background-wake requests go through the
   // cloud proxy — without rehydration those requests hit the wrong platform
   // and are rejected.
-  await rehydrateCloudCredentials();
+  await ensureCloudIdentityIds();
 
   // Jobs in this process wake real agent conversations, so it registers the
   // default plugin hook surface (hooks and injectors, no init hooks) the same

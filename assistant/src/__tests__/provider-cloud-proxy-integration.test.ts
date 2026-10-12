@@ -152,7 +152,7 @@ function makeProvidersConfig(
 // Helpers
 // ---------------------------------------------------------------------------
 
-const PLATFORM_BASE = "https://platform.example.com";
+const PLATFORM_BASE = "https://test-cloud.mycadet.ai";
 const MANAGED_API_KEY = "ast-managed-key-123";
 const PLATFORM_ASSISTANT_ID = "assistant-abc123";
 
