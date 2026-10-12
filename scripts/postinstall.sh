@@ -24,3 +24,41 @@ STORE="node_modules/.bun"
 # ---------------------------------------------------------------------------
 echo "[postinstall] pruning musl variants from ${STORE}"
 rm -rf "${STORE}"/*musl* 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# prune: electron packaging armada (ONLY outside CI)
+#
+# The installer toolchain (electron-builder + app-builder + sign/notarize
+# helpers, ~250M) is only needed when building installers, and installers
+# are built in CI (which sets CI=true automatically). Everywhere else —
+# dev laptops, containers, docker image builds — it is dead weight, so we
+# prune it right after install.
+#
+# Escape hatch: run `CADET_KEEP_PACKAGING=1 bun install` when you need to
+# package locally; `rm -rf node_modules && bun install` restores afterwards.
+#
+# Scope: ONLY the installer-factory packages. We deliberately keep
+# electron@*, electron-vite, @electron/{get,asar,fuses}, electron-store,
+# electron-log, electron-updater and electron-to-chromium — the desktop
+# shell needs those to build and run on every machine.
+#
+# Reversible: nothing here changes the lockfile; a clean
+# `rm -rf node_modules && bun install` (or CI) brings the toolchain back.
+# ---------------------------------------------------------------------------
+if [[ -z "${CI:-}" && -z "${CADET_KEEP_PACKAGING:-}" ]]; then
+  echo "[postinstall] CI not detected — pruning electron packaging armada (CADET_KEEP_PACKAGING=1 to keep)"
+  rm -rf "${STORE}"/app-builder-bin@* \
+         "${STORE}"/app-builder-lib@* \
+         "${STORE}"/builder-util@* \
+         "${STORE}"/electron-builder@* \
+         "${STORE}"/electron-builder-squirrel-windows@* \
+         "${STORE}"/electron-publish@* \
+         "${STORE}"/electron-winstaller@* \
+         "${STORE}"/@electron+osx-sign@* \
+         "${STORE}"/@electron+notarize@* \
+         "${STORE}"/@electron+windows-sign@* \
+         "${STORE}"/@electron+universal@* \
+         "${STORE}"/@electron+rebuild@* 2>/dev/null || true
+else
+  echo "[postinstall] CI/CADET_KEEP_PACKAGING detected — keeping electron packaging armada"
+fi
