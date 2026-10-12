@@ -26,9 +26,11 @@
     "vite": "8.0.11"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "predev": "cd ../web && bun run openapi-ts",
+    "dev": "bun --bun vite",
+    "prebuild": "cd ../web && bun run openapi-ts && node ../web/scripts/copy-skill-assets.mjs",
+    "build": "bun --bun vite build",
+    "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"

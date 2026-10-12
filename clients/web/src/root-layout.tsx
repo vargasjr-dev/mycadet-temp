@@ -110,7 +110,6 @@ import {
   removePairedAssistant,
   switchToAssistant,
 } from "@/assistant/switch-service";
-import { CreateAssistantDialog } from "@/components/create-assistant-dialog";
 import { RemoveFromDeviceDialog } from "@/components/remove-from-device-dialog";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
 import { useTranslation } from "@/i18n";
@@ -397,8 +396,6 @@ export function RootLayout() {
   // Id of the paired assistant a tray "Remove from this Mac…" command targets.
   const [removePairedId, setRemovePairedId] = useState<string | null>(null);
   const [removePairedPending, setRemovePairedPending] = useState(false);
-  // Whether the tray "New Assistant…" name-prompt dialog is open.
-  const [createOpen, setCreateOpen] = useState(false);
   const { login } = useOnboardingLogin();
 
   useCadetCommands({
@@ -450,9 +447,6 @@ export function RootLayout() {
       } else {
         void navigate(routes.settings.general);
       }
-    },
-    createAssistant: () => {
-      setCreateOpen(true);
     },
     retireAssistant: (command) => {
       if (command.kind === "retireAssistant") {
@@ -774,15 +768,6 @@ export function RootLayout() {
         onCancel={() => setRemovePairedId(null)}
       />
 
-      {/* Name-prompt for the tray "New Assistant…" command — hatches an
-          additional cloud assistant and switches to it. Shell territory:
-          the served platform build drops it with the account subtree. */}
-      {__INCLUDES_ACCOUNT__ && (
-        <CreateAssistantDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-        />
-      )}
     </div>
   );
 }

@@ -2,7 +2,13 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import {
+  defineConfig,
+  type ConfigEnv,
+  type Plugin,
+  type UserConfig,
+} from "vite";
+import webConfig from "../web/vite.config";
 
 const APP_SRC = path.resolve(import.meta.dirname, "src");
 const WEB_SRC = path.resolve(import.meta.dirname, "../web/src");
@@ -31,9 +37,16 @@ function aliasFallback(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), aliasFallback()],
-  resolve: {
-    dedupe: ["react", "react-dom"],
-  },
+const webFactory = webConfig as unknown as (env: ConfigEnv) => UserConfig;
+
+// The desktop renderer builds web's full config (base, dev proxy, chunk
+// groups) and composes the account routes into the tree on top.
+export default defineConfig((env) => {
+  const web = webFactory(env);
+  return {
+    ...web,
+    publicDir: "../web/public",
+    plugins: [...(web.plugins ?? []), aliasFallback()],
+    resolve: { ...web.resolve, alias: [] },
+  };
 });
