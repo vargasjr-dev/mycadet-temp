@@ -12,6 +12,7 @@ import {
   AUTO_PROFILE_KEY,
   OS_BETA_PROFILE_KEY,
 } from "./default-profile-names.js";
+import { getIsCloud } from "./env-registry.js";
 import {
   getConfigReadOnly,
   invalidateConfigCache,
@@ -23,7 +24,6 @@ import {
   OS_BETA_FEATURE_FLAG_KEY,
   readObject,
 } from "./seed-inference-profiles.js";
-import { getIsCloud } from "./env-registry.js";
 
 const log = getLogger("sync-gated-profiles");
 
