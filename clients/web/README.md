@@ -31,6 +31,27 @@ bun run openapi-ts  # generate API client (required before typecheck/dev)
 bun run dev         # Vite dev server on localhost:3000
 ```
 
+### Web surface and app development
+
+`VITE_WEB_MODE` selects the UI included in a build:
+
+- `full` (default) includes account login, signup, OAuth, logout, assistant
+  selection, and the assistant UI. Desktop clients, CLI web mode, and the
+  hosted mobile hub use this surface while app is developed separately.
+- `assistant` omits account routes and the tray's New Assistant dialog for
+  hosts that provide their own account UI.
+
+`VITE_CLOUD_MODE` independently selects cloud versus local runtime behavior.
+For example, `VITE_CLOUD_MODE=true VITE_WEB_MODE=full bun run build` builds the
+hosted full client; changing `VITE_WEB_MODE` to `assistant` builds the iframe
+surface. Use `VITE_CLOUD_MODE=false` for a local client.
+
+`clients/app` remains an experimental client with its own account screens and
+i18n. Run `bun run dev` there on port 3001 alongside web on port 3000. Its
+current composition includes web's assistant routes while excluding web's
+account routes. The account screen copies are intentionally independent so
+app changes do not alter the stable web client.
+
 ### Connecting to a backend
 
 The Vite dev server includes a built-in

@@ -94,7 +94,13 @@ export default defineConfig(({ mode }) => {
   const gatewayProxyTarget =
     env.GATEWAY_PROXY_TARGET || "http://localhost:7830";
 
+  const webMode = env.VITE_WEB_MODE || "full";
+  if (webMode !== "full" && webMode !== "assistant") {
+    throw new Error('VITE_WEB_MODE must be "full" or "assistant"');
+  }
+
   return {
+    define: { __INCLUDES_ACCOUNT__: JSON.stringify(webMode === "full") },
     base: "/assistant/",
     plugins: [
       tailwindcss(),

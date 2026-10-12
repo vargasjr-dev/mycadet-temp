@@ -13,6 +13,9 @@ export default defineConfig((env) => {
   const web = webFactory(env);
   return {
     ...web,
+    // App composes its own account routes and tray dialog.
+    define: { ...web.define, __INCLUDES_ACCOUNT__: "false" },
+    server: { ...web.server, port: Number(process.env.PORT || "3001") },
     publicDir: "../web/public",
     resolve: {
       ...web.resolve,

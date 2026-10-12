@@ -939,7 +939,8 @@ jobs:
       - name: Build
         working-directory: clients/web
         env:
-          VITE_PLATFORM_MODE: "false"
+          VITE_CLOUD_MODE: "false"
+          VITE_WEB_MODE: "full"
         run: bun run build
 
       - name: Rewrite package.json for publish
@@ -1126,8 +1127,8 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
         run: |
-          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/app --filter=@mycadet/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/app --filter=@mycadet/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web
           fi
 
       # Installing does not download the Electron binary or build the mac
@@ -1194,7 +1195,8 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          VITE_PLATFORM_MODE: "false"
+          VITE_CLOUD_MODE: "false"
+          VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: production
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           # Environment-scoped secret (pk_live_ on production);

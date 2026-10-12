@@ -68,21 +68,63 @@ function leafRouteComponentName(path: string): string | undefined {
   return leaf?.Component?.name;
 }
 
-describe("account routes", () => {
-  // The account tree lives in @mycadet/app and the desktop shell composes it
-  // into its own root route tree — the web module serves only /assistant.
-  test.each([
-    "/account",
-    "/account/login",
-    "/account/signup",
-    "/account/select-assistant",
-    "/logout",
-  ])("%s falls through to the NotFound splat", (path) => {
-    const matches = matchRoutes(routeTree as never, path) ?? [];
-    expect(matches.at(-1)?.route.path).toBe("*");
-    expect(hasRouteMiddleware(path)).toBe(false);
+if (__INCLUDES_ACCOUNT__) {
+  describe("account route compact-window grouping", () => {
+    // The auth screens that render in the main window opt into the compact
+    // (440×630) window via AccountLayout's sizing hook.
+    test.each([
+      "/account",
+      "/account/login",
+      "/account/signup",
+      "/account/provider/callback",
+      "/account/provider/signup",
+      "/account/password/reset",
+      "/account/password/reset/key/abc123",
+    ])("%s is sized by AccountLayout", (path) => {
+      expect(isUnderComponent(path, "AccountLayout")).toBe(true);
+    });
+
+    // The OAuth completion / loopback pages render inside a popup child window
+    // (or are transient redirects). They must stay OUT of AccountLayout — the
+    // resize IPC targets the main window, so sizing from a popup would shrink
+    // the wrong window and persist `onboardingActive`.
+    test.each([
+      "/account/oauth/popup-complete",
+      "/account/oauth/complete",
+      "/account/oauth/desktop-complete",
+      "/account/cloud-callback",
+      // Assistant selection moved here from /assistant: account-level flows
+      // are shell territory. A standalone screen, not compact auth chrome.
+      "/account/select-assistant",
+    ])("%s is NOT sized by AccountLayout", (path) => {
+      expect(isUnderComponent(path, "AccountLayout")).toBe(false);
+    });
+
+    test("select-assistant moved out of /assistant into /account", () => {
+      // The old path now falls through to the NotFound splat; the new path
+      // keeps the auth contract it inherited from the /assistant subtree.
+      const oldMatches =
+        matchRoutes(routeTree as never, "/assistant/select-assistant") ?? [];
+      expect(oldMatches.at(-1)?.route.path).toBe("*");
+      expect(hasRouteMiddleware("/account/select-assistant")).toBe(true);
+    });
   });
-});
+} else {
+  describe("account routes", () => {
+    // Assistant builds omit account routes.
+    test.each([
+      "/account",
+      "/account/login",
+      "/account/signup",
+      "/account/select-assistant",
+      "/logout",
+    ])("%s falls through to the NotFound splat", (path) => {
+      const matches = matchRoutes(routeTree as never, path) ?? [];
+      expect(matches.at(-1)?.route.path).toBe("*");
+      expect(hasRouteMiddleware(path)).toBe(false);
+    });
+  });
+}
 
 describe("remote web pairing route", () => {
   test("stays outside the auth-protected assistant app tree", () => {

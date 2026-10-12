@@ -152,7 +152,8 @@ jobs:
 
       - name: Build packaged runtime
         env:
-          VITE_PLATFORM_MODE: "false"
+          VITE_CLOUD_MODE: "false"
+          VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: ${{ inputs.environment }}
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

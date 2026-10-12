@@ -24,9 +24,9 @@
 import { spawn } from "node:child_process";
 
 // Edge-proxy origin used by the probe — vel up serves the marketing site
-// at the bare root and reverse-proxies `/assistant/*` to clients/app's Vite,
+// at the bare root and reverse-proxies `/assistant/*` to clients/web's Vite,
 // so we probe the origin and load `/assistant` (the renderer path) when
-// attaching. clients/app's `vite.config.ts` declares `base: "/assistant/"`,
+// attaching. clients/web's `vite.config.ts` declares `base: "/assistant/"`,
 // which is the same path Swift Cadet hits today.
 const VEL_EDGE_PROXY_ORIGIN = "http://localhost:3000";
 const VEL_RENDERER_URL = `${VEL_EDGE_PROXY_ORIGIN}/assistant`;

@@ -471,14 +471,13 @@ const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const REVALIDATE_CACHE_CONTROL = "no-cache";
 
 /**
- * Locate the clients/app source directory for running the Vite dev server
- * (the desktop composition). Only works from a source checkout (not
- * npm-installed).
+ * Locate the clients/web source directory for running the Vite dev server.
+ * Only works from a source checkout (not npm-installed).
  */
-function findAppSourceDir(): string | null {
+function findWebSourceDir(): string | null {
   let dir = import.meta.dir;
   for (let depth = 0; depth < 8; depth++) {
-    const candidate = path.join(dir, "clients", "app", "vite.config.ts");
+    const candidate = path.join(dir, "clients", "web", "vite.config.ts");
     if (existsSync(candidate)) {
       return path.dirname(candidate);
     }
@@ -1323,10 +1322,10 @@ async function runWebInterface(
 
   // Prefer Vite dev server in source checkouts for full local-mode support
   // (HMR, __local endpoints, gateway proxy).
-  const appSourceDir = findAppSourceDir();
-  if (appSourceDir) {
+  const webSourceDir = findWebSourceDir();
+  if (webSourceDir) {
     return runViteDevServer(
-      appSourceDir,
+      webSourceDir,
       flagEnvVars,
       disableCloud,
       openInBrowser,
@@ -1525,7 +1524,7 @@ async function runWebInterface(
 }
 
 async function runViteDevServer(
-  appSourceDir: string,
+  webSourceDir: string,
   flagEnvVars: Record<string, string>,
   disableCloud: boolean,
   openInBrowser: boolean,
@@ -1549,7 +1548,7 @@ async function runViteDevServer(
   }
 
   const child = spawn("bun", ["run", "dev"], {
-    cwd: appSourceDir,
+    cwd: webSourceDir,
     stdio: "inherit",
     windowsHide: true,
     env: {
@@ -1558,6 +1557,7 @@ async function runViteDevServer(
       ...viteFlagVars,
       ...(disableCloud ? { VITE_CADET_DISABLE_CLOUD: "true" } : {}),
       VITE_CLOUD_MODE: "false",
+      VITE_WEB_MODE: "full",
       API_PROXY_TARGET: cloudUrl,
       CADET_WEB_URL: getWebUrl(),
       CADET_CLOUD_URL: cloudUrl,
