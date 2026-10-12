@@ -2,6 +2,8 @@ import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
 
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 
+import { ensureBinaryInstalled } from "../ensure-binary.js";
+
 import { GATEWAY_PORT } from "../constants.js";
 import {
   clearIngressUrl,
@@ -138,18 +140,26 @@ export interface RunCloudflareTunnelOptions {
 export async function runCloudflareTunnel(
   opts: RunCloudflareTunnelOptions = {},
 ): Promise<ProviderTunnelResult> {
-  const version = getCloudflareTunnelVersion();
+  const version = await ensureBinaryInstalled({
+    binary: "cloudflared",
+    purpose: "the cloudflare tunnel",
+    packages: {
+      brew: ["brew", "install", "cloudflare/cloudflare/cloudflared"],
+      winget: [
+        "winget",
+        "install",
+        "--silent",
+        "--accept-package-agreements",
+        "--accept-source-agreements",
+        "Cloudflare.cloudflared",
+      ],
+      choco: ["choco", "install", "-y", "cloudflared"],
+    },
+    manualHint:
+      "Install it (macOS: brew install cloudflare/cloudflare/cloudflared; Linux: https://pkg.cloudflare.com/index.html; Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).",
+    probe: getCloudflareTunnelVersion,
+  });
   if (!version) {
-    console.error("Error: cloudflared is not installed.");
-    console.error("");
-    console.error("Install cloudflared:");
-    console.error("  macOS:   brew install cloudflare/cloudflare/cloudflared");
-    console.error("  Linux:   https://pkg.cloudflare.com/index.html");
-    console.error(
-      "  Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/",
-    );
-    console.error("");
-    console.error("No Cloudflare account is required for quick tunnels.");
     process.exit(1);
   }
 

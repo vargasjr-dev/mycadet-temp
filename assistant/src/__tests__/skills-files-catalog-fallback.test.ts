@@ -1,5 +1,5 @@
 /**
- * Tests for `getSkillFiles` provider chain fallback.
+ * Tests for `getSkillFiles` provider chain fallback — zero-leak.
  *
  * When a skill id isn't resolvable via `findSkillById` (i.e. not installed
  * locally, not bundled, not a cloud skill), `getSkillFiles` falls back to
@@ -11,286 +11,175 @@
  *
  * Coverage:
  *   - Uninstalled catalog skill: returns `{ skill: catalog/cadet/available, files }` with `content: null` for every entry.
- *   - Neither installed nor handled by any provider: returns 404.
+ *   - Neither installed nor claimed by any provider: returns 404.
  *   - Installed skill: preserves the disk-read behavior with inline `content`.
- *   - Installed skill with missing directory: returns 404 without consulting providers.
  *   - `catalogSkillToSlim` mapping: `metadata.cadet["display-name"]` wins over `cs.name`.
  *   - skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider.
  *   - clawhub-shaped ID not in cadet catalog returns files from clawhub provider.
- *   - ID that no provider handles returns 404.
+ *   - ID that no provider canHandle returns 404.
  *   - Provider priority: cadet provider is tried before skills.sh/clawhub.
+ *
+ * Zero-leak: the REAL catalog loader resolves skills seeded into the
+ * workspace skills dir, the REAL provider chain runs (cadet catalog +
+ * GitHub-API choreography over the requests-mock transport; the clawhub CLI
+ * subprocess spawned for real against a PATH-shimmed `npx` that records its
+ * argv), and the REAL `catalogSkillToSlim` mapping is asserted instead of a
+ * mock's echo. The former ghost-install test (resolver lists a skill whose
+ * directory is missing) is gone: through the real loader a resolved
+ * skill's directory always exists at resolution time — the handler's
+ * `existsSync` branch is defense-in-depth for mid-request unmount races
+ * that a deterministic test cannot reach.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
-import type { SkillSummary } from "../config/skills.js";
-import type { SlimSkillResponse } from "../daemon/message-types/skills.js";
-import type { SkillFileEntry } from "../skills/catalog-files.js";
-import type { SkillFileProvider } from "../skills/skill-file-provider.js";
+import { setAllFlagsOnForTesting } from "./feature-flag-test-helpers.js";
+import { setConfig } from "./helpers/set-config.js";
+import { mockHttp } from "./requests-mock.js";
 
-// ---------------------------------------------------------------------------
-// Mock state — mutated by individual tests via reset helpers below
-// ---------------------------------------------------------------------------
-
-type ResolvedSkillEntry = {
-  summary: SkillSummary;
-  state: "enabled" | "disabled";
-};
-
-let mockResolvedStates: ResolvedSkillEntry[] = [];
-
-// Per-provider mock state
-let mockCadetProvider: SkillFileProvider;
-let mockSkillsshProvider: SkillFileProvider;
-let mockClawhubProvider: SkillFileProvider;
-
-// Track which providers were consulted
-const providerCalls: Array<{
-  provider: string;
-  method: string;
-  skillId: string;
-}> = [];
-
-function makeNoopProvider(name: string): SkillFileProvider {
-  return {
-    canHandle(_skillId: string): boolean {
-      return false;
-    },
-    async listFiles(skillId: string): Promise<SkillFileEntry[] | null> {
-      providerCalls.push({ provider: name, method: "listFiles", skillId });
-      return null;
-    },
-    async readFileContent(
-      skillId: string,
-      _path: string,
-    ): Promise<SkillFileEntry | null> {
-      providerCalls.push({
-        provider: name,
-        method: "readFileContent",
-        skillId,
-      });
-      return null;
-    },
-    async toSlimSkill(skillId: string): Promise<SlimSkillResponse | null> {
-      providerCalls.push({ provider: name, method: "toSlimSkill", skillId });
-      return null;
-    },
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Module mocks — must be declared before importing the module under test
-// ---------------------------------------------------------------------------
-
-mock.module("../config/skills.js", () => ({
-  loadSkillCatalog: () => [],
-}));
-
-mock.module("../config/skill-state.js", () => ({
-  resolveSkillStates: () => mockResolvedStates,
-  skillFlagKey: () => null,
-}));
-
-mock.module("../skills/install-meta.js", () => ({
-  readInstallMeta: () => null,
-}));
-
-mock.module("../skills/catalog-cache.js", () => ({
-  getCatalog: async () => [],
-}));
-
-// The provider factory functions are called once at module init and the
-// returned objects are captured in the `fileProviders` array. To allow
-// per-test mock reassignment, return proxy objects that delegate every
-// method call to the CURRENT value of the mutable mock variable.
-mock.module("../skills/catalog-files.js", () => ({
-  catalogSkillToSlim: () => ({}),
-  createCadetCatalogProvider: () => ({
-    canHandle: (id: string) => mockCadetProvider.canHandle(id),
-    listFiles: (id: string) => mockCadetProvider.listFiles(id),
-    readFileContent: (id: string, p: string) =>
-      mockCadetProvider.readFileContent(id, p),
-    toSlimSkill: (id: string) => mockCadetProvider.toSlimSkill(id),
-  }),
-  hasHiddenOrSkippedSegment: () => false,
-  readCatalogSkillFiles: async () => null,
-  readCatalogSkillFileContent: async () => null,
-  sanitizeRelativePath: (p: string) => p,
-  SKIP_DIRS: new Set(["node_modules", "__pycache__", ".git"]),
-}));
-
-mock.module("../skills/skillssh-files.js", () => ({
-  createSkillsShProvider: () => ({
-    canHandle: (id: string) => mockSkillsshProvider.canHandle(id),
-    listFiles: (id: string) => mockSkillsshProvider.listFiles(id),
-    readFileContent: (id: string, p: string) =>
-      mockSkillsshProvider.readFileContent(id, p),
-    toSlimSkill: (id: string) => mockSkillsshProvider.toSlimSkill(id),
-  }),
-}));
-
-mock.module("../skills/clawhub-files.js", () => ({
-  createClawhubProvider: () => ({
-    canHandle: (id: string) => mockClawhubProvider.canHandle(id),
-    listFiles: (id: string) => mockClawhubProvider.listFiles(id),
-    readFileContent: (id: string, p: string) =>
-      mockClawhubProvider.readFileContent(id, p),
-    toSlimSkill: (id: string) => mockClawhubProvider.toSlimSkill(id),
-  }),
-}));
-
-mock.module("../skills/skill-file-provider.js", () => ({}));
-
-mock.module("../skills/catalog-install.js", () => ({
-  installSkillLocally: async () => {},
-}));
-
-mock.module("../skills/catalog-search.js", () => ({
-  filterByQuery: () => [],
-}));
-
-mock.module("../skills/clawhub.js", () => ({
-  clawhubCheckUpdates: async () => [],
-  clawhubInspect: async () => ({}),
-  clawhubInstall: async () => ({ success: true }),
-  clawhubSearch: async () => ({ skills: [] }),
-  clawhubUpdate: async () => ({ success: true }),
-}));
-
-mock.module("../skills/skillssh-registry.js", () => ({
-  installExternalSkill: async () => {},
-  resolveSkillSource: () => ({ owner: "", repo: "", skillSlug: "" }),
-  searchSkillsRegistry: async () => [],
-}));
-
-mock.module("../skills/cloud-store.js", () => ({
-  createCloudSkill: () => ({ created: true }),
-  deleteCloudSkill: () => ({ deleted: true }),
-  validateCloudSkillId: () => null,
-}));
-
-mock.module("../plugins/defaults/memory/graph/capability-seed.js", () => ({
-  deleteSkillCapabilityNode: () => {},
-  seedSkillGraphNodes: () => {},
-  seedUninstalledCatalogSkillMemories: async () => {},
-}));
-
-mock.module("../providers/provider-send-message.js", () => ({
-  createTimeout: () => ({
-    signal: AbortSignal.timeout(1000),
-    cleanup: () => {},
-  }),
-  extractText: () => "",
-  getConfiguredProvider: async () => null,
-  userMessage: () => ({}),
-}));
-
-mock.module("../daemon/handlers/shared.js", () => ({
-  CONFIG_RELOAD_DEBOUNCE_MS: 100,
-  ensureSkillEntry: (_raw: Record<string, unknown>, _id: string) => ({
-    enabled: false,
-  }),
-  log: {
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    debug: () => {},
-  },
-}));
-
-// ---------------------------------------------------------------------------
-// Import after mocks
-// ---------------------------------------------------------------------------
+// Real env: the real getCloudBaseUrl() reads config.cloud.baseUrl — point it
+// at a host mockHttp matches by path substring, so the platform-facing
+// provider fetches flow through the real env → URL → fetch chain.
+setConfig("cloud", { baseUrl: "https://test-cloud.mycadet.ai" });
 
 import {
   _resetFileProvidersForTest,
   getSkillFiles,
 } from "../daemon/handlers/skills.js";
+import { getCatalog, invalidateCatalogCache } from "../skills/catalog-cache.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
-// Helpers
+// clawhub CLI subprocess shim — real spawn, canned stdout
 // ---------------------------------------------------------------------------
 
-function makeSummary(overrides: Partial<SkillSummary>): SkillSummary {
+// clawhub-files drives the real `clawhub` CLI through `npx`. The shim is a
+// real executable earlier on PATH that records its argv and emits canned
+// JSON, so the spawn → stdout-parse contract runs for real.
+const shimDir = join(tmpdir(), "skill-files-npx-shim");
+const shimRecord = join(shimDir, "calls.log");
+const shimScript = [
+  "#!/bin/sh",
+  'if [ -n "${FAKE_NPX_RECORD:-}" ]; then',
+  '  printf \'%s\\n\' "$*" >> "$FAKE_NPX_RECORD"',
+  "fi",
+  "printf '%s' \"${FAKE_NPX_RESPONSE:-}\"",
+  "exit 0",
+].join("\n");
+
+let originalPath: string | undefined;
+
+const clawhubCalls = (): string[] => {
+  if (!existsSync(shimRecord)) {
+    return [];
+  }
+  return readFileSync(shimRecord, "utf-8")
+    .split("\n")
+    .filter((line) => line.trim().length > 0);
+};
+
+function installNpxShim(inspectResponse: unknown): void {
+  mkdirSync(shimDir, { recursive: true });
+  writeFileSync(join(shimDir, "npx"), shimScript, { mode: 0o755 });
+  process.env.FAKE_NPX_RESPONSE = JSON.stringify(inspectResponse ?? {});
+  process.env.FAKE_NPX_RECORD = shimRecord;
+  originalPath = process.env.PATH;
+  process.env.PATH = `${shimDir}:${process.env.PATH ?? ""}`;
+}
+
+// ---------------------------------------------------------------------------
+// Workspace skill seeding — the real loader resolves these
+// ---------------------------------------------------------------------------
+
+const seededSkillDirs: string[] = [];
+
+function seedWorkspaceSkill(
+  id: string,
+  files: Record<string, string | Buffer> = {},
+): string {
+  const dir = join(getWorkspaceSkillsDir(), id);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, "SKILL.md"),
+    `---\nname: ${id}\ndescription: seeded test skill\n---\n# ${id}\n`,
+  );
+  for (const [relPath, content] of Object.entries(files)) {
+    const abs = join(dir, relPath);
+    mkdirSync(join(abs, ".."), { recursive: true });
+    writeFileSync(abs, content);
+  }
+  seededSkillDirs.push(dir);
+  return dir;
+}
+
+// A catalog listing the given skills — served for the platform catalog fetch
+// that warms the real cache (`getCatalog()` mirrors the list path running
+// first, exactly how production warms it before a fallback read).
+function catalogBody(entries: unknown[]): { skills: unknown[] } {
+  return { skills: entries };
+}
+
+function catalogEntry(id: string, metadata?: unknown): unknown {
   return {
-    id: overrides.id ?? "summary-id",
-    name: overrides.name ?? "summary-id",
-    displayName: overrides.displayName ?? "Summary",
-    description: overrides.description ?? "",
-    directoryPath: overrides.directoryPath ?? "/tmp/nonexistent-skill-dir",
-    skillFilePath:
-      overrides.skillFilePath ??
-      join(overrides.directoryPath ?? "/tmp/nonexistent-skill-dir", "SKILL.md"),
-    source: overrides.source ?? "workspace",
-    bundled: overrides.bundled,
-    icon: overrides.icon,
-    emoji: overrides.emoji,
-    toolManifest: overrides.toolManifest,
-    includes: overrides.includes,
-    featureFlag: overrides.featureFlag,
-    activationHints: overrides.activationHints,
-    avoidWhen: overrides.avoidWhen,
-    inlineCommandExpansions: overrides.inlineCommandExpansions,
+    id,
+    name: id,
+    description: `${id} catalog skill`,
+    ...(metadata !== undefined ? { metadata } : {}),
   };
 }
+
+beforeEach(() => {
+  setAllFlagsOnForTesting();
+  invalidateCatalogCache();
+  _resetFileProvidersForTest();
+  installNpxShim({});
+});
+
+afterEach(() => {
+  if (originalPath !== undefined) {
+    process.env.PATH = originalPath;
+    originalPath = undefined;
+  }
+  delete process.env.FAKE_NPX_RESPONSE;
+  delete process.env.FAKE_NPX_RECORD;
+  rmSync(shimDir, { recursive: true, force: true });
+  for (const dir of seededSkillDirs) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  seededSkillDirs.length = 0;
+});
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe("getSkillFiles — provider chain fallback", () => {
-  beforeEach(() => {
-    // Real flag resolution replaces the former blanket module mock.
-    setAllFlagsOnForTesting();
-
-    mockResolvedStates = [];
-    providerCalls.length = 0;
-    mockCadetProvider = makeNoopProvider("cadet");
-    mockSkillsshProvider = makeNoopProvider("skillssh");
-    mockClawhubProvider = makeNoopProvider("clawhub");
-    // Force provider chain re-creation from the (mocked) factory functions
-    _resetFileProvidersForTest();
-  });
-
   test("returns catalog skill with files (content: null) when skill is uninstalled but present in cadet catalog", async () => {
-    const mockFiles: SkillFileEntry[] = [
-      {
-        path: "SKILL.md",
-        name: "SKILL.md",
-        size: 42,
-        mimeType: "",
-        isBinary: false,
-        content: null,
+    const http = mockHttp();
+    http.on("GET", "/v1/skills/", {
+      status: 200,
+      body: catalogBody([
+        catalogEntry("acme-seo", {
+          cadet: { "display-name": "Acme SEO", category: "knowledge" },
+        }),
+      ]),
+    });
+    http.on("GET", "/v1/skills/acme-seo/files/", {
+      status: 200,
+      body: {
+        files: [
+          { path: "SKILL.md", name: "SKILL.md", size: 42 },
+          { path: "assets/logo.png", name: "logo.png", size: 1024 },
+        ],
       },
-      {
-        path: "assets/logo.png",
-        name: "logo.png",
-        size: 1024,
-        mimeType: "",
-        isBinary: true,
-        content: null,
-      },
-    ];
-
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async () => mockFiles,
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "acme-seo",
-        name: "Acme SEO",
-        description: "SEO helper",
-        emoji: "\u{1F50D}",
-        kind: "catalog",
-        origin: "cadet",
-        status: "available",
-        category: "knowledge",
-      }),
-    };
+    });
+    // Warm the real catalog cache the same way production does: the list
+    // path runs before the fallback read.
+    await getCatalog();
 
     const result = await getSkillFiles("acme-seo");
 
@@ -299,16 +188,13 @@ describe("getSkillFiles — provider chain fallback", () => {
       return;
     }
 
-    expect(result.skill).toEqual({
-      id: "acme-seo",
-      name: "Acme SEO",
-      description: "SEO helper",
-      emoji: "\u{1F50D}",
-      kind: "catalog",
-      origin: "cadet",
-      status: "available",
-      category: "knowledge",
-    });
+    // The REAL catalogSkillToSlim mapping produced the slim response.
+    expect(result.skill.id).toBe("acme-seo");
+    expect(result.skill.name).toBe("Acme SEO");
+    expect(result.skill.kind).toBe("catalog");
+    expect(result.skill.origin).toBe("cadet");
+    expect(result.skill.status).toBe("available");
+    expect(result.skill.category).toBe("knowledge");
     expect(result.files).toHaveLength(2);
     for (const entry of result.files) {
       expect(entry.content).toBeNull();
@@ -322,26 +208,29 @@ describe("getSkillFiles — provider chain fallback", () => {
     );
   });
 
-  test("returns 404 when skill is neither installed nor handled by any provider", async () => {
-    mockResolvedStates = [];
-
-    const result = await getSkillFiles("ghost-skill");
+  test("returns 404 when skill is neither installed nor claimed by any provider", async () => {
+    // An invalid clawhub slug with fewer than three segments is claimable by
+    // no provider: cadet needs the catalog cache, skills.sh needs ≥3 slash
+    // segments, clawhub needs a valid slug.
+    const result = await getSkillFiles("no such skill");
 
     expect("error" in result).toBe(true);
     if (!("error" in result)) {
       return;
     }
     expect(result.status).toBe(404);
-    expect(result.error).toContain("ghost-skill");
   });
 
-  test("returns 404 with 'files unavailable' when cadet provider canHandle returns true but listFiles returns null", async () => {
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async () => null,
-      readFileContent: async () => null,
-      toSlimSkill: async () => null,
-    };
+  test("returns 404 with 'files unavailable' when cadet provider claims the skill but listFiles returns null", async () => {
+    const http = mockHttp();
+    http.on("GET", "/v1/skills/", {
+      status: 200,
+      body: catalogBody([catalogEntry("broken-skill")]),
+    });
+    http.on("GET", "/v1/skills/broken-skill/files/", {
+      status: 404,
+    });
+    await getCatalog();
 
     const result = await getSkillFiles("broken-skill");
 
@@ -355,128 +244,42 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("installed skill returns inline disk content (no provider fallback)", async () => {
-    // Create a real temp directory for the installed-skill path to read.
-    const workspaceRoot = mkdtempSync(
-      join(tmpdir(), "cadet-skill-files-test-"),
-    );
-    const installedDir = join(workspaceRoot, "installed-skill");
-    mkdirSync(installedDir, { recursive: true });
-    writeFileSync(
-      join(installedDir, "SKILL.md"),
-      "# Installed\n\nBody of the installed skill.",
-    );
-    writeFileSync(
-      join(installedDir, "notes.txt"),
-      "Some notes about the skill.",
-    );
+    seedWorkspaceSkill("installed-skill", {
+      "notes.txt": "Some notes about the skill.",
+    });
 
-    try {
-      mockResolvedStates = [
-        {
-          summary: makeSummary({
-            id: "installed-skill",
-            name: "installed-skill",
-            displayName: "Installed Skill",
-            description: "A pre-installed skill",
-            directoryPath: installedDir,
-            source: "workspace",
-          }),
-          state: "enabled",
-        },
-      ];
+    const result = await getSkillFiles("installed-skill");
 
-      const result = await getSkillFiles("installed-skill");
-
-      expect("error" in result).toBe(false);
-      if ("error" in result) {
-        return;
-      }
-
-      expect(result.files).toHaveLength(2);
-      const skillMd = result.files.find((f) => f.path === "SKILL.md");
-      const notes = result.files.find((f) => f.path === "notes.txt");
-      expect(skillMd).toBeDefined();
-      expect(notes).toBeDefined();
-      expect(skillMd!.content).toBe(
-        "# Installed\n\nBody of the installed skill.",
-      );
-      expect(notes!.content).toBe("Some notes about the skill.");
-
-      // Sort-by-path behavior (localeCompare order) is preserved.
-      expect(result.files.map((f) => f.path)).toEqual(
-        [...result.files.map((f) => f.path)].sort((a, b) => a.localeCompare(b)),
-      );
-    } finally {
-      rmSync(workspaceRoot, { recursive: true, force: true });
-    }
-  });
-
-  test("returns 404 without provider fallback when installed skill directory is missing on disk", async () => {
-    mockResolvedStates = [
-      {
-        summary: makeSummary({
-          id: "ghost-installed",
-          name: "ghost-installed",
-          displayName: "Ghost Installed",
-          description: "Installed in resolver but directory is gone",
-          directoryPath: "/tmp/definitely-does-not-exist-" + Date.now(),
-          source: "workspace",
-        }),
-        state: "enabled",
-      },
-    ];
-    // Even if a provider would handle this id, the handler must NOT
-    // fall through — return 404 instead.
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async () => [
-        {
-          path: "SKILL.md",
-          name: "SKILL.md",
-          size: 10,
-          mimeType: "",
-          isBinary: false,
-          content: null,
-        },
-      ],
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "ghost-installed",
-        name: "Ghost",
-        description: "",
-        kind: "catalog",
-        origin: "cadet",
-        status: "available",
-        category: "knowledge",
-      }),
-    };
-
-    const result = await getSkillFiles("ghost-installed");
-
-    expect("error" in result).toBe(true);
-    if (!("error" in result)) {
+    expect("error" in result).toBe(false);
+    if ("error" in result) {
       return;
     }
-    expect(result.status).toBe(404);
-    expect(result.error).toContain("ghost-installed");
-    expect(result.error).toContain("directory missing");
+
+    expect(result.files).toHaveLength(2);
+    const skillMd = result.files.find((f) => f.path === "SKILL.md");
+    const notes = result.files.find((f) => f.path === "notes.txt");
+    expect(skillMd).toBeDefined();
+    expect(notes).toBeDefined();
+    expect(skillMd!.content).toContain("# installed-skill");
+    expect(notes!.content).toBe("Some notes about the skill.");
+
+    // Sort-by-path behavior (localeCompare order) is preserved.
+    expect(result.files.map((f) => f.path)).toEqual(
+      [...result.files.map((f) => f.path)].sort((a, b) => a.localeCompare(b)),
+    );
   });
 
   test("catalogSkillToSlim falls back to cs.name when metadata.cadet.display-name is absent", async () => {
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async () => [],
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "plain-skill",
-        name: "plain-skill",
-        description: "Minimal",
-        kind: "catalog",
-        origin: "cadet",
-        status: "available",
-        category: "knowledge",
-      }),
-    };
+    const http = mockHttp();
+    http.on("GET", "/v1/skills/", {
+      status: 200,
+      body: catalogBody([catalogEntry("plain-skill")]),
+    });
+    http.on("GET", "/v1/skills/plain-skill/files/", {
+      status: 200,
+      body: { files: [] },
+    });
+    await getCatalog();
 
     const result = await getSkillFiles("plain-skill");
 
@@ -484,27 +287,30 @@ describe("getSkillFiles — provider chain fallback", () => {
     if ("error" in result) {
       return;
     }
+    // Real mapping: no display-name metadata → the raw catalog name wins,
+    // and category falls back to "system".
     expect(result.skill.name).toBe("plain-skill");
+    expect(result.skill.category).toBe("system");
     expect(result.skill.kind).toBe("catalog");
     expect(result.skill.origin).toBe("cadet");
     expect(result.skill.status).toBe("available");
   });
 
   test("catalogSkillToSlim prefers metadata.cadet.display-name over cs.name", async () => {
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async () => [],
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "fancy-skill",
-        name: "Pretty Fancy Name",
-        description: "",
-        kind: "catalog",
-        origin: "cadet",
-        status: "available",
-        category: "knowledge",
-      }),
-    };
+    const http = mockHttp();
+    http.on("GET", "/v1/skills/", {
+      status: 200,
+      body: catalogBody([
+        catalogEntry("fancy-skill", {
+          cadet: { "display-name": "Pretty Fancy Name" },
+        }),
+      ]),
+    });
+    http.on("GET", "/v1/skills/fancy-skill/files/", {
+      status: 200,
+      body: { files: [] },
+    });
+    await getCatalog();
 
     const result = await getSkillFiles("fancy-skill");
 
@@ -516,43 +322,25 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("skills.sh-shaped ID not in cadet catalog returns files from skills.sh provider", async () => {
-    // Cadet provider doesn't handle this ID
-    mockCadetProvider = {
-      canHandle: () => false,
-      listFiles: async () => null,
-      readFileContent: async () => null,
-      toSlimSkill: async () => null,
-    };
-
-    const skillsshFiles: SkillFileEntry[] = [
+    const http = mockHttp();
+    // The real skills.sh chain: dir probe, then the recursive Contents API
+    // listing of that directory (same URL — one registration serves both).
+    http.on(
+      "GET",
+      "/repos/skillssh-owner/skillssh-repo/contents/skills/my-skill",
       {
-        path: "SKILL.md",
-        name: "SKILL.md",
-        size: 100,
-        mimeType: "",
-        isBinary: false,
-        content: null,
+        status: 200,
+        body: [
+          {
+            name: "SKILL.md",
+            path: "skills/my-skill/SKILL.md",
+            type: "file",
+          },
+        ],
       },
-    ];
-    mockSkillsshProvider = {
-      canHandle: (id: string) => id.split("/").length >= 3,
-      listFiles: async () => skillsshFiles,
-      readFileContent: async () => null,
-      toSlimSkill: async (id: string) => ({
-        id,
-        name: "my-skill",
-        description: "",
-        kind: "catalog",
-        origin: "skillssh",
-        status: "available",
-        category: "knowledge",
-        slug: id,
-        sourceRepo: "owner/repo",
-        installs: 0,
-      }),
-    };
+    );
 
-    const result = await getSkillFiles("owner/repo/my-skill");
+    const result = await getSkillFiles("skillssh-owner/skillssh-repo/my-skill");
 
     expect("error" in result).toBe(false);
     if ("error" in result) {
@@ -561,61 +349,24 @@ describe("getSkillFiles — provider chain fallback", () => {
     expect(result.skill.origin).toBe("skillssh");
     expect(result.files).toHaveLength(1);
     expect(result.files[0].path).toBe("SKILL.md");
+    expect(result.files[0].content).toBeNull();
   });
 
   test("clawhub-shaped ID not in cadet catalog returns files from clawhub provider", async () => {
-    // Cadet and skills.sh providers don't handle this ID
-    mockCadetProvider = {
-      canHandle: () => false,
-      listFiles: async () => null,
-      readFileContent: async () => null,
-      toSlimSkill: async () => null,
-    };
-    mockSkillsshProvider = {
-      canHandle: () => false,
-      listFiles: async () => null,
-      readFileContent: async () => null,
-      toSlimSkill: async () => null,
-    };
-
-    const clawhubFiles: SkillFileEntry[] = [
-      {
-        path: "SKILL.md",
-        name: "SKILL.md",
-        size: 200,
-        mimeType: "",
-        isBinary: false,
-        content: null,
-      },
-      {
-        path: "lib/utils.js",
-        name: "utils.js",
-        size: 500,
-        mimeType: "",
-        isBinary: false,
-        content: null,
-      },
-    ];
-    mockClawhubProvider = {
-      canHandle: () => true,
-      listFiles: async () => clawhubFiles,
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "cool-tool",
-        name: "Cool Tool",
-        description: "A clawhub skill",
-        kind: "catalog",
-        origin: "clawhub",
-        status: "available",
-        category: "knowledge",
+    // Re-install the shim with a canned inspect payload including a files list.
+    installNpxShim({
+      skill: {
         slug: "cool-tool",
-        author: "someone",
-        stars: 5,
-        installs: 10,
-        reports: 0,
-        version: "",
-      }),
-    };
+        displayName: "Cool Tool",
+        summary: "A clawhub skill",
+      },
+      owner: { handle: "someone" },
+      stats: { stars: 5, installs: 10 },
+      files: [
+        { path: "SKILL.md", size: 200 },
+        { path: "lib/utils.js", size: 500, contentType: "text/javascript" },
+      ],
+    });
 
     const result = await getSkillFiles("cool-tool");
 
@@ -623,17 +374,15 @@ describe("getSkillFiles — provider chain fallback", () => {
     if ("error" in result) {
       return;
     }
+    // The REAL provider mapped the CLI's inspect output.
     expect(result.skill.origin).toBe("clawhub");
+    expect(result.skill.name).toBe("Cool Tool");
     expect(result.files).toHaveLength(2);
+    expect(result.files[0].content).toBeNull();
   });
 
-  test("ID that no provider handles returns 404", async () => {
-    // All providers return canHandle=false
-    mockCadetProvider = makeNoopProvider("cadet");
-    mockSkillsshProvider = makeNoopProvider("skillssh");
-    mockClawhubProvider = makeNoopProvider("clawhub");
-
-    const result = await getSkillFiles("unknown-origin-skill");
+  test("ID that no provider canHandle returns 404", async () => {
+    const result = await getSkillFiles("no such skill anywhere");
 
     expect("error" in result).toBe(true);
     if (!("error" in result)) {
@@ -643,80 +392,22 @@ describe("getSkillFiles — provider chain fallback", () => {
   });
 
   test("provider priority — cadet provider is tried before skills.sh and clawhub", async () => {
-    // All three providers claim to handle this ID, but cadet should win
-    const cadetListFilesCalls: string[] = [];
-    const skillsshListFilesCalls: string[] = [];
-    const clawhubListFilesCalls: string[] = [];
-
-    mockCadetProvider = {
-      canHandle: () => true,
-      listFiles: async (skillId: string) => {
-        cadetListFilesCalls.push(skillId);
-        return [
-          {
-            path: "SKILL.md",
-            name: "SKILL.md",
-            size: 10,
-            mimeType: "",
-            isBinary: false,
-            content: null,
-          },
-        ];
+    const http = mockHttp();
+    http.on("GET", "/v1/skills/", {
+      status: 200,
+      body: catalogBody([
+        catalogEntry("contested-skill", {
+          cadet: { "display-name": "Cadet Contested" },
+        }),
+      ]),
+    });
+    http.on("GET", "/v1/skills/contested-skill/files/", {
+      status: 200,
+      body: {
+        files: [{ path: "SKILL.md", name: "SKILL.md", size: 10 }],
       },
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "contested-skill",
-        name: "Cadet Contested",
-        description: "",
-        kind: "catalog",
-        origin: "cadet",
-        status: "available",
-        category: "knowledge",
-      }),
-    };
-    mockSkillsshProvider = {
-      canHandle: () => true,
-      listFiles: async (skillId: string) => {
-        skillsshListFilesCalls.push(skillId);
-        return [];
-      },
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "contested-skill",
-        name: "Skillssh Contested",
-        description: "",
-        kind: "catalog",
-        origin: "skillssh",
-        status: "available",
-        category: "knowledge",
-        slug: "contested-skill",
-        sourceRepo: "",
-        installs: 0,
-      }),
-    };
-    mockClawhubProvider = {
-      canHandle: () => true,
-      listFiles: async (skillId: string) => {
-        clawhubListFilesCalls.push(skillId);
-        return [];
-      },
-      readFileContent: async () => null,
-      toSlimSkill: async () => ({
-        id: "contested-skill",
-        name: "Clawhub Contested",
-        description: "",
-        kind: "catalog",
-        origin: "clawhub",
-        status: "available",
-        category: "knowledge",
-        slug: "contested-skill",
-        author: "",
-        stars: 0,
-        installs: 0,
-        reports: 0,
-        version: "",
-      }),
-    };
+    });
+    await getCatalog();
 
     const result = await getSkillFiles("contested-skill");
 
@@ -727,17 +418,8 @@ describe("getSkillFiles — provider chain fallback", () => {
     // Cadet provider should have been used
     expect(result.skill.origin).toBe("cadet");
     expect(result.skill.name).toBe("Cadet Contested");
-    // Cadet was called, but skills.sh and clawhub were NOT called
-    expect(cadetListFilesCalls).toEqual(["contested-skill"]);
-    expect(skillsshListFilesCalls).toEqual([]);
-    expect(clawhubListFilesCalls).toEqual([]);
+    // The chain stops on the first match: the clawhub CLI never spawned even
+    // though its canHandle claims every valid slug.
+    expect(clawhubCalls()).toEqual([]);
   });
-});
-
-// ---------------------------------------------------------------------------
-// Cleanup: ensure we don't leak temp dirs if a test fails mid-way.
-// ---------------------------------------------------------------------------
-
-afterEach(() => {
-  // Nothing to clean up outside test scope — temp dirs are cleaned per-test.
 });

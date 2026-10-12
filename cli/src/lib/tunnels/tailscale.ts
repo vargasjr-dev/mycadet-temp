@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
 import { GATEWAY_PORT } from "../constants.js";
+import { ensureBinaryInstalled } from "../ensure-binary.js";
 import {
   clearIngressUrl,
   getDefaultWorkspaceDir,
@@ -79,12 +80,12 @@ export interface TailscaleCommandResult {
  */
 export interface TailscaleDeps {
   /** Locate the tailscale CLI; returns the invocable path, null if absent. */
-  findBinary(): string | null;
+  findBinary(): Promise<string | null>;
   /** Run `<bin> <args>` synchronously (spawnSync semantics). */
   run(bin: string, args: string[]): TailscaleCommandResult;
 }
 
-function realFindBinary(): string | null {
+function probeTailscaleBinary(): string | null {
   for (const candidate of getTailscaleBinaryCandidates()) {
     const res = spawnSync(candidate, ["version"], {
       encoding: "utf-8",
@@ -97,6 +98,35 @@ function realFindBinary(): string | null {
     }
   }
   return null;
+}
+
+/**
+ * The real binary finder offers to install tailscale when it is missing
+ * (prompt-install via the shared helper; no-op hint on a non-interactive
+ * terminal) and re-probes after.
+ */
+async function realFindBinary(): Promise<string | null> {
+  const found = probeTailscaleBinary();
+  if (found) return found;
+  await ensureBinaryInstalled({
+    binary: "tailscale",
+    purpose: "the tailscale tunnel",
+    packages: {
+      brew: ["brew", "install", "tailscale"],
+      winget: [
+        "winget",
+        "install",
+        "--silent",
+        "--accept-package-agreements",
+        "--accept-source-agreements",
+        "Tailscale.Tailscale",
+      ],
+      choco: ["choco", "install", "-y", "tailscale"],
+    },
+    manualHint: getTailscaleInstallMessage(),
+    probe: () => probeTailscaleBinary(),
+  });
+  return probeTailscaleBinary();
 }
 
 function realRun(bin: string, args: string[]): TailscaleCommandResult {
@@ -292,7 +322,7 @@ export async function startTailscaleServe(
   opts: RunTailscaleTunnelOptions = {},
   deps: TailscaleDeps = realTailscaleDeps(),
 ): Promise<TailscaleServeInfo> {
-  const binary = deps.findBinary();
+  const binary = await deps.findBinary();
   if (!binary) {
     throw new Error(getTailscaleInstallMessage());
   }

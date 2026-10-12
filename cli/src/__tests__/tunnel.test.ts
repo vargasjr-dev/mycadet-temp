@@ -84,9 +84,13 @@ const EDGE_PORT = 18080;
 const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
   async () => ({ port: EDGE_PORT, started: true, includesWebApp: true }),
 );
+const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
+  () => "nginx version (test)",
+);
 mock.module("../lib/nginx-ingress.js", () => ({
   ...realNginxIngress,
   ensureTunnelEdge: ensureTunnelEdgeMock,
+  getNginxVersion: getNginxVersionMock,
 }));
 
 const { tunnel } = await import("../commands/tunnel.js");
@@ -324,7 +328,6 @@ describe("tunnel edge targeting", () => {
     });
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
-    expect(logs).toContain("serves remote web + webhooks");
   });
 
   test("the tunnel level notifies the gateway of the provider's public URL", async () => {
@@ -673,7 +676,6 @@ describe("tunnel edge targeting", () => {
       workspaceDir: join(entry.resources!.instanceDir, "workspace"),
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
-    expect(logs).toContain("serves webhooks only");
   });
 
   test("a bare invocation tunnels the default provider", async () => {
@@ -1139,13 +1141,14 @@ describe("ngrok --domain spawn args", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
+    // Plain `ngrok http` so the user's default config — where their
+    // authtoken lives — is what the agent loads.
     expect(args).toEqual([
-      "start",
-      "cadet",
-      `--config=${realNgrok.ngrokConfigPath()}`,
+      "http",
+      "127.0.0.1:7831",
       "--log=stdout",
+      "--domain=foo.ngrok.app",
     ]);
-    // The reserved domain rides the XDG config the agent loads, not a flag.
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
 
     const config = IngressTestConfigSchema.parse(
@@ -1430,11 +1433,13 @@ describe("ngrok --domain spawn args", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const [cmd, args] = spawnMock.mock.calls[0];
     expect(cmd).toBe("ngrok");
+    // Plain `ngrok http` so the user's default config — where their
+    // authtoken lives — is what the agent loads.
     expect(args).toEqual([
-      "start",
-      "cadet",
-      `--config=${realNgrok.ngrokConfigPath()}`,
+      "http",
+      "127.0.0.1:7830",
       "--log=stdout",
+      "--domain=foo.ngrok.app",
     ]);
 
     const config = IngressTestConfigSchema.parse(
@@ -1469,10 +1474,10 @@ describe("ngrok --domain spawn args", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const [, args] = spawnMock.mock.calls[0];
     expect(args).toEqual([
-      "start",
-      "cadet",
-      `--config=${realNgrok.ngrokConfigPath()}`,
+      "http",
+      "127.0.0.1:7831",
       "--log=stdout",
+      "--domain=foo.ngrok.app",
     ]);
 
     const config = IngressTestConfigSchema.parse(

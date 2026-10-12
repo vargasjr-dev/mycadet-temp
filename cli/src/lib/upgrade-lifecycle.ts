@@ -17,6 +17,7 @@ import {
   dockerResourceNames,
   GATEWAY_INTERNAL_PORT,
   ASSISTANT_INTERNAL_PORT,
+  pullImage,
   startContainers,
   stopContainers,
 } from "./docker.js";
@@ -40,7 +41,7 @@ import {
   type DockerStatefulSetSpec,
   type ServiceName,
 } from "./statefulset.js";
-import { exec, execOutput } from "./step-runner.js";
+import { execOutput } from "./step-runner.js";
 import { compareVersions, stripVersionPrefix } from "./version-compat.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
@@ -806,7 +807,7 @@ export async function performDockerRollback(
   try {
     for (const [service, image] of pullImages) {
       console.log(`   Pulling ${service}: ${image}`);
-      await exec("docker", ["pull", image]);
+      await pullImage(image);
     }
   } catch (pullErr) {
     const detail = pullErr instanceof Error ? pullErr.message : String(pullErr);

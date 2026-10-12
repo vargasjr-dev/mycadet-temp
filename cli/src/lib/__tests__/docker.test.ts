@@ -8,6 +8,7 @@ import {
   collectWatchTargets,
   dockerResourceNames,
   ensureDockerDaemonRunning,
+  pullImage,
   resolveAvatarDevicePath,
   resolveDockerHatchMode,
   resolveDockerProviderCredentialSetupAction,
@@ -157,6 +158,38 @@ describe("resolveDockerProviderCredentialSetupAction", () => {
         detached: true,
       }),
     ).toBe("skip");
+  });
+
+  test("detached hatch with a pre-collected key configures instead of deferring", () => {
+    expect(
+      resolveDockerProviderCredentialSetupAction({
+        provider: "fireworks",
+        guardianAccessToken: "guardian-token",
+        detached: true,
+        precollectedKey: "fw-key-123",
+      }),
+    ).toBe("configure");
+  });
+
+  test("pre-collected key without a guardian token reports missing-token (no silent defer)", () => {
+    expect(
+      resolveDockerProviderCredentialSetupAction({
+        provider: "fireworks",
+        detached: true,
+        precollectedKey: "fw-key-123",
+      }),
+    ).toBe("missing-token");
+  });
+
+  test("an explicitly skipped key still counts as answered — configure runs and reports the gap", () => {
+    expect(
+      resolveDockerProviderCredentialSetupAction({
+        provider: "fireworks",
+        guardianAccessToken: "guardian-token",
+        detached: true,
+        precollectedKey: "",
+      }),
+    ).toBe("configure");
   });
 });
 
@@ -384,25 +417,48 @@ describe("collectWatchTargets", () => {
 });
 
 /**
- * Build a fake `exec` that records calls and fails the probes named in `fail`.
- * Injected into `ensureDockerDaemonRunning` so these cases need no `mock.module`
- * (which is process-global and would leak across the CLI's single-process test
- * run) and no real Docker/Colima subprocesses.
+ * Build a STATEFUL fake `exec` modeling the Docker daemon + Colima interplay:
+ * `docker info` succeeds only while `daemonUp`; a `colima start` heals the
+ * daemon (unless the fake is told to model the zombie state, where Colima's
+ * state file says "already running, ignoring" but the daemon stays dead —
+ * only the stop → start cycle recovers). Injected into
+ * `ensureDockerDaemonRunning` so these cases need no `mock.module` (which is
+ * process-global and would leak across the CLI's single-process test run) and
+ * no real Docker/Colima subprocesses.
  */
-function fakeExec(fail: { dockerInfo?: boolean; colimaStatus?: boolean }) {
+function fakeExec(
+  opts: {
+    /** Daemon already reachable when the test starts. */
+    daemonUpAtStart?: boolean;
+    /** `colima start` exits nonzero instead of healing. */
+    startFails?: boolean;
+    /** First `colima start` is a zombie no-op that does NOT heal the daemon. */
+    zombieFirstStart?: boolean;
+  } = {},
+) {
   const calls: Array<{ cmd: string; args: string[] }> = [];
+  let daemonUp = opts.daemonUpAtStart ?? false;
+  let starts = 0;
   const exec = async (cmd: string, args: string[] = []): Promise<void> => {
     calls.push({ cmd, args });
-    if (cmd === "docker" && args[0] === "info" && fail.dockerInfo) {
-      throw new Error("Cannot connect to the Docker daemon");
+    if (cmd === "docker" && args[0] === "info") {
+      if (!daemonUp) throw new Error("Cannot connect to the Docker daemon");
+      return;
     }
-    if (cmd === "colima" && args[0] === "status" && fail.colimaStatus) {
-      throw new Error("colima is not running");
+    if (cmd === "colima" && args[0] === "start") {
+      starts++;
+      if (opts.startFails) throw new Error("colima start exited 1");
+      if (!opts.zombieFirstStart || starts > 1) daemonUp = true;
+      return;
+    }
+    if (cmd === "colima" && args[0] === "stop") {
+      daemonUp = false;
+      return;
     }
   };
   const ran = (cmd: string, sub: string): boolean =>
     calls.some((c) => c.cmd === cmd && c.args[0] === sub);
-  return { exec: exec as typeof import("../step-runner.js").exec, ran };
+  return { exec, ran };
 }
 
 describe("ensureDockerDaemonRunning", () => {
@@ -410,30 +466,122 @@ describe("ensureDockerDaemonRunning", () => {
   // Colima, because that switches the active `docker context` and points
   // `docker start` at a VM that never held the instance's containers.
   test("reuses an already-reachable daemon (e.g. Docker Desktop) and never touches Colima", async () => {
-    const { exec, ran } = fakeExec({ dockerInfo: false });
+    const { exec, ran } = fakeExec({ daemonUpAtStart: true });
 
     await ensureDockerDaemonRunning(exec);
 
     expect(ran("docker", "info")).toBe(true);
-    expect(ran("colima", "status")).toBe(false);
     expect(ran("colima", "start")).toBe(false);
+    expect(ran("colima", "stop")).toBe(false);
   });
 
-  test("starts Colima only when no daemon is reachable", async () => {
-    const { exec, ran } = fakeExec({ dockerInfo: true, colimaStatus: true });
+  test("starts Colima when no daemon is reachable and confirms the daemon answered", async () => {
+    const { exec, ran } = fakeExec();
 
-    await ensureDockerDaemonRunning(exec);
+    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
 
     expect(ran("docker", "info")).toBe(true);
     expect(ran("colima", "start")).toBe(true);
+    expect(ran("colima", "stop")).toBe(false);
   });
 
-  test("does not restart Colima when it is already running", async () => {
-    const { exec, ran } = fakeExec({ dockerInfo: true, colimaStatus: false });
+  // Regression (v0.12.8 release feedback): a zombie Colima — stale state file
+  // saying "already running" while the daemon inside is dead — used to sail
+  // through wake (no `colima status` oracle anymore) and leave every later
+  // docker command dying on the unreachable socket.
+  test("recovers a zombie Colima: start no-ops, daemon stays dead → stop --force → start → daemon up", async () => {
+    const { exec, ran } = fakeExec({ zombieFirstStart: true });
 
-    await ensureDockerDaemonRunning(exec);
+    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
 
-    expect(ran("colima", "status")).toBe(true);
-    expect(ran("colima", "start")).toBe(false);
+    expect(ran("colima", "start")).toBe(true);
+    expect(ran("colima", "stop")).toBe(true);
+  });
+
+  test("never deletes the Colima VM — the VM disk holds every image and volume", async () => {
+    const { exec, ran } = fakeExec({ zombieFirstStart: true });
+
+    await ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 });
+
+    expect(ran("colima", "delete")).toBe(false);
+  });
+
+  test("throws an actionable error when even the restart cannot bring the daemon up", () => {
+    // A start that always exits nonzero: the first failure surfaces its
+    // output, the recovery stop+start runs, and the final wait still finds
+    // no daemon → the helper throws instead of letting hatch proceed.
+    const { exec } = fakeExec({ startFails: true });
+    expect(
+      ensureDockerDaemonRunning(exec, { settleTimeoutMs: 0 }),
+    ).rejects.toThrow(/Failed to restart Colima/);
+  });
+});
+
+describe("pullImage", () => {
+  function fakePull(
+    opts: {
+      failFirstPullWith?: string;
+      failAllPullsWith?: string;
+    } = {},
+  ) {
+    const calls: Array<{ cmd: string; args: string[] }> = [];
+    let pulls = 0;
+    const exec = async (cmd: string, args: string[] = []): Promise<void> => {
+      calls.push({ cmd, args });
+      if (cmd === "docker" && args[0] === "pull") {
+        pulls++;
+        if (opts.failAllPullsWith) throw new Error(opts.failAllPullsWith);
+        if (opts.failFirstPullWith && pulls === 1) {
+          throw new Error(opts.failFirstPullWith);
+        }
+      }
+      // `docker logout` (and anything else) succeeds silently.
+    };
+    const ran = (sub: string): boolean =>
+      calls.some((c) => c.cmd === "docker" && c.args[0] === sub);
+    return { exec, ran };
+  }
+
+  test("pulls without touching stored credentials on success", async () => {
+    const { exec, ran } = fakePull();
+
+    await pullImage("mycadet/mycadet-assistant:v1", () => {}, exec);
+
+    expect(ran("pull")).toBe(true);
+    expect(ran("logout")).toBe(false);
+  });
+
+  test("clears stale Docker Hub credentials and retries once on an expired-token error", async () => {
+    const { exec, ran } = fakePull({
+      failFirstPullWith:
+        "Error response from daemon: authentication required - personal access token is expired",
+    });
+
+    await pullImage("mycadet/mycadet-assistant:v1", () => {}, exec);
+
+    expect(ran("logout")).toBe(true);
+  });
+
+  test("wraps the failure with actionable copy when the auth retry also fails", () => {
+    const { exec } = fakePull({
+      failAllPullsWith:
+        "Error response from daemon: authentication required - personal access token is expired",
+    });
+
+    expect(
+      pullImage("mycadet/mycadet-assistant:v1", () => {}, exec),
+    ).rejects.toThrow("Failed to pull mycadet/mycadet-assistant:v1");
+  });
+
+  test("rethrows non-auth pull errors raw and never logs out", () => {
+    const { exec, ran } = fakePull({
+      failAllPullsWith:
+        "Cannot connect to the Docker daemon at unix:///var/run/docker.sock",
+    });
+
+    expect(
+      pullImage("mycadet/mycadet-assistant:v1", () => {}, exec),
+    ).rejects.toThrow("Cannot connect to the Docker daemon");
+    expect(ran("logout")).toBe(false);
   });
 });

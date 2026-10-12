@@ -64,8 +64,54 @@ interface ColWidths {
   info: number;
 }
 
+/**
+ * Terminal display width for table alignment: emoji render two cells wide
+ * (including ZWJ sequences like 🧑‍🚀 and VS16 pairs like ⚠️), while the ZWJ
+ * and variation selectors themselves render zero. `.length` counts UTF-16
+ * units and none of that, which is what broke the STATUS and INFO columns
+ * whenever an emoji appeared in an earlier one.
+ */
+export function displayWidth(s: string): number {
+  const chars = [...s];
+  let width = 0;
+  // A ZWJ joins the previous and next glyphs into ONE grapheme (🧑‍🚀 renders
+  // as a single 2-cell astronaut), so the glyph after a ZWJ adds no width.
+  let joinedByZwj = false;
+  for (let i = 0; i < chars.length; i++) {
+    const cp = chars[i]?.codePointAt(0) ?? 0;
+    // Zero-width: the joiner, the variation selectors, skin-tone modifiers.
+    if (cp === 0x200d) {
+      joinedByZwj = true;
+      continue;
+    }
+    if (cp === 0xfe0e || cp === 0xfe0f) continue;
+    if (cp >= 0x1f3fb && cp <= 0x1f3ff) continue;
+    const next = chars[i + 1]?.codePointAt(0);
+    if (!joinedByZwj) {
+      // A VS16 after a narrow symbol forces emoji presentation — two cells.
+      width += isWideCodePoint(cp) || next === 0xfe0f ? 2 : 1;
+    }
+    joinedByZwj = false;
+  }
+  return width;
+}
+
+function isWideCodePoint(cp: number): boolean {
+  return (
+    (cp >= 0x1100 && cp <= 0x115f) || // Hangul Jamo
+    (cp >= 0x2e80 && cp <= 0x303e) || // CJK radicals and punctuation
+    (cp >= 0x3040 && cp <= 0x318f) || // Hiragana, Katakana, bopomofo
+    (cp >= 0xac00 && cp <= 0xd7a3) || // Hangul syllables
+    (cp >= 0xf900 && cp <= 0xfaff) || // CJK compatibility ideographs
+    (cp >= 0xfe30 && cp <= 0xfe6f) || // CJK compatibility forms
+    (cp >= 0xff00 && cp <= 0xff60) || // fullwidth forms
+    (cp >= 0xffe0 && cp <= 0xffe6) ||
+    cp >= 0x1f000 // emoji and symbol blocks (🟢, 🚀, 🧑, …)
+  );
+}
+
 function pad(s: string, w: number): string {
-  return s + " ".repeat(Math.max(0, w - s.length));
+  return s + " ".repeat(Math.max(0, w - displayWidth(s)));
 }
 
 function computeColWidths(
@@ -79,14 +125,17 @@ function computeColWidths(
 ): ColWidths {
   const all = [headers, ...rows];
   return {
-    name: Math.max(...all.map((r) => r.name.length)),
-    type: Math.max(...all.map((r) => r.type.length)),
-    status: Math.max(...all.map((r) => r.status.length), "checking...".length),
-    info: Math.max(...all.map((r) => r.info.length)),
+    name: Math.max(...all.map((r) => displayWidth(r.name))),
+    type: Math.max(...all.map((r) => displayWidth(r.type))),
+    status: Math.max(
+      ...all.map((r) => displayWidth(r.status)),
+      "checking...".length,
+    ),
+    info: Math.max(...all.map((r) => displayWidth(r.info))),
   };
 }
 
-function formatRow(r: TableRow, colWidths: ColWidths): string {
+export function formatRow(r: TableRow, colWidths: ColWidths): string {
   return `  ${pad(r.name, colWidths.name)}  ${pad(r.type, colWidths.type)}  ${pad(r.status, colWidths.status)}  ${r.info}`;
 }
 

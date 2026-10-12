@@ -12,6 +12,7 @@ import {
   AUTO_PROFILE_KEY,
   OS_BETA_PROFILE_KEY,
 } from "./default-profile-names.js";
+import { getIsCloud } from "./env-registry.js";
 import {
   getConfigReadOnly,
   invalidateConfigCache,
@@ -97,9 +98,7 @@ export function reconcileFlagGatedProfiles(): boolean {
     : [];
   llm.profileOrder = profileOrder;
 
-  const isCloud =
-    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
-  const isByokMode = !isCloud;
+  const isCloud = getIsCloud();
 
   let changed = false;
   for (const gated of GATED_PROFILES) {
@@ -123,7 +122,7 @@ export function reconcileFlagGatedProfiles(): boolean {
 
     const order = llm.profileOrder as string[];
     const profileChanged = enabled
-      ? enableProfile(gated, profiles, order, previous, isByokMode)
+      ? enableProfile(gated, profiles, order, previous, !isCloud)
       : disableProfile(gated.key, llm, profiles, order, previous);
     if (profileChanged) {
       changed = true;
