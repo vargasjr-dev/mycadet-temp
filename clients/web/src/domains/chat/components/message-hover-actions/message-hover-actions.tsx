@@ -16,7 +16,6 @@ import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { Button } from "@mycadet/design-library/components/button";
 
 import { ExternalAnchor } from "@/components/external-anchor";
-import { useProfileLabel } from "@/assistant/use-profile-label";
 import { useMessageReadAloudStore } from "@/domains/chat/message-read-aloud-store";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { messageCopyText } from "@/domains/chat/utils/message-plain-text";
