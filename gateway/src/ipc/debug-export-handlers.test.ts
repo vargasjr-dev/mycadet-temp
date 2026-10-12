@@ -41,6 +41,7 @@ function makeConfig(logDir: string | undefined): GatewayConfig {
     runtimeProxyRequireAuth: true,
     runtimeTimeoutMs: 1000,
     trustProxy: false,
+    trustedPeerCidrs: [],
   } as GatewayConfig;
 }
 

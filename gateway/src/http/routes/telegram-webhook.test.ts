@@ -73,6 +73,7 @@ const baseConfig: GatewayConfig = {
   runtimeProxyRequireAuth: true,
   runtimeTimeoutMs: 30000,
   trustProxy: false,
+  trustedPeerCidrs: [],
 };
 
 function makeCallbackQueryBody(data: string, updateId = 200) {

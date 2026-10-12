@@ -1304,10 +1304,9 @@ async function spawnBackgroundWebInterface(
 export function buildWebInterfaceConfig(opts: {
   webUrl: string;
   cloudUrl: string;
-  disableCloud: boolean;
 }): Record<string, unknown> {
-  const { webUrl, cloudUrl, disableCloud } = opts;
-  return { webUrl, cloudUrl, disableCloud };
+  const { webUrl, cloudUrl } = opts;
+  return { webUrl, cloudUrl };
 }
 
 async function runWebInterface(
@@ -1349,9 +1348,7 @@ async function runWebInterface(
   const webUrl = getWebUrl();
   const safeJson = (v: unknown) =>
     JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
-  const configJson = safeJson(
-    buildWebInterfaceConfig({ webUrl, cloudUrl, disableCloud }),
-  );
+  const configJson = safeJson(buildWebInterfaceConfig({ webUrl, cloudUrl }));
   const hasOverrides = Object.keys(parsedFlagOverrides).length > 0;
   const flagOverridesSnippet = hasOverrides
     ? `;window.__CADET_FLAG_OVERRIDES__=${safeJson(parsedFlagOverrides)}`

@@ -330,10 +330,6 @@ const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   cloudUrl: resolvedConfig.cloudUrl,
-  disableCloud:
-    ["true", "1"].includes(
-      (process.env.CADET_DISABLE_CLOUD ?? "").toLowerCase(),
-    ) || undefined,
   deviceId: getDeviceId(),
 }));
 

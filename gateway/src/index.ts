@@ -19,6 +19,7 @@ import { validateEdgeToken, mintServiceToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { AuthFallbackReporter } from "./auth-fallback-reporter.js";
 import { loopbackFallbackCountTracker } from "./http/middleware/auth.js";
+import { setTrustedPeerCidrs } from "./http/loopback-guard.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 import { FeatureFlagWatcher } from "./feature-flag-watcher.js";
@@ -419,6 +420,7 @@ const INBOUND_DEDUP_CLEANUP_INTERVAL_MS = 60 * 60 * 1_000;
 async function main() {
   const config = loadConfig();
   initLogger(config.logFile);
+  setTrustedPeerCidrs(config.trustedPeerCidrs);
 
   log.info("Starting Cadet Gateway...");
 

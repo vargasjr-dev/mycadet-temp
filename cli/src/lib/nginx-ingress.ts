@@ -177,8 +177,6 @@ function remoteWebIngressConfig(
   return {
     remote: EDGE_SERVED_REMOTE,
     apiBaseUrl: "/v1",
-    cloudDisabled: true,
-    disableCloud: true,
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
@@ -191,7 +189,7 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 9;
+export const EDGE_TEMPLATE_VERSION = 10;
 
 /**
  * Stable fingerprint of the SPA config injected into the served index and

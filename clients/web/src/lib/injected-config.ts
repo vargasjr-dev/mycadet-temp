@@ -9,7 +9,6 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  * re-declaring per-file object types.
  */
 export const InjectedConfigSchema = z.object({
-  disableCloud: z.boolean().optional(),
   remote: z.enum(["local", "docker", "custom", "cloud"]).optional(),
   cloudUrl: z.string().optional(),
   /** Serving assistant's display name (remote-web ingress configs only). */

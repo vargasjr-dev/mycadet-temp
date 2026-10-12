@@ -92,6 +92,7 @@ const baseConfig: GatewayConfig = {
   runtimeProxyRequireAuth: true,
   runtimeTimeoutMs: 30000,
   trustProxy: false,
+  trustedPeerCidrs: [],
 };
 
 /** Create mock caches for the WhatsApp webhook handler. */

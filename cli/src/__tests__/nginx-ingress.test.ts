@@ -160,7 +160,6 @@ describe("buildIngressNginxConfig", () => {
       config: {
         remote: "docker",
         apiBaseUrl: "/v1",
-        cloudDisabled: true,
       },
     },
   });
@@ -330,7 +329,7 @@ describe("buildIngressNginxConfig", () => {
     expect(remoteConf).toContain("default_type application/json;");
     expect(remoteConf).toContain('add_header Cache-Control "no-store";');
     expect(remoteConf).toContain(
-      'return 200 "{\\"remote\\":\\"docker\\",\\"apiBaseUrl\\":\\"/v1\\",\\"cloudDisabled\\":true,\\"disableCloud\\":true}";',
+      'return 200 "{\\"remote\\":\\"docker\\",\\"apiBaseUrl\\":\\"/v1\\"}";',
     );
     expect(remoteConf).not.toContain("assistantId");
   });
@@ -347,7 +346,7 @@ describe("buildIngressNginxConfig", () => {
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"cloudDisabled\\":true,\\"disableCloud\\":true,\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
     );
   });
 
@@ -449,14 +448,13 @@ describe("buildRemoteWebIndexHtml", () => {
     const result = buildRemoteWebIndexHtml(html, {
       remote: "docker",
       apiBaseUrl: "/v1",
-      disableCloud: true,
     });
 
     expect(result).toContain(
       'window.__CADET_CONFIG__={"webUrl":"https://mycadet.ai"}',
     );
     expect(result).toContain(
-      'window.__CADET_CONFIG__={"remote":"docker","apiBaseUrl":"/v1","disableCloud":true}',
+      'window.__CADET_CONFIG__={"remote":"docker","apiBaseUrl":"/v1"}',
     );
     expect(result.indexOf('"webUrl"')).toBeLessThan(
       result.indexOf('"docker"'),
@@ -864,8 +862,6 @@ function spaConfigHash(
         config: {
           remote: "custom",
           apiBaseUrl: "/v1",
-          cloudDisabled: true,
-          disableCloud: true,
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
@@ -1354,8 +1350,6 @@ describe("startRemoteWebIngress", () => {
           config: {
             remote: "custom",
             apiBaseUrl: "/v1",
-            cloudDisabled: true,
-            disableCloud: true,
             hubUrl: PRODUCTION_HUB_URL,
           },
         }),

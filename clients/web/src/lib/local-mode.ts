@@ -168,11 +168,6 @@ export function isLocalClient(): boolean {
 }
 
 export function isCloudDisabled(): boolean {
-  const config = readInjectedConfig();
-  if (config.disableCloud != null) {
-    return !!config.disableCloud;
-  }
-
   const raw = import.meta.env.VITE_CADET_DISABLE_CLOUD;
   if (raw) {
     const v = raw.toLowerCase();

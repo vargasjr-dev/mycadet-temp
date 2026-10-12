@@ -339,8 +339,8 @@ type RouteGuardStep = (
 const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
   waitForSession,
   requirePostCheckoutProvisioning,
-  allowGatewayAuth,
   requireRemoteGatewayPairing,
+  allowGatewayAuth,
   requireAuth,
   enforceModeBoundary,
   allowSetupRoutes,

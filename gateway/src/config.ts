@@ -38,6 +38,13 @@ export type GatewayConfig = {
   runtimeTimeoutMs: number;
   /** When true, trust X-Forwarded-For for client IP resolution (set when behind a reverse proxy). */
   trustProxy: boolean;
+  /**
+   * Peer CIDR ranges that count as "the local machine" for loopback-only
+   * endpoints (docker instance-network subnets, where published-port NAT
+   * rewrites host-originated connections to the bridge address). Env-only:
+   * `GATEWAY_TRUSTED_PEER_CIDRS`, comma-separated IPv4 CIDRs.
+   */
+  trustedPeerCidrs: string[];
 };
 
 type RoutingEntry = {
@@ -160,6 +167,18 @@ export function loadConfig(): GatewayConfig {
       ? process.env.GATEWAY_TRUST_PROXY === "true" ||
         process.env.GATEWAY_TRUST_PROXY === "1"
       : gw.trustProxy === true || gw.trustProxy === "true";
+
+  // Peers whose address counts as "the local machine" for loopback-only
+  // endpoints, beyond the loopback interface itself. Comma-separated IPv4
+  // CIDRs. The CLI stamps the docker instance network's subnet here for
+  // containerized gateways, where published-port NAT rewrites every
+  // host-originated connection to the bridge address — a strictly-loopback
+  // check can never pass for a genuinely local caller. Env-only on purpose:
+  // nothing can read this from a workspace config file to widen the boundary.
+  const trustedPeerCidrs = (process.env.GATEWAY_TRUSTED_PEER_CIDRS ?? "")
+    .split(",")
+    .map((cidr) => cidr.trim())
+    .filter((cidr) => cidr.length > 0);
   const runtimeTimeoutMs =
     parsePositiveInteger(
       process.env.RUNTIME_TIMEOUT_MS,
@@ -226,5 +245,6 @@ export function loadConfig(): GatewayConfig {
     runtimeProxyRequireAuth,
     runtimeTimeoutMs,
     trustProxy,
+    trustedPeerCidrs,
   };
 }

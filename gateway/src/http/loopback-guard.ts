@@ -9,11 +9,41 @@
  */
 
 import { getLogger } from "../logger.js";
-import { isLoopbackAddress } from "../util/is-loopback-address.js";
+import {
+  isLoopbackAddress,
+  isTrustedLocalPeer,
+} from "../util/is-loopback-address.js";
 import { TUNNEL_FORWARDED_HEADER } from "../tunnel/bridge-utils.js";
 import { requestArrivedViaEdgeProxy } from "./edge-forwarded-header.js";
 
 const log = getLogger("loopback-guard");
+
+/**
+ * Deployment-trusted peer CIDRs, installed once at startup from
+ * `GATEWAY_TRUSTED_PEER_CIDRS` (see `setTrustedPeerCidrs`). Empty by default,
+ * which keeps every peer check strictly loopback — the containerized-gateway
+ * case opts in via env.
+ */
+let trustedPeerCidrs: readonly string[] = [];
+
+/**
+ * Install the deployment's trusted peer CIDRs. Called from `main()` after
+ * `loadConfig()`; must run before the server starts accepting requests.
+ */
+export function setTrustedPeerCidrs(cidrs: readonly string[]): void {
+  trustedPeerCidrs = [...cidrs];
+  if (trustedPeerCidrs.length > 0) {
+    log.info(
+      { cidrs: trustedPeerCidrs },
+      "Loopback-only endpoints accept trusted-CIDR peers",
+    );
+  }
+}
+
+/** The installed trusted peer CIDRs (for route handlers outside this module). */
+export function getTrustedPeerCidrs(): readonly string[] {
+  return trustedPeerCidrs;
+}
 
 /** JSON error response in the shared `{ error: { code, message } }` shape. */
 export function errorResponse(
@@ -98,7 +128,7 @@ export function enforceLoopbackOnly(
     return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
   }
 
-  if (!clientIp || !isLoopbackAddress(clientIp)) {
+  if (!clientIp || !isTrustedLocalPeer(clientIp, trustedPeerCidrs)) {
     auditDeny(req, clientIp, auditTag, "non_loopback_peer");
     return errorResponse("FORBIDDEN", "endpoint is local-only", 403);
   }

@@ -122,6 +122,7 @@ function makeConfig(): GatewayConfig {
     runtimeProxyRequireAuth: false,
     runtimeTimeoutMs: 30000,
     trustProxy: false,
+    trustedPeerCidrs: [],
   };
 }
 
