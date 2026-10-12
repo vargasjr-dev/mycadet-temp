@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - "release/v*"
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +25,7 @@ jobs:
       chrome_extension_changed: ${{ steps.detect-extension-changes.outputs.changed }}
     permissions:
       contents: read
+      actions: write # cancel-run API (Cancel run if release already published)
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -44,6 +48,33 @@ jobs:
             exit 1
           fi
           echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cancel run if release already published
+        # Pushes to release/v$VERSION after the production release has been cut
+        # (typically manual merge-back fixups when merge-release-branch fails)
+        # otherwise kick off a duplicate production run. workflow_dispatch is
+        # left untouched because that path is always intentional (e.g. retrying
+        # a failed publish step on an already-shipped version).
+        if: ${{ github.event_name == 'push' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_VERSION="${{ steps.extract.outputs.base_version }}"
+          HTTP_STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/v$BASE_VERSION")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "::warning::GitHub Release v$BASE_VERSION is already published. Cancelling this run to avoid a duplicate production run. Use workflow_dispatch if you need to retry a published version."
+            curl -sSL -X POST \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel" > /dev/null
+            # Wait for the cancellation to land. If it doesn't, fall through and
+            # fail-fast so downstream jobs don't run.
+            sleep 60
+            exit 1
+          fi
 
       - name: Compute final version
         id: finalize

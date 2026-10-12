@@ -19,8 +19,8 @@ on:
           - minor
           - major
           # hotfix: patch bump cut from the latest *release tag's* commit
-          # (not main HEAD), committed with [skip ci] so no staging release runs
-          # until hotfixes are manually cherry-picked onto the branch.
+          # (not main HEAD), committed with [skip ci] so no production release
+          # runs until hotfixes are manually cherry-picked onto the branch.
           - hotfix
 
 concurrency:
@@ -31,6 +31,7 @@ jobs:
   schedule-guard:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    if: github.actor == 'dvargasfuertes'
     outputs:
       should-run: ${{ steps.check.outputs.should-run }}
     steps:
@@ -117,7 +118,7 @@ jobs:
 
           # A hotfix is a patch release cut from the latest release tag's commit
           # rather than from main HEAD, and committed with [skip ci] so the push
-          # doesn't kick off a staging release — the branch is meant to receive
+          # doesn't kick off a production release — the branch is meant to receive
           # manually cherry-picked fixes first. patch/minor/major all cut from
           # main HEAD and run CI as usual (base-ref empty, skip-ci false).
           if [ "$BUMP" = "hotfix" ]; then
@@ -238,7 +239,7 @@ jobs:
           cd assistant && bun run generate:openapi && cd ..
 
           # Hotfix commits carry [skip ci] so pushing the branch doesn't trigger
-          # a staging release run — the branch is cut quietly and only releases
+          # a production release run — the branch is cut quietly and only releases
           # once fixes have been cherry-picked and CI is run intentionally.
           COMMIT_MSG="Release v$VERSION"
           if [ "$SKIP_CI" = "true" ]; then
