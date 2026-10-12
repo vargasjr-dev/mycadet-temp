@@ -1,5 +1,5 @@
 {
-  "name": "default-discord",
+  "name": "discord",
   "version": "1.0.0",
   "description": "Connect Cadet to Discord: your assistant joins your server and answers mentions and DMs.",
   "private": true,
