@@ -289,14 +289,7 @@ export const defaultCloudHostedPlugin: Plugin = {
   },
 };
 
-/**
- * `discord` — the Discord channel plugin. Phase-1 skeleton of the
- * gateway→plugin migration: it ships the manifest plus no-op `init`/`shutdown`
- * hooks so the lifecycle is populated and the manifest addressable; the real
- * channel behavior (in-process Discord gateway dial + event fan-out, outbound
- * delivery through the messaging provider registry) lands in later phases,
- * replacing the gateway's /deliver/discord round-trip.
- */
+/** `discord` — Phase-1 skeleton of the gateway→plugin migration: manifest plus no-op init/shutdown hooks; channel behavior lands in later phases. */
 export const defaultDiscordPlugin: Plugin = {
   manifest: {
     name: discordPkg.name,
