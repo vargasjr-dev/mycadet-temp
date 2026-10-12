@@ -6,7 +6,7 @@ import {
   onboardingCompletedMiddleware,
 } from "@/lib/onboarding-middleware";
 import { RootLayout } from "@/root-layout";
-import { AccountLayout } from "@mycadet/app/domains/account/account-layout";
+import { accountRoute } from "@mycadet/app/domains/account/account-route";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
 import { ConversationRedirect } from "@/domains/chat/conversation-redirect";
@@ -34,22 +34,6 @@ import { ActiveAssistantGate } from "@/components/layout/active-assistant-gate";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { isCadetCloudRemote } from "@/lib/local-mode";
 import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
-
-/**
- * Redirects legacy `/account/oauth/desktop-complete` to the canonical
- * `/account/oauth/complete`, preserving all query parameters. Older macOS
- * and iOS Capacitor builds have the old path baked in.
- */
-function OAuthDesktopCompleteRedirect() {
-  const [searchParams] = useSearchParams();
-  const qs = searchParams.toString();
-  return (
-    <Navigate
-      to={`${routes.account.oauth.complete}${qs ? `?${qs}` : ""}`}
-      replace
-    />
-  );
-}
 
 function McpSettingsRedirect() {
   return <Navigate to={`${routes.settings.integrations}?tab=mcp`} replace />;
@@ -132,150 +116,12 @@ export function getRouterBasename(): string | undefined {
 // (e.g. "the OAuth popup pages are NOT under AccountLayout") must run against
 // these raw definitions.
 export const routeTree = [
-  // Account routes — standalone auth pages, no app chrome.
-  // Lazy-loaded: only needed for unauthenticated flows.
-  // Desktop-shell territory: the served platform build drops the subtree
-  // entirely (`__INCLUDES_ACCOUNT__` is a vite define literal) so the
-  // iframed assistant surface neither ships nor reaches account flows.
-  ...(__INCLUDES_ACCOUNT__
-    ? [
-  {
-    path: "/account",
-    ErrorBoundary: RouteErrorBoundary,
-    HydrateFallback: RootHydrateFallback,
-    children: [
-      // Pathless wrapper so lazy-chunk failures render the chunk-fail
-      // variant of `RouteErrorBoundary` (inline copy + Reload button)
-      // rather than the full-page variant inherited from the top.
-      {
-        ErrorBoundary: RouteErrorBoundary,
-        children: [
-          // Auth screens that render in the MAIN window. AccountLayout sizes
-          // it compact (440×630) for these, matching onboarding.
-          {
-            Component: AccountLayout,
-            children: [
-              {
-                index: true,
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/account-page").then(
-                      (m) => m.AccountPage,
-                    ),
-                },
-              },
-              {
-                path: "login",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/login-page").then(
-                      (m) => m.LoginPage,
-                    ),
-                },
-              },
-              {
-                path: "signup",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/signup-page").then(
-                      (m) => m.SignupPage,
-                    ),
-                },
-              },
-              {
-                path: "provider/callback",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/provider-callback-page").then(
-                      (m) => m.ProviderCallbackPage,
-                    ),
-                },
-              },
-              {
-                path: "provider/signup",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/provider-signup-page").then(
-                      (m) => m.ProviderSignupPage,
-                    ),
-                },
-              },
-              {
-                path: "password/reset",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/password-reset-page").then(
-                      (m) => m.PasswordResetPage,
-                    ),
-                },
-              },
-              {
-                path: "password/reset/key/:key",
-                lazy: {
-                  Component: () =>
-                    import("@mycadet/app/domains/account/pages/password-reset-page").then(
-                      (m) => m.PasswordResetPage,
-                    ),
-                },
-              },
-            ],
-          },
-          // OAuth completion / loopback machinery. These render inside the
-          // OAuth popup child window (or are transient redirects), NOT the
-          // main window — so they're deliberately OUTSIDE AccountLayout and
-          // never mount the sizing hook. The resize IPC targets the
-          // module-scoped main window, so sizing from a popup would shrink
-          // the wrong window. See `use-onboarding-window-size`.
-          {
-            path: "oauth/popup-complete",
-            lazy: {
-              Component: () =>
-                import("@mycadet/app/domains/account/pages/oauth-popup-complete-page").then(
-                  (m) => m.OAuthPopupCompletePage,
-                ),
-            },
-          },
-          {
-            path: "oauth/complete",
-            lazy: {
-              Component: () =>
-                import("@mycadet/app/domains/account/pages/oauth-complete-page").then(
-                  (m) => m.OAuthCompletePage,
-                ),
-            },
-          },
-          {
-            path: "oauth/desktop-complete",
-            Component: OAuthDesktopCompleteRedirect,
-          },
-          {
-            path: "cloud-callback",
-            lazy: {
-              Component: () =>
-                import("@mycadet/app/domains/account/pages/cloud-loopback-page").then(
-                  (m) => m.CloudLoopbackPage,
-                ),
-            },
-          },
-          // Assistant selection: which assistant this device talks to. Was
-          // /assistant/select-assistant; account-level flows are shell
-          // territory, so it lives under /account now.
-          {
-            path: "select-assistant",
-            middleware: [authMiddleware],
-            lazy: {
-              Component: () =>
-                import("@/domains/onboarding/pages/select-assistant-screen").then(
-                  (m) => m.SelectAssistantScreen,
-                ),
-            },
-          },
-        ],
-      },
-    ],
-  },
-    ]
-    : []),
+  // Account routes — standalone auth pages, no app chrome. The subtree
+  // (and every account page it lazy-loads) lives in @mycadet/app; the
+  // gate is a vite define literal so cloud-served builds fold the dead
+  // branch and tree-shake the account chunks out of the artifact
+  // entirely.
+  ...(__INCLUDES_ACCOUNT__ ? [accountRoute] : []),
 
   // Logout — standalone page, no app chrome
   {
@@ -284,7 +130,9 @@ export const routeTree = [
     HydrateFallback: RootHydrateFallback,
     lazy: {
       Component: () =>
-        import("@mycadet/app/domains/account/pages/logout-page").then((m) => m.LogoutPage),
+        import("@mycadet/app/domains/account/pages/logout-page").then(
+          (m) => m.LogoutPage,
+        ),
     },
   },
 
