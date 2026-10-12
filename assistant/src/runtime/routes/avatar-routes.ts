@@ -6,7 +6,6 @@ import {
   AVATAR_TRAITS_FILENAME,
   normalizeAvatarAccentHex,
 } from "@mycadet/avatar-manifest";
-import {} from "@mycadet/service-contracts/client-metadata";
 import { z } from "zod";
 
 import { backfillAccent } from "../../avatar/accent-backfill.js";

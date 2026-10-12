@@ -1,16 +1,15 @@
-import { existsSync } from "node:fs";
-import { Database } from "bun:sqlite";
+import { existsSync, unlinkSync } from "node:fs";
 
 import { getTelemetryDbPath } from "../../util/telemetry-db-path.js";
-import { type DrizzleDb, getTelemetrySqlite } from "../db-connection.js";
+import { closeTelemetryDb, type DrizzleDb } from "../db-connection.js";
 
 /**
- * Drop every table on the dedicated telemetry database
- * (`assistant-telemetry.db`).
+ * Delete the dedicated telemetry database (`assistant-telemetry.db`, plus its
+ * `-wal` and `-shm` siblings).
  *
  * The usage-telemetry pipeline (reporter, event sources, outbox, traces, and
  * every store that fed it) is gone — nothing reads or writes this database
- * anymore, so the tables it held are dead weight:
+ * anymore. It held:
  *
  *   - `watchdog_events` (migration 301)
  *   - `config_setting_events` (325)
@@ -21,35 +20,32 @@ import { type DrizzleDb, getTelemetrySqlite } from "../db-connection.js";
  *   - `skill_loaded_events` (moved here by 332)
  *   - `telemetry_events` — the generic outbox (333)
  *
- * Skipped entirely on a fresh install (no telemetry DB file): there is nothing
- * to drop and opening the file would recreate it. The (now empty) file itself
- * is left in place — nothing opens it after this migration, so it is inert.
+ * Deleting the FILES rather than DROP TABLE: a dropped table leaves its
+ * payloads recoverable in the file's freelist and WAL pages, and this
+ * database's last contents include the consented turn traces — unlinking is
+ * what actually destroys them on disk.
+ *
+ * Skipped entirely on a fresh install (no telemetry DB file): there is
+ * nothing to delete. The live connection is closed first so platforms that
+ * lock open files can complete the unlink; a failed unlink is logged and
+ * leaves the file in place, where it is inert — nothing opens it after this
+ * migration (the export route's checkpoint list no longer includes it).
  *
  * The `mainDb` parameter is accepted to satisfy the migration-step signature but
  * is not used — this migration operates exclusively on the telemetry DB.
  */
 export function migrateDropTelemetryTables(_mainDb: DrizzleDb): void {
-  if (!existsSync(getTelemetryDbPath())) {
-    return;
-  }
-  let raw: Database | null = getTelemetrySqlite();
-  if (!raw) {
-    // The dedicated connection failed to open (logged by openDedicatedDb).
-    // Fall back to opening the file directly so the migration still runs —
-    // the singleton will pick it up on a later access. This mirrors the
-    // fail-soft pattern of the other dedicated-DB migrations.
-    raw = new Database(getTelemetryDbPath());
-  }
-  for (const table of [
-    "telemetry_events",
-    "flush_checkpoints",
-    "config_setting_events",
-    "onboarding_events",
-    "auth_fallback_events",
-    "lifecycle_events",
-    "skill_loaded_events",
-    "watchdog_events",
-  ]) {
-    raw.exec(`DROP TABLE IF EXISTS ${table}`);
+  closeTelemetryDb();
+  const base = getTelemetryDbPath();
+  for (const file of [base, `${base}-wal`, `${base}-shm`]) {
+    try {
+      if (existsSync(file)) {
+        unlinkSync(file);
+      }
+    } catch (error) {
+      console.warn(
+        `[migrate-387] could not delete ${file}: ${error instanceof Error ? error.message : String(error)} — leaving the inert file in place.`,
+      );
+    }
   }
 }

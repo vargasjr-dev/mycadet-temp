@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, rmSync, unlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -14,8 +20,12 @@ import { migrateDropTelemetryTables } from "../387-drop-telemetry-tables.js";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");
-  sqlite.exec("PRAGMA journal_mode=WAL");
   return drizzle(sqlite, { schema });
+}
+
+function seededFiles(): string[] {
+  const base = getTelemetryDbPath();
+  return [base, `${base}-wal`, `${base}-shm`];
 }
 
 function seedTelemetryDb(): void {
@@ -31,18 +41,17 @@ function seedTelemetryDb(): void {
     CREATE TABLE IF NOT EXISTS flush_checkpoints (
       key TEXT PRIMARY KEY, value TEXT NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS watchdog_events (
-      id TEXT PRIMARY KEY, created_at INTEGER NOT NULL, payload TEXT NOT NULL
-    );
   `);
   raw.close();
 }
 
 describe("migrateDropTelemetryTables", () => {
   beforeEach(() => {
-    // Never let one case's seeded file leak into the next.
-    if (existsSync(getTelemetryDbPath())) {
-      unlinkSync(getTelemetryDbPath());
+    // Never let one case's seeded files leak into the next.
+    for (const file of seededFiles()) {
+      if (existsSync(file)) {
+        unlinkSync(file);
+      }
     }
   });
 
@@ -52,24 +61,19 @@ describe("migrateDropTelemetryTables", () => {
     expect(existsSync(getTelemetryDbPath())).toBe(false);
   });
 
-  test("drops the telemetry tables", () => {
+  test("deletes the telemetry database file and its -wal/-shm siblings", () => {
     seedTelemetryDb();
+    // Siblings as sqlite leaves them after a WAL-mode session — the migration
+    // must sweep all three, since a DROP-less delete that only removed the
+    // base file would still leave trace payloads in the WAL.
+    writeFileSync(`${getTelemetryDbPath()}-wal`, "wal-bytes");
+    writeFileSync(`${getTelemetryDbPath()}-shm`, "shm-bytes");
 
     const db = createTestDb();
     migrateDropTelemetryTables(db);
 
-    const check = new Database(getTelemetryDbPath());
-    try {
-      const tables = (
-        check
-          .prepare(
-            `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`,
-          )
-          .all() as Array<{ name: string }>
-      ).map((r) => r.name);
-      expect(tables).toEqual([]);
-    } finally {
-      check.close();
+    for (const file of seededFiles()) {
+      expect(existsSync(file)).toBe(false);
     }
   });
 });

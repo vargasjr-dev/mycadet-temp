@@ -323,3 +323,13 @@ export function resetDb(): void {
   clearStoredDb("memory");
   clearStoredDb("telemetry");
 }
+
+/**
+ * Close only the telemetry connection. Migration 387 deletes the telemetry
+ * database file outright; closing its handle first lets that unlink succeed
+ * on platforms that lock open files, without disturbing the other dedicated
+ * connections the way the broader `resetDb()` would.
+ */
+export function closeTelemetryDb(): void {
+  clearStoredDb("telemetry");
+}

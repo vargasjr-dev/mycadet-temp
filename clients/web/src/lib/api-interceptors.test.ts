@@ -125,20 +125,6 @@ mock.module(
   }),
 );
 
-// Post-resume request counter, stubbed so a test can make it throw and prove
-// the interceptor still returns its request. `isResumeWindowOpen` defaults to
-// true so counting is exercised; a test flips it to pin the idle fast path.
-let noteDaemonApiRequestImpl: (url: string) => void = () => {};
-let resumeWindowOpen = true;
-const noteDaemonApiRequestMock = mock((url: string) => {
-  noteDaemonApiRequestImpl(url);
-});
-const isResumeWindowOpenMock = mock(() => resumeWindowOpen);
-// `installResumeRequestCounter` is stubbed for surface parity only. The module
-// under test calls it at module scope, and ESM imports are hoisted above these
-// `mock.module` calls, so that one call already ran against the real
-// implementation before the stub took over. It subscribes to the bus and
-// nothing here publishes to it.
 import {
   resetAssistantRequestActivity,
   useAssistantRequestActivity,

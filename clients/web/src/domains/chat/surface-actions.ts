@@ -9,7 +9,6 @@
 import { t } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
-import {} from "@/domains/onboarding/first-run-scope";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { patchTranscriptMessages } from "@/domains/chat/transcript/patch-transcript-messages";
 import { useStreamStore } from "@/domains/chat/stream-store";
