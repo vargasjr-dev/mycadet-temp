@@ -138,8 +138,7 @@ export async function takeSample(
         }
       : null,
     activeConversations: readActiveConversations(),
-    // Timestamped at the scan, not the tick start: the disk read above can
-    // take seconds, and the CPU rate needs the counters' real interval.
+    // Timestamped at the process scan so CPU rates use the real interval.
     processes:
       processUsage?.sample(Date.now(), readDaemonHeartbeat(now)?.pid ?? null) ??
       null,
@@ -269,9 +268,7 @@ export function startResourceSampler(
   const processUsage = createProcessUsageTracker();
   let lastOomSweepAt = 0;
 
-  // Skip ticks while a sample is in flight: the disk measurement can take
-  // seconds (du over the workspace), and overlapping ticks would all delta
-  // against the same stale prevSample and land in one burst.
+  // Skip overlapping samples so deltas always use the previous completed sample.
   let sampleInFlight = false;
   const tick = async () => {
     if (sampleInFlight) {
