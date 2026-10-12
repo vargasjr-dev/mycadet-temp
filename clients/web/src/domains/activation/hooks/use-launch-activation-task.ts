@@ -74,10 +74,6 @@ import {
   sendBackgroundPrompt,
 } from "@/lib/background-conversation";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import {
-  captureActivationTelemetryContext,
-  emitActivationEvent,
-} from "@/utils/activation-telemetry";
 import { extractErrorMessage } from "@/utils/api-errors";
 
 import { readActivationAssistantName, resolveActivationTask } from "../catalog";
@@ -363,9 +359,6 @@ export function useLaunchActivationTask(
       // field, so the turn is typed engagement and activation analytics has to
       // count it. Only the catalog prompt is scripted.
       const scripted = !override;
-      // Read before the first await, and handed to every event this launch
-      // emits, so a switch mid-launch cannot refile it.
-      const telemetryContext = captureActivationTelemetryContext(listId);
 
       // The row is already working. Launching again would open a second
       // conversation for one task and leave the daemon two rows to mark done.
@@ -457,11 +450,6 @@ export function useLaunchActivationTask(
           });
         }
 
-        emitActivationEvent(
-          "activation_task_started",
-          { taskId },
-          telemetryContext,
-        );
         return settle({ ok: true, conversationId });
       } finally {
         pending.delete(taskId);

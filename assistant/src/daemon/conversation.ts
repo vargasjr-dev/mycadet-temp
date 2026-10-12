@@ -1167,12 +1167,10 @@ export class Conversation {
 
   setOnboardingContext(ctx: OnboardingContext): void {
     this.onboardingContext = ctx;
-    // Reseed BOOTSTRAP.md and mark the activation session at the earliest point
-    // the conversation knows its bootstrap selection — before the first turn's
-    // tool resolution, which `buildSystemPrompt` is too late for. See
-    // `applyBootstrapTemplate`.
+    // Reseed BOOTSTRAP.md from the requested onboarding template at the
+    // earliest point the conversation knows its bootstrap selection.
     if (ctx.bootstrapTemplate) {
-      applyBootstrapTemplate(ctx.bootstrapTemplate, this.conversationId);
+      applyBootstrapTemplate(ctx.bootstrapTemplate);
     }
   }
 

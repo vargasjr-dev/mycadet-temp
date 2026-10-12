@@ -63,14 +63,10 @@ stubModule(
   { useIsNativeAndroid: () => nativeAndroidRef.value },
 );
 
-stubModule(
-  "@/hooks/use-cloud-gate",
-  await import("@/hooks/use-cloud-gate"),
-  {
-    useCloudGate: () => "full",
-    useActiveAssistantIsCloudHosted: () => true,
-  },
-);
+stubModule("@/hooks/use-cloud-gate", await import("@/hooks/use-cloud-gate"), {
+  useCloudGate: () => "full",
+  useActiveAssistantIsCloudHosted: () => true,
+});
 
 // Whether the org store can supply the `Cadet-Organization-Id` header, which
 // is the half of the billing gate a test can switch off from here.
@@ -313,23 +309,6 @@ stubModule(
   },
 );
 
-// The funnel emitter posts to the telemetry ingest, which has nowhere to go
-// in a test process. What the menu owns is that opening the list emits the
-// event at all, so the emitter is captured rather than run.
-//
-// `use-launch-activation-task.test.tsx` asserts on the same emitter, so this
-// one has to be put back when the file is done with it.
-const activationEvents: string[] = [];
-stubModule(
-  "@/utils/activation-telemetry",
-  await import("@/utils/activation-telemetry"),
-  {
-    emitActivationEvent: (event: string) => {
-      activationEvents.push(event);
-    },
-  },
-);
-
 stubModule(
   "@/domains/chat/components/credits-card",
   await import("@/domains/chat/components/credits-card"),
@@ -400,7 +379,6 @@ function enableActivationList(arm = "smb"): void {
 
 beforeEach(() => {
   navigateArgs = [];
-  activationEvents.length = 0;
   activationProgressRef.data = undefined;
   setActivationArm("off");
   useAssistantIdentityStore.getState().clearIdentity();
@@ -705,7 +683,6 @@ describe("PreferencesMenu Inspiration List", () => {
     });
 
     expect(navigateArgs).toEqual([routes.activationList]);
-    expect(activationEvents).toEqual(["activation_list_opened"]);
     expect(screen.queryByTestId("preferences-usage")).toBeNull();
   });
 
@@ -723,7 +700,6 @@ describe("PreferencesMenu Inspiration List", () => {
     await openMenu();
 
     expect(screen.queryByText("Inspiration List")).toBeNull();
-    expect(activationEvents).toEqual([]);
   });
 
   // The daemon freezes a list on the first write and the arm can be
@@ -745,8 +721,6 @@ describe("PreferencesMenu Inspiration List", () => {
       fireEvent.click(screen.getByText("Inspiration List"));
       await Promise.resolve();
     });
-
-    expect(activationEvents).toEqual(["activation_list_opened"]);
   });
 
   test("sits above Share Feedback, as Figma orders the menu", async () => {

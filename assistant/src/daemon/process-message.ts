@@ -29,13 +29,13 @@ import {
   setConversationOriginInterfaceIfUnset,
 } from "../persistence/conversation-crud.js";
 import { updateMetaFile } from "../persistence/conversation-disk-view.js";
-import { broadcastMessage } from "../runtime/assistant-event-hub.js";
-import { DAEMON_INTERNAL_ASSISTANT_ID } from "../runtime/assistant-scope.js";
-import { publishConversationMessagesChanged } from "../runtime/sync/resource-sync-events.js";
 import {
   readTurnFailure,
   type TurnFailure,
-} from "../telemetry/turn-outcome.js";
+} from "../persistence/turn-outcome.js";
+import { broadcastMessage } from "../runtime/assistant-event-hub.js";
+import { DAEMON_INTERNAL_ASSISTANT_ID } from "../runtime/assistant-scope.js";
+import { publishConversationMessagesChanged } from "../runtime/sync/resource-sync-events.js";
 import { getLogger } from "../util/logger.js";
 import type { Conversation } from "./conversation.js";
 import {

@@ -21,7 +21,6 @@ import { cn, Typography } from "@mycadet/design-library";
 import { ChatPill } from "@/components/chat-pill";
 import { MidlineDot } from "@/components/midline-dot";
 import { useTranslation } from "@/i18n";
-import { emitActivationEvent } from "@/utils/activation-telemetry";
 import { publicAsset } from "@/utils/public-asset";
 
 import { useActivationUiStore } from "../activation-ui-store";
@@ -114,7 +113,6 @@ export function ActivationSuggestionsPillHost(): ReactNode {
       done={doneStarterCount(progress, listId)}
       total={getActivationListIds(listId).starters.length}
       onClick={() => {
-        emitActivationEvent("activation_pill_clicked");
         openModal();
       }}
     />

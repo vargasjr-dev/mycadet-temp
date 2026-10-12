@@ -14,7 +14,7 @@ import { normalizeSSEPayload } from "@/lib/streaming/sse-payload";
 import { toError } from "@/utils/to-error";
 
 import { getReconnectCursor } from "@/lib/streaming/reconnect-cursor";
-import { getClientRegistrationHeaders } from "@/lib/telemetry/client-identity";
+import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import {
   type SseClientEndReason,
   endSseClient,

@@ -107,7 +107,6 @@ import { ROUTES as TELEGRAM_ROUTES } from "./integrations/telegram.js";
 import { ROUTES as TWILIO_ROUTES } from "./integrations/twilio.js";
 import { ROUTES as VERCEL_ROUTES } from "./integrations/vercel.js";
 import { ROUTES as INTERNAL_OAUTH_ROUTES } from "./internal-oauth-routes.js";
-import { ROUTES as INTERNAL_TELEMETRY_ROUTES } from "./internal-telemetry-routes.js";
 import { ROUTES as INTERNAL_TWILIO_ROUTES } from "./internal-twilio-routes.js";
 import { ROUTES as LIFECYCLE_ROUTES } from "./lifecycle-routes.js";
 import { ROUTES as LIVE_VOICE_ROUTES } from "./live-voice-routes.js";
@@ -153,7 +152,6 @@ import { ROUTES as SUBAGENT_ROUTES } from "./subagents-routes.js";
 import { ROUTES as SUGGEST_TRUST_RULE_ROUTES } from "./suggest-trust-rule-routes.js";
 import { ROUTES as SURFACE_ACTION_ROUTES } from "./surface-action-routes.js";
 import { ROUTES as SURFACE_CONTENT_ROUTES } from "./surface-content-routes.js";
-import { ROUTES as TELEMETRY_ROUTES } from "./telemetry-routes.js";
 import { ROUTES as THEME_ROUTES } from "./theme-routes.js";
 import { ROUTES as TRUST_RULES_ROUTES } from "./trust-rules-routes.js";
 import { ROUTES as TTS_ROUTES } from "./tts-routes.js";
@@ -255,7 +253,6 @@ export const ROUTES: RouteDefinition[] = [
   ...INFERENCE_SEND_ROUTES,
   ...INGRESS_STATUS_ROUTES,
   ...INTERNAL_OAUTH_ROUTES,
-  ...INTERNAL_TELEMETRY_ROUTES,
   ...MCP_AUTH_ROUTES,
   ...OAUTH_CONNECT_ROUTES,
   ...INTERNAL_TWILIO_ROUTES,
@@ -315,7 +312,6 @@ export const ROUTES: RouteDefinition[] = [
   ...SURFACE_CONTENT_ROUTES,
   ...TELEGRAM_ROUTES,
   ...TWILIO_ROUTES,
-  ...TELEMETRY_ROUTES,
   ...THEME_ROUTES,
   ...TRUST_RULES_ROUTES,
   ...TTS_ROUTES,

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { DesktopAppPlatform } from "@/runtime/desktop-app-platform";
-import { emitNativeAppNudgeEvent } from "@/utils/native-app-nudge-telemetry";
 import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 import {
   getLocalBool,
@@ -40,10 +39,7 @@ function writeDesktopAppBannerDismissed(): void {
 }
 
 export function readDesktopAppAssistantTurnsSeen(): number {
-  return Math.max(
-    0,
-    getLocalNumber(KEY_DESKTOP_APP_ASSISTANT_TURNS_SEEN, 0),
-  );
+  return Math.max(0, getLocalNumber(KEY_DESKTOP_APP_ASSISTANT_TURNS_SEEN, 0));
 }
 
 export function incrementDesktopAppAssistantTurnsSeen(delta = 1): void {
@@ -101,14 +97,12 @@ export function useDesktopAppNudgeState(platform: DesktopAppPlatform): {
   }, [firstSeenAt, ageEligible]);
 
   const handleDownload = useCallback(() => {
-    emitNativeAppNudgeEvent("click", "banner", platform);
     openDesktopAppDownload();
     writeDesktopAppDownloaded();
     setDownloaded(true);
   }, [platform]);
 
   const handleBannerDismiss = useCallback(() => {
-    emitNativeAppNudgeEvent("dismiss", "banner", platform);
     writeDesktopAppBannerDismissed();
     setBannerDismissed(true);
   }, [platform]);

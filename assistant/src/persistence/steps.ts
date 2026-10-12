@@ -497,6 +497,7 @@ import { migrateNormalizeOpencodeHostConnections } from "./migrations/383-normal
 import { migrateAddDocumentRevision } from "./migrations/384-add-document-revision.js";
 import { migrateCreateDocumentRevisions } from "./migrations/385-create-document-revisions.js";
 import { migrateConversationsLastReopenedAt } from "./migrations/386-conversations-last-reopened-at.js";
+import { migrateDropTelemetryTables } from "./migrations/387-drop-telemetry-tables.js";
 import type { MigrationStep } from "./migrations/run-migrations.js";
 
 export const migrationSteps: MigrationStep[] = [
@@ -1667,4 +1668,5 @@ export const migrationSteps: MigrationStep[] = [
   migrateAddDocumentRevision,
   migrateCreateDocumentRevisions,
   migrateConversationsLastReopenedAt,
+  migrateDropTelemetryTables,
 ];

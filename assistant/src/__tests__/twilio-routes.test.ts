@@ -364,7 +364,6 @@ function createTestSession(
 ) {
   ensureConversation(convId);
   const session = createCallSession({
-    direction: "inbound",
     conversationId: convId,
     provider: "twilio",
     fromNumber: "+14155550111",

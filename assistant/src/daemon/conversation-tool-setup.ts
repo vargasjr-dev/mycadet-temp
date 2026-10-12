@@ -30,7 +30,6 @@ import {
 } from "../persistence/conversation-tool-surface.js";
 import { getBindingByConversation } from "../persistence/external-conversation-store.js";
 import { getAllDefaultPluginNames } from "../plugins/defaults/main.js";
-import { isActivationSession } from "../plugins/defaults/memory/activation-session-store.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import type { Message, ToolDefinition } from "../providers/types.js";
 import { registerConversationSender } from "../tools/browser/browser-screencast.js";
@@ -64,7 +63,6 @@ import {
   type ToolContext,
   type ToolExecutionResult,
 } from "../tools/types.js";
-import { injectActivationMomentParam } from "../tools/ui-surface/channel-variants.js";
 import { loadWorkspaceTools } from "../tools/workspace-tools/loader.js";
 import {
   resolveUsageAttribution,
@@ -1198,14 +1196,6 @@ export function createResolveToolsCallback(
           : definition,
       );
     }
-    // Activation-rail conversations carry the optional `activation_moment`
-    // telemetry param on ui_show. The marker is written before the first
-    // tool resolution (see `applyBootstrapTemplate` in system-prompt.ts), so
-    // the projected schema is stable for the conversation's lifetime.
-    if (isActivationSession(ctx.conversationId)) {
-      allBaseDefs = injectActivationMomentParam(allBaseDefs);
-    }
-
     const effectivePreactivated = [
       ...DEFAULT_PREACTIVATED_SKILL_IDS,
       ...(ctx.preactivatedSkillIds ?? []),
@@ -1220,19 +1210,6 @@ export function createResolveToolsCallback(
       // Scope plugin-contributed skills to the conversation's per-chat plugin
       // selection (null = no restriction).
       effectiveEnabledPluginSet,
-      // skill_loaded telemetry context — resolved per turn so attribution
-      // reflects the call site/profile the current turn actually runs on.
-      telemetry:
-        ctx.conversationId !== undefined
-          ? {
-              conversationId: ctx.conversationId,
-              attribution: resolveConversationAttribution({
-                conversationId: ctx.conversationId,
-                currentCallSite: ctx.currentCallSite,
-                currentTurnOverrideProfile: ctx.currentTurnOverrideProfile,
-              }),
-            }
-          : undefined,
     });
     const turnAllowed = new Set(allBaseDefs.map((d) => d.name));
     for (const name of projection.allowedToolNames) {

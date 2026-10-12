@@ -9,7 +9,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import {
   getRecentInvocations,
   rotateToolInvocations,
-} from "../telemetry/tool-usage-store.js";
+} from "../persistence/tool-usage-store.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 
 // ---------------------------------------------------------------------------

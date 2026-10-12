@@ -20,7 +20,6 @@ import {
   removeLocalSetting,
   setLocalSetting,
 } from "@/utils/local-settings";
-import { readAnalyticsConsent } from "@/lib/telemetry/consent";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 
 // ---------------------------------------------------------------------------
@@ -188,19 +187,6 @@ export function readDiagnosticsConsentCurrent(): boolean {
  */
 export function readConsentHydrated(): boolean {
   return useOnboardingStore.getState().consentHydrated;
-}
-
-/**
- * SSR-safe, non-hook gate for telemetry emitters.
- *
- * Thin wrapper over the shared `readAnalyticsConsent()` so the onboarding
- * funnel and the intelligence domain's Memory telemetry gate on the exact
- * same decision: a local explicit opt-out wins (its server write may be in
- * flight); otherwise the server-computed effective verdict decides, with the
- * opt-out default applying before the first sync.
- */
-export function isAnalyticsEnabled(): boolean {
-  return readAnalyticsConsent();
 }
 
 /**

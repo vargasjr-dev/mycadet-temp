@@ -13,14 +13,14 @@ import {
 } from "../permissions/checker.js";
 import { PermissionPrompter } from "../permissions/prompter.js";
 import {
+  recordToolError,
+  recordToolExecuted,
+} from "../persistence/tool-audit.js";
+import {
   runInPluginContext,
   runOutsidePluginContext,
 } from "../plugins/plugin-execution-context.js";
 import { TokenExpiredError } from "../security/token-manager.js";
-import {
-  recordToolError,
-  recordToolExecuted,
-} from "../telemetry/tool-audit.js";
 import { PermissionDeniedError, ToolError } from "../util/errors.js";
 import { pathExists, safeStatSync } from "../util/fs.js";
 import { truncateForLog } from "../util/logger.js";

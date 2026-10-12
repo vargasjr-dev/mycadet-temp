@@ -87,9 +87,7 @@ const mockAuthState: {
 // `refreshSession`. Defaults to already-settled; a test swaps in a pending
 // promise to model the fire-and-forget probe still being in flight.
 let whenCloudSessionSettledImpl: () => Promise<void> = async () => {};
-const whenCloudSessionSettledMock = mock(() =>
-  whenCloudSessionSettledImpl(),
-);
+const whenCloudSessionSettledMock = mock(() => whenCloudSessionSettledImpl());
 
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
@@ -141,13 +139,6 @@ const isResumeWindowOpenMock = mock(() => resumeWindowOpen);
 // `mock.module` calls, so that one call already ran against the real
 // implementation before the stub took over. It subscribes to the bus and
 // nothing here publishes to it.
-mock.module("@/lib/telemetry/resume-request-counter", () => ({
-  __resetResumeRequestCounterForTests: () => {},
-  installResumeRequestCounter: () => {},
-  isResumeWindowOpen: isResumeWindowOpenMock,
-  noteDaemonApiRequest: noteDaemonApiRequestMock,
-}));
-
 import {
   resetAssistantRequestActivity,
   useAssistantRequestActivity,
@@ -177,7 +168,7 @@ import {
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
 import { useOrganizationStore } from "@/stores/organization-store";
 
@@ -2704,132 +2695,6 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 // ---------------------------------------------------------------------------
 // Post-resume request counting
 // ---------------------------------------------------------------------------
-
-describe("api-interceptors / post-resume request counting", () => {
-  beforeEach(() => {
-    noteDaemonApiRequestMock.mockClear();
-    isResumeWindowOpenMock.mockClear();
-    noteDaemonApiRequestImpl = () => {};
-    resumeWindowOpen = true;
-  });
-
-  afterEach(() => {
-    noteDaemonApiRequestImpl = () => {};
-    resumeWindowOpen = true;
-    setSelfHostedConnection(null);
-    window.__CADET_CONFIG__ = undefined;
-    isLocalClientMock.mockImplementation(() => !process.env.VITE_CLOUD_MODE);
-    isCloudDisabledMock.mockImplementation(() => false);
-  });
-
-  test("notes daemon requests", async () => {
-    const url = "https://platform.test/v1/assistants/a1/conversations";
-    await daemonRequestInterceptor(new Request(url));
-    expect(noteDaemonApiRequestMock).toHaveBeenCalledTimes(1);
-    expect(noteDaemonApiRequestMock.mock.calls.at(-1)?.[0]).toBe(url);
-  });
-
-  test("does not note platform requests", async () => {
-    await requestInterceptor(new Request("https://platform.test/v1/probe"));
-    expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
-  });
-
-  test("notes daemon routes issued through the cloud client", async () => {
-    // `subscribeEvents` opens the SSE stream through the cloud client, so
-    // the reopen in a resume burst is only counted if the cloud chain
-    // counts its daemon-bound paths.
-    const url = `https://platform.test/v1/assistants/${SELF_HOSTED_ID}/events/`;
-    await requestInterceptor(new Request(url));
-    expect(noteDaemonApiRequestMock).toHaveBeenCalledTimes(1);
-    expect(noteDaemonApiRequestMock.mock.calls.at(-1)?.[0]).toBe(url);
-  });
-
-  test("notes a rewritten platform request exactly once", async () => {
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    const output = await requestInterceptor(
-      new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`),
-    );
-    expect(new URL(output.url).origin).toBe(INGRESS);
-    expect(noteDaemonApiRequestMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("does not note platform-owned assistant routes", async () => {
-    await requestInterceptor(
-      new Request(
-        `https://platform.test/v1/assistants/${SELF_HOSTED_ID}/maintenance-mode/`,
-      ),
-    );
-    expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
-  });
-
-  test("does not count when no resume window is open", async () => {
-    resumeWindowOpen = false;
-    await daemonRequestInterceptor(
-      new Request("https://platform.test/v1/assistants/a1/conversations"),
-    );
-    await requestInterceptor(
-      new Request(
-        `https://platform.test/v1/assistants/${SELF_HOSTED_ID}/events/`,
-      ),
-    );
-
-    expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
-  });
-
-  test("does not count a cloud request the features gate aborts", async () => {
-    isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => true);
-    // No ingress registered, so the daemon-bound path is not rewritten and the
-    // gate downstream aborts it. An aborted request never reaches the network.
-    const input = new Request(
-      `https://platform.test/v1/assistants/${SELF_HOSTED_ID}/conversations/`,
-    );
-
-    const output = await requestInterceptor(input);
-
-    expect(platformFeaturesGate(output).signal.aborted).toBe(true);
-    expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
-  });
-
-  test("does not count a cloud request aborted in remote-gateway mode", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    const input = new Request(
-      `${window.location.origin}/v1/assistants/${SELF_HOSTED_ID}/conversations/`,
-    );
-
-    const output = await requestInterceptor(input);
-
-    expect(platformFeaturesGate(output).signal.aborted).toBe(true);
-    expect(noteDaemonApiRequestMock).not.toHaveBeenCalled();
-  });
-
-  test("counts a gate-passing platform request exactly once", async () => {
-    isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => true);
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    const url = `https://platform.test${RUNTIME_PROXIED_PATH}`;
-
-    const output = await requestInterceptor(new Request(url));
-
-    expect(platformFeaturesGate(output).signal.aborted).toBe(false);
-    expect(noteDaemonApiRequestMock).toHaveBeenCalledTimes(1);
-    expect(noteDaemonApiRequestMock.mock.calls.at(-1)?.[0]).toBe(url);
-  });
-
-  test("a throwing counter leaves the request path intact", async () => {
-    noteDaemonApiRequestImpl = () => {
-      throw new Error("counter down");
-    };
-    const input = new Request(
-      "https://platform.test/v1/assistants/a1/messages",
-    );
-
-    const output = await daemonRequestInterceptor(input);
-
-    expect(output.url).toBe(input.url);
-    expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
-  });
-});
 
 describe("daemon request activity", () => {
   beforeEach(() => {

@@ -2,36 +2,21 @@
  * Standalone entry point for the resource monitor as its own OS process.
  *
  * Spawned at every daemon startup (and on demand by `assistant monitoring
- * start`). Loads config, starts the sampling loop and the non-turn telemetry
- * reporter, writes a PID file, and stays alive until SIGTERM/SIGINT.
+ * start`). Loads config, starts the sampling loop, writes a PID file, and
+ * stays alive until SIGTERM/SIGINT.
  *
  * Running as a separate process — off the assistant's main event loop — is the
- * whole point: the sampler keeps recording during a main-thread freeze, its
- * on-disk ring buffer survives the OOM SIGKILL that resets all in-VM state,
- * and telemetry keeps flushing while the daemon is busy or stalled.
- * Periodic workspace git auto-commits also run here so large `git add` /
- * `git commit` work cannot stall the daemon event loop.
+ * whole point: the sampler keeps recording during a main-thread freeze, and
+ * its on-disk ring buffer survives the OOM SIGKILL that resets all in-VM
+ * state. Periodic workspace git auto-commits also run here so large `git add`
+ * / `git commit` work cannot stall the daemon event loop.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import { startConsentRefresh } from "../cloud/consent-cache.js";
-import { rehydrateCloudCredentials } from "../config/cloud-rehydration.js";
 import { getConfig } from "../config/loader.js";
 import { resetDb } from "../persistence/db-connection.js";
 import { disableStreamSeqStamping } from "../runtime/assistant-stream-state.js";
-import {
-  startConfigSnapshotReporter,
-  stopConfigSnapshotReporter,
-} from "../telemetry/config-setting-snapshot.js";
-import {
-  startMemoryTierReporter,
-  stopMemoryTierReporter,
-} from "../telemetry/memory-tier-reporter.js";
-import {
-  startMonitorUsageTelemetryReporter,
-  stopUsageTelemetryReporter,
-} from "../telemetry/usage-telemetry-reporter.js";
 import { getLogger } from "../util/logger.js";
 import {
   getMonitoringDataDir,
@@ -41,10 +26,6 @@ import {
   cleanupWorkerPidFile,
   startWorkerPidFileGuard,
 } from "../util/worker-process.js";
-import {
-  startDbIntegritySampler,
-  stopDbIntegritySampler,
-} from "./db-integrity-sample.js";
 import {
   type FileDescriptorMonitorHandle,
   startFileDescriptorMonitor,
@@ -91,13 +72,6 @@ async function main(): Promise<void> {
     "Resource monitor process started",
   );
 
-  // Rehydrate the cloud base URL and IDs from the credential store before
-  // the telemetry reporter starts. The daemon does this in
-  // initializeProvidersAndTools(); this standalone process must do it itself so
-  // the non-turn telemetry it flushes carries the cloud organization and
-  // user context instead of shipping with those fields empty.
-  await rehydrateCloudCredentials();
-
   let sampler: ResourceSamplerHandle | null = null;
   let fdMonitor: FileDescriptorMonitorHandle | null = null;
   let mountWatch: MountWatchHandle | null = null;
@@ -122,28 +96,10 @@ async function main(): Promise<void> {
     }
     workspaceGitHeartbeat = null;
     recovery?.stop();
-    stopConfigSnapshotReporter();
-    stopMemoryTierReporter();
-    stopDbIntegritySampler();
     autoUpdate?.stop();
     sourceWatch?.stop();
     mountWatch?.stop();
     fdMonitor?.stop();
-    sampler?.stop();
-    // Bounded final telemetry flush, mirroring the daemon's shutdown. This
-    // is load-bearing for the opt-out contract: when share_analytics is
-    // off, flush() is what advances this process's watermarks past rows
-    // recorded during the opt-out window — without it, rows since the last
-    // 5-minute cycle would ship after a later opt-in. When opted in, it
-    // ships the tail instead of leaving it for the next boot.
-    try {
-      const timeout = new Promise<void>((_, reject) =>
-        setTimeout(() => reject(new Error("Telemetry flush timed out")), 3_000),
-      );
-      await Promise.race([stopUsageTelemetryReporter(), timeout]);
-    } catch (err) {
-      log.warn({ err }, "Telemetry reporter shutdown failed (non-fatal)");
-    }
     disposePidGuard?.();
     cleanupWorkerPidFile(pidPath);
     process.exit(0);
@@ -154,8 +110,8 @@ async function main(): Promise<void> {
 
   // Arm the identity guard before the monitoring subsystems start. Its on-arm
   // check runs synchronously, so a worker superseded during startup begins
-  // shutting down here. shutdown() is async (it flushes telemetry), so bail
-  // out explicitly rather than fall through and start the subsystems.
+  // shutting down here. shutdown() is async, so bail out explicitly rather
+  // than fall through and start the subsystems.
   disposePidGuard = startWorkerPidFileGuard(pidPath, {
     onEvicted: (reason) => {
       log.warn(
@@ -190,23 +146,6 @@ async function main(): Promise<void> {
   // `git commit` work stalls the event loop.
   workspaceGitHeartbeat = startWorkspaceGitHeartbeat();
 
-  // Flush the non-turn telemetry sources from this process, off the daemon's
-  // event loop. The reporter's share_analytics gate reads the consent cache,
-  // so this process runs its own refresh loop.
-  startConsentRefresh();
-  startMonitorUsageTelemetryReporter();
-
-  // Emit the tracked config settings into the config_setting pipeline this
-  // process flushes.
-  startConfigSnapshotReporter();
-
-  // Emit the coarse memory tier as a periodic per-assistant watchdog heartbeat.
-  startMemoryTierReporter();
-
-  // Sample the database's structural integrity (at most daily) so the fleet's
-  // corruption prevalence is measurable.
-  startDbIntegritySampler();
-
   process.on("SIGUSR1", () => {
     log.info("Received SIGUSR1 — refreshing database connections");
     resetDb();
@@ -220,7 +159,6 @@ async function main(): Promise<void> {
     mountWatch?.stop();
     fdMonitor?.stop();
     sampler?.stop();
-    stopDbIntegritySampler();
     cleanupWorkerPidFile(getMonitoringPidPath());
     process.exit(1);
   });
@@ -233,7 +171,6 @@ async function main(): Promise<void> {
     mountWatch?.stop();
     fdMonitor?.stop();
     sampler?.stop();
-    stopDbIntegritySampler();
     cleanupWorkerPidFile(getMonitoringPidPath());
     process.exit(1);
   });
@@ -245,7 +182,6 @@ async function main(): Promise<void> {
     mountWatch?.stop();
     fdMonitor?.stop();
     sampler?.stop();
-    stopDbIntegritySampler();
     cleanupWorkerPidFile(getMonitoringPidPath());
   });
 }

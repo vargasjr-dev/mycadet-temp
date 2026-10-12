@@ -22,13 +22,11 @@ import {
 } from "../../daemon/conversation-registry.js";
 import { getOrCreateConversation } from "../../daemon/conversation-store.js";
 import {
-  parseActivationMomentTag,
   parseStoredActions,
   type StoredSurfaceAction,
 } from "../../daemon/conversation-surface-state.js";
 import { isRowVisibleToUntrustedActor } from "../../daemon/message-provenance.js";
 import { rawAll, rawGet } from "../../persistence/raw-query.js";
-import type { ActivationMomentParam } from "../../telemetry/activation-funnel.js";
 
 /**
  * Resolve the {@link Conversation} that owns the given surface.
@@ -97,7 +95,6 @@ export interface PersistedSurfaceState {
   data: Record<string, unknown>;
   title?: string;
   actions?: StoredSurfaceAction[];
-  activationMoment?: ActivationMomentParam;
 }
 
 /**
@@ -193,16 +190,13 @@ export function findPersistedSurfaceState(
       }
       // Serve verbatim: preserve the persisted `surfaceType` string and
       // `data` object as-is (the client parses them), applying only the same
-      // light shared parsing for `actions` and the daemon-only
-      // `activationMoment` tag that the live restore uses.
-      const activationMoment = parseActivationMomentTag(b.activationMoment);
+      // light shared parsing for `actions` that the live restore uses.
       return {
         surfaceType:
           typeof b.surfaceType === "string" ? b.surfaceType : "dynamic_page",
         data: coerceSurfaceDataRecord(b.data),
         title: typeof b.title === "string" ? b.title : undefined,
         actions: parseStoredActions(b.actions),
-        ...(activationMoment ? { activationMoment } : {}),
       };
     }
   }

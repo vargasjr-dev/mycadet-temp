@@ -66,6 +66,7 @@ import {
   backfillMessageIdOnLogs,
   recordSyntheticAgentErrorMessageLog,
 } from "../persistence/llm-request-log-store.js";
+import { stampTurnOutcome } from "../persistence/turn-outcome.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import type { ConversationGraphMemory } from "../plugins/defaults/memory/graph/conversation-graph-memory.js";
 import { enqueueMemoryRetrospectiveOnCompaction } from "../plugins/defaults/memory/memory-retrospective-enqueue.js";
@@ -86,7 +87,6 @@ import { resolveTurnReplyMessageId } from "../runtime/channel-reply-delivery.js"
 import { isNoResponseOnlyText } from "../runtime/no-response.js";
 import { getByConversation as getPendingInteractionsByConversation } from "../runtime/pending-interactions.js";
 import { publishConversationMessagesChanged } from "../runtime/sync/resource-sync-events.js";
-import { stampTurnOutcome } from "../telemetry/turn-outcome.js";
 import {
   emitToolProfilingSummary,
   startToolProfilingRequest,

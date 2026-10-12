@@ -1,35 +1,25 @@
 /**
- * In-memory cache of the cloud owner's telemetry consent.
+ * In-memory cache of the cloud owner's diagnostics consent.
  *
- * Three values are cached, all refreshed from the same owner-consent fetch:
- *  - `share_analytics`: gates usage telemetry collection.
- *  - `share_diagnostics`: gates crash diagnostics (read by the client's
- *    client diagnostics reporting),
- *    and composes the per-turn trace-collection gate alongside the accepted
- *    consent version.
- *  - `share_diagnostics_accepted_version`: the consent version the owner
- *    accepted; the disclosing-version half of the trace-collection gate (see
- *    telemetry/trace-collection-policy.ts).
+ * One value is cached from the owner-consent fetch:
+ *  - `share_diagnostics`: gates crash diagnostics (read by the client
+ *    diagnostics reporting).
  *
- * Hot-path gates (record-time telemetry writes, the client diagnostics
- * consent check) need a
- * synchronous, I/O-free read, so this module owns the values and refreshes them
- * periodically in the background. Consent is opt-out — an owner who never made
- * an explicit choice reports as consented (the client maps a never-chose wire
- * value to `true`).
+ * Hot-path gates (the client diagnostics consent check) need a synchronous,
+ * I/O-free read, so this module owns the value and refreshes it periodically
+ * in the background. Consent is opt-out — an owner who never made an explicit
+ * choice reports as consented (the client maps a never-chose wire value to
+ * `true`).
  *
- * The consent values are tri-state (`ConsentState`): `true`/`false` are
- * confirmed states from a successful platform fetch; `"unknown"` means no
- * confirmed state exists — boot before the first refresh, no platform session,
- * or no resolvable owner identity. A transient fetch failure keeps the
- * previous value so a known opt-in is not flipped mid-session. Analytics
- * exposes only the raw tri-state accessor (gates drop solely on a confirmed
- * opt-out); the diagnostics boolean accessors collapse `"unknown"` to `false`
- * — diagnostics gates are deliberately fail-closed, so no raw diagnostics
- * accessor exists.
+ * The cached value is tri-state: `true`/`false` are confirmed states from a
+ * successful cloud fetch; `"unknown"` means no confirmed state exists — boot
+ * before the first refresh, no cloud session, or no resolvable owner
+ * identity. A transient fetch failure keeps the previous value so a known
+ * opt-in is not flipped mid-session. The diagnostics accessor collapses
+ * `"unknown"` to `false` — diagnostics gates are deliberately fail-closed, so
+ * no raw diagnostics accessor exists.
  */
 
-import { getConfigReadOnly } from "../config/loader.js";
 import { getLogger } from "../util/logger.js";
 import { CadetCloudClient } from "./client.js";
 import { areCloudFeaturesEnabled } from "./feature-gate.js";
@@ -41,38 +31,8 @@ const REFRESH_INTERVAL_MS = 5 * 60_000; // refresh consent every 5 min
 /** Cached consent value: a confirmed boolean, or `"unknown"` when no confirmed state exists. */
 export type ConsentState = boolean | "unknown";
 
-let cachedShareAnalytics: ConsentState = "unknown"; // no confirmed state until first success
 let cachedShareDiagnostics: ConsentState = "unknown"; // no confirmed state until first success
-let cachedShareDiagnosticsVersion = ""; // "" fails the trace disclosure gate
-// Fail-closed marker for a workspace that locally opted out of usage data
-// before telemetry moved to platform `share_analytics` consent (migration 106).
-// While set, telemetry stays off regardless of platform consent. Cleared by a
-// future cross-repo reconciliation once the cloud exposes an explicit
-// re-consent signal; not auto-cleared here. Read live from config (an
-// in-memory cached read, safe on the hot path): a boot-time default would
-// leave the record-time gates open between daemon start and the first
-// consent refresh, exactly the window unknown-consent recording now keeps
-// events flowing in.
-function isLegacyOptedOut(): boolean {
-  try {
-    return getConfigReadOnly().legacyTelemetryOptOut === true;
-  } catch {
-    // Config not yet loaded — no marker to honor yet.
-    return false;
-  }
-}
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
-
-/**
- * Raw tri-state `share_analytics` consent — the ONLY analytics accessor:
- * every gate distinguishes a confirmed opt-out (`false`, the only state that
- * drops or purges) from a not-yet-known one. The legacy fail-closed opt-out
- * marker folds into `false` — a workspace-level opt-out is a confirmed
- * opt-out, not an unknown. Never does I/O; hot-path safe.
- */
-export function getRawShareAnalytics(): ConsentState {
-  return isLegacyOptedOut() ? false : cachedShareAnalytics;
-}
 
 /**
  * Synchronous hot-path accessor for the `share_diagnostics` consent (read
@@ -83,15 +43,6 @@ export function getRawShareAnalytics(): ConsentState {
  */
 export function getCachedShareDiagnostics(): boolean {
   return cachedShareDiagnostics === true;
-}
-
-/**
- * Synchronous hot-path accessor for the owner's accepted diagnostics-consent
- * version ("YYYY-MM-DD", or "" until a successful refresh / if never accepted).
- * The disclosing-version half of the per-turn trace-collection gate.
- */
-export function getCachedShareDiagnosticsVersion(): string {
-  return cachedShareDiagnosticsVersion;
 }
 
 /**
@@ -106,14 +57,8 @@ export function getCachedShareDiagnosticsVersion(): string {
  * flipped off mid-session.
  */
 export async function refreshConsentCache(): Promise<void> {
-  // Platform features disabled is a PERMANENT condition (config-level), not a
-  // cold-cache transient: telemetry can never ship, so confirmed-off keeps the
-  // record-time gates closed and the outbox from accumulating rows that no
-  // flush will ever drain.
   if (!areCloudFeaturesEnabled()) {
-    setCachedShareAnalytics(false);
     setCachedShareDiagnostics(false);
-    setCachedShareDiagnosticsVersion("");
     return;
   }
 
@@ -131,26 +76,12 @@ export async function refreshConsentCache(): Promise<void> {
 
   const consent = await client.getOwnerConsent();
   if (consent) {
-    setCachedShareAnalytics(consent.shareAnalytics);
     setCachedShareDiagnostics(consent.shareDiagnostics);
-    setCachedShareDiagnosticsVersion(consent.shareDiagnosticsAcceptedVersion);
   }
 }
 
 function resetConsentToUnknown(): void {
-  setCachedShareAnalytics("unknown");
   setCachedShareDiagnostics("unknown");
-  setCachedShareDiagnosticsVersion("");
-}
-
-function setCachedShareAnalytics(value: ConsentState): void {
-  if (value !== cachedShareAnalytics) {
-    log.debug(
-      { from: cachedShareAnalytics, to: value },
-      "share_analytics consent changed",
-    );
-    cachedShareAnalytics = value;
-  }
 }
 
 function setCachedShareDiagnostics(value: ConsentState): void {
@@ -160,16 +91,6 @@ function setCachedShareDiagnostics(value: ConsentState): void {
       "share_diagnostics consent changed",
     );
     cachedShareDiagnostics = value;
-  }
-}
-
-function setCachedShareDiagnosticsVersion(value: string): void {
-  if (value !== cachedShareDiagnosticsVersion) {
-    log.debug(
-      { from: cachedShareDiagnosticsVersion, to: value },
-      "share_diagnostics_accepted_version changed",
-    );
-    cachedShareDiagnosticsVersion = value;
   }
 }
 
@@ -200,17 +121,7 @@ export async function stopConsentRefresh(): Promise<void> {
   }
 }
 
-/** Test-only: override the cached analytics value without going through a refresh. */
-export function __setCachedShareAnalyticsForTest(value: ConsentState): void {
-  cachedShareAnalytics = value;
-}
-
 /** Test-only: override the cached diagnostics value without going through a refresh. */
 export function __setCachedShareDiagnosticsForTest(value: ConsentState): void {
   cachedShareDiagnostics = value;
-}
-
-/** Test-only: override the cached diagnostics-consent version directly. */
-export function __setCachedShareDiagnosticsVersionForTest(value: string): void {
-  cachedShareDiagnosticsVersion = value;
 }

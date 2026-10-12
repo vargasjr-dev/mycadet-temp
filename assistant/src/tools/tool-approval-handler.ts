@@ -27,6 +27,10 @@ import {
   isWorkspaceWriteTool,
 } from "../permissions/workspace-policy.js";
 import {
+  recordToolDenied,
+  recordToolError,
+} from "../persistence/tool-audit.js";
+import {
   boundUnparseableToolArgs,
   isUnparseableToolArgs,
   unparseableToolArgsMessage,
@@ -38,7 +42,6 @@ import {
 import { createOrReuseToolGrantRequest } from "../runtime/tool-grant-request-helper.js";
 import { redactSecrets } from "../security/secret-scanner.js";
 import { computeToolApprovalDigest } from "../security/tool-approval-digest.js";
-import { recordToolDenied, recordToolError } from "../telemetry/tool-audit.js";
 import { getLogger } from "../util/logger.js";
 import { resolveExecutionTarget } from "./execution-target.js";
 import { safeTimeoutMs } from "./execution-timeout.js";

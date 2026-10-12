@@ -10,9 +10,7 @@ import type {
   ToolUseContent,
 } from "../providers/types.js";
 import type { SkillInstallMeta } from "../skills/install-meta.js";
-import type { SkillLoadedEventRecord } from "../telemetry/skill-loaded-events-store.js";
 import type { Tool } from "../tools/types.js";
-import type { UsageAttributionSnapshot } from "../usage/attribution.js";
 import { buildSkillLoadHistory } from "./test-support/browser-skill-harness.js";
 
 // ---------------------------------------------------------------------------
@@ -31,11 +29,7 @@ let mockVersionHashErrors: Set<string> = new Set();
 /** Install metadata by skill id (readInstallMeta derives the id from the directory path). */
 let mockInstallMetas: Record<string, SkillInstallMeta | null> = {};
 /** Merged catalog entries returned by getCachedCatalogSync. */
-let mockCachedCatalog: Array<{ id: string; updatedAt?: string }> = [];
-/** skill_loaded events captured by the mocked store. */
-let recordedSkillLoadedEvents: SkillLoadedEventRecord[] = [];
-/** When true, recordSkillLoadedEvent throws (simulates a store failure). */
-let mockRecordSkillLoadedFailure = false;
+const mockCachedCatalog: Array<{ id: string; updatedAt?: string }> = [];
 /** Skill IDs for which registerSkillTools throws (simulates a different-owner tool name collision). */
 let mockRegisterFailures: Set<string> = new Set();
 /** `(skillDir, today)` pairs captured by the mocked touchSkillLastUsed. */
@@ -280,15 +274,6 @@ mock.module("../skills/install-meta.js", () => ({
 
 mock.module("../skills/catalog-cache.js", () => ({
   getCachedCatalogSync: () => mockCachedCatalog,
-}));
-
-mock.module("../telemetry/skill-loaded-events-store.js", () => ({
-  recordSkillLoadedEvent: (record: SkillLoadedEventRecord) => {
-    if (mockRecordSkillLoadedFailure) {
-      throw new Error("Mock: skill_loaded store failure");
-    }
-    recordedSkillLoadedEvents.push(record);
-  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -812,426 +797,6 @@ describe("projectSkillTools", () => {
 });
 
 // ---------------------------------------------------------------------------
-// skill_loaded telemetry recording
-// ---------------------------------------------------------------------------
-
-describe("skill_loaded telemetry recording", () => {
-  let sessionState: Map<string, string>;
-
-  function makeAttribution(): UsageAttributionSnapshot {
-    return {
-      callSite: "mainAgent",
-      activeProfile: "balanced",
-      overrideProfile: null,
-      callSiteProfile: null,
-      appliedProfile: "balanced",
-      profileSource: "active",
-      resolvedProvider: "test-provider",
-      resolvedModel: "test-model",
-      resolvedMixArm: null,
-    };
-  }
-
-  function makeTelemetry() {
-    return { conversationId: "conv-xyz", attribution: makeAttribution() };
-  }
-
-  beforeEach(() => {
-    mockCatalog = [];
-    mockManifests = {};
-    mockRegisteredTools = new Map();
-    mockUnregisteredSkillIds = [];
-    mockSkillRefCount = new Map();
-    mockVersionHashes = {};
-    mockVersionHashErrors = new Set();
-    mockInstallMetas = {};
-    mockCachedCatalog = [];
-    recordedSkillLoadedEvents = [];
-    mockRecordSkillLoadedFailure = false;
-    mockRegisterFailures = new Set();
-    sessionState = new Map<string, string>();
-  });
-
-  test("bundled skill activation records an event with attribution and catalog updatedAt", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockCachedCatalog = [{ id: "notes", updatedAt: "2026-01-02T03:04:05Z" }];
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0]).toEqual({
-      conversationId: "conv-xyz",
-      skillName: "notes",
-      skillUpdatedAt: "2026-01-02T03:04:05Z",
-      provider: "test-provider",
-      model: "test-model",
-      inferenceProfile: "balanced",
-      inferenceProfileSource: "active",
-    });
-  });
-
-  test("managed skill with cadet install origin records an event", () => {
-    mockCatalog = [makeSkill("deploy")];
-    mockManifests = { deploy: makeManifest(["deploy_run"]) };
-    mockInstallMetas = {
-      deploy: { origin: "cadet", installedAt: "2026-01-01T00:00:00Z" },
-    };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="deploy" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0].skillName).toBe("deploy");
-  });
-
-  test("managed skill with clawhub or custom origin does NOT record", () => {
-    mockCatalog = [makeSkill("third-party"), makeSkill("homemade")];
-    mockManifests = {
-      "third-party": makeManifest(["tp_run"]),
-      homemade: makeManifest(["hm_run"]),
-    };
-    mockInstallMetas = {
-      "third-party": {
-        origin: "clawhub",
-        installedAt: "2026-01-01T00:00:00Z",
-      },
-      homemade: { origin: "custom", installedAt: "2026-01-01T00:00:00Z" },
-    };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="third-party" />'),
-      ...skillLoadMessages('<loaded_skill id="homemade" />'),
-    ];
-    const result = projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-    // Tool projection itself is unaffected
-    expect(result.allowedToolNames).toEqual(new Set(["tp_run", "hm_run"]));
-  });
-
-  test("managed skill without install metadata does NOT record", () => {
-    mockCatalog = [makeSkill("deploy")];
-    mockManifests = { deploy: makeManifest(["deploy_run"]) };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="deploy" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-  });
-
-  test("workspace skill does NOT record", () => {
-    mockCatalog = [makeSkill("local-helper", undefined, "workspace")];
-    mockManifests = { "local-helper": makeManifest(["lh_run"]) };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="local-helper" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-  });
-
-  test("second turn with the skill still active does NOT re-record", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-  });
-
-  test("version-hash change that re-registers counts as a new load", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockVersionHashes = { notes: "v1:hash-aaa" };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    mockVersionHashes = { notes: "v1:hash-bbb" };
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(2);
-  });
-
-  test("registration that throws on turn 1 and succeeds on turn 2 records exactly one row total", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockRegisterFailures = new Set(["notes"]);
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-
-    // Turn 1: registration throws — no row, no tracking, registry untouched.
-    const result1 = projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-    expect(result1.allowedToolNames.size).toBe(0);
-    expect(sessionState.has("notes")).toBe(false);
-    expect(mockUnregisteredSkillIds).toEqual([]);
-
-    // Turn 2: registration succeeds — the load is recorded exactly once.
-    mockRegisterFailures = new Set();
-    const result2 = projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0].skillName).toBe("notes");
-    expect(result2.allowedToolNames.has("notes_add")).toBe(true);
-    expect(sessionState.has("notes")).toBe(true);
-    expect(mockSkillRefCount.get("notes")).toBe(1);
-  });
-
-  test("persistently failing registration never duplicates skill_loaded rows across turns", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockRegisterFailures = new Set(["notes"]);
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-
-    for (let turn = 1; turn <= 3; turn++) {
-      projectSkillTools(history, {
-        previouslyActiveSkillIds: sessionState,
-        telemetry: makeTelemetry(),
-      });
-    }
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-    expect(mockUnregisteredSkillIds).toEqual([]);
-  });
-
-  test("catalog miss yields undefined skillUpdatedAt (persisted as null)", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockCachedCatalog = []; // no merged-catalog entry for "notes"
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0].skillUpdatedAt).toBeUndefined();
-  });
-
-  test("null attribution records the event without model fields", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: { conversationId: "conv-xyz", attribution: null },
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0]).toEqual({
-      conversationId: "conv-xyz",
-      skillName: "notes",
-      skillUpdatedAt: undefined,
-      provider: null,
-      model: null,
-      inferenceProfile: null,
-      inferenceProfileSource: null,
-    });
-  });
-
-  test("store failure does not throw out of projectSkillTools", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-    mockRecordSkillLoadedFailure = true;
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    const result = projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    // Tool projection behavior is unchanged when recording fails
-    expect(result.allowedToolNames.has("notes_add")).toBe(true);
-    expect(sessionState.has("notes")).toBe(true);
-  });
-
-  test("instruction-only bundled skill (no TOOLS.json) records exactly one event", () => {
-    mockCatalog = [makeSkill("guides", undefined, "bundled")];
-    // No manifest registered for "guides" — instruction-only skill.
-    mockCachedCatalog = [{ id: "guides", updatedAt: "2026-02-03T04:05:06Z" }];
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="guides" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0]).toEqual({
-      conversationId: "conv-xyz",
-      skillName: "guides",
-      skillUpdatedAt: "2026-02-03T04:05:06Z",
-      provider: "test-provider",
-      model: "test-model",
-      inferenceProfile: "balanced",
-      inferenceProfileSource: "active",
-    });
-
-    // Still active next turn — no re-record.
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-  });
-
-  test("instruction-only managed skill with cadet origin records exactly one event", () => {
-    mockCatalog = [makeSkill("catalog-skill")];
-    // No manifest — mirrors installSkillLocally output for catalog skills.
-    mockInstallMetas = {
-      "catalog-skill": {
-        origin: "cadet",
-        installedAt: "2026-01-01T00:00:00Z",
-      },
-    };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="catalog-skill" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-    expect(recordedSkillLoadedEvents[0].skillName).toBe("catalog-skill");
-  });
-
-  test("instruction-only non-Cadet skills never record", () => {
-    mockCatalog = [
-      makeSkill("local-notes", undefined, "workspace"),
-      makeSkill("homemade"),
-    ];
-    // No manifests for either skill.
-    mockInstallMetas = {
-      homemade: { origin: "custom", installedAt: "2026-01-01T00:00:00Z" },
-    };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="local-notes" />'),
-      ...skillLoadMessages('<loaded_skill id="homemade" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-  });
-
-  test("instruction-only skill re-records after deactivation and reactivation, without touching the registry", () => {
-    mockCatalog = [makeSkill("guides", undefined, "bundled")];
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="guides" />'),
-    ];
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
-
-    // Deactivated: marker gone. No tools were ever registered for it, so the
-    // registry must not be touched (refcounts belong to other conversations).
-    mockUnregisteredSkillIds = [];
-    projectSkillTools([], {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(mockUnregisteredSkillIds).not.toContain("guides");
-
-    // Reactivated: a fresh activation is a new load.
-    projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-      telemetry: makeTelemetry(),
-    });
-    expect(recordedSkillLoadedEvents).toHaveLength(2);
-  });
-
-  test("absent telemetry context disables recording entirely", () => {
-    mockCatalog = [makeSkill("notes", undefined, "bundled")];
-    mockManifests = { notes: makeManifest(["notes_add"]) };
-
-    const history: Message[] = [
-      ...skillLoadMessages('<loaded_skill id="notes" />'),
-    ];
-    const result = projectSkillTools(history, {
-      previouslyActiveSkillIds: sessionState,
-    });
-
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
-    expect(result.allowedToolNames.has("notes_add")).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // lastUsedAt stamping on cloud-skill load
 // ---------------------------------------------------------------------------
 
@@ -1251,7 +816,6 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     mockVersionHashes = {};
     mockVersionHashErrors = new Set();
     mockInstallMetas = {};
-    recordedSkillLoadedEvents = [];
     recordedLastUsedTouches = [];
     sessionState = new Map<string, string>();
   });
@@ -1273,8 +837,8 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     ]);
   });
 
-  test("stamps managed skills even when telemetry is off (ungated)", () => {
-    // origin: "custom" is suppressed for telemetry but must still be stamped.
+  test("stamps managed skills regardless of origin", () => {
+    // origin: "custom" skills are stamped too.
     mockCatalog = [makeSkill("homemade")];
     mockManifests = { homemade: makeManifest(["hm_run"]) };
     mockInstallMetas = {
@@ -1284,10 +848,8 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     const history: Message[] = [
       ...skillLoadMessages('<loaded_skill id="homemade" />'),
     ];
-    // No telemetry option passed.
     projectSkillTools(history, { previouslyActiveSkillIds: sessionState });
 
-    expect(recordedSkillLoadedEvents).toHaveLength(0);
     expect(recordedLastUsedTouches).toHaveLength(1);
     expect(recordedLastUsedTouches[0].skillDir).toBe("/skills/homemade");
   });
@@ -1321,11 +883,9 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     ];
     projectSkillTools(history, {
       previouslyActiveSkillIds: sessionState,
-      telemetry: { conversationId: "conv-xyz", attribution: null },
     });
 
     // Telemetry still fires for the bundled skill, but no usage stamp.
-    expect(recordedSkillLoadedEvents).toHaveLength(1);
     expect(recordedLastUsedTouches).toHaveLength(0);
   });
 
@@ -1354,7 +914,7 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     projectSkillTools(history, { previouslyActiveSkillIds: sessionState });
     projectSkillTools(history, { previouslyActiveSkillIds: sessionState });
 
-    // Stamping rides the same load events as telemetry — once per activation.
+    // Stamping rides the skill-load events — once per activation.
     expect(recordedLastUsedTouches).toHaveLength(1);
   });
 

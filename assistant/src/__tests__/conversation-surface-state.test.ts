@@ -88,22 +88,6 @@ describe("restoreSurfaceStateEntry", () => {
       restoreSurfaceStateEntry({ surfaceType: 42, data: {} }).surfaceType,
     ).toBe("dynamic_page");
   });
-
-  test("rehydrates the daemon-only activationMoment tag and drops a malformed one", () => {
-    const valid = restoreSurfaceStateEntry({
-      surfaceType: "card",
-      data: {},
-      activationMoment: "first_wow_executed",
-    });
-    expect(valid.activationMoment).toBe("first_wow_executed");
-
-    const invalid = restoreSurfaceStateEntry({
-      surfaceType: "card",
-      data: {},
-      activationMoment: "not_a_real_moment",
-    });
-    expect(invalid.activationMoment).toBeUndefined();
-  });
 });
 
 describe("parseStoredActions", () => {

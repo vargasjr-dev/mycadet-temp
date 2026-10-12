@@ -54,14 +54,9 @@ function resetTables() {
   ensuredConvIds = new Set();
 }
 
-function createTestCallSession(
-  opts: Omit<Parameters<typeof createCallSession>[0], "direction"> & {
-    direction?: Parameters<typeof createCallSession>[0]["direction"];
-  },
-) {
+function createTestCallSession(opts: Parameters<typeof createCallSession>[0]) {
   ensureConversation(opts.conversationId);
-  // Direction only shapes the funnel stamp; these suites test other things.
-  return createCallSession({ direction: "inbound", ...opts });
+  return createCallSession({ ...opts });
 }
 
 /** Backdate a session's createdAt so it appears older than the grace period. */

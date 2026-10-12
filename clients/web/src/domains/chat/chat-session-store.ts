@@ -50,10 +50,6 @@ import {
 } from "@/domains/chat/transcript/rolling-snapshot";
 import { messageMatchKeys } from "@/domains/chat/utils/message-identity";
 import { getSseEnvelopesSince } from "@/lib/streaming/stream-debug";
-import {
-  abandonSwitchMeasurement,
-  noteConversationSwitchStarted,
-} from "@/lib/telemetry/switch-telemetry";
 import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
 // ---------------------------------------------------------------------------
@@ -439,7 +435,6 @@ const useChatSessionStoreBase = create<ChatSessionStore>()((set, get) => ({
     // opened under the draft key can only be closed by a paint under that key,
     // and the transcript paints under the server id, so close it here.
     if (state.draftConversationIdResolution) {
-      abandonSwitchMeasurement("draft_resolution");
       set({ draftConversationIdResolution: false });
       return;
     }
@@ -516,11 +511,9 @@ const useChatSessionStoreBase = create<ChatSessionStore>()((set, get) => ({
     // is boot latency, which the boot family already owns; folding it in here
     // would mix first-fetch time into the switch distribution.
     if (isConversationSwitch && !isAssistantSwitch) {
-      noteConversationSwitchStarted(activeConversationId);
     } else {
       // Unmeasured move: nothing will paint under the pending window's id, so
       // close it here instead of letting the TTL bill it as a stall.
-      abandonSwitchMeasurement("context_change");
     }
 
     set({
@@ -554,7 +547,6 @@ const useChatSessionStoreBase = create<ChatSessionStore>()((set, get) => ({
   },
 
   resetForLogout: () => {
-    abandonSwitchMeasurement("context_change");
     useStreamStore.getState().cancelAndClearStream();
     useConversationStore.getState().reset();
     useComposerStore.getState().resetForLogout();

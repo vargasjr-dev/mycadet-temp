@@ -150,7 +150,6 @@ describe("Call session mode metadata", () => {
 
     const { conversationId } = getOrCreateConversation("test-conv-mode");
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+15551234567",
@@ -179,7 +178,6 @@ describe("Call session mode metadata", () => {
       "test-conv-mode-default",
     );
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+15551234567",

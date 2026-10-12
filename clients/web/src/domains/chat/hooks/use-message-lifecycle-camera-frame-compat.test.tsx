@@ -42,7 +42,7 @@ import {
   pushSseEvent,
   resetSseDebugStateForTests,
 } from "@/lib/streaming/stream-debug";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 
 const ASSISTANT_ID = "assistant-1";
 const CONVERSATION_ID = "conversation-1";

@@ -32,7 +32,6 @@ import {
 } from "@mycadet/avatar-manifest";
 
 import { publishAvatarChanged } from "../runtime/sync/resource-sync-events.js";
-import { recordTelemetryEvent } from "../telemetry/telemetry-events-outbox.js";
 import { getLogger } from "../util/logger.js";
 import { getAvatarDir, getAvatarImagePath } from "../util/platform.js";
 import { automaticAccent } from "./accent-backfill.js";
@@ -42,20 +41,15 @@ import {
   paletteAccent,
 } from "./avatar-accent.js";
 import {
-  type AvatarChangeAction,
-  avatarChangedFields,
-  IMAGE_ACTIONS,
-  type ImageSource,
-  isSameAvatar,
-} from "./avatar-changed-telemetry.js";
-import {
+  type AvatarSource,
   type AvatarState,
   computeImageMeta,
-  NONE_AVATAR_STATE,
   readAvatarState,
   writeManifest,
 } from "./avatar-manifest.js";
-import { readContainedAvatarRaster } from "./ensure-raster.js";
+
+/** The sources an image can be set from (everything but the builder render). */
+type ImageSource = Exclude<AvatarSource, "builder">;
 import {
   describeAvatarState,
   NO_AVATAR_IDENTITY_NOTE,
@@ -73,11 +67,6 @@ const log = getLogger("avatar-store");
 export interface AvatarChangeOptions {
   /** The client that made the change, so it can ignore its own sync echo. */
   originClientId?: string;
-  /**
-   * The caller's OS as reported by the client-metadata header, already
-   * sanitized; carried on the telemetry event.
-   */
-  clientOs?: string;
 }
 
 export interface ImageChangeOptions extends AvatarChangeOptions {
@@ -85,21 +74,11 @@ export interface ImageChangeOptions extends AvatarChangeOptions {
   imageDescription?: string;
 }
 
-interface AvatarTransition {
-  action: AvatarChangeAction;
-  previous: AvatarState;
-  next: AvatarState;
-  /** Set by the image write: the PNG bytes differ from the previous image's. */
-  imageBytesChanged?: boolean;
-}
-
 /**
- * The side effects every persisted change owes. An identical re-set notifies
- * and is not counted. Telemetry is best effort: the avatar is
- * already written and announced, so a failed record is logged, not thrown.
+ * The side effects every persisted change owes: refresh the identity note and
+ * notify connected clients so they re-read the avatar.
  */
 function announceChange(
-  transition: AvatarTransition,
   identityNote: string | null,
   options?: AvatarChangeOptions,
 ): void {
@@ -107,18 +86,6 @@ function announceChange(
     updateIdentityAvatarSection(identityNote);
   }
   publishAvatarChanged(options?.originClientId);
-  const { action, previous, next, imageBytesChanged } = transition;
-  if (isSameAvatar(previous, next, imageBytesChanged)) {
-    return;
-  }
-  try {
-    recordTelemetryEvent(
-      "avatar_changed",
-      avatarChangedFields(action, previous, next, options?.clientOs),
-    );
-  } catch (err) {
-    log.warn({ err, action }, "Failed to record the avatar_changed event");
-  }
 }
 
 /**
@@ -136,7 +103,6 @@ export function setCharacter(
   traits: CharacterTraits,
   options?: AvatarChangeOptions,
 ): TraitsSyncResult {
-  const previous = readAvatarState();
   const result = writeTraitsAndRenderAvatar(traits);
   if (!result.ok) {
     return result;
@@ -150,11 +116,7 @@ export function setCharacter(
     accent: paletteAccent(traits.color),
   };
   writeManifest(state);
-  announceChange(
-    { action: "set_character", previous, next: state },
-    describeAvatarState(state),
-    options,
-  );
+  announceChange(describeAvatarState(state), options);
   return result;
 }
 
@@ -175,13 +137,6 @@ export async function setImage(
   mkdirSync(avatarDir, { recursive: true });
 
   const pngPath = join(avatarDir, AVATAR_IMAGE_FILENAME);
-  const previous = readAvatarState();
-  // Capped at the upload's own size: a larger file cannot be identical, and
-  // the serving cap must not turn a big re-upload into a counted change.
-  const previousBytes =
-    previous.kind === "image"
-      ? readContainedAvatarRaster(pngPath, pngBuffer.length)
-      : null;
   const pngTmp = `${pngPath}.${randomUUID()}.tmp`;
   writeFileSync(pngTmp, pngBuffer);
   renameSync(pngTmp, pngPath);
@@ -203,12 +158,6 @@ export async function setImage(
     "Set avatar from image and removed character sidecars",
   );
   announceChange(
-    {
-      action: IMAGE_ACTIONS[source],
-      previous,
-      next: state,
-      imageBytesChanged: !previousBytes?.equals(pngBuffer),
-    },
     describeAvatarState(state, options?.imageDescription),
     options,
   );
@@ -234,11 +183,7 @@ export async function setAccent(
     accent: hex ? { hex, source: "custom" } : await automaticAccent(state),
   };
   writeManifest(next);
-  announceChange(
-    { action: "set_accent", previous: state, next },
-    null,
-    options,
-  );
+  announceChange(null, options);
   return next;
 }
 
@@ -264,10 +209,6 @@ export function clearAvatar(options?: AvatarChangeOptions): AvatarState {
   rmSync(join(avatarDir, AVATAR_MANIFEST_FILENAME), { force: true });
 
   log.info("Cleared avatar — removed all artifacts");
-  announceChange(
-    { action: "clear", previous, next: NONE_AVATAR_STATE },
-    NO_AVATAR_IDENTITY_NOTE,
-    options,
-  );
+  announceChange(NO_AVATAR_IDENTITY_NOTE, options);
   return previous;
 }

@@ -62,7 +62,6 @@ import {
   boundUnparseableToolArgs,
   isUnparseableToolArgs,
 } from "../providers/unparseable-tool-args.js";
-import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import {
   ABORT_SETTLE_GRACE_MS,
   CANCELLED_TOOL_RESULT,
@@ -92,8 +91,6 @@ import { buildToolResultFollowUp } from "./tool-result-follow-up.js";
 
 const log = getLogger("agent-loop");
 
-/** Watchdog check name for both tool-gated reply outcomes. */
-const SEND_USER_MESSAGE_CHECK = "send_user_message_delivery";
 const MAX_CONSECUTIVE_UNPARSEABLE_TOOL_TURNS = 3;
 const SKILL_EXECUTE_TOOL_NAME = "skill_execute";
 
@@ -119,26 +116,6 @@ function deliveredUserMessage(block: {
   return typeof message === "string" && message.trim().length > 0
     ? message
     : null;
-}
-
-/**
- * Count one outcome of the tool-gated reply surface: the model was nudged for
- * a `send_user_message` call, or the run ended without one and the raw text
- * was surfaced as the fallback. Tagged with the model that served the call.
- * Best-effort observability, never a reason to fail a turn.
- */
-function recordSendUserMessageOutcome(
-  outcome: "nudge" | "fallback",
-  model: string | undefined,
-): void {
-  try {
-    recordWatchdogEvent({
-      checkName: SEND_USER_MESSAGE_CHECK,
-      detail: { outcome, model: model ?? null },
-    });
-  } catch {
-    // Telemetry must not affect the turn.
-  }
 }
 
 /**
@@ -2577,9 +2554,6 @@ export class AgentLoop {
           if (!suppressAssistantText) {
             return undefined;
           }
-          if (fallbackSurfaced) {
-            recordSendUserMessageOutcome("fallback", response.model);
-          }
           return fallbackSurfaced ? "visible" : "private";
         };
 
@@ -2854,12 +2828,6 @@ export class AgentLoop {
               { turn: toolUseTurns, retry: postModelCallContinues },
               "post-model-call requested a retry — re-querying the model",
             );
-            // On a suppressed run with nothing sent, this retry IS the
-            // send-user-message nudge (the default `empty-response` plugin
-            // owns the decision, the counter is the host's).
-            if (suppressAssistantText && !userToldOutcome) {
-              recordSendUserMessageOutcome("nudge", response.model);
-            }
             history = postModelCallMessages;
             continue;
           } else {

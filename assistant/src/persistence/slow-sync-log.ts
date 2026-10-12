@@ -44,12 +44,6 @@ export const SLOW_SYNC_THRESHOLD_MS = ((): number => {
   return Number.isFinite(raw) && raw > 0 ? raw : 1000;
 })();
 
-/**
- * `check_name` for slow-sync telemetry events. Stable so downstream
- * grouping stays consistent; keep it in sync with any admin query.
- */
-export const SLOW_SYNC_CHECK_NAME = "slow_sync_operation";
-
 /** One recorded section entry: a static label plus monotonic start/end stamps. */
 export interface SectionMark {
   label: string;
@@ -157,23 +151,6 @@ export function reportSlowSync(
     { label, elapsedMs, ...detail },
     "Slow synchronous DB operation blocked the event loop",
   );
-  // Record telemetry via a lazy dynamic import. A static import would pull the
-  // telemetry → consent-cache → config/loader chain into the module graph of
-  // every raw-query / conversation-load caller, where a test's `mock.module`
-  // of the loader leaks across the shared test process and breaks unrelated
-  // files at eval time. Loading it only on the rare slow path keeps that chain
-  // off the hot path's static graph; best-effort, so a failure is swallowed.
-  void import("../telemetry/watchdog-events-store.js")
-    .then(({ recordWatchdogEvent }) => {
-      recordWatchdogEvent({
-        checkName: SLOW_SYNC_CHECK_NAME,
-        value: elapsedMs,
-        detail: { label, ...detail },
-      });
-    })
-    .catch(() => {
-      // Telemetry is best-effort — never let it escape the timed section.
-    });
 }
 
 /**

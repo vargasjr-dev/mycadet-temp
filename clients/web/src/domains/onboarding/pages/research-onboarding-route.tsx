@@ -42,10 +42,7 @@ import {
 } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
-import {
-  DEFAULT_GROUP_ID,
-  RESEARCH_NAMING_VARIANTS,
-} from "@/domains/onboarding/prechat-names";
+import { DEFAULT_GROUP_ID } from "@/domains/onboarding/prechat-names";
 import {
   setPendingAssistantName,
   setPendingPreChatContext,
@@ -70,12 +67,6 @@ import {
 } from "@/domains/onboarding/research-onboarding-persistence";
 import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { shouldSkipOnboardingResearch } from "@/domains/onboarding/should-skip-onboarding-research";
-import {
-  emitResearchOnboardingStepCompleted,
-  RESEARCH_ONBOARDING_FUNNEL_STEPS,
-  type OnboardingFunnelAbVariant,
-  type OnboardingFunnelStepOutcome,
-} from "@/domains/onboarding/funnel-events";
 import { scheduleCheckin } from "@/domains/onboarding/checkin-scheduler";
 import { GOOGLE_CALENDAR_EVENTS_SCOPE } from "@/domains/onboarding/hooks/use-google-calendar-connect";
 import { formatCheckinTime } from "@/domains/onboarding/format-checkin-time";
@@ -188,20 +179,7 @@ export function ResearchOnboardingRoute() {
   // (`completed` for Continue, `skipped` for a Skip) so analytics can tell a
   // deliberate completion apart from a skip. Defaults to `completed`; the skip
   // affordances pass `skipped` explicitly. Back/redo moves deliberately don't emit.
-  function goForwardTo(
-    next: ResearchStep,
-    outcome: OnboardingFunnelStepOutcome = "completed",
-    extras?: { screen?: string; variant?: OnboardingFunnelAbVariant },
-  ) {
-    emitResearchOnboardingStepCompleted(
-      RESEARCH_ONBOARDING_FUNNEL_STEPS[step],
-      {
-        userId,
-        outcome,
-        screen: extras?.screen,
-        variant: extras?.variant,
-      },
-    );
+  function goForwardTo(next: ResearchStep, _outcome?: unknown) {
     setForwardStack([]);
     navTo(next);
   }
@@ -922,12 +900,6 @@ export function ResearchOnboardingRoute() {
       return;
     }
     handoffStartedRef.current = true;
-    // Terminal step: the handoff leaves via enterAssistant, not goForwardTo, so
-    // emit the completion here (mirrors SuggestionsStep).
-    emitResearchOnboardingStepCompleted(
-      RESEARCH_ONBOARDING_FUNNEL_STEPS.suggestions,
-      { userId, outcome: "completed" },
-    );
     void finishAndEnterChat();
   }
 
@@ -1170,7 +1142,7 @@ export function ResearchOnboardingRoute() {
             onRetry={() => setMissingCalendarScope(false)}
             onSkip={() => {
               setMissingCalendarScope(false);
-              goForwardTo(researchRevealStep(skipResearchReveal), "skipped");
+              goForwardTo(researchRevealStep(skipResearchReveal));
             }}
             onBack={() => goBackTo("integration")}
             onForward={onForward}
@@ -1256,7 +1228,7 @@ export function ResearchOnboardingRoute() {
                   rejectedAll: true,
                 });
               }
-              goForwardTo("suggestions", "skipped");
+              goForwardTo("suggestions");
             }}
             onBack={() => goBackTo("looking")}
             onForward={onForward}
@@ -1268,13 +1240,6 @@ export function ResearchOnboardingRoute() {
             loading={researchLoading}
             installedPlugins={research.installedPlugins}
             onSuggestionClick={async (suggestion) => {
-              // Terminal step: the handoff leaves via enterAssistant, not
-              // goForwardTo, so emit the suggestions completion here (mirrors the
-              // pre-chat funnel emitting on its final step before completeFlow).
-              emitResearchOnboardingStepCompleted(
-                RESEARCH_ONBOARDING_FUNNEL_STEPS.suggestions,
-                { userId, outcome: "completed" },
-              );
               // Wait out any background capability installs so the new chat can
               // discover their skills (else it silently degrades to a generic
               // prompt). Usually instant — installs kicked off while the user
@@ -1287,11 +1252,6 @@ export function ResearchOnboardingRoute() {
               enterAssistant(formValues, faceValues, suggestion.prompt);
             }}
             onSkip={async () => {
-              // "Skip to Chat" — record the suggestions step as skipped.
-              emitResearchOnboardingStepCompleted(
-                RESEARCH_ONBOARDING_FUNNEL_STEPS.suggestions,
-                { userId, outcome: "skipped" },
-              );
               await Promise.all([
                 research.awaitPluginInstalls(),
                 researchCorrectionRef.current,
@@ -1334,12 +1294,6 @@ export function ResearchOnboardingRoute() {
       <ExistingAssistantStep
         assistantName={establishedCheck?.assistantName ?? null}
         onKeep={() => {
-          // Terminal off-ramp: leaves via navigation, not goForwardTo, so emit
-          // the step outcome here (mirrors the suggestions terminal steps).
-          emitResearchOnboardingStepCompleted(
-            RESEARCH_ONBOARDING_FUNNEL_STEPS.existing,
-            { userId, outcome: "completed" },
-          );
           clearResearchSnapshot(userId);
           // Keeping an established assistant settles its onboarding too.
           if (hatchedAssistantId) {
@@ -1361,10 +1315,6 @@ export function ResearchOnboardingRoute() {
           // Deliberate overwrite: release the gate for the rest of this visit
           // and continue exactly where the intercepted submit left off.
           guardOverriddenRef.current = true;
-          emitResearchOnboardingStepCompleted(
-            RESEARCH_ONBOARDING_FUNNEL_STEPS.existing,
-            { userId, outcome: "skipped" },
-          );
           setFormValues(values);
           fireResearch(values);
           // Mirrors goForwardTo("face") minus the step-completion emit — the
@@ -1398,16 +1348,7 @@ export function ResearchOnboardingRoute() {
         initialName={faceValues?.name}
         onContinue={(face) => {
           setFaceValues(face);
-          goForwardTo(
-            "intro",
-            "completed",
-            face.naming
-              ? {
-                  screen: face.naming.source,
-                  variant: RESEARCH_NAMING_VARIANTS[face.naming.source],
-                }
-              : undefined,
-          );
+          goForwardTo("intro");
         }}
         onBack={() => goBackTo("form")}
         onForward={onForward}

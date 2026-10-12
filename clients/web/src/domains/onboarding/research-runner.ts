@@ -29,7 +29,6 @@ import {
   messagesPost,
   pluginsInstallPost,
   pluginsSearchGet,
-  telemetryIngestPost,
 } from "@/generated/daemon/sdk.gen";
 import { archiveResearchConversation } from "@/domains/onboarding/archive-research-conversation";
 import { invalidateConversationQueries } from "@/utils/conversation-cache";
@@ -237,101 +236,8 @@ async function installCapabilityBestEffort(
  * Cap on hobbies reported to telemetry. Matches the cloud serializer's
  * `self_reported_hobbies` bound so the two can't disagree.
  */
-const MAX_REPORTED_HOBBIES = 32;
 
 /** Count claims in one confidence tier — mirrors the derived wire counts. */
-function countByConfidence(
-  claims: ResearchFact[],
-  confidence: ResearchFact["confidence"],
-): number {
-  return claims.filter((c) => c.confidence === confidence).length;
-}
-
-/**
- * Report a research turn's outcome (claims/suggestions/plugin picks) for
- * analytics. Client-orchestrated: the daemon never detects this turn on its
- * own, so the client reports it once — either as the raw model output the
- * moment the reply parses as a complete JSON payload (`status: "done"`,
- * before the deterministic-floor merge folds in role-based baseline
- * plugins), or as whatever had been parsed so far if the poll ceiling fires
- * first (`status: "error"`). Fire-and-forget: a failure here must never
- * block or surface in the flow, mirroring `archiveResearchConversation`.
- *
- * Sent through the generic `telemetry/ingest` route as an `onboarding_research`
- * wire event: the client owns the full payload (the daemon can't observe this
- * turn), including the derived confidence counts and the conversation-scoped
- * `daemon_event_id` collapse key. That key is set only for `status: "done"` so
- * a page refresh mid-poll that re-reports the same completed turn collapses
- * downstream instead of double-counting; a client-side timeout gets a fresh id
- * (omitted here) so a later genuine completion isn't masked by its own
- * provisional timeout report.
- *
- * Reports the `subject` the turn was run ON alongside its results, so a claim
- * can be told apart from the form value it merely echoed back, and so
- * `installed_plugins` is attributable (the deterministic floor is keyed on
- * occupation). The name is deliberately NOT sent: directly identifying, and
- * nothing downstream needs it to judge research quality.
- */
-async function sendOnboardingResearchTelemetry({
-  assistantId,
-  conversationId,
-  status,
-  subject,
-  claims,
-  suggestions,
-  plugins,
-  installedPlugins,
-}: {
-  assistantId: string;
-  conversationId: string;
-  status: "done" | "error";
-  subject: ResearchSubject;
-  claims: ResearchFact[];
-  suggestions: ResearchSuggestion[];
-  plugins: string[];
-  installedPlugins: string[];
-}): Promise<void> {
-  try {
-    await telemetryIngestPost({
-      path: { assistant_id: assistantId },
-      body: {
-        type: "onboarding_research",
-        // Collapse a refresh-retried completed report onto the original;
-        // omitted for a timeout so an eventual success gets its own id.
-        ...(status === "done"
-          ? { daemon_event_id: `onboarding_research:${conversationId}` }
-          : {}),
-        fields: {
-          conversation_id: conversationId,
-          status,
-          self_reported_occupation: subject.occupation,
-          // Capped client-side: the chip field has no UI limit, and the
-          // platform serializer's own bound would drop the WHOLE event rather
-          // than the overflow (an invalid event is skipped while the batch
-          // still 2xxes). Truncating here keeps a pathological form from
-          // costing us the research report entirely.
-          self_reported_hobbies: (subject.hobbies ?? []).slice(
-            0,
-            MAX_REPORTED_HOBBIES,
-          ),
-          self_reported_timezone: subject.timezone,
-          claims,
-          claim_count: claims.length,
-          claims_confident: countByConfidence(claims, "confident"),
-          claims_maybe: countByConfidence(claims, "maybe"),
-          claims_guessing: countByConfidence(claims, "guessing"),
-          suggestions,
-          suggestion_count: suggestions.length,
-          plugins,
-          installed_plugins: installedPlugins,
-        },
-      },
-      throwOnError: false,
-    });
-  } catch (err) {
-    captureError(err, { context: "research_onboarding_telemetry" });
-  }
-}
 
 export type ResearchStatus = "idle" | "running" | "done" | "error";
 
@@ -787,18 +693,6 @@ export function useResearchRunner(): UseResearchRunner {
           // Guards the telemetry report to fire exactly once: `complete` can
           // stay true across the `STABLE_READS_TO_SETTLE` re-polls before the
           // loop breaks, and would otherwise re-send on every one of them.
-          let telemetrySent = false;
-          // Last-known partial result, so a poll-ceiling timeout (the loop
-          // exits without ever seeing `complete`) can still report what had
-          // been parsed so far instead of the turn silently never being
-          // reported at all. `lastInstalledPlugins` seeds from the
-          // deterministic floor (already fired above, before any poll tick)
-          // rather than `[]`, so a timeout on a turn that never produced any
-          // assistant text doesn't undercount installs that already happened.
-          let lastClaims: ResearchFact[] = [];
-          let lastSuggestions: ResearchSuggestion[] = [];
-          let lastPlugins: string[] = [];
-          let lastInstalledPlugins: string[] = deterministicPlugins;
           // The model's `plugins` picks fire as soon as its array closes — emitted
           // first in the reply, so this lands early while claims/suggestions are
           // still streaming. These union on top of the deterministic floor already
@@ -878,25 +772,8 @@ export function useResearchRunner(): UseResearchRunner {
                 suggestions,
                 installedPlugins,
               });
-              lastClaims = claims;
-              lastSuggestions = suggestions;
-              lastPlugins = plugins;
-              lastInstalledPlugins = installedPlugins;
               if (complete) {
                 sawCompletePayload = true;
-              }
-              if (complete && !telemetrySent) {
-                telemetrySent = true;
-                void sendOnboardingResearchTelemetry({
-                  assistantId,
-                  conversationId,
-                  status: "done",
-                  subject,
-                  claims,
-                  suggestions,
-                  plugins,
-                  installedPlugins,
-                });
               }
               stableReads = text === lastText ? stableReads + 1 : 0;
               lastText = text;
@@ -911,23 +788,6 @@ export function useResearchRunner(): UseResearchRunner {
 
           if (isStale()) {
             return;
-          }
-          // The poll ceiling fired before a complete payload ever landed —
-          // the in-loop send above never ran. Report the timeout with
-          // whatever had been parsed so far rather than letting the turn go
-          // unreported and skewing the event stream toward successful runs.
-          if (!telemetrySent) {
-            telemetrySent = true;
-            void sendOnboardingResearchTelemetry({
-              assistantId,
-              conversationId,
-              status: "error",
-              subject,
-              claims: lastClaims,
-              suggestions: lastSuggestions,
-              plugins: lastPlugins,
-              installedPlugins: lastInstalledPlugins,
-            });
           }
           setState((s) => ({
             ...s,

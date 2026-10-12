@@ -34,7 +34,7 @@ import { workspaceThemeGet } from "@/generated/daemon/sdk.gen";
 import { workspaceThemeGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { SYNC_TAGS } from "@/lib/sync/types";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import { toApiError } from "@/utils/api-errors";
 import {
   applyWorkspaceThemeTokens,
