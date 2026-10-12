@@ -34,6 +34,9 @@ import { channelInjectors } from "./channel/injectors.js";
 import channelPkg from "./channel/package.json" with { type: "json" };
 import cloudHostedPkg from "./cloud-hosted/package.json" with { type: "json" };
 import compactionPkg from "./compaction/package.json" with { type: "json" };
+import discordInit from "./discord/hooks/init.js";
+import discordShutdown from "./discord/hooks/shutdown.js";
+import discordPkg from "./discord/package.json" with { type: "json" };
 import { documentsInjectors } from "./documents/injectors.js";
 import documentsPkg from "./documents/package.json" with { type: "json" };
 import emptyResponsePostModelCall from "./empty-response/hooks/post-model-call.js";
@@ -287,6 +290,25 @@ export const defaultCloudHostedPlugin: Plugin = {
 };
 
 /**
+ * `discord` — the Discord channel plugin. Phase-1 skeleton of the
+ * gateway→plugin migration: it ships the manifest plus no-op `init`/`shutdown`
+ * hooks so the lifecycle is populated and the manifest addressable; the real
+ * channel behavior (in-process Discord gateway dial + event fan-out, outbound
+ * delivery through the messaging provider registry) lands in later phases,
+ * replacing the gateway's /deliver/discord round-trip.
+ */
+export const defaultDiscordPlugin: Plugin = {
+  manifest: {
+    name: discordPkg.name,
+    version: discordPkg.version,
+  },
+  hooks: {
+    init: discordInit,
+    shutdown: discordShutdown,
+  },
+};
+
+/**
  * `image-recovery` — recovers from a provider image-too-large rejection. The
  * `post-model-call` hook handles the rejection, downscaling the oversized image
  * blocks in the working history and asking the loop to retry, and persisting
@@ -460,6 +482,7 @@ export function getAllDefaultPlugins(): readonly Plugin[] {
     defaultChannelPlugin,
     defaultSessionPlugin,
     defaultCloudHostedPlugin,
+    defaultDiscordPlugin,
     defaultImageFallbackPlugin,
     defaultToolResultTruncatePlugin,
     defaultEmptyResponsePlugin,

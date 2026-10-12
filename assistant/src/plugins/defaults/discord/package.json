@@ -1,0 +1,14 @@
+{
+  "name": "default-discord",
+  "version": "1.0.0",
+  "description": "First-party default plugin for the Discord channel. Phase-1 skeleton of the gateway→plugin migration: registers the manifest plus no-op lifecycle hooks that later phases fill with the in-process Discord gateway connection (replacing the gateway's /deliver/discord round-trip).",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "peerDependencies": {
+    "@mycadet/plugin-api": "^0.10.9"
+  }
+}
