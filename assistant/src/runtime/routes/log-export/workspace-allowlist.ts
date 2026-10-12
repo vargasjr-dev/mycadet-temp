@@ -28,8 +28,8 @@ import { join } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 
 import { parseConversationDirName } from "../../../persistence/conversation-directories.js";
+import { getConversationsDir } from "../../../util/layout.js";
 import { getLogger } from "../../../util/logger.js";
-import { getConversationsDir } from "../../../util/platform.js";
 
 const log = getLogger("log-export-workspace");
 

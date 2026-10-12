@@ -30,7 +30,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 /** Workspace-relative path clients and the config watcher both key on. */
 export const WORKSPACE_THEME_RELATIVE_PATH = "ui/theme.json";

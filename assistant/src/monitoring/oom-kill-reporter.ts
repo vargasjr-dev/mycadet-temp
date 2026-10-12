@@ -17,9 +17,9 @@ import { dirname, join } from "node:path";
 import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import { getContainerMemoryEvents } from "../util/cgroup-memory.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { DAEMON_OOM_SCORE_ADJ } from "../util/oom-priority.js";
-import { getMonitoringDataDir } from "../util/platform.js";
 import type { ResourceSample } from "./resource-sample-types.js";
 
 const log = getLogger("oom-kill-reporter");

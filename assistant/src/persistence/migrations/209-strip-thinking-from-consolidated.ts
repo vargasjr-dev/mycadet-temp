@@ -1,6 +1,6 @@
 import { getConfig } from "../../config/loader.js";
+import { getDbPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDbPath } from "../../util/platform.js";
 import { runAsyncSqlite } from "../db-async-query.js";
 import type { DrizzleDb } from "../db-connection.js";
 import { getSqliteFrom } from "../db-connection.js";

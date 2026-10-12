@@ -17,12 +17,12 @@ import { derivePersonaTrustFlags } from "../runtime/trust-class.js";
 import { ACTIVATION_RAIL_BOOTSTRAP_TEMPLATE } from "../telemetry/activation-funnel.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
 import { resolveBundledDir } from "../util/bundled-asset.js";
-import { getLogger } from "../util/logger.js";
 import {
   getConversationsDir,
   getWorkspaceDir,
   getWorkspacePromptPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import { cleanupBootstrapFiles } from "./bootstrap-cleanup.js";
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "./cache-boundary.js";

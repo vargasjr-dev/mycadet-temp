@@ -17,8 +17,8 @@
  */
 
 import { getConfigReadOnly } from "../config/loader.js";
+import { getProcPidPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getProcPidPath } from "../util/platform.js";
 import {
   probeWorkerPidFile,
   spawnWorkerProcess,

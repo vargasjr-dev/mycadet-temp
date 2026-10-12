@@ -26,12 +26,12 @@ import { countConversations as countConversationsDb } from "../persistence/conve
 import { resolveGuardianPersonaPath } from "../prompts/persona-resolver.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
-import { getLogger } from "../util/logger.js";
 import {
   getDataDir,
   getWorkspaceDir,
   getWorkspacePromptPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { resolveAndPersistHatchedAt } from "../workspace/hatched-date.js";
 import { computeProgressPercent, computeTier } from "./progress-formula.js";
 import {

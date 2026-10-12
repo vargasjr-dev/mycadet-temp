@@ -381,7 +381,7 @@ mock.module("../../../skills/categories-cache.js", () => ({
   getLocalCategorySlugs: () => SKILLS_CATEGORY_SLUGS,
 }));
 
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import {
   BadRequestError,
   ConflictError,

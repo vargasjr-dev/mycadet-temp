@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { getConversationsDir } from "../util/platform.js";
+import { getConversationsDir } from "../util/layout.js";
 
 function getConversationDirTimestamp(createdAtMs: number): string {
   return new Date(createdAtMs).toISOString().replace(/:/g, "-");

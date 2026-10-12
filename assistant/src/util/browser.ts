@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { getSignalsDir } from "./layout.js";
 import { getLogger } from "./logger.js";
-import { getSignalsDir } from "./platform.js";
 
 const log = getLogger("browser");
 

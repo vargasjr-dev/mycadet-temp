@@ -15,7 +15,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { getMonitoringDataDir } from "../util/platform.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 
 const BOOT_TIME_FILE = "daemon-boot-time";
 

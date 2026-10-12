@@ -73,8 +73,8 @@ import {
   registerPluginTools,
   unregisterPluginTools,
 } from "../tools/registry.js";
+import { getWorkspaceDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir, getWorkspacePluginsDir } from "../util/platform.js";
 import { APP_VERSION } from "../version.js";
 
 const log = getLogger("plugins-bootstrap");

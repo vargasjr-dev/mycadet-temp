@@ -75,7 +75,7 @@ setWorkspaceMcp({
   },
 });
 
-const { getWorkspacePluginsDir } = await import("../util/platform.js");
+const { getWorkspacePluginsDir } = await import("../util/layout.js");
 const { ROUTES } = await import("../runtime/routes/mcp-auth-routes.js");
 
 const listHandler = ROUTES.find(

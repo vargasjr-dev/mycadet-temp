@@ -17,8 +17,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { pathExists } from "../util/fs.js";
+import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDataDir } from "../util/platform.js";
 
 const log = getLogger("secret-allowlist");
 

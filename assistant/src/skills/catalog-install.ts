@@ -23,8 +23,9 @@ import {
 import { getCloudBaseUrl } from "../config/env.js";
 import { loadSkillCatalog } from "../config/skills.js";
 import { isBunVirtualPath } from "../util/bundled-asset.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { addToPathEnv, getWorkspaceSkillsDir } from "../util/platform.js";
+import { addToPathEnv } from "../util/os.js";
 import {
   isSkillCompatibleWithCloud,
   normalizeSkillPlatforms,

@@ -21,7 +21,7 @@ import {
 } from "../../util/cgroup-memory.js";
 import { getCachedContainerCpuPercent } from "../../util/container-cpu-sampler.js";
 import { getDiskUsageInfo } from "../../util/disk-usage.js";
-import { getWorkspacePromptPath } from "../../util/platform.js";
+import { getWorkspacePromptPath } from "../../util/layout.js";
 import { APP_VERSION } from "../../version.js";
 import { resolveHatchedAtReadOnly } from "../../workspace/hatched-date.js";
 import { WORKSPACE_MIGRATIONS } from "../../workspace/migrations/registry.js";

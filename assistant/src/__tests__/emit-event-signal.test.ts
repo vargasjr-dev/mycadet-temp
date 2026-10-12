@@ -13,7 +13,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import type { AssistantEvent, AssistantEventEnvelope } from "../api/index.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { handleEmitEventSignal } from "../signals/emit-event.js";
-import { getSignalsDir } from "../util/platform.js";
+import { getSignalsDir } from "../util/layout.js";
 
 function signalPath(): string {
   return join(getSignalsDir(), "emit-event");

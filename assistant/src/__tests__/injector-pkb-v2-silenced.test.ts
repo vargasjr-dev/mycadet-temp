@@ -59,7 +59,7 @@ const { registerDefaultPluginInjectors } =
 import { getPkbRoot } from "../plugins/defaults/memory/v1/pkb/types.js";
 import type { TurnContext } from "../plugins/types.js";
 import type { Message } from "../providers/types.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 function makeTurnContext(): TurnContext {
   return {

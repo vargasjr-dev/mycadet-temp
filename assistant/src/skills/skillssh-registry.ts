@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 import {
   commitStagedSkillInstall,
   createSkillInstallStagingDir,

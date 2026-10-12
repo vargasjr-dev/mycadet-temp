@@ -15,7 +15,7 @@
 
 import { Database } from "bun:sqlite";
 
-import { getDbPath } from "../util/platform.js";
+import { getDbPath } from "../util/layout.js";
 
 /** Cap on entries recorded per sample so a pathological burst stays bounded. */
 const MAX_ENTRIES = 20;

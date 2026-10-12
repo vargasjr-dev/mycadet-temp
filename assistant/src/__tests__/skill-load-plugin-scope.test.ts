@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import { skillLoadTool } from "../tools/skills/load.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 function writeSkill(
   root: string,

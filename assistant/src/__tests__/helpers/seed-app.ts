@@ -11,7 +11,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { slugify } from "../../apps/app-store.js";
-import { getDataDir } from "../../util/platform.js";
+import { getDataDir } from "../../util/layout.js";
 
 export function seedApp(
   app: Partial<Omit<AppDefinitionFixture, "id">> & { id: string },

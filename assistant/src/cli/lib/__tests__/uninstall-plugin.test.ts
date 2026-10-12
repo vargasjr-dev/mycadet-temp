@@ -43,7 +43,7 @@ mock.module("../../../mcp/mcp-oauth-provider.js", () => ({
 }));
 
 import { resetHookCacheForTests } from "../../../hooks/hook-loader.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { InvalidPluginNameError } from "../install-from-github.js";
 const { PluginNotInstalledError, uninstallPlugin } =
   await import("../uninstall-plugin.js");

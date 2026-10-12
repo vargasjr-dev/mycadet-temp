@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { Command } from "commander";
 
 import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { APP_VERSION } from "../version.js";
 import { registerAppsCommand } from "./commands/apps.js";
 import { registerAttachmentCommand } from "./commands/attachment.js";

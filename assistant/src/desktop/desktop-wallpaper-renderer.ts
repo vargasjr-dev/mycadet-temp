@@ -8,8 +8,8 @@ import { renderCharacterPng } from "../avatar/png-renderer.js";
 import { getResvg, isResvgAvailable } from "../avatar/resvg-lazy.js";
 import { isTemplatePlaceholder } from "../daemon/handlers/identity.js";
 import { getAssistantName } from "../daemon/identity-helpers.js";
+import { getAvatarImagePath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarImagePath } from "../util/platform.js";
 import { escapeXmlContent } from "../util/xml.js";
 
 function wallpaperWordmark(

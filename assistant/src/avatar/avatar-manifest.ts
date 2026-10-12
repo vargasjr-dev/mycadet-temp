@@ -31,8 +31,8 @@ import {
   parseAvatarManifest,
 } from "@mycadet/avatar-manifest";
 
+import { getAvatarDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarDir } from "../util/platform.js";
 import { paletteAccent } from "./avatar-accent.js";
 
 const log = getLogger("avatar-manifest");

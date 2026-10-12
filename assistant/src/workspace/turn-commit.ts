@@ -13,8 +13,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { syncIdentityNameToPlatform } from "../cloud/sync-identity.js";
 import { parseIdentityFields } from "../daemon/handlers/identity.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
 import { getEnrichmentService } from "./commit-message-enrichment-service.js";
 import {
   type CommitContext,

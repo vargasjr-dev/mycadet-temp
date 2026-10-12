@@ -4,8 +4,8 @@ import {
   buildShellSpawnFlags,
   terminateProcessTree,
 } from "../util/host-process.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { safeStringSlice } from "../util/unicode.js";
 
 const log = getLogger("run-script");

@@ -13,7 +13,7 @@ import {
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { rawAll, rawGet, rawRun } from "../../persistence/raw-query.js";
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import type { LiveVoiceAudioArtifactMetadata } from "../live-voice-archive.js";
 import {
   archiveLiveVoiceAssistantResponseAudio,

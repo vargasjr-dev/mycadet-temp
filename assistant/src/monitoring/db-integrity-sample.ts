@@ -20,8 +20,8 @@ import { join } from "node:path";
 
 import { getRawShareAnalytics } from "../cloud/consent-cache.js";
 import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
+import { getDbPath, getMonitoringDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDbPath, getMonitoringDataDir } from "../util/platform.js";
 import { resolveWorkerCommand } from "../util/worker-process.js";
 import type { IntegritySampleResult } from "./db-integrity-check.js";
 

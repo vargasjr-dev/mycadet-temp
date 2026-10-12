@@ -2,7 +2,7 @@ import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { deleteSkillCapabilityNode } from "../plugins/defaults/memory/graph/capability-seed.js";
-import { getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 
 /**
  * Remove a locally-installed skill: delete its workspace directory and prune

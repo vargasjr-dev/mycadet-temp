@@ -6,7 +6,7 @@
  *
  * IMPORTANT: This module has NO internal imports (no logger, no platform
  * utilities) so it can be safely imported from bootstrap-level code like
- * util/platform.ts and util/logger.ts without circular dependencies.
+ * util/layout.ts and util/logger.ts without circular dependencies.
  *
  * Higher-level env vars that depend on the logger or config system live in
  * config/env.ts, which re-exports selected accessors from this module.

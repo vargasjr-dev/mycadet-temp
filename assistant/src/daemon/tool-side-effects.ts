@@ -20,8 +20,8 @@ import { getConceptsDir } from "../plugins/defaults/memory/substrate/page-store.
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
 import { publishDocumentsChanged } from "../runtime/sync/resource-sync-events.js";
 import type { ToolExecutionResult } from "../tools/types.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import {
   broadcastAppFilesChanged,
   notifyAppSurfacesChanged,

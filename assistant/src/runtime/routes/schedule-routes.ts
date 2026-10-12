@@ -54,8 +54,8 @@ import { getScheduleUsageSummaries } from "../../schedule/schedule-usage-store.j
 import { buildWakeScheduleOptions } from "../../schedule/wake-schedule-options.js";
 import { initializeTools } from "../../tools/registry.js";
 import { UserError } from "../../util/errors.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
 import { normalizeCapabilityManifest } from "../../workflows/capabilities.js";
 import { getWorkflowRunManager } from "../../workflows/run-manager.js";
 import { isOwnerCaller } from "../auth/owner-caller.js";

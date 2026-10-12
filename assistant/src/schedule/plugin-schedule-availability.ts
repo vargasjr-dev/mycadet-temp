@@ -29,7 +29,7 @@
 import { join } from "node:path";
 
 import { isPluginDirActivated } from "../plugins/mtime-cache.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 import { declarationExistsOnDisk } from "./plugin-schedule-declarations.js";
 
 /**

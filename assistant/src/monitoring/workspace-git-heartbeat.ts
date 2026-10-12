@@ -15,8 +15,8 @@
  * against the daemon's turn-boundary commits.
  */
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { getWorkspaceGitService } from "../workspace/git-service.js";
 import {
   startWorkspaceHeartbeatService,

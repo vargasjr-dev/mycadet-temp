@@ -21,7 +21,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { getMonitoringDataDir } from "../util/platform.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 
 const HEARTBEAT_FILE = "daemon-heartbeat";
 

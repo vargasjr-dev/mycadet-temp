@@ -9,8 +9,8 @@ import {
   type CharacterTraits,
 } from "@mycadet/avatar-manifest";
 
+import { getAvatarDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarDir } from "../util/platform.js";
 import { renderCharacterAscii } from "./ascii-renderer.js";
 import { renderCharacterPng } from "./png-renderer.js";
 import { isResvgAvailable } from "./resvg-lazy.js";

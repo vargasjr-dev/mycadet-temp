@@ -2,11 +2,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parseFrontmatterFields } from "../skills/frontmatter.js";
-import { getLogger } from "../util/logger.js";
 import {
   getWorkspacePromptPath,
   getWorkspaceSystemPromptDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import {
   BUNDLED_SYSTEM_SECTIONS,

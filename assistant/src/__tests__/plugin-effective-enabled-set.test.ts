@@ -50,7 +50,7 @@ import {
   resetPluginRegistryForTests,
 } from "../plugins/registry.js";
 import type { HookFunction, Plugin } from "../plugins/types.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 // Point the workspace at an empty temp dir so `getHooksFor` -> `getUserHooksFor`
 // finds no user-land plugins; the in-process hook tests then observe only the

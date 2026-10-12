@@ -6,7 +6,7 @@ import type { RouteInvokeParams } from "../../../routes/route-host-protocol.js";
 import {
   getWorkspacePluginsDir,
   getWorkspaceRoutesDir,
-} from "../../../util/platform.js";
+} from "../../../util/layout.js";
 
 // The dispatcher constructs the route host client inline and reads the enabled
 // flag from config, so both are mocked here (there is no injection seam).

@@ -49,7 +49,7 @@ import { dirname, join } from "node:path";
 
 import { runShutdownHook } from "../../hooks/hook-loader.js";
 import { PRESERVED_ENTRIES } from "../../plugins/plugin-tree-walk.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import type { FetchLike } from "./fetch-like.js";
 import {
   fetchCommitDate,

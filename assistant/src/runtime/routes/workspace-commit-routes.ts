@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { getWorkspaceGitService } from "../../workspace/git-service.js";
 import { GATEWAY_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError } from "./errors.js";

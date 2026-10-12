@@ -35,7 +35,7 @@ import {
 } from "../../archive/ustar-size.js";
 import { getCloudBaseUrl } from "../../config/env.js";
 import { getExistingDeviceId } from "../../util/device-id.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { getPluginManifestInstallAction } from "../../util/plugin-manifest.js";
 import { APP_VERSION } from "../../version.js";
 import type { FetchLike } from "./fetch-like.js";

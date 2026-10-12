@@ -9,8 +9,8 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { isTerminalState } from "./call-state-machine.js";
 import type { CallSession } from "./types.js";
 

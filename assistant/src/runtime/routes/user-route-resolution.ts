@@ -35,7 +35,7 @@ import { isPluginDisabled } from "../../plugins/disabled-state.js";
 import {
   getWorkspacePluginsDir,
   getWorkspaceRoutesDir,
-} from "../../util/platform.js";
+} from "../../util/layout.js";
 
 /** Supported file extensions for handler modules (`.js` preferred over `.ts`). */
 export const HANDLER_EXTENSIONS = [".ts", ".js"] as const;

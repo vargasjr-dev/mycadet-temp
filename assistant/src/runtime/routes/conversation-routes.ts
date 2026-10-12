@@ -167,11 +167,8 @@ import {
   isHeicFilename,
   normalizeImageBase64,
 } from "../../util/image-conversion.js";
+import { getWorkspaceDir, getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import {
-  getWorkspaceDir,
-  getWorkspacePromptPath,
-} from "../../util/platform.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
 import { getCurrentSeq } from "../assistant-stream-state.js";

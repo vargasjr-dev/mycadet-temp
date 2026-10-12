@@ -294,7 +294,7 @@ export {
 // Absolute path to the active workspace directory. A plugin that reads or
 // writes files under the workspace (e.g. its own `plugins/<name>/data/`
 // directory) resolves them against this instead of hardcoding a base path.
-export { getWorkspaceDir } from "../util/platform.js";
+export { getWorkspaceDir } from "../util/layout.js";
 // `String.prototype.slice` that never cuts a UTF-16 surrogate pair in half.
 // Any text a plugin truncates by character budget and hands to a model must
 // go through this: an orphaned half is invalid UTF-16 that strict provider

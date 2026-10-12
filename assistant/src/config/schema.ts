@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getDataDir } from "../util/platform.js";
+import { getDataDir } from "../util/layout.js";
 
 // Re-export domain schemas that have external consumers
 export { VALID_CALLER_IDENTITY_MODES } from "./schemas/calls.js";

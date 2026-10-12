@@ -27,7 +27,7 @@ import {
   getDefaultPluginRouteRoots,
   getDefaultPluginRoutesDir,
 } from "../../../plugins/defaults/main.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { UserRouteDispatcher } from "../user-route-dispatcher.js";
 import {
   isRouteTestPath,

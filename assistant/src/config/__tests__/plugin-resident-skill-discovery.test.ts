@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { loadSkillCatalog } from "../skills.js";
 
 function writePlugin(

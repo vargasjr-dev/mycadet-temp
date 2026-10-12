@@ -15,7 +15,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { getWorkspaceHooksDir } from "../util/platform.js";
+import { getWorkspaceHooksDir } from "../util/layout.js";
 import { listInstalledPluginDirs } from "./installed-plugin-dirs.js";
 import { snapshotPluginSource } from "./source-fingerprint.js";
 import type { PluginSourceVersion } from "./source-versions.js";

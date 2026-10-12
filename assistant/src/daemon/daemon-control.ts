@@ -14,7 +14,6 @@ import { getIsContainerized } from "../config/env-registry.js";
 import { loadOrCreateSigningKey } from "../runtime/auth/token-service.js";
 import { ensureBun } from "../util/bun-runtime.js";
 import { DaemonError } from "../util/errors.js";
-import { getLogger } from "../util/logger.js";
 import {
   ensureDataDir,
   getDaemonStartupLockPath,
@@ -22,7 +21,8 @@ import {
   getDataDir,
   getPidPath,
   getWorkspaceConfigPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { readRawProcessCommand } from "../util/process-table.js";
 import { isDaemonCommand } from "../util/worker-ownership.js";
 

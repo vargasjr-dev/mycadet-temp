@@ -54,11 +54,11 @@ import {
 } from "../security/plugin-secret-patterns.js";
 import { finalizeTool } from "../tools/tool-defaults.js";
 import type { Tool, ToolDefinition } from "../tools/types.js";
-import { getLogger } from "../util/logger.js";
 import {
   getWorkspaceHooksDir,
   getWorkspacePluginsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
 import { collectSourceVersions } from "./collect-source-versions.js";
 import {

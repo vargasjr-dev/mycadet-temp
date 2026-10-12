@@ -10,13 +10,13 @@ import {
 import { basename, dirname, join } from "node:path";
 
 import { safeStatSync } from "../util/fs.js";
-import { getLogger } from "../util/logger.js";
 import {
   ensureDataDir,
   getConfigQuarantineNoticePath,
   getConfigValidationResetNoticePath,
   getWorkspaceConfigPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 import { validateChatSettingsWrite } from "./chat-settings.js";
 import { pruneSeededCallsiteDefaultsFromConfig } from "./prune-seeded-callsite-defaults.js";
 import { AssistantConfigSchema } from "./schema.js";

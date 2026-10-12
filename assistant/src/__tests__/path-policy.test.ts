@@ -26,7 +26,7 @@ import {
   sandboxPolicyWithHostFallback,
   sandboxReadPolicy,
 } from "../tools/shared/filesystem/path-policy.js";
-import { getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 
 // The classifier reads REAL roots: managed = the per-process workspace skills
 // dir (writable, from the test preload), bundled = the repo's bundled-skills

@@ -26,8 +26,8 @@ import { arch, platform } from "node:os";
 import { join } from "node:path";
 
 import { ensureBun, findBun } from "../../util/bun-runtime.js";
+import { getEmbeddingModelsDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getEmbeddingModelsDir } from "../../util/platform.js";
 import { PromiseGuard } from "../../util/promise-guard.js";
 
 const log = getLogger("embedding-runtime-manager");

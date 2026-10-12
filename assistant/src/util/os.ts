@@ -1,16 +1,14 @@
 /**
- * Platform detection and environment-shaping helpers.
+ * Platform detection and host-environment shaping helpers.
  *
- * Directory-layout helpers (every canonical path under the workspace and
- * its data dir) live in `util/layout.ts` — they were never platform
- * concerns. This module re-exports that module for backward compatibility;
- * new code should import layout helpers from `./layout.js` directly.
+ * OS detection (`isMacOS`/`isLinux`/`isWindows`/`getPlatformName`), the
+ * per-user application-data root, and the PATH-shaping helpers
+ * daemon-spawned tools rely on. Directory-layout helpers (every canonical
+ * path under the workspace and its data dir) live in `./layout.js`.
  */
 
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
-
-export * from "./layout.js";
 
 export function isMacOS(): boolean {
   return process.platform === "darwin";
@@ -87,27 +85,4 @@ export function addToPathEnv(
  */
 export function getPlatformName(): string {
   return process.platform;
-}
-
-/**
- * Normalize an assistant ID to its canonical form for DB operations.
- *
- * The system uses "self" as the canonical single-tenant identifier
- * (see migration 007-assistant-id-to-self). However, the desktop UI
- * sends the real assistant ID (e.g., "cadet-true-eel") while the
- * inbound call path resolves phone numbers to config keys (typically
- * "self"). This function maps the current assistant's ID to "self"
- * so both sides use a consistent DB key.
- */
-export function normalizeAssistantId(assistantId: string): string {
-  if (assistantId === "self") {
-    return "self";
-  }
-
-  const ownName = process.env.CADET_ASSISTANT_NAME;
-  if (ownName && assistantId === ownName) {
-    return "self";
-  }
-
-  return assistantId;
 }

@@ -28,7 +28,7 @@ import { Database } from "bun:sqlite";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
-import { getWorkspaceDir } from "../../../util/platform.js";
+import { getWorkspaceDir } from "../../../util/layout.js";
 import type { RepairContext, RepairStep, StepResult } from "./repair-steps.js";
 
 /**

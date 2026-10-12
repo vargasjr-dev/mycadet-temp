@@ -55,8 +55,8 @@ import { getConfigReadOnly } from "../config/loader.js";
 import type { PluginUpdatesConfig } from "../config/schemas/plugin-updates.js";
 import { cliIpcCall } from "../ipc/cli-client.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getMonitoringDataDir } from "../util/platform.js";
 
 const log = getLogger("plugin-auto-update");
 

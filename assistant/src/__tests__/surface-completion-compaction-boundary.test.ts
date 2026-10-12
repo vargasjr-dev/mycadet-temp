@@ -9,7 +9,7 @@ import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { conversations, messages } from "../persistence/schema/index.js";
 import { findPersistedSurfaceState } from "../runtime/routes/surface-conversation-resolver.js";
-import { getDbPath } from "../util/platform.js";
+import { getDbPath } from "../util/layout.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
 
 await initializeDb();

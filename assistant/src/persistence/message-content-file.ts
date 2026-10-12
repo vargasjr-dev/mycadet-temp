@@ -34,8 +34,8 @@ import { z } from "zod";
 
 import { contentBlockSchema } from "../providers/content-block-schema.js";
 import type { ContentBlock } from "../providers/types.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 
 const log = getLogger("message-content-file");
 

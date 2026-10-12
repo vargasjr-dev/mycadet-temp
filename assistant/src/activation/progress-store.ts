@@ -75,8 +75,8 @@ import {
   ServiceUnavailableError,
 } from "../runtime/routes/errors.js";
 import { publishActivationProgressChanged } from "../runtime/sync/resource-sync-events.js";
+import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDataDir } from "../util/platform.js";
 
 const log = getLogger("activation-progress-store");
 

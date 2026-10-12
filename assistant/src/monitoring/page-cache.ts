@@ -14,7 +14,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { getDataDir, getDbPath } from "../util/platform.js";
+import { getDataDir, getDbPath } from "../util/layout.js";
 
 const execFileAsync = promisify(execFile);
 

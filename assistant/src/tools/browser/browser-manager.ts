@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
+import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDataDir } from "../../util/platform.js";
 import { authSessionCache } from "./auth-cache.js";
 import type { CdpClientKind } from "./cdp-client/types.js";
 import type { ExtractedCredential } from "./network-recording-types.js";

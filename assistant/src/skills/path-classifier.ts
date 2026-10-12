@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, normalize, resolve, sep } from "node:path";
 
 import { getBundledSkillsDir } from "../config/skills.js";
-import { getWorkspaceSkillsDir } from "../util/platform.js";
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 
 /**
  * Returns the cloud skills root directory. Managed skills are user-installed

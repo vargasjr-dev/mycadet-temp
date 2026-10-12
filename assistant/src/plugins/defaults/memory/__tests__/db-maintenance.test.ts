@@ -26,7 +26,7 @@ const { maybeRunDbMaintenance, maybeRunPassiveWalCheckpoint } =
   await import("../../../../persistence/db-maintenance.js");
 const { getLastInteractiveUserMessageTimestamp } =
   await import("../../../../persistence/conversation-crud.js");
-const { getDbPath } = await import("../../../../util/platform.js");
+const { getDbPath } = await import("../../../../util/layout.js");
 
 await initializeDb();
 

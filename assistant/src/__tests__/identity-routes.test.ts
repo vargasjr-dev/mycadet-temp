@@ -27,7 +27,7 @@ import {
   ROUTES,
 } from "../runtime/routes/identity-routes.js";
 import { setCesClient } from "../security/secure-keys.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { APP_VERSION } from "../version.js";
 import {
   getHatchedSidecarPath,

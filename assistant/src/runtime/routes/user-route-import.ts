@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { snapshotPluginSource } from "../../plugins/source-fingerprint.js";
 import { evictModule } from "../../plugins/surface-import.js";
-import { getWorkspaceRoutesDir } from "../../util/platform.js";
+import { getWorkspaceRoutesDir } from "../../util/layout.js";
 
 /**
  * Directory whose source files must stay mutually consistent with this

@@ -84,7 +84,7 @@ mock.module("../../../apps/app-pin-store.js", () => ({
 }));
 
 const { createApp } = await import("../../../apps/app-store.js");
-const { getWorkspacePluginsDir } = await import("../../../util/platform.js");
+const { getWorkspacePluginsDir } = await import("../../../util/layout.js");
 const { ROUTES } = await import("../app-management-routes.js");
 
 function findHandler(operationId: string) {

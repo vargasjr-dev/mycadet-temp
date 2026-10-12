@@ -10,7 +10,7 @@ import { dirname, resolve, sep } from "node:path";
 
 import { z } from "zod";
 
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { BadRequestError, ConflictError } from "./errors.js";
 
 /**

@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { getDefaultPluginSkillRoots } from "../../plugins/defaults/main.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   discoverDefaultPluginResidentSkills,
   discoverPluginResidentSkills,

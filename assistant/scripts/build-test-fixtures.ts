@@ -52,7 +52,7 @@ async function buildMigratedFixture(outWorkspaceDir: string): Promise<void> {
   const { initializeDb } = await import("../src/persistence/db-init.js");
   const { getSqlite, getLogsSqlite, getMemorySqlite, getTelemetrySqlite } =
     await import("../src/persistence/db-connection.js");
-  const { getDbPath } = await import("../src/util/platform.js");
+  const { getDbPath } = await import("../src/util/layout.js");
   const { getLogsDbPath } = await import("../src/util/logs-db-path.js");
   const { getMemoryDbPath } = await import("../src/util/memory-db-path.js");
   const { getTelemetryDbPath } =

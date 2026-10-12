@@ -11,7 +11,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { getMemoryWorkerPidPath } from "../../../../../util/platform.js";
+import { getMemoryWorkerPidPath } from "../../../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
 

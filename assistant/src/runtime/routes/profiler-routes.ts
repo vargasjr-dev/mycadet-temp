@@ -35,8 +35,8 @@ import {
   rescanRuns,
   runProfilerSweep,
 } from "../../daemon/profiler-run-store.js";
+import { getProfilerRunDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getProfilerRunDir } from "../../util/platform.js";
 import { GATEWAY_PRINCIPALS } from "../auth/route-policy.js";
 import { createTarGz, MAX_ARCHIVE_BYTES } from "./archive-utils.js";
 import {

@@ -12,7 +12,7 @@ import type {
   RouteDefinition,
   RouteHandlerArgs,
 } from "../runtime/routes/types.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 let workspaceDir: string;
 

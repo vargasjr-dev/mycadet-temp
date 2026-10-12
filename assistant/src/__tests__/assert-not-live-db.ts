@@ -22,7 +22,7 @@
  * No source-module imports — only node stdlib. Helpers in `__tests__/`
  * must not import from `src/` (see assistant/AGENTS.md). Callers pass
  * the resolved `dbPath` in so this file stays decoupled from
- * `src/util/platform.ts`.
+ * `src/util/layout.ts`.
  */
 
 import { realpathSync, rmSync } from "node:fs";

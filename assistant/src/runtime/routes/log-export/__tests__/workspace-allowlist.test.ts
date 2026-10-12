@@ -25,7 +25,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { getConversationsDir } from "../../../../util/platform.js";
+import { getConversationsDir } from "../../../../util/layout.js";
 import { collectWorkspaceData } from "../workspace-allowlist.js";
 
 // ---------------------------------------------------------------------------

@@ -110,8 +110,8 @@ describe("assistant ID boundary", () => {
     const repoRoot = getRepoRoot();
 
     // Scan all daemon/runtime source directories for any reference to
-    // normalizeAssistantId. The function is defined in util/platform.ts for
-    // gateway use — it must not appear in daemon scoping modules.
+    // normalizeAssistantId. The function is deleted — it must not be
+    // reintroduced in daemon scoping modules.
     let grepOutput = "";
     try {
       grepOutput = execFileSync(
@@ -134,7 +134,7 @@ describe("assistant ID boundary", () => {
       const message = [
         "Found daemon/runtime source files that reference `normalizeAssistantId`.",
         "Daemon code should use the `DAEMON_INTERNAL_ASSISTANT_ID` constant instead.",
-        "The `normalizeAssistantId` function is for gateway/platform use only (defined in util/platform.ts).",
+        "The `normalizeAssistantId` function is deleted and must not be reintroduced.",
         "",
         "Violations:",
         ...violations.map((f) => `  - ${f}`),

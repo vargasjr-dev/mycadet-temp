@@ -21,8 +21,9 @@ import {
 import { arch, homedir, platform } from "node:os";
 import { basename, join } from "node:path";
 
+import { getBinDir } from "./layout.js";
 import { getLogger } from "./logger.js";
-import { getBinDir, isWindows } from "./platform.js";
+import { isWindows } from "./os.js";
 
 const log = getLogger("bun-runtime");
 

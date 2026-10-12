@@ -26,7 +26,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 
 const DISABLED_FILE = ".disabled";
 

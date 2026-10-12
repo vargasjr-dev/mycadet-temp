@@ -20,11 +20,11 @@ import {
 } from "../../monitoring/control.js";
 import type { ResourceSample } from "../../monitoring/resource-sample-types.js";
 import { SampleRingBuffer } from "../../monitoring/sample-ring-buffer.js";
-import { getLogger } from "../../util/logger.js";
 import {
   getMonitoringDataDir,
   getMonitoringPidPath,
-} from "../../util/platform.js";
+} from "../../util/layout.js";
+import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { InternalError } from "./errors.js";
 import type { RouteDefinition } from "./types.js";

@@ -81,7 +81,7 @@ import {
   resolveSkillSource,
   searchSkillsRegistry,
 } from "../../skills/skillssh-registry.js";
-import { getWorkspaceSkillsDir } from "../../util/platform.js";
+import { getWorkspaceSkillsDir } from "../../util/layout.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { getConfigWatcher } from "../config-watcher.js";
 import type {

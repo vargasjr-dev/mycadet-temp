@@ -51,7 +51,7 @@ tester.run("cli/no-daemon-internals", rule, {
     {
       filename: FILE,
       code: `
-        import { getWorkspaceDir } from "../../util/platform.js";
+        import { getWorkspaceDir } from "../../util/layout.js";
         import { readStdinSync } from "../../util/read-stdin.js";
         import { APP_VERSION } from "../../version.js";
       `,

@@ -17,8 +17,8 @@ import { join } from "node:path";
 
 import type { AssistantEvent } from "../api/index.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
+import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSignalsDir } from "../util/platform.js";
 
 const log = getLogger("signal:emit-event");
 

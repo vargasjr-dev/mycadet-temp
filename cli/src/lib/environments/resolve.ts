@@ -67,10 +67,8 @@ export function getCurrentEnvironment(
   const seed = SEEDS[name];
   if (!seed) {
     if (name !== DEFAULT_ENVIRONMENT_NAME) {
-      // Warn on stderr instead of throwing, to match the silent-fallback
-      // behavior in assistant/src/util/platform.ts:getXdgCadetConfigDirName,
-      // which silently falls back to production; the CLI agrees so neither
-      // writer ends up in a disjoint state on a typo.
+      // Warn on stderr instead of throwing: an unknown environment falls back
+      // to production, so a typo never splits writes between two states.
       process.stderr.write(
         `warning: unknown environment "${name}"; falling back to "${DEFAULT_ENVIRONMENT_NAME}". ` +
           `Add it to packages/environments/src/seeds.ts and rebuild if this was intentional.\n`,

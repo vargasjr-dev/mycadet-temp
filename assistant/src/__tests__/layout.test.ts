@@ -19,7 +19,7 @@ import {
   getWorkspacePluginsDir,
   getWorkspacePromptPath,
   getWorkspaceSkillsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
 
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 

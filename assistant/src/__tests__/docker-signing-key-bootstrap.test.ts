@@ -23,7 +23,7 @@ const {
   _resetSigningKeyForTesting,
 } = await import("../runtime/auth/token-service.js");
 const { CURRENT_POLICY_EPOCH } = await import("../runtime/auth/policy.js");
-const { getDeprecatedDir } = await import("../util/platform.js");
+const { getDeprecatedDir } = await import("../util/layout.js");
 
 const VALID_HEX_KEY = "ab".repeat(32); // 64 hex chars = 32 bytes
 

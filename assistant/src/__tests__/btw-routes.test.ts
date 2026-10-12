@@ -119,7 +119,7 @@ import {
   ServiceUnavailableError,
 } from "../runtime/routes/errors.js";
 import type { RouteHandlerArgs } from "../runtime/routes/types.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // ---------------------------------------------------------------------------

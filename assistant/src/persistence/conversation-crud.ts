@@ -52,9 +52,9 @@ import { getCurrentSeq } from "../runtime/assistant-stream-state.js";
 import { publishConversationListAndMetadataChanged } from "../runtime/sync/resource-sync-events.js";
 import { publishSyncInvalidation } from "../runtime/sync/sync-publisher.js";
 import { UserError } from "../util/errors.js";
+import { getConversationsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { getLogsDbPath } from "../util/logs-db-path.js";
-import { getConversationsDir } from "../util/platform.js";
 import { createRowMapper, parseJsonNullable } from "../util/row-mapper.js";
 import {
   isRetryableSqliteError,

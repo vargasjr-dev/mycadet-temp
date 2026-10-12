@@ -27,8 +27,8 @@ import {
 import { renderInlineCommands } from "../../skills/inline-command-render.js";
 import { parseToolManifestFile } from "../../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../../skills/version-hash.js";
+import { getWorkspaceDirDisplay } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspaceDirDisplay } from "../../util/platform.js";
 import { supportsClientOsForSkillTool } from "../client-os.js";
 import type {
   ToolContext,

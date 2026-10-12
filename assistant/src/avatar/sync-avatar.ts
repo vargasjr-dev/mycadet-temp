@@ -62,8 +62,8 @@ import {
   type SyncedKey,
 } from "../cloud/cloud-patch-queue.js";
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { backfillAccent } from "./accent-backfill.js";
 import { readAvatarState } from "./avatar-manifest.js";
 import {

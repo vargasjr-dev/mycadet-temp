@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { listInstalledPluginDirs } from "../installed-plugin-dirs.js";
 
 const pluginsDir = getWorkspacePluginsDir();

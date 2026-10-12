@@ -3,7 +3,7 @@
  *
  * The function writes a cloud `## Onboarding Context` section to the
  * guardian persona file (with a fallback chain). These tests stub
- * `util/platform.js` and `contacts/contact-store.js` to control the
+ * `util/layout.js` and `contacts/contact-store.js` to control the
  * write target and verify idempotency, fallback, and field omission.
  */
 

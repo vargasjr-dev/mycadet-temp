@@ -32,8 +32,8 @@ import {
 } from "../util/cgroup-memory.js";
 import { diffCounters } from "../util/counter-diff.js";
 import { getDiskUsageInfo } from "../util/disk-usage.js";
+import { getMonitoringDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getMonitoringDataDir } from "../util/platform.js";
 import {
   listProcessTableAsync,
   type ProcessTableRow,

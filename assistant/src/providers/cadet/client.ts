@@ -1,4 +1,4 @@
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { OpenAIChatCompletionsProvider } from "../openai/chat-completions-provider.js";
 import type { SendMessageOptions } from "../types.js";
 import { hostedDirectionsExtraBody } from "./personality-directions.js";

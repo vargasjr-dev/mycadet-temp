@@ -10,7 +10,7 @@ import { readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { ensureDir, pathExists } from "../util/fs.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 export interface Draft {
   id: string;

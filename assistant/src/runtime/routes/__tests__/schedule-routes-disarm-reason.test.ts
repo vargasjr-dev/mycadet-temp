@@ -19,7 +19,7 @@ import {
   setUserEnabled,
   upsertDeclaredSchedule,
 } from "../../../schedule/schedule-store.js";
-import { getWorkspacePluginsDir } from "../../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { ROUTES } from "../schedule-routes.js";
 
 await initializeDb();

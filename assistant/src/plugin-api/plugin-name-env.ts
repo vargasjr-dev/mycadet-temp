@@ -12,7 +12,7 @@ import { isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getCurrentPluginName } from "../plugins/plugin-execution-context.js";
-import { getWorkspacePluginsDir } from "../util/platform.js";
+import { getWorkspacePluginsDir } from "../util/layout.js";
 
 export const PLUGIN_NAME_ENV = "CADET_PLUGIN_NAME";
 

@@ -10,7 +10,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getDataDir } from "../util/platform.js";
+import { getDataDir } from "../util/layout.js";
 
 export const ComposerPreferencesSchema = z.object({
   favoriteModeIds: z.array(z.string().min(1).max(200)).max(5).default([]),

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { getDataDir, getDbPath } from "../../util/platform.js";
+import { getDataDir, getDbPath } from "../../util/layout.js";
 import { getTrackedDataFiles, parseFincoreJson } from "../page-cache.js";
 
 describe("parseFincoreJson", () => {

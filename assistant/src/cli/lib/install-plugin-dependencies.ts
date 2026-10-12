@@ -59,7 +59,7 @@ import { promisify } from "node:util";
 
 import { ensureBun } from "../../util/bun-runtime.js";
 import { getLogger } from "../../util/logger.js";
-import { addToPathEnv } from "../../util/platform.js";
+import { addToPathEnv } from "../../util/os.js";
 
 const execFileAsync = promisify(execFile);
 

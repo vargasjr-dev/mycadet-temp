@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { ToolContext } from "../../../../tools/types.js";
 
 // The real isWindows() reads process.platform, so simulate the host platform
-// directly instead of mocking util/platform.js.
+// directly instead of mocking util/os.js.
 const originalProcessPlatform = process.platform;
 
 function setProcessPlatform(value: string): void {

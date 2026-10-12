@@ -32,11 +32,8 @@ import {
   startMonitorUsageTelemetryReporter,
   stopUsageTelemetryReporter,
 } from "../telemetry/usage-telemetry-reporter.js";
+import { getMonitoringDataDir, getMonitoringPidPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import {
-  getMonitoringDataDir,
-  getMonitoringPidPath,
-} from "../util/platform.js";
 import {
   cleanupWorkerPidFile,
   startWorkerPidFileGuard,

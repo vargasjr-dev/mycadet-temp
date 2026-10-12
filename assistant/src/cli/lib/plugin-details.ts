@@ -34,7 +34,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { readPluginManifest } from "../../util/plugin-manifest.js";
 import { readBundledPluginFile } from "./bundled-plugin-packages.js";
 import type { FetchLike } from "./fetch-like.js";

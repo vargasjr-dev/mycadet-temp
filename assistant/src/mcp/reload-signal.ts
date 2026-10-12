@@ -21,8 +21,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSignalsDir } from "../util/platform.js";
 
 const log = getLogger("mcp-reload-signal");
 

@@ -13,7 +13,7 @@ import type { Command } from "commander";
 
 import { cliIpcCall } from "../../ipc/cli-client.js";
 import { stripAnsiAndControlChars } from "../../util/ansi.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { truncate } from "../../util/truncate.js";
 import { resolveBundledCliModule } from "../bundled-modules.js";
 import { yellow } from "../lib/cli-colors.js";

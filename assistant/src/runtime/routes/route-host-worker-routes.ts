@@ -22,8 +22,8 @@ import {
   stopRouteHostWorkerProcess,
 } from "../../routes/control.js";
 import { ROUTE_HOST_PROC_NAME } from "../../routes/route-host-protocol.js";
+import { getProcPidPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getProcPidPath } from "../../util/platform.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { InternalError } from "./errors.js";
 import type { RouteDefinition } from "./types.js";

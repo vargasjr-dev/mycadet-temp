@@ -8,8 +8,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { safeStringSlice } from "../util/unicode.js";
 
 const log = getLogger("dictation-profile-store");

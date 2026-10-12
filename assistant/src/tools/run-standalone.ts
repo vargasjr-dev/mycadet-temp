@@ -18,7 +18,7 @@
 import { v4 as uuid } from "uuid";
 
 import { PermissionPrompter } from "../permissions/prompter.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { ToolExecutor } from "./executor.js";
 import { resolveTool } from "./registry.js";
 import type { ToolContext } from "./types.js";

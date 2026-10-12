@@ -15,7 +15,7 @@ import {
 } from "@mycadet/environments/shell";
 
 import { getGatewayInternalBaseUrl } from "../../config/env.js";
-import { getDataDir, getWorkspaceDir } from "../../util/platform.js";
+import { getDataDir, getWorkspaceDir } from "../../util/layout.js";
 
 export const SAFE_ENV_VARS = [
   "PATH",

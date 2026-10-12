@@ -18,7 +18,7 @@ import { existsSync } from "node:fs";
 
 import type { Command } from "commander";
 
-import { getDbPath } from "../../../util/platform.js";
+import { getDbPath } from "../../../util/layout.js";
 import { dim, green, red } from "../../lib/cli-colors.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";

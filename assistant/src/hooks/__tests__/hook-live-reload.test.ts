@@ -30,7 +30,7 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { evictModule } from "../../plugins/surface-import.js";
 import type { HookEntry } from "../../plugins/types.js";
-import { getWorkspacePluginsDir } from "../../util/platform.js";
+import { getWorkspacePluginsDir } from "../../util/layout.js";
 import {
   collectUserHookEntries,
   evictHooksForOwner,

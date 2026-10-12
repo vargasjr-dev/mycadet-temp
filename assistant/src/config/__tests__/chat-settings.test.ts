@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
 
-import { getWorkspaceConfigPath } from "../../util/platform.js";
+import { getWorkspaceConfigPath } from "../../util/layout.js";
 import { loadRawConfig, saveRawConfig } from "../loader.js";
 import { AssistantConfigSchema } from "../schema.js";
 import { AutoArchiveConfigSchema } from "../schemas/conversations.js";

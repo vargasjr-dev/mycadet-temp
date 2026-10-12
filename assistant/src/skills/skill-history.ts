@@ -40,8 +40,8 @@
 // requires to be side-effect-free, so observing history must never be the
 // thing that brings a repository into existence.
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { getWorkspaceGitService } from "../workspace/git-service.js";
 import { validateCloudSkillId } from "./cloud-store.js";
 

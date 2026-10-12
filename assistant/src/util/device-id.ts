@@ -22,8 +22,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getDeviceIdOverride } from "../config/env-registry.js";
+import { getWorkspaceDir } from "./layout.js";
 import { getLogger } from "./logger.js";
-import { getWorkspaceDir } from "./platform.js";
 
 const log = getLogger("device-id");
 

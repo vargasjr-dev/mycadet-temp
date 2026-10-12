@@ -34,12 +34,12 @@ import {
 import type { CharacterTraits } from "../../avatar/traits-png-sync.js";
 import { detectMediaType } from "../../tools/shared/filesystem/image-read.js";
 import { generateAvatarImage } from "../../tools/system/avatar-generator.js";
-import { getLogger } from "../../util/logger.js";
 import {
   getAvatarDir,
   getAvatarImagePath,
   getWorkspaceDir,
-} from "../../util/platform.js";
+} from "../../util/layout.js";
+import { getLogger } from "../../util/logger.js";
 import { ACTOR_PRINCIPALS, LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   getOriginClientId,

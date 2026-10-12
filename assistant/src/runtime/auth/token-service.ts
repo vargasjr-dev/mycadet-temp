@@ -22,8 +22,8 @@ import {
 import { dirname, join } from "node:path";
 
 import { getIsContainerized } from "../../config/env-registry.js";
+import { getDeprecatedDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getDeprecatedDir } from "../../util/platform.js";
 import { isStaleEpoch } from "./policy.js";
 import type { ScopeProfile, TokenAudience, TokenClaims } from "./types.js";
 

@@ -16,12 +16,12 @@ import { dirname, join } from "node:path";
 import type { Subprocess } from "bun";
 
 import { getQdrantReadyzTimeoutMs, getQdrantUrlEnv } from "../../config/env.js";
+import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 import {
   setOomScoreAdj,
   WORKER_OOM_SCORE_ADJ,
 } from "../../util/oom-priority.js";
-import { getDataDir } from "../../util/platform.js";
 
 const log = getLogger("qdrant-manager");
 

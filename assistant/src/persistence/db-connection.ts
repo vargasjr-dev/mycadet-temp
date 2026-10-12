@@ -5,9 +5,9 @@ import { Database } from "bun:sqlite";
 import { canonicalizePathThroughExistingParent } from "@mycadet/environments/test-path-guard";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { ensureDataDir, getDbPath } from "../util/layout.js";
 import { getLogsDbPath } from "../util/logs-db-path.js";
 import { getMemoryDbPath } from "../util/memory-db-path.js";
-import { ensureDataDir, getDbPath } from "../util/platform.js";
 import { getTelemetryDbPath } from "../util/telemetry-db-path.js";
 import { clearStoredDb, getStoredDb, setStoredDb } from "./db-singleton.js";
 import * as schema from "./schema/index.js";

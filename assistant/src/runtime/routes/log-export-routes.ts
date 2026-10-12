@@ -30,12 +30,12 @@ import {
   messages,
   toolInvocations,
 } from "../../persistence/schema/index.js";
-import { getLogger, LOG_FILE_PATTERN } from "../../util/logger.js";
 import {
   getDaemonStderrLogPath,
   getDataDir,
   getWorkspaceConfigPath,
-} from "../../util/platform.js";
+} from "../../util/layout.js";
+import { getLogger, LOG_FILE_PATTERN } from "../../util/logger.js";
 import { APP_VERSION, COMMIT_SHA } from "../../version.js";
 import { assistantEventHub } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";

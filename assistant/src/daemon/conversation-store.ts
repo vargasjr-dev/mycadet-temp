@@ -28,7 +28,7 @@ import {
 import { RateLimitProvider } from "../providers/ratelimit.js";
 import { listProviders } from "../providers/registry.js";
 import { getSubagentManager } from "../subagent/index.js";
-import { getSandboxWorkingDir } from "../util/platform.js";
+import { getSandboxWorkingDir } from "../util/layout.js";
 import { Conversation } from "./conversation.js";
 import { conversationEventSink } from "./conversation-event-sink.js";
 import {

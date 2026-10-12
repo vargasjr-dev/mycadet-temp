@@ -18,8 +18,8 @@ import {
   spawnScheduleWorkerProcess,
   stopScheduleWorkerProcess,
 } from "../../schedule/worker-control.js";
+import { getScheduleWorkerPidPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getScheduleWorkerPidPath } from "../../util/platform.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { InternalError } from "./errors.js";
 import type { RouteDefinition } from "./types.js";

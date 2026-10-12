@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   getWorkspacePluginsDir,
   getWorkspaceSkillsDir,
-} from "../../../../util/platform.js";
+} from "../../../../util/layout.js";
 import {
   collectInstalledInventory,
   collectPluginInventory,

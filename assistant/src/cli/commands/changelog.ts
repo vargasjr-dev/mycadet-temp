@@ -22,7 +22,7 @@ import { dirname, join } from "node:path";
 
 import type { Command } from "commander";
 
-import { getWorkspaceDir } from "../../util/platform.js";
+import { getWorkspaceDir } from "../../util/layout.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { USER_AGENT } from "../lib/user-agent.js";

@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { getWorkspaceSkillsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceSkillsDir } from "../util/platform.js";
 import {
   computeSkillHash,
   readInstallMeta,

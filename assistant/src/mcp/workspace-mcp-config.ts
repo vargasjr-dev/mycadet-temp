@@ -17,8 +17,8 @@ import { dirname } from "node:path";
 
 import type { McpConfig, McpServerConfig } from "../config/schemas/mcp.js";
 import { McpConfigSchema } from "../config/schemas/mcp.js";
+import { getWorkspaceMcpConfigPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceMcpConfigPath } from "../util/platform.js";
 import {
   AGENT_PLUGINS_MCP_SCHEMA_URL,
   projectSpecServerToTransport,

@@ -31,9 +31,9 @@ import { Database } from "bun:sqlite";
 import type { Command } from "commander";
 
 import type { SchemaContractReport } from "../../../persistence/schema-contract.js";
+import { getDbPath } from "../../../util/layout.js";
 import { getLogsDbPath } from "../../../util/logs-db-path.js";
 import { getMemoryDbPath } from "../../../util/memory-db-path.js";
-import { getDbPath } from "../../../util/platform.js";
 import { getTelemetryDbPath } from "../../../util/telemetry-db-path.js";
 import { red } from "../../lib/cli-colors.js";
 import { subcommand } from "../../lib/cli-command-help.js";

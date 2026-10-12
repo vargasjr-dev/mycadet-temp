@@ -1,7 +1,7 @@
 /**
  * The memory plugin's single host-path channel. Every module in this plugin
  * resolves filesystem locations here rather than importing host
- * `util/platform` directly, so the host import below is the plugin's sole
+ * `util/layout` directly, so the host import below is the plugin's sole
  * path escape (tracked by `plugin-import-boundary-guard.test.ts`), mirroring
  * `logging.ts`.
  *
@@ -12,13 +12,13 @@
  * a paths facet on the contract, or `InitContext`-provided roots — a
  * one-file change. `getMemoryWorkerPidPath` is the PID-file coordination
  * point shared between the memory worker process entry (`worker.ts`) and its
- * control module (`worker-control.ts`), so it lives in host `util/platform`
+ * control module (`worker-control.ts`), so it lives in host `util/layout`
  * where both — and any out-of-process consumer — resolve the same path.
  */
-// A namespace import (not named imports) so tests that mock `util/platform`
+// A namespace import (not named imports) so tests that mock `util/layout`
 // with a subset of its exports don't fail this module's import link — each
 // forward resolves its function at call time.
-import * as hostPlatform from "../../../util/platform.js";
+import * as hostPlatform from "../../../util/layout.js";
 
 export function getWorkspaceDir(): string {
   return hostPlatform.getWorkspaceDir();

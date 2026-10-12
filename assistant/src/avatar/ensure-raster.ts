@@ -10,8 +10,8 @@ import {
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative } from "node:path";
 
+import { getAvatarImagePath, getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarImagePath, getWorkspaceDir } from "../util/platform.js";
 import { type AvatarState, readAvatarState } from "./avatar-manifest.js";
 import { writeTraitsAndRenderAvatar } from "./traits-png-sync.js";
 

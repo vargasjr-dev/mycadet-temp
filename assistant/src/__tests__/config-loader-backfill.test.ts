@@ -74,7 +74,7 @@ import { migrateProviderConnectionBaseUrlAndModels } from "../persistence/migrat
 import * as schema from "../persistence/schema/index.js";
 import { getConnection } from "../providers/inference/connections.js";
 import { getProviderDefaultModel } from "../providers/model-intents.js";
-import { getConfigQuarantineNoticePath } from "../util/platform.js";
+import { getConfigQuarantineNoticePath } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

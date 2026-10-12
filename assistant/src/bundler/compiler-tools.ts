@@ -18,8 +18,8 @@ import {
 import { arch, platform } from "node:os";
 import { basename, join } from "node:path";
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import { PromiseGuard } from "../util/promise-guard.js";
 
 const log = getLogger("compiler-tools");

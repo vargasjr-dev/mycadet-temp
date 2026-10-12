@@ -180,7 +180,7 @@ import type { SubagentState } from "../subagent/types.js";
 import {
   getWorkspacePluginsDir,
   getWorkspacePromptPath,
-} from "../util/platform.js";
+} from "../util/layout.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // `applyRuntimeInjections` self-resolves the Slack active-thread focus block by

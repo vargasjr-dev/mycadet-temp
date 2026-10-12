@@ -56,8 +56,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, symlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 
 const log = getLogger("shared-dep-links");
 

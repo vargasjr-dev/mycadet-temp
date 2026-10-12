@@ -15,8 +15,8 @@ import { touchConversation } from "../daemon/conversation-evictor.js";
 import { findConversation } from "../daemon/conversation-registry.js";
 import { getSubagentManager } from "../subagent/index.js";
 import { createAbortReason } from "../util/abort-reasons.js";
+import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSignalsDir } from "../util/platform.js";
 
 const log = getLogger("signal:cancel");
 

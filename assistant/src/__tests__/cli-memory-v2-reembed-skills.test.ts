@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { Command } from "commander";
 
 import { invalidateConfigCache } from "../config/loader.js";
-import { getWorkspaceDir } from "../util/platform.js";
+import { getWorkspaceDir } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
 // Module-level mocks — kept minimal. `loadConfig` and `getLogger` use their

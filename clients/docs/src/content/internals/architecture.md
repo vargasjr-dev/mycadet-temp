@@ -81,7 +81,7 @@ Environments are **namespaces**, not containers. `CADET_ENVIRONMENT` selects a p
 
 ### Per-assistant data directories
 
-Every local assistant's daemon root is `<resources.instanceDir>/.cadet/`. The CLI passes per-instance paths to spawned daemons and gateways via explicit environment variables: `CADET_WORKSPACE_DIR` (workspace data), `GATEWAY_SECURITY_DIR` (gateway security state), and `CREDENTIAL_SECURITY_DIR` (CES key stores). `assistant/src/util/platform.ts:cadetRoot` resolves the root from `CADET_WORKSPACE_DIR` when set, falling back to `join(homedir(), ".cadet")`. All root-level state (PID file, `.env`, `runtime-port`, `protected/` with its encrypted keys, trust rules, credentials, capability token, etc.) and the workspace directory derive from these helpers.
+Every local assistant's daemon root is `<resources.instanceDir>/.cadet/`. The CLI passes per-instance paths to spawned daemons and gateways via explicit environment variables: `CADET_WORKSPACE_DIR` (workspace data), `GATEWAY_SECURITY_DIR` (gateway security state), and `CREDENTIAL_SECURITY_DIR` (CES key stores). `assistant/src/util/layout.ts:getWorkspaceDir` resolves the root from `CADET_WORKSPACE_DIR` when set, falling back to `<cwd>/workspace`. All root-level state (PID file, `.env`, `runtime-port`, `protected/` with its encrypted keys, trust rules, credentials, capability token, etc.) and the workspace directory derive from these helpers.
 
 Allocation of `instanceDir` for new hatches:
 
@@ -108,7 +108,7 @@ The CLI routes all lockfile reads/writes through `cli/src/lib/environments/paths
 | `production`   | `$XDG_CONFIG_HOME/cadet/`       |
 | non-production | `$XDG_CONFIG_HOME/cadet-<env>/` |
 
-Platform tokens (`platform-token`), device IDs (`device-id`), and guardian tokens (`assistants/<id>/guardian-token.json`) live under the env-scoped config dir. The CLI (`cli/src/lib/cloud-client.ts`, `cli/src/lib/guardian-token.ts`), the daemon (`assistant/src/util/platform.ts:getXdgPlatformTokenPath`, `getXdgCadetConfigDirName`), and the Electron app (`clients/macos/src/main/device-id.ts`) all agree on the same env-scoped path, so `cadet login`, guardian leasing, persisted device IDs, and desktop session state never bleed between environments.
+Platform tokens (`platform-token`), device IDs (`device-id`), and guardian tokens (`assistants/<id>/guardian-token.json`) live under the env-scoped config dir. The CLI (`cli/src/lib/cloud-client.ts`, `cli/src/lib/guardian-token.ts`) and the Electron app (`clients/macos/src/main/device-id.ts`) agree on the same env-scoped path; the daemon's device ID derives from the workspace itself (`assistant/src/util/device-id.ts`), so `cadet login`, guardian leasing, persisted device IDs, and desktop session state never bleed between environments.
 
 Paired guardian credentials stay in the trusted host. The renderer sends paired traffic to `/assistant/__gateway-paired/<assistantId>/*` without a bearer. The Electron main process, CLI web host, or Vite development host resolves the paired entry, removes any renderer-provided `Authorization` header, reads or refreshes the guardian token, and injects it only on the remote gateway hop. Renderer-facing guardian-token endpoints reject paired assistant IDs. Packaged Electron gates the custom-protocol route through main-process `WebRequest` frame identity because Chromium omits Origin, Referer, and Fetch Metadata from the `GlobalRequest` delivered to custom protocol handlers.
 

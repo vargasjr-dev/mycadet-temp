@@ -34,7 +34,7 @@ import {
   watchEventStream,
 } from "./signals/event-stream.js";
 import { formatDiff, formatNewFileDiff } from "./util/diff.js";
-import { getHistoryPath, getSignalsDir } from "./util/platform.js";
+import { getHistoryPath, getSignalsDir } from "./util/layout.js";
 import { Spinner } from "./util/spinner.js";
 import { timeAgo } from "./util/time.js";
 import { truncate } from "./util/truncate.js";

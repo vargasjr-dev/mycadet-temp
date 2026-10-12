@@ -8,9 +8,9 @@
  * binds them to the monitor's PID path and entry point.
  */
 
+import { getMonitoringPidPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { MONITOR_OOM_SCORE_ADJ } from "../util/oom-priority.js";
-import { getMonitoringPidPath } from "../util/platform.js";
 import {
   probeWorkerPidFile,
   spawnWorkerProcess,

@@ -10,7 +10,7 @@ import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getDbPath } from "../../util/platform.js";
+import { getDbPath } from "../../util/layout.js";
 import { readActiveConversations } from "../active-conversations.js";
 
 function openWriter(): Database {

@@ -42,8 +42,8 @@ import {
   isPendingGuardianFeedItem,
 } from "../api/responses/home.js";
 import { broadcastMessage } from "../runtime/assistant-event-hub.js";
+import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getDataDir } from "../util/platform.js";
 import {
   type FeedItem,
   type FeedItemStatus,

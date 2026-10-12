@@ -29,7 +29,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { memoryInjectors } from "../plugins/defaults/memory/injectors.js";
 import type { Injector, TurnContext } from "../plugins/types.js";
 import type { Message } from "../providers/types.js";
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 function findInjector(name: string): Injector {
   const injector = memoryInjectors.find((i) => i.name === name);

@@ -29,7 +29,7 @@ import {
   getWorkspaceRoutesDir,
   getWorkspaceToolsDir,
   getWorkspaceWorkflowsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
 import {
   type ApprovalContext,
   DefaultApprovalPolicy,

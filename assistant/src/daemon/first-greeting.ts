@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 
-import { getWorkspacePromptPath } from "../util/platform.js";
+import { getWorkspacePromptPath } from "../util/layout.js";
 
 type Tone = "grounded" | "warm" | "energetic" | "poetic";
 

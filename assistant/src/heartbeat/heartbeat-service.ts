@@ -27,8 +27,8 @@ import {
   resolveScheduleTimezone,
 } from "../schedule/schedule-timezone.js";
 import { readTextFileSync } from "../util/fs.js";
+import { getWorkspaceDir, getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir, getWorkspacePromptPath } from "../util/platform.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import {
   completeHeartbeatRun,

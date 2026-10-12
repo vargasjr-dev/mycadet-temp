@@ -10,15 +10,15 @@ import { join } from "node:path";
 import type { Subprocess } from "bun";
 
 import { getIsContainerized } from "../../config/env-registry.js";
+import {
+  getEmbeddingModelsDir,
+  getEmbedWorkerPidPath,
+} from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 import {
   setOomScoreAdj,
   WORKER_OOM_SCORE_ADJ,
 } from "../../util/oom-priority.js";
-import {
-  getEmbeddingModelsDir,
-  getEmbedWorkerPidPath,
-} from "../../util/platform.js";
 import { isProcessAlive } from "../../util/process-liveness.js";
 import { PromiseGuard } from "../../util/promise-guard.js";
 import { workerComputeEnv } from "../../util/worker-compute.js";

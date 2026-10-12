@@ -12,8 +12,8 @@ import { basename, isAbsolute, relative, resolve, sep } from "node:path";
 
 import type { ActivationArtifact } from "../api/responses/activation.js";
 import type { AttachmentSourceType } from "../daemon/assistant-attachments.js";
+import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getWorkspaceDir } from "../util/platform.js";
 import {
   bumpActivationStepCount,
   markActivationTurnComplete,

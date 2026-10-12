@@ -36,8 +36,8 @@ import { RateLimitProvider } from "../providers/ratelimit.js";
 import { listProviders } from "../providers/registry.js";
 import type { Message, TextContent } from "../providers/types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
+import { getSandboxWorkingDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getSandboxWorkingDir } from "../util/platform.js";
 import { sleep } from "../util/retry.js";
 import { injectMessageIntoParent } from "./notify.js";
 import {

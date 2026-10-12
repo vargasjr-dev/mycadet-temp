@@ -32,12 +32,12 @@ import {
   getProfilerMode,
   getProfilerRunId,
 } from "../config/env-registry.js";
-import { getLogger } from "../util/logger.js";
 import {
   getProfilerRootDir,
   getProfilerRunDir,
   getProfilerRunsDir,
-} from "../util/platform.js";
+} from "../util/layout.js";
+import { getLogger } from "../util/logger.js";
 
 const log = getLogger("profiler-run-store");
 

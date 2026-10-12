@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   getWorkspacePluginsDir,
   getWorkspaceRoutesDir,
-} from "../../../util/platform.js";
+} from "../../../util/layout.js";
 import { BadRequestError } from "../errors.js";
 import type { RouteHandlerArgs } from "../types.js";
 import { ROUTES } from "../user-routes-cli.js";

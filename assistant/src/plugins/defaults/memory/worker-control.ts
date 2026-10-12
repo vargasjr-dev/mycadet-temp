@@ -8,7 +8,7 @@
  * path and entry point.
  */
 
-import { getMemoryWorkerPidPath } from "../../../util/platform.js";
+import { getMemoryWorkerPidPath } from "../../../util/layout.js";
 import {
   probeWorkerPidFile,
   spawnWorkerProcess,

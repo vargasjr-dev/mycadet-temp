@@ -49,8 +49,8 @@ import {
   getCredentialMetadata,
   upsertCredentialMetadata,
 } from "../../tools/credentials/metadata-store.js";
+import { getWorkspaceDir, getWorkspaceHooksDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
-import { getWorkspaceDir, getWorkspaceHooksDir } from "../../util/platform.js";
 import { APP_VERSION } from "../../version.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";

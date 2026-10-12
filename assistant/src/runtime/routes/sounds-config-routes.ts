@@ -18,7 +18,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-import { getSoundsDir } from "../../util/platform.js";
+import { getSoundsDir } from "../../util/layout.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { publishSoundsConfigUpdated } from "../sync/resource-sync-events.js";
 import { BadRequestError } from "./errors.js";

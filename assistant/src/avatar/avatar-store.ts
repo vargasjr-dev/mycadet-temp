@@ -33,8 +33,8 @@ import {
 
 import { publishAvatarChanged } from "../runtime/sync/resource-sync-events.js";
 import { recordTelemetryEvent } from "../telemetry/telemetry-events-outbox.js";
+import { getAvatarDir, getAvatarImagePath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
-import { getAvatarDir, getAvatarImagePath } from "../util/platform.js";
 import { automaticAccent } from "./accent-backfill.js";
 import {
   deriveAccentHexFromImage,

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   getWorkspacePluginsDir,
   getWorkspaceRoutesDir,
-} from "../../../util/platform.js";
+} from "../../../util/layout.js";
 import { UserRouteDispatcher } from "../user-route-dispatcher.js";
 
 // ---------------------------------------------------------------------------

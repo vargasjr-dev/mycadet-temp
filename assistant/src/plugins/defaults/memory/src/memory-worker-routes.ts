@@ -18,8 +18,8 @@ import { getMemoryBackendStatus } from "../../../../persistence/embeddings/embed
 import { ACTOR_PRINCIPALS } from "../../../../runtime/auth/route-policy.js";
 import { InternalError } from "../../../../runtime/routes/errors.js";
 import type { RouteDefinition } from "../../../../runtime/routes/types.js";
+import { getMemoryWorkerPidPath } from "../../../../util/layout.js";
 import { getLogger } from "../../../../util/logger.js";
-import { getMemoryWorkerPidPath } from "../../../../util/platform.js";
 import {
   MemoryWorkerSpawnError,
   probeMemoryWorker,
