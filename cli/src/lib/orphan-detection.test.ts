@@ -4,6 +4,8 @@ import {
   classifyProcess,
   detectOrphanedProcesses,
   isInteractiveCliSession,
+  MAX_PS_COMMAND_LENGTH,
+  truncateCommand,
 } from "./orphan-detection.js";
 
 // `mock.restore()` does not undo `mock.module()`; keep the real module so it
@@ -161,5 +163,36 @@ describe("detectOrphanedProcesses", () => {
     expect(orphans.map((o) => o.pid).sort()).toEqual(["104", "105"]);
     expect(orphans.find((o) => o.pid === "104")?.name).toBe("gateway");
     expect(orphans.find((o) => o.pid === "105")?.name).toBe("cadet");
+  });
+});
+
+describe("truncateCommand", () => {
+  const longCommand =
+    "bun /Users/david/.local/share/cadet/assistants/a1b2c3d4e5f6/runtime/daemon/main.js --serve";
+
+  test("keeps a short command untouched", () => {
+    expect(truncateCommand("qdrant --config-path /etc/qdrant")).toBe(
+      "qdrant --config-path /etc/qdrant",
+    );
+  });
+
+  test("keeps a command at the cap untouched", () => {
+    const atCap = "a".repeat(MAX_PS_COMMAND_LENGTH);
+    expect(truncateCommand(atCap)).toBe(atCap);
+  });
+
+  test("caps a super-long command to the max, keeping head and tail", () => {
+    const truncated = truncateCommand(longCommand);
+    expect(truncated.length).toBe(MAX_PS_COMMAND_LENGTH);
+    expect(truncated.startsWith("bun /Users/david")).toBe(true);
+    expect(truncated.endsWith("daemon/main.js --serve")).toBe(true);
+    expect(truncated).toContain("…");
+  });
+
+  test("never grows shorter commands when the cap shrinks them", () => {
+    // 61 chars — one over the cap: the overlap-free middle collapses to "…".
+    const justOver = "a".repeat(MAX_PS_COMMAND_LENGTH + 1);
+    const truncated = truncateCommand(justOver);
+    expect(truncated.length).toBe(MAX_PS_COMMAND_LENGTH);
   });
 });

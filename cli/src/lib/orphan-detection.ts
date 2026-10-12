@@ -35,6 +35,22 @@ export function classifyProcess(command: string): string {
 }
 
 /**
+ * Display cap for a raw process command line in `ps` output (`PID N |
+ * <command>`). `ps ax` args are unbounded — an interpreter plus an absolute
+ * install path routinely runs 100+ chars, which wraps every row and
+ * stretches the whole table. The cap keeps the interpreter (head) and the
+ * identifying script name (tail); the middle collapses to one ellipsis.
+ */
+export const MAX_PS_COMMAND_LENGTH = 60;
+
+export function truncateCommand(command: string): string {
+  if (command.length <= MAX_PS_COMMAND_LENGTH) return command;
+  const head = 16;
+  const tail = MAX_PS_COMMAND_LENGTH - head - 1; // 1 char for the ellipsis
+  return `${command.slice(0, head)}…${command.slice(-tail)}`;
+}
+
+/**
  * True when the command line is a deliberate long-running interactive CLI
  * session (e.g. a live `cadet tunnel` in someone's terminal). Such sessions
  * have no PID-file registration, so `cadet clean` would otherwise kill them
