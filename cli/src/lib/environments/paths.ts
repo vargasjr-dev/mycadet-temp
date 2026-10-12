@@ -82,18 +82,26 @@ export function getLogDir(env: EnvironmentDefinition): string {
 }
 
 /**
- * Path to the interactive CLI's input history file.
+ * The interactive CLI's shared state directory — `$XDG_STATE_HOME/cadet`.
  *
- * Follows the XDG Base Directory spec: history files are state data
- * (persistent across runs but not portable / user-owned content), so they
- * belong under `$XDG_STATE_HOME`, mirroring `bash`, `zsh`, `psql`, and `gh`.
- * Defaults to `~/.local/state/cadet/input-history`.
+ * Follows the XDG Base Directory spec: session state is data that persists
+ * across runs but is not portable user-owned content, mirroring `bash`,
+ * `zsh`, `psql`, and `gh`. Defaults to `~/.local/state/cadet`.
  *
- * Not environment-scoped: terminal input history is per-user, not per-assistant,
- * so dev and prod CLIs share the same history file.
+ * Not environment-scoped: it holds per-user state (the terminal input
+ * history, below) that dev and prod CLIs share.
+ */
+export function getSharedStateDir(): string {
+  return join(xdgStateHome(), "cadet");
+}
+
+/**
+ * Path to the interactive CLI's input history file, inside
+ * {@link getSharedStateDir}. Defaults to
+ * `~/.local/state/cadet/input-history`.
  */
 export function getInputHistoryPath(): string {
-  return join(xdgStateHome(), "cadet", "input-history");
+  return join(getSharedStateDir(), "input-history");
 }
 
 /**

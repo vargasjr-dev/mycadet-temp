@@ -39,9 +39,11 @@ const {
   getConfigDir,
   getConfigDirs,
   getDefaultPorts,
+  getInputHistoryPath,
   getLockfilePath,
   getLockfilePaths,
   getMultiInstanceDir,
+  getSharedStateDir,
 } = await import("../paths.js");
 type EnvironmentDefinition =
   import("@mycadet/environments").EnvironmentDefinition;
@@ -58,7 +60,12 @@ const dev: EnvironmentDefinition = {
   webUrl: "https://dev.mycadet.ai",
 };
 
-const XDG_ENV_VARS = ["XDG_DATA_HOME", "XDG_CONFIG_HOME", "APPDATA"] as const;
+const XDG_ENV_VARS = [
+  "XDG_DATA_HOME",
+  "XDG_CONFIG_HOME",
+  "XDG_STATE_HOME",
+  "APPDATA",
+] as const;
 
 describe("path helpers", () => {
   let savedEnv: Record<string, string | undefined>;
@@ -220,6 +227,25 @@ describe("path helpers", () => {
       process.env.XDG_DATA_HOME = "/custom/data";
       expect(getMultiInstanceDir(dev)).toBe(
         "/custom/data/cadet-dev/assistants",
+      );
+    });
+  });
+
+  describe("getSharedStateDir", () => {
+    test("is not environment-scoped: ~/.local/state/cadet for every env", () => {
+      expect(getSharedStateDir()).toBe(
+        join(TEST_HOME, ".local", "state", "cadet"),
+      );
+    });
+
+    test("respects XDG_STATE_HOME", () => {
+      process.env.XDG_STATE_HOME = "/custom/state";
+      expect(getSharedStateDir()).toBe("/custom/state/cadet");
+    });
+
+    test("holds the shared terminal input history file", () => {
+      expect(getInputHistoryPath()).toBe(
+        join(getSharedStateDir(), "input-history"),
       );
     });
   });

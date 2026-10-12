@@ -1,4 +1,12 @@
-import { afterAll, afterEach, describe, expect, spyOn, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
@@ -8,6 +16,7 @@ import {
   getConfigDirs,
   getInputHistoryPath,
   getLogDir,
+  getSharedStateDir,
   getStateDir,
 } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
@@ -15,6 +24,20 @@ import type { AssistantEntry } from "../lib/assistant-config.js";
 
 // The command reads its argv at call time.
 const ORIGINAL_ARGV = process.argv;
+
+// retireDocker is the one retirement path with observable side effects
+// (docker teardown), and uninstall is the only importer in its graph.
+// Mocked module-wide so tests pin WHEN it runs — never before the
+// confirmation gate — as much as whether it runs.
+const retireDockerCalls: string[] = [];
+let onRetireDocker: ((name: string) => void) | undefined;
+
+mock.module("../lib/docker.js", () => ({
+  retireDocker: (name: string) => {
+    retireDockerCalls.push(name);
+    onRetireDocker?.(name);
+  },
+}));
 
 // Every XDG location the command touches MUST be redirected: the homedir
 // fallback would otherwise point at the real user's data dirs.
@@ -70,7 +93,15 @@ describe("cadet uninstall", () => {
   const errorSpy = spyOn(console, "error").mockImplementation(() => {});
   const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
 
+  function printedOutput(): string {
+    return logSpy.mock.calls
+      .map((args) => args.map(String).join(" "))
+      .join("\n");
+  }
+
   afterEach(() => {
+    retireDockerCalls.length = 0;
+    onRetireDocker = undefined;
     logSpy.mockClear();
     errorSpy.mockClear();
     warnSpy.mockClear();
@@ -82,11 +113,12 @@ describe("cadet uninstall", () => {
     warnSpy.mockRestore();
   });
 
-  test("warns and retires remaining assistants, then proceeds to the confirm gate", async () => {
+  test("warns that remaining assistants will be retired, then proceeds to the confirm gate", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
       // A remaining assistant is retired — with its data deleted — as part
-      // of the uninstall (v0.0.10 run feedback: the old hard refusal just
+      // of the uninstall AFTER the user confirms; the pre-confirm summary
+      // says so up front (v0.0.10 run feedback: the hard refusal just
       // blocked the uninstall; the fs sweep deletes the archives anyway).
       writeFileSync(
         join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
@@ -105,7 +137,7 @@ describe("cadet uninstall", () => {
           expect.stringContaining("1 assistant still exists"),
         );
         expect(warnSpy).toHaveBeenCalledWith(
-          expect.stringContaining("will be retired now"),
+          expect.stringContaining("will be retired as part of this uninstall"),
         );
         expect(errorSpy).not.toHaveBeenCalledWith(
           expect.stringContaining("Retire them first"),
@@ -138,6 +170,67 @@ describe("cadet uninstall", () => {
     });
   });
 
+  test("does not retire assistants when the confirm gate refuses", async () => {
+    await withRestoredEnv(async () => {
+      const root = redirectXdg();
+      writeFileSync(
+        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        JSON.stringify({
+          assistants: [{ ...makeEntry("docker-assistant"), cloud: "docker" }],
+        }) + "\n",
+      );
+
+      const exitMock = spyOn(process, "exit");
+      exitMock.mockImplementation((code?: number | string | undefined): never => {
+        throw new Error(`process.exit:${code}`);
+      });
+      try {
+        process.argv = ["bun", "cadet", "uninstall"];
+        await expect(uninstall()).rejects.toThrow("process.exit:1");
+      } finally {
+        exitMock.mockRestore();
+      }
+      // Retirement is part of the confirmed flow — a refusal must leave the
+      // assistant's docker resources untouched.
+      expect(retireDockerCalls).toEqual([]);
+
+      rmSync(root, { recursive: true, force: true });
+    });
+  });
+
+  test("--yes retires remaining assistants after the deletion list is shown", async () => {
+    await withRestoredEnv(async () => {
+      const root = redirectXdg();
+      writeFileSync(
+        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        JSON.stringify({
+          assistants: [{ ...makeEntry("docker-assistant"), cloud: "docker" }],
+        }) + "\n",
+      );
+      mkdirSync(getConfigDirs(getCurrentEnvironment())[0]!, {
+        recursive: true,
+      });
+
+      // Capture what had been printed by the time retirement ran — the list
+      // the user confirms against must already be on screen.
+      let outputAtRetire = "";
+      onRetireDocker = () => {
+        outputAtRetire = printedOutput();
+      };
+
+      process.argv = ["bun", "cadet", "uninstall", "--yes"];
+      await uninstall();
+
+      expect(retireDockerCalls).toEqual(["docker-assistant"]);
+      expect(outputAtRetire).toContain("It will permanently delete:");
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("will be retired as part of this uninstall"),
+      );
+
+      rmSync(root, { recursive: true, force: true });
+    });
+  });
+
   test("--yes deletes the environment's XDG locations and leaves the source checkout alone", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
@@ -166,13 +259,52 @@ describe("cadet uninstall", () => {
       expect(existsSync(logDir)).toBe(false);
       expect(existsSync(historyPath)).toBe(false);
 
+      // The list shows the shared state DIR (never the input-history FILE
+      // alone) and never names a nested path twice — the log dir goes with
+      // its parent's recursive delete.
+      const out = printedOutput();
+      expect(out).toContain(
+        `  - ${getSharedStateDir()}  — shared state, including the terminal input history`,
+      );
+      expect(out).not.toContain(logDir);
+      expect(out).not.toContain(historyPath);
+      expect(out).not.toContain("It will then remove the Cadet executable");
+
       // Running under bun from a git checkout: self-removal must print the
       // note and delete NOTHING outside the XDG targets.
-      const note = logSpy.mock.calls
-        .map((args) => args.map(String).join(" "))
-        .join("\n");
-      expect(note).toContain("source checkout");
+      expect(printedOutput()).toContain("source checkout");
       expect(existsSync(process.execPath)).toBe(true);
+
+      rmSync(root, { recursive: true, force: true });
+    });
+  });
+
+  test("--yes lists and removes the Cadet executable itself", async () => {
+    await withRestoredEnv(async () => {
+      const root = redirectXdg();
+      const configDir = getConfigDirs(getCurrentEnvironment())[0]!;
+      mkdirSync(configDir, { recursive: true });
+
+      // A compiled-binary install: process.execPath IS the install, so the
+      // uninstall list must name it alongside the data dirs.
+      const fakeBinDir = join(root, "bin");
+      mkdirSync(fakeBinDir, { recursive: true });
+      const fakeBin = join(fakeBinDir, "cadet");
+      writeFileSync(fakeBin, "#!/bin/sh\n");
+
+      const realExecPath = process.execPath;
+      process.execPath = fakeBin;
+      try {
+        process.argv = ["bun", "cadet", "uninstall", "--yes"];
+        await uninstall();
+      } finally {
+        process.execPath = realExecPath;
+      }
+
+      expect(printedOutput()).toContain(
+        `  - ${fakeBin}  — the Cadet executable`,
+      );
+      expect(existsSync(fakeBin)).toBe(false);
 
       rmSync(root, { recursive: true, force: true });
     });
