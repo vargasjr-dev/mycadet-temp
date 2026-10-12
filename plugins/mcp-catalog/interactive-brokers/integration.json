@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Interactive Brokers",
+  "documentationUrl": "https://www.interactivebrokers.com/en/trading/ai-integrations.php",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize one Interactive Brokers account. This integration is unavailable to customers in India or Japan."
+  },
+  "logo": "interactive-brokers-mcp.png",
+  "category": "finance"
+}

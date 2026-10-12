@@ -121,10 +121,10 @@ if [ -n "$CHANGED_FILES" ]; then
     # The pre-commit hook skips tsc in worktrees to keep commits fast (~20s cold).
     # Pre-push is the right place to catch cross-file type errors before they hit CI.
     # Invoke the `typecheck` script (not `tsc` directly) so its `pretypecheck`
-    # step regenerates the gitignored bundled copies (e.g. bundled-marketplace.json,
-    # statically imported by the offline plugin catalog) first — otherwise a fresh
-    # worktree that never ran `bun install` would fail to resolve them and block
-    # the push with a spurious error.
+    # step regenerates the gitignored bundled copies (e.g. the bundled local
+    # packages and their catalog manifest, statically imported by the plugin
+    # loader) first — otherwise a fresh worktree that never ran `bun install`
+    # would fail to resolve them and block the push with a spurious error.
     ASSISTANT_TS_CHANGED=0
     while IFS= read -r file; do
         if [[ "$file" == assistant/*.ts ]] || [[ "$file" == assistant/*.tsx ]]; then

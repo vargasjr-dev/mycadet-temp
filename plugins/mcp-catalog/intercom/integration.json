@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Intercom",
+  "documentationUrl": "https://developers.intercom.com/docs/guides/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "This endpoint serves US-hosted Intercom workspaces. Australian workspaces are not supported."
+  },
+  "logo": "intercom-mcp.png",
+  "category": "sales"
+}

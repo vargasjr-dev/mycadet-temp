@@ -50,9 +50,7 @@ import {
 import { isPluginCatalogEntryVisible } from "./plugin-catalog-visibility.js";
 import { DEFAULT_PLUGIN_REF } from "./plugin-constants.js";
 import { readValidatedPluginIcon } from "./plugin-icon-file.js";
-import { fetchMarketplaceEntries } from "./plugin-marketplace.js";
 import {
-  marketplaceMatch,
   PluginCatalogUnavailableError,
   type PluginMatchSource,
   type PluginSearchMatch,
@@ -430,10 +428,13 @@ async function resolveCatalogEntry(
     return null;
   }
   try {
+    // Non-default refs named historical revisions of the old local marketplace
+    // manifest; with the catalog living in Cadet Cloud there is nothing to
+    // resolve a historical ref against.
     const match =
       ref === DEFAULT_PLUGIN_REF
         ? await findCatalogEntry(name, { fetch: fetchFn })
-        : await findMarketplaceMatch(name, ref, fetchFn);
+        : null;
     return validateCatalogMatchSource(match);
   } catch (err) {
     if (err instanceof PluginCatalogUnavailableError && !installed) {
@@ -464,17 +465,6 @@ function validateCatalogMatchSource(
   } catch {
     return null;
   }
-}
-
-/** Read the GitHub marketplace at {@link ref} and project the named entry. */
-async function findMarketplaceMatch(
-  name: string,
-  ref: string,
-  fetchFn: FetchLike,
-): Promise<PluginSearchMatch | null> {
-  const entries = await fetchMarketplaceEntries({ fetch: fetchFn }, { ref });
-  const entry = entries.find((e) => e.name === name);
-  return entry ? marketplaceMatch(entry) : null;
 }
 
 function githubFetch(

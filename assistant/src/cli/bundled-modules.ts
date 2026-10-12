@@ -8,7 +8,6 @@ export interface BundledCliModules {
   pluginInstallGitHub: typeof import("./lib/install-from-github.js");
   pluginInstallPlatform: typeof import("./lib/install-from-cloud.js");
   pluginInstalled: typeof import("./lib/list-installed-plugins.js");
-  pluginPinHistory: typeof import("./lib/plugin-pin-history.js");
   pluginSearch: typeof import("./lib/search-plugins.js");
   pluginSurfaces: typeof import("./lib/plugin-surfaces.js");
   pluginUninstall: typeof import("./lib/uninstall-plugin.js");

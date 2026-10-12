@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "MailerLite",
+  "documentationUrl": "https://developers.mailerlite.com/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the MailerLite account you want to use."
+  },
+  "logo": "mailerlite-mcp.png",
+  "category": "marketing"
+}

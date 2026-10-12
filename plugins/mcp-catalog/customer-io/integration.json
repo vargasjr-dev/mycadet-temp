@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Customer.io",
+  "documentationUrl": "https://docs.customer.io/ai/mcp/get-started/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "An account admin must enable MCP and choose permissions. This endpoint serves US-region accounts."
+  },
+  "logo": "customer-io-mcp.png",
+  "category": "marketing"
+}

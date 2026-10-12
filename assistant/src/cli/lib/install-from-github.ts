@@ -1,8 +1,8 @@
 /**
  * Install a reviewed plugin by name from its catalog source.
  *
- * A name resolves to an entry in the curated `plugins/marketplace.json`
- * manifest. A GitHub source is fetched with a shallow clone at its pinned ref.
+ * A name resolves to an entry in the curated plugin catalog (Cadet Cloud's
+ * marketplace). A GitHub source is fetched with a shallow clone at its pinned ref.
  * A local source is read from the exact package version embedded in the
  * assistant distribution. Both are materialized into
  * `<workspacePluginsDir>/<name>/` and record their source in the provenance
@@ -61,18 +61,16 @@ import {
   type DependencyInstaller,
   installPluginDependencies,
 } from "./install-plugin-dependencies.js";
+import { getPluginCatalog } from "./plugin-catalog-cache.js";
+import { resolveSourceFromMatch } from "./plugin-catalog-resolve.js";
 import {
   computeContentHash,
   computeFingerprint,
   type Fingerprint,
   parseFingerprint,
 } from "./plugin-fingerprint.js";
-import {
-  fetchMarketplaceEntries,
-  MarketplaceFetchError,
-  type ResolvedPluginSource,
-  resolveMarketplaceSource,
-} from "./plugin-marketplace.js";
+import type { ResolvedPluginSource } from "./plugin-marketplace.js";
+import { PluginCatalogUnavailableError } from "./search-plugins.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -142,10 +140,10 @@ export interface InstallPluginOptions {
   readonly commitOverride?: string;
   /**
    * Install directly from these GitHub coordinates, bypassing the curated
-   * `plugins/marketplace.json` whitelist. The tree is materialized verbatim —
-   * no curated adapter stub is overlaid — and the source is *untrusted*, so the
-   * caller is responsible for surfacing a warning. Used to install a plugin not
-   * yet in the marketplace (typically one still under development). When set,
+   * plugin catalog. The tree is materialized verbatim — no curated adapter stub
+   * is overlaid — and the source is *untrusted*, so the caller is responsible
+   * for surfacing a warning. Used to install a plugin not yet in the catalog
+   * (typically one still under development). When set,
    * {@link InstallPluginOptions.ref}, {@link InstallPluginOptions.commitOverride},
    * and marketplace resolution are all skipped; `directSource.ref` selects the
    * commit to clone (a branch, tag, `HEAD`, or full SHA).
@@ -345,14 +343,13 @@ function sourceLabel(source: PluginMaterializeSource): string {
 
 /**
  * Resolve a plugin name to its exact marketplace source, or `null` when no
- * entry claims the name. A GitHub entry may have a same-named adapter stub
- * under `plugins/<name>` that is overlaid onto the clone. A local entry refers
- * to a fully self-contained package embedded in the assistant distribution.
+ * entry claims the name. A GitHub entry resolves to exact repo coordinates; a
+ * local entry refers to a fully self-contained package embedded in the
+ * assistant distribution.
  *
- * A transient marketplace failure (rate-limit / 5xx) surfaces as a retryable
- * {@link PluginSourceUnavailableError}; a malformed manifest propagates as a
- * hard error, since the marketplace is the source of truth for what is
- * installable.
+ * A transient catalog failure (rate-limit / 5xx) surfaces as a retryable
+ * {@link PluginSourceUnavailableError}; a malformed row propagates as a hard
+ * error, since the catalog is the source of truth for what is installable.
  */
 async function resolvePluginSource(
   name: string,
@@ -361,14 +358,14 @@ async function resolvePluginSource(
 ): Promise<PluginMaterializeSource | null> {
   let resolved: ResolvedPluginSource | null;
   try {
-    const entries = await fetchMarketplaceEntries(
-      { fetch: fetchFn },
-      { ref: marketplaceRef },
+    const catalog = await getPluginCatalog(marketplaceRef, { fetch: fetchFn });
+    const match = catalog.matches.find(
+      (candidate) => candidate.name === name,
     );
-    resolved = resolveMarketplaceSource(name, entries);
+    resolved = match ? resolveSourceFromMatch(match) : null;
   } catch (err) {
-    if (err instanceof MarketplaceFetchError && err.transient) {
-      throw new PluginSourceUnavailableError(err.message, err.status ?? 503);
+    if (err instanceof PluginCatalogUnavailableError) {
+      throw new PluginSourceUnavailableError(err.message, err.status);
     }
     throw err;
   }
@@ -503,7 +500,7 @@ export async function installPlugin(
       throw new PluginNotFoundError(
         name,
         marketplaceRef,
-        "plugins/marketplace.json",
+        "the plugin catalog",
       );
     }
     // A commit override installs a specific plugin revision while still taking
@@ -754,8 +751,8 @@ export const INSTALL_META_FILENAME = "install-meta.json";
 /**
  * Which catalog manages an installed plugin. Mirrors the skill origin values
  * (`SkillInstallMeta.origin` in `src/skills/install-meta.ts`) so the two
- * systems keep a consistent vocabulary. `"cadet"` denotes the first-party
- * `marketplace.json`; the union widens as new sources are supported.
+ * systems keep a consistent vocabulary. `"cadet"` denotes first-party; the
+ * union widens as new sources are supported.
  */
 export type InstallOrigin = "cadet";
 

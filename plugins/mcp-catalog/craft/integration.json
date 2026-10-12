@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Craft",
+  "documentationUrl": "https://www.craft.do/imagine/guide/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Craft workspace and documents you want to use."
+  },
+  "logo": "craft-mcp.png",
+  "category": "productivity"
+}

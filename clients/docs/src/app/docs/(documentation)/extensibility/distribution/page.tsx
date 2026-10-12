@@ -4,7 +4,7 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "Distribution - Cadet Docs",
   description:
-    "How plugins ship: a curated marketplace catalog, installing by name from the CLI, installing directly from a GitHub URL (untrusted), the marketplace.json manifest, and why entries pin an immutable commit.",
+    "How plugins ship: a curated marketplace catalog, installing by name from the CLI, installing directly from a GitHub URL (untrusted), the catalog row shape, and why entries pin an immutable commit.",
   path: "/docs/extensibility/distribution",
 });
 

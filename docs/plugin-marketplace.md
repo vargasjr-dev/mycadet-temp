@@ -1,7 +1,7 @@
 # Plugin Marketplace
 
-[`plugins/marketplace.json`](../plugins/marketplace.json) is the canonical
-inventory for reviewed plugins. Each entry has one source:
+The installable plugin catalog lives in Cadet Cloud (`GET /v1/plugins/`).
+Each row has one source:
 
 - `github` identifies an immutable repository commit and an optional package
   path.
@@ -9,18 +9,21 @@ inventory for reviewed plugins. Each entry has one source:
   assistant distribution. It never resolves a path from the workspace or the
   process working directory.
 
-The catalog is platform-first when platform features are enabled. The
-assistant merges local packages from its bundled copy after a successful
-platform response, with platform entries winning duplicate names. Platform
-errors still fail the catalog request and are never replaced by a stale or
-offline response. When platform features are disabled, the full bundled
-manifest supplies the catalog.
+The assistant merges the local packages it ships into the cloud response,
+with cloud rows winning duplicate names. Platform errors fail the catalog
+request and are never replaced by a stale or offline response. With platform
+features disabled there is no catalog: installs by name need the cloud, and
+installs by GitHub URL keep working.
 
-`assistant/scripts/generate-bundled-plugin-packages.ts` validates every local
-package and generates the embedded file map used by the installer. A local
-package must be a standard plugin with matching name and version, a valid
-`mcp.json`, canonical paths, and no symlinks. Build and Docker packaging fail if
-any declared package is invalid or unavailable.
+Default plugins live in this repo as plain directories
+(`plugins/mcp-catalog/<name>/` — `plugin.json` plus an optional
+`integration.json`); there is no central catalog file.
+`assistant/scripts/generate-bundled-plugin-packages.ts` scans those
+directories, validates every local package, and generates both the embedded
+file map used by the installer and the catalog manifest the CLI merges. A
+local package must be a standard plugin with matching name and version, a
+valid `mcp.json`, canonical paths, and no symlinks. Build and Docker packaging
+fail if any package is invalid or unavailable.
 
 The normal plugin installer handles both source kinds and records the exact
 source in the install sidecar. Local update checks only versions embedded in

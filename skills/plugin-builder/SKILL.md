@@ -104,7 +104,7 @@ If a surface fails to load or fire, see `references/plugins.md` for loader rules
 
 ## Shipping to the catalog
 
-See `references/distribution.md` for the full publishing walkthrough (push to GitHub, add a `marketplace.json` entry with a copy-pasteable template, and what the review checks), plus the manifest schema, CLI commands, and commit-pinning rules.
+See `references/distribution.md` for the full publishing walkthrough (push to GitHub, publish the entry to the Cadet Cloud catalog, and what the review checks), plus the catalog row schema, CLI commands, and commit-pinning rules.
 
 Once merged, users install by name: `assistant plugins install my-plugin`. The new plugin is picked up automatically.
 
@@ -115,7 +115,7 @@ Once merged, users install by name: `assistant plugins install my-plugin`. The n
 - `package.json` declares `name`, `version`, and a real `peerDependencies["@mycadet/plugin-api"]` range.
 - Any durable state lives in `data/`, created by `init` and cleaned up by `shutdown` / `conversation-deleted`.
 - Each surface has been exercised locally with a working example.
-- A `marketplace.json` entry exists with a full SHA in `source.ref`, and the Cadet team's review is in flight.
+- The plugin is published to the Cadet Cloud catalog with a full SHA in its source ref, and the Cadet team's review is in flight.
 
 ## Reference files
 

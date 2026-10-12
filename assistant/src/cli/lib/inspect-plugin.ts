@@ -29,6 +29,7 @@ import {
   type InstalledPluginInfo,
   readInstalledPlugin,
 } from "./list-installed-plugins.js";
+import { getPluginCatalog } from "./plugin-catalog-cache.js";
 import {
   areCloudFeaturesEnabled,
   readBundledLocalPluginCatalog,
@@ -39,10 +40,6 @@ import {
   compareFingerprint,
   type FingerprintComparison,
 } from "./plugin-fingerprint.js";
-import {
-  fetchMarketplaceEntries,
-  type MarketplaceEntry,
-} from "./plugin-marketplace.js";
 import {
   detectPluginSurfaces,
   type PluginSurfaces,
@@ -221,35 +218,34 @@ function readLocal(
   };
 }
 
-function readRemote(
-  entry: MarketplaceEntry,
+function readCatalogRemote(
+  match: PluginSearchMatch,
   marketplaceRef: string,
-  committedAt: string | null,
 ): PluginRemoteInfo {
-  if (entry.source.source === "local") {
+  if (match.source.kind === "local") {
     return {
       kind: "local",
       repo: "",
-      path: entry.source.path,
-      commit: entry.source.version,
+      path: match.source.path,
+      commit: match.source.version,
       committedAt: null,
-      description: entry.description ?? null,
-      homepage: entry.homepage ?? null,
-      license: entry.license ?? null,
-      category: entry.category ?? null,
+      description: match.description ?? null,
+      homepage: match.homepage ?? null,
+      license: match.license ?? null,
+      category: match.category,
       marketplaceRef,
-      version: entry.source.version,
+      version: match.source.version,
     };
   }
   return {
-    repo: entry.source.repo,
-    path: entry.source.path ?? "",
-    commit: entry.source.ref,
-    committedAt,
-    description: entry.description ?? null,
-    homepage: entry.homepage ?? null,
-    license: entry.license ?? null,
-    category: entry.category ?? null,
+    repo: match.source.repo,
+    path: match.source.path ?? "",
+    commit: match.source.ref,
+    committedAt: null,
+    description: match.description ?? null,
+    homepage: match.homepage ?? null,
+    license: match.license ?? null,
+    category: match.category,
     marketplaceRef,
   };
 }
@@ -362,21 +358,14 @@ export async function inspectPlugin(
       remote = match ? readLocalPackageRemote(match, catalog.ref) : null;
     }
     if (!remote && !installedLocalSource) {
-      const entries = await fetchMarketplaceEntries(
-        { fetch: deps.fetch },
-        { ref: marketplaceRef },
+      const catalog = await getPluginCatalog(marketplaceRef, {
+        fetch: deps.fetch,
+      });
+      const match = catalog.matches.find(
+        (candidate) => candidate.name === name,
       );
-      const match = entries.find((entry) => entry.name === name);
       if (match) {
-        const committedAt =
-          match.source.source === "github"
-            ? await fetchCommitDate(
-                match.source.repo,
-                match.source.ref,
-                deps.fetch,
-              )
-            : null;
-        remote = readRemote(match, marketplaceRef, committedAt);
+        remote = readCatalogRemote(match, marketplaceRef);
       }
     }
   } catch (err) {

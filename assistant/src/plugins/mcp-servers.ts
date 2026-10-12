@@ -54,17 +54,15 @@ export const PLUGIN_MCP_MANIFEST = "mcp.json";
  * `mcp.json` has no risk field, since the spec defines none, so a host
  * default applies.
  *
- * The review happens earlier: the marketplace catalog
- * (`plugins/marketplace.json`) is a curated whitelist of SHA-pinned
- * entries, and installing a plugin is itself the user's decision to run
- * the code it ships. Gating every call afterwards prompts on the tools
- * the user installed the plugin to get.
+ * The review happens earlier: the installable catalog is the Cadet Cloud
+ * marketplace's reviewed entries, and installing a plugin is itself the
+ * user's decision to run the code it ships. Gating every call afterwards
+ * prompts on the tools the user installed the plugin to get.
  *
  * The gap this leaves is deliberate and known: a plugin installed
- * off-marketplace straight from a GitHub URL gets the same default, and
- * nothing recorded at install time distinguishes the two afterwards. A
- * provenance signal is what would let this default be curation-gated
- * rather than blanket. A workspace entry of the same id replaces the
+ * straight from a GitHub URL gets the same default, and nothing recorded
+ * at install time distinguishes the two afterwards. A provenance signal
+ * is what would let this default be curation-gated rather than blanket. A workspace entry of the same id replaces the
  * plugin server wholesale (transport included) and uses the workspace
  * origin risk.
  */

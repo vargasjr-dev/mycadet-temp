@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Clay",
+  "documentationUrl": "https://university.clay.com/docs/connect-to-clay-mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Requires workspace access. A workspace admin may need to allow MCP connections."
+  },
+  "logo": "clay-mcp.png",
+  "category": "sales"
+}

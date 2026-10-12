@@ -42,7 +42,6 @@ import {
   type PluginUpgradeStrategy,
 } from "../lib/plugin-constants.js";
 import type { FingerprintComparison } from "../lib/plugin-fingerprint.js";
-import type { PluginPinHistoryEntry } from "../lib/plugin-pin-history.js";
 import type { PluginScheduleSurface } from "../lib/plugin-surfaces.js";
 import { runPublish } from "../lib/publish-plugin.js";
 import { registerCommand } from "../lib/register-command.js";
@@ -123,15 +122,6 @@ const libs = {
         loadModule(
           "../lib/list-installed-plugins.js",
         ) as typeof import("../lib/list-installed-plugins.js"),
-    );
-  },
-  get pinHistory() {
-    return resolveBundledCliModule(
-      "pluginPinHistory",
-      () =>
-        loadModule(
-          "../lib/plugin-pin-history.js",
-        ) as typeof import("../lib/plugin-pin-history.js"),
     );
   },
   get search() {
@@ -282,39 +272,11 @@ export function registerPluginsCommand(program: Command): void {
                   );
                 }
               } else {
-                const source =
-                  libs.catalogLocal.resolveBundledPluginSource(nameOrUrl);
-                if (!source) {
-                  console.error(
-                    `Plugin "${nameOrUrl}" is not in the bundled marketplace catalog.`,
-                  );
-                  process.exitCode = 1;
-                  return;
-                }
-                if (source.kind === "local") {
-                  result = await libs.installGitHub.installPlugin(
-                    {
-                      name: nameOrUrl,
-                      force: opts.force,
-                      trustedSource: source,
-                    },
-                    { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
-                  );
-                } else {
-                  result = await libs.installGitHub.installPlugin(
-                    {
-                      name: nameOrUrl,
-                      force: opts.force,
-                      trustedSource: {
-                        owner: source.owner,
-                        repo: source.repo,
-                        rootPath: source.path,
-                        ref: source.ref,
-                      },
-                    },
-                    { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
-                  );
-                }
+                console.error(
+                  `Plugin "${nameOrUrl}" cannot be resolved by name: the installable catalog lives in Cadet Cloud and platform features are disabled. Install by GitHub URL instead.`,
+                );
+                process.exitCode = 1;
+                return;
               }
             } else {
               const installOpts = direct
@@ -380,61 +342,13 @@ export function registerPluginsCommand(program: Command): void {
               process.exitCode = 1;
               return;
             }
-            if (
-              err instanceof libs.installGitHub.InvalidPluginNameError ||
-              err instanceof libs.pinHistory.PluginPinHistoryError
-            ) {
+            if (err instanceof libs.installGitHub.InvalidPluginNameError) {
               console.error(err.message);
               process.exitCode = 1;
               return;
             }
             const message = err instanceof Error ? err.message : String(err);
             console.error(`Plugin install failed: ${message}`);
-            process.exitCode = 1;
-          }
-        },
-      );
-
-      subcommand(plugins, "versions").action(
-        async (name: string, opts: { json?: boolean; limit?: string }) => {
-          let limit: number | undefined;
-          if (opts.limit !== undefined) {
-            limit = Number.parseInt(opts.limit, 10);
-            if (!Number.isInteger(limit) || limit < 1) {
-              console.error("--limit must be a positive integer.");
-              process.exitCode = 1;
-              return;
-            }
-          }
-          try {
-            const history = await libs.pinHistory.listPinHistory(
-              name,
-              { fetch: globalThis.fetch.bind(globalThis) },
-              limit !== undefined ? { limit } : {},
-            );
-
-            if (opts.json) {
-              process.stdout.write(JSON.stringify(history, null, 2) + "\n");
-              return;
-            }
-
-            // Logged after the JSON early-return so the logger's stdout
-            // writes never corrupt --json output.
-            log.info({ name, count: history.length }, "plugin versions");
-            for (const line of formatVersions(name, history)) {
-              console.log(line);
-            }
-          } catch (err) {
-            if (
-              err instanceof libs.installGitHub.InvalidPluginNameError ||
-              err instanceof libs.pinHistory.PluginPinHistoryError
-            ) {
-              console.error(err.message);
-              process.exitCode = 1;
-              return;
-            }
-            const message = err instanceof Error ? err.message : String(err);
-            console.error(`Plugin versions failed: ${message}`);
             process.exitCode = 1;
           }
         },
@@ -976,12 +890,19 @@ async function resolveInstallOptions(
 ): Promise<InstallPluginOptions | null> {
   const force = opts.force ?? false;
 
+  if (opts.ref) {
+    console.error(
+      "--ref named a revision of the retired local marketplace manifest; the catalog now lives in Cadet Cloud. Install by GitHub URL instead.",
+    );
+    return null;
+  }
+
   if (!opts.pin) {
     if (opts.allowUnreviewed) {
       console.error("--allow-unreviewed only applies together with --pin.");
       return null;
     }
-    return { name, force, ref: opts.ref ?? DEFAULT_PLUGIN_REF };
+    return { name, force, ref: DEFAULT_PLUGIN_REF };
   }
 
   const pin = opts.pin.trim();
@@ -991,32 +912,35 @@ async function resolveInstallOptions(
     );
     return null;
   }
-  if (opts.ref) {
-    console.error(
-      "--ref and --pin cannot be combined; --pin already selects the revision.",
-    );
-    return null;
-  }
 
   if (opts.allowUnreviewed) {
-    // Materialize the exact SHA from the plugin's current-manifest repo,
-    // bypassing the reviewed-history check. The adapter stub still comes from
+    // Materialize the exact SHA from the plugin's current-catalog repo,
+    // bypassing the reviewed-pin check. The adapter stub still comes from
     // the default ref, so an adapted plugin may not reproduce faithfully.
     return { name, force, ref: DEFAULT_PLUGIN_REF, commitOverride: pin };
   }
 
-  const entry = await libs.pinHistory.resolvePinToMarketplaceCommit(name, pin, {
+  // Without the old manifest's git history there is no rollback surface: the
+  // only reviewed revision of a plugin is the one the live catalog pins now.
+  const catalog = await libs.catalogCache.getPluginCatalog(DEFAULT_PLUGIN_REF, {
     fetch: globalThis.fetch.bind(globalThis),
   });
-  if (!entry) {
+  const match = catalog.matches.find(
+    (candidate) => candidate.name === name,
+  );
+  if (
+    !match ||
+    match.source.kind !== "github" ||
+    match.source.ref !== pin
+  ) {
     console.error(
-      `"${pin}" is not a reviewed marketplace pin for "${name}".\n` +
-        `Run \`assistant plugins versions ${name}\` to see available pins, ` +
-        "or pass --allow-unreviewed to install it anyway.",
+      `"${pin}" is not the pin the catalog currently holds for "${name}".\n` +
+        "Rolling back to older reviewed pins is no longer supported; " +
+        "pass --allow-unreviewed to install it anyway.",
     );
     return null;
   }
-  return { name, force, ref: entry.marketplaceCommit };
+  return { name, force, ref: DEFAULT_PLUGIN_REF, commitOverride: pin };
 }
 
 /**
@@ -1328,40 +1252,6 @@ async function printDeclaredSchedulesAfterUpgrade(
       "New schedules run automatically in the background. Run 'assistant schedules list' to review them, or 'assistant schedules disable <id>' to turn one off.",
     );
   }
-}
-
-/**
- * Render a plugin's marketplace-pin history as a table: the pinned commit (short
- * SHA), when it was promoted, and a marker for the pin currently active. An
- * empty history reports that none was found.
- */
-function formatVersions(
-  name: string,
-  history: readonly PluginPinHistoryEntry[],
-): string[] {
-  if (history.length === 0) {
-    return [`No marketplace pin history found for "${name}".`];
-  }
-  const rows = history.map((entry) => ({
-    pin: shortSha(entry.pin),
-    promoted: formatTimestamp(entry.promotedAt),
-    marker: entry.current ? "(current)" : "",
-  }));
-  const pinW = Math.max(3, ...rows.map((r) => r.pin.length));
-  const promotedW = Math.max(8, ...rows.map((r) => r.promoted.length));
-  const pad = (s: string, w: number) => s + " ".repeat(w - s.length);
-  const lines = [
-    `${pad("PIN", pinW)}  ${pad("PROMOTED", promotedW)}  `.trimEnd(),
-  ];
-  for (const r of rows) {
-    lines.push(
-      `${pad(r.pin, pinW)}  ${pad(r.promoted, promotedW)}  ${r.marker}`.trimEnd(),
-    );
-  }
-  lines.push("");
-  lines.push("Install an older pin with:");
-  lines.push(`  assistant plugins install ${name} --pin <sha> --force`);
-  return lines;
 }
 
 function shortSha(sha: string | null): string {

@@ -1,0 +1,14 @@
+{
+  "kind": "mcp",
+  "displayName": "Calendly",
+  "documentationUrl": "https://developer.calendly.com/docs/mcp/calendly-mcp-server",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in to Calendly. Available actions depend on your plan and account permissions."
+  },
+  "logo": "calendly-mcp.png",
+  "category": "meetings",
+  "oauthProvider": "calendly"
+}

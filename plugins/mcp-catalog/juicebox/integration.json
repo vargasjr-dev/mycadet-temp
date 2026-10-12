@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Juicebox",
+  "documentationUrl": "https://docs.juicebox.ai/juicebox-mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Requires a paid Juicebox plan. Some exports count against plan limits."
+  },
+  "logo": "juicebox-mcp.png",
+  "category": "recruiting"
+}

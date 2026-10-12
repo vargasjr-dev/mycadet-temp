@@ -2,7 +2,7 @@
 
 This doc is the single cross-repo source of truth for **marketplace plugin icons** — the small glyph shown next to a plugin in `assistant plugins search`, the desktop/web catalog, and the marketing site. It mirrors how skill icons work. Two repos consume this contract and MUST enforce identical rules:
 
-- **`vargasjr-dev/mycadet`** (this repo) — the assistant validator at [`assistant/src/cli/lib/plugin-icon-file.ts`](../assistant/src/cli/lib/plugin-icon-file.ts) is the authoritative implementation. In-repo curation lives here (`plugins/marketplace.json`, `plugins/assets/`, `plugins/plugin-icons.json`).
+- **`vargasjr-dev/mycadet`** (this repo) — the assistant validator at [`assistant/src/cli/lib/plugin-icon-file.ts`](../assistant/src/cli/lib/plugin-icon-file.ts) is the authoritative implementation. In-repo curation lives here (`plugins/assets/`, `plugins/plugin-icons.json`); the catalog's emoji `icon` values live in the Cadet Cloud catalog.
 - **`vargasjr-dev/mycadet-platform`** — a Django validator behind `/v1/plugins/` that MUST match this doc byte-for-byte. Uploads the PNGs to GCS and serves the combined catalog `icon` value.
 
 Any change to the format, limits, or manifest shape below is a **coordinated cross-repo change** — the TS validator and the Python validator move together, or a plugin that validates in one repo silently gets "no icon" in the other.
@@ -35,7 +35,7 @@ ships a PNG does not also need a marketplace `icon` emoji.
 
 ### 1. Emoji — `icon` field on the marketplace entry
 
-Each entry in [`plugins/marketplace.json`](../plugins/marketplace.json) MAY carry an optional `icon` string holding a single emoji. This is human-curated by whoever reviews the marketplace entry — the cheapest way to give a plugin a recognizable glyph with no asset pipeline.
+Each row in the Cadet Cloud catalog MAY carry an optional `icon` string holding a single emoji. This is human-curated by whoever reviews the catalog entry — the cheapest way to give a plugin a recognizable glyph with no asset pipeline.
 
 ```json
 {
@@ -112,18 +112,15 @@ Vendored PNGs are uploaded to GCS and served publicly, mirroring the skill asset
 ## Adding or updating a plugin icon
 
 A plugin gets an icon through either artifact: curate an emoji by setting the
-`icon` field on its `plugins/marketplace.json` entry, or vendor a bundled PNG
-(the plugin publishes its own `icon.png` upstream) into
+`icon` field on its Cadet Cloud catalog row (a platform-side change), or vendor
+a bundled PNG (the plugin publishes its own `icon.png` upstream) into
 `plugins/assets/<name>/icon.png` and regenerate its `plugins/plugin-icons.json`
-entry with the content-hash `iconVersion`. Then run
-`meta/sync-bundled-copies.ts` so `assistant/src/cli/lib/bundled-marketplace.json`
-stays in lockstep, and commit whatever changed (`marketplace.json`, the vendored
-asset, `plugin-icons.json`, and the bundled copy).
+entry with the content-hash `iconVersion`. Commit whatever changed (the vendored
+asset and `plugin-icons.json`).
 
-The plugin must already exist in `plugins/marketplace.json` — an icon only
-attaches to a catalogued plugin. A plugin whose upstream `icon.png` fails
-validation simply gets no manifest entry, so its `icon` resolves to the curated
-emoji if one is set, otherwise null.
+An icon only attaches to a catalogued plugin. A plugin whose upstream
+`icon.png` fails validation simply gets no icon entry, so its `icon` resolves
+to the curated emoji if one is set, otherwise null.
 
 ### Under the hood
 
@@ -131,11 +128,9 @@ If you'd rather run the steps by hand, or need only one of them:
 
 **Emoji:**
 
-1. Set (or change) the `icon` string on the plugin's entry in `plugins/marketplace.json`.
-2. Run `sync-bundled-copies` (`meta/sync-bundled-copies.ts`) so the bundled offline copy at `assistant/src/cli/lib/bundled-marketplace.json` stays in sync.
-3. Commit both files.
+1. Set (or change) the `icon` string on the plugin's row in the Cadet Cloud catalog (a platform-side change).
 
 **PNG:**
 
 1. Vendor the plugin's `icon.png` into `plugins/assets/<name>/icon.png` and regenerate its `plugins/plugin-icons.json` entry (fetching the plugin's `icon.png` for GitHub entries, reading `<source.path>/icon.png` from disk for local entries), validating the bytes against the rules above. Keep the derived `<name>-mcp.png` web copies in lockstep.
-2. Commit the vendored asset **and** the regenerated `plugins/plugin-icons.json` together. A plugin whose icon fails validation simply gets no manifest entry (and falls back to emoji or the generic glyph).
+2. Commit the vendored asset **and** the regenerated `plugins/plugin-icons.json` together. A plugin whose icon fails validation simply gets no icon entry (and falls back to emoji or the generic glyph).

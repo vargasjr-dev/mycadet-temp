@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Attio",
+  "documentationUrl": "https://docs.attio.com/mcp/overview",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Attio workspace you want to use."
+  },
+  "logo": "attio-mcp.png",
+  "category": "sales"
+}

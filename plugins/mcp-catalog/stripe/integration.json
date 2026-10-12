@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Stripe",
+  "documentationUrl": "https://docs.stripe.com/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the intended Stripe account and environment; your administrator may need to enable MCP access."
+  },
+  "logo": "stripe-mcp.png",
+  "category": "finance"
+}

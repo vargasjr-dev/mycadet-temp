@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Brex",
+  "documentationUrl": "https://www.brex.com/support/using-brex-in-ai-apps",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "A Brex admin must enable AI assistant access and accept the Developer API agreement."
+  },
+  "logo": "brex-mcp.png",
+  "category": "finance"
+}

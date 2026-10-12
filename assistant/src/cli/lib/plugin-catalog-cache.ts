@@ -4,16 +4,14 @@
  * Platform-first: when platform features are enabled the catalog is fetched
  * from Cadet Cloud and any fetch failure propagates (fail hard — no
  * stale-cache smoothing). Successful loads are held per git ref for a short
- * TTL. When `CADET_DISABLE_CLOUD` disables platform features the bundled
- * offline manifest is read instead, with zero network calls.
+ * TTL. When `CADET_DISABLE_CLOUD` disables platform features there is no
+ * catalog to serve — the installable catalog is cloud-only, so the result is
+ * empty (installs by GitHub URL keep working).
  */
 
 import { areCloudFeaturesEnabled } from "../../cloud/feature-gate.js";
 import { fetchPluginCatalogFromPlatform } from "./plugin-catalog-cloud.js";
-import {
-  readBundledLocalPluginCatalog,
-  readBundledPluginCatalog,
-} from "./plugin-catalog-local.js";
+import { readBundledLocalPluginCatalog } from "./plugin-catalog-local.js";
 import { filterPluginCatalogByFeatureFlags } from "./plugin-catalog-visibility.js";
 import type { PluginCatalog, SearchPluginsDeps } from "./search-plugins.js";
 
@@ -62,18 +60,18 @@ export function mergePlatformCatalogWithBundledLocals(
 /**
  * Resolve the full plugin catalog at {@link ref}.
  *
- * With platform features disabled the bundled manifest is returned directly —
- * an in-memory constant, no network and no TTL. Otherwise the catalog is
- * fetched from the cloud and, on success, cached per ref for the TTL; a
- * fetch failure propagates so the caller can surface it (e.g. map a rate-limit
- * to 503) — no stale catalog is ever served.
+ * With platform features disabled the catalog is empty — installs by name
+ * need the cloud. Otherwise the catalog is fetched from the cloud and, on
+ * success, cached per ref for the TTL; a fetch failure propagates so the
+ * caller can surface it (e.g. map a rate-limit to 503) — no stale catalog is
+ * ever served.
  */
 async function loadPluginCatalog(
   ref: string,
   deps: PluginCatalogLoadDeps,
 ): Promise<PluginCatalog> {
   if (!areCloudFeaturesEnabled()) {
-    return { ...readBundledPluginCatalog(), ref };
+    return { ref, matches: [] };
   }
 
   const cached = cache.get(ref);

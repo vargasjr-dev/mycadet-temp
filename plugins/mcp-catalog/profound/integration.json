@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Profound",
+  "documentationUrl": "https://docs.tryprofound.com/mcp/overview",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Profound workspace you want to analyze."
+  },
+  "logo": "profound-mcp.png",
+  "category": "marketing"
+}

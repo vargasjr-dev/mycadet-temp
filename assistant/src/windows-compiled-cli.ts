@@ -6,7 +6,6 @@ import * as pluginInstallGitHub from "./cli/lib/install-from-github.js";
 import * as pluginInstalled from "./cli/lib/list-installed-plugins.js";
 import * as pluginCatalogCache from "./cli/lib/plugin-catalog-cache.js";
 import * as pluginCatalogLocal from "./cli/lib/plugin-catalog-local.js";
-import * as pluginPinHistory from "./cli/lib/plugin-pin-history.js";
 import * as pluginSurfaces from "./cli/lib/plugin-surfaces.js";
 import * as pluginSearch from "./cli/lib/search-plugins.js";
 import * as pluginUninstall from "./cli/lib/uninstall-plugin.js";
@@ -24,7 +23,6 @@ setBundledCliModules({
   pluginInstallGitHub,
   pluginInstallPlatform,
   pluginInstalled,
-  pluginPinHistory,
   pluginSearch,
   pluginSurfaces,
   pluginUninstall,

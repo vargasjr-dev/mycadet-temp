@@ -1,4 +1,5 @@
 import {
+  cpSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -9,7 +10,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { buildBundledPluginPackages } from "../../../assistant/scripts/bundled-plugin-packages.js";
+import {
+  buildBundledLocalPluginCatalogManifest,
+  buildBundledPluginPackages,
+} from "../../../assistant/scripts/bundled-plugin-packages.js";
 
 const roots: string[] = [];
 
@@ -19,7 +23,8 @@ afterEach(() => {
   }
 });
 
-function fixture(path = "plugins/mcp-catalog/fathom"): string {
+/** A plugins/ tree with one valid fathom package. */
+function fixture(): string {
   const root = mkdtempSync(join(tmpdir(), "bundled-plugin-packages-"));
   roots.push(root);
   const packageRoot = join(root, "plugins", "mcp-catalog", "fathom");
@@ -30,6 +35,7 @@ function fixture(path = "plugins/mcp-catalog/fathom"): string {
       $schema: "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
       name: "fathom",
       version: "1.0.0",
+      description: "Search meeting transcripts.",
     }),
   );
   writeFileSync(
@@ -42,17 +48,6 @@ function fixture(path = "plugins/mcp-catalog/fathom"): string {
           url: "https://api.fathom.ai/mcp",
         },
       },
-    }),
-  );
-  writeFileSync(
-    join(root, "plugins", "marketplace.json"),
-    JSON.stringify({
-      plugins: [
-        {
-          name: "fathom",
-          source: { source: "local", path, version: "1.0.0" },
-        },
-      ],
     }),
   );
   return root;
@@ -70,31 +65,44 @@ describe("buildBundledPluginPackages", () => {
     });
   });
 
-  test.each(["plugins/mcp-catalog/../fathom", "plugins/mcp-catalog/./fathom"])(
-    "rejects a noncanonical package key: %s",
-    (path) => {
-      expect(() => buildBundledPluginPackages(fixture(path))).toThrow(
-        /not canonical/,
-      );
-    },
-  );
+  test("rejects a directory whose manifest name does not match the directory", () => {
+    const root = fixture();
+    writeFileSync(
+      join(root, "plugins", "mcp-catalog", "fathom", "plugin.json"),
+      JSON.stringify({
+        $schema: "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+        name: "other",
+        version: "1.0.0",
+      }),
+    );
+    expect(() => buildBundledPluginPackages(root)).toThrow(
+      /must match its manifest name/,
+    );
+  });
 
-  test("rejects a symlink at the declared package root", () => {
-    const root = fixture("plugins/mcp-catalog/fathom-link");
+  test("skips a symlinked package directory (never followed)", () => {
+    const root = fixture();
     symlinkSync(
       join(root, "plugins", "mcp-catalog", "fathom"),
       join(root, "plugins", "mcp-catalog", "fathom-link"),
     );
-    expect(() => buildBundledPluginPackages(root)).toThrow(/symlinks/);
+    const packages = buildBundledPluginPackages(root);
+    expect(packages["plugins/mcp-catalog/fathom-link"]).toBeUndefined();
+    expect(packages["plugins/mcp-catalog/fathom"]).toBeDefined();
   });
 
-  test("rejects a symlink in a declared package ancestor", () => {
-    const root = fixture("plugins/alias/fathom");
-    symlinkSync(
-      join(root, "plugins", "mcp-catalog"),
-      join(root, "plugins", "alias"),
-    );
-    expect(() => buildBundledPluginPackages(root)).toThrow(/symlinks/);
+  test("rejects a symlinked mcp-catalog root that escapes plugins/", () => {
+    const root = fixture();
+    const outside = mkdtempSync(join(tmpdir(), "outside-plugins-"));
+    roots.push(outside);
+    // Copy the package content outside the repo, then point mcp-catalog at it.
+    cpSync(join(root, "plugins", "mcp-catalog"), outside, { recursive: true });
+    rmSync(join(root, "plugins", "mcp-catalog"), {
+      recursive: true,
+      force: true,
+    });
+    symlinkSync(outside, join(root, "plugins", "mcp-catalog"));
+    expect(() => buildBundledPluginPackages(root)).toThrow(/escapes plugins\//);
   });
 
   test("rejects an invalid MCP server definition", () => {
@@ -107,5 +115,49 @@ describe("buildBundledPluginPackages", () => {
       }),
     );
     expect(() => buildBundledPluginPackages(root)).toThrow();
+  });
+});
+
+describe("buildBundledLocalPluginCatalogManifest", () => {
+  test("derives catalog entries from the plugin directories", () => {
+    const root = fixture();
+    writeFileSync(
+      join(root, "plugins", "mcp-catalog", "fathom", "integration.json"),
+      JSON.stringify({
+        kind: "mcp",
+        displayName: "Fathom",
+        documentationUrl: "https://developers.fathom.ai/mcp-docs",
+        verifiedAt: "2026-09-10",
+        verification: "documentation-only",
+        setup: { mode: "oauth", instructions: "Sign in." },
+        logo: "fathom-mcp.png",
+      }),
+    );
+    const entries = buildBundledLocalPluginCatalogManifest(root);
+    expect(entries).toEqual([
+      {
+        name: "fathom",
+        source: {
+          source: "local",
+          path: "plugins/mcp-catalog/fathom",
+          version: "1.0.0",
+        },
+        description: "Search meeting transcripts.",
+        integration: {
+          kind: "mcp",
+          displayName: "Fathom",
+          documentationUrl: "https://developers.fathom.ai/mcp-docs",
+          verifiedAt: "2026-09-10",
+          verification: "documentation-only",
+          setup: { mode: "oauth", instructions: "Sign in." },
+          logo: "fathom-mcp.png",
+        },
+      },
+    ]);
+  });
+
+  test("omits integration metadata when integration.json is absent", () => {
+    const entries = buildBundledLocalPluginCatalogManifest(fixture());
+    expect(entries[0]?.integration).toBeUndefined();
   });
 });

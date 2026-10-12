@@ -54,7 +54,6 @@ import {
 } from "../../cli/lib/plugin-catalog-cache.js";
 import { resolvePluginSourceFromCatalog } from "../../cli/lib/plugin-catalog-resolve.js";
 import {
-  DEFAULT_PIN_HISTORY_LIMIT,
   DEFAULT_PLUGIN_REF,
   type PluginUpgradeStrategy,
 } from "../../cli/lib/plugin-constants.js";
@@ -63,11 +62,6 @@ import {
   PluginDetailsNotFoundError,
 } from "../../cli/lib/plugin-details.js";
 import { readValidatedPluginIcon } from "../../cli/lib/plugin-icon-file.js";
-import {
-  listPinHistory,
-  PluginPinHistoryError,
-  resolvePinToMarketplaceCommit,
-} from "../../cli/lib/plugin-pin-history.js";
 import {
   assertValidSearchPattern,
   filterPluginCatalog,
@@ -383,7 +377,7 @@ const pluginInstallRequestSchema = z.object({
     .string()
     .optional()
     .describe(
-      "Install a specific reviewed marketplace pin (full commit SHA) instead of the current one. The pin is validated against the plugin's marketplace pin history (`GET /v1/plugins/:name/versions`) and installed from the marketplace revision that introduced it; an unreviewed SHA is rejected. Use this to roll a plugin back to an older reviewed version.",
+      "Install a specific reviewed pin (full commit SHA). The pin must be the revision the catalog currently holds for the plugin; an unreviewed or older SHA is rejected.",
     ),
 });
 
@@ -398,32 +392,6 @@ const pluginInstallResponseSchema = z.object({
     .describe("Number of files written for the installed plugin."),
   ref: z.string().describe("Git ref the plugin was fetched from."),
 });
-
-const pluginPinHistoryEntrySchema = z.object({
-  pin: z
-    .string()
-    .describe("Plugin commit SHA pinned at this point in marketplace history."),
-  marketplaceCommit: z
-    .string()
-    .describe(
-      "Marketplace-manifest commit to install this pin from (the newest commit carrying it).",
-    ),
-  promotedAt: z
-    .string()
-    .nullable()
-    .describe(
-      "ISO-8601 committer date (UTC) of the marketplace commit that promoted this pin; null when unreadable.",
-    ),
-  current: z
-    .boolean()
-    .describe("True for the pin currently active on the default branch."),
-});
-
-const pluginVersionsResponseSchema = z
-  .array(pluginPinHistoryEntrySchema)
-  .describe(
-    "Distinct marketplace pins a plugin has been promoted to, newest first; the first entry is the current pin. Empty when the plugin has no resolvable history.",
-  );
 
 const fingerprintComparisonSchema = z
   .object({
@@ -1227,32 +1195,6 @@ async function handleGetPluginDetails({
 // Handler — install
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve the marketplace ref an install should read from. With no `pin`, that
- * is the default reviewed branch. With a `pin`, it is the marketplace commit
- * that introduced that pin — but only when the pin appears in the plugin's
- * reviewed history; an unreviewed SHA is rejected as a bad request so the route
- * never installs an unvetted revision.
- */
-async function resolveInstallMarketplaceRef(
-  name: string,
-  pin: string | undefined,
-): Promise<string> {
-  if (!pin) {
-    return DEFAULT_PLUGIN_REF;
-  }
-  const entry = await resolvePinToMarketplaceCommit(name, pin, {
-    fetch: globalThis.fetch.bind(globalThis),
-  });
-  if (!entry) {
-    throw new BadRequestError(
-      `"${pin}" is not a reviewed marketplace pin for "${name}". ` +
-        `Use GET /v1/plugins/${name}/versions to list installable pins.`,
-    );
-  }
-  return entry.marketplaceCommit;
-}
-
 async function handleInstallPlugin({ body = {}, headers }: RouteHandlerArgs) {
   const rawName = typeof body.name === "string" ? body.name : "";
   if (!rawName) {
@@ -1264,15 +1206,14 @@ async function handleInstallPlugin({ body = {}, headers }: RouteHandlerArgs) {
   // The install source is never taken raw from the request: a caller-supplied
   // ref would let any `settings.write` principal install from an unreviewed
   // revision (a PR branch, fork ref, ...) whose manifest could carry attacker
-  // code the loader then dynamically imports. The default (no-pin) install
-  // resolves owner/repo/ref from the gated catalog — platform-first, or the
-  // bundled manifest when platform features are disabled — which is the same
-  // reviewed source of truth `handleSearchPlugins` advertises, and installs via
-  // a trusted pre-resolved source (no direct `plugins/marketplace.json` fetch).
-  // A `pin` is honored by mapping it — server-side — to the marketplace commit
-  // that introduced it through the plugin's reviewed pin history; an unreviewed
-  // SHA is refused. Operators who need an unreviewed revision use the local
-  // CLI's `assistant plugins install --pin <sha> --allow-unreviewed`.
+  // code the loader then dynamically imports. Every install resolves
+  // owner/repo/ref from the gated catalog — the same reviewed source of truth
+  // `handleSearchPlugins` advertises — and installs via a trusted
+  // pre-resolved source. A `pin` is accepted only when it is the revision the
+  // catalog currently holds; older reviewed pins cannot be resolved without
+  // the retired local marketplace manifest, so they are refused. Operators who
+  // need an unreviewed revision use the local
+  // CLI's `assistant plugins install <owner/repo> --pin <sha> --allow-unreviewed`.
   //
   // No `confirmStaged` consent gate: the daemon route is unattended by design
   // (there is no interactive surface to prompt on). Declared schedules the
@@ -1286,9 +1227,29 @@ async function handleInstallPlugin({ body = {}, headers }: RouteHandlerArgs) {
     const name = sanitizePluginName(rawName);
     let result;
     if (pin) {
-      const marketplaceRef = await resolveInstallMarketplaceRef(name, pin);
+      // Without the old local marketplace manifest there is no pin history to
+      // resolve against: the only reviewed revision is the one the live
+      // catalog currently pins, so a mismatched SHA is refused outright.
+      const source = await resolvePluginSourceFromCatalog(name, {
+        fetch: globalThis.fetch.bind(globalThis),
+      });
+      if (!source || source.kind !== "github" || source.ref !== pin) {
+        throw new BadRequestError(
+          `"${pin}" is not the pin the catalog currently holds for "${name}". ` +
+            "Rolling back to older reviewed pins is no longer supported.",
+        );
+      }
       result = await installPlugin(
-        { name, ref: marketplaceRef, force },
+        {
+          name,
+          force,
+          trustedSource: {
+            owner: source.owner,
+            repo: source.repo,
+            rootPath: source.path,
+            ref: source.ref,
+          },
+        },
         { fetch: globalThis.fetch.bind(globalThis) },
       );
     } else {
@@ -1349,10 +1310,6 @@ async function handleInstallPlugin({ body = {}, headers }: RouteHandlerArgs) {
     if (err instanceof PluginSourceUnavailableError) {
       throw new ServiceUnavailableError(err.message);
     }
-    // The pin-history read hits GitHub too; treat its failures as retryable.
-    if (err instanceof PluginPinHistoryError) {
-      throw new ServiceUnavailableError(err.message);
-    }
     // A rate-limited or unavailable platform catalog (no stale fallback) is
     // transient — surface it as retryable rather than a misleading 500.
     if (err instanceof PluginCatalogUnavailableError) {
@@ -1389,45 +1346,6 @@ async function handleInspectPlugin({ pathParams = {} }: RouteHandlerArgs) {
     }
     throw new InternalError(
       err instanceof Error ? err.message : "plugin inspect failed",
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Handler — versions (marketplace pin history)
-// ---------------------------------------------------------------------------
-
-async function handlePluginVersions({
-  pathParams = {},
-  queryParams = {},
-}: RouteHandlerArgs) {
-  const rawName = pathParams.name ?? "";
-
-  let limit: number | undefined;
-  if (queryParams.limit !== undefined) {
-    const parsed = Number.parseInt(queryParams.limit, 10);
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      throw new BadRequestError("`limit` must be a positive integer.");
-    }
-    limit = parsed;
-  }
-
-  try {
-    return await listPinHistory(
-      rawName,
-      { fetch: globalThis.fetch.bind(globalThis) },
-      limit !== undefined ? { limit } : {},
-    );
-  } catch (err) {
-    if (err instanceof InvalidPluginNameError) {
-      throw new BadRequestError(err.message);
-    }
-    // The history read hits GitHub; its failures are retryable upstream errors.
-    if (err instanceof PluginPinHistoryError) {
-      throw new ServiceUnavailableError(err.message);
-    }
-    throw new InternalError(
-      err instanceof Error ? err.message : "plugin versions failed",
     );
   }
 }
@@ -2003,46 +1921,6 @@ export const ROUTES: RouteDefinition[] = [
       },
     },
     handler: handleInspectPlugin,
-  },
-  {
-    operationId: "plugins_versions",
-    endpoint: "plugins/:name/versions",
-    method: "GET",
-    policy: {
-      requiredScopes: ["settings.read"],
-      allowedPrincipalTypes: ACTOR_PRINCIPALS,
-    },
-    summary: "List a plugin's reviewed marketplace pins",
-    description: `Report the distinct marketplace pins a plugin has been promoted to over time, newest first (the first entry is the current pin), capped at \`limit\` (default ${DEFAULT_PIN_HISTORY_LIMIT}). The curated \`marketplace.json\` stores only the current pin, so this is reconstructed from the manifest's own commit history on the default branch — every entry is therefore a reviewed, known-good revision. Pair with \`POST /v1/plugins/install\`'s \`pin\` field to roll a plugin back to an older reviewed version. An unknown name (never in the manifest) returns an empty array, not 404.`,
-    tags: ["plugins"],
-    pathParams: [
-      {
-        name: "name",
-        type: "string",
-        description:
-          "Install name. Must match the kebab-case name accepted by `assistant plugins install`.",
-      },
-    ],
-    queryParams: [
-      {
-        name: "limit",
-        type: "string",
-        required: false,
-        description: `Maximum number of pins to return (positive integer; default ${DEFAULT_PIN_HISTORY_LIMIT}).`,
-      },
-    ],
-    responseBody: pluginVersionsResponseSchema,
-    additionalResponses: {
-      "400": {
-        description:
-          "The plugin name failed sanitization, or `limit` was not a positive integer.",
-      },
-      "503": {
-        description:
-          "The marketplace pin history could not be read from GitHub (rate-limited or upstream error); retryable.",
-      },
-    },
-    handler: handlePluginVersions,
   },
   {
     operationId: "plugins_diff",

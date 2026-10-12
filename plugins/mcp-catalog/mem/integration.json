@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Mem",
+  "documentationUrl": "https://docs.mem.ai/mcp/overview",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Mem account and content you want to use."
+  },
+  "logo": "mem-mcp.png",
+  "category": "knowledge"
+}

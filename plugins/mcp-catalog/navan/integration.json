@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Navan",
+  "documentationUrl": "https://developer.navan.com/mcp/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "A Navan admin must enable MCP for your organization."
+  },
+  "logo": "navan-mcp.png",
+  "category": "finance"
+}

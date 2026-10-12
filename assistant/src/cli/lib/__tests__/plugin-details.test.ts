@@ -27,12 +27,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import type { FetchLike } from "../fetch-like.js";
 import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
-import { readBundledPluginCatalog } from "../plugin-catalog-local.js";
 import {
   getPluginDetails,
   PluginDetailsNotFoundError,
 } from "../plugin-details.js";
+import type { MarketplaceEntry } from "../plugin-marketplace.js";
 import {
+  marketplaceMatch,
   PluginCatalogUnavailableError,
   type PluginSearchMatch,
 } from "../search-plugins.js";
@@ -75,6 +76,24 @@ function makeFetch(config: FixtureConfig): FetchLike {
       return new Response(config.raw[url], { status: 200 });
     }
 
+    if (url.includes("/v1/plugins")) {
+      return new Response(
+        JSON.stringify({
+          plugins: CATALOG_FIXTURES.map((e) => ({
+            name: e.name,
+            ...(e.source.source === "github"
+              ? { repo: e.source.repo, ref: e.source.ref }
+              : {}),
+            description: e.description,
+            category: e.category,
+            homepage: e.homepage,
+            license: e.license,
+          })),
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
+
     if (url.includes("/contents")) {
       const key = listingKey(url);
       const entries = config.listings?.[key];
@@ -107,16 +126,64 @@ function splitOnce(s: string, sep: string): [string, string] {
   return [s.slice(0, i), s.slice(i + sep.length)];
 }
 
-/** The bundled catalog entry for {@link name} — the source under test. */
+/**
+ * Catalog fixture rows served to the mocked cloud catalog — the source under
+ * test. Former bundled-catalog entries, now exercised through the platform
+ * fetch path.
+ */
+const CATALOG_FIXTURES: MarketplaceEntry[] = [
+  {
+    name: "caveman",
+    source: {
+      source: "github",
+      repo: "JuliusBrussee/caveman",
+      ref: "63a91ecadbf4c4719a4602a5abb00883f9966034",
+    },
+    description:
+      "Ultra-compressed communication mode that strips filler words to cut token usage.",
+    category: "productivity",
+    homepage: "https://github.com/JuliusBrussee/caveman",
+    license: "MIT",
+  },
+  {
+    name: "simple-memory",
+    source: {
+      source: "github",
+      repo: "vargasjr-dev/simple-memory",
+      ref: "ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3",
+    },
+    description:
+      "Reference memory plugin that exercises the full plugin API with low-cost variants of Cadet's memory defaults.",
+    category: "memory",
+    homepage: "https://github.com/vargasjr-dev/simple-memory",
+    license: "MIT",
+  },
+  {
+    name: "dynamic-notch",
+    source: {
+      source: "github",
+      repo: "AnitaKirkovska/dynamic-notch",
+      ref: "9729c3685d60d00d1de73a183b03122b9fa1f8f4",
+    },
+    description:
+      "Put your Cadet assistant inside your MacBook's notch: click to chat, hold Ctrl+Option to talk, and get a floating task bulb while it works, with live-streamed replies and per-sentence voice.",
+    category: "interface",
+    homepage: "https://github.com/AnitaKirkovska/dynamic-notch",
+    license: "MIT",
+  },
+];
+
+/** The catalog fixture entry for {@link name} — the source under test. */
 function bundledMatch(name: string): PluginSearchMatch & {
   source: Extract<PluginSearchMatch["source"], { kind: "github" }>;
 } {
-  const match = readBundledPluginCatalog().matches.find((m) => m.name === name);
-  if (!match) {
-    throw new Error(`bundled catalog has no entry for "${name}"`);
+  const entry = CATALOG_FIXTURES.find((e) => e.name === name);
+  if (!entry) {
+    throw new Error(`catalog fixture has no entry for "${name}"`);
   }
+  const match = marketplaceMatch(entry);
   if (match.source.kind !== "github") {
-    throw new Error(`bundled catalog entry "${name}" is not GitHub-backed`);
+    throw new Error(`catalog fixture entry "${name}" is not GitHub-backed`);
   }
   return match as PluginSearchMatch & {
     source: Extract<PluginSearchMatch["source"], { kind: "github" }>;
@@ -159,11 +226,11 @@ function restoreEnv(): void {
 
 let workspace: string;
 
-describe("getPluginDetails (bundled catalog, offline)", () => {
+describe("getPluginDetails (mocked cloud catalog)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    process.env.CADET_DISABLE_CLOUD = "true";
+    delete process.env.CADET_DISABLE_CLOUD;
     delete process.env.IS_CLOUD;
   });
 
@@ -233,6 +300,23 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
       }
       if (url === "raw://caveman/readme") {
         return new Response("# Caveman", { status: 200 });
+      }
+      if (url.includes("/v1/plugins")) {
+        return new Response(
+          JSON.stringify({
+            plugins: CATALOG_FIXTURES.map((e) => ({
+              name: e.name,
+              ...(e.source.source === "github"
+                ? { repo: e.source.repo, ref: e.source.ref }
+                : {}),
+              description: e.description,
+              category: e.category,
+              homepage: e.homepage,
+              license: e.license,
+            })),
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
       }
       return new Response("unexpected url: " + url, { status: 500 });
     }) as FetchLike;
@@ -465,68 +549,24 @@ describe("getPluginDetails (bundled catalog, offline)", () => {
     expect(details.source).toEqual(caveman.source);
   });
 
-  test("resolves an explicit historical ref via the GitHub marketplace, not the gated catalog", async () => {
-    // GIVEN an explicit historical ref and a name absent from the gated catalog
+  test("an explicit historical ref no longer resolves — the catalog has no history", async () => {
+    // The retired local marketplace manifest could be read at any git ref;
+    // the cloud catalog has no revisions, so a historical ref resolves to
+    // nothing and a not-installed plugin 404s.
     const historicalRef = "a".repeat(40);
-    const historicalRepo = "octo/time-machine";
-    const marketplaceRefs: string[] = [];
-    const fetch = (async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      // The marketplace manifest, read at the requested historical ref
-      if (url.includes("/contents/plugins/marketplace.json")) {
-        marketplaceRefs.push(new URL(url).searchParams.get("ref") ?? "");
-        return new Response(
-          JSON.stringify({
-            name: "cadet",
-            plugins: [
-              {
-                name: "time-traveler",
-                source: {
-                  source: "github",
-                  repo: historicalRepo,
-                  ref: "b".repeat(40),
-                },
-                description: "historical description",
-                homepage: "https://historical.example.com",
-                license: "MIT",
-              },
-            ],
-          }),
-          { status: 200 },
-        );
-      }
-      // The entry's own external repo, read at its pinned source ref
-      if (url.includes("/contents") && url.includes(historicalRepo)) {
-        return new Response(
-          JSON.stringify([fileEntry("README.md", "raw://hist/readme")]),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
-      if (url === "raw://hist/readme") {
-        return new Response("# Time Traveler (historical)", { status: 200 });
-      }
-      return new Response("unexpected url: " + url, { status: 500 });
+    let fetchCalls = 0;
+    const fetch = (async () => {
+      fetchCalls += 1;
+      return new Response("unexpected request", { status: 500 });
     }) as FetchLike;
 
-    // WHEN we resolve the detail view at the historical ref
-    const details = await getPluginDetails(
-      { name: "time-traveler", ref: historicalRef },
-      { fetch, workspacePluginsDir: workspace },
-    );
-
-    // THEN the marketplace manifest was read at the requested historical ref
-    expect(marketplaceRefs).toContain(historicalRef);
-    // AND source + metadata come from that historical entry, not the gated catalog
-    expect(details.source).toEqual({
-      kind: "github",
-      repo: historicalRepo,
-      ref: "b".repeat(40),
-    });
-    expect(details.description).toBe("historical description");
-    expect(details.homepage).toBe("https://historical.example.com");
-    expect(details.license).toBe("MIT");
-    expect(details.readme).toContain("historical");
-    expect(details.ref).toBe(historicalRef);
+    await expect(
+      getPluginDetails(
+        { name: "time-traveler", ref: historicalRef },
+        { fetch, workspacePluginsDir: workspace },
+      ),
+    ).rejects.toBeInstanceOf(PluginDetailsNotFoundError);
+    expect(fetchCalls).toBe(0);
   });
 
   test("hides a gated integration at an explicit historical ref", async () => {

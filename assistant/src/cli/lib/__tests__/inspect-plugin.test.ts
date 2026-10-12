@@ -18,6 +18,7 @@ import {
   inspectPlugin,
   PluginInspectNotFoundError,
 } from "../inspect-plugin.js";
+import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import { computeFingerprint } from "../plugin-fingerprint.js";
 import type { PluginCatalog } from "../search-plugins.js";
 
@@ -42,12 +43,12 @@ function manifestWith(name: string, ref: string): unknown {
 }
 
 /**
- * Build a `fetch` that serves the marketplace manifest and the GitHub commit
- * API. `marketplace: undefined` answers 404 (empty catalog); `fail: true`
- * rejects the marketplace request with a network error. `remoteCommitDate`
- * seeds the committer date the GitHub commit endpoint returns (its absence
- * 404s, so the remote timestamp degrades to `null`). Anything else surfaces a
- * 500 so test bugs are loud.
+ * Build a `fetch` that serves the plugin catalog (a manifest flattened into
+ * cloud rows) and the GitHub commit API. `marketplace: undefined` answers 404
+ * (empty catalog); `fail: true` rejects the catalog request with a network
+ * error. `remoteCommitDate` is unused by the catalog-backed reader (the cloud
+ * catalog carries no commit dates). Anything else surfaces a 500 so test bugs
+ * are loud.
  */
 function makeFetch(opts: {
   marketplace?: unknown;
@@ -56,14 +57,33 @@ function makeFetch(opts: {
 }): FetchLike {
   return (async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
-    if (url.includes("marketplace.json")) {
+    if (url.includes("/v1/plugins")) {
       if (opts.fail) {
         throw new Error("network down");
       }
       if (opts.marketplace === undefined) {
-        return new Response("not found", { status: 404 });
+        return new Response(JSON.stringify({ plugins: [] }), { status: 200 });
       }
-      return new Response(JSON.stringify(opts.marketplace), { status: 200 });
+      const manifest = opts.marketplace as {
+        plugins?: Array<{
+          name: string;
+          source?: { source: string; repo?: string; ref?: string };
+          description?: string;
+          category?: string;
+          homepage?: string;
+          license?: string;
+        }>;
+      };
+      const rows = (manifest.plugins ?? []).map((entry) => ({
+        name: entry.name,
+        ...(entry.source?.repo ? { repo: entry.source.repo } : {}),
+        ...(entry.source?.ref ? { ref: entry.source.ref } : {}),
+        description: entry.description,
+        category: entry.category,
+        homepage: entry.homepage,
+        license: entry.license,
+      }));
+      return new Response(JSON.stringify({ plugins: rows }), { status: 200 });
     }
     if (url.includes("api.github.com") && url.includes("/commits/")) {
       if (opts.remoteCommitDate === undefined) {
@@ -150,6 +170,9 @@ let workspace: string;
 
 beforeEach(() => {
   workspace = mkdtempSync(join(tmpdir(), "inspect-plugin-"));
+  invalidatePluginCatalogCache();
+  delete process.env.CADET_DISABLE_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
@@ -196,10 +219,11 @@ describe("inspectPlugin", () => {
       { fetch, workspacePluginsDir: workspace },
     );
 
-    // THEN the installed timestamp comes from the sidecar and the remote one
-    // is resolved from GitHub — both as ISO-8601 UTC strings
+    // THEN the installed timestamp comes from the sidecar; the cloud catalog
+    // carries no commit dates, so the remote side reports the bare SHA
     expect(result.local?.committedAt).toBe("2026-06-01T12:34:56.000Z");
-    expect(result.remote?.committedAt).toBe("2026-06-05T08:12:24.000Z");
+    expect(result.remote?.committedAt).toBeNull();
+    expect(result.remote?.commit).toBe(SHA_B);
   });
 
   test("leaves the remote timestamp null when the commit date cannot be fetched", async () => {

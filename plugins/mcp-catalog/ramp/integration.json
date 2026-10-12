@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Ramp",
+  "documentationUrl": "https://agents.ramp.com/docs/guides/connecting",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "manual",
+    "instructions": "Ask Ramp to allowlist this client or gateway's exact OAuth redirect URI before connecting."
+  },
+  "logo": "ramp-mcp.png",
+  "category": "finance"
+}

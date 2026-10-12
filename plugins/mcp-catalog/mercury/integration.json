@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Mercury",
+  "documentationUrl": "https://docs.mercury.com/docs/what-is-mercury-mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in to the Mercury organization whose financial data you want to use."
+  },
+  "logo": "mercury-mcp.png",
+  "category": "finance"
+}

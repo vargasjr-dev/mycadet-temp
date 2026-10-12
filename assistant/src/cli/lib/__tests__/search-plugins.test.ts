@@ -8,7 +8,6 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { buildBundledPluginCatalog } from "../plugin-catalog-local.js";
 import type { MarketplaceEntry } from "../plugin-marketplace.js";
 import {
   assertValidSearchPattern,
@@ -58,13 +57,7 @@ function entry(
 /** Build a resolved {@link PluginCatalog} from raw entries the way the catalog
  * sources do (dedupe by name, project, sort), reusing the real projection. */
 function catalog(entries: MarketplaceEntry[], ref = "main"): PluginCatalog {
-  return {
-    ...buildBundledPluginCatalog({
-      name: "mycadet",
-      plugins: entries,
-    }),
-    ref,
-  };
+  return { ref, matches: projectMarketplaceEntries(entries) };
 }
 
 describe("filterPluginCatalog", () => {

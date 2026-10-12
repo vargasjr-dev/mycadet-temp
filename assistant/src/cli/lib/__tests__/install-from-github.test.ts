@@ -39,7 +39,13 @@ import {
   resolveTreeRefPath,
   sanitizePluginName,
 } from "../install-from-github.js";
+import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import { readValidatedPluginIcon } from "../plugin-icon-file.js";
+
+
+beforeEach(() => {
+  invalidatePluginCatalogCache();
+});
 
 const CANON_REPO = "vargasjr-dev/mycadet";
 /** Synthetic host the fixtures use for Contents API `download_url`s. */
@@ -54,21 +60,21 @@ const DOWNLOAD_HOST = "https://files.test/";
  * Directory listings are derived from the key set; file `download_url`s point
  * at {@link DOWNLOAD_HOST} and are served with the stored bytes.
  *
- * The marketplace manifest lookup is answered with `manifest` (or a 404 when
- * omitted, so the name resolves to no installable source).
+ * The plugin catalog lookup is answered with `manifest` flattened into cloud
+ * rows (or a 404 when omitted, so the name resolves to no installable source).
  */
 function makeContentsFetch(opts: {
   tree: Record<string, Uint8Array | string | null>;
   manifest?: unknown;
   /**
-   * HTTP status to answer the manifest fetch with. Defaults to 200 (when
+   * HTTP status to answer the catalog fetch with. Defaults to 200 (when
    * `manifest` is provided) or 404 (when omitted). Set to a transient status
-   * (e.g. 500) to simulate a marketplace lookup that fails rather than being
+   * (e.g. 500) to simulate a catalog lookup that fails rather than being
    * absent.
    */
   manifestStatus?: number;
 }): FetchLike {
-  const MANIFEST_URL = `https://api.github.com/repos/${CANON_REPO}/contents/plugins/marketplace.json`;
+  const CATALOG_URL = "https://test-cloud.mycadet.ai/v1/plugins/";
   const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
   const { tree } = opts;
 
@@ -108,16 +114,38 @@ function makeContentsFetch(opts: {
   return (async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
 
-    if (url.startsWith(MANIFEST_URL)) {
+    if (url.startsWith(CATALOG_URL)) {
       if (opts.manifestStatus !== undefined && opts.manifestStatus !== 200) {
-        return new Response("manifest unavailable", {
+        return new Response("catalog unavailable", {
           status: opts.manifestStatus,
         });
       }
       if (opts.manifest === undefined) {
         return new Response("not found", { status: 404 });
       }
-      return new Response(JSON.stringify(opts.manifest), { status: 200 });
+      const manifest = opts.manifest as {
+        plugins?: Array<{
+          name: string;
+          source?: { source: string; repo?: string; ref?: string; path?: string };
+          description?: string;
+          category?: string;
+          homepage?: string;
+          license?: string;
+          icon?: string;
+        }>;
+      };
+      const rows = (manifest.plugins ?? []).map((entry) => ({
+        name: entry.name,
+        ...(entry.source?.repo ? { repo: entry.source.repo } : {}),
+        ...(entry.source?.ref ? { ref: entry.source.ref } : {}),
+        ...(entry.source?.path ? { path: entry.source.path } : {}),
+        description: entry.description,
+        category: entry.category,
+        homepage: entry.homepage,
+        license: entry.license,
+        icon: entry.icon,
+      }));
+      return new Response(JSON.stringify({ plugins: rows }), { status: 200 });
     }
 
     if (url.startsWith(DOWNLOAD_HOST)) {
@@ -845,7 +873,7 @@ describe("installPlugin — marketplace resolution", () => {
       ),
     ).rejects.toMatchObject({
       constructor: PluginNotFoundError,
-      message: expect.stringContaining("plugins/marketplace.json"),
+      message: expect.stringContaining("the plugin catalog"),
     });
   });
 

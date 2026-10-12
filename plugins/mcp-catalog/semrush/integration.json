@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Semrush",
+  "documentationUrl": "https://developer.semrush.com/api/v4/introduction/semrush-mcp/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Your Semrush plan must include API units. Requests consume those units."
+  },
+  "logo": "semrush-mcp.png",
+  "category": "marketing"
+}

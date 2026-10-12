@@ -28,6 +28,7 @@ import {
   PluginNotFoundError,
   PluginSourceUnavailableError,
 } from "../install-from-github.js";
+import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import { computeFingerprint } from "../plugin-fingerprint.js";
 import { PluginNotInstalledError } from "../uninstall-plugin.js";
 import {
@@ -40,7 +41,7 @@ import {
 const SHA_A = "a".repeat(40);
 const SHA_B = "b".repeat(40);
 const CANON_REPO = "vargasjr-dev/mycadet";
-const MANIFEST_URL = `https://api.github.com/repos/${CANON_REPO}/contents/plugins/marketplace.json`;
+const CATALOG_URL = "https://test-cloud.mycadet.ai/v1/plugins/";
 const CONTENTS = `https://api.github.com/repos/${CANON_REPO}/contents/`;
 
 /** A marketplace manifest pinning `name` to `ref`. */
@@ -60,11 +61,11 @@ function manifestWith(name: string, ref: string): unknown {
 }
 
 /**
- * Build a `fetch` that serves the marketplace manifest and answers the GitHub
- * Contents API listing (used by the adapter-stub lookup) with a 404, so the
- * clone is treated as a raw external tree. `manifest: undefined` answers the
- * manifest with 404; `manifestStatus` overrides the manifest status to
- * simulate a transient marketplace failure.
+ * Build a `fetch` that serves the plugin catalog (a manifest flattened into
+ * cloud rows) and answers the GitHub Contents API listing (used by the
+ * adapter-stub lookup) with a 404, so the clone is treated as a raw external
+ * tree. `manifest: undefined` serves an empty catalog; `manifestStatus`
+ * overrides the catalog status to simulate a transient failure.
  */
 function makeFetch(opts: {
   manifest?: unknown;
@@ -73,16 +74,33 @@ function makeFetch(opts: {
 }): FetchLike {
   return (async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
-    if (url.startsWith(MANIFEST_URL)) {
+    if (url.startsWith(CATALOG_URL)) {
       if (opts.manifestStatus !== undefined && opts.manifestStatus !== 200) {
-        return new Response("manifest unavailable", {
+        return new Response("catalog unavailable", {
           status: opts.manifestStatus,
         });
       }
       if (opts.manifest === undefined) {
-        return new Response("not found", { status: 404 });
+        return new Response(JSON.stringify({ plugins: [] }), { status: 200 });
       }
-      return new Response(JSON.stringify(opts.manifest), { status: 200 });
+      const manifest = opts.manifest as {
+        plugins?: Array<{
+          name: string;
+          source?: { source: string; repo?: string; ref?: string };
+          description?: string;
+          category?: string;
+          license?: string;
+        }>;
+      };
+      const rows = (manifest.plugins ?? []).map((entry) => ({
+        name: entry.name,
+        ...(entry.source?.repo ? { repo: entry.source.repo } : {}),
+        ...(entry.source?.ref ? { ref: entry.source.ref } : {}),
+        description: entry.description,
+        category: entry.category,
+        license: entry.license,
+      }));
+      return new Response(JSON.stringify({ plugins: rows }), { status: 200 });
     }
     // The remote commit date `inspect` resolves to surface the human-readable
     // "to" timestamp; absent it 404s and the timestamp degrades to null.
@@ -230,6 +248,9 @@ beforeEach(() => {
   ws = mkdtempSync(join(tmpdir(), "upgrade-plugin-"));
   pluginsDir = join(ws, "plugins");
   mkdirSync(pluginsDir, { recursive: true });
+  invalidatePluginCatalogCache();
+  delete process.env.CADET_DISABLE_CLOUD;
+  delete process.env.IS_CLOUD;
 });
 
 afterEach(() => {
@@ -285,15 +306,15 @@ describe("upgradePlugin", () => {
     expect(result.toTimestamp).toBe("2026-06-05T08:12:24.000Z");
   });
 
-  test("a dry run resolves the target timestamp from the marketplace pin", async () => {
-    // GIVEN an installed copy and a marketplace pin whose commit GitHub dates
+  test("a dry run previews the target pin without a timestamp", async () => {
+    // GIVEN an installed copy and a marketplace pin that has advanced — the
+    // cloud catalog carries no commit dates, so the target timestamp is null
     installCopy(pluginsDir, "level-up", {
       commit: SHA_A,
       committedAt: "2026-06-01T12:34:56.000Z",
     });
     const fetch = makeFetch({
       manifest: manifestWith("level-up", SHA_B),
-      remoteCommitDate: "2026-06-05T08:12:24.000Z",
     });
 
     // WHEN a dry-run upgrade is performed (git must never run)
@@ -302,9 +323,9 @@ describe("upgradePlugin", () => {
       { fetch, runGit: unusedGitRunner, workspacePluginsDir: pluginsDir },
     );
 
-    // THEN the preview shows the timestamp move resolved without a clone
+    // THEN the preview shows the recorded timestamp and a null target one
     expect(result.fromTimestamp).toBe("2026-06-01T12:34:56.000Z");
-    expect(result.toTimestamp).toBe("2026-06-05T08:12:24.000Z");
+    expect(result.toTimestamp).toBeNull();
   });
 
   test("is a no-op when the installed commit already equals the pin", async () => {
@@ -498,6 +519,7 @@ describe("upgradePlugin", () => {
       },
     );
     expect(dry.outcome).toBe("would-upgrade");
+    invalidatePluginCatalogCache();
 
     // No-op: the install already sits at the pin.
     const noop = await upgradePlugin(
@@ -1245,6 +1267,7 @@ describe("upgradePlugin confirmStaged consent gate", () => {
       },
     );
     expect(dry.outcome).toBe("would-upgrade");
+    invalidatePluginCatalogCache();
 
     const noop = await upgradePlugin(
       { name: "level-up" },

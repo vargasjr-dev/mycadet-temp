@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Webull",
+  "documentationUrl": "https://developer.webull.com/apis/docs/AI-friendly-Resources/mcp/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize specific accounts and capabilities. Hong Kong accounts use a separate regional endpoint."
+  },
+  "logo": "webull-mcp.png",
+  "category": "finance"
+}

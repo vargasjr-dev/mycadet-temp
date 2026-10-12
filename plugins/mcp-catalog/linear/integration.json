@@ -1,0 +1,14 @@
+{
+  "kind": "mcp",
+  "displayName": "Linear",
+  "documentationUrl": "https://linear.app/docs/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Choose the Linear workspace to authorize; access follows your account permissions."
+  },
+  "logo": "linear-mcp.png",
+  "category": "engineering",
+  "oauthProvider": "linear"
+}

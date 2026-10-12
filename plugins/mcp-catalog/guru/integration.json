@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Guru",
+  "documentationUrl": "https://developer.getguru.com/docs/guru-mcp-server-overview",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in to the Guru workspace you want to search."
+  },
+  "logo": "guru-mcp.png",
+  "category": "knowledge"
+}

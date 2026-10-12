@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Ashby",
+  "documentationUrl": "https://docs.ashbyhq.com/ashby-mcp-server-beta",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "An organization admin must enable MCP. Analytics-only organizations are not supported."
+  },
+  "logo": "ashby-mcp.png",
+  "category": "recruiting"
+}

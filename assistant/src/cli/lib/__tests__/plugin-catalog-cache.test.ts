@@ -24,7 +24,6 @@ import {
   mergePlatformCatalogWithBundledLocals,
   PLUGIN_CATALOG_CACHE_TTL_MS,
 } from "../plugin-catalog-cache.js";
-import { readBundledPluginCatalog } from "../plugin-catalog-local.js";
 import type { SearchPluginsDeps } from "../search-plugins.js";
 import type { PluginCatalog } from "../search-plugins.js";
 
@@ -156,7 +155,7 @@ describe("getPluginCatalog", () => {
     expect(failing.calls()).toBe(1);
   });
 
-  test("reads the bundled catalog with zero network when platform is disabled", async () => {
+  test("serves an empty catalog with zero network when platform is disabled", async () => {
     // GIVEN platform features disabled (offline / self-hosted)
     process.env.CADET_DISABLE_CLOUD = "true";
     delete process.env.IS_CLOUD;
@@ -170,38 +169,24 @@ describe("getPluginCatalog", () => {
     // WHEN we request the catalog
     const result = await getPluginCatalog("main", deps);
 
-    // THEN it comes from the bundled manifest and no fetch is made
+    // THEN the catalog is empty — installs by name need the cloud — and no
+    // fetch is made. The requested ref is echoed onto the wire contract.
     expect(calls()).toBe(0);
-    const bundled = readBundledPluginCatalog();
-    expect(result.matches).toEqual(bundled.matches);
-    // The requested ref is echoed onto the wire contract.
+    expect(result.matches).toEqual([]);
     expect(result.ref).toBe("main");
   });
 
-  test("applies feature-flag visibility to bundled catalog entries", async () => {
+  test("serves an empty installed-metadata catalog when platform is disabled", async () => {
     process.env.CADET_DISABLE_CLOUD = "true";
     delete process.env.IS_CLOUD;
 
-    const { fetch } = platformFetch(["ignored"]);
-    const result = await getPluginCatalog("main", {
-      fetch,
-      featureFlagEnabled: () => false,
-    });
-
-    expect(result.matches.map((match) => match.name)).not.toContain("gamma");
-    expect(result.matches.map((match) => match.name)).toContain("fathom");
-  });
-
-  test("preserves hidden entries for installed-plugin metadata", async () => {
-    process.env.CADET_DISABLE_CLOUD = "true";
-    delete process.env.IS_CLOUD;
-
-    const { fetch } = platformFetch(["ignored"]);
+    const { fetch, calls } = platformFetch(["ignored"]);
     const result = await getPluginCatalogForInstalledMetadata("main", {
       fetch,
     });
 
-    expect(result.matches.map((match) => match.name)).toContain("gamma");
+    expect(calls()).toBe(0);
+    expect(result.matches).toEqual([]);
   });
 });
 

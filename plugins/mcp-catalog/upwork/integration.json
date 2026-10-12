@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Upwork",
+  "documentationUrl": "https://www.upwork.com/ai/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in to the Upwork account you want to use."
+  },
+  "logo": "upwork-mcp.png",
+  "category": "recruiting"
+}

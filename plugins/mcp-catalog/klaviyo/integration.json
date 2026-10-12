@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Klaviyo",
+  "documentationUrl": "https://developers.klaviyo.com/en/docs/klaviyo_mcp_server",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Requires an Owner, Admin, or Manager role in Klaviyo."
+  },
+  "logo": "klaviyo-mcp.png",
+  "category": "marketing"
+}

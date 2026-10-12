@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Meltwater",
+  "documentationUrl": "https://developer.meltwater.com/guides/meltwater-mcp/overview/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Your Meltwater subscription must include the MCP package."
+  },
+  "logo": "meltwater-mcp.png",
+  "category": "marketing"
+}

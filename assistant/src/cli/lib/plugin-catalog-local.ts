@@ -1,27 +1,31 @@
 /**
- * Offline plugin catalog reader backed by the manifest bundled into the
- * package at build time. `bundled-marketplace.json` is a generated artifact
- * (git-ignored) that meta/sync-bundled-copies.ts copies from the canonical
- * plugins/marketplace.json before every build, test, and install — the same
- * treatment as the feature-flag registry.
+ * Catalog for the default local plugins shipped inside the assistant
+ * distribution, backed by a build-time-generated manifest.
  *
- * `getPluginCatalog` selects this reader only when platform features are
- * disabled (air-gapped / self-hosted, `CADET_DISABLE_CLOUD=true`). Importing
- * the JSON directly (resolveJsonModule) inlines it into the bundle, so there is
- * no filesystem path resolution and the manifest is always present at runtime —
- * it works identically in dev, Docker, and an npm-packed macOS install.
+ * `bundled-local-plugins.json` is a generated artifact (git-ignored) that
+ * `assistant/scripts/generate-bundled-plugin-packages.ts` derives from the
+ * plugins' own directories (`plugin.json` + `integration.json` per plugin) —
+ * the directories are the source of truth; there is no central catalog file.
+ *
+ * Only the LOCAL packages live here. The full installable catalog is Cadet
+ * Cloud's (see {@link ./plugin-catalog-cache}); this manifest exists so
+ * shipped integrations keep their metadata and offline materialization even
+ * when the cloud catalog omits them.
+ *
+ * Importing the JSON directly (resolveJsonModule) inlines it into the bundle,
+ * so there is no filesystem path resolution and the manifest is always
+ * present at runtime — it works identically in dev, Docker, and an npm-packed
+ * macOS install.
  */
 
-import bundledManifest from "./bundled-marketplace.json" with { type: "json" };
+import { z } from "zod";
+
+import bundledManifest from "./bundled-local-plugins.json" with { type: "json" };
+import { isPluginCatalogEntryVisible } from "./plugin-catalog-visibility.js";
 import {
-  isPluginCatalogEntryVisible,
-  type PluginCatalogFeatureFlagResolver,
-} from "./plugin-catalog-visibility.js";
-import {
-  type MarketplaceEntry,
-  marketplaceManifestSchema,
-  type ResolvedPluginSource,
-  resolveMarketplaceSource,
+  localSourceSchema,
+  mcpIntegrationSchema,
+  PLUGIN_NAME_RE,
 } from "./plugin-marketplace.js";
 import {
   type PluginCatalog,
@@ -33,62 +37,37 @@ import {
 export { areCloudFeaturesEnabled } from "../../cloud/feature-gate.js";
 export { isPluginCatalogEntryVisible };
 
-let memoizedEntries: readonly MarketplaceEntry[] | undefined;
+/** Schema for one entry of the generated bundled-local manifest. */
+const bundledLocalEntrySchema = z.object({
+  name: z.string().regex(PLUGIN_NAME_RE, "expected a kebab-case install name"),
+  source: localSourceSchema,
+  description: z.string().optional(),
+  homepage: z.string().optional(),
+  license: z.string().optional(),
+  integration: mcpIntegrationSchema.optional(),
+});
 
-/** Validated bundled manifest entries, parsed once and reused. */
-function bundledEntries(): readonly MarketplaceEntry[] {
-  memoizedEntries ??= marketplaceManifestSchema.parse(bundledManifest).plugins;
-  return memoizedEntries;
-}
-
-/**
- * Validate and project a marketplace manifest into a {@link PluginCatalog}:
- * every entry deduped by name, projected, and sorted alphabetically. A
- * malformed bundled manifest is a build defect, so parsing throws rather than
- * silently degrading. Defaults to the bundled manifest (parsed once); tests
- * pass an override to assert it throws on invalid input.
- */
-export function buildBundledPluginCatalog(
-  rawManifest: unknown = bundledManifest,
-): PluginCatalog {
-  const plugins =
-    rawManifest === bundledManifest
-      ? bundledEntries()
-      : marketplaceManifestSchema.parse(rawManifest).plugins;
-  return { ref: "bundled", matches: projectMarketplaceEntries(plugins) };
-}
+const bundledLocalManifestSchema = z.object({
+  version: z.literal(1),
+  plugins: z.array(bundledLocalEntrySchema),
+});
 
 let memoized: PluginCatalog | undefined;
 
-/** Memoized {@link buildBundledPluginCatalog}, so the mapping runs once. */
-export function readBundledPluginCatalog(): PluginCatalog {
-  memoized ??= buildBundledPluginCatalog();
-  return memoized;
+/**
+ * Validated generated manifest, parsed once and reused. A malformed
+ * generated manifest is a build defect, so parsing throws rather than
+ * silently degrading.
+ */
+function bundledEntries() {
+  return bundledLocalManifestSchema.parse(bundledManifest).plugins;
 }
 
 /** Local packages the current assistant release can materialize itself. */
 export function readBundledLocalPluginCatalog(): PluginCatalog {
-  return {
+  memoized ??= {
     ref: "bundled",
-    matches: projectMarketplaceEntries(
-      bundledEntries().filter((entry) => entry.source.source === "local"),
-    ),
+    matches: projectMarketplaceEntries(bundledEntries()),
   };
-}
-
-/**
- * Resolve an install name to its exact source from the bundled manifest, or
- * `null` when no bundled entry claims the name. The offline analogue of
- * resolving against the remote-fetched marketplace, used when platform
- * features are disabled and `assistant plugins install <name>` must resolve the
- * pin without any network call.
- */
-export function resolveBundledPluginSource(
-  name: string,
-  isFeatureFlagEnabled?: PluginCatalogFeatureFlagResolver,
-): ResolvedPluginSource | null {
-  if (!isPluginCatalogEntryVisible(name, isFeatureFlagEnabled)) {
-    return null;
-  }
-  return resolveMarketplaceSource(name, bundledEntries());
+  return memoized;
 }

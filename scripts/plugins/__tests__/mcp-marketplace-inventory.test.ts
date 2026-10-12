@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { buildBundledPluginPackages } from "../../../assistant/scripts/bundled-plugin-packages.js";
+import {
+  buildBundledLocalPluginCatalogManifest,
+  buildBundledPluginPackages,
+} from "../../../assistant/scripts/bundled-plugin-packages.js";
 import { readValidatedPluginIcon } from "../../../assistant/src/cli/lib/plugin-icon-file.js";
-import { marketplaceManifestSchema } from "../../../assistant/src/cli/lib/plugin-marketplace.js";
+import { mcpIntegrationSchema } from "../../../assistant/src/cli/lib/plugin-marketplace.js";
 import { isIntegrationCategory } from "../../../packages/service-contracts/src/integration-categories.js";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
@@ -50,14 +53,17 @@ const EXPECTED_PROVIDERS = [
   "wix",
 ] as const;
 
-describe("bundled MCP marketplace inventory", () => {
+describe("bundled MCP integration inventory", () => {
   test("ships the reviewed 38-provider inventory and every declared logo", () => {
-    const raw = JSON.parse(
-      readFileSync(join(REPO_ROOT, "plugins", "marketplace.json"), "utf8"),
-    ) as unknown;
-    const manifest = marketplaceManifestSchema.parse(raw);
-    const integrations = manifest.plugins.filter(
-      (entry) => entry.source.source === "local",
+    // The directories are the source of truth: derive the entries from a
+    // fresh scan and hold each integration.json to the wire schema.
+    const integrations = buildBundledLocalPluginCatalogManifest(REPO_ROOT).map(
+      (entry) => ({
+        ...entry,
+        integration: entry.integration
+          ? mcpIntegrationSchema.parse(entry.integration)
+          : undefined,
+      }),
     );
 
     expect(integrations.map((entry) => entry.name).sort()).toEqual(

@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Sentry",
+  "documentationUrl": "https://github.com/getsentry/sentry-mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in to Sentry and authorize the organizations you want to use."
+  },
+  "logo": "sentry-mcp.png",
+  "category": "engineering"
+}

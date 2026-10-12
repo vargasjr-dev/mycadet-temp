@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Typeform",
+  "documentationUrl": "https://developers.typeform.com/developers/get-started/mcp/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "This endpoint serves standard Typeform accounts. EU-hosted accounts use a separate regional endpoint."
+  },
+  "logo": "typeform-mcp.png",
+  "category": "productivity"
+}

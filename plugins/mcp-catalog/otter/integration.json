@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Otter.ai",
+  "documentationUrl": "https://help.otter.ai/hc/en-us/articles/35287607569687-Otter-MCP-Server",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in with the Otter account whose conversations you want to use."
+  },
+  "logo": "otter-mcp.png",
+  "category": "meetings"
+}

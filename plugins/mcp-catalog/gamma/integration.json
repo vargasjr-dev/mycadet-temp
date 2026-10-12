@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Gamma",
+  "documentationUrl": "https://developers.gamma.app/mcp/gamma-mcp-server.md",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Requires a Gamma account. Generations consume account credits."
+  },
+  "logo": "gamma-mcp.png",
+  "category": "productivity"
+}

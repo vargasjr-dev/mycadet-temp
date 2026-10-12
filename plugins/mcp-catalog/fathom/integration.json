@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Fathom",
+  "documentationUrl": "https://developers.fathom.ai/mcp-docs",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Sign in with the Fathom account whose meetings you want to use."
+  },
+  "logo": "fathom-mcp.png",
+  "category": "meetings"
+}

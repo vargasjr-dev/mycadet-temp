@@ -3,16 +3,23 @@
 import { writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { buildBundledPluginPackages } from "./bundled-plugin-packages.js";
+import {
+  buildBundledLocalPluginCatalogManifest,
+  buildBundledPluginPackages,
+} from "./bundled-plugin-packages.js";
 
 const repoRoot = resolve(import.meta.dir, "../..");
-const output = {
+const packages = {
   version: 1,
   packages: buildBundledPluginPackages(repoRoot),
 };
+const localCatalog = {
+  version: 1,
+  plugins: buildBundledLocalPluginCatalogManifest(repoRoot),
+};
 
 if (process.argv.includes("--check")) {
-  console.log("✓ Local marketplace packages are valid");
+  console.log("✓ Local plugin packages and catalog manifest are valid");
 } else {
   writeFileSync(
     join(
@@ -23,7 +30,18 @@ if (process.argv.includes("--check")) {
       "lib",
       "bundled-plugin-packages.json",
     ),
-    `${JSON.stringify(output, null, 2)}\n`,
+    `${JSON.stringify(packages, null, 2)}\n`,
   );
-  console.log("✓ Generated bundled local plugin packages");
+  writeFileSync(
+    join(
+      repoRoot,
+      "assistant",
+      "src",
+      "cli",
+      "lib",
+      "bundled-local-plugins.json",
+    ),
+    `${JSON.stringify(localCatalog, null, 2)}\n`,
+  );
+  console.log("✓ Generated bundled local plugin packages + catalog manifest");
 }

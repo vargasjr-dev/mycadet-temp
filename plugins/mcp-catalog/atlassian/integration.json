@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Atlassian",
+  "documentationUrl": "https://atlassian.github.io/atlassian-mcp-server/",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Requires an Atlassian Cloud site and access allowed by your organization."
+  },
+  "logo": "atlassian-mcp.png",
+  "category": "engineering"
+}

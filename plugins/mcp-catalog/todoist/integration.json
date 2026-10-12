@@ -1,0 +1,14 @@
+{
+  "kind": "mcp",
+  "displayName": "Todoist",
+  "documentationUrl": "https://github.com/Doist/todoist-mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Todoist account whose tasks and projects you want to use."
+  },
+  "logo": "todoist-mcp.png",
+  "category": "productivity",
+  "oauthProvider": "todoist"
+}

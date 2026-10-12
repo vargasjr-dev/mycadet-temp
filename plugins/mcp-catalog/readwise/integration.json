@@ -1,0 +1,13 @@
+{
+  "kind": "mcp",
+  "displayName": "Readwise",
+  "documentationUrl": "https://docs.readwise.io/tools/mcp",
+  "verifiedAt": "2026-09-10",
+  "verification": "documentation-only",
+  "setup": {
+    "mode": "oauth",
+    "instructions": "Authorize the Readwise library you want to use."
+  },
+  "logo": "readwise-mcp.png",
+  "category": "knowledge"
+}

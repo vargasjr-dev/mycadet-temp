@@ -20,16 +20,13 @@ const TOC_ITEMS = [
   { id: "automatic-updates", label: "Automatic updates", level: 3 },
   { id: "drift", label: "Drift and local edits", level: 3 },
   { id: "in-product", label: "Upgrading from the Plugins tab", level: 3 },
-  { id: "the-manifest", label: "The marketplace manifest", level: 2 },
+  { id: "the-catalog-row", label: "The catalog row", level: 2 },
   { id: "commit-pinning", label: "Why entries pin a commit", level: 2 },
   { id: "adapters", label: "Adapting external plugins", level: 2 },
 ];
 
 const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
-
-const MARKETPLACE_URL =
-  "https://github.com/vargasjr-dev/mycadet/blob/main/plugins/marketplace.json";
 
 const CLAUDE_MARKETPLACE_URL =
   "https://code.claude.com/docs/en/plugin-marketplaces";
@@ -271,13 +268,10 @@ export function ExtensibilityDistributionContent() {
             The marketplace catalog
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The catalog is computed live from{" "}
-            <Link href={MARKETPLACE_URL} className={linkClass}>
-              <code>plugins/marketplace.json</code>
-            </Link>{" "}
-            in the assistant repo. It lets Cadet surface plugins that live in
-            other repositories without copying their code, and its shape is a
-            subset of the{" "}
+            The catalog is served by Cadet Cloud (
+            <code>GET /v1/plugins/</code>). It lets Cadet surface plugins that
+            live in other repositories without copying their code, and its
+            shape is a subset of the{" "}
             <Link href={CLAUDE_MARKETPLACE_URL} className={linkClass}>
               Claude Code marketplace schema
             </Link>
@@ -349,42 +343,19 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
           </p>
 
           <SectionHeading id="publish-add-entry" level={3}>
-            2. Add your entry to marketplace.json
+            2. Publish it to the catalog
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            Open a PR against{" "}
-            <Link
-              href="https://github.com/vargasjr-dev/mycadet"
-              className={linkClass}
-            >
-              <code>vargasjr-dev/mycadet</code>
-            </Link>{" "}
-            adding your plugin to <code>plugins/marketplace.json</code>. Copy
-            this template and fill in your details:
-          </p>
-          <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-            <code>{`{
-"name": "my-plugin",
-"source": {
-  "source": "github",
-  "repo": "you/my-plugin",
-  "ref": "e83c5163316f89bfbde7d9ab23ca2e25604af290"
-},
-"description": "One-line summary shown in the catalog.",
-"category": "productivity",
-"homepage": "https://github.com/you/my-plugin",
-"license": "MIT"
-}`}</code>
-          </pre>
-          <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The <code>name</code> must be a single kebab-case segment (e.g.{" "}
+            Run <code>assistant plugins publish</code> and follow the prompts —
+            it reads your plugin&apos;s manifest and submits the entry (install
+            name, repo, pinned commit, description, category, homepage,
+            license) to the Cadet Cloud catalog as a pending review. The{" "}
+            <code>name</code> must be a single kebab-case segment (e.g.{" "}
             <code>my-plugin</code>, not <code>myPlugin</code> or{" "}
-            <code>my_plugin</code>). Only <code>name</code>,{" "}
-            <code>source.source</code>, <code>source.repo</code>, and{" "}
-            <code>source.ref</code> are required; the rest are optional but
-            recommended for discoverability. See{" "}
-            <Link href="#the-manifest" className={linkClass}>
-              The marketplace manifest
+            <code>my_plugin</code>); the rest are optional but recommended for
+            discoverability. See{" "}
+            <Link href="#the-catalog-row" className={linkClass}>
+              The catalog row
             </Link>{" "}
             below for the full schema.
           </p>
@@ -393,7 +364,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
             3. Wait for review
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The Cadet team reviews each entry before it lands in the catalog.
+            The Cadet team reviews each submission before it lands in the catalog.
             The review checks that:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600 dark:text-zinc-400">
@@ -415,7 +386,7 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290`}</code>
             </li>
           </ul>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            Once the review approves and the PR merges, the plugin appears in{" "}
+            Once the review approves, the plugin appears in{" "}
             <code>assistant plugins search</code> and is installable by name.
           </p>
         </section>
@@ -564,15 +535,15 @@ $ assistant plugins install owner/repo`}</code>
               enforces it.
             </li>
             <li>
-              The marketplace-only flags (<code>--ref</code>, <code>--pin</code>
-              , <code>--allow-unreviewed</code>) do not apply to a direct
+              The marketplace-only flags (<code>--pin</code>,{" "}
+              <code>--allow-unreviewed</code>) do not apply to a direct
               install. The ref lives in the URL.
             </li>
           </ul>
           <p className="mb-0 text-zinc-600 dark:text-zinc-400">
-            Once the plugin is ready for broader distribution, add it to{" "}
-            <code>marketplace.json</code> so others can install it by name with
-            a reviewed, reproducible pin.
+            Once the plugin is ready for broader distribution, publish it (see
+            &ldquo;Publishing your plugin&rdquo; above) so others can install
+            it by name with a reviewed, reproducible pin.
           </p>
         </section>
 
@@ -585,8 +556,8 @@ $ assistant plugins install owner/repo`}</code>
             immutable commit, an install never changes on its own. It stays on
             the commit it was installed at until you explicitly move it &mdash;
             or until an opted-in workspace&apos;s automatic sweep moves it.
-            Curators advance a plugin by bumping its <code>source.ref</code> in
-            the manifest; your local copy only catches up when you upgrade it.
+            Curators advance a plugin by repinning its row in the catalog; your
+            local copy only catches up when you upgrade it.
           </p>
 
           <SectionHeading id="automatic-updates" level={3}>
@@ -744,37 +715,13 @@ Upgraded "simple-memory" 2026-06-01T12:34:56 (ed09a4c) → 2026-06-05T08:12:24 (
           </p>
         </section>
 
-        <section id="the-manifest" className="mt-12">
-          <SectionHeading id="the-manifest" level={2}>
-            The marketplace manifest
+        <section id="the-catalog-row" className="mt-12">
+          <SectionHeading id="the-catalog-row" level={2}>
+            The catalog row
           </SectionHeading>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The manifest has a top-level <code>name</code>, an optional{" "}
-            <code>owner</code>, and a <code>plugins</code> array. Each entry
-            names the plugin and points at the exact source revision to install.
-          </p>
-          <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-            <code>{`{
-  "name": "mycadet",
-  "owner": { "name": "Cadet", "url": "https://github.com/vargasjr-dev/mycadet" },
-  "plugins": [
-    {
-      "name": "example-plugin",
-      "source": {
-        "source": "github",
-        "repo": "example-org/example-plugin",
-        "ref": "e83c5163316f89bfbde7d9ab23ca2e25604af290"
-      },
-      "description": "Short summary shown in the catalog.",
-      "category": "productivity",
-      "homepage": "https://github.com/example-org/example-plugin",
-      "license": "MIT"
-    }
-  ]
-}`}</code>
-          </pre>
-          <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-            The fields each entry can set:
+            Each catalog row names the plugin and points at the exact source
+            revision to install. The fields it can set:
           </p>
           <ManifestTable fields={MANIFEST_FIELDS} />
         </section>
@@ -788,7 +735,7 @@ Upgraded "simple-memory" 2026-06-01T12:34:56 (ed09a4c) → 2026-06-05T08:12:24 (
             are rejected, because they are mutable: an upstream owner could
             retag or repoint them at different code, which the assistant would
             then clone and dynamically import. A full SHA pins the install to an
-            immutable revision, so the reviewed manifest fully determines what
+            immutable revision, so the reviewed catalog fully determines what
             executes.
           </p>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
@@ -812,8 +759,8 @@ e83c5163316f89bfbde7d9ab23ca2e25604af290  refs/tags/v1.2.0^{}`}</code>
             another ecosystem may not match this loader&apos;s conventions and
             so contribute nothing on boot. A{" "}
             <strong>postinstall adapter</strong> bridges that gap: a small,
-            curated transform committed alongside the marketplace entry that
-            reshapes the cloned tree into Cadet&apos;s layout during install.
+            curated transform committed to the assistant repo that reshapes the
+            cloned tree into Cadet&apos;s layout during install.
           </p>
           <p className="mb-4 text-zinc-600 dark:text-zinc-400">
             The adapter is a single JavaScript file referenced from the
