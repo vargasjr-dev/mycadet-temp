@@ -25,7 +25,7 @@ const CONFIG = {
 
 const PLUGIN_SECRET = "plugin-webhook-secret";
 const CADET_SECRET = "platform-webhook-secret";
-const WS_PATH = "/webhooks/plugins/meeting-bot/realtime";
+const WS_PATH = "/webhooks/plugins/example/realtime";
 
 const ROUTE = {
   path: "realtime",
@@ -44,7 +44,7 @@ function credentialsFor(entries: Record<string, string>) {
 }
 
 const CREDENTIALS = credentialsFor({
-  "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
+  "credential/example/webhook_secret": PLUGIN_SECRET,
   "credential/cadet/webhook_secret": CADET_SECRET,
 });
 
@@ -584,7 +584,7 @@ describe("frame delivery", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]!.method).toBe("user_route_post");
     expect(calls[0]!.params).toMatchObject({
-      pathParams: { path: "plugins/meeting-bot/realtime" },
+      pathParams: { path: "plugins/example/realtime" },
     });
     // The frame travels as the raw body, byte-for-byte.
     expect(new TextDecoder().decode(calls[0]!.binary)).toBe(evt("joined"));
