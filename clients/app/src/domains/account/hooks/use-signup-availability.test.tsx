@@ -33,8 +33,7 @@ mock.module("@/lib/auth/allauth-client", () => ({
   },
 }));
 
-const { useSignupAvailability } =
-  await import("../../../hooks/use-signup-availability");
+const { useSignupAvailability } = await import("./use-signup-availability");
 
 const configReporting = (
   isOpenForSignup: boolean,

@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { screen } from "@testing-library/react";
 
-import type { SignupAvailability } from "../../../hooks/use-signup-availability";
+import type { SignupAvailability } from "../hooks/use-signup-availability";
 
 import {
   CHECKOUT,
@@ -34,7 +34,7 @@ beforeEach(() => {
   signupAvailability.value = "open";
 });
 
-const { SignupPage } = await import("../../../pages/signup-page");
+const { SignupPage } = await import("./signup-page");
 
 const ROUTE = "/account/signup";
 

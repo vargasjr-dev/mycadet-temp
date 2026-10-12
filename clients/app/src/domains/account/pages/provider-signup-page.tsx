@@ -5,11 +5,11 @@ import {
   AccountForm,
   AccountHeading,
   AccountInput,
-} from "../../../account-form";
+} from "../../../components/account/account-form";
 import { useTranslation } from "@/i18n";
 import { refreshCloudAssistantsIfStale } from "@/assistant/cloud-assistants-sync";
-import { AccountShell } from "../../../account-shell";
-import { SignupShell } from "../../../components/signup-shell";
+import { AccountShell } from "../../../components/account/account-shell";
+import { SignupShell } from "../components/signup-shell";
 import {
   getProviderSignup,
   isConflict,
@@ -19,7 +19,7 @@ import { setSignupOnboardingFirstName } from "@/lib/auth/signup-onboarding-hando
 import {
   resolvePostAuthDestination,
   resolvePostLoginDestination,
-} from "../../../login-flow";
+} from "../login-flow";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";

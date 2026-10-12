@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 
 import { publicAsset } from "@/utils/public-asset";
 
-import "../../../components/signup.css";
+import "./signup.css";
 
 /**
  * Two-column sign-up shell: brand + form on the left, a full-bleed looping

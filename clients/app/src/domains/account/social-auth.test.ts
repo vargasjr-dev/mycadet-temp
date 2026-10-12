@@ -4,7 +4,7 @@ import {
   buildProviderRedirectFields,
   readAttributionParams,
   withPreservedAttribution,
-} from "../../social-auth";
+} from "./social-auth";
 
 const ORIGIN = "https://www.mycadet.ai";
 const CALLBACK = "/account/provider/callback";

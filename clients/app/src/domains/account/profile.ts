@@ -9,7 +9,7 @@ import {
   assertHasResponse,
   extractErrorMessage,
 } from "@/utils/api-errors";
-import { parseDrfFieldError } from "../../parse-drf-field-error";
+import { parseDrfFieldError } from "./parse-drf-field-error";
 
 /**
  * The generated wire type, tightened for reads: DRF serializes every field on
