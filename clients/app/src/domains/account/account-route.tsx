@@ -1,7 +1,7 @@
 import { Navigate, useSearchParams } from "react-router";
 
 import { RouteErrorBoundary } from "@web/components/route-error-boundary";
-import { RootHydrateFallback } from "@web/components/root-hydrate-fallback";
+import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { authMiddleware } from "@web/lib/auth/auth-middleware";
 import { routes } from "@web/utils/routes";
 

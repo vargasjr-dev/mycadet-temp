@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import webI18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 
+import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { changeLocale, t, Trans, useTranslation } from "@app/i18n";
 import { i18next } from "@app/i18n/instance";
 
@@ -50,4 +51,18 @@ test("app and web own separate resource stores", () => {
   expect(
     webI18next.getResource("en", "common", "appIsolationProbe"),
   ).toBeUndefined();
+});
+
+test("app hydration fallback uses app locale while web remains English", async () => {
+  await changeLocale("es");
+  await webI18next.changeLanguage("en");
+  render(
+    <I18nextProvider i18n={webI18next}>
+      <RootHydrateFallback />
+    </I18nextProvider>,
+  );
+  expect(screen.getByRole("status").getAttribute("aria-label")).toBe(
+    "Cargando",
+  );
+  expect(webI18next.t("rootHydrateFallback.loadingAria")).toBe("Loading");
 });
