@@ -1,2 +1,2 @@
 [test]
-preload = ["../web/test-setup.ts"]
+preload = ["../web/test-setup.ts", "./test-setup.ts"]

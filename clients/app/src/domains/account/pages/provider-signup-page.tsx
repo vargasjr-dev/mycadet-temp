@@ -6,7 +6,7 @@ import {
   AccountHeading,
   AccountInput,
 } from "@app/components/account/account-form";
-import { useTranslation } from "@web/i18n";
+import { useTranslation } from "@app/i18n";
 import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { AccountShell } from "@app/components/account/account-shell";
 import { SignupShell } from "@app/domains/account/components/signup-shell";

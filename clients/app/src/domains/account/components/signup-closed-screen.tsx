@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router";
 
 import { ExternalAnchor } from "@web/components/external-anchor";
-import { Trans, useTranslation } from "@web/i18n";
+import { Trans, useTranslation } from "@app/i18n";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import { withPreservedAttribution } from "@web/domains/account/social-auth";
 import { docsUrl, routes } from "@web/utils/routes";

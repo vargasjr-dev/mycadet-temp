@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useTranslation } from "@web/i18n";
+import { useTranslation } from "@app/i18n";
 import { useSearchParams } from "react-router";
 
 import {

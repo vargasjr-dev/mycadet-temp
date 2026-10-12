@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 
-import { useTranslation } from "@web/i18n";
+import { useTranslation } from "@app/i18n";
 import { listAssistants } from "@web/assistant/api";
 import { registerLocalCloudSession } from "@web/runtime/local-mode-host";
 import { setMenuCloudSession } from "@web/runtime/menu";

@@ -1,0 +1,60 @@
+{
+  "workspaceTree": {
+    "heading": "Files",
+    "newFile": "New File",
+    "newFolder": "New Folder",
+    "delete": "Delete",
+    "rename": "Rename",
+    "renaming": "Renaming…",
+    "create": "Create",
+    "creating": "Creating…",
+    "creatingHeading": "Create new",
+    "createTriggerAria": "Create new file or folder",
+    "createTriggerTitle": "New file or folder",
+    "nameLabel": "Name",
+    "nameError": "Enter a single file or folder name without slashes.",
+    "nameTaken": "\"{name}\" already exists in this folder.",
+    "createFailed": "Couldn't create it. Check the name and try again.",
+    "renameFailed": "Couldn't rename it. Check the name and try again.",
+    "deleteFailed": "Couldn't delete it. Try again.",
+    "cancel": "Cancel",
+    "sortByNameAria": "Sort by name",
+    "sortBySizeAria": "Sort by size",
+    "sortedBySizeTitle": "Sorted by size, switch to name",
+    "sortedByNameTitle": "Sorted by name, switch to size",
+    "hideHiddenAria": "Hide hidden files",
+    "showHiddenAria": "Show hidden files",
+    "searchPlaceholder": "Search files",
+    "clearSearchAria": "Clear search",
+    "noFilesFound": "No files found",
+    "searchScope": "Searching open folders",
+    "noSearchMatches": "No matches in open folders",
+    "searchIncomplete": "Some folders are not searched. Open a folder to search inside it.",
+    "noMatches": "No matches",
+    "deleteFolderTitle": "Delete Folder",
+    "deleteFileTitle": "Delete File",
+    "deleteFileMessage": "Are you sure you want to delete <name>{name}</name>? This cannot be undone.",
+    "deleteFolderMessage": "Are you sure you want to delete <name>{name}</name> and all of its contents? This cannot be undone.",
+    "deleting": "Deleting…"
+  },
+  "workspaceFileViewer": {
+    "download": "Download",
+    "downloading": "Downloading…",
+    "downloadFailed": "Download failed. Try again.",
+    "modifiedLabel": "Modified:",
+    "selectAFile": "Select a file to view",
+    "fileNotFound": "File not found",
+    "saveFailed": "Save failed",
+    "unknownSize": "Unknown size",
+    "downloadAria": "Download {name}",
+    "emptyTitle": "Nothing open yet"
+  },
+  "workspaceFileSwitcher": {
+    "chooseFile": "Choose a file",
+    "switchFile": "Switch file: {path}",
+    "openHint": "Opens file list"
+  },
+  "workspaceFilePicker": {
+    "dismiss": "Close file list"
+  }
+}

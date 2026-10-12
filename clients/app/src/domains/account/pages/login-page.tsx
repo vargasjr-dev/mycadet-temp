@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "react-router";
 
-import { useTranslation } from "@web/i18n";
+import { useTranslation } from "@app/i18n";
 import {
   AuthWelcomeScreen,
   WelcomeScreenCopy,

@@ -1,0 +1,1367 @@
+{
+  "allChatsPage": {
+    "close": "Закрыть все чаты",
+    "openChat": "Перейти к чату",
+    "doneLabel": "{title}, завершён",
+    "unread": "Не прочитано",
+    "running": "Выполняется",
+    "needsAttention": "Требует внимания",
+    "runningCount": "{count, plural, one {# задача выполняется} few {# задачи выполняются} many {# задач выполняются} other {# задачи выполняются}}"
+  },
+  "askQuestionDetail": {
+    "heading": "{count, plural, one {Вопрос} few {Вопроса} many {Вопросов} other {Вопроса}}"
+  },
+  "secretPromptCard": {
+    "showValue": "Показать значение",
+    "hideValue": "Скрыть значение"
+  },
+  "documentChat": {
+    "saveFailed": "Не удалось сохранить документ. Ваше сообщение сохранено здесь. Попробуйте отправить ещё раз.",
+    "viewConversation": "Открыть беседу",
+    "reopenDocument": "Открыть документ"
+  },
+  "acpConnectAffordance": {
+    "title": "Подключить Claude Code",
+    "dismissButton": "Скрыть",
+    "subtitleIdle": "Использование подписки Claude Code",
+    "subtitleStarting": "Запускаем вход...",
+    "subtitleWaiting": "Ждём вход в Claude...",
+    "subtitleExchanging": "Завершаем вход...",
+    "subtitleConnected": "Claude Code подключён, продолжаем...",
+    "subtitlePaste": "Вставка ключа из открывшейся вкладки",
+    "errorFallback": "Не удалось подключить Claude. Повторите попытку.",
+    "connectButton": "Подключить",
+    "saveButton": "Сохранить",
+    "pastePlaceholder": "Ключ"
+  },
+  "acpRunChatView": {
+    "modelLabel": "Модель"
+  },
+  "mobileDetailSheet": {
+    "title": "Сведения о действии"
+  },
+  "activityStepsPanel": {
+    "backAria": "Назад ко всем шагам",
+    "backTooltip": "Все шаги",
+    "screenshotAria": "Открыть снимок экрана: {activity}",
+    "screenshotFallbackAria": "Открыть снимок экрана компьютера",
+    "screenshotFallbackTitle": "Снимок экрана компьютера",
+    "screenshotTitle": "Снимок экрана: {activity}"
+  },
+  "computerUseScreenshotPreview": {
+    "unavailable": "Последний снимок экрана недоступен.",
+    "unavailableShowingPrevious": "Последний снимок экрана недоступен. Показан предыдущий снимок.",
+    "updating": "Обновление снимка экрана..."
+  },
+  "addToChatSheet": {
+    "title": "Добавить в диалог",
+    "closeAriaLabel": "Закрыть",
+    "camera": "Камера",
+    "gallery": "Фотоплёнка",
+    "files": "Файлы",
+    "pickFailed": "Не удалось добавить этот файл. Повторите попытку.",
+    "tooLarge": "{count, plural, one {# файл слишком большой, чтобы прикрепить} few {# файла слишком большие, чтобы прикрепить} many {# файлов слишком большие, чтобы прикрепить} other {# файла слишком большие, чтобы прикрепить}}",
+    "pickFull": "{count, plural, one {# файл не поместился в эту пачку. Добавление отдельно.} few {# файла не поместились в эту пачку. Добавление отдельно.} many {# файлов не поместились в эту пачку. Добавление отдельно.} other {# файла не поместились в эту пачку. Добавление отдельно.}}"
+  },
+  "allowOptionsMenu": {
+    "allowAndCreateRule": "Разрешить и создать правило",
+    "trigger": "Другие варианты разрешения"
+  },
+  "appAssetActions": {
+    "appExported": "Приложение экспортировано",
+    "shareFailed": "Не удалось поделиться приложением"
+  },
+  "actionDisplay": {
+    "click": "Нажатие",
+    "type": "Ввод текста",
+    "keyPress": "Нажатие клавиши",
+    "scroll": "Прокрутка",
+    "drag": "Перетаскивание",
+    "hover": "Наведение",
+    "observe": "Просмотр",
+    "navigate": "Навигация",
+    "terminal": "Выполнение команды"
+  },
+  "sessionGroupRow": {
+    "mode": {
+      "computerUse": "Сеанс работы с компьютером",
+      "browser": "Сеанс браузера",
+      "liveVision": "Сеанс видеопросмотра",
+      "ambient": "Фоновый сеанс"
+    },
+    "durationSeconds": "{count, plural, one {# сек} few {# сек} many {# сек} other {# сек}}",
+    "durationMinutes": "{count, plural, one {# мин} few {# мин} many {# мин} other {# мин}}",
+    "working": "Работаю",
+    "workingWithDuration": "Работаю · {duration}",
+    "waiting": "Ожидание",
+    "waitingWithDuration": "Ожидание · {duration}",
+    "finishing": "Завершение",
+    "finishingWithDuration": "Завершение · {duration}",
+    "completedWithDurationAndEnd": "{duration} · Завершено в {endTime}",
+    "completedWithDuration": "{duration}",
+    "completedWithEnd": "Завершено в {endTime}",
+    "interrupted": "Прервано",
+    "interruptedWithDurationAndEnd": "Прервано · {duration} · Завершено в {endTime}",
+    "interruptedWithDurationAndLastActivity": "Прервано · {duration} · Последняя активность в {lastActivityTime}",
+    "interruptedWithLastActivity": "Прервано · Последняя активность в {lastActivityTime}",
+    "interruptedWithEnd": "Прервано · Завершено в {endTime}",
+    "disconnected": "Соединение потеряно",
+    "disconnectedWithDurationAndLastActivity": "Соединение потеряно · {duration} · Последняя активность в {lastActivityTime}",
+    "disconnectedWithLastActivity": "Соединение потеряно · Последняя активность в {lastActivityTime}",
+    "timingUnavailable": "Данные о времени недоступны"
+  },
+  "assistantDesktop": {
+    "fitView": "Вписать",
+    "panView": "Обзор",
+    "controlView": "Управление",
+    "panHint": "Перетаскивайте для обзора. Коснитесь для щелчка.",
+    "hideAria": "Скрыть виртуальный рабочий стол",
+    "closeAria": "Закрыть предпросмотр виртуального рабочего стола",
+    "moveAria": "Переместить предпросмотр виртуального рабочего стола (клавиши со стрелками)",
+    "resizeAria": "Изменить размер предпросмотра виртуального рабочего стола (клавиши со стрелками)",
+    "expandAria": "Развернуть виртуальный рабочий стол",
+    "busy": "Виртуальный рабочий стол занят другим пользователем.",
+    "connecting": "Подключение к виртуальному рабочему столу…",
+    "failed": "Не удалось запустить виртуальный рабочий стол.",
+    "lost": "Соединение с виртуальным рабочим столом потеряно.",
+    "openAria": "Открыть виртуальный рабочий стол {name}",
+    "openUnnamedAria": "Открыть виртуальный рабочий стол",
+    "reconnectButton": "Переподключиться",
+    "title": "Рабочий стол",
+    "unavailable": "Виртуальный рабочий стол недоступен для этого ассистента.",
+    "checkingSetup": "Проверка виртуального рабочего стола…",
+    "setupRequestFailed": "Не удалось проверить рабочий стол. Подключитесь заново."
+  },
+  "assistantSideMenu": {
+    "bulkActionMembersFailed": "Не удалось загрузить все диалоги в этом разделе. Повторите попытку."
+  },
+  "assistantSleepStage": {
+    "dismissLabel": "Скрыть экран сна",
+    "sleeping": "Ваш ассистент спит",
+    "sleepingNamed": "{name} спит",
+    "waking": "Ваш ассистент просыпается…",
+    "wakingNamed": "{name} просыпается…",
+    "woke": "Ваш ассистент только что проснулся",
+    "wokeNamed": "{name} только что проснулся"
+  },
+  "assistantSwitcher": {
+    "collapse": "Скрыть ассистентов",
+    "currentAssistant": "{name}, текущий ассистент",
+    "expand": "Сменить ассистента",
+    "switchFailed": "Не удалось сменить ассистента. Повторите попытку.",
+    "switchTo": "Переключиться на {name}",
+    "unnamedAssistant": "Безымянный ассистент"
+  },
+  "attachmentPreviewModal": {
+    "legacyUnavailable": "Предпросмотр недоступен. Содержимое файла не сохранилось в истории чата.",
+    "loadFailed": "Не удалось загрузить предпросмотр.",
+    "pdfLoadFailed": "Не удалось показать этот PDF"
+  },
+  "attachmentTile": {
+    "cancelUpload": "Отменить загрузку {filename}",
+    "preview": "Предпросмотр {filename}",
+    "remove": "Удалить {filename}",
+    "uploading": "Загрузка {filename}"
+  },
+  "cacheBreakpointMapCard": {
+    "description": "Где {count, plural, one {# точка разрыва кэша попала} few {# точки разрыва кэша попали} many {# точек разрыва кэша попали} other {# точки разрыва кэша попали}} в префикс этого запроса и какие сегменты прочитали, а какие создали заново.",
+    "estimatedTokens": "≈ {count} токенов",
+    "fullMissBody": "В этом ходе каждый сегмент создали заново. Сравнение с предыдущим ходом в разнице кэша выше, чтобы найти изменившийся блок.",
+    "fullMissTitle": "Полный промах кэша",
+    "loadError": "Не удалось загрузить тело запроса, чтобы нанести точки разрыва кэша.",
+    "loading": "Загружаем тело запроса, чтобы нанести точки разрыва кэша…",
+    "noBreakpoints": "В этом запросе не было точек разрыва кэша: кэш промпта для вызова был выключен.",
+    "splitEstimatedNote": " Разделение «прочитано / создано» считается по размеру сегмента; провайдер сообщает только итоги.",
+    "statusCreated": "Создано заново",
+    "statusRead": "Прочитано из кэша",
+    "statusUnknown": "В кэше",
+    "title": "Точки разрыва кэша",
+    "tokenEstimateNote": "Число токенов оценивается по длине текста."
+  },
+  "cacheDiffCard": {
+    "changedLabel": "Изменено",
+    "changedMessageFallback": "сообщение",
+    "chipMessages": "Сообщения",
+    "chipModel": "Модель",
+    "chipSettings": "Настройки",
+    "chipSystem": "Система",
+    "chipTools": "Инструменты",
+    "currentModelFallback": "эта модель",
+    "description": "Что изменилось с запроса прошлого хода: блок, из-за которого кэш промпта создали заново.",
+    "diffAnyway": "Всё равно сравнить ({lineCount} строк)",
+    "diffLabel": "Разница: {label}",
+    "diffLargeDefault": "Изменённый текст большой, поэтому по умолчанию его не сравнивают.",
+    "diffStillTooLarge": "Всё ещё слишком большой, чтобы сравнивать здесь (больше {maxLines} строк). Вкладка Raw показывает полное тело.",
+    "diffTooLarge": "Изменённый текст слишком большой, чтобы сравнивать здесь. Вкладка Raw показывает полное тело.",
+    "loadPreviousCallError": "Не удалось загрузить предыдущий вызов для сравнения.",
+    "loadingPreviousCall": "Загружаем предыдущий вызов для сравнения…",
+    "messageStatsAppended": "добавлено: {count}",
+    "messageStatsLeading": "Начальные сообщения: {parts}",
+    "messageStatsRemoved": "удалено: {count}",
+    "messageStatsShared": "общих: {count}",
+    "previousModelFallback": "предыдущая модель",
+    "previousPromptUnavailable": "Промпт предыдущего вызова недоступен для сравнения.",
+    "showLess": "Показать меньше",
+    "showMoreDiffLines": "Показать ещё {count} строк разницы",
+    "statusMessagesEarlierBody": "{label} #{index} отличается от прошлого хода, поэтому всё, что кэшировалось после него, в этом ходе обрабатывается заново.",
+    "statusMessagesEarlierTitle": "Изменилось более раннее сообщение",
+    "statusMessagesHistoryBody": "В этом ходе пропало более ранних сообщений: {removedCount} (скорее всего из-за сжатия истории), поэтому кэшированный префикс сообщений больше не совпадает.",
+    "statusMessagesHistoryTitle": "История сообщений изменилась",
+    "statusModelBody": "Этот ход использовал {current}, а предыдущий: {previous}. Другая модель не может переиспользовать прошлый кэш промпта, поэтому весь промпт создаётся заново.",
+    "statusModelTitle": "Модель изменилась",
+    "statusPrefixUnchangedBodyAppended": "Кэшированный префикс совпадает с прошлым ходом, и добавлено новых сообщений: {count}. Промах кэша здесь скорее про истечение TTL, а не про изменённое содержимое.",
+    "statusPrefixUnchangedBodyIdentical": "Кэшированный префикс совпадает с прошлым ходом. Промах кэша здесь скорее про истечение TTL, а не про изменённое содержимое.",
+    "statusPrefixUnchangedTitle": "Префикс промпта не изменился",
+    "statusSettingsBody": "От прошлого хода отличаются только настройки запроса (например, temperature). У большинства провайдеров одного этого недостаточно, чтобы сбросить кэш промпта.",
+    "statusSettingsTitle": "Настройки запроса изменились",
+    "statusSystemBody": "Часть системного промпта изменилась с прошлого хода. Нестабильное содержимое здесь (метка времени, память или блок на каждый ход) заставляет создавать кэш заново каждый ход.",
+    "statusSystemTitle": "Системный промпт изменился",
+    "statusToolsBody": "Набор инструментов или их определения отличаются от прошлого хода. Инструменты стоят в начале кэшированного префикса, поэтому любое изменение здесь пересоздаёт кэш ещё до системного промпта и сообщений.",
+    "statusToolsTitle": "Определения инструментов изменились",
+    "title": "Разница кэша",
+    "unchangedLines": "⋯ без изменений: {count} строк"
+  },
+  "cacheHealthCard": {
+    "barAriaLabel": "Разбивка кэша промпта из {total} токенов: {segments} ({percent} из кэша).",
+    "barSegment": "{count} {label}",
+    "cached": "из кэша",
+    "description": "Какая доля промпта этого вызова пришла из кэша промпта.",
+    "segmentCreated": "Создано заново",
+    "segmentFresh": "Новый ввод",
+    "segmentRead": "Прочитано из кэша",
+    "statusFullMissBody": "Ни одна часть промпта этого вызова не была прочитана из кэша.",
+    "statusFullMissReCreatedSuffix": " В этом ходе в кэш записали {count} токенов, но ни один не переиспользовали: обычно так бывает, когда кэшированный префикс изменился с прошлого хода.",
+    "statusFullMissTitle": "Полный промах кэша",
+    "statusHealthyBody": "{percent} промпта этого вызова ({count} токенов) пришло из кэша.",
+    "statusHealthyTitle": "Здоровое переиспользование кэша",
+    "statusPartialBody": "{percent} промпта этого вызова ({count} токенов) пришло из кэша; остальное в этом ходе обработали заново.",
+    "statusPartialTitle": "Частичное переиспользование кэша",
+    "title": "Состояние кэша",
+    "unavailableNote": "Этот вызов не сообщил об использовании кэша промпта.",
+    "unavailableNoteForProvider": "Этот вызов не сообщил об использовании кэша промпта для {provider}."
+  },
+  "callRail": {
+    "callCount": "{count, plural, one {# вызов LLM} few {# вызова LLM} many {# вызовов LLM} other {# вызова LLM}}",
+    "callLabel": "Вызов {number}",
+    "compaction": "Сжатие",
+    "cost": "Стоимость",
+    "empty": "Вызовов LLM нет.",
+    "failed": "Ошибка",
+    "latest": "Последний",
+    "navAriaLabel": "Вызовы LLM",
+    "syntheticAgentLoopError": "Ошибка цикла агента",
+    "syntheticAgentLoopErrorWithReason": "Ошибка цикла агента · {reason}",
+    "syntheticYield": "Пауза · сжатие не уместило следующий шаг",
+    "unrecognizedCall": "Неизвестный вызов"
+  },
+  "cameraDeepLink": {
+    "captureFailed": "Не удалось сделать фото. Попробуйте ещё раз.",
+    "close": "Закрыть камеру",
+    "flip": "Сменить камеру",
+    "openFailed": "Не удалось открыть камеру.",
+    "shutter": "Сделать фото",
+    "title": "Сделать фото"
+  },
+  "cameraError": {
+    "captureFailed": "Не удалось сделать это фото.",
+    "deviceInUse": "Камеру использует другое приложение.",
+    "noDevice": "Камера не найдена.",
+    "notDelivered": "Переподключение. Сделайте это фото ещё раз.",
+    "permissionDenied": "Доступ к камере для Cadet отключён.",
+    "refused": "Ваш ассистент пока не может получать фото.",
+    "storeFailed": "Не удалось добавить это фото в разговор.",
+    "unknown": "Не удалось открыть камеру.",
+    "unsupported": "Это устройство не может открыть камеру.",
+    "uploadFailed": "Не удалось отправить это фото."
+  },
+  "cameraExplainer": {
+    "close": "Закрыть",
+    "gotIt": "Понятно",
+    "liveBody": "{name} смотрит, пока вы двигаете камеру. Просто говорите о том, что видит {name}.",
+    "liveBodyDesktop": "{name} смотрит, пока вы двигаете камеру. Просто говорите о том, что видит {name}. Остановить можно в любой момент.",
+    "liveTag": "Эфир",
+    "liveTitle": "Прямой эфир",
+    "photoBody": "Сделайте снимок. {name} видит только этот один снимок.",
+    "photoTitle": "Фото",
+    "privacy": "Всё, что видит {name}, остаётся в собственном приватном рабочем пространстве {name}. Эфир заканчивается, когда вы закрываете камеру.",
+    "subtitle": "Выберите, как {name} видит то, на что вы наводите камеру. Переключить можно в любой момент.",
+    "title": "Фото или прямой эфир?",
+    "tryLive": "Попробовать эфир",
+    "tryLiveDesktop": "Попробовать эфир",
+    "yourAssistant": "ваш ассистент"
+  },
+  "cameraShutterHint": {
+    "live": "Прямой эфир · Нажмите, чтобы остановить",
+    "liveDescription": "Нажмите, чтобы остановить прямой эфир.",
+    "photo": "Нажмите для фото · Удерживайте для прямого эфира",
+    "photoDescription": "Удерживайте, чтобы начать прямой эфир."
+  },
+  "cameraStatusPill": {
+    "announceLive": "Прямой эфир. {status}",
+    "announceLiveMuted": "Прямой эфир. Без звука. {status}",
+    "announceLiveMutedSpeaking": "Прямой эфир. Без звука. {name} говорит",
+    "announceLiveSpeaking": "Прямой эфир. {name} говорит",
+    "announcePhoto": "Фото. {status}",
+    "announcePhotoMuted": "Фото. Без звука. {status}",
+    "announcePhotoMutedSpeaking": "Фото. Без звука. {name} говорит",
+    "announcePhotoSpeaking": "Фото. {name} говорит",
+    "live": "Прямой эфир",
+    "photo": "Фото",
+    "yourAssistant": "Ваш ассистент"
+  },
+  "cameraViewOptions": {
+    "buttonAria": "Параметры отображения камеры",
+    "gateHudDescription": "Отладочный слой: как прямой эфир выбирает, какие кадры отправлять.",
+    "gateHudTitle": "Настройка фильтра кадров",
+    "howItWorks": "Как работают «Фото» и «Прямой эфир»",
+    "keptFrameDescription": "Показывает последний кадр, отправленный в эфире.",
+    "keptFrameTitle": "Последний отправленный кадр",
+    "title": "Показывать"
+  },
+  "channelReferenceChip": {
+    "heading": "Ссылка на сообщение из {channel}",
+    "headingWithSender": "Ссылка на сообщение {sender} в {channel}",
+    "removeAria": "Убрать выбранное сообщение"
+  },
+  "channelThreadControl": {
+    "closeAria": "Закрыть тред в {channel}",
+    "label": "Тред в {channel}",
+    "openAria": "Открыть тред в {channel}"
+  },
+  "channelTranscriptPanel": {
+    "assistantSender": "Ассистент",
+    "closeAria": "Закрыть тред канала",
+    "closeTooltip": "Закрыть",
+    "emptyNoMessageDetail": "{channel} не передаёт Cadet данные по отдельным сообщениям, которые нужны этому виду, поэтому показывать здесь нечего. Откройте разговор в {channel}, чтобы прочитать его целиком.",
+    "emptyThread": "В этом разговоре пока нет сообщений из {channel}.",
+    "namedTitle": "{channel} · {thread}",
+    "noText": "Без текста",
+    "openInChannel": "Открыть в {channel}",
+    "reactionAdded": "Реакция {emoji}",
+    "reactionRemoved": "Реакция {emoji} убрана",
+    "readOnly": "Только чтение",
+    "readOnlyNote": "Это разговор в том виде, в каком он есть в {channel}. Писать можно только в поле ввода Cadet.",
+    "reference": "Сослаться в Cadet",
+    "referenceAria": "Сослаться на это сообщение из {channel} в Cadet",
+    "referenced": "Выбрано",
+    "removeReferenceAria": "Убрать эту ссылку из поля ввода Cadet",
+    "title": "Тред в {channel}",
+    "unknownSender": "Неизвестный отправитель"
+  },
+  "chatComposer": {
+    "addToChat": "Добавить в диалог",
+    "askAssistantPlaceholder": "Сообщение для {assistantName}",
+    "endOtherVoiceSession": "Завершить и начать здесь",
+    "goToVoiceSession": "Перейти к ней"
+  },
+  "chatInfoPanel": {
+    "appsTitle": "Приложения",
+    "backAria": "Назад к информации о диалоге",
+    "backTooltip": "Информация о диалоге",
+    "closeAria": "Закрыть информацию о диалоге",
+    "empty": "В этом диалоге пока нет материалов",
+    "filesTitle": "Документы и изображения",
+    "framesTitle": "Кадры с камеры",
+    "loadFailed": "Не удалось загрузить материалы",
+    "loadMore": "Загрузить ещё",
+    "openAppAria": "Открыть {name}",
+    "openDocumentAria": "Открыть {name}",
+    "previewAttachmentAria": "Предпросмотр {filename}",
+    "previewFrameAria": "Предпросмотр кадра с камеры",
+    "seeAll": "Показать все",
+    "seeAllAppsAria": "Показать все приложения",
+    "seeAllFilesAria": "Показать все документы и изображения",
+    "seeAllFramesAria": "Показать все кадры с камеры",
+    "title": "Информация о диалоге",
+    "retry": "Повторить",
+    "retrySourceAria": "Повторить загрузку: {source}",
+    "documentsSource": "Документы",
+    "attachmentsSource": "Вложения",
+    "sourceLoading": "Загрузка: {source}…",
+    "sourceLoadFailed": "Не удалось загрузить: {source}.",
+    "sourceRefreshFailed": "Не удалось обновить: {source}. Показаны сохранённые результаты.",
+    "sourcePageFailed": "Не удалось загрузить следующие элементы: {source}.",
+    "framesUnsupported": "Классификация кадров камеры недоступна в этой версии помощника.",
+    "loadedHistory": "Вложения взяты только из загруженной истории чата."
+  },
+  "compactionTab": {
+    "compactedMessages": "сжато: {count}",
+    "compactedPreserved": "Сжато / сохранено",
+    "contextTokens": "Токены контекста",
+    "duration": "Длительность",
+    "durationMs": "{count} мс",
+    "emptyBody": "Сжатие относят к вызову, который шёл сразу после него. Если ждал его здесь, проверь, что диалог превысил бюджет контекста прямо перед этим вызовом.",
+    "emptyTitle": "К этому вызову не привязано сжатие",
+    "eventIndex": " · {index} из {totalCount}",
+    "hideSummaryText": "Скрыть текст сводки",
+    "loadFailedDefault": "Не удалось загрузить сжатие.",
+    "loadFailedTitle": "Не удалось загрузить",
+    "loading": "Загрузка сжатия…",
+    "messageRange": "{before} → {after}",
+    "messages": "Сообщения",
+    "outcomeCompacted": "Сжато",
+    "outcomeFailed": "Сжатие не удалось",
+    "outcomeFailedDetail": "Вызов суммаризатора завершился ошибкой, поэтому контекст оставили как есть.",
+    "outcomeNoChange": "Без изменений",
+    "outcomeUnavailable": "Исход недоступен",
+    "outcomeUnavailableDetail": "Подробные метрики до и после для этого сжатия не записали.",
+    "preservedMessages": "сохранено: {count}",
+    "reductionRatio": "в {ratio}× меньше",
+    "retry": "Повторить",
+    "showSummaryText": "Показать текст сводки",
+    "summarizerUsage": "{input} вход / {output} выход",
+    "summaryCost": "Стоимость сводки",
+    "summaryModel": "Модель сводки",
+    "tokenRange": "{before} → {after}",
+    "tokenRangeWithReduction": "{before} → {after}  ({reduction})",
+    "trigger": "Триггер"
+  },
+  "contactActions": {
+    "cancelFailed": "Не удалось закрыть форму. Попробуйте ещё раз.",
+    "recordCancelFailed": "Не удалось закрыть форму. Попробуйте ещё раз.",
+    "recordSaveFailed": "Не удалось сохранить контакт. Попробуйте ещё раз."
+  },
+  "contactPromptCard": {
+    "addingToContact": "Добавление канала для {name}",
+    "markVerified": "Отметить этот адрес как подтверждённый",
+    "markVerifiedHelp": "Подтверждённый адрес может писать вашему ассистенту.",
+    "namePlaceholder": "Имя",
+    "notesLabel": "Заметки"
+  },
+  "contactRecordCard": {
+    "cancel": "Отмена",
+    "channelType": "{channel}:",
+    "contactDeleted": "Контакт удалён",
+    "contactMerged": "Контакты объединены",
+    "contactSaved": "Контакт сохранён",
+    "createTitle": "Добавить контакт",
+    "delete": "Удалить",
+    "deleteTitle": "Удалить {name}?",
+    "deleteWarning": "Вместе с ним удаляются его каналы, и он больше не сможет связаться с вашим ассистентом.",
+    "merge": "Объединить",
+    "mergeDonorChannels": "Переходят от {name}",
+    "mergeSurvivorChannels": "Уже у {name}",
+    "mergeTitle": "Объединить {donor} с {survivor}?",
+    "mergeWarning": "Эти каналы перейдут к {survivor}, а запись {donor} будет удалена.",
+    "nameLabel": "Имя",
+    "namePlaceholder": "Имя",
+    "noChannels": "У этого контакта нет каналов.",
+    "notesLabel": "Заметки",
+    "notesPlaceholder": "Добавить заметку",
+    "save": "Сохранить",
+    "saving": "Сохранение…",
+    "updateTitle": "Обновить: {name}"
+  },
+  "conversationActions": {
+    "archive": "В архив",
+    "copyConversation": "Скопировать весь диалог",
+    "copyConversationId": "Скопировать ID диалога",
+    "delete": "Удалить",
+    "forkConversation": "Ответвить диалог",
+    "inspect": "Разобрать диалог",
+    "markRead": "Отметить как прочитанный",
+    "markUnread": "Отметить как непрочитанный",
+    "moveToGroup": "Перенести в группу",
+    "newGroup": "Новая группа…",
+    "openInNewWindow": "Открыть в новом окне",
+    "pin": "Закрепить",
+    "refresh": "Обновить",
+    "removeFromGroup": "Убрать из группы",
+    "rename": "Переименовать",
+    "shareFeedback": "Отправить отзыв",
+    "triggerAriaLabel": "Действия с диалогом",
+    "unarchive": "Вернуть из архива",
+    "unpin": "Открепить"
+  },
+  "conversationActionsSheet": {
+    "closeAriaLabel": "Закрыть",
+    "title": "Действия с диалогом"
+  },
+  "conversationAssets": {
+    "ariaLabel": "Ресурсы диалога, {count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}",
+    "ariaLabelUnavailable": "Ресурсы диалога, не удалось загрузить",
+    "ariaLabelUnseen": "Ресурсы диалога, {count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}} (есть невидимые изменения)",
+    "label": "{count, plural, one {# ресурс} few {# ресурса} many {# ресурсов} other {# ресурса}}",
+    "labelUnavailable": "Не удалось загрузить ресурсы",
+    "labelPartial": "Не удалось загрузить некоторые ресурсы",
+    "ariaLabelPartial": "Ресурсы беседы, некоторые не удалось загрузить",
+    "labelLoaded": "{count, plural, one {# загруженный ресурс} few {# загруженных ресурса} many {# загруженных ресурсов} other {# загруженного ресурса}}",
+    "ariaLabelLoaded": "Ресурсы беседы, {count, plural, one {# загруженный элемент} few {# загруженных элемента} many {# загруженных элементов} other {# загруженного элемента}}",
+    "ariaLabelLoadedUnseen": "Ресурсы беседы, {count, plural, one {# загруженный элемент} few {# загруженных элемента} many {# загруженных элементов} other {# загруженного элемента}} (непросмотренные изменения)"
+  },
+  "conversationStarterDock": {
+    "caption": "Подсказки:"
+  },
+  "copyIdToClipboard": {
+    "conversationCopied": "ID диалога скопирован в буфер обмена.",
+    "conversationFailed": "Не удалось скопировать ID диалога.",
+    "groupCopied": "ID группы скопирован в буфер обмена.",
+    "groupFailed": "Не удалось скопировать ID группы."
+  },
+  "deleteConversationConfirmDialog": {
+    "acknowledgment": "Я понимаю, что связанные ресурсы и воспоминания могут сохраниться",
+    "cancel": "Отмена",
+    "confirm": "Удалить",
+    "message": "Удалить «{title}»? Диалог и его сообщения будут удалены навсегда. Связанные ресурсы и воспоминания могут сохраниться. Это действие нельзя отменить.",
+    "title": "Удалить диалог"
+  },
+  "deletedMessageRow": {
+    "label": "Это сообщение было удалено"
+  },
+  "documentAssetActions": {
+    "pdfDownloadFailed": "Не удалось скачать PDF"
+  },
+  "documentConversation": {
+    "unavailable": "Не удалось открыть беседу документа. Попробуйте ещё раз.",
+    "updateRequired": "Обновите ассистента, чтобы начать связанную беседу.",
+    "prepareFailed": "Не удалось подготовить беседу документа. Ваши изменения сохранены.",
+    "feedbackPrompt": "Пожалуйста, рассмотрите и обработайте мои комментарии к «{title}».",
+    "missing": "Беседа этого документа недоступна. Вы можете продолжить редактирование или начать новую связанную беседу.",
+    "start": "Начать связанную беседу",
+    "retry": "Повторить",
+    "back": "Назад"
+  },
+  "documentViewerPage": {
+    "exportFailed": "Не удалось экспортировать PDF"
+  },
+  "exportProgressModal": {
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "defaultError": "Не удалось экспортировать данные инспектора.",
+    "descriptionDone": "Скачивание должно было начаться само.",
+    "descriptionError": "Что-то пошло не так при сборе экспорта.",
+    "descriptionRunning": "Собираем тела запросов провайдера и нормализованный контекст. В длинных диалогах это может занять время.",
+    "done": "Готово",
+    "progressAriaLabel": "Прогресс экспорта",
+    "retry": "Повторить",
+    "statusDone": "Готово",
+    "statusPackaging": "Упаковываем ZIP…",
+    "statusProgress": "{completed} из {total} вызовов",
+    "titleDone": "Экспорт готов",
+    "titleError": "Экспорт не удался",
+    "titleRunning": "Экспортируем данные инспектора"
+  },
+  "fileDownload": {
+    "failed": "Не удалось скачать файл"
+  },
+  "groupActions": {
+    "archiveAll": "В архив все…",
+    "copyGroupId": "Скопировать ID группы",
+    "deleteGroup": "Удалить группу",
+    "deleteGroupWithConversations": "Удалить группу…",
+    "groupByChannel": "Группировать по каналу",
+    "markAllRead": "Отметить все как прочитанные",
+    "moveSectionDown": "Секцию вниз",
+    "moveSectionUp": "Секцию вверх",
+    "rename": "Переименовать",
+    "ungroup": "Разгруппировать"
+  },
+  "groupActionsSheet": {
+    "title": "Действия: {name}"
+  },
+  "inspectPage": {
+    "accessDenied": "Инспектор доступен, когда включён флаг Internal Thread Actions.",
+    "allMessages": "Все сообщения",
+    "back": "Назад",
+    "backToConversationAria": "Назад к диалогу",
+    "chooseCall": "Выбор вызова на панели, чтобы разобрать его контекст.",
+    "conversationScopeSubtitle": "Показаны все вызовы LLM, записанные для этого диалога.",
+    "detailLoadFailed": "Не удалось загрузить нормализованный контекст этого вызова.",
+    "emptyBodyConversation": "Либо ни одно сообщение диалога не создал вызов LLM, либо журналы запросов обрезала политика хранения.",
+    "emptyBodyMessage": "Либо это сообщение создал не вызов LLM, либо его журналы запросов обрезала политика хранения.",
+    "emptyTitleConversation": "Для этого диалога нет записанных вызовов LLM.",
+    "emptyTitleMessage": "Для этого сообщения нет записанных вызовов LLM.",
+    "enableLogging": "Включить журнал",
+    "enableLoggingFailed": "Не удалось включить журнал",
+    "enableLoggingFailedWithMessage": "Не удалось включить журнал ({message})",
+    "enabling": "Включаем…",
+    "exportFailed": "Не удалось экспортировать данные инспектора",
+    "exportZip": "Экспорт ZIP",
+    "exportZipAria": "Экспортировать данные инспектора как ZIP",
+    "exporting": "Экспорт…",
+    "filterToMessage": "Фильтр по сообщению:",
+    "llmCallCount": "{count, plural, one {1 вызов LLM} few {# вызова LLM} many {# вызовов LLM} other {# вызова LLM}}",
+    "loadContextFailed": "Не удалось загрузить контекст LLM.",
+    "loadFailedTitle": "Не удалось загрузить",
+    "loading": "Загрузка…",
+    "loggingDisabledBody": "Тела запросов и ответов не записываются, поэтому смотреть нечего. Включение журнала фиксирует следующие вызовы LLM.",
+    "loggingDisabledTitle": "Журнал запросов LLM выключен",
+    "loggingEnabledToast": "Журнал запросов LLM включён",
+    "messageOptionDeepLink": "Сообщение {messageId}",
+    "messageOptionNoText": "{index}. (без текста)",
+    "messageOptionWithPreview": "{index}. {preview}",
+    "retry": "Повторить",
+    "scopedToOneMessage": "Ограничено одним сообщением · ",
+    "scopedToTurn": "Ограничено ходом {index} из {count} · ",
+    "title": "Инспектор контекста LLM"
+  },
+  "liveVoiceBusy": {
+    "android": "Голосовой режим уже активен в приложении для Android.",
+    "ios": "Голосовой режим уже активен в приложении для iOS.",
+    "macos": "Голосовой режим уже активен в приложении для Mac.",
+    "unknown": "Голосовой режим уже активен в другом месте.",
+    "web": "Голосовой режим уже активен в другой вкладке браузера.",
+    "windows": "Голосовой режим уже активен в приложении для Windows."
+  },
+  "liveVoiceStatus": {
+    "connecting": "Подключение…",
+    "ending": "Завершение…",
+    "listening": "Слушаю…",
+    "muted": "Без звука",
+    "reconnecting": "Переподключение…",
+    "speaking": "Говорит…",
+    "thinking": "Думает…",
+    "working": "Работаю над этим…"
+  },
+  "llmCallErrorCard": {
+    "chipCode": "Код",
+    "chipProvider": "Провайдер",
+    "chipRequestId": "Request ID",
+    "chipStatus": "Статус",
+    "chipType": "Тип",
+    "chipUpstreamCode": "Код выше по цепочке",
+    "chipUpstreamParam": "Параметр выше по цепочке",
+    "chipUpstreamType": "Тип выше по цепочке",
+    "noResponse": "Провайдер отклонил этот вызов и не вернул ответ.",
+    "title": "Вызов не удался"
+  },
+  "localFileEmbed": {
+    "pictureInPictureUnavailable": "Картинка в картинке недоступна"
+  },
+  "localFileLink": {
+    "closePreview": "Закрыть предпросмотр: {filename}",
+    "fileOptions": "Действия с файлом: {filename}",
+    "openInWorkspace": "Открыть в рабочем пространстве: {filename}",
+    "openPreview": "Открыть предпросмотр: {filename}",
+    "unavailable": "Этот файл здесь недоступен",
+    "unavailableLabel": "Файл недоступен: {filename}",
+    "viewImage": "Просмотреть изображение: {filename}"
+  },
+  "memoryRouterPlaygroundPage": {
+    "addOlderPairButton": "+ Добавить более старую пару",
+    "assistantReplyLabel": "[assistant]: ответ",
+    "assistantReplyPlaceholder": "Ответ ассистента, который был до сообщения пользователя ниже.",
+    "configTitle": "Конфиг {paneId}",
+    "conversationalContextTitle": "Контекст диалога (общий для обеих панелей)",
+    "customPromptPlaceholder": "Свой системный промпт маршрутизатора. Доступные подстановки:\n  '{ASSISTANT_NAME}, {USER_NAME}, {PAGE_INDEX}'\nПустое поле берёт встроенный шаблон. «Загрузить по умолчанию» подставляет в поле встроенный текст для правки.",
+    "description": "Прогон маршрутизатора v4 с своими переопределениями уровня и пакета. Только чтение: строки в <code>memory_v2_injection_events</code> и <code>memory_v2_activation_logs</code> не пишутся, состояние активации не меняется. Пустое переопределение берёт живое значение конфига; <code>null</code> явно выключает уровень.",
+    "diffLabel": "Разница",
+    "diffValue": "{shared} общих · {unique} только у этой панели",
+    "effectiveConfig": "Итоговый конфиг",
+    "emaScore": "EMA {score}",
+    "empty": "(пусто)",
+    "emptySelectionHint": "Маршрутизатор вернул пустой выбор. Более точный запрос или ослабление переопределений.",
+    "failedToRunSimulation": "Не удалось запустить симуляцию",
+    "firstTurnAssistantPlaceholder": "Пустое поле: сценарий первого хода.",
+    "inheritActive": "наследовать активный",
+    "inheritActiveWithProfile": "наследовать активный ({profile})",
+    "inheritPlaceholder": "наследовать",
+    "invalidOverrideInput": "Некорректное переопределение",
+    "justArrivedUserLabel": "Только что пришло [user]: сообщение",
+    "lastUserPlaceholder": "например, что выпустить дальше",
+    "legendAOnly": "только A",
+    "legendBOnly": "только B",
+    "legendInBoth": "в обоих",
+    "llmProfilesOverride": "переопределение llm.profiles",
+    "loadDefault": "Загрузить по умолчанию",
+    "loading": "Загрузка…",
+    "noPagesSelected": "Страницы не выбраны",
+    "notAvailable": "Песочница маршрутизатора памяти недоступна.",
+    "nowBlockLabel": "блок '<now>'",
+    "nowDefaultPlaceholder": "Заполнено живым NOW.md. Прави, чтобы проверить другие состояния.",
+    "nowLoadingPlaceholder": "Загрузка текущего NOW.md…",
+    "nullValue": "null",
+    "overrideMustBePositiveInteger": "{fieldName} должен быть положительным целым или 'null' (получено \"{value}\")",
+    "overrideSuffix": "  (переопределение)",
+    "pageCount": "{count, plural, one {# страница} few {# страницы} many {# страниц} other {# страницы}}",
+    "pairLabel": "Пара {index} из {total}",
+    "pairMostRecentSuffix": " · самая свежая",
+    "paneTitle": "Панель {paneId}",
+    "promptModeBundled": "встроенный",
+    "promptModeCustom": "свой",
+    "rawApiExchange": "Сырой обмен API",
+    "recentPairsLabel": "Недавние пары (ассистент, пользователь) · сначала старые",
+    "reloadNowButton": "Перезагрузить живой NOW.md",
+    "removeButton": "Удалить",
+    "requestLabel": "Запрос (панель {paneId})",
+    "reset": "Сбросить",
+    "responseLabel": "Ответ (панель {paneId})",
+    "routerFailure": "Сбой маршрутизатора: {reason}",
+    "runBoth": "Запустить оба",
+    "runPane": "Запустить {paneId}",
+    "running": "Запуск…",
+    "selectedLabel": "Выбрано",
+    "selectedValue": "{count}  (живой max_page_ids: {maxPageIds})",
+    "summary": "Сводка",
+    "summaryUserMessageLabel": "Сообщение пользователя",
+    "systemPrompt": "Системный промпт",
+    "systemPromptConfigLabel": "системный промпт",
+    "tier1Label": "уровень 1",
+    "tier2Label": "уровень 2",
+    "tier3Label": "уровень 3 · b{batch}",
+    "title": "Песочница маршрутизатора памяти",
+    "totalCandidatePagesLabel": "Всего страниц-кандидатов",
+    "userMessageLabel": "[user]: сообщение",
+    "userMessagePlaceholder": "Сообщение пользователя."
+  },
+  "memoryTab": {
+    "afterMergeLabel": "После слияния",
+    "breakdownCAssistantRerank": "c_assistant · rerank Δ_a",
+    "breakdownCAssistantSim": "c_assistant · sim_a",
+    "breakdownCNowSim": "c_now · sim_n",
+    "breakdownCUserRerank": "c_user · rerank Δ_u",
+    "breakdownCUserSim": "c_user · sim_u",
+    "breakdownOwnActivation": "A_o (свой)",
+    "breakdownPriorActivation": "prior · d",
+    "breakdownRerankScaledRaw": "+{scaled}  (сырой {raw})",
+    "breakdownScaledRaw": "{scaled}  (сырой {raw})",
+    "breakdownSource": "источник",
+    "breakdownSpreadDelta": "spread Δ",
+    "breakdownStatus": "статус",
+    "candidatePoolChosenChip": "выбрана",
+    "candidatePoolNoneBody": "Пул кандидатов для этого хода не записан.",
+    "candidatePoolPassthroughSubtitle": "{poolSize, plural, one {# кандидат передан напрямую} few {# кандидата передано напрямую} many {# кандидатов передано напрямую} other {# кандидата передано напрямую}} без оценки селектора · селектор отключён",
+    "candidatePoolSelectorNotRunBody": "Селектор не запускался в этом ходе.",
+    "candidatePoolSubtitle": "{poolSize, plural, one {# кандидат показан} few {# кандидата показано} many {# кандидатов показано} other {# кандидата показано}} селектору · {selectedCount, plural, one {выбрана # страница} few {выбраны # страницы} many {выбрано # страниц} other {выбрано # страницы}}",
+    "candidatePoolTitle": "Пул кандидатов",
+    "candidateScores": "sem {semantic} · rec {recency}",
+    "carriedPill": "Перенесено: {count}",
+    "conceptActivationsSubtitle": "Сортировка по итоговой активации. Записи навыков идут с префиксом `skills/`; разверни строку, чтобы увидеть разбивку активации.",
+    "conceptActivationsTitle": "Активации концептов ({count})",
+    "configCAssistant": "c_assistant",
+    "configCNow": "c_now",
+    "configCUser": "c_user",
+    "configDDecay": "d (затухание)",
+    "configEpsilon": "epsilon",
+    "configHops": "hops",
+    "configKSharpening": "k (обострение)",
+    "configSubtitle": "Веса активации и пороги отбора.",
+    "configTitle": "Конфиг",
+    "configTopK": "top_k",
+    "copyAriaLabel": "Скопировать в буфер обмена",
+    "copyAriaLabelCopied": "Скопировано",
+    "copyButtonCopied": "Скопировано",
+    "copyButtonCopy": "Копировать",
+    "copyErrorMessage": "Не удалось скопировать в буфер обмена.",
+    "copyTitle": "Копировать",
+    "copyTitleCopied": "Скопировано!",
+    "corePill": "Ядро: {count}",
+    "degradationTitle": "Деградация",
+    "fallbackSourcesLabel": "Резервные источники",
+    "hybridSearchLabel": "Гибридный поиск",
+    "inContextPill": "В контексте: {count}",
+    "injectedMemoryContextTitle": "Вставленный контекст памяти",
+    "injectedPill": "Вставлено: {count}",
+    "injectedTokensLabel": "Вставленные токены",
+    "latencyMs": "{ms} мс",
+    "loading": "Загрузка…",
+    "loggedMemorySelectionSubtitle": "Отрисовано из выбора v3, в этот ход не вставлено.",
+    "loggedMemorySelectionTitle": "Записанный выбор памяти",
+    "memoryDisabledDefaultReason": "Для этого хода вспоминание памяти было выключено.",
+    "memoryDisabledTitle": "Память выключена",
+    "missingValue": "-",
+    "modelLabel": "Модель",
+    "no": "Нет",
+    "noDataBody": "Сведения о вспоминании памяти для этого сообщения недоступны.",
+    "noDataTitle": "Нет данных памяти",
+    "noEntriesRanked": "Нет ранжированных записей.",
+    "noPagesSelected": "Страницы не выбраны.",
+    "notInjectedPill": "Не вставлено: {count}",
+    "pageContentLabel": "содержимое страницы",
+    "pageNotFound": "Страница не найдена на диске. Slug может ссылаться на устаревшую запись Qdrant.",
+    "pillMemoryV2": "Memory V2",
+    "pillMemoryV3": "Memory V3",
+    "pillRecallV1": "Recall (v1)",
+    "providerLabel": "Провайдер",
+    "queryContextSubtitle": "Текст, который встроили как поисковый вектор для семантического поиска.",
+    "queryContextTitle": "Контекст запроса",
+    "reasonLabel": "Причина",
+    "retrievalFunnelSubtitle": "Как воспоминания отфильтровали от семантического поиска до вставки.",
+    "retrievalFunnelTitle": "Воронка поиска",
+    "searchDetailsTitle": "Подробности поиска",
+    "selectedLabel": "Выбрано",
+    "selectedPagesSubtitle": "Страницы, которые выбрал v3, с меткой полосы, откуда они пришли, и совпавшего раздела (если полоса поиска его нашла).",
+    "selectedPagesTitle": "Выбранные страницы ({count})",
+    "selectedPill": "Выбрано: {count}",
+    "semanticHitsLabel": "Семантические совпадения",
+    "semanticUnavailableLabel": "Семантика недоступна",
+    "sparseDenseOnly": "Только плотные",
+    "sparseUsed": "Использованы",
+    "sparseVectorsLabel": "Разреженные векторы",
+    "statusActive": "Активно",
+    "statusDegraded": "Деградировано",
+    "statusLabel": "Статус",
+    "statusSubtitle": "Провайдер, модель и задержка этого вспоминания.",
+    "statusTitle": "Статус",
+    "tier1Label": "Уровень 1",
+    "tier2Label": "Уровень 2",
+    "topCandidatesSubtitle": "{count, plural, one {# кандидат, ранжированный по итоговому баллу.} few {# кандидата, ранжированных по итоговому баллу.} many {# кандидатов, ранжированных по итоговому баллу.} other {# кандидата, ранжированных по итоговому баллу.}}",
+    "topCandidatesTitle": "Лучшие кандидаты",
+    "totalLatencyLabel": "Общая задержка",
+    "turnLevelRecallBody": "Вспоминание памяти запускается один раз за ход. Эти данные относятся ко всем вызовам LLM этого сообщения.",
+    "turnLevelRecallTitle": "Вспоминание на уровне хода",
+    "turnPill": "Ход {turn}",
+    "unavailable": "Недоступно",
+    "unknown": "Неизвестно",
+    "v2StatusInContext": "В контексте",
+    "v2StatusInjected": "Вставлено",
+    "v2StatusNotInjected": "Не вставлено",
+    "v2StatusPageMissing": "Страницы нет",
+    "v2TurnBody": "Проход памяти с распространением активации: ранжирует концепты и навыки для этого хода.",
+    "v2TurnTitle": "Память - ход {turn} ({mode})",
+    "v3LiveInjectionBody": "v3 в этом ходе живой источник памяти: блок ниже вставлен в контекст (v2 подавлен).",
+    "v3LiveInjectionTitle": "Memory V3 - живая вставка",
+    "v3LoggedSelectionBody": "v3 не живой источник памяти этого ассистента: эти выборы записали, но в этот ход не вставили; память хода пришла из v2.",
+    "v3LoggedSelectionTitle": "Memory V3 - записанный выбор (не вставлено)",
+    "v3SourceCarried": "перенесено",
+    "v3SourceCore": "ядро",
+    "v3SourceL1L2": "L1+L2",
+    "v3SourceNeedle": "needle",
+    "yes": "Да"
+  },
+  "messageHoverActions": {
+    "bookmark": "Закладка",
+    "copied": "Скопировано",
+    "copy": "Копировать",
+    "copyFailed": "Не удалось скопировать сообщение.",
+    "forkFromHere": "Ответвить отсюда",
+    "inspect": "Просмотр",
+    "loading": "Чтение…",
+    "openInSlack": "Открыть в Slack",
+    "playFailed": "Не удалось прочитать это сообщение.",
+    "readAloud": "Прочитать вслух",
+    "removeBookmark": "Убрать закладку",
+    "retry": "Повторить",
+    "stop": "Остановить",
+    "summarizeUpToHere": "Суммировать досюда"
+  },
+  "messageLongPressActions": {
+    "bookmark": "Закладка",
+    "copied": "Скопировано",
+    "copy": "Копировать",
+    "copyFailed": "Не удалось скопировать сообщение.",
+    "forkFromHere": "Ответвить отсюда",
+    "inspect": "Просмотр",
+    "openInSlack": "Открыть в Slack",
+    "readAloud": "Прочитать вслух",
+    "removeBookmark": "Убрать закладку",
+    "stop": "Остановить",
+    "summarizeUpToHere": "Суммировать досюда",
+    "title": "Действия с сообщением"
+  },
+  "mobileCallSelector": {
+    "callOfTotal": "Вызов {number} из {total}",
+    "llmCallCount": "{count, plural, one {1 вызов LLM} few {# вызова LLM} many {# вызовов LLM} other {# вызова LLM}}",
+    "selectCallAria": "Выбор вызова LLM для разбора",
+    "sheetTitle": "Выбор вызова"
+  },
+  "multiActivityGroup": {
+    "runSummary": {
+      "completed": "Завершено",
+      "failed": "Ошибка",
+      "toolsFailed": "{count, plural, one {# инструмент завершился с ошибкой} few {# инструмента завершились с ошибкой} many {# инструментов завершились с ошибкой} other {# инструмента завершились с ошибкой}}",
+      "workedFor": "Работа заняла {duration}",
+      "workedUnderSecond": "Работа заняла меньше секунды",
+      "working": "Работаю",
+      "workingFor": "Работаю уже {duration}"
+    }
+  },
+  "quietTurnProgress": {
+    "checking": "Проверяю: {place}",
+    "updating": "Обновляю: {place}",
+    "using": "Использую: {place}",
+    "working": "Работаю",
+    "showWorkAria": "Показать ход работы: {label}",
+    "showStepsAria": "Показать шаги этого ответа: {summary}",
+    "place": {
+      "files": "Файлы",
+      "terminal": "Терминал",
+      "memory": "Память",
+      "web": "интернет",
+      "mac": "ваш Mac"
+    }
+  },
+  "overviewTab": {
+    "cacheTokensLabel": "Токены кэша",
+    "conversationSubtitle": "Накопительные итоги по всем тарифицированным вызовам LLM на сейчас.",
+    "conversationTitle": "Диалог",
+    "createdLabel": "Создано",
+    "durationLabel": "Длительность",
+    "estimatedCostLabel": "Оценочная стоимость",
+    "failedStatus": "Ошибка",
+    "firstTokenKindLabel": "Тип первого токена",
+    "firstTokenLatencySubtitle": "Куда ушло время до первого токена этого хода, по замерам ассистента.",
+    "firstTokenLatencyTitle": "Задержка первого токена",
+    "inputTokensLabel": "Входные токены",
+    "latencyMs": "{ms} мс",
+    "loopExitReasonLabel": "Причина выхода из цикла",
+    "modelLabel": "Модель",
+    "normalizedMetadataSubtitle": "Провайдер, модель, метки времени и счётчики использования.",
+    "normalizedMetadataTitle": "Нормализованные метаданные",
+    "normalizedSummaryUnavailableSubtitle": "У этого вызова всё ещё есть сырые тела запроса и ответа.",
+    "normalizedSummaryUnavailableTitle": "Нормализованная сводка недоступна",
+    "otherLabel": "Другое",
+    "outputTokensLabel": "Выходные токены",
+    "providerLabel": "Провайдер",
+    "requestMessagesLabel": "Сообщения запроса",
+    "statusLabel": "Статус",
+    "stopReasonLabel": "Причина остановки",
+    "toolCallsLabel": "Вызовы инструментов",
+    "toolsAvailableLabel": "Доступные инструменты",
+    "totalCostSoFarLabel": "Стоимость всего на сейчас",
+    "totalToFirstTokenLabel": "Всего до первого токена",
+    "usageSubtitle": "Счётчики токенов и вызовов, нормализованные маршрутом ассистента.",
+    "usageTitle": "Использование"
+  },
+  "pdfPageSkeleton": {
+    "loadingPdf": "Загрузка PDF"
+  },
+  "pdfPreview": {
+    "pageCapNotice": "{count, plural, one {Показана первая страница} few {Показаны первые # страницы} many {Показаны первые # страниц} other {Показаны первые # страницы}}"
+  },
+  "pinnedAppColorSwatches": {
+    "colors": {
+      "green": "Зелёный",
+      "orange": "Оранжевый",
+      "pink": "Розовый",
+      "purple": "Фиолетовый",
+      "teal": "Бирюзовый",
+      "yellow": "Жёлтый"
+    },
+    "noColor": "Без цвета"
+  },
+  "preferencesUsagePanel": {
+    "addCreditsAriaLabel": "Добавить кредиты",
+    "dailyExhausted": "Дневной лимит исчерпан. Добавьте кредиты, чтобы продолжить.",
+    "dailyTitle": "Дневное использование",
+    "exhausted": "Добавление кредитов для продолжения.",
+    "extraCredits": "Используются дополнительные кредиты",
+    "pctUsed": "использовано {pct}%",
+    "settingsAriaLabel": "Настройки использования и оплаты",
+    "title": "Использование"
+  },
+  "previewError": {
+    "cannotPreview": "Не удаётся показать этот файл"
+  },
+  "previewTruncationNotice": {
+    "markdown": "Показаны первые 512 КБ",
+    "text": "Показаны первые 2 МБ"
+  },
+  "previewUnsupported": {
+    "noPreviewForType": "Нет предпросмотра для этого типа файла"
+  },
+  "promptTab": {
+    "availableTools": "Доступные инструменты",
+    "bannerNoSections": "У этого вызова ещё нет нормализованных секций промпта.",
+    "bannerSectionsCount": "{count, plural, one {# нормализованная секция запроса в порядке, который вернул маршрут ассистента.} few {# нормализованные секции запроса в порядке, который вернул маршрут ассистента.} many {# нормализованных секций запроса в порядке, который вернул маршрут ассистента.} other {# нормализованные секции запроса в порядке, который вернул маршрут ассистента.}}",
+    "collapseAll": "Свернуть всё",
+    "copyAriaLabel": "Скопировать {title}",
+    "emptyBody": "У этого вызова нет нормализованных секций промпта. Вкладка Raw показывает полное тело запроса.",
+    "emptyTitle": "Нет нормализованных секций промпта",
+    "expandAll": "Развернуть всё",
+    "formatJavaScript": "JavaScript",
+    "formatJson": "JSON",
+    "formatMarkdown": "Markdown",
+    "formatTypeScript": "TypeScript",
+    "noContentAvailable": "Содержимое недоступно.",
+    "promptSectionsTitle": "Секции промпта"
+  },
+  "rawDisclosure": {
+    "input": "Исходные входные данные",
+    "output": "Исходные выходные данные"
+  },
+  "rawTab": {
+    "copyRequestPayloadAriaLabel": "Скопировать тело запроса",
+    "copyResponsePayloadAriaLabel": "Скопировать тело ответа",
+    "downloadFailedToast": "Не удалось скачать тело.",
+    "downloadRequestPayloadAriaLabel": "Скачать тело запроса",
+    "downloadResponsePayloadAriaLabel": "Скачать тело ответа",
+    "loadErrorTitle": "Не удалось загрузить сырые тела",
+    "loading": "Загрузка сырых тел…",
+    "payloadRequestFailed": "Запрос тела не удался. Повторите попытку.",
+    "request": "Запрос",
+    "requestPayload": "Тело запроса",
+    "response": "Ответ",
+    "responsePayload": "Тело ответа",
+    "retry": "Повторить"
+  },
+  "redactedCredentialChip": {
+    "revealFailed": "Не удалось показать {name}."
+  },
+  "responseTab": {
+    "argumentsPreview": "Предпросмотр аргументов",
+    "copySectionAria": "Скопировать содержимое секции",
+    "kindAssistantText": "Текст ассистента",
+    "kindFunctionResponse": "Ответ функции",
+    "kindReasoning": "Рассуждение",
+    "kindToolCall": "Вызов инструмента",
+    "kindToolResult": "Результат инструмента",
+    "modeResultOnly": "Ответ только с результатом",
+    "modeTextOnly": "Ответ только текстом",
+    "modeToolCalling": "Ответ с вызовом инструмента",
+    "noArgumentsPreview": "Для этого вызова инструмента нет предпросмотра структурированных аргументов.",
+    "noAssistantText": "Для этой секции не записали текст ассистента.",
+    "noSectionsFallback": "У этого ответа нет отрисованных секций. Сырые тела остаются на вкладке Raw, а нормализованные метаданные ответа покажутся, если они есть.",
+    "rawTabHint": "Полное тело провайдера: вкладка Raw для JSON запроса и ответа.",
+    "responseMetadata": "Метаданные ответа",
+    "sectionTitle": "Секция {number}",
+    "sectionUnavailable": "Отрисовка секции недоступна",
+    "stopReasonChip": "Причина остановки: {reason}",
+    "toolChip": "Инструмент: {name}"
+  },
+  "sidebarConversationError": {
+    "message": "Не удалось загрузить диалоги.",
+    "retry": "Попробовать снова"
+  },
+  "skillDetailPanel": {
+    "actionsAria": "Действия навыка",
+    "moreTooltip": "Ещё"
+  },
+  "skillLoadDetail": {
+    "failed": "Не удалось загрузить",
+    "loading": "Загрузка навыка…",
+    "loadingAria": "Загрузка навыка",
+    "notApproved": "Не одобрено",
+    "provides": "Предоставляет",
+    "unnamedSkill": "Навык",
+    "usedSkill": "Использованный навык"
+  },
+  "skillsTab": {
+    "callLink": "Вызов {number}",
+    "emptyBody": "На этой вкладке перечислены все вызовы инструмента <code>skill_load</code> в диалоге. В записанных вызовах LLM их не нашли.",
+    "emptyTitle": "В этом диалоге навыки не загружали",
+    "loadCount": "{count, plural, one {1 загрузка} few {# загрузки} many {# загрузок} other {# загрузки}}",
+    "summaryStats": "{uniqueCount, plural, one {# уникальный навык} few {# уникальных навыка} many {# уникальных навыков} other {# уникальных навыка}} · {totalLoads, plural, one {# вызов загрузки} few {# вызова загрузки} many {# вызовов загрузки} other {# вызова загрузки}}",
+    "summaryTitle": "Навыки, загруженные в этом диалоге"
+  },
+  "tableSurface": {
+    "table": "Таблица"
+  },
+  "thinkingDetail": {
+    "title": "Размышление"
+  },
+  "toolDefinitionsContent": {
+    "defaultValue": "по умолчанию: {value}",
+    "inputSchema": "Схема ввода",
+    "intro": "{count, plural, one {# инструмент отправили с этим запросом. Разверни инструмент, чтобы увидеть определение и схему ввода.} few {# инструмента отправили с этим запросом. Разверни инструмент, чтобы увидеть определение и схему ввода.} many {# инструментов отправили с этим запросом. Разверни инструмент, чтобы увидеть определение и схему ввода.} other {# инструмента отправили с этим запросом. Разверни инструмент, чтобы увидеть определение и схему ввода.}}",
+    "noInputSchema": "Нет схемы ввода: этот инструмент не принимает структурированный ввод.",
+    "required": "обязательно",
+    "settings": "Настройки"
+  },
+  "transcriptMessageBody": {
+    "fileUnavailable": "Файл недоступен для скачивания",
+    "fileUnavailableHostTimeout": "Файл недоступен для скачивания (возможно, истекло время на одобрение файла на хосте)"
+  },
+  "useConversationLoader": {
+    "authFailed": "Не удалось аутентифицировать пользователя."
+  },
+  "useConversationSecondaryActions": {
+    "assistantBusy": "Ассистент занят. Повтор, когда закончит отвечать.",
+    "retryFailed": "Не удалось повторить ответ",
+    "summarizeFailed": "Не удалось кратко пересказать диалог"
+  },
+  "useSendMessage": {
+    "commandFailed": "Не удалось выполнить эту команду. Повторите попытку.",
+    "doctorUnavailable": "Doctor недоступен у этого ассистента."
+  },
+  "voiceErrors": {
+    "nativeSttNoTranscript": "Нативная диктовка {clientName} не вернула расшифровку. Проверьте нативное распознавание речи в системных настройках и повторите попытку."
+  },
+  "voiceRoom": {
+    "ariaLabel": "Голосовой сеанс",
+    "closeCamera": "Закрыть камеру",
+    "endSessionAria": "Завершить голосовой сеанс",
+    "endSessionTooltip": "Завершить сеанс",
+    "flashAuto": "Автоматическая вспышка",
+    "flashAutoBadge": "А",
+    "flashOff": "Вспышка выключена",
+    "flashOn": "Вспышка включена",
+    "flipCamera": "Сменить камеру",
+    "lightOff": "Фонарик выключен",
+    "lightOn": "Фонарик включён",
+    "minimizeAria": "Свернуть голосовую комнату",
+    "minimizeTooltip": "Свернуть (сеанс продолжится)",
+    "muteAssistant": "Отключить звук ассистента",
+    "muteMicrophone": "Отключить микрофон",
+    "mutedState": "Без звука. {state}",
+    "showCamera": "Показать камеру",
+    "stopLive": "Остановить прямой эфир",
+    "takePhoto": "Сделать фото",
+    "unmuteAssistant": "Включить звук ассистента",
+    "unmuteMicrophone": "Включить микрофон"
+  },
+  "transcript": {
+    "noResponse": "Решил не отвечать",
+    "reactionAddedSelf": "Отреагировал(а) {emoji}",
+    "reactionRemovedSelf": "Убрал(а) реакцию {emoji}",
+    "reactionAdded": "{name} отреагировал(а) {emoji}",
+    "reactionRemoved": "{name} убрал(а) свою реакцию {emoji}",
+    "reactionSomeone": "Кто-то"
+  },
+  "toolDetailPanel": {
+    "output": "Вывод",
+    "changes": "Изменения",
+    "command": "Команда",
+    "denied": "Этот вызов инструмента не был одобрен, поэтому он не выполнился.",
+    "emptyOutput": "Инструмент не вернул никаких данных.",
+    "requestedChanges": "Запрошенные изменения"
+  },
+  "toolInputParameters": {
+    "parameters": "Параметры",
+    "moreCount": "{count, plural, one {Ещё # в «Исходные входные данные»} few {Ещё # в «Исходные входные данные»} many {Ещё # в «Исходные входные данные»} other {Ещё # в «Исходные входные данные»}}"
+  },
+  "toolOutputSection": {
+    "moreCount": "{count, plural, one {Ещё # в «Исходные выходные данные»} few {Ещё # в «Исходные выходные данные»} many {Ещё # в «Исходные выходные данные»} other {Ещё # в «Исходные выходные данные»}}"
+  },
+  "valueFields": {
+    "copyValue": "Скопировать {label}"
+  },
+  "frameGateHud": {
+    "collapse": "Скрыть показатели фильтра кадров",
+    "expand": "Показать показатели фильтра кадров"
+  },
+  "wakeCard": {
+    "commandFinished": "Фоновая команда завершена",
+    "incomingEvent": "Входящее событие",
+    "memoryReview": "Просмотр памяти",
+    "ranOnItsOwn": "Запустился сам",
+    "resumed": "Возобновлено после прерывания",
+    "scheduledRun": "Запуск по расписанию",
+    "watchReview": "Разбор сессии наблюдения",
+    "workflowFinished": "Рабочий процесс завершён"
+  },
+  "wakeDetailPanel": {
+    "details": "Подробности",
+    "result": "Результат",
+    "runStatus": "Статус запуска",
+    "title": "Разговор возобновлён",
+    "workflow": "Рабочий процесс",
+    "closeAria": "Закрыть подробности"
+  },
+  "watchRetroSurface": {
+    "doneDiscarded": "Не сохранено",
+    "doneNotRight": "Отмечено как неверное",
+    "doneSaved": "Навык сохранён",
+    "recommended": "Рекомендуем"
+  },
+  "restoreCloudCredentialButton": {
+    "restore": "Восстановить доступ",
+    "restoring": "Восстановление...",
+    "restored": "Восстановлено. Модели под управлением Cadet снова работают.",
+    "failedNoAssistant": "Выберите ассистента и повторите попытку.",
+    "failedCannotActHere": "Это приложение не может восстановить учётные данные этого ассистента. Откройте ассистента на компьютере, где он запущен.",
+    "failedReplacementRejected": "Cadet отклонил новые учётные данные. Войдите на платформу Cadet и повторите попытку.",
+    "failedUnconfirmed": "Новые учётные данные сохранены, но Cadet не смог их подтвердить. Возможно, они заработают через некоторое время.",
+    "failedGeneric": "Не удалось восстановить доступ. Повторите попытку через минуту."
+  },
+  "liveVoiceButton": {
+    "tooltip": "Говорите вслух в голосовом режиме"
+  },
+  "cardSurface": {
+    "viewDetails": "Подробности"
+  },
+  "sidebarExpandRow": {
+    "expand": "Развернуть",
+    "collapse": "Свернуть"
+  },
+  "cameraFrameGrid": {
+    "count": "{count, plural, one {# кадр камеры} few {# кадра камеры} many {# кадров камеры} other {# кадра камеры}}",
+    "timeRange": "Сохранено с {first} по {last}",
+    "savedTime": "Сохранено: {time}",
+    "pendingAria": "Кадр камеры, изображение ещё загружается. {time}",
+    "timeUnavailable": "Время недоступно"
+  },
+  "desktopHelpCard": {
+    "showPreview": "Показать трансляцию",
+    "needsHelp": "Виртуальному рабочему столу нужна ваша помощь.",
+    "stepIn": "Вмешаться",
+    "done": "Готово",
+    "skip": "Пропустить",
+    "showMore": "Показать больше",
+    "showLess": "Показать меньше"
+  },
+  "dynamicPageSurface": {
+    "collapse": "Свернуть"
+  },
+  "fileUploadSurface": {
+    "removeFile": "Удалить {name}"
+  },
+  "rememberDetail": {
+    "saved": "Сохранено",
+    "saving": "Сохранение",
+    "notSaved": "Не сохранено"
+  },
+  "recallDetail": {
+    "searchedFor": "Запрос",
+    "scope": "{depth} · {sources}",
+    "answer": "Ответ",
+    "evidence": "{count, plural, one {# результат} few {# результата} many {# результатов} other {# результата}}",
+    "noEvidence": "Ничего подходящего не нашлось.",
+    "degraded": "Некоторые места не удалось просмотреть полностью",
+    "degradedSource": "{source}: {error}"
+  },
+  "recallLabels": {
+    "source": "{source, select, memory {Память} conversations {Беседы} workspace {Файлы рабочей области} other {{source}}}",
+    "depth": "{depth, select, fast {Быстрый поиск} standard {Обычный поиск} deep {Глубокий поиск} other {Поиск}}"
+  },
+  "skillExecuteDetail": {
+    "unnamedTool": "Инструмент навыка"
+  },
+  "chatsSection": {
+    "doneEmptyBody": "Чаты, отмеченные как выполненные, ждут вас в разделе «Все чаты».",
+    "doneEmptyTitle": "Всё разобрано.",
+    "emptyBody": "Начните новый чат, и он появится здесь.",
+    "emptyTitle": "Чатов пока нет."
+  },
+  "sidebarSectionViewAll": {
+    "label": "Все чаты"
+  },
+  "freeTierDailyLimitBanner": {
+    "addCredits": "Добавить кредиты",
+    "subtitle": "Вы использовали бесплатный лимит на сегодня. Он сбросится в {resetPhrase}. Обновите план или добавьте кредиты, чтобы продолжить.",
+    "title": "Дневной бесплатный лимит исчерпан",
+    "viewPlans": "Посмотреть планы"
+  },
+  "emailReferenceChip": {
+    "noSubject": "(без темы)",
+    "captionReceived": "Получено · От {name} · {date}",
+    "captionReceivedUndated": "Получено · От {name}",
+    "captionSent": "Отправлено · Кому: {name} · {date}",
+    "captionSentUndated": "Отправлено · Кому: {name}",
+    "tooltip": "{subject}\n{caption}",
+    "removeAria": "Убрать письмо {subject}"
+  },
+  "emailReferenceCard": {
+    "noSubject": "(без темы)",
+    "captionReceived": "Получено · От {name} · {date}",
+    "captionReceivedUndated": "Получено · От {name}",
+    "captionSent": "Отправлено · Кому: {name} · {date}",
+    "captionSentUndated": "Отправлено · Кому: {name}",
+    "tooltip": "{subject}\n{caption}",
+    "openAria": "Открыть письмо {subject} в почте"
+  },
+  "chatsSettingsModal": {
+    "title": "Настройки чатов",
+    "description": "Управляйте автоматическим завершением чатов и уведомлениями об ответах этого ассистента на всех устройствах.",
+    "autoArchive": "Автоматически архивировать чаты",
+    "autoArchiveHelper": "Помечает неактивные чаты как завершённые, включая те, для которых этот срок уже истёк. Завершённые чаты остаются в списке всех чатов.",
+    "timeToArchive": "Срок до архивации",
+    "days": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
+    "notifications": "Уведомления об ответах",
+    "notificationsHelper": "Получайте уведомления об ответах в чатах, которые вы не просматриваете.",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "saving": "Сохранение…",
+    "loading": "Загрузка настроек чатов…",
+    "retry": "Повторить",
+    "loadError": "Не удалось загрузить настройки чатов. Попробуйте ещё раз.",
+    "saveError": "Не удалось сохранить настройки чатов. Ваши изменения сохранены в этой форме. Нажмите «Подтвердить», чтобы повторить попытку.",
+    "unsupported": "Обновите этого ассистента, чтобы использовать настройки чатов."
+  },
+  "emailNavItem": {
+    "label": "Почта",
+    "unpin": "Открепить Почту"
+  },
+  "tiptapDocumentEditor": {
+    "adding": "Добавление…",
+    "blockquote": "Цитата",
+    "bold": "Жирный",
+    "bulletList": "Маркированный список",
+    "code": "Код",
+    "comment": "Комментарий",
+    "feedbackPlaceholder": "Добавьте отзыв…",
+    "heading1": "Заголовок 1",
+    "heading2": "Заголовок 2",
+    "heading3": "Заголовок 3",
+    "italic": "Курсив",
+    "link": "Ссылка",
+    "linkAddress": "Адрес ссылки",
+    "linkApply": "Применить ссылку",
+    "linkInvalid": "Укажите веб-адрес или адрес электронной почты",
+    "linkPlaceholder": "Вставьте или введите ссылку",
+    "linkRemove": "Удалить ссылку",
+    "orderedList": "Нумерованный список",
+    "paragraph": "Текст",
+    "placeholder": "Начните писать…",
+    "remoteEditConflict": "Ваши правки сохранены там, где ассистент изменил тот же текст, поэтому часть его правки не применена.",
+    "strike": "Зачёркнутый",
+    "textStyle": "Стиль текста: {style}",
+    "toolbarAria": "Форматирование"
+  },
+  "documentViewerContainer": {
+    "comments": "Комментарии",
+    "commentsWithOpenCount": "{count, plural, one {Комментарии, # открытый} few {Комментарии, # открытых} many {Комментарии, # открытых} other {Комментарии, # открытых}}"
+  },
+  "voiceShortcutConfirmation": {
+    "title": "Начать голосовой чат?",
+    "detail": "Вы использовали сочетание клавиш для голосового чата. Микрофон будет включён для разговора с ассистентом, даже когда вы используете другое приложение. Завершите звонок, чтобы отключить прослушивание.",
+    "confirm": "Продолжить",
+    "cancel": "Отмена",
+    "always": "Всегда начинать"
+  },
+  "composerConfiguration": {
+    "title": "Вложения и настройки",
+    "close": "Закрыть настройки",
+    "back": "Назад",
+    "allModes": "Все модели · {count}",
+    "newMode": "Создать",
+    "builtIn": "Встроенные",
+    "yours": "Пользовательские",
+    "beta": "Бета",
+    "noModes": "Нет доступных моделей.",
+    "autonomyTitle": "Автономность",
+    "modeTitle": "Модель",
+    "loading": "Загрузка",
+    "more": "Ещё ({count})",
+    "customHint": "Свой режим · {model}",
+    "preferencesFailed": "Не удалось сохранить настройки. Попробуйте ещё раз.",
+    "saveFailed": "Не удалось сохранить настройку. Попробуйте ещё раз.",
+    "preferencesUnavailable": "Настройки недоступны. Повторите после восстановления связи.",
+    "updateRequired": "Обновите ассистента для синхронизации настроек и выбора автономности до первого сообщения.",
+    "camera": "Камера",
+    "photos": "Фото",
+    "files": "Файлы",
+    "attach": "Прикрепить файлы",
+    "autonomy": {
+      "none": {
+        "label": "Строгий",
+        "hint": "Спрашивает перед действием."
+      },
+      "low": {
+        "label": "Осторожный",
+        "hint": "Выполняет безопасные задачи и правки."
+      },
+      "medium": {
+        "label": "Свободный",
+        "hint": "Спрашивает перед рискованными действиями."
+      },
+      "high": {
+        "label": "Без контроля",
+        "hint": "Одобряет в пределах разрешённого доступа."
+      }
+    },
+    "modes": {
+      "auto": {
+        "hint": "Выбирает модель для каждой задачи."
+      },
+      "balanced": {
+        "hint": "Баланс скорости, глубины и стоимости."
+      },
+      "quality": {
+        "hint": "Глубже, медленнее и дороже."
+      },
+      "fast": {
+        "hint": "Быстрее, дешевле, менее подробно."
+      },
+      "budget": {
+        "hint": "Минимальная стоимость. Может упускать детали."
+      },
+      "experimental": {
+        "label": "Открытая бета",
+        "hint": "Открытая бета. Результаты различаются."
+      }
+    },
+    "allModelsLink": "Все модели ({count})",
+    "allModelsList": "Все модели"
+  }
+}

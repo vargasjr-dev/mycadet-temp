@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { AppleLogo } from "@web/components/icons/apple-logo";
-import { Trans, useTranslation } from "@web/i18n";
+import { Trans, useTranslation } from "@app/i18n";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import { RotatingWord } from "@app/domains/account/components/rotating-word";
 import {

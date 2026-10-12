@@ -12,6 +12,8 @@ import { start } from "@web/boot";
 import { useCadetCommands } from "@web/runtime/cadet-commands";
 import { getRouterBasename, routeTree } from "@web/routes";
 
+import { initI18n } from "@app/i18n";
+
 import { accountRoute } from "@app/domains/account/account-route";
 
 // The tray "New Assistant…" name-prompt — account-level chrome the desktop
@@ -36,7 +38,9 @@ const logoutRoute = {
   HydrateFallback: RootHydrateFallback,
   lazy: {
     Component: () =>
-      import("@app/domains/account/pages/logout-page").then((m) => m.LogoutPage),
+      import("@app/domains/account/pages/logout-page").then(
+        (m) => m.LogoutPage,
+      ),
   },
 };
 
@@ -50,4 +54,5 @@ const router = createBrowserRouter(
   { basename: getRouterBasename(), future: { v8_middleware: true } },
 );
 
+await initI18n();
 start(router);
