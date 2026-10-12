@@ -7,6 +7,9 @@ on:
       - "package.json"
       - "patches/**"
       - "clients/web/**"
+      # The account tree moved here (bundled by web's desktop build and
+      # built standalone by this workflow), so app edits run web's gates.
+      - "clients/app/**"
       - "assistant/src/api/**"
       # `openapi-ts` generates the web's daemon client from this spec, so a
       # schema change here can break the web build with no web file touched.
@@ -91,6 +94,13 @@ jobs:
           VITE_ENVIRONMENT: ${{ vars.VITE_ENVIRONMENT }}
           VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_APP_VERSION: ${{ github.sha }}
+        run: bun run build
+
+      # The account bundle now builds standalone from clients/app (same
+      # shared sources via the `@/` bridge). Keep it compiling: its graph
+      # can drift even when web's is fine.
+      - name: Build account bundle
+        working-directory: clients/app
         run: bun run build
 
       - name: Test
