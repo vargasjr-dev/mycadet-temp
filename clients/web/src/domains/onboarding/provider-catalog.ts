@@ -114,7 +114,7 @@ export const ONBOARDING_PROVIDERS: readonly OnboardingProvider[] = [
   {
     id: "openai-compatible",
     displayName: "OpenAI-compatible",
-    apiKeyPlaceholder: "Your provider's API key (optional)",
+    apiKeyPlaceholder: "Your provider's API key, optional",
     docsUrl: null,
     requiresKey: true,
   },

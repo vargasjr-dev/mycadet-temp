@@ -47,7 +47,7 @@ const CreateTrustRuleRequestSchema = z.object({
     .literal("everywhere")
     .optional()
     .describe(
-      'Compatibility field. Trust rules apply workspace-wide: the engine matches on (tool, pattern) only, so a narrower scope cannot be honored and any value other than "everywhere" is rejected rather than stored broader than the consent it records.',
+      'Compatibility field. Trust rules apply workspace-wide: the engine matches on tool and pattern only, so a narrower scope cannot be honored and any value other than "everywhere" is rejected rather than stored broader than the consent it records.',
     ),
 });
 
@@ -116,7 +116,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     queryParameters: [
       {
         name: "origin",
-        description: "Filter by origin (default | user_defined)",
+        description: "Filter by origin: default or user_defined",
       },
       { name: "tool", description: "Filter by tool name" },
       {

@@ -66,7 +66,7 @@ function printUsage(): void {
   console.log("  <name>               Name of the assistant to restore into");
   console.log("");
   console.log("Options:");
-  console.log("  --from <path>        Path to the .vbundle file (required)");
+  console.log("  --from <path>        Path to the .vbundle file — required");
   console.log(
     "  --version <version>  Roll back to this version before importing data",
   );
@@ -432,7 +432,7 @@ async function restorePlatform(
     importResult.statusCode !== 202 &&
     (importResult.statusCode < 200 || importResult.statusCode >= 300)
   ) {
-    console.error(`Error: Import failed (${importResult.statusCode})`);
+    console.error(`Error: Import failed with status ${importResult.statusCode}`);
     process.exit(1);
   }
 
@@ -474,7 +474,7 @@ async function restorePlatform(
           }
         }
         // Transient error (5xx, network) — retry
-        console.warn(`Polling failed, retrying... (${msg})`);
+        console.warn(`Polling failed, retrying... ${msg}`);
         continue;
       }
 
@@ -680,7 +680,7 @@ export const restore = Object.assign(
   }
 
   const sizeMB = formatBundleSizeMb(bundleFileSizeBytes(fromPath));
-  console.log(`Reading ${fromPath} (${sizeMB} MB)...`);
+  console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
 
   // Detect topology and route platform assistants through Django import
   const cloud =
@@ -894,7 +894,7 @@ async function runLocalRestore(opts: {
           });
       if (!response.ok) {
         const body = await response.text();
-        console.error(`Error: Import failed (${response.status}): ${body}`);
+        console.error(`Error: Import failed, status ${response.status}: ${body}`);
         process.exit(1);
       }
       result = (await response.json()) as ImportResponse;

@@ -275,7 +275,7 @@ export async function handlePair(
     const origin = req.headers.get("origin");
     if (!origin || !KNOWN_EXTENSION_ORIGINS.has(origin)) {
       auditDeny(req, clientIp, "unknown_extension_origin", {
-        origin: origin ?? "(none)",
+        origin: origin ?? "none",
       });
       return errorResponse(
         "FORBIDDEN",

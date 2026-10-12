@@ -88,7 +88,7 @@ export async function syncCloudAssistants(
     log?.("Fetching Cadet Cloud assistants…");
     cloudAssistants = await fetchCloudAssistants(token);
     log?.(
-      `Cadet Cloud returned ${cloudAssistants.length} assistant(s): ${cloudAssistants.map((a) => a.name || a.id).join(", ") || "(none)"}`,
+      `Cadet Cloud returned ${cloudAssistants.length} ${cloudAssistants.length === 1 ? "assistant" : "assistants"}: ${cloudAssistants.map((a) => a.name || a.id).join(", ") || "none"}`,
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -118,7 +118,7 @@ export async function syncCloudAssistants(
   );
   const existingCloudIds = new Set(existingCloudById.keys());
   log?.(
-    `Lockfile has ${existingCloudIds.size} cloud assistant(s): ${[...existingCloudIds].join(", ") || "(none)"}`,
+    `Lockfile has ${existingCloudIds.size} ${existingCloudIds.size === 1 ? "cloud assistant" : "cloud assistants"}: ${[...existingCloudIds].join(", ") || "none"}`,
   );
 
   let added = 0;

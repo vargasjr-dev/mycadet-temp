@@ -153,7 +153,7 @@ async function postRestoreWithRetries(
   if (response.status === 401) {
     const refreshed = await refreshGuardianToken(runtimeUrl, assistantId);
     if (!refreshed) {
-      console.warn(`Warning: restore failed (401) and token refresh failed`);
+      console.warn(`Warning: restore failed with 401 and token refresh failed`);
       return null;
     }
     onTokenRefresh(refreshed.accessToken);
@@ -184,7 +184,7 @@ async function postRestoreWithRetries(
       response = await postImport();
       continue;
     }
-    console.warn(`Warning: restore failed (${response.status}): ${body}`);
+    console.warn(`Warning: restore failed, status ${response.status}: ${body}`);
     return null;
   }
 

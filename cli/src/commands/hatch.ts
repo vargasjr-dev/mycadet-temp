@@ -76,7 +76,7 @@ function parseArgs(): HatchArgs {
         "  --watch                   Run assistant and gateway in watch mode (hot reload on source changes)",
       );
       console.log(
-        "  --source <path>           Build images from a local source tree at <path> (no watcher). Useful for callers (e.g. evals) that want each run to pick up local CLI changes.",
+        "  --source <path>           Build images from a local source tree at <path> without the watcher. Useful for callers, e.g. evals, that want each run to pick up local CLI changes.",
       );
       console.log(
         "  --keep-alive              Stay alive after hatch, exit when gateway stops",

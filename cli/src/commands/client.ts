@@ -1285,7 +1285,7 @@ async function spawnBackgroundWebInterface(
   }
 
   console.log(`Cadet web interface: http://localhost:${port}${SPA_BASE}`);
-  console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
+  console.log(`Running in background, pid ${child.pid}. Logs: ${logPath}`);
   console.log(`Stop with: kill ${child.pid}`);
 }
 

@@ -71,7 +71,7 @@ export const sleep = Object.assign(
     console.log("");
     console.log("Arguments:");
     console.log(
-      "  <name>    Name of the assistant to stop (default: active or only local)",
+      "  <name>    Name of the assistant to stop, defaults to active or only local",
     );
     console.log("");
     console.log("Options:");
@@ -88,7 +88,7 @@ export const sleep = Object.assign(
       "            schedules) to finish before stopping. Waits as long as it",
     );
     console.log(
-      "            takes by default; pass a duration (e.g. --wait 90s, --wait 10m)",
+      "            takes by default; pass a duration, e.g. --wait 90s or --wait 10m",
     );
     console.log(
       "            to bound the wait. Ctrl-C cancels and leaves the assistant running.",

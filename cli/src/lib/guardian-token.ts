@@ -429,7 +429,7 @@ export async function refreshGuardianTokenResult(
     console.warn(
       `Refusing to refresh the guardian token over an insecure URL (${gatewayUrl}). ` +
         "The refresh token is only sent over https or a loopback address: " +
-        "use an https URL (e.g. a tunnel) or connect over loopback.",
+        "use an https URL, e.g. a tunnel, or connect over loopback.",
     );
     return {
       ok: false,
@@ -636,7 +636,7 @@ export async function leaseGuardianToken(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`guardian/init failed (${response.status}): ${body}`);
+    throw new Error(`guardian/init failed, status ${response.status}: ${body}`);
   }
 
   const rawBody: unknown = await response.json();

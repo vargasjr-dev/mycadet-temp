@@ -126,7 +126,7 @@ function buildSpec(version: string) {
       description:
         "Auto-generated OpenAPI specification for the Cadet Gateway HTTP endpoints.",
     },
-    servers: [{ url: "", description: "Same-origin (gateway)" }],
+    servers: [{ url: "", description: "Same-origin — the gateway" }],
     paths,
   });
 }

@@ -43,7 +43,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "channelPermissionOverridesList",
     summary: "List channel-permission matrix cells",
     description:
-      "Returns every persisted cell (cascade selector × contact-type → RiskThreshold). Unset cells fall through the cascade; the list contains only explicit overrides.",
+      "Returns every persisted cell in the cascade selector × contact-type → RiskThreshold map. Unset cells fall through the cascade; the list contains only explicit overrides.",
     tags: ["channel-permission-overrides"],
     responseBody: z.object({
       cells: z.array(ChannelPermissionCellRowSchema),
@@ -66,7 +66,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "channelPermissionResolve",
     summary: "Resolve the effective channel-permission threshold",
     description:
-      "Read-only cascade resolution for one coordinate: walks channel → channel_type → adapter → workspace for the given selector keys and contact-type, returning the winning cell's threshold and scope, or null when no cell matches (the caller then falls through to the global thresholds). Same resolver the runtime evaluator uses over IPC.",
+      "Read-only cascade resolution for one coordinate: walks channel → channel_type → adapter → workspace for the given selector keys and contact-type, returning the winning cell's threshold and scope, or null when no cell matches, in which case the caller falls through to the global thresholds. Same resolver the runtime evaluator uses over IPC.",
     tags: ["channel-permission-overrides"],
     requestBody: ResolveChannelPermissionRequestSchema,
     responseBody: z.object({
@@ -84,7 +84,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "channelPermissionOverrideDelete",
     summary: "Delete a channel-permission matrix cell",
     description:
-      "Removes one cell by its composite key (selector × contact-type), letting the next cascade tier up win. Returns whether a cell was removed.",
+      "Removes one cell by its composite key, selector × contact-type, letting the next cascade tier up win. Returns whether a cell was removed.",
     tags: ["channel-permission-overrides"],
     requestBody: ChannelPermissionCellKeySchema,
     responseBody: z.object({ removed: z.boolean() }),

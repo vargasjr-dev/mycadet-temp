@@ -188,9 +188,9 @@ export const message = Object.assign(
     console.log(JSON.stringify(result, null, 2));
   } else {
     if (result.accepted) {
-      console.log(`Message accepted (id: ${result.messageId})`);
+      console.log(`Message accepted — id ${result.messageId}`);
     } else {
-      console.log(`Message rejected (id: ${result.messageId})`);
+      console.log(`Message rejected — id ${result.messageId}`);
     }
   }
 },

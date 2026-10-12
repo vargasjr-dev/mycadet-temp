@@ -16,7 +16,7 @@
     "description": "Add an API key or token to let tools and integrations use it.",
     "fieldLabel": "Field",
     "fieldPlaceholder": "e.g. api_token",
-    "labelOptional": "Label (optional)",
+    "labelOptional": "Label — optional",
     "labelPlaceholder": "e.g. GitHub personal access token",
     "save": "Save",
     "saveFailed": "Failed to save credential",
@@ -227,7 +227,7 @@
     "allow": "Allow",
     "confirm": "Confirm",
     "credentialLabel": "Credential",
-    "defaultSuffix": "(default)",
+    "defaultSuffix": "— default",
     "deny": "Deny",
     "dismiss": "Dismiss",
     "enter": "Enter",
@@ -941,7 +941,7 @@
   },
   "voiceList": {
     "assistantVoiceAriaLabel": "Assistant voice",
-    "defaultSuffix": "(default)",
+    "defaultSuffix": "— default",
     "previewVoice": "Preview {description}",
     "providerAriaLabel": "Voice provider",
     "stopPreview": "Stop preview"

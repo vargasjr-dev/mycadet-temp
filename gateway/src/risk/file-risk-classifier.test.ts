@@ -74,7 +74,7 @@ describe("FileRiskClassifier", () => {
         filePath: "src/index.ts",
       });
       expect(result.riskLevel).toBe("low");
-      expect(result.reason).toBe("File read (default)");
+      expect(result.reason).toBe("File read — default");
       expect(result.matchType).toBe("registry");
       expect(result.scopeOptions).toEqual([]);
     });
@@ -121,7 +121,7 @@ describe("FileRiskClassifier", () => {
         filePath: "src/index.ts",
       });
       expect(result.riskLevel).toBe("low");
-      expect(result.reason).toBe("File write (default)");
+      expect(result.reason).toBe("File write — default");
       expect(result.matchType).toBe("registry");
     });
 
@@ -440,7 +440,7 @@ describe("FileRiskClassifier", () => {
         filePath: "src/index.ts",
       });
       expect(result.riskLevel).toBe("low");
-      expect(result.reason).toBe("File edit (default)");
+      expect(result.reason).toBe("File edit — default");
     });
 
     test("skill source path is high", async () => {
@@ -525,7 +525,7 @@ describe("FileRiskClassifier", () => {
         filePath: "/etc/passwd",
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file read (default)");
+      expect(result.reason).toBe("Host file read — default");
       expect(result.matchType).toBe("registry");
     });
 
@@ -550,7 +550,7 @@ describe("FileRiskClassifier", () => {
         filePath: "/tmp/output.txt",
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file write (default)");
+      expect(result.reason).toBe("Host file write — default");
       expect(result.matchType).toBe("registry");
     });
 
@@ -652,7 +652,7 @@ describe("FileRiskClassifier", () => {
         filePath: "/tmp/output.txt",
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file edit (default)");
+      expect(result.reason).toBe("Host file edit — default");
     });
 
     test("skill source path is high", async () => {
@@ -723,7 +723,7 @@ describe("FileRiskClassifier", () => {
         filePath: "/tmp/output.txt",
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file transfer (default)");
+      expect(result.reason).toBe("Host file transfer — default");
       expect(result.matchType).toBe("registry");
     });
 
@@ -848,7 +848,7 @@ describe("FileRiskClassifier", () => {
         transferSandboxWorkingDir: MOCK_WORKSPACE_DIR,
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file transfer (default)");
+      expect(result.reason).toBe("Host file transfer — default");
     });
   });
 
@@ -1047,7 +1047,7 @@ describe("FileRiskClassifier", () => {
         isContainerized: true,
       });
       expect(result.riskLevel).toBe("low");
-      expect(result.reason).toBe("File write (default)");
+      expect(result.reason).toBe("File write — default");
     });
 
     test("code-injection sink outside the working dir stays high", async () => {
@@ -1083,7 +1083,7 @@ describe("FileRiskClassifier", () => {
         resolvedWorkingDir: WORKING_DIR,
       });
       expect(result.riskLevel).toBe("low");
-      expect(result.reason).toBe("File write (default)");
+      expect(result.reason).toBe("File write — default");
     });
 
     test("falls back to a lexical comparison when canonical fields are absent", async () => {
@@ -1122,7 +1122,7 @@ describe("FileRiskClassifier", () => {
         resolvedPath: "/tmp/outside.txt",
       });
       expect(result.riskLevel).toBe("medium");
-      expect(result.reason).toBe("Host file write (default)");
+      expect(result.reason).toBe("Host file write — default");
     });
   });
 

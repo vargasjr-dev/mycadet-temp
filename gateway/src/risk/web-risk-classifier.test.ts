@@ -41,7 +41,7 @@ describe("web_fetch", () => {
       toolName: "web_fetch",
     });
     expect(result.riskLevel).toBe("low");
-    expect(result.reason).toBe("Web fetch (default)");
+    expect(result.reason).toBe("Web fetch — default");
     expect(result.matchType).toBe("registry");
     expect(result.scopeOptions).toEqual([]);
   });
@@ -53,7 +53,7 @@ describe("web_fetch", () => {
       allowPrivateNetwork: false,
     });
     expect(result.riskLevel).toBe("low");
-    expect(result.reason).toBe("Web fetch (default)");
+    expect(result.reason).toBe("Web fetch — default");
   });
 
   test("allowPrivateNetwork=undefined is low risk", async () => {

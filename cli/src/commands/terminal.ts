@@ -61,7 +61,7 @@ function printHelp(): void {
   console.log("hosts via ssh, and apple-container assistants via their management socket.");
   console.log("");
   console.log("Subcommands:");
-  console.log("  (none)              Interactive shell");
+  console.log("  none                Interactive shell");
   console.log(
     "  attach <name>       Attach to a tmux session inside the container",
   );
@@ -71,7 +71,7 @@ function printHelp(): void {
   console.log("");
   console.log("Options:");
   console.log(
-    "  <name>              Name of the assistant (defaults to active)",
+    "  <name>              Name of the assistant, defaults to active",
   );
   console.log(
     "  --assistant <name>  Explicit assistant name (alternative to positional)",

@@ -1162,13 +1162,13 @@ export async function ensureTunnelEdge(opts: {
     case "nginx-missing":
       throw new Error(
         "nginx is not installed, so the tunnel edge cannot start. " +
-          "Install it (macOS: `brew install nginx`, Linux: `sudo apt install nginx`) " +
+          "See https://nginx.org/en/docs/install.html for how to install, " +
           "or point NGINX_BIN at an existing binary.",
       );
     case "web-dist-missing":
       throw new Error(
         "Unable to locate built web assets for the remote web edge. " +
-          "Build the SPA (`cd clients/web && VITE_CLOUD_MODE=false bun run build`) " +
+          "Build the SPA with `cd clients/web && VITE_CLOUD_MODE=false bun run build`, " +
           "or install @mycadet/web so its packaged dist directory is available.",
       );
     case "unreachable":

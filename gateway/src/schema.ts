@@ -302,7 +302,7 @@ export function buildSchema(): Record<string, unknown> {
               },
             },
             "405": {
-              description: "Method not allowed (only POST accepted)",
+              description: "Method not allowed, only POST accepted",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -368,7 +368,7 @@ export function buildSchema(): Record<string, unknown> {
               },
             },
             "405": {
-              description: "Method not allowed (only POST accepted)",
+              description: "Method not allowed, only POST accepted",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -822,7 +822,7 @@ export function buildSchema(): Record<string, unknown> {
               "application/json": {
                 schema: {
                   type: "object",
-                  description: "Mailgun webhook payload (JSON).",
+                  description: "Mailgun webhook payload as JSON.",
                 },
               },
             },
@@ -945,7 +945,7 @@ export function buildSchema(): Record<string, unknown> {
         get: {
           summary: "Twilio Media Stream WebSocket",
           description:
-            "Accepts a WebSocket upgrade from Twilio Media Streams and bidirectionally proxies frames to the assistant runtime's /v1/calls/media-stream endpoint. Handshake metadata (callSessionId and auth token) is carried in URL path segments (e.g. /webhooks/twilio/media-stream/<callSessionId>/<token>) because Twilio Media Streams does not reliably preserve query parameters across the WebSocket upgrade. Legacy query-parameter-based handshake is still supported as a fallback.",
+            "Accepts a WebSocket upgrade from Twilio Media Streams and bidirectionally proxies frames to the assistant runtime's /v1/calls/media-stream endpoint. Handshake metadata, the callSessionId and auth token, is carried in URL path segments, e.g. /webhooks/twilio/media-stream/<callSessionId>/<token>, because Twilio Media Streams does not reliably preserve query parameters across the WebSocket upgrade. Legacy query-parameter-based handshake is still supported as a fallback.",
           operationId: "twilioMediaStreamWebsocket",
           parameters: [
             {
@@ -1003,7 +1003,7 @@ export function buildSchema(): Record<string, unknown> {
               required: false,
               schema: { type: "string" },
               description:
-                "Optional STT provider identifier (e.g. 'deepgram', 'google-gemini'). Forwarded as compatibility metadata: the runtime resolves the transcriber from config (`services.stt.roles.dictation`, else `services.stt.provider`), not from this parameter. When supplied and it disagrees with the provider that resolves to, the runtime logs a mismatch warning.",
+                "Optional STT provider identifier, e.g. 'deepgram' or 'google-gemini'. Forwarded as compatibility metadata: the runtime resolves the transcriber from config (`services.stt.roles.dictation`, else `services.stt.provider`), not from this parameter. When supplied and it disagrees with the provider that resolves to, the runtime logs a mismatch warning.",
             },
             {
               name: "mimeType",
@@ -1011,7 +1011,7 @@ export function buildSchema(): Record<string, unknown> {
               required: true,
               schema: { type: "string" },
               description:
-                "MIME type of the audio being streamed (e.g. 'audio/webm;codecs=opus').",
+                "MIME type of the audio being streamed, e.g. 'audio/webm;codecs=opus'.",
             },
             {
               name: "sampleRate",
@@ -1035,7 +1035,7 @@ export function buildSchema(): Record<string, unknown> {
                 "WebSocket upgrade successful — bidirectional STT audio/transcription frame proxying begins.",
             },
             "400": {
-              description: "Missing required query parameter (mimeType)",
+              description: "Missing required query parameter: mimeType",
               content: {
                 "text/plain": {
                   schema: { type: "string" },
@@ -1084,7 +1084,7 @@ export function buildSchema(): Record<string, unknown> {
               required: true,
               schema: { type: "string" },
               description:
-                "MIME type of the narration audio being streamed (e.g. 'audio/pcm').",
+                "MIME type of the narration audio being streamed, e.g. 'audio/pcm'.",
             },
             {
               name: "sampleRate",
@@ -1124,7 +1124,7 @@ export function buildSchema(): Record<string, unknown> {
                 "WebSocket upgrade successful - bidirectional watch stream frame proxying begins.",
             },
             "400": {
-              description: "Missing required query parameter (mimeType)",
+              description: "Missing required query parameter: mimeType",
               content: {
                 "text/plain": {
                   schema: { type: "string" },
@@ -1739,7 +1739,7 @@ export function buildSchema(): Record<string, unknown> {
             "404": { description: "Channel not found" },
             "409": {
               description:
-                "Invalid state transition (e.g. revoking a blocked channel)",
+                "Invalid state transition, e.g. revoking a blocked channel",
             },
             "503": { description: "Bearer token not configured" },
             "502": { description: "Failed to reach assistant runtime" },
@@ -1983,7 +1983,7 @@ export function buildSchema(): Record<string, unknown> {
               required: false,
               schema: { type: "string" },
               description:
-                "Optional verification purpose (e.g. guardian, trusted-contact).",
+                "Optional verification purpose, e.g. guardian or trusted-contact.",
             },
             {
               name: "contactChannelId",
@@ -2126,7 +2126,7 @@ export function buildSchema(): Record<string, unknown> {
             "Loopback-only endpoint that removes the guardian-init lock file so that /v1/guardian/init can be called again. When bootstrap secrets are configured, callers must provide a valid x-bootstrap-secret header. Used by the desktop app to recover from a lost actor token.",
           operationId: "guardianResetBootstrap",
           responses: {
-            "200": { description: "Lock file removed (or already absent)" },
+            "200": { description: "Lock file removed, or already absent" },
             "403": {
               description:
                 "Forbidden — non-loopback origin or invalid bootstrap secret",
@@ -2183,7 +2183,7 @@ export function buildSchema(): Record<string, unknown> {
           responses: {
             "200": { description: "New access token returned" },
             "400": {
-              description: "Missing required field (refreshToken or deviceId)",
+              description: "Missing required field: refreshToken or deviceId",
             },
             "401": { description: "Unauthorized — invalid token" },
             "403": {
@@ -3314,11 +3314,11 @@ export function buildSchema(): Record<string, unknown> {
                   properties: {
                     startTime: {
                       type: "number",
-                      description: "Start of time range (epoch ms)",
+                      description: "Start of time range, in epoch ms",
                     },
                     endTime: {
                       type: "number",
-                      description: "End of time range (epoch ms)",
+                      description: "End of time range, in epoch ms",
                     },
                     auditLimit: {
                       type: "number",
@@ -3381,7 +3381,7 @@ export function buildSchema(): Record<string, unknown> {
                 enum: ["trace", "debug", "info", "warn", "error", "fatal"],
                 default: "info",
               },
-              description: "Minimum pino level name (default: info)",
+              description: "Minimum pino level name, defaults to info",
             },
             {
               name: "module",
@@ -3427,7 +3427,7 @@ export function buildSchema(): Record<string, unknown> {
         get: {
           summary: "List trust rules",
           description:
-            "Authenticated gateway endpoint that lists trust rules from the SQLite-backed store. By default returns user-relevant rules (user_defined + user-modified defaults). Supports `origin`, `tool`, and `include_deleted` query filters.",
+            "Authenticated gateway endpoint that lists trust rules from the SQLite-backed store. By default returns user-relevant rules: user_defined + user-modified defaults. Supports `origin`, `tool`, and `include_deleted` query filters.",
           operationId: "trustRulesGet",
           security: [{ BearerAuth: [] }],
           parameters: [
@@ -3752,7 +3752,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Resolve the effective channel-permission threshold",
           description:
-            "Authenticated gateway endpoint that resolves the cascade for one coordinate (adapter, optional channelType/channelExternalId, contact-type) and returns the winning cell's threshold and scope, or null when no cell matches so the caller falls through to the global thresholds. Read-only; a POST verb path because the composite query travels in the body, same rationale as /delete.",
+            "Authenticated gateway endpoint that resolves the cascade for one coordinate — adapter, optional channelType/channelExternalId, contact-type — and returns the winning cell's threshold and scope, or null when no cell matches so the caller falls through to the global thresholds. Read-only; a POST verb path because the composite query travels in the body, same rationale as /delete.",
           operationId: "channelPermissionResolve",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -3764,7 +3764,7 @@ export function buildSchema(): Record<string, unknown> {
             },
           },
           responses: {
-            "200": { description: "Resolution returned (resolved or null)" },
+            "200": { description: "Resolution returned — resolved or null" },
             "400": { description: "Invalid request payload or adapter" },
             "401": {
               description: "Unauthorized — missing or invalid bearer token",
@@ -3777,7 +3777,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Delete a channel-permission matrix cell",
           description:
-            "Authenticated gateway endpoint that removes one channel-permission cell by its composite key (selector × contact-type), letting the next cascade tier up win. A POST verb path because cells have no row id and DELETE request bodies are unreliable through proxies.",
+            "Authenticated gateway endpoint that removes one channel-permission cell by its composite key, selector × contact-type, letting the next cascade tier up win. A POST verb path because cells have no row id and DELETE request bodies are unreliable through proxies.",
           operationId: "channelPermissionOverrideDelete",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -4152,7 +4152,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Kick off an async export-to-GCS job",
           description:
-            "Transparent proxy to the assistant daemon's `POST /v1/migrations/export-to-gcs` endpoint. The daemon schedules a background export job that streams the workspace backup to the supplied signed GCS upload URL and returns `202 Accepted` with a `job_id`. Callers poll `GET /v1/migrations/jobs/{jobId}` for progress. Registered explicitly (not via the runtime-proxy catch-all) for dedicated auth and timeout handling.",
+            "Transparent proxy to the assistant daemon's `POST /v1/migrations/export-to-gcs` endpoint. The daemon schedules a background export job that streams the workspace backup to the supplied signed GCS upload URL and returns `202 Accepted` with a `job_id`. Callers poll `GET /v1/migrations/jobs/{jobId}` for progress. Registered explicitly, not via the runtime-proxy catch-all, for dedicated auth and timeout handling.",
           operationId: "migrationExportToGcs",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -4191,7 +4191,7 @@ export function buildSchema(): Record<string, unknown> {
         post: {
           summary: "Kick off an async import-from-GCS job",
           description:
-            "Transparent proxy to the assistant daemon's `POST /v1/migrations/import-from-gcs` endpoint. The daemon schedules a background import job that fetches a `.vbundle` archive at the supplied `bundle_url` and streams it through the importer, returning `202 Accepted` with a `job_id`. Callers poll `GET /v1/migrations/jobs/{jobId}` for progress. Registered explicitly (not via the runtime-proxy catch-all) for dedicated auth and timeout handling.",
+            "Transparent proxy to the assistant daemon's `POST /v1/migrations/import-from-gcs` endpoint. The daemon schedules a background import job that fetches a `.vbundle` archive at the supplied `bundle_url` and streams it through the importer, returning `202 Accepted` with a `job_id`. Callers poll `GET /v1/migrations/jobs/{jobId}` for progress. Registered explicitly, not via the runtime-proxy catch-all, for dedicated auth and timeout handling.",
           operationId: "migrationImportFromGcs",
           security: [{ BearerAuth: [] }],
           requestBody: {
@@ -4241,7 +4241,7 @@ export function buildSchema(): Record<string, unknown> {
         get: {
           summary: "Poll unified migration job status",
           description:
-            "Transparent proxy to the assistant daemon's `GET /v1/migrations/jobs/{job_id}` endpoint. Returns the current status of an async export-to-GCS or import-from-GCS job tracked by the daemon's migration job registry. Registered explicitly (not via the runtime-proxy catch-all) for dedicated auth and timeout handling.",
+            "Transparent proxy to the assistant daemon's `GET /v1/migrations/jobs/{job_id}` endpoint. Returns the current status of an async export-to-GCS or import-from-GCS job tracked by the daemon's migration job registry. Registered explicitly, not via the runtime-proxy catch-all, for dedicated auth and timeout handling.",
           operationId: "migrationJobStatus",
           security: [{ BearerAuth: [] }],
           parameters: [
@@ -4360,7 +4360,7 @@ export function buildSchema(): Record<string, unknown> {
                     type: {
                       type: "string",
                       description:
-                        "Email provider type (e.g. resend, mailgun, cadet)",
+                        "Email provider type, e.g. resend, mailgun, cadet",
                     },
                     guardian_email: {
                       type: "string",

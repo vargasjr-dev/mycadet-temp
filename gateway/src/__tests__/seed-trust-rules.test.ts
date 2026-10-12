@@ -145,6 +145,6 @@ describe("description generation", () => {
 
   test("generates default description when no reason", () => {
     const lsRule = store.getById("default:bash:ls")!;
-    expect(lsRule.description).toBe("ls (default)");
+    expect(lsRule.description).toBe("ls — default");
   });
 });

@@ -90,7 +90,9 @@ async function deleteCloudAssistant(
 
   if (!response.ok && response.status !== 404) {
     const body = await response.text();
-    throw new Error(`${options.label} failed (${response.status}): ${body}`);
+    throw new Error(
+      `${options.label} failed, status ${response.status}: ${body}`,
+    );
   }
 
   if (response.status === 404) {
@@ -287,12 +289,12 @@ async function retireInner(): Promise<void> {
     console.log("");
     console.log("Delete an assistant instance and archive its data.");
     console.log(
-      "With no name or ID, retires the active assistant (see `cadet use`). By default, retire prints the assistant name, ID, cloud, and runtime before asking for confirmation.",
+      "With no name or ID, retires the active assistant — see `cadet use`. By default, retire prints the assistant name, ID, cloud, and runtime before asking for confirmation.",
     );
     console.log("");
     console.log("Arguments:");
     console.log(
-      "  <name-or-id>         Assistant display name or ID to retire (defaults to the active assistant)",
+      "  <name-or-id>         Assistant display name or ID to retire, defaults to the active assistant",
     );
     console.log("");
     console.log("Options:");

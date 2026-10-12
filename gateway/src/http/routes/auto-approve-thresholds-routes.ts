@@ -55,7 +55,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "conversationThresholdGet",
     summary: "Get a conversation's threshold override",
     description:
-      "Returns { threshold: null } when no override exists. (Gateways predating that behavior returned 404 for the same condition; clients tolerate both during rollout.)",
+      "Returns { threshold: null } when no override exists. Gateways predating that behavior returned 404 for the same condition; clients tolerate both during rollout.",
     tags: ["permissions"],
     pathParameters: [
       { name: "conversation_id", description: "The conversation id" },

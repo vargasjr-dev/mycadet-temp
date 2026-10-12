@@ -44,7 +44,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     operationId: "channelAdmissionPolicyList",
     summary: "List per-channel admission floors",
     description:
-      "Returns one entry per enforced channel (exempt and hidden channels are omitted), seeded with defaults for channels without a stored row.",
+      "Returns one entry per enforced channel, excluding exempt and hidden channels, seeded with defaults for channels without a stored row.",
     tags: ["channel-admission-policy"],
     responseBody: z.object({
       policies: z.array(ChannelPolicyViewSchema),
@@ -59,7 +59,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
       "Upserts the channel's admission policy. Exempt and hidden channels return 403.",
     tags: ["channel-admission-policy"],
     pathParameters: [
-      { name: "channel_type", description: "The channel type (e.g. slack)" },
+      { name: "channel_type", description: "The channel type, e.g. slack" },
     ],
     requestBody: SetChannelPolicyRequestSchema,
     responseBody: z.object({ policy: ChannelPolicyViewSchema }),

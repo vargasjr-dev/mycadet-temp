@@ -86,5 +86,5 @@ export async function retireInstance(
     region,
   ]);
 
-  console.log(`\u2705 Instance ${name} (${instanceId}) terminated.`);
+  console.log(`\u2705 Instance ${name} terminated — ${instanceId}.`);
 }

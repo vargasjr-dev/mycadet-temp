@@ -149,7 +149,7 @@ export class WebRiskClassifier implements RiskClassifier<WebClassifierInput> {
         } else {
           assessment = {
             riskLevel: "low",
-            reason: "Web fetch (default)",
+            reason: "Web fetch — default",
             scopeOptions: [],
             allowlistOptions,
             matchType: "registry",

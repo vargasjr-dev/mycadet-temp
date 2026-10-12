@@ -616,7 +616,7 @@ export class FileRiskClassifier implements RiskClassifier<
         }
         assessment = {
           riskLevel: "low",
-          reason: "File read (default)",
+          reason: "File read — default",
           scopeOptions: [],
           matchType: "registry",
           allowlistOptions,
@@ -658,7 +658,7 @@ export class FileRiskClassifier implements RiskClassifier<
           riskLevel: "low",
           reason: `File ${
             toolName === "file_write" ? "write" : "edit"
-          } (default)`,
+          } — default`,
           scopeOptions: [],
           matchType: "registry",
           allowlistOptions,
@@ -672,7 +672,7 @@ export class FileRiskClassifier implements RiskClassifier<
         // to getTool() which returns that default.
         assessment = {
           riskLevel: "medium",
-          reason: "Host file read (default)",
+          reason: "Host file read — default",
           scopeOptions: [],
           matchType: "registry",
           allowlistOptions,
@@ -739,7 +739,7 @@ export class FileRiskClassifier implements RiskClassifier<
               : "transfer";
         assessment = {
           riskLevel: "medium",
-          reason: `Host file ${defaultLabel} (default)`,
+          reason: `Host file ${defaultLabel} — default`,
           scopeOptions: [],
           matchType: "registry",
           allowlistOptions,

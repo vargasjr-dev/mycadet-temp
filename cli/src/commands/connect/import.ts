@@ -214,7 +214,7 @@ export async function connectImport(): Promise<void> {
       console.log(`  Code: ${started.userCode}`);
       console.log(`  Run:  cadet pair --web-approve ${started.userCode}`);
       console.log("");
-      console.log(`Waiting for approval (expires ${started.expiresAt})...`);
+      console.log(`Waiting for approval, expires ${started.expiresAt}...`);
     }
 
     // The approval wait promises to run until approval or expiry, so a

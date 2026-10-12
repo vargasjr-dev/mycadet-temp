@@ -15,7 +15,7 @@ function printUsage(): void {
   console.log("Operator commands for gateway-owned state.");
   console.log("");
   console.log("Commands:");
-  console.log("  contacts    Manage contact ACL (list, get, set-risk-threshold)");
+  console.log("  contacts    Manage the contact ACL with list, get, set-risk-threshold");
 }
 
 const args = process.argv.slice(2);

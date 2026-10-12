@@ -605,7 +605,7 @@ export async function promptProviderChoice(
 
   output.write("No LLM provider detected. Choose:\n\n");
   choices.forEach((provider, index) => {
-    const suffix = index === 0 ? " (default)" : "";
+    const suffix = index === 0 ? " — default" : "";
     output.write(`  ${index + 1}) ${formatProviderName(provider)}${suffix}\n`);
   });
   output.write("\n");

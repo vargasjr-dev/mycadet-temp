@@ -78,9 +78,9 @@ function parseArgs(): TunnelArgs {
         "the default. A tailscale tunnel is reachable only from your",
       );
       console.log(
-        "own tailnet; webhook integrations need a public tunnel (see Providers",
+        "own tailnet; webhook integrations need a public tunnel. See Providers",
       );
-      console.log("below).");
+      console.log("below.");
       console.log("");
       console.log(
         "The tunnel always fronts the local nginx edge, which is started automatically.",
@@ -91,15 +91,12 @@ function parseArgs(): TunnelArgs {
       console.log("");
       console.log("Arguments:");
       console.log(
-        "  <name>                        Name of the assistant (defaults to active or only local)",
+        "  <name>                        Name of the assistant, defaults to active or only local",
       );
       console.log("");
       console.log("Options:");
       console.log(
-        `  --provider <provider>         Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")}`,
-      );
-      console.log(
-        `                                (default: ${DEFAULT_TUNNEL_PROVIDER})`,
+        `  --provider <provider>         Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")} — default ${DEFAULT_TUNNEL_PROVIDER}`,
       );
       console.log(
         "  --domain <domain>             Reserved domain to bind, for providers that support",
@@ -410,7 +407,7 @@ async function spawnDetachedTunnel(): Promise<void> {
   } else if (publicUrl) {
     console.log(`Tunnel established: ${publicUrl}`);
   }
-  console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
+  console.log(`Running in background, pid ${child.pid}. Logs: ${logPath}`);
   if (adopted) {
     console.log(adoptedTunnelStopNotice(child.pid));
   } else {
@@ -455,7 +452,7 @@ export const tunnel = Object.assign(
         choco: ["choco", "install", "-y", "nginx"],
       },
       manualHint:
-        "Install nginx (macOS: brew install nginx; Debian/Ubuntu: sudo apt install nginx) or point NGINX_BIN at an existing binary.",
+        "See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
       probe: getNginxVersion,
     });
     if (!nginxVersion) {

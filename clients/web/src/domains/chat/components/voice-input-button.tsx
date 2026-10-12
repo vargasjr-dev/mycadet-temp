@@ -590,7 +590,7 @@ export const VoiceInputButton = forwardRef<
       // before the offline Apple Speech fallback could hear a single
       // word. The press-to-stop lifecycle owns an in-flight session;
       // `disabled` only gates starting new ones.
-      console.info("dictation: button disabled mid-recording (continuing)");
+      console.info("dictation: button disabled mid-recording, continuing");
     }
   }, [disabled, recording]);
 

@@ -34,7 +34,7 @@ function makeDescription(pattern: string, spec: CommandRiskSpec): string {
   if (spec.reason) {
     return `${pattern} \u2014 ${spec.reason}`;
   }
-  return `${pattern} (default)`;
+  return `${pattern} — default`;
 }
 
 /**
