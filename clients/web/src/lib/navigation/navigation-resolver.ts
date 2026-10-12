@@ -1,5 +1,5 @@
 import type { CloudSessionStatus } from "@/stores/session-status";
-import { sanitizeReturnTo } from "@/domains/account/return-to";
+import { sanitizeReturnTo } from "@mycadet/app/domains/account/return-to";
 import {
   isNewAssistantFunnel,
   onboardingDestinationAfterConsent,

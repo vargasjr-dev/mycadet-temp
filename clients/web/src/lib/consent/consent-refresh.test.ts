@@ -16,13 +16,13 @@ import {
   test,
 } from "bun:test";
 
-import type { UserConsent } from "@/domains/account/profile";
+import type { UserConsent } from "@mycadet/app/domains/account/profile";
 
 let consentResult: Promise<UserConsent>;
 const fetchConsent = mock(() => consentResult);
 // `mock.module` is process-global and replaces the whole module, so re-export
 // `patchConsent` (imported transitively by consent-persistence).
-mock.module("@/domains/account/profile", () => ({
+mock.module("@mycadet/app/domains/account/profile", () => ({
   fetchConsent,
   patchConsent: mock(() => Promise.resolve()),
 }));

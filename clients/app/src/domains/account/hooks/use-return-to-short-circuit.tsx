@@ -4,8 +4,8 @@ import { Navigate, useSearchParams } from "react-router";
 import {
   requiresFullPageNavigation,
   requiresCloudSession,
-} from "@/domains/account/login-flow";
-import { sanitizeReturnTo } from "@/domains/account/return-to";
+} from "../../../login-flow";
+import { sanitizeReturnTo } from "../../../return-to";
 import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import {

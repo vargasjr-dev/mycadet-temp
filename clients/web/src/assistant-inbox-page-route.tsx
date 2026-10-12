@@ -29,7 +29,7 @@ import type {
 import {
   checkAssistantHandleAvailable,
   HANDLE_ERROR_COPY,
-} from "@/domains/account/handle";
+} from "@mycadet/app/domains/account/handle";
 import {
   readableSetupError,
   readDomainEmailError,

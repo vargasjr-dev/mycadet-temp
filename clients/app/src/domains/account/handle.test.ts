@@ -16,7 +16,7 @@ import {
   HANDLE_ERROR_COPY,
   checkAssistantHandleAvailable,
   updateAssistantHandle,
-} from "@/domains/account/handle";
+} from "../../handle";
 
 // ---------------------------------------------------------------------------
 // HANDLE_ERROR_COPY parity with backend codes

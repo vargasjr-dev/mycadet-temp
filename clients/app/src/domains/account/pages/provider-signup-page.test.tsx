@@ -52,7 +52,7 @@ mock.module("@/stores/auth-store", () => ({
   },
 }));
 
-mock.module("@/domains/account/login-flow", () => ({
+mock.module("../../../login-flow", () => ({
   resolvePostAuthDestination: () => ({
     destination: "/assistant",
     requiresFullPageNavigation: false,
@@ -63,12 +63,12 @@ mock.module("@/domains/account/login-flow", () => ({
   }),
 }));
 
-mock.module("@/domains/account/components/signup-shell", () => ({
+mock.module("../../../components/signup-shell", () => ({
   SignupShell: ({ children }: { children: ReactNode }) => children,
 }));
 
 const { ProviderSignupPage } = await import(
-  "@/domains/account/pages/provider-signup-page"
+  "../../../pages/provider-signup-page"
 );
 const { peekSignupOnboardingFirstName, takeSignupOnboardingFirstName } =
   await import("@/lib/auth/signup-onboarding-handoff");

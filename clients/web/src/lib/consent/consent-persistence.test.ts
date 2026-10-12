@@ -18,7 +18,7 @@ import {
 } from "bun:test";
 
 import { installMemoryStorage } from "@/utils/memory-storage.test-helper";
-import type { ConsentPatch } from "@/domains/account/profile";
+import type { ConsentPatch } from "@mycadet/app/domains/account/profile";
 
 installMemoryStorage({ beforeAll, afterAll, beforeEach, afterEach });
 
@@ -40,7 +40,7 @@ mock.module("@/domains/onboarding/onboarding-store", () => ({
 // `consent-persistence` only needs `patchConsent`; the real `profile` module
 // pulls in the generated API client (unavailable in unit tests), so stub it.
 const patchConsentMock = mock(async (_consent: ConsentPatch) => {});
-mock.module("@/domains/account/profile", () => ({
+mock.module("@mycadet/app/domains/account/profile", () => ({
   patchConsent: patchConsentMock,
 }));
 mock.module("@/generated/api/client.gen", () => ({ client: {} }));
@@ -68,7 +68,7 @@ import {
   saveConsent,
   savePreferenceToggle,
 } from "@/lib/consent/consent-persistence";
-import type { UserConsent } from "@/domains/account/profile";
+import type { UserConsent } from "@mycadet/app/domains/account/profile";
 
 function makeConsent(overrides: Partial<UserConsent> = {}): UserConsent {
   const base: UserConsent = {

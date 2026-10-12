@@ -3,16 +3,16 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
-import { AccountHeading } from "@/components/account/account-form";
-import { AccountShell } from "@/components/account/account-shell";
+import { AccountHeading } from "../../../account-form";
+import { AccountShell } from "../../../account-shell";
 import { listAssistants } from "@/assistant/api";
 import { refreshCloudAssistantsIfStale } from "@/assistant/cloud-assistants-sync";
 import { getSession } from "@/lib/auth/allauth-client";
 import {
   readAuthCallbackIntent,
   resolvePostAuthDestination,
-} from "@/domains/account/login-flow";
-import { classifyCallbackFlows } from "@/domains/account/social-auth";
+} from "../../../login-flow";
+import { classifyCallbackFlows } from "../../../social-auth";
 import {
   isLocalClient,
 } from "@/lib/local-mode";

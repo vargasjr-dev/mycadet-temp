@@ -8,6 +8,7 @@
     "assistant",
     "assistant/src/api",
     "cli",
+    "clients/app",
     "clients/docs",
     "clients/linux",
     "clients/macos",

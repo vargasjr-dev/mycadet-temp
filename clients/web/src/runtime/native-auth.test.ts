@@ -61,7 +61,7 @@ const {
 const { clearCheckoutIntent, readCheckoutIntent, saveCheckoutIntent } =
   await import("@/lib/billing/checkout-intent");
 const { nativeAuthErrorDetail } = await import(
-  "@/domains/account/native-auth-error"
+  "@mycadet/app/domains/account/native-auth-error"
 );
 const { ONBOARDED_HATCH_AGE_MS } = await import(
   "@/domains/onboarding/onboarded-assistant"

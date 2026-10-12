@@ -7,7 +7,7 @@
  * the effective diagnostics gate. A failed/timed-out fetch is swallowed and leaves
  * all consent state unchanged (never flips a gate on or off).
  */
-import { fetchConsent } from "@/domains/account/profile";
+import { fetchConsent } from "@mycadet/app/domains/account/profile";
 import { applyResolvedDiagnosticsConsent } from "@/lib/consent/diagnostics-consent";
 import { useAuthStore } from "@/stores/auth-store";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";

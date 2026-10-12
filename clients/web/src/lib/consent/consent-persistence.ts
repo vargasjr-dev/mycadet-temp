@@ -41,7 +41,7 @@ import {
 } from "@/utils/local-settings";
 import { applyExplicitDiagnosticsChoice } from "@/lib/consent/diagnostics-consent";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
-import { patchConsent, type UserConsent } from "@/domains/account/profile";
+import { patchConsent, type UserConsent } from "@mycadet/app/domains/account/profile";
 
 // Frozen build constants. The server's `required_versions` is authoritative;
 // these keep two roles only: seeding the module's required versions before

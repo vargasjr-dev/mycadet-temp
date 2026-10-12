@@ -2,8 +2,8 @@ import { Link, useLocation } from "react-router";
 
 import { ExternalAnchor } from "@/components/external-anchor";
 import { Trans, useTranslation } from "@/i18n";
-import { SignupShell } from "@/domains/account/components/signup-shell";
-import { withPreservedAttribution } from "@/domains/account/social-auth";
+import { SignupShell } from "../../../components/signup-shell";
+import { withPreservedAttribution } from "../../../social-auth";
 import { docsUrl, routes } from "@/utils/routes";
 
 interface SignupClosedScreenProps {

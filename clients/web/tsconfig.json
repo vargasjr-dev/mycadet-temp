@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
@@ -13,9 +17,16 @@
     "noEmit": true,
     "allowJs": false,
     "isolatedModules": true,
-    "types": ["bun"],
+    "types": [
+      "bun"
+    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@mycadet/app/*": [
+        "../app/src/*"
+      ]
     }
   },
   "include": [
@@ -25,5 +36,8 @@
     ".storybook/**/*.tsx",
     "capacitor.config.ts"
   ],
-  "exclude": ["dist/**", "node_modules/**"]
+  "exclude": [
+    "dist/**",
+    "node_modules/**"
+  ]
 }

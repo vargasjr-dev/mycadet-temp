@@ -6,7 +6,7 @@ import {
   onboardingCompletedMiddleware,
 } from "@/lib/onboarding-middleware";
 import { RootLayout } from "@/root-layout";
-import { AccountLayout } from "@/domains/account/account-layout";
+import { AccountLayout } from "@mycadet/app/domains/account/account-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
 import { ConversationRedirect } from "@/domains/chat/conversation-redirect";
@@ -159,7 +159,7 @@ export const routeTree = [
                 index: true,
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/account-page").then(
+                    import("@mycadet/app/domains/account/pages/account-page").then(
                       (m) => m.AccountPage,
                     ),
                 },
@@ -168,7 +168,7 @@ export const routeTree = [
                 path: "login",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/login-page").then(
+                    import("@mycadet/app/domains/account/pages/login-page").then(
                       (m) => m.LoginPage,
                     ),
                 },
@@ -177,7 +177,7 @@ export const routeTree = [
                 path: "signup",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/signup-page").then(
+                    import("@mycadet/app/domains/account/pages/signup-page").then(
                       (m) => m.SignupPage,
                     ),
                 },
@@ -186,7 +186,7 @@ export const routeTree = [
                 path: "provider/callback",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/provider-callback-page").then(
+                    import("@mycadet/app/domains/account/pages/provider-callback-page").then(
                       (m) => m.ProviderCallbackPage,
                     ),
                 },
@@ -195,7 +195,7 @@ export const routeTree = [
                 path: "provider/signup",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/provider-signup-page").then(
+                    import("@mycadet/app/domains/account/pages/provider-signup-page").then(
                       (m) => m.ProviderSignupPage,
                     ),
                 },
@@ -204,7 +204,7 @@ export const routeTree = [
                 path: "password/reset",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/password-reset-page").then(
+                    import("@mycadet/app/domains/account/pages/password-reset-page").then(
                       (m) => m.PasswordResetPage,
                     ),
                 },
@@ -213,7 +213,7 @@ export const routeTree = [
                 path: "password/reset/key/:key",
                 lazy: {
                   Component: () =>
-                    import("@/domains/account/pages/password-reset-page").then(
+                    import("@mycadet/app/domains/account/pages/password-reset-page").then(
                       (m) => m.PasswordResetPage,
                     ),
                 },
@@ -230,7 +230,7 @@ export const routeTree = [
             path: "oauth/popup-complete",
             lazy: {
               Component: () =>
-                import("@/domains/account/pages/oauth-popup-complete-page").then(
+                import("@mycadet/app/domains/account/pages/oauth-popup-complete-page").then(
                   (m) => m.OAuthPopupCompletePage,
                 ),
             },
@@ -239,7 +239,7 @@ export const routeTree = [
             path: "oauth/complete",
             lazy: {
               Component: () =>
-                import("@/domains/account/pages/oauth-complete-page").then(
+                import("@mycadet/app/domains/account/pages/oauth-complete-page").then(
                   (m) => m.OAuthCompletePage,
                 ),
             },
@@ -252,7 +252,7 @@ export const routeTree = [
             path: "cloud-callback",
             lazy: {
               Component: () =>
-                import("@/domains/account/pages/cloud-loopback-page").then(
+                import("@mycadet/app/domains/account/pages/cloud-loopback-page").then(
                   (m) => m.CloudLoopbackPage,
                 ),
             },
@@ -284,7 +284,7 @@ export const routeTree = [
     HydrateFallback: RootHydrateFallback,
     lazy: {
       Component: () =>
-        import("@/domains/account/pages/logout-page").then((m) => m.LogoutPage),
+        import("@mycadet/app/domains/account/pages/logout-page").then((m) => m.LogoutPage),
     },
   },
 

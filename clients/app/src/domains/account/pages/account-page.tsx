@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 import { useTranslation } from "@/i18n";
-import { AccountHeading } from "@/components/account/account-form";
-import { AccountShell } from "@/components/account/account-shell";
+import { AccountHeading } from "../../../account-form";
+import { AccountShell } from "../../../account-shell";
 import {
   PROVIDER_CALLBACK_URL,
   PROVIDER_ID,
-} from "@/domains/account/login-flow";
+} from "../../../login-flow";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { startAuthFlow } from "@/runtime/native-auth";
 import {

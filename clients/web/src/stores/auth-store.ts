@@ -66,7 +66,7 @@ import {
   fetchConsent,
   patchConsent,
   type ConsentPatch,
-} from "@/domains/account/profile";
+} from "@mycadet/app/domains/account/profile";
 import {
   restoreConsentForUser,
   persistConsentForUser,

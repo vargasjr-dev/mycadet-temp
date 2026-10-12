@@ -6,7 +6,7 @@ import {
   requiresFullPageNavigation,
   requiresCloudSession,
   resolvePostAuthDestination,
-} from "@/domains/account/login-flow";
+} from "../../login-flow";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 

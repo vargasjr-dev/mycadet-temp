@@ -30,7 +30,7 @@ mock.module("@/components/onboarding-layout", () => ({
   OnboardingLayout: ({ children }: { children: ReactNode }) => children,
 }));
 
-const { LoginPage } = await import("@/domains/account/pages/login-page");
+const { LoginPage } = await import("../../../pages/login-page");
 
 const ROUTE = "/account/login";
 
