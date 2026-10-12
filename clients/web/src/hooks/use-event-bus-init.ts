@@ -37,9 +37,7 @@ import { useEffect } from "react";
 
 import { sseService } from "@/assistant/sse-service";
 import { subscribeLifecycleDiagnostics } from "@/lib/lifecycle-diagnostics";
-import { startBootTelemetry } from "@/lib/telemetry/boot-telemetry";
 import { setupQueryFocusManager } from "@/lib/query-focus-manager";
-import { subscribeSwitchTelemetry } from "@/lib/telemetry/switch-telemetry";
 import { publishCapacitorAppStateSource } from "@/runtime/event-sources/capacitor-app-state";
 import { publishCapacitorDeepLinksSource } from "@/runtime/event-sources/capacitor-deep-links";
 import { publishShareInboxSource } from "@/runtime/share-inbox";
@@ -89,8 +87,6 @@ export function useEventBusInit({
       publishElectronConnectivitySource(),
       publishElectronWindowAttentionSource(),
       subscribeLifecycleDiagnostics(),
-      startBootTelemetry(),
-      subscribeSwitchTelemetry(),
       setupQueryFocusManager(),
     ];
     return () => {

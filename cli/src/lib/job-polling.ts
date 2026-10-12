@@ -166,7 +166,7 @@ export async function pollJobUntilDone(
         throw err;
       }
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`${options.label} polling failed, retrying... (${msg})`);
+      console.warn(`${options.label} polling failed: ${msg}. Retrying...`);
       if (Date.now() >= deadline) {
         throw new Error(
           `Timed out waiting for ${options.label} after ${Math.round(

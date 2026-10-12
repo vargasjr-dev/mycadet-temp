@@ -474,7 +474,7 @@ async function restorePlatform(
           }
         }
         // Transient error (5xx, network) — retry
-        console.warn(`Polling failed, retrying... (${msg})`);
+        console.warn(`Polling failed: ${msg}. Retrying...`);
         continue;
       }
 
@@ -680,7 +680,7 @@ export const restore = Object.assign(
   }
 
   const sizeMB = formatBundleSizeMb(bundleFileSizeBytes(fromPath));
-  console.log(`Reading ${fromPath} (${sizeMB} MB)...`);
+  console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
 
   // Detect topology and route platform assistants through Django import
   const cloud =

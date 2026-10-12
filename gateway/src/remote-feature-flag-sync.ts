@@ -423,7 +423,7 @@ export class RemoteFeatureFlagSync {
       if (value === false && registry[key]?.defaultEnabled === true) {
         log.debug(
           { key },
-          "Normalizing remote false for GA flag to true (defaultEnabled: true)",
+          "Normalizing remote false for GA flag to true — defaultEnabled is true",
         );
         values[key] = true;
         continue;

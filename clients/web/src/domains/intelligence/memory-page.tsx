@@ -10,7 +10,6 @@ import {
 import { CreateMemoryModal } from "@/domains/intelligence/components/concept-graph/create-memory-modal";
 import { memoryGraphOptions } from "@/domains/intelligence/memory-graph/get-memory-graph";
 import { memoryStatsOptions } from "@/domains/intelligence/memory-graph/get-memory-stats";
-import { emitMemoryEvent } from "@/domains/intelligence/memory-telemetry";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library";
 
@@ -59,7 +58,6 @@ export function MemoryPage({ onOpenThread }: MemoryPageProps) {
       return;
     }
     openedEmitted.current = true;
-    emitMemoryEvent("opened");
   }, []);
 
   return (

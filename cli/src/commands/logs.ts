@@ -32,19 +32,19 @@ function printHelp(): void {
   console.log("");
   console.log("Arguments:");
   console.log(
-    "  <name>                Name of the assistant (defaults to latest)",
+    "  <name>                Name of the assistant, defaults to latest",
   );
   console.log("");
   console.log("Options:");
-  console.log("  -f, --follow          Follow log output (stream new lines)");
-  console.log("  -n, --tail <N>        Show last N lines (default: all)");
+  console.log("  -f, --follow          Follow log output");
+  console.log("  -n, --tail <N>        Show last N lines");
   console.log("  -t, --timestamps      Show timestamps on each line");
   console.log(
-    "  --since <time>        Show logs since timestamp or relative (e.g. 10m, 2h)",
+    "  --since <time>        Show logs since timestamp or relative, e.g. 10m or 2h",
   );
   console.log("  --until <time>        Show logs until timestamp or relative");
   console.log(
-    "  -s, --service <name>  Filter to a specific service (e.g. assistant, gateway)",
+    "  -s, --service <name>  Filter to a specific service",
   );
   console.log("  -h, --help            Show this help");
 }
@@ -186,13 +186,13 @@ async function showLocalLogs(
 
   if (opts.since && !sinceDate) {
     console.error(
-      `Error: Could not parse --since value '${opts.since}'. Use relative (e.g. 10m, 2h) or ISO format.`,
+      `Error: Could not parse --since value '${opts.since}'. Use a relative value such as 10m or 2h, or ISO format.`,
     );
     process.exit(1);
   }
   if (opts.until && !untilDate) {
     console.error(
-      `Error: Could not parse --until value '${opts.until}'. Use relative (e.g. 10m, 2h) or ISO format.`,
+      `Error: Could not parse --until value '${opts.until}'. Use a relative value such as 10m or 2h, or ISO format.`,
     );
     process.exit(1);
   }

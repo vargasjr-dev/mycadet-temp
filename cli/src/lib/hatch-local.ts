@@ -384,7 +384,7 @@ export async function hatchLocal(
         await new Promise((r) => setTimeout(r, delayMs));
       } else {
         reporter.error(
-          `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? " (not retrying — a malformed 200 will not fix itself)" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
+          `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
             `   The assistant is running but guardian-token.json was not written.\n` +
             `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
         );

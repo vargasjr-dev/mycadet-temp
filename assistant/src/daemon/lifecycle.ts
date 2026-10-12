@@ -56,7 +56,6 @@ import { reconcilePluginSchedules } from "../schedule/plugin-schedule-reconciler
 import { recoverStaleSchedules } from "../schedule/schedule-recovery.js";
 import { startScheduler } from "../schedule/scheduler.js";
 import { getSubagentManager } from "../subagent/index.js";
-import { startUsageTelemetryReporter } from "../telemetry/usage-telemetry-reporter.js";
 import {
   ensureDataDir,
   getDotEnvPath,
@@ -678,12 +677,10 @@ export async function runDaemon(): Promise<void> {
     });
   }
 
-  // Refresh the consent cache regardless of dev mode so record-time telemetry
-  // writes (which drop on a confirmed opt-out) work in dev too. The usage
-  // telemetry reporter re-checks share_analytics on every flush, so dev still
-  // never sends telemetry to the cloud. Fire-and-forget: startConsentRefresh()
-  // runs an immediate non-blocking refresh, so the startup hot path is never
-  // blocked.
+  // Refresh the consent cache (gates crash-diagnostics sharing) regardless of
+  // dev mode so the cache is warm in dev too. Fire-and-forget:
+  // startConsentRefresh() runs an immediate non-blocking refresh, so the
+  // startup hot path is never blocked.
   startConsentRefresh();
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
@@ -732,7 +729,6 @@ export async function runDaemon(): Promise<void> {
     log.warn({ err }, "Guardian principal cache warm failed — continuing"),
   );
 
-  startUsageTelemetryReporter();
   startDiskPressureGuardForLifecycle();
   startResourcePressureGuardForLifecycle();
   startOrphanReaper();

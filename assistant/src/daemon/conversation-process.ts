@@ -35,6 +35,7 @@ import {
   setConversationOriginInterfaceIfUnset,
 } from "../persistence/conversation-crud.js";
 import { isReplyPushIneligibleUserMessage } from "../persistence/conversation-types.js";
+import { stampTurnOutcome } from "../persistence/turn-outcome.js";
 import type { ContextWindowResult } from "../plugins/defaults/compaction/window-manager.js";
 import { getCurrentSeq } from "../runtime/assistant-stream-state.js";
 import {
@@ -42,7 +43,6 @@ import {
   routeGuardianReply,
 } from "../runtime/guardian-reply-router.js";
 import { publishConversationMessagesChanged } from "../runtime/sync/resource-sync-events.js";
-import { stampTurnOutcome } from "../telemetry/turn-outcome.js";
 import { getLogger } from "../util/logger.js";
 import type { CleanResult, Conversation } from "./conversation.js";
 import { repairInterruptedToolUseBlocks } from "./conversation-interrupt-repair.js";

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { emitNativeAppNudgeEvent } from "@/utils/native-app-nudge-telemetry";
 import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 import {
   getLocalBool,
@@ -28,8 +27,7 @@ export const IOS_APP_STORE_URL =
 const ANDROID_PACKAGE_ID = "ai.mycadet.android";
 
 /** Verbatim value Android's `getInstallReferrer()` returns after install. */
-const ANDROID_INSTALL_REFERRER =
-  "utm_source=cadet-app&utm_medium=in-app-nudge";
+const ANDROID_INSTALL_REFERRER = "utm_source=cadet-app&utm_medium=in-app-nudge";
 
 export const ANDROID_PLAY_STORE_URL =
   `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE_ID}` +
@@ -182,14 +180,12 @@ export function useNativeAppNudgeState(target: NudgeTarget): {
   }, [target]);
 
   const handleDownload = useCallback(() => {
-    emitNativeAppNudgeEvent("click", "banner", target);
     openNativeAppStore(target);
     writeNativeAppDownloaded(target);
     setDownloaded(true);
   }, [target]);
 
   const handleBannerDismiss = useCallback(() => {
-    emitNativeAppNudgeEvent("dismiss", "banner", target);
     writeNativeAppBannerDismissed(target);
     setBannerDismissed(true);
   }, [target]);

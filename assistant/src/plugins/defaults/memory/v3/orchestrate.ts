@@ -77,9 +77,7 @@ import {
   recordLatencySubSpan,
   timeLatencySubSpan,
 } from "../../../../daemon/turn-latency-sub-spans.js";
-import { recordWatchdogEvent } from "../../../../telemetry/watchdog-events-store.js";
 import { getLogger } from "../logging.js";
-import { injectionUnits } from "./capabilities.js";
 import { denseLaneScored } from "./dense.js";
 import type { EdgeGraph } from "./edge.js";
 import { edgeExpand } from "./edge.js";
@@ -116,66 +114,6 @@ import {
 // Named to disambiguate from the unrelated `src/config/memory-v3-gate.ts`: this
 // logger names the per-turn INJECTION gate wired in below.
 const log = getLogger("memory-v3-injection-gate");
-
-/** `check_name` of the `watchdog` telemetry event recorded once per
- *  injection-gate run. The cloud's memory admin analytics count and filter
- *  on this exact string — keep it stable. */
-export const MEMORY_V3_INJECTION_GATE_CHECK_NAME = "memory_v3_injection_gate";
-
-/** Record one injection-gate run to usage telemetry. `detail` keys are the
- *  platform-side contract (snake_case; scores, reason codes, and corpus-size
- *  counts only — never page titles, slugs, or conversation content). Never
- *  throws: the gate is pass-open by design, and a telemetry failure must not
- *  cost the turn its memory either.
- *
- *  `detail.scored` says whether checkV3Gate actually weighed scores this run, as
- *  opposed to the run taking a pass-open shortcut (dense off, dense unavailable,
- *  gate threw). Pass rate is only meaningful over scored runs — the shortcuts are
- *  all unconditional passes and would otherwise inflate it. It is derivable from
- *  `reason`, but the daemon owns the reason set and adds to it freely, so it is
- *  reported explicitly rather than left for the cloud to re-derive from a
- *  hardcoded list that would silently miscount the next reason we add. */
-function recordGateRun(detail: Record<string, unknown>): void {
-  try {
-    recordWatchdogEvent({
-      checkName: MEMORY_V3_INJECTION_GATE_CHECK_NAME,
-      value: 1,
-      detail,
-    });
-  } catch {
-    // recordWatchdogEvent already no-ops on opt-out and a missing telemetry
-    // DB; anything past that is not worth failing the turn over.
-  }
-}
-
-/** `check_name` of the `watchdog` telemetry event recorded once per orchestrated
- *  turn, carrying what the SELECTOR did. Keep this string stable — the cloud's
- *  memory admin analytics filter on it. */
-export const MEMORY_V3_SELECTION_CHECK_NAME = "memory_v3_selection";
-
-/** Record one turn's selection outcome. Deliberately a SEPARATE event from
- *  {@link MEMORY_V3_INJECTION_GATE_CHECK_NAME} rather than extra keys on it: the
- *  gate records at decision time, before selection has run, so folding the
- *  outcome in would mean deferring the gate event until after `selectPool` — and
- *  losing every gate run whenever selection throws, which is exactly the
- *  incident we would want the gate telemetry for. This event carries
- *  `gate_reason` so the two still group together without a join.
- *
- *  `value` is the selection count. Never throws, same as the gate counter. */
-function recordSelectionRun(
-  value: number,
-  detail: Record<string, unknown>,
-): void {
-  try {
-    recordWatchdogEvent({
-      checkName: MEMORY_V3_SELECTION_CHECK_NAME,
-      value,
-      detail,
-    });
-  } catch {
-    // Same contract as recordGateRun: telemetry must never cost a turn.
-  }
-}
 
 /** Default number of BM25 needle articles to fold into the pool. */
 export const DEFAULT_NEEDLE_K = 12;
@@ -797,15 +735,8 @@ export async function orchestrate(
   // profile threshold rather than guessed at: `dense_disabled` is sub-threshold
   // by construction, and whether those assistants sit at 1 page or 9 is the
   // difference between "empty" and "about to cross".
-  const recordGate = (detail: Record<string, unknown>): void =>
-    recordGateRun(
-      deps.realConceptPageCount === undefined
-        ? detail
-        : { ...detail, real_concept_page_count: deps.realConceptPageCount },
-    );
-
-  // This turn's gate decision, carried to the selection event so the two group
-  // together without a join. Null when the gate never ran (disabled/omitted).
+  // This turn's gate decision, carried on the result as `gateReason`. Null
+  // when the gate never ran (disabled/omitted).
   let gateOutcome: { reason: string; pass: boolean } | null = null;
 
   // What the SELECTOR did with the pool the gate let through — the outcome the
@@ -825,54 +756,13 @@ export async function orchestrate(
   //     the provider (also a 0%).
   // The last is why `poolSize` decides this rather than each call site: an empty
   // pool is not a judgment that nothing was relevant, and no caller has to
-  // remember that. `selectorRanOver` is that rule; the selection event and the
-  // result's `selectorRan` both read it.
-  // `selector_kept_all` and `net_new_count` separate what the selector JUDGED
-  // from what actually reaches the turn, which `selected_count` alone conflates:
-  //   - kept_all: the recall-safe fallback fired (model omitted `ids`), so every
-  //     candidate was kept without a real judgment. Distinguishes "kept the whole
-  //     pool because it gave up" from "explicitly selected a large set", which
-  //     otherwise look identical and inflate the same way.
-  //   - net_new: the injection units among the selections (`injectionUnits`:
-  //     each selected section, or the lead of a page selected with none, a
-  //     capability page as one unit) not already live in the conversation,
-  //     the injector renders only these (prior turns' sections ride
-  //     history), so it is the real incremental injection, where
-  //     `selected_count` re-counts the whole standing set every turn.
-  //     Omitted when the caller did not supply `isResident` (tests,
-  //     shadow-less paths). The count reads the same units the injector will
-  //     (a closed gate's selections carry no sections, so it counts leads).
+  // remember that. `selectorRanOver` is that rule; the result's `selectorRan`
+  // reads it.
   const selectorRanOver = (
     poolSize: number,
     failure?: MemoryV3RetrievalUnavailableError,
   ): boolean =>
     deps.selectorEnabled !== false && poolSize > 0 && failure === undefined;
-  const recordSelection = (
-    selections: SelectedPage[],
-    poolSize: number,
-    keptAll: boolean,
-    failure?: MemoryV3RetrievalUnavailableError,
-  ): void => {
-    const detail: Record<string, unknown> = {
-      gate_reason: gateOutcome?.reason ?? null,
-      gate_pass: gateOutcome?.pass ?? null,
-      selector_ran: selectorRanOver(poolSize, failure),
-      selector_failed: failure !== undefined,
-      selector_kept_all: keptAll,
-      selected_count: selections.length,
-      pool_size: poolSize,
-    };
-    const isResident = deps.isResident;
-    if (isResident !== undefined) {
-      detail.net_new_count = injectionUnits(selections).filter(
-        ({ slug, key }) => !isResident(slug, key),
-      ).length;
-    }
-    if (deps.realConceptPageCount !== undefined) {
-      detail.real_concept_page_count = deps.realConceptPageCount;
-    }
-    recordSelectionRun(selections.length, detail);
-  };
   if (deps.gateConfig?.enabled) {
     if (liveDensed.length === 0) {
       const reason = denseEnabled ? "dense_unavailable" : "dense_disabled";
@@ -888,7 +778,6 @@ export async function orchestrate(
           : "memory-v3 injection gate: dense lane disabled, passing open",
       );
       gateOutcome = { reason, pass: true };
-      recordGate({ pass: true, reason, scored: false });
     } else {
       let gate: V3GateResult | null = null;
       try {
@@ -906,7 +795,6 @@ export async function orchestrate(
           "memory-v3 injection gate threw; passing open (proceeding with selection)",
         );
         gateOutcome = { reason: "gate_error", pass: true };
-        recordGate({ pass: true, reason: "gate_error", scored: false });
       }
       if (gate) {
         log.info(
@@ -918,14 +806,6 @@ export async function orchestrate(
           "memory-v3 injection gate decision",
         );
         gateOutcome = { reason: gate.reason, pass: gate.pass };
-        recordGate({
-          pass: gate.pass,
-          reason: gate.reason,
-          scored: true,
-          top_dense_score: gate.topDenseScore,
-          top_norm_sparse_score: gate.topNormSparseScore,
-          checked_articles: gate.checkedArticles,
-        });
         if (!gate.pass) {
           // A closed gate produces no finder lane; only `selections` and
           // `selectorRan` differ between bypass (stable prefix) and hard-skip.
@@ -975,7 +855,6 @@ export async function orchestrate(
             } = await runSelection(stableOnly);
             const selectedPoolSize =
               selectedPool.stable.length + selectedPool.finder.length;
-            recordSelection(bypassed, selectedPoolSize, keptAll, failure);
             return closed(
               bypassed,
               selectorRanOver(selectedPoolSize, failure),
@@ -985,9 +864,7 @@ export async function orchestrate(
           }
           // Hard skip: the selector is never consulted, so this is a zero
           // selection BY CONSTRUCTION, not a judgment that nothing was relevant.
-          // `selector_ran: false` keeps it out of any relevance rate, and the
-          // result's `selectorRan` keeps it out of the persisted pool record.
-          recordSelection([], 0, false);
+          // The result's `selectorRan` is false.
           return closed([], false);
         }
       }
@@ -1095,7 +972,6 @@ export async function orchestrate(
   } = await runSelection(pool);
   const selectedPoolSize =
     selectedPool.stable.length + selectedPool.finder.length;
-  recordSelection(selections, selectedPoolSize, keptAll, failure);
 
   return {
     selections,

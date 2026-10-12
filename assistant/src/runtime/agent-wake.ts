@@ -120,6 +120,7 @@ import {
   recordRequestLog,
   setAgentLoopExitReasonOnLatestLog,
 } from "../persistence/llm-request-log-store.js";
+import { stampTurnOutcome } from "../persistence/turn-outcome.js";
 import type { SystemPromptPersonaOverride } from "../prompts/system-prompt.js";
 import type { Message, ToolDefinition } from "../providers/types.js";
 import { getScheduleRunStatus } from "../schedule/schedule-store.js";
@@ -127,7 +128,6 @@ import {
   type UntrustedContentSource,
   wrapUntrustedContent,
 } from "../security/untrusted-content.js";
-import { stampTurnOutcome } from "../telemetry/turn-outcome.js";
 import type { CompletedBackgroundTool } from "../tools/background-tool-registry.js";
 import { getLogger } from "../util/logger.js";
 import { safeStringSlice } from "../util/unicode.js";

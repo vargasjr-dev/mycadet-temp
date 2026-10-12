@@ -784,7 +784,7 @@ describe("tunnel edge targeting", () => {
     ensureTunnelEdgeMock.mockRejectedValue(
       new Error(
         "nginx is not installed, so the tunnel edge cannot start. " +
-          "Install it (macOS: `brew install nginx`, Linux: `sudo apt install nginx`) " +
+          "See https://nginx.org/en/docs/install.html for how to install, " +
           "or point NGINX_BIN at an existing binary.",
       ),
     );
@@ -792,7 +792,9 @@ describe("tunnel edge targeting", () => {
     const { exited, errors } = await runTunnelExpectingExit1();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("brew install nginx");
+    expect(errors).toContain(
+      "See https://nginx.org/en/docs/install.html for how to install",
+    );
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();

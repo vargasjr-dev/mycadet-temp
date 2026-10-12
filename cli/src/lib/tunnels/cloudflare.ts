@@ -156,7 +156,7 @@ export async function runCloudflareTunnel(
       choco: ["choco", "install", "-y", "cloudflared"],
     },
     manualHint:
-      "Install it (macOS: brew install cloudflare/cloudflare/cloudflared; Linux: https://pkg.cloudflare.com/index.html; Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).",
+      "See https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ for how to install",
     probe: getCloudflareTunnelVersion,
   });
   if (!version) {

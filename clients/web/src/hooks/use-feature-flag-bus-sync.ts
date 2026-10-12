@@ -24,7 +24,7 @@ import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { assistantFeatureFlagsGetQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { featureFlagsClientFlagValuesRetrieveQueryKey } from "@/generated/api/@tanstack/react-query.gen";
 import { SYNC_TAGS } from "@/lib/sync/types";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 
 const CLIENT_FLAG_REFRESH_MIN_INTERVAL_MS = 30_000;
 

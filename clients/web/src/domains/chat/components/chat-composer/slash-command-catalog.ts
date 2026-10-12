@@ -41,7 +41,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     name: "doctor",
     description:
-      "Open the Doctor with a first message (e.g. /doctor fix my profiles)",
+      "Open the Doctor with a first message, e.g. /doctor fix my profiles",
     selectionBehavior: "insertTrailingSpace",
   },
   {

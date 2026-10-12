@@ -38,7 +38,7 @@ export function parseFeatureFlagArgs(args: string[]): {
 
       if (!ALLOWED_KEY_RE.test(key)) {
         console.error(
-          `Error: invalid flag key "${key}". Keys must be kebab-case (e.g. "browser")`,
+          `Error: invalid flag key "${key}". Keys must be kebab-case, e.g. "browser"`,
         );
         process.exit(1);
       }

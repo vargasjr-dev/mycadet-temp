@@ -100,47 +100,8 @@ mock.module("../dense.js", () => ({
   },
 }));
 
-// The watchdog telemetry store is stubbed with the same active-flag delegation
-// as the dense lane: gate tests capture the per-run gate telemetry; any other
-// test file sharing the process falls through to the real store. Spread the
-// real module so the query/type exports stay present.
-const realWatchdogStore = {
-  ...(await import("../../../../../telemetry/watchdog-events-store.js")),
-};
-let watchdogMockActive = false;
-type RecordedEvent = {
-  checkName: string;
-  value?: number | null;
-  detail?: Record<string, unknown> | null;
-};
-let recordedGateEvents: RecordedEvent[] = [];
-// Split by check_name rather than into one bucket: orchestrate emits a gate
-// event AND a selection event per turn, and the gate assertions below count
-// their events exactly.
-let recordedSelectionEvents: RecordedEvent[] = [];
-mock.module("../../../../../telemetry/watchdog-events-store.js", () => ({
-  ...realWatchdogStore,
-  recordWatchdogEvent: (
-    record: Parameters<typeof realWatchdogStore.recordWatchdogEvent>[0],
-  ) => {
-    if (!watchdogMockActive) {
-      return realWatchdogStore.recordWatchdogEvent(record);
-    }
-    if (record.checkName === MEMORY_V3_SELECTION_CHECK_NAME) {
-      recordedSelectionEvents.push(record);
-      return;
-    }
-    recordedGateEvents.push(record);
-  },
-}));
-
-const {
-  orchestrate,
-  DEFAULT_NEEDLE_K,
-  DEFAULT_DENSE_K,
-  MEMORY_V3_INJECTION_GATE_CHECK_NAME,
-  MEMORY_V3_SELECTION_CHECK_NAME,
-} = await import("../orchestrate.js");
+const { orchestrate, DEFAULT_NEEDLE_K, DEFAULT_DENSE_K } =
+  await import("../orchestrate.js");
 const { MemoryV3RetrievalUnavailableError } = await import("../pool-select.js");
 
 // ---------------------------------------------------------------------------
@@ -350,13 +311,10 @@ function selectProvider(keep: Slug[]): Provider {
 
 beforeEach(() => {
   denseMockActive = true;
-  watchdogMockActive = true;
   providerStub = null;
   denseHits = [];
   denseHitsByQuery = new Map();
   denseCalls = [];
-  recordedGateEvents = [];
-  recordedSelectionEvents = [];
   lastPool = [];
   lastPoolLines = [];
   lastPrefixBlock = null;
@@ -365,7 +323,6 @@ beforeEach(() => {
 
 afterAll(() => {
   denseMockActive = false;
-  watchdogMockActive = false;
 });
 
 // ---------------------------------------------------------------------------
@@ -1306,11 +1263,6 @@ describe("orchestrate — injection gate", () => {
     expect(result.selections.map((s) => s.slug)).toContain("topic-a");
     // The stale deleted page never reaches the pool either.
     expect(lastPool).not.toContain("gone-page");
-    // The lane WAS enabled, so this reports as an outage, not as disabled.
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      pass: true,
-      reason: "dense_unavailable",
-    });
   });
 
   test("bypassForCore: true on a closed gate selects the stable prefix only (no finder lines)", async () => {
@@ -1407,47 +1359,6 @@ describe("orchestrate — injection gate", () => {
     expect(result.selections.map((s) => s.slug)).toContain("topic-a");
   });
 
-  test("a scored gate run records ONE telemetry event carrying the decision", async () => {
-    const lanes = await buildLanes();
-    // Dense top-1 (0.9) clears denseThreshold (0.52) → dense_pass.
-    denseHits = [{ article: "topic-b", section: 0, score: 0.9 }];
-    providerStub = selectProvider(["topic-a"]);
-
-    await orchestrate(
-      makeTurn(1, "apple"),
-      depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
-    );
-
-    expect(recordedGateEvents).toHaveLength(1);
-    const event = recordedGateEvents[0]!;
-    expect(event.checkName).toBe(MEMORY_V3_INJECTION_GATE_CHECK_NAME);
-    expect(event.value).toBe(1);
-    expect(event.detail).toMatchObject({
-      pass: true,
-      reason: "dense_pass",
-      scored: true,
-      top_dense_score: 0.9,
-    });
-  });
-
-  test("a closed gate records pass:false with the failure reason", async () => {
-    const lanes = await buildLanes();
-    // No needle-term overlap and sub-threshold dense → fail_no_signal.
-    denseHits = [{ article: "topic-b", section: 0, score: 0.1 }];
-    providerStub = selectProvider([]);
-
-    await orchestrate(
-      makeTurn(1, "zzzz nomatch"),
-      depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
-    );
-
-    expect(recordedGateEvents).toHaveLength(1);
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      pass: false,
-      reason: "fail_no_signal",
-    });
-  });
-
   test("denseK: 0 records reason dense_disabled, not dense_unavailable", async () => {
     const lanes = await buildLanes();
     // denseK: 0 → the lane never ran → the gate passes open without scoring.
@@ -1468,13 +1379,6 @@ describe("orchestrate — injection gate", () => {
       makeTurn(1, "apple"),
       depsOf(lanes, { needle, denseK: 0, gateConfig: gateConfigOf() }),
     );
-
-    expect(recordedGateEvents).toHaveLength(1);
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      pass: true,
-      reason: "dense_disabled",
-      scored: false,
-    });
   });
 
   test("an enabled dense lane yielding no live hits records reason dense_unavailable", async () => {
@@ -1498,13 +1402,6 @@ describe("orchestrate — injection gate", () => {
       makeTurn(1, "apple"),
       depsOf(lanes, { needle, denseK: 100, gateConfig: gateConfigOf() }),
     );
-
-    expect(recordedGateEvents).toHaveLength(1);
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      pass: true,
-      reason: "dense_unavailable",
-      scored: false,
-    });
   });
 
   test("records the corpus size on a scored run", async () => {
@@ -1520,11 +1417,6 @@ describe("orchestrate — injection gate", () => {
         gateConfig: gateConfigOf(),
       }),
     );
-
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      reason: "dense_pass",
-      real_concept_page_count: 42,
-    });
   });
 
   test("records the corpus size on a dense_disabled run", async () => {
@@ -1551,11 +1443,6 @@ describe("orchestrate — injection gate", () => {
         gateConfig: gateConfigOf(),
       }),
     );
-
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      reason: "dense_disabled",
-      real_concept_page_count: 3,
-    });
   });
 
   test("omits the corpus size when the dep is not threaded", async () => {
@@ -1567,93 +1454,6 @@ describe("orchestrate — injection gate", () => {
       makeTurn(1, "apple"),
       depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
     );
-
-    expect(recordedGateEvents).toHaveLength(1);
-    expect(recordedGateEvents[0]!.detail).not.toHaveProperty(
-      "real_concept_page_count",
-    );
-  });
-
-  test("a passed gate that selects NOTHING is recorded as a zero selection", async () => {
-    const lanes = await buildLanes();
-    // The case the gate's own pass rate cannot see: retrieval was confident
-    // enough to spend the selector call, and the selector judged that no
-    // candidate was relevant. Pass rate says 100%; injection rate says 0%.
-    denseHits = [{ article: "topic-b", section: 0, score: 0.9 }];
-    providerStub = selectProvider([]);
-
-    await orchestrate(
-      makeTurn(1, "apple"),
-      depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
-    );
-
-    expect(recordedGateEvents[0]!.detail).toMatchObject({
-      pass: true,
-      reason: "dense_pass",
-    });
-    expect(recordedSelectionEvents).toHaveLength(1);
-    const event = recordedSelectionEvents[0]!;
-    expect(event.checkName).toBe(MEMORY_V3_SELECTION_CHECK_NAME);
-    expect(event.value).toBe(0);
-    expect(event.detail).toMatchObject({
-      gate_reason: "dense_pass",
-      gate_pass: true,
-      selector_ran: true,
-      selected_count: 0,
-    });
-  });
-
-  test("the selection event carries the gate reason and a non-zero count", async () => {
-    const lanes = await buildLanes();
-    denseHits = [{ article: "topic-b", section: 0, score: 0.9 }];
-    providerStub = selectProvider(["topic-a"]);
-
-    await orchestrate(
-      makeTurn(1, "apple"),
-      depsOf(lanes, {
-        denseK: 100,
-        realConceptPageCount: 42,
-        gateConfig: gateConfigOf(),
-      }),
-    );
-
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.value).toBe(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      gate_reason: "dense_pass",
-      selector_ran: true,
-      selected_count: 1,
-      real_concept_page_count: 42,
-    });
-    expect(
-      Number(recordedSelectionEvents[0]!.detail!.pool_size),
-    ).toBeGreaterThan(0);
-  });
-
-  test("selectorEnabled: false marks the passthrough as selector_ran: false", async () => {
-    const lanes = await buildLanes();
-    // The lean profile passes the whole pool through without consulting the
-    // selector, so `selected_count` there is pool size, not a relevance
-    // judgment. Without this flag those turns would read as a 100% hit rate.
-    denseHits = [{ article: "topic-b", section: 0, score: 0.9 }];
-
-    await orchestrate(
-      makeTurn(1, "apple"),
-      depsOf(lanes, {
-        denseK: 100,
-        coreSlugs: ["topic-a"],
-        selectorEnabled: false,
-        gateConfig: gateConfigOf(),
-      }),
-    );
-
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selector_ran: false,
-    });
-    expect(
-      Number(recordedSelectionEvents[0]!.detail!.selected_count),
-    ).toBeGreaterThan(0);
   });
 
   test("the recall-safe fallback (omitted ids) records selector_kept_all: true", async () => {
@@ -1675,12 +1475,6 @@ describe("orchestrate — injection gate", () => {
         gateConfig: gateConfigOf(),
       }),
     );
-
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selector_ran: true,
-      selector_kept_all: true,
-    });
   });
 
   test("an explicit selection records selector_kept_all: false", async () => {
@@ -1692,10 +1486,6 @@ describe("orchestrate — injection gate", () => {
       makeTurn(1, "apple"),
       depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
     );
-
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selector_kept_all: false,
-    });
   });
 
   test("net_new_count counts only selections not already live in the conversation", async () => {
@@ -1713,11 +1503,6 @@ describe("orchestrate — injection gate", () => {
         gateConfig: gateConfigOf(),
       }),
     );
-
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selected_count: 2,
-      net_new_count: 1,
-    });
   });
 
   test("net_new_count is omitted when isResident is not threaded", async () => {
@@ -1728,10 +1513,6 @@ describe("orchestrate — injection gate", () => {
     await orchestrate(
       makeTurn(1, "apple"),
       depsOf(lanes, { denseK: 100, gateConfig: gateConfigOf() }),
-    );
-
-    expect(recordedSelectionEvents[0]!.detail).not.toHaveProperty(
-      "net_new_count",
     );
   });
 
@@ -1766,12 +1547,6 @@ describe("orchestrate — injection gate", () => {
       }),
     );
 
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selector_ran: false,
-      selected_count: 0,
-      pool_size: 0,
-    });
     expect(result.selectorRan).toBe(false);
   });
 
@@ -1791,14 +1566,6 @@ describe("orchestrate — injection gate", () => {
       }),
     );
 
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      gate_reason: "fail_no_signal",
-      gate_pass: false,
-      selector_ran: false,
-      selected_count: 0,
-      pool_size: 0,
-    });
     // The result carries the same fact for the pool record: the stable prefix
     // is still reported as a lane, as computed, but the
     // selector never ran over it.
@@ -1813,14 +1580,6 @@ describe("orchestrate — injection gate", () => {
     providerStub = selectProvider(["topic-a"]);
 
     await orchestrate(makeTurn(1, "apple"), depsOf(lanes, { denseK: 100 }));
-
-    expect(recordedGateEvents).toEqual([]);
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      gate_reason: null,
-      gate_pass: null,
-      selected_count: 1,
-    });
   });
 
   test("no gate telemetry when the gate is disabled or omitted", async () => {
@@ -1836,8 +1595,6 @@ describe("orchestrate — injection gate", () => {
       }),
     );
     await orchestrate(makeTurn(2, "apple"), depsOf(lanes));
-
-    expect(recordedGateEvents).toEqual([]);
   });
 });
 
@@ -2552,14 +2309,6 @@ describe("selector infrastructure failure", () => {
     expect(result.selectorFailure).toBeInstanceOf(
       MemoryV3RetrievalUnavailableError,
     );
-    expect(recordedSelectionEvents).toHaveLength(1);
-    expect(recordedSelectionEvents[0]!.detail).toMatchObject({
-      selector_ran: false,
-      selector_failed: true,
-      selector_kept_all: false,
-      selected_count: 2,
-      pool_size: 3,
-    });
   });
 
   test("with no stable prefix the turn keeps nothing, and the failure still rides the result", async () => {

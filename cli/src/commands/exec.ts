@@ -75,28 +75,28 @@ export const exec = Object.assign(
     console.log("");
     console.log("Arguments:");
     console.log(
-      "  <name>              Name of the assistant (defaults to active)",
+      "  <name>              Name of the assistant, defaults to active",
     );
     console.log(
       "  <command...>        Command and arguments to run (after --)",
     );
     console.log("");
     console.log("Options:");
-    console.log("  --service <svc>     Target service (default: assistant)");
+    console.log("  --service <svc>     Target service, defaults to assistant");
     console.log(
       "  -it                 Interactive mode with TTY (like docker exec -it)",
     );
     console.log(
-      "  --timeout <secs>    Timeout in seconds (default: 30, 0 = no timeout)",
+      "  --timeout <secs>    Timeout in seconds — default 30, 0 = no timeout",
     );
     console.log(
-      "  --verbose           Show debug output (SSE events, sentinel parsing)",
+      "  --verbose           Show debug output",
     );
     console.log("");
     console.log("Services:");
-    console.log("  assistant (or mycadet)");
-    console.log("  gateway (or cadet-gateway)");
-    console.log("  credential-executor (or cadet-credential-executor)");
+    console.log("  assistant");
+    console.log("  gateway");
+    console.log("  credential-executor");
     console.log("");
     console.log("Examples:");
     console.log("  cadet exec -- ls -la /workspace");

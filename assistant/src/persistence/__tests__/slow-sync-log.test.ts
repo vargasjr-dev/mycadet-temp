@@ -6,7 +6,6 @@ import {
   markSection,
   reportSlowSync,
   resetSectionTrailForTests,
-  SLOW_SYNC_CHECK_NAME,
   SLOW_SYNC_THRESHOLD_MS,
   timeSyncSection,
   traceAsyncSection,
@@ -15,7 +14,6 @@ import {
 describe("slow-sync-log", () => {
   test("threshold default is a positive number", () => {
     expect(SLOW_SYNC_THRESHOLD_MS).toBeGreaterThan(0);
-    expect(SLOW_SYNC_CHECK_NAME).toBe("slow_sync_operation");
   });
 
   test("timeSyncSection returns the section's value and runs it once", () => {

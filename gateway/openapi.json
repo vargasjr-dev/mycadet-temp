@@ -2,10 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Cadet Gateway API",
-    "version": "0.12.6",
+    "version": "0.12.8",
     "description": "Auto-generated OpenAPI specification for the Cadet Gateway HTTP endpoints."
   },
-  "servers": [{ "url": "", "description": "Same-origin (gateway)" }],
+  "servers": [{ "url": "", "description": "Same-origin — the gateway" }],
   "paths": {
     "/v1/permissions/thresholds": {
       "get": {
@@ -105,7 +105,7 @@
         "operationId": "conversationThresholdGet",
         "summary": "Get a conversation's threshold override",
         "tags": ["permissions"],
-        "description": "Returns { threshold: null } when no override exists. (Gateways predating that behavior returned 404 for the same condition; clients tolerate both during rollout.)",
+        "description": "Returns { threshold: null } when no override exists. Gateways predating that behavior returned 404 for the same condition; clients tolerate both during rollout.",
         "parameters": [
           {
             "name": "conversation_id",
@@ -209,7 +209,7 @@
         "operationId": "channelAdmissionPolicyList",
         "summary": "List per-channel admission floors",
         "tags": ["channel-admission-policy"],
-        "description": "Returns one entry per enforced channel (exempt and hidden channels are omitted), seeded with defaults for channels without a stored row.",
+        "description": "Returns one entry per enforced channel, excluding exempt and hidden channels, seeded with defaults for channels without a stored row.",
         "responses": {
           "200": {
             "description": "Successful response",
@@ -272,7 +272,7 @@
             "in": "path",
             "required": true,
             "schema": { "type": "string" },
-            "description": "The channel type (e.g. slack)"
+            "description": "The channel type, e.g. slack"
           }
         ],
         "requestBody": {
@@ -452,7 +452,7 @@
             "in": "path",
             "required": true,
             "schema": { "type": "string" },
-            "description": "The declaring ingress source (today, a plugin name)"
+            "description": "The declaring ingress source, today a plugin name"
           }
         ],
         "requestBody": {
@@ -502,7 +502,7 @@
             "in": "path",
             "required": true,
             "schema": { "type": "string" },
-            "description": "The declaring ingress source (today, a plugin name)"
+            "description": "The declaring ingress source, today a plugin name"
           }
         ],
         "responses": {
@@ -530,7 +530,7 @@
         "operationId": "channelPermissionOverridesList",
         "summary": "List channel-permission matrix cells",
         "tags": ["channel-permission-overrides"],
-        "description": "Returns every persisted cell (cascade selector × contact-type → RiskThreshold). Unset cells fall through the cascade; the list contains only explicit overrides.",
+        "description": "Returns every persisted cell in the cascade selector × contact-type → RiskThreshold map. Unset cells fall through the cascade; the list contains only explicit overrides.",
         "responses": {
           "200": {
             "description": "Successful response",
@@ -854,7 +854,7 @@
         "operationId": "channelPermissionResolve",
         "summary": "Resolve the effective channel-permission threshold",
         "tags": ["channel-permission-overrides"],
-        "description": "Read-only cascade resolution for one coordinate: walks channel → channel_type → adapter → workspace for the given selector keys and contact-type, returning the winning cell's threshold and scope, or null when no cell matches (the caller then falls through to the global thresholds). Same resolver the runtime evaluator uses over IPC.",
+        "description": "Read-only cascade resolution for one coordinate: walks channel → channel_type → adapter → workspace for the given selector keys and contact-type, returning the winning cell's threshold and scope, or null when no cell matches, in which case the caller falls through to the global thresholds. Same resolver the runtime evaluator uses over IPC.",
         "requestBody": {
           "required": true,
           "content": {
@@ -931,7 +931,7 @@
         "operationId": "channelPermissionOverrideDelete",
         "summary": "Delete a channel-permission matrix cell",
         "tags": ["channel-permission-overrides"],
-        "description": "Removes one cell by its composite key (selector × contact-type), letting the next cascade tier up win. Returns whether a cell was removed.",
+        "description": "Removes one cell by its composite key, selector × contact-type, letting the next cascade tier up win. Returns whether a cell was removed.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1027,7 +1027,7 @@
         "operationId": "contactsUpsert",
         "summary": "Create or update a contact",
         "tags": ["contacts"],
-        "description": "Gateway-native contact upsert (dual-writes the gateway ACL store and the assistant info mirror). Matches by id, then by any provided (type, address) channel, else creates.",
+        "description": "Gateway-native contact upsert that dual-writes the gateway ACL store and the assistant info mirror. Matches by id, then by the provided type and address channel, else creates.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1085,7 +1085,7 @@
                         "address": { "type": "string" },
                         "isPrimary": { "type": "boolean" },
                         "externalChatId": {
-                          "description": "Delivery chat id. Omit to preserve the stored value. A legacy explicit null is accepted for compatibility and treated as omitted; clearing is not supported (a stored null is indistinguishable from never-learned, so no consumer could tell a clear from a gap).",
+                          "description": "Delivery chat id. Omit to preserve the stored value. A legacy explicit null is accepted for compatibility and treated as omitted; clearing is not supported: a stored null is indistinguishable from never-learned, so no consumer could tell a clear from a gap.",
                           "type": "string"
                         },
                         "status": { "type": "string" },
@@ -1141,7 +1141,7 @@
                             },
                             { "type": "null" }
                           ],
-                          "description": "Per-contact auto-approve ceiling. Null means unset (inherit cascade)."
+                          "description": "Per-contact auto-approve ceiling. Null means unset, inheriting the cascade."
                         },
                         "assistantMetadata": {
                           "anyOf": [
@@ -1184,7 +1184,7 @@
                               },
                               "externalUserId": {
                                 "type": "string",
-                                "description": "Compat alias for address (older macOS clients)"
+                                "description": "Compat alias for address, for older macOS clients"
                               },
                               "status": {
                                 "anyOf": [
@@ -1479,7 +1479,7 @@
         "operationId": "contactChannelVerify",
         "summary": "Manually verify a contact channel",
         "tags": ["contacts"],
-        "description": "Guardian-only manual attestation: marks the channel active/verified in the gateway store (source of truth) with a best-effort assistant mirror. Idempotent.",
+        "description": "Guardian-only manual attestation: marks the channel active/verified in the gateway store, the source of truth, with a best-effort assistant mirror. Idempotent.",
         "parameters": [
           {
             "name": "channel_id",
@@ -1828,7 +1828,7 @@
             "in": "query",
             "required": false,
             "schema": { "type": "string" },
-            "description": "Filter by origin (default | user_defined)"
+            "description": "Filter by origin: default or user_defined"
           },
           {
             "name": "tool",
@@ -1929,7 +1929,7 @@
                   },
                   "description": { "type": "string", "minLength": 1 },
                   "scope": {
-                    "description": "Compatibility field. Trust rules apply workspace-wide: the engine matches on (tool, pattern) only, so a narrower scope cannot be honored and any value other than \"everywhere\" is rejected rather than stored broader than the consent it records.",
+                    "description": "Compatibility field. Trust rules apply workspace-wide: the engine matches on tool and pattern only, so a narrower scope cannot be honored and any value other than \"everywhere\" is rejected rather than stored broader than the consent it records.",
                     "type": "string",
                     "const": "everywhere"
                   }

@@ -299,7 +299,6 @@ export async function createInboundVoiceSession(
   const session = createCallSession({
     conversationId: voiceConversationId,
     provider: "twilio",
-    direction: "inbound",
     fromNumber,
     toNumber,
   });
@@ -439,7 +438,6 @@ export async function startCall(
     signal?.throwIfAborted();
 
     const session = createCallSession({
-      direction: "outbound",
       conversationId,
       provider: "twilio",
       fromNumber,
@@ -978,7 +976,6 @@ export async function startVerificationCall(
     });
 
     const session = createCallSession({
-      direction: "outbound",
       conversationId,
       provider: "twilio",
       fromNumber: identityResult.fromNumber,
@@ -1112,7 +1109,6 @@ export async function startInviteCall(
     });
 
     const session = createCallSession({
-      direction: "outbound",
       conversationId,
       provider: "twilio",
       fromNumber: identityResult.fromNumber,

@@ -80,7 +80,6 @@ import {
 import { resolveUserSlug } from "../../../prompts/persona-resolver.js";
 import type { SystemPromptPersonaOverride } from "../../../prompts/system-prompt.js";
 import { wakeAgentForOpportunity } from "../../../runtime/agent-wake.js";
-import { recordWatchdogEvent } from "../../../telemetry/watchdog-events-store.js";
 import { findMostRecentRetrospectiveFor } from "./find-most-recent-retrospective-for.js";
 import { getLogger } from "./logging.js";
 import {
@@ -133,9 +132,6 @@ const FOLLOW_UP_JOB_TYPES: readonly MemoryJobType[] = [] as const;
  * is strictly better than never forming memories for the conversation again.
  */
 export const STALE_SOURCE_PROCESSING_OVERRIDE_MS = 6 * 60 * 60 * 1000;
-
-/** Watchdog check_name for the per-run retrospective outcome counter. */
-const MEMORY_RETROSPECTIVE_RUN_CHECK_NAME = "memory_retrospective_run";
 
 /**
  * The agent-loop exit that means the MODEL ended the run: it answered without
@@ -191,55 +187,10 @@ export async function memoryRetrospectiveJob(
     return { kind: "disabled" };
   }
 
-  // Central health counter (admin analytics groups on the watchdog
-  // check_name): one event per run with its outcome kind. A run that
-  // throws records outcome "error" before the exception continues to the
-  // jobs worker's retry machinery, so a fleet-wide spike in
-  // `wake_failed`/`error` (e.g. a provider outage on the retrospective's
-  // resolved model) is visible without log access. The emitter itself
-  // never throws — the run's outcome must reach the jobs worker
-  // regardless.
-  const emitRunOutcome = (
-    outcome: string,
-    detail?: { reason?: string; noFindings?: boolean },
-  ): void => {
-    try {
-      recordWatchdogEvent({
-        checkName: MEMORY_RETROSPECTIVE_RUN_CHECK_NAME,
-        value: 1,
-        detail: {
-          outcome,
-          ...(detail?.reason ? { reason: detail.reason.slice(0, 200) } : {}),
-          ...(detail?.noFindings !== undefined
-            ? { noFindings: detail.noFindings }
-            : {}),
-        },
-      });
-    } catch {
-      // recordWatchdogEvent already no-ops on opt-out and a missing
-      // telemetry DB; anything past that is not worth surfacing here.
-    }
-  };
-
-  let outcome: MemoryRetrospectiveOutcome;
-  try {
-    outcome = await runForkBasedRetrospective(sourceConversationId, config, {
-      enforceSweepLookback: true,
-      enforceUserActivityGate: true,
-    });
-  } catch (err) {
-    emitRunOutcome("error", {
-      reason: err instanceof Error ? err.message : String(err),
-    });
-    throw err;
-  }
-  emitRunOutcome(outcome.kind, {
-    ...(outcome.kind === "wake_failed" || outcome.kind === "no_usable_output"
-      ? { reason: outcome.reason }
-      : {}),
-    ...(outcome.kind === "invoked" ? { noFindings: outcome.noFindings } : {}),
+  return await runForkBasedRetrospective(sourceConversationId, config, {
+    enforceSweepLookback: true,
+    enforceUserActivityGate: true,
   });
-  return outcome;
 }
 
 // ---------------------------------------------------------------------------

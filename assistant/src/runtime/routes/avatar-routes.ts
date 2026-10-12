@@ -6,10 +6,6 @@ import {
   AVATAR_TRAITS_FILENAME,
   normalizeAvatarAccentHex,
 } from "@mycadet/avatar-manifest";
-import {
-  CLIENT_METADATA_HEADERS,
-  sanitizeClientMetadataValue,
-} from "@mycadet/service-contracts/client-metadata";
 import { z } from "zod";
 
 import { backfillAccent } from "../../avatar/accent-backfill.js";
@@ -54,15 +50,12 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("avatar-routes");
 
-/** What every mutation hands the store: who made the change, from which OS. */
+/** What every mutation hands the store: who made the change. */
 function changeOptions(
   headers: RouteHandlerArgs["headers"],
 ): AvatarChangeOptions {
   return {
     originClientId: getOriginClientId(headers),
-    clientOs: sanitizeClientMetadataValue(
-      headers?.[CLIENT_METADATA_HEADERS.os],
-    ),
   };
 }
 

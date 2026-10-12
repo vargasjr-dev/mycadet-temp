@@ -11,7 +11,7 @@ import {
   normalizeSSEPayload,
   unwrapMessageEnvelope,
 } from "@/lib/streaming/sse-payload";
-import { getClientRegistrationHeaders } from "@/lib/telemetry/client-identity";
+import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { toError } from "@/utils/to-error";
 
 // ---------------------------------------------------------------------------

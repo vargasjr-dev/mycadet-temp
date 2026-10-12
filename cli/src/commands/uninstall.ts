@@ -141,7 +141,7 @@ function selfDelete(): void {
       "Cadet is running from a source checkout — skipping self-removal.",
     );
     console.log(
-      "Remove the installed copy with `bun remove -g mycadet` (or `npm uninstall -g mycadet`).",
+      "Remove the installed copy with `bun remove -g mycadet` or `npm uninstall -g mycadet`.",
     );
     return;
   }
@@ -206,14 +206,14 @@ export const uninstall = Object.assign(
     const existing = loadAllAssistants();
     if (existing.length > 0) {
       console.warn(
-        `\n⚠️  ${existing.length} assistant(s) still exist: ${existing.map((a) => a.assistantId).join(", ")}`,
+        `\n⚠️  ${existing.length} ${existing.length === 1 ? "assistant still exists" : "assistants still exist"}: ${existing.map((a) => a.assistantId).join(", ")}`,
       );
       console.warn(
         "   They will be retired now — their data (and any retired archives) will be permanently deleted by this uninstall.",
       );
       for (const entry of existing) {
         if (entry.cloud === "apple-container" || entry.cloud === "paired") {
-          console.log(`   Skipping '${entry.assistantId}' (${entry.cloud}) — its lifecycle is managed elsewhere.`);
+          console.log(`   Skipping '${entry.assistantId}' on ${entry.cloud} — its lifecycle is managed elsewhere.`);
           continue;
         }
         try {
@@ -239,7 +239,7 @@ export const uninstall = Object.assign(
     } else {
       console.log("It will permanently delete:");
       for (const t of targets) {
-        console.log(`  - ${t.path}  (${t.description})`);
+        console.log(`  - ${t.path}  — ${t.description}`);
       }
     }
     const execBase = basename(execPath);

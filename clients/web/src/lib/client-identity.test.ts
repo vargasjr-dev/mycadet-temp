@@ -17,7 +17,7 @@ mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => false,
 }));
 
-const MODULE_PATH = "@/lib/telemetry/client-identity";
+const MODULE_PATH = "@/lib/client-identity";
 
 async function freshImport(): Promise<typeof import("./client-identity")> {
   // Bust the module cache so the in-module `cached` singleton starts fresh.

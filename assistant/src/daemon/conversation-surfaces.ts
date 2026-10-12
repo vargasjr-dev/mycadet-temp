@@ -30,12 +30,10 @@ import {
 } from "../apps/app-store.js";
 import { executeDesktopComputerUse } from "../desktop/desktop-computer-use.js";
 import { canUseVirtualDesktop } from "../desktop/virtual-desktop-feature.js";
-import { recordActivationEvent } from "../onboarding/onboarding-events-store.js";
 import {
   getMessages,
   updateMessageContent,
 } from "../persistence/conversation-crud.js";
-import { isActivationSession } from "../plugins/defaults/memory/activation-session-store.js";
 import {
   assistantEventHub,
   broadcastMessage,
@@ -50,12 +48,6 @@ import type {
   InteractiveUiRequest,
   InteractiveUiResult,
 } from "../runtime/interactive-ui-types.js";
-import {
-  activationMomentEmitsAtShow,
-  type ActivationMomentParam,
-  activationStepNameForMomentParam,
-  isActivationMomentParam,
-} from "../telemetry/activation-funnel.js";
 import { resolveAppId } from "../tools/apps/resolve-app-id.js";
 import { formatDesktopAppRequired } from "../tools/capability-offer.js";
 import { POINT_AT_PROXY_TOOL } from "../tools/computer-use/skill-proxy-bridge.js";
@@ -1837,53 +1829,6 @@ function getRequestedSurfaceCompletionSummary(
  * when the surface renders) and the commit-time path (the other moments,
  * recorded when the user commits the surface).
  */
-function recordActivationMoment(
-  ctx: Conversation,
-  moment: ActivationMomentParam,
-): void {
-  try {
-    if (!isActivationSession(ctx.conversationId)) {
-      return;
-    }
-    recordActivationEvent({
-      stepName: activationStepNameForMomentParam(moment),
-      sessionId: ctx.conversationId,
-    });
-  } catch (err) {
-    log.warn(
-      { err, conversationId: ctx.conversationId, moment },
-      "Failed to record activation moment",
-    );
-  }
-}
-
-/**
- * Best-effort activation-funnel emission on a user surface commit.
- *
- * When the committed surface carries a commit-timing `activationMoment` tag,
- * record the corresponding funnel milestone. Show-timing moments
- * (`first_wow_executed`) are recorded at render time in `surfaceProxyResolver`
- * and are NOT stored on `surfaceState`, so they never reach this path. The tag
- * is cleared after the first record so re-entrant or repeated commits on the
- * same surface do not double-emit (and the deterministic `daemon_event_id`
- * collapses any cross-surface duplicate downstream anyway).
- *
- * Must be called only from terminal-commit paths (user clicked an action /
- * submitted / selected-and-committed), NOT from intermediate non-terminal
- * events (`selection_changed` / `content_changed` / `state_update`).
- */
-function maybeEmitActivationMoment(ctx: Conversation, surfaceId: string): void {
-  const stored = ctx.surfaceState.get(surfaceId);
-  const moment = stored?.activationMoment;
-  if (!moment) {
-    return;
-  }
-  // Clear the tag first so this can fire at most once per surface even if the
-  // commit path is re-entered.
-  stored.activationMoment = undefined;
-  recordActivationMoment(ctx, moment);
-}
-
 /** The action result for an enqueue the message queue refused. */
 const QUEUE_FULL_RESULT: SurfaceActionResult = {
   accepted: false,
@@ -2081,7 +2026,6 @@ export async function handleSurfaceAction(
     // — record an activation milestone if tagged. Must run before
     // `cleanupStandaloneSurface` clears the surface state.
     if (!isCancellation) {
-      maybeEmitActivationMoment(ctx, surfaceId);
     }
 
     // Cleanup and resolve — order matters: cleanup clears the timer
@@ -2174,7 +2118,6 @@ export async function handleSurfaceAction(
     // Launching a child conversation is a terminal user commit — record an
     // activation milestone if tagged. The helper clears the tag after firing,
     // so the other commit-path call sites below can't double-emit.
-    maybeEmitActivationMoment(ctx, surfaceId);
     return { accepted: true, conversationId };
   }
 
@@ -2347,7 +2290,6 @@ export async function handleSurfaceAction(
     // surface was tagged (best-effort, no-op otherwise). Deferred until after
     // the rejection check so a queue-full click doesn't over-report a moment
     // (and the one-shot tag stays intact for the user's retry).
-    maybeEmitActivationMoment(ctx, surfaceId);
 
     maybeCompleteSurfaceAfterAction(ctx, surfaceId, actionId, mergedData, {
       liveSurfaceType: stored?.surfaceType,
@@ -2603,7 +2545,6 @@ export async function handleSurfaceAction(
   // surface was tagged (best-effort, no-op otherwise). Deferred until after the
   // rejection check so a queue-full click doesn't over-report a moment (and the
   // one-shot tag stays intact for the user's retry).
-  maybeEmitActivationMoment(ctx, surfaceId);
 
   maybeCompleteSurfaceAfterAction(ctx, surfaceId, actionId, mergedData, {
     liveSurfaceType: pending.surfaceType,
@@ -3706,36 +3647,13 @@ export async function surfaceProxyResolver(
       ...(a.data ? { data: a.data } : {}),
     }));
 
-    // Optional activation-rail telemetry tag. Daemon-only metadata: validated
-    // and ignored if invalid; never forwarded to the client.
-    const activationMoment =
-      typeof input.activation_moment === "string" &&
-      isActivationMomentParam(input.activation_moment)
-        ? input.activation_moment
-        : undefined;
-
-    // Show-timing moments (`first_wow_executed`) record the instant the surface
-    // renders — a display-only result/`work_result` card may never be committed,
-    // so a commit-time emit would never fire. We record now and do NOT store the
-    // tag, so the commit path won't double-emit. Commit-timing moments are
-    // stored and recorded when the user commits the surface (see
-    // `handleSurfaceAction` → `maybeEmitActivationMoment`).
-    const storeTagForCommit =
-      activationMoment !== undefined &&
-      !activationMomentEmitsAtShow(activationMoment);
-
     // Track surface state for ui_update merging (includes actions so we can
     // look up per-action data payloads when the client sends an action back).
     ctx.surfaceState.set(surfaceId, {
       title,
       actions: mappedActions,
-      ...(storeTagForCommit ? { activationMoment } : {}),
       ...showPair,
     });
-
-    if (activationMoment !== undefined && !storeTagForCommit) {
-      recordActivationMoment(ctx, activationMoment);
-    }
 
     log.info(
       {
@@ -3763,9 +3681,7 @@ export async function surfaceProxyResolver(
       ...showPair,
     });
 
-    // Track surface for persistence with the message. The commit-timing
-    // activation tag rides along (daemon-only) so it survives history restore;
-    // show-timing moments aren't stored here (already recorded at render).
+    // Track surface for persistence with the message.
     ctx.currentTurnSurfaces.push({
       surfaceId,
       title,
@@ -3773,7 +3689,6 @@ export async function surfaceProxyResolver(
       display,
       ...(persistent ? { persistent: true } : {}),
       ...(toolUseId ? { toolCallId: toolUseId } : {}),
-      ...(storeTagForCommit ? { activationMoment } : {}),
       ...showPair,
     });
 

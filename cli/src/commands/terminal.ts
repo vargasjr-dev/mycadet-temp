@@ -71,7 +71,7 @@ function printHelp(): void {
   console.log("");
   console.log("Options:");
   console.log(
-    "  <name>              Name of the assistant (defaults to active)",
+    "  <name>              Name of the assistant, defaults to active",
   );
   console.log(
     "  --assistant <name>  Explicit assistant name (alternative to positional)",

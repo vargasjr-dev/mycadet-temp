@@ -15,11 +15,9 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { emitActivationEvent } from "@/utils/activation-telemetry";
 
 import { useActivationUiStore } from "./activation-ui-store";
 import { ActivationWelcomeModal } from "./components/activation-welcome-modal";
-import { useActivationCompletionTelemetry } from "./hooks/use-activation-completion-telemetry";
 import { useActivationProgress } from "./hooks/use-activation-progress";
 import { useActivationVisibility } from "./hooks/use-activation-visibility";
 import { useDismissActivation } from "./hooks/use-dismiss-activation";
@@ -40,7 +38,6 @@ export function ActivationController(): ReactNode {
   const setClosedSurface = useActivationUiStore.use.setClosedSurface();
   const resetTransientState = useActivationUiStore.use.resetTransientState();
   const { dismiss } = useDismissActivation(listId);
-  useActivationCompletionTelemetry();
 
   // An expanded row, a pill reopen and a dismissal made ahead of the daemon
   // all belong to one assistant's checklist. Switching assistants without
@@ -69,7 +66,6 @@ export function ActivationController(): ReactNode {
       return;
     }
     shownFor.current = variant;
-    emitActivationEvent("activation_modal_shown");
   }, [open, variant]);
 
   if (!open || listId === null || !progress) {

@@ -100,7 +100,6 @@ import {
 import { isPopoutWindow } from "@/runtime/popout-window";
 import { CompanionIntroScrim } from "@/components/companion-intro-scrim";
 import { CompanionTourEntry } from "@/components/companion-tour-entry-lazy";
-import { useCompanionIntroFunnel } from "@/domains/onboarding/companion-intro-funnel";
 import { GlobalPushToTalkBridge } from "@/domains/chat/voice/global-push-to-talk-bridge";
 import { TimezoneSync } from "@/components/timezone-sync";
 import { RoutePendingIndicator } from "@/components/route-pending-indicator";
@@ -256,7 +255,6 @@ export function RootLayout() {
   // is the window that is signed in and holds the user's answer about
   // analytics. Mounted beside the scrim below, which is here for the same
   // reason. Inert everywhere there is no companion surface.
-  useCompanionIntroFunnel();
 
   // Keep the browser favicon in sync with the assistant's avatar across
   // every authenticated route (chat, settings, logs, etc.). Mounted here

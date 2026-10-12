@@ -53,8 +53,6 @@ import {
   getSectionTrail,
   type SectionTrailEntry,
 } from "../persistence/slow-sync-log.js";
-import { watchdogTelemetryEventSchema } from "../telemetry/telemetry-wire.generated.js";
-import { recordWatchdogEvent } from "../telemetry/watchdog-events-store.js";
 import { getLogger } from "../util/logger.js";
 import {
   type DaemonActivityGroup,
@@ -90,167 +88,6 @@ const REPORT_COOLDOWN_MS = 30_000;
  */
 const STALL_CAPTURE_MATCH_GRACE_MS = 5_000;
 
-/**
- * Whether ingest accepts `detail`, judged by the generated wire contract so
- * the byte measurement matches the server's exactly. The detail is checked
- * as serialized (undefined keys dropped, as on the wire). The other event
- * fields are fixed valid values; only issues on `detail` count.
- */
-export function detailFitsServerCap(detail: object): boolean {
-  const result = watchdogTelemetryEventSchema.safeParse({
-    type: "watchdog",
-    daemon_event_id: "size-check",
-    recorded_at: 0,
-    check_name: EVENT_LOOP_BLOCKED_CHECK_NAME,
-    detail: JSON.parse(JSON.stringify(detail)),
-  });
-  return (
-    result.success || !result.error.issues.some((i) => i.path[0] === "detail")
-  );
-}
-
-type BlockTelemetryDetail = {
-  threshold_ms: number;
-  tick_interval_ms: number;
-  /** Process uptime at report time; small values mean boot work. */
-  daemon_uptime_ms: number;
-  /** Work on this process that overlapped the block, grouped by label. */
-  activity: DaemonActivityGroup[];
-  section_trail: SectionTrailEntry[];
-  stall_capture: StallCapture | null;
-  /** Trim steps applied to fit the byte cap, in order. Absent when none. */
-  trimmed?: string[];
-};
-
-/**
- * Ordered steps that shrink an oversize report, least diagnostic loss first.
- * The activity groups, the busiest processes, the newest section-trail
- * entries, and the capture's wait state are what attribute a block, so they
- * go last.
- */
-const TRIM_STEPS: Array<{
-  name: string;
-  apply: (detail: BlockTelemetryDetail) => void;
-}> = [
-  {
-    name: "section_trail_8",
-    apply: (d) => {
-      d.section_trail = d.section_trail.slice(0, 8);
-    },
-  },
-  {
-    name: "thread_groups",
-    apply: (d) => {
-      if (d.stall_capture?.waitState) {
-        d.stall_capture.waitState.threads = [];
-      }
-    },
-  },
-  {
-    name: "active_conversations",
-    apply: (d) => {
-      if (d.stall_capture) {
-        d.stall_capture.sample.activeConversations = null;
-      }
-    },
-  },
-  {
-    name: "memory_stat",
-    apply: (d) => {
-      if (d.stall_capture) {
-        d.stall_capture.sample.memoryStat = null;
-      }
-    },
-  },
-  {
-    name: "kernel_stack_512",
-    apply: (d) => {
-      if (d.stall_capture?.kernelStack) {
-        d.stall_capture.kernelStack = d.stall_capture.kernelStack.slice(0, 512);
-      }
-    },
-  },
-  {
-    name: "section_trail_3",
-    apply: (d) => {
-      d.section_trail = d.section_trail.slice(0, 3);
-    },
-  },
-  {
-    // Keeps the daemon, which the sampler always lists last, for comparison.
-    name: "processes_3",
-    apply: (d) => {
-      const processes = d.stall_capture?.sample.processes;
-      if (processes) {
-        const daemon = processes.find((p) => p.name === "daemon");
-        const kept = processes.slice(0, 3);
-        d.stall_capture!.sample.processes =
-          daemon && !kept.includes(daemon) ? [...kept, daemon] : kept;
-      }
-    },
-  },
-  {
-    name: "activity_4",
-    apply: (d) => {
-      d.activity = d.activity.slice(0, 4);
-    },
-  },
-  {
-    // Last resort so the report itself always lands: blockedMs and the
-    // longest activity groups survive.
-    name: "stall_capture",
-    apply: (d) => {
-      d.stall_capture = null;
-      d.section_trail = [];
-    },
-  },
-];
-
-/**
- * The telemetry `detail` for a block report. Conversation titles are dropped
- * (the event is metadata only and titles can carry user content), then trim
- * steps apply until the bag fits the server's byte cap. An oversize bag is
- * rejected outright, losing the whole report. Pure so the budget
- * logic is unit-testable.
- */
-export function buildBlockTelemetryDetail(input: {
-  thresholdMs: number;
-  daemonUptimeMs: number;
-  activity: DaemonActivityGroup[];
-  sectionTrail: SectionTrailEntry[];
-  stallCapture: StallCapture | null;
-}): BlockTelemetryDetail {
-  // Deep copy: the trim steps mutate, and the caller's objects also feed the log.
-  const stallCapture: StallCapture | null = input.stallCapture
-    ? structuredClone(input.stallCapture)
-    : null;
-  if (stallCapture?.sample.activeConversations) {
-    stallCapture.sample.activeConversations =
-      stallCapture.sample.activeConversations.map((conversation) => ({
-        ...conversation,
-        title: null,
-      }));
-  }
-  const detail: BlockTelemetryDetail = {
-    threshold_ms: input.thresholdMs,
-    tick_interval_ms: TICK_INTERVAL_MS,
-    daemon_uptime_ms: input.daemonUptimeMs,
-    activity: [...input.activity],
-    section_trail: [...input.sectionTrail],
-    stall_capture: stallCapture,
-  };
-
-  for (const step of TRIM_STEPS) {
-    if (detailFitsServerCap(detail)) {
-      break;
-    }
-    step.apply(detail);
-    // Assigned before the next measurement so the marker counts too.
-    detail.trimmed = [...(detail.trimmed ?? []), step.name];
-  }
-  return detail;
-}
-
 let tickTimer: ReturnType<typeof setInterval> | null = null;
 let lastTickAt = 0;
 let lastReportAt = Number.NEGATIVE_INFINITY;
@@ -275,7 +112,6 @@ export function evaluateTick(
  * this exact string, so it is the primary group-by dimension downstream —
  * keep it stable.
  */
-export const EVENT_LOOP_BLOCKED_CHECK_NAME = "event_loop_blocked";
 
 async function reportBlock(
   blockedMs: number,
@@ -322,27 +158,6 @@ async function reportBlock(
     },
     "event loop blocked",
   );
-  // Persist a `watchdog` telemetry event so the cloud can surface
-  // event-loop blocking in the infrastructure admin chart. `recordWatchdogEvent`
-  // no-ops when usage-data collection is disabled (the event is dropped to
-  // honor the opt-out), so the watchdog runs unconditionally without leaking
-  // health data for opted-out owners. Never let a telemetry failure escape
-  // the timer callback.
-  try {
-    recordWatchdogEvent({
-      checkName: EVENT_LOOP_BLOCKED_CHECK_NAME,
-      value: blockedMs,
-      detail: buildBlockTelemetryDetail({
-        thresholdMs,
-        daemonUptimeMs: Math.round(process.uptime() * 1000),
-        activity,
-        sectionTrail,
-        stallCapture,
-      }),
-    });
-  } catch {
-    // Never let a telemetry failure escape the timer callback.
-  }
 }
 
 /**

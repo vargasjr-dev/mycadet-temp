@@ -102,7 +102,6 @@ describe("call-conversation-messages", () => {
     const conversationId = "conv-call-msg-failed";
     ensureConversation(conversationId);
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -123,7 +122,6 @@ describe("call-conversation-messages", () => {
     const conversationId = "conv-call-msg-cancelled";
     ensureConversation(conversationId);
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -144,7 +142,6 @@ describe("call-conversation-messages", () => {
     const conversationId = "conv-call-msg-completed";
     ensureConversation(conversationId);
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -174,7 +171,6 @@ describe("call-conversation-messages", () => {
     const conversationId = "conv-call-msg-fallback";
     ensureConversation(conversationId);
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+12025550101",
@@ -212,7 +208,6 @@ describe("call-conversation-messages", () => {
     const conversationId = "conv-call-msg-schema";
     ensureConversation(conversationId);
     const session = createCallSession({
-      direction: "inbound",
       conversationId,
       provider: "twilio",
       fromNumber: "+12025550101",

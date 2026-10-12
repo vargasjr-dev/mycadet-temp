@@ -146,12 +146,6 @@ export const AssistantConfigSchema = z.object({
   pluginUpdates: PluginUpdatesConfigSchema.default(
     PluginUpdatesConfigSchema.parse({}),
   ),
-  legacyTelemetryOptOut: z
-    .boolean()
-    .optional()
-    .describe(
-      "Fail-closed telemetry marker: set for a workspace that had an explicit local usage-data opt-out before telemetry moved to platform share_analytics consent. While set, usage telemetry stays disabled regardless of platform consent.",
-    ),
   legacyDiagnosticsOptOut: z
     .boolean()
     .optional()

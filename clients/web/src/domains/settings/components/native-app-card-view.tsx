@@ -7,10 +7,6 @@ import {
   writeNativeAppDownloaded,
   type NativeAppPromotion,
 } from "@/hooks/use-native-app-nudge";
-import {
-  emitNativeAppNudgeEvent,
-  emitNativeAppNudgeImpressionOnce,
-} from "@/utils/native-app-nudge-telemetry";
 import { useTranslation } from "@/i18n";
 
 export interface NativeAppCardViewProps {
@@ -24,9 +20,7 @@ export function NativeAppCardView({ promotion }: NativeAppCardViewProps) {
   // `NativeAppCard` renders null off mobile, so this mount means the card is on
   // screen. Without it `settings:<target>` would carry clicks and no
   // denominator, leaving that surface's conversion uncomputable.
-  useEffect(() => {
-    emitNativeAppNudgeImpressionOnce("settings", target);
-  }, [target]);
+  useEffect(() => {}, [target]);
 
   return (
     <NudgeSettingsCard
@@ -49,7 +43,6 @@ export function NativeAppCardView({ promotion }: NativeAppCardViewProps) {
       ctaLabel={t("nativeAppCard.download")}
       ctaLeftIcon={<Smartphone size={16} />}
       onAction={() => {
-        emitNativeAppNudgeEvent("click", "settings", target);
         writeNativeAppDownloaded(target);
         openNativeAppStore(target);
       }}

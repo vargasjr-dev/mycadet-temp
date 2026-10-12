@@ -17,7 +17,7 @@ import { useMessageReconciliation } from "@/domains/chat/hooks/use-message-recon
 import { useStreamEventHandler } from "@/domains/chat/hooks/use-stream-event-handler";
 import { useEventStream } from "@/domains/chat/hooks/use-event-stream";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { getClientId } from "@/lib/telemetry/client-identity";
+import { getClientId } from "@/lib/client-identity";
 import { parseConversationSyncTag } from "@/lib/sync/types";
 import { useConversationStore } from "@/stores/conversation-store";
 import type { UseAssistantReachabilityResult } from "@/assistant/use-assistant-reachability";

@@ -17,7 +17,6 @@ import { useNavigate } from "react-router";
 
 import { memoryStatsOptions } from "@/domains/intelligence/memory-graph/get-memory-stats";
 import { invalidateMemoryQueries } from "@/domains/intelligence/memory-graph/invalidate-memory-queries";
-import { emitMemoryEvent } from "@/domains/intelligence/memory-telemetry";
 import { useAssistantCapability } from "@/hooks/use-assistant-capability";
 import { useTranslation } from "@/i18n";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
@@ -100,7 +99,6 @@ export function MemoryUpgradePrompt({
         onClick={() => {
           // The route's `onOpenThread` reports its own `chat_from_node`; this
           // is the narrower signal that says which chat, and why.
-          emitMemoryEvent("upgrade_v3_clicked");
           onOpenThread(seed);
         }}
       >
@@ -140,7 +138,6 @@ export function MemoryUpgradePrompt({
         size="compact"
         leftIcon={<Sparkles />}
         onClick={() => {
-          emitMemoryEvent("enable_memory_clicked");
           onOpenThread(seed);
         }}
       >

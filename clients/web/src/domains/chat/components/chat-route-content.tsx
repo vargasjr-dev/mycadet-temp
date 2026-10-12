@@ -31,7 +31,6 @@ import {
   useState,
 } from "react";
 
-import { markBoot } from "@/lib/telemetry/boot-telemetry";
 import { useAcpRunRehydration } from "@/domains/chat/hooks/use-acp-run-rehydration";
 import { useBackgroundTaskRehydration } from "@/domains/chat/hooks/use-background-task-rehydration";
 import { useChatUIState } from "@/domains/chat/hooks/use-chat-ui-state";
@@ -77,7 +76,6 @@ import { useChatAttachmentDropZone } from "@/domains/chat/components/chat-attach
 import { useVisionAttachmentGate } from "@/lib/backwards-compat/vision-attachment-gate";
 import { useSupportsNewChatPlugins } from "@/lib/backwards-compat/use-supports-new-chat-plugins";
 import { recordCommit } from "@/lib/commit-pressure";
-import { useSwitchPaintMeasurement } from "@/lib/telemetry/switch-telemetry";
 import { NewChatPluginsSection } from "@/domains/chat/components/new-chat-plugins/new-chat-plugins-section";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { ActiveProcessOverlay } from "@/domains/chat/process-registry/active-process-overlay";
@@ -606,13 +604,6 @@ export function ChatMainPanel({
   // instant empty conversation, so it has to veto the paint; an error that
   // still has a painted transcript behind it (a failed older page, a failed
   // background refetch) does not.
-  const historyLoadFailed = historyPagination.isError && messages.length === 0;
-  useSwitchPaintMeasurement({
-    conversationId: activeConversationId,
-    historyLoadFailed,
-    transcriptPainted: !(isLoadingHistory && messages.length === 0),
-    hadHistory: messages.length > 0,
-  });
 
   // Clear staged quotes and dismiss the reply bubble when the active
   // conversation changes to prevent quotes from one conversation leaking
@@ -792,12 +783,10 @@ export function ChatMainPanel({
   // First meaningful transcript paint: the exact condition under which
   // `ChatScrollArea` stops rendering `<ChatSkeleton />`. On the new-conversation
   // draft there is no history to wait for, so this lands immediately; on an
-  // existing conversation it is the history fetch. `markBoot` is first-write-wins,
   // so later conversation switches within the page load do not overwrite it.
   const transcriptPainted = !(isLoadingHistory && messages.length === 0);
   useEffect(() => {
     if (transcriptPainted) {
-      markBoot("transcript_painted");
     }
   }, [transcriptPainted]);
 

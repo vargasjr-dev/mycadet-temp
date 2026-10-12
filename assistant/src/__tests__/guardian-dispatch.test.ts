@@ -158,7 +158,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -210,7 +209,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -240,7 +238,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -285,7 +282,6 @@ describe("guardian-dispatch", () => {
     };
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -328,7 +324,6 @@ describe("guardian-dispatch", () => {
     };
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -374,7 +369,6 @@ describe("guardian-dispatch", () => {
     };
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -402,7 +396,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -438,7 +431,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -464,7 +456,6 @@ describe("guardian-dispatch", () => {
     ensureConversation(convId);
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -497,7 +488,6 @@ describe("guardian-dispatch", () => {
     const sharedConversationId = "conv-shared-guardian";
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -586,7 +576,6 @@ describe("guardian-dispatch", () => {
     const sharedConversationId = "conv-affinity-guardian";
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -659,7 +648,6 @@ describe("guardian-dispatch", () => {
     const sharedConversationId = "conv-affinity-tool-guardian";
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",
@@ -739,7 +727,6 @@ describe("guardian-dispatch", () => {
     const sharedConversationId = "conv-affinity-triple";
 
     const session = createCallSession({
-      direction: "inbound",
       conversationId: convId,
       provider: "twilio",
       fromNumber: "+15550001111",

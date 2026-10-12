@@ -36,7 +36,6 @@ import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
 import { useAuthStore, useIsAuthenticated } from "@/stores/auth-store";
 import { openUrl } from "@/runtime/browser";
-import { emitActivationEvent } from "@/utils/activation-telemetry";
 import { adminUrl, routes } from "@/utils/routes";
 
 import { CreditsCard } from "./credits-card";
@@ -356,7 +355,6 @@ function PreferencesMenuContent({
           label={tActivation("menu.inspirationList")}
           onSelect={() => {
             onClose();
-            emitActivationEvent("activation_list_opened");
             navigate(routes.activationList);
           }}
         />

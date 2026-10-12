@@ -41,6 +41,7 @@ import {
 import { CURRENT_POLICY_EPOCH } from "./policy.js";
 import { mintToken } from "./token-service.js";
 import type { ScopeProfile } from "./types.js";
+import { getIsCloud } from "../cloud-url.js";
 
 const log = getLogger("guardian-bootstrap");
 
@@ -1046,9 +1047,7 @@ async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
     return null;
   }
 
-  const isCloud =
-    process.env.IS_CLOUD?.trim().toLowerCase() === "true" ||
-    process.env.IS_CLOUD?.trim() === "1";
+  const isCloud = getIsCloud();
   if (!isCloud) return null;
 
   const assistantApiKey = await readCredential(

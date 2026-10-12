@@ -23,14 +23,8 @@ import type {
   RiskThreshold,
 } from "../permissions/types.js";
 import { RiskLevel } from "../permissions/types.js";
+import { recordToolDenied } from "../persistence/tool-audit.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
-import {
-  type PermissionPromptOutcome,
-  type PermissionPromptTelemetry,
-  recordToolDenied,
-  recordToolPermissionDecided,
-  recordToolPermissionPrompted,
-} from "../telemetry/tool-audit.js";
 import { getLogger } from "../util/logger.js";
 import { resolveExecutionTarget } from "./execution-target.js";
 import { getHostShell } from "./host-shell.js";
@@ -389,26 +383,6 @@ export class PermissionChecker {
           persistentDecisionsAllowed: !context.requireFreshApproval,
         };
 
-        // Grouping dimensions shared by this prompt and its decision, so the
-        // two series can be diffed by risk and by access preset without
-        // parsing anything out of the event name.
-        const promptTelemetry: PermissionPromptTelemetry = {
-          toolName: name,
-          riskLevel,
-          riskThreshold,
-          surface: context.executionChannel,
-          conversationId: context.conversationId,
-        };
-        // An already-aborted signal makes the prompter return without
-        // registering or sending a confirmation request, so nothing reaches
-        // the user and neither half of the pair is recorded. `prompt()` reads
-        // the same signal synchronously on entry, with no await in between, so
-        // this check and its check always agree.
-        const promptIsSurfaced = context.signal?.aborted !== true;
-        if (promptIsSurfaced) {
-          recordToolPermissionPrompted(promptTelemetry);
-        }
-
         let response: Awaited<ReturnType<PermissionPrompter["prompt"]>>;
         try {
           response = await this.prompter.prompt(
@@ -430,34 +404,11 @@ export class PermissionChecker {
         } catch (err) {
           // The prompter rejected rather than resolved: it was disposed while
           // this prompt was outstanding (client disconnect, conversation
-          // teardown). Nobody answered, so the prompt is abandoned.
-          if (promptIsSurfaced) {
-            recordToolPermissionDecided(promptTelemetry, "abandoned");
-          }
+          // teardown).
           throw err;
         }
 
         const decision = response.decision;
-
-        // A prompt that ends without a human answer is abandoned, not denied.
-        // The daemon resolves a timeout, a superseding user message, and a
-        // turn abort to `deny` so the agent loop stops, but none of the three
-        // is a decision the user made.
-        let outcome: PermissionPromptOutcome;
-        if (
-          response.wasTimeout === true ||
-          response.wasSystemCancel === true ||
-          response.wasAbort === true
-        ) {
-          outcome = "abandoned";
-        } else if (decision === "deny") {
-          outcome = "deny";
-        } else {
-          outcome = "allow";
-        }
-        if (promptIsSurfaced) {
-          recordToolPermissionDecided(promptTelemetry, outcome);
-        }
 
         if (decision === "deny") {
           const contextualDenial =

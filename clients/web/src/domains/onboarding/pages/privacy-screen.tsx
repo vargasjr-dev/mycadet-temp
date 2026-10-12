@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import {
@@ -7,11 +7,6 @@ import {
 } from "@/domains/onboarding/components/consent-controls";
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import { StepIndicatorDots } from "@/domains/onboarding/components/step-indicator-dots";
-import {
-  emitOnboardingFunnelStepCompleted,
-  getOnboardingFunnelSessionId,
-  ONBOARDING_FUNNEL_STEPS,
-} from "@/domains/onboarding/funnel-events";
 import { isSelectedAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant";
 import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
 import {
@@ -63,10 +58,6 @@ export function PrivacyScreen() {
   const hasCloudSession = useHasCloudSession();
   const takeover = useMarketingPricingTakeover();
 
-  useEffect(() => {
-    getOnboardingFunnelSessionId();
-  }, []);
-
   const isPreview = searchParams.get("preview") === "true";
   const noop = useCallback((_next: boolean) => {}, []);
   const setShareDiagnostics = isPreview ? noop : setShareDiagnosticsReal;
@@ -94,9 +85,6 @@ export function PrivacyScreen() {
         shareAnalytics: null,
         shareDiagnostics: shareDiagnosticsChecked,
         hasCloudSession,
-      });
-      emitOnboardingFunnelStepCompleted(ONBOARDING_FUNNEL_STEPS.privacyTos, {
-        userId,
       });
 
       // A completed checkout with nothing provisioned is funneled to the hatching

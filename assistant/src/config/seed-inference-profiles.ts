@@ -14,6 +14,7 @@ import {
   MANAGED_PROFILE_NAMES,
   MANAGED_PROFILE_TEMPLATES,
 } from "./default-profile-catalog.js";
+import { getIsCloud } from "./env-registry.js";
 import { loadConfig, loadRawConfig, saveRawConfig } from "./loader.js";
 import { isDispatchableProfile } from "./profile-dispatchability.js";
 import {
@@ -67,8 +68,7 @@ export function seedInferenceProfiles(
   const llm = config.llm;
   const profiles = llm.profiles;
 
-  const isCloud =
-    process.env.IS_CLOUD === "true" || process.env.IS_CLOUD === "1";
+  const isCloud = getIsCloud();
 
   // A hatch overlay that explicitly selected a cloud connection routes the
   // default provider through cadet rather than the entered BYOK key.

@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 
-import { getRecentInvocations } from "../../telemetry/tool-usage-store.js";
+import { getRecentInvocations } from "../../persistence/tool-usage-store.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 

@@ -38,7 +38,7 @@ export const use = Object.assign(
           `Active assistant: ${formatAssistantReference(result.entry)}`,
         );
       } else {
-        console.log(`Active assistant: ${active} (not found in lockfile)`);
+        console.log(`Active assistant: ${active} — not found in lockfile`);
       }
     } else {
       console.log("No active assistant set.");

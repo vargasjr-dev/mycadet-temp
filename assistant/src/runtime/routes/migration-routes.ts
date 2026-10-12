@@ -33,7 +33,6 @@ import {
   getDb,
   getLogsSqlite,
   getMemorySqlite,
-  getTelemetrySqlite,
   resetDb,
 } from "../../persistence/db-connection.js";
 import { validateMigrationState } from "../../persistence/migrations/validate-migration-state.js";
@@ -197,7 +196,7 @@ async function checkpointDbsForExport(): Promise<void> {
   for (const [label, sqlite] of [
     ["logs", getLogsSqlite()],
     ["memory", getMemorySqlite()],
-    ["telemetry", getTelemetrySqlite()],
+    // (no telemetry: migration 387 deletes that database file outright)
   ] as const) {
     if (!sqlite) {
       log.warn(

@@ -4,7 +4,6 @@ import { Download, Monitor } from "lucide-react";
 import { AppleLogo } from "@/components/icons/apple-logo";
 import { NudgeChatBanner } from "@/components/nudges/nudge-chat-banner";
 import type { DesktopAppPlatform } from "@/runtime/desktop-app-platform";
-import { emitNativeAppNudgeImpressionOnce } from "@/utils/native-app-nudge-telemetry";
 import { useTranslation } from "@/i18n";
 
 interface DesktopAppBannerProps {
@@ -20,9 +19,7 @@ export function DesktopAppBanner({
 }: DesktopAppBannerProps) {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    emitNativeAppNudgeImpressionOnce("banner", platform);
-  }, [platform]);
+  useEffect(() => {}, [platform]);
 
   const icon =
     platform === "windows" ? (

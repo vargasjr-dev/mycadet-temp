@@ -44,7 +44,7 @@ import {
 import type { DoctorMessage } from "@/generated/api/types.gen";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { createStreamWatchdog } from "@/lib/streaming/stream-watchdog";
-import { getClientRegistrationHeaders } from "@/lib/telemetry/client-identity";
+import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { toError } from "@/utils/to-error";
 
 // ---------------------------------------------------------------------------

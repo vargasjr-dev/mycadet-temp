@@ -128,7 +128,6 @@ import {
   enqueueLexicalIndexForMessage,
   enqueuePurgeConversationLexical,
 } from "./job-handlers/message-lexical.js";
-import { buildLifecycleTelemetryEvent } from "./lifecycle-events-store.js";
 import { resolveMessageContentBlocks } from "./message-content-file.js";
 import {
   loadMessageBound,
@@ -143,7 +142,6 @@ import {
   rawLogsRun,
   rawMemoryRun,
   rawRun,
-  rawTelemetryRun,
 } from "./raw-query.js";
 import {
   attachments,
@@ -4245,17 +4243,6 @@ export async function clearAll(): Promise<{
     }
   };
 
-  // Pending skill_loaded rows live in the telemetry_events outbox on the
-  // dedicated telemetry connection. Redact them FIRST, before any destructive
-  // delete: unshipped skill events reference conversations this wipe must
-  // redact, so a telemetry failure must abort the clear-all while the
-  // workspace is still fully intact — never after memory state is already
-  // gone.
-  rawTelemetryRun(
-    "conversation:clearAll:skillLoadedEvents",
-    "DELETE FROM telemetry_events WHERE name = 'skill_loaded'",
-  );
-
   // Delete in dependency order. The cascade handles tool_invocations. memory_jobs,
   // memory_segments, memory_embeddings, and memory_summaries each live on a
   // dedicated connection; clear them there rather than through a main-DB sqlite3
@@ -4309,30 +4296,6 @@ export async function clearAll(): Promise<{
   // contract). When the plugin is disabled the hook is a no-op; the startup
   // orphan sweep reclaims those rows on the next memory boot.
   await runHook(HOOKS.CONVERSATIONS_CLEARED, {});
-
-  // Record audit event into the telemetry_events outbox (consent-bypassing);
-  // the trail persists platform-side once flushed. Best-effort: the
-  // destructive deletes above already completed, so telemetry degradation
-  // must not turn a finished wipe into a failure or skip the cleanup below.
-  try {
-    const auditEventId = uuid();
-    const auditEventAt = Date.now();
-    rawTelemetryRun(
-      "conversation:clearAll:auditEvent",
-      `INSERT INTO telemetry_events (id, name, created_at, conversation_id, payload) VALUES (?, 'lifecycle', ?, NULL, ?)`,
-      auditEventId,
-      auditEventAt,
-      JSON.stringify(
-        buildLifecycleTelemetryEvent(
-          auditEventId,
-          "conversations_clear_all",
-          auditEventAt,
-        ),
-      ),
-    );
-  } catch (err) {
-    log.warn({ err }, "clearAll: failed to record audit event");
-  }
 
   // Drop the whole lexical (Qdrant) collection — a "delete all" leaves no ids
   // to key per-message cleanup on. AWAITED so the drop completes before
