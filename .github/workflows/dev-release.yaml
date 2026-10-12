@@ -1433,8 +1433,6 @@ jobs:
             .dependencies["@mycadet/gateway"] = $v |
             .dependencies["@mycadet/web"] = $v
           ' package.json > tmp && mv tmp package.json
-      - name: Wait for dependencies to propagate
-        run: ./scripts/npm-wait-for-meta-deps.sh
       - name: Generate npm-shrinkwrap.json
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
       - name: Publish

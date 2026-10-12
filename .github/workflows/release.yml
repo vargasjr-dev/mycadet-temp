@@ -1025,8 +1025,6 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
 
-      - name: Wait for dependencies to propagate
-        run: ./scripts/npm-wait-for-meta-deps.sh
       - name: Generate npm-shrinkwrap.json
         run: ./scripts/npm-generate-meta-shrinkwrap.sh
 
