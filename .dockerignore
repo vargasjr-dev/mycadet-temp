@@ -15,6 +15,7 @@
 # package.json is missing fails every image build.
 # Listed explicitly: a `!` pattern with a wildcard before its final path
 # segment disables directory pruning for the entire context walk.
+!clients/app/package.json
 !clients/chrome-extension/package.json
 !clients/docs/package.json
 !clients/linux/package.json
