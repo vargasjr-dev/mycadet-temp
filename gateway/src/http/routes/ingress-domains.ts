@@ -1,5 +1,5 @@
 /**
- * Loopback-guarded recording of a tunnel's public URL.
+ * Guardian-authed recording of a tunnel's public URL.
  *
  *   POST /v1/ingress/domains — the CLI (its ngrok agent, today) tells the
  *   gateway the public URL its tunnel published; the gateway writes
@@ -19,11 +19,7 @@ import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@mycadet/service
 
 import type { ConfigFileCache } from "../../config-file-cache.js";
 import { writeManagedPublicBaseUrl } from "../../tunnel/client.js";
-import {
-  enforceLoopbackOnly,
-  errorResponse,
-  rejectBrowserOrigin,
-} from "../loopback-guard.js";
+import { errorResponse, rejectBrowserOrigin } from "../loopback-guard.js";
 
 const SaveIngressDomainRequestSchema = z.object({
   publicBaseUrl: z.string(),
@@ -41,8 +37,6 @@ export async function handleSaveIngressDomain(
     });
   }
 
-  const guardError = enforceLoopbackOnly(req, clientIp, "ingress-domains");
-  if (guardError) return guardError;
   const originError = rejectBrowserOrigin(req, clientIp, "ingress-domains");
   if (originError) return originError;
 

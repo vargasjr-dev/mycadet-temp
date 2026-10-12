@@ -97,14 +97,17 @@ describe("POST /v1/ingress/domains", () => {
     expect(afterSecond).toBe(afterFirst);
   });
 
-  test("rejects non-loopback callers", async () => {
+  test("does not gate on the peer IP — auth lives in the edge-guardian strategy", async () => {
+    // The docker hatch's gateway sees the host CLI as a non-loopback peer
+    // (the docker bridge IP); peer-IP gating here 403'd valid
+    // guardian-token requests, so it moved to the auth strategy.
     const res = await handleSaveIngressDomain(
       request({ publicBaseUrl: "https://foo.ngrok.app" }),
       "10.0.0.1",
       new ConfigFileCache(),
     );
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(200);
   });
 
   test("rejects a body without a usable public URL", async () => {
