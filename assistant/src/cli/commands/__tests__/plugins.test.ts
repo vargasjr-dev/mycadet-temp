@@ -450,7 +450,8 @@ describe("plugins install - declared-schedules consent", () => {
     expect(r.exitCode).toBe(0);
   });
 
-  test("a bundled-catalog install (platform disabled) is gated too", async () => {
+  test("a name install with platform disabled refuses before anything runs", async () => {
+    // The bundled offline catalog is gone: a name needs the cloud to resolve.
     process.env.CADET_DISABLE_CLOUD = "true";
     stageFixture = writeScheduleFixture;
     confirmResults = ["confirmed"];
@@ -458,11 +459,10 @@ describe("plugins install - declared-schedules consent", () => {
     const r = await runCommand(["plugins", "install", "caveman"]);
 
     expect(platformInstallCalls.length).toBe(0);
-    expect(installPluginCalls.length).toBe(1);
-    expect(installPluginCalls[0]!.trustedSource).toBeDefined();
-    expect(confirmCalls.length).toBe(1);
-    expect(r.stdout).toContain('Plugin "caveman" declares 2 schedules:');
-    expect(r.exitCode).toBe(0);
+    expect(installPluginCalls.length).toBe(0);
+    expect(confirmCalls.length).toBe(0);
+    expect(r.stdout + r.stderr).toContain("Install by GitHub URL instead");
+    expect(r.exitCode).toBe(1);
   });
 
   test("a local catalog source bypasses the cloud installer", async () => {

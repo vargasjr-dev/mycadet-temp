@@ -359,9 +359,7 @@ async function resolvePluginSource(
   let resolved: ResolvedPluginSource | null;
   try {
     const catalog = await getPluginCatalog(marketplaceRef, { fetch: fetchFn });
-    const match = catalog.matches.find(
-      (candidate) => candidate.name === name,
-    );
+    const match = catalog.matches.find((candidate) => candidate.name === name);
     resolved = match ? resolveSourceFromMatch(match) : null;
   } catch (err) {
     if (err instanceof PluginCatalogUnavailableError) {
@@ -497,11 +495,7 @@ export async function installPlugin(
   } else {
     const source = await resolvePluginSource(name, marketplaceRef, deps.fetch);
     if (!source) {
-      throw new PluginNotFoundError(
-        name,
-        marketplaceRef,
-        "the plugin catalog",
-      );
+      throw new PluginNotFoundError(name, marketplaceRef, "the plugin catalog");
     }
     // A commit override installs a specific plugin revision while still taking
     // owner/repo/path (and the adapter stub, via `marketplaceRef`) from the

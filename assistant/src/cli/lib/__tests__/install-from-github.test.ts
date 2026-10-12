@@ -42,7 +42,6 @@ import {
 import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import { readValidatedPluginIcon } from "../plugin-icon-file.js";
 
-
 beforeEach(() => {
   invalidatePluginCatalogCache();
 });
@@ -126,7 +125,12 @@ function makeContentsFetch(opts: {
       const manifest = opts.manifest as {
         plugins?: Array<{
           name: string;
-          source?: { source: string; repo?: string; ref?: string; path?: string };
+          source?: {
+            source: string;
+            repo?: string;
+            ref?: string;
+            path?: string;
+          };
           description?: string;
           category?: string;
           homepage?: string;

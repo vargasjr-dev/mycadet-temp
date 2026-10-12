@@ -13,7 +13,10 @@ import { buildBundledLocalPluginCatalogManifest } from "../../../../scripts/bund
 import bundledManifest from "../bundled-local-plugins.json" with { type: "json" };
 import { readBundledLocalPluginCatalog } from "../plugin-catalog-local.js";
 
-const LOCAL_PLUGINS_DIR = join(import.meta.dir, "../../../../../plugins/mcp-catalog");
+const LOCAL_PLUGINS_DIR = join(
+  import.meta.dir,
+  "../../../../../plugins/mcp-catalog",
+);
 
 /** Every directory under plugins/mcp-catalog that ships a plugin manifest. */
 function onDiskPluginDirs(): string[] {
@@ -40,7 +43,9 @@ describe("readBundledLocalPluginCatalog", () => {
 
     for (const match of catalog.matches) {
       expect(match.source.kind).toBe("local");
-      if (match.source.kind !== "local") {continue;}
+      if (match.source.kind !== "local") {
+        continue;
+      }
       expect(match.source.path.startsWith("plugins/mcp-catalog/")).toBe(true);
     }
   });
@@ -61,7 +66,9 @@ describe("readBundledLocalPluginCatalog", () => {
         logo: "fathom-mcp.png",
       },
     });
-    if (match?.source.kind !== "local") {throw new Error("expected local source");}
+    if (match?.source.kind !== "local") {
+      throw new Error("expected local source");
+    }
     expect(match.source.path).toBe("plugins/mcp-catalog/fathom");
     expect(match.source.version).toBe("1.0.2");
   });

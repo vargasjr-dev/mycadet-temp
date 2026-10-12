@@ -144,9 +144,7 @@ export function buildBundledPluginPackages(
       );
     }
     if (Object.keys(mcp.mcpServers).length === 0) {
-      throw new Error(
-        `local plugin ${path} must declare an MCP server`,
-      );
+      throw new Error(`local plugin ${path} must declare an MCP server`);
     }
     for (const server of Object.values(mcp.mcpServers)) {
       SpecMcpServerSchema.parse(server);
@@ -214,8 +212,9 @@ export function buildBundledLocalPluginCatalogManifest(
     }
     const integrationPath = join(discovered.realpath, "integration.json");
     try {
-      entry.integration = JSON.parse(readFileSync(integrationPath, "utf8")) as
-        Record<string, unknown>;
+      entry.integration = JSON.parse(
+        readFileSync(integrationPath, "utf8"),
+      ) as Record<string, unknown>;
     } catch {
       // integration.json is optional; a missing or unreadable file simply
       // means the plugin ships without integration metadata.

@@ -925,14 +925,8 @@ async function resolveInstallOptions(
   const catalog = await libs.catalogCache.getPluginCatalog(DEFAULT_PLUGIN_REF, {
     fetch: globalThis.fetch.bind(globalThis),
   });
-  const match = catalog.matches.find(
-    (candidate) => candidate.name === name,
-  );
-  if (
-    !match ||
-    match.source.kind !== "github" ||
-    match.source.ref !== pin
-  ) {
+  const match = catalog.matches.find((candidate) => candidate.name === name);
+  if (!match || match.source.kind !== "github" || match.source.ref !== pin) {
     console.error(
       `"${pin}" is not the pin the catalog currently holds for "${name}".\n` +
         "Rolling back to older reviewed pins is no longer supported; " +
