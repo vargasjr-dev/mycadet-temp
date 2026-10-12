@@ -1,6 +1,6 @@
 {
   "name": "@mycadet/cli",
-  "version": "0.12.7",
+  "version": "0.12.8",
   "description": "CLI tools for mycadet",
   "type": "module",
   "exports": {
@@ -20,7 +20,7 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --max-warnings 323",
+    "lint": "eslint --max-warnings 322",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
     "test": "bun run scripts/run-tests.ts",

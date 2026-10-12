@@ -85,7 +85,9 @@ export async function fetchLatestStableVersion(): Promise<string | null> {
 }
 
 /**
- * Image refs for a target version: the tag is the target version, the repo
+ * Image refs for a target version: the tag is the target version exactly as
+ * the release workflows push it — bare ("0.12.8", "0.12.8-dev…"); a
+ * git-tag-style "v" prefix on the input is tolerated and stripped. The repo
  * follows the CLI's own version shape (dev CLI → `-dev` repos).
  */
 export function resolveImageRefs(
@@ -93,8 +95,8 @@ export function resolveImageRefs(
   cliVersion: string,
 ): Record<ServiceName, string> {
   const versionTag = targetVersion.startsWith("v")
-    ? targetVersion
-    : `v${targetVersion}`;
+    ? targetVersion.slice(1)
+    : targetVersion;
   const images = dockerhubImages(cliVersion);
   return {
     assistant: `${images.assistant}:${versionTag}`,
@@ -107,5 +109,5 @@ export function resolveImageRefs(
 export function resolveOwnImageRefs(
   cliVersion: string,
 ): Record<ServiceName, string> {
-  return resolveImageRefs(cliVersion ? `v${cliVersion}` : "latest", cliVersion);
+  return resolveImageRefs(cliVersion || "latest", cliVersion);
 }

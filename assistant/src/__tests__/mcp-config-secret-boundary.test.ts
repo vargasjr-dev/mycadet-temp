@@ -101,20 +101,13 @@ const configGetRoute = findRoute("config_get");
 const configPatchRoute = findRoute("config_patch");
 const configSetRoute = findRoute("config_set");
 
-function withoutWireProfiles(
-  result: Record<string, unknown>,
-): Record<string, unknown> {
-  const { llm: _llm, ...rest } = result;
-  return rest;
-}
-
 describe("MCP config secret boundary", () => {
   beforeEach(() => {
     seedRawConfig({});
     rmSync(mcpJsonPath(), { force: true });
   });
 
-  test("config_get omits MCP headers from the mcp.json overlay", () => {
+  test("config_get serves no mcp subtree — workspace mcp.json headers never reach the config wire", () => {
     seedWorkspaceMcp({
       mcpServers: {
         remote: {
@@ -132,16 +125,10 @@ describe("MCP config secret boundary", () => {
 
     expect(JSON.stringify(result)).not.toContain("mcp-secret");
     expect(JSON.stringify(result)).not.toContain("mcp-api-secret");
-    const mcp = result.mcp as {
-      servers: { remote: { transport: Record<string, unknown> } };
-    };
-    expect(mcp.servers.remote.transport).toEqual({
-      type: "streamable-http",
-      url: "https://mcp.example.com",
-    });
+    expect(result.mcp).toBeUndefined();
   });
 
-  test("config_get ignores leftover config.json mcp so its headers cannot leak", () => {
+  test("config_get drops leftover config.json mcp so its headers cannot leak", () => {
     seedRawConfig({
       mcp: {
         servers: {
@@ -159,12 +146,10 @@ describe("MCP config secret boundary", () => {
     const result = configGetRoute.handler({}) as Record<string, unknown>;
 
     expect(JSON.stringify(result)).not.toContain("leftover-secret");
-    expect(
-      (result.mcp as { servers: Record<string, unknown> }).servers,
-    ).toEqual({});
+    expect(result.mcp).toBeUndefined();
   });
 
-  test("config_get preserves an MCP server named headers", () => {
+  test("config_get ignores workspace mcp.json even when a server is named headers", () => {
     seedWorkspaceMcp({
       mcpServers: {
         headers: {
@@ -176,19 +161,10 @@ describe("MCP config secret boundary", () => {
 
     const result = configGetRoute.handler({}) as Record<string, unknown>;
 
-    expect(withoutWireProfiles(result).mcp).toEqual({
-      servers: {
-        headers: {
-          transport: {
-            type: "streamable-http",
-            url: "https://mcp.example.com",
-          },
-        },
-      },
-    });
+    expect(result.mcp).toBeUndefined();
   });
 
-  test("config_get preserves non-credential headers env vars", () => {
+  test("config_get ignores workspace mcp.json env vars (the MCP API serves them)", () => {
     seedWorkspaceMcp({
       mcpServers: {
         local: {
@@ -203,20 +179,7 @@ describe("MCP config secret boundary", () => {
 
     const result = configGetRoute.handler({}) as Record<string, unknown>;
 
-    expect(withoutWireProfiles(result).mcp).toEqual({
-      servers: {
-        local: {
-          transport: {
-            type: "stdio",
-            command: "npx",
-            args: [],
-            env: {
-              headers: "not-a-transport-header",
-            },
-          },
-        },
-      },
-    });
+    expect(result.mcp).toBeUndefined();
   });
 
   test("config_patch strips MCP transport headers so generic writes cannot persist plaintext credentials", async () => {
@@ -237,12 +200,10 @@ describe("MCP config secret boundary", () => {
     });
 
     // `mcp` is not an AssistantConfigSchema key: the write's schema parse
-    // strips it, so the secret never reaches disk — and the response's
-    // projected workspace view carries no such server either.
+    // strips it, so the secret never reaches disk — and the response
+    // echoes no such subtree either.
     expect(committedRaw()?.mcp).toBeUndefined();
-    expect(
-      (result as { mcp: { servers: Record<string, unknown> } }).mcp.servers,
-    ).toEqual({});
+    expect(result).not.toHaveProperty("mcp");
   });
 
   test("config_patch strips mcp so a full-config round trip cannot write it back", async () => {
@@ -262,9 +223,7 @@ describe("MCP config secret boundary", () => {
     });
 
     expect(committedRaw()?.mcp).toBeUndefined();
-    expect(
-      (result as { mcp: { servers: Record<string, unknown> } }).mcp.servers,
-    ).toEqual({});
+    expect(result).not.toHaveProperty("mcp");
   });
 
   test("config_set drops MCP server writes", async () => {

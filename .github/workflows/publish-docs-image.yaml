@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   push-docs-image:
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     # dev carries DOCKERHUB_ACCESS_TOKEN (piped from the platform's Secret
     # Manager); the docs image is environment-agnostic.

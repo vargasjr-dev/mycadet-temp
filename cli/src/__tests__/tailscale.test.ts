@@ -79,7 +79,7 @@ function makeDeps(opts: {
   const calls: string[][] = [];
   const binary = opts.binary === undefined ? "tailscale" : opts.binary;
   const deps: TailscaleDeps = {
-    findBinary: () => binary,
+    findBinary: async () => binary,
     run: (_bin, args) => {
       calls.push(args);
       return opts.responses?.[args.join(" ")] ?? ok();
