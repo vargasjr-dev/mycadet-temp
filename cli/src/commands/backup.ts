@@ -199,7 +199,7 @@ export const backup = Object.assign(
 
   if (!response.ok) {
     const body = await response.text();
-    console.error(`Error: Export failed, status ${response.status}: ${body}`);
+    console.error(`Error: Export failed (${response.status}): ${body}`);
     process.exit(1);
   }
 
@@ -254,7 +254,7 @@ async function backupPlatform(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first — required for cloud-managed backup.",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }
@@ -311,14 +311,14 @@ async function backupPlatform(
   } catch (err) {
     if (err instanceof MigrationInProgressError) {
       console.error(
-        `Error: Another backup or teleport export is already in progress on '${entry.assistantId}' — job ${err.existingJobId}. Wait for it to finish, then re-run.`,
+        `Error: Another backup or teleport export is already in progress on '${entry.assistantId}' (job ${err.existingJobId}). Wait for it to finish, then re-run.`,
       );
       process.exit(1);
     }
     throw err;
   }
 
-  console.log(`Export started — job ${jobId}...`);
+  console.log(`Export started (job ${jobId})...`);
 
   // Step 3 — Poll the job through the wildcard proxy. The dedicated
   // `/v1/migrations/jobs/{id}/` endpoint queries platform-side ImportJob

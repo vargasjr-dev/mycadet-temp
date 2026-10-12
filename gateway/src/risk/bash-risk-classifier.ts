@@ -482,7 +482,7 @@ export function classifySegment(
   // Escalation always applies — any matched rule that's higher than baseRisk
   // raises the risk regardless of unmatched args.
   let risk: Risk = effectiveBaseRisk;
-  let reason = resolvedSpec.reason || `${segment.program} — default`;
+  let reason = resolvedSpec.reason || `${segment.program} (default)`;
 
   const argRules = resolvedSpec.argRules;
   if (argRules && argRules.length > 0) {

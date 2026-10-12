@@ -420,7 +420,7 @@ async function reconcileTelegramWebhookNow(
 
   log.info(
     {
-      currentUrl: info.url || "none",
+      currentUrl: info.url || "(none)",
       expectedUrl,
       urlMatches: info.url === expectedUrl,
     },

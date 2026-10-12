@@ -90,9 +90,7 @@ async function deleteCloudAssistant(
 
   if (!response.ok && response.status !== 404) {
     const body = await response.text();
-    throw new Error(
-      `${options.label} failed, status ${response.status}: ${body}`,
-    );
+    throw new Error(`${options.label} failed (${response.status}): ${body}`);
   }
 
   if (response.status === 404) {

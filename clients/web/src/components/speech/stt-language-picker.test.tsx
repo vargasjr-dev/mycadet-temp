@@ -180,6 +180,6 @@ describe("SttLanguagePicker (in its modal host)", () => {
     const labels = optionLabels();
     expect(labels.some((label) => label.includes("Multilingual"))).toBe(false);
     expect(labels.some((label) => label.includes("Tamil"))).toBe(false);
-    expect(labels[0]).toContain("Auto-detect — default");
+    expect(labels[0]).toContain("Auto-detect (default)");
   });
 });

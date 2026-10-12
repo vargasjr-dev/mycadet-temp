@@ -124,7 +124,7 @@ describe("sttLanguageOptionsFor", () => {
     // misreports that state.
     const options = sttLanguageOptionsFor("", "xai");
     expect(options[0]?.code).toBe("");
-    expect(options[0]?.label).toBe("Auto-detect — default");
+    expect(options[0]?.label).toBe("Auto-detect (default)");
     expect(options[0]?.description).toContain("natively");
     // The one-way door is stated plainly: the picker cannot clear the key.
     expect(options[0]?.description).toContain(
@@ -337,7 +337,7 @@ describe("sttLanguageLabelForCode", () => {
   });
 
   test("labels the default code under xai as Auto-detect", () => {
-    expect(sttLanguageLabelForCode("", "xai")).toBe("Auto-detect — default");
+    expect(sttLanguageLabelForCode("", "xai")).toBe("Auto-detect (default)");
   });
 
   test("labels en under xai as the English pin", () => {

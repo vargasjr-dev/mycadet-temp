@@ -257,7 +257,7 @@ export async function resolveProcessState(
       // Genuinely hung — kill if it belongs to Cadet, otherwise just clean up.
       if (isCadetProcess(result.pid)) {
         console.log(
-          `${label} process alive, pid ${result.pid}, but not responding — killing and restarting...`,
+          `${label} process alive (pid ${result.pid}) but not responding — killing and restarting...`,
         );
         const stopped = await stopProcess(result.pid, label);
         if (!stopped && isProcessAlive(pidFile).alive) {
@@ -265,7 +265,7 @@ export async function resolveProcessState(
         }
       } else {
         console.log(
-          `Stale PID file, pid ${result.pid}, is not a Cadet process — cleaning up...`,
+          `Stale PID file (pid ${result.pid} is not a Cadet process) — cleaning up...`,
         );
       }
       removeFiles(pidFile);
@@ -336,7 +336,7 @@ export async function stopProcess(
   const identityBeforeWait =
     hostPlatform === "win32" ? null : readIdentity(pid);
 
-  console.log(`Stopping ${label}, pid ${pid}...`);
+  console.log(`Stopping ${label} (pid ${pid})...`);
   let waitForGracefulExit = true;
   if (hostPlatform === "win32") {
     try {

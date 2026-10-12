@@ -380,7 +380,7 @@ describe("cadet retire", () => {
     expect(retireLocalMock).toHaveBeenCalledWith("assistant-1", entry);
     expect(loadAllAssistants()).toEqual([]);
     expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
-      "Platform self-hosted unregister failed, status 503: platform unavailable",
+      "Platform self-hosted unregister failed (503): platform unavailable",
     );
   });
 

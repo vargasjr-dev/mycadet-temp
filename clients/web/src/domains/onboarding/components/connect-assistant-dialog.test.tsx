@@ -173,7 +173,7 @@ describe("ConnectAssistantDialog", () => {
     renderDialog();
 
     fillAddress("  https://gw.example.com/assistant/pair#device_code=abc  ");
-    fireEvent.change(screen.getByLabelText("Name — optional"), {
+    fireEvent.change(screen.getByLabelText("Name (optional)"), {
       target: { value: "  desk  " },
     });
     fireEvent.click(screen.getByText("Connect"));

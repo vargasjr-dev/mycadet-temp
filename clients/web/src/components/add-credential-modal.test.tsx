@@ -123,7 +123,7 @@ describe("AddCredentialModal", () => {
     fireEvent.change(input("Value"), {
       target: { value: " synthetic-secret-value " },
     });
-    fireEvent.change(input("Label — optional"), {
+    fireEvent.change(input("Label (optional)"), {
       target: { value: "Synthetic test token" },
     });
     submitForm();
@@ -197,7 +197,7 @@ describe("AddCredentialModal", () => {
     expect(input("Service").value).toBe("stripe");
     expect(input("Field").value).toBe("secret_key");
     expect(input("Value").value).toBe("synthetic-prefilled-value");
-    expect(input("Label — optional").value).toBe("Synthetic Stripe key");
+    expect(input("Label (optional)").value).toBe("Synthetic Stripe key");
   });
 
   test("Cancel closes without saving", () => {

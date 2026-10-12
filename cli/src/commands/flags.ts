@@ -59,7 +59,7 @@ function printFlagTable(flags: FeatureFlagEntry[]): void {
     console.log(formatRow(row));
   }
   console.log("");
-  console.log("* = overridden, differs from default");
+  console.log("* = overridden");
 }
 
 function printHelp(): void {
@@ -67,11 +67,11 @@ function printHelp(): void {
   console.log("");
   console.log("Show and toggle feature flags for the active assistant.");
   console.log(
-    "Reads from the gateway's merged flag state: persisted overrides > remote > defaults.",
+    "Reads from the gateway's merged flag state.",
   );
   console.log("");
   console.log("Subcommands:");
-  console.log("  none                List all feature flags in a table");
+  console.log("  (none)              List all feature flags in a table");
   console.log("  get <key>           Show details for a single flag");
   console.log("  set <key> <bool>    Set a flag override to true or false");
   console.log("");
@@ -181,7 +181,7 @@ async function getFlag(key: string, assistantName?: string): Promise<void> {
   console.log(`Key:            ${flag.key}`);
   console.log(`Enabled:        ${flag.enabled}`);
   console.log(`Default:        ${flag.defaultEnabled}`);
-  console.log(`Description:    ${flag.description || "none"}`);
+  console.log(`Description:    ${flag.description || "(none)"}`);
 }
 
 async function setFlag(

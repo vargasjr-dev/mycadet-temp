@@ -14,7 +14,7 @@ describe("SkillLoadRiskClassifier", () => {
     const classifier = new SkillLoadRiskClassifier();
     const result = await classifier.classify({ toolName: "skill_load" });
     expect(result.riskLevel).toBe("low");
-    expect(result.reason).toBe("Skill load — default");
+    expect(result.reason).toBe("Skill load (default)");
     expect(result.scopeOptions).toEqual([]);
     expect(result.matchType).toBe("registry");
   });
@@ -52,7 +52,7 @@ describe("SkillLoadRiskClassifier", () => {
       skillSelector: "my-custom-skill",
     });
     expect(result.riskLevel).toBe("low");
-    expect(result.reason).toBe("Skill load — default");
+    expect(result.reason).toBe("Skill load (default)");
   });
 
   test("scaffold_cloud_skill with skillSelector is still High risk", async () => {

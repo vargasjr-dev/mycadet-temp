@@ -395,7 +395,7 @@ describe("promptProviderChoice", () => {
     input.emit("data", Buffer.from("2\n"));
 
     await expect(resultPromise).resolves.toBe("openai");
-    expect(output.text).toContain("1) Anthropic — default");
+    expect(output.text).toContain("1) Anthropic (default)");
     expect(output.text).toContain("2) OpenAI");
   });
 

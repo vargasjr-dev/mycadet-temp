@@ -879,5 +879,5 @@ export const ps = Object.assign(
     }
     printTable(rows);
   },
-  { description: "List assistants, or processes for a specific assistant" },
+  { description: "List assistants" },
 );

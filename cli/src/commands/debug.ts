@@ -158,13 +158,13 @@ export const debug = Object.assign(
   } catch (err) {
     if (err instanceof MigrationInProgressError) {
       console.error(
-        `Error: Another export is already in progress — job ${err.existingJobId}. Wait for it to finish, then retry.`,
+        `Error: Another export is already in progress (job ${err.existingJobId}). Wait for it to finish, then retry.`,
       );
       process.exit(1);
     }
     throw err;
   }
-  console.log(`Export started — job ${jobId}...`);
+  console.log(`Export started (job ${jobId})...`);
 
   // Step 4: wait for the upload so the owner sees a real result. A large
   // export can outlive the guardian token, so a 401 mid-poll re-leases one.

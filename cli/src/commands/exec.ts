@@ -90,13 +90,13 @@ export const exec = Object.assign(
       "  --timeout <secs>    Timeout in seconds — default 30, 0 = no timeout",
     );
     console.log(
-      "  --verbose           Show debug output: SSE events, sentinel parsing",
+      "  --verbose           Show debug output",
     );
     console.log("");
     console.log("Services:");
-    console.log("  assistant, also mycadet");
-    console.log("  gateway, also cadet-gateway");
-    console.log("  credential-executor, also cadet-credential-executor");
+    console.log("  assistant");
+    console.log("  gateway");
+    console.log("  credential-executor");
     console.log("");
     console.log("Examples:");
     console.log("  cadet exec -- ls -la /workspace");

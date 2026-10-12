@@ -555,9 +555,7 @@ export async function rollbackMigrations(
         await new Promise((r) => setTimeout(r, 1_000));
         continue;
       }
-      console.warn(
-        `⚠️  Migration rollback failed, status ${resp.status}: ${text}`,
-      );
+      console.warn(`⚠️  Migration rollback failed (${resp.status}): ${text}`);
       return false;
     }
     const result = (await resp.json()) as {

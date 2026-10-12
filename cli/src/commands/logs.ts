@@ -36,15 +36,15 @@ function printHelp(): void {
   );
   console.log("");
   console.log("Options:");
-  console.log("  -f, --follow          Follow log output and stream new lines");
-  console.log("  -n, --tail <N>        Show last N lines, all by default");
+  console.log("  -f, --follow          Follow log output");
+  console.log("  -n, --tail <N>        Show last N lines");
   console.log("  -t, --timestamps      Show timestamps on each line");
   console.log(
     "  --since <time>        Show logs since timestamp or relative, e.g. 10m or 2h",
   );
   console.log("  --until <time>        Show logs until timestamp or relative");
   console.log(
-    "  -s, --service <name>  Filter to a specific service, e.g. assistant or gateway",
+    "  -s, --service <name>  Filter to a specific service",
   );
   console.log("  -h, --help            Show this help");
 }

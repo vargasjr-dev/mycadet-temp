@@ -190,7 +190,7 @@ export class SkillLoadRiskClassifier implements RiskClassifier<SkillClassifierIn
           riskLevel: hasExpansions ? "high" : "low",
           reason: hasExpansions
             ? "Skill load with inline command expansions (executes shell commands at load time)"
-            : "Skill load — default",
+            : "Skill load (default)",
           scopeOptions: [],
           matchType: "registry",
           allowlistOptions: buildSkillLoadAllowlistOptions(

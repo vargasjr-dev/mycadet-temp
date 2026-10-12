@@ -78,9 +78,9 @@ export function renderMarkdown(event: AssistantEvent): void {
       break;
     case "tool_result":
       if (msg.isError) {
-        console.log(`\n> **Tool error** — \`${msg.toolName}\`: ${msg.result}`);
+        console.log(`\n> **Tool error** (\`${msg.toolName}\`): ${msg.result}`);
       } else {
-        console.log(`\n> **Tool result** — \`${msg.toolName}\`: ${msg.result}`);
+        console.log(`\n> **Tool result** (\`${msg.toolName}\`): ${msg.result}`);
       }
       break;
     case "tool_output_chunk":

@@ -108,7 +108,7 @@ export async function fetchWorkosClientId(
   const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/config`;
   const response = await loopbackSafeFetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to fetch auth config, status ${response.status}`);
+    throw new Error(`Failed to fetch auth config (${response.status})`);
   }
   const parsed = WorkosAuthConfigSchema.safeParse(await response.json());
   const providers = parsed.success
@@ -175,7 +175,7 @@ export async function exchangeAccessTokenForSession(
   });
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Session exchange failed, status ${response.status}: ${body}`);
+    throw new Error(`Session exchange failed (${response.status}): ${body}`);
   }
   const parsed = WorkosSessionTokenResponseSchema.safeParse(
     await response.json(),

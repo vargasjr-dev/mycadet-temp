@@ -131,7 +131,7 @@ function printHelp(): void {
   console.log("");
   console.log("Options:");
   console.log(
-    "  --from <name>       Source assistant to export data from — required",
+    "  --from <name>       Source assistant to export data from (required)",
   );
   console.log(
     "  --keep-source       Do not retire the source after local/docker transfers",
@@ -470,7 +470,7 @@ async function exportFromAssistant(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first — required for GCS-based teleport.",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }
@@ -543,14 +543,14 @@ async function exportFromAssistant(
         // pointing at an empty/unrelated bundle. Surface the existing job id
         // so the user can decide whether to wait or investigate.
         console.error(
-          `Error: Another teleport export is already in progress on '${entry.assistantId}' — job ${err.existingJobId}. Wait for it to finish or check its status, then re-run.`,
+          `Error: Another teleport export is already in progress on '${entry.assistantId}' (job ${err.existingJobId}). Wait for it to finish or check its status, then re-run.`,
         );
         process.exit(1);
       }
       throw err;
     }
 
-    console.log(`Export started — job ${jobId}...`);
+    console.log(`Export started (job ${jobId})...`);
 
     const terminal = await pollJobUntilDone({
       label: "local-runtime export",
@@ -629,14 +629,14 @@ async function exportFromAssistant(
     } catch (err) {
       if (err instanceof MigrationInProgressError) {
         console.error(
-          `Error: Another teleport export is already in progress on '${entry.assistantId}' — job ${err.existingJobId}. Wait for it to finish or check its status, then re-run.`,
+          `Error: Another teleport export is already in progress on '${entry.assistantId}' (job ${err.existingJobId}). Wait for it to finish or check its status, then re-run.`,
         );
         process.exit(1);
       }
       throw err;
     }
 
-    console.log(`Export started — job ${jobId}...`);
+    console.log(`Export started (job ${jobId})...`);
 
     // Polling also goes through the wildcard proxy — `localRuntimePollJobStatus`
     // builds `/v1/assistants/<id>/migrations/jobs/<jobId>` for `isCloudHome(cloud)`
@@ -688,7 +688,7 @@ async function importToAssistant(
   const cloudToken = readCloudToken();
   if (!cloudToken) {
     console.error(
-      "Not logged in. Run 'cadet login' first — required for GCS-based teleport.",
+      "Not logged in. Run 'cadet login' first.",
     );
     process.exit(1);
   }
@@ -768,7 +768,7 @@ async function importToAssistant(
     }
 
     if (importResult.statusCode !== 202 && importResult.statusCode !== 200) {
-      console.error(`Error: Import failed with status ${importResult.statusCode}`);
+      console.error(`Error: Import failed (${importResult.statusCode})`);
       process.exit(1);
     }
 
@@ -927,7 +927,7 @@ async function importToAssistant(
         // (the original caller's), not ours. Polling it would report success
         // on an import that wasn't the one we just kicked off.
         console.error(
-          `Error: Another teleport import is already in progress on '${entry.assistantId}' — job ${err.existingJobId}. Wait for it to finish or check its status, then re-run.`,
+          `Error: Another teleport import is already in progress on '${entry.assistantId}' (job ${err.existingJobId}). Wait for it to finish or check its status, then re-run.`,
         );
         process.exit(1);
       }

@@ -614,7 +614,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
     expect(options).toContain("Spanish (Español)");
     // Unset language under xai is native auto-detection, so the default row
     // is Auto-detect and an explicit English entry makes the pin writable.
-    expect(options.some((o) => o.includes("Auto-detect — default"))).toBe(true);
+    expect(options.some((o) => o.includes("Auto-detect (default)"))).toBe(true);
     expect(options).toContain("English");
   });
 
@@ -630,7 +630,7 @@ describe("SpeechToTextCard: Spoken language picker", () => {
     renderCard();
 
     await waitFor(() => expect(languageTrigger()).not.toBeNull());
-    expect(languageTrigger()!.textContent).toContain("Auto-detect — default");
+    expect(languageTrigger()!.textContent).toContain("Auto-detect (default)");
   });
 
   test("a persisted en under an xai daemon shows the English pin, not Auto-detect", async () => {

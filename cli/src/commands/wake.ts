@@ -213,7 +213,7 @@ async function wakeAssistant(
         .filter(Boolean)
         .join(" and ");
       console.warn(
-        `Warning: ${ignored} ignored for Docker instances — not supported.`,
+        `Warning: ${ignored} ignored for Docker instances.`,
       );
     }
     const res = dockerResourceNames(entry.assistantId);
@@ -339,11 +339,11 @@ async function wakeAssistant(
       daemonRunning = true;
       daemonUnready = true;
       console.log(
-        `Assistant running, pid ${daemonState.pid}, but is not responding and could not be stopped.`,
+        `Assistant running (pid ${daemonState.pid}) but is not responding and could not be stopped.`,
       );
     } else if (watch && isAssistantWatchModeAvailable()) {
       console.log(
-        `Assistant running, pid ${daemonState.pid} — restarting in watch mode...`,
+        `Assistant running (pid ${daemonState.pid}) — restarting in watch mode...`,
       );
       const stopped = await stopProcessByPidFile(
         pidFile,
@@ -355,7 +355,7 @@ async function wakeAssistant(
         daemonRunning = true;
         daemonUnready = true;
         console.log(
-          `Assistant running, pid ${daemonState.pid}, but could not be stopped for watch mode.`,
+          `Assistant running (pid ${daemonState.pid}) but could not be stopped for watch mode.`,
         );
       }
     } else {
@@ -364,18 +364,18 @@ async function wakeAssistant(
       daemonMigrationsFailed = daemonState.status === "migration_failed";
       if (watch) {
         console.log(
-          `Assistant running, pid ${daemonState.pid} — watch mode not available, no source files. Keeping existing process.`,
+          `Assistant running (pid ${daemonState.pid}) — watch mode not available, no source files. Keeping existing process.`,
         );
       } else if (daemonMigrationsFailed) {
         console.log(
-          `Assistant running, pid ${daemonState.pid}, but its database migrations failed.`,
+          `Assistant running (pid ${daemonState.pid}) but its database migrations failed.`,
         );
       } else if (daemonUnready) {
         console.log(
-          `Assistant running, pid ${daemonState.pid} — database migrations still running.`,
+          `Assistant running (pid ${daemonState.pid}) — database migrations still running.`,
         );
       } else {
-        console.log(`Assistant already running, pid ${daemonState.pid}.`);
+        console.log(`Assistant already running (pid ${daemonState.pid}).`);
       }
     }
   }
@@ -452,7 +452,7 @@ async function wakeAssistant(
       const stopped = await stopProcessByPidFile(gatewayPidFile, "gateway");
       if (!stopped && isProcessAlive(gatewayPidFile).alive) {
         console.log(
-          `Gateway running, pid ${gatewayState.pid}, but could not be stopped.`,
+          `Gateway running (pid ${gatewayState.pid}) but could not be stopped.`,
         );
         return false;
       }
@@ -465,33 +465,33 @@ async function wakeAssistant(
     const needsRestart = bootstrapSecretBackfilled && gatewayAlive;
     if (gatewayStuck) {
       console.log(
-        `Gateway running, pid ${gatewayState.pid}, but is not responding and could not be stopped.`,
+        `Gateway running (pid ${gatewayState.pid}) but is not responding and could not be stopped.`,
       );
     } else if (needsRestart) {
       const restartWithWatch = watch && isGatewayWatchModeAvailable();
       if (restartWithWatch) {
         console.log(
-          `Gateway running, pid ${gatewayState.pid} — restarting to apply bootstrap secret...`,
+          `Gateway running (pid ${gatewayState.pid}) — restarting to apply bootstrap secret...`,
         );
       } else {
         console.log(
-          `Gateway running, pid ${gatewayState.pid} — restarting without watch mode to apply bootstrap secret...`,
+          `Gateway running (pid ${gatewayState.pid}) — restarting without watch mode to apply bootstrap secret...`,
         );
       }
       gatewayStarted = await restartGateway(restartWithWatch);
     } else if (gatewayAlive) {
       if (watch && isGatewayWatchModeAvailable()) {
         console.log(
-          `Gateway running, pid ${gatewayState.pid} — restarting in watch mode...`,
+          `Gateway running (pid ${gatewayState.pid}) — restarting in watch mode...`,
         );
         gatewayStarted = await restartGateway(watch);
       } else {
         if (watch) {
           console.log(
-            `Gateway running, pid ${gatewayState.pid} — watch mode not available, no source files. Keeping existing process.`,
+            `Gateway running (pid ${gatewayState.pid}) — watch mode not available, no source files. Keeping existing process.`,
           );
         } else {
-          console.log(`Gateway already running, pid ${gatewayState.pid}.`);
+          console.log(`Gateway already running (pid ${gatewayState.pid}).`);
         }
       }
     } else {

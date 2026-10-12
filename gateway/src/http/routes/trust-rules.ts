@@ -362,7 +362,7 @@ function lookupOriginalDefaults(
 
   const description = resolved.reason
     ? `${pattern} \u2014 ${resolved.reason}`
-    : `${pattern} — default`;
+    : `${pattern} (default)`;
 
   return { risk: resolved.baseRisk, description };
 }

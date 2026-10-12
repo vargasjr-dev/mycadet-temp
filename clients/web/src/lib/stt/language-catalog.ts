@@ -58,7 +58,7 @@ export const STT_PINNED_ENGLISH_CODE = "en";
 export const STT_LANGUAGES: readonly SttLanguageOption[] = [
   {
     code: STT_LANGUAGE_DEFAULT_CODE,
-    label: "English — default",
+    label: "English (default)",
     description: "Speech recognition defaults to English.",
   },
   {
@@ -179,7 +179,7 @@ const NOVA3_ROSTER_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
  * Daemon provider ids that detect the spoken language natively when
  * `services.stt.language` is unset: the resolver sends no language, so the
  * unset state means auto-detection. For these providers the picker's
- * default-sentinel row reads "Auto-detect — default", an explicit English
+ * default-sentinel row reads "Auto-detect (default)", an explicit English
  * entry lets the user pin English deliberately, and a persisted `"en"`
  * renders as that pin rather than collapsing to the default row (see
  * `use-stt-language-selection.ts`).
@@ -194,7 +194,8 @@ export const AUTO_DETECT_WHEN_UNSET_DAEMON_PROVIDERS: ReadonlySet<string> =
  * `"multi"` before it reaches them (`effectiveSttLanguage` in
  * `assistant/src/providers/speech-to-text/resolve.ts`).
  *
- * The picker mirrors that: the default-sentinel row reads "Multilingual", the standalone Multilingual entry drops out (it would be a
+ * The picker mirrors that: the default-sentinel row reads "Multilingual
+ * (default)", the standalone Multilingual entry drops out (it would be a
  * same-value dead pick), an explicit English entry appears so English can
  * still be pinned deliberately, and a persisted `"multi"` collapses into the
  * default row rather than reading as a separate choice.
@@ -213,7 +214,7 @@ export const MULTI_DEFAULT_DAEMON_PROVIDERS: ReadonlySet<string> = new Set([
  */
 const STT_AUTO_DETECT_OPTION: SttLanguageOption = {
   code: STT_LANGUAGE_DEFAULT_CODE,
-  label: "Auto-detect — default",
+  label: "Auto-detect (default)",
   description:
     "xAI identifies the spoken language natively. Picking a specific language pins it; returning to auto-detect requires clearing services.stt.language outside this picker.",
 };

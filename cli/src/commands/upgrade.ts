@@ -1156,7 +1156,7 @@ async function waitForPlatformUpgrade(
 
     if (Date.now() - lastHeartbeat >= PLATFORM_POLL_HEARTBEAT_MS) {
       const elapsedSec = Math.round((Date.now() - start) / 1000);
-      console.log(`   Still upgrading... ${elapsedSec}s elapsed`);
+      console.log(`   Still upgrading... (${elapsedSec}s elapsed)`);
       lastHeartbeat = Date.now();
     }
   }
@@ -1514,7 +1514,7 @@ async function resolveLatestAndMaybeSelfUpdate(
   }
 
   if (cmp !== null && cmp === 0) {
-    console.log(`✅ CLI is already on the latest version, ${latestTag}\n`);
+    console.log(`✅ CLI is already on the latest version (${latestTag})\n`);
   }
 
   return latestTag;

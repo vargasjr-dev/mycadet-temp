@@ -636,7 +636,7 @@ export async function leaseGuardianToken(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`guardian/init failed, status ${response.status}: ${body}`);
+    throw new Error(`guardian/init failed (${response.status}): ${body}`);
   }
 
   const rawBody: unknown = await response.json();

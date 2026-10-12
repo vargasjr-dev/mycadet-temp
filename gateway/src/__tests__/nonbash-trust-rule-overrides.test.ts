@@ -816,7 +816,7 @@ describe("SkillLoadRiskClassifier inline command risk elevation", () => {
     });
 
     expect(result.riskLevel).toBe("low");
-    expect(result.reason).toBe("Skill load — default");
+    expect(result.reason).toBe("Skill load (default)");
   });
 
   test("skill_load with no resolved metadata defaults to low risk", async () => {

@@ -769,7 +769,7 @@ function logAssistantAlreadyRunning(
         : status === "stuck"
           ? " but is not responding and could not be stopped"
           : "";
-  console.log(`   Assistant already running, pid ${pid}${suffix}\n`);
+  console.log(`   Assistant already running (pid ${pid})${suffix}\n`);
 }
 
 async function startDaemonFromSource(
@@ -1262,7 +1262,7 @@ async function checkOrphanedDaemon(
   const recoveredPid = recoverPidFile(pidFile, daemonPort);
   if (recoveredPid) {
     console.log(
-      `   Assistant is responsive, pid ${recoveredPid} — skipping restart\n`,
+      `   Assistant is responsive (pid ${recoveredPid}) — skipping restart\n`,
     );
   } else {
     console.log("   Assistant is responsive — skipping restart\n");

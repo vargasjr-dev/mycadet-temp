@@ -1580,7 +1580,7 @@ describe("tunnel --detach", () => {
     expect(opts?.detached).toBe(true);
 
     expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
-    expect(logs).toContain("Running in background, pid 9999");
+    expect(logs).toContain("Running in background (pid 9999)");
     expect(logs).toContain("Stop with: kill 9999");
 
     // The parent hands the actual tunnel workflow off to the child: it never
@@ -1650,7 +1650,7 @@ describe("tunnel --detach", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(logs).toContain("Tunnel established: https://already-up.ngrok.app");
-    expect(logs).toContain("Running in background, pid 5555");
+    expect(logs).toContain("Running in background (pid 5555)");
     // The supervisor did not spawn this ngrok agent, so killing it must not
     // be advertised as the way to stop the tunnel.
     expect(logs).not.toContain("Stop with: kill 5555");

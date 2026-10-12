@@ -203,7 +203,7 @@ describe("pollJobUntilDone", () => {
       expect(refreshes).toBe(1);
       expect(calls).toBe(2);
       // The 401 branch logs its own distinct warning (not the generic
-      // "polling failed, retrying" one) so operators can distinguish an
+      // "polling failed:" one) so operators can distinguish an
       // auth refresh from a transient-error retry in the output.
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("refreshing auth"),

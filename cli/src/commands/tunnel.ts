@@ -407,7 +407,7 @@ async function spawnDetachedTunnel(): Promise<void> {
   } else if (publicUrl) {
     console.log(`Tunnel established: ${publicUrl}`);
   }
-  console.log(`Running in background, pid ${child.pid}. Logs: ${logPath}`);
+  console.log(`Running in background (pid ${child.pid}). Logs: ${logPath}`);
   if (adopted) {
     console.log(adoptedTunnelStopNotice(child.pid));
   } else {
