@@ -36,6 +36,7 @@ import {
   looksLikeGitHubSpec,
   parseGitHubPluginSpec,
 } from "../lib/parse-github-plugin-spec.js";
+import { isPluginCatalogEntryVisible } from "../lib/plugin-catalog-visibility.js";
 import {
   DEFAULT_PLUGIN_REF,
   PLUGIN_UPGRADE_STRATEGIES,
@@ -68,15 +69,6 @@ const libs = {
         loadModule(
           "../lib/plugin-catalog-cache.js",
         ) as typeof import("../lib/plugin-catalog-cache.js"),
-    );
-  },
-  get catalogLocal() {
-    return resolveBundledCliModule(
-      "pluginCatalogLocal",
-      () =>
-        loadModule(
-          "../lib/plugin-catalog-local.js",
-        ) as typeof import("../lib/plugin-catalog-local.js"),
     );
   },
   get diff() {
@@ -222,62 +214,38 @@ export function registerPluginsCommand(program: Command): void {
             let untrusted = false;
             if (!direct && !usesMarketplaceGit) {
               // Platform-managed install serves a verified tarball from the
-              // pinned commit. With platform features disabled (air-gapped /
-              // self-hosted) there is no platform to call, so resolve the pin
-              // from the bundled catalog and install through the GitHub path.
-              const platformEnabled =
-                libs.catalogLocal.areCloudFeaturesEnabled();
-              if (platformEnabled) {
-                if (!libs.catalogLocal.isPluginCatalogEntryVisible(nameOrUrl)) {
-                  console.error(
-                    `Plugin "${nameOrUrl}" is not in the marketplace catalog.`,
-                  );
-                  process.exitCode = 1;
-                  return;
-                }
-                let match;
-                let catalogResolved = false;
-                try {
-                  match = (
-                    await libs.catalogCache.getPluginCatalog(
-                      DEFAULT_PLUGIN_REF,
-                      { fetch: globalThis.fetch.bind(globalThis) },
-                    )
-                  ).matches.find((candidate) => candidate.name === nameOrUrl);
-                  catalogResolved = true;
-                } catch {
-                  // The install endpoint remains authoritative and can succeed
-                  // independently when catalog discovery is unavailable.
-                }
-                if (!match && catalogResolved) {
-                  console.error(
-                    `Plugin "${nameOrUrl}" is not in the marketplace catalog.`,
-                  );
-                  process.exitCode = 1;
-                  return;
-                }
-                if (match?.source.kind === "local") {
-                  result = await libs.installGitHub.installPlugin(
-                    {
-                      name: nameOrUrl,
-                      force: opts.force,
-                      trustedSource: match.source,
-                    },
-                    { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
-                  );
-                } else {
-                  result = await libs.installPlatform.installPluginViaPlatform(
-                    { name: nameOrUrl, force: opts.force },
-                    { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
-                  );
-                }
-              } else {
+              // pinned commit.
+              if (!isPluginCatalogEntryVisible(nameOrUrl)) {
                 console.error(
-                  `Plugin "${nameOrUrl}" cannot be resolved by name: the installable catalog lives in Cadet Cloud and platform features are disabled. Install by GitHub URL instead.`,
+                  `Plugin "${nameOrUrl}" is not in the marketplace catalog.`,
                 );
                 process.exitCode = 1;
                 return;
               }
+              let match;
+              let catalogResolved = false;
+              try {
+                match = (
+                  await libs.catalogCache.getPluginCatalog(DEFAULT_PLUGIN_REF, {
+                    fetch: globalThis.fetch.bind(globalThis),
+                  })
+                ).matches.find((candidate) => candidate.name === nameOrUrl);
+                catalogResolved = true;
+              } catch {
+                // The install endpoint remains authoritative and can succeed
+                // independently when catalog discovery is unavailable.
+              }
+              if (!match && catalogResolved) {
+                console.error(
+                  `Plugin "${nameOrUrl}" is not in the marketplace catalog.`,
+                );
+                process.exitCode = 1;
+                return;
+              }
+              result = await libs.installPlatform.installPluginViaPlatform(
+                { name: nameOrUrl, force: opts.force },
+                { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
+              );
             } else {
               const installOpts = direct
                 ? await resolveDirectInstallOptions(nameOrUrl, opts)
@@ -1326,11 +1294,8 @@ function driftLine(changes: FingerprintComparison | null): string {
   return parts.join(", ");
 }
 
-/** Build the display location for a bundled package or GitHub pin. */
+/** Build the display location for a plugin's GitHub pin. */
 function remoteLocation(remote: PluginRemoteInfo): string {
-  if (remote.kind === "local") {
-    return `bundled:${remote.path}`;
-  }
   const base = `https://github.com/${remote.repo}`;
   return remote.path ? `${base}/tree/${remote.commit}/${remote.path}` : base;
 }

@@ -9,10 +9,6 @@ let fetchImpl: (
 ) => Promise<Response> = async () => new Response("{}", { status: 200 });
 const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
 
-mock.module("../cloud/feature-gate.js", () => ({
-  areCloudFeaturesEnabled: () => true,
-}));
-
 mock.module("../providers/cloud-proxy/context.js", () => ({
   resolveCloudProxyContext: async () => ({
     enabled: true,

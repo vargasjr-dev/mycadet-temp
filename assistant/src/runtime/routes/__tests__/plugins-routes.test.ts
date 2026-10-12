@@ -1057,12 +1057,12 @@ describe("GET /v1/plugins/search", () => {
     expect("icon" in byName.get("plain-plugin")!).toBe(false);
   });
 
-  test("preserves a bundled MCP package source and integration metadata", async () => {
+  test("preserves MCP integration metadata from the catalog entry", async () => {
     getCatalogSpy.mockImplementation(async (ref) =>
       catalog(ref, [
         {
           name: "fathom",
-          path: "local:plugins/mcp-catalog/fathom@1.0.0",
+          path: `github:acme/fathom@${CAVEMAN_PIN}`,
           description: "Search meeting transcripts.",
           category: null,
           integration: {
@@ -1078,9 +1078,9 @@ describe("GET /v1/plugins/search", () => {
             logo: "fathom.png",
           },
           source: {
-            kind: "local",
-            path: "plugins/mcp-catalog/fathom",
-            version: "1.0.0",
+            kind: "github",
+            repo: "acme/fathom",
+            ref: CAVEMAN_PIN,
           },
         },
       ]),
@@ -1091,7 +1091,7 @@ describe("GET /v1/plugins/search", () => {
     expect(result.matches).toEqual([
       {
         name: "fathom",
-        path: "local:plugins/mcp-catalog/fathom@1.0.0",
+        path: `github:acme/fathom@${CAVEMAN_PIN}`,
         description: "Search meeting transcripts.",
         category: null,
         integration: {
@@ -1107,9 +1107,9 @@ describe("GET /v1/plugins/search", () => {
           logo: "fathom.png",
         },
         source: {
-          kind: "local",
-          path: "plugins/mcp-catalog/fathom",
-          version: "1.0.0",
+          kind: "github",
+          repo: "acme/fathom",
+          ref: CAVEMAN_PIN,
         },
       },
     ]);
@@ -1595,90 +1595,36 @@ describe("POST /v1/plugins/install", () => {
   });
 
   test("no-pin install resolves from the gated catalog and installs via trustedSource", async () => {
-    // The default (no-pin) path reads the same gated catalog `search`
-    // advertises and installs from a trusted pre-resolved source — no direct
+    // The default (no-pin) path reads the same catalog `search` advertises
+    // and installs from a trusted pre-resolved source — no direct
     // `plugins/marketplace.json` fetch (the pin/marketplace path is untouched).
-    const prev = process.env.CADET_DISABLE_CLOUD;
-    process.env.CADET_DISABLE_CLOUD = "true";
-    try {
-      installSpy.mockImplementation(async (opts) => trustedInstallResult(opts));
+    installSpy.mockImplementation(async (opts) => trustedInstallResult(opts));
 
-      const result = await invokeInstall({
-        body: { name: "caveman", force: true },
-      });
+    const result = await invokeInstall({
+      body: { name: "caveman", force: true },
+    });
 
-      // Resolved through the gated catalog, not the pin/marketplace path.
-      expect(getCatalogSpy).toHaveBeenCalledTimes(1);
-      // installPlugin receives the pre-resolved trusted coordinates (owner/repo
-      // split from the catalog `repo`, `rootPath` from its path, the full-SHA
-      // pin as `ref`) — no caller-supplied `ref`.
-      expect(installSpy.mock.calls[0]?.[0]).toEqual({
-        name: "caveman",
-        force: true,
-        trustedSource: {
-          owner: "JuliusBrussee",
-          repo: "caveman",
-          rootPath: "",
-          ref: CAVEMAN_PIN,
-        },
-      });
-      expect(result).toEqual({
-        ok: true,
-        name: "caveman",
-        target: "/workspace/.cadet/plugins/caveman",
-        fileCount: 7,
-        ref: CAVEMAN_PIN,
-      });
-    } finally {
-      if (prev === undefined) {
-        delete process.env.CADET_DISABLE_CLOUD;
-      } else {
-        process.env.CADET_DISABLE_CLOUD = prev;
-      }
-    }
-  });
-
-  test("installs a bundled package from the exact catalog source", async () => {
-    getCatalogSpy.mockImplementation(async (ref) =>
-      catalog(ref, [
-        {
-          name: "fathom",
-          path: "local:plugins/mcp-catalog/fathom@1.0.0",
-          category: null,
-          source: {
-            kind: "local",
-            path: "plugins/mcp-catalog/fathom",
-            version: "1.0.0",
-          },
-        },
-      ]),
-    );
-    installSpy.mockImplementation(async (opts) => ({
-      name: opts.name,
-      target: `/workspace/.cadet/plugins/${opts.name}`,
-      fileCount: 2,
-      ref: "1.0.0",
-      commit: null,
-      committedAt: null,
-    }));
-
-    const result = await invokeInstall({ body: { name: "fathom" } });
-
+    // Resolved through the catalog, not the pin/marketplace path.
+    expect(getCatalogSpy).toHaveBeenCalledTimes(1);
+    // installPlugin receives the pre-resolved trusted coordinates (owner/repo
+    // split from the catalog `repo`, `rootPath` from its path, the full-SHA
+    // pin as `ref`) — no caller-supplied `ref`.
     expect(installSpy.mock.calls[0]?.[0]).toEqual({
-      name: "fathom",
-      force: undefined,
+      name: "caveman",
+      force: true,
       trustedSource: {
-        kind: "local",
-        path: "plugins/mcp-catalog/fathom",
-        version: "1.0.0",
+        owner: "JuliusBrussee",
+        repo: "caveman",
+        rootPath: "",
+        ref: CAVEMAN_PIN,
       },
     });
     expect(result).toEqual({
       ok: true,
-      name: "fathom",
-      target: "/workspace/.cadet/plugins/fathom",
-      fileCount: 2,
-      ref: "1.0.0",
+      name: "caveman",
+      target: "/workspace/.cadet/plugins/caveman",
+      fileCount: 7,
+      ref: CAVEMAN_PIN,
     });
   });
 

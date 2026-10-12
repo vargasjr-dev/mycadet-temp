@@ -69,18 +69,6 @@ export function getIsCloud(): boolean {
 }
 
 /**
- * CADET_DISABLE_CLOUD — boolean, default: false
- * When true, all outbound cloud API calls in local mode are suppressed.
- * The daemon, gateway, and web UI each no-op cloud requests with a
- * debug log. Has no effect when IS_CLOUD is true (cloud-managed
- * instances always connect to the cloud). Reads the legacy
- * CADET_DISABLE_CLOUD name as a fallback for older deployments.
- */
-export function getDisableCloud(): boolean {
-  return flag("CADET_DISABLE_CLOUD") || flag("CADET_DISABLE_CLOUD");
-}
-
-/**
  * CADET_DEVICE_ID — string, default: undefined
  * Host-stable device id injected by the CLI into containerized deployments,
  * where the container fs cannot persist device.json across recreation.
@@ -182,7 +170,6 @@ const KNOWN_CADET_VARS = new Set([
   "CADET_DESKTOP_APP",
   "CADET_DEV",
   "CADET_DEVICE_ID",
-  "CADET_DISABLE_CLOUD",
   "CADET_DOCS_BASE_URL",
   "CADET_ENVIRONMENT",
   "CADET_HATCHED_BY",

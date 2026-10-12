@@ -55,7 +55,6 @@ import {
   getPluginManifestInstallAction,
   readPluginManifest,
 } from "../../util/plugin-manifest.js";
-import { materializeBundledPluginPackage } from "./bundled-plugin-packages.js";
 import type { FetchLike } from "./fetch-like.js";
 import {
   type DependencyInstaller,
@@ -150,11 +149,9 @@ export interface InstallPluginOptions {
    */
   readonly directSource?: PluginFetchSource;
   /**
-   * Install from an exact source resolved by the reviewed catalog. GitHub
-   * sources retain the curated adapter overlay. Local sources are complete
-   * packages embedded in the assistant distribution and do not use an adapter.
-   * Marketplace resolution and {@link InstallPluginOptions.commitOverride} are
-   * skipped when this is set.
+   * Install from an exact source resolved by the reviewed catalog; retains
+   * the curated adapter overlay. Marketplace resolution and
+   * {@link InstallPluginOptions.commitOverride} are skipped when this is set.
    */
   readonly trustedSource?: PluginMaterializeSource;
 }
@@ -189,8 +186,6 @@ export interface InstallPluginDeps {
   readonly beforeSwap?: () => Promise<void>;
   /** Consent gate between staging and finalize; see {@link ConfirmStagedInstall}. */
   readonly confirmStaged?: ConfirmStagedInstall;
-  /** Override embedded-package materialization for focused tests. */
-  readonly materializeLocalPackage?: typeof materializeBundledPluginPackage;
 }
 
 /** Successful install result. */
@@ -313,29 +308,10 @@ export interface PluginFetchSource {
   readonly ref: string;
 }
 
-/** Reviewed package embedded in the assistant distribution. */
-export interface LocalPluginFetchSource {
-  readonly kind: "local";
-  readonly path: string;
-  readonly version: string;
-  readonly ref?: undefined;
-}
-
-export type PluginMaterializeSource =
-  | PluginFetchSource
-  | LocalPluginFetchSource;
-
-export function isLocalPluginSource(
-  source: PluginMaterializeSource,
-): source is LocalPluginFetchSource {
-  return "kind" in source && source.kind === "local";
-}
+export type PluginMaterializeSource = PluginFetchSource;
 
 /** Build the `owner/repo/path` label used in not-found errors. */
 function sourceLabel(source: PluginMaterializeSource): string {
-  if (isLocalPluginSource(source)) {
-    return source.path;
-  }
   return source.rootPath
     ? `${source.owner}/${source.repo}/${source.rootPath}`
     : `${source.owner}/${source.repo}`;
@@ -343,9 +319,7 @@ function sourceLabel(source: PluginMaterializeSource): string {
 
 /**
  * Resolve a plugin name to its exact marketplace source, or `null` when no
- * entry claims the name. A GitHub entry resolves to exact repo coordinates; a
- * local entry refers to a fully self-contained package embedded in the
- * assistant distribution.
+ * entry claims the name. A GitHub entry resolves to exact repo coordinates.
  *
  * A transient catalog failure (rate-limit / 5xx) surfaces as a retryable
  * {@link PluginSourceUnavailableError}; a malformed row propagates as a hard
@@ -370,14 +344,6 @@ async function resolvePluginSource(
 
   if (!resolved) {
     return null;
-  }
-
-  if (resolved.kind === "local") {
-    return {
-      kind: "local",
-      path: resolved.path,
-      version: resolved.version,
-    };
   }
 
   return {
@@ -474,9 +440,9 @@ export async function installPlugin(
 
   // A direct install bypasses the marketplace whitelist entirely: the source is
   // supplied by the caller and the tree is materialized verbatim (no curated
-  // adapter stub). A trusted pre-resolved source (offline bundled-catalog
-  // install) supplies its coordinates too but keeps the curated overlay.
-  // Otherwise the name is resolved against the reviewed manifest.
+  // adapter stub). A trusted pre-resolved source (catalog-backed install)
+  // supplies its coordinates too but keeps the curated overlay. Otherwise the
+  // name is resolved against the reviewed catalog.
   let effectiveSource: PluginMaterializeSource;
   // Ref the curated adapter stub is fetched at, or `null` to skip the overlay.
   let stubRef: string | null;
@@ -484,14 +450,13 @@ export async function installPlugin(
     effectiveSource = opts.directSource;
     stubRef = null;
   } else if (opts.trustedSource) {
-    // Offline bundled-catalog install: clone the external content verbatim but
-    // keep the curated adapter overlay (like the marketplace-git trusted path).
-    // The stub lives in this repo, not in `trustedSource` (the external plugin),
-    // so `trustedSource.ref` can't address it; with no canonical-repo pin
-    // recorded offline, the stub is fetched at `marketplaceRef` (its default,
-    // DEFAULT_PLUGIN_REF).
+    // Trusted-catalog install: clone the external content verbatim but keep
+    // the curated adapter overlay (like the marketplace-git trusted path).
+    // The stub lives in this repo, not in `trustedSource` (the external
+    // plugin), so `trustedSource.ref` can't address it; the stub is fetched
+    // at `marketplaceRef` (its default, DEFAULT_PLUGIN_REF).
     effectiveSource = opts.trustedSource;
-    stubRef = isLocalPluginSource(effectiveSource) ? null : marketplaceRef;
+    stubRef = marketplaceRef;
   } else {
     const source = await resolvePluginSource(name, marketplaceRef, deps.fetch);
     if (!source) {
@@ -500,15 +465,12 @@ export async function installPlugin(
     // A commit override installs a specific plugin revision while still taking
     // owner/repo/path (and the adapter stub, via `marketplaceRef`) from the
     // manifest; otherwise the reviewed pin from the manifest is materialized.
-    effectiveSource =
-      opts.commitOverride && !isLocalPluginSource(source)
-        ? { ...source, ref: opts.commitOverride }
-        : source;
-    stubRef = isLocalPluginSource(effectiveSource) ? null : marketplaceRef;
+    effectiveSource = opts.commitOverride
+      ? { ...source, ref: opts.commitOverride }
+      : source;
+    stubRef = marketplaceRef;
   }
-  const ref = isLocalPluginSource(effectiveSource)
-    ? effectiveSource.version
-    : effectiveSource.ref;
+  const ref = effectiveSource.ref;
 
   const pluginsDir = deps.workspacePluginsDir ?? getWorkspacePluginsDir();
   const target = join(pluginsDir, name);
@@ -751,22 +713,13 @@ export const INSTALL_META_FILENAME = "install-meta.json";
 export type InstallOrigin = "cadet";
 
 /** Resolved source coordinates recorded in the provenance sidecar. */
-export type InstallMetaSource =
-  | {
-      readonly kind: "github";
-      readonly owner: string;
-      readonly repo: string;
-      readonly path?: string;
-      readonly ref: string;
-    }
-  | {
-      readonly kind: "local";
-      readonly path: string;
-      readonly version: string;
-      readonly owner?: undefined;
-      readonly repo?: undefined;
-      readonly ref?: undefined;
-    };
+export type InstallMetaSource = {
+  readonly kind: "github";
+  readonly owner: string;
+  readonly repo: string;
+  readonly path?: string;
+  readonly ref: string;
+};
 
 /**
  * Parsed contents of the `install-meta.json` provenance sidecar — what was
@@ -876,19 +829,11 @@ export async function materializePluginTree(
   },
   deps: InstallPluginDeps,
 ): Promise<MaterializedTree> {
-  const cloned = isLocalPluginSource(opts.source)
-    ? {
-        fileCount: (
-          deps.materializeLocalPackage ?? materializeBundledPluginPackage
-        )(opts.source.path, opts.source.version, opts.destDir),
-        commit: null,
-        committedAt: null,
-      }
-    : await copyExternalViaGit(
-        opts.source,
-        opts.destDir,
-        deps.runGit ?? defaultGitRunner,
-      );
+  const cloned = await copyExternalViaGit(
+    opts.source,
+    opts.destDir,
+    deps.runGit ?? defaultGitRunner,
+  );
   // An external clone is often a foreign-ecosystem plugin (e.g. a Claude Code
   // plugin) that the Cadet loader can't run as-is. When we curate an adapter
   // stub for it, overlay the stub and run its transform so the materialized
@@ -1628,24 +1573,21 @@ function writeInstallMeta(
     contentHash,
   }: WriteInstallMetaParams,
 ): void {
-  const local = isLocalPluginSource(source);
   const meta: InstallMeta = {
     origin: "cadet",
     installedAt: new Date().toISOString(),
     version: readStagedManifestVersion(stagingDir),
-    sourceRepo: local ? undefined : `${source.owner}/${source.repo}`,
+    sourceRepo: `${source.owner}/${source.repo}`,
     contentHash,
     author: "user",
     name,
-    source: local
-      ? { kind: "local", path: source.path, version: source.version }
-      : {
-          kind: "github",
-          owner: source.owner,
-          repo: source.repo,
-          path: source.rootPath || undefined,
-          ref,
-        },
+    source: {
+      kind: "github",
+      owner: source.owner,
+      repo: source.repo,
+      path: source.rootPath || undefined,
+      ref,
+    },
     commit,
     committedAt,
     ...(etag ? { etag } : {}),
@@ -1693,32 +1635,20 @@ export function readInstallMeta(pluginDir: string): InstallMeta | null {
     return null;
   }
 
-  let parsedSource: InstallMetaSource;
-  if (source.kind === "local") {
-    if (typeof source.path !== "string" || typeof source.version !== "string") {
-      return null;
-    }
-    parsedSource = {
-      kind: "local",
-      path: source.path,
-      version: source.version,
-    };
-  } else {
-    if (
-      typeof source.owner !== "string" ||
-      typeof source.repo !== "string" ||
-      typeof source.ref !== "string"
-    ) {
-      return null;
-    }
-    parsedSource = {
-      kind: "github",
-      owner: source.owner,
-      repo: source.repo,
-      path: typeof source.path === "string" ? source.path : undefined,
-      ref: source.ref,
-    };
+  if (
+    typeof source.owner !== "string" ||
+    typeof source.repo !== "string" ||
+    typeof source.ref !== "string"
+  ) {
+    return null;
   }
+  const parsedSource: InstallMetaSource = {
+    kind: "github",
+    owner: source.owner,
+    repo: source.repo,
+    path: typeof source.path === "string" ? source.path : undefined,
+    ref: source.ref,
+  };
 
   const optionalString = (value: unknown): string | undefined =>
     typeof value === "string" ? value : undefined;

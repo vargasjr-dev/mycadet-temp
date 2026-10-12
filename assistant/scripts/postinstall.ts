@@ -19,15 +19,9 @@ if (!run("git", ["config", "core.hooksPath"])) {
   run("git", ["config", "core.hooksPath", ".githooks"]);
 }
 
+// Keep the bundled feature-flag registry copies in sync with the canonical
+// source on fresh installs.
 const syncScript = join(repoRoot, "meta", "sync-bundled-copies.ts");
-if (existsSync(syncScript) && run(process.execPath, ["run", syncScript])) {
-  run(process.execPath, [
-    "run",
-    join(
-      repoRoot,
-      "assistant",
-      "scripts",
-      "generate-bundled-plugin-packages.ts",
-    ),
-  ]);
+if (existsSync(syncScript)) {
+  run(process.execPath, ["run", syncScript]);
 }

@@ -2,7 +2,6 @@ export interface BundledCliModules {
   configEnv: typeof import("../config/env.js");
   providerSecretCatalog: typeof import("../providers/provider-secret-catalog.js");
   pluginCatalogCache: typeof import("./lib/plugin-catalog-cache.js");
-  pluginCatalogLocal: typeof import("./lib/plugin-catalog-local.js");
   pluginDiff: typeof import("./lib/diff-plugin.js");
   pluginInspect: typeof import("./lib/inspect-plugin.js");
   pluginInstallGitHub: typeof import("./lib/install-from-github.js");

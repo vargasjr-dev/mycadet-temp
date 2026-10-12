@@ -8,7 +8,6 @@
  * experimental file lists, and the pre-migrated DB fixture.
  */
 
-import { existsSync } from "node:fs";
 import { basename } from "node:path";
 
 import { runIsolatedTests } from "@mycadet/shared/scripts/run-isolated-tests";
@@ -46,27 +45,7 @@ const KNOWN_BROKEN_FILES = new Set<string>([
   "src/workflows/sandbox-cpu-guard-asyncify.test.ts",
 ]);
 
-// Ensure generated catalog inputs exist before tests. Locally, postinstall may
-// not run in worktrees that share node_modules, so the static JSON imports can
-// otherwise be missing.
-function syncBundledCatalog(): void {
-  if (!existsSync("../meta/sync-bundled-copies.ts")) {
-    return;
-  }
-  const result = Bun.spawnSync(["bun", "run", "sync:bundled-catalog"], {
-    stdout: "ignore",
-    stderr: "pipe",
-    windowsHide: true,
-  });
-  if (result.exitCode !== 0) {
-    throw new Error(
-      `Failed to generate bundled catalog inputs: ${result.stderr.toString()}`,
-    );
-  }
-}
-
 await runIsolatedTests({
-  setup: syncBundledCatalog,
   filter: (file) => {
     const base = basename(file);
     // Always exclude benchmark files — run them with `bun run test:bench`.

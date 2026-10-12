@@ -2,9 +2,9 @@
  * Tests for the gated catalog resolvers.
  *
  * `resolveSourceFromMatch` is exercised as a pure function. The catalog-backed
- * resolvers run against the bundled manifest with platform features disabled
- * (`CADET_DISABLE_CLOUD`, zero network), plus a cloud-enabled case that
- * asserts a rejecting catalog fetch propagates rather than resolving to `null`.
+ * resolvers run against a mocked cloud catalog (zero real network), plus a
+ * case that asserts a rejecting catalog fetch propagates rather than
+ * resolving to `null`.
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
@@ -39,25 +39,6 @@ function match(
 }
 
 describe("resolveSourceFromMatch", () => {
-  test("returns an exact bundled package path and version", () => {
-    expect(
-      resolveSourceFromMatch({
-        name: "fathom",
-        path: "local:plugins/mcp-catalog/fathom@1.0.0",
-        category: null,
-        source: {
-          kind: "local",
-          path: "plugins/mcp-catalog/fathom",
-          version: "1.0.0",
-        },
-      }),
-    ).toEqual({
-      kind: "local",
-      path: "plugins/mcp-catalog/fathom",
-      version: "1.0.0",
-    });
-  });
-
   test("returns owner/repo/path/ref for a full-SHA match", () => {
     expect(
       resolveSourceFromMatch(
@@ -138,37 +119,39 @@ describe("resolveSourceFromMatch", () => {
   });
 });
 
-describe("catalog-backed resolvers (bundled, offline)", () => {
-  const ORIGINAL_ENV = {
-    IS_CLOUD: process.env.IS_CLOUD,
-    CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
-  };
-
+describe("catalog-backed resolvers (cloud catalog)", () => {
   beforeEach(() => {
     invalidatePluginCatalogCache();
-    process.env.CADET_DISABLE_CLOUD = "true";
-    delete process.env.IS_CLOUD;
   });
 
   afterEach(() => {
-    for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
-    }
+    invalidatePluginCatalogCache();
   });
 
-  // A rejecting fetch proves the bundled path never touches the network.
-  const rejectingDeps: SearchPluginsDeps = {
-    fetch: (async () => {
-      throw new Error("network must not be used");
-    }) as FetchLike,
+  /** A `deps.fetch` serving a small `/v1/plugins/` payload. */
+  const catalogDeps: SearchPluginsDeps = {
+    fetch: (async () =>
+      new Response(
+        JSON.stringify({
+          plugins: [
+            {
+              name: "caveman",
+              repo: "JuliusBrussee/caveman",
+              ref: FULL_SHA,
+            },
+            {
+              name: "gamma",
+              repo: "acme/gamma",
+              ref: FULL_SHA,
+            },
+          ],
+        }),
+        { status: 200 },
+      )) as FetchLike,
   };
 
-  test("findCatalogEntry returns the bundled entry for a known name", async () => {
-    const entry = await findCatalogEntry("caveman", rejectingDeps);
+  test("findCatalogEntry returns the catalog entry for a known name", async () => {
+    const entry = await findCatalogEntry("caveman", catalogDeps);
     expect(entry?.name).toBe("caveman");
     expect(entry?.source).toEqual({
       kind: "github",
@@ -180,7 +163,7 @@ describe("catalog-backed resolvers (bundled, offline)", () => {
 
   test("resolvePluginSourceFromCatalog resolves a known name to its pinned source", async () => {
     expect(
-      await resolvePluginSourceFromCatalog("caveman", rejectingDeps),
+      await resolvePluginSourceFromCatalog("caveman", catalogDeps),
     ).toEqual({
       kind: "github",
       owner: "JuliusBrussee",
@@ -192,14 +175,14 @@ describe("catalog-backed resolvers (bundled, offline)", () => {
 
   test("resolvePluginSourceFromCatalog returns null for an unknown name", async () => {
     expect(
-      await resolvePluginSourceFromCatalog("no-such-plugin", rejectingDeps),
+      await resolvePluginSourceFromCatalog("no-such-plugin", catalogDeps),
     ).toBeNull();
   });
 
   test("does not resolve a QA integration while its feature flag is off", async () => {
     expect(
       await resolvePluginSourceFromCatalog("gamma", {
-        ...rejectingDeps,
+        ...catalogDeps,
         featureFlagEnabled: () => false,
       }),
     ).toBeNull();
@@ -208,37 +191,24 @@ describe("catalog-backed resolvers (bundled, offline)", () => {
   test("resolves a QA integration while its feature flag is on", async () => {
     expect(
       await resolvePluginSourceFromCatalog("gamma", {
-        ...rejectingDeps,
+        ...catalogDeps,
         featureFlagEnabled: () => true,
       }),
     ).toMatchObject({
-      kind: "local",
-      path: "plugins/mcp-catalog/gamma",
+      kind: "github",
+      owner: "acme",
+      repo: "gamma",
     });
   });
 });
 
 describe("catalog-backed resolvers (platform enabled)", () => {
-  const ORIGINAL_ENV = {
-    IS_CLOUD: process.env.IS_CLOUD,
-    CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
-  };
-
   beforeEach(() => {
     invalidatePluginCatalogCache();
-    delete process.env.IS_CLOUD;
-    delete process.env.CADET_DISABLE_CLOUD;
   });
 
   afterEach(() => {
     invalidatePluginCatalogCache();
-    for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
-    }
   });
 
   test("propagates PluginCatalogUnavailableError instead of resolving to null", async () => {

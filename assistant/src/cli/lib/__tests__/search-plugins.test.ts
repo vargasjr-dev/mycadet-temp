@@ -144,13 +144,13 @@ describe("assertValidSearchPattern", () => {
 });
 
 describe("marketplaceMatch", () => {
-  test("projects a bundled MCP package and its integration metadata", () => {
+  test("projects an MCP package's integration metadata", () => {
     const match = marketplaceMatch({
       name: "fathom",
       source: {
-        source: "local",
-        path: "plugins/mcp-catalog/fathom",
-        version: "1.0.0",
+        source: "github",
+        repo: "acme/fathom",
+        ref: SHA_A,
       },
       integration: {
         kind: "mcp",
@@ -165,12 +165,12 @@ describe("marketplaceMatch", () => {
 
     expect(match).toMatchObject({
       name: "fathom",
-      path: "local:plugins/mcp-catalog/fathom@1.0.0",
+      path: `github:acme/fathom@${SHA_A}`,
       integration: { kind: "mcp", logo: "fathom.png" },
       source: {
-        kind: "local",
-        path: "plugins/mcp-catalog/fathom",
-        version: "1.0.0",
+        kind: "github",
+        repo: "acme/fathom",
+        ref: SHA_A,
       },
     });
   });

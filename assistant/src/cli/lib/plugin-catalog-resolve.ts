@@ -3,16 +3,15 @@
  *
  * The gated analogues of {@link ./plugin-marketplace}'s `resolveMarketplaceSource`
  * / GitHub `findMarketplaceEntry`: install-by-name and the detail lookup resolve
- * the SAME catalog `search` uses (platform-first via {@link ./plugin-catalog-cache}'s
- * `getPluginCatalog`, bundled offline) instead of a direct GitHub
- * `plugins/marketplace.json` fetch — so search, install, and details read one source.
+ * the SAME catalog `search` uses (via {@link ./plugin-catalog-cache}'s
+ * `getPluginCatalog`) instead of a direct GitHub `plugins/marketplace.json`
+ * fetch — so search, install, and details read one source.
  */
 
 import { getPluginCatalog } from "./plugin-catalog-cache.js";
 import { DEFAULT_PLUGIN_REF } from "./plugin-constants.js";
 import {
   githubSourceSchema,
-  localSourceSchema,
   type ResolvedPluginSource,
 } from "./plugin-marketplace.js";
 import type { PluginSearchMatch, SearchPluginsDeps } from "./search-plugins.js";
@@ -41,24 +40,6 @@ export async function findCatalogEntry(
 export function resolveSourceFromMatch(
   match: PluginSearchMatch,
 ): ResolvedPluginSource {
-  if (match.source.kind === "local") {
-    const parsed = localSourceSchema.safeParse({
-      source: "local",
-      path: match.source.path,
-      version: match.source.version,
-    });
-    if (!parsed.success) {
-      throw new Error(
-        `Catalog entry "${match.name}" (${match.source.path}) has an invalid source: ` +
-          parsed.error.issues.map((issue) => issue.message).join("; "),
-      );
-    }
-    return {
-      kind: "local",
-      path: parsed.data.path,
-      version: parsed.data.version,
-    };
-  }
   // Repo-root `""` maps to `undefined` (omitted = root) so the schema's
   // non-empty path refine does not reject a valid repo-root entry.
   const path = match.source.path || undefined;

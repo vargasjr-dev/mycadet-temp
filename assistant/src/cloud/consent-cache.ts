@@ -22,7 +22,6 @@
 
 import { getLogger } from "../util/logger.js";
 import { CadetCloudClient } from "./client.js";
-import { areCloudFeaturesEnabled } from "./feature-gate.js";
 
 const log = getLogger("consent-cache");
 
@@ -57,11 +56,6 @@ export function getCachedShareDiagnostics(): boolean {
  * flipped off mid-session.
  */
 export async function refreshConsentCache(): Promise<void> {
-  if (!areCloudFeaturesEnabled()) {
-    setCachedShareDiagnostics(false);
-    return;
-  }
-
   const client = await CadetCloudClient.create();
   if (!client) {
     resetConsentToUnknown();

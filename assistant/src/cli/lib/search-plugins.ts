@@ -2,8 +2,8 @@
  * Filtering and projection helpers for the installable plugin catalog.
  *
  * The catalog itself is resolved by {@link ./plugin-catalog-cache}
- * (`getPluginCatalog`), which is platform-first with a bundled offline
- * fallback. This module owns the query semantics on top of a resolved
+ * (`getPluginCatalog`), which fetches it from Cadet Cloud. This module owns
+ * the query semantics on top of a resolved
  * catalog: compile a pattern, filter entries by name, and project a raw
  * marketplace entry onto the catalog match shape.
  *
@@ -24,24 +24,15 @@ export interface SearchPluginsDeps {
 }
 
 /** Where a catalog match comes from. */
-export type PluginMatchSource =
-  | {
-      readonly kind: "github";
-      /** `owner/repo` of the external plugin repository. */
-      readonly repo: string;
-      /** Directory within the repo, when the plugin is not at the root. */
-      readonly path?: string;
-      /** Pinned git ref the plugin is fetched from. */
-      readonly ref: string;
-    }
-  | {
-      readonly kind: "local";
-      /** Exact package key in the assistant's embedded plugin bundle. */
-      readonly path: string;
-      readonly version: string;
-      readonly repo?: undefined;
-      readonly ref?: undefined;
-    };
+export type PluginMatchSource = {
+  readonly kind: "github";
+  /** `owner/repo` of the external plugin repository. */
+  readonly repo: string;
+  /** Directory within the repo, when the plugin is not at the root. */
+  readonly path?: string;
+  /** Pinned git ref the plugin is fetched from. */
+  readonly ref: string;
+};
 
 export interface McpPluginIntegration {
   readonly kind: "mcp";
@@ -149,29 +140,18 @@ export interface PluginCatalog {
  * Project a marketplace entry onto the catalog match shape, building a
  * a source-specific locator for display.
  *
- * Shared by the cloud fetcher and bundled reader so all catalog sources
- * project entries identically.
+ * Shared by the cloud fetcher so all catalog entries project identically.
  */
 export function marketplaceMatch(entry: MarketplaceEntry): PluginSearchMatch {
-  const source: PluginMatchSource =
-    entry.source.source === "github"
-      ? {
-          kind: "github",
-          repo: entry.source.repo,
-          path: entry.source.path,
-          ref: entry.source.ref,
-        }
-      : {
-          kind: "local",
-          path: entry.source.path,
-          version: entry.source.version,
-        };
-  const locator =
-    source.kind === "github"
-      ? `github:${source.repo}${source.path ? `/${source.path}` : ""}@${
-          source.ref
-        }`
-      : `local:${source.path}@${source.version}`;
+  const source: PluginMatchSource = {
+    kind: "github",
+    repo: entry.source.repo,
+    path: entry.source.path,
+    ref: entry.source.ref,
+  };
+  const locator = `github:${source.repo}${
+    source.path ? `/${source.path}` : ""
+  }@${source.ref}`;
   return {
     name: entry.name,
     path: locator,
@@ -190,8 +170,8 @@ export function marketplaceMatch(entry: MarketplaceEntry): PluginSearchMatch {
  * (first occurrence wins), map via {@link marketplaceMatch}, and return
  * sorted alphabetically by name.
  *
- * Shared by every catalog source (platform fetcher, bundled reader) so they
- * dedupe, project, and order entries identically.
+ * Shared by the cloud fetcher so entries dedupe, project, and order
+ * identically.
  */
 export function projectMarketplaceEntries(
   entries: Iterable<MarketplaceEntry>,

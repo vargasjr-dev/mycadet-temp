@@ -111,10 +111,6 @@ mock.module("../config/env.js", () => ({
 // credentials are seeded under their real credentialKey lookups.
 const secureKeys = useMemorySecureKeyMap();
 
-mock.module("../cloud/feature-gate.js", () => ({
-  areCloudFeaturesEnabled: () => true,
-}));
-
 import { LLMSchema } from "../config/schemas/llm.js";
 import type { ProvidersConfig } from "../providers/registry.js";
 import {

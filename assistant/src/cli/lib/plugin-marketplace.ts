@@ -3,10 +3,9 @@
  *
  * The old local marketplace manifest (`plugins/marketplace.json`) and its
  * GitHub fetcher are gone: the installable catalog is Cadet Cloud's
- * (`GET /v1/plugins`, see {@link ./plugin-catalog-cloud}), and the default
- * local plugins are discovered from their own directories (see
- * {@link ./plugin-catalog-local}). What remains here is the contract every
- * catalog source must satisfy when a name resolves to install coordinates.
+ * (`GET /v1/plugins`, see {@link ./plugin-catalog-cloud}). What remains here
+ * is the contract every catalog source must satisfy when a name resolves to
+ * install coordinates.
  *
  * Every external source pins an explicit `ref` that MUST be a full commit
  * SHA: the fetched code is locked to an immutable revision. Tags and branches
@@ -64,32 +63,7 @@ export const githubSourceSchema = z.object({
     ),
 });
 
-/**
- * A plugin package shipped inside the assistant distribution. The path is a
- * key into the generated bundled-package map, never a path resolved from the
- * current working directory.
- */
-export const localSourceSchema = z.object({
-  source: z.literal("local"),
-  path: z
-    .string()
-    .regex(/^plugins\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+$/)
-    .refine(
-      (path) =>
-        !path
-          .split(/[/\\]/)
-          .some((segment) => segment === "." || segment === ".."),
-      "path must be a clean bundled-package path",
-    ),
-  version: z.string().min(1),
-  repo: z.never().optional(),
-  ref: z.never().optional(),
-});
-
-export const marketplaceSourceSchema = z.discriminatedUnion("source", [
-  githubSourceSchema,
-  localSourceSchema,
-]);
+export const marketplaceSourceSchema = githubSourceSchema;
 
 export const mcpIntegrationSchema = z.object({
   kind: z.literal("mcp"),
@@ -154,13 +128,4 @@ export interface ResolvedGitHubPluginSource {
   readonly ref: string;
 }
 
-/** Concrete bundled-package coordinates an entry resolves to for install. */
-export interface ResolvedLocalPluginSource {
-  readonly kind: "local";
-  readonly path: string;
-  readonly version: string;
-}
-
-export type ResolvedPluginSource =
-  | ResolvedGitHubPluginSource
-  | ResolvedLocalPluginSource;
+export type ResolvedPluginSource = ResolvedGitHubPluginSource;

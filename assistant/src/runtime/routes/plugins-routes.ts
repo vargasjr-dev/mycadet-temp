@@ -1263,15 +1263,12 @@ async function handleInstallPlugin({ body = {}, headers }: RouteHandlerArgs) {
         {
           name,
           force,
-          trustedSource:
-            source.kind === "local"
-              ? source
-              : {
-                  owner: source.owner,
-                  repo: source.repo,
-                  rootPath: source.path,
-                  ref: source.ref,
-                },
+          trustedSource: {
+            owner: source.owner,
+            repo: source.repo,
+            rootPath: source.path,
+            ref: source.ref,
+          },
         },
         { fetch: globalThis.fetch.bind(globalThis) },
       );

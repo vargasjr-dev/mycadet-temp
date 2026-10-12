@@ -20,7 +20,6 @@ import {
 } from "../inspect-plugin.js";
 import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import { computeFingerprint } from "../plugin-fingerprint.js";
-import type { PluginCatalog } from "../search-plugins.js";
 
 const SHA_A = "a".repeat(40);
 const SHA_B = "b".repeat(40);
@@ -357,59 +356,6 @@ describe("inspectPlugin", () => {
 
     expect(result.installed).toBe(true);
     expect(result.local?.description).toBe("Installed copy.");
-  });
-
-  test("previews an uninstalled bundled provider offline without fetching GitHub", async () => {
-    const savedDisablePlatform = process.env.CADET_DISABLE_CLOUD;
-    const savedIsPlatform = process.env.IS_CLOUD;
-    process.env.CADET_DISABLE_CLOUD = "true";
-    delete process.env.IS_CLOUD;
-    let fetchCalls = 0;
-    const fetch = (async () => {
-      fetchCalls += 1;
-      throw new Error("offline");
-    }) as FetchLike;
-    const localCatalog: PluginCatalog = {
-      ref: "bundled",
-      matches: [
-        {
-          name: "fathom",
-          path: "local:plugins/mcp-catalog/fathom@1.0.0",
-          category: "productivity",
-          source: {
-            kind: "local",
-            path: "plugins/mcp-catalog/fathom",
-            version: "1.0.0",
-          },
-        },
-      ],
-    };
-
-    try {
-      const result = await inspectPlugin(
-        { name: "fathom" },
-        { fetch, workspacePluginsDir: workspace, localCatalog },
-      );
-
-      expect(result.status).toBe("not-installed");
-      expect(result.remote).toMatchObject({
-        kind: "local",
-        path: "plugins/mcp-catalog/fathom",
-        version: "1.0.0",
-      });
-      expect(fetchCalls).toBe(0);
-    } finally {
-      if (savedDisablePlatform === undefined) {
-        delete process.env.CADET_DISABLE_CLOUD;
-      } else {
-        process.env.CADET_DISABLE_CLOUD = savedDisablePlatform;
-      }
-      if (savedIsPlatform === undefined) {
-        delete process.env.IS_CLOUD;
-      } else {
-        process.env.IS_CLOUD = savedIsPlatform;
-      }
-    }
   });
 
   test("reports remote-unavailable when the marketplace cannot be reached", async () => {

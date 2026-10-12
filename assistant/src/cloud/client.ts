@@ -12,7 +12,6 @@ import { resolveCloudProxyContext } from "../providers/cloud-proxy/context.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
-import { areCloudFeaturesEnabled } from "./feature-gate.js";
 
 const log = getLogger("cloud-client");
 
@@ -54,11 +53,6 @@ interface CloudClientConfig {
  * key). The assistant ID is resolved but not required.
  */
 async function resolveCloudClientConfig(): Promise<CloudClientConfig | null> {
-  if (!areCloudFeaturesEnabled()) {
-    log.debug("platform features disabled -- returning null");
-    return null;
-  }
-
   const ctx = await resolveCloudProxyContext();
 
   const baseUrl = ctx.enabled ? ctx.cloudBaseUrl : "";

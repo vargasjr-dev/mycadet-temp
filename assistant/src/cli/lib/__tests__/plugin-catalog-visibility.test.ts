@@ -6,16 +6,14 @@ import {
 } from "../plugin-catalog-visibility.js";
 import type { PluginCatalog, PluginSearchMatch } from "../search-plugins.js";
 
+const SHA = "0".repeat(40);
+
 function match(name: string): PluginSearchMatch {
   return {
     name,
-    path: `local:plugins/mcp-catalog/${name}@1.0.0`,
+    path: `github:acme/${name}@${SHA}`,
     category: null,
-    source: {
-      kind: "local",
-      path: `plugins/mcp-catalog/${name}`,
-      version: "1.0.0",
-    },
+    source: { kind: "github", repo: `acme/${name}`, ref: SHA },
   };
 }
 

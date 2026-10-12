@@ -1,10 +1,8 @@
 /**
  * Tests for {@link getPluginCatalog}.
  *
- * Exercises the gate between the cloud fetcher and the bundled reader plus
- * the per-ref TTL cache. Platform paths drive a fake `deps.fetch` returning a
- * `/v1/plugins/` payload (no real network); the offline path reads the bundled
- * manifest and must touch the network zero times.
+ * Exercises the cloud fetcher wiring and the per-ref TTL cache via a fake
+ * `deps.fetch` returning a `/v1/plugins/` payload (no real network).
  */
 
 import {
@@ -19,9 +17,7 @@ import {
 import type { FetchLike } from "../fetch-like.js";
 import {
   getPluginCatalog,
-  getPluginCatalogForInstalledMetadata,
   invalidatePluginCatalogCache,
-  mergePlatformCatalogWithBundledLocals,
   PLUGIN_CATALOG_CACHE_TTL_MS,
 } from "../plugin-catalog-cache.js";
 import type { SearchPluginsDeps } from "../search-plugins.js";
@@ -67,28 +63,13 @@ function failingFetch(): { fetch: FetchLike; calls: () => number } {
   return { fetch, calls: () => calls };
 }
 
-const ORIGINAL_ENV = {
-  IS_CLOUD: process.env.IS_CLOUD,
-  CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
-};
-
 describe("getPluginCatalog", () => {
   beforeEach(() => {
     invalidatePluginCatalogCache();
-    // Default: platform features enabled (neither flag set).
-    delete process.env.IS_CLOUD;
-    delete process.env.CADET_DISABLE_CLOUD;
   });
 
   afterEach(() => {
     setSystemTime();
-    for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
-    }
   });
 
   test("fetches from the cloud once, then serves cache within the TTL", async () => {
@@ -153,154 +134,5 @@ describe("getPluginCatalog", () => {
     // THEN the failure propagates instead of serving the stale catalog
     expect(err).toBeInstanceOf(Error);
     expect(failing.calls()).toBe(1);
-  });
-
-  test("serves an empty catalog with zero network when platform is disabled", async () => {
-    // GIVEN platform features disabled (offline / self-hosted)
-    process.env.CADET_DISABLE_CLOUD = "true";
-    delete process.env.IS_CLOUD;
-
-    const { fetch, calls } = platformFetch(["ignored"]);
-    const deps: SearchPluginsDeps = {
-      fetch,
-      featureFlagEnabled: () => true,
-    };
-
-    // WHEN we request the catalog
-    const result = await getPluginCatalog("main", deps);
-
-    // THEN the catalog is empty — installs by name need the cloud — and no
-    // fetch is made. The requested ref is echoed onto the wire contract.
-    expect(calls()).toBe(0);
-    expect(result.matches).toEqual([]);
-    expect(result.ref).toBe("main");
-  });
-
-  test("serves an empty installed-metadata catalog when platform is disabled", async () => {
-    process.env.CADET_DISABLE_CLOUD = "true";
-    delete process.env.IS_CLOUD;
-
-    const { fetch, calls } = platformFetch(["ignored"]);
-    const result = await getPluginCatalogForInstalledMetadata("main", {
-      fetch,
-    });
-
-    expect(calls()).toBe(0);
-    expect(result.matches).toEqual([]);
-  });
-});
-
-describe("mergePlatformCatalogWithBundledLocals", () => {
-  test("adds local packages while keeping a cloud row on name collision", () => {
-    const platform: PluginCatalog = {
-      ref: "main",
-      matches: [
-        {
-          name: "fathom",
-          path: "github:provider/fathom@pin",
-          category: null,
-          source: {
-            kind: "github",
-            repo: "provider/fathom",
-            ref: "0".repeat(40),
-          },
-        },
-      ],
-    };
-    const bundled: PluginCatalog = {
-      ref: "bundled",
-      matches: [
-        {
-          name: "fathom",
-          path: "local:plugins/mcp-catalog/fathom@1.0.0",
-          category: null,
-          source: {
-            kind: "local",
-            path: "plugins/mcp-catalog/fathom",
-            version: "1.0.0",
-          },
-        },
-        {
-          name: "notion",
-          path: "local:plugins/mcp-catalog/notion@1.0.0",
-          category: null,
-          source: {
-            kind: "local",
-            path: "plugins/mcp-catalog/notion",
-            version: "1.0.0",
-          },
-        },
-      ],
-    };
-
-    const merged = mergePlatformCatalogWithBundledLocals(platform, bundled);
-
-    expect(merged.matches.map((match) => match.name)).toEqual([
-      "fathom",
-      "notion",
-    ]);
-    expect(merged.matches[0]?.source.kind).toBe("github");
-    expect(merged.matches[1]?.source.kind).toBe("local");
-    expect(merged.ref).toBe("main");
-  });
-  test("keeps the bundled integration when a cloud row without one shadows it", () => {
-    const integration = {
-      kind: "mcp",
-      displayName: "Fathom",
-      documentationUrl: "https://example.com/docs",
-      verifiedAt: "2026-09-10",
-      verification: "documentation-only",
-      setup: { mode: "oauth", instructions: "Sign in." },
-      logo: "fathom.png",
-    } as const;
-    const platformIntegration = { ...integration, displayName: "Platform" };
-    const platform: PluginCatalog = {
-      ref: "main",
-      matches: [
-        {
-          name: "fathom",
-          path: "github:provider/fathom@pin",
-          category: null,
-          source: {
-            kind: "github",
-            repo: "provider/fathom",
-            ref: "0".repeat(40),
-          },
-        },
-        {
-          name: "linear",
-          path: "github:provider/linear@pin",
-          category: null,
-          integration: platformIntegration,
-          source: {
-            kind: "github",
-            repo: "provider/linear",
-            ref: "0".repeat(40),
-          },
-        },
-      ],
-    };
-    const bundled: PluginCatalog = {
-      ref: "bundled",
-      matches: ["fathom", "linear"].map((name) => ({
-        name,
-        path: `local:plugins/mcp-catalog/${name}@1.0.0`,
-        category: null,
-        integration,
-        source: {
-          kind: "local",
-          path: `plugins/mcp-catalog/${name}`,
-          version: "1.0.0",
-        },
-      })),
-    };
-
-    const merged = mergePlatformCatalogWithBundledLocals(platform, bundled);
-
-    const [fathom, linear] = merged.matches;
-    expect(fathom?.source.kind).toBe("github");
-    expect(fathom?.integration).toEqual(integration);
-    expect(linear?.source.kind).toBe("github");
-    expect(linear?.integration).toEqual(platformIntegration);
   });
 });

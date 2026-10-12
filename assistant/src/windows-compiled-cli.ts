@@ -5,7 +5,6 @@ import * as pluginInstallPlatform from "./cli/lib/install-from-cloud.js";
 import * as pluginInstallGitHub from "./cli/lib/install-from-github.js";
 import * as pluginInstalled from "./cli/lib/list-installed-plugins.js";
 import * as pluginCatalogCache from "./cli/lib/plugin-catalog-cache.js";
-import * as pluginCatalogLocal from "./cli/lib/plugin-catalog-local.js";
 import * as pluginSurfaces from "./cli/lib/plugin-surfaces.js";
 import * as pluginSearch from "./cli/lib/search-plugins.js";
 import * as pluginUninstall from "./cli/lib/uninstall-plugin.js";
@@ -17,7 +16,6 @@ setBundledCliModules({
   configEnv,
   providerSecretCatalog,
   pluginCatalogCache,
-  pluginCatalogLocal,
   pluginDiff,
   pluginInspect,
   pluginInstallGitHub,

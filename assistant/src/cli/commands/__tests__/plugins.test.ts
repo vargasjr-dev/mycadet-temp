@@ -450,9 +450,9 @@ describe("plugins install - declared-schedules consent", () => {
     expect(r.exitCode).toBe(0);
   });
 
-  test("a name install with platform disabled refuses before anything runs", async () => {
-    // The bundled offline catalog is gone: a name needs the cloud to resolve.
-    process.env.CADET_DISABLE_CLOUD = "true";
+  test("a name install absent from the catalog refuses before anything runs", async () => {
+    // A name needs the cloud catalog to resolve; an unclaimed name refuses
+    // before any install machinery runs.
     stageFixture = writeScheduleFixture;
     confirmResults = ["confirmed"];
 
@@ -461,34 +461,10 @@ describe("plugins install - declared-schedules consent", () => {
     expect(platformInstallCalls.length).toBe(0);
     expect(installPluginCalls.length).toBe(0);
     expect(confirmCalls.length).toBe(0);
-    expect(r.stdout + r.stderr).toContain("Install by GitHub URL instead");
+    expect(r.stdout + r.stderr).toContain(
+      'Plugin "caveman" is not in the marketplace catalog.',
+    );
     expect(r.exitCode).toBe(1);
-  });
-
-  test("a local catalog source bypasses the cloud installer", async () => {
-    catalogMatches = [
-      {
-        name: "fathom",
-        path: "local:plugins/mcp-catalog/fathom@1.0.0",
-        category: "productivity",
-        source: {
-          kind: "local",
-          path: "plugins/mcp-catalog/fathom",
-          version: "1.0.0",
-        },
-      },
-    ];
-
-    const r = await runCommand(["plugins", "install", "fathom"]);
-
-    expect(platformInstallCalls).toHaveLength(0);
-    expect(installPluginCalls).toHaveLength(1);
-    expect(installPluginCalls[0]?.trustedSource).toEqual({
-      kind: "local",
-      path: "plugins/mcp-catalog/fathom",
-      version: "1.0.0",
-    });
-    expect(r.exitCode).toBe(0);
   });
 
   test("falls back to the cloud installer when catalog discovery fails", async () => {
@@ -779,39 +755,6 @@ describe("plugins inspect - schedules surface", () => {
     const r = await runCommand(["plugins", "inspect", "example"]);
 
     expect(r.stdout).toContain("weekly  RRULE:FREQ=WEEKLY;BYDAY=MO  (execute)");
-    expect(r.exitCode).toBe(0);
-  });
-
-  test("renders a bundled package location without a GitHub URL", async () => {
-    inspectResult = {
-      ...inspectionWithSurfaces({
-        skills: [],
-        hooks: [],
-        tools: [],
-        schedules: [],
-      }),
-      installed: false,
-      status: "not-installed",
-      local: null,
-      remote: {
-        kind: "local",
-        repo: "",
-        path: "plugins/mcp-catalog/fathom",
-        commit: "1.0.0",
-        committedAt: null,
-        description: null,
-        homepage: null,
-        license: null,
-        category: "productivity",
-        marketplaceRef: "main",
-        version: "1.0.0",
-      },
-    };
-
-    const r = await runCommand(["plugins", "inspect", "fathom"]);
-
-    expect(r.stdout).toContain("bundled:plugins/mcp-catalog/fathom");
-    expect(r.stdout).not.toContain("https://github.com//");
     expect(r.exitCode).toBe(0);
   });
 });

@@ -1,17 +1,15 @@
 /**
  * Tests for {@link getPluginDetails}.
  *
- * At the default ref, the catalog entry is resolved from the gated plugin
- * catalog (the same source search and install-by-name use): these tests run
- * with platform features disabled (`CADET_DISABLE_CLOUD`) so the catalog is
- * the bundled manifest — real plugin names / pinned SHAs, zero network. An
- * explicit historical `ref` instead reads the GitHub `plugins/marketplace.json`
- * at that revision (a git lookup, matching pin history / inspect). GitHub is
- * replaced with an
+ * At the default ref, the catalog entry is resolved from the mocked cloud
+ * plugin catalog (the same source search and install-by-name use) — real
+ * plugin names / pinned SHAs, zero network. An explicit historical `ref`
+ * instead reads the GitHub `plugins/marketplace.json` at that revision (a git
+ * lookup, matching pin history / inspect). GitHub is replaced with an
  * in-memory Contents API fixture passed via the `fetch` dependency, and the
  * installed-copy path is exercised against a real temp directory passed via
- * `workspacePluginsDir` — no globals are monkey-patched. The fixture answers two
- * URL shapes:
+ * `workspacePluginsDir` — no globals are monkey-patched. The fixture answers
+ * two URL shapes:
  *   - directory listings (`/contents/<path>` → entry array or 404),
  *   - raw file downloads (a listing entry's `download_url`).
  *
@@ -209,34 +207,16 @@ function sha16(buf: Buffer): string {
   return createHash("sha256").update(buf).digest("hex").slice(0, 16);
 }
 
-const ORIGINAL_ENV = {
-  IS_CLOUD: process.env.IS_CLOUD,
-  CADET_DISABLE_CLOUD: process.env.CADET_DISABLE_CLOUD,
-};
-
-function restoreEnv(): void {
-  for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
-    if (value === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = value;
-    }
-  }
-}
-
 let workspace: string;
 
 describe("getPluginDetails (mocked cloud catalog)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    delete process.env.CADET_DISABLE_CLOUD;
-    delete process.env.IS_CLOUD;
   });
 
   afterEach(() => {
     rmSync(workspace, { recursive: true, force: true });
-    restoreEnv();
   });
 
   test("resolves an external plugin: catalog metadata + repo README/package.json", async () => {
@@ -778,14 +758,11 @@ describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
   beforeEach(() => {
     workspace = mkdtempSync(join(tmpdir(), "plugin-details-"));
     invalidatePluginCatalogCache();
-    delete process.env.IS_CLOUD;
-    delete process.env.CADET_DISABLE_CLOUD;
   });
 
   afterEach(() => {
     rmSync(workspace, { recursive: true, force: true });
     invalidatePluginCatalogCache();
-    restoreEnv();
   });
 
   test("an installed copy still renders from disk when the catalog is down", async () => {
