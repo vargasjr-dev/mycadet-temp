@@ -141,7 +141,7 @@ describe("CesHttpCredentialClient", () => {
       Promise.resolve(
         Response.json({ account: "test-acct", value: "secret-123" }),
       ),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -156,7 +156,7 @@ describe("CesHttpCredentialClient", () => {
   test("get returns not-found on 404", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response(null, { status: 404 })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -171,7 +171,7 @@ describe("CesHttpCredentialClient", () => {
   test("get returns unreachable on 500", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("internal error", { status: 500 })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -186,7 +186,7 @@ describe("CesHttpCredentialClient", () => {
   test("get returns unreachable on network error", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new Error("ECONNREFUSED")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -201,7 +201,7 @@ describe("CesHttpCredentialClient", () => {
   test("delete returns deleted on 200", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(Response.json({ ok: true, account: "acct" })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -215,7 +215,7 @@ describe("CesHttpCredentialClient", () => {
   test("delete returns not-found on 404", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response(null, { status: 404 })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -229,7 +229,7 @@ describe("CesHttpCredentialClient", () => {
   test("delete returns error on network failure", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new Error("network down")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -243,7 +243,7 @@ describe("CesHttpCredentialClient", () => {
   test("list returns accounts on 200", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(Response.json({ accounts: ["a", "b", "c"] })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -258,7 +258,7 @@ describe("CesHttpCredentialClient", () => {
   test("list returns unreachable on error", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new Error("timeout")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -273,7 +273,7 @@ describe("CesHttpCredentialClient", () => {
   test("bulkSet returns all-failed when request fails", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new Error("network")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const client = createCesHttpCredentialClient(
       createTestConfig(),
@@ -311,7 +311,7 @@ describe("fetchCesLogExport", () => {
           headers: { "Content-Type": "application/gzip" },
         }),
       ),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const result = await fetchCesLogExport({
       baseUrl: "http://ces-test:8090",
@@ -327,7 +327,7 @@ describe("fetchCesLogExport", () => {
   test("returns error on non-OK status", async () => {
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("forbidden", { status: 403 })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const result = await fetchCesLogExport({
       baseUrl: "http://ces-test:8090",
@@ -343,7 +343,7 @@ describe("fetchCesLogExport", () => {
   test("returns error on network failure", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new Error("connection refused")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const result = await fetchCesLogExport({
       baseUrl: "http://ces-test:8090",
@@ -361,7 +361,7 @@ describe("fetchCesLogExport", () => {
     globalThis.fetch = mock((url: string | URL | Request) => {
       capturedUrl = typeof url === "string" ? url : url.toString();
       return Promise.resolve(new Response(new ArrayBuffer(0), { status: 200 }));
-    }) as typeof fetch;
+    }) as unknown as typeof fetch;
 
     await fetchCesLogExport(
       { baseUrl: "http://ces-test:8090", serviceToken: "tok" },

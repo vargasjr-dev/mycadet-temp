@@ -1,6 +1,9 @@
 {
   "name": "cadet-workspace",
   "private": true,
+  "scripts": {
+    "postinstall": "bash scripts/postinstall.sh"
+  },
   "workspaces": [
     "assistant",
     "assistant/src/api",
