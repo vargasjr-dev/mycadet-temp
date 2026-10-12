@@ -110,7 +110,7 @@ describe("ensureCompleteCustomProfiles", () => {
       llm: {
         default: distinctiveDefault,
         profiles: {
-          balanced: { source: "managed", status: "disabled" },
+          balanced: { source: "cloud", status: "disabled" },
           ab: {
             source: "user",
             mix: [

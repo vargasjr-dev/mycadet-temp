@@ -249,7 +249,7 @@ describe("completeCustomProfile", () => {
   });
 
   test("passes cloud profiles through untouched", () => {
-    const managed: ProfileEntry = { source: "managed", topP: 0.9 };
+    const managed: ProfileEntry = { source: "cloud", topP: 0.9 };
     expect(completeCustomProfile(fullDefault, managed)).toBe(managed);
   });
 

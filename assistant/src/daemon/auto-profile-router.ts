@@ -403,7 +403,7 @@ export async function previewAutoProfile(args: {
 }): Promise<AutoProfileRoute | null> {
   const { llm } = getConfig();
   const profiles = getConversationProfilesForProvider(llm);
-  if (profiles[AUTO_PROFILE_KEY]?.source !== "managed") {
+  if (profiles[AUTO_PROFILE_KEY]?.source !== "cloud") {
     return null;
   }
   const history = recentHistoryFromDb(args.conversationId);

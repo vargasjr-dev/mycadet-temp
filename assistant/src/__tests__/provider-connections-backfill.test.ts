@@ -89,7 +89,7 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
   expect(created.ok).toBe(true);
   seedConfig({
     balanced: {
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-sonnet-4-6",
     },

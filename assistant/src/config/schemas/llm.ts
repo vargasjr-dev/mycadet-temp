@@ -509,7 +509,7 @@ const OpenRouterDeepPartialSchema = z.object({
  * Distinguishes daemon-cloud profiles (overwritten on every startup) from
  * user-created ones (never touched by the daemon).
  */
-const ProfileSource = z.enum(["managed", "user"]);
+const ProfileSource = z.enum(["cloud", "user"]);
 type ProfileSource = z.infer<typeof ProfileSource>;
 
 // ---------------------------------------------------------------------------
@@ -824,7 +824,7 @@ function unresolvableProfileReason(
  * `llm.default`.
  *
  * Every on-disk key qualifies but one: a reserved backup name whose entry is
- * a thin `source: "managed"` stub. The stub is not a profile, it is the
+ * a thin `source: "cloud"` stub. The stub is not a profile, it is the
  * workspace's slot for a code-owned one, and it can reach disk on a cloud
  * install through nothing more than a `config get` -> `config set` round-trip
  * of the effective profile list (`normalizeCloudProfileWrites` reduces the
@@ -853,7 +853,7 @@ function referenceableProfileKeys(
         value != null && typeof value === "object" && !Array.isArray(value)
           ? (value as Record<string, unknown>)
           : null;
-      return entry != null && entry.source !== "managed";
+      return entry != null && entry.source !== "cloud";
     })
     .map(([name]) => name);
 }
@@ -927,7 +927,7 @@ export function collectFallbackProfileIssues(
     const expectedFallback = isDefaultProfileKey(name)
       ? FALLBACK_PROFILE_BY_KEY[name]
       : undefined;
-    if (entry?.source !== "managed" || fallback !== expectedFallback) {
+    if (entry?.source !== "cloud" || fallback !== expectedFallback) {
       issues.push({
         profileName: name,
         message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Cadet Cloud default profiles.`,

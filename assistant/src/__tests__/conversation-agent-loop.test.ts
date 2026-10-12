@@ -63,7 +63,7 @@ const channelReplyDeliveryRealSnapshot = {
 };
 // Disable the catalog default so resolution lands on llm.default.
 const disabledCatalogDefaultProfiles: Record<string, unknown> = {
-  balanced: { source: "managed", status: "disabled" },
+  balanced: { source: "cloud", status: "disabled" },
 };
 
 /**
@@ -3034,7 +3034,7 @@ describe("session-agent-loop", () => {
       seedLlmConfig({
         profiles: {
           auto: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             model: "test-model",
           },

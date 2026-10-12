@@ -79,7 +79,7 @@ type HatchEraProfileKey = (typeof HATCH_ERA_PROFILE_KEYS)[number];
 
 /**
  * The exact stub shapes BYOK hatching left on each default key: thin (only
- * the workspace-owned overlay fields), `source: "managed"`, the frozen
+ * the workspace-owned overlay fields), `source: "cloud"`, the frozen
  * per-key label, and a `status` of `"disabled"` (seeded at hatch, #30367),
  * `"active"` (re-enabled through the guard; safe to delete because the bare
  * key resolves active post-conversion), or no `status` key at all (installs
@@ -116,7 +116,7 @@ function isHatchStub(
   entry: Record<string, unknown>,
 ): boolean {
   return (
-    entry.source === "managed" &&
+    entry.source === "cloud" &&
     Object.keys(entry).every((k) => STUB_ONLY_KEYS.has(k)) &&
     (!("status" in entry) ||
       entry.status === "disabled" ||
@@ -332,7 +332,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
     const overlay = userOverlayState(entry, key);
     delete profiles[name];
     if (overlay !== null && readObject(profiles[key]) === null) {
-      const stub: Record<string, unknown> = { source: "managed", ...overlay };
+      const stub: Record<string, unknown> = { source: "cloud", ...overlay };
       // A carried label that reproduces the hatch-stub shape is
       // indistinguishable from a genuine hatch stub and would be deleted by
       // the stub arm on the next boot, so the colliding label is never
@@ -414,12 +414,12 @@ function isKnownUneditedBody(
     return false;
   }
   // Completion skips managed-source bodies, so a copy from the era whose
-  // templates wrote `source: "managed"` (#29755 to #29768, 2026-05-05) is
+  // templates wrote `source: "cloud"` (#29755 to #29768, 2026-05-05) is
   // compared as if user-source to keep both sides normalized identically.
   const normalizedEntry: Record<string, unknown> = {
     ...entry,
     provider: copyProvider,
-    ...(entry.source === "managed" ? { source: "user" } : {}),
+    ...(entry.source === "cloud" ? { source: "user" } : {}),
   };
   // The conventional personal binding is machinery-written (hatch stamps,
   // completion re-stamps); normalize it away. Any other binding is user
@@ -485,7 +485,7 @@ function uniformCopyProvider(profiles: Record<string, unknown>): string | null {
  *   retiring the copy cannot switch keys. Any other connection value is a
  *   user edit and never matches.
  *
- * The final hatch-written deviation, `source: "managed"` from the earliest
+ * The final hatch-written deviation, `source: "cloud"` from the earliest
  * templates, is handled by the caller's source normalization.
  */
 function hatchBodyVariants(
@@ -655,7 +655,7 @@ function repairProfileSelections(
     typeof advisor === "string" ? effectiveEntry(advisor) : undefined;
   const advisorUnusable =
     advisorEntry === undefined ||
-    (advisorEntry.source === "managed" && advisorEntry.status === "disabled");
+    (advisorEntry.source === "cloud" && advisorEntry.status === "disabled");
   if (advisorUnusable) {
     // A default key whose surviving workspace entry is a disabled managed
     // stub still dispatches the pure catalog body (`providerAwareEntry` in
@@ -678,7 +678,7 @@ function repairProfileSelections(
       const workspace = readObject(profiles[key]);
       return (
         workspace !== null &&
-        workspace.source === "managed" &&
+        workspace.source === "cloud" &&
         resolveDefaultProfileForProvider(undefined, key, defaultBlob)
           ?.status !== "disabled"
       );

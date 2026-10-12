@@ -44120,13 +44120,15 @@ components:
                   additionalProperties: {}
                 - type: "null"
             profiles:
-              type: object
-              propertyNames:
-                type: string
-              additionalProperties:
-                anyOf:
-                  - $ref: "#/components/schemas/ProfilePatchEntry"
-                  - type: "null"
+              anyOf:
+                - type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    anyOf:
+                      - $ref: "#/components/schemas/ProfilePatchEntry"
+                      - type: "null"
+                - type: "null"
             profileOrder:
               type: array
               items:
@@ -44351,7 +44353,7 @@ components:
           anyOf:
             - type: string
               enum:
-                - managed
+                - cloud
                 - user
             - type: "null"
         label:
@@ -44720,7 +44722,7 @@ components:
         source:
           type: string
           enum:
-            - managed
+            - cloud
             - user
         label:
           anyOf:
@@ -45100,7 +45102,7 @@ components:
         source:
           type: string
           enum:
-            - managed
+            - cloud
             - user
         provider_connection:
           type: string
@@ -45507,7 +45509,7 @@ components:
         source:
           type: string
           enum:
-            - managed
+            - cloud
             - user
         label:
           anyOf:

@@ -69,17 +69,17 @@ function makeDefaultRawConfig(): Record<string, unknown> {
         "quality-optimized": {
           provider: "anthropic",
           model: "claude-sonnet",
-          source: "managed",
+          source: "cloud",
         },
         balanced: {
           provider: "anthropic",
           model: "claude-sonnet",
-          source: "managed",
+          source: "cloud",
         },
         "cost-optimized": {
           provider: "anthropic",
           model: "claude-haiku",
-          source: "managed",
+          source: "cloud",
         },
         "my-custom": { provider: "openai", model: "gpt-4o", source: "user" },
       },
@@ -249,7 +249,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             provider: "anthropic",
             model: "claude-sonnet",
             label: "My Custom Name",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -322,7 +322,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             provider: "anthropic",
             model: "claude-opus",
             status: "disabled",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -347,7 +347,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             model: "zai-org/GLM-5.2",
             label: "OS Beta (Custom)",
             status: "disabled",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -371,7 +371,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             provider: "together",
             model: "zai-org/GLM-5.2",
             label: "Custom Label",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -394,7 +394,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
           "os-beta": {
             provider: "together",
             model: "zai-org/GLM-5.2",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -416,7 +416,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             provider: "together",
             model: "zai-org/GLM-5.2",
             topP: 0.7,
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -438,7 +438,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
             provider: "together",
             model: "zai-org/GLM-5.2",
             status: "disabled",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -484,7 +484,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
           "os-beta": {
             provider: "fireworks",
             model: "accounts/fireworks/models/glm-5p2",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -636,7 +636,7 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
           "os-beta": {
             provider: "fireworks",
             model: "accounts/fireworks/models/glm-5p2",
-            source: "managed",
+            source: "cloud",
           },
         },
       },
@@ -725,7 +725,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
     (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
       provider: "together",
       model: "zai-org/GLM-5.2",
-      source: "managed",
+      source: "cloud",
     };
     seedRawConfig(rawConfig);
     await expect(
@@ -740,7 +740,7 @@ describe("cloud-profile invariant guard — rejected writes", () => {
     (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
       provider: "together",
       model: "zai-org/GLM-5.2",
-      source: "managed",
+      source: "cloud",
     };
     seedRawConfig(rawConfig);
     await expect(
@@ -1111,12 +1111,12 @@ describe("code-owned default profiles — wire view and write normalization", ()
   test("GET serves thin stubs verbatim — materialization lives on the profiles API", async () => {
     seedRawConfig({
       llm: {
-        profiles: { balanced: { source: "managed", status: "disabled" } },
+        profiles: { balanced: { source: "cloud", status: "disabled" } },
       },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
     const wireBalanced = response.llm.profiles.balanced;
-    expect(wireBalanced).toEqual({ source: "managed", status: "disabled" });
+    expect(wireBalanced).toEqual({ source: "cloud", status: "disabled" });
     // Catalog-only defaults (no on-disk stub) do not appear at all — the
     // profiles API's list serves their resolved bodies.
     expect(response.llm.profiles["quality-optimized"]).toBeUndefined();
@@ -1126,7 +1126,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
     seedRawConfig({
       llm: {
         profiles: {
-          balanced: { source: "managed", status: "disabled" },
+          balanced: { source: "cloud", status: "disabled" },
           "my-custom": { provider: "openai", model: "gpt-4o", source: "user" },
         },
       },
@@ -1138,7 +1138,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
     expect(result).toHaveProperty("llm");
     expectOneCommitCycle();
     expect(savedProfile("balanced")).toEqual({
-      source: "managed",
+      source: "cloud",
       status: "disabled",
     });
     // The raw response carries no absent-default echoes to strip.
@@ -1175,7 +1175,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
         body: {
           llm: {
             profiles: {
-              "cost-optimized": { source: "managed", model: "gpt-4o" },
+              "cost-optimized": { source: "cloud", model: "gpt-4o" },
             },
           },
         },
@@ -1192,7 +1192,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
       patchRoute.handler({
         body: {
           llm: {
-            profiles: { balanced: { source: "managed", status: "disabled" } },
+            profiles: { balanced: { source: "cloud", status: "disabled" } },
           },
         },
       }),
@@ -1208,7 +1208,7 @@ describe("code-owned default profiles — wire view and write normalization", ()
     });
     expect(result).toEqual({ ok: true });
     expect(savedProfile("balanced")).toEqual({
-      source: "managed",
+      source: "cloud",
       status: "active",
     });
   });
@@ -1260,7 +1260,7 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     seedRawConfig({
       llm: {
         default: { provider: "anthropic" },
-        profiles: { balanced: { source: "managed", status: "disabled" } },
+        profiles: { balanced: { source: "cloud", status: "disabled" } },
       },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
@@ -1270,7 +1270,7 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     expect(result).toHaveProperty("llm");
     expectOneCommitCycle();
     expect(savedProfile("balanced")).toEqual({
-      source: "managed",
+      source: "cloud",
       status: "disabled",
     });
     // No absent-default echoes exist to reduce — nothing else is written.
@@ -1300,7 +1300,7 @@ describe("code-owned default profiles — leaf SET source stamping", () => {
     });
     expect(result).toEqual({ ok: true });
     expect(savedProfile("balanced")).toEqual({
-      source: "managed",
+      source: "cloud",
       status: "active",
     });
   });
@@ -1344,7 +1344,7 @@ describe("code-owned default profiles — echoes over stale on-disk bodies", () 
   // that match neither nothing — they match the wire view. The round-trip
   // must still be a no-op.
   const staleBody = {
-    source: "managed",
+    source: "cloud",
     provider: "anthropic",
     model: "claude-sonnet",
     maxTokens: 16000,

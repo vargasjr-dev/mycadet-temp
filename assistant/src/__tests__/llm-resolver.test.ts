@@ -321,7 +321,7 @@ describe("resolveCallSiteConfig", () => {
       },
       profiles: {
         "quality-optimized": {
-          source: "managed",
+          source: "cloud",
           fallbackProfile: "quality-optimized-backup",
         },
       },
@@ -724,7 +724,7 @@ describe("resolveCallSiteConfig", () => {
   test("BYOK: a disabled managed stub does not block resolution — the default-provider intent wins", () => {
     const llm = LLMSchema.parse({
       profiles: {
-        "cost-optimized": { source: "managed", status: "disabled" },
+        "cost-optimized": { source: "cloud", status: "disabled" },
       },
       default: {
         provider: "openai",
@@ -739,9 +739,9 @@ describe("resolveCallSiteConfig", () => {
   test("BYOK full-workspace: every call site resolves through the default provider, never the cloud connection", () => {
     const byokConfig = LLMSchema.parse({
       profiles: {
-        balanced: { source: "managed", status: "disabled" },
-        "cost-optimized": { source: "managed", status: "disabled" },
-        "quality-optimized": { source: "managed", status: "disabled" },
+        balanced: { source: "cloud", status: "disabled" },
+        "cost-optimized": { source: "cloud", status: "disabled" },
+        "quality-optimized": { source: "cloud", status: "disabled" },
         "custom-balanced": {
           source: "user",
           provider: "openai",
@@ -797,7 +797,7 @@ describe("resolveCallSiteConfig", () => {
   test("BYOK: tuning overrides from CALL_SITE_DEFAULTS apply on top of the default-provider winner", () => {
     const byokConfig = LLMSchema.parse({
       profiles: {
-        "cost-optimized": { source: "managed", status: "disabled" },
+        "cost-optimized": { source: "cloud", status: "disabled" },
       },
       default: {
         provider: "openai",
@@ -1291,7 +1291,7 @@ describe("resolveDefaultProfileKey", () => {
     // the call site.
     const llm = LLMSchema.parse({
       profiles: {
-        "cost-optimized": { source: "managed", status: "disabled" },
+        "cost-optimized": { source: "cloud", status: "disabled" },
         "custom-cost-optimized": {
           provider: "openai",
           model: "gpt-5-mini",

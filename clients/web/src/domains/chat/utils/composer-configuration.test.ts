@@ -67,10 +67,10 @@ test("saved recent-use ordering normalizes before replacing the last visible slo
 
 test("custom beta labels are preserved", () => {
   expect(
-    modeLabel({ name: "os-beta", source: "managed", label: "My experiment" }),
+    modeLabel({ name: "os-beta", source: "cloud", label: "My experiment" }),
   ).toBe("My experiment");
   expect(
-    modeLabel({ name: "os-beta", source: "managed", label: "OS Beta" }),
+    modeLabel({ name: "os-beta", source: "cloud", label: "OS Beta" }),
   ).toBe("Open Beta");
 });
 test("writes are ordered, independent between chats, and recover after rejection", async () => {

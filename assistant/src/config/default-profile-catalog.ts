@@ -93,7 +93,7 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   balanced: {
     model: "accounts/fireworks/models/glm-5p3-flash",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY.balanced,
@@ -107,7 +107,7 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   "quality-optimized": {
     model: "gpt-5.6-sol",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Quality",
     description: "High-quality results with the most capable model",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY["quality-optimized"],
@@ -121,7 +121,7 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   "cost-optimized": {
     model: "accounts/fireworks/models/deepseek-v4p1-flash",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Budget",
     // Tier intent only - never name the concrete model here. Clients
     // surface the live model beside the description, so a model name in
@@ -154,7 +154,7 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
     // owner. This model is the one live-voice TTFT drives validated.
     model: "gpt-5.6-luna",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY["latency-optimized"],
@@ -189,7 +189,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "balanced-backup": {
     model: "claude-sonnet-5",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Balanced Backup",
     description: "Automatic backup for the Balanced profile",
     maxTokens: 32000,
@@ -202,7 +202,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "quality-optimized-backup": {
     model: "claude-opus-5",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Quality Backup",
     description: "Automatic backup for the Quality profile",
     maxTokens: 32000,
@@ -215,7 +215,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "cost-optimized-backup": {
     model: "gemini-3.1-flash-lite",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Budget Backup",
     description: "Automatic backup for the Budget profile",
     maxTokens: 8192,
@@ -233,7 +233,7 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "latency-optimized-backup": {
     model: "claude-haiku-4-5-20251001",
     provider: "cadet",
-    source: "managed",
+    source: "cloud",
     label: "Fast Backup",
     description: "Automatic backup for the Fast profile",
     maxTokens: 8192,
@@ -259,7 +259,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   balanced: {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "managed",
+    source: "cloud",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
     // Matches the cadet column's Balanced token budget: the Codex path
@@ -272,7 +272,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "quality-optimized": {
     model: "gpt-5.6-sol",
     provider: "chatgpt",
-    source: "managed",
+    source: "cloud",
     label: "Quality",
     description: "Best results with the most capable model",
     maxTokens: 32000,
@@ -283,7 +283,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "cost-optimized": {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "managed",
+    source: "cloud",
     label: "Budget",
     description: "Cheapest responses, for high-volume work",
     maxTokens: 8192,
@@ -294,7 +294,7 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "latency-optimized": {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "managed",
+    source: "cloud",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
     maxTokens: 8192,
@@ -402,7 +402,7 @@ export const PROFILE_IMPLS: Record<
 export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "jev-latest",
   provider: "cadet",
-  source: "managed",
+  source: "cloud",
   label: "Jev",
   description:
     "TypeSafe decision model for yes/no verdicts, for the voice judges and memory selection",
@@ -498,7 +498,7 @@ export const USER_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
 export const OS_BETA_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "MiniMaxAI/MiniMax-M3",
   provider: "cadet",
-  source: "managed",
+  source: "cloud",
   label: "OS Beta",
   description: "Good balance of quality, cost, and speed, in beta",
   maxTokens: 32000,
@@ -777,7 +777,7 @@ function resolveAgainstBody(
     // to the stub would list a profile with no provider or model and let a
     // reference to it look valid, which is precisely what `LLMSchema` rejects
     // on those columns.
-    if (isCloudOnlyProfileKey(name) && workspace?.source === "managed") {
+    if (isCloudOnlyProfileKey(name) && workspace?.source === "cloud") {
       return undefined;
     }
     return workspace;
@@ -788,7 +788,7 @@ function resolveAgainstBody(
   if (workspace == null) {
     return isFlagGatedProfileKey(name) ? undefined : { ...body };
   }
-  if (workspace.source !== "managed") {
+  if (workspace.source !== "cloud") {
     return workspace;
   }
   const merged: ProfileEntry = { ...body };
@@ -816,7 +816,7 @@ function resolveAgainstBody(
  * - A default provider without a named matrix column materializes from the
  *   shared `BYOK_PROFILE_IMPLS` templates, with `resolveModelIntent`
  *   falling back to the provider's catalog `defaultModel`.
- * - The resolved body carries `source: "managed"` regardless of provider:
+ * - The resolved body carries `source: "cloud"` regardless of provider:
  *   default profile content is code-owned whichever provider implements it.
  *   The BYOK templates' `source: "user"` exists for the conversion pass's
  *   frozen `custom-*` reference bodies (`USER_PROFILE_TEMPLATES`), not as
@@ -892,7 +892,7 @@ function defaultProfileBodyForProvider(
       impl.provider,
       resolveDefaultConnectionName(defaultBlob) ?? undefined,
     ),
-    source: "managed",
+    source: "cloud",
   });
 }
 

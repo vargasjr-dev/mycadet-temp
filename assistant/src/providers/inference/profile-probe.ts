@@ -127,7 +127,7 @@ export async function probeInferenceProfile(
 ): Promise<ProfileCheck | null> {
   const { llm } = getConfigReadOnly();
   const entry = llm.profiles?.[name] as Record<string, unknown> | undefined;
-  if (!entry || entry.status === "disabled" || entry.source === "managed") {
+  if (!entry || entry.status === "disabled" || entry.source === "cloud") {
     return null;
   }
 

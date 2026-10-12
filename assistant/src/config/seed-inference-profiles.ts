@@ -180,7 +180,7 @@ export function seedInferenceProfiles(
       ? effectiveProfiles[requestedAdvisorProfile]
       : undefined;
   const requestedAdvisorIsDisabledManaged =
-    requestedAdvisorEntry?.source === "managed" &&
+    requestedAdvisorEntry?.source === "cloud" &&
     requestedAdvisorEntry.status === "disabled";
   if (
     requestedAdvisorProfile === undefined ||
@@ -223,12 +223,12 @@ export function seedInferenceProfiles(
   }
   llm.profileOrder = profileOrder;
 
-  // Tag any remaining profiles without a source as user-created.
+  // Tag any remaining profiles without a source. Catalog-owned names are
+  // cloud-owned — this is also how an existing install converges: the loader
+  // strips the retired `source: "managed"` value as an invalid leaf and this
+  // re-stamps the name as cloud before anything reads it.
   for (const [name, profile] of Object.entries(profiles)) {
-    if (MANAGED_PROFILE_NAMES.has(name)) {
-      continue;
-    }
-    profile.source ??= "user";
+    profile.source ??= MANAGED_PROFILE_NAMES.has(name) ? "cloud" : "user";
   }
 
   // Persist: the seed only ever rewrites the `llm` section, so the typed
@@ -274,7 +274,7 @@ function pruneNonDispatchableProfiles(
     // Thin managed stubs carry no model/mix by design — their content is
     // code-owned, so dispatchability is judged on the catalog body, never
     // the stub. Only workspace-owned profiles are pruned.
-    if (MANAGED_PROFILE_NAMES.has(name) && profile.source === "managed") {
+    if (MANAGED_PROFILE_NAMES.has(name) && profile.source === "cloud") {
       continue;
     }
     if (!isDispatchableProfile(profile)) {
@@ -337,7 +337,7 @@ function firstActiveCloudProfile(
 ): string | undefined {
   for (const name of names) {
     const profile = profiles[name];
-    if (profile?.source === "managed" && profile.status !== "disabled") {
+    if (profile?.source === "cloud" && profile.status !== "disabled") {
       return name;
     }
   }

@@ -1145,14 +1145,14 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
         rawConfigFixture.llm as { profiles: Record<string, unknown> }
       ).profiles;
       profiles["balanced"] = {
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         model: "claude-sonnet-4-6",
         label: "Balanced",
         status: "active",
       };
       profiles["os-beta"] = {
-        source: "managed",
+        source: "cloud",
         provider: "together",
         model: "zai-org/GLM-5.2",
         label: "OS Beta",
@@ -1209,7 +1209,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       // Seed fields preserved.
       expect(savedProfile.provider).toBe("together");
       expect(savedProfile.model).toBe("zai-org/GLM-5.2");
-      expect(savedProfile.source).toBe("managed");
+      expect(savedProfile.source).toBe("cloud");
     });
 
     // The full commit-time rejection matrix for invariant cloud profiles
@@ -1256,7 +1256,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       (rawConfigFixture.llm as { profiles: Record<string, unknown> }).profiles[
         "balanced"
       ] = {
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         model: "claude-sonnet-4-6",
         label: "Balanced",
@@ -1464,7 +1464,7 @@ describe("custom profile write normalization (complete overrides)", () => {
   test("a bogus managed source on a non-catalog name is normalized and completed", async () => {
     await replaceProfileRoute.handler({
       pathParams: { name: "mine" },
-      body: { source: "managed", model: "claude-haiku-4-5-20251001" },
+      body: { source: "cloud", model: "claude-haiku-4-5-20251001" },
     });
     const saved = savedProfiles().mine;
     expect(saved.source).toBe("user");
@@ -1475,13 +1475,13 @@ describe("custom profile write normalization (complete overrides)", () => {
   test("a cloud status re-enable stays a thin stub", async () => {
     (
       rawConfigFixture.llm as { profiles: Record<string, unknown> }
-    ).profiles.balanced = { source: "managed", status: "disabled" };
+    ).profiles.balanced = { source: "cloud", status: "disabled" };
     seedRawConfig();
     await replaceProfileRoute.handler({
       pathParams: { name: "balanced" },
       body: { status: null },
     });
-    expect(savedProfiles().balanced).toEqual({ source: "managed" });
+    expect(savedProfiles().balanced).toEqual({ source: "cloud" });
   });
 
   test("a mix profile write is not completed", async () => {
@@ -1774,14 +1774,14 @@ describe("config GET serves profiles verbatim", () => {
       llm: {
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "fireworks",
             model: "accounts/fireworks/models/glm-5p2",
             label: "Balanced",
             status: "active",
           },
           "os-beta": {
-            source: "managed",
+            source: "cloud",
             provider: "together",
             model: "zai-org/GLM-5.2",
             label: "OS Beta",
@@ -1809,7 +1809,7 @@ describe("config GET serves profiles verbatim", () => {
     const body = await configGetRoute.handler({});
     const profiles = wireProfiles(body);
 
-    expect(profiles.balanced!.source).toBe("managed");
+    expect(profiles.balanced!.source).toBe("cloud");
     expect(profiles.balanced!.provider).toBe("fireworks");
     expect(profiles.balanced!.model).toBe("accounts/fireworks/models/glm-5p2");
     expect(profiles.custom!.provider).toBe("anthropic");

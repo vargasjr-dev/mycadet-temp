@@ -406,7 +406,7 @@ describe("managedProfileModelName", () => {
       managedProfileModelName({
         name: "balanced",
         label: "Balanced",
-        source: "managed",
+        source: "cloud",
         provider: "cadet",
         model: "accounts/fireworks/models/glm-5p3",
       }),
@@ -439,7 +439,7 @@ describe("managedProfileModelName", () => {
     expect(
       managedProfileModelName({
         name: "ab",
-        source: "managed",
+        source: "cloud",
         mix: [
           { profile: "balanced", weight: 70 },
           { profile: "quality", weight: 30 },
@@ -450,7 +450,7 @@ describe("managedProfileModelName", () => {
 
   test("a cloud profile carrying no model names nothing", () => {
     expect(
-      managedProfileModelName({ name: "half", source: "managed" }),
+      managedProfileModelName({ name: "half", source: "cloud" }),
     ).toBeNull();
   });
 
@@ -458,7 +458,7 @@ describe("managedProfileModelName", () => {
     expect(
       managedProfileModelName({
         name: "balanced",
-        source: "managed",
+        source: "cloud",
         provider: "cadet",
         model: "accounts/fireworks/models/not-in-the-catalog",
       }),

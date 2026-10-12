@@ -1893,7 +1893,7 @@ describe("ProfileEditorModal — invariant cloud profiles in view mode", () => {
     label: "Default A",
     provider: "anthropic",
     model: "claude-opus-4-8",
-    source: "managed",
+    source: "cloud",
     topP: 0.9,
   };
 
@@ -2146,11 +2146,11 @@ describe("ProfileEditorModal: explains why Save is blocked", () => {
   });
 
   test("a locked profile is not told to fix a field it cannot edit", () => {
-    // `source: "managed"` forces read-only even in edit mode, so
+    // `source: "cloud"` forces read-only even in edit mode, so
     // `effectiveMode` is still "edit" and the error would otherwise render
     // above a disabled picker. Matches how `keyError` is already suppressed
     // for these.
-    renderEdit({ name: "my-managed", source: "managed" });
+    renderEdit({ name: "my-managed", source: "cloud" });
 
     expect(fieldErrors()).toEqual([]);
   });

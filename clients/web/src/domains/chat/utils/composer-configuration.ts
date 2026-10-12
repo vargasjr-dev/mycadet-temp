@@ -54,7 +54,7 @@ const BUILTIN_KEYS: Record<
 };
 
 export function isBuiltinMode(entry: ProfilePickerEntry): boolean {
-  return entry.source === "managed" && entry.name in BUILTIN_KEYS;
+  return entry.source === "cloud" && entry.name in BUILTIN_KEYS;
 }
 
 export function modeLabel(entry: ProfilePickerEntry): string {

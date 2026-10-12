@@ -371,7 +371,7 @@ export function createAdapterFromConnection(
         }
         const expectedFallback = FALLBACK_PROFILE_BY_KEY[primaryProfile];
         if (
-          winner.entry?.source !== "managed" ||
+          winner.entry?.source !== "cloud" ||
           winner.entry.fallbackProfile !== expectedFallback
         ) {
           return null;

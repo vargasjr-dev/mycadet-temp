@@ -288,7 +288,7 @@ export function defaultChatRouteBurnsManagedCredits(
           // managed-source stub resolves to the default-provider route;
           // any other unusable arm skips this whole rung for its seeds and
           // stands for the rest of the chain.
-          return armEntry?.source === "managed"
+          return armEntry?.source === "cloud"
             ? classifyStaleDefaultStub(evidence)
             : classifyFromRung(index + 1);
         }),
@@ -301,7 +301,7 @@ export function defaultChatRouteBurnsManagedCredits(
       // disabled through any write path) and resolves the pure catalog body
       // through `llm.default`, so this rung classifies as that
       // route instead.
-      if (entry.source === "managed") {
+      if (entry.source === "cloud") {
         return classifyStaleDefaultStub(evidence);
       }
       return classifyFromRung(index + 1);

@@ -115,7 +115,7 @@ export function reconcileFlagGatedProfiles(): boolean {
     // Never clobber a user-owned profile that happens to share the name. The
     // entry is ours to manage only when it is absent or already managed; a
     // user-sourced entry of the same name is left untouched on every path.
-    const isOursToManage = previous == null || previous.source === "managed";
+    const isOursToManage = previous == null || previous.source === "cloud";
     if (!isOursToManage) {
       continue;
     }
@@ -151,7 +151,7 @@ function enableProfile(
   // resolves through the effective view once this stub exists; the workspace
   // entry carries only the overlay fields (`source`, `label`, `status`,
   // `topP`).
-  const next: Record<string, unknown> = { source: "managed" };
+  const next: Record<string, unknown> = { source: "cloud" };
 
   // BYOK installs create the stub disabled: the cloud inference connection
   // backing this profile isn't usable until the user enables it, so a fresh

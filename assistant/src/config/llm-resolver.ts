@@ -278,7 +278,7 @@ function providerAwareEntry(
     return entry;
   }
   const workspace = llm.profiles?.[name];
-  if (workspace != null && workspace.source !== "managed") {
+  if (workspace != null && workspace.source !== "cloud") {
     return entry;
   }
   return resolveDefaultProfileForProvider(undefined, name, llm.default);

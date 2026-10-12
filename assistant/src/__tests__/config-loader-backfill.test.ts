@@ -640,7 +640,7 @@ describe("loadConfig startup behavior", () => {
     expect(effective.balanced?.provider).toBe("anthropic");
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
     expect(effective.balanced?.model).toBe("claude-sonnet-4-6");
-    expect(effective.balanced?.source).toBe("managed");
+    expect(effective.balanced?.source).toBe("cloud");
     expect("status" in (effective.balanced ?? {})).toBe(false);
   });
 
@@ -884,7 +884,7 @@ describe("loadConfig startup behavior", () => {
     expect(effective.balanced?.provider).toBe("openai");
     expect(effective.balanced?.model).toBe("gpt-5.6-luna");
     expect(effective.balanced?.provider_connection).toBe("openai-personal");
-    expect(effective.balanced?.source).toBe("managed");
+    expect(effective.balanced?.source).toBe("cloud");
     expect(effective["quality-optimized"]?.provider).toBe("openai");
     expect(effective["quality-optimized"]?.model).toBe("gpt-5.6-sol");
     expect(effective["cost-optimized"]?.provider).toBe("openai");
@@ -927,7 +927,7 @@ describe("loadConfig startup behavior", () => {
       expect(effective[name]?.provider).toBe("together");
       expect(effective[name]?.provider_connection).toBe("together-personal");
       expect(effective[name]?.model).toBe(getProviderDefaultModel("together"));
-      expect(effective[name]?.source).toBe("managed");
+      expect(effective[name]?.source).toBe("cloud");
     }
   });
 
@@ -978,7 +978,7 @@ describe("loadConfig startup behavior", () => {
     // exactly as written — boots never rewrite managed entries. Content is
     // served from the code catalog at resolution time instead.
     const drifted = {
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "old-model-from-previous-release",
       provider_connection: "anthropic-managed",
@@ -1003,11 +1003,13 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.provider_connection).toBeUndefined();
   });
 
-  test("boot leaves a source-less legacy canonical profile as a user-owned shadow", () => {
-    // Migration 052 seeded canonical profiles without a `source`. A
-    // source-less entry on a default name is user-owned: boots leave it
-    // byte-identical (never reclaimed or tagged managed), and it shadows the
-    // code catalog in the effective view.
+  test("boot re-stamps a source-less legacy canonical profile as cloud-owned", () => {
+    // Migration 052 seeded canonical profiles without a `source`. The
+    // boot-seed re-stamp claims source-less entries on catalog-owned names
+    // as cloud-owned (the retired `source: "managed"` spelling was stripped
+    // by the loader): the entry keeps its on-disk body verbatim, but the
+    // effective view serves catalog content — a drifted body no longer
+    // shadows the code catalog.
     const legacy = {
       provider: "fireworks",
       model: "accounts/fireworks/models/glm-5p2",
@@ -1022,15 +1024,19 @@ describe("loadConfig startup behavior", () => {
     mergeDefaultConfigAndSeedInferenceProfiles();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
-    expect(raw.llm.profiles["quality-optimized"]).toEqual(legacy);
-    // The shadow wins over the catalog body (which serves gpt-5.6-sol).
+    expect(raw.llm.profiles["quality-optimized"]).toEqual({
+      ...legacy,
+      source: "cloud",
+    });
+    // The catalog body wins over the drifted on-disk one (which serves
+    // gpt-5.6-sol, not the legacy fireworks model).
     const effectiveQuality = getEffectiveProfile(
       raw.llm.profiles,
       "quality-optimized",
     );
-    expect(effectiveQuality?.model).toBe("accounts/fireworks/models/glm-5p2");
-    expect(effectiveQuality?.provider_connection).toBe("fireworks-managed");
-    expect(effectiveQuality?.source).toBeUndefined();
+    expect(effectiveQuality?.model).toBe("gpt-5.6-sol");
+    expect(effectiveQuality?.provider_connection).toBeUndefined();
+    expect(effectiveQuality?.source).toBe("cloud");
   });
 
   test("defaults the advisor profile to the cloud Quality profile", () => {
@@ -1047,7 +1053,7 @@ describe("loadConfig startup behavior", () => {
       raw.llm.profiles,
       "quality-optimized",
     );
-    expect(effectiveQuality?.source).toBe("managed");
+    expect(effectiveQuality?.source).toBe("cloud");
     expect(effectiveQuality?.model).toBe("gpt-5.6-sol");
   });
 
@@ -1059,7 +1065,7 @@ describe("loadConfig startup behavior", () => {
     process.env.IS_CLOUD = "true";
 
     const drifted = {
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "old-model-from-previous-release",
       maxTokens: 1,
@@ -1094,7 +1100,7 @@ describe("loadConfig startup behavior", () => {
     process.env.IS_CLOUD = "true";
 
     const edited = {
-      source: "managed",
+      source: "cloud",
       label: "My Default",
       status: "disabled",
     };
@@ -1120,7 +1126,7 @@ describe("loadConfig startup behavior", () => {
   test("off-cloud boot preserves a user-edited label on a cloud stub (Codex P1 on PR #30362)", () => {
     // Simulate a user who renamed the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { label: "My Default" }.
-    const stub = { source: "managed", label: "My Default" };
+    const stub = { source: "cloud", label: "My Default" };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1142,7 +1148,7 @@ describe("loadConfig startup behavior", () => {
   test("off-cloud boot preserves user-toggled status on a cloud stub", () => {
     // Simulate a user who disabled the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { status: "disabled" }.
-    const stub = { source: "managed", status: "disabled" };
+    const stub = { source: "cloud", status: "disabled" };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1166,7 +1172,7 @@ describe("loadConfig startup behavior", () => {
     // PUT /v1/config/llm/profiles/balanced { topP: 0.5 }. The override lives
     // on the stub, survives boots untouched, and overlays the catalog body
     // (which carries no topP of its own).
-    const stub = { source: "managed", topP: 0.5 };
+    const stub = { source: "cloud", topP: 0.5 };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1207,7 +1213,7 @@ describe("loadConfig startup behavior", () => {
       llm: {
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             model: "old-model",
             provider_connection: "anthropic-managed",
@@ -1259,7 +1265,7 @@ describe("loadConfig startup behavior", () => {
         },
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             model: "claude-sonnet-4-6",
             maxTokens: 16000,
@@ -1283,7 +1289,7 @@ describe("loadConfig startup behavior", () => {
             },
             profiles: {
               balanced: {
-                source: "managed",
+                source: "cloud",
                 provider: "openai",
                 model: "gpt-5.4",
                 label: "Cloud Balanced",
@@ -1306,7 +1312,7 @@ describe("loadConfig startup behavior", () => {
     // (preserveProfileNames).
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.profiles.balanced).toEqual({
-      source: "managed",
+      source: "cloud",
       provider: "openai",
       model: "gpt-5.4",
       label: "Cloud Balanced",
@@ -1320,7 +1326,7 @@ describe("loadConfig startup behavior", () => {
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.llm.profiles.balanced).toEqual({
-      source: "managed",
+      source: "cloud",
       provider: "openai",
       model: "gpt-5.4",
       label: "Cloud Balanced",
@@ -1336,7 +1342,7 @@ describe("loadConfig startup behavior", () => {
     const afterRestart = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(afterRestart.llm.activeProfile).toBe("balanced");
     expect(afterRestart.llm.profiles.balanced).toEqual({
-      source: "managed",
+      source: "cloud",
       provider: "openai",
       model: "gpt-5.4",
       label: "Cloud Balanced",
@@ -1586,28 +1592,28 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-opus-4-8",
             status: "disabled",
           },
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "together",
             provider_connection: "together-managed",
             model: "open-model",
             status: "disabled",
           },
           "quality-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "fireworks",
             provider_connection: "fireworks-managed",
             model: "accounts/fireworks/models/glm-5p2",
             status: "disabled",
           },
           "cost-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "fireworks",
             provider_connection: "fireworks-managed",
             model: "accounts/fireworks/models/deepseek-v4-flash",
@@ -1639,7 +1645,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-opus-4-8",
@@ -1668,28 +1674,28 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-opus-4-8",
             status: "disabled",
           },
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "together",
             provider_connection: "together-managed",
             model: "open-model",
             status: "disabled",
           },
           "quality-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "fireworks",
             provider_connection: "fireworks-managed",
             model: "accounts/fireworks/models/glm-5p2",
             status: "disabled",
           },
           "cost-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "fireworks",
             provider_connection: "fireworks-managed",
             model: "accounts/fireworks/models/deepseek-v4-flash",
@@ -1749,7 +1755,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
             default: { provider: "anthropic" },
             profiles: {
               balanced: {
-                source: "managed",
+                source: "cloud",
                 provider: "anthropic",
                 provider_connection: "anthropic-personal",
                 model: "claude-sonnet-4-6",
@@ -1875,20 +1881,20 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     // and the bare labels flow through the effective view.
     const legacyProfiles = {
       balanced: {
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         provider_connection: "anthropic-managed",
         model: "claude-sonnet-4-6",
         label: "Balanced",
       },
       "quality-optimized": {
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         provider_connection: "anthropic-managed",
         label: "Quality",
       },
       "cost-optimized": {
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         provider_connection: "anthropic-managed",
         label: "Speed",
@@ -1922,21 +1928,21 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-sonnet-4-6",
             label: "My Balanced",
           },
           "quality-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             label: null,
           },
           // Already-suffixed labels are also preserved (idempotency).
           "cost-optimized": {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             label: "Speed (Managed)",
@@ -1963,7 +1969,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-sonnet-4-6",
@@ -1988,7 +1994,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             provider_connection: "anthropic-managed",
             model: "claude-sonnet-4-6",
@@ -2078,7 +2084,7 @@ describe("OS Beta cloud profile template", () => {
     expect(entry.provider_connection).toBe("cadet");
     expect(entry.provider).toBe("together");
     expect(entry.label).toBe("OS Beta");
-    expect(entry.source).toBe("managed");
+    expect(entry.source).toBe("cloud");
     expect(entry.maxTokens).toBe(32000);
     expect(entry.effort).toBe("low");
     expect(entry.thinking?.enabled).toBe(true);

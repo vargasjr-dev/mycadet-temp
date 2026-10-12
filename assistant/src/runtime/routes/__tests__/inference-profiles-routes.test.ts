@@ -556,7 +556,7 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
     setConfig("llm", {
       profiles: {
         balanced: {
-          source: "managed",
+          source: "cloud",
           provider: "fireworks",
           model: "accounts/fireworks/models/glm-5p2",
         },
@@ -584,7 +584,7 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
 
 describe("DELETE inference/profiles/:name protection", () => {
   test("rejects deleting a cloud default profile", async () => {
-    setConfig("llm", { profiles: { balanced: { source: "managed" } } });
+    setConfig("llm", { profiles: { balanced: { source: "cloud" } } });
     await expect(
       call("inference_profiles_delete", { pathParams: { name: "balanced" } }),
     ).rejects.toThrow(/cloud profile/);
@@ -757,7 +757,7 @@ describe("GET inference/profiles honors the llm.default blob", () => {
     setConfig("llm", {
       profiles: {
         "zed-custom": { source: "user", provider: "anthropic" },
-        auto: { source: "managed" },
+        auto: { source: "cloud" },
         "alpha-custom": { source: "user", provider: "anthropic" },
       },
       profileOrder: ["auto", "balanced", "zed-custom"],
@@ -851,7 +851,7 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
   test("profiles without a provider or model stay unflagged", async () => {
     setConfig("llm", {
       profiles: {
-        sparse: { source: "managed" },
+        sparse: { source: "cloud" },
       },
     });
 

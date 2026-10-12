@@ -25,7 +25,7 @@ interface ProfileSummary {
   provider: string | null;
   model: string | null;
   status: "active" | "disabled";
-  source: "managed" | "user";
+  source: "cloud" | "user";
   provider_connection?: string;
   availability: { status: string; message?: string } | null;
   /** Static problem with the stored entry itself; absent when it checks out. */

@@ -21,7 +21,7 @@ describe("LLMSchema fallbackProfile", () => {
         default: { provider: "cadet" },
         profiles: {
           [profileName]: {
-            source: "managed",
+            source: "cloud",
             fallbackProfile: FALLBACK_PROFILE_BY_KEY[profileName],
           },
         },
@@ -64,7 +64,7 @@ describe("LLMSchema fallbackProfile", () => {
     const result = LLMSchema.safeParse({
       profiles: {
         [profileName]: {
-          source: "managed",
+          source: "cloud",
           fallbackProfile: "custom-backup",
         },
         "custom-backup": { speed: "fast" },
@@ -105,7 +105,7 @@ describe("LLMSchema fallbackProfile", () => {
         default: { provider },
         profiles: {
           [profileName]: {
-            source: "managed",
+            source: "cloud",
             fallbackProfile: FALLBACK_PROFILE_BY_KEY[profileName],
           },
         },
@@ -274,12 +274,12 @@ describe("LLMSchema backup profile references vs llm.default", () => {
     }
   });
 
-  // A managed install can persist a thin `{ source: "managed" }` stub for a
+  // A managed install can persist a thin `{ source: "cloud" }` stub for a
   // backup key: `normalizeCloudProfileWrites` reduces a `config get` ->
   // `config set` echo of the effective profile list to exactly that. The stub
   // holds no body of its own, so it must not carry a reference past the
   // provider gate once the install moves off the cloud column.
-  const stub = { source: "managed" } as const;
+  const stub = { source: "cloud" } as const;
 
   test("a cloud stub does not keep a backup reference alive off the cloud column", () => {
     for (const blob of nonManaged) {

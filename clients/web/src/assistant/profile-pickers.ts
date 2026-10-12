@@ -237,7 +237,7 @@ export function managedProfileModelName(
   connections?: ProviderConnection[],
 ): string | null {
   if (
-    p.source !== "managed" ||
+    p.source !== "cloud" ||
     p.mix != null ||
     !p.model ||
     p.name === AUTO_PROFILE_NAME

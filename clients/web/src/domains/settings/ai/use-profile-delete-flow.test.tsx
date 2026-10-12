@@ -256,7 +256,7 @@ beforeEach(() => {
   profilesState = {
     balanced: {
       label: "Balanced",
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
@@ -463,7 +463,7 @@ describe("profile delete flow - replacement preselection", () => {
   test("cloud profiles that are not the default are offered too", async () => {
     profilesState["quality"] = {
       label: "Quality",
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     };
@@ -484,7 +484,7 @@ describe("profile delete flow - replacement preselection", () => {
   test("deleting the default preselects the user's own profile over managed ones", async () => {
     profilesState["quality"] = {
       label: "Quality",
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     };

@@ -94,14 +94,14 @@ describe("reconcileFlagGatedProfiles", () => {
     const raw = readConfig();
     // On disk: a thin managed stub — profile content is code-owned.
     const osBeta = raw.llm.profiles["os-beta"]!;
-    expect(osBeta).toEqual({ source: "managed" });
+    expect(osBeta).toEqual({ source: "cloud" });
 
     // Through the effective view the stub resolves to the catalog body.
     const effective = getEffectiveProfile(raw.llm.profiles, "os-beta")!;
     expect(effective.model).toBe("MiniMaxAI/MiniMax-M3");
     expect(effective.provider_connection).toBeUndefined();
     expect(effective.provider).toBe("cadet");
-    expect(effective.source).toBe("managed");
+    expect(effective.source).toBe("cloud");
     expect(effective.label).toBe("OS Beta");
     expect(effective.effort).toBe("low");
     expect(effective.topP).toBe(0.95);
@@ -120,7 +120,7 @@ describe("reconcileFlagGatedProfiles", () => {
     const osBeta = profiles["os-beta"]!;
     expect(osBeta.status).toBe("disabled");
     expect(osBeta.label).toBe("OS Beta (Managed)");
-    expect(osBeta.source).toBe("managed");
+    expect(osBeta.source).toBe("cloud");
     // Content stays code-owned; the effective view supplies it.
     expect(osBeta.effort).toBeUndefined();
     expect(getEffectiveProfile(profiles, "os-beta")?.effort).toBe("low");
@@ -377,7 +377,7 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(reconcileFlagGatedProfiles()).toBe(true);
 
     const raw = readConfig();
-    expect(raw.llm.profiles.auto).toEqual({ source: "managed" });
+    expect(raw.llm.profiles.auto).toEqual({ source: "cloud" });
     expect(raw.llm.profileOrder[0]).toBe("auto");
     const effective = getEffectiveProfile(raw.llm.profiles, "auto")!;
     expect(effective.label).toBe("Auto");
@@ -394,7 +394,7 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(reconcileFlagGatedProfiles()).toBe(true);
 
     const raw = readConfig();
-    expect(raw.llm.profiles.auto).toEqual({ source: "managed" });
+    expect(raw.llm.profiles.auto).toEqual({ source: "cloud" });
     expect(getEffectiveProfile(raw.llm.profiles, "auto")).toBeDefined();
   });
 

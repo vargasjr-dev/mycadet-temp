@@ -696,7 +696,7 @@ export async function runAgentLoopImpl(
     async (): Promise<AutoProfileRoute | null> => {
       try {
         const profiles = getConversationProfilesForProvider(config.llm);
-        if (profiles[AUTO_PROFILE_KEY]?.source !== "managed") {
+        if (profiles[AUTO_PROFILE_KEY]?.source !== "cloud") {
           return null;
         }
         const userMessage = plainTextOf(

@@ -132,7 +132,7 @@ describe("config_set route - request validation", () => {
         activeProfile: "my-custom-profile",
         profiles: {
           balanced: {
-            source: "managed",
+            source: "cloud",
             provider: "anthropic",
             model: "claude-sonnet-4-6",
           },
@@ -168,7 +168,7 @@ describe("config_set route - request validation", () => {
       maxTokens: 32000,
     });
     expect(profiles.balanced).toEqual({
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-sonnet-4-6",
     });

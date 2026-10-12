@@ -586,7 +586,7 @@ describe("stale managed default stubs", () => {
   // resolves the pure catalog body through `llm.default`, so it must
   // classify as that route instead of falling through the chain.
   const STALE_BALANCED = {
-    source: "managed",
+    source: "cloud",
     status: "disabled",
     invariant: true,
   } as const;

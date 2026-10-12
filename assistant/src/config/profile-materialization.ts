@@ -41,7 +41,7 @@ export function completeCustomProfile(
   dflt: LLMConfigBase,
   profile: ProfileEntry,
 ): ProfileEntry {
-  if (profile.mix != null || profile.source === "managed") {
+  if (profile.mix != null || profile.source === "cloud") {
     return profile;
   }
 

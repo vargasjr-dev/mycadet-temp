@@ -196,13 +196,13 @@ function seedProfiles() {
   profilesState = {
     balanced: {
       label: "Balanced",
-      source: "managed",
+      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
     "speed-tier": {
       label: "Speed",
-      source: "managed",
+      source: "cloud",
       status: "disabled",
       provider: "anthropic",
       model: "claude-haiku-4-5",

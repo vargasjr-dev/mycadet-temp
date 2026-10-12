@@ -208,7 +208,7 @@ function ensureProviderConnection(
   //
   // Managed-owned entries are excluded: a cloud preset must stay on the
   // cloud route, not start dispatching against a key the user
-  // brought for their own profiles. Managed-owned means `source: "managed"`
+  // brought for their own profiles. Cloud-owned means `source: "cloud"`
   // or a canonical managed name without an explicit `source: "user"` —
   // legacy seeders wrote canonical entries source-less, and only an explicit
   // user source marks a shadow the user took ownership of (mirrors
@@ -216,7 +216,7 @@ function ensureProviderConnection(
   // `llm.profiles.*` walk; the other walks pass bracketed labels that never
   // collide with canonical names.
   const isManagedOwned =
-    entry.source === "managed" ||
+    entry.source === "cloud" ||
     (entry.source !== "user" && MANAGED_PROFILE_NAMES.has(entryLabel));
   const entryModel = typeof entry.model === "string" ? entry.model : undefined;
   const existingForProvider = isManagedOwned

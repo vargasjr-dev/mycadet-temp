@@ -44,8 +44,8 @@ function fakeProvider(
   return { name: "typesafe", sendMessage: respond } as Provider;
 }
 
-const managed = (label: string, status?: "disabled"): ProfileEntry => ({
-  source: "managed",
+const cloud = (label: string, status?: "disabled"): ProfileEntry => ({
+  source: "cloud",
   provider: "cadet",
   model: "m",
   label,
@@ -53,11 +53,11 @@ const managed = (label: string, status?: "disabled"): ProfileEntry => ({
 });
 
 const profiles: Record<string, ProfileEntry> = {
-  auto: managed("Auto"),
-  balanced: managed("Balanced"),
-  "quality-optimized": managed("Quality"),
-  "cost-optimized": managed("Budget"),
-  "latency-optimized": managed("Fast"),
+  auto: cloud("Auto"),
+  balanced: cloud("Balanced"),
+  "quality-optimized": cloud("Quality"),
+  "cost-optimized": cloud("Budget"),
+  "latency-optimized": cloud("Fast"),
 };
 
 const contextFor = (
@@ -83,10 +83,10 @@ describe("autoProfileCandidates", () => {
     expect(
       autoProfileCandidates({
         ...profiles,
-        "cost-optimized": managed("Budget", "disabled"),
+        "cost-optimized": cloud("Budget", "disabled"),
       }),
     ).toEqual(["balanced", "quality-optimized", "latency-optimized"]);
-    expect(autoProfileCandidates({ balanced: managed("Balanced") })).toEqual([
+    expect(autoProfileCandidates({ balanced: cloud("Balanced") })).toEqual([
       "balanced",
     ]);
   });
@@ -200,7 +200,7 @@ describe("routeAutoProfile", () => {
     let asked = false;
     const route = await routeAutoProfile({
       ...base,
-      profiles: { auto: managed("Auto"), balanced: managed("Balanced") },
+      profiles: { auto: cloud("Auto"), balanced: cloud("Balanced") },
       resolveProvider: async () => {
         asked = true;
         return null;
@@ -217,7 +217,7 @@ describe("routeAutoProfile", () => {
   test("falls back to an enabled candidate when Balanced is disabled", async () => {
     const withoutBalanced = {
       ...profiles,
-      balanced: managed("Balanced", "disabled"),
+      balanced: cloud("Balanced", "disabled"),
     };
     expect(autoProfileFallback(autoProfileCandidates(withoutBalanced))).toBe(
       "quality-optimized",
@@ -231,9 +231,9 @@ describe("routeAutoProfile", () => {
     const single = await routeAutoProfile({
       ...base,
       profiles: {
-        auto: managed("Auto"),
-        balanced: managed("Balanced", "disabled"),
-        "cost-optimized": managed("Budget"),
+        auto: cloud("Auto"),
+        balanced: cloud("Balanced", "disabled"),
+        "cost-optimized": cloud("Budget"),
       },
     });
     expect(single).toMatchObject({
@@ -303,7 +303,7 @@ describe("draft preview reuse", () => {
         text: "do that too",
         profiles: {
           ...profiles,
-          "cost-optimized": managed("Budget", "disabled"),
+          "cost-optimized": cloud("Budget", "disabled"),
         },
       }),
     ).toBeUndefined();

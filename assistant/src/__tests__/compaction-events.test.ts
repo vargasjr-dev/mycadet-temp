@@ -37,8 +37,8 @@ import { setConfig } from "./helpers/set-config.js";
 setConfig("llm", {
   profiles: {
     // Disable the catalog default so resolution lands on llm.default.
-    balanced: { source: "managed", status: "disabled" },
-    "cost-optimized": { source: "managed", status: "disabled" },
+    balanced: { source: "cloud", status: "disabled" },
+    "cost-optimized": { source: "cloud", status: "disabled" },
   },
   callSites: {
     // This file's blanket assistant-feature-flags mock forces the

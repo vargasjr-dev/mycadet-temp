@@ -64,7 +64,7 @@ export function ProfileRow({
   onDelete,
 }: ProfileRowProps) {
   const { t } = useTranslation("settings");
-  const isManaged = profile.source === "managed";
+  const isManaged = profile.source === "cloud";
   const isDisabled = profile.status === "disabled";
   const displayName = profile.label ?? profile.name;
 

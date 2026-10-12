@@ -10,7 +10,7 @@ export function composerConfigurationFixture(): ComposerConfiguration {
     { name: "os-beta", label: "OS Beta" },
   ].map((entry) => ({
     ...entry,
-    source: "managed" as const,
+    source: "cloud" as const,
     provider: "anthropic" as const,
     model: "claude-fable-5",
   }));

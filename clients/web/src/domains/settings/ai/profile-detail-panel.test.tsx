@@ -237,7 +237,7 @@ describe("ProfileDetailPanel - cloud profiles", () => {
     profilesState = {
       balanced: {
         label: "Balanced",
-        source: "managed",
+        source: "cloud",
         provider: "anthropic",
         model: "claude-opus-4-8",
       },

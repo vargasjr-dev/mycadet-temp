@@ -51,28 +51,32 @@ function profile(name: string): Record<string, unknown> {
 
 // The startup repair, migration 097, and migration 104 keep frozen copies of
 // the same logic (migration modules must stay self-contained). Run every
-// scenario against all of them so the copies can't drift.
-const implementations: Array<[string, (dir: string) => void]> = [
-  ["startup repair", repairAdaptiveThinkingOnCloudProfiles],
+// scenario against all of them. The copies' source vocabularies split with
+// the managed→cloud rename: the live repair reads the renamed "cloud" marker
+// while the frozen migrations keep the retired "managed" one.
+const implementations: Array<[string, string, (dir: string) => void]> = [
+  ["startup repair", "cloud", repairAdaptiveThinkingOnCloudProfiles],
   [
     "migration 097",
+    "managed",
     (dir) => enableAdaptiveThinkingCloudProfilesMigration.run(dir),
   ],
   [
     "migration 104",
+    "managed",
     (dir) => recheckAdaptiveThinkingModelImpliedAnthropicMigration.run(dir),
   ],
 ];
 
-describe.each(implementations)("%s", (_label, run) => {
+describe.each(implementations)("%s", (_label, sourceMarker, run) => {
   test("patches managed Anthropic profiles missing thinking", () => {
     writeConfig({
       llm: {
         default: { provider: "anthropic", model: "claude-sonnet-4-6" },
         profiles: {
-          balanced: { source: "managed", provider: "anthropic" },
+          balanced: { source: sourceMarker, provider: "anthropic" },
           "quality-optimized": {
-            source: "managed",
+            source: sourceMarker,
             provider: "anthropic",
             thinking: { enabled: false },
           },
@@ -147,7 +151,7 @@ describe.each(implementations)("%s", (_label, run) => {
         profiles: {
           balanced: { model: "claude-sonnet-4-6" },
           "quality-optimized": {
-            source: "managed",
+            source: sourceMarker,
             model: "claude-opus-4-8",
           },
         },
@@ -196,7 +200,7 @@ describe.each(implementations)("%s", (_label, run) => {
         default: { provider: "anthropic" },
         profiles: {
           balanced: {
-            source: "managed",
+            source: sourceMarker,
             thinking: { enabled: true, streamThinking: false },
           },
         },

@@ -51,7 +51,7 @@ describe("fallbackProfile pointers on the cadet column", () => {
       const backup = CODE_DEFAULT_PROFILE_ENTRIES[FALLBACK_PROFILE_BY_KEY[key]];
       expect(backup).toBeDefined();
       expect(backup.provider).toBe("cadet");
-      expect(backup.source).toBe("managed");
+      expect(backup.source).toBe("cloud");
       // Single hop: a backup never declares a fallback of its own.
       expect(backup.fallbackProfile).toBeUndefined();
     }
@@ -106,7 +106,7 @@ describe("managed-column-only scoping", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeDefined();
       expect(effective[key]?.provider).toBe("cadet");
-      expect(effective[key]?.source).toBe("managed");
+      expect(effective[key]?.source).toBe("cloud");
     }
     // The seeder inserts missing managed keys in MANAGED_PROFILE_TEMPLATES
     // order, which is what places backups after the primaries in
@@ -167,7 +167,7 @@ describe("managed-column-only scoping", () => {
     // providerless entry the pickers would offer and `LLMSchema` would
     // reject.
     const workspace: Record<string, ProfileEntry> = {
-      "balanced-backup": { source: "managed" },
+      "balanced-backup": { source: "cloud" },
     };
     for (const provider of ["anthropic", "chatgpt"] as const) {
       const effective = getEffectiveProfilesForProvider(
@@ -237,7 +237,7 @@ describe("effective-profile machinery", () => {
     // label/status/topP whitelist from a cloud stub, and not a user-owned
     // shadow. Disabling a backup through a hand-edited config would strand
     // the primary's fallback exactly when it is needed.
-    for (const source of ["managed", "user"] as const) {
+    for (const source of ["cloud", "user"] as const) {
       const workspace: Record<string, ProfileEntry> = {
         "balanced-backup": {
           source,

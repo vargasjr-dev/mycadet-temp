@@ -36,7 +36,7 @@ import {
  * markers for the defaults, no profile content. */
 function managedStubs(): Record<string, ProfileEntry> {
   return Object.fromEntries(
-    DEFAULT_PROFILE_KEYS.map((key) => [key, { source: "managed" as const }]),
+    DEFAULT_PROFILE_KEYS.map((key) => [key, { source: "cloud" as const }]),
   );
 }
 
@@ -48,7 +48,7 @@ describe("getEffectiveProfiles", () => {
       expect(typeof body.model).toBe("string");
       expect(body.provider).toBe("cadet");
       expect(body.provider_connection).toBeUndefined();
-      expect(body.source).toBe("managed");
+      expect(body.source).toBe("cloud");
     }
   });
 
@@ -92,7 +92,7 @@ describe("getEffectiveProfiles", () => {
     expect(
       resolveDefaultProfileForProvider(undefined, "auto", undefined),
     ).toBeUndefined();
-    const stub: Record<string, ProfileEntry> = { auto: { source: "managed" } };
+    const stub: Record<string, ProfileEntry> = { auto: { source: "cloud" } };
     expect(
       resolveDefaultProfileForProvider(stub, "auto", undefined)?.model,
     ).toBe(balanced.model);
@@ -153,7 +153,7 @@ describe("getEffectiveProfiles", () => {
   test("a cloud-source entry resolves to the code body with only label/status/topP from disk", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
-        source: "managed",
+        source: "cloud",
         label: "Balanced (Managed)",
         status: "disabled",
         topP: 0.7,
@@ -297,7 +297,7 @@ describe("resolver integration", () => {
   test("a disabled managed default does not divert resolution to the custom-* clone", () => {
     const llm = LLMSchema.parse({
       profiles: {
-        balanced: { source: "managed", status: "disabled" },
+        balanced: { source: "cloud", status: "disabled" },
         "custom-balanced": {
           source: "user",
           provider: "anthropic",
@@ -414,7 +414,7 @@ describe("schema validation", () => {
     expect(() =>
       LLMSchema.parse({
         activeProfile: OS_BETA_PROFILE_KEY,
-        profiles: { [OS_BETA_PROFILE_KEY]: { source: "managed" } },
+        profiles: { [OS_BETA_PROFILE_KEY]: { source: "cloud" } },
       }),
     ).not.toThrow();
     expect(() =>
@@ -485,7 +485,7 @@ describe("resolveDefaultProfileForProvider", () => {
         } else {
           expect(entry?.provider_connection).toBeDefined();
         }
-        expect(entry?.source).toBe("managed");
+        expect(entry?.source).toBe("cloud");
       }
     }
   });
@@ -507,7 +507,7 @@ describe("resolveDefaultProfileForProvider", () => {
       expect(entry?.provider).toBe("chatgpt");
       expect(entry?.model).toBe(model);
       expect(entry?.provider_connection).toBeUndefined();
-      expect(entry?.source).toBe("managed");
+      expect(entry?.source).toBe("cloud");
     }
     // Budget and Fast both opt fully out of reasoning.
     expect(effective["cost-optimized"]?.effort).toBe("none");
@@ -526,7 +526,7 @@ describe("resolveDefaultProfileForProvider", () => {
     // No intent table for `together`: the intent falls back to the
     // provider's catalog defaultModel.
     expect(entry?.model).toBe(resolveModelIntent("together", "balanced"));
-    expect(entry?.source).toBe("managed");
+    expect(entry?.source).toBe("cloud");
   });
 
   test("maxTokens clamps to the resolved model's catalog output cap", () => {
@@ -634,7 +634,7 @@ describe("resolveDefaultProfileForProvider", () => {
   test("a cloud-source stub contributes only label/status/topP over the provider-resolved body", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
-        source: "managed",
+        source: "cloud",
         label: "Balanced (BYOK)",
         status: "disabled",
         topP: 0.7,
@@ -687,7 +687,7 @@ describe("resolveDefaultProfileForProvider", () => {
       ),
     ).toBeUndefined();
     const workspace: Record<string, ProfileEntry> = {
-      [OS_BETA_PROFILE_KEY]: { source: "managed" },
+      [OS_BETA_PROFILE_KEY]: { source: "cloud" },
     };
     const entry = resolveDefaultProfileForProvider(
       workspace,

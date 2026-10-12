@@ -36,7 +36,7 @@ const PROFILES: InferenceProfileSummary[] = [
     label: "Balanced",
     provider: "cadet",
     model: "glm-5.2",
-    source: "managed",
+    source: "cloud",
   }),
   summary({ name: "my-custom", label: "My Custom" }),
   summary({ name: "retired", label: "Retired", status: "disabled" }),

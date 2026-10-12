@@ -169,7 +169,7 @@ describe("fallback and completeness", () => {
   test("no custom-* hop: a drifted custom clone does not capture a background call site", () => {
     const llm = LLMSchema.parse({
       profiles: {
-        "cost-optimized": { source: "managed", status: "disabled" },
+        "cost-optimized": { source: "cloud", status: "disabled" },
         "custom-cost-optimized": { ...completeCustom, model: "gpt-5.4" },
       },
       ...anthropicDp,
@@ -559,8 +559,8 @@ describe("explicit default-profile references resolve through the default provid
   // Regressed failure mode: the cadet column's model ids dispatched to
   // BYOK connections.
   const managedStubs = {
-    balanced: { source: "managed" as const },
-    "cost-optimized": { source: "managed" as const },
+    balanced: { source: "cloud" as const },
+    "cost-optimized": { source: "cloud" as const },
   };
 
   test("an override pin to a default key matches the intent-rung resolution", () => {
@@ -635,9 +635,9 @@ describe("explicit default-profile references resolve through the default provid
 describe("hatch-era disabled stubs on default keys", () => {
   // Fresh BYOK hatches persist disabled managed stubs.
   const disabledStubs = {
-    balanced: { source: "managed" as const, status: "disabled" as const },
+    balanced: { source: "cloud" as const, status: "disabled" as const },
     "cost-optimized": {
-      source: "managed" as const,
+      source: "cloud" as const,
       status: "disabled" as const,
     },
   };

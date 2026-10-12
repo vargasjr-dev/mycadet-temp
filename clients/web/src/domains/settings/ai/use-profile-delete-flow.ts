@@ -185,7 +185,7 @@ export function useProfileDeleteFlow(
       (p) => !excludeDisabled || p.status !== "disabled",
     );
     const current = candidates.find((p) => p.name === activeProfile);
-    const own = candidates.find((p) => p.source !== "managed");
+    const own = candidates.find((p) => p.source !== "cloud");
     return (current ?? own ?? candidates[0])?.name ?? "";
   }
 

@@ -104,7 +104,7 @@ export function repairAdaptiveThinkingOnCloudProfiles(
     if (profile.source === "user") {
       continue;
     }
-    if (profile.source !== undefined && profile.source !== "managed") {
+    if (profile.source !== undefined && profile.source !== "cloud") {
       continue;
     }
     const effectiveProvider = resolveEffectiveProvider(
