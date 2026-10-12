@@ -2,9 +2,12 @@ import { useMemo, useState } from "react";
 
 import { AppleLogo } from "@/components/icons/apple-logo";
 import { Trans, useTranslation } from "@/i18n";
-import { SignupShell } from "./signup-shell";
-import { RotatingWord } from "./rotating-word";
-import { PROVIDER_ID, buildProviderCallbackUrl } from "../login-flow";
+import { SignupShell } from "@/domains/account/components/signup-shell";
+import { RotatingWord } from "@/domains/account/components/rotating-word";
+import {
+  PROVIDER_ID,
+  buildProviderCallbackUrl,
+} from "@/domains/account/login-flow";
 import { startAuthFlow } from "@/runtime/native-auth";
 
 /**

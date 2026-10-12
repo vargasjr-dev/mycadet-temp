@@ -7,14 +7,14 @@ import {
   WelcomeScreenCopy,
   WelcomeScreenShell,
 } from "@/components/auth-welcome-screen";
-import { AuthWaitSpinner } from "../components/auth-wait-spinner";
-import { useReturnToShortCircuit } from "../hooks/use-return-to-short-circuit";
+import { AuthWaitSpinner } from "@/domains/account/components/auth-wait-spinner";
+import { useReturnToShortCircuit } from "@/domains/account/hooks/use-return-to-short-circuit";
 import {
   isUserCancelledAuthError,
   nativeAuthErrorDetail,
   nativeAuthErrorKey,
-} from "../native-auth-error";
-import { withPreservedAttribution } from "../social-auth";
+} from "@/domains/account/native-auth-error";
+import { withPreservedAttribution } from "@/domains/account/social-auth";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { startNativeLogin, useIsNativePlatform } from "@/runtime/native-auth";
 import { routes } from "@/utils/routes";

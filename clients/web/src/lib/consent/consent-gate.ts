@@ -17,11 +17,8 @@ import { isConfirmedCloudSession } from "@/stores/session-status";
  * governs the pre-first-sync window.
  */
 export function diagnosticsConsentGranted(): boolean {
-  const { cloudSession, cloudSessionRestoredOffline } =
-    useAuthStore.getState();
-  if (
-    !isConfirmedCloudSession(cloudSession, cloudSessionRestoredOffline)
-  ) {
+  const { cloudSession, cloudSessionRestoredOffline } = useAuthStore.getState();
+  if (!isConfirmedCloudSession(cloudSession, cloudSessionRestoredOffline)) {
     return false;
   }
   const stored = getDeviceSetting("diagnosticsReporting", "");

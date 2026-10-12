@@ -67,7 +67,8 @@ mock.module("../../../components/signup-shell", () => ({
   SignupShell: ({ children }: { children: ReactNode }) => children,
 }));
 
-const { ProviderSignupPage } = await import("./provider-signup-page");
+const { ProviderSignupPage } =
+  await import("@/domains/account/pages/provider-signup-page");
 const { peekSignupOnboardingFirstName, takeSignupOnboardingFirstName } =
   await import("@/lib/auth/signup-onboarding-handoff");
 

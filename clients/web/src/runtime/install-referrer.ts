@@ -11,7 +11,7 @@
 
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
-import { readAttributionParams } from "@mycadet/app/domains/account/social-auth";
+import { readAttributionParams } from "@/domains/account/social-auth";
 import {
   getDeviceSetting,
   hasDeviceSetting,

@@ -66,7 +66,7 @@ import {
   fetchConsent,
   patchConsent,
   type ConsentPatch,
-} from "@mycadet/app/domains/account/profile";
+} from "@/lib/consent/consent-api";
 import {
   restoreConsentForUser,
   persistConsentForUser,
@@ -882,9 +882,7 @@ function probeCloudSession(
         return;
       }
       set((state) =>
-        state.cloudSession === "unknown"
-          ? { cloudSession: "absent" }
-          : {},
+        state.cloudSession === "unknown" ? { cloudSession: "absent" } : {},
       );
     });
 }

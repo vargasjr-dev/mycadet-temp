@@ -30,7 +30,8 @@ mock.module("@/runtime/native-auth", (): typeof nativeAuth => ({
     }),
 }));
 
-const { SignupScreen } = await import("./signup-screen");
+const { SignupScreen } =
+  await import("@/domains/account/components/signup-screen");
 
 const GENERIC_FAILURE = "Something went wrong. Please try again.";
 

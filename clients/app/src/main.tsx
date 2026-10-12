@@ -14,7 +14,7 @@ import { StartupFailure } from "@/components/startup-failure";
 import { initI18n } from "@/i18n";
 import { setupAuthListeners } from "@/stores/auth-store";
 
-import { accountRoute } from "./domains/account/account-route";
+import { accountRoute } from "@/domains/account/account-route";
 
 import "./index.css";
 

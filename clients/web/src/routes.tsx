@@ -6,7 +6,6 @@ import {
   onboardingCompletedMiddleware,
 } from "@/lib/onboarding-middleware";
 import { RootLayout } from "@/root-layout";
-import { accountRoute } from "@mycadet/app/domains/account/account-route";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
 import { ConversationRedirect } from "@/domains/chat/conversation-redirect";
@@ -116,26 +115,6 @@ export function getRouterBasename(): string | undefined {
 // (e.g. "the OAuth popup pages are NOT under AccountLayout") must run against
 // these raw definitions.
 export const routeTree = [
-  // Account routes — standalone auth pages, no app chrome. The subtree
-  // (and every account page it lazy-loads) lives in @mycadet/app; the
-  // gate is a vite define literal so cloud-served builds fold the dead
-  // branch and tree-shake the account chunks out of the artifact
-  // entirely.
-  ...(__INCLUDES_ACCOUNT__ ? [accountRoute] : []),
-
-  // Logout — standalone page, no app chrome
-  {
-    path: "/logout",
-    ErrorBoundary: RouteErrorBoundary,
-    HydrateFallback: RootHydrateFallback,
-    lazy: {
-      Component: () =>
-        import("@mycadet/app/domains/account/pages/logout-page").then(
-          (m) => m.LogoutPage,
-        ),
-    },
-  },
-
   // About — standalone metadata page rendered inside the Electron
   // About BrowserWindow. Declared as a sibling of `/assistant` (not
   // a child) so React Router's most-specific matcher picks it for

@@ -5,11 +5,11 @@ import { t } from "@/i18n";
 import {
   PROVIDER_ID,
   buildProviderCallbackUrl,
-} from "@mycadet/app/domains/account/login-flow";
+} from "@/domains/account/login-flow";
 import {
   nativeAuthErrorDetail,
   nativeAuthErrorKey,
-} from "@mycadet/app/domains/account/native-auth-error";
+} from "@/domains/account/native-auth-error";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { resolveLoginReturnTo } from "@/lib/navigation/navigation-resolver";

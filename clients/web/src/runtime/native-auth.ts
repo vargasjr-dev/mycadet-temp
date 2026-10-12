@@ -5,8 +5,8 @@ import {
   type ProviderRedirectOptions,
   readAttributionParams,
   startProviderRedirect,
-} from "@mycadet/app/domains/account/social-auth";
-import { sanitizeReturnTo } from "@mycadet/app/domains/account/return-to";
+} from "@/domains/account/social-auth";
+import { sanitizeReturnTo } from "@/domains/account/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
 import { userHasOnboardedAssistant } from "@/domains/onboarding/onboarded-assistant";
 import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";

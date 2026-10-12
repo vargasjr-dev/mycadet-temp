@@ -41,7 +41,7 @@ import {
 } from "@/utils/local-settings";
 import { applyExplicitDiagnosticsChoice } from "@/lib/consent/diagnostics-consent";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
-import { patchConsent, type UserConsent } from "@mycadet/app/domains/account/profile";
+import { patchConsent, type UserConsent } from "@/lib/consent/consent-api";
 
 // Frozen build constants. The server's `required_versions` is authoritative;
 // these keep two roles only: seeding the module's required versions before
@@ -136,7 +136,10 @@ export function __resetRequiredConsentVersionsForTesting(): void {
 // version would attest an artifact bump the user never saw. Analytics has no
 // device ack key.
 type DeviceAckField =
-  "tos" | "privacy_policy" | "ai_data_sharing" | "share_diagnostics";
+  | "tos"
+  | "privacy_policy"
+  | "ai_data_sharing"
+  | "share_diagnostics";
 
 function consentAckKey(field: DeviceAckField, userId: string): string {
   return `device:consent:${field}:${userId}`;
@@ -276,10 +279,7 @@ export function restoreConsentForUser(userId: string | null): {
     // backfill it) without showing the updated privacy checkbox. Force
     // privacy through re-review instead.
     const legacyTos = getLocalBool("cadet:onboarding:tosAccepted", false);
-    const legacyPrivacy = getLocalBool(
-      "cadet:onboarding:aiDataConsent",
-      false,
-    );
+    const legacyPrivacy = getLocalBool("cadet:onboarding:aiDataConsent", false);
     if (legacyTos || legacyPrivacy) {
       if (legacyTos) {
         setLocalSetting(consentAckKey("tos", userId), TOS_CONSENT_VERSION);

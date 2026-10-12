@@ -18,7 +18,7 @@ import {
   mockNativeAuth,
   renderAuthEntry,
   setupAuthEntry,
-} from "./auth-entry-contract-test-helpers";
+} from "@/domains/account/pages/auth-entry-contract-test-helpers";
 
 mock.module("@/stores/auth-store", mockAuthStore);
 mock.module("@/runtime/native-auth", mockNativeAuth);
@@ -30,7 +30,7 @@ mock.module("@/components/onboarding-layout", () => ({
   OnboardingLayout: ({ children }: { children: ReactNode }) => children,
 }));
 
-const { LoginPage } = await import("./login-page");
+const { LoginPage } = await import("@/domains/account/pages/login-page");
 
 const ROUTE = "/account/login";
 

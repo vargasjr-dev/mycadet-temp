@@ -1,9 +1,21 @@
 {
-  "extends": "../web/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "allowJs": false,
+    "isolatedModules": true,
+    "types": ["bun"],
     "paths": {
-      "@/*": ["../web/src/*"],
-      "@mycadet/app/*": ["./src/*"]
+      "@/*": ["./src/*", "../web/src/*"]
     }
   },
   "include": ["src", "../web/src", "vite.config.ts"]

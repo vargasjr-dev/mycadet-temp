@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { screen } from "@testing-library/react";
 
-import type { SignupAvailability } from "../hooks/use-signup-availability";
+import type { SignupAvailability } from "@/domains/account/hooks/use-signup-availability";
 
 import {
   CHECKOUT,
@@ -18,7 +18,7 @@ import {
   mockNativeAuth,
   renderAuthEntry,
   setupAuthEntry,
-} from "./auth-entry-contract-test-helpers";
+} from "@/domains/account/pages/auth-entry-contract-test-helpers";
 
 mock.module("@/stores/auth-store", mockAuthStore);
 mock.module("@/runtime/native-auth", mockNativeAuth);
@@ -26,7 +26,7 @@ mock.module("@/lib/auth/hard-navigate", mockHardNavigate);
 
 /** What the cloud reports about accepting new accounts. */
 const signupAvailability = { value: "open" as SignupAvailability };
-mock.module("../../../hooks/use-signup-availability", () => ({
+mock.module("@/domains/account/hooks/use-signup-availability", () => ({
   useSignupAvailability: () => signupAvailability.value,
 }));
 
@@ -34,7 +34,7 @@ beforeEach(() => {
   signupAvailability.value = "open";
 });
 
-const { SignupPage } = await import("./signup-page");
+const { SignupPage } = await import("@/domains/account/pages/signup-page");
 
 const ROUTE = "/account/signup";
 
