@@ -39,7 +39,7 @@
  * specific app.
  *
  * **No step cap.** Unlike {@link HostCuProxy} which enforces a per-session
- * step ceiling via `loadConfig().maxStepsPerSession`, app-control sessions
+ * step ceiling via `getConfig().maxStepsPerSession`, app-control sessions
  * are not capped. App-control flows are typically narrower (single-app,
  * shorter horizons) and the loop guard plus user oversight are the
  * intended safeguards.

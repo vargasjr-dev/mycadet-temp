@@ -38,7 +38,7 @@ useMemorySecureKeyMap();
 
 // NOTE: Do NOT mock '../inbound/public-ingress-urls.js' here.
 // Those are pure functions that derive URLs from the config object returned by
-// loadConfig(). Mocking them at the module level leaks into other test files
+// getConfig(). Mocking them at the module level leaks into other test files
 // (e.g. ingress-url-consistency.test.ts) that need the real implementations,
 // causing cross-test contamination.
 

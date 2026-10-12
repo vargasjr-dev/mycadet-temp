@@ -196,20 +196,17 @@ function seedProfiles() {
   profilesState = {
     balanced: {
       label: "Balanced",
-      source: "cloud",
-      provider: "anthropic",
-      model: "claude-opus-4-8",
+      provider: "cadet",
+      model: "claude-sonnet-4-6",
     },
     "speed-tier": {
       label: "Speed",
-      source: "cloud",
       status: "disabled",
-      provider: "anthropic",
-      model: "claude-haiku-4-5",
+      provider: "cadet",
+      model: "claude-sonnet-4-6",
     },
     "my-custom": {
       label: "My Custom",
-      source: "user",
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
@@ -341,7 +338,6 @@ describe("ProfilesSection - kebab menus", () => {
       ...profilesState,
       jev: {
         label: "Jev",
-        source: "user",
         provider: "typesafe",
         model: "jev-latest",
       },

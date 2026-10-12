@@ -67,21 +67,18 @@ function makeDefaultRawConfig(): Record<string, unknown> {
     llm: {
       profiles: {
         "quality-optimized": {
-          provider: "anthropic",
-          model: "claude-sonnet",
-          source: "cloud",
+          provider: "cadet",
+          model: "claude-sonnet-4-6",
         },
         balanced: {
-          provider: "anthropic",
-          model: "claude-sonnet",
-          source: "cloud",
+          provider: "cadet",
+          model: "claude-sonnet-4-6",
         },
         "cost-optimized": {
-          provider: "anthropic",
-          model: "claude-haiku",
-          source: "cloud",
+          provider: "cadet",
+          model: "claude-sonnet-4-6",
         },
-        "my-custom": { provider: "openai", model: "gpt-4o", source: "user" },
+        "my-custom": { provider: "openai", model: "gpt-4o" },
       },
     },
   };
@@ -246,10 +243,9 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           balanced: {
-            provider: "anthropic",
-            model: "claude-sonnet",
+            provider: "cadet",
+            model: "claude-sonnet-4-6",
             label: "My Custom Name",
-            source: "cloud",
           },
         },
       },
@@ -319,10 +315,9 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "quality-optimized": {
-            provider: "anthropic",
-            model: "claude-opus",
+            provider: "cadet",
+            model: "claude-sonnet-4-6",
             status: "disabled",
-            source: "cloud",
           },
         },
       },
@@ -334,8 +329,8 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
     expect(result).toEqual({ ok: true });
     const profile = savedProfile("quality-optimized");
     expect("status" in profile).toBe(false);
-    expect(profile.provider).toBe("anthropic");
-    expect(profile.model).toBe("claude-opus");
+    expect(profile.provider).toBe("cadet");
+    expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
   test("PUT { label: null, status: null } on managed os-beta is rejected (label is frozen)", async () => {
@@ -343,11 +338,10 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "together",
+            provider: "cadet",
             model: "zai-org/GLM-5.2",
             label: "OS Beta (Custom)",
             status: "disabled",
-            source: "cloud",
           },
         },
       },
@@ -368,10 +362,9 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "together",
+            provider: "cadet",
             model: "zai-org/GLM-5.2",
             label: "Custom Label",
-            source: "cloud",
           },
         },
       },
@@ -392,9 +385,8 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "together",
+            provider: "cadet",
             model: "zai-org/GLM-5.2",
-            source: "cloud",
           },
         },
       },
@@ -413,10 +405,9 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "together",
+            provider: "cadet",
             model: "zai-org/GLM-5.2",
             topP: 0.7,
-            source: "cloud",
           },
         },
       },
@@ -435,10 +426,9 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "together",
-            model: "zai-org/GLM-5.2",
+            provider: "cadet",
+            model: "claude-sonnet-4-6",
             status: "disabled",
-            source: "cloud",
           },
         },
       },
@@ -451,8 +441,8 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
     expectOneCommitCycle();
     const profile = savedProfile("os-beta");
     expect(profile.status).toBe("active");
-    expect(profile.provider).toBe("together");
-    expect(profile.model).toBe("zai-org/GLM-5.2");
+    expect(profile.provider).toBe("cadet");
+    expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
   test("allows edits to a user-owned profile sharing a cloud name (os-beta)", async () => {
@@ -461,8 +451,7 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
         profiles: {
           "os-beta": {
             provider: "anthropic",
-            model: "claude-sonnet",
-            source: "user",
+            model: "gpt-4o",
           },
         },
       },
@@ -482,9 +471,8 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "fireworks",
+            provider: "cadet",
             model: "accounts/fireworks/models/glm-5p2",
-            source: "cloud",
           },
         },
       },
@@ -532,30 +520,6 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
 // ---------------------------------------------------------------------------
 
 describe("PATCH /v1/config — cloud profile deletion guard", () => {
-  test("rejects deletion of quality-optimized via null with descriptive message", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { "quality-optimized": null } } },
-      }),
-    ).rejects.toThrow('Cannot delete cloud profile "quality-optimized".');
-  });
-
-  test("rejects deletion of balanced via null", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: null } } },
-      }),
-    ).rejects.toThrow(BadRequestError);
-  });
-
-  test("rejects deletion of cost-optimized via null", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { "cost-optimized": null } } },
-      }),
-    ).rejects.toThrow(BadRequestError);
-  });
-
   test("allows deletion of custom-balanced via null (user-owned)", async () => {
     const result = await patchRoute.handler({
       body: { llm: { profiles: { "custom-balanced": null } } },
@@ -616,9 +580,8 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
       llm: {
         profiles: {
           "os-beta": {
-            provider: "anthropic",
-            model: "claude-sonnet",
-            source: "user",
+            provider: "cadet",
+            model: "claude-sonnet-4-6",
           },
         },
       },
@@ -627,33 +590,6 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
       body: { llm: { profiles: { "os-beta": null } } },
     });
     expect(result).toHaveProperty("llm");
-  });
-
-  test("rejects deletion of a cloud os-beta profile", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "fireworks",
-            model: "accounts/fireworks/models/glm-5p2",
-            source: "cloud",
-          },
-        },
-      },
-    });
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { "os-beta": null } } },
-      }),
-    ).rejects.toThrow('Cannot delete cloud profile "os-beta".');
-  });
-
-  test("rejects nulling the entire profiles map", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: null } },
-      }),
-    ).rejects.toThrow("Cannot null llm.profiles");
   });
 });
 
@@ -664,93 +600,10 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
 // os-beta) is read-only to every config-write route while its on-disk entry
 // is managed-source; the only writable transition is re-enabling a disabled
 // profile. A user-owned entry sharing a cloud name is not locked. Enforced
-// by `assertInvariantProfilesPreserved` at the commitConfigWrite choke
 // point, so PATCH, SET, and PUT are all covered by the same checks.
 // ---------------------------------------------------------------------------
 
 describe("cloud-profile invariant guard — rejected writes", () => {
-  test("PATCH disabling balanced is rejected (active → disabled)", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: { status: "disabled" } } } },
-      }),
-    ).rejects.toThrow('Cannot disable cloud profile "balanced".');
-    expectNothingCommitted();
-  });
-
-  test("PATCH setting a label on balanced is rejected", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: { label: "X" } } } },
-      }),
-    ).rejects.toThrow(
-      'Cannot edit cloud profile "balanced" fields [label]. ' +
-        "Cloud profiles are read-only; duplicate to a custom profile to customize.",
-    );
-    expectNothingCommitted();
-  });
-
-  test("PATCH { label: null } on balanced is rejected when a label exists", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.label = "Balanced";
-    seedRawConfig(rawConfig);
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: { label: null } } } },
-      }),
-    ).rejects.toThrow('Cannot edit cloud profile "balanced" fields [label]');
-    expectNothingCommitted();
-  });
-
-  test("PATCH { topP: 0.8 } on balanced is rejected", async () => {
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: { topP: 0.8 } } } },
-      }),
-    ).rejects.toThrow('Cannot edit cloud profile "balanced" fields [topP]');
-    expectNothingCommitted();
-  });
-
-  test("PATCH { topP: null } on balanced is rejected when an on-disk override exists", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.topP = 0.7;
-    seedRawConfig(rawConfig);
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { balanced: { topP: null } } } },
-      }),
-    ).rejects.toThrow('Cannot edit cloud profile "balanced" fields [topP]');
-    expectNothingCommitted();
-  });
-
-  test("PATCH disabling a cloud-source os-beta is rejected (active → disabled)", async () => {
-    (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
-      provider: "together",
-      model: "zai-org/GLM-5.2",
-      source: "cloud",
-    };
-    seedRawConfig(rawConfig);
-    await expect(
-      patchRoute.handler({
-        body: { llm: { profiles: { "os-beta": { status: "disabled" } } } },
-      }),
-    ).rejects.toThrow('Cannot disable cloud profile "os-beta".');
-    expectNothingCommitted();
-  });
-
-  test("SET llm.profiles.os-beta.label is rejected on a cloud-source entry", async () => {
-    (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
-      provider: "together",
-      model: "zai-org/GLM-5.2",
-      source: "cloud",
-    };
-    seedRawConfig(rawConfig);
-    await expect(
-      setRoute.handler({
-        body: { path: "llm.profiles.os-beta.label", value: "My OS Beta" },
-      }),
-    ).rejects.toThrow('Cannot edit cloud profile "os-beta" fields [label]');
-    expectNothingCommitted();
-  });
-
   test("PATCH overwriting balanced with a string is rejected", async () => {
     await expect(
       patchRoute.handler({
@@ -782,22 +635,6 @@ describe("cloud-profile invariant guard — rejected writes", () => {
     ).rejects.toThrow(
       'Cannot edit cloud profile "balanced". Cloud profiles are read-only',
     );
-    expectNothingCommitted();
-  });
-
-  test("SET llm.profiles.balanced.status = 'disabled' is rejected", async () => {
-    await expect(
-      setRoute.handler({
-        body: { path: "llm.profiles.balanced.status", value: "disabled" },
-      }),
-    ).rejects.toThrow('Cannot disable cloud profile "balanced".');
-    expectNothingCommitted();
-  });
-
-  test("SET llm = {} is rejected (would drop all defaults)", async () => {
-    await expect(
-      setRoute.handler({ body: { path: "llm", value: {} } }),
-    ).rejects.toThrow(/Cannot delete or replace cloud profile/);
     expectNothingCommitted();
   });
 
@@ -905,8 +742,7 @@ describe("default-profile invariant guard — allowed writes", () => {
   test("PUT full edits on a user-sourced os-beta entry are allowed (invariance is source-gated)", async () => {
     (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
       provider: "anthropic",
-      model: "claude-sonnet",
-      source: "user",
+      model: "claude-sonnet-4-6",
     };
     seedRawConfig(rawConfig);
     const result = await replaceRoute.handler({
@@ -997,8 +833,8 @@ describe("wire-only profile keys are stripped from writes", () => {
     const profile = savedProfile("balanced");
     expect("invariant" in profile).toBe(false);
     expect("supportsVision" in profile).toBe(false);
-    expect(profile.provider).toBe("anthropic");
-    expect(profile.model).toBe("claude-sonnet");
+    expect(profile.provider).toBe("cadet");
+    expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
   test("SET of a wire-only leaf path never persists the key", async () => {
@@ -1035,8 +871,8 @@ describe("wire-only profile keys are stripped from writes", () => {
     expect(profile.status).toBe("active");
     expect("supportsVision" in profile).toBe(false);
     expect("invariant" in profile).toBe(false);
-    expect(profile.provider).toBe("anthropic");
-    expect(profile.model).toBe("claude-sonnet");
+    expect(profile.provider).toBe("cadet");
+    expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
   test("pure no-op SET round-trip with stale on-disk supportsVision succeeds", async () => {
@@ -1053,8 +889,8 @@ describe("wire-only profile keys are stripped from writes", () => {
     const profile = savedProfile("balanced");
     expect("supportsVision" in profile).toBe(false);
     expect("invariant" in profile).toBe(false);
-    expect(profile.provider).toBe("anthropic");
-    expect(profile.model).toBe("claude-sonnet");
+    expect(profile.provider).toBe("cadet");
+    expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
   test("PATCH re-enable carrying wire keys succeeds when the on-disk entry has stale supportsVision", async () => {
@@ -1111,93 +947,15 @@ describe("code-owned default profiles — wire view and write normalization", ()
   test("GET serves thin stubs verbatim — materialization lives on the profiles API", async () => {
     seedRawConfig({
       llm: {
-        profiles: { balanced: { source: "cloud", status: "disabled" } },
+        profiles: { balanced: { status: "disabled" } },
       },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
     const wireBalanced = response.llm.profiles.balanced;
-    expect(wireBalanced).toEqual({ source: "cloud", status: "disabled" });
+    expect(wireBalanced).toEqual({ status: "disabled" });
     // Catalog-only defaults (no on-disk stub) do not appear at all — the
     // profiles API's list serves their resolved bodies.
     expect(response.llm.profiles["quality-optimized"]).toBeUndefined();
-  });
-
-  test("GET → PATCH round-trip of the raw profiles is accepted and keeps disk stubs thin", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          balanced: { source: "cloud", status: "disabled" },
-          "my-custom": { provider: "openai", model: "gpt-4o", source: "user" },
-        },
-      },
-    });
-    const response = (await getRoute.handler({})) as Record<string, any>;
-    const result = await patchRoute.handler({
-      body: { llm: { profiles: response.llm.profiles } },
-    });
-    expect(result).toHaveProperty("llm");
-    expectOneCommitCycle();
-    expect(savedProfile("balanced")).toEqual({
-      source: "cloud",
-      status: "disabled",
-    });
-    // The raw response carries no absent-default echoes to strip.
-    expect(savedProfile("quality-optimized")).toBeUndefined();
-    expect(savedProfile("my-custom")).toEqual({
-      provider: "openai",
-      model: "gpt-4o",
-      source: "user",
-    });
-  });
-
-  test("creating a new profile under a default name is rejected", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      patchRoute.handler({
-        body: {
-          llm: {
-            profiles: {
-              balanced: { source: "user", provider: "openai", model: "gpt-4o" },
-            },
-          },
-        },
-      }),
-    ).rejects.toThrow(
-      'Cannot create profile "balanced" — the name is reserved for a code-defined default profile.',
-    );
-    expectNothingCommitted();
-  });
-
-  test("writing content to an absent default name is rejected", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      patchRoute.handler({
-        body: {
-          llm: {
-            profiles: {
-              "cost-optimized": { source: "cloud", model: "gpt-4o" },
-            },
-          },
-        },
-      }),
-    ).rejects.toThrow(
-      'Cannot edit cloud profile "cost-optimized" fields [model].',
-    );
-    expectNothingCommitted();
-  });
-
-  test("disabling an absent default via a generic write is rejected", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      patchRoute.handler({
-        body: {
-          llm: {
-            profiles: { balanced: { source: "cloud", status: "disabled" } },
-          },
-        },
-      }),
-    ).rejects.toThrow('Cannot disable cloud profile "balanced".');
-    expectNothingCommitted();
   });
 
   test("PUT status re-enable on an absent always-available default creates a thin managed stub", async () => {
@@ -1208,7 +966,6 @@ describe("code-owned default profiles — wire view and write normalization", ()
     });
     expect(result).toEqual({ ok: true });
     expect(savedProfile("balanced")).toEqual({
-      source: "cloud",
       status: "active",
     });
   });
@@ -1260,7 +1017,7 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     seedRawConfig({
       llm: {
         default: { provider: "anthropic" },
-        profiles: { balanced: { source: "cloud", status: "disabled" } },
+        profiles: { balanced: { status: "disabled" } },
       },
     });
     const response = (await getRoute.handler({})) as Record<string, any>;
@@ -1270,7 +1027,6 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     expect(result).toHaveProperty("llm");
     expectOneCommitCycle();
     expect(savedProfile("balanced")).toEqual({
-      source: "cloud",
       status: "disabled",
     });
     // No absent-default echoes exist to reduce — nothing else is written.
@@ -1289,107 +1045,6 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     // The raw response carries no materialized catalog bodies, so the
     // catalog-only default stays catalog-only.
     expect(savedProfile("balanced")).toBeUndefined();
-  });
-});
-
-describe("code-owned default profiles — leaf SET source stamping", () => {
-  test("a leaf SET creating a cloud entry stamps the cloud marker", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    const result = await setRoute.handler({
-      body: { path: "llm.profiles.balanced.status", value: "active" },
-    });
-    expect(result).toEqual({ ok: true });
-    expect(savedProfile("balanced")).toEqual({
-      source: "cloud",
-      status: "active",
-    });
-  });
-
-  test("a leaf SET on an existing user shadow does not stamp it managed", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          balanced: { source: "user", provider: "openai", model: "gpt-4o" },
-        },
-      },
-    });
-    const result = await setRoute.handler({
-      body: { path: "llm.profiles.balanced.model", value: "gpt-5.4" },
-    });
-    expect(result).toEqual({ ok: true });
-    // Write normalization completes the changed user entry; the guard's
-    // concern is only that `source` stays user-owned.
-    expect(savedProfile("balanced")).toMatchObject({
-      source: "user",
-      provider: "openai",
-      model: "gpt-5.4",
-    });
-    expect(savedProfile("balanced").source).toBe("user");
-  });
-
-  test("a leaf SET writing content to an absent default is rejected", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      setRoute.handler({
-        body: { path: "llm.profiles.balanced.model", value: "gpt-4o" },
-      }),
-    ).rejects.toThrow(BadRequestError);
-    expectNothingCommitted();
-  });
-});
-
-describe("code-owned default profiles — echoes over stale on-disk bodies", () => {
-  // An overlay can persist a cloud entry whose content differs from the
-  // catalog; GET serves catalog content, so a client echo carries values
-  // that match neither nothing — they match the wire view. The round-trip
-  // must still be a no-op.
-  const staleBody = {
-    source: "cloud",
-    provider: "anthropic",
-    model: "claude-sonnet",
-    maxTokens: 16000,
-  };
-
-  test("GET → PATCH round-trip over a stale managed body is accepted and changes nothing", async () => {
-    seedRawConfig({
-      llm: { profiles: { balanced: structuredClone(staleBody) } },
-    });
-    const response = (await getRoute.handler({})) as Record<string, any>;
-    // The response serves the stored body verbatim — the raw echo is what
-    // the guard then recognizes as a no-op.
-    expect(response.llm.profiles.balanced.model).toBe("claude-sonnet");
-    const result = await patchRoute.handler({
-      body: { llm: { profiles: response.llm.profiles } },
-    });
-    expect(result).toHaveProperty("llm");
-    expectOneCommitCycle();
-    expect(savedProfile("balanced")).toEqual(staleBody);
-  });
-
-  test("GET → SET llm round-trip over a stale managed body is accepted and changes nothing", async () => {
-    seedRawConfig({
-      llm: { profiles: { balanced: structuredClone(staleBody) } },
-    });
-    const response = (await getRoute.handler({})) as Record<string, any>;
-    const result = await setRoute.handler({
-      body: { path: "llm.profiles", value: response.llm.profiles },
-    });
-    expect(result).toEqual({ ok: true });
-    expect(savedProfile("balanced")).toEqual(staleBody);
-  });
-
-  test("a genuine content edit over a stale managed body is still rejected", async () => {
-    seedRawConfig({
-      llm: { profiles: { balanced: structuredClone(staleBody) } },
-    });
-    await expect(
-      patchRoute.handler({
-        body: {
-          llm: { profiles: { balanced: { model: "some-other-model" } } },
-        },
-      }),
-    ).rejects.toThrow(BadRequestError);
-    expectNothingCommitted();
   });
 });
 

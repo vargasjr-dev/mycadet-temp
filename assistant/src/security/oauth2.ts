@@ -782,10 +782,10 @@ export async function startOAuth2Flow(
   try {
     // Dynamic imports required here to avoid circular dependencies with
     // config/loader → security → oauth2 module chains.
-    const { loadConfig } = await import("../config/loader.js");
+    const { getConfig } = await import("../config/loader.js");
     const { getPublicBaseUrl } =
       await import("../inbound/public-ingress-urls.js");
-    getPublicBaseUrl(loadConfig());
+    getPublicBaseUrl(getConfig());
     hasPublicUrl = true;
   } catch {
     // No public URL configured

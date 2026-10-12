@@ -9,7 +9,7 @@
 import { INTEGRATION_CATEGORIES } from "@mycadet/service-contracts/integration-categories";
 import { z } from "zod";
 
-import { loadConfig } from "../../config/loader.js";
+import { getConfig } from "../../config/loader.js";
 import { getOAuthCallbackUrl } from "../../inbound/public-ingress-urls.js";
 import {
   deleteApp,
@@ -66,7 +66,7 @@ function serializeProviderFull(row: ReturnType<typeof getProvider>) {
 
 function handleListProviders({ queryParams = {} }: RouteHandlerArgs) {
   const rows = listProviders();
-  const config = loadConfig();
+  const config = getConfig();
   const visibleRows = rows.filter((r) => isProviderVisible(r, config));
   let serialized = visibleRows
     .map((row) => serializeProviderSummary(row))
@@ -91,7 +91,7 @@ function handleGetProvider({ pathParams = {} }: RouteHandlerArgs) {
     );
   }
 
-  const config = loadConfig();
+  const config = getConfig();
   if (!isProviderVisible(row, config)) {
     throw new NotFoundError(
       `No OAuth provider registered for "${providerKey}"`,
@@ -203,7 +203,7 @@ function handleUpdateProvider({
     );
   }
 
-  if (!isProviderVisible(existing, loadConfig())) {
+  if (!isProviderVisible(existing, getConfig())) {
     throw new NotFoundError(
       `No OAuth provider registered for "${providerKey}"`,
     );
@@ -341,7 +341,7 @@ async function handleDeleteProvider({
     );
   }
 
-  if (!isProviderVisible(existing, loadConfig())) {
+  if (!isProviderVisible(existing, getConfig())) {
     throw new NotFoundError(
       `No OAuth provider registered for "${providerKey}"`,
     );

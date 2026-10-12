@@ -17,7 +17,6 @@
  * default profile and on any legacy bare-`provider` callsite override.
  */
 
-import { MANAGED_PROFILE_NAMES } from "../../config/default-profile-catalog.js";
 import { getIsCloud } from "../../config/env-registry.js";
 import { loadRawConfig, saveRawConfig } from "../../config/loader.js";
 import type { DrizzleDb } from "../../persistence/db-connection.js";
@@ -207,17 +206,11 @@ function ensureProviderConnection(
   // custom-named connection already exists.
   //
   // Managed-owned entries are excluded: a cloud preset must stay on the
-  // cloud route, not start dispatching against a key the user
-  // brought for their own profiles. Cloud-owned means `source: "cloud"`
-  // or a canonical managed name without an explicit `source: "user"` —
-  // legacy seeders wrote canonical entries source-less, and only an explicit
-  // user source marks a shadow the user took ownership of (mirrors
-  // workspace migration 109). `entryLabel` is the profile name for the
+  // cloud route, not start dispatching against a key the user brought for
+  // their own profiles. `entryLabel` is the profile name for the
   // `llm.profiles.*` walk; the other walks pass bracketed labels that never
   // collide with canonical names.
-  const isManagedOwned =
-    entry.source === "cloud" ||
-    (entry.source !== "user" && MANAGED_PROFILE_NAMES.has(entryLabel));
+  const isManagedOwned = entry.provider === "cadet";
   const entryModel = typeof entry.model === "string" ? entry.model : undefined;
   const existingForProvider = isManagedOwned
     ? undefined

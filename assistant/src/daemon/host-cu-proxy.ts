@@ -15,7 +15,7 @@
  */
 import { v4 as uuid } from "uuid";
 
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { escapeAxTreeContent } from "../context/outbound-sanitize.js";
 import type { ContentBlock } from "../providers/types.js";
 import {
@@ -256,7 +256,7 @@ export class HostCuProxy {
     }
   >();
 
-  constructor(maxSteps = loadConfig().maxStepsPerSession) {
+  constructor(maxSteps = getConfig().maxStepsPerSession) {
     this._maxSteps = maxSteps;
   }
 

@@ -53,7 +53,7 @@ afterAll(() => {
 });
 
 import { enableMemoryV3LiveForNewWorkspacesMigration } from "../../workspace/migrations/105-enable-memory-v3-live-for-new-workspaces.js";
-import { invalidateConfigCache, loadConfig } from "../loader.js";
+import { getConfig, invalidateConfigCache } from "../loader.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -74,7 +74,7 @@ let originalIsPlatform: string | undefined;
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("deployment-context embedding-provider default (via loadConfig)", () => {
+describe("deployment-context embedding-provider default (via getConfig)", () => {
   beforeEach(() => {
     ensureTestDir();
     const resetPaths = [
@@ -109,7 +109,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     writeConfig({});
     process.env.IS_CLOUD = "true";
 
-    const config = loadConfig();
+    const config = getConfig();
 
     // In-memory effective config reflects the cloud intent.
     expect(config.memory.embeddings.provider).toBe("gemini");
@@ -138,7 +138,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     }
     process.env.IS_CLOUD = "true";
 
-    const config = loadConfig();
+    const config = getConfig();
 
     // In-memory effective config still reflects the cloud intent.
     expect(config.memory.embeddings.provider).toBe("gemini");
@@ -180,14 +180,14 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     // provider leaf absent), the cloud default re-applies in memory rather
     // than being lost to a persisted "auto" read back as an explicit choice.
     invalidateConfigCache();
-    expect(loadConfig().memory.embeddings.provider).toBe("gemini");
+    expect(getConfig().memory.embeddings.provider).toBe("gemini");
   });
 
   test("IS_CLOUD='1' also fills provider=gemini in memory", () => {
     writeConfig({});
     process.env.IS_CLOUD = "1";
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.memory.embeddings.provider).toBe("gemini");
   });
@@ -198,7 +198,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     });
     process.env.IS_CLOUD = "true";
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.memory.embeddings.provider).toBe("local");
     expect(config.memory.qdrant.vectorSize).toBe(384);
@@ -214,7 +214,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     writeConfig({});
     delete process.env.IS_CLOUD;
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.memory.embeddings.provider).toBe("auto");
     expect(config.memory.qdrant.vectorSize).toBe(384);
@@ -226,7 +226,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     }
     delete process.env.IS_CLOUD;
 
-    const config = loadConfig();
+    const config = getConfig();
 
     // In-memory effective config still carries the full tuning (schema defaults).
     expect(config.memory.v3.gate.denseThreshold).toBe(0.66);
@@ -253,7 +253,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
     }
     delete process.env.IS_CLOUD;
 
-    loadConfig();
+    getConfig();
     enableMemoryV3LiveForNewWorkspacesMigration.run(WORKSPACE_DIR, {
       isNewWorkspace: true,
     });
@@ -295,7 +295,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
         `{\n  "memory": {\n    "v3": {\n      "live": true\n    }\n  },\n  "llm": {\n    "activeProf`,
       );
 
-      const config = loadConfig();
+      const config = getConfig();
 
       // The corrupt file was quarantined and the reseeded config carries the
       // tier forward, both in-memory (this boot runs v3) and on disk
@@ -311,7 +311,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
         `{\n  "memory": {\n    "v3": {\n      "live": false\n    }\n  },\n  "llm": {\n    "activeProf`,
       );
 
-      const config = loadConfig();
+      const config = getConfig();
 
       // Never carry `false` forward: an absent leaf is the only way to keep
       // "no decision recorded" representable for migration 105.
@@ -331,7 +331,7 @@ describe("deployment-context embedding-provider default (via loadConfig)", () =>
         JSON.stringify({ memory: { v3: { live: true } } }, null, 2),
       );
 
-      const config = loadConfig();
+      const config = getConfig();
 
       expect(config.memory.v3.live).toBe(true);
       expect(readV3Raw()).toEqual({ live: true });

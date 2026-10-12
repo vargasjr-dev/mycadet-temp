@@ -31,7 +31,7 @@ afterAll(() => {
   mock.restore();
 });
 
-import { invalidateConfigCache, loadConfig } from "../loader.js";
+import { getConfig, invalidateConfigCache } from "../loader.js";
 
 function writeConfig(obj: unknown): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(obj, null, 2) + "\n");
@@ -64,7 +64,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       maxStepsPerSession: 77,
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.tools.exclude).toEqual(["tool-a", "tool-b"]);
     // The rest of the config survives — cleanup succeeded, so recovery never
@@ -77,7 +77,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       tools: { exclude: [1, "tool-a", 2, "tool-b", 3] },
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.tools.exclude).toEqual(["tool-a", "tool-b"]);
   });
@@ -91,7 +91,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       maxStepsPerSession: 66,
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.tools.exclude).toEqual([]);
     expect(config.maxStepsPerSession).toBe(66);
@@ -107,7 +107,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       maxStepsPerSession: 66,
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.skills.allowBundled).toBeNull();
     expect(config.maxStepsPerSession).toBe(66);
@@ -122,7 +122,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       maxStepsPerSession: 66,
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.skills.allowBundled).toBeNull();
     expect(config.maxStepsPerSession).toBe(66);
@@ -138,7 +138,7 @@ describe("config recovery compacts arrays after stripping invalid elements", () 
       maxStepsPerSession: "not-a-number",
     });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.skills.allowBundled).toEqual([]);
   });

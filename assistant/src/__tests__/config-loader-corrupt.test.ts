@@ -3,7 +3,7 @@
  * hand-edited to invalid JSON) is quarantined by the loader, which
  * logs an error with a remediation hint and falls through to the
  * default-config path so startup proceeds. These tests verify that
- * loadConfig() / loadRawConfig() never throw on corrupt input, and
+ * getConfig() / loadRawConfig() never throw on corrupt input, and
  * that the corrupt file is preserved for debugging.
  */
 
@@ -19,8 +19,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
+  getConfig,
   invalidateConfigCache,
-  loadConfig,
   loadRawConfig,
 } from "../config/loader.js";
 
@@ -63,7 +63,7 @@ function listQuarantinedFiles(): string[] {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("loadConfig corrupt-file recovery", () => {
+describe("getConfig corrupt-file recovery", () => {
   beforeEach(() => {
     resetWorkspace();
     invalidateConfigCache();
@@ -78,7 +78,7 @@ describe("loadConfig corrupt-file recovery", () => {
     writeFileSync(CONFIG_PATH, '{"provider": "anthropic", "mo');
 
     // Must not throw — the daemon must never block startup on corrupt config.
-    const config = loadConfig();
+    const config = getConfig();
 
     // Defaults loaded — config is populated through the Zod schema.
     expect(config).toBeDefined();
@@ -102,7 +102,7 @@ describe("loadConfig corrupt-file recovery", () => {
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-7" }),
     );
 
-    const config = loadConfig();
+    const config = getConfig();
     expect(config).toBeDefined();
 
     // No quarantine file for valid JSON.
@@ -114,7 +114,7 @@ describe("loadConfig corrupt-file recovery", () => {
   test("does not re-quarantine existing quarantine files on subsequent startups", () => {
     // First startup: corrupt config is quarantined.
     writeFileSync(CONFIG_PATH, "}{not json");
-    loadConfig();
+    getConfig();
 
     const firstBatch = listQuarantinedFiles();
     expect(firstBatch).toHaveLength(1);
@@ -123,7 +123,7 @@ describe("loadConfig corrupt-file recovery", () => {
     // the quarantine on the previous load, so there IS now a valid config.json
     // on disk — no second quarantine should occur).
     invalidateConfigCache();
-    loadConfig();
+    getConfig();
 
     // Still exactly one quarantined file — the loader did not re-rename a
     // pristine or already-quarantined file.
@@ -133,7 +133,7 @@ describe("loadConfig corrupt-file recovery", () => {
 
   test("quarantine filenames are filesystem-safe (no colons)", () => {
     writeFileSync(CONFIG_PATH, "not-valid-json");
-    loadConfig();
+    getConfig();
 
     const quarantined = listQuarantinedFiles();
     expect(quarantined).toHaveLength(1);
@@ -149,7 +149,7 @@ describe("loadConfig corrupt-file recovery", () => {
   // ---------------------------------------------------------------------------
   // Shape-mismatch quarantine — same JSON.parse caveat as `loadRawConfig`.
   // Without an `isPlainObject` check, downstream code (e.g. the cloud-Gemini
-  // `setNestedValue` block in `loadConfig`) would TypeError on `null` or
+  // `setNestedValue` block in `getConfig`) would TypeError on `null` or
   // primitive `fileConfig`, and only the broad try/catch around the migration
   // saved startup. Treating the wrong-shape case as a parse error here moves
   // the boundary check to the loader so callers don't have to defend.
@@ -167,7 +167,7 @@ describe("loadConfig corrupt-file recovery", () => {
       writeFileSync(CONFIG_PATH, jsonText);
 
       // Must not throw — daemon startup contract.
-      const config = loadConfig();
+      const config = getConfig();
 
       // Defaults loaded — config is populated through the Zod schema.
       expect(config).toBeDefined();

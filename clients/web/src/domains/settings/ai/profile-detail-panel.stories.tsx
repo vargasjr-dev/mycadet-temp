@@ -32,13 +32,11 @@ const CONFIG = makeConfigFixture({
         label: "Balanced",
         provider: "cadet",
         model: "glm-5.2",
-        source: "cloud",
       },
       "my-custom": {
         label: "My Custom",
         provider: "anthropic",
         model: "claude-opus-5",
-        source: "user",
       },
     },
     profileOrder: ["balanced", "my-custom"],

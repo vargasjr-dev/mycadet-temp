@@ -347,13 +347,6 @@ export interface SendMessageConfig {
    */
   overrideProfile?: string;
   /**
-   * Who chose `overrideProfile`: `"auto"` when the Auto profile's router
-   * picked it for the turn. Usage attribution reports it as the profile
-   * source so a routed turn is not counted as a user pin. A routing-time
-   * concern only; stripped before any provider wire request.
-   */
-  overrideProfileOrigin?: "auto";
-  /**
    * When true, the resolver floats `overrideProfile` above the call-site
    * layers (named site profile + call-site override) for non-main-agent call
    * sites — see `ResolveCallSiteOpts.forceOverrideProfile`. Used by callers

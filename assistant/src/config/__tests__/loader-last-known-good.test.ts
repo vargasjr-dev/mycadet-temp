@@ -6,7 +6,7 @@
  *
  * The strip-and-reparse cleanup (including sparse-array compaction) repairs
  * every known real-world config shape, so no config.json fixture reliably
- * reaches the ladder through `loadConfig` — the ladder is defense-in-depth
+ * reaches the ladder through `getConfig` — the ladder is defense-in-depth
  * for schema shapes the cleanup does not anticipate. The ladder tests here
  * therefore drive `_recoverFromInvalidConfigForTests` directly, while the
  * file-based tests assert the cleanup's healing behavior end-to-end.
@@ -48,9 +48,9 @@ afterAll(() => {
 import {
   _recoverFromInvalidConfigForTests,
   _resetLastKnownGoodConfigForTests,
+  getConfig,
   getConfigReadOnly,
   invalidateConfigCache,
-  loadConfig,
 } from "../loader.js";
 
 function writeConfig(obj: unknown): void {
@@ -90,7 +90,7 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
   test("keeps the last-known-good config when recovery runs after a good load", () => {
     // A valid load captures the last-known-good snapshot for this process.
     writeConfig({ maxStepsPerSession: 123 });
-    expect(loadConfig().maxStepsPerSession).toBe(123);
+    expect(getConfig().maxStepsPerSession).toBe(123);
 
     // Recovery for an irreparable config returns the snapshot — the whole
     // config is NOT reset to schema defaults (which would be 50).
@@ -123,7 +123,7 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
     // the sibling value is preserved and the recovery ladder is never reached.
     writeConfig({ maxStepsPerSession: 9999, tools: { exclude: ["keep-me"] } });
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.maxStepsPerSession).toBe(50);
     expect(config.tools.exclude).toEqual(["keep-me"]);
@@ -135,14 +135,14 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
     // rung runs, the valid element survives, and sibling sections keep their
     // values from the file (not from the last-known-good snapshot).
     writeConfig({ maxStepsPerSession: 42 });
-    expect(loadConfig().maxStepsPerSession).toBe(42);
+    expect(getConfig().maxStepsPerSession).toBe(42);
 
     writeConfig({
       maxStepsPerSession: 123,
       tools: { exclude: ["valid-tool", 456] },
     });
     invalidateConfigCache();
-    const healed = loadConfig();
+    const healed = getConfig();
 
     expect(healed.maxStepsPerSession).toBe(123);
     expect(healed.tools.exclude).toEqual(["valid-tool"]);
@@ -150,7 +150,7 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
 
   test("invalidateConfigCache does not clear the last-known-good safety net", () => {
     writeConfig({ maxStepsPerSession: 77 });
-    expect(loadConfig().maxStepsPerSession).toBe(77);
+    expect(getConfig().maxStepsPerSession).toBe(77);
 
     // A bare cache invalidation must not drop the safety net.
     invalidateConfigCache();
@@ -165,7 +165,7 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
 
   test("getConfigReadOnly returns schema defaults for a top-level `null` config without throwing", () => {
     // `JSON.parse("null")` is valid JSON, so it reaches validateWithSchema as a
-    // non-object top-level value. `loadConfig` quarantines non-object files
+    // non-object top-level value. `getConfig` quarantines non-object files
     // before validation, so `getConfigReadOnly` (which validates the parsed
     // value directly) is the path that exercises the recovery ladder's
     // non-object guard. It must degrade to schema defaults, not throw on
@@ -193,7 +193,7 @@ describe("config recovery ladder for cleanup-resistant invalid config", () => {
     // First load with no config.json seeds the file and fills the
     // deployment-context cloud OAuth service modes in memory; the
     // last-known-good snapshot is refreshed AFTER that fill.
-    const seeded = loadConfig();
+    const seeded = getConfig();
     expect(seeded.services["outlook-oauth"].mode).toBe("managed");
 
     // Recovery keeps the last-known-good EFFECTIVE config, so the cloud mode

@@ -710,7 +710,6 @@ function normalizeSendMessageOptions(
   // (after the `openai` promptCacheKey copy above) so they never leak into
   // provider request bodies even when callers set them without a `callSite`.
   delete nextConfig.overrideProfile;
-  delete nextConfig.overrideProfileOrigin;
   delete nextConfig.forceOverrideProfile;
   delete nextConfig.selectionSeed;
   delete nextConfig.conversationId;
@@ -725,7 +724,6 @@ function normalizeSendMessageOptions(
     const attribution = resolveUsageAttribution({
       callSite: config.callSite,
       overrideProfile: config.overrideProfile,
-      overrideProfileOrigin: config.overrideProfileOrigin,
       forceOverrideProfile: config.forceOverrideProfile,
       selectionSeed: config.selectionSeed,
     });

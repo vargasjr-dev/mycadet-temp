@@ -222,7 +222,7 @@ export function useProfileEditor({
   // Customization goes through "Save As New", which switches
   // `effectiveMode` to "create" and therefore drops the lock on the duplicate.
   const isInvariant =
-    initialValues?.source === "cloud" && effectiveMode !== "create";
+    initialValues?.provider === "cadet" && effectiveMode !== "create";
   // The invariant lock forces read-only handling even in edit mode, so Save
   // takes the partial-merge path and never the delete/recreate cycle the
   // daemon rejects for cloud profiles.

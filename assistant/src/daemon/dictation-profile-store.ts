@@ -262,7 +262,7 @@ function loadFromDisk(): DictationProfilesConfig {
 
 // --- Public API ---
 
-export function loadConfig(): DictationProfilesConfig {
+export function getConfig(): DictationProfilesConfig {
   if (cachedConfig == null) {
     cachedConfig = loadFromDisk();
   }
@@ -283,7 +283,7 @@ export function resolveProfile(
   appName: string,
   requestProfileId?: string,
 ): ProfileResolution {
-  const config = loadConfig();
+  const config = getConfig();
 
   const enabledProfiles = config.profiles.filter(isProfileEnabled);
   const profileById = (id: string) => enabledProfiles.find((p) => p.id === id);

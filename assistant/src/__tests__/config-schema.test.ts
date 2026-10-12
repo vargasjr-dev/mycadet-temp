@@ -30,7 +30,7 @@ function ensureTestDir(): void {
   }
 }
 
-import { invalidateConfigCache, loadConfig } from "../config/loader.js";
+import { getConfig, invalidateConfigCache } from "../config/loader.js";
 import {
   AssistantConfigSchema,
   DEFAULT_ELEVENLABS_VOICE_ID,
@@ -2360,10 +2360,10 @@ describe("032-tts-provider-unification migration", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: loader integration (config file -> loadConfig with fallback)
+// Tests: loader integration (config file -> getConfig with fallback)
 // ---------------------------------------------------------------------------
 
-describe("loadConfig with schema validation", () => {
+describe("getConfig with schema validation", () => {
   beforeEach(() => {
     // Keep WORKSPACE_DIR and logs in place to avoid racing async logger stream init.
     ensureTestDir();
@@ -2397,7 +2397,7 @@ describe("loadConfig with schema validation", () => {
         },
       },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.provider).toBe("openai");
     expect(config.llm.callSites?.mainAgent?.model).toBe("gpt-4");
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
@@ -2405,7 +2405,7 @@ describe("loadConfig with schema validation", () => {
 
   test("applies defaults for missing fields", () => {
     writeConfig({});
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.profiles).toEqual({});
     expect(config.llm.profileOrder).toEqual([]);
     expect(config.llm.callSites).toEqual({});
@@ -2425,7 +2425,7 @@ describe("loadConfig with schema validation", () => {
         callSites: { mainAgent: { maxTokens: 4096 } },
       },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.default).toEqual({
       provider: "openai",
       model: "gpt-4",
@@ -2442,7 +2442,7 @@ describe("loadConfig with schema validation", () => {
         profiles: { custom: { provider: "unknown-provider", model: "gpt-4" } },
       },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.profiles.custom?.provider).toBe("unknown-provider");
     expect(config.llm.profiles.custom?.model).toBe("gpt-4");
   });
@@ -2451,7 +2451,7 @@ describe("loadConfig with schema validation", () => {
     writeConfig({
       llm: { callSites: { mainAgent: { maxTokens: -100, model: "gpt-4" } } },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBeUndefined();
     expect(config.llm.callSites?.mainAgent?.model).toBe("gpt-4");
   });
@@ -2460,7 +2460,7 @@ describe("loadConfig with schema validation", () => {
     writeConfig({
       timeouts: { shellDefaultTimeoutSec: -5, shellMaxTimeoutSec: "bad" },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.timeouts.shellDefaultTimeoutSec).toBe(120);
     expect(config.timeouts.shellMaxTimeoutSec).toBe(600);
     expect(config.timeouts.permissionTimeoutSec).toBe(300);
@@ -2479,7 +2479,7 @@ describe("loadConfig with schema validation", () => {
         },
       },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.provider).toBe("openai");
     expect(config.llm.callSites?.mainAgent?.model).toBe("gpt-4");
     expect(config.llm.callSites?.mainAgent?.thinking?.enabled).toBe(true);
@@ -2487,7 +2487,7 @@ describe("loadConfig with schema validation", () => {
   });
 
   test("handles no config file", () => {
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.profiles).toEqual({});
     expect(config.llm.profileSession.defaultTtlSeconds).toBe(1800);
   });
@@ -2496,7 +2496,7 @@ describe("loadConfig with schema validation", () => {
     writeConfig({
       timeouts: { shellDefaultTimeoutSec: 30 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.timeouts.shellDefaultTimeoutSec).toBe(30);
     expect(config.timeouts.shellMaxTimeoutSec).toBe(600);
     expect(config.timeouts.permissionTimeoutSec).toBe(300);
@@ -2514,7 +2514,7 @@ describe("loadConfig with schema validation", () => {
         },
       },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(
       config.llm.callSites?.mainAgent?.contextWindow?.targetBudgetRatio,
     ).toBeUndefined();
@@ -2527,13 +2527,13 @@ describe("loadConfig with schema validation", () => {
     writeConfig({
       rateLimit: { maxRequestsPerMinute: -1 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.rateLimit.maxRequestsPerMinute).toBe(0);
   });
 
   test("falls back for invalid auditLog.retentionDays", () => {
     writeConfig({ auditLog: { retentionDays: -7 } });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.auditLog.retentionDays).toBe(0);
   });
 
@@ -2543,7 +2543,7 @@ describe("loadConfig with schema validation", () => {
     writeConfig({
       calls: { enabled: false, maxDurationSeconds: 600 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.calls.enabled).toBe(false);
     expect(config.calls.maxDurationSeconds).toBe(600);
     expect(config.calls.userConsultTimeoutSeconds).toBe(120);
@@ -2552,7 +2552,7 @@ describe("loadConfig with schema validation", () => {
 
   test("falls back for invalid calls.provider", () => {
     writeConfig({ calls: { provider: "vonage" } });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.calls.provider).toBe("twilio");
   });
 
@@ -2565,7 +2565,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 4096 } } },
       filing: { activeHoursStart: 8 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
     expect(config.filing.activeHoursStart).toBeNull();
     expect(config.filing.activeHoursEnd).toBeNull();
@@ -2579,7 +2579,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 4096 } } },
       heartbeat: { activeHoursStart: null },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
     expect(config.heartbeat.activeHoursStart).toBe(8);
     expect(config.heartbeat.activeHoursEnd).toBe(22);
@@ -2595,7 +2595,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 4096 } } },
       heartbeat: { activeHoursStart: null, activeHoursEnd: 8 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
     expect(config.heartbeat.activeHoursStart).toBe(8);
     expect(config.heartbeat.activeHoursEnd).toBe(22);
@@ -2607,7 +2607,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 4096 } } },
       heartbeat: { activeHoursStart: 22, activeHoursEnd: null },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
     expect(config.heartbeat.activeHoursStart).toBe(8);
     expect(config.heartbeat.activeHoursEnd).toBe(22);
@@ -2623,7 +2623,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 4096 } } },
       heartbeat: { activeHoursStart: 22, activeHoursEnd: 22 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
     expect(config.heartbeat.activeHoursStart).toBe(8);
     expect(config.heartbeat.activeHoursEnd).toBe(22);
@@ -2639,7 +2639,7 @@ describe("loadConfig with schema validation", () => {
       llm: { callSites: { mainAgent: { maxTokens: 1234 } } },
       filing: { activeHoursStart: 5, activeHoursEnd: 5 },
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites?.mainAgent?.maxTokens).toBe(1234);
     expect(config.filing.activeHoursStart).toBeNull();
     expect(config.filing.activeHoursEnd).toBeNull();
@@ -2647,7 +2647,7 @@ describe("loadConfig with schema validation", () => {
 
   test("applies calls defaults when not specified", () => {
     writeConfig({});
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.calls.enabled).toBe(true);
     expect(config.calls.maxDurationSeconds).toBe(3600);
     expect(config.calls.userConsultTimeoutSeconds).toBe(120);
@@ -2697,21 +2697,20 @@ describe("Call entrypoint gating", () => {
   test("call_start tool returns error when calls.enabled is false", async () => {
     writeConfig({ calls: { enabled: false } });
     // Force config reload
-    loadConfig();
+    getConfig();
 
     const { executeCallStart: _executeCallStart } =
       await import("../tools/calls/call-start.js");
 
     // The tool is registered via side effect. We need to test the gating logic directly.
     // Since the module registers itself, we test by loading config and checking behavior.
-    const { getConfig } = await import("../config/loader.js");
     const config = getConfig();
     expect(config.calls.enabled).toBe(false);
   });
 
   test("calls_start route throws ForbiddenError when calls.enabled is false", async () => {
     writeConfig({ calls: { enabled: false } });
-    loadConfig();
+    getConfig();
 
     const { ROUTES } = await import("../runtime/routes/call-routes.js");
     const { RouteError } = await import("../runtime/routes/errors.js");

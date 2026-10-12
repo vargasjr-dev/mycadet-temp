@@ -285,23 +285,22 @@ export function defaultChatRouteBurnsManagedCredits(
           }
           // Arms expand through the same stale-stub exception as rungs
           // (`providerAwareEntry` daemon-side), so an unusable
-          // managed-source stub resolves to the default-provider route;
+          // cadet-provider stub resolves to the default-provider route;
           // any other unusable arm skips this whole rung for its seeds and
           // stands for the rest of the chain.
-          return armEntry?.source === "cloud"
+          return armEntry?.provider === "cadet"
             ? classifyStaleDefaultStub(evidence)
             : classifyFromRung(index + 1);
         }),
       );
     }
     if (entry.status === "disabled" || !entry.provider || !entry.model) {
-      // An unusable managed-source stub of a code-owned default (its
-      // `source` is `managed`) does NOT fall through: the daemon's
-      // `providerAwareEntry` ignores the stale stub (defaults cannot be
-      // disabled through any write path) and resolves the pure catalog body
-      // through `llm.default`, so this rung classifies as that
-      // route instead.
-      if (entry.source === "cloud") {
+      // An unusable cadet-provider stub of a code-owned default does NOT
+      // fall through: the daemon's `providerAwareEntry` ignores the stale
+      // stub (defaults cannot be disabled through any write path) and
+      // resolves the pure catalog body through `llm.default`, so this rung
+      // classifies as that route instead.
+      if (entry.provider === "cadet") {
         return classifyStaleDefaultStub(evidence);
       }
       return classifyFromRung(index + 1);

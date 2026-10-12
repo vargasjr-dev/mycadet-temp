@@ -15,7 +15,7 @@
 import { randomUUID } from "node:crypto";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
-import { loadConfig } from "../../config/loader.js";
+import { getConfig } from "../../config/loader.js";
 import {
   nonTextConversationProfileMessage,
   profileSupportsTextGeneration,
@@ -156,7 +156,7 @@ export async function setInferenceProfileSession({
   }
 
   // --- Validate profile ---
-  const { llm } = loadConfig();
+  const { llm } = getConfig();
   const profiles = getUserSelectableProfilesForProvider(llm);
   if (!Object.prototype.hasOwnProperty.call(profiles, profile)) {
     throw new BadRequestError(
@@ -193,7 +193,7 @@ export async function setInferenceProfileSession({
   let clamped: number | null | undefined;
 
   if (typeof ttlSeconds === "number") {
-    const maxTtl = loadConfig().llm?.profileSession?.maxTtlSeconds ?? 43200;
+    const maxTtl = getConfig().llm?.profileSession?.maxTtlSeconds ?? 43200;
     clamped = Math.min(Math.max(1, ttlSeconds), maxTtl);
     newExpiresAt = Date.now() + clamped * 1000;
     newSessionId = callerSessionId ?? randomUUID();

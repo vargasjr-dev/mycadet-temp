@@ -8,7 +8,7 @@
  */
 
 import { resolveEffectiveSpeechProviders } from "../config/cloud-speech-defaults.js";
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import {
   getCatalogProvider,
   getTtsProvider,
@@ -101,7 +101,7 @@ export async function resolveCallTtsProvider(
   options?: ResolveCallTtsOptions,
 ): Promise<ResolvedCallTts> {
   try {
-    const config = loadConfig();
+    const config = getConfig();
     const effectiveProviderId = await effectiveTtsProviderId(config);
     const resolved = resolveTtsConfig(config, effectiveProviderId);
 
@@ -192,7 +192,7 @@ export async function resolveCallTtsProvider(
  * silent native path.
  */
 async function effectiveTtsProviderId(
-  config: ReturnType<typeof loadConfig>,
+  config: ReturnType<typeof getConfig>,
 ): Promise<TtsProviderId | undefined> {
   try {
     const { tts } = await resolveEffectiveSpeechProviders(config);

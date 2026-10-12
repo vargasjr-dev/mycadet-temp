@@ -10,8 +10,6 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairAdaptiveThinkingOnCloudProfiles } from "../workspace/adaptive-thinking-repair.js";
-import { enableAdaptiveThinkingCloudProfilesMigration } from "../workspace/migrations/097-enable-adaptive-thinking-managed-profiles.js";
-import { recheckAdaptiveThinkingModelImpliedAnthropicMigration } from "../workspace/migrations/104-recheck-adaptive-thinking-model-implied-anthropic.js";
 
 const ADAPTIVE = { enabled: true, streamThinking: true };
 
@@ -49,34 +47,14 @@ function profile(name: string): Record<string, unknown> {
   return profiles[name] as Record<string, unknown>;
 }
 
-// The startup repair, migration 097, and migration 104 keep frozen copies of
-// the same logic (migration modules must stay self-contained). Run every
-// scenario against all of them. The copies' source vocabularies split with
-// the managed→cloud rename: the live repair reads the renamed "cloud" marker
-// while the frozen migrations keep the retired "managed" one.
-const implementations: Array<[string, string, (dir: string) => void]> = [
-  ["startup repair", "cloud", repairAdaptiveThinkingOnCloudProfiles],
-  [
-    "migration 097",
-    "managed",
-    (dir) => enableAdaptiveThinkingCloudProfilesMigration.run(dir),
-  ],
-  [
-    "migration 104",
-    "managed",
-    (dir) => recheckAdaptiveThinkingModelImpliedAnthropicMigration.run(dir),
-  ],
-];
-
-describe.each(implementations)("%s", (_label, sourceMarker, run) => {
+describe("repairAdaptiveThinkingOnCloudProfiles", () => {
   test("patches managed Anthropic profiles missing thinking", () => {
     writeConfig({
       llm: {
         default: { provider: "anthropic", model: "claude-sonnet-4-6" },
         profiles: {
-          balanced: { source: sourceMarker, provider: "anthropic" },
+          balanced: { provider: "anthropic" },
           "quality-optimized": {
-            source: sourceMarker,
             provider: "anthropic",
             thinking: { enabled: false },
           },
@@ -84,14 +62,14 @@ describe.each(implementations)("%s", (_label, sourceMarker, run) => {
       },
     });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toEqual(ADAPTIVE);
     expect(profile("quality-optimized").thinking).toEqual(ADAPTIVE);
   });
 
-  test("skips source-less empty shells when llm.default.provider is non-Anthropic", () => {
-    // Migration 052 seeds empty {} shells (no source, no provider) on legacy
+  test("skips empty shells when llm.default.provider is non-Anthropic", () => {
+    // Migration 052 seeds empty {} shells (no provider) on legacy
     // non-Anthropic workspaces. They inherit the non-Anthropic provider from
     // llm.default and must stay off the Anthropic-specific repair.
     writeConfig({
@@ -104,13 +82,13 @@ describe.each(implementations)("%s", (_label, sourceMarker, run) => {
       },
     });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced")).toEqual({});
     expect(profile("quality-optimized")).toEqual({});
   });
 
-  test("treats absent llm.default.provider as Anthropic for source-less profiles", () => {
+  test("treats absent llm.default.provider as Anthropic", () => {
     writeConfig({
       llm: {
         default: { model: "claude-sonnet-4-6" },
@@ -120,7 +98,7 @@ describe.each(implementations)("%s", (_label, sourceMarker, run) => {
       },
     });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toEqual(ADAPTIVE);
   });
@@ -135,30 +113,27 @@ describe.each(implementations)("%s", (_label, sourceMarker, run) => {
       },
     });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toEqual(ADAPTIVE);
   });
 
-  test("patches source-less profiles pinning a known Claude model under a non-Anthropic default", () => {
-    // A managed/source-less profile that omits `provider` but pins a known
-    // Claude model is Anthropic via the resolver's model-implied provider, even
-    // when llm.default.provider is non-Anthropic. It must still get adaptive
+  test("patches profiles pinning a known Claude model under a non-Anthropic default", () => {
+    // A profile that omits `provider` but pins a known Claude model is
+    // Anthropic via the resolver's model-implied provider, even when
+    // llm.default.provider is non-Anthropic. It must still get adaptive
     // thinking rather than being skipped.
     writeConfig({
       llm: {
         default: { provider: "gemini", model: "gemini-2.5-pro" },
         profiles: {
           balanced: { model: "claude-sonnet-4-6" },
-          "quality-optimized": {
-            source: sourceMarker,
-            model: "claude-opus-4-8",
-          },
+          "quality-optimized": { model: "claude-opus-4-8" },
         },
       },
     });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toEqual(ADAPTIVE);
     expect(profile("quality-optimized").thinking).toEqual(ADAPTIVE);
@@ -174,41 +149,24 @@ describe.each(implementations)("%s", (_label, sourceMarker, run) => {
       },
     });
 
-    run(workspaceDir);
-
-    expect(profile("balanced").thinking).toBeUndefined();
-  });
-
-  test("skips source: user profiles", () => {
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic" },
-        profiles: {
-          balanced: { source: "user", provider: "anthropic" },
-        },
-      },
-    });
-
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toBeUndefined();
   });
 
   test("is idempotent when thinking is already enabled", () => {
-    const config = {
+    writeConfig({
       llm: {
         default: { provider: "anthropic" },
         profiles: {
           balanced: {
-            source: sourceMarker,
             thinking: { enabled: true, streamThinking: false },
           },
         },
       },
-    };
-    writeConfig(config);
+    });
 
-    run(workspaceDir);
+    repairAdaptiveThinkingOnCloudProfiles(workspaceDir);
 
     expect(profile("balanced").thinking).toEqual({
       enabled: true,

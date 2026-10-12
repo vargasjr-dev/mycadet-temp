@@ -16,7 +16,7 @@
  * for plugin ingress.
  */
 
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { resolveCallbackUrl } from "./cloud-callback-registration.js";
 import {
   getMcpOAuthClientMetadataUrl,
@@ -57,7 +57,7 @@ const OAUTH_REGISTRATION_TYPE = "oauth";
  */
 export async function resolveOauthCallbackUrl(): Promise<string> {
   return resolveCallbackUrl(
-    () => getOAuthCallbackUrl(loadConfig()),
+    () => getOAuthCallbackUrl(getConfig()),
     OAUTH_CALLBACK_PATH,
     OAUTH_REGISTRATION_TYPE,
   );
@@ -77,7 +77,7 @@ export function resolveMcpOAuthClientMetadataUrl(
   redirectUrl: string,
 ): string | undefined {
   try {
-    const config = loadConfig();
+    const config = getConfig();
     if (getOAuthCallbackUrl(config) !== redirectUrl) {
       return undefined;
     }

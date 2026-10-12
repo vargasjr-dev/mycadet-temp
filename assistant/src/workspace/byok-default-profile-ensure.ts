@@ -78,22 +78,20 @@ const HATCH_ERA_PROFILE_KEYS = [
 type HatchEraProfileKey = (typeof HATCH_ERA_PROFILE_KEYS)[number];
 
 /**
- * The exact stub shapes BYOK hatching left on each default key: thin (only
- * the workspace-owned overlay fields), `source: "cloud"`, the frozen
- * per-key label, and a `status` of `"disabled"` (seeded at hatch, #30367),
- * `"active"` (re-enabled through the guard; safe to delete because the bare
- * key resolves active post-conversion), or no `status` key at all (installs
- * that already existed when #30367 landed got only the label rewrite;
- * migration 126 thinned those bodies to `{ source, label }`). Deletion
- * requires the full shape: a thin managed entry differing in any other way
- * (a guard-side edit on the bare key, or a non-frozen label or status
- * carried off a retired copy by this pass) is user overlay state and stays.
- * The carry arm below never writes the frozen label, so a match is always
- * hatch-written modulo the status toggle. A managed-source entry with any
- * other key (a cloud overlay body) is not a stub and is likewise left
- * alone.
+ * The exact stub shapes hatching leaves on each default key: thin (only
+ * the cadet-provider marker plus workspace-owned overlay fields), the
+ * frozen per-key label, and a `status` of `"disabled"` (seeded at hatch,
+ * #30367), `"active"` (re-enabled through the guard; safe to delete because
+ * the bare key resolves active post-conversion), or no `status` key at all
+ * (label-only rewrites). Deletion requires the full shape: a thin managed
+ * entry differing in any other way (a guard-side edit on the bare key, or a
+ * non-frozen label or status carried off a retired copy by this pass) is
+ * user overlay state and stays. The carry arm below never writes the frozen
+ * label, so a match is always hatch-written modulo the status toggle. A
+ * cadet-provider entry with any other key (a cloud overlay body) is not a
+ * stub and is likewise left alone.
  */
-const STUB_ONLY_KEYS = new Set(["source", "status", "label", "thinking"]);
+const STUB_ONLY_KEYS = new Set(["provider", "status", "label", "thinking"]);
 const HATCH_STUB_LABELS: Record<HatchEraProfileKey, string> = {
   balanced: "Balanced (Managed)",
   "quality-optimized": "Quality (Managed)",
@@ -116,7 +114,7 @@ function isHatchStub(
   entry: Record<string, unknown>,
 ): boolean {
   return (
-    entry.source === "cloud" &&
+    entry.provider === "cadet" &&
     Object.keys(entry).every((k) => STUB_ONLY_KEYS.has(k)) &&
     (!("status" in entry) ||
       entry.status === "disabled" ||
@@ -332,7 +330,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
     const overlay = userOverlayState(entry, key);
     delete profiles[name];
     if (overlay !== null && readObject(profiles[key]) === null) {
-      const stub: Record<string, unknown> = { source: "cloud", ...overlay };
+      const stub: Record<string, unknown> = { provider: "cadet", ...overlay };
       // A carried label that reproduces the hatch-stub shape is
       // indistinguishable from a genuine hatch stub and would be deleted by
       // the stub arm on the next boot, so the colliding label is never
@@ -370,7 +368,7 @@ export function ensureByokDefaultProfiles(workspaceDir: string): void {
   repairProfileSelections(llm, profiles, blob, carriedDisables);
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-  // The lifecycle call site runs before the first loadConfig() of this boot;
+  // The lifecycle call site runs before the first getConfig() of this boot;
   // this guards callers that read config earlier (and future reordering).
   invalidateConfigCache();
 }
@@ -413,13 +411,9 @@ function isKnownUneditedBody(
   ) {
     return false;
   }
-  // Completion skips managed-source bodies, so a copy from the era whose
-  // templates wrote `source: "cloud"` (#29755 to #29768, 2026-05-05) is
-  // compared as if user-source to keep both sides normalized identically.
   const normalizedEntry: Record<string, unknown> = {
     ...entry,
     provider: copyProvider,
-    ...(entry.source === "cloud" ? { source: "user" } : {}),
   };
   // The conventional personal binding is machinery-written (hatch stamps,
   // completion re-stamps); normalize it away. Any other binding is user
@@ -485,8 +479,6 @@ function uniformCopyProvider(profiles: Record<string, unknown>): string | null {
  *   retiring the copy cannot switch keys. Any other connection value is a
  *   user edit and never matches.
  *
- * The final hatch-written deviation, `source: "cloud"` from the earliest
- * templates, is handled by the caller's source normalization.
  */
 function hatchBodyVariants(
   known: Record<string, unknown>,
@@ -653,9 +645,15 @@ function repairProfileSelections(
   const advisor = llm.advisorProfile;
   const advisorEntry =
     typeof advisor === "string" ? effectiveEntry(advisor) : undefined;
+  // The workspace view decides ownership: a cadet-provider stub (or an
+  // absent entry) is a managed default the write governs; a non-cadet
+  // entry is a user shadow whose disable is user intent and stays.
+  const advisorWorkspace =
+    typeof advisor === "string" ? readObject(profiles[advisor]) : null;
   const advisorUnusable =
     advisorEntry === undefined ||
-    (advisorEntry.source === "cloud" && advisorEntry.status === "disabled");
+    (advisorEntry.status === "disabled" &&
+      (advisorWorkspace === null || advisorWorkspace.provider === "cadet"));
   if (advisorUnusable) {
     // A default key whose surviving workspace entry is a disabled managed
     // stub still dispatches the pure catalog body (`providerAwareEntry` in
@@ -678,7 +676,7 @@ function repairProfileSelections(
       const workspace = readObject(profiles[key]);
       return (
         workspace !== null &&
-        workspace.source === "cloud" &&
+        workspace.provider === "cadet" &&
         resolveDefaultProfileForProvider(undefined, key, defaultBlob)
           ?.status !== "disabled"
       );

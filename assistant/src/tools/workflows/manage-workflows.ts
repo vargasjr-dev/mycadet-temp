@@ -16,7 +16,7 @@
 import { z } from "zod";
 
 import { getConversationProfilesForProvider } from "../../config/default-profile-catalog.js";
-import { loadConfig } from "../../config/loader.js";
+import { getConfig } from "../../config/loader.js";
 import { callerOwnsWorkflowRun } from "../../workflows/capabilities.js";
 import type { WorkflowRun } from "../../workflows/journal-store.js";
 import { getWorkflowRunManager } from "../../workflows/run-manager.js";
@@ -198,7 +198,7 @@ export async function executeManageWorkflows(
       // Mirror the `config/llm/profiles` route: sorted profile names plus the
       // workspace-wide active profile. Read-only — leaves use this to pick a
       // valid `profile` for `run_workflow` (an unknown profile throws).
-      const { llm } = loadConfig();
+      const { llm } = getConfig();
       // A workflow leaf runs chat turns, so this is the conversation view,
       // which leaves out the cloud Jev profile.
       const profiles = getConversationProfilesForProvider(llm);

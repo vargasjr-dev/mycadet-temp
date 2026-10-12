@@ -1,5 +1,5 @@
 /**
- * When IS_CLOUD=true and no config.json exists yet, loadConfig() must
+ * When IS_CLOUD=true and no config.json exists yet, getConfig() must
  * write all managed-capable service modes as "managed" instead of the
  * per-service schema default. When IS_CLOUD is absent/false, or when
  * config.json already exists, the Zod schema defaults and existing values
@@ -38,7 +38,7 @@ afterAll(() => {
   mock.restore();
 });
 
-import { invalidateConfigCache, loadConfig } from "../config/loader.js";
+import { getConfig, invalidateConfigCache } from "../config/loader.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -135,7 +135,7 @@ describe("cloud-managed config defaults", () => {
   test("IS_CLOUD=true, no config file → all 6 cloud service modes written as 'managed', image-generation provider written as 'cadet'", () => {
     process.env.IS_CLOUD = "true";
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(CONFIG_PATH)).toBe(true);
     const written = readConfig() as { services?: Record<string, unknown> };
@@ -161,7 +161,7 @@ describe("cloud-managed config defaults", () => {
   test("IS_CLOUD=false, no config file → service modes follow schema defaults (your-own except google/notion-oauth which are managed)", () => {
     process.env.IS_CLOUD = "false";
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(CONFIG_PATH)).toBe(true);
     const written = readConfig() as { services?: Record<string, unknown> };
@@ -178,7 +178,7 @@ describe("cloud-managed config defaults", () => {
   test("IS_CLOUD unset, no config file → service modes follow schema defaults (your-own except google/notion-oauth which are managed)", () => {
     delete process.env.IS_CLOUD;
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(CONFIG_PATH)).toBe(true);
     const written = readConfig() as { services?: Record<string, unknown> };
@@ -209,7 +209,7 @@ describe("cloud-managed config defaults", () => {
       ) + "\n",
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     const written = readConfig() as { services?: Record<string, unknown> };
     expect(written.services).toBeDefined();
@@ -246,7 +246,7 @@ describe("cloud-managed config defaults", () => {
       ) + "\n",
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     const written = readConfig() as { services?: Record<string, unknown> };
     expect(written.services).toBeDefined();
@@ -258,7 +258,7 @@ describe("cloud-managed config defaults", () => {
 
   test("IS_CLOUD=true, config file exists without a services key → in-memory config has all managed modes", () => {
     // Regression guard for the cloud-managed boot order: by the time
-    // `loadConfig()` runs, lifecycle steps such as `seedInferenceProfiles`
+    // `getConfig()` runs, lifecycle steps such as `seedInferenceProfiles`
     // have already written `config.json` (with `llm.profiles` etc.), so
     // `configFileExisted` is true even on a brand-new cloud-managed
     // assistant. Deployment-context defaults must still be applied to the
@@ -281,7 +281,7 @@ describe("cloud-managed config defaults", () => {
       ) + "\n",
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     // In-memory config has the deployment-context defaults applied for the
     // missing service-mode fields.
@@ -320,7 +320,7 @@ describe("cloud-managed config defaults", () => {
       ) + "\n",
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     const imageGen = (
       config.services as unknown as Record<
@@ -355,7 +355,7 @@ describe("cloud-managed config defaults", () => {
       ) + "\n",
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     for (const svc of SCHEMA_YOUR_OWN_DEFAULT_SERVICES) {
       expect(

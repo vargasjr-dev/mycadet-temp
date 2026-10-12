@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
-  loadConfig,
+  getConfig,
   resetCache,
   resolveProfile,
   setStorePathOverride,
@@ -34,17 +34,17 @@ function writeConfig(config: unknown): void {
   writeFileSync(testFilePath, JSON.stringify(config, null, 2));
 }
 
-describe("loadConfig", () => {
+describe("getConfig", () => {
   test("returns default config when file is missing or malformed", () => {
     // Missing file
-    let config = loadConfig();
+    let config = getConfig();
     expect(config.profiles).toHaveLength(1);
     expect(config.profiles[0].id).toBe("general");
 
     // Malformed JSON
     resetCache();
     writeFileSync(testFilePath, "not json");
-    config = loadConfig();
+    config = getConfig();
     expect(config.profiles[0].id).toBe("general");
   });
 
@@ -57,7 +57,7 @@ describe("loadConfig", () => {
         { id: "casual", name: "Casual" },
       ],
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.profiles).toHaveLength(2);
     expect(config.defaultProfileId).toBe("work");
   });
@@ -81,7 +81,7 @@ describe("loadConfig", () => {
         },
       ],
     });
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.profiles[0].stylePrompt!.length).toBe(2000);
     expect(config.profiles[0].dictionary).toHaveLength(1);
     expect(config.profiles[0].snippets).toHaveLength(1);

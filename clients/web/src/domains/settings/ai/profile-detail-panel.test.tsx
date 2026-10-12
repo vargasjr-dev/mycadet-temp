@@ -237,9 +237,8 @@ describe("ProfileDetailPanel - cloud profiles", () => {
     profilesState = {
       balanced: {
         label: "Balanced",
-        source: "cloud",
-        provider: "anthropic",
-        model: "claude-opus-4-8",
+        provider: "cadet",
+        model: "claude-sonnet-4-6",
       },
     };
     renderPanel("balanced");
@@ -263,7 +262,6 @@ describe("ProfileDetailPanel - edit flow", () => {
     profilesState = {
       "my-custom": {
         label: "My Custom",
-        source: "user",
         provider: "anthropic",
         model: "claude-opus-4-8",
         provider_connection: "anthropic-personal",

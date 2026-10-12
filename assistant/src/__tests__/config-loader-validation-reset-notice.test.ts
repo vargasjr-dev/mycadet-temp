@@ -1,5 +1,5 @@
 /**
- * When loadConfig() parses config.json as valid JSON but schema validation
+ * When getConfig() parses config.json as valid JSON but schema validation
  * fails so hard that the loader falls back to *full* defaults (via
  * cloneDefaultConfig), it writes a JSON sentinel to
  * <workspace>/data/config-validation-reset-notice.json recording the reset.
@@ -25,8 +25,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
+  getConfig,
   invalidateConfigCache,
-  loadConfig,
   withSuppressedConfigDiskWritesSync,
 } from "../config/loader.js";
 import { getConfigValidationResetNoticePath } from "../util/layout.js";
@@ -101,7 +101,7 @@ describe("config-validation-reset notice sentinel", () => {
   test("writes a sentinel when validation falls back to full defaults", () => {
     writeFullResetConfig();
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(NOTICE_PATH)).toBe(true);
     const notice = readNotice();
@@ -119,7 +119,7 @@ describe("config-validation-reset notice sentinel", () => {
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-7" }),
     );
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(NOTICE_PATH)).toBe(false);
   });
@@ -133,7 +133,7 @@ describe("config-validation-reset notice sentinel", () => {
     writeFullResetConfig();
     invalidateConfigCache();
 
-    withSuppressedConfigDiskWritesSync(() => loadConfig());
+    withSuppressedConfigDiskWritesSync(() => getConfig());
 
     expect(existsSync(NOTICE_PATH)).toBe(true);
     expect(readNotice().invalidPaths).toContain("llm.activeProfile");
@@ -142,7 +142,7 @@ describe("config-validation-reset notice sentinel", () => {
   test("clears the sentinel under suppressed disk writes when the fix lands (config-set path)", () => {
     // First cause a reset so the sentinel exists.
     writeFullResetConfig();
-    loadConfig();
+    getConfig();
     expect(existsSync(NOTICE_PATH)).toBe(true);
     invalidateConfigCache();
 
@@ -154,7 +154,7 @@ describe("config-validation-reset notice sentinel", () => {
       CONFIG_PATH,
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-7" }),
     );
-    withSuppressedConfigDiskWritesSync(() => loadConfig());
+    withSuppressedConfigDiskWritesSync(() => getConfig());
 
     expect(existsSync(NOTICE_PATH)).toBe(false);
   });
@@ -184,7 +184,7 @@ describe("config-validation-reset notice sentinel", () => {
       ),
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(existsSync(NOTICE_PATH)).toBe(false);
     expect(config.llm.activeProfile).toBe("glm-default");
@@ -197,7 +197,7 @@ describe("config-validation-reset notice sentinel", () => {
   test("a later clean load clears a stale reset sentinel", () => {
     // First: force a reset so the sentinel exists.
     writeFullResetConfig();
-    loadConfig();
+    getConfig();
     expect(existsSync(NOTICE_PATH)).toBe(true);
     invalidateConfigCache();
 
@@ -207,7 +207,7 @@ describe("config-validation-reset notice sentinel", () => {
       CONFIG_PATH,
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-7" }),
     );
-    loadConfig();
+    getConfig();
 
     expect(existsSync(NOTICE_PATH)).toBe(false);
   });

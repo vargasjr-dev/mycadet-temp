@@ -406,7 +406,6 @@ describe("managedProfileModelName", () => {
       managedProfileModelName({
         name: "balanced",
         label: "Balanced",
-        source: "cloud",
         provider: "cadet",
         model: "accounts/fireworks/models/glm-5p3",
       }),
@@ -418,14 +417,13 @@ describe("managedProfileModelName", () => {
       managedProfileModelName({
         name: "my-luna",
         label: "GPT-5.6 Luna",
-        source: "user",
         provider: "openai",
         model: "gpt-5.6-luna",
       }),
     ).toBeNull();
   });
 
-  test("a profile with no source is treated as the user's", () => {
+  test("a non-cadet provider is treated as the user's", () => {
     expect(
       managedProfileModelName({
         name: "legacy",
@@ -439,7 +437,7 @@ describe("managedProfileModelName", () => {
     expect(
       managedProfileModelName({
         name: "ab",
-        source: "cloud",
+        provider: "cadet",
         mix: [
           { profile: "balanced", weight: 70 },
           { profile: "quality", weight: 30 },
@@ -450,7 +448,7 @@ describe("managedProfileModelName", () => {
 
   test("a cloud profile carrying no model names nothing", () => {
     expect(
-      managedProfileModelName({ name: "half", source: "cloud" }),
+      managedProfileModelName({ name: "half", provider: "cadet" }),
     ).toBeNull();
   });
 
@@ -458,7 +456,6 @@ describe("managedProfileModelName", () => {
     expect(
       managedProfileModelName({
         name: "balanced",
-        source: "cloud",
         provider: "cadet",
         model: "accounts/fireworks/models/not-in-the-catalog",
       }),

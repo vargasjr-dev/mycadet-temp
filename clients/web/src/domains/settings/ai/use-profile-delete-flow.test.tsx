@@ -97,7 +97,6 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
         provider: entry.provider ?? null,
         model: entry.model ?? null,
         status: entry.status ?? "active",
-        source: entry.source ?? "user",
         availability: null,
       })),
     },
@@ -256,19 +255,16 @@ beforeEach(() => {
   profilesState = {
     balanced: {
       label: "Balanced",
-      source: "cloud",
-      provider: "anthropic",
-      model: "claude-opus-4-8",
+      provider: "cadet",
+      model: "claude-sonnet-4-6",
     },
     "my-custom": {
       label: "My Custom",
-      source: "user",
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
     "other-custom": {
       label: "Other Custom",
-      source: "user",
       provider: "anthropic",
       model: "claude-opus-4-8",
     },
@@ -463,7 +459,6 @@ describe("profile delete flow - replacement preselection", () => {
   test("cloud profiles that are not the default are offered too", async () => {
     profilesState["quality"] = {
       label: "Quality",
-      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     };
@@ -484,7 +479,6 @@ describe("profile delete flow - replacement preselection", () => {
   test("deleting the default preselects the user's own profile over managed ones", async () => {
     profilesState["quality"] = {
       label: "Quality",
-      source: "cloud",
       provider: "anthropic",
       model: "claude-opus-4-8",
     };
@@ -506,7 +500,6 @@ describe("profile delete flow - disabled replacements", () => {
   beforeEach(() => {
     profilesState["retired"] = {
       label: "Retired",
-      source: "user",
       status: "disabled",
       provider: "anthropic",
       model: "claude-opus-4-8",

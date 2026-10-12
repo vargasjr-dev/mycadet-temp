@@ -15,7 +15,7 @@ import {
   updatePhoneNumberWebhooks as updateTwilioPhoneNumberWebhooks,
 } from "@mycadet/twilio-client";
 
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { ConfigError, ProviderError } from "../util/errors.js";
@@ -28,7 +28,7 @@ export interface TwilioCredentials {
 /** Resolve the Twilio Account SID from config. */
 function resolveAccountSid(): string | undefined {
   try {
-    const config = loadConfig();
+    const config = getConfig();
     return config.twilio?.accountSid || undefined;
   } catch {
     // Config may not be available during early startup

@@ -556,9 +556,8 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
     setConfig("llm", {
       profiles: {
         balanced: {
-          source: "cloud",
-          provider: "fireworks",
-          model: "accounts/fireworks/models/glm-5p2",
+          provider: "cadet",
+          model: "claude-sonnet-4-6",
         },
       },
     });
@@ -583,13 +582,6 @@ describe("PATCH inference/profiles/:name (update) validation", () => {
 // ── delete protection ───────────────────────────────────────────────────────
 
 describe("DELETE inference/profiles/:name protection", () => {
-  test("rejects deleting a cloud default profile", async () => {
-    setConfig("llm", { profiles: { balanced: { source: "cloud" } } });
-    await expect(
-      call("inference_profiles_delete", { pathParams: { name: "balanced" } }),
-    ).rejects.toThrow(/cloud profile/);
-  });
-
   test("404s an unknown profile", async () => {
     setConfig("llm", { profiles: {} });
     await expect(

@@ -19,7 +19,7 @@
  * - Running identity verifiers
  */
 
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { emitPostConnectNudge } from "../home/post-connect-feed.js";
 import { invalidateAssistantSuggestedPromptsCache } from "../home/suggested-prompts-cache.js";
 import type { TokenEndpointAuthMethod } from "../security/oauth2.js";
@@ -138,7 +138,7 @@ export async function orchestrateOAuthConnect(
   // them rather than relying on each entry point to check. The error matches
   // the not-found case above so a gated provider is indistinguishable from an
   // absent one, mirroring the provider routes.
-  if (!isProviderVisible(providerRow, loadConfig())) {
+  if (!isProviderVisible(providerRow, getConfig())) {
     return {
       success: false,
       error: `No OAuth provider registered for "${options.service}". Ensure the provider is seeded in the database.`,
@@ -227,11 +227,11 @@ export async function orchestrateOAuthConnect(
     try {
       // Gateway transport needs a public ingress URL
       if (callbackTransport !== "loopback") {
-        const { loadConfig } = await import("../config/loader.js");
+        const { getConfig } = await import("../config/loader.js");
         const { getPublicBaseUrl } =
           await import("../inbound/public-ingress-urls.js");
         try {
-          getPublicBaseUrl(loadConfig());
+          getPublicBaseUrl(getConfig());
         } catch {
           return {
             success: false,

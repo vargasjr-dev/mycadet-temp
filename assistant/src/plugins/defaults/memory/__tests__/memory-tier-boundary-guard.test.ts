@@ -193,7 +193,6 @@ interface TierKeyExemption {
  *   home for raw tier-predicate reads, and it compares v2 against v3.
  * - `config/loader.ts` (v3) — seeds/normalizes the persisted `memory.v3`
  *   shape.
- * - `telemetry/config-setting-snapshot.ts` (both) — reports both tier keys
  *   as-is.
  * - the named migrations: append-only history that rewrites or reads the
  *   historical tier keys it was written for. Listed per file, not per
@@ -240,7 +239,6 @@ const TIER_KEY_READ_ALLOWLIST: readonly TierKeyExemption[] = [
   },
   { path: "src/plugins/defaults/memory/v2/", keys: ["v2"] },
   { path: "src/plugins/defaults/memory/v3/", keys: ["v3"] },
-  { path: "src/telemetry/config-setting-snapshot.ts", keys: ["v2", "v3"] },
   {
     path: "src/workspace/migrations/085-memory-v2-bm25-b-reembed-disabled-v2-pages.ts",
     keys: ["v2"],

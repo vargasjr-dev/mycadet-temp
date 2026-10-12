@@ -16,12 +16,10 @@ import type { LoopToolExecutor } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import { stripInjectionsForCompaction } from "../context/strip-injections.js";
 import type { AttachmentResolutionResult } from "../daemon/conversation-attachments.js";
-import { abortScheduledRun } from "../daemon/conversation-lifecycle.js";
 import {
   queueConversationNotice,
   resetConversationNoticesForTests,
 } from "../daemon/conversation-notices.js";
-import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 import { desktopAutomationLease } from "../desktop/desktop-automation-lease.js";
 import type { EmitSignalParams } from "../notifications/emit-signal.js";
 import type { AttentionState } from "../persistence/conversation-attention-store.js";
@@ -63,7 +61,7 @@ const channelReplyDeliveryRealSnapshot = {
 };
 // Disable the catalog default so resolution lands on llm.default.
 const disabledCatalogDefaultProfiles: Record<string, unknown> = {
-  balanced: { source: "cloud", status: "disabled" },
+  balanced: { provider: "cadet", status: "disabled" },
 };
 
 /**
@@ -104,14 +102,6 @@ function seedLlmConfig(options?: {
 }
 
 // ── Module mocks (must precede imports of the module under test) ─────
-
-let routeAutoProfileForTest: (() => Promise<void>) | undefined;
-mock.module("../daemon/auto-profile-router.js", () => ({
-  routeAutoProfile: async () => {
-    await routeAutoProfileForTest?.();
-    return { profile: "balanced", outcome: "fallback", latencyMs: 0 };
-  },
-}));
 
 // The real AgentLoop resolves the per-conversation ContextWindowManager from
 // the compaction store keyed by conversationId. These orchestrator tests build
@@ -1127,7 +1117,6 @@ function overflowAfterToolTurnScenario(): NonNullable<
 // ── Tests ────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  routeAutoProfileForTest = undefined;
   setConfig("ui", {});
   seedLlmConfig();
   raceWithTimeoutOutcome = "completed";
@@ -3030,51 +3019,6 @@ describe("session-agent-loop", () => {
   });
 
   describe("user cancellation", () => {
-    test("schedule timeout aborts a continuation during Auto profile setup", async () => {
-      seedLlmConfig({
-        profiles: {
-          auto: {
-            source: "cloud",
-            provider: "anthropic",
-            model: "test-model",
-          },
-        },
-        activeProfile: "auto",
-      });
-      const enteredRouter = Promise.withResolvers<void>();
-      const releaseRouter = Promise.withResolvers<void>();
-      routeAutoProfileForTest = async () => {
-        enteredRouter.resolve();
-        await releaseRouter.promise;
-      };
-      const controller = new AbortController();
-      const provider = createMockProvider([textResponse("Should not run")]);
-      const ctx = makeCtx({
-        abortController: controller,
-        loopProvider: provider.provider,
-        queue: new MessageQueue(),
-        prompter: { dispose: () => {} } as Conversation["prompter"],
-        secretPrompter: { dispose: () => {} } as Conversation["secretPrompter"],
-        accumulatedSurfaceState: new Map(),
-      });
-      const turn = runAgentLoopImpl(ctx, "Continue report", "msg-1", () => {}, {
-        cronRunId: "run-scheduled",
-        overrideProfile: "auto",
-      });
-      try {
-        await enteredRouter.promise;
-        expect(ctx.currentTurnCronRunId).toBe("run-scheduled");
-        abortScheduledRun(ctx, "run-scheduled");
-        expect(controller.signal.aborted).toBe(true);
-      } finally {
-        releaseRouter.resolve();
-        await turn;
-      }
-      expect(provider.calls).toHaveLength(0);
-      expect(ctx.isProcessing()).toBe(false);
-      expect(ctx.currentTurnCronRunId).toBeUndefined();
-    });
-
     test("emits generation_cancelled when abort signal fires", async () => {
       const events: AssistantEvent[] = [];
       const abortController = new AbortController();

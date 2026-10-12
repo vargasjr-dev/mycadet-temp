@@ -65,8 +65,6 @@ const BASELINE: Readonly<Record<string, number>> = {
   "src/runtime/pre-first-message-gate.ts": 1,
   "src/runtime/routes/log-export-routes.ts": 1,
   "src/runtime/routes/surface-conversation-resolver.ts": 2,
-  "src/telemetry/turn-events-store.ts": 2,
-  "src/telemetry/turn-trace-store.ts": 2,
   "src/workspace/migrations/rebuild-conversation-disk-view.ts": 1,
 };
 

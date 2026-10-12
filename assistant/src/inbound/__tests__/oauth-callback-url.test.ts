@@ -26,7 +26,7 @@ mock.module("../public-ingress-urls.js", () => ({
 }));
 
 mock.module("../../config/loader.js", () => ({
-  loadConfig: () => ({}),
+  getConfig: () => ({}),
 }));
 
 const {

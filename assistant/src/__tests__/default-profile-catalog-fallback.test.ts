@@ -25,7 +25,6 @@ import {
   getEffectiveProfile,
   getEffectiveProfiles,
   getEffectiveProfilesForProvider,
-  INVARIANT_PROFILE_NAMES,
   MANAGED_PROFILE_NAMES,
   MANAGED_PROFILE_TEMPLATES,
   PROFILE_IMPLS,
@@ -51,7 +50,6 @@ describe("fallbackProfile pointers on the cadet column", () => {
       const backup = CODE_DEFAULT_PROFILE_ENTRIES[FALLBACK_PROFILE_BY_KEY[key]];
       expect(backup).toBeDefined();
       expect(backup.provider).toBe("cadet");
-      expect(backup.source).toBe("cloud");
       // Single hop: a backup never declares a fallback of its own.
       expect(backup.fallbackProfile).toBeUndefined();
     }
@@ -106,7 +104,6 @@ describe("managed-column-only scoping", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(effective[key]).toBeDefined();
       expect(effective[key]?.provider).toBe("cadet");
-      expect(effective[key]?.source).toBe("cloud");
     }
     // The seeder inserts missing managed keys in MANAGED_PROFILE_TEMPLATES
     // order, which is what places backups after the primaries in
@@ -161,13 +158,13 @@ describe("managed-column-only scoping", () => {
   test("a persisted managed stub does not resurrect a backup off the cloud column", () => {
     // A `config get` -> `config set` round-trip on a cloud install can
     // leave a thin managed stub for a backup in `llm.profiles`
-    // (`normalizeCloudProfileWrites`). The stub is the workspace's slot for
+    // The stub is the workspace's slot for
     // a code-owned body, not a profile, so once the column has no body behind
     // it the name must stop being listed rather than resolve to a
     // providerless entry the pickers would offer and `LLMSchema` would
     // reject.
     const workspace: Record<string, ProfileEntry> = {
-      "balanced-backup": { source: "cloud" },
+      "balanced-backup": { provider: "cadet" },
     };
     for (const provider of ["anthropic", "chatgpt"] as const) {
       const effective = getEffectiveProfilesForProvider(
@@ -196,7 +193,6 @@ describe("managed-column-only scoping", () => {
     // that name and keeps its own body.
     const workspace: Record<string, ProfileEntry> = {
       "balanced-backup": {
-        source: "user",
         provider: "anthropic",
         model: "claude-opus-4-7",
       },
@@ -237,15 +233,14 @@ describe("effective-profile machinery", () => {
     // label/status/topP whitelist from a cloud stub, and not a user-owned
     // shadow. Disabling a backup through a hand-edited config would strand
     // the primary's fallback exactly when it is needed.
-    for (const source of ["cloud", "user"] as const) {
+    {
       const workspace: Record<string, ProfileEntry> = {
         "balanced-backup": {
-          source,
+          provider: "cadet",
           label: "My Backup",
           status: "disabled",
           topP: 0.7,
           // Stale content drift on disk must lose to the code default body.
-          provider: "anthropic",
           model: "claude-sonnet-4-6",
           maxTokens: 1,
         },
@@ -261,14 +256,9 @@ describe("effective-profile machinery", () => {
     }
   });
 
-  test("backup profiles are delete-protected like the other managed defaults", () => {
-    // Membership in these sets is what wires the route-level deletion
-    // rejection (`rejectCloudProfileDeletion`, `handleCreateProfile`) and
-    // the commitConfigWrite invariant guard
-    // (`assertInvariantProfilesPreserved`).
+  test("backup names are reserved like the other managed defaults", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
       expect(MANAGED_PROFILE_NAMES.has(key)).toBe(true);
-      expect(INVARIANT_PROFILE_NAMES.has(key)).toBe(true);
     }
   });
 });

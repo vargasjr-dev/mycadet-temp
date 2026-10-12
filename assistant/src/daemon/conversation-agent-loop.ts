@@ -25,8 +25,6 @@ import type {
   TurnChannelContext,
   TurnInterfaceContext,
 } from "../channels/types.js";
-import { getConversationProfilesForProvider } from "../config/default-profile-catalog.js";
-import { AUTO_PROFILE_KEY } from "../config/default-profile-names.js";
 import {
   contextWindowConfigFromEffective,
   type EffectiveContextWindow,
@@ -102,12 +100,6 @@ import {
   DEFAULT_TURN_COMMIT_MAX_WAIT_MS,
 } from "./abort-watchdog.js";
 import { cleanAssistantContent } from "./assistant-attachments.js";
-import {
-  type AutoProfileRoute,
-  plainTextOf,
-  routeAutoProfile,
-  takeAutoProfilePreview,
-} from "./auto-profile-router.js";
 import { conversationSupportsDynamicUi } from "./channel-ui-capability.js";
 import type { Conversation } from "./conversation.js";
 import {
@@ -670,89 +662,16 @@ export async function runAgentLoopImpl(
   // the row.
   const config = getConfig();
 
-  // With no explicit override, the resolver's own chain (the active profile
-  // for the main agent, then the call site's pin) may still select the Auto
-  // profile. That winner is named here so the router below covers every path
-  // that would otherwise dispatch the Auto body.
-  const readRequestedOverrideProfile = (): string | undefined => {
-    const explicit = options?.overrideProfile ?? resolveOverrideProfile(ctx);
-    if (explicit !== undefined) {
-      return explicit;
-    }
-    const winner = selectWinningProfile(inferenceCallSite, config.llm, {
-      selectionSeed: ctx.conversationId,
-    }).profileName;
-    return winner === AUTO_PROFILE_KEY ? AUTO_PROFILE_KEY : undefined;
-  };
+  const readRequestedOverrideProfile = (): string | undefined =>
+    options?.overrideProfile ?? resolveOverrideProfile(ctx);
 
-  // The Auto profile is a selection over the default profiles, made once per
-  // turn: the routed profile stands in for the Auto name on every read, so
-  // the whole turn (and any subagent inheriting the override) runs on one
-  // profile. A user profile that shadows the cloud name is a profile of
-  // its own and is not routed. Nothing here may throw: the turn's processing
-  // state is already held and its release lives in the loop's `finally`
-  // further down, so a routing failure degrades to the Auto body instead.
-  const routeAutoProfileForTurn =
-    async (): Promise<AutoProfileRoute | null> => {
-      try {
-        const profiles = getConversationProfilesForProvider(config.llm);
-        if (profiles[AUTO_PROFILE_KEY]?.source !== "cloud") {
-          return null;
-        }
-        const userMessage = plainTextOf(
-          getMessageById(userMessageId)?.content ?? [],
-        );
-        // A draft the composer already previewed carries its pick over, so
-        // the reply lands on the profile the pill showed with no second call.
-        const previewed = takeAutoProfilePreview({
-          conversationId: ctx.conversationId,
-          text: userMessage,
-          history: ctx.messages,
-          profiles,
-        });
-        const route =
-          previewed ??
-          (await routeAutoProfile({
-            conversationId: ctx.conversationId,
-            history: ctx.messages,
-            userMessage,
-            profiles,
-            signal: abortController.signal,
-          }));
-        rlog.info(
-          {
-            outcome: route.outcome,
-            profile: route.profile,
-            confidence: route.confidence ?? null,
-            latencyMs: route.latencyMs,
-            reusedPreview: previewed !== undefined,
-          },
-          "Auto profile routed the turn",
-        );
-        return route;
-      } catch (err) {
-        rlog.warn(
-          { err },
-          "Auto profile routing failed; running the Auto body",
-        );
-        return null;
-      }
-    };
   const requestedOverrideProfile = readRequestedOverrideProfile();
-  const autoRoute =
-    requestedOverrideProfile === AUTO_PROFILE_KEY
-      ? await routeAutoProfileForTurn()
-      : null;
-  const withAutoRoute = (profile: string | undefined): string | undefined =>
-    profile === AUTO_PROFILE_KEY && autoRoute ? autoRoute.profile : profile;
 
-  const userExplicitOverride = withAutoRoute(requestedOverrideProfile);
-
-  const turnOverrideProfile = userExplicitOverride;
+  const turnOverrideProfile = requestedOverrideProfile;
   const forceOverrideProfile = options?.forceOverrideProfile === true;
 
   const readCurrentOverrideProfile = (): string | undefined =>
-    withAutoRoute(readRequestedOverrideProfile());
+    readRequestedOverrideProfile();
 
   // Best-effort attribution for error classification: names the resolved
   // connection and profile so credential/connection errors point at the
@@ -981,7 +900,6 @@ export async function runAgentLoopImpl(
   startToolProfilingRequest(ctx.conversationId);
   let turnStarted = false;
   const state = createEventHandlerState();
-  state.autoRoutedProfile = autoRoute?.profile;
   // Publish this turn's flushed-content watermark so the worker → daemon
   // persist hand-off can cap a snapshot anchor at flushed content rather than
   // the live seq counter, which runs ahead while the turn streams. Cleared in
@@ -1723,7 +1641,6 @@ export async function runAgentLoopImpl(
           supportsDynamicUi: conversationSupportsDynamicUi(ctx),
           trust: loopTrust,
           overrideProfile: turnOverrideProfile,
-          ...(autoRoute ? { overrideProfileOrigin: "auto" as const } : {}),
           ...(forceOverrideProfile ? { forceOverrideProfile: true } : {}),
           resolveOverrideProfile: refreshCurrentProfileState,
           ...(onModelCallPrepared !== undefined ? { onModelCallPrepared } : {}),
@@ -2183,9 +2100,7 @@ export async function runAgentLoopImpl(
         overrideProfile: mainRowOverrideProfile,
         ...(state.exchangeInferenceProfile !== undefined
           ? { forceOverrideProfile: true }
-          : autoRoute && mainRowOverrideProfile === autoRoute.profile
-            ? { overrideProfileOrigin: "auto" as const }
-            : {}),
+          : {}),
       },
       turnCronRunId,
     );
@@ -2292,9 +2207,6 @@ export async function runAgentLoopImpl(
           ...(state.lastAssistantMessageId
             ? { messageId: state.lastAssistantMessageId }
             : {}),
-          ...(state.autoRoutedProfile
-            ? { autoRoutedProfile: state.autoRoutedProfile }
-            : {}),
           modeSession: ctx.modeSessions.getTurnOwner(reqId),
         });
         publishLoopMessagesChanged();
@@ -2322,9 +2234,6 @@ export async function runAgentLoopImpl(
           // per-row treatment the history projection will hand it.
           ...(state.lastAssistantTextVisibility
             ? { assistantTextVisibility: state.lastAssistantTextVisibility }
-            : {}),
-          ...(state.autoRoutedProfile
-            ? { autoRoutedProfile: state.autoRoutedProfile }
             : {}),
         });
         if (shouldEmitQueuedConversationNotices) {

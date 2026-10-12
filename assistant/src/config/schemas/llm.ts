@@ -14,7 +14,6 @@ import {
 } from "../../providers/model-catalog.js";
 import { isCodexSubscriptionModel } from "../../providers/openai/codex-models.js";
 import {
-  AUTO_PROFILE_KEY,
   DEFAULT_PROFILE_KEYS,
   DEFAULT_PROFILE_PROVIDERS,
   FALLBACK_PROFILE_BY_KEY,
@@ -29,9 +28,9 @@ import { InputModalitiesSchema } from "../input-modalities.js";
 
 /**
  * Managed-only keys that are valid reference targets on the cloud column
- * whether or not a workspace stub exists. The flag-gated ones (`os-beta`,
- * `auto`) are excluded: they resolve only while their reconciled stub is
- * present, so they enter the reference set through `llm.profiles` alone.
+ * whether or not a workspace stub exists. The flag-gated one (`os-beta`)
+ * is excluded: it resolves only while its reconciled stub is
+ * present, so it enters the reference set through `llm.profiles` alone.
  */
 const ALWAYS_RESOLVING_MANAGED_ONLY_PROFILE_KEYS =
   MANAGED_ONLY_PROFILE_KEYS.filter((key) => !isFlagGatedProfileKey(key));
@@ -241,7 +240,6 @@ export const LLMCallSiteEnum = z.enum([
   "voiceEscalationJudge",
   "voiceContinuationJudge",
   "voiceContinuationLabel",
-  "autoProfileRouter",
   "trustRuleSuggestion",
   "homeGreeting",
   "homeSuggestedPrompts",
@@ -505,13 +503,6 @@ const OpenRouterDeepPartialSchema = z.object({
 // Profile metadata
 // ---------------------------------------------------------------------------
 
-/**
- * Distinguishes daemon-cloud profiles (overwritten on every startup) from
- * user-created ones (never touched by the daemon).
- */
-const ProfileSource = z.enum(["cloud", "user"]);
-type ProfileSource = z.infer<typeof ProfileSource>;
-
 // ---------------------------------------------------------------------------
 // Pricing overrides
 // ---------------------------------------------------------------------------
@@ -673,7 +664,6 @@ const MixSchema = z.array(MixArmSchema).min(2);
  * resolver's deep-merge output.
  */
 export const ProfileEntry = LLMConfigFragment.extend({
-  source: ProfileSource.optional(),
   /**
    * `.nullable()` is intentional: the PUT `/v1/config/llm/profiles/:name`
    * route uses `null` as the "clear this field" sentinel (edit mode sends
@@ -812,9 +802,6 @@ function unresolvableProfileReason(
   if (name === JEV_MANAGED_PROFILE_KEY) {
     return "is the cloud Jev profile, which resolves only while llm.default is the cloud provider";
   }
-  if (name === AUTO_PROFILE_KEY) {
-    return "is the cloud Auto profile, which resolves only while llm.default is the cloud provider";
-  }
   return "is a cloud backup profile, which resolves only while llm.default is the cloud provider";
 }
 
@@ -824,10 +811,10 @@ function unresolvableProfileReason(
  * `llm.default`.
  *
  * Every on-disk key qualifies but one: a reserved backup name whose entry is
- * a thin `source: "cloud"` stub. The stub is not a profile, it is the
+ * a thin model-less `provider: "cadet"` stub. The stub is not a profile, it is the
  * workspace's slot for a code-owned one, and it can reach disk on a cloud
  * install through nothing more than a `config get` -> `config set` round-trip
- * of the effective profile list (`normalizeCloudProfileWrites` reduces the
+ * of the effective profile list (a write round-trip reduces the
  * echoed body to exactly that stub). Counting it as an ordinary raw key would
  * let it launder a backup reference past the provider gate: after a switch to
  * a BYOK or ChatGPT default provider the reference would keep validating
@@ -837,7 +824,7 @@ function unresolvableProfileReason(
  * A genuinely user-owned entry under a backup name is the opposite case: it
  * carries its own body, and with no code-owned body to lose on a non-managed
  * column `resolveAgainstBody` resolves the workspace entry itself. So it
- * stays a valid target on every column. The `source` test is the same one
+ * stays a valid target on every column. The provider test is the same one
  * the resolver uses, which is what keeps the two in step.
  */
 function referenceableProfileKeys(
@@ -853,7 +840,7 @@ function referenceableProfileKeys(
         value != null && typeof value === "object" && !Array.isArray(value)
           ? (value as Record<string, unknown>)
           : null;
-      return entry != null && entry.source !== "cloud";
+      return entry != null && entry.provider !== "cadet";
     })
     .map(([name]) => name);
 }
@@ -891,9 +878,9 @@ export function collectFallbackProfileIssues(
   // (`default-profile-catalog.ts`) and resolve whether or not they are
   // materialized in `llm.profiles`, so their names are always valid
   // fallback targets (same rule as call-site `profile` references). The
-  // managed backups resolve the same way, but on the cloud column only,
+  // cloud backups resolve the same way, but on the cloud column only,
   // so they are valid targets only under a cloud `llm.default`.
-  // A persisted managed stub for a backup name does not change that, see
+  // A persisted cloud stub for a backup name does not change that, see
   // `referenceableProfileKeys`.
   const backupsResolve = backupProfilesResolveUnderDefaultProvider(
     RawDefaultSelectionSchema.parse(llmDefault),
@@ -927,7 +914,7 @@ export function collectFallbackProfileIssues(
     const expectedFallback = isDefaultProfileKey(name)
       ? FALLBACK_PROFILE_BY_KEY[name]
       : undefined;
-    if (entry?.source !== "cloud" || fallback !== expectedFallback) {
+    if (entry?.provider !== "cadet" || fallback !== expectedFallback) {
       issues.push({
         profileName: name,
         message: `Profile "${name}" cannot configure fallbackProfile. Automatic fallbacks are code-owned for Cadet Cloud default profiles.`,
@@ -1019,9 +1006,17 @@ export const LLMSchema = z
   })
   .superRefine((config, ctx) => {
     for (const [name, entry] of Object.entries(config.profiles ?? {})) {
-      const issue = entry?.provider
-        ? routingIdentityModelIssue(entry.provider, entry.model ?? undefined)
-        : null;
+      // A model-less entry under a code-defined default name is the thin
+      // cloud stub — its content is code-owned, so the routing-identity
+      // model check applies only to entries carrying their own body.
+      const isCodeOwnedName =
+        isDefaultProfileKey(name) ||
+        isCloudOnlyProfileKey(name) ||
+        isFlagGatedProfileKey(name);
+      const issue =
+        entry?.provider && (entry.model != null || !isCodeOwnedName)
+          ? routingIdentityModelIssue(entry.provider, entry.model ?? undefined)
+          : null;
       if (issue) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -1062,7 +1057,7 @@ export const LLMSchema = z
     // The flag-gated `os-beta` is excluded: it resolves only while a
     // workspace entry exists, so a reference to it is valid only when that
     // entry is present in `config.profiles`. A backup name materialized as a
-    // thin managed stub does not re-enter the set on a non-cloud column
+    // thin cloud stub does not re-enter the set on a non-cloud column
     // either, see `referenceableProfileKeys`.
     const backupsResolve = backupProfilesResolveUnderDefaultProvider(
       config.default,

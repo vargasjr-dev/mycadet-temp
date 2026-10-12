@@ -2597,58 +2597,6 @@ paths:
                   - userId
                   - authenticated
                 additionalProperties: false
-  /v1/auto-profile/preview:
-    post:
-      operationId: autoprofile_preview_post
-      summary: Preview the Auto profile's pick for a draft
-      description:
-        Ask the Auto profile which default profile a draft message would run on, using the conversation's recent
-        history when one is given. The pick is kept briefly so the turn that sends the same text reuses it. Spends one
-        Jev call per request.
-      tags:
-        - conversations
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                text:
-                  type: string
-                  minLength: 1
-                  maxLength: 20000
-                conversationId:
-                  type: string
-                  description: Conversation the draft belongs to, for recent history. Omit for a new chat.
-              required:
-                - text
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  profile:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  outcome:
-                    type: string
-                    enum:
-                      - routed
-                      - unavailable
-                      - timeout
-                      - error
-                      - fallback
-                  confidence:
-                    type: number
-                required:
-                  - profile
-                  - outcome
-                additionalProperties: false
   /v1/avatar/accent:
     post:
       operationId: avatar_accent_post
@@ -5682,7 +5630,6 @@ paths:
                             - voiceEscalationJudge
                             - voiceContinuationJudge
                             - voiceContinuationLabel
-                            - autoProfileRouter
                             - trustRuleSuggestion
                             - homeGreeting
                             - homeSuggestedPrompts
@@ -8899,7 +8846,6 @@ paths:
                             - voiceEscalationJudge
                             - voiceContinuationJudge
                             - voiceContinuationLabel
-                            - autoProfileRouter
                             - trustRuleSuggestion
                             - homeGreeting
                             - homeSuggestedPrompts
@@ -44116,6 +44062,7 @@ components:
                     provider_connection:
                       anyOf:
                         - type: string
+                          minLength: 1
                         - type: "null"
                   additionalProperties: {}
                 - type: "null"
@@ -44133,13 +44080,16 @@ components:
               type: array
               items:
                 type: string
+                minLength: 1
             activeProfile:
               anyOf:
                 - type: string
+                  minLength: 1
                 - type: "null"
             advisorProfile:
               anyOf:
                 - type: string
+                  minLength: 1
                 - type: "null"
             callSites:
               type: object
@@ -44154,9 +44104,19 @@ components:
                 - type: object
                   properties:
                     defaultTtlSeconds:
-                      type: number
+                      anyOf:
+                        - default: 1800
+                          type: integer
+                          minimum: 1
+                          maximum: 9007199254740991
+                        - type: "null"
                     maxTtlSeconds:
-                      type: number
+                      anyOf:
+                        - default: 43200
+                          type: integer
+                          minimum: 1
+                          maximum: 9007199254740991
+                        - type: "null"
                 - type: "null"
           additionalProperties: {}
         memory:
@@ -44348,13 +44308,6 @@ components:
         disableCache:
           anyOf:
             - type: boolean
-            - type: "null"
-        source:
-          anyOf:
-            - type: string
-              enum:
-                - cloud
-                - user
             - type: "null"
         label:
           anyOf:
@@ -44719,11 +44672,6 @@ components:
             - suppress-cjk
         disableCache:
           type: boolean
-        source:
-          type: string
-          enum:
-            - cloud
-            - user
         label:
           anyOf:
             - type: string
@@ -45099,11 +45047,6 @@ components:
           enum:
             - active
             - disabled
-        source:
-          type: string
-          enum:
-            - cloud
-            - user
         provider_connection:
           type: string
         supportsVision:
@@ -45133,7 +45076,6 @@ components:
         - provider
         - model
         - status
-        - source
         - availability
       additionalProperties: false
     ProfileConnectionAvailability:
@@ -45506,11 +45448,6 @@ components:
             - suppress-cjk
         disableCache:
           type: boolean
-        source:
-          type: string
-          enum:
-            - cloud
-            - user
         label:
           anyOf:
             - type: string

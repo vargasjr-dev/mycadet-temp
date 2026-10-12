@@ -23,7 +23,7 @@ mock.module(
 );
 
 // ── Config ──────────────────────────────────────────────────────────
-// These tests run against the real config loader. `loadConfig()` returns the
+// These tests run against the real config loader. `getConfig()` returns the
 // loader's live cached object, so tests set TTS/ingress fields by mutating it
 // in place; `beforeEach` restores the fields the tests touch. The workspace
 // config file itself is seeded once below (memory off, ingress base URL).
@@ -58,7 +58,7 @@ mock.module("../../config/cloud-speech-defaults.js", () => ({
   resolveEffectiveSpeechProviders: async (config?: {
     services: { stt: { provider: string }; tts: { provider: string } };
   }) => {
-    const services = (config ?? loadConfig()).services;
+    const services = (config ?? getConfig()).services;
     return { stt: services.stt.provider, tts: services.tts.provider };
   },
 }));
@@ -230,7 +230,7 @@ registerTestTtsProviders();
 import { resetDbForTesting } from "../../__tests__/db-test-helpers.js";
 import { createGuardianBinding } from "../../__tests__/helpers/create-guardian-binding.js";
 import { setConfig } from "../../__tests__/helpers/set-config.js";
-import { loadConfig } from "../../config/loader.js";
+import { getConfig } from "../../config/loader.js";
 import type {
   VoiceFrontModelConfig,
   VoiceProgressConfig,
@@ -517,7 +517,7 @@ describe("call-controller", () => {
     mockEndCallListenWindowMs = 0;
     mockEndCallDrainMaxWaitMs = 15_000;
     // Reset TTS config to defaults so per-test mutations don't leak.
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "elevenlabs";
     cfg.services.tts.providers["fish-audio"].referenceId = "";
     cfg.ingress.publicBaseUrl = "https://generic.example.com";
@@ -2964,7 +2964,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: if synthesis fails before first chunk, falls back to text-token speech without sending play URL", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3014,7 +3014,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: a superseded run does not emit native fallback text", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3073,7 +3073,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: play URL uses public base URL", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.ingress.publicBaseUrl = "https://twilio.example.com/";
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
@@ -3117,7 +3117,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: stays 'processing' during synthesis latency until the play URL is sent", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3173,7 +3173,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: a superseded turn does not send a stale play URL", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3224,7 +3224,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: a turn error cancels the queued synthesis chain so no stale speech follows the recovery prompt", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3326,7 +3326,7 @@ describe("call-controller", () => {
   });
 
   test("Deepgram selected path resolves useSynthesizedPath to true", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "deepgram";
 
     const result = await resolveCallTtsProvider();
@@ -3336,7 +3336,7 @@ describe("call-controller", () => {
   });
 
   test("Deepgram synthesis failure does NOT fall back to native token TTS", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "deepgram";
 
     _resetTtsProviderOverridesForTests();
@@ -3384,7 +3384,7 @@ describe("call-controller", () => {
   });
 
   test("Fish Audio synthesis failure still falls back to native token TTS (unchanged behavior)", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-abc";
 
@@ -3437,7 +3437,7 @@ describe("call-controller", () => {
       onChunk: (chunk: Buffer) => void,
     ) => Promise<void>;
   }): { synthesizedTexts: string[] } {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -3546,7 +3546,7 @@ describe("call-controller", () => {
   function registerDeepgramRequestRecorder(): {
     requests: Array<{ voiceId?: string; language?: string }>;
   } {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "deepgram";
 
     _resetTtsProviderOverridesForTests();
@@ -3570,7 +3570,7 @@ describe("call-controller", () => {
   }
 
   test("synthesized provider: a configured languageVoices entry for the call language rides the request as voiceId", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.providers.deepgram.languageVoices = {
       hi: "aura-2-hindi-voice",
     };
@@ -3596,7 +3596,7 @@ describe("call-controller", () => {
   });
 
   test("synthesized provider: no voiceId when languageVoices has no entry for the call language", async () => {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.providers.deepgram.languageVoices = {
       hi: "aura-2-hindi-voice",
     };
@@ -3994,7 +3994,7 @@ describe("call-controller", () => {
     fishTexts: string[];
     fallbackTexts: string[];
   } {
-    const cfg = loadConfig();
+    const cfg = getConfig();
     cfg.services.tts.provider = "fish-audio";
     cfg.services.tts.providers["fish-audio"].referenceId = "fish-ref-123";
 
@@ -4184,7 +4184,7 @@ describe("call-controller", () => {
     test("returns fallback when the configured provider is not in the catalog", async () => {
       // The schema enum rejects unknown providers, so this state can only be
       // produced by mutating the loader's cached config directly.
-      const cfg = loadConfig();
+      const cfg = getConfig();
       (cfg.services.tts as { provider: string }).provider =
         "not-a-real-provider";
 
@@ -4195,7 +4195,7 @@ describe("call-controller", () => {
     });
 
     test("degrades fish-audio synthesized path when referenceId is missing", async () => {
-      const cfg = loadConfig();
+      const cfg = getConfig();
       cfg.services.tts.provider = "fish-audio";
       cfg.services.tts.providers["fish-audio"].referenceId = "";
 
@@ -4224,7 +4224,7 @@ describe("call-controller", () => {
     });
 
     test("returns synthesized path with deepgram provider", async () => {
-      const cfg = loadConfig();
+      const cfg = getConfig();
       cfg.services.tts.provider = "deepgram";
 
       const result = await resolveCallTtsProvider();
@@ -4237,7 +4237,7 @@ describe("call-controller", () => {
     test("Deepgram does not apply fish-audio referenceId gate", async () => {
       // Deepgram has no referenceId requirement. Verify the fish-audio
       // config gate does not apply to deepgram resolution.
-      const cfg = loadConfig();
+      const cfg = getConfig();
       cfg.services.tts.provider = "deepgram";
       // fish-audio referenceId left empty — should not affect deepgram.
       cfg.services.tts.providers["fish-audio"].referenceId = "";
@@ -5161,7 +5161,7 @@ describe("call-controller", () => {
     function endpointingConfig(
       overrides: Partial<VoiceFrontModelConfig> = {},
     ): VoiceFrontModelConfig {
-      return { ...loadConfig().voice.frontModel, ...overrides };
+      return { ...getConfig().voice.frontModel, ...overrides };
     }
 
     /**
@@ -5304,7 +5304,7 @@ describe("call-controller", () => {
       // A provider that has gone quiet past its commit window plus the
       // margin is gone, not slow, so the interim text is the only record of
       // what the caller said.
-      loadConfig().calls.voice.utteranceEndMs = 5;
+      getConfig().calls.voice.utteranceEndMs = 5;
       const { controller } = setupController(undefined, {
         frontModelConfig: endpointingConfig({ endpointExtensionMs: 20 }),
       });
@@ -5321,7 +5321,7 @@ describe("call-controller", () => {
 
     test("interim words re-arm the replay so it fires only once the caller stops", async () => {
       const { legs } = mockHoldingBridge();
-      loadConfig().calls.voice.utteranceEndMs = 5;
+      getConfig().calls.voice.utteranceEndMs = 5;
       const { controller } = setupController(undefined, {
         frontModelConfig: endpointingConfig({ endpointExtensionMs: 60 }),
       });

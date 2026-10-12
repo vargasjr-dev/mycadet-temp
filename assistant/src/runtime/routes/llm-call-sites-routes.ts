@@ -5,7 +5,7 @@ import {
   resolveDefaultProfileKey,
   resolveShippedDefaultProfileKey,
 } from "../../config/llm-resolver.js";
-import { loadConfig } from "../../config/loader.js";
+import { getConfig } from "../../config/loader.js";
 import {
   CALL_SITE_CATALOG,
   CALL_SITE_DOMAINS,
@@ -55,7 +55,7 @@ export function buildCallSiteCatalog(llm: LLMConfig) {
 }
 
 async function handleGetCallSites() {
-  const { llm } = loadConfig();
+  const { llm } = getConfig();
   return {
     domains: CALL_SITE_DOMAINS,
     callSites: buildCallSiteCatalog(llm),
@@ -74,7 +74,7 @@ export type LlmProfilesListResult = z.infer<
 >;
 
 async function handleListProfiles(): Promise<LlmProfilesListResult> {
-  const { llm } = loadConfig();
+  const { llm } = getConfig();
   const profiles = getUserSelectableProfilesForProvider(llm);
   return {
     profiles: Object.keys(profiles).sort(),

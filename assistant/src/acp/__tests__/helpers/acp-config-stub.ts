@@ -6,7 +6,7 @@
  * mutable `mockAcpConfig` + `mock.module(..., () => ({ getConfig: ... }))`
  * boilerplate; this helper consolidates it. The real loader's other named
  * exports are spread into the mock so tests whose code path transitively
- * imports `loadConfig`, `invalidateConfigCache`, etc. don't fail at parse
+ * imports `getConfig`, `invalidateConfigCache`, etc. don't fail at parse
  * time on "Export named 'X' not found".
  *
  * Like `which-stub.ts`, this is a process-global hook by design — Bun's

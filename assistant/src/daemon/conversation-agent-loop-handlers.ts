@@ -53,7 +53,6 @@ import {
   updateMessageContent,
 } from "../persistence/conversation-crud.js";
 import { syncMessageToDisk } from "../persistence/conversation-disk-view.js";
-import { AUTO_ROUTED_PROFILE_METADATA_KEY } from "../persistence/conversation-types.js";
 import { enqueueLexicalIndexForMessage } from "../persistence/job-handlers/message-lexical.js";
 import {
   backfillMessageIdOnLogs,
@@ -277,12 +276,6 @@ export interface EventHandlerState {
    * the model ever having seen it.
    */
   pendingNotifiedInferenceProfile: string | null;
-  /**
-   * The default profile the Auto profile routed this turn to, stamped on the
-   * turn's assistant rows and carried on `message_complete` so clients can
-   * show which profile answered. `undefined` on every turn not run on Auto.
-   */
-  autoRoutedProfile: string | undefined;
   pendingDirectiveDisplayBuffer: string;
   firstAssistantText: string;
   /** Most recent resolved provider for the current exchange's usage accounting. */
@@ -708,7 +701,6 @@ export interface EventHandlerDeps {
 export function createEventHandlerState(): EventHandlerState {
   return {
     pendingNotifiedInferenceProfile: null,
-    autoRoutedProfile: undefined,
     pendingDirectiveDisplayBuffer: "",
     firstAssistantText: "",
     exchangeProviderName: undefined,
@@ -3321,9 +3313,6 @@ export async function handleMessageComplete(
     ...(event.model ? { model: event.model } : {}),
     ...(event.assistantTextVisibility
       ? { [ASSISTANT_TEXT_VISIBILITY_KEY]: event.assistantTextVisibility }
-      : {}),
-    ...(state.autoRoutedProfile
-      ? { [AUTO_ROUTED_PROFILE_METADATA_KEY]: state.autoRoutedProfile }
       : {}),
   };
   state.lastAssistantTextVisibility = event.assistantTextVisibility;

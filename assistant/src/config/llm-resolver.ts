@@ -278,7 +278,7 @@ function providerAwareEntry(
     return entry;
   }
   const workspace = llm.profiles?.[name];
-  if (workspace != null && workspace.source !== "cloud") {
+  if (workspace != null && workspace.provider !== "cadet") {
     return entry;
   }
   return resolveDefaultProfileForProvider(undefined, name, llm.default);
@@ -477,7 +477,6 @@ function resolveOverrideOrDefault(
  * kept — with a single winner there is no cross-profile leakage to guard. */
 function winnerConfigFragment(entry: ProfileEntry): Mergeable {
   const {
-    source: _source,
     label: _label,
     description: _description,
     status: _status,

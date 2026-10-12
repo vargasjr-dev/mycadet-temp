@@ -67,7 +67,7 @@ export const unifyLlmCallSiteConfigsMigration: WorkspaceMigration = {
     // Idempotency: skip only when `llm.default` is present AND no legacy
     // source key remains on disk. The `&& !hasLegacyData` clause matters
     // because `AssistantConfigSchema` wires `llm: LLMSchema.default(LLMSchema
-    // .parse({}))`, which makes `loadConfig()` inject a full schema-default
+    // .parse({}))`, which makes `getConfig()` inject a full schema-default
     // `llm.default` block to disk on first daemon boot under the new schema.
     // If that boot happened before this migration was added (or before the
     // daemon binary that includes it landed on the user's machine),
@@ -454,7 +454,7 @@ function readTemperature(value: unknown): number | undefined {
  * cover the `services.inference` and top-level legacy locations; their
  * presence proves migration 039 hasn't yet stripped them, which means we
  * MUST re-process even if `llm.default` already exists (it may have been
- * injected by `loadConfig()`'s schema-default backfill rather than by a
+ * injected by `getConfig()`'s schema-default backfill rather than by a
  * previous run of this migration).
  */
 function hasLegacyLlmDefaultSource(config: Record<string, unknown>): boolean {

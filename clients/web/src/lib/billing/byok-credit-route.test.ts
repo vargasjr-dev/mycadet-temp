@@ -586,9 +586,8 @@ describe("stale managed default stubs", () => {
   // resolves the pure catalog body through `llm.default`, so it must
   // classify as that route instead of falling through the chain.
   const STALE_BALANCED = {
-    source: "cloud",
+    provider: "cadet",
     status: "disabled",
-    invariant: true,
   } as const;
 
   test("a stale invariant stub classifies as the default-provider route, not the next rung", () => {
@@ -650,7 +649,6 @@ describe("stale managed default stubs", () => {
               provider: "anthropic",
               model: "claude",
               status: "disabled",
-              source: "user",
             },
             pinned: { provider: "cadet", model: "claude" },
           },

@@ -3,15 +3,10 @@ import { isDeepStrictEqual } from "node:util";
 import { getLogger } from "../util/logger.js";
 import { isAssistantFeatureFlagEnabled } from "./assistant-feature-flags.js";
 import {
-  AUTO_PROFILE_TEMPLATE,
   type DefaultProfileTemplate,
   OS_BETA_PROFILE_TEMPLATE,
 } from "./default-profile-catalog.js";
-import {
-  AUTO_PROFILE_FEATURE_FLAG_KEY,
-  AUTO_PROFILE_KEY,
-  OS_BETA_PROFILE_KEY,
-} from "./default-profile-names.js";
+import { OS_BETA_PROFILE_KEY } from "./default-profile-names.js";
 import { getIsCloud } from "./env-registry.js";
 import {
   getConfigReadOnly,
@@ -56,14 +51,6 @@ const GATED_PROFILES: readonly GatedProfile[] = [
       }
     },
     byokStartsDisabled: true,
-  },
-  {
-    key: AUTO_PROFILE_KEY,
-    flag: AUTO_PROFILE_FEATURE_FLAG_KEY,
-    template: AUTO_PROFILE_TEMPLATE,
-    // Auto leads the picker.
-    place: (profileOrder) => profileOrder.unshift(AUTO_PROFILE_KEY),
-    byokStartsDisabled: false,
   },
 ];
 
@@ -112,13 +99,8 @@ export function reconcileFlagGatedProfiles(): boolean {
 
     const previous = readObject(profiles[gated.key]);
 
-    // Never clobber a user-owned profile that happens to share the name. The
-    // entry is ours to manage only when it is absent or already managed; a
-    // user-sourced entry of the same name is left untouched on every path.
-    const isOursToManage = previous == null || previous.source === "cloud";
-    if (!isOursToManage) {
-      continue;
-    }
+    // The gated names are code-owned and reserved, so every entry under one
+    // is ours to manage; a user-owned shadow cannot exist.
 
     const order = llm.profileOrder as string[];
     const profileChanged = enabled
@@ -149,9 +131,9 @@ function enableProfile(
 ): boolean {
   // The profile's content is code-owned (`default-profile-catalog.ts`) and
   // resolves through the effective view once this stub exists; the workspace
-  // entry carries only the overlay fields (`source`, `label`, `status`,
-  // `topP`).
-  const next: Record<string, unknown> = { source: "cloud" };
+  // entry carries the cadet-provider marker (its cloud identity) plus the
+  // overlay fields (`label`, `status`, `topP`).
+  const next: Record<string, unknown> = { provider: "cadet" };
 
   // BYOK installs create the stub disabled: the cloud inference connection
   // backing this profile isn't usable until the user enables it, so a fresh

@@ -1,5 +1,5 @@
 /**
- * When loadConfig()/loadRawConfig() quarantines a corrupt config.json, it
+ * When getConfig()/loadRawConfig() quarantines a corrupt config.json, it
  * writes a small JSON sentinel to <workspace>/data/config-quarantine-notice.json
  * recording the event. The per-turn `config-quarantine-notice` injector reads
  * that sentinel and surfaces the reset to the agent — it's agent-visible
@@ -23,8 +23,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   _writeQuarantineNotice,
+  getConfig,
   invalidateConfigCache,
-  loadConfig,
 } from "../config/loader.js";
 import { getConfigQuarantineNoticePath } from "../util/layout.js";
 
@@ -89,7 +89,7 @@ describe("config-quarantine notice sentinel", () => {
   test("writes a sentinel recording the quarantine when config.json is corrupt", () => {
     writeFileSync(CONFIG_PATH, '{"provider": "anthropic", "mo');
 
-    loadConfig();
+    getConfig();
 
     const [quarantinedName] = listQuarantinedFiles();
     expect(quarantinedName).toBeDefined();
@@ -106,7 +106,7 @@ describe("config-quarantine notice sentinel", () => {
   test("a second quarantine overwrites the sentinel with the latest event", () => {
     // First corruption round.
     writeFileSync(CONFIG_PATH, '{"partial": ');
-    loadConfig();
+    getConfig();
     invalidateConfigCache();
 
     const firstNotice = readNotice();
@@ -120,7 +120,7 @@ describe("config-quarantine notice sentinel", () => {
       /* spin */
     }
     writeFileSync(CONFIG_PATH, "still not json");
-    loadConfig();
+    getConfig();
 
     const quarantined = listQuarantinedFiles().sort();
     expect(quarantined).toHaveLength(2);
@@ -139,7 +139,7 @@ describe("config-quarantine notice sentinel", () => {
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-7" }),
     );
 
-    loadConfig();
+    getConfig();
 
     expect(listQuarantinedFiles()).toHaveLength(0);
     expect(existsSync(NOTICE_PATH)).toBe(false);

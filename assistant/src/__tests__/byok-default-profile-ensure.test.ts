@@ -81,7 +81,6 @@ function eraHatchBody(
   ) as Record<string, unknown>;
   return {
     ...body,
-    source: "cloud",
     label: `${body.label} (Custom Provider)`,
     model,
   };
@@ -107,17 +106,17 @@ function uneditedByokConfig(): Record<string, unknown> {
       },
       profiles: {
         balanced: {
-          source: "cloud",
+          provider: "cadet",
           status: "disabled",
           label: "Balanced (Managed)",
         },
         "quality-optimized": {
-          source: "cloud",
+          provider: "cadet",
           status: "disabled",
           label: "Quality (Managed)",
         },
         "cost-optimized": {
-          source: "cloud",
+          provider: "cadet",
           status: "disabled",
           label: "Speed (Managed)",
         },
@@ -125,7 +124,6 @@ function uneditedByokConfig(): Record<string, unknown> {
         "custom-quality-optimized": hatchBody("quality-optimized", "anthropic"),
         "custom-cost-optimized": hatchBody("cost-optimized", "anthropic"),
         "my-mix": {
-          source: "user",
           label: "My Mix",
           mix: [
             { profile: "custom-balanced", weight: 1 },
@@ -198,7 +196,6 @@ describe("ensureByokDefaultProfiles", () => {
       "balanced",
       { provider: "anthropic" },
     );
-    expect(resolved?.source).toBe("cloud");
     expect(resolved?.status).toBeUndefined();
     expect(resolved?.provider).toBe("anthropic");
     expect(resolved?.provider_connection).toBe("anthropic-personal");
@@ -417,7 +414,7 @@ describe("ensureByokDefaultProfiles", () => {
     expectSecondRunNoop();
   });
 
-  test("stubs carrying the migration-097 thinking stamp are deleted (real-world shape)", () => {
+  test("stubs carrying the repair thinking stamp are deleted (real-world shape)", () => {
     const config = uneditedByokConfig();
     const profs = (config.llm as Record<string, unknown>).profiles as Record<
       string,
@@ -508,7 +505,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     expect(profiles()["custom-balanced"]).toBeUndefined();
     expect(profiles().balanced).toEqual({
-      source: "cloud",
+      provider: "cadet",
       label: "My Balanced",
     });
     expect(llm().activeProfile).toBe("balanced");
@@ -558,7 +555,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     expect(profiles()["custom-balanced"]).toBeUndefined();
     expect(profiles().balanced).toEqual({
-      source: "cloud",
+      provider: "cadet",
       status: "disabled",
     });
     expectSecondRunNoop();
@@ -572,7 +569,7 @@ describe("ensureByokDefaultProfiles", () => {
         default: { provider: "anthropic" },
         profiles: {
           "quality-optimized": {
-            source: "cloud",
+            provider: "cadet",
             status: "active",
             label: "Quality (Managed)",
           },
@@ -588,13 +585,13 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a label-only hatch stub with no status key is deleted", () => {
     // Installs that predate #30367's status seeding got only the label
-    // rewrite, and migration 126 thinned them to { source, label }.
+    // rewrite: thin provider-marked stubs with no status key.
     writeConfig({
       llm: {
         default: { provider: "anthropic" },
         profiles: {
-          balanced: { source: "cloud", label: "Balanced (Managed)" },
-          "cost-optimized": { source: "cloud", label: "Speed (Managed)" },
+          balanced: { provider: "cadet", label: "Balanced (Managed)" },
+          "cost-optimized": { provider: "cadet", label: "Speed (Managed)" },
         },
       },
     });
@@ -610,7 +607,7 @@ describe("ensureByokDefaultProfiles", () => {
     const config = uneditedByokConfig();
     const profileMap = (config.llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
-    profileMap.balanced = { source: "cloud", label: "Balanced (Managed)" };
+    profileMap.balanced = { provider: "cadet", label: "Balanced (Managed)" };
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       status: "disabled",
@@ -621,7 +618,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     expect(profiles()["custom-balanced"]).toBeUndefined();
     expect(profiles().balanced).toEqual({
-      source: "cloud",
+      provider: "cadet",
       status: "disabled",
     });
     expectSecondRunNoop();
@@ -641,7 +638,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     expect(profiles()["custom-quality-optimized"]).toBeUndefined();
     expect(profiles()["quality-optimized"]).toEqual({
-      source: "cloud",
+      provider: "cadet",
       status: "disabled",
     });
     // The advisor pointed at the now-disabled default, so the same write
@@ -691,7 +688,6 @@ describe("ensureByokDefaultProfiles", () => {
         activeProfile: "custom-cost-optimized",
         profiles: {
           "custom-cost-optimized": {
-            source: "user",
             label: "Speed",
             description: "Fastest responses at lower cost",
             maxTokens: 8192,
@@ -769,7 +765,6 @@ describe("ensureByokDefaultProfiles", () => {
       "balanced",
       { provider: "cadet" },
     );
-    expect(resolved?.source).toBe("cloud");
     expect(resolved?.status).toBeUndefined();
     expectSecondRunNoop();
   });
@@ -838,7 +833,6 @@ describe("ensureByokDefaultProfiles", () => {
         },
         profiles: {
           balanced: {
-            source: "user",
             provider: "openai",
             model: "gpt-5.4",
           },
@@ -883,19 +877,19 @@ describe("ensureByokDefaultProfiles", () => {
         },
         profiles: {
           balanced: {
-            source: "cloud",
+            provider: "cadet",
             status: "active",
             label: "Balanced (Managed)",
             thinking: { enabled: true, streamThinking: true },
           },
           "quality-optimized": {
-            source: "cloud",
+            provider: "cadet",
             status: "active",
             label: "Quality (Managed)",
             thinking: { enabled: true, streamThinking: true },
           },
           "cost-optimized": {
-            source: "cloud",
+            provider: "cadet",
             status: "active",
             label: "Speed (Managed)",
           },
@@ -909,7 +903,7 @@ describe("ensureByokDefaultProfiles", () => {
           ),
           "custom-cost-optimized": hatchBody("cost-optimized", "anthropic"),
           "os-beta": {
-            source: "cloud",
+            provider: "cadet",
             status: "active",
             label: "OS Beta (Managed)",
           },
@@ -953,7 +947,7 @@ describe("ensureByokDefaultProfiles", () => {
     expectSecondRunNoop();
   });
 
-  test("a cloud-source default entry with body keys is left alone", () => {
+  test("a cadet-provider default entry with body keys is left alone", () => {
     writeConfig({
       llm: {
         default: {
@@ -961,7 +955,7 @@ describe("ensureByokDefaultProfiles", () => {
         },
         profiles: {
           balanced: {
-            source: "cloud",
+            provider: "cadet",
             status: "disabled",
             label: "Balanced (Managed)",
             model: "gpt-5.4",
@@ -1093,7 +1087,7 @@ describe("ensureByokDefaultProfiles", () => {
     const profileMap = (config.llm as Record<string, unknown>)
       .profiles as Record<string, Record<string, unknown>>;
     profileMap["quality-optimized"] = {
-      source: "cloud",
+      provider: "cadet",
       status: "active",
       label: "Quality (Managed)",
     };
@@ -1107,7 +1101,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     expect(profiles()["custom-quality-optimized"]).toBeUndefined();
     expect(profiles()["quality-optimized"]).toEqual({
-      source: "cloud",
+      provider: "cadet",
       status: "disabled",
     });
     expectSecondRunNoop();

@@ -820,7 +820,6 @@
     "yes": "Да"
   },
   "messageHoverActions": {
-    "autoRouted": "Авто · {profile}",
     "bookmark": "Закладка",
     "copied": "Скопировано",
     "copy": "Копировать",

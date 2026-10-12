@@ -1,5 +1,5 @@
 import { getIsCloud } from "../config/env-registry.js";
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getPublicBaseUrl } from "../inbound/public-ingress-urls.js";
 import { resolveTelephonyCredentialReadiness } from "./telephony-credential-preflight.js";
@@ -31,7 +31,7 @@ function fail(error: string): VoiceIngressPreflightFailure {
 }
 
 export async function preflightVoiceIngress(): Promise<VoiceIngressPreflightResult> {
-  const ingressConfig = loadConfig();
+  const ingressConfig = getConfig();
 
   // The daemon performs both STT and TTS on the media-stream transport —
   // in every deployment mode, cloud-hosted included — so credential

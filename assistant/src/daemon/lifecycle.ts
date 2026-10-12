@@ -11,8 +11,8 @@ import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
 import {
+  getConfig,
   hasPendingDefaultWorkspaceConfig,
-  loadConfig,
   mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
@@ -544,7 +544,7 @@ export async function runDaemon(): Promise<void> {
 
   // Merge CLI-provided default config (from CADET_DEFAULT_WORKSPACE_CONFIG_PATH)
   // into the workspace config file before profile seeding and the first
-  // loadConfig() call so onboarding/platform preferences are visible to the
+  // getConfig() call so onboarding/platform preferences are visible to the
   // seeder and persisted alongside schema defaults.
   const defaultConfigMerge = mergeDefaultWorkspaceConfig();
 
@@ -599,7 +599,7 @@ export async function runDaemon(): Promise<void> {
   }
 
   // Runs on every boot, after the overlay merge and profile seeding and
-  // before the first loadConfig(), so no resolution ever sees a partial
+  // before the first getConfig(), so no resolution ever sees a partial
   // custom profile. See workspace/custom-profile-ensure.ts for why this is
   // an ensure pass rather than a workspace migration.
   try {
@@ -613,7 +613,7 @@ export async function runDaemon(): Promise<void> {
   }
 
   log.info("Daemon startup: loading config");
-  const config = loadConfig();
+  const config = getConfig();
 
   // Select conversations left mid-turn by the previous shutdown for auto-resume
   // when `conversations.resumeProcessingOnStartup` is enabled. Their

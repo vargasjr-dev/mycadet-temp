@@ -10,7 +10,6 @@ import {
   getEffectiveProfiles,
   getEffectiveProfilesForProvider,
   getUserSelectableProfilesForProvider,
-  MANAGED_PROFILE_TEMPLATES,
   PROFILE_IMPLS,
   resolveDefaultProfileForProvider,
 } from "../default-profile-catalog.js";
@@ -32,11 +31,11 @@ import {
   type ProfileEntry,
 } from "../schemas/llm.js";
 
-/** Thin managed-source stubs: a workspace that carries only ownership
- * markers for the defaults, no profile content. */
+/** Thin managed stubs: a workspace that carries only the cadet-provider
+ * marker for the defaults, no profile content. */
 function managedStubs(): Record<string, ProfileEntry> {
   return Object.fromEntries(
-    DEFAULT_PROFILE_KEYS.map((key) => [key, { source: "cloud" as const }]),
+    DEFAULT_PROFILE_KEYS.map((key) => [key, { provider: "cadet" as const }]),
   );
 }
 
@@ -48,7 +47,6 @@ describe("getEffectiveProfiles", () => {
       expect(typeof body.model).toBe("string");
       expect(body.provider).toBe("cadet");
       expect(body.provider_connection).toBeUndefined();
-      expect(body.source).toBe("cloud");
     }
   });
 
@@ -78,35 +76,6 @@ describe("getEffectiveProfiles", () => {
         provider_connection: "anthropic-personal",
       }),
     ).toBeUndefined();
-  });
-
-  test("the Auto profile is the cloud Balanced body relabeled, managed-only, and flag-gated", () => {
-    const auto = CODE_DEFAULT_PROFILE_ENTRIES.auto;
-    const balanced = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
-    expect(auto.label).toBe("Auto");
-    expect(auto.model).toBe(balanced.model);
-    expect(auto.provider).toBe(balanced.provider);
-    expect(auto.fallbackProfile).toBeUndefined();
-    // Not seeded unconditionally: the flag reconcile writes the stub.
-    expect(Object.keys(MANAGED_PROFILE_TEMPLATES)).not.toContain("auto");
-    expect(
-      resolveDefaultProfileForProvider(undefined, "auto", undefined),
-    ).toBeUndefined();
-    const stub: Record<string, ProfileEntry> = { auto: { source: "cloud" } };
-    expect(
-      resolveDefaultProfileForProvider(stub, "auto", undefined)?.model,
-    ).toBe(balanced.model);
-    expect(
-      resolveDefaultProfileForProvider(stub, "auto", {
-        provider: "anthropic",
-        provider_connection: "anthropic-personal",
-      }),
-    ).toBeUndefined();
-    expect(
-      Object.keys(
-        getConversationProfilesForProvider(LLMSchema.parse({ profiles: stub })),
-      ),
-    ).toContain("auto");
   });
 
   test("the conversation view drops the cloud Jev profile but keeps it selectable for call sites", () => {
@@ -150,15 +119,14 @@ describe("getEffectiveProfiles", () => {
     expect(getEffectiveProfile({}, OS_BETA_PROFILE_KEY)).toBeUndefined();
   });
 
-  test("a cloud-source entry resolves to the code body with only label/status/topP from disk", () => {
+  test("a cadet-provider entry resolves to the code body with only label/status/topP from disk", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
-        source: "cloud",
+        provider: "cadet",
         label: "Balanced (Managed)",
         status: "disabled",
         topP: 0.7,
         // Stale content drift on disk must lose to the code default body.
-        provider: "anthropic",
         model: "claude-sonnet-4-6",
         maxTokens: 1,
       },
@@ -180,7 +148,6 @@ describe("getEffectiveProfiles", () => {
   test("a user-owned profile sharing a default name wins verbatim", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
-        source: "user",
         provider: "anthropic",
         model: "claude-sonnet-4-6",
         maxTokens: 1000,
@@ -297,9 +264,8 @@ describe("resolver integration", () => {
   test("a disabled managed default does not divert resolution to the custom-* clone", () => {
     const llm = LLMSchema.parse({
       profiles: {
-        balanced: { source: "cloud", status: "disabled" },
+        balanced: { provider: "cadet", status: "disabled" },
         "custom-balanced": {
-          source: "user",
           provider: "anthropic",
           model: "claude-sonnet-4-6",
           maxTokens: 1000,
@@ -324,7 +290,6 @@ describe("resolver integration", () => {
     const llm = LLMSchema.parse({
       profiles: {
         "latency-optimized": {
-          source: "user",
           provider: "anthropic",
           model: "claude-opus-4-6",
           provider_connection: "anthropic-personal",
@@ -366,7 +331,6 @@ describe("resolver integration", () => {
       const llm = LLMSchema.parse({
         profiles: {
           [key]: {
-            source: "user",
             provider: "anthropic",
             model: "claude-opus-4-6",
             provider_connection: "anthropic-personal",
@@ -414,7 +378,7 @@ describe("schema validation", () => {
     expect(() =>
       LLMSchema.parse({
         activeProfile: OS_BETA_PROFILE_KEY,
-        profiles: { [OS_BETA_PROFILE_KEY]: { source: "cloud" } },
+        profiles: { [OS_BETA_PROFILE_KEY]: { provider: "cadet" } },
       }),
     ).not.toThrow();
     expect(() =>
@@ -485,7 +449,6 @@ describe("resolveDefaultProfileForProvider", () => {
         } else {
           expect(entry?.provider_connection).toBeDefined();
         }
-        expect(entry?.source).toBe("cloud");
       }
     }
   });
@@ -507,7 +470,6 @@ describe("resolveDefaultProfileForProvider", () => {
       expect(entry?.provider).toBe("chatgpt");
       expect(entry?.model).toBe(model);
       expect(entry?.provider_connection).toBeUndefined();
-      expect(entry?.source).toBe("cloud");
     }
     // Budget and Fast both opt fully out of reasoning.
     expect(effective["cost-optimized"]?.effort).toBe("none");
@@ -526,7 +488,6 @@ describe("resolveDefaultProfileForProvider", () => {
     // No intent table for `together`: the intent falls back to the
     // provider's catalog defaultModel.
     expect(entry?.model).toBe(resolveModelIntent("together", "balanced"));
-    expect(entry?.source).toBe("cloud");
   });
 
   test("maxTokens clamps to the resolved model's catalog output cap", () => {
@@ -599,7 +560,7 @@ describe("resolveDefaultProfileForProvider", () => {
 
   test("a user-source workspace entry shadows the provider-resolved default", () => {
     const workspace: Record<string, ProfileEntry> = {
-      balanced: { source: "user", provider: "openai", model: "gpt-5.5" },
+      balanced: { provider: "openai", model: "gpt-5.5" },
     };
     const entry = resolveDefaultProfileForProvider(
       workspace,
@@ -631,10 +592,10 @@ describe("resolveDefaultProfileForProvider", () => {
     }
   });
 
-  test("a cloud-source stub contributes only label/status/topP over the provider-resolved body", () => {
+  test("a cadet-provider stub contributes only label/status/topP over the provider-resolved body", () => {
     const workspace: Record<string, ProfileEntry> = {
       balanced: {
-        source: "cloud",
+        provider: "cadet",
         label: "Balanced (BYOK)",
         status: "disabled",
         topP: 0.7,
@@ -664,7 +625,7 @@ describe("resolveDefaultProfileForProvider", () => {
 
   test("non-matrix names pass through like getEffectiveProfile", () => {
     const workspace: Record<string, ProfileEntry> = {
-      "custom-mine": { source: "user", provider: "openai", model: "gpt-5.4" },
+      "custom-mine": { provider: "openai", model: "gpt-5.4" },
     };
     expect(
       resolveDefaultProfileForProvider(
@@ -687,7 +648,7 @@ describe("resolveDefaultProfileForProvider", () => {
       ),
     ).toBeUndefined();
     const workspace: Record<string, ProfileEntry> = {
-      [OS_BETA_PROFILE_KEY]: { source: "cloud" },
+      [OS_BETA_PROFILE_KEY]: { provider: "cadet" },
     };
     const entry = resolveDefaultProfileForProvider(
       workspace,

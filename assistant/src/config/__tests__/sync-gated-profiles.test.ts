@@ -94,14 +94,13 @@ describe("reconcileFlagGatedProfiles", () => {
     const raw = readConfig();
     // On disk: a thin managed stub — profile content is code-owned.
     const osBeta = raw.llm.profiles["os-beta"]!;
-    expect(osBeta).toEqual({ source: "cloud" });
+    expect(osBeta).toEqual({ provider: "cadet" });
 
     // Through the effective view the stub resolves to the catalog body.
     const effective = getEffectiveProfile(raw.llm.profiles, "os-beta")!;
     expect(effective.model).toBe("MiniMaxAI/MiniMax-M3");
     expect(effective.provider_connection).toBeUndefined();
     expect(effective.provider).toBe("cadet");
-    expect(effective.source).toBe("cloud");
     expect(effective.label).toBe("OS Beta");
     expect(effective.effort).toBe("low");
     expect(effective.topP).toBe(0.95);
@@ -120,7 +119,6 @@ describe("reconcileFlagGatedProfiles", () => {
     const osBeta = profiles["os-beta"]!;
     expect(osBeta.status).toBe("disabled");
     expect(osBeta.label).toBe("OS Beta (Managed)");
-    expect(osBeta.source).toBe("cloud");
     // Content stays code-owned; the effective view supplies it.
     expect(osBeta.effort).toBeUndefined();
     expect(getEffectiveProfile(profiles, "os-beta")?.effort).toBe("low");
@@ -203,7 +201,6 @@ describe("reconcileFlagGatedProfiles", () => {
 
     const raw = readConfig();
     raw.llm.profiles["my-mix"] = {
-      source: "user",
       label: "My Mix",
       mix: [
         { profile: "balanced", weight: 70 },
@@ -225,7 +222,6 @@ describe("reconcileFlagGatedProfiles", () => {
       { profile: "balanced", weight: 70 },
       { profile: "quality-optimized", weight: 20 },
     ]);
-    expect(mix.source).toBe("user");
     expect(mix.label).toBe("My Mix");
 
     invalidateConfigCache();
@@ -240,7 +236,6 @@ describe("reconcileFlagGatedProfiles", () => {
 
     const raw = readConfig();
     raw.llm.profiles["experiment"] = {
-      source: "user",
       label: "Experiment",
       mix: [
         { profile: "balanced", weight: 50 },
@@ -338,105 +333,5 @@ describe("reconcileFlagGatedProfiles", () => {
     expect(inference.temperature).toBe(0.3);
 
     expect(LLMSchema.safeParse(after.llm).success).toBe(true);
-  });
-
-  test("a user-owned os-beta profile is never touched", () => {
-    process.env.IS_CLOUD = "true";
-    writeConfig({
-      llm: {
-        default: { provider: "anthropic" },
-        profiles: {
-          "os-beta": {
-            source: "user",
-            label: "Mine",
-            provider: "anthropic",
-            model: "claude-x",
-            provider_connection: "anthropic-personal",
-          },
-        },
-        profileOrder: ["os-beta"],
-      },
-    });
-    invalidateConfigCache();
-    const before = readFileSync(CONFIG_PATH, "utf-8");
-
-    setOverridesForTesting({ "os-beta": true });
-    expect(reconcileFlagGatedProfiles()).toBe(false);
-    expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(before);
-
-    setOverridesForTesting({ "os-beta": false });
-    expect(reconcileFlagGatedProfiles()).toBe(false);
-    expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(before);
-  });
-
-  test("auto-profile flag on materializes the cloud auto profile at the head of the order", () => {
-    process.env.IS_CLOUD = "true";
-    seedBalancedConfig();
-    setOverridesForTesting({ "auto-profile": true });
-
-    expect(reconcileFlagGatedProfiles()).toBe(true);
-
-    const raw = readConfig();
-    expect(raw.llm.profiles.auto).toEqual({ source: "cloud" });
-    expect(raw.llm.profileOrder[0]).toBe("auto");
-    const effective = getEffectiveProfile(raw.llm.profiles, "auto")!;
-    expect(effective.label).toBe("Auto");
-    expect(effective.model).toBe(
-      getEffectiveProfile(raw.llm.profiles, "balanced")!.model,
-    );
-    expect(LLMSchema.safeParse(raw.llm).success).toBe(true);
-  });
-
-  test("auto-profile flag on in BYOK mode writes a plain stub that the effective view hides", () => {
-    seedBalancedConfig();
-    setOverridesForTesting({ "auto-profile": true });
-
-    expect(reconcileFlagGatedProfiles()).toBe(true);
-
-    const raw = readConfig();
-    expect(raw.llm.profiles.auto).toEqual({ source: "cloud" });
-    expect(getEffectiveProfile(raw.llm.profiles, "auto")).toBeDefined();
-  });
-
-  test("auto-profile flag off removes the cloud auto profile and repoints its references", () => {
-    process.env.IS_CLOUD = "true";
-    seedBalancedConfig();
-    setOverridesForTesting({ "auto-profile": true });
-    reconcileFlagGatedProfiles();
-
-    const raw = readConfig();
-    raw.llm.activeProfile = "auto";
-    (raw.llm as Record<string, unknown>).callSites = {
-      subagentSpawn: { profile: "auto" },
-    };
-    writeConfig(raw);
-    invalidateConfigCache();
-
-    setOverridesForTesting({ "auto-profile": false });
-    expect(reconcileFlagGatedProfiles()).toBe(true);
-
-    const after = readConfig();
-    expect(after.llm.profiles.auto).toBeUndefined();
-    expect(after.llm.profileOrder.includes("auto")).toBe(false);
-    expect(after.llm.activeProfile).toBe("balanced");
-    expect((after.llm as Record<string, unknown>).callSites).toEqual({
-      subagentSpawn: {},
-    });
-  });
-
-  test("os-beta and auto-profile reconcile independently in one pass", () => {
-    process.env.IS_CLOUD = "true";
-    seedBalancedConfig();
-    setOverridesForTesting({ "os-beta": true, "auto-profile": true });
-    expect(reconcileFlagGatedProfiles()).toBe(true);
-    let order = readConfig().llm.profileOrder;
-    expect(order[0]).toBe("auto");
-    expect(order.indexOf("os-beta")).toBe(order.indexOf("balanced") + 1);
-
-    setOverridesForTesting({ "os-beta": false, "auto-profile": true });
-    expect(reconcileFlagGatedProfiles()).toBe(true);
-    order = readConfig().llm.profileOrder;
-    expect(order[0]).toBe("auto");
-    expect(order.includes("os-beta")).toBe(false);
   });
 });

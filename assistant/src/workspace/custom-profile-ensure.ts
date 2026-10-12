@@ -23,7 +23,7 @@ const log = getLogger("custom-profile-ensure");
 // construction. Running
 // unconditionally each boot also covers configs restored from backups
 // and entries injected after the migration registry checkpoints — and it
-// completes before the first `loadConfig()`, so no resolution ever sees a
+// completes before the first `getConfig()`, so no resolution ever sees a
 // partial custom profile.
 //
 // Idempotent and write-avoidant: entries that are already complete (and mix
@@ -87,7 +87,7 @@ export function ensureCompleteCustomProfiles(workspaceDir: string): void {
     return;
   }
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-  // The lifecycle call site runs before the first loadConfig() of this boot;
+  // The lifecycle call site runs before the first getConfig() of this boot;
   // this guards callers that read config earlier (and future reordering).
   invalidateConfigCache();
 }

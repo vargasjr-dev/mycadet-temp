@@ -559,8 +559,8 @@ describe("explicit default-profile references resolve through the default provid
   // Regressed failure mode: the cadet column's model ids dispatched to
   // BYOK connections.
   const managedStubs = {
-    balanced: { source: "cloud" as const },
-    "cost-optimized": { source: "cloud" as const },
+    balanced: { provider: "cadet" as const },
+    "cost-optimized": { provider: "cadet" as const },
   };
 
   test("an override pin to a default key matches the intent-rung resolution", () => {
@@ -612,7 +612,6 @@ describe("explicit default-profile references resolve through the default provid
       profiles: {
         ...managedStubs,
         blend: {
-          source: "user" as const,
           mix: [
             { profile: "cost-optimized", weight: 1 },
             { profile: "cost-optimized", weight: 1 },
@@ -635,9 +634,9 @@ describe("explicit default-profile references resolve through the default provid
 describe("hatch-era disabled stubs on default keys", () => {
   // Fresh BYOK hatches persist disabled managed stubs.
   const disabledStubs = {
-    balanced: { source: "cloud" as const, status: "disabled" as const },
+    balanced: { provider: "cadet" as const, status: "disabled" as const },
     "cost-optimized": {
-      source: "cloud" as const,
+      provider: "cadet" as const,
       status: "disabled" as const,
     },
   };

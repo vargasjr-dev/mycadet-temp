@@ -862,7 +862,7 @@ describe("host_bash — proxy delegation", () => {
     for (const key of ROUTING_ENV_KEYS) {
       delete process.env[key];
     }
-    // With CADET_WORKSPACE_DIR unset, loadConfig resolves the real ~/.cadet
+    // With CADET_WORKSPACE_DIR unset, getConfig resolves the real ~/.cadet
     // fallback (read-only here), so bypass the live-workspace guard for it.
     const originalAllowRealWorkspace =
       process.env.CADET_ALLOW_REAL_WORKSPACE_IN_TESTS;

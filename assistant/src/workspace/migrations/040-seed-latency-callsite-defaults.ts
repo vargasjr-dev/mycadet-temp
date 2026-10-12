@@ -21,7 +21,7 @@ import type { WorkspaceMigration } from "./types.js";
  *      overwriting any user-defined overrides.
  *   2. **Fresh install** (config.json absent): write a minimal starter
  *      config with just the callSite seeds, using the default provider
- *      (anthropic — same as the schema default). `loadConfig()` runs
+ *      (anthropic — same as the schema default). `getConfig()` runs
  *      after migrations and applies schema defaults only to the
  *      in-memory config (disk is left untouched), so our seeded
  *      callSites are preserved verbatim.

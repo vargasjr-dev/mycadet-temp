@@ -13,7 +13,6 @@ function summary(
     provider: "anthropic",
     model: "claude-opus-5",
     status: "active",
-    source: "user",
     availability: { status: "ok" },
     ...over,
   };
@@ -55,7 +54,6 @@ export const IsDefault: Story = {
       label: "Balanced",
       provider: "cadet",
       model: "glm-5.2",
-      source: "cloud",
     }),
     isActiveProfile: true,
   },

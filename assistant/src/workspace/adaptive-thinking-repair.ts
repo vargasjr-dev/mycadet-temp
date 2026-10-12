@@ -13,22 +13,14 @@ import { getCatalogProviderForModel } from "../providers/model-catalog.js";
 // up on every boot because the seeder overwrites cloud profiles. On-platform
 // instances preserve existing profiles (the cloud overlay is authoritative),
 // so instances that were hatched before thinking was enabled in the templates
-// are stuck with thinking disabled or absent.
-//
-// Workspace migration 097 patches the on-disk config once, but it runs before
-// mergeDefaultWorkspaceConfig() which can overwrite the fix with overlay
-// profiles that have thinking disabled or absent. lifecycle.ts calls this
-// repair again after the overlay merge + profile seeding so the fix sticks.
-// The migration keeps its own frozen copy of this logic (migration files are
-// self-contained snapshots and must not be imported from).
+// are stuck with thinking disabled or absent. lifecycle.ts calls this repair
+// after the overlay merge + profile seeding so the fix sticks.
 //
 // The repair patches both profiles, adding thinking: { enabled: true,
 // streamThinking: true } where it's missing or explicitly disabled. It skips
 // profiles that:
 //   - Don't exist (no profile to patch)
 //   - Already have thinking enabled (idempotent)
-//   - Are source: "user" (user-created profiles are untouched)
-//   - Have a non-managed, non-absent source (unknown origin)
 //   - Resolve to a non-Anthropic provider (adaptive thinking is
 //     Anthropic-specific). Effective provider is the profile's explicit
 //     `provider`; otherwise the provider implied by a known catalog `model`
@@ -93,20 +85,9 @@ export function repairAdaptiveThinkingOnCloudProfiles(
       continue;
     }
 
-    // Only patch managed Anthropic profiles.
-    // Legacy profiles created before the `source` metadata field was introduced
-    // have source=undefined. Treat these as managed when the profile name is one
-    // of the canonical managed names (which TARGET_PROFILES already guarantees)
-    // and the effective provider is Anthropic. Effective provider is the
-    // explicit `provider`, else the provider implied by a known catalog
-    // `model`, else the inherited llm.default.provider. Explicit
-    // `source: "user"` profiles are always skipped.
-    if (profile.source === "user") {
-      continue;
-    }
-    if (profile.source !== undefined && profile.source !== "cloud") {
-      continue;
-    }
+    // Only patch managed-name entries resolving to Anthropic. Effective
+    // provider is the explicit `provider`, else the provider implied by a
+    // known catalog `model`, else the inherited llm.default.provider.
     const effectiveProvider = resolveEffectiveProvider(
       profile,
       defaultProvider,

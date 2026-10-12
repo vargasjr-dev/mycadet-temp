@@ -5,9 +5,7 @@ import {
   configGetOptions,
   inferenceProfilesGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import type {
-  InferenceProfileSummary,
-} from "@/generated/daemon/types.gen";
+import type { InferenceProfileSummary } from "@/generated/daemon/types.gen";
 import { makeConfigFixture } from "@/lib/config-fixture.test-helper";
 import { withQueryCache } from "@/lib/story-query-cache";
 
@@ -21,7 +19,6 @@ function summary(
     provider: "anthropic",
     model: "claude-opus-5",
     status: "active",
-    source: "user",
     availability: { status: "ok" },
     ...over,
   };
@@ -36,7 +33,6 @@ const PROFILES: InferenceProfileSummary[] = [
     label: "Balanced",
     provider: "cadet",
     model: "glm-5.2",
-    source: "cloud",
   }),
   summary({ name: "my-custom", label: "My Custom" }),
   summary({ name: "retired", label: "Retired", status: "disabled" }),

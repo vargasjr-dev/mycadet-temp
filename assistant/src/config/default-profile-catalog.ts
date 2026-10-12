@@ -8,7 +8,6 @@ import { resolveModelIntent } from "../providers/model-intents.js";
 import { isCodexSubscriptionModel } from "../providers/openai/codex-models.js";
 import type { ModelIntent } from "../providers/types.js";
 import {
-  AUTO_PROFILE_KEY,
   BACKUP_PROFILE_KEYS,
   type BackupProfileKey,
   DEFAULT_PROFILE_KEYS,
@@ -93,7 +92,6 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   balanced: {
     model: "accounts/fireworks/models/glm-5p3-flash",
     provider: "cadet",
-    source: "cloud",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY.balanced,
@@ -107,7 +105,6 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   "quality-optimized": {
     model: "gpt-5.6-sol",
     provider: "cadet",
-    source: "cloud",
     label: "Quality",
     description: "High-quality results with the most capable model",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY["quality-optimized"],
@@ -121,7 +118,6 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
   "cost-optimized": {
     model: "accounts/fireworks/models/deepseek-v4p1-flash",
     provider: "cadet",
-    source: "cloud",
     label: "Budget",
     // Tier intent only - never name the concrete model here. Clients
     // surface the live model beside the description, so a model name in
@@ -154,7 +150,6 @@ const CADET_PROFILE_IMPLS: ProfileImpls = {
     // owner. This model is the one live-voice TTFT drives validated.
     model: "gpt-5.6-luna",
     provider: "cadet",
-    source: "cloud",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
     fallbackProfile: FALLBACK_PROFILE_BY_KEY["latency-optimized"],
@@ -189,7 +184,6 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "balanced-backup": {
     model: "claude-sonnet-5",
     provider: "cadet",
-    source: "cloud",
     label: "Balanced Backup",
     description: "Automatic backup for the Balanced profile",
     maxTokens: 32000,
@@ -202,7 +196,6 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "quality-optimized-backup": {
     model: "claude-opus-5",
     provider: "cadet",
-    source: "cloud",
     label: "Quality Backup",
     description: "Automatic backup for the Quality profile",
     maxTokens: 32000,
@@ -215,7 +208,6 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "cost-optimized-backup": {
     model: "gemini-3.1-flash-lite",
     provider: "cadet",
-    source: "cloud",
     label: "Budget Backup",
     description: "Automatic backup for the Budget profile",
     maxTokens: 8192,
@@ -233,7 +225,6 @@ const BACKUP_PROFILE_IMPLS: Record<BackupProfileKey, DefaultProfileTemplate> = {
   "latency-optimized-backup": {
     model: "claude-haiku-4-5-20251001",
     provider: "cadet",
-    source: "cloud",
     label: "Fast Backup",
     description: "Automatic backup for the Fast profile",
     maxTokens: 8192,
@@ -259,7 +250,6 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   balanced: {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "cloud",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
     // Matches the cadet column's Balanced token budget: the Codex path
@@ -272,7 +262,6 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "quality-optimized": {
     model: "gpt-5.6-sol",
     provider: "chatgpt",
-    source: "cloud",
     label: "Quality",
     description: "Best results with the most capable model",
     maxTokens: 32000,
@@ -283,7 +272,6 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "cost-optimized": {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "cloud",
     label: "Budget",
     description: "Cheapest responses, for high-volume work",
     maxTokens: 8192,
@@ -294,7 +282,6 @@ const CHATGPT_PROFILE_IMPLS: ProfileImpls = {
   "latency-optimized": {
     model: "gpt-5.6-luna",
     provider: "chatgpt",
-    source: "cloud",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
     maxTokens: 8192,
@@ -322,7 +309,6 @@ const BYOK_PROFILE_IMPLS: Record<
 > = {
   balanced: {
     intent: "balanced",
-    source: "user",
     label: "Balanced",
     description: "Good balance of quality, cost, and speed",
     maxTokens: 16000,
@@ -332,7 +318,6 @@ const BYOK_PROFILE_IMPLS: Record<
   },
   "quality-optimized": {
     intent: "quality-optimized",
-    source: "user",
     label: "Quality",
     description: "Best results with the most capable model",
     maxTokens: 32000,
@@ -345,7 +330,6 @@ const BYOK_PROFILE_IMPLS: Record<
   // is effort alone (see PROVIDER_MODEL_INTENTS).
   "cost-optimized": {
     intent: "cost-optimized",
-    source: "user",
     label: "Budget",
     description: "Cheapest responses, for high-volume work",
     maxTokens: 8192,
@@ -355,7 +339,6 @@ const BYOK_PROFILE_IMPLS: Record<
   },
   "latency-optimized": {
     intent: "latency-optimized",
-    source: "user",
     label: "Fast",
     description: "Fastest responses, with reasoning turned off",
     maxTokens: 8192,
@@ -402,7 +385,6 @@ export const PROFILE_IMPLS: Record<
 export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "jev-latest",
   provider: "cadet",
-  source: "cloud",
   label: "Jev",
   description:
     "TypeSafe decision model for yes/no verdicts, for the voice judges and memory selection",
@@ -410,27 +392,6 @@ export const JEV_MANAGED_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   thinking: { enabled: false, streamThinking: false },
   contextWindow: { maxInputTokens: 32_000 },
 };
-
-/**
- * The Auto profile: the cloud Balanced body under its own label, so that
- * anything dispatching the name directly runs Balanced. The per-message
- * choice among the defaults happens in the agent loop, not here (see
- * `AUTO_PROFILE_KEY`). No `fallbackProfile`: the code-owned fallback mapping
- * is keyed by default profile, and a direct dispatch of this name is already
- * the fallback path. Flag-gated like `os-beta`: NOT in
- * `MANAGED_PROFILE_TEMPLATES`, so the unconditional boot seed never creates
- * it; the flag-gated profile reconcile materializes it while the
- * `auto-profile` feature flag is on.
- */
-export const AUTO_PROFILE_TEMPLATE: DefaultProfileTemplate = (() => {
-  const { fallbackProfile: _fallbackProfile, ...balanced } =
-    CADET_PROFILE_IMPLS.balanced;
-  return {
-    ...balanced,
-    label: "Auto",
-    description: "Picks the profile that fits each message, in beta",
-  };
-})();
 
 /**
  * Cloud profiles, i.e. the `cadet` column keyed by profile name, plus the
@@ -498,7 +459,6 @@ export const USER_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
 export const OS_BETA_PROFILE_TEMPLATE: DefaultProfileTemplate = {
   model: "MiniMaxAI/MiniMax-M3",
   provider: "cadet",
-  source: "cloud",
   label: "OS Beta",
   description: "Good balance of quality, cost, and speed, in beta",
   maxTokens: 32000,
@@ -537,31 +497,13 @@ export const CODE_OWNED_PROFILE_NAMES = new Set<string>([
   JEV_MANAGED_PROFILE_KEY,
 ]);
 
-// All cloud profiles, including the flag-gated os-beta, are invariant:
-// their MANAGED-SOURCE entries are read-only to user-facing writes except
-// re-enabling a disabled one (enforced at commitConfigWrite). A user-owned
-// profile sharing one of these names is NOT locked — invariance is gated on
-// the on-disk entry's `source` being `managed`.
-export const INVARIANT_PROFILE_NAMES = new Set<string>([
-  ...DEFAULT_PROFILE_KEYS,
-  ...BACKUP_PROFILE_KEYS,
-  JEV_MANAGED_PROFILE_KEY,
-  AUTO_PROFILE_KEY,
-  OS_BETA_PROFILE_KEY,
-]);
-
-// Membership here marks a name as managed. The route layer applies managed
-// restrictions (blocking model/provider edits and deletion) only to entries
-// whose on-disk `source` is `managed`; `INVARIANT_PROFILE_NAMES` marks the
-// names whose managed-source entries are additionally frozen at the
-// `commitConfigWrite` choke point. `OS_BETA_PROFILE_KEY` is flag-gated: it is
-// materialized by the flag-gated profile reconcile, which refuses to touch a
-// same-named user profile.
+// Names reserved for code-defined default profiles. Users cannot create or
+// edit profiles under these names — a workspace entry on a non-`cadet`
+// provider under one would be a shadow, which the route layer refuses.
 export const MANAGED_PROFILE_NAMES = new Set<string>([
   ...DEFAULT_PROFILE_KEYS,
   ...BACKUP_PROFILE_KEYS,
   JEV_MANAGED_PROFILE_KEY,
-  AUTO_PROFILE_KEY,
   OS_BETA_PROFILE_KEY,
 ]);
 
@@ -691,10 +633,6 @@ function buildDefaultProfileEntries(): Record<string, ProfileEntry> {
     JEV_MANAGED_PROFILE_TEMPLATE,
     JEV_MANAGED_PROFILE_TEMPLATE.provider,
   );
-  entries[AUTO_PROFILE_KEY] = materializeProfile(
-    AUTO_PROFILE_TEMPLATE,
-    AUTO_PROFILE_TEMPLATE.provider,
-  );
   entries[OS_BETA_PROFILE_KEY] = materializeProfile(
     OS_BETA_PROFILE_TEMPLATE,
     OS_BETA_PROFILE_TEMPLATE.provider,
@@ -734,9 +672,9 @@ const WORKSPACE_OWNED_DEFAULT_FIELDS = ["label", "status", "topP"] as const;
  * Precedence:
  * - A name with no code default resolves to the workspace entry (custom
  *   profiles pass through untouched).
- * - A workspace entry whose `source` is not `managed` wins over the code
+ * - A workspace entry on a non-`cadet` provider wins over the code
  *   default — a user-owned profile sharing a default name shadows it.
- * - A managed-source workspace entry contributes only its
+ * - A `cadet`-provider workspace entry contributes only its
  *   `WORKSPACE_OWNED_DEFAULT_FIELDS`; all other content comes from the code
  *   default body.
  * - A default absent from the workspace resolves to the catalog body as-is —
@@ -777,7 +715,7 @@ function resolveAgainstBody(
     // to the stub would list a profile with no provider or model and let a
     // reference to it look valid, which is precisely what `LLMSchema` rejects
     // on those columns.
-    if (isCloudOnlyProfileKey(name) && workspace?.source === "cloud") {
+    if (isCloudOnlyProfileKey(name) && workspace?.provider === "cadet") {
       return undefined;
     }
     return workspace;
@@ -788,7 +726,7 @@ function resolveAgainstBody(
   if (workspace == null) {
     return isFlagGatedProfileKey(name) ? undefined : { ...body };
   }
-  if (workspace.source !== "cloud") {
+  if (workspace.provider !== "cadet") {
     return workspace;
   }
   const merged: ProfileEntry = { ...body };
@@ -816,11 +754,7 @@ function resolveAgainstBody(
  * - A default provider without a named matrix column materializes from the
  *   shared `BYOK_PROFILE_IMPLS` templates, with `resolveModelIntent`
  *   falling back to the provider's catalog `defaultModel`.
- * - The resolved body carries `source: "cloud"` regardless of provider:
- *   default profile content is code-owned whichever provider implements it.
- *   The BYOK templates' `source: "user"` exists for the conversion pass's
- *   frozen `custom-*` reference bodies (`USER_PROFILE_TEMPLATES`), not as
- *   an ownership claim on the body.
+ * Default profile content is code-owned whichever provider implements it.
  */
 export function resolveDefaultProfileForProvider(
   workspaceProfiles: Record<string, ProfileEntry> | undefined,
@@ -892,7 +826,6 @@ function defaultProfileBodyForProvider(
       impl.provider,
       resolveDefaultConnectionName(defaultBlob) ?? undefined,
     ),
-    source: "cloud",
   });
 }
 

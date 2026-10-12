@@ -1342,7 +1342,6 @@
     "title": "Files"
   },
   "messageHoverActions": {
-    "autoRouted": "Auto · {profile}",
     "bookmark": "Bookmark",
     "copied": "Copied",
     "copy": "Copy",

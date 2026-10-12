@@ -62,7 +62,6 @@ import {
   deepMergeOverwrite,
   getConfig,
   invalidateConfigCache,
-  loadConfig,
   mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
 import { LLMSchema } from "../config/schemas/llm.js";
@@ -364,15 +363,15 @@ describe("deepMergeOverwrite", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: loadConfig() startup behavior
+// Tests: getConfig() startup behavior
 //
-// Contract: disk = user intent, in-memory cache = effective values. loadConfig
+// Contract: disk = user intent, in-memory cache = effective values. getConfig
 // must NOT silently materialize schema defaults into config.json on load.
 // The legitimate self-healing paths that DO rewrite the file (deprecated-key
 // strip, fresh-config seed, corrupt-JSON quarantine) are protected below.
 // ---------------------------------------------------------------------------
 
-describe("loadConfig startup behavior", () => {
+describe("getConfig startup behavior", () => {
   beforeEach(() => {
     ensureTestDir();
     const resetPaths = [
@@ -415,19 +414,19 @@ describe("loadConfig startup behavior", () => {
 
   test("does not modify existing config.json on load", () => {
     // Write a partial config and confirm the file's bytes are unchanged
-    // after loadConfig(). Schema defaults must apply in-memory only; disk
+    // after getConfig(). Schema defaults must apply in-memory only; disk
     // is the user's source of truth.
     writeConfig({ provider: "anthropic" });
     const before = readFileSync(CONFIG_PATH);
 
-    loadConfig();
+    getConfig();
 
     const after = readFileSync(CONFIG_PATH);
     expect(after.equals(before)).toBe(true);
   });
 
   test("getConfig().memory.v2.bm25_b returns schema default when absent on disk", () => {
-    // Consumer-side correctness: even though loadConfig no longer writes
+    // Consumer-side correctness: even though getConfig no longer writes
     // schema defaults back to disk, accessors still see them via the
     // in-memory `cached: AssistantConfig` populated by `applyNestedDefaults`.
     writeConfig({ provider: "anthropic" });
@@ -491,15 +490,13 @@ describe("loadConfig startup behavior", () => {
     // Models a CLI subprocess writing twilio.accountSid while the assistant
     // process already has an effective config cached in memory.
     writeConfig({ twilio: { accountSid: "AC_cached_before" } });
-    expect(loadConfig().twilio.accountSid).toBe("AC_cached_before");
+    expect(getConfig().twilio.accountSid).toBe("AC_cached_before");
 
     writeConfig({
       twilio: { accountSid: "AC_fresh_after_external_write" },
     });
 
-    expect(loadConfig().twilio.accountSid).toBe(
-      "AC_fresh_after_external_write",
-    );
+    expect(getConfig().twilio.accountSid).toBe("AC_fresh_after_external_write");
   });
 
   test("still strips deprecated fields and rewrites", () => {
@@ -511,7 +508,7 @@ describe("loadConfig startup behavior", () => {
       rateLimit: { maxTokensPerSession: 100_000 },
     });
 
-    loadConfig();
+    getConfig();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.rateLimit?.maxTokensPerSession).toBeUndefined();
@@ -529,7 +526,7 @@ describe("loadConfig startup behavior", () => {
       memory: { jobs: { batchSize: 25, workerConcurrency: 4 } },
     });
 
-    loadConfig();
+    getConfig();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.memory?.jobs?.batchSize).toBeUndefined();
@@ -547,7 +544,7 @@ describe("loadConfig startup behavior", () => {
       daemon: { reapOrphanedSubprocesses: true, standaloneRecording: false },
     });
 
-    loadConfig();
+    getConfig();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.daemon?.reapOrphanedSubprocesses).toBeUndefined();
@@ -566,7 +563,7 @@ describe("loadConfig startup behavior", () => {
       calls: { voice: { language: "es-ES", telephonyStreaming: false } },
     });
 
-    loadConfig();
+    getConfig();
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.calls?.voice?.language).toBeUndefined();
@@ -579,7 +576,7 @@ describe("loadConfig startup behavior", () => {
     // all schema defaults so users can see and edit available options.
     expect(existsSync(CONFIG_PATH)).toBe(false);
 
-    loadConfig();
+    getConfig();
 
     expect(existsSync(CONFIG_PATH)).toBe(true);
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -609,7 +606,7 @@ describe("loadConfig startup behavior", () => {
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
-    const config = loadConfig();
+    const config = getConfig();
 
     // `llm.default` is the base blob — the overlay blob reaches the parsed
     // config as a partial fragment and the seed never writes a separate key.
@@ -640,7 +637,6 @@ describe("loadConfig startup behavior", () => {
     expect(effective.balanced?.provider).toBe("anthropic");
     expect(effective.balanced?.provider_connection).toBe("anthropic-personal");
     expect(effective.balanced?.model).toBe("claude-sonnet-4-6");
-    expect(effective.balanced?.source).toBe("cloud");
     expect("status" in (effective.balanced ?? {})).toBe(false);
   });
 
@@ -689,7 +685,6 @@ describe("loadConfig startup behavior", () => {
         default: { provider: "openai", model: "gpt-5.4-mini" },
         profiles: {
           "custom-balanced": {
-            source: "user",
             provider: "openai",
             model: "gpt-5.4-mini",
           },
@@ -720,7 +715,6 @@ describe("loadConfig startup behavior", () => {
     });
     // The pre-existing custom profile is user-owned and never rewritten.
     expect(raw.llm.profiles["custom-balanced"]).toEqual({
-      source: "user",
       provider: "openai",
       model: "gpt-5.4-mini",
     });
@@ -740,7 +734,6 @@ describe("loadConfig startup behavior", () => {
         default: { provider: "openai", model: "gpt-5.4-mini" },
         profiles: {
           "custom-balanced": {
-            source: "user",
             provider: "openai",
             model: "gpt-5.4-mini",
           },
@@ -884,7 +877,6 @@ describe("loadConfig startup behavior", () => {
     expect(effective.balanced?.provider).toBe("openai");
     expect(effective.balanced?.model).toBe("gpt-5.6-luna");
     expect(effective.balanced?.provider_connection).toBe("openai-personal");
-    expect(effective.balanced?.source).toBe("cloud");
     expect(effective["quality-optimized"]?.provider).toBe("openai");
     expect(effective["quality-optimized"]?.model).toBe("gpt-5.6-sol");
     expect(effective["cost-optimized"]?.provider).toBe("openai");
@@ -905,7 +897,7 @@ describe("loadConfig startup behavior", () => {
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
-    const config = loadConfig();
+    const config = getConfig();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.activeProfile).toBe("balanced");
@@ -927,7 +919,6 @@ describe("loadConfig startup behavior", () => {
       expect(effective[name]?.provider).toBe("together");
       expect(effective[name]?.provider_connection).toBe("together-personal");
       expect(effective[name]?.model).toBe(getProviderDefaultModel("together"));
-      expect(effective[name]?.source).toBe("cloud");
     }
   });
 
@@ -951,7 +942,7 @@ describe("loadConfig startup behavior", () => {
     const db = createProviderConnectionsDb();
 
     mergeDefaultConfigAndSeedInferenceProfiles(db);
-    const config = loadConfig();
+    const config = getConfig();
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
 
     expect(raw.llm.activeProfile).toBe("balanced");
@@ -974,14 +965,12 @@ describe("loadConfig startup behavior", () => {
   });
 
   test("off-cloud boot leaves an existing managed entry byte-identical", () => {
-    // A drifted legacy full-body entry left by a previous release stays
-    // exactly as written — boots never rewrite managed entries. Content is
-    // served from the code catalog at resolution time instead.
+    // A drifted full-body entry left by a previous release stays exactly
+    // as written — boots never rewrite managed entries. Content is served
+    // from the code catalog at resolution time instead.
     const drifted = {
-      source: "cloud",
-      provider: "anthropic",
-      model: "old-model-from-previous-release",
-      provider_connection: "anthropic-managed",
+      provider: "cadet",
+      model: "claude-sonnet-4-6",
     };
     writeConfig({
       llm: {
@@ -996,47 +985,12 @@ describe("loadConfig startup behavior", () => {
 
     expect(raw.llm.profiles.balanced).toEqual(drifted);
     expect(raw.llm.activeProfile).toBe("balanced");
-    // Resolution ignores the drifted body: a cloud-source entry contributes
-    // only label/status/topP, everything else comes from the catalog.
+    // Resolution ignores the drifted body: a cadet-provider entry
+    // contributes only label/status/topP, everything else comes from the
+    // catalog.
     const effectiveBalanced = getEffectiveProfile(raw.llm.profiles, "balanced");
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
     expect(effectiveBalanced?.provider_connection).toBeUndefined();
-  });
-
-  test("boot re-stamps a source-less legacy canonical profile as cloud-owned", () => {
-    // Migration 052 seeded canonical profiles without a `source`. The
-    // boot-seed re-stamp claims source-less entries on catalog-owned names
-    // as cloud-owned (the retired `source: "managed"` spelling was stripped
-    // by the loader): the entry keeps its on-disk body verbatim, but the
-    // effective view serves catalog content — a drifted body no longer
-    // shadows the code catalog.
-    const legacy = {
-      provider: "fireworks",
-      model: "accounts/fireworks/models/glm-5p2",
-      provider_connection: "fireworks-managed",
-    };
-    writeConfig({
-      llm: {
-        profiles: { "quality-optimized": legacy },
-      },
-    });
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    expect(raw.llm.profiles["quality-optimized"]).toEqual({
-      ...legacy,
-      source: "cloud",
-    });
-    // The catalog body wins over the drifted on-disk one (which serves
-    // gpt-5.6-sol, not the legacy fireworks model).
-    const effectiveQuality = getEffectiveProfile(
-      raw.llm.profiles,
-      "quality-optimized",
-    );
-    expect(effectiveQuality?.model).toBe("gpt-5.6-sol");
-    expect(effectiveQuality?.provider_connection).toBeUndefined();
-    expect(effectiveQuality?.source).toBe("cloud");
   });
 
   test("defaults the advisor profile to the cloud Quality profile", () => {
@@ -1053,7 +1007,6 @@ describe("loadConfig startup behavior", () => {
       raw.llm.profiles,
       "quality-optimized",
     );
-    expect(effectiveQuality?.source).toBe("cloud");
     expect(effectiveQuality?.model).toBe("gpt-5.6-sol");
   });
 
@@ -1065,11 +1018,9 @@ describe("loadConfig startup behavior", () => {
     process.env.IS_CLOUD = "true";
 
     const drifted = {
-      source: "cloud",
-      provider: "anthropic",
-      model: "old-model-from-previous-release",
+      provider: "cadet",
+      model: "gpt-5.4",
       maxTokens: 1,
-      provider_connection: "anthropic-managed",
     };
     writeConfig({
       llm: {
@@ -1093,14 +1044,14 @@ describe("loadConfig startup behavior", () => {
     expect("topP" in (effectiveBalanced ?? {})).toBe(false);
   });
 
-  test("platform boot preserves user-edited label and status on a cloud stub", () => {
+  test("platform boot preserves user-edited label and status on a managed stub", () => {
     // The workspace-owned fields a user may set on a cloud profile — label
     // and status — live on the stub, which boots never touch. The effective
     // view overlays them onto the code-owned body.
     process.env.IS_CLOUD = "true";
 
     const edited = {
-      source: "cloud",
+      provider: "cadet",
       label: "My Default",
       status: "disabled",
     };
@@ -1123,10 +1074,10 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.status).toBe("disabled");
   });
 
-  test("off-cloud boot preserves a user-edited label on a cloud stub (Codex P1 on PR #30362)", () => {
+  test("off-cloud boot preserves a user-edited label on a managed stub (Codex P1 on PR #30362)", () => {
     // Simulate a user who renamed the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { label: "My Default" }.
-    const stub = { source: "cloud", label: "My Default" };
+    const stub = { provider: "cadet", label: "My Default" };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1145,10 +1096,10 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
   });
 
-  test("off-cloud boot preserves user-toggled status on a cloud stub", () => {
+  test("off-cloud boot preserves user-toggled status on a managed stub", () => {
     // Simulate a user who disabled the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { status: "disabled" }.
-    const stub = { source: "cloud", status: "disabled" };
+    const stub = { provider: "cadet", status: "disabled" };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1167,12 +1118,12 @@ describe("loadConfig startup behavior", () => {
     expect(effectiveBalanced?.model).toBe(MANAGED_BALANCED_MODEL);
   });
 
-  test("boot preserves a user-edited topP override on a cloud stub", () => {
+  test("boot preserves a user-edited topP override on a managed stub", () => {
     // Simulate a user who overrode topP on the cloud "balanced" profile via
     // PUT /v1/config/llm/profiles/balanced { topP: 0.5 }. The override lives
     // on the stub, survives boots untouched, and overlays the catalog body
     // (which carries no topP of its own).
-    const stub = { source: "cloud", topP: 0.5 };
+    const stub = { provider: "cadet", topP: 0.5 };
     writeConfig({
       llm: {
         profiles: { balanced: stub },
@@ -1213,10 +1164,8 @@ describe("loadConfig startup behavior", () => {
       llm: {
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
+            provider: "cadet",
             model: "old-model",
-            provider_connection: "anthropic-managed",
             label: null,
           },
         },
@@ -1265,8 +1214,7 @@ describe("loadConfig startup behavior", () => {
         },
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
+            provider: "cadet",
             model: "claude-sonnet-4-6",
             maxTokens: 16000,
             effort: "high",
@@ -1289,8 +1237,7 @@ describe("loadConfig startup behavior", () => {
             },
             profiles: {
               balanced: {
-                source: "cloud",
-                provider: "openai",
+                provider: "cadet",
                 model: "gpt-5.4",
                 label: "Cloud Balanced",
               },
@@ -1305,15 +1252,14 @@ describe("loadConfig startup behavior", () => {
     process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
     const mainAgentConfig = resolveCallSiteConfig("mainAgent", config.llm);
 
     // Hatch boot: overlay fragment is preserved verbatim on disk
     // (preserveProfileNames).
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.profiles.balanced).toEqual({
-      source: "cloud",
-      provider: "openai",
+      provider: "cadet",
       model: "gpt-5.4",
       label: "Cloud Balanced",
     });
@@ -1326,8 +1272,7 @@ describe("loadConfig startup behavior", () => {
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(raw.llm.profiles.balanced).toEqual({
-      source: "cloud",
-      provider: "openai",
+      provider: "cadet",
       model: "gpt-5.4",
       label: "Cloud Balanced",
     });
@@ -1342,8 +1287,7 @@ describe("loadConfig startup behavior", () => {
     const afterRestart = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     expect(afterRestart.llm.activeProfile).toBe("balanced");
     expect(afterRestart.llm.profiles.balanced).toEqual({
-      source: "cloud",
-      provider: "openai",
+      provider: "cadet",
       model: "gpt-5.4",
       label: "Cloud Balanced",
     });
@@ -1414,7 +1358,7 @@ describe("loadConfig startup behavior", () => {
     // A managed backup resolves from the code catalog without being
     // materialized in `llm.profiles`, so selecting one persists nothing but
     // the reference. If the schema did not treat backup keys as
-    // always-available references, the strip-and-reparse in `loadConfig`
+    // always-available references, the strip-and-reparse in `getConfig`
     // would drop `activeProfile` and the seeder would reset the user's
     // chat-model selection to `balanced` on the next boot.
     writeConfig({
@@ -1427,7 +1371,7 @@ describe("loadConfig startup behavior", () => {
       },
     });
 
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.activeProfile).toBe("balanced-backup");
 
     mergeDefaultConfigAndSeedInferenceProfiles();
@@ -1453,7 +1397,7 @@ describe("loadConfig startup behavior", () => {
       },
     });
 
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.activeProfile).toBeUndefined();
 
     mergeDefaultConfigAndSeedInferenceProfiles();
@@ -1474,7 +1418,7 @@ describe("loadConfig startup behavior", () => {
       },
     });
 
-    const config = loadConfig();
+    const config = getConfig();
     expect(config.llm.callSites.recall?.profile).toBe("cost-optimized-backup");
 
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -1487,7 +1431,7 @@ describe("loadConfig startup behavior", () => {
     // with defaults. This must keep working.
     writeFileSync(CONFIG_PATH, "{not valid json");
 
-    loadConfig();
+    getConfig();
 
     // A new defaults-populated config.json is written in place
     expect(existsSync(CONFIG_PATH)).toBe(true);
@@ -1580,7 +1524,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH = overlayPath;
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.advisorProfile).toBe("quality-optimized");
@@ -1592,36 +1536,27 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-opus-4-8",
             status: "disabled",
           },
           balanced: {
-            source: "cloud",
-            provider: "together",
-            provider_connection: "together-managed",
+            provider: "cadet",
             model: "open-model",
             status: "disabled",
           },
           "quality-optimized": {
-            source: "cloud",
-            provider: "fireworks",
-            provider_connection: "fireworks-managed",
+            provider: "cadet",
             model: "accounts/fireworks/models/glm-5p2",
             status: "disabled",
           },
           "cost-optimized": {
-            source: "cloud",
-            provider: "fireworks",
-            provider_connection: "fireworks-managed",
+            provider: "cadet",
             model: "accounts/fireworks/models/deepseek-v4-flash",
             status: "disabled",
           },
           "custom-quality-optimized": {
-            source: "user",
-            provider: "anthropic",
+            provider: "cadet",
             provider_connection: "anthropic-personal",
             model: "claude-opus-4-8",
             label: "Quality",
@@ -1631,7 +1566,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     // Advisor repair only considers the cloud defaults; a user profile is
     // never auto-selected, so a fully-disabled managed set clears the field.
@@ -1645,15 +1580,12 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-opus-4-8",
             status: "disabled",
           },
           "custom-quality-optimized": {
-            source: "user",
-            provider: "anthropic",
+            provider: "cadet",
             provider_connection: "anthropic-personal",
             model: "claude-opus-4-8",
             label: "Quality",
@@ -1663,7 +1595,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.advisorProfile).toBe("quality-optimized");
   });
@@ -1674,30 +1606,22 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         advisorProfile: "frontier",
         profiles: {
           frontier: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-opus-4-8",
             status: "disabled",
           },
           balanced: {
-            source: "cloud",
-            provider: "together",
-            provider_connection: "together-managed",
+            provider: "cadet",
             model: "open-model",
             status: "disabled",
           },
           "quality-optimized": {
-            source: "cloud",
-            provider: "fireworks",
-            provider_connection: "fireworks-managed",
+            provider: "cadet",
             model: "accounts/fireworks/models/glm-5p2",
             status: "disabled",
           },
           "cost-optimized": {
-            source: "cloud",
-            provider: "fireworks",
-            provider_connection: "fireworks-managed",
+            provider: "cadet",
             model: "accounts/fireworks/models/deepseek-v4-flash",
             status: "disabled",
           },
@@ -1706,7 +1630,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.advisorProfile).toBeUndefined();
   });
@@ -1755,8 +1679,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
             default: { provider: "anthropic" },
             profiles: {
               balanced: {
-                source: "cloud",
-                provider: "anthropic",
+                provider: "cadet",
                 provider_connection: "anthropic-personal",
                 model: "claude-sonnet-4-6",
               },
@@ -1881,22 +1804,16 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     // and the bare labels flow through the effective view.
     const legacyProfiles = {
       balanced: {
-        source: "cloud",
-        provider: "anthropic",
-        provider_connection: "anthropic-managed",
+        provider: "cadet",
         model: "claude-sonnet-4-6",
         label: "Balanced",
       },
       "quality-optimized": {
-        source: "cloud",
-        provider: "anthropic",
-        provider_connection: "anthropic-managed",
+        provider: "cadet",
         label: "Quality",
       },
       "cost-optimized": {
-        source: "cloud",
-        provider: "anthropic",
-        provider_connection: "anthropic-managed",
+        provider: "cadet",
         label: "Speed",
       },
     };
@@ -1928,23 +1845,17 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-sonnet-4-6",
             label: "My Balanced",
           },
           "quality-optimized": {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             label: null,
           },
           // Already-suffixed labels are also preserved (idempotency).
           "cost-optimized": {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             label: "Speed (Managed)",
           },
         },
@@ -1969,9 +1880,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-sonnet-4-6",
             label: "Balanced",
           },
@@ -1981,7 +1890,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     });
 
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.profiles.balanced?.label).toBe("Balanced");
   });
@@ -1994,16 +1903,13 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
         default: { provider: "anthropic", model: "claude-opus-4-7" },
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
-            provider_connection: "anthropic-managed",
+            provider: "cadet",
             model: "claude-sonnet-4-6",
             label: "Balanced (Managed)",
             status: "active",
           },
           "custom-balanced": {
-            source: "user",
-            provider: "anthropic",
+            provider: "cadet",
             provider_connection: "anthropic-personal",
             model: "claude-sonnet-4-6",
             label: "Balanced",
@@ -2015,7 +1921,7 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
 
     // No overlay → this is a normal boot, not a hatch.
     mergeDefaultConfigAndSeedInferenceProfiles();
-    const config = loadConfig();
+    const config = getConfig();
 
     // User's "active" decision survives the boot upsert.
     expect(config.llm.profiles.balanced?.status).toBe("active");
@@ -2084,7 +1990,6 @@ describe("OS Beta cloud profile template", () => {
     expect(entry.provider_connection).toBe("cadet");
     expect(entry.provider).toBe("together");
     expect(entry.label).toBe("OS Beta");
-    expect(entry.source).toBe("cloud");
     expect(entry.maxTokens).toBe(32000);
     expect(entry.effort).toBe("low");
     expect(entry.thinking?.enabled).toBe(true);

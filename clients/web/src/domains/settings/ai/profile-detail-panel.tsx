@@ -105,7 +105,7 @@ export function ProfileDetailPanel({
   const mode =
     profileName == null
       ? "create"
-      : initialValues?.source === "cloud"
+      : initialValues?.provider === "cadet"
         ? "view"
         : "edit";
 

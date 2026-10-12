@@ -35,7 +35,7 @@ mock.module("../../inbound/public-ingress-urls.js", () => ({
 }));
 
 mock.module("../../config/loader.js", () => ({
-  loadConfig: () => ({ ingress: { publicBaseUrl } }),
+  getConfig: () => ({ ingress: { publicBaseUrl } }),
 }));
 
 /** In-memory stand-in for the credential store. */

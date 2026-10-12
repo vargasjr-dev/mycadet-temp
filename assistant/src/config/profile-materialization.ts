@@ -41,7 +41,7 @@ export function completeCustomProfile(
   dflt: LLMConfigBase,
   profile: ProfileEntry,
 ): ProfileEntry {
-  if (profile.mix != null || profile.source === "cloud") {
+  if (profile.mix != null || profile.provider === "cadet") {
     return profile;
   }
 

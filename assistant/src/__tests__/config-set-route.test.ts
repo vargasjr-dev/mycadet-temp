@@ -132,12 +132,10 @@ describe("config_set route - request validation", () => {
         activeProfile: "my-custom-profile",
         profiles: {
           balanced: {
-            source: "cloud",
-            provider: "anthropic",
+            provider: "cadet",
             model: "claude-sonnet-4-6",
           },
           "my-custom-profile": {
-            source: "user",
             provider: "anthropic",
             model: "claude-opus-4-6",
             maxTokens: 32000,
@@ -162,14 +160,12 @@ describe("config_set route - request validation", () => {
 
     const profiles = llm.profiles as Record<string, Record<string, unknown>>;
     expect(profiles["my-custom-profile"]).toEqual({
-      source: "user",
       provider: "anthropic",
       model: "claude-opus-4-6",
       maxTokens: 32000,
     });
     expect(profiles.balanced).toEqual({
-      source: "cloud",
-      provider: "anthropic",
+      provider: "cadet",
       model: "claude-sonnet-4-6",
     });
 

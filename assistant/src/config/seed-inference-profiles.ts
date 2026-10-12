@@ -15,7 +15,7 @@ import {
   MANAGED_PROFILE_TEMPLATES,
 } from "./default-profile-catalog.js";
 import { getIsCloud } from "./env-registry.js";
-import { loadConfig, loadRawConfig, saveRawConfig } from "./loader.js";
+import { getConfig, loadRawConfig, saveRawConfig } from "./loader.js";
 import { isDispatchableProfile } from "./profile-dispatchability.js";
 import {
   isDefaultProviderChoice,
@@ -64,7 +64,7 @@ export type SeedInferenceProfilesOptions = {
 export function seedInferenceProfiles(
   options: SeedInferenceProfilesOptions = {},
 ): void {
-  const config = loadConfig();
+  const config = getConfig();
   const llm = config.llm;
   const profiles = llm.profiles;
 
@@ -173,20 +173,27 @@ export function seedInferenceProfiles(
     }
   }
 
-  // Advisor profile: defaults to the strongest active managed default.
+  // Advisor profile: defaults to the strongest active managed default. A
+  // default name the user shadowed (a non-cadet workspace entry) is user
+  // intent and is left alone; a disabled code-owned default is repaired.
   const requestedAdvisorProfile = llm.advisorProfile;
   const requestedAdvisorEntry =
     requestedAdvisorProfile !== undefined
       ? effectiveProfiles[requestedAdvisorProfile]
       : undefined;
+  const requestedAdvisorWorkspace =
+    requestedAdvisorProfile !== undefined
+      ? (llm.profiles[requestedAdvisorProfile] ?? null)
+      : null;
   const requestedAdvisorIsDisabledManaged =
-    requestedAdvisorEntry?.source === "cloud" &&
-    requestedAdvisorEntry.status === "disabled";
+    requestedAdvisorEntry?.status === "disabled" &&
+    (requestedAdvisorWorkspace === null ||
+      requestedAdvisorWorkspace.provider === "cadet");
   if (
     requestedAdvisorProfile === undefined ||
     requestedAdvisorIsDisabledManaged
   ) {
-    const defaultAdvisorProfile = firstActiveCloudProfile(effectiveProfiles, [
+    const defaultAdvisorProfile = firstActiveDefaultProfile(effectiveProfiles, [
       "quality-optimized",
       "balanced",
       "cost-optimized",
@@ -222,14 +229,6 @@ export function seedInferenceProfiles(
     }
   }
   llm.profileOrder = profileOrder;
-
-  // Tag any remaining profiles without a source. Catalog-owned names are
-  // cloud-owned — this is also how an existing install converges: the loader
-  // strips the retired `source: "managed"` value as an invalid leaf and this
-  // re-stamps the name as cloud before anything reads it.
-  for (const [name, profile] of Object.entries(profiles)) {
-    profile.source ??= MANAGED_PROFILE_NAMES.has(name) ? "cloud" : "user";
-  }
 
   // Persist: the seed only ever rewrites the `llm` section, so the typed
   // view's `llm` lands on the raw base verbatim and every other section the
@@ -274,7 +273,7 @@ function pruneNonDispatchableProfiles(
     // Thin managed stubs carry no model/mix by design — their content is
     // code-owned, so dispatchability is judged on the catalog body, never
     // the stub. Only workspace-owned profiles are pruned.
-    if (MANAGED_PROFILE_NAMES.has(name) && profile.source === "cloud") {
+    if (MANAGED_PROFILE_NAMES.has(name)) {
       continue;
     }
     if (!isDispatchableProfile(profile)) {
@@ -331,13 +330,13 @@ function pruneRemovedProfileReferences(
   }
 }
 
-function firstActiveCloudProfile(
+function firstActiveDefaultProfile(
   profiles: Record<string, ProfileEntry>,
   names: string[],
 ): string | undefined {
   for (const name of names) {
     const profile = profiles[name];
-    if (profile?.source === "cloud" && profile.status !== "disabled") {
+    if (profile && profile.status !== "disabled") {
       return name;
     }
   }

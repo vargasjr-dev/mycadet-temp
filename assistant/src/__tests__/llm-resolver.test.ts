@@ -321,7 +321,7 @@ describe("resolveCallSiteConfig", () => {
       },
       profiles: {
         "quality-optimized": {
-          source: "cloud",
+          provider: "cadet",
           fallbackProfile: "quality-optimized-backup",
         },
       },

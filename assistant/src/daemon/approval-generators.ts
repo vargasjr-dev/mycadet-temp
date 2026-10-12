@@ -1,4 +1,4 @@
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { wrapWithCallSiteRouting } from "../providers/call-site-routing.js";
 import {
   mainAgentResolutionError,
@@ -82,7 +82,7 @@ const VALID_DISPOSITIONS: ReadonlySet<string> = new Set([
  */
 export function createApprovalCopyGenerator(): ApprovalCopyGenerator {
   return async (context, options = {}) => {
-    const config = loadConfig();
+    const config = getConfig();
     // Connection-aware default-provider resolution. Throws
     // `ConnectionResolutionError` on hard config errors (missing /
     // unknown / mismatched connection). Returns null on soft credential
@@ -150,7 +150,7 @@ export function createApprovalCopyGenerator(): ApprovalCopyGenerator {
  */
 export function createApprovalConversationGenerator(): ApprovalConversationGenerator {
   return async (context) => {
-    const config = loadConfig();
+    const config = getConfig();
     // Connection-aware default + per-call routing. `resolveDefaultProvider`
     // throws `ConnectionResolutionError` on hard config errors (missing /
     // unknown / mismatched connection) and returns null on soft credential

@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { getUserSelectableProfilesForProvider } from "../../../../config/default-profile-catalog.js";
-import { loadConfig } from "../../../../config/loader.js";
+import { getConfig } from "../../../../config/loader.js";
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
 import type { AssistantConfig } from "../../../../config/types.js";
 import { getDb } from "../../../../persistence/db-connection.js";
@@ -63,7 +63,7 @@ export const MEMORY_V2_DISABLED_CODE = "MEMORY_V2_DISABLED";
  * config" empty state.
  */
 function requireMemoryV2Enabled(): void {
-  if (!usesConceptPageMemory(loadConfig().memory)) {
+  if (!usesConceptPageMemory(getConfig().memory)) {
     throw new RouteError(
       "Concept-page memory is not active — enable memory.v3.live (or memory.v2.enabled) to use this command.",
       MEMORY_V2_DISABLED_CODE,
@@ -135,7 +135,7 @@ async function handleValidate({
 
   const workspaceDir = getWorkspaceDir();
   const maxPageChars = resolveSubstrateTuning(
-    loadConfig().memory,
+    getConfig().memory,
   ).max_page_chars;
 
   const slugs = await listPages(workspaceDir);
@@ -514,7 +514,7 @@ export async function handleSimulateRouter({
       ? rawRouterPromptOverride
       : undefined;
 
-  const liveConfig = loadConfig();
+  const liveConfig = getConfig();
   const mergedConfig = applySimulateOverrides(liveConfig, configOverrides);
   const effectiveRouter = mergedConfig.memory.v2.router;
 
@@ -663,7 +663,7 @@ export async function handleCompareRetrievers({
   const { limit, strategy, conversationIds, ks, includeNotInjected } =
     MemoryV2CompareRetrieversParams.parse(body);
 
-  const config = loadConfig();
+  const config = getConfig();
   const workspaceDir = getWorkspaceDir();
   const pageIndex = await getPageIndex(workspaceDir);
   const db = getDb();

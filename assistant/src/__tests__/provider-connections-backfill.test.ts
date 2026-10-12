@@ -79,7 +79,7 @@ test("managed mode still stamps cadet when no user connection exists", () => {
   expect(backfilledConnection("byok")).toBe("cadet");
 });
 
-test("managed-owned entries keep the cadet stamp even when a user connection exists", () => {
+test("cadet-provider entries take no connection stamp; user entries bind their own", () => {
   process.env.IS_CLOUD = "true";
   const created = createConnection(getDb(), {
     name: "anthropic-personal",
@@ -89,20 +89,18 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
   expect(created.ok).toBe(true);
   seedConfig({
     balanced: {
-      source: "cloud",
-      provider: "anthropic",
+      provider: "cadet",
       model: "claude-sonnet-4-6",
     },
-    // Legacy seeders wrote canonical entries without `source` — still
-    // managed-owned (workspace migration 109's rule).
+    // A cadet-provider entry is managed-owned: the cadet stamp survives any
+    // user connection.
     "quality-optimized": {
-      provider: "anthropic",
+      provider: "cadet",
       model: "claude-opus-4-8",
     },
-    // An explicit user source on a canonical name is a shadow the user took
+    // A non-cadet provider on a canonical name is a shadow the user took
     // ownership of — the preference applies.
     "cost-optimized": {
-      source: "user",
       provider: "anthropic",
       model: "claude-haiku-4-5-20251001",
     },
@@ -111,8 +109,10 @@ test("managed-owned entries keep the cadet stamp even when a user connection exi
 
   runProviderConnectionsBackfill(getDb());
 
-  expect(backfilledConnection("balanced")).toBe("cadet");
-  expect(backfilledConnection("quality-optimized")).toBe("cadet");
+  // The cadet provider is its own routing identity — no connection stamp;
+  // dispatch resolves the row per-request.
+  expect(backfilledConnection("balanced")).toBeUndefined();
+  expect(backfilledConnection("quality-optimized")).toBeUndefined();
   expect(backfilledConnection("cost-optimized")).toBe("anthropic-personal");
   expect(backfilledConnection("byok")).toBe("anthropic-personal");
 });

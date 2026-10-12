@@ -32,7 +32,7 @@ afterAll(() => {
 });
 
 import { resolveCallSiteConfig } from "../llm-resolver.js";
-import { invalidateConfigCache, loadConfig } from "../loader.js";
+import { getConfig, invalidateConfigCache } from "../loader.js";
 
 function writeConfig(obj: unknown): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(obj, null, 2) + "\n");
@@ -84,7 +84,7 @@ describe("config recovery prunes call-site overrides emptied by a strip", () => 
     // `{profile:"balanced"}` default — silently resolving to the active profile.
     writeConfig(baseLlm({ memoryV3SelectL2: { profile: "ghost-profile" } }));
 
-    const config = loadConfig();
+    const config = getConfig();
 
     // The emptied call-site entry must be pruned entirely, not left as `{}`.
     expect(config.llm.callSites?.memoryV3SelectL2).toBeUndefined();
@@ -105,7 +105,7 @@ describe("config recovery prunes call-site overrides emptied by a strip", () => 
       }),
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.callSites?.memoryV3SelectL2).toBeUndefined();
     expect(config.llm.callSites?.memoryRouter).toEqual({ profile: "balanced" });
@@ -119,7 +119,7 @@ describe("config recovery prunes call-site overrides emptied by a strip", () => 
       baseLlm({ memoryV3SelectL2: { profile: "missing", temperature: 0.5 } }),
     );
 
-    const config = loadConfig();
+    const config = getConfig();
 
     expect(config.llm.callSites?.memoryV3SelectL2).toEqual({
       temperature: 0.5,

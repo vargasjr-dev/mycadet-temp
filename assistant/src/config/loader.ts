@@ -32,7 +32,7 @@ let suppressConfigDiskWritesDepth = 0;
 /**
  * The most recent effective config in this process. Captured inside
  * {@link validateWithSchema} on every validation-success path, then overwritten
- * by {@link loadConfig} with the deployment-context-filled config whenever
+ * by {@link getConfig} with the deployment-context-filled config whenever
  * context defaults apply — so it reflects the config as consumers actually see
  * it (cloud service modes and all), not just the pre-fill schema-defaulted
  * view. It is a safety net for the recovery ladder — when config.json later
@@ -126,7 +126,7 @@ function cloneDefaultConfig(): AssistantConfig {
 
 /**
  * Returns deployment-context-aware config defaults that override schema
- * defaults for cloud assistants. Applied to every `loadConfig()`
+ * defaults for cloud assistants. Applied to every `getConfig()`
  * call as a fill-only pass — they only fill keys that are absent from the
  * raw config on disk, so an explicit user choice (e.g. saving "your-own"
  * via the macOS Models & Services UI) always wins.
@@ -473,7 +473,7 @@ function clearConfigValidationResetNotice(): void {
  *   3. full schema defaults as the true last resort.
  *
  * Every success path records a `structuredClone` of the returned config as the
- * last-known-good safety net. Cloning is required because `loadConfig` mutates
+ * last-known-good safety net. Cloning is required because `getConfig` mutates
  * the returned object in place via `fillContextDefaultsForMissingKeys`.
  */
 function validateWithSchema(raw: Record<string, unknown>): AssistantConfig {
@@ -939,10 +939,10 @@ function emptyDefaultWorkspaceConfigMergeResult(): DefaultWorkspaceConfigMergeRe
  * Merge default workspace config from the file referenced by
  * CADET_DEFAULT_WORKSPACE_CONFIG_PATH into the workspace config on disk.
  *
- * Called once at daemon startup (before the first loadConfig()) so platform
+ * Called once at daemon startup (before the first getConfig()) so platform
  * overrides are persisted to disk before the daemon's first config read.
  * Schema defaults are no longer materialized into the file on load — the
- * in-memory `loadConfig()` cache applies them at access time instead.
+ * in-memory `getConfig()` cache applies them at access time instead.
  */
 /**
  * Whether an unconsumed onboarding overlay is waiting to be merged this boot.
@@ -1048,14 +1048,14 @@ export function mergeDefaultWorkspaceConfig(): DefaultWorkspaceConfigMergeResult
   return mergeResult;
 }
 
-export function loadConfig(): AssistantConfig {
+export function getConfig(): AssistantConfig {
   const freshCached = getCachedConfigIfFresh();
   if (freshCached) {
     return freshCached;
   }
 
   // Re-entrancy guard: log calls during loading (e.g. file-mode warning)
-  // can trigger loadConfig again. Return defaults to break the cycle
+  // can trigger getConfig again. Return defaults to break the cycle
   // instead of recursing to stack overflow.
   if (loading) {
     return cloneDefaultConfig();
@@ -1123,7 +1123,7 @@ export function loadConfig(): AssistantConfig {
     // explicitly set in `fileConfig`. This runs on every load — not just the
     // first — because the workspace config file is written by upstream
     // lifecycle steps (`mergeDefaultWorkspaceConfig`, `seedInferenceProfiles`)
-    // before `loadConfig()` is reached. Gating on `!configFileExisted` would
+    // before `getConfig()` is reached. Gating on `!configFileExisted` would
     // make the context defaults dead code on cloud-managed daemons whose
     // config.json was created by those earlier steps without service-mode
     // entries. Explicit user choices on disk are preserved because the helper
@@ -1234,14 +1234,10 @@ export function loadConfig(): AssistantConfig {
   }
 }
 
-export function getConfig(): AssistantConfig {
-  return loadConfig();
-}
-
 /**
  * Read-only config accessor: returns the current config without creating
  * directories or writing files. Reads config.json if it exists on disk;
- * returns schema defaults otherwise. Unlike `getConfig()` / `loadConfig()`,
+ * returns schema defaults otherwise. Unlike `getConfig()`,
  * this never calls `ensureDataDir()` or writes a default config to disk,
  * making it safe to call during CLI program construction before the
  * workspace-existence check runs.
@@ -1315,7 +1311,7 @@ export function loadRawConfig(): Record<string, unknown> {
   try {
     parsed = JSON.parse(readFileSync(configPath, "utf-8"));
   } catch (err) {
-    // Mirror loadConfig(): quarantine the corrupt file and return an empty
+    // Mirror getConfig(): quarantine the corrupt file and return an empty
     // object rather than throwing. This prevents /v1/config from surfacing
     // a 500 when the user's config.json is malformed.
     quarantineCorruptConfig(configPath, err);
@@ -1440,7 +1436,7 @@ export const _writeQuarantineNotice = writeQuarantineNotice;
  * Test-only alias for `recoverFromInvalidConfig`. The strip-and-reparse
  * cleanup (including sparse-array compaction) repairs every known real-world
  * config shape, so no config.json fixture reliably reaches the recovery
- * ladder through `loadConfig` — the ladder is defense-in-depth for schema
+ * ladder through `getConfig` — the ladder is defense-in-depth for schema
  * shapes the cleanup does not anticipate. Tests exercise its rungs (last
  * known good, per-section salvage, full defaults) by calling it directly.
  * Not for production use.

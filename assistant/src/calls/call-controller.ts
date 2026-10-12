@@ -17,7 +17,7 @@ import {
   getRequestByPendingQuestionOrNull,
   listGuardianRequestDeliveriesOrEmpty,
 } from "../channels/gateway-guardian-requests.js";
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import type {
   VoiceFrontModelConfig,
   VoiceProgressConfig,
@@ -365,7 +365,7 @@ export class CallController {
       opts?.resolveSynthesisLanguage ??
       (() => resolveTelephonySynthesisLanguage());
     this.frontModelConfig =
-      opts?.frontModelConfig ?? loadConfig().voice.frontModel;
+      opts?.frontModelConfig ?? getConfig().voice.frontModel;
     this.progressConfig =
       opts?.progressConfig ?? this.frontModelConfig.progress;
     this.progressNarrator =
@@ -936,7 +936,7 @@ export class CallController {
     }
     return Math.max(
       extensionMs,
-      loadConfig().calls.voice.utteranceEndMs +
+      getConfig().calls.voice.utteranceEndMs +
         PROVIDER_FINAL_FALLBACK_MARGIN_MS,
     );
   }

@@ -248,20 +248,18 @@ describe("completeCustomProfile", () => {
     expect(completeCustomProfile(fullDefault, mix)).toBe(mix);
   });
 
-  test("passes cloud profiles through untouched", () => {
-    const managed: ProfileEntry = { source: "cloud", topP: 0.9 };
+  test("passes cadet-provider profiles through untouched", () => {
+    const managed: ProfileEntry = { provider: "cadet", topP: 0.9 };
     expect(completeCustomProfile(fullDefault, managed)).toBe(managed);
   });
 
   test("preserves metadata fields", () => {
     const completed = completeCustomProfile(fullDefault, {
-      source: "user",
       label: "Fast drafts",
       description: "cheap and quick",
       status: "disabled",
       model: "claude-haiku-4-5-20251001",
     });
-    expect(completed.source).toBe("user");
     expect(completed.label).toBe("Fast drafts");
     expect(completed.description).toBe("cheap and quick");
     expect(completed.status).toBe("disabled");

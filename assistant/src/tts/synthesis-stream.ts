@@ -12,7 +12,7 @@ import {
   type CallAudioFormat,
   createStreamingEntry,
 } from "../calls/audio-store.js";
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { getPublicBaseUrl } from "../inbound/public-ingress-urls.js";
 import type {
   TtsProvider,
@@ -245,7 +245,7 @@ export function createAudioStoreSink(
 ): AudioStoreSink {
   const createEntry = options.createEntry ?? createStreamingEntry;
   const handle = createEntry(options.format);
-  const baseUrl = getPublicBaseUrl(loadConfig());
+  const baseUrl = getPublicBaseUrl(getConfig());
   const url = `${baseUrl}/v1/audio/${handle.audioId}`;
 
   let playUrlSent = false;

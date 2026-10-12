@@ -9,7 +9,6 @@ import { Tooltip } from "@mycadet/design-library/components/tooltip";
 
 import { catalogModelSupportsText } from "@/assistant/llm-model-catalog";
 import { resolveModelDisplayName } from "@/assistant/model-display";
-import { AUTO_PROFILE_NAME } from "@/assistant/profile-pickers";
 import { useTranslation } from "@/i18n";
 import type {
   InferenceProfileSummary,
@@ -64,19 +63,12 @@ export function ProfileRow({
   onDelete,
 }: ProfileRowProps) {
   const { t } = useTranslation("settings");
-  const isManaged = profile.source === "cloud";
+  const isManaged = profile.provider === "cadet";
   const isDisabled = profile.status === "disabled";
   const displayName = profile.label ?? profile.name;
 
   const subtitleParts: string[] = [];
-  if (profile.name === AUTO_PROFILE_NAME && isManaged) {
-    // The cloud Auto profile's own body is Balanced's model, which is only
-    // what a turn runs on when the router cannot judge it; naming that model
-    // here would read as the profile's identity. Describe the routing
-    // instead. A user-owned profile that shares the name is an ordinary
-    // profile and keeps its model.
-    subtitleParts.push(t("profileRow.autoRouting"));
-  } else if (profile.model) {
+  if (profile.model) {
     subtitleParts.push(
       resolveModelDisplayName(
         profile.provider ?? undefined,

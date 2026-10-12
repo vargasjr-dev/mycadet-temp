@@ -1,4 +1,4 @@
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { ConfigError } from "../util/errors.js";
@@ -23,7 +23,7 @@ export interface TwilioConfig {
  */
 export function resolveTwilioPhoneNumber(): string {
   try {
-    const config = loadConfig();
+    const config = getConfig();
     if (config.twilio?.phoneNumber) {
       return config.twilio.phoneNumber;
     }
@@ -35,7 +35,7 @@ export function resolveTwilioPhoneNumber(): string {
 }
 
 export async function getTwilioConfig(): Promise<TwilioConfig> {
-  const accountSid = loadConfig().twilio?.accountSid || "";
+  const accountSid = getConfig().twilio?.accountSid || "";
   const authToken =
     (await getSecureKeyAsync(credentialKey("twilio", "auth_token"))) || "";
   const phoneNumber = resolveTwilioPhoneNumber();

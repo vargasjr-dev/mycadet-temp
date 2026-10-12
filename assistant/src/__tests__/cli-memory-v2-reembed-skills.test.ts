@@ -4,7 +4,7 @@
  *
  * The CLI half mocks `cliIpcCall` and asserts the subcommand dispatches
  * to `memory_v2_reembed_skills` with an empty body. The route half uses
- * the real `loadConfig` — `memory.v2.enabled` is toggled via a per-test
+ * the real `getConfig` — `memory.v2.enabled` is toggled via a per-test
  * `config.json` fixture in the temp workspace. We mock only
  * `seedV2SkillEntries` so we can assert it was invoked without actually
  * embedding skills.
@@ -20,7 +20,7 @@ import { invalidateConfigCache } from "../config/loader.js";
 import { getWorkspaceDir } from "../util/layout.js";
 
 // ---------------------------------------------------------------------------
-// Module-level mocks — kept minimal. `loadConfig` and `getLogger` use their
+// Module-level mocks — kept minimal. `getConfig` and `getLogger` use their
 // real implementations because we have first-class test hooks (a per-test
 // workspace `config.json` for config) that exercise the same code paths
 // the route handler runs in production.
@@ -106,7 +106,7 @@ async function runCommand(args: string[]): Promise<{ exitCode: number }> {
 
 /**
  * Override `memory.v2.enabled` (and any other config paths) by writing a
- * workspace `config.json` that the real `loadConfig` will pick up.
+ * workspace `config.json` that the real `getConfig` will pick up.
  */
 function writeWorkspaceConfig(json: Record<string, unknown>): void {
   const workspace = getWorkspaceDir();

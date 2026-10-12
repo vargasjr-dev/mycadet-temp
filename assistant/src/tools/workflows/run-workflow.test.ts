@@ -61,7 +61,7 @@ function makeContext(): Parameters<typeof executeRunWorkflow>[1] {
 
 beforeEach(() => {
   // `manage_workflows list_profiles` reads the workspace active profile via
-  // loadConfig(); the effective profile names always include the code-catalog
+  // getConfig(); the effective profile names always include the code-catalog
   // defaults, so only the active-profile selection needs seeding.
   setConfig("llm", { activeProfile: "balanced" });
   startThrows = null;

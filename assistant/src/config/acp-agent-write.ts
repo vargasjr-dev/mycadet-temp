@@ -11,7 +11,7 @@ import { isPlainObject } from "../util/object.js";
  * `config set acp.agents.<id>.model null`. The deep-merge assigns that literal
  * `null` because the stored value is a scalar, and a SET writes it verbatim by
  * design. Both `command` and `model` are optional strings in `AcpConfigSchema`,
- * so a persisted `null` makes every later `loadConfig()` warn and take its
+ * so a persisted `null` makes every later `getConfig()` warn and take its
  * salvage path, dropping the whole `acp` section with the agents defined in it.
  * Clearing means removing the key, so drop it here on every write path.
  *

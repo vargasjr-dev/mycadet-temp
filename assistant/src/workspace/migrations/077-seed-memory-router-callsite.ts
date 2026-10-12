@@ -21,7 +21,7 @@ import type { WorkspaceMigration } from "./types.js";
  *   1. Existing workspace (config.json present): merge the seed into
  *      `llm.callSites` without overwriting a user-defined override.
  *   2. Fresh install (config.json absent): write a minimal starter
- *      config carrying just the seed; `loadConfig()` applies schema
+ *      config carrying just the seed; `getConfig()` applies schema
  *      defaults to the in-memory config after migrations run.
  *
  * Skipped when:

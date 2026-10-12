@@ -600,7 +600,6 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   // Cloud connections are write-protected: `seedCanonicalConnections` would
   // re-upsert them on the next daemon boot anyway, so a successful delete here
   // produces a confusing delete → reappear loop. Reject outright. Mirrors
-  // `rejectCloudProfileDeletion` for cloud profiles (which are similarly
   // re-overlaid by `seed-inference-profiles.ts` on boot).
   //
   // Gated on the row, not the name: an install predating the reserved name can

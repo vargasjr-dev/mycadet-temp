@@ -61,7 +61,6 @@ export function useInferenceProfileList(
         provider: profile.provider ?? null,
         model: profile.model ?? null,
         status: profile.status === "disabled" ? "disabled" : "active",
-        source: profile.source === "cloud" ? "cloud" : "user",
         provider_connection: profile.provider_connection,
         availability: null,
       }),

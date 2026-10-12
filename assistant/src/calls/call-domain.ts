@@ -6,7 +6,7 @@
  */
 
 import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approval-grants.js";
-import { loadConfig } from "../config/loader.js";
+import { getConfig } from "../config/loader.js";
 import { VALID_CALLER_IDENTITY_MODES } from "../config/schema.js";
 import type { AssistantConfig } from "../config/types.js";
 import { resolveCallbackUrl } from "../inbound/cloud-callback-registration.js";
@@ -401,7 +401,7 @@ export async function startCall(
   let sessionId: string | null = null;
 
   try {
-    const config = loadConfig();
+    const config = getConfig();
 
     // Resolve which phone number to use as caller ID
     const identityResult = await resolveCallerIdentity(
@@ -948,7 +948,7 @@ export async function startVerificationCall(
   let sessionId: string | null = null;
 
   try {
-    const config = loadConfig();
+    const config = getConfig();
     const provider = new TwilioVoiceProvider();
 
     // Resolve the assistant's Twilio number as the caller ID
@@ -1080,7 +1080,7 @@ export async function startInviteCall(
   let sessionId: string | null = null;
 
   try {
-    const config = loadConfig();
+    const config = getConfig();
     const provider = new TwilioVoiceProvider();
 
     // Resolve the assistant's Twilio number as the caller ID

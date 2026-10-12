@@ -25,7 +25,6 @@ interface ProfileSummary {
   provider: string | null;
   model: string | null;
   status: "active" | "disabled";
-  source: "cloud" | "user";
   provider_connection?: string;
   availability: { status: string; message?: string } | null;
   /** Static problem with the stored entry itself; absent when it checks out. */
@@ -180,23 +179,13 @@ export function attachProfilesSubcommand(inference: Command): void {
       return;
     }
     renderTable(
-      [
-        "NAME",
-        "LABEL",
-        "PROVIDER",
-        "MODEL",
-        "STATUS",
-        "SOURCE",
-        "AVAIL",
-        "CONFIG",
-      ],
+      ["NAME", "LABEL", "PROVIDER", "MODEL", "STATUS", "AVAIL", "CONFIG"],
       rows.map((p) => [
         p.name,
         p.label ?? "-",
         p.provider ?? "-",
         p.model ?? "-",
         p.status,
-        p.source,
         p.availability ? p.availability.status : "-",
         p.config_issue ? p.config_issue.code : "ok",
       ]),

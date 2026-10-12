@@ -57,25 +57,6 @@ export type MessageHoverActionsProps = {
 };
 
 /**
- * Which default profile the Auto profile picked for this row. Its own
- * component so the profile-label query mounts only for Auto rows, keeping
- * the rest of the hover row free of any query client (same reason the
- * bookmark toggle lives in `MessageBookmarkButton`).
- */
-function AutoRoutedProfileBadge({ profileKey }: { profileKey: string }) {
-  const { t } = useTranslation("chat");
-  const label = useProfileLabel(profileKey);
-  return (
-    <span
-      data-slot="auto-routed-profile"
-      className="select-none px-1 text-body-small-default text-[var(--content-tertiary)]"
-    >
-      {t("messageHoverActions.autoRouted", { profile: label })}
-    </span>
-  );
-}
-
-/**
  * Every control in the row is a 24px ghost `Button`; `expandOnMobile` is off
  * because the row is laid out for 24px boxes and the long-press sheet is the
  * touch affordance.
@@ -204,9 +185,6 @@ export function MessageHoverActions({
         {formatTimestamp(displayTimestamp)}
       </span>
       {workSummary}
-      {message.autoRoutedProfile && (
-        <AutoRoutedProfileBadge profileKey={message.autoRoutedProfile} />
-      )}
 
       {hasCopyableText && (
         <Button

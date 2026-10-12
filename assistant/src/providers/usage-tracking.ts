@@ -80,7 +80,7 @@ export class UsageTrackingProvider implements Provider {
         // A rerouted serve ran on the backup the wrapper chose, not on the
         // router's pick, so the origin applies only to the original route.
         ...(response.actualInferenceProfile === undefined
-          ? { overrideProfileOrigin: config.overrideProfileOrigin }
+          ? {}
           : { forceOverrideProfile: true }),
       });
       const providerName = response.actualProvider ?? this.inner.name;

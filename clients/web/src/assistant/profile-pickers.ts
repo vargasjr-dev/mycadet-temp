@@ -16,9 +16,6 @@ import type {
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
 
-/** The cloud profile the assistant routes per message (`AUTO_PROFILE_KEY`). */
-export const AUTO_PROFILE_NAME = "auto";
-
 /**
  * The subset of a profile a picker needs. Fields are typed from the generated
  * `ProfileEntry` so they cannot drift from the wire, and stay optional so
@@ -32,7 +29,6 @@ export interface ProfilePickerEntry {
   readonly model?: ProfileEntry["model"] | null;
   readonly mix?: ProfileEntry["mix"];
   readonly description?: ProfileEntry["description"];
-  readonly source?: ProfileEntry["source"];
 }
 
 /**
@@ -236,12 +232,7 @@ export function managedProfileModelName(
   p: ProfilePickerEntry,
   connections?: ProviderConnection[],
 ): string | null {
-  if (
-    p.source !== "cloud" ||
-    p.mix != null ||
-    !p.model ||
-    p.name === AUTO_PROFILE_NAME
-  ) {
+  if (p.provider !== "cadet" || p.mix != null || !p.model) {
     return null;
   }
   return resolveModelDisplayName(p.provider ?? undefined, p.model, connections);

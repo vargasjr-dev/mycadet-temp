@@ -55,12 +55,10 @@ import type { AssistantEventEnvelope } from "../../../api/index.js";
 import {
   getConfig,
   invalidateConfigCache,
-  loadConfig,
   loadRawConfig,
   setNestedValue,
 } from "../../../config/loader.js";
 import { AssistantConfigSchema } from "../../../config/schema.js";
-import { LLMConfigBase } from "../../../config/schemas/llm.js";
 import type { ConversationCreateType } from "../../../persistence/conversation-types.js";
 import {
   getDb,
@@ -846,49 +844,6 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     seedRawConfig();
   });
 
-  describe("fallbackProfile write protection", () => {
-    beforeEach(() => {
-      const llm = rawConfigFixture.llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      };
-      llm.profiles.backup = {
-        provider: "anthropic",
-        model: "claude-sonnet-4-6",
-      };
-      seedRawConfig();
-    });
-
-    test("rejects a custom fallbackProfile without writing", async () => {
-      await expect(
-        replaceProfileRoute.handler({
-          pathParams: { name: "custom" },
-          body: {
-            provider: "anthropic",
-            model: "claude-sonnet-4-6",
-            fallbackProfile: "backup",
-          },
-        }),
-      ).rejects.toThrow(/Automatic fallbacks are code-owned/);
-      expect(persistedProfile("custom").fallbackProfile).toBeUndefined();
-      expect(initializeProvidersCalls).toBe(0);
-    });
-
-    test("rejects a custom pointer at a cloud backup name", async () => {
-      await expect(
-        replaceProfileRoute.handler({
-          pathParams: { name: "custom" },
-          body: {
-            provider: "anthropic",
-            model: "claude-sonnet-4-6",
-            fallbackProfile: "balanced-backup",
-          },
-        }),
-      ).rejects.toThrow(/Automatic fallbacks are code-owned/);
-      expect(persistedProfile("custom").fallbackProfile).toBeUndefined();
-      expect(initializeProvidersCalls).toBe(0);
-    });
-  });
-
   test("owns contextWindow maxInputTokens while preserving non-UI profile leaves", async () => {
     const result = await replaceProfileRoute.handler({
       pathParams: { name: "custom" },
@@ -907,20 +862,14 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
 
     expect(savedProfile.provider).toBe("openai");
     expect(savedProfile.model).toBe("gpt-5.5");
-    // Write normalization completes the entry against llm.default (schema
-    // defaults here — the fixture has none), so UI-cleared fields land as
-    // explicit values instead of inherit-by-absence.
-    const schemaDefault = LLMConfigBase.parse({});
-    expect(savedProfile.maxTokens).toBe(schemaDefault.maxTokens);
+    // The entry replaces verbatim; contextWindow is route-owned — the
+    // non-UI leaves survive the write, the UI-owned maxInputTokens does
+    // not (it only lands when the body carries it).
+    expect(savedProfile.maxTokens).toBeUndefined();
     expect(savedProfile.contextWindow).toEqual({
-      ...schemaDefault.contextWindow,
       targetBudgetRatio: 0.3,
       summaryBudgetRatio: 0.08,
-      overflowRecovery: {
-        ...schemaDefault.contextWindow.overflowRecovery,
-        enabled: true,
-        maxAttempts: 4,
-      },
+      overflowRecovery: { enabled: true, maxAttempts: 4 },
     });
     expect(savedProfile.openrouter).toEqual({ only: ["anthropic"] });
   });
@@ -945,17 +894,13 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       }
     ).profiles.custom;
 
-    const schemaDefault = LLMConfigBase.parse({});
+    // Only the maxInputTokens override is taken; the non-UI leaves ride
+    // from the existing entry.
     expect(savedProfile.contextWindow).toEqual({
-      ...schemaDefault.contextWindow,
       maxInputTokens: 150000,
       targetBudgetRatio: 0.3,
       summaryBudgetRatio: 0.08,
-      overflowRecovery: {
-        ...schemaDefault.contextWindow.overflowRecovery,
-        enabled: true,
-        maxAttempts: 4,
-      },
+      overflowRecovery: { enabled: true, maxAttempts: 4 },
     });
     expect(savedProfile.openrouter).toEqual({ only: ["anthropic"] });
   });
@@ -1137,24 +1082,21 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
 
   describe("cloud profile guard", () => {
     beforeEach(() => {
-      // Seed two managed-source profiles alongside the existing custom one.
-      // Every cloud profile name (including the flag-gated os-beta) is
-      // invariant while its entry is managed-source: fully read-only except
-      // the disabled → active status transition.
+      // Seed two managed profiles alongside the existing custom one. A
+      // cadet-provider entry under a managed name is read-only except the
+      // disabled → active status transition (the up-front route check).
       const profiles = (
         rawConfigFixture.llm as { profiles: Record<string, unknown> }
       ).profiles;
       profiles["balanced"] = {
-        source: "cloud",
-        provider: "anthropic",
+        provider: "cadet",
         model: "claude-sonnet-4-6",
         label: "Balanced",
         status: "active",
       };
       profiles["os-beta"] = {
-        source: "cloud",
-        provider: "together",
-        model: "zai-org/GLM-5.2",
+        provider: "cadet",
+        model: "claude-sonnet-4-6",
         label: "OS Beta",
         status: "active",
       };
@@ -1207,9 +1149,8 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
 
       expect(savedProfile.status).toBe("active");
       // Seed fields preserved.
-      expect(savedProfile.provider).toBe("together");
-      expect(savedProfile.model).toBe("zai-org/GLM-5.2");
-      expect(savedProfile.source).toBe("cloud");
+      expect(savedProfile.provider).toBe("cadet");
+      expect(savedProfile.model).toBe("claude-sonnet-4-6");
     });
 
     // The full commit-time rejection matrix for invariant cloud profiles
@@ -1335,189 +1276,34 @@ describe("PATCH /v1/config fallbackProfile write protection", () => {
   });
 });
 
-describe("custom profile write normalization (complete overrides)", () => {
-  const configPatchRoute = ROUTES.find(
-    (r) => r.operationId === "config_patch",
-  )!;
-  const configSetRoute = ROUTES.find((r) => r.operationId === "config_set")!;
-
-  const distinctiveDefault = {
-    provider: "anthropic",
-    model: "claude-opus-4-8",
-    maxTokens: 12345,
-    temperature: 0.7,
-    logitBias: "suppress-cjk",
-  };
-
+describe("profile writes are schema-canonical", () => {
   beforeEach(() => {
     rawConfigFixture = {
       llm: {
-        default: structuredClone(distinctiveDefault),
+        default: { provider: "anthropic", model: "claude-opus-4-8" },
         profiles: {
-          partial: { source: "user", model: "claude-haiku-4-5-20251001" },
-        },
-      },
-    };
-    seedRawConfig();
-  });
-
-  const savedProfiles = () =>
-    (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles;
-
-  test("PUT of a partial body stores a complete profile", async () => {
-    await replaceProfileRoute.handler({
-      pathParams: { name: "mine" },
-      body: { model: "claude-haiku-4-5-20251001" },
-    });
-    const saved = savedProfiles().mine;
-    expect(saved.model).toBe("claude-haiku-4-5-20251001");
-    expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
-    // Non-null default sampling is baked in; logitBias never is.
-    expect(saved.temperature).toBe(0.7);
-    expect(saved.logitBias).toBeUndefined();
-    expect(saved.thinking).toBeDefined();
-    expect(saved.contextWindow).toBeDefined();
-  });
-
-  test("PATCH creating a partial profile stores it complete", async () => {
-    await configPatchRoute.handler({
-      body: {
-        llm: {
-          default: structuredClone(distinctiveDefault),
-          profiles: {
-            mine: { source: "user", model: "claude-haiku-4-5-20251001" },
+          partial: {
+            model: "claude-haiku-4-5-20251001",
+            futureField: "keep-me",
           },
         },
       },
-    });
-    const saved = savedProfiles().mine;
-    expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
-    expect(saved.temperature).toBe(0.7);
-    expect(saved.logitBias).toBeUndefined();
-  });
-
-  test("SET on a profile leaf completes the whole entry", async () => {
-    await configSetRoute.handler({
-      body: { path: "llm.profiles.partial.maxTokens", value: 999 },
-    });
-    const saved = savedProfiles().partial;
-    expect(saved.maxTokens).toBe(999);
-    expect(saved.provider).toBe("anthropic");
-    expect(saved.temperature).toBe(0.7);
-    expect(saved.model).toBe("claude-haiku-4-5-20251001");
-  });
-
-  test("an unrelated write leaves untouched partial profiles byte-identical", async () => {
-    await configSetRoute.handler({
-      body: { path: "heartbeat.activeHoursStart", value: 9 },
-    });
-    expect(savedProfiles().partial).toEqual({
-      source: "user",
-      model: "claude-haiku-4-5-20251001",
-    });
-  });
-
-  test("nested unknown keys survive completion of a touched entry", async () => {
-    (
-      rawConfigFixture.llm as { profiles: Record<string, unknown> }
-    ).profiles.partial = {
-      source: "user",
-      model: "claude-haiku-4-5-20251001",
-      contextWindow: { futureField: "keep-me", maxInputTokens: 111 },
     };
     seedRawConfig();
-    await configSetRoute.handler({
-      body: { path: "llm.profiles.partial.maxTokens", value: 999 },
-    });
-    const saved = savedProfiles().partial;
-    const contextWindow = saved.contextWindow as Record<string, unknown>;
-    // Schema-canonical saves strip keys the schema doesn't know.
-    expect(contextWindow.futureField).toBeUndefined();
-    expect(contextWindow.maxInputTokens).toBe(111);
-    expect(saved.provider).toBe("anthropic");
   });
 
   test("unknown profile keys are stripped by the schema parse", async () => {
-    (
-      rawConfigFixture.llm as { profiles: Record<string, unknown> }
-    ).profiles.partial = {
-      source: "user",
-      model: "claude-haiku-4-5-20251001",
-      futureField: "keep-me",
-    };
-    seedRawConfig();
+    const configSetRoute = ROUTES.find((r) => r.operationId === "config_set")!;
     await configSetRoute.handler({
       body: { path: "llm.profiles.partial.maxTokens", value: 999 },
     });
-    const saved = savedProfiles().partial;
+    const saved = (
+      loadRawConfig().llm as {
+        profiles: Record<string, Record<string, unknown>>;
+      }
+    ).profiles.partial;
     expect(saved.futureField).toBeUndefined();
     expect(saved.maxTokens).toBe(999);
-    expect(saved.provider).toBe("anthropic");
-  });
-
-  test("a bogus managed source on a non-catalog name is normalized and completed", async () => {
-    await replaceProfileRoute.handler({
-      pathParams: { name: "mine" },
-      body: { source: "cloud", model: "claude-haiku-4-5-20251001" },
-    });
-    const saved = savedProfiles().mine;
-    expect(saved.source).toBe("user");
-    expect(saved.provider).toBe("anthropic");
-    expect(saved.maxTokens).toBe(12345);
-  });
-
-  test("a cloud status re-enable stays a thin stub", async () => {
-    (
-      rawConfigFixture.llm as { profiles: Record<string, unknown> }
-    ).profiles.balanced = { source: "cloud", status: "disabled" };
-    seedRawConfig();
-    await replaceProfileRoute.handler({
-      pathParams: { name: "balanced" },
-      body: { status: null },
-    });
-    expect(savedProfiles().balanced).toEqual({ source: "cloud" });
-  });
-
-  test("a mix profile write is not completed", async () => {
-    await replaceProfileRoute.handler({
-      pathParams: { name: "ab" },
-      body: {
-        label: "A/B",
-        mix: [
-          { profile: "balanced", weight: 1 },
-          { profile: "cost-optimized", weight: 1 },
-        ],
-      },
-    });
-    const saved = savedProfiles().ab;
-    expect(saved.mix).toBeDefined();
-    expect(saved.provider).toBeUndefined();
-    expect(saved.model).toBeUndefined();
-    expect(saved.maxTokens).toBeUndefined();
-  });
-
-  test("re-writing a completed profile is idempotent", async () => {
-    // Deterministic connection state: the PUT handler derives a connection
-    // for provider-carrying bodies, so both writes must see the same rows.
-    getDb().delete(providerConnections).run();
-    await replaceProfileRoute.handler({
-      pathParams: { name: "mine" },
-      body: { provider: "anthropic", model: "claude-haiku-4-5-20251001" },
-    });
-    const first = structuredClone(savedProfiles().mine);
-    rawConfigFixture = structuredClone(loadRawConfig());
-    seedRawConfig();
-    await replaceProfileRoute.handler({
-      pathParams: { name: "mine" },
-      body: first as Record<string, unknown>,
-    });
-    expect(savedProfiles().mine).toEqual(first);
   });
 });
 
@@ -1809,7 +1595,6 @@ describe("config GET serves profiles verbatim", () => {
     const body = await configGetRoute.handler({});
     const profiles = wireProfiles(body);
 
-    expect(profiles.balanced!.source).toBe("cloud");
     expect(profiles.balanced!.provider).toBe("fireworks");
     expect(profiles.balanced!.model).toBe("accounts/fireworks/models/glm-5p2");
     expect(profiles.custom!.provider).toBe("anthropic");
@@ -2013,7 +1798,7 @@ describe("config writes to a per-agent acp entry", () => {
 
     expect("model" in agentEntry(loadRawConfig())).toBe(false);
     expect(AssistantConfigSchema.safeParse(loadRawConfig()).success).toBe(true);
-    expect(loadConfig().acp.agents.claude?.model).toBeUndefined();
+    expect(getConfig().acp.agents.claude?.model).toBeUndefined();
   });
 
   test("a nulled per-agent command is dropped on both write paths", async () => {
@@ -2023,7 +1808,7 @@ describe("config writes to a per-agent acp entry", () => {
 
     expect("command" in agentEntry(loadRawConfig())).toBe(false);
     expect(AssistantConfigSchema.safeParse(loadRawConfig()).success).toBe(true);
-    expect(loadConfig().acp.agents.claude?.command).toBeUndefined();
+    expect(getConfig().acp.agents.claude?.command).toBeUndefined();
 
     seedRawConfig();
     await patchRoute.handler({
@@ -2034,7 +1819,7 @@ describe("config writes to a per-agent acp entry", () => {
     expect("command" in patched).toBe(false);
     expect(patched.model).toBe("opus");
     expect(AssistantConfigSchema.safeParse(loadRawConfig()).success).toBe(true);
-    expect(loadConfig().acp.agents.claude?.command).toBeUndefined();
+    expect(getConfig().acp.agents.claude?.command).toBeUndefined();
   });
 
   test("a nulled command on an id with no bundled profile is rejected", async () => {
@@ -2065,7 +1850,7 @@ describe("config writes to a per-agent acp entry", () => {
     const entry = agentEntry(loadRawConfig());
     expect("command" in entry).toBe(false);
     expect(AssistantConfigSchema.safeParse(loadRawConfig()).success).toBe(true);
-    expect(loadConfig().acp.agents.claude?.model).toBe("sonnet");
+    expect(getConfig().acp.agents.claude?.model).toBe("sonnet");
   });
 });
 
@@ -2220,7 +2005,7 @@ describe("persisted chat settings", () => {
 
     // Nulled leaves reset to the schema default on the canonical save (the
     // read-time recovery had already cleaned the stored nulls).
-    expect(loadConfig().conversations.autoArchive).toEqual({
+    expect(getConfig().conversations.autoArchive).toEqual({
       enabled: false,
       afterDays: 7,
     });
@@ -2272,11 +2057,11 @@ describe("persisted chat settings", () => {
         notifications: { newMessageEnabled: false },
       });
       invalidateConfigCache();
-      expect(loadConfig().conversations.autoArchive).toEqual({
+      expect(getConfig().conversations.autoArchive).toEqual({
         enabled: true,
         afterDays: 30,
       });
-      expect(loadConfig().notifications.newMessageEnabled).toBe(false);
+      expect(getConfig().notifications.newMessageEnabled).toBe(false);
       expect(await getRoute.handler({})).toEqual(result);
       expect(initializeProvidersCalls).toBe(1);
       expect(clearEmbeddingBackendCacheCalls).toBe(1);
@@ -2308,11 +2093,11 @@ describe("persisted chat settings", () => {
     });
     // The nulled leaves restore to the schema defaults on the canonical
     // save; the unknown sibling key (futureOption) doesn't persist.
-    expect(loadConfig().conversations.autoArchive).toEqual({
+    expect(getConfig().conversations.autoArchive).toEqual({
       enabled: false,
       afterDays: 7,
     });
-    expect(loadConfig().notifications.newMessageEnabled).toBe(true);
+    expect(getConfig().notifications.newMessageEnabled).toBe(true);
     expect(
       "futureOption" in
         (loadRawConfig().conversations as Record<string, unknown>),
@@ -2330,11 +2115,11 @@ describe("persisted chat settings", () => {
     });
     // The nulled subtrees restore to the schema defaults on the canonical
     // save — the same values a fresh read would materialize.
-    expect(loadConfig().conversations.autoArchive).toEqual({
+    expect(getConfig().conversations.autoArchive).toEqual({
       enabled: false,
       afterDays: 7,
     });
-    expect(loadConfig().notifications.newMessageEnabled).toBe(true);
+    expect(getConfig().notifications.newMessageEnabled).toBe(true);
   });
 
   test.each([
@@ -2416,7 +2201,7 @@ describe("persisted chat settings", () => {
     await setRoute.handler({
       body: { path: "notifications.newMessageEnabled", value: true },
     });
-    expect(loadConfig().notifications.newMessageEnabled).toBe(true);
+    expect(getConfig().notifications.newMessageEnabled).toBe(true);
     // Schema-canonical saves strip keys the schema doesn't know.
     expect(
       "futureOption" in
