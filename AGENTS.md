@@ -29,7 +29,7 @@ Defend technical positions with evidence. Don't flip-flop to placate the user �
 ```bash
 bun install                          # Install workspace dependencies (any directory works)
 cd assistant && bunx tsc --noEmit    # Type-check
-cd assistant && bun run typecheck:fast  # Fast type-check using tsgo
+cd assistant && bun run typecheck     # Type-check (tsgo — the native compiler)
 cd assistant && bun test src/path/to/changed.test.ts  # Run tests
 cd assistant && bun run lint         # Lint
 ```
@@ -84,7 +84,7 @@ The full test suite is large and will hang or timeout if run unscoped. **Never r
 - After making changes, run only the tests relevant to what you changed:
   `cd assistant && bun test src/path/to/file.test.ts`
 - To run tests matching a pattern: `cd assistant && bun test src/path/to/file.test.ts --grep "pattern"`
-- Use `bunx tsc --noEmit` for full-project type-checking instead of running all tests. In memory-constrained environments, use `bun run typecheck:fast` instead.
+- Use `bun run typecheck` (tsgo — the TypeScript native compiler, several times faster than `tsc` with a fraction of the CPU and memory) for full-project type-checking instead of running all tests.
 - **Regression tests for unfixed bugs**: When adding tests that reproduce a bug or document expected behavior before the fix lands, use `test.todo("description", () => {})` so mainline stays green. Never commit normally-failing `test(...)` cases — red CI blocks merges and erodes signal. Convert `test.todo` to `test` when the implementation PR lands.
 
 ## PR Workflow

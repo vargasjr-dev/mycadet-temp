@@ -24,8 +24,7 @@
     "lint:unused": "knip --include files,dependencies,unlisted",
     "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
     "test": "bun run scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit",
-    "typecheck:fast": "bunx tsgo --noEmit"
+    "typecheck": "bunx tsgo --noEmit"
   },
   "author": "Cadet AI",
   "license": "MIT",

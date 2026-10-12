@@ -1721,10 +1721,8 @@ jobs:
         run: bun run meta/sync-bundled-copies.ts
 
       - name: Typecheck
-        run: bunx tsc --noEmit
+        run: bun run typecheck
         working-directory: assistant
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192
 
   ci-assistant-tests:
     needs: extract-version
