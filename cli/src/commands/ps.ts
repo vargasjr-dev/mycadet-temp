@@ -33,7 +33,6 @@ import {
   isPidAlive,
   parseRemotePs,
   readPidFile,
-  truncateCommand,
 } from "../lib/orphan-detection";
 import { pgrepExact } from "../lib/pgrep";
 import { probePort } from "../lib/port-probe";
@@ -611,7 +610,7 @@ async function getAssistantProcessRows(
     name: classifyProcess(p.command),
     type: ASSISTANT_TYPE,
     status: withStatusEmoji("running"),
-    info: `PID ${p.pid} | ${truncateCommand(p.command)}`,
+    info: `PID ${p.pid} | ${p.command.slice(0, 80)}`,
   }));
 }
 
