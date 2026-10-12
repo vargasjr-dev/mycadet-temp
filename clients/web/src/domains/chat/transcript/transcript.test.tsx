@@ -689,6 +689,7 @@ describe("Transcript", () => {
     globalThis.IntersectionObserver = class implements IntersectionObserver {
       root = null;
       rootMargin = "0px";
+      scrollMargin = "0px";
       thresholds = [0];
       constructor() {
         observerCount += 1;
@@ -795,6 +796,7 @@ describe("Transcript", () => {
     globalThis.IntersectionObserver = class implements IntersectionObserver {
       readonly root = null;
       readonly rootMargin = "0px";
+      readonly scrollMargin = "0px";
       readonly thresholds = [0];
       constructor() {
         observerCount += 1;
