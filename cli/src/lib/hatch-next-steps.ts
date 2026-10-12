@@ -1,12 +1,8 @@
-export function logHatchNextSteps(
-  log: (message: string) => void,
-  verbose = false,
-): void {
+export function logHatchNextSteps(log: (message: string) => void): void {
   log("Next steps:");
-  log("  cadet client");
-  if (verbose) {
-    log('  cadet message "hello"');
-    log("  cadet events");
-  }
+  log("  - Run `cadet client` to interact with your cadet via the terminal");
+  log(
+    "  - Run `cadet tunnel` to make your cadet publicly accessible and interact with it via the browser",
+  );
   log("");
 }

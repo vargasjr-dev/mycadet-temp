@@ -21,6 +21,7 @@ import {
   setActiveAssistant,
 } from "./assistant-config.js";
 import type { AssistantEntry } from "./assistant-config.js";
+import { green, yellow } from "./color.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
   generateLocalSigningKey,
@@ -379,14 +380,18 @@ export async function hatchLocal(
       ) {
         const delayMs = 2000 * 2 ** (attempt - 1);
         reporter.error(
-          `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
+          yellow(
+            `⚠️  Guardian token lease attempt ${attempt}/${maxLeaseAttempts} failed — retrying in ${delayMs / 1000}s: ${err}`,
+          ),
         );
         await new Promise((r) => setTimeout(r, delayMs));
       } else {
         reporter.error(
-          `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
-            `   The assistant is running but guardian-token.json was not written.\n` +
-            `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
+          yellow(
+            `⚠️  Guardian token lease failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxLeaseAttempts} attempts`}: ${err}\n` +
+              `   The assistant is running but guardian-token.json was not written.\n` +
+              `   Run \`cadet restart ${JSON.stringify(instanceName)} --repair-guardian\` to re-lease a token.`,
+          ),
         );
       }
     }
@@ -398,8 +403,10 @@ export async function hatchLocal(
 
   if (provider !== undefined && provider !== null && !guardianAccessToken) {
     reporter.error(
-      `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
-        `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
+      yellow(
+        `⚠️  Provider credential setup skipped because the guardian token was not leased.\n` +
+          `   The assistant is still hatched. Run \`cadet setup --provider ${provider}\` after fixing the connection.`,
+      ),
     );
   } else if (provider !== undefined) {
     await configureHatchProviderApiKey({
@@ -429,7 +436,7 @@ export async function hatchLocal(
   }
 
   reporter.log("");
-  reporter.log(`✅ Local assistant hatched!`);
+  reporter.log(green(`✅ Local assistant hatched!`, process.stdout));
   printInstanceDetails(
     {
       name: instanceName,
@@ -438,7 +445,7 @@ export async function hatchLocal(
     },
     (message) => reporter.log(message),
   );
-  logHatchNextSteps((message) => reporter.log(message), verbose);
+  logHatchNextSteps((message) => reporter.log(message));
 
   const result: HatchLocalResult = {
     assistantId: instanceName,

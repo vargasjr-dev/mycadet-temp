@@ -14,3 +14,7 @@ export function red(text: string, stream?: NodeJS.WriteStream): string {
 export function yellow(text: string, stream?: NodeJS.WriteStream): string {
   return colorize("\x1b[33m", text, stream);
 }
+
+export function green(text: string, stream?: NodeJS.WriteStream): string {
+  return colorize("\x1b[32m", text, stream);
+}
