@@ -34,8 +34,8 @@ rm -rf "${STORE}"/*musl* 2>/dev/null || true
 # dev laptops, containers, docker image builds — it is dead weight, so we
 # prune it right after install.
 #
-# Escape hatch: run `CADET_KEEP_PACKAGING=1 bun install` when you need to
-# package locally; `rm -rf node_modules && bun install` restores afterwards.
+# Escape hatch: pretend to be CI with `CI=true bun install` when you need
+# to package locally; `rm -rf node_modules && bun install` restores afterwards.
 #
 # Scope: ONLY the installer-factory packages. We deliberately keep
 # electron@*, electron-vite, @electron/{get,asar,fuses}, electron-store,
@@ -45,8 +45,8 @@ rm -rf "${STORE}"/*musl* 2>/dev/null || true
 # Reversible: nothing here changes the lockfile; a clean
 # `rm -rf node_modules && bun install` (or CI) brings the toolchain back.
 # ---------------------------------------------------------------------------
-if [[ -z "${CI:-}" && -z "${CADET_KEEP_PACKAGING:-}" ]]; then
-  echo "[postinstall] CI not detected — pruning electron packaging armada (CADET_KEEP_PACKAGING=1 to keep)"
+if [[ -z "${CI:-}" ]]; then
+  echo "[postinstall] CI not detected — pruning electron packaging armada (CI=true bun install to keep)"
   rm -rf "${STORE}"/app-builder-bin@* \
          "${STORE}"/app-builder-lib@* \
          "${STORE}"/builder-util@* \
@@ -60,5 +60,5 @@ if [[ -z "${CI:-}" && -z "${CADET_KEEP_PACKAGING:-}" ]]; then
          "${STORE}"/@electron+universal@* \
          "${STORE}"/@electron+rebuild@* 2>/dev/null || true
 else
-  echo "[postinstall] CI/CADET_KEEP_PACKAGING detected — keeping electron packaging armada"
+  echo "[postinstall] CI detected — keeping electron packaging armada"
 fi
