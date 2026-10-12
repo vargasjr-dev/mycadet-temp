@@ -13,7 +13,7 @@ import {
   isUserCancelledAuthError,
   nativeAuthErrorDetail,
   nativeAuthErrorKey,
-} from "@web/domains/account/native-auth-error";
+} from "@app/domains/account/native-auth-error";
 import { withPreservedAttribution } from "@web/domains/account/social-auth";
 import { captureError } from "@web/lib/error-reporting/capture-error";
 import { startNativeLogin, useIsNativePlatform } from "@web/runtime/native-auth";
