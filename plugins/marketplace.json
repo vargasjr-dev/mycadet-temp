@@ -9,20 +9,20 @@
       "name": "admin-copilot",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/admin-copilot",
+        "repo": "vellum-ai/admin-copilot",
         "ref": "d30596aa50a1c702f5d74e05c45bd965d14e2107"
       },
       "description": "Proactive chief-of-staff: a morning digest, propose-then-confirm inbox triage, calendar prep, and a weekly competitor brief.",
       "category": "productivity",
-      "homepage": "https://github.com/vargasjr-dev/admin-copilot",
+      "homepage": "https://github.com/vellum-ai/admin-copilot",
       "license": "MIT",
-      "icon": "\ud83e\uddd1\u200d\ud83d\udcbc"
+      "icon": "🧑‍💼"
     },
     {
       "name": "agent-wrapped",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/agent-wrapped",
+        "repo": "vellum-ai/agent-wrapped",
         "ref": "7e5e7971a38a90120cee9b1e393b733622e24d17"
       },
       "description": "Your agent's year in review: conversations, days together, memories formed, swear count, top topics, and the receipt (total tokens + LLM calls). Works with Cadet agents and Claude Code. Presents the stats as data in chat and publishes a shareable page at agent-wrapped.com.",
@@ -30,7 +30,7 @@
       "license": "MIT",
       "submittedBy": "marina",
       "homepage": "https://agent-wrapped.com",
-      "icon": "\ud83c\udf81"
+      "icon": "🎁"
     },
     {
       "name": "ai-hero-engineer-kit",
@@ -39,11 +39,11 @@
         "repo": "marinatrajk/ai-hero-engineer-kit",
         "ref": "18d33c62b15a3e2cc22dc070723fe3077749dcec"
       },
-      "description": "Five engineering skills adapted from Matt Pocock's '5 Agent Skills I Use Every Day' \u2014 plans, PRDs, vertical-slice issues, TDD loop, and codebase deepening in one install.",
+      "description": "Five engineering skills adapted from Matt Pocock's '5 Agent Skills I Use Every Day' — plans, PRDs, vertical-slice issues, TDD loop, and codebase deepening in one install.",
       "category": "developer",
       "homepage": "https://github.com/marinatrajk/ai-hero-engineer-kit",
       "license": "MIT",
-      "icon": "\ud83e\uddf0"
+      "icon": "🧰"
     },
     {
       "name": "amex-perk-reminder",
@@ -56,33 +56,33 @@
       "category": "lifestyle",
       "homepage": "https://github.com/AnitaKirkovska/amex-perk-reminder",
       "license": "MIT",
-      "icon": "\ud83d\udcb3"
+      "icon": "💳"
     },
     {
       "name": "astrology-horoscope",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/astrology-horoscope",
+        "repo": "vellum-ai/astrology-horoscope",
         "ref": "d226ce2e0a021e12cbf89ca7313f7c76a0bd8e39"
       },
       "description": "Western tropical natal chart and transit computation. Local ephemeris (astronomy-engine, no API keys) for planet positions, ascendant/midheaven, whole-sign houses, and aspects, plus a natal-reading skill that interprets the raw chart into a readable report.",
       "category": "hobby",
-      "homepage": "https://github.com/vargasjr-dev/astrology-horoscope",
+      "homepage": "https://github.com/vellum-ai/astrology-horoscope",
       "license": "MIT",
-      "icon": "\ud83d\udd2e"
+      "icon": "🔮"
     },
     {
       "name": "battleship",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/battleship",
+        "repo": "vellum-ai/battleship",
         "ref": "32391ea3af71597b7507bb710bd29ab8308a4604"
       },
       "description": "Play Battleship against your assistant. Fire shots, track hits and misses, and sink the fleet before the assistant sinks yours.",
       "category": "hobby",
-      "homepage": "https://github.com/vargasjr-dev/battleship",
+      "homepage": "https://github.com/vellum-ai/battleship",
       "license": "MIT",
-      "icon": "\u2693"
+      "icon": "⚓"
     },
     {
       "name": "caveman",
@@ -95,32 +95,32 @@
       "category": "productivity",
       "homepage": "https://github.com/JuliusBrussee/caveman",
       "license": "MIT",
-      "icon": "\ud83e\uddb4"
+      "icon": "🦴"
     },
     {
       "name": "coffee-aficionado",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/coffee-aficionado",
+        "repo": "vellum-ai/coffee-aficionado",
         "ref": "facd5a03979605edc894ea61e9a45f7b6a53214a"
       },
       "description": "Find great coffee beans and machines matched to your taste profile, budget, and kitchen. Persistent memory learns your preferences over time.",
       "category": "lifestyle",
-      "homepage": "https://github.com/vargasjr-dev/coffee-aficionado",
+      "homepage": "https://github.com/vellum-ai/coffee-aficionado",
       "license": "MIT"
     },
     {
       "name": "cofounder",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/cofounder",
+        "repo": "vellum-ai/cofounder",
         "ref": "547adf1c0db0cbb32855ff0e4ef46c056248bdea"
       },
       "description": "AI co-founder that remembers your company context, challenges your thinking, and tracks your decisions.",
       "category": "productivity",
-      "homepage": "https://github.com/vargasjr-dev/cofounder",
+      "homepage": "https://github.com/vellum-ai/cofounder",
       "license": "MIT",
-      "icon": "\ud83e\udd1d"
+      "icon": "🤝"
     },
     {
       "name": "cognee",
@@ -133,7 +133,7 @@
       "description": "Cognee knowledge graph memory for Cadet Assistant: session-aware storage, auto-routing recall, and persistent learning across sessions. Supports local mode and Cognee Cloud.",
       "category": "memory",
       "homepage": "https://github.com/topoteretes/cognee-integrations/tree/main/integrations/mycadet",
-      "icon": "\ud83d\udd78\ufe0f"
+      "icon": "🕸️"
     },
     {
       "name": "contractor-missed-call-dispatcher",
@@ -186,7 +186,7 @@
       "category": "marketing",
       "homepage": "https://github.com/creatorland/creatorland-mcp-skills/tree/main/plugins/creatorland-data",
       "license": "MIT",
-      "icon": "\ud83c\udfa8"
+      "icon": "🎨"
     },
     {
       "name": "dynamic-notch",
@@ -199,7 +199,7 @@
       "category": "interface",
       "homepage": "https://github.com/AnitaKirkovska/dynamic-notch",
       "license": "MIT",
-      "icon": "\ud83d\udcbb"
+      "icon": "💻"
     },
     {
       "name": "ecommerce-order-supporter",
@@ -225,33 +225,33 @@
       "category": "productivity",
       "homepage": "https://github.com/AnitaKirkovska/family-briefing",
       "license": "MIT",
-      "icon": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66"
+      "icon": "👨‍👩‍👧‍👦"
     },
     {
       "name": "fitness-companion",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/fitness-companion",
+        "repo": "vellum-ai/fitness-companion",
         "ref": "fe4e02e2b514207a37f2a7e9f9c500ec8a73edcb"
       },
       "description": "Fitness and nutrition companion. Logs meals, workouts, and weight; looks up nutrition data from OpenFoodFacts; calculates macro targets; and injects daily fitness context into every conversation.",
       "category": "health",
-      "homepage": "https://github.com/vargasjr-dev/fitness-companion",
+      "homepage": "https://github.com/vellum-ai/fitness-companion",
       "license": "MIT",
-      "icon": "\ud83d\udcaa"
+      "icon": "💪"
     },
     {
       "name": "git-workflow",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/git-workflow",
+        "repo": "vellum-ai/git-workflow",
         "ref": "829407aa93b63b8bca4717624533f2fc7f702a5d"
       },
       "description": "Git workflow tools and multi-perspective code review: branch management, push, stash, PR creation/review/merge/checkout, diffs, logs, changelog generation, and parallel subagent code review with confidence scoring.",
       "category": "developer",
-      "homepage": "https://github.com/vargasjr-dev/git-workflow",
+      "homepage": "https://github.com/vellum-ai/git-workflow",
       "license": "MIT",
-      "icon": "\ud83d\udd00"
+      "icon": "🔀"
     },
     {
       "name": "google-drive-search",
@@ -264,20 +264,20 @@
       "category": "productivity",
       "homepage": "https://github.com/ZeebBoyBlue/google-drive-search",
       "license": "Apache-2.0",
-      "icon": "\ud83d\udd0d"
+      "icon": "🔍"
     },
     {
       "name": "imessage",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/imessage",
+        "repo": "vellum-ai/imessage",
         "ref": "af3d9f79903817358084de74e056422e6ca91fe4"
       },
       "description": "iMessage and SMS channel for the Cadet assistant, backed by a Photon line.",
       "category": "productivity",
-      "homepage": "https://github.com/vargasjr-dev/imessage",
+      "homepage": "https://github.com/vellum-ai/imessage",
       "license": "MIT",
-      "icon": "\ud83d\udcf2"
+      "icon": "📲"
     },
     {
       "name": "influencer-marketing",
@@ -290,20 +290,20 @@
       "category": "marketing",
       "homepage": "https://github.com/ZeebBoyBlue/influencer",
       "license": "MIT",
-      "icon": "\ud83d\udce3"
+      "icon": "📣"
     },
     {
       "name": "kitchen-companion",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/kitchen-companion",
+        "repo": "vellum-ai/kitchen-companion",
         "ref": "b6ebdda6992dfa1fd2186a600a642f538fb64584"
       },
       "description": "Full kitchen companion. Scan your fridge with a photo to stock a pantry inventory and get 3 makeable-now recipes, get alerts before food expires, clip recipes from any URL into a clean format, and generate meal plans with grocery lists from what you actually have.",
       "category": "lifestyle",
-      "homepage": "https://github.com/vargasjr-dev/kitchen-companion",
+      "homepage": "https://github.com/vellum-ai/kitchen-companion",
       "license": "MIT",
-      "icon": "\ud83c\udf73"
+      "icon": "🍳"
     },
     {
       "name": "ledger",
@@ -316,33 +316,33 @@
       "category": "developer",
       "homepage": "https://github.com/simensgreen/ledger",
       "license": "MIT",
-      "icon": "\ud83d\uddc4\ufe0f"
+      "icon": "🗄️"
     },
     {
       "name": "level-up",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/level-up",
+        "repo": "vellum-ai/level-up",
         "ref": "4357028acc339c6d6f718d5d6ab279ebf198673b"
       },
       "description": "Surfaces a first-class \"Level Up\" diff card whenever the assistant edits its own skills or plugins, so you can see how it improved itself after the fact.",
       "category": "developer",
-      "homepage": "https://github.com/vargasjr-dev/level-up",
+      "homepage": "https://github.com/vellum-ai/level-up",
       "license": "MIT",
-      "icon": "\ud83c\udd99"
+      "icon": "🆙"
     },
     {
       "name": "marketing-expert",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/marketing-expert",
+        "repo": "vellum-ai/marketing-expert",
         "ref": "6a85ee33e184c2be56ed63cd5681d1287a941eff"
       },
       "description": "Acts as a full-stack marketing expert for any business (B2B or B2C): an on-demand persona plus playbook skills (positioning, demand planning, launches, content & copywriting, brand voice, email sequences, SEO & GEO, competitive teardown, board reporting) and deterministic funnel/positioning/GTM/competitive tools.",
       "category": "marketing",
-      "homepage": "https://github.com/vargasjr-dev/marketing-expert",
+      "homepage": "https://github.com/vellum-ai/marketing-expert",
       "license": "MIT",
-      "icon": "\ud83d\udcc8"
+      "icon": "📈"
     },
     {
       "name": "markitdown-cadet",
@@ -351,11 +351,11 @@
         "repo": "simensgreen/markitdown-cadet",
         "ref": "5e5a4ecfd6c60d613778106442003a1ed302fc3c"
       },
-      "description": "Convert workspace documents (PDF, DOCX, PPTX, XLSX, images, MSG, \u2026) to markdown via @cognipeer/to-markdown, with Cadet vision OCR or Tesseract.",
+      "description": "Convert workspace documents (PDF, DOCX, PPTX, XLSX, images, MSG, …) to markdown via @cognipeer/to-markdown, with Cadet vision OCR or Tesseract.",
       "category": "productivity",
       "homepage": "https://github.com/simensgreen/markitdown-cadet",
       "license": "MIT",
-      "icon": "\ud83d\udcc4"
+      "icon": "📄"
     },
     {
       "name": "model-router",
@@ -368,44 +368,44 @@
       "category": "productivity",
       "homepage": "https://github.com/AnitaKirkovska/model-router",
       "license": "MIT",
-      "icon": "\ud83d\udea6"
+      "icon": "🚦"
     },
     {
       "name": "motion-design",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/motion-design",
+        "repo": "vellum-ai/motion-design",
         "ref": "9cdc798c26e0141dcdf6887d7707559c38bfe00e"
       },
       "description": "Teaches the assistant to build polished UI animations with Motion (motion.dev) for React: animated product mockups, chat replays, typing effects, and staggered reveals, with a complete animated chat example included.",
       "category": "creative",
-      "homepage": "https://github.com/vargasjr-dev/motion-design",
+      "homepage": "https://github.com/vellum-ai/motion-design",
       "license": "MIT",
-      "icon": "\ud83c\udfac"
+      "icon": "🎬"
     },
     {
       "name": "natural",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/natural",
+        "repo": "vellum-ai/natural",
         "ref": "e71880d144337d1b8b6d3e65ab98006b7d015ef6"
       },
       "description": "Hosted MCP access to Natural payment operations for Cadet assistants.",
       "category": "finance",
       "homepage": "https://www.natural.com",
       "license": "MIT",
-      "icon": "\ud83d\udcb3"
+      "icon": "💳"
     },
     {
       "name": "octolens",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/octolens",
+        "repo": "vellum-ai/octolens",
         "ref": "d9117f5c6b97b3bff75dec1a04bedc32571c6538"
       },
       "description": "Social listening plugin for Octolens. Monitor brand mentions, competitor activity, and industry conversations across 13+ platforms. Query mentions, run analytics, manage keywords and feeds via REST API tools, or connect the Octolens MCP server for natural-language workflows.",
       "category": "growth",
-      "homepage": "https://github.com/vargasjr-dev/octolens",
+      "homepage": "https://github.com/vellum-ai/octolens",
       "license": "MIT"
     },
     {
@@ -420,20 +420,20 @@
       "category": "marketing",
       "homepage": "https://openseo.so",
       "license": "MIT",
-      "icon": "\ud83d\udd0e"
+      "icon": "🔎"
     },
     {
       "name": "originkit",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/originkit",
+        "repo": "vellum-ai/originkit",
         "ref": "9aa260c2561ad9e765832dc342e9bbb5138858a4"
       },
       "description": "Browse and import animated UI components from Originkit, a free library of 50 animated components. Browse by category or search term without an API key; fetch component source code (React, Next.js, Vite, Framer) with a free key from originkit.dev.",
       "category": "productivity",
-      "homepage": "https://github.com/vargasjr-dev/originkit",
+      "homepage": "https://github.com/vellum-ai/originkit",
       "license": "MIT",
-      "icon": "\ud83e\uddf1"
+      "icon": "🧱"
     },
     {
       "name": "personal-finance",
@@ -446,33 +446,33 @@
       "category": "productivity",
       "homepage": "https://github.com/AnitaKirkovska/personal-finance",
       "license": "MIT",
-      "icon": "\ud83d\udcb0"
+      "icon": "💰"
     },
     {
       "name": "plant-doctor",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/plant-doctor",
+        "repo": "vellum-ai/plant-doctor",
         "ref": "1115ac07a5b7f731600f037b743e011a84bd0597"
       },
       "description": "Diagnose plants from photos. Identifies the species, assesses health with visible evidence, and returns a care plan. Named plants get a persistent checkup history so you can track whether they are improving.",
       "category": "lifestyle",
-      "homepage": "https://github.com/vargasjr-dev/plant-doctor",
+      "homepage": "https://github.com/vellum-ai/plant-doctor",
       "license": "MIT",
-      "icon": "\ud83e\udeb4"
+      "icon": "🪴"
     },
     {
       "name": "polyglot",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/polyglot",
+        "repo": "vellum-ai/polyglot",
         "ref": "ab607b7c60b64b0ac5c6bf01609840a004cfd002"
       },
       "description": "Ambient language acquisition through your assistant. Three graduated modes (practice, ambient, immersive) weave a target language into your real conversations, with SM-2 spaced repetition, error-pattern tracking, and CEFR level history.",
       "category": "education",
-      "homepage": "https://github.com/vargasjr-dev/polyglot",
+      "homepage": "https://github.com/vellum-ai/polyglot",
       "license": "MIT",
-      "icon": "\ud83d\udde3\ufe0f"
+      "icon": "🗣️"
     },
     {
       "name": "proactive-slacks",
@@ -485,7 +485,7 @@
       "category": "productivity",
       "homepage": "https://github.com/AnitaKirkovska/proactive-slacks",
       "license": "MIT",
-      "icon": "\ud83d\udcac"
+      "icon": "💬"
     },
     {
       "name": "quickbooks-expense-categorizer",
@@ -504,20 +504,20 @@
       "name": "reading-pal",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/reading-pal",
+        "repo": "vellum-ai/reading-pal",
         "ref": "5219474719e67db7ea64848f6bd2a0b7312e4f27"
       },
       "description": "Your reading life in one plugin. Track your TBR pile, get guilt-tripped about your backlog, find your next read, and sync from Goodreads.",
       "category": "hobby",
-      "homepage": "https://github.com/vargasjr-dev/reading-pal",
+      "homepage": "https://github.com/vellum-ai/reading-pal",
       "license": "MIT",
-      "icon": "\ud83d\udcda"
+      "icon": "📚"
     },
     {
       "name": "restaurant-invoice-auditor",
       "description": "Audits restaurant food delivery slips in 14 seconds, flags silent price hikes and pack-size shrinkage, and stages approved bills in QuickBooks.",
       "category": "commerce",
-      "icon": "\ud83e\uddfe",
+      "icon": "🧾",
       "license": "MIT",
       "homepage": "https://github.com/ZeebBoyBlue/restaurant-invoice-auditor",
       "source": {
@@ -543,14 +543,14 @@
       "name": "simple-memory",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/simple-memory",
+        "repo": "vellum-ai/simple-memory",
         "ref": "ed09a4c01bf18e4ac8859faee94cb65c7cbd1ca3"
       },
       "description": "Reference memory plugin that exercises the full plugin API with low-cost variants of Cadet's memory defaults.",
       "category": "memory",
-      "homepage": "https://github.com/vargasjr-dev/simple-memory",
+      "homepage": "https://github.com/vellum-ai/simple-memory",
       "license": "MIT",
-      "icon": "\ud83e\udde0"
+      "icon": "🧠"
     },
     {
       "name": "smb-inbox-brief",
@@ -563,20 +563,20 @@
       "category": "productivity",
       "homepage": "https://github.com/AnitaKirkovska/smb-inbox-brief",
       "license": "MIT",
-      "icon": "\ud83d\udce7"
+      "icon": "📧"
     },
     {
       "name": "tennis-companion",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/tennis-companion",
+        "repo": "vellum-ai/tennis-companion",
         "ref": "1c6d2bd448ee7b5285d37cfee4e0e413522746d1"
       },
       "description": "Tennis journal, drill sessions, court finder, and progress tracking. Log matches with opponent tendencies, generate 30-minute practice sessions with progressions, find nearby courts via OpenStreetMap, and track win rate by surface and conditions.",
       "category": "health",
-      "homepage": "https://github.com/vargasjr-dev/tennis-companion",
+      "homepage": "https://github.com/vellum-ai/tennis-companion",
       "license": "MIT",
-      "icon": "\ud83c\udfbe"
+      "icon": "🎾"
     },
     {
       "name": "travel-planner",
@@ -589,7 +589,7 @@
       "category": "lifestyle",
       "homepage": "https://github.com/AnitaKirkovska/travel-planner",
       "license": "MIT",
-      "icon": "\u2708\ufe0f"
+      "icon": "✈️"
     },
     {
       "name": "unabyss",
@@ -602,7 +602,7 @@
       "category": "memory",
       "homepage": "https://unabyss.com",
       "license": "MIT",
-      "icon": "\ud83c\udf0a"
+      "icon": "🌊"
     },
     {
       "name": "cadet-client-qa",
@@ -613,9 +613,9 @@
       },
       "description": "Cross-platform QA rig for mycadet clients: mock the cloud backend, boot the real chat UI, and verify feature branches in headless Chromium (web), an iOS simulator, or Electron with screenshot and video proof.",
       "category": "developer",
-      "homepage": "https://github.com/vargasjr-dev/cadet-client-qa",
+      "homepage": "https://github.com/vellum-ai/cadet-client-qa",
       "license": "MIT",
-      "icon": "\ud83e\uddea"
+      "icon": "🧪"
     },
     {
       "name": "virlo",
@@ -629,20 +629,20 @@
       "category": "marketing",
       "homepage": "https://github.com/Virlo-AI/virlo-integrations/tree/main/integrations/cadet",
       "license": "MIT",
-      "icon": "\ud83d\udcf1"
+      "icon": "📱"
     },
     {
       "name": "writing-coach",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/writing-coach",
+        "repo": "vellum-ai/writing-coach",
         "ref": "9cb2289343fed2fd6ad8b0bb5db07616d1c8181c"
       },
       "description": "A writing coach in your pocket. Daily prompts that escalate with your streak, savage-but-constructive draft roasts, query letter critiques, and a word count enforcer that guilt-trips you when you skip.",
       "category": "hobby",
-      "homepage": "https://github.com/vargasjr-dev/writing-coach",
+      "homepage": "https://github.com/vellum-ai/writing-coach",
       "license": "MIT",
-      "icon": "\u270d\ufe0f"
+      "icon": "✍️"
     },
     {
       "name": "fathom",
@@ -1419,7 +1419,7 @@
       "name": "runway-plugin",
       "source": {
         "source": "github",
-        "repo": "vargasjr-dev/runway-plugin",
+        "repo": "vellum-ai/runway-plugin",
         "ref": "bb017a1e018c7be140c02c8463273c2d85f3b9d9"
       },
       "description": "Securely set up, collaboratively direct, approve, create, track, cancel, and download Runway Gen-4.5 videos.",
