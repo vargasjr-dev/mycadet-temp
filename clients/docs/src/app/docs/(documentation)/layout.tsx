@@ -41,10 +41,11 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                   <Image
                     src="/docs/cadet-logo.svg"
                     alt="Cadet"
-                    width={100}
-                    height={24}
+                    width={26}
+                    height={26}
                     unoptimized
                   />
+                  <span className="docs-brand-wordmark">Cadet</span>
                 </a>
               </div>
               <div className="flex h-full flex-1 items-center gap-6 px-4 md:pl-8 md:pr-4">

@@ -690,6 +690,39 @@ jobs:
           path: /tmp/manifest-digest/*
           retention-days: 1
 
+  push-docs-image:
+    needs: [extract-version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login docker.io -u mycadet --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build and push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: clients/docs/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            docker.io/mycadet/docs-site:${{ needs.extract-version.outputs.version }}
+            docker.io/mycadet/docs-site:latest
+            docker.io/mycadet/docs-site:${{ github.sha }}
+          cache-from: type=gha,scope=docs-site
+          cache-to: type=gha,mode=max,ignore-error=true,scope=docs-site
+
 
   build-npm-prod:
     # Build has no side effects; release-ordering gates live on publish-npm-prod.
