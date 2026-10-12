@@ -85,15 +85,29 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
     return { data: servedCatalog };
   }),
   configGet: mock(async () => ({ data: servedConfig })),
+  // The override picker reads the effective catalog from the daemon
+  // (the summaries arrive in presentation order), not the raw config map.
+  inferenceProfilesGet: mock(async () => ({
+    data: {
+      profiles: Object.entries(CONFIG.llm.profiles).map(([name, p]) => ({
+        name,
+        label: p.label ?? null,
+        provider: p.provider ?? null,
+        model: p.model ?? null,
+        status: "active",
+        source: "user",
+        availability: null,
+      })),
+    },
+  })),
   configPatch: async (options?: { body?: unknown }) => {
     configPatchBodies.push(options?.body);
     return { data: CONFIG };
   },
 }));
 
-const { OverridesDetailPanel } = await import(
-  "@/domains/settings/ai/overrides-detail-panel"
-);
+const { OverridesDetailPanel } =
+  await import("@/domains/settings/ai/overrides-detail-panel");
 
 // ---------------------------------------------------------------------------
 // Helpers

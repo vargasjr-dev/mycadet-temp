@@ -89,6 +89,19 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
       },
     };
   },
+  inferenceProfilesGet: async () => ({
+    data: {
+      profiles: Object.entries(profilesState).map(([name, entry]) => ({
+        name,
+        label: entry.label ?? null,
+        provider: entry.provider ?? null,
+        model: entry.model ?? null,
+        status: entry.status ?? "active",
+        source: entry.source ?? "user",
+        availability: null,
+      })),
+    },
+  }),
   schedulesReassignprofilePost: async (options?: {
     body?: { from: string; to: string };
   }) => {

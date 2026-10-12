@@ -76,6 +76,21 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   ...daemonSdk,
   configGet: mock(async () => ({ data: CONFIG })),
   configLlmCallsitesGet: mock(async () => ({ data: CATALOG })),
+  // The model-profile picker reads the effective catalog from the daemon
+  // (the summaries arrive in presentation order), not the raw config map.
+  inferenceProfilesGet: mock(async () => ({
+    data: {
+      profiles: Object.entries(CONFIG.llm.profiles).map(([name, p]) => ({
+        name,
+        label: p.label ?? null,
+        provider: p.provider ?? null,
+        model: p.model ?? null,
+        status: "active",
+        source: "user",
+        availability: null,
+      })),
+    },
+  })),
   schedulesByIdRunsGet: mock(async () => ({
     data: { runs: [], nextCursor: null },
     response: { ok: true, status: 200 },

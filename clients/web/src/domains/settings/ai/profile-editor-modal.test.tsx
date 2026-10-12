@@ -2146,10 +2146,11 @@ describe("ProfileEditorModal: explains why Save is blocked", () => {
   });
 
   test("a locked profile is not told to fix a field it cannot edit", () => {
-    // `invariant` forces read-only even in edit mode, so `effectiveMode` is
-    // still "edit" and the error would otherwise render above a disabled
-    // picker. Matches how `keyError` is already suppressed for these.
-    renderEdit({ name: "my-managed", invariant: true });
+    // `source: "managed"` forces read-only even in edit mode, so
+    // `effectiveMode` is still "edit" and the error would otherwise render
+    // above a disabled picker. Matches how `keyError` is already suppressed
+    // for these.
+    renderEdit({ name: "my-managed", source: "managed" });
 
     expect(fieldErrors()).toEqual([]);
   });
