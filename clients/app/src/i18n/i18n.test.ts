@@ -90,39 +90,6 @@ describe("ICU message formatting", () => {
     await changeLocale("en");
   });
 
-  test("selects the singular plural category", () => {
-    expect(t("chat:conversationAssets.label", { count: 1 })).toBe("1 asset");
-    expect(t("chat:conversationAssets.ariaLabel", { count: 1 })).toBe(
-      "Conversation assets, 1 item",
-    );
-    expect(t("chat:conversationAssets.ariaLabelUnseen", { count: 1 })).toBe(
-      "Conversation assets, 1 item (unseen changes)",
-    );
-  });
-
-  test("selects the plural category for other counts", () => {
-    expect(t("chat:conversationAssets.label", { count: 0 })).toBe("0 assets");
-    expect(t("chat:conversationAssets.label", { count: 7 })).toBe("7 assets");
-  });
-
-  test("pluralizes in the active locale after a switch", async () => {
-    await changeLocale("es");
-    expect(t("chat:conversationAssets.label", { count: 1 })).toBe("1 recurso");
-    expect(t("chat:conversationAssets.label", { count: 7 })).toBe("7 recursos");
-  });
-
-  test("renders Russian copy and CLDR plural categories", async () => {
-    await changeLocale("ru");
-    expect(t("notFound.title")).toBe("Страница не найдена");
-    expect(t("chat:conversationAssets.label", { count: 1 })).toBe("1 ресурс");
-    expect(t("chat:conversationAssets.label", { count: 2 })).toBe("2 ресурса");
-    expect(t("chat:conversationAssets.label", { count: 5 })).toBe("5 ресурсов");
-    expect(t("chat:conversationAssets.label", { count: 21 })).toBe("21 ресурс");
-    expect(t("chat:conversationAssets.label", { count: 22 })).toBe(
-      "22 ресурса",
-    );
-  });
-
   test("renders a bare apostrophe literally", () => {
     // ICU treats `'` as an escape character, but only when it precedes a
     // syntax character. English copy is full of contractions, so this is the

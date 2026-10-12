@@ -7,8 +7,8 @@
  * `namespaces.ts` for which one that is):
  *
  * ```tsx
- * const { t } = useTranslation("chat");
- * return <h1>{t("conversationAssets.label", { count })}</h1>;
+ * const { t } = useTranslation("account");
+ * return <h1>{t("loginPage.signIn")}</h1>;
  * ```
  *
  * `common` is the default, so cross-domain components can omit it:
@@ -22,7 +22,7 @@
  *
  * ```ts
  * import { t } from "@app/i18n";
- * toast.error(t("conversationAssets.label", { count: files.length }));
+ * toast.error(t("notFound.title"));
  * ```
  *
  * Keys are type-checked against `locales/en/common.json` via the `i18next`
@@ -81,7 +81,7 @@ export type { TFunction } from "i18next";
 
 /**
  * The union of valid key paths, derived from the English catalogs. Type a
- * parameter as `ParseKeys<"chat">` rather than `string` when it names copy, so
+ * parameter as `ParseKeys<"account">` rather than `string` when it names copy, so
  * the catalog stays the only place copy can come from.
  */
 export type { ParseKeys } from "i18next";

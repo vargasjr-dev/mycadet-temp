@@ -34,24 +34,7 @@
  * Reference: https://vite.dev/guide/features#dynamic-import
  */
 import enAccount from "@app/i18n/locales/en/account.json";
-import enActivation from "@app/i18n/locales/en/activation.json";
-import enActivationTasks from "@app/i18n/locales/en/activation-tasks.json";
-import enAssistantInbox from "@app/i18n/locales/en/assistant-inbox.json";
-import enChannels from "@app/i18n/locales/en/channels.json";
-import enContacts from "@app/i18n/locales/en/contacts.json";
-import enCredentialRequests from "@app/i18n/locales/en/credential-requests.json";
-import enHome from "@app/i18n/locales/en/home.json";
-import enLibrary from "@app/i18n/locales/en/library.json";
-import enLogs from "@app/i18n/locales/en/logs.json";
-import enIntelligence from "@app/i18n/locales/en/intelligence.json";
-import enOnboarding from "@app/i18n/locales/en/onboarding.json";
-import enRemoteWeb from "@app/i18n/locales/en/remote-web.json";
-import enTerminal from "@app/i18n/locales/en/terminal.json";
-import enWorkspace from "@app/i18n/locales/en/workspace.json";
-import enChat from "@app/i18n/locales/en/chat.json";
 import enCommon from "@app/i18n/locales/en/common.json";
-import enSchedules from "@app/i18n/locales/en/schedules.json";
-import enSettings from "@app/i18n/locales/en/settings.json";
 import { NAMESPACES, type Namespace } from "@app/i18n/namespaces";
 import {
   DEFAULT_LOCALE,
@@ -76,24 +59,7 @@ type CatalogLoader = () => Promise<{ default: Catalog }>;
  */
 export const FALLBACK_CATALOGS: LocaleCatalogs = {
   common: enCommon,
-  chat: enChat,
-  schedules: enSchedules,
   account: enAccount,
-  channels: enChannels,
-  settings: enSettings,
-  workspace: enWorkspace,
-  terminal: enTerminal,
-  "remote-web": enRemoteWeb,
-  "credential-requests": enCredentialRequests,
-  logs: enLogs,
-  library: enLibrary,
-  home: enHome,
-  contacts: enContacts,
-  onboarding: enOnboarding,
-  intelligence: enIntelligence,
-  activation: enActivation,
-  "activation-tasks": enActivationTasks,
-  "assistant-inbox": enAssistantInbox,
 };
 
 /** Loaders for the locales that are not bundled into the entry chunk. */
@@ -103,99 +69,19 @@ const CATALOG_LOADERS: Record<
 > = {
   es: {
     common: () => import("@app/i18n/locales/es/common.json"),
-    chat: () => import("@app/i18n/locales/es/chat.json"),
-    schedules: () => import("@app/i18n/locales/es/schedules.json"),
     account: () => import("@app/i18n/locales/es/account.json"),
-    channels: () => import("@app/i18n/locales/es/channels.json"),
-    settings: () => import("@app/i18n/locales/es/settings.json"),
-    workspace: () => import("@app/i18n/locales/es/workspace.json"),
-    terminal: () => import("@app/i18n/locales/es/terminal.json"),
-    "remote-web": () => import("@app/i18n/locales/es/remote-web.json"),
-    "credential-requests": () =>
-      import("@app/i18n/locales/es/credential-requests.json"),
-    logs: () => import("@app/i18n/locales/es/logs.json"),
-    library: () => import("@app/i18n/locales/es/library.json"),
-    home: () => import("@app/i18n/locales/es/home.json"),
-    contacts: () => import("@app/i18n/locales/es/contacts.json"),
-    onboarding: () => import("@app/i18n/locales/es/onboarding.json"),
-    intelligence: () => import("@app/i18n/locales/es/intelligence.json"),
-    activation: () => import("@app/i18n/locales/es/activation.json"),
-    "activation-tasks": () =>
-      import("@app/i18n/locales/es/activation-tasks.json"),
-    "assistant-inbox": () =>
-      import("@app/i18n/locales/es/assistant-inbox.json"),
   },
   ru: {
     common: () => import("@app/i18n/locales/ru/common.json"),
-    chat: () => import("@app/i18n/locales/ru/chat.json"),
-    schedules: () => import("@app/i18n/locales/ru/schedules.json"),
     account: () => import("@app/i18n/locales/ru/account.json"),
-    channels: () => import("@app/i18n/locales/ru/channels.json"),
-    settings: () => import("@app/i18n/locales/ru/settings.json"),
-    workspace: () => import("@app/i18n/locales/ru/workspace.json"),
-    terminal: () => import("@app/i18n/locales/ru/terminal.json"),
-    "remote-web": () => import("@app/i18n/locales/ru/remote-web.json"),
-    "credential-requests": () =>
-      import("@app/i18n/locales/ru/credential-requests.json"),
-    logs: () => import("@app/i18n/locales/ru/logs.json"),
-    library: () => import("@app/i18n/locales/ru/library.json"),
-    home: () => import("@app/i18n/locales/ru/home.json"),
-    contacts: () => import("@app/i18n/locales/ru/contacts.json"),
-    onboarding: () => import("@app/i18n/locales/ru/onboarding.json"),
-    intelligence: () => import("@app/i18n/locales/ru/intelligence.json"),
-    activation: () => import("@app/i18n/locales/ru/activation.json"),
-    "activation-tasks": () =>
-      import("@app/i18n/locales/ru/activation-tasks.json"),
-    "assistant-inbox": () =>
-      import("@app/i18n/locales/ru/assistant-inbox.json"),
   },
   zh: {
     common: () => import("@app/i18n/locales/zh/common.json"),
-    chat: () => import("@app/i18n/locales/zh/chat.json"),
-    schedules: () => import("@app/i18n/locales/zh/schedules.json"),
     account: () => import("@app/i18n/locales/zh/account.json"),
-    channels: () => import("@app/i18n/locales/zh/channels.json"),
-    settings: () => import("@app/i18n/locales/zh/settings.json"),
-    workspace: () => import("@app/i18n/locales/zh/workspace.json"),
-    terminal: () => import("@app/i18n/locales/zh/terminal.json"),
-    "remote-web": () => import("@app/i18n/locales/zh/remote-web.json"),
-    "credential-requests": () =>
-      import("@app/i18n/locales/zh/credential-requests.json"),
-    logs: () => import("@app/i18n/locales/zh/logs.json"),
-    library: () => import("@app/i18n/locales/zh/library.json"),
-    home: () => import("@app/i18n/locales/zh/home.json"),
-    contacts: () => import("@app/i18n/locales/zh/contacts.json"),
-    onboarding: () => import("@app/i18n/locales/zh/onboarding.json"),
-    intelligence: () => import("@app/i18n/locales/zh/intelligence.json"),
-    activation: () => import("@app/i18n/locales/zh/activation.json"),
-    "activation-tasks": () =>
-      import("@app/i18n/locales/zh/activation-tasks.json"),
-    "assistant-inbox": () =>
-      import("@app/i18n/locales/zh/assistant-inbox.json"),
   },
   "zh-TW": {
     common: () => import("@app/i18n/locales/zh-TW/common.json"),
-    chat: () => import("@app/i18n/locales/zh-TW/chat.json"),
-    schedules: () => import("@app/i18n/locales/zh-TW/schedules.json"),
     account: () => import("@app/i18n/locales/zh-TW/account.json"),
-    channels: () => import("@app/i18n/locales/zh-TW/channels.json"),
-    settings: () => import("@app/i18n/locales/zh-TW/settings.json"),
-    workspace: () => import("@app/i18n/locales/zh-TW/workspace.json"),
-    terminal: () => import("@app/i18n/locales/zh-TW/terminal.json"),
-    "remote-web": () => import("@app/i18n/locales/zh-TW/remote-web.json"),
-    "credential-requests": () =>
-      import("@app/i18n/locales/zh-TW/credential-requests.json"),
-    logs: () => import("@app/i18n/locales/zh-TW/logs.json"),
-    library: () => import("@app/i18n/locales/zh-TW/library.json"),
-    home: () => import("@app/i18n/locales/zh-TW/home.json"),
-    contacts: () => import("@app/i18n/locales/zh-TW/contacts.json"),
-    onboarding: () => import("@app/i18n/locales/zh-TW/onboarding.json"),
-    intelligence: () => import("@app/i18n/locales/zh-TW/intelligence.json"),
-    activation: () => import("@app/i18n/locales/zh-TW/activation.json"),
-    "activation-tasks": () =>
-      import("@app/i18n/locales/zh-TW/activation-tasks.json"),
-    "assistant-inbox": () =>
-      import("@app/i18n/locales/zh-TW/assistant-inbox.json"),
   },
 };
 

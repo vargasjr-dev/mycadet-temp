@@ -1,9 +1,0 @@
-{
-  "pairingPage": {
-    "openInApp": "Abrir en la aplicación de Cadet",
-    "continueInBrowser": "Continuar en este navegador",
-    "pairingCode": "Código de vinculación",
-    "expiresAt": "Caduca a las {time}.",
-    "cancel": "Cancelar"
-  }
-}

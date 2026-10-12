@@ -35,27 +35,28 @@ import type settings from "@/i18n/locales/en/settings.json";
 declare module "i18next" {
   interface CustomTypeOptions {
     defaultNS: "common";
-    resources: {
-      common: typeof common;
-      chat: typeof chat;
-      schedules: typeof schedules;
-      account: typeof account;
-      channels: typeof channels;
-      settings: typeof settings;
-      workspace: typeof workspace;
-      terminal: typeof terminal;
-      "remote-web": typeof remoteWeb;
-      "credential-requests": typeof credentialRequests;
-      logs: typeof logs;
-      library: typeof library;
-      home: typeof home;
-      contacts: typeof contacts;
-      onboarding: typeof onboarding;
-      intelligence: typeof intelligence;
-      activation: typeof activation;
-      "activation-tasks": typeof activationTasks;
-      "assistant-inbox": typeof assistantInbox;
-    };
+    resources: TranslationResources;
     returnNull: false;
+  }
+  interface TranslationResources {
+    common: typeof common;
+    chat: typeof chat;
+    schedules: typeof schedules;
+    account: typeof account;
+    channels: typeof channels;
+    settings: typeof settings;
+    workspace: typeof workspace;
+    terminal: typeof terminal;
+    "remote-web": typeof remoteWeb;
+    "credential-requests": typeof credentialRequests;
+    logs: typeof logs;
+    library: typeof library;
+    home: typeof home;
+    contacts: typeof contacts;
+    onboarding: typeof onboarding;
+    intelligence: typeof intelligence;
+    activation: typeof activation;
+    "activation-tasks": typeof activationTasks;
+    "assistant-inbox": typeof assistantInbox;
   }
 }
