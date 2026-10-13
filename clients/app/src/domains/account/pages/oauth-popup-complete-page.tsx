@@ -6,7 +6,7 @@ import { oauthCompletionStorageKey } from "@app/lib/auth/oauth-popup";
 import {
   buildOAuthCompleteDeepLink,
   getNativeUrlSchemeForHost,
-} from "@web/runtime/native-deep-link";
+} from "@app/runtime/native-deep-link";
 
 /**
  * OAuth popup completion page.

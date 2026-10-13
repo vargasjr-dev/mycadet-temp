@@ -7,12 +7,14 @@ import type { CadetCommand } from "@mycadet/ipc-contract";
 import { useOnboardingWindowSize } from "@app/hooks/use-onboarding-window-size";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { getElectronBridge } from "@app/runtime/electron-bridge";
+import { setMenuCloudSession } from "@app/runtime/menu";
 import { ensureMainWindowVisible } from "@app/runtime/main-window";
 
 const original = Object.getOwnPropertyDescriptor(window, "cadet");
 const unsubscribe = mock(() => {});
 const setOnboarding = mock(async (_active: boolean) => {});
 const ensureVisible = mock(async () => {});
+const setCloudSession = mock(async (_has: boolean) => {});
 let listener: ((command: CadetCommand) => void) | undefined;
 const on = mock((callback: (command: CadetCommand) => void) => {
   listener = callback;
@@ -24,6 +26,7 @@ function installHost() {
     configurable: true,
     value: {
       platform: "electron",
+      menu: { setCloudSession },
       commands: { on },
       mainWindow: { setOnboarding, ensureVisible },
     },
@@ -35,7 +38,13 @@ afterEach(() => {
   if (original) Object.defineProperty(window, "cadet", original);
   else Reflect.deleteProperty(window, "cadet");
   listener = undefined;
-  for (const callback of [on, unsubscribe, setOnboarding, ensureVisible])
+  for (const callback of [
+    on,
+    unsubscribe,
+    setOnboarding,
+    ensureVisible,
+    setCloudSession,
+  ])
     callback.mockClear();
 });
 
@@ -75,4 +84,14 @@ test("ordinary browser renders do not subscribe or invoke native controls", asyn
   await ensureMainWindowVisible();
   expect(on).not.toHaveBeenCalled();
   expect(ensureVisible).not.toHaveBeenCalled();
+});
+
+test("cloud session changes reach the host menu and no-op in a browser", async () => {
+  installHost();
+  await setMenuCloudSession(true);
+  await setMenuCloudSession(false);
+  expect(setCloudSession.mock.calls).toEqual([[true], [false]]);
+  Reflect.deleteProperty(window, "cadet");
+  await setMenuCloudSession(true);
+  expect(setCloudSession).toHaveBeenCalledTimes(2);
 });

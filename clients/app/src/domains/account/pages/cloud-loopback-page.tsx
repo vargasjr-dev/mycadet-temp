@@ -4,9 +4,9 @@ import { useSearchParams, useNavigate } from "react-router";
 import { useTranslation } from "@app/i18n";
 import { listAssistants } from "@web/assistant/api";
 import { registerLocalCloudSession } from "@web/runtime/local-mode-host";
-import { setMenuCloudSession } from "@web/runtime/menu";
+import { setMenuCloudSession } from "@app/runtime/menu";
 import { useAuthStore } from "@web/stores/auth-store";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";

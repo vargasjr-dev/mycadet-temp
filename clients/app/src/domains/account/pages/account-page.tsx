@@ -15,7 +15,7 @@ import {
   useIsAuthenticated,
   useIsSessionInitializing,
 } from "@web/stores/auth-store";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 
 /**
  * Account landing page. Shows a sign-in CTA when unauthenticated,

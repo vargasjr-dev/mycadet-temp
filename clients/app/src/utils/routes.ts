@@ -1,0 +1,23 @@
+import { WWW_DOMAIN } from "@app/utils/domains";
+
+export const routes = {
+  assistant: "/assistant",
+  welcome: "/assistant/welcome",
+  account: {
+    root: "/account",
+    login: "/account/login",
+    signup: "/account/signup",
+    providerSignup: "/account/provider/signup",
+    providerCallback: "/account/provider/callback",
+    oauth: {
+      popupComplete: "/account/oauth/popup-complete",
+      complete: "/account/oauth/complete",
+      desktopComplete: "/account/oauth/desktop-complete",
+    },
+  },
+  docs: { localHosting: "/docs/hosting-options/local-hosting" },
+} as const;
+
+export function docsUrl(path: string): string {
+  return `https://${WWW_DOMAIN}${path}`;
+}

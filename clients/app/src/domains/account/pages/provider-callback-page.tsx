@@ -15,7 +15,7 @@ import {
 import { classifyCallbackFlows } from "@web/domains/account/social-auth";
 import { isLocalClient } from "@web/lib/local-mode";
 import { useAuthStore } from "@web/stores/auth-store";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 

@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from "react-router";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { authMiddleware } from "@web/lib/auth/auth-middleware";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 
 import { AccountLayout } from "@app/domains/account/account-layout";
 

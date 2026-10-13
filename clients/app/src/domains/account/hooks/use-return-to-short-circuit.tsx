@@ -12,7 +12,7 @@ import {
   useIsAuthenticated,
   useIsSessionInitializing,
 } from "@web/stores/auth-store";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 
 /**
  * What an auth entry point should render.

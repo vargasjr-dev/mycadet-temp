@@ -14,10 +14,10 @@ import {
   nativeAuthErrorDetail,
   nativeAuthErrorKey,
 } from "@app/domains/account/native-auth-error";
-import { withPreservedAttribution } from "@web/domains/account/social-auth";
+import { withPreservedAttribution } from "@app/domains/account/attribution";
 import { captureError } from "@web/lib/error-reporting/capture-error";
 import { startNativeLogin, useIsNativePlatform } from "@web/runtime/native-auth";
-import { routes } from "@web/utils/routes";
+import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library";
 
 /**
