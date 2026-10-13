@@ -139,8 +139,8 @@ export function HostingOptionsContent() {
               </li>
               <li>
                 <strong>Docker</strong>{" "}
-                <span className="ml-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 align-middle text-xs font-medium text-amber-900 dark:bg-amber-500/20 dark:text-amber-200">
-                  Coming soon
+                <span className="ml-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200">
+                  Available now
                 </span>{" "}
                 — The assistant runs inside a Docker container on your Mac.
                 Better isolation than native, but requires Docker to be
@@ -290,8 +290,8 @@ export function HostingOptionsContent() {
               </h4>
               <p className="m-0 text-sm text-stone-600 dark:text-stone-400">
                 If keeping your data off third-party servers is a priority,
-                local is the way to go. Today that means native. Once
-                available, Apple Container on your Mac (or a dedicated Mac
+                local is the way to go. Today that means native or Docker.
+                Once available, Apple Container on your Mac (or a dedicated Mac
                 Mini) will be the best local option, giving you both privacy
                 and better isolation.
               </p>

@@ -47,10 +47,12 @@ export function HostingOptionsLocalHostingContent() {
             is awake.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            Today, local hosting uses native (the assistant runs directly
-            as a process on your Mac or Windows PC). Docker and Apple Container options are
-            on the roadmap and will provide better isolation while keeping
-            everything local.
+            Today, local hosting comes in two flavors: native (the assistant
+            runs directly as a process on your Mac or Windows PC) and Docker
+            (the assistant runs inside a container on your machine — hatch it
+            with <code>cadet hatch --remote docker</code>). Apple Container is
+            on the roadmap and will add isolation via native Apple virtual
+            machines.
           </p>
         </section>
 
@@ -97,15 +99,17 @@ export function HostingOptionsLocalHostingContent() {
           <div id="docker" className="mb-10">
             <SectionHeading id="docker" level={3}>
               Docker
-              <span className="ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 align-middle text-xs font-medium text-amber-900 dark:bg-amber-500/20 dark:text-amber-200">
-                Coming soon
+              <span className="ml-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200">
+                Available now
               </span>
             </SectionHeading>
             <p className="mb-4 text-stone-600 dark:text-stone-400">
               The assistant runs inside a Docker container on your Mac. Think
               of it as a computer inside your computer. The assistant has its
               own isolated environment with its own filesystem, and
-              it&apos;s walled off from the rest of your system.
+              it&apos;s walled off from the rest of your system. Hatch a Docker
+              assistant from the terminal with{" "}
+              <code>cadet hatch --remote docker</code>.
             </p>
             <dl className="mb-0 space-y-3">
               <div className="rounded-xl border border-stone-200 p-4 dark:border-moss-600/50">
@@ -207,7 +211,7 @@ export function HostingOptionsLocalHostingContent() {
                   <td className="py-3 pr-4">Container</td>
                   <td className="py-3 pr-4">Moderate</td>
                   <td className="py-3 pr-4">Docker Desktop</td>
-                  <td className="py-3">Coming soon</td>
+                  <td className="py-3">Available</td>
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
@@ -269,15 +273,17 @@ export function HostingOptionsLocalHostingContent() {
             What&apos;s next for local
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Docker and Apple Container options are in development. Once they
-            ship and stabilize, native local may be phased out in favor of
-            the containerized options, which offer much better security
-            isolation while keeping all the same privacy and access benefits.
+            Docker is available today (hatch with{" "}
+            <code>cadet hatch --remote docker</code>) and Apple Container is
+            next on the roadmap — it will run the assistant in native Apple
+            virtual machines with no Docker dependency. The containerized
+            flavors offer much better security isolation while keeping all the
+            same privacy and access benefits.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             If you&apos;re on native today, you won&apos;t need to do
-            anything disruptive. Migration paths will be provided when the time
-            comes.
+            anything disruptive — and you can always hatch another assistant
+            with Docker when you want the extra isolation.
           </p>
         </section>
       </DocsContent>
