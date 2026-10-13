@@ -220,7 +220,9 @@ describe("AccessConsentSetting", () => {
     await waitFor(() => expect(patchCalls).toHaveLength(1));
     expect(patchCalls[0].path?.id).toBe(ASSISTANT_ID);
     expect(patchCalls[0].body).toEqual({ access_consented: true });
-    await screen.findByText("Staff access ends in 24 hours.");
+    // The expiry lands exactly 24h out: a same-millisecond render hits the
+    // day bucket and Intl reads "tomorrow" instead of "in 24 hours".
+    await screen.findByText(/Staff access ends (in 24 hours|tomorrow)\./);
   });
 
   test("the owner can keep access on until they turn it off, and put the clock back", async () => {
@@ -246,7 +248,7 @@ describe("AccessConsentSetting", () => {
     );
     await waitFor(() => expect(patchCalls).toHaveLength(2));
     expect(patchCalls[1].body).toEqual({ access_consented: true });
-    await screen.findByText("Staff access ends in 24 hours.");
+    await screen.findByText(/Staff access ends (in 24 hours|tomorrow)\./);
   });
 
   test("hides keep-on when the cloud predates it, so a click can never send an unsupported field", async () => {

@@ -1626,15 +1626,7 @@ jobs:
           fi
 
   release-ios:
-    needs:
-      [
-        extract-version,
-        publish-npm-prod,
-        publish-web-prod,
-        publish-meta-prod,
-        publish-plugin-api-prod,
-        build-chrome-extension,
-      ]
+    needs: [extract-version, build-chrome-extension]
     if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     uses: ./.github/workflows/release-ios.yaml
     with:
@@ -1643,15 +1635,7 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs:
-      [
-        extract-version,
-        publish-npm-prod,
-        publish-web-prod,
-        publish-meta-prod,
-        publish-plugin-api-prod,
-        build-chrome-extension,
-      ]
+    needs: [extract-version, build-chrome-extension]
     if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
     permissions:
       contents: read

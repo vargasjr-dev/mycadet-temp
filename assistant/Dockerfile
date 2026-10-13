@@ -200,12 +200,6 @@ RUN bun run scripts/smoke-container-workspace-dependencies.ts
 # The repo-root .dockerignore decides which skills (and files) ship.
 COPY skills /app/skills
 
-# Materialize the git-ignored bundled local packages and their catalog
-# manifest. The build installs with --ignore-scripts, so the postinstall
-# generator that creates these static imports in development never runs here.
-COPY plugins /app/plugins
-RUN bun run assistant/scripts/generate-bundled-plugin-packages.ts
-
 # Install assistant CLI launcher backed by the bundled assistant package
 RUN printf '#!/usr/bin/env sh\nexec bun run /app/assistant/src/index.ts "$@"\n' > /usr/local/bin/assistant && \
     chmod +x /usr/local/bin/assistant

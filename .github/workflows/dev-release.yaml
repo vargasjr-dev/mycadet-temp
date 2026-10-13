@@ -710,13 +710,7 @@ jobs:
   #
   # ci-web is the only hard gate: a dev release must always get the web changes
   # onto the dev instance, even when the backend half of the release does not
-  # land. The push-*-manifest jobs stay in `needs` purely for *ordering* — when
-  # the backend images do ship, the SPA still publishes after them, so the dev
-  # UI is never pushed ahead of a backend that shipped in the same run. But the
-  # `if` deliberately uses a status function, which drops the implicit
-  # success() check on every `needs` entry: a failed or skipped manifest push
-  # (backend CI red, a Docker build failure) no longer strands green web
-  # commits outside dev until the next run happens to be fully green.
+  # land.
   #
   # The cloud learns about dev releases by pulling from Docker Hub itself;
   # this workflow no longer registers anything with the cloud API.
@@ -729,7 +723,7 @@ jobs:
   # superseded by the next release via concurrency.cancel-in-progress.
   deploy-web-spa:
     name: Deploy Web SPA (dev)
-    needs: [ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
+    needs: [ci-web-lint, ci-web-types, ci-web-tests]
     if: ${{ !cancelled() && needs.ci-web-lint.result == 'success' && needs.ci-web-types.result == 'success' && needs.ci-web-tests.result == 'success' }}
     permissions:
       contents: read

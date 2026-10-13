@@ -52,15 +52,6 @@ clients/macos/src
 # Docker image degrades every plugin category to "system" until the remote cache warms.
 !skills/skill-categories-catalog.yaml
 
-# Default local plugins: the bundle generator scans these directories (and
-# statically imports its generated artifacts), so they must ship in the build
-# context.
-!plugins/
-!plugins/mcp-catalog/
-!plugins/mcp-catalog/**
-!meta/
-!meta/sync-bundled-copies.ts
-
 # Exclude local dependencies and build outputs from included directories.
 assistant/dist/
 assistant/out/

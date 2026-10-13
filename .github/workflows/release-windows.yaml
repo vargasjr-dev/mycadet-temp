@@ -25,25 +25,15 @@ concurrency:
 
 jobs:
   build:
-    name: Build native payload (Windows ${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    name: Build native payload
+    runs-on: windows-2025
     timeout-minutes: 90
     environment: ${{ inputs.environment }}
-    # The arm64 runner is a preview image; only dev tolerates it failing.
-    continue-on-error: ${{ matrix.arch == 'arm64' && inputs.environment == 'dev' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            runner: windows-2025
-          - arch: arm64
-            runner: windows-11-vs2026-arm
     defaults:
       run:
         working-directory: clients/windows
     env:
-      ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
+      ELECTRON_TARGET_ARCH: x64
       CADET_ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: Validate inputs and signing gate
@@ -118,7 +108,7 @@ jobs:
           done
 
       - name: Build native helper
-        run: bun scripts/build-native-helper.ts --arch ${{ matrix.arch }}
+        run: bun scripts/build-native-helper.ts --arch x64
 
       - name: Prepare vcpkg binary cache
         shell: pwsh
@@ -135,12 +125,12 @@ jobs:
             !clients/windows/.build-tools/vcpkg/*/buildtrees
             !clients/windows/.build-tools/vcpkg/*/packages
             ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: windows-vcpkg-v1-${{ runner.os }}-${{ matrix.runner }}-${{ runner.arch }}-${{ matrix.arch }}-${{ steps.msbuild.outputs.image-version }}-${{ hashFiles('clients/windows/native/Cadet.PreviewHandler/vcpkg.json', 'clients/windows/scripts/build-preview-handler.ts') }}
+          key: windows-vcpkg-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.msbuild.outputs.image-version }}-${{ hashFiles('clients/windows/native/Cadet.PreviewHandler/vcpkg.json', 'clients/windows/scripts/build-preview-handler.ts') }}
 
       - name: Build preview handler
         env:
           MSBUILD_EXE_PATH: ${{ steps.msbuild.outputs.path }}
-        run: bun scripts/build-preview-handler.ts --arch ${{ matrix.arch }}
+        run: bun scripts/build-preview-handler.ts --arch x64
 
       - name: Build packaged runtime
         env:
@@ -165,29 +155,23 @@ jobs:
       - name: Upload native payload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: windows-native-${{ matrix.arch }}
+          name: windows-native
           path: clients/windows/native-build.tar
           if-no-files-found: error
           compression-level: 1
           retention-days: 1
 
   package-and-sign:
-    name: Package and sign (Windows ${{ matrix.arch }})
+    name: Package and sign
     needs: [build]
-    # Azure Artifact Signing does not support Windows ARM runners.
     runs-on: windows-2025
     timeout-minutes: 90
     environment: ${{ inputs.environment }}
-    continue-on-error: ${{ matrix.arch == 'arm64' && inputs.environment == 'dev' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x64, arm64]
     defaults:
       run:
         working-directory: clients/windows
     env:
-      ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
+      ELECTRON_TARGET_ARCH: x64
       CADET_ENVIRONMENT: ${{ inputs.environment }}
       WINDOWS_SIGNING_PUBLISHER_NAME: Vocify Inc.
     steps:
@@ -205,7 +189,7 @@ jobs:
       - name: Download native payload
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: windows-native-${{ matrix.arch }}
+          name: windows-native
           path: clients/windows
 
       - name: Restore native payload and release version
@@ -231,7 +215,7 @@ jobs:
       - name: Upload release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: windows-release-${{ matrix.arch }}
+          name: windows-release
           path: |
             clients/windows/dist/*.exe
             clients/windows/dist/*.exe.blockmap
