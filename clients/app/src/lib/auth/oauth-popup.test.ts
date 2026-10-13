@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test";
 import {
+  type OAuthCompletePayload,
   getOAuthCompleteMessagePayload,
   getOAuthCompleteStoragePayload,
   oauthCompletionStorageKey,
   parseOAuthCompletePayload,
 } from "@app/lib/auth/oauth-popup";
 
-const payload = {
+const payload: OAuthCompletePayload = {
   type: "cadet:oauth-complete",
   requestId: "request-1",
   oauthStatus: "success",
