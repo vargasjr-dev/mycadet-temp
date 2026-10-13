@@ -305,7 +305,6 @@ export interface HatchDockerParams {
    * also enables hot-reload.
    */
   sourcePath?: string | null;
-  analyze?: boolean;
   /**
    * Name of an existing container whose network namespace the assistant,
    * gateway, and credential-executor join (`--network=container:<name>`),
@@ -1719,7 +1718,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         logFd,
         runtimeUrl,
         containersUpAt,
-        analyze: params.analyze ?? false,
       });
 
     if (!ready && !(watch && repoRoot)) {
@@ -1828,7 +1826,6 @@ async function waitForGatewayAndLease(opts: {
   logFd: number | "ignore";
   runtimeUrl: string;
   containersUpAt: number;
-  analyze: boolean;
 }): Promise<{
   ready: boolean;
   guardianAccessToken?: string;
@@ -1844,7 +1841,6 @@ async function waitForGatewayAndLease(opts: {
     logFd,
     runtimeUrl,
     containersUpAt,
-    analyze,
   } = opts;
 
   const log = (msg: string): void => {
@@ -1964,14 +1960,12 @@ async function waitForGatewayAndLease(opts: {
   const containersUpToReadyMs = readyAt - start;
   const elapsedSec = (containersUpToReadyMs / 1000).toFixed(1);
   log(`Assistant ready after ${elapsedSec}s`);
-  if (analyze) {
-    console.info(
-      `[cadet-hatch-timing] ${JSON.stringify({
-        containers_up_to_ready_ms: containersUpToReadyMs,
-        instance: instanceName,
-      })}`,
-    );
-  }
+  console.info(
+    `[cadet-hatch-timing] ${JSON.stringify({
+      containers_up_to_ready_ms: containersUpToReadyMs,
+      instance: instanceName,
+    })}`,
+  );
 
   // Lease guardian token. The /readyz check confirms both gateway and
   // assistant are reachable. Retry with backoff in case there is a brief
