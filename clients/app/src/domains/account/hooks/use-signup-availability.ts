@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getAuthConfig } from "@web/lib/auth/allauth-client";
+import { getAuthConfig } from "@app/lib/auth/auth-config-client";
 
 export type SignupAvailability = "pending" | "open" | "closed";
 

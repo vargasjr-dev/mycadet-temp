@@ -3,6 +3,7 @@ import type { CadetCommand } from "@mycadet/ipc-contract";
 /** Native host capabilities currently used by the account client. */
 export interface AppElectronBridge {
   platform: "electron";
+  auth?: { getSessionToken?(): string | null };
   menu: { setCloudSession(has: boolean): Promise<void> };
   commands: {
     on(callback: (command: CadetCommand) => void): () => void;
