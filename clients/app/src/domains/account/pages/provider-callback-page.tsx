@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@app/i18n";
-import { captureError } from "@web/lib/error-reporting/capture-error";
+import { captureError } from "@app/lib/error-reporting/capture-error";
 
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
