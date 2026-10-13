@@ -12,7 +12,7 @@ import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-s
 import { getSession } from "@web/lib/auth/allauth-client";
 import { resolvePostAuthDestination } from "@web/domains/account/login-flow";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
-import { isLocalClient } from "@web/lib/local-mode";
+import { isLocalClient } from "@app/lib/runtime-mode";
 import { useAuthStore } from "@web/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
