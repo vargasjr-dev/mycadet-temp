@@ -104,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1", "2", "3", "4"]
+        shard: ["1", "2", "3", "4", "5", "6", "7", "8"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -126,13 +126,13 @@ jobs:
       - name: Sync feature flag registry
         run: bun run meta/sync-bundled-copies.ts
 
-      - name: Test (shard ${{ matrix.shard }} of 4)
+      - name: Test (shard ${{ matrix.shard }} of 8)
         run: bun run test
         working-directory: assistant
         env:
           EXCLUDE_EXPERIMENTAL: "true"
           TEST_WORKERS: "8"
-          TEST_SHARD: "${{ matrix.shard }}/4"
+          TEST_SHARD: "${{ matrix.shard }}/8"
 
   ci-gateway:
     runs-on: ubuntu-latest
@@ -208,8 +208,6 @@ jobs:
         working-directory: cli
 
   ci-web-lint:
-    needs: [compute-version]
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -232,8 +230,6 @@ jobs:
         working-directory: clients/web
 
   ci-web-types:
-    needs: [compute-version]
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -258,8 +254,6 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-web-tests:
-    needs: [compute-version]
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -399,9 +393,6 @@ jobs:
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:preview-v${VERSION}")
-          fi
           echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
           echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -542,9 +533,6 @@ jobs:
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:preview-v${VERSION}")
-          fi
           echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
           echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -682,9 +670,6 @@ jobs:
           IMAGE_TAGS="${IMAGE_REF}:${GITHUB_SHA}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:dev")
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:preview-v${VERSION}")
-          fi
           echo "image_tags<<EOF" >> "$GITHUB_OUTPUT"
           echo "$IMAGE_TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -754,25 +739,6 @@ jobs:
       environment: dev
     secrets: inherit
 
-  # ── Web SPA (production preview channel) ─────────────────────────────
-  # Publishes the preview UI into the PRODUCTION bucket under `/preview/` on
-  # every dev release, leaving the stable root index.html untouched. The
-  # bundle self-identifies via VITE_CHANNEL=preview; its version is the commit
-  # SHA. Gating matches deploy-web-spa above. The ref guard matches the other
-  # production-preview jobs so a release-branch dispatch cannot publish here.
-  deploy-web-spa-preview:
-    name: Deploy Web SPA (production /preview)
-    needs: [ci-web-lint, ci-web-types, ci-web-tests, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest]
-    if: ${{ !cancelled() && github.ref_name == 'main' && needs.ci-web-lint.result == 'success' && needs.ci-web-types.result == 'success' && needs.ci-web-tests.result == 'success' }}
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/deploy-cloud-web-spa.yaml
-    with:
-      environment: production
-      channel: preview
-    secrets: inherit
-
   build-chrome-extension:
     needs: [compute-version]
     if: ${{ false }} # chrome-extension offline on the dev channel; bring back online by deleting this marker
@@ -815,28 +781,13 @@ jobs:
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
     # the renderer below.
     environment: dev
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            dmg_name: mycadet-electron-dev.dmg
-            artifact_name: dev-electron-dmg
-            update_artifact_name: dev-electron-update-arm64
-            experimental: false
-          - arch: x64
-            dmg_name: mycadet-electron-dev-x64.dmg
-            artifact_name: dev-electron-dmg-x64
-            update_artifact_name: dev-electron-update-x64
-            experimental: true
     defaults:
       run:
         working-directory: clients/macos
     env:
       KEYCHAIN_NAME: build-electron.keychain
       KEYCHAIN_PASSWORD: temporary-ci-password
-      ELECTRON_TARGET_ARCH: ${{ matrix.arch }}
+      ELECTRON_TARGET_ARCH: arm64
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -972,7 +923,7 @@ jobs:
             exit 1
           fi
           echo "Found DMG: $ELECTRON_DMG"
-          FINAL_DMG="dist/${{ matrix.dmg_name }}"
+          FINAL_DMG="dist/mycadet-electron-dev.dmg"
           mv "$ELECTRON_DMG" "$FINAL_DMG"
           echo "dmg_path=$FINAL_DMG" >> "$GITHUB_OUTPUT"
 
@@ -1045,15 +996,15 @@ jobs:
       - name: Upload Electron DMG artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ matrix.artifact_name }}
-          path: clients/macos/dist/${{ matrix.dmg_name }}
+          name: dev-electron-dmg
+          path: clients/macos/dist/mycadet-electron-dev.dmg
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload Electron update artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ matrix.update_artifact_name }}
+          name: dev-electron-update-arm64
           path: |
             clients/macos/dist/*-mac.yml
             clients/macos/dist/*.zip
@@ -1091,13 +1042,6 @@ jobs:
           name: dev-electron-update-arm64
           path: electron-artifacts/arm64
 
-      - name: Download x64 update artifacts
-        continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: dev-electron-update-x64
-          path: electron-artifacts/x64
-
       - name: Validate update artifacts
         run: |
           DIR="electron-artifacts/arm64"
@@ -1117,7 +1061,7 @@ jobs:
         run: |
           MANIFEST_NAME="dev-mac.yml"
 
-          for ARCH in arm64 x64; do
+          for ARCH in arm64; do
             ARCH_DIR="electron-artifacts/${ARCH}"
             [ -d "$ARCH_DIR" ] || continue
             PREFIX="mac-electron/${ARCH}"
@@ -1135,24 +1079,14 @@ jobs:
 
   # ── Dev npm publishing ─────────────────────────────────────────────────
 
-  build-npm-dev:
-    needs:
-      [
-        compute-version,
-        ci-assistant-lint,
-        ci-assistant-types,
-        ci-assistant-tests,
-        ci-cli,
-        ci-gateway,
-        ci-credential-executor,
-      ]
+  publish-npm-assistant-dev:
+    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-    strategy:
-      matrix:
-        package: [assistant, cli, credential-executor, gateway]
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -1161,91 +1095,42 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
       - name: Sync feature flag registry
         run: bun run meta/sync-bundled-copies.ts
       - name: Stamp dev version
-        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' ${{ matrix.package }}/package.json > ${{ matrix.package }}/package.json.tmp && mv ${{ matrix.package }}/package.json.tmp ${{ matrix.package }}/package.json
+        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
       - name: Install package dependencies
         run: |
-          if ! bun install --frozen-lockfile --filter="./${{ matrix.package }}"; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter="./${{ matrix.package }}"
+          if ! bun install --frozen-lockfile --filter=./assistant; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=./assistant
           fi
       - name: Strip bundled deps from the manifest
-        run: bun scripts/strip-bundled-deps.mjs "${{ matrix.package }}"
-      - name: Rename the cli bin for the dev channel
-        if: matrix.package == 'cli'
-        run: |
-          jq '.bin = { "cadet-dev": .bin.cadet }' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
+        run: bun scripts/strip-bundled-deps.mjs assistant
       - name: Pack tarball
         run: |
-          cd "${{ matrix.package }}"
+          cd assistant
           mkdir -p /tmp/npm-dist
           bun pm pack --destination /tmp/npm-dist
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
           bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
-          node -p "require('./package.json').name" > /tmp/npm-dist/name
-          node -p "require('./package.json').version" > /tmp/npm-dist/version
-      - name: Upload tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: npm-tarball-dev-${{ matrix.package }}
-          path: /tmp/npm-dist/
-          retention-days: 1
-
-  publish-npm-dev:
-    needs: [compute-version, build-npm-dev]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
-    environment: dev
-    strategy:
-      matrix:
-        package: [assistant, cli, credential-executor, gateway]
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          sparse-checkout: .nvmrc
-          sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-      - name: Download tarball
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: npm-tarball-dev-${{ matrix.package }}
-          path: /tmp/npm-dist
-      - name: Publish package
+      - name: Publish
         run: |
-          PKG_NAME=$(cat /tmp/npm-dist/name)
-          PKG_VERSION=$(cat /tmp/npm-dist/version)
+          PKG_NAME=$(node -p "require('./assistant/package.json').name")
+          PKG_VERSION=$(node -p "require('./assistant/package.json').version")
           if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public
-
-  # `@mycadet/plugin-api` is generated by scripts/build-plugin-api.ts (a single
-  # self-contained `index.d.ts` rollup, zod-only external), not a package dir
-  # `npm pack` consumes directly, so it gets its own build/publish pair instead
-  # of a slot in the npm matrix. Mirrors build/publish-plugin-api-* in release.yml.
-  build-plugin-api-dev:
-    needs:
-      [
-        compute-version,
-        ci-assistant-lint,
-        ci-assistant-types,
-        ci-assistant-tests,
-        ci-cli,
-        ci-gateway,
-        ci-credential-executor,
-      ]
+  publish-npm-cli-dev:
+    needs: [compute-version, ci-cli]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -1254,6 +1139,146 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+      - name: Stamp dev version
+        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
+      - name: Install package dependencies
+        run: |
+          if ! bun install --frozen-lockfile --filter=./cli; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=./cli
+          fi
+      - name: Strip bundled deps from the manifest
+        run: bun scripts/strip-bundled-deps.mjs cli
+      - name: Rename the cli bin for the dev channel
+        run: |
+          jq '.bin = { "cadet-dev": .bin.cadet }' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
+      - name: Pack tarball
+        run: |
+          cd cli
+          mkdir -p /tmp/npm-dist
+          bun pm pack --destination /tmp/npm-dist
+          mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
+          bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
+      - name: Publish
+        run: |
+          PKG_NAME=$(node -p "require('./cli/package.json').name")
+          PKG_VERSION=$(node -p "require('./cli/package.json').version")
+          if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
+            exit 0
+          fi
+          npm publish /tmp/npm-dist/package.tgz --tag dev --access public
+  publish-npm-credential-executor-dev:
+    needs: [compute-version, ci-credential-executor]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+      - name: Stamp dev version
+        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
+      - name: Install package dependencies
+        run: |
+          if ! bun install --frozen-lockfile --filter=./credential-executor; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=./credential-executor
+          fi
+      - name: Strip bundled deps from the manifest
+        run: bun scripts/strip-bundled-deps.mjs credential-executor
+      - name: Pack tarball
+        run: |
+          cd credential-executor
+          mkdir -p /tmp/npm-dist
+          bun pm pack --destination /tmp/npm-dist
+          mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
+          bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
+      - name: Publish
+        run: |
+          PKG_NAME=$(node -p "require('./credential-executor/package.json').name")
+          PKG_VERSION=$(node -p "require('./credential-executor/package.json').version")
+          if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
+            exit 0
+          fi
+          npm publish /tmp/npm-dist/package.tgz --tag dev --access public
+  publish-npm-gateway-dev:
+    needs: [compute-version, ci-gateway]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - name: Sync feature flag registry
+        run: bun run meta/sync-bundled-copies.ts
+      - name: Stamp dev version
+        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
+      - name: Install package dependencies
+        run: |
+          if ! bun install --frozen-lockfile --filter=./gateway; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=./gateway
+          fi
+      - name: Strip bundled deps from the manifest
+        run: bun scripts/strip-bundled-deps.mjs gateway
+      - name: Pack tarball
+        run: |
+          cd gateway
+          mkdir -p /tmp/npm-dist
+          bun pm pack --destination /tmp/npm-dist
+          mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
+          bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
+      - name: Publish
+        run: |
+          PKG_NAME=$(node -p "require('./gateway/package.json').name")
+          PKG_VERSION=$(node -p "require('./gateway/package.json').version")
+          if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
+            exit 0
+          fi
+          npm publish /tmp/npm-dist/package.tgz --tag dev --access public
+  # `@mycadet/plugin-api` is generated by scripts/build-plugin-api.ts (a single
+  # self-contained `index.d.ts` rollup, zod-only external), not a package dir
+  # `npm pack` consumes directly, so it keeps its own combined build/publish job
+  # instead of a slot in the npm publish family. Mirrors build/publish-plugin-api-* in release.yml.
+  publish-plugin-api-dev:
+    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
       - name: Install dependencies
         run: |
           if ! bun install --frozen-lockfile --filter=@mycadet/assistant; then
@@ -1269,65 +1294,23 @@ jobs:
           mkdir -p /tmp/npm-dist
           npm pack --pack-destination /tmp/npm-dist
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
-          node -p "require('./package.json').name" > /tmp/npm-dist/name
-          node -p "require('./package.json').version" > /tmp/npm-dist/version
-      - name: Upload tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: npm-tarball-dev-plugin-api
-          path: /tmp/npm-dist/
-          retention-days: 1
-
-  publish-plugin-api-dev:
-    needs: [compute-version, build-plugin-api-dev]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
-    environment: dev
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          sparse-checkout: .nvmrc
-          sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-      - name: Download tarball
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: npm-tarball-dev-plugin-api
-          path: /tmp/npm-dist
-      - name: Publish package
+      - name: Publish
         run: |
-          PKG_NAME=$(cat /tmp/npm-dist/name)
-          PKG_VERSION=$(cat /tmp/npm-dist/version)
+          PKG_NAME=$(node -p "require('./assistant/.plugin-api-build/package/package.json').name")
+          PKG_VERSION=$(node -p "require('./assistant/.plugin-api-build/package/package.json').version")
           if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public
-
-  build-web-dev:
-    needs:
-      [
-        compute-version,
-        ci-assistant-lint,
-        ci-assistant-types,
-        ci-assistant-tests,
-        ci-cli,
-        ci-gateway,
-        ci-credential-executor,
-        ci-web-lint,
-        ci-web-types,
-        ci-web-tests,
-      ]
+  publish-web-dev:
+    needs: [compute-version, ci-web-lint, ci-web-types, ci-web-tests]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: read
+      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
+    environment: dev
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -1336,6 +1319,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
       - name: Install design-library dependencies
         working-directory: packages/design-library
         run: bun install --frozen-lockfile --filter=@mycadet/design-library
@@ -1365,51 +1349,25 @@ jobs:
           mkdir -p /tmp/npm-dist
           npm pack --pack-destination /tmp/npm-dist
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
-          node -p "require('./package.json').name" > /tmp/npm-dist/name
-          node -p "require('./package.json').version" > /tmp/npm-dist/version
-      - name: Upload tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: npm-tarball-dev-web
-          path: /tmp/npm-dist/
-          retention-days: 1
-
-  publish-web-dev:
-    name: publish-npm-dev (web)
-    needs: [compute-version, build-web-dev]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN
-    environment: dev
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          sparse-checkout: .nvmrc
-          sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-      - name: Download tarball
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: npm-tarball-dev-web
-          path: /tmp/npm-dist
       - name: Publish
         run: |
-          PKG_NAME=$(cat /tmp/npm-dist/name)
-          PKG_VERSION=$(cat /tmp/npm-dist/version)
+          PKG_NAME=$(node -p "require('./clients/web/package.json').name")
+          PKG_VERSION=$(node -p "require('./clients/web/package.json').version")
           if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "::notice::$PKG_NAME@$PKG_VERSION already published; skipping."
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public
-
   publish-meta-dev:
-    name: publish-npm-dev (meta)
-    needs: [compute-version, publish-npm-dev, publish-web-dev]
+    needs:
+      [
+        compute-version,
+        publish-npm-assistant-dev,
+        publish-npm-cli-dev,
+        publish-npm-credential-executor-dev,
+        publish-npm-gateway-dev,
+        publish-web-dev,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
