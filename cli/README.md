@@ -151,3 +151,16 @@ The CLI looks up the instance by name in the production lockfile (`~/.cadet.lock
 # Retire an instance (cloud type resolved from config)
 cadet retire my-assistant
 ```
+
+## Terminal login and logs
+
+`cadet login` opens the browser PKCE flow in an attached terminal. Without
+a terminal, it prints a cloud approval URL and confirmation code, then
+polls for up to five minutes. The resulting session token uses the same
+local storage, validation, registration, and sync path as browser login.
+The cloud platform must expose `/v1/auth/cli/start` and `/v1/auth/cli/poll`.
+
+CLI lifecycle logs remain in the environment's XDG config log directory
+(`~/.config/cadet/logs` in production). Local assistant and gateway stdout
+are appended to `<instanceDir>/logs/assistant-stdout.log` and
+`<instanceDir>/logs/gateway-stdout.log`.

@@ -142,3 +142,14 @@ export function pipeToLogFile(
     stream.on("error", onDone);
   }
 }
+
+/** Runtime output belongs to the instance, alongside its service state. */
+export function openRuntimeLogFile(instanceDir: string, service: "assistant" | "gateway"): number | "ignore" {
+  try {
+    const dir = join(instanceDir, "logs");
+    mkdirSync(dir, { recursive: true });
+    return openSync(join(dir, `${service}-stdout.log`), "a", 0o600);
+  } catch {
+    return "ignore";
+  }
+}
