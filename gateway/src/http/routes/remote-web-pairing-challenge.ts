@@ -21,7 +21,13 @@ import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
 
 const MAX_CHALLENGE_BODY_BYTES = 512;
 
-function parsePublicBaseUrl(value: string): string | null {
+/**
+ * Normalize an advertised base URL to `origin + trailing-slash-stripped path`,
+ * or null when the value is empty, unparseable, non-http(s), or hostless.
+ * Shared with the pairing mint IPC route, which validates the CLI-passed URL
+ * with the exact same rules the HTTP route applies.
+ */
+export function parsePublicBaseUrl(value: string): string | null {
   if (!value.trim()) {
     return null;
   }

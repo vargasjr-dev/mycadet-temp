@@ -8,6 +8,7 @@
  */
 
 import { runContactsCommand } from "./contacts.js";
+import { runPairingCommand } from "./pairing.js";
 
 function printUsage(): void {
   console.log("Usage: gateway <command>");
@@ -15,7 +16,12 @@ function printUsage(): void {
   console.log("Operator commands for gateway-owned state.");
   console.log("");
   console.log("Commands:");
-  console.log("  contacts    Manage the contact ACL with list, get, set-risk-threshold");
+  console.log(
+    "  contacts    Manage the contact ACL with list, get, set-risk-threshold",
+  );
+  console.log(
+    "  pairing     Mint/approve a remote-web pairing challenge (mint <url>)",
+  );
 }
 
 const args = process.argv.slice(2);
@@ -28,6 +34,11 @@ if (command === "--help" || command === "-h" || !command) {
 
 if (command === "contacts") {
   const code = await runContactsCommand(args.slice(1));
+  process.exit(code);
+}
+
+if (command === "pairing") {
+  const code = await runPairingCommand(args.slice(1));
   process.exit(code);
 }
 

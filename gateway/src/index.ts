@@ -260,6 +260,7 @@ import { createDebugExportRoutes } from "./ipc/debug-export-handlers.js";
 import { createLogTailRoutes } from "./ipc/log-tail-handlers.js";
 import { createChannelSocketHealthRoutes } from "./ipc/channel-socket-health-handlers.js";
 import { createCredentialRequestIpcRoutes } from "./ipc/credential-request-handlers.js";
+import { createPairingIpcRoutes } from "./ipc/pairing-handlers.js";
 import { slackThreadRoutes } from "./ipc/slack-thread-handlers.js";
 import { thresholdRoutes } from "./ipc/threshold-handlers.js";
 import { trustRulesRoutes } from "./ipc/trust-rules-handlers.js";
@@ -3108,6 +3109,7 @@ async function main() {
       discord: () => discordGatewayClient,
     }),
     ...trustRulesRoutes,
+    ...createPairingIpcRoutes(),
     ...createTunnelRoutes(tunnelClient),
     ...createWebhookRouteRoutes(),
     ...createCredentialRequestIpcRoutes(

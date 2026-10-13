@@ -984,6 +984,33 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
   }
 }
 
+/**
+ * How to invoke a `gateway <subcommand>` CLI process so it resolves the same
+ * workspace (and therefore the same gateway IPC socket) as the locally
+ * spawned gateway server: run the gateway package's CLI entry through bun
+ * with the spawn state root as cwd and the instance-pinned CADET_WORKSPACE_DIR
+ * the server was given. Callers pass the resolved assistant entry's
+ * `resources` (undefined for the default instance).
+ */
+export function gatewayCliInvocation(resources?: LocalInstanceResources): {
+  command: string;
+  args: string[];
+  cwd: string;
+  env: Record<string, string | undefined>;
+} {
+  return {
+    command: resolveBunExecutable(),
+    args: ["run", join(resolveGatewayDir(resources), "src/cli/index.ts")],
+    cwd: spawnStateRoot(),
+    env: {
+      ...process.env,
+      ...(resources
+        ? { CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace") }
+        : {}),
+    },
+  };
+}
+
 function resolveCesDir(resources?: LocalInstanceResources): string {
   const runtimeCesDir = localRuntimeCesDir(resources);
   if (runtimeCesDir) return runtimeCesDir;
@@ -1118,9 +1145,7 @@ export async function startCes(
     // Source tree / bunx: run the CES entry point via bun.
     const cesDir = runtimeCesDir ?? resolveCesDir(resources);
     const cesEntry = join(cesDir, "src/main.ts");
-    const bunArgs = watch
-      ? ["--watch", "run", cesEntry]
-      : ["run", cesEntry];
+    const bunArgs = watch ? ["--watch", "run", cesEntry] : ["run", cesEntry];
     const cesLogFd = openLogFile("hatch.log");
     ces = spawn(resolveBunExecutable(), bunArgs, {
       cwd: spawnStateRoot(),
