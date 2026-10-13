@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router";
 
 import { useTranslation } from "@app/i18n";
-import { oauthCompletionStorageKey } from "@web/lib/auth/oauth-popup";
+import { oauthCompletionStorageKey } from "@app/lib/auth/oauth-popup";
 import {
   buildOAuthCompleteDeepLink,
   getNativeUrlSchemeForHost,

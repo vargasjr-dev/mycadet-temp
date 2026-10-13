@@ -70,7 +70,7 @@ mock.module("../../../components/signup-shell", () => ({
 const { ProviderSignupPage } =
   await import("@app/domains/account/pages/provider-signup-page");
 const { peekSignupOnboardingFirstName, takeSignupOnboardingFirstName } =
-  await import("@web/lib/auth/signup-onboarding-handoff");
+  await import("@app/lib/auth/signup-onboarding-handoff");
 
 function continueButton(): HTMLButtonElement {
   return screen.getByRole("button", { name: /continue/i });
