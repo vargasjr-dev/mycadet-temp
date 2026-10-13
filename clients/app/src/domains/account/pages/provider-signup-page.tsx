@@ -14,7 +14,7 @@ import {
   getProviderSignup,
   isConflict,
   submitProviderSignup,
-} from "@web/lib/auth/allauth-client";
+} from "@app/lib/auth/provider-signup-client";
 import { setSignupOnboardingFirstName } from "@app/lib/auth/signup-onboarding-handoff";
 import {
   resolvePostAuthDestination,

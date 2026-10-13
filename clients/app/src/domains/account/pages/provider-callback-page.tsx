@@ -9,7 +9,7 @@ import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
 import { listAssistants } from "@web/assistant/api";
 import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
-import { getSession } from "@web/lib/auth/allauth-client";
+import { getSession } from "@app/lib/auth/session-client";
 import { resolvePostAuthDestination } from "@web/domains/account/login-flow";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
 import { isLocalClient } from "@app/lib/runtime-mode";
