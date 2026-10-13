@@ -197,6 +197,43 @@ export function adoptedTunnelStopNotice(pid: number | undefined): string {
   );
 }
 
+/**
+ * Pull the single most meaningful failure line out of a tunnel log so the
+ * `cadet tunnel` wrapper can name why the child died instead of only pointing
+ * at the log file. Priority: nginx emerg/bind failures, ngrok error codes,
+ * auth/usage failures, then any generic error/fatal/failed line — the LAST
+ * match wins (the freshest), capped to keep the console line readable. Falls
+ * back to the last non-empty log line, or null for an empty log.
+ */
+export function summarizeStartupFailure(logText: string): string | null {
+  const lines = logText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) {
+    return null;
+  }
+  const patterns: RegExp[] = [
+    /\[emerg\]/,
+    /bind\(\).*failed/i,
+    /address already in use/i,
+    /ERR_NGROK_\d+/,
+    /authtoken|authentication failed|usage limit|unauthorized/i,
+    /\berror\b|\bfatal\b|\bfailed\b/i,
+  ];
+  const cap = (line: string): string =>
+    line.length > 200 ? `${line.slice(0, 200)}…` : line;
+  for (const pattern of patterns) {
+    const matches = lines.filter((line) => pattern.test(line));
+    const last = matches.at(-1);
+    if (last !== undefined) {
+      return cap(last);
+    }
+  }
+  const lastLine = lines.at(-1);
+  return lastLine === undefined ? null : cap(lastLine);
+}
+
 export {
   ADOPTED_TUNNEL_RE,
   hasWebhookIntegrationsConfigured,

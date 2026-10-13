@@ -13,6 +13,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createServer } from "node:net";
 import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 
@@ -166,7 +167,23 @@ export function cloudWebHubUrl(env: string | undefined): string {
 // must always run: it is reached through this self-hosted edge however the
 // cadet itself is hosted. "cloud" is never stamped (the cloud serves its
 // own bundles).
-const EDGE_SERVED_REMOTE: RemoteHost = "custom";
+/** The lockfile's recorded remote kind for the assistant, if one is found. */
+function lockfileAssistantRemote(assistantId: string): string | undefined {
+  const result = lookupAssistantByIdentifier(assistantId);
+  return result.status === "found" ? result.entry.cloud : undefined;
+}
+
+/**
+ * The remote kind stamped into the served SPA config. Docker and custom
+ * cadets are stamped truthfully; every other hosting shape — a local cadet
+ * reached through this edge, paired remotes, unknown entries — reads as
+ * "custom" so the served bundle always runs the remote-gateway machinery
+ * (this edge serves remote browsers however the cadet itself is hosted).
+ * "cloud" is never stamped: the cloud serves its own bundles.
+ */
+export function edgeServedRemote(recorded: string | undefined): RemoteHost {
+  return recorded === "docker" ? "docker" : "custom";
+}
 
 function remoteWebIngressConfig(
   opts: Pick<
@@ -175,7 +192,9 @@ function remoteWebIngressConfig(
   >,
 ): Record<string, unknown> {
   return {
-    remote: EDGE_SERVED_REMOTE,
+    remote: edgeServedRemote(
+      opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
+    ),
     apiBaseUrl: "/v1",
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
@@ -276,6 +295,44 @@ export function hasIpv6Loopback(): boolean {
   return Object.values(networkInterfaces())
     .flatMap((addrs) => addrs ?? [])
     .some((addr) => addr.address === "::1");
+}
+
+/** Whether a TCP listener already holds `port` on the given loopback host. */
+async function isPortInUse(
+  port: number,
+  host: "127.0.0.1" | "::1",
+): Promise<boolean> {
+  return await new Promise((resolve) => {
+    const probe = createServer();
+    probe.once("error", () => resolve(true));
+    probe.once("listening", () => {
+      probe.close(() => resolve(false));
+    });
+    probe.listen(port, host);
+  });
+}
+
+/**
+ * The first free loopback port at or above `startPort`, scanning a short band,
+ * or null when the whole band is busy. Both stacks the edge may bind are
+ * probed (the IPv4 loopback always, the IPv6 loopback when the host has one),
+ * so the returned port is one nginx can actually take.
+ */
+export async function findAvailableIngressPort(
+  startPort: number,
+  attempts = 20,
+): Promise<number | null> {
+  const checkIpv6 = hasIpv6Loopback();
+  for (let port = startPort; port < startPort + attempts; port++) {
+    if (await isPortInUse(port, "127.0.0.1")) {
+      continue;
+    }
+    if (checkIpv6 && (await isPortInUse(port, "::1"))) {
+      continue;
+    }
+    return port;
+  }
+  return null;
 }
 
 /**
@@ -857,7 +914,7 @@ export async function startRemoteWebIngress(opts: {
     listenPort: number;
   }) => void;
 }): Promise<StartRemoteWebIngressResult> {
-  const listenPort = opts.listenPort ?? getNginxIngressPort();
+  let listenPort = opts.listenPort ?? getNginxIngressPort();
   const includeWebApp = opts.includeWebApp ?? true;
 
   const version = getNginxVersion();
@@ -911,6 +968,23 @@ export async function startRemoteWebIngress(opts: {
     webDistDir = findWebDistDir();
     if (!webDistDir) {
       return { status: "web-dist-missing" };
+    }
+  }
+
+  // A foreign process squatting the default edge port (another assistant's
+  // edge, a stale dev server) must not kill the tunnel: the edge port is
+  // loopback-local and the public tunnel URL never carries it, so moving to
+  // the next free port is invisible to remote clients. Explicit pins
+  // (opts.listenPort / CADET_NGINX_INGRESS_PORT) keep their intent and still
+  // fail on a collision.
+  if (
+    opts.listenPort === undefined &&
+    process.env.CADET_NGINX_INGRESS_PORT === undefined
+  ) {
+    const discovered = await findAvailableIngressPort(listenPort);
+    if (discovered !== null && discovered !== listenPort) {
+      console.log(`Port ${listenPort} in use; using ${discovered} instead.`);
+      listenPort = discovered;
     }
   }
 

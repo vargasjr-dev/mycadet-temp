@@ -1818,7 +1818,7 @@ describe("tunnel background mode", () => {
     const { exited, errors } = await runTunnelExpectingExit1();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("exited during startup (exit code 1)");
+    expect(errors).toContain("Error (1): tunnel process exited during startup");
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 

@@ -37,6 +37,7 @@ import {
   hasWebhookIntegrationsConfigured,
   providerSupportsReservedDomain,
   runProviderTunnel,
+  summarizeStartupFailure,
 } from "../lib/tunnel.js";
 
 // The accepted `--provider` values ARE the shared registry, so validation
@@ -394,9 +395,17 @@ async function spawnDetachedTunnel(): Promise<void> {
   });
 
   if (exitCode !== undefined) {
+    let logText = "";
+    try {
+      logText = readFileSync(logPath, "utf-8");
+    } catch {
+      // Log file not readable — the summary falls back to none.
+    }
+    const reason = summarizeStartupFailure(logText);
     console.error(
-      `Error: tunnel process exited during startup${exitCode !== null ? ` (exit code ${exitCode})` : ""}. Logs: ${logPath}`,
+      `Error (${exitCode ?? "unknown"}): tunnel process exited during startup${reason ? `: ${reason}` : "."}`,
     );
+    console.error(`Logs: ${logPath}`);
     process.exit(1);
   }
 

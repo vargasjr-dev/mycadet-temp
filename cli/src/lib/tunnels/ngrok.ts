@@ -631,8 +631,12 @@ export async function runNgrokTunnel(
     console.log("Ingress URL saved to config.");
     console.log("");
     console.log(
-      "Tunnel is already running. Press Ctrl+C to detach (tunnel stays active).",
+      `An ngrok agent from an earlier run is still up serving 127.0.0.1:${port} (${existingUrl}) — this run adopts it instead of starting a new agent.`,
     );
+    console.log(
+      "Adopted agents do not appear in `cadet ps` because this run does not own the process.",
+    );
+    console.log("Press Ctrl+C to detach (tunnel stays active).");
 
     // Block until SIGINT/SIGTERM
     const waitForExit = new Promise<void>((resolve) => {
