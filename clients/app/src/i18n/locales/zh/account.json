@@ -86,5 +86,11 @@
     "loopbackStateMismatch": "登录失败：状态不匹配。请重试。",
     "loopbackNoToken": "登录失败：未收到会话令牌。请重试。",
     "loopbackInvalidToken": "登录失败：会话令牌无效。"
+  },
+  "welcome": {
+    "title": "欢迎使用 Cadet",
+    "body": "您的专属智能助手触手可及。",
+    "cancel": "取消",
+    "logIn": "登录"
   }
 }

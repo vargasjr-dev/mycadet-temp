@@ -6,7 +6,7 @@ import {
   AuthWelcomeScreen,
   WelcomeScreenCopy,
   WelcomeScreenShell,
-} from "@web/components/auth-welcome-screen";
+} from "@app/components/auth-welcome-screen";
 import { AuthWaitSpinner } from "@app/domains/account/components/auth-wait-spinner";
 import { useReturnToShortCircuit } from "@app/domains/account/hooks/use-return-to-short-circuit";
 import {
@@ -16,7 +16,10 @@ import {
 } from "@app/domains/account/native-auth-error";
 import { withPreservedAttribution } from "@app/domains/account/attribution";
 import { captureError } from "@mycadet/design-library/utils/capture-error";
-import { startNativeLogin, useIsNativePlatform } from "@web/runtime/native-auth";
+import {
+  startNativeLogin,
+  useIsNativePlatform,
+} from "@web/runtime/native-auth";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library";
 

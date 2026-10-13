@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import webI18next from "i18next";
 import { I18nextProvider } from "react-i18next";
 
+import { WelcomeScreenCopy } from "@app/components/auth-welcome-screen";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { changeLocale, t, Trans, useTranslation } from "@app/i18n";
 import { i18next } from "@app/i18n/instance";
@@ -65,4 +66,20 @@ test("app hydration fallback uses app locale while web remains English", async (
     "Cargando",
   );
   expect(webI18next.t("rootHydrateFallback.loadingAria")).toBe("Loading");
+});
+
+test("login welcome copy uses app language inside a web provider", async () => {
+  await changeLocale("es");
+  await webI18next.changeLanguage("en");
+  render(
+    <I18nextProvider i18n={webI18next}>
+      <WelcomeScreenCopy>
+        <button>Sign in</button>
+      </WelcomeScreenCopy>
+    </I18nextProvider>,
+  );
+  expect(screen.getByRole("heading").textContent).toBe(
+    t("account:welcome.title"),
+  );
+  expect(screen.getByRole("heading").textContent).not.toBe("Welcome to Cadet");
 });
