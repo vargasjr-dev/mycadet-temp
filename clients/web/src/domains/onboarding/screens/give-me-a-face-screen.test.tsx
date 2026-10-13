@@ -29,7 +29,7 @@ import {
   test,
 } from "bun:test";
 
-mock.module("@/utils/use-bundled-avatar-components", () => ({
+mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
   // Truthy so the scene renders + the pool generates; `colors: []` keeps
   // `useOnboardingTone` (read by the shared top bar) happy.
   useBundledAvatarComponents: () => ({ colors: [] }),

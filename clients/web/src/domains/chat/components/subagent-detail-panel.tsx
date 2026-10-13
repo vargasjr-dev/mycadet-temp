@@ -29,7 +29,7 @@ import type { SubagentEntry } from "@/domains/chat/subagent-store";
 import { useSubagentHistory } from "@/domains/chat/hooks/use-subagent-history";
 import { subagentTraits } from "@/utils/avatar-subagent";
 import { isActiveStatus } from "@/utils/subagent-status";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 import { Button, Typography } from "@mycadet/design-library";
 
 import { DetailPanelStopButton } from "@/components/detail-panel-stop-button";

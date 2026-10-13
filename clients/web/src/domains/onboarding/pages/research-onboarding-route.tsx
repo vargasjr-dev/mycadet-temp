@@ -41,7 +41,7 @@ import {
   useIsCloudSessionSettled,
 } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
-import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 import { DEFAULT_GROUP_ID } from "@/domains/onboarding/prechat-names";
 import {
   setPendingAssistantName,

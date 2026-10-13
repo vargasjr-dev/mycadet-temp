@@ -12,7 +12,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("@/utils/use-bundled-avatar-components", () => ({
+mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
   useBundledAvatarComponents: () => ({
     colors: [
       { id: "teal", hex: "#2AA79B" },

@@ -30,7 +30,7 @@ let bundledArt: unknown = {
   ],
 };
 
-mock.module("@/utils/use-bundled-avatar-components", () => ({
+mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
   useBundledAvatarComponents: () => bundledArt,
 }));
 

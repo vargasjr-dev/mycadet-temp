@@ -13,7 +13,7 @@ import { AvatarRenderer } from "@/components/avatar-renderer";
 import { useTranslation } from "@/i18n";
 import type { CharacterTraits } from "@/types/avatar";
 import { canResolveDefinitions } from "@/utils/avatar-svg-compositor";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 
 export interface ChooserAvatarChipProps {
   traits: CharacterTraits | null;

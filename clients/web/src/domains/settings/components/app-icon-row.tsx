@@ -28,7 +28,7 @@ import {
   DEFAULT_APP_ICON_TRAITS,
   traitsForAppIconName,
 } from "@/utils/avatar-app-icon";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 import { Button } from "@mycadet/design-library/components/button";
 
 /** Size of the row's thumbnail, sitting beside a single-line control. */

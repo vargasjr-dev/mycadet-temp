@@ -28,7 +28,7 @@ import { WorkflowSubagentRow } from "@/domains/chat/components/workflow-subagent
 import type { WorkflowEntry } from "@/domains/chat/workflow-store";
 import { subagentTraits } from "@/utils/avatar-subagent";
 import { isActiveStatus } from "@/utils/workflow-status";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 import { Button, Typography } from "@mycadet/design-library";
 import { useTranslation } from "@/i18n";
 

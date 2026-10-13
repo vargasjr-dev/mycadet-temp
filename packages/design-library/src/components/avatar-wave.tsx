@@ -7,9 +7,9 @@ import {
   ribbonSizingHeight,
   type RelativeRibbonPoint,
   type RibbonPoint,
-} from "@/utils/avatar-wave-ribbon";
-import { renderAvatarSprite } from "@/utils/avatar-sprite";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+} from "@design/utils/avatar-wave-ribbon";
+import { renderAvatarSprite } from "@design/utils/avatar-sprite";
+import { useBundledAvatarComponents } from "@design/utils/use-bundled-avatar-components";
 
 /**
  * A crowd of characters flowing down a ribbon, drawn on one canvas and
@@ -211,7 +211,7 @@ let hasPlayedEntrance = false;
  */
 export type AvatarWaveVariant = "column" | "wrap";
 
-interface AvatarWaveProps {
+export interface AvatarWaveProps {
   className?: string;
   /**
    * Ask for the staggered entrance. Honored only on the first wave to mount
@@ -607,6 +607,7 @@ export function AvatarWave({
   return (
     <canvas
       ref={canvasRef}
+      data-slot="avatar-wave"
       aria-hidden="true"
       className={`pointer-events-none block h-full w-full ${className}`}
     />

@@ -6,7 +6,7 @@ import { useMediaQuery } from "@app/hooks/use-media-query";
 import {
   AvatarWave,
   WRAP_WAVE_MIN_HEIGHT_QUERY,
-} from "@web/components/avatar-wave";
+} from "@mycadet/design-library/components/avatar-wave";
 import { CreatureFooter } from "./creature-footer";
 
 /** See {@link OnboardingLayout}'s `avatarWave` prop. */

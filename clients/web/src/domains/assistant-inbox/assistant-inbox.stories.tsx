@@ -41,7 +41,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { Conversation } from "@/types/conversation-types";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
-import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 
 import { AssistantInboxPage } from "./components/assistant-inbox-page";
 import { AssistantInboxSetupCard } from "./components/assistant-inbox-setup-card";

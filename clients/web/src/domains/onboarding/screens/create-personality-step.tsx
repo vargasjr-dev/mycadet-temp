@@ -36,7 +36,7 @@ import { useLayoutViewportSize } from "@/hooks/use-element-size";
 import {
   preloadBundledAvatarComponents,
   useBundledAvatarComponents,
-} from "@/utils/use-bundled-avatar-components";
+} from "@mycadet/design-library/utils/use-bundled-avatar-components";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
 import { useTranslation } from "@/i18n";
 

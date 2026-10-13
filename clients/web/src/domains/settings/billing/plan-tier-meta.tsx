@@ -1,5 +1,5 @@
 import { AvatarRenderer } from "@/components/avatar-renderer";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
 
 /** Pro package tier keys, keyed by `ProPackage.key` ("free" is the base plan). */
 export type PlanTierKey = "free" | "mighty" | "super" | "ultra";

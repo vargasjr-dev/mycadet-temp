@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-import type { CharacterComponents } from "@/types/avatar";
+import type { getCharacterComponents } from "@mycadet/avatar-catalog";
+
+type CharacterComponents = ReturnType<typeof getCharacterComponents>;
 
 // Module-level cache so the dynamic import resolves once per session even if
 // multiple chips mount in parallel during the same render pass.
@@ -28,9 +30,9 @@ function loadBundledComponents(): Promise<CharacterComponents> {
   if (loadPromise) {
     return loadPromise;
   }
-  loadPromise = import("@/utils/avatar-bundled-components")
+  loadPromise = import("@mycadet/avatar-catalog")
     .then((m) => {
-      cached = m.BUNDLED_COMPONENTS;
+      cached = m.getCharacterComponents();
       loadPromise = null;
       for (const cb of subscribers) {
         cb();

@@ -4,7 +4,7 @@ import { PortalContainerProvider } from "@mycadet/design-library/utils/portal-co
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { isElectron } from "@/runtime/is-electron";
-import { AvatarWave, WRAP_WAVE_MIN_HEIGHT_QUERY } from "./avatar-wave";
+import { AvatarWave, WRAP_WAVE_MIN_HEIGHT_QUERY } from "@mycadet/design-library/components/avatar-wave";
 import { CreatureFooter } from "./creature-footer";
 
 /** See {@link OnboardingLayout}'s `avatarWave` prop. */
