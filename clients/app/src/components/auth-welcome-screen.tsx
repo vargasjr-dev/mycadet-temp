@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { AccountShell } from "@app/components/account/account-shell";
-import { startAuthFlow } from "@web/runtime/native-auth";
+import { startAuthFlow } from "@app/lib/auth/auth-flow";
 import { PROVIDER_ID } from "@app/domains/account/provider";
 import { buildProviderCallbackUrl } from "@app/domains/account/provider-callback";
 import {

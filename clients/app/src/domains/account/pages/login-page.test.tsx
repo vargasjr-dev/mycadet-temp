@@ -21,6 +21,7 @@ import {
 
 mock.module("@web/stores/auth-store", mockAuthStore);
 mock.module("@web/runtime/native-auth", mockNativeAuth);
+mock.module("@app/lib/auth/auth-flow", mockNativeAuth);
 mock.module("@app/lib/auth/hard-navigate", mockHardNavigate);
 
 const { LoginPage } = await import("@app/domains/account/pages/login-page");

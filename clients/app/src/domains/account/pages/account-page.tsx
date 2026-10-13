@@ -9,7 +9,7 @@ import {
   PROVIDER_ID,
 } from "@app/domains/account/provider";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";
-import { startAuthFlow } from "@web/runtime/native-auth";
+import { startAuthFlow } from "@app/lib/auth/auth-flow";
 import {
   useAuthStore,
   useIsAuthenticated,

@@ -9,7 +9,7 @@ import {
 import { MemoryRouter } from "react-router";
 
 const startAuthFlow = mock(() => new Promise<void>(() => {}));
-mock.module("@web/runtime/native-auth", () => ({ startAuthFlow }));
+mock.module("@app/lib/auth/auth-flow", () => ({ startAuthFlow }));
 const { AuthWelcomeScreen } = await import("./auth-welcome-screen");
 const initialBridge = window.cadet;
 afterEach(() => {

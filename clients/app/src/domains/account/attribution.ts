@@ -1,4 +1,4 @@
-const ATTRIBUTION_PARAMS: readonly string[] = [
+export const ATTRIBUTION_PARAMS: readonly string[] = [
   "utm_source",
   "utm_medium",
   "utm_campaign",

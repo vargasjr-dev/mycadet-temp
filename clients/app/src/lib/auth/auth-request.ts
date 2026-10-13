@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currentLocale } from "@app/i18n";
+import { ensureCsrfCookie, getCsrfToken } from "@app/lib/auth/csrf";
 import { authEndpoint } from "@app/lib/auth/auth-endpoint";
 import {
   authErrorResult,
@@ -7,36 +8,6 @@ import {
 } from "@app/lib/auth/auth-response";
 import { getElectronBridge } from "@app/runtime/electron-bridge";
 import { getElectronSessionToken } from "@app/runtime/session-token";
-
-function csrfToken(): string | undefined {
-  const key = import.meta.env.PROD ? "__Secure-csrftoken" : "csrftoken";
-  return document.cookie
-    .split("; ")
-    .findLast((entry) => entry.startsWith(`${key}=`))
-    ?.split("=")
-    .slice(1)
-    .join("=");
-}
-let bootstrap: Promise<void> | undefined;
-async function ensureCsrfCookie(): Promise<void> {
-  if (csrfToken()) return;
-  bootstrap ??= (async () => {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        await fetch(authEndpoint("auth/session"), {
-          credentials: "same-origin",
-        });
-        if (csrfToken()) return;
-      } catch {
-        if (attempt === 0)
-          await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-    }
-  })().finally(() => {
-    bootstrap = undefined;
-  });
-  await bootstrap;
-}
 
 export async function requestAccount<T>(
   path: string,
@@ -59,7 +30,7 @@ export async function requestAccount<T>(
         );
       } else {
         await ensureCsrfCookie();
-        const csrf = csrfToken();
+        const csrf = getCsrfToken();
         if (csrf) headers.set("X-CSRFToken", csrf);
       }
     }
