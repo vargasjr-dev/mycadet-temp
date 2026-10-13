@@ -3,6 +3,7 @@
     "openInApp": "Abrir en la aplicación de Cadet",
     "continueInBrowser": "Continuar en este navegador",
     "pairingCode": "Código de vinculación",
+    "pair": "Vincular",
     "expiresAt": "Caduca a las {time}.",
     "cancel": "Cancelar"
   }

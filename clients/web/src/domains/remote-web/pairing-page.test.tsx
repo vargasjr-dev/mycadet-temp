@@ -80,16 +80,6 @@ const exchangeRemoteWebPairingTokenMock = mock(
     intervalSeconds: 5,
   }),
 );
-const createRemoteWebPairingChallengeMock = mock(
-  async (_signal?: AbortSignal) => ({
-    deviceCode: "created-device",
-    userCode: "B8C2-S2J3",
-    verificationUri: "http://localhost:3000/assistant/pair",
-    expiresAt: "2026-06-16T12:00:00.000Z",
-    expiresInSeconds: 600,
-    intervalSeconds: 5,
-  }),
-);
 const activateRemoteGatewaySessionMock = mock((_session: unknown) => {});
 
 const APPROVED_RESULT: RemoteWebPairingTokenResult = {
@@ -113,7 +103,6 @@ class MockRemoteWebPairingError extends Error {
 
 mock.module("@/lib/auth/remote-gateway-session", () => ({
   activateRemoteGatewaySession: activateRemoteGatewaySessionMock,
-  createRemoteWebPairingChallenge: createRemoteWebPairingChallengeMock,
   exchangeRemoteWebPairingToken: exchangeRemoteWebPairingTokenMock,
   // The real parser, not a stand-in: production links carry the device code
   // in the FRAGMENT and in snake_case, which a query-only mock reads as null.
@@ -142,7 +131,6 @@ afterEach(() => {
   nativePlatformName = "ios";
   setUserAgent(ORIGINAL_USER_AGENT);
   exchangeRemoteWebPairingTokenMock.mockClear();
-  createRemoteWebPairingChallengeMock.mockClear();
   activateRemoteGatewaySessionMock.mockClear();
   nativeSwitchToOriginPathMock.mockReset();
   nativeSwitchToOriginPathMock.mockImplementation(async () => false);
@@ -161,7 +149,6 @@ describe("RemoteWebPairingPage", () => {
     );
 
     expect(screen.getByText("Page not found")).not.toBeNull();
-    expect(createRemoteWebPairingChallengeMock).not.toHaveBeenCalled();
     expect(exchangeRemoteWebPairingTokenMock).not.toHaveBeenCalled();
   });
 
@@ -181,7 +168,6 @@ describe("RemoteWebPairingPage", () => {
     expect(exchangeRemoteWebPairingTokenMock.mock.calls[0]?.[1]).toBeInstanceOf(
       AbortSignal,
     );
-    expect(createRemoteWebPairingChallengeMock).not.toHaveBeenCalled();
   });
 
   test("cancel leaves the origin for the hub chooser", async () => {
@@ -312,41 +298,36 @@ describe("RemoteWebPairingPage", () => {
     expect(screen.queryByText("Cancel")).toBeNull();
   });
 
-  test("shows progress state while creating a challenge", () => {
-    createRemoteWebPairingChallengeMock.mockImplementationOnce(
-      async () => new Promise<never>(() => {}),
-    );
-
+  test("asks for a pairing code when opened without one", () => {
     const { container } = render(
       <MemoryRouter initialEntries={["/assistant/pair"]}>
         <RemoteWebPairingPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Starting pairing")).not.toBeNull();
-    expect(container.querySelector(".animate-spin")).not.toBeNull();
-    expect(
-      container.querySelector('[class*="--system-negative-strong"]'),
-    ).toBeNull();
+    expect(screen.getByText("Pair a device")).not.toBeNull();
+    expect(screen.getByText(/run "cadet pair"/)).not.toBeNull();
+    expect(screen.getByLabelText("Pairing code")).not.toBeNull();
+    expect(container.querySelector(".animate-spin")).toBeNull();
     expect(exchangeRemoteWebPairingTokenMock).not.toHaveBeenCalled();
   });
 
-  test("creates a challenge when opened without a device code", async () => {
+  test("polls the exchange with an entered pairing code", async () => {
     render(
       <MemoryRouter initialEntries={["/assistant/pair"]}>
         <RemoteWebPairingPage />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("B8C2-S2J3")).not.toBeNull();
-    expect(
-      createRemoteWebPairingChallengeMock.mock.calls[0]?.[0],
-    ).toBeInstanceOf(AbortSignal);
-    // The token-exchange poll fires in an effect after the challenge resolves
-    // and `pairing` is set, so it lands a tick after the user code renders.
+    fireEvent.change(screen.getByLabelText("Pairing code"), {
+      target: { value: "  typed-code  " },
+    });
+    fireEvent.click(screen.getByText("Pair"));
+
+    expect(screen.getByText("Pairing")).not.toBeNull();
     await waitFor(() => {
       expect(exchangeRemoteWebPairingTokenMock.mock.calls[0]?.[0]).toBe(
-        "created-device",
+        "typed-code",
       );
     });
   });
@@ -493,7 +474,6 @@ describe("RemoteWebPairingPage", () => {
 
     // The single-use code stays unspent while the choice is pending.
     expect(exchangeRemoteWebPairingTokenMock).not.toHaveBeenCalled();
-    expect(createRemoteWebPairingChallengeMock).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: "Continue in this browser" }),
     ).not.toBeNull();

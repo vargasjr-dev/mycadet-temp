@@ -12,7 +12,6 @@ import { Button } from "@mycadet/design-library/components/button";
 import { NotFound } from "@/components/not-found";
 import {
   activateRemoteGatewaySession,
-  createRemoteWebPairingChallenge,
   exchangeRemoteWebPairingToken,
   parseRemoteWebPairingParams,
   remoteGatewayPublicBaseUrl,
@@ -37,7 +36,7 @@ type PairingDetails = {
 };
 
 type PairingState =
-  | { kind: "starting" }
+  | { kind: "awaiting_code" }
   | { kind: "handoff_choice" }
   | { kind: "verifying" }
   | { kind: "polling"; expiresAt: string | null }
@@ -47,10 +46,10 @@ type PairingState =
 
 function statusCopy(state: PairingState): { title: string; body: string } {
   switch (state.kind) {
-    case "starting":
+    case "awaiting_code":
       return {
-        title: "Starting pairing",
-        body: "Creating a code for this browser.",
+        title: "Pair a device",
+        body: 'On the machine running your assistant, run "cadet pair", then enter the code it prints below the QR code here.',
       };
     case "handoff_choice":
       return {
@@ -94,7 +93,7 @@ function StatusIcon({ state }: { state: PairingState }) {
       />
     );
   }
-  if (state.kind === "handoff_choice") {
+  if (state.kind === "handoff_choice" || state.kind === "awaiting_code") {
     return (
       <Smartphone
         className="h-5 w-5 text-[var(--system-info-strong)]"
@@ -102,11 +101,7 @@ function StatusIcon({ state }: { state: PairingState }) {
       />
     );
   }
-  if (
-    state.kind === "starting" ||
-    state.kind === "verifying" ||
-    state.kind === "polling"
-  ) {
+  if (state.kind === "verifying" || state.kind === "polling") {
     return (
       <LoaderCircle
         className="h-5 w-5 animate-spin text-[var(--system-info-strong)]"
@@ -288,47 +283,21 @@ export function RemoteWebPairingPage() {
     if (appHandoffPlatform) {
       return { kind: "handoff_choice" };
     }
-    return params.deviceCode ? { kind: "verifying" } : { kind: "starting" };
+    return params.deviceCode
+      ? { kind: "verifying" }
+      : { kind: "awaiting_code" };
   });
 
-  useEffect(() => {
-    if (!enabled) {
+  const [codeDraft, setCodeDraft] = useState("");
+
+  const handleCodeSubmit = useCallback(() => {
+    const deviceCode = codeDraft.trim();
+    if (!deviceCode) {
       return;
     }
-    if (pairing) {
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const createChallenge = async () => {
-      try {
-        const challenge = await createRemoteWebPairingChallenge(
-          controller.signal,
-        );
-        setPairing({
-          deviceCode: challenge.deviceCode,
-          userCode: challenge.userCode,
-        });
-        setState({ kind: "polling", expiresAt: challenge.expiresAt });
-      } catch {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setState({
-          kind: "error",
-          message:
-            "The assistant could not start pairing. Refresh the page to try again.",
-        });
-      }
-    };
-
-    void createChallenge();
-
-    return () => {
-      controller.abort();
-    };
-  }, [enabled, pairing]);
+    setPairing({ deviceCode, userCode: null });
+    setState({ kind: "verifying" });
+  }, [codeDraft]);
 
   useEffect(() => {
     if (!enabled) {
@@ -418,13 +387,14 @@ export function RemoteWebPairingPage() {
 
   const cancelUrl = useMemo(() => hubChooserUrl(), []);
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(null, `account/select-assistant?noAutoSkip=1`).then(
-      (switched) => {
-        if (!switched && cancelUrl) {
-          window.location.assign(cancelUrl);
-        }
-      },
-    );
+    void nativeSwitchToOriginPath(
+      null,
+      `account/select-assistant?noAutoSkip=1`,
+    ).then((switched) => {
+      if (!switched && cancelUrl) {
+        window.location.assign(cancelUrl);
+      }
+    });
   }, [cancelUrl]);
 
   if (!enabled) {
@@ -457,6 +427,28 @@ export function RemoteWebPairingPage() {
         <p className="text-body-medium-lighter leading-6 text-[var(--content-secondary)]">
           {copy.body}
         </p>
+
+        {state.kind === "awaiting_code" ? (
+          <form
+            className="mt-6 flex flex-col gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleCodeSubmit();
+            }}
+          >
+            <input
+              type="text"
+              value={codeDraft}
+              onChange={(event) => setCodeDraft(event.target.value)}
+              placeholder={t("pairingPage.pairingCode")}
+              aria-label={t("pairingPage.pairingCode")}
+              className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-sunken)] px-3 py-2 font-mono text-body-medium-default tracking-wide text-[var(--content-default)]"
+            />
+            <Button type="submit" variant="primary" fullWidth>
+              {t("pairingPage.pair")}
+            </Button>
+          </form>
+        ) : null}
 
         {state.kind === "handoff_choice" && pairing && appHandoffPlatform ? (
           <PairingHandoffActions

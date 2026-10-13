@@ -3,6 +3,7 @@
     "openInApp": "Открыть в приложении Cadet",
     "continueInBrowser": "Продолжить в этом браузере",
     "pairingCode": "Код сопряжения",
+    "pair": "Подключить",
     "expiresAt": "Истекает {time}.",
     "cancel": "Отмена"
   }

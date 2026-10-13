@@ -168,8 +168,13 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       emptyOutDir: true,
-      // Source maps stay out of the deployed artifact.
-      sourcemap: false,
+      // Cloud-served bundles stay minified without source maps — the deploy
+      // hands phones a cold cache. Everything else (the bundle the local web
+      // host and the tunnel edge serve) builds unminified with source maps
+      // so QA and debugging can read it.
+      ...(isCloudServedBuild(env.VITE_CLOUD_MODE)
+        ? { sourcemap: false }
+        : { sourcemap: true, minify: false }),
       // Chunking is tuned for a cold cache on a phone, which is what every
       // deploy hands users: `index.html` modulepreloads the whole boot
       // graph, and hundreds of tiny chunks fetched at once stall a congested
