@@ -155,8 +155,10 @@ staging, and production in parallel with the other release jobs.
 
 The workflow stamps the version and builds the helper, preview handler, CLI
 runtime, and renderer on native runners (x64 on `windows-2025`, arm64 on
-`windows-11-vs2026-arm`), then packages and signs through `electron-builder`
-on the same runner.
+`windows-11-vs2026-arm`). Each native payload and its stamped app manifest
+transfer to an x64 `windows-2025` runner
+for packaging and signing through `electron-builder`, because
+[Azure Artifact Signing does not support Windows ARM runners](https://github.com/Azure/artifact-signing-action#runner-requirements).
 The workflow verifies every manifest binary and the installer with
 `Get-AuthenticodeSignature`, requiring valid signatures from the configured
 publisher while allowing Azure certificate rotation. Three bundled Microsoft

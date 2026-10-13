@@ -547,7 +547,7 @@ Creating the GitHub Release triggers three workflows in parallel:
 - **Publish velly to npm** (`publish-velly.yml`): Publishes the `velly` CLI package to npm with provenance.
 - **Slack Release Notification** (`slack-release-notification.yml`): Posts a summary message to the releases Slack channel with a threaded changelog.
 
-- **Release Windows** (`build-windows` job): The reusable `release-windows.yaml` builds, packages, signs, and verifies the NSIS installers in a single job as soon as version resolution succeeds. Signing credentials are an explicit gate documented in `clients/windows/README.md`.
+- **Release Windows** (`build-windows` job): The reusable `release-windows.yaml` builds the native payload per arch as soon as version resolution succeeds, then packages, signs, and verifies the NSIS installers on an x64 runner (Azure Artifact Signing does not support Windows ARM runners). Signing credentials are an explicit gate documented in `clients/windows/README.md`.
 
 #### Auto-updates for macOS clients
 
