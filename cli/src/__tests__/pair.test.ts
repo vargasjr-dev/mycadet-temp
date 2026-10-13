@@ -4,6 +4,7 @@ import {
   beforeEach,
   describe,
   expect,
+  mock,
   spyOn,
   test,
 } from "bun:test";
@@ -19,8 +20,35 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 const originalEnvironment = process.env.CADET_ENVIRONMENT;
 process.env.CADET_ENVIRONMENT = "production";
 
-import { buildAppConnectUrl, pair } from "../commands/pair.js";
 import { withPreconnect } from "./helpers/http.js";
+
+// The gateway-CLI mint runs in a SUBPROCESS for local and docker assistants;
+// answer it in-process and record the invocations (the fetch stubs below
+// still serve the loopback HTTP mint the other topologies keep using).
+const mintCalls: Array<{ command: string; args: readonly string[] }> = [];
+const actualStepRunner = await import("../lib/step-runner.js");
+const mockExecOutput = mock(
+  (command: string, args: readonly string[]): Promise<string> => {
+    mintCalls.push({ command, args });
+    const mintedUrl = args[args.length - 1] ?? "";
+    return Promise.resolve(
+      JSON.stringify({
+        deviceCode: "device-code",
+        userCode: "ABCD-EFGH",
+        verificationUri: `${mintedUrl}/assistant/pair`,
+        expiresAt: "2026-06-04T00:10:00.000Z",
+        expiresInSeconds: 600,
+        intervalSeconds: 5,
+      }),
+    );
+  },
+);
+mock.module("../lib/step-runner.js", () => ({
+  ...actualStepRunner,
+  execOutput: mockExecOutput,
+}));
+
+const { buildAppConnectUrl, pair } = await import("../commands/pair.js");
 
 // Distinct loopback (mint) vs reachable (advertised) URLs to verify the split.
 const LOCAL_URL = "http://127.0.0.1:7830";
@@ -93,6 +121,7 @@ const ORIGINAL_ARGV = [...process.argv];
 
 describe("pair command", () => {
   beforeEach(() => {
+    mintCalls.length = 0;
     writeLockfile();
   });
 
@@ -130,18 +159,16 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // Mint over the loopback gateway, then approve: running this command on
-    // the host IS the approval, so the link alone completes the pairing.
-    expect(calls.map((c) => c[0])).toEqual([
-      `${LOCAL_URL}/v1/remote-web/pairing-challenge`,
-      `${LOCAL_URL}/v1/remote-web/pairing-verification`,
+    // Mint through the gateway CLI subprocess: process execution IS the
+    // local-presence proof and the approval, so the link alone completes
+    // the pairing — no HTTP at all for a local assistant.
+    expect(mintCalls).toHaveLength(1);
+    expect(mintCalls[0]?.args.slice(-3)).toEqual([
+      "pairing",
+      "mint",
+      PUBLIC_URL,
     ]);
-    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
-      publicBaseUrl: PUBLIC_URL,
-    });
-    expect(JSON.parse(String(calls[1][1]?.body))).toEqual({
-      userCode: "ABCD-EFGH",
-    });
+    expect(calls).toHaveLength(0);
 
     const output = logs.join("\n");
     // One artifact, two renderings: the link and the same link as a QR.
@@ -391,10 +418,9 @@ describe("pair command", () => {
     }
 
     // Resolution succeeded (no exit), so the challenge was minted.
-    expect(calls.map((c) => c[0])).toEqual([
-      `${LOCAL_URL}/v1/remote-web/pairing-challenge`,
-      `${LOCAL_URL}/v1/remote-web/pairing-verification`,
-    ]);
+    expect(mintCalls).toHaveLength(1);
+    expect(mintCalls[0]?.args.at(-1)).toBe(PUBLIC_URL);
+    expect(calls).toHaveLength(0);
   });
 
   test("rejects an unknown --flag before any network call", async () => {
@@ -587,11 +613,8 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // Mint still over loopback; the link advertises the override.
-    expect(calls[0][0]).toBe(`${LOCAL_URL}/v1/remote-web/pairing-challenge`);
-    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
-      publicBaseUrl: OVERRIDE,
-    });
+    // Mint still through the gateway CLI; the link advertises the override.
+    expect(mintCalls[0]?.args.at(-1)).toBe(OVERRIDE);
     expect(JSON.parse(logs.join("\n")).pairUrl).toBe(
       `${OVERRIDE}/assistant/pair#device_code=device-code`,
     );
@@ -1069,35 +1092,8 @@ describe("pair command", () => {
 
     const calls: string[] = [];
     const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      calls.push(url);
-      if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
-        // The minted challenge must advertise the entry's recorded URL.
-        expect(JSON.parse(String(init?.body))).toEqual({
-          publicBaseUrl: "https://saved.example.ts.net",
-        });
-        return new Response(
-          JSON.stringify({
-            deviceCode: "device-code",
-            userCode: "ABCD-EFGH",
-            verificationUri: "https://saved.example.ts.net/assistant/pair",
-            expiresAt: "2026-06-04T00:10:00.000Z",
-            expiresInSeconds: 600,
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
-      if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
-        return new Response(
-          JSON.stringify({
-            status: "approved",
-            verificationUri: "https://saved.example.ts.net/assistant/pair",
-            expiresAt: "2026-06-04T00:10:00.000Z",
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
+    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL) => {
+      calls.push(String(input));
       return new Response("not found", { status: 404 });
     });
 
@@ -1116,7 +1112,9 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    expect(calls).toContain(`${LOCAL_URL}/v1/remote-web/pairing-challenge`);
+    // The minted challenge must advertise the entry's recorded URL.
+    expect(mintCalls[0]?.args.at(-1)).toBe("https://saved.example.ts.net");
+    expect(calls).toHaveLength(0);
     const output = logs.join("\n");
     expect(output).toContain(
       "Using saved ingress URL https://saved.example.ts.net",
@@ -1130,33 +1128,7 @@ describe("pair command", () => {
     writeLockfileWithIngress("https://saved.example.ts.net");
 
     const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
-        expect(JSON.parse(String(init?.body))).toEqual({
-          publicBaseUrl: "https://explicit.example.ts.net",
-        });
-        return new Response(
-          JSON.stringify({
-            deviceCode: "device-code",
-            userCode: "ABCD-EFGH",
-            verificationUri: "https://explicit.example.ts.net/assistant/pair",
-            expiresAt: "2026-06-04T00:10:00.000Z",
-            expiresInSeconds: 600,
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
-      if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
-        return new Response(
-          JSON.stringify({
-            status: "approved",
-            verificationUri: "https://explicit.example.ts.net/assistant/pair",
-            expiresAt: "2026-06-04T00:10:00.000Z",
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
+    globalThis.fetch = withPreconnect(async () => {
       return new Response("not found", { status: 404 });
     });
 
@@ -1182,6 +1154,8 @@ describe("pair command", () => {
     }
 
     expect(logs.join("\n")).not.toContain("Using saved ingress URL");
+    // The override reached the mint.
+    expect(mintCalls[0]?.args.at(-1)).toBe("https://explicit.example.ts.net");
   });
 
   test("a non-https recorded ingress URL is ignored", async () => {
@@ -1262,5 +1236,102 @@ describe("pair command", () => {
     expect(exited).toBe(true);
     expect(errors.join("\n")).toContain(RUNTIME_URL);
     expect(minted).toBe(false);
+  });
+
+  test("refuses a paired (connect-import) assistant before minting", async () => {
+    writeFileSync(
+      join(testDir, "lockfile.json"),
+      JSON.stringify({
+        assistants: [
+          {
+            assistantId: "pair-test",
+            runtimeUrl: RUNTIME_URL,
+            cloud: "paired",
+          },
+        ],
+        activeAssistant: "pair-test",
+      }),
+    );
+
+    const errors: string[] = [];
+    const errSpy = spyOn(console, "error").mockImplementation(
+      (...a: unknown[]) => {
+        errors.push(a.join(" "));
+      },
+    );
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
+
+    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
+    let exited = false;
+    try {
+      await pair();
+    } catch (e) {
+      exited = e instanceof Error && e.message === "exit:1";
+    } finally {
+      errSpy.mockRestore();
+      exitSpy.mockRestore();
+    }
+
+    expect(exited).toBe(true);
+    expect(errors.join("\n")).toContain("was paired as a remote");
+    // Keyed on the entry's cloud, not on which fields happen to exist.
+    expect(mintCalls).toHaveLength(0);
+  });
+
+  test("a custom (ssh-managed) assistant keeps the loopback HTTP mint", async () => {
+    writeFileSync(
+      join(testDir, "lockfile.json"),
+      JSON.stringify({
+        assistants: [
+          {
+            assistantId: "pair-test",
+            runtimeUrl: LOCAL_URL,
+            cloud: "custom",
+          },
+        ],
+        activeAssistant: "pair-test",
+      }),
+    );
+
+    const calls: Array<[string, RequestInit | undefined]> = [];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = withPreconnect(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        calls.push([url, init]);
+        if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
+          return challengeResponse(PUBLIC_URL);
+        }
+        if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
+          return approvalResponse(PUBLIC_URL);
+        }
+        return new Response("not found", { status: 404 });
+      },
+    );
+
+    const logSpy = spyOn(console, "log").mockImplementation(() => {});
+
+    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
+    try {
+      await pair();
+    } finally {
+      logSpy.mockRestore();
+      globalThis.fetch = origFetch;
+    }
+
+    // Not local/docker: no CLI execution — the mint rides the loopback HTTP
+    // route, keyed on the entry's cloud, not on containerInfo.
+    expect(mintCalls).toHaveLength(0);
+    expect(calls.map((c) => c[0])).toEqual([
+      `${LOCAL_URL}/v1/remote-web/pairing-challenge`,
+      `${LOCAL_URL}/v1/remote-web/pairing-verification`,
+    ]);
+    expect(JSON.parse(String(calls[0]?.[1]?.body))).toEqual({
+      publicBaseUrl: PUBLIC_URL,
+    });
   });
 });

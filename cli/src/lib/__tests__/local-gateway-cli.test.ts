@@ -25,6 +25,15 @@ describe("gatewayCliInvocation", () => {
     );
   });
 
+  test("pins GATEWAY_SECURITY_DIR to the instance dir for named instances", () => {
+    const invocation = gatewayCliInvocation(
+      fakeResources("/data/assistants/testy"),
+    );
+    expect(invocation.env.GATEWAY_SECURITY_DIR).toBe(
+      "/data/assistants/testy/gateway-security",
+    );
+  });
+
   test("leaves the workspace resolution untouched for the default instance", () => {
     delete process.env.CADET_WORKSPACE_DIR;
     const invocation = gatewayCliInvocation();

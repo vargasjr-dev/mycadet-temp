@@ -1,4 +1,14 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+
+import { getGatewaySecurityDir } from "../paths.js";
 
 import {
   REMOTE_WEB_PAIRING_CODE_TTL_MS,
@@ -70,6 +80,94 @@ function nowMs(): number {
   return nowForTests?.() ?? Date.now();
 }
 
+/**
+ * The challenge store is FILE-BACKED under GATEWAY_SECURITY_DIR so a mint can
+ * run in ANY process: `gateway pairing mint` executes the mint logic directly
+ * (deliberately never over the gateway's IPC socket — the assistant daemon
+ * shares that socket, and an IPC-exposed mint would let the assistant
+ * approve pairings for itself) and persists the challenge here. The running
+ * gateway's verification and token-exchange routes re-read the file on every
+ * store call, so cross-process writes land. Writes are atomic (tmp + rename)
+ * and the single-user local flow makes last-writer-wins races a non-issue.
+ */
+const STORE_FILENAME = "remote-web-pairing-challenges.json";
+
+let lastResolvedStorePath: string | null = null;
+
+function challengeStoreFilePath(): string {
+  const resolved = join(getGatewaySecurityDir(), STORE_FILENAME);
+  lastResolvedStorePath = resolved;
+  return resolved;
+}
+
+function isNotExistError(err: unknown): boolean {
+  return err instanceof Error && "code" in err && err.code === "ENOENT";
+}
+
+function isChallengeLike(
+  value: unknown,
+): value is PendingRemoteWebPairingChallenge {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "userCodeHash" in value &&
+    typeof value.userCodeHash === "string" &&
+    "deviceCodeHash" in value &&
+    typeof value.deviceCodeHash === "string"
+  );
+}
+
+/**
+ * Re-sync the in-memory maps from disk at the top of every exported call.
+ * A missing file is an empty store; a corrupt one warns and starts empty.
+ * Expired challenges are NOT dropped here — the same cleanup/expiry checks
+ * that ran before file-backing still classify them ("expired", not
+ * "invalid") and delete them on their own paths.
+ */
+function loadFromDisk(): void {
+  challengesByUserCodeHash.clear();
+  challengesByDeviceCodeHash.clear();
+
+  let raw: string;
+  try {
+    raw = readFileSync(challengeStoreFilePath(), "utf-8");
+  } catch (err) {
+    if (isNotExistError(err)) return;
+    throw err;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = null;
+  }
+  if (!Array.isArray(parsed)) {
+    console.warn(
+      `[pairing-challenge-store] could not read ${challengeStoreFilePath()} — starting empty.`,
+    );
+    return;
+  }
+  for (const entry of parsed) {
+    if (!isChallengeLike(entry)) continue;
+    challengesByUserCodeHash.set(entry.userCodeHash, entry);
+    challengesByDeviceCodeHash.set(entry.deviceCodeHash, entry);
+  }
+}
+
+/** Persist the current challenges so other processes can see them. */
+function saveToDisk(): void {
+  const filePath = challengeStoreFilePath();
+  mkdirSync(dirname(filePath), { recursive: true });
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
+  writeFileSync(
+    tmpPath,
+    JSON.stringify([...challengesByUserCodeHash.values()]),
+    { mode: 0o600 },
+  );
+  renameSync(tmpPath, filePath);
+}
+
 function hashSecret(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -100,6 +198,7 @@ function cleanupExpiredChallenges(now = nowMs()): void {
 }
 
 export function checkRemoteWebPairingChallengeCapacity(): RemoteWebPairingChallengeCapacityLimit | null {
+  loadFromDisk();
   const now = nowMs();
   cleanupExpiredChallenges(now);
 
@@ -122,6 +221,7 @@ export function createRemoteWebPairingChallenge(
   publicBaseUrl: string,
   requester: { ip: string; userAgent: string | null; viaEdgeProxy: boolean },
 ): RemoteWebPairingChallengeResponse {
+  loadFromDisk();
   cleanupExpiredChallenges();
 
   const deviceCode = randomBytes(DEVICE_CODE_BYTES).toString("base64url");
@@ -152,6 +252,7 @@ export function createRemoteWebPairingChallenge(
   };
   challengesByUserCodeHash.set(userCodeHash, challenge);
   challengesByDeviceCodeHash.set(deviceCodeHash, challenge);
+  saveToDisk();
 
   return {
     deviceCode,
@@ -188,12 +289,15 @@ function approveChallenge(
 export function approveRemoteWebPairingChallenge(
   userCode: string,
 ): ApproveRemoteWebPairingChallengeResult {
+  loadFromDisk();
   const userCodeHash = hashSecret(normalizeUserCode(userCode));
   const challenge = challengesByUserCodeHash.get(userCodeHash);
   if (!challenge) {
     return { status: "invalid" };
   }
-  return approveChallenge(challenge);
+  const result = approveChallenge(challenge);
+  saveToDisk();
+  return result;
 }
 
 function findChallengeById(
@@ -208,6 +312,7 @@ function findChallengeById(
 }
 
 export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequestSummary[] {
+  loadFromDisk();
   cleanupExpiredChallenges();
 
   const pending = [...challengesByUserCodeHash.values()]
@@ -229,11 +334,14 @@ export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequest
 export function approveRemoteWebPairingChallengeById(
   id: string,
 ): ApproveRemoteWebPairingChallengeResult {
+  loadFromDisk();
   const challenge = findChallengeById(id);
   if (!challenge) {
     return { status: "invalid" };
   }
-  return approveChallenge(challenge);
+  const result = approveChallenge(challenge);
+  saveToDisk();
+  return result;
 }
 
 export type DenyRemoteWebPairingChallengeResult =
@@ -244,6 +352,7 @@ export type DenyRemoteWebPairingChallengeResult =
 export function denyRemoteWebPairingChallengeById(
   id: string,
 ): DenyRemoteWebPairingChallengeResult {
+  loadFromDisk();
   const challenge = findChallengeById(id);
   if (!challenge) {
     return { status: "invalid" };
@@ -256,12 +365,14 @@ export function denyRemoteWebPairingChallengeById(
   }
 
   deleteChallenge(challenge);
+  saveToDisk();
   return { status: "denied" };
 }
 
 export function claimRemoteWebPairingChallengeExchange(
   deviceCode: string,
 ): ClaimRemoteWebPairingChallengeExchangeResult {
+  loadFromDisk();
   const deviceCodeHash = hashSecret(deviceCode);
   const challenge = challengesByDeviceCodeHash.get(deviceCodeHash);
   if (!challenge) return { status: "invalid" };
@@ -269,6 +380,7 @@ export function claimRemoteWebPairingChallengeExchange(
   const now = nowMs();
   if (challenge.expiresAtMs <= now) {
     deleteChallenge(challenge);
+    saveToDisk();
     return { status: "expired" };
   }
 
@@ -290,6 +402,7 @@ export function claimRemoteWebPairingChallengeExchange(
 
   challenge.status = "exchanging";
   challenge.exchangeStartedAtMs = now;
+  saveToDisk();
   return {
     status: "approved",
     publicBaseUrl: challenge.publicBaseUrl,
@@ -301,27 +414,41 @@ export function claimRemoteWebPairingChallengeExchange(
 export function completeRemoteWebPairingChallengeExchange(
   deviceCode: string,
 ): void {
+  loadFromDisk();
   const challenge = challengesByDeviceCodeHash.get(hashSecret(deviceCode));
   if (!challenge || challenge.status !== "exchanging") return;
 
   challenge.status = "consumed";
   challenge.consumedAtMs = nowMs();
+  saveToDisk();
 }
 
 export function releaseRemoteWebPairingChallengeExchange(
   deviceCode: string,
 ): void {
+  loadFromDisk();
   const challenge = challengesByDeviceCodeHash.get(hashSecret(deviceCode));
   if (!challenge || challenge.status !== "exchanging") return;
 
   challenge.status = "approved";
   challenge.exchangeStartedAtMs = undefined;
+  saveToDisk();
 }
 
 export function resetRemoteWebPairingChallengesForTests(): void {
   challengesByUserCodeHash.clear();
   challengesByDeviceCodeHash.clear();
   nowForTests = null;
+  // Best effort on the LAST-RESOLVED path: test files may delete
+  // GATEWAY_SECURITY_DIR before this runs, and re-resolving then would
+  // either throw the ephemeral-path guard or point at the wrong dir.
+  if (lastResolvedStorePath) {
+    try {
+      rmSync(lastResolvedStorePath, { force: true });
+    } catch {
+      /* the maps are cleared either way */
+    }
+  }
 }
 
 export function setRemoteWebPairingChallengeNowForTests(
@@ -333,5 +460,6 @@ export function setRemoteWebPairingChallengeNowForTests(
 export function getRemoteWebPairingChallengeForTests(
   userCode: string,
 ): PendingRemoteWebPairingChallenge | undefined {
+  loadFromDisk();
   return challengesByUserCodeHash.get(hashSecret(normalizeUserCode(userCode)));
 }

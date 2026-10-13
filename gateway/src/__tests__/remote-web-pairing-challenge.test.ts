@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 const { handleCreateRemoteWebPairingChallenge } =
@@ -15,6 +17,7 @@ const {
 } = await import("../remote-web/pairing-challenge-store.js");
 const { resetRemoteWebPairingChallengeRateLimiterForTests } =
   await import("../remote-web/pairing-challenge-rate-limit-store.js");
+const { testSecurityDir } = await import("./test-preload.js");
 
 import {
   LOOPBACK_IP,
@@ -499,5 +502,39 @@ describe("remote web pairing request list/approve/deny", () => {
     expect(denyRemoteWebPairingChallengeById("missing-id")).toEqual({
       status: "invalid",
     });
+  });
+});
+
+describe("file-backed persistence", () => {
+  test("persists challenges to the security dir for other processes", () => {
+    setRemoteWebPairingChallengeNowForTests(() => 1_000);
+    createRemoteWebPairingChallenge(PUBLIC_BASE_URL, TEST_REQUESTER);
+
+    const storePath = join(
+      testSecurityDir,
+      "remote-web-pairing-challenges.json",
+    );
+    expect(existsSync(storePath)).toBe(true);
+    const persisted: unknown[] = JSON.parse(readFileSync(storePath, "utf-8"));
+    expect(persisted).toHaveLength(1);
+
+    // The reset helper removes the file so other tests start empty.
+    resetRemoteWebPairingChallengesForTests();
+    expect(existsSync(storePath)).toBe(false);
+  });
+
+  test("starts empty and warns when the store file is corrupt", () => {
+    const storePath = join(
+      testSecurityDir,
+      "remote-web-pairing-challenges.json",
+    );
+    writeFileSync(storePath, "{not json", "utf-8");
+
+    const challenge = createRemoteWebPairingChallenge(
+      PUBLIC_BASE_URL,
+      TEST_REQUESTER,
+    );
+    const stored = getRemoteWebPairingChallengeForTests(challenge.userCode);
+    expect(stored).toBeDefined();
   });
 });

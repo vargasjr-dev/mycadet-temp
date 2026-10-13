@@ -24,8 +24,9 @@ const MAX_CHALLENGE_BODY_BYTES = 512;
 /**
  * Normalize an advertised base URL to `origin + trailing-slash-stripped path`,
  * or null when the value is empty, unparseable, non-http(s), or hostless.
- * Shared with the pairing mint IPC route, which validates the CLI-passed URL
- * with the exact same rules the HTTP route applies.
+ * Shared with the direct pairing mint (remote-web/pairing-mint.ts), which
+ * validates the CLI-passed URL with the exact same rules the HTTP route
+ * applies.
  */
 export function parsePublicBaseUrl(value: string): string | null {
   if (!value.trim()) {

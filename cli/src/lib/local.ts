@@ -986,11 +986,13 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
 
 /**
  * How to invoke a `gateway <subcommand>` CLI process so it resolves the same
- * workspace (and therefore the same gateway IPC socket) as the locally
- * spawned gateway server: run the gateway package's CLI entry through bun
- * with the spawn state root as cwd and the instance-pinned CADET_WORKSPACE_DIR
- * the server was given. Callers pass the resolved assistant entry's
- * `resources` (undefined for the default instance).
+ * workspace AND gateway security dir as the locally spawned gateway server:
+ * run the gateway package's CLI entry through bun with the spawn state root
+ * as cwd and the instance-pinned CADET_WORKSPACE_DIR / GATEWAY_SECURITY_DIR
+ * the server was given (the file-backed pairing store must resolve
+ * identically in both processes). Callers pass the resolved assistant
+ * entry's `resources` (undefined for the default instance, where both
+ * processes fall back to the same cwd-relative paths).
  */
 export function gatewayCliInvocation(resources?: LocalInstanceResources): {
   command: string;
@@ -1005,7 +1007,13 @@ export function gatewayCliInvocation(resources?: LocalInstanceResources): {
     env: {
       ...process.env,
       ...(resources
-        ? { CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace") }
+        ? {
+            CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace"),
+            GATEWAY_SECURITY_DIR: join(
+              resources.instanceDir,
+              "gateway-security",
+            ),
+          }
         : {}),
     },
   };
