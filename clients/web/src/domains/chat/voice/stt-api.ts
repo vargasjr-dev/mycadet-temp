@@ -5,7 +5,7 @@ import {
 } from "@/generated/daemon/sdk.gen";
 import { encodeBase64Bytes } from "@/utils/base64";
 import { MACOS_NATIVE_STT_PROVIDER_ID } from "@/lib/provider-catalogs";
-import { isCancellationError } from "@/utils/is-cancellation-error";
+import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 import { isNativeDictationSupported } from "@/runtime/native-dictation-partials";
 import { getLocalSetting, removeLocalSetting } from "@/utils/local-settings";
 import {

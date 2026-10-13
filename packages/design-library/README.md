@@ -230,3 +230,11 @@ The `"files"` field in `package.json` allowlists `src/` for the npm tarball, whi
 - `react >= 19`
 - `react-dom >= 19`
 - `tailwindcss >= 4`
+
+### Internal imports
+
+Use `@design/` for imports within the library; it resolves to `src/` in
+TypeScript, Bun tests, Storybook, and the app/web Vite builds. The error
+utilities use this alias first; other internal imports can follow gradually.
+Client code continues to use the package's public `@mycadet/design-library`
+subpaths.

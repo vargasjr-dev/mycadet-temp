@@ -109,6 +109,7 @@ export default defineConfig(({ mode }) => {
     ].filter(Boolean),
     resolve: {
       alias: [
+        { find: /^@design\//, replacement: DESIGN_LIBRARY_SRC + "/" },
         {
           find: /^@\//,
           replacement: path.resolve(import.meta.dirname, "src") + "/",

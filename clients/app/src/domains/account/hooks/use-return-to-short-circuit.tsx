@@ -1,10 +1,9 @@
 import { useEffect, type ReactElement } from "react";
 import { Navigate, useSearchParams } from "react-router";
 
-import {
-  requiresFullPageNavigation,
-  requiresCloudSession,
-} from "@web/domains/account/login-flow";
+import { requiresFullPageNavigation } from "@app/domains/account/full-page-navigation";
+
+import { requiresCloudSession } from "@web/domains/account/login-flow";
 import { sanitizeReturnTo } from "@app/utils/return-to";
 import { useCloudGateWithPending } from "@web/hooks/use-cloud-gate";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";

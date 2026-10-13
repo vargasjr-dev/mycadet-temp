@@ -23,7 +23,7 @@ import type {
 } from "@/generated/daemon/types.gen";
 import { resolveSupportsBatchedQuestionSubmit } from "@/lib/backwards-compat/batched-question-submit";
 import { assertHasResponse, extractErrorMessage } from "@/utils/api-errors";
-import { isTransientNetworkError } from "@/utils/is-transient-network-error";
+import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 
 /**
  * Subset of the pending-interactions response returned for a single

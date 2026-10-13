@@ -1,6 +1,6 @@
-import { normalizeToError } from "./normalize-error";
-import { isCancellationError } from "./is-cancellation-error";
-import { isTransientNetworkError } from "./is-transient-network-error";
+import { normalizeToError } from "@design/utils/normalize-error";
+import { isCancellationError } from "@design/utils/is-cancellation-error";
+import { isTransientNetworkError } from "@design/utils/is-transient-network-error";
 
 export type CaptureErrorOptions = {
   context: string;

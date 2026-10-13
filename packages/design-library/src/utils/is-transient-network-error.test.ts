@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isTransientNetworkError } from "./is-transient-network-error";
+import { isTransientNetworkError } from "@design/utils/is-transient-network-error";
 
 describe("isTransientNetworkError", () => {
   test("matches Chrome/Safari 'Failed to fetch'", () => {

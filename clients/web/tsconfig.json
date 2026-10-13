@@ -15,7 +15,8 @@
     "isolatedModules": true,
     "types": ["bun"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@design/*": ["../../packages/design-library/src/*"]
     }
   },
   "include": [

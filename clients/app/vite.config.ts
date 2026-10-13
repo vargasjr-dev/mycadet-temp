@@ -20,6 +20,14 @@ export default defineConfig((env) => {
     resolve: {
       ...web.resolve,
       alias: [
+        {
+          find: /^@design\//,
+          replacement:
+            path.resolve(
+              import.meta.dirname,
+              "../../packages/design-library/src",
+            ) + "/",
+        },
         { find: /^@app\//, replacement: APP_SRC + "/" },
         { find: /^@web\//, replacement: WEB_SRC + "/" },
         { find: /^@\//, replacement: WEB_SRC + "/" },

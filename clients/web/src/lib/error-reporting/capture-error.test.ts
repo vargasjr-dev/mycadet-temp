@@ -5,7 +5,9 @@ const consoleWarnMock = mock((..._args: unknown[]) => {});
 console.error = consoleErrorMock as unknown as typeof console.error;
 console.warn = consoleWarnMock as unknown as typeof console.warn;
 
-const { captureError, normalizeToError, isExpectedDaemonTransientError } =
+const { normalizeToError } = await import("@mycadet/design-library/utils/normalize-error");
+const { isExpectedDaemonTransientError } = await import("@/utils/daemon-errors");
+const { captureError } =
   await import("@/lib/error-reporting/capture-error");
 const { ApiError } = await import("@/utils/api-errors");
 const { CancelledError } = await import("@tanstack/react-query");

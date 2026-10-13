@@ -3,16 +3,15 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@app/i18n";
 import { captureError } from "@mycadet/design-library/utils/capture-error";
 
+import { readAuthCallbackIntent } from "@app/domains/account/provider-callback";
+
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
 import { listAssistants } from "@web/assistant/api";
 import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { getSession } from "@web/lib/auth/allauth-client";
-import {
-  readAuthCallbackIntent,
-  resolvePostAuthDestination,
-} from "@web/domains/account/login-flow";
-import { classifyCallbackFlows } from "@web/domains/account/social-auth";
+import { resolvePostAuthDestination } from "@web/domains/account/login-flow";
+import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
 import { isLocalClient } from "@web/lib/local-mode";
 import { useAuthStore } from "@web/stores/auth-store";
 import { routes } from "@app/utils/routes";

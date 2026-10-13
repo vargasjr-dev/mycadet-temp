@@ -5,7 +5,7 @@ import {
   requiresFullPageNavigation,
   requiresCloudSession,
 } from "@/domains/account/login-flow";
-import { sanitizeReturnTo } from "@/domains/account/return-to";
+import { sanitizeReturnTo } from "@/utils/return-to";
 import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import {

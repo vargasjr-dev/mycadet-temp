@@ -7,7 +7,7 @@ import { AccountShell } from "@app/components/account/account-shell";
 import {
   PROVIDER_CALLBACK_URL,
   PROVIDER_ID,
-} from "@web/domains/account/login-flow";
+} from "@app/domains/account/provider";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import { startAuthFlow } from "@web/runtime/native-auth";
 import {

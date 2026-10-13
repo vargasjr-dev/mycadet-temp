@@ -36,6 +36,14 @@ export default defineMain({
       alias: [
         ...aliasArray,
         {
+          find: /^@design\//,
+          replacement:
+            path.resolve(
+              import.meta.dirname,
+              "../../../packages/design-library/src",
+            ) + "/",
+        },
+        {
           find: /^@\//,
           replacement: path.resolve(import.meta.dirname, "../src") + "/",
         },

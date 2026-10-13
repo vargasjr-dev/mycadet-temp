@@ -12,7 +12,7 @@
  */
 
 import { ApiError } from "@/utils/api-errors";
-import { isTransientNetworkError } from "@/utils/is-transient-network-error";
+import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 
 const MAX_DAEMON_RETRIES = 3;
 

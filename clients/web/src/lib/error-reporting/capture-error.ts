@@ -4,8 +4,6 @@ import {
 } from "@mycadet/design-library/utils/capture-error";
 import { isExpectedDaemonTransientError } from "@/utils/daemon-errors";
 
-export { normalizeToError } from "@mycadet/design-library/utils/normalize-error";
-export { isExpectedDaemonTransientError } from "@/utils/daemon-errors";
 
 /** Web retains its daemon-specific policy around the general reporter. */
 export function captureError(

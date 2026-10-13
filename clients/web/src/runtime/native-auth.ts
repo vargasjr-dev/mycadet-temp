@@ -6,7 +6,7 @@ import {
   readAttributionParams,
   startProviderRedirect,
 } from "@/domains/account/social-auth";
-import { sanitizeReturnTo } from "@/domains/account/return-to";
+import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
 import { userHasOnboardedAssistant } from "@/domains/onboarding/onboarded-assistant";
 import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";

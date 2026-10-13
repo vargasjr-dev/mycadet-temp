@@ -1,6 +1,6 @@
 import { onlineManager } from "@tanstack/react-query";
 
-import { isTransientNetworkError } from "@/utils/is-transient-network-error";
+import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 
 export type ConversationAssetSource =
   | "apps"

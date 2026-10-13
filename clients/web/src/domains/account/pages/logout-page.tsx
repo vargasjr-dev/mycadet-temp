@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router";
 import { useTranslation } from "@/i18n";
 import { AccountHeading } from "@/components/account/account-form";
 import { AccountShell } from "@/components/account/account-shell";
-import { sanitizeReturnTo } from "@/domains/account/return-to";
+import { sanitizeReturnTo } from "@/utils/return-to";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";

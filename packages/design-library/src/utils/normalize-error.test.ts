@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { normalizeToError } from "./normalize-error";
+import { normalizeToError } from "@design/utils/normalize-error";
 
 describe("normalizeToError", () => {
   test("returns Error instances unchanged", () => {

@@ -17,7 +17,8 @@
     "paths": {
       "@app/*": ["./src/*"],
       "@web/*": ["../web/src/*"],
-      "@/*": ["../web/src/*"]
+      "@/*": ["../web/src/*"],
+      "@design/*": ["../../packages/design-library/src/*"]
     }
   },
   "include": ["src", "../web/src"]

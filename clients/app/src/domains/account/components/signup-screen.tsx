@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 
+import { PROVIDER_ID } from "@app/domains/account/provider";
+
 import { AppleLogo } from "@app/components/icons/apple-logo";
 import { Trans, useTranslation } from "@app/i18n";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import { RotatingWord } from "@app/domains/account/components/rotating-word";
-import {
-  PROVIDER_ID,
-  buildProviderCallbackUrl,
-} from "@web/domains/account/login-flow";
+import { buildProviderCallbackUrl } from "@app/domains/account/provider-callback";
 import { startAuthFlow } from "@web/runtime/native-auth";
 
 /**
@@ -60,7 +59,10 @@ export function SignupScreen({ returnTo }: SignupScreenProps) {
     startAuthFlow(
       PROVIDER_ID,
       buildProviderCallbackUrl(returnTo, { authIntent: intent }),
-      { returnTo, intent },
+      {
+        returnTo,
+        intent,
+      },
     )
       .catch((err) => {
         console.error(logLabel, err);

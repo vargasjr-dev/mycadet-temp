@@ -34,7 +34,7 @@ import type {
 import { t } from "@/i18n";
 import { getLocalGatewayUrl, getSelectedAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { isCancellationError } from "@/utils/is-cancellation-error";
+import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
 import { buildRemoteWebPairingUrl } from "./pair-device-url";
 
