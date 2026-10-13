@@ -1,7 +1,7 @@
 import { Outlet } from "react-router";
 
 import { useClientFeatureFlagSync } from "@web/hooks/use-client-feature-flag-sync";
-import { useOnboardingWindowSize } from "@web/hooks/use-onboarding-window-size";
+import { useOnboardingWindowSize } from "@app/hooks/use-onboarding-window-size";
 
 /**
  * Layout for the `/account/*` auth screens that render in the MAIN window —

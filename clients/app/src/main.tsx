@@ -9,7 +9,7 @@ import { CreateAssistantDialog } from "@web/components/create-assistant-dialog";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { start } from "@web/boot";
-import { useCadetCommands } from "@web/runtime/cadet-commands";
+import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { getRouterBasename, routeTree } from "@web/routes";
 
 import { initI18n } from "@app/i18n";
