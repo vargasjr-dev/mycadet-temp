@@ -16,7 +16,7 @@ let abortDuringCheck: AbortController | null = null;
 // ── audit-terminal captures ───────────────────────────────
 // The executor and its permission/approval collaborators no longer emit
 // lifecycle events through a context callback; they call direct terminal
-// functions in `../telemetry/tool-audit.js`. Mock those terminals here
+// functions in `../persistence/tool-audit.js`. Mock those terminals here
 // (declared before importing the ToolExecutor so the mock intercepts the
 // executor's static import) and capture each call into an array. Every test
 // below asserts against these captures instead of an emitted-event stream.
@@ -59,28 +59,19 @@ interface DeniedCapture {
   durationMs: number;
 }
 
-interface PromptTelemetryCapture {
-  toolName: string;
-  riskLevel: string;
-  riskThreshold?: string;
-  surface?: string;
-  conversationId?: string;
-}
-
 const executedCaptures: ExecutedCapture[] = [];
 const errorCaptures: ErrorCapture[] = [];
 const deniedCaptures: DeniedCapture[] = [];
-const promptedCaptures: PromptTelemetryCapture[] = [];
-const decidedCaptures: Array<{
-  entry: PromptTelemetryCapture;
-  outcome: string;
+// The permission-prompt telemetry pair (recordToolPermissionPrompted/Decided)
+// died with the telemetry removal; whether a prompt was surfaced is observed
+// through the fake prompter instead (see makePrompter below).
+const promptCalls: Array<{
+  toolName: string;
+  riskLevel: string;
+  conversationId?: string;
 }> = [];
-const promptedToolNames = (): string[] =>
-  promptedCaptures.map((entry) => entry.toolName);
-const decidedOutcomes = (): string[] =>
-  decidedCaptures.map((decided) => decided.outcome);
 
-mock.module("../telemetry/tool-audit.js", () => ({
+mock.module("../persistence/tool-audit.js", () => ({
   recordToolExecuted: (entry: ExecutedCapture) => {
     executedCaptures.push(entry);
   },
@@ -89,15 +80,6 @@ mock.module("../telemetry/tool-audit.js", () => ({
   },
   recordToolDenied: (entry: DeniedCapture) => {
     deniedCaptures.push(entry);
-  },
-  recordToolPermissionPrompted: (entry: PromptTelemetryCapture) => {
-    promptedCaptures.push(entry);
-  },
-  recordToolPermissionDecided: (
-    entry: PromptTelemetryCapture,
-    outcome: string,
-  ) => {
-    decidedCaptures.push({ entry, outcome });
   },
 }));
 
@@ -156,8 +138,8 @@ mock.module("../persistence/conversation-crud.js", () => ({
 }));
 
 // Mock every export so downstream test files that dynamically import modules
-// with a static `from "../telemetry/tool-usage-store.js"` still see all symbols.
-mock.module("../telemetry/tool-usage-store.js", () => ({
+// with a static `from "../persistence/tool-usage-store.js"` still see all symbols.
+mock.module("../persistence/tool-usage-store.js", () => ({
   recordToolInvocation: () => {},
   getRecentInvocations: () => [],
   rotateToolInvocations: async () => 0,
@@ -302,7 +284,21 @@ function makePrompter(
   }>,
 ) {
   return {
-    prompt: promptImpl ?? (async () => ({ decision: promptDecision })),
+    prompt: async (
+      toolName: string,
+      _input: unknown,
+      riskLevel: string,
+      _allowlistOptions: unknown,
+      _scopeOptions: unknown,
+      _previewDiff: unknown,
+      conversationId?: string,
+    ) => {
+      // Record that a prompt was actually surfaced (with the risk and
+      // conversation the checker resolved) — the telemetry "prompted" half is
+      // gone, so the surfaced-prompt observation lives here now.
+      promptCalls.push({ toolName, riskLevel, conversationId });
+      return promptImpl ? promptImpl() : { decision: promptDecision };
+    },
     resolveConfirmation: () => {},
     updateSender: () => {},
     dispose: () => {},
@@ -323,8 +319,7 @@ describe("ToolExecutor audit terminals", () => {
     executedCaptures.length = 0;
     errorCaptures.length = 0;
     deniedCaptures.length = 0;
-    promptedCaptures.length = 0;
-    decidedCaptures.length = 0;
+    promptCalls.length = 0;
   });
 
   test("records executed terminal for allowed execution", async () => {
@@ -356,7 +351,7 @@ describe("ToolExecutor audit terminals", () => {
   test("records permission telemetry per-invocation, not from the turn-level flag", async () => {
     // A prior tool this turn was interactively approved (turn-level
     // `approvedViaPrompt` already true), but THIS call is auto-approved, so it
-    // surfaces no prompt and records neither half of the pair.
+    // surfaces no prompt and lands directly on the executed terminal.
     const executor = new ToolExecutor(makePrompter());
 
     const result = await executor.execute(
@@ -367,8 +362,7 @@ describe("ToolExecutor audit terminals", () => {
 
     expect(result).toMatchObject({ isError: false });
     expect(executedCaptures).toHaveLength(1);
-    expect(promptedCaptures).toHaveLength(0);
-    expect(decidedCaptures).toHaveLength(0);
+    expect(promptCalls).toHaveLength(0);
   });
 
   test("records denied terminal when user denies prompt", async () => {
@@ -389,8 +383,7 @@ describe("ToolExecutor audit terminals", () => {
     expect(result.content).toContain("Permission denied");
 
     // A prompt was surfaced, then the user's denial recorded a denied terminal.
-    expect(promptedToolNames()).toEqual(["bash"]);
-    expect(decidedOutcomes()).toEqual(["deny"]);
+    expect(promptCalls.map((c) => c.toolName)).toEqual(["bash"]);
     expect(executedCaptures).toHaveLength(0);
     expect(deniedCaptures).toHaveLength(1);
     const denied = deniedCaptures[0];
@@ -399,7 +392,7 @@ describe("ToolExecutor audit terminals", () => {
     expect(denied.reason).toBe("Permission denied by user");
   });
 
-  test("records an allow decision when the user approves the prompt", async () => {
+  test("runs the tool when the user approves the prompt", async () => {
     checkerDecision = "prompt";
     checkerReason = "medium risk: requires approval";
     checkerRisk = "medium";
@@ -413,11 +406,12 @@ describe("ToolExecutor audit terminals", () => {
       makeContext({ forcePromptSideEffects: true }),
     );
 
-    expect(promptedToolNames()).toEqual(["bash"]);
-    expect(decidedOutcomes()).toEqual(["allow"]);
+    expect(promptCalls.map((c) => c.toolName)).toEqual(["bash"]);
+    expect(executedCaptures).toHaveLength(1);
+    expect(deniedCaptures).toHaveLength(0);
   });
 
-  test("carries risk level and access preset onto both halves of the pair", async () => {
+  test("carries risk level and conversation onto the prompt request", async () => {
     checkerDecision = "prompt";
     checkerReason = "high risk: requires approval";
     checkerRisk = "high";
@@ -434,14 +428,10 @@ describe("ToolExecutor audit terminals", () => {
     const expected = {
       toolName: "bash",
       riskLevel: "high",
-      // The gateway is unreachable under test, so the reader falls back to the
-      // strict preset. What matters is that the resolved value is recorded.
-      riskThreshold: "none",
-      surface: "slack",
       conversationId: "conversation-1",
     };
-    expect(promptedCaptures[0]).toMatchObject(expected);
-    expect(decidedCaptures[0].entry).toMatchObject(expected);
+    expect(promptCalls[0]).toMatchObject(expected);
+    expect(deniedCaptures).toHaveLength(1);
   });
 
   // ── abandoned prompts ───────────────────────────────
@@ -470,8 +460,8 @@ describe("ToolExecutor audit terminals", () => {
       );
 
       expect(result.isError).toBe(true);
-      expect(promptedToolNames()).toEqual(["bash"]);
-      expect(decidedOutcomes()).toEqual(["abandoned"]);
+      expect(promptCalls.map((c) => c.toolName)).toEqual(["bash"]);
+      expect(deniedCaptures).toHaveLength(1);
     },
   );
 
@@ -496,14 +486,12 @@ describe("ToolExecutor audit terminals", () => {
     );
 
     expect(result.isError).toBe(true);
-    // The invocation did reach the prompt branch and was denied there, so the
-    // empty telemetry below is the guard working, not the branch being skipped.
+    // The invocation did reach the prompt branch and was denied there — the
+    // deny is the guard working, not the branch being skipped.
     expect(deniedCaptures).toHaveLength(1);
-    expect(promptedCaptures).toHaveLength(0);
-    expect(decidedCaptures).toHaveLength(0);
   });
 
-  test("records an abandoned decision when the prompter is disposed mid-prompt", async () => {
+  test("records an error terminal when the prompter is disposed mid-prompt", async () => {
     checkerDecision = "prompt";
     checkerReason = "medium risk: requires approval";
     checkerRisk = "medium";
@@ -521,61 +509,13 @@ describe("ToolExecutor audit terminals", () => {
     );
 
     expect(result.isError).toBe(true);
-    expect(promptedToolNames()).toEqual(["bash"]);
-    expect(decidedOutcomes()).toEqual(["abandoned"]);
-  });
-
-  test("every prompt reconciles against exactly one decision", async () => {
-    checkerDecision = "prompt";
-    checkerReason = "medium risk: requires approval";
-    checkerRisk = "medium";
-
-    // One of each terminal shape a prompted invocation can reach: approved and
-    // the tool runs, approved and the tool throws, denied, and abandoned.
-    const runs: Array<() => Promise<unknown>> = [
-      async () => {
-        promptDecision = "allow";
-        toolThrow = null;
-        return new ToolExecutor(makePrompter()).execute(
-          "bash",
-          { command: "ls" },
-          makeContext({ forcePromptSideEffects: true }),
-        );
-      },
-      async () => {
-        promptDecision = "allow";
-        toolThrow = new Error("boom");
-        return new ToolExecutor(makePrompter()).execute(
-          "bash",
-          { command: "ls" },
-          makeContext({ forcePromptSideEffects: true }),
-        );
-      },
-      async () => {
-        promptDecision = "deny";
-        toolThrow = null;
-        return new ToolExecutor(makePrompter()).execute(
-          "bash",
-          { command: "ls" },
-          makeContext({ forcePromptSideEffects: true }),
-        );
-      },
-      async () =>
-        new ToolExecutor(
-          makePrompter(async () => ({ decision: "deny", wasTimeout: true })),
-        ).execute(
-          "bash",
-          { command: "ls" },
-          makeContext({ forcePromptSideEffects: true }),
-        ),
-    ];
-    for (const run of runs) {
-      await run();
-    }
-
-    expect(promptedCaptures).toHaveLength(runs.length);
-    expect(decidedCaptures).toHaveLength(runs.length);
-    expect(decidedOutcomes()).toEqual(["allow", "allow", "deny", "abandoned"]);
+    expect(promptCalls.map((c) => c.toolName)).toEqual(["bash"]);
+    // The prompter rejected rather than resolved: the throw rides the
+    // executor's generic error path to an unexpected-error terminal, not a
+    // denied one.
+    expect(errorCaptures).toHaveLength(1);
+    expect(errorCaptures[0].errorMessage).toBe("Prompter disposed");
+    expect(errorCaptures[0].isExpected).toBe(false);
   });
 
   test("uses contextual deny messaging when provided by prompter", async () => {
@@ -644,7 +584,7 @@ describe("ToolExecutor audit terminals", () => {
       isError: true,
     });
     // A deterministic deny rule blocks without prompting.
-    expect(promptedCaptures).toHaveLength(0);
+    expect(promptCalls).toHaveLength(0);
     expect(deniedCaptures).toHaveLength(1);
     expect(deniedCaptures[0].reason).toBe("Blocked by deny rule: rm *");
   });
@@ -977,7 +917,7 @@ describe("ToolExecutor audit terminals", () => {
     );
 
     // forcePromptSideEffects promotes the auto-allow to an interactive prompt.
-    expect(promptedToolNames()).toEqual(["bash"]);
+    expect(promptCalls.map((c) => c.toolName)).toEqual(["bash"]);
     expect(executedCaptures).toHaveLength(1);
     expect(executedCaptures[0].toolName).toBe("bash");
   });
@@ -995,8 +935,8 @@ describe("ToolExecutor audit terminals", () => {
       makeContext({ forcePromptSideEffects: true }),
     );
 
-    // file_read is not a side-effect tool, so no prompt terminal should fire.
-    expect(promptedCaptures).toHaveLength(0);
+    // file_read is not a side-effect tool, so no prompt is surfaced.
+    expect(promptCalls).toHaveLength(0);
     expect(executedCaptures).toHaveLength(1);
     expect(executedCaptures[0].toolName).toBe("file_read");
   });
@@ -1022,7 +962,7 @@ describe("ToolExecutor audit terminals", () => {
     );
 
     expect(result).toMatchObject({ content: "ok", isError: false });
-    expect(promptedToolNames()).toEqual(["file_edit"]);
+    expect(promptCalls.map((c) => c.toolName)).toEqual(["file_edit"]);
     expect(executedCaptures).toHaveLength(1);
     expect(executedCaptures[0].toolName).toBe("file_edit");
   });
