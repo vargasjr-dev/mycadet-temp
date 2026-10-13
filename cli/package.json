@@ -42,7 +42,9 @@
     "react": "19.2.6",
     "react-devtools-core": "7.0.1",
     "yaml": "2.8.2",
-    "zod": "4.3.6"
+    "zod": "4.3.6",
+    "@mycadet/backup": "workspace:*",
+    "@mycadet/credential-storage": "workspace:*"
   },
   "bundledDependencies": [
     "@mycadet/assistant-api",
@@ -50,7 +52,9 @@
     "@mycadet/environments",
     "@mycadet/ipc-server-utils",
     "@mycadet/local-mode",
-    "@mycadet/service-contracts"
+    "@mycadet/service-contracts",
+    "@mycadet/backup",
+    "@mycadet/credential-storage"
   ],
   "devDependencies": {
     "@mycadet/shared": "workspace:*",

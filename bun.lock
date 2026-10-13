@@ -20,6 +20,7 @@
         "@mycadet/app-icons": "workspace:*",
         "@mycadet/avatar-catalog": "workspace:*",
         "@mycadet/avatar-manifest": "workspace:*",
+        "@mycadet/backup": "workspace:*",
         "@mycadet/ces-client": "workspace:*",
         "@mycadet/credential-storage": "workspace:*",
         "@mycadet/egress-proxy": "workspace:*",
@@ -107,6 +108,8 @@
       "dependencies": {
         "@mycadet/assistant-api": "workspace:*",
         "@mycadet/avatar-manifest": "workspace:*",
+        "@mycadet/backup": "workspace:*",
+        "@mycadet/credential-storage": "workspace:*",
         "@mycadet/environments": "workspace:*",
         "@mycadet/ipc-server-utils": "workspace:*",
         "@mycadet/local-mode": "workspace:*",
@@ -496,6 +499,14 @@
       "devDependencies": {
         "@types/bun": "1.3.11",
         "typescript": "5.9.3",
+      },
+    },
+    "packages/backup": {
+      "name": "@mycadet/backup",
+      "version": "0.0.1",
+      "dependencies": {
+        "@mycadet/service-contracts": "workspace:*",
+        "zod": "4.3.6",
       },
     },
     "packages/ces-client": {
@@ -1151,6 +1162,8 @@
     "@mycadet/avatar-catalog": ["@mycadet/avatar-catalog@workspace:packages/avatar-catalog"],
 
     "@mycadet/avatar-manifest": ["@mycadet/avatar-manifest@workspace:packages/avatar-manifest"],
+
+    "@mycadet/backup": ["@mycadet/backup@workspace:packages/backup"],
 
     "@mycadet/ces-client": ["@mycadet/ces-client@workspace:packages/ces-client"],
 

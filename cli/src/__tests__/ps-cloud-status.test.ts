@@ -262,7 +262,8 @@ describe("cadet ps — platform status line", () => {
     // children of an assistant row…
     expect(output).toContain("ngrok");
     expect(output).not.toContain("└ ngrok");
-    expect(output).toContain("nginx edge");
+    expect(output).toContain("nginx");
+    expect(output).toContain("port ");
     // …the type column distinguishes the three process kinds…
     expect(output).toContain("🧑‍🚀 Assistant");
     expect(output).toContain("🚇 Tunnel");

@@ -1,3 +1,4 @@
+import { getNginxIngressPort } from "../lib/nginx-ingress.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
 
@@ -649,10 +650,10 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
     rows.push({
       assistantId: app.assistantId,
       row: {
-        name: "nginx edge",
+        name: "nginx",
         type: APP_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
-        info: alive ? `PID ${app.pid}` : `PID ${app.pid} (exited)`,
+        info: `port ${app.port ?? getNginxIngressPort()}, PID ${app.pid}${alive ? "" : " (exited)"}`,
       },
     });
   }

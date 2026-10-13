@@ -14,16 +14,13 @@ describe("terminal login polling", () => {
     const logs: string[] = [];
     const bodies: unknown[] = [];
     let polls = 0;
-    const request = (async (
-      url: string | URL | Request,
-      init?: RequestInit,
-    ) => {
+    const request = async (url: string | URL | Request, init?: RequestInit) => {
       bodies.push(init?.body);
       if (String(url).endsWith("/start")) return Response.json(login);
       return ++polls === 1
         ? Response.json({ status: "pending" }, { status: 202 })
         : Response.json({ session_token: "session-test" });
-    }) as typeof fetch;
+    };
     expect(
       await pollingCloudLogin("https://cloud.example.com", {
         fetch: request,
@@ -41,14 +38,14 @@ describe("terminal login polling", () => {
   });
 
   test("times out even while a network request is hung", async () => {
-    const request = (async (_url: unknown, init?: RequestInit) =>
+    const request = async (_url: unknown, init?: RequestInit) =>
       new Promise<Response>((_resolve, reject) => {
         init?.signal?.addEventListener(
           "abort",
           () => reject(new Error("aborted")),
           { once: true },
         );
-      })) as typeof fetch;
+      });
     await expect(
       pollingCloudLogin("https://example.com", {
         fetch: request,
@@ -58,10 +55,10 @@ describe("terminal login polling", () => {
   });
 
   test("expired approval fails without returning a token", async () => {
-    const request = (async (url: unknown) =>
+    const request = async (url: unknown) =>
       String(url).endsWith("/start")
         ? Response.json(login)
-        : Response.json({}, { status: 410 })) as typeof fetch;
+        : Response.json({}, { status: 410 });
     await expect(
       pollingCloudLogin("https://example.com", {
         fetch: request,

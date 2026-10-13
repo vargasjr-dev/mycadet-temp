@@ -170,6 +170,8 @@ export interface RootProcessRecord {
   /** The assistant the process fronts, so `cadet ps` can nest the row. */
   assistantId?: string;
   startedAt: string;
+  /** Listening port for the nginx edge. */
+  port?: number;
 }
 
 export type RootProcessKind = "tunnel" | "app";

@@ -35,7 +35,8 @@
     "packages/service-contracts",
     "packages/shared",
     "packages/slack-text",
-    "packages/twilio-client"
+    "packages/twilio-client",
+    "packages/backup"
   ],
   "trustedDependencies": [
     "@playwright/browser-chromium"

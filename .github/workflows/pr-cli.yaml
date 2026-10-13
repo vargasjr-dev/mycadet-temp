@@ -7,6 +7,8 @@ on:
       - "package.json"
       - "patches/**"
       - "cli/**"
+      - "packages/backup/**"
+      - "packages/credential-storage/**"
       - "packages/local-mode/**"
       - "packages/environments/**"
       - "packages/avatar-manifest/**"

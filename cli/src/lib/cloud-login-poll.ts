@@ -15,7 +15,10 @@ export async function pollingCloudLogin(
   cloudUrl: string,
   options: {
     timeoutMs?: number;
-    fetch?: typeof fetch;
+    fetch?: (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => Promise<Response>;
     log?: (message: string) => void;
   } = {},
 ): Promise<string> {

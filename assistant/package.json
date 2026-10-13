@@ -85,7 +85,8 @@
     "uuid": "11.1.0",
     "yaml": "2.8.2",
     "zod": "4.3.6",
-    "zod-openapi": "5.4.6"
+    "zod-openapi": "5.4.6",
+    "@mycadet/backup": "workspace:*"
   },
   "engines": {
     "node": ">=20.12.0"
@@ -102,7 +103,8 @@
     "@mycadet/gateway-client",
     "@mycadet/ipc-server-utils",
     "@mycadet/slack-text",
-    "@mycadet/twilio-client"
+    "@mycadet/twilio-client",
+    "@mycadet/backup"
   ],
   "optionalDependencies": {
     "@resvg/resvg-js-darwin-arm64": "2.6.2",
