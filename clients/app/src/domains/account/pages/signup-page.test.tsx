@@ -22,7 +22,7 @@ import {
 
 mock.module("@web/stores/auth-store", mockAuthStore);
 mock.module("@web/runtime/native-auth", mockNativeAuth);
-mock.module("@web/lib/auth/hard-navigate", mockHardNavigate);
+mock.module("@app/lib/auth/hard-navigate", mockHardNavigate);
 
 /** What the cloud reports about accepting new accounts. */
 const signupAvailability = { value: "open" as SignupAvailability };

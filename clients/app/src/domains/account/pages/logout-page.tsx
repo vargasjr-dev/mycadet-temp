@@ -5,7 +5,7 @@ import { useTranslation } from "@app/i18n";
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
 import { sanitizeReturnTo } from "@web/domains/account/return-to";
-import { hardNavigate } from "@web/lib/auth/hard-navigate";
+import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import { useAuthStore } from "@web/stores/auth-store";
 import { routes } from "@web/utils/routes";
 

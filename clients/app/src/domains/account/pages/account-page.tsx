@@ -8,7 +8,7 @@ import {
   PROVIDER_CALLBACK_URL,
   PROVIDER_ID,
 } from "@web/domains/account/login-flow";
-import { hardNavigate } from "@web/lib/auth/hard-navigate";
+import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import { startAuthFlow } from "@web/runtime/native-auth";
 import {
   useAuthStore,

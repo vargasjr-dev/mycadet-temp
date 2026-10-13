@@ -6,7 +6,7 @@ import { useState } from "react";
 import { createBrowserRouter, Outlet } from "react-router";
 
 import { CreateAssistantDialog } from "@web/components/create-assistant-dialog";
-import { RouteErrorBoundary } from "@web/components/route-error-boundary";
+import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { start } from "@web/boot";
 import { useCadetCommands } from "@web/runtime/cadet-commands";

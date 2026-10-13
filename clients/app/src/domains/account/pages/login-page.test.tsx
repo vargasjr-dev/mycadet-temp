@@ -22,7 +22,7 @@ import {
 
 mock.module("@web/stores/auth-store", mockAuthStore);
 mock.module("@web/runtime/native-auth", mockNativeAuth);
-mock.module("@web/lib/auth/hard-navigate", mockHardNavigate);
+mock.module("@app/lib/auth/hard-navigate", mockHardNavigate);
 // Light passthrough so the shared welcome chrome renders in happy-dom (the
 // avatar-wave canvas has nothing to draw on there), as the onboarding screen
 // tests do with the same layout.

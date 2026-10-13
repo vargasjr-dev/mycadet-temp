@@ -7,7 +7,7 @@ import {
 } from "@web/domains/account/login-flow";
 import { sanitizeReturnTo } from "@web/domains/account/return-to";
 import { useCloudGateWithPending } from "@web/hooks/use-cloud-gate";
-import { hardNavigate } from "@web/lib/auth/hard-navigate";
+import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import {
   useIsAuthenticated,
   useIsSessionInitializing,

@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { type ReactNode } from "react";
 
-import { publicAsset } from "@web/utils/public-asset";
+import { publicAsset } from "@app/utils/public-asset";
 
 import "./signup.css";
 
