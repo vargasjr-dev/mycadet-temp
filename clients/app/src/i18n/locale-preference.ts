@@ -1,23 +1,9 @@
-const LOCALE_KEY = "device:locale";
+import { getDeviceSetting, setDeviceSetting } from "@app/utils/device-settings";
 
-// Retain the existing device preference so login keeps the selected language.
 export function readLocalePreference(): string {
-  try {
-    return localStorage.getItem(LOCALE_KEY) ?? "";
-  } catch {
-    return "";
-  }
+  return getDeviceSetting("locale", "");
 }
 
 export function writeLocalePreference(locale: string): void {
-  try {
-    localStorage.setItem(LOCALE_KEY, locale);
-    window.dispatchEvent(
-      new CustomEvent("cadet:pref-changed", {
-        detail: { key: LOCALE_KEY, value: locale },
-      }),
-    );
-  } catch {
-    // Language changes must still work when browser storage is unavailable.
-  }
+  setDeviceSetting("locale", locale);
 }

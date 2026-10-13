@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import { CancelledError } from "@tanstack/react-query";
-import { captureError } from "@app/lib/error-reporting/capture-error";
+import { captureError } from "./capture-error";
 
 const errors = spyOn(console, "error").mockImplementation(() => {});
 const warnings = spyOn(console, "warn").mockImplementation(() => {});

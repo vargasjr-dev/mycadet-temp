@@ -1,6 +1,6 @@
 // Run localStorage migrations before any other app import — the modules
 // below read localStorage at module level.
-import "@web/utils/run-storage-migrations";
+import "@app/utils/run-storage-migrations";
 
 import { useState } from "react";
 import { createBrowserRouter, Outlet } from "react-router";

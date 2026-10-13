@@ -1,17 +1,16 @@
-import { normalizeToError } from "@app/lib/error-reporting/normalize-error";
-import { isCancellationError } from "@app/utils/is-cancellation-error";
-import { isTransientNetworkError } from "@app/utils/is-transient-network-error";
+import { normalizeToError } from "./normalize-error";
+import { isCancellationError } from "./is-cancellation-error";
+import { isTransientNetworkError } from "./is-transient-network-error";
 
-/** Account error reporting with cancellation and network-failure filtering. */
-export function captureError(
-  error: unknown,
-  opts: {
-    context: string;
-    level?: "warning" | "info" | "error" | "fatal";
-    tags?: Record<string, string>;
-    extra?: Record<string, unknown>;
-  },
-): void {
+export type CaptureErrorOptions = {
+  context: string;
+  level?: "warning" | "info" | "error" | "fatal";
+  tags?: Record<string, string>;
+  extra?: Record<string, unknown>;
+};
+
+/** Error reporting with cancellation and network-failure filtering. */
+export function captureError(error: unknown, opts: CaptureErrorOptions): void {
   if (isTransientNetworkError(error)) {
     return;
   }

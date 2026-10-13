@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CancelledError } from "@tanstack/react-query";
 
-import { isCancellationError } from "@app/utils/is-cancellation-error";
+import { isCancellationError } from "./is-cancellation-error";
 
 describe("isCancellationError", () => {
   test("matches TanStack Query CancelledError", () => {

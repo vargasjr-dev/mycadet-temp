@@ -141,7 +141,6 @@
         "@capacitor/core": "8.3.4",
         "@mycadet/design-library": "workspace:*",
         "@mycadet/ipc-contract": "workspace:*",
-        "@tanstack/react-query": "5.90.21",
         "i18next": "26.3.6",
         "i18next-icu": "2.4.4",
         "lucide-react": "1.16.0",
@@ -520,6 +519,9 @@
     "packages/design-library": {
       "name": "@mycadet/design-library",
       "version": "0.0.1",
+      "dependencies": {
+        "@tanstack/react-query": "5.90.21",
+      },
       "devDependencies": {
         "@playwright/browser-chromium": "1.60.0",
         "@radix-ui/react-accordion": "1.2.12",
