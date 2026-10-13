@@ -153,24 +153,15 @@ uninstall-tests the installer.
 as soon as version resolution succeeds. Windows installers build for dev,
 staging, and production in parallel with the other release jobs.
 
-The separate `.github/workflows/publish-windows.yaml` publishes artifacts from
-that same workflow run after the Windows build and release gates succeed.
-Staging and production require the release images and channel metadata to
-publish first. Dev requires release registration and the Chrome extension build.
 The workflow stamps the version and builds the helper, preview handler, CLI
 runtime, and renderer on native runners (x64 on `windows-2025`, arm64 on
-`windows-11-vs2026-arm`). Each native payload and its stamped app manifest
-transfer to an x64 `windows-2025` runner
-for packaging and signing through `electron-builder`, because
-[Azure Artifact Signing does not support Windows ARM runners](https://github.com/Azure/artifact-signing-action#runner-requirements).
+`windows-11-vs2026-arm`), then packages and signs through `electron-builder`
+on the same runner.
 The workflow verifies every manifest binary and the installer with
 `Get-AuthenticodeSignature`, requiring valid signatures from the configured
 publisher while allowing Azure certificate rotation. Three bundled Microsoft
 runtime DLL paths also accept valid Microsoft Windows catalog signatures,
-which PowerShell prefers over embedded signatures. The publish workflow writes to the
-`mycadet-<env>-releases/win-electron/<arch>/` feed: installer and blockmap
-first, then the `<env>.yml` channel manifest. Dev also publishes the installer
-as `mycadet-dev-<arch>.exe` for stable download-page links.
+which PowerShell prefers over embedded signatures.
 
 The builder always writes `latest.yml`, including for prerelease versions;
 CD uploads it under the environment's `<env>.yml` channel name.

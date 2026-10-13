@@ -1409,7 +1409,7 @@ jobs:
   # ── iOS release (same-repo reusable workflow) ────────────────────────
 
   release-ios:
-    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
+    needs: [compute-version, build-chrome-extension]
     if: ${{ false }} # ios offline on the dev channel; bring back online by deleting this marker
     uses: ./.github/workflows/release-ios.yaml
     with:
@@ -1418,7 +1418,7 @@ jobs:
     secrets: inherit
 
   release-android:
-    needs: [compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
+    needs: [compute-version, build-chrome-extension]
     if: ${{ false }} # android offline on the dev channel; re-enable as vars.ANDROID_DEV_RELEASE_ENABLED == 'true' && delete this marker
     permissions:
       contents: read
@@ -1438,18 +1438,6 @@ jobs:
     with:
       environment: dev
       version: ${{ needs.compute-version.outputs.version }}
-    secrets: inherit
-
-  release-windows:
-    needs:
-      [build-windows, compute-version, push-assistant-manifest, push-gateway-manifest, push-credential-executor-manifest, build-chrome-extension]
-    if: ${{ false }} # windows offline on the dev channel; bring back online by deleting this marker
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/publish-windows.yaml
-    with:
-      environment: dev
     secrets: inherit
 
   # ── Slack notification (first failure only) ──────────────────────────

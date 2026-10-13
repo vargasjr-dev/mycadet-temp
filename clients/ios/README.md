@@ -634,12 +634,6 @@ internal testers](https://developer.apple.com/help/app-store-connect/test-a-beta
 The export method stays `app-store-connect` for all environments; only
 the boolean differs.
 
-### Notifications
-
-The workflow uses the `.github/actions/send-build-alert` composite action
-on completion (`if: always()`). Failures surface in `#build-alerts` via
-`SLACK_WEBHOOK_URL`.
-
 ### Why no `bun run build` before `cap sync`
 
 No web assets are bundled in the IPA (see

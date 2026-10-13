@@ -22,7 +22,6 @@ on:
   #     - "packages/**"
   #     - ".github/workflows/pr-windows.yaml"
   #     - ".github/workflows/release-windows.yaml"
-  #     - ".github/workflows/publish-windows.yaml"
   #
   workflow_dispatch:
 concurrency:

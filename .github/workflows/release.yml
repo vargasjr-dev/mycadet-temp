@@ -1633,9 +1633,6 @@ jobs:
         publish-web-prod,
         publish-meta-prod,
         publish-plugin-api-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
         build-chrome-extension,
       ]
     if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
@@ -1643,7 +1640,6 @@ jobs:
     with:
       environment: production
       version: ${{ needs.extract-version.outputs.version }}
-      notify_slack: false
     secrets: inherit
 
   release-android:
@@ -1654,9 +1650,6 @@ jobs:
         publish-web-prod,
         publish-meta-prod,
         publish-plugin-api-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
         build-chrome-extension,
       ]
     if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
@@ -1678,27 +1671,6 @@ jobs:
     with:
       environment: production
       version: ${{ needs.extract-version.outputs.version }}
-    secrets: inherit
-
-  # Gated on the channel's meta publish like upload-electron-updates: never
-  # offer a Windows auto-update for a release that didn't publish.
-  release-windows:
-    needs:
-      [
-        build-windows,
-        extract-version,
-        publish-meta-prod,
-        push-assistant-manifest,
-        push-gateway-manifest,
-        push-credential-executor-manifest,
-      ]
-    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/publish-windows.yaml
-    with:
-      environment: production
     secrets: inherit
 
   ci-assistant-lint:

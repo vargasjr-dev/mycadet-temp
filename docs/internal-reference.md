@@ -547,7 +547,7 @@ Creating the GitHub Release triggers three workflows in parallel:
 - **Publish velly to npm** (`publish-velly.yml`): Publishes the `velly` CLI package to npm with provenance.
 - **Slack Release Notification** (`slack-release-notification.yml`): Posts a summary message to the releases Slack channel with a threaded changelog.
 
-- **Release Windows** (`build-windows` and `release-windows` jobs): The reusable `release-windows.yaml` builds, signs, and verifies the NSIS installers as soon as version resolution succeeds. `publish-windows.yaml` publishes the verified artifacts from the same run to `win-electron/{arch}/` only after the Windows build and existing channel gates succeed: release registration and the Chrome extension build for dev, or release images and channel metadata for staging and production. The installer and blockmap upload before the `{env}.yml` manifest; dev also publishes a stable installer alias. Signing credentials are an explicit gate documented in `clients/windows/README.md`.
+- **Release Windows** (`build-windows` job): The reusable `release-windows.yaml` builds, packages, signs, and verifies the NSIS installers in a single job as soon as version resolution succeeds. Signing credentials are an explicit gate documented in `clients/windows/README.md`.
 
 #### Auto-updates for macOS clients
 

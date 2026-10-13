@@ -11,11 +11,6 @@ on:
         description: "Release version string (e.g. 0.6.0, 0.6.1-staging.1)"
         required: true
         type: string
-      notify_slack:
-        description: "Whether the reusable workflow sends its own Slack alert. Set false when the caller already summarizes iOS status."
-        required: false
-        type: boolean
-        default: true
 
 concurrency:
   group: ios-release-${{ inputs.environment }}
@@ -596,22 +591,3 @@ jobs:
           KEYCHAIN_PATH="$HOME/Library/Keychains/$KEYCHAIN_NAME-db"
           security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
           rm -rf ~/.private_keys 2>/dev/null || true
-
-  notify-slack:
-    needs: [build-and-upload]
-    if: always() && inputs.notify_slack
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          sparse-checkout: .github/actions/send-build-alert
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/send-build-alert
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          status: ${{ needs.build-and-upload.result }}
-          slack-user-id: ${{ github.actor }}
-          should-tag: "false"
