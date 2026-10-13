@@ -21,7 +21,7 @@ import {
 import { makeProPackage } from "@/domains/settings/billing/plans/pro-package-test-fixtures";
 
 // Render avatar placeholders; skip the lazy compositor bundle.
-mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
+mock.module("@/utils/use-bundled-avatar-components", () => ({
   preloadBundledAvatarComponents: () => {},
   useBundledAvatarComponents: () => null,
 }));

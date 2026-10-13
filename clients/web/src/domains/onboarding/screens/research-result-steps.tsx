@@ -31,7 +31,7 @@ import {
 } from "@/domains/onboarding/onboarding-tone";
 import { useLayoutViewportSize } from "@/hooks/use-element-size";
 import { Trans, useTranslation } from "@/i18n";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import {
   pluginDisplayName,
   type ResearchFact,

@@ -19,7 +19,7 @@ import { fn } from "storybook/test";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 import { AssistantEmailIntroModal } from "./assistant-email-intro-modal";
 import { FeatureIntroModal } from "./feature-intro-modal";

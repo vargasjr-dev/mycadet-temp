@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import { AvatarRenderer } from "@/components/avatar-renderer";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 export function IconBadge({ icon: Icon }: { icon: LucideIcon }) {
   return (

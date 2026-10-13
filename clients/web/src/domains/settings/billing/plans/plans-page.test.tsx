@@ -200,7 +200,7 @@ mock.module("@/runtime/platform-detection", () => ({
 }));
 
 // Render avatar placeholders; skip the lazy compositor bundle in the DOM test.
-mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
+mock.module("@/utils/use-bundled-avatar-components", () => ({
   preloadBundledAvatarComponents: () => {},
   useBundledAvatarComponents: () => null,
 }));

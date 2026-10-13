@@ -8,7 +8,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
 
 let avatarComponents: unknown = { colors: [] };
-mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
+mock.module("@/utils/use-bundled-avatar-components", () => ({
   preloadBundledAvatarComponents: () => {},
   useBundledAvatarComponents: () => avatarComponents,
 }));

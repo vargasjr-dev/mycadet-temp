@@ -37,7 +37,7 @@ import {
 } from "@/domains/onboarding/prechat-names";
 import { useUnscopedCloudVoices } from "@/lib/tts/use-cloud-voices";
 import { randomCharacterTraits } from "@/utils/avatar-random";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import type { CharacterTraits } from "@/types/avatar";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@/i18n";

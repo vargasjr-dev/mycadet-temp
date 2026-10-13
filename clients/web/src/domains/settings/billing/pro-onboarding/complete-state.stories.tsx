@@ -20,7 +20,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { assistantsRetrieveQueryKey } from "@/generated/api/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 import { CompleteState } from "./complete-state";
 import type { TakeoverDirection } from "./takeover-copy";

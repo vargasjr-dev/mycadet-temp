@@ -17,7 +17,7 @@ import { useMemo } from "react";
 
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
 import { toneForBg, type AvatarTone } from "@/utils/avatar-tone";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 export { darkenHex, toneForBg } from "@/utils/avatar-tone";
 export type OnboardingTone = AvatarTone;

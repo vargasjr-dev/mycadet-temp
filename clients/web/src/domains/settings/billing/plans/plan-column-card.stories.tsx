@@ -33,7 +33,7 @@ import {
 } from "@/domains/settings/billing/plans/pro-package-test-fixtures";
 import { priceLabelFromCents } from "@/domains/settings/components/tier-pricing";
 import { useTranslation } from "@/i18n";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 // Every column draws a creature avatar, so warm the bundled-component chunk at
 // module scope the way `plans-page.tsx` does.

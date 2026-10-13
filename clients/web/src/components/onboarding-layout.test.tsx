@@ -19,7 +19,7 @@ mock.module("@/runtime/is-electron", () => ({
 }));
 // The wave is a canvas simulation; the layout's job is only deciding whether
 // and in which composition one mounts, so stand in for it with a marker.
-mock.module("@mycadet/design-library/components/avatar-wave", () => ({
+mock.module("./avatar-wave", () => ({
   AvatarWave: ({ variant = "column" }: { variant?: string }) => (
     <div data-testid={`wave-${variant}`} />
   ),

@@ -31,7 +31,7 @@ import type {
 } from "@/generated/api/types.gen";
 import type { CheckoutIntent } from "@/lib/billing/checkout-intent";
 import { createStoryQueryClient } from "@/lib/story-query-cache";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 import type { ProvisioningDimensions } from "./provisioning-machine";
 import {

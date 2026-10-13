@@ -81,7 +81,7 @@ import { openUrl } from "@/runtime/browser";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { PACKAGE_PARAM, routes } from "@/utils/routes";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 

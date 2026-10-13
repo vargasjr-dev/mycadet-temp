@@ -13,7 +13,7 @@
 import { useEffect, type ReactNode } from "react";
 
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 /**
  * The height contract `OnboardingStage` relies on.

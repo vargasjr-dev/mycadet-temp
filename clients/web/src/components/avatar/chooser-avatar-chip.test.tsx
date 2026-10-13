@@ -3,12 +3,12 @@ import { cleanup, render } from "@testing-library/react";
 
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
-import type * as BundledHookModule from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import type * as BundledHookModule from "@/utils/use-bundled-avatar-components";
 
 const componentsRef: { value: CharacterComponents | null } = { value: null };
 
 mock.module(
-  "@mycadet/design-library/utils/use-bundled-avatar-components",
+  "@/utils/use-bundled-avatar-components",
   (): Partial<typeof BundledHookModule> => ({
     useBundledAvatarComponents: () => componentsRef.value,
   }),

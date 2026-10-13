@@ -28,7 +28,7 @@ import { useOnboardingStageSize } from "@/domains/onboarding/hooks/use-onboardin
 import { useOnboardingTone } from "@/domains/onboarding/onboarding-tone";
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
 import { cssTransitionFor } from "@/stores/page-surface-store";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 interface IntroductionScreenProps {
   firstName: string;

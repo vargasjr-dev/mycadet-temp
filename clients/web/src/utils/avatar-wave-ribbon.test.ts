@@ -7,7 +7,7 @@ import {
   ribbonSizingHeight,
   type RelativeRibbonPoint,
   type RibbonPoint,
-} from "@design/utils/avatar-wave-ribbon";
+} from "@/utils/avatar-wave-ribbon";
 
 const RIBBON: RibbonPoint[] = [
   { x: 0, y: 0, w: 100, s: 40 },

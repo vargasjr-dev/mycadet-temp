@@ -29,7 +29,7 @@ import {
 } from "@/domains/onboarding/components/onboarding-character-stage";
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
 import { useLayoutViewportSize } from "@/hooks/use-element-size";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 export function OnboardingEdgeCharacters() {
   const components = useBundledAvatarComponents();

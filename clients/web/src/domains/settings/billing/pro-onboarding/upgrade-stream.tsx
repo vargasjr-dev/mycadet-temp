@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 
-import { renderAvatarSprite } from "@mycadet/design-library/utils/avatar-sprite";
-import { mulberry32 } from "@mycadet/design-library/utils/avatar-wave-ribbon";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { renderAvatarSprite } from "@/utils/avatar-sprite";
+import { mulberry32 } from "@/utils/avatar-wave-ribbon";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 import {
   buildStreamPath,

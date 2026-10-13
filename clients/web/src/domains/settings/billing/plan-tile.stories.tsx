@@ -46,7 +46,7 @@ import {
 } from "@/domains/settings/components/tier-pricing";
 import { useDocumentTheme } from "@/hooks/use-document-theme";
 import { useTranslation } from "@/i18n";
-import { preloadBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 // Every story here draws a creature avatar, so warm the bundled-component
 // chunk at module scope the way `plans-page.tsx` does; otherwise each tile

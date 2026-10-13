@@ -521,7 +521,6 @@
       "name": "@mycadet/design-library",
       "version": "0.0.1",
       "dependencies": {
-        "@mycadet/avatar-catalog": "workspace:*",
         "@tanstack/react-query": "5.90.21",
       },
       "devDependencies": {

@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
-import { OnboardingLayout } from "@app/components/onboarding-layout";
+import { AccountShell } from "@app/components/account/account-shell";
 import { startAuthFlow } from "@web/runtime/native-auth";
 import { PROVIDER_ID } from "@app/domains/account/provider";
 import { buildProviderCallbackUrl } from "@app/domains/account/provider-callback";
@@ -14,73 +14,23 @@ import { getElectronBridge } from "@app/runtime/electron-bridge";
 import { useTranslation } from "@app/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 
-/**
- * The way off the welcome screen that isn't logging in. Local onboarding
- * offers a route past the account entirely ("Continue without account");
- * the cloud's `/account/login` offers signup, which is a real navigation
- * and so carries an `href` rather than a handler.
- */
+/** The account action offered alongside login. */
 export type WelcomeSecondaryAction =
   | { label: string; onSelect: () => void; href?: never }
   | { label: string; href: string; onSelect?: never };
 
-/**
- * Chrome for the welcome screen on its own: the onboarding layout beside the
- * avatar wave, with the content column the screen centres its copy in.
- *
- * Exported so a surface that has to hold this screen's place before it can
- * render — `/account/login` waiting out the session probe — occupies the same
- * layout instead of flashing a differently-shaped shell first.
- */
-export function WelcomeScreenShell({
-  children,
-  animateAvatarWaveIn = false,
-  fillsViewport = false,
-}: {
-  children: ReactNode;
-  animateAvatarWaveIn?: boolean;
-  /**
-   * Establish the viewport-height box `OnboardingLayout` sizes against.
-   *
-   * The layout is `h-full`, which fills `RootLayout`'s own `100dvh` shell —
-   * what every `/assistant` route renders inside, onboarding included. The
-   * `/account` routes have no such shell (`AccountLayout` renders a bare
-   * outlet, each screen sizing itself), so there `h-full` has nothing to
-   * resolve against and the screen collapses to the height of its copy,
-   * clipping the avatar wave to a sliver. Set this on those routes only:
-   * doubling the height up inside `RootLayout` would overflow the insets it
-   * subtracts for the keyboard and the safe area.
-   */
-  fillsViewport?: boolean;
-}) {
-  const content = (
-    <OnboardingLayout
-      avatarWave="around"
-      animateAvatarWaveIn={animateAvatarWaveIn}
-    >
-      <div className="mx-auto flex min-h-full w-full max-w-xl flex-col items-center px-6 pb-40 text-[var(--content-default)] md:pb-0">
-        <div className="flex flex-1 flex-col items-center justify-center">
-          {children}
-        </div>
+/** Stable account layout shared by login and its session-probe wait. */
+export function WelcomeScreenShell({ children }: { children: ReactNode }) {
+  return (
+    <AccountShell>
+      <div className="flex flex-col items-center py-12 text-[var(--content-default)]">
+        {children}
       </div>
-    </OnboardingLayout>
+    </AccountShell>
   );
-
-  return fillsViewport ? <div className="h-dvh">{content}</div> : content;
 }
 
-/**
- * The welcome screen's copy and its action column, with no auth flow behind
- * it: the heading, the body line, a failed handoff's message, and whatever
- * buttons the caller hands it.
- *
- * Exported because the two front doors reach the provider by different
- * routes. The browser navigates the page away (the provider redirect); the
- * Capacitor shells stay mounted and hand off to the cloud browser through
- * their own `NativeAuth` plugin, because Google refuses OAuth in an embedded
- * WebView. The screen either one puts around that handoff is the same, so it
- * lives here and each caller supplies only its own buttons.
- */
+/** Account welcome copy and actions, shared by browser and native login. */
 export function WelcomeScreenCopy({
   error,
   children,
@@ -94,11 +44,6 @@ export function WelcomeScreenCopy({
 
   return (
     <>
-      {/*
-        Only the tablet split is tight enough to wrap the heading: the
-        column is widest on the single-column layout, and wide again once
-        the wave settles at half width.
-      */}
       <h1
         className="text-5xl font-normal tracking-tight md:text-4xl lg:text-5xl xl:text-6xl"
         style={{
@@ -108,13 +53,6 @@ export function WelcomeScreenCopy({
       >
         {t("welcome.title")}
       </h1>
-      {/*
-        Centred, not just centre-aligned as a block: the column is
-        `items-center`, so an unwrapped line already sits in the middle and
-        this looks like a no-op on a wide split. It is not one on a phone,
-        where the line wraps and its second half would otherwise hang off to
-        the left of the first.
-      */}
       <p
         className="mt-3 text-center text-body-large-lighter text-[var(--content-tertiary)]"
         style={{ animation: "fadeInUp 0.5s ease-out 0.3s both" }}
@@ -128,14 +66,6 @@ export function WelcomeScreenCopy({
         </p>
       )}
 
-      {/*
-        A failed handoff is the one thing that grows this column, and the wrap
-        composition has about a button's worth of room under it on a 640-tall
-        phone before the returning crowd. Spend the gap above the buttons on
-        the message rather than adding to the column: the error sits next to
-        what it is about either way, and the buttons stay clear of the crowd
-        through a message long enough to wrap three times.
-      */}
       <div
         className={`${error ? "mt-4" : "mt-15"} flex w-full max-w-sm flex-col gap-3`}
         style={{ animation: "fadeInUp 0.5s ease-out 0.5s both" }}
@@ -151,15 +81,12 @@ export function AuthWelcomeScreen({
   returnTo,
   secondary,
   errorContext,
-  fillsViewport = false,
 }: {
   /** Destination after login; null leaves it to the post-auth fallback. */
   returnTo: string | null;
   secondary: WelcomeSecondaryAction;
   /** Error-report `context` tag for a failed handoff. */
   errorContext?: string;
-  /** See `WelcomeScreenShell` — set on routes outside `RootLayout`'s shell. */
-  fillsViewport?: boolean;
 }) {
   const { t } = useTranslation("account");
   const [loading, setLoading] = useState(false);
@@ -176,7 +103,7 @@ export function AuthWelcomeScreen({
     } catch (err) {
       if (flowId !== flowIdRef.current) return;
       captureError(err, {
-        context: errorContext ?? "onboarding_login",
+        context: errorContext ?? "account_login",
         tags: { authError: nativeAuthErrorDetail(err) ?? "unclassified" },
       });
       setError(t(nativeAuthErrorKey(err)));
@@ -237,7 +164,7 @@ export function AuthWelcomeScreen({
   );
 
   return (
-    <WelcomeScreenShell animateAvatarWaveIn fillsViewport={fillsViewport}>
+    <WelcomeScreenShell>
       <WelcomeScreenCopy error={error}>
         <Button
           variant="primary"

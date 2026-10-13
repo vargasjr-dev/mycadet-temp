@@ -238,12 +238,3 @@ TypeScript, Bun tests, Storybook, and the app/web Vite builds. The error
 utilities use this alias first; other internal imports can follow gradually.
 Client code continues to use the package's public `@mycadet/design-library`
 subpaths.
-
-### Avatar crowds
-
-`components/avatar-wave` provides the decorative column and wrap canvas waves.
-Its ribbon layout, sprite rendering, and lazy bundled-component loader live
-in the library’s `utils/` subpaths. App and web use these public imports; the
-loader dynamically imports `@mycadet/avatar-catalog` and keeps its existing
-cache and retry behavior. Presentation types derive from the catalog function,
-so the library does not depend on web’s generated daemon API types.

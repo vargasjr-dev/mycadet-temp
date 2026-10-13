@@ -12,7 +12,7 @@ import { PeekingEyes } from "@/components/avatar/peeking-eyes";
 import { useOnboardingStageSize } from "@/domains/onboarding/hooks/use-onboarding-stage-size";
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
 import { pathBBox, unionBBox } from "@/utils/eye-bbox";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 /**
  * The onboarding stage's bottom edge sits above where the eyes should read as

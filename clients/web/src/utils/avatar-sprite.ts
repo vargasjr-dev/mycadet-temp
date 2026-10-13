@@ -4,9 +4,7 @@
  * dozens of characters per frame: one rasterization per character, then a
  * `drawImage` each, is what lets a whole crowd run at frame rate.
  */
-import type { getCharacterComponents } from "@mycadet/avatar-catalog";
-
-type CharacterComponents = ReturnType<typeof getCharacterComponents>;
+import type { CharacterComponents } from "@/types/avatar";
 
 /**
  * Draw one character to an offscreen canvas at its final size. Rasterizing

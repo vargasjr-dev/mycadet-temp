@@ -39,7 +39,7 @@ import { pickOverlayColors } from "@/domains/onboarding/onboarding-avatar-colors
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
 import { ONBOARDING_STEP_CONTENT } from "@/domains/onboarding/onboarding-step-layout";
 import { useOnboardingTone } from "@/domains/onboarding/onboarding-tone";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 // Lines 1 + 2 carousel together from the setup framing to the first two payoff
 // lines; line 3 ("The less you do") is then added in last.

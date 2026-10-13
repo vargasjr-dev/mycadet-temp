@@ -14,7 +14,7 @@
 
 import { AvatarRenderer } from "@/components/avatar-renderer";
 import { useTranslation } from "@/i18n";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import { subagentTraits } from "@/utils/avatar-subagent";
 
 export interface SubagentAvatarChipProps {

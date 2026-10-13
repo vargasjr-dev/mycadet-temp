@@ -26,7 +26,7 @@ import {
   cssTransitionFor,
   usePublishPageSurface,
 } from "@/stores/page-surface-store";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 /**
  * The crowd that peeks in around the edges, in reveal order. The first few sit

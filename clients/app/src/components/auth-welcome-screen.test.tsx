@@ -7,13 +7,9 @@ import {
   screen,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import type { ReactNode } from "react";
 
 const startAuthFlow = mock(() => new Promise<void>(() => {}));
 mock.module("@web/runtime/native-auth", () => ({ startAuthFlow }));
-mock.module("@app/components/onboarding-layout", () => ({
-  OnboardingLayout: ({ children }: { children: ReactNode }) => children,
-}));
 const { AuthWelcomeScreen } = await import("./auth-welcome-screen");
 const initialBridge = window.cadet;
 afterEach(() => {
@@ -27,7 +23,6 @@ function show() {
       <AuthWelcomeScreen
         returnTo="/assistant"
         secondary={{ label: "Sign up", href: "/account/signup" }}
-        fillsViewport
       />
     </MemoryRouter>,
   );

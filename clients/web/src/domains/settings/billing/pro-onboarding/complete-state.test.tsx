@@ -14,7 +14,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { routes } from "@/utils/routes";
 
 let avatarComponents: unknown = { colors: [] };
-mock.module("@mycadet/design-library/utils/use-bundled-avatar-components", () => ({
+mock.module("@/utils/use-bundled-avatar-components", () => ({
   preloadBundledAvatarComponents: () => {},
   useBundledAvatarComponents: () => avatarComponents,
 }));

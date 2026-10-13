@@ -20,7 +20,7 @@ import { OnboardingCharacterStage } from "./onboarding-character-stage";
 import { OnboardingStage } from "./onboarding-stage";
 import { SeededAvatarPool, StageHost } from "./onboarding-story-fixtures";
 import { useOnboardingAvatarPoolStore } from "@/domains/onboarding/onboarding-avatar-pool-store";
-import { useBundledAvatarComponents } from "@mycadet/design-library/utils/use-bundled-avatar-components";
+import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 
 /**
  * The ring as `GiveMeAFaceScreen` arranges it: the stored selection centered,
