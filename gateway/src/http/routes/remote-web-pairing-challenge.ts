@@ -7,18 +7,17 @@ import {
   recordRemoteWebPairingChallengeCreation,
   type RemoteWebPairingChallengeRateLimit,
 } from "../../remote-web/pairing-challenge-rate-limit-store.js";
-import {
-  enforceLoopbackOnly,
-  errorResponse,
-  getTrustedPeerCidrs,
-  parseHostHeader,
-} from "../loopback-guard.js";
-import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
-import { isTrustedLocalPeer } from "../../util/is-loopback-address.js";
+import { isLoopbackAddress } from "../../util/is-loopback-address.js";
 import {
   EDGE_CLIENT_IP_HEADER,
   requestArrivedViaEdgeProxy,
 } from "../edge-forwarded-header.js";
+import {
+  enforceLoopbackOnly,
+  errorResponse,
+  parseHostHeader,
+} from "../loopback-guard.js";
+import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
 
 const MAX_CHALLENGE_BODY_BYTES = 512;
 
@@ -95,7 +94,7 @@ export async function handleCreateRemoteWebPairingChallenge(
 
   const arrivedViaEdgeProxy = requestArrivedViaEdgeProxy(req);
   const arrivedViaTrustedEdgeProxy =
-    arrivedViaEdgeProxy && isTrustedLocalPeer(rawPeerIp, getTrustedPeerCidrs());
+    arrivedViaEdgeProxy && isLoopbackAddress(rawPeerIp);
   if (!arrivedViaTrustedEdgeProxy) {
     const guardError = enforceLoopbackOnly(
       req,

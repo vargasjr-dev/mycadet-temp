@@ -80,7 +80,6 @@ function makeConfig(dir: string | undefined): GatewayConfig {
     runtimeProxyRequireAuth: true,
     runtimeTimeoutMs: 30000,
     trustProxy: false,
-    trustedPeerCidrs: [],
   } as GatewayConfig;
 }
 

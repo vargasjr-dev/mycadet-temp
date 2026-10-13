@@ -40,7 +40,6 @@ const baseConfig: GatewayConfig = {
   runtimeProxyRequireAuth: true,
   runtimeTimeoutMs: 30000,
   trustProxy: false,
-  trustedPeerCidrs: [],
 };
 
 /** Mock credential cache providing test bot token. */

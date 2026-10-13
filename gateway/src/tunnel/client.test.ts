@@ -179,7 +179,6 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
     runtimeProxyRequireAuth: true,
     runtimeTimeoutMs: 1,
     trustProxy: false,
-    trustedPeerCidrs: [],
     ...overrides,
   };
 }

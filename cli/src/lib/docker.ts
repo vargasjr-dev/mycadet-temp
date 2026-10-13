@@ -828,63 +828,13 @@ export async function startContainers(
   },
   log: (msg: string) => void,
 ): Promise<void> {
-  // The containerized gateway can never see a loopback peer for
-  // host-originated calls: docker's published-port NAT rewrites every
-  // connection's source to the instance network's bridge address. Stamp that
-  // subnet into the gateway env so its loopback-only endpoints (pairing,
-  // guardian init, /auth/token) accept NAT'd host traffic as local — see
-  // GATEWAY_TRUSTED_PEER_CIDRS in gateway/src/config.ts. Netns-sharing
-  // deployments publish no ports of their own; the inspect fails and the
-  // gateway keeps the strict loopback-only boundary.
-  const trustedCidrs = await dockerNetworkTrustedCidrs(
-    opts.netnsContainer ? null : opts.res.network,
-    log,
-  );
-  const extraGatewayEnv = trustedCidrs.length
-    ? {
-        ...opts.extraGatewayEnv,
-        GATEWAY_TRUSTED_PEER_CIDRS: trustedCidrs.join(","),
-      }
-    : opts.extraGatewayEnv;
-
   const runArgs = buildServiceRunArgs({
     ...opts,
-    extraGatewayEnv,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
   for (const service of SERVICE_START_ORDER) {
     log(`🚀 Starting ${service} container...`);
     await exec("docker", runArgs[service]());
-  }
-}
-
-/**
- * The IPv4 subnets of a docker instance network, read live so the gateway can
- * trust NAT'd host traffic from exactly this instance's bridge. Empty when the
- * network doesn't exist (netns-shared deployments) or inspect fails — a missing
- * stamp narrows the boundary back to strict loopback, never widens it.
- */
-async function dockerNetworkTrustedCidrs(
-  network: string | null,
-  log: (msg: string) => void,
-): Promise<string[]> {
-  if (!network) return [];
-  try {
-    const out = await execOutput("docker", ["network", "inspect", network]);
-    const parsed = JSON.parse(out) as Array<{
-      IPAM?: { Config?: Array<{ Subnet?: string }> };
-    }>;
-    const subnets = parsed
-      .flatMap((n) => n.IPAM?.Config ?? [])
-      .map((cfg) => cfg.Subnet?.trim() ?? "")
-      .filter((subnet) => /^\d+\.\d+\.\d+\.\d+\/\d+$/.test(subnet));
-    return subnets;
-  } catch (err) {
-    log(
-      `⚠️  Could not inspect the docker network (${err instanceof Error ? err.message : String(err)}); ` +
-        "the gateway will keep strict loopback-only endpoint checks.",
-    );
-    return [];
   }
 }
 

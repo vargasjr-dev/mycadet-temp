@@ -113,7 +113,6 @@ const baseConfig: GatewayConfig = {
   runtimeProxyRequireAuth: true,
   runtimeTimeoutMs: 30000,
   trustProxy: false,
-  trustedPeerCidrs: [],
 };
 
 function makeVoiceRequest(

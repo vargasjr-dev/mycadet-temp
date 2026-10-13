@@ -93,7 +93,6 @@ function makeConfig(): GatewayConfig {
     maxAttachmentConcurrency: 3,
     gatewayInternalBaseUrl: "http://127.0.0.1:7830",
     trustProxy: false,
-    trustedPeerCidrs: [],
   };
 }
 

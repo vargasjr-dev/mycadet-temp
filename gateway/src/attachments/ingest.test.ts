@@ -30,7 +30,6 @@ function config(overrides?: Partial<GatewayConfig>): GatewayConfig {
     runtimeProxyRequireAuth: false,
     runtimeTimeoutMs: 1000,
     trustProxy: false,
-    trustedPeerCidrs: [],
   };
   return { ...base, ...overrides };
 }
