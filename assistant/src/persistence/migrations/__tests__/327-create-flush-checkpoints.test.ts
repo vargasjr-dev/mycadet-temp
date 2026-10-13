@@ -15,6 +15,12 @@ const { createFlushCheckpointsTable } =
 
 await initializeDb();
 
+// Migration 387 (the usage-telemetry removal) deletes the telemetry DB file
+// at the end of the chain, so after `initializeDb()` the telemetry-side
+// schema no longer exists. Re-drive the idempotent step so the tests
+// exercise it against a live telemetry file.
+createFlushCheckpointsTable(getDb());
+
 function telemetrySqlite() {
   const db = getTelemetrySqlite();
   if (!db) {
@@ -53,7 +59,9 @@ describe("migration 327 — flush_checkpoints on the telemetry database", () => 
       .run();
   });
 
-  test("after init, the table exists on the telemetry DB", () => {
+  test("the step creates the table on the telemetry DB", () => {
+    createFlushCheckpointsTable(getDb());
+
     const row = telemetrySqlite()
       .query(
         `SELECT name FROM sqlite_master WHERE type='table' AND name='flush_checkpoints'`,

@@ -2,9 +2,10 @@
  * Tests for migration 333: creating the generic `telemetry_events` outbox
  * table on the dedicated telemetry database (`assistant-telemetry.db`).
  *
- * Runs against real workspace databases (`initializeDb()` already ran the
- * step once), so the tests assert the resulting telemetry-side schema and
- * that re-running the step is idempotent.
+ * Runs against real workspace databases. Migration 387 (the usage-telemetry
+ * removal) deletes the telemetry DB file at the end of the chain, so the
+ * tests re-drive the idempotent step themselves and assert the resulting
+ * telemetry-side schema and that re-running it is idempotent.
  */
 import { describe, expect, test } from "bun:test";
 
@@ -32,7 +33,9 @@ function telemetryIndexNames(): string[] {
 }
 
 describe("migration 333: create telemetry_events on the telemetry DB", () => {
-  test("initializeDb created the table with both indexes", () => {
+  test("the step creates the table with both indexes", () => {
+    migrateCreateTelemetryEventsTable(getDb());
+
     expect(telemetryTableExists("telemetry_events")).toBe(true);
     const indexes = telemetryIndexNames();
     expect(indexes).toContain("idx_telemetry_events_name_created_at_id");

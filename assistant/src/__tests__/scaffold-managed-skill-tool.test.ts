@@ -13,21 +13,6 @@ import type { SkillSource } from "../config/skills.js";
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 const mockRefreshSkillCapabilityMemories = mock(() => {});
 
-const watchdogEvents: Array<{
-  checkName: string;
-  value?: number | null;
-  detail?: Record<string, unknown> | null;
-}> = [];
-mock.module("../telemetry/watchdog-events-store.js", () => ({
-  recordWatchdogEvent: (record: {
-    checkName: string;
-    value?: number | null;
-    detail?: Record<string, unknown> | null;
-  }) => {
-    watchdogEvents.push(record);
-  },
-}));
-
 mock.module("../daemon/skill-memory-refresh.js", () => ({
   refreshSkillCapabilityMemories: mockRefreshSkillCapabilityMemories,
 }));
@@ -150,7 +135,6 @@ beforeEach(() => {
   mockRefreshSkillCapabilityMemories.mockClear();
   skillCardJobUpserts = [];
   skillCardUpsertThrows = false;
-  watchdogEvents.length = 0;
   recordedUpdates = [];
 });
 
@@ -311,16 +295,6 @@ describe("scaffold_cloud_skill tool", () => {
     expect(skill).toBeDefined();
     expect(skill!.name).toBe("Test Skill");
     expect(mockRefreshSkillCapabilityMemories).toHaveBeenCalledTimes(1);
-
-    // A genuine create emits the central authoring counter, attributed to
-    // the user for a non-retrospective origin.
-    expect(watchdogEvents).toEqual([
-      {
-        checkName: "skill_authored",
-        value: 1,
-        detail: { authored_by: "user" },
-      },
-    ]);
   });
 
   test("accepts legacy add_to_index input without returning index metadata", async () => {
@@ -381,12 +355,6 @@ describe("scaffold_cloud_skill tool", () => {
       makeContext(),
     );
     expect(result3.isError).toBe(false);
-
-    // Only the original create counts — the overwrite refined an existing
-    // skill and must not emit a second authoring event.
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "skill_authored"),
-    ).toHaveLength(1);
   });
 
   test("rejects missing required fields", async () => {
@@ -1031,15 +999,6 @@ describe("scaffold_cloud_skill tool", () => {
 
     expect(result.isError).toBe(false);
     expect(installMetaFor("retro-skill")?.author).toBe("assistant");
-    // The central authoring counter attributes the create to the
-    // retrospective.
-    expect(watchdogEvents).toEqual([
-      {
-        checkName: "skill_authored",
-        value: 1,
-        detail: { authored_by: "retrospective" },
-      },
-    ]);
   });
 
   test('tags author "user" for a normal (non-retrospective) scaffold', async () => {
@@ -1210,12 +1169,6 @@ describe("scaffold_cloud_skill tool", () => {
         ),
       ),
     ).toBe(true);
-
-    // Only the V1 create counts toward authoring — the V2 refinement of an
-    // existing skill emits no second event.
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "skill_authored"),
-    ).toHaveLength(1);
   });
 
   // ── Conversation lineage (retrospective-authored skills) ───────────────────
@@ -1768,7 +1721,6 @@ describe("background skill update notification", () => {
       installedAt: new Date().toISOString(),
       author: "assistant",
     });
-    watchdogEvents.length = 0;
     skillCardJobUpserts = [];
     recordedUpdates = [];
     recordUpdateFails = false;
@@ -1869,11 +1821,6 @@ describe("background skill update notification", () => {
         "utf-8",
       ),
     ).toContain("Refined steps.");
-    expect(watchdogEvents).toContainEqual(
-      expect.objectContaining({
-        checkName: "skill_update_receipt_record_failed",
-      }),
-    );
   });
 
   test("the entry body is the pass's change_summary, so the receipt says what changed", async () => {

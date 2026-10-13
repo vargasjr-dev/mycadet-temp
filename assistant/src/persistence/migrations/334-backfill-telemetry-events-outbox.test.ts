@@ -20,6 +20,19 @@ const { APP_VERSION } = await import("../../version.js");
 
 await initializeDb();
 
+// Migration 387 (the usage-telemetry removal) deletes the telemetry DB file
+// at the end of the chain, so after `initializeDb()` the outbox and
+// checkpoint tables no longer exist. The tests recreate the legacy tables
+// and drive this step directly, so re-create the two tables it touches
+// first — both owning steps are idempotent CREATE IF NOT EXISTS on the
+// lazily re-opened telemetry file.
+const { migrateCreateTelemetryEventsTable } =
+  await import("./333-create-telemetry-events-table.js");
+const { createFlushCheckpointsTable } =
+  await import("./327-create-flush-checkpoints.js");
+migrateCreateTelemetryEventsTable(getDb());
+createFlushCheckpointsTable(getDb());
+
 const OPT_OUT_SENTINEL = "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
 const LEGACY_TABLES: Record<string, string> = {

@@ -23,6 +23,19 @@ const { migrateBackfillTelemetryEventsOutbox } =
 
 await initializeDb();
 
+// Migration 387 (the usage-telemetry removal) deletes the telemetry DB file
+// at the end of the chain, so after `initializeDb()` the telemetry-side
+// schema no longer exists. These tests drive the move + backfill steps
+// directly, so re-create the two tables they touch first — both owning
+// steps are idempotent CREATE IF NOT EXISTS on the lazily re-opened
+// telemetry file.
+const { migrateCreateTelemetryEventsTable } =
+  await import("./333-create-telemetry-events-table.js");
+const { createFlushCheckpointsTable } =
+  await import("./327-create-flush-checkpoints.js");
+migrateCreateTelemetryEventsTable(getDb());
+createFlushCheckpointsTable(getDb());
+
 /** Backfilled outbox rows for the lifecycle source, in `(created_at, id)` order. */
 function outboxLifecycleRows(): Array<{
   id: string;

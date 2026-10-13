@@ -106,7 +106,7 @@ const auditCalls = {
   prompted: [] as any[],
   decided: [] as any[],
 };
-mock.module("../telemetry/tool-audit.js", () => ({
+mock.module("../persistence/tool-audit.js", () => ({
   recordToolDenied: (e: any) => auditCalls.denied.push(e),
   recordToolError: (e: any) => auditCalls.error.push(e),
   recordToolExecuted: (e: any) => auditCalls.executed.push(e),

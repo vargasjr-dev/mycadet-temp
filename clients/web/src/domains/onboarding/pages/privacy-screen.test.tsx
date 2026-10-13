@@ -57,15 +57,6 @@ mock.module("@/hooks/use-marketing-pricing-takeover", () => ({
   useMarketingPricingTakeover: () => takeoverValue,
 }));
 
-const PRIVACY_TOS_STEP = "privacy_tos";
-const emitFunnelStepCompletedMock = mock((..._args: unknown[]) => {});
-const getFunnelSessionIdMock = mock(() => "session-1");
-mock.module("@/domains/onboarding/funnel-events", () => ({
-  emitOnboardingFunnelStepCompleted: emitFunnelStepCompletedMock,
-  getOnboardingFunnelSessionId: getFunnelSessionIdMock,
-  ONBOARDING_FUNNEL_STEPS: { privacyTos: PRIVACY_TOS_STEP },
-}));
-
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => true }));
 // Mutable platform/flag state so individual tests can flip them.
 let nativePlatform = false;
@@ -146,8 +137,6 @@ describe("PrivacyScreen — Start navigation", () => {
   beforeEach(() => {
     navigateMock.mockClear();
     saveConsentMock.mockClear();
-    emitFunnelStepCompletedMock.mockClear();
-    getFunnelSessionIdMock.mockClear();
     clearCheckoutIntentMock.mockClear();
     nativePlatform = false;
     localMode = false;
@@ -176,7 +165,6 @@ describe("PrivacyScreen — Start navigation", () => {
     // routes, so Start is a no-op — it neither navigates nor persists consent.
     expect(navigateMock).not.toHaveBeenCalled();
     expect(saveConsentMock).not.toHaveBeenCalled();
-    expect(emitFunnelStepCompletedMock).not.toHaveBeenCalled();
   });
 
   test("web persists consent and advances to the research flow, preserving hosting", () => {
@@ -229,10 +217,6 @@ describe("PrivacyScreen — Start navigation", () => {
 
     clickStart();
 
-    expect(getFunnelSessionIdMock).toHaveBeenCalledTimes(1);
-    expect(emitFunnelStepCompletedMock).toHaveBeenCalledWith(PRIVACY_TOS_STEP, {
-      userId: "user-1",
-    });
     expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
       replace: true,
     });
@@ -627,7 +611,6 @@ describe("PrivacyScreen — Skip to chat", () => {
     env.VITE_ENVIRONMENT = "staging";
     navigateMock.mockClear();
     saveConsentMock.mockClear();
-    emitFunnelStepCompletedMock.mockClear();
     nativePlatform = false;
     localMode = false;
     checkoutIntentValue = null;

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Smartphone } from "lucide-react";
 
 import { NudgeChatBanner } from "@/components/nudges/nudge-chat-banner";
@@ -17,12 +16,7 @@ export function NativeAppBanner({
   onDismiss,
 }: NativeAppBannerProps) {
   const { t } = useTranslation();
-  const { appName, target } = promotion;
-
-  // Counted here rather than where the banner becomes eligible: ChatBody drops
-  // the slot on the empty state and side-panel chat passes none at all, so an
-  // eligibility-time emit would bill impressions nobody saw.
-  useEffect(() => {}, [target]);
+  const { appName } = promotion;
 
   return (
     <NudgeChatBanner

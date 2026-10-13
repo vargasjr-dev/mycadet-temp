@@ -158,7 +158,7 @@ const BASELINE: Record<string, readonly string[]> = {
     "../../../../util/logger.js",
     "../../../api/remember-tool.js",
     "../../../channels/types.js",
-    "../../../config/cloud-rehydration.js",
+    "../../../config/cloud-identity.js",
     "../../../config/loader.js",
     "../../../config/memory-v3-gate.js",
     "../../../config/schema.js",

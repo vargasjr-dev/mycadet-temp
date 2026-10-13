@@ -6,7 +6,6 @@
  * - Missing X-Confirm-Destructive header returns BadRequestError
  * - Wrong header value returns BadRequestError
  * - Correct header clears data
- * - telemetry_events contains the `conversations_clear_all` audit entry after clear
  */
 
 import { describe, expect, mock, test } from "bun:test";
@@ -34,7 +33,6 @@ import {
   createConversation,
   getConversation,
 } from "../persistence/conversation-crud.js";
-import { getTelemetrySqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { enforcePolicy } from "../runtime/auth/route-policy.js";
 import type { AuthContext, Scope } from "../runtime/auth/types.js";
@@ -168,33 +166,5 @@ describe("DELETE /v1/conversations — route handler", () => {
     expect(result).toBeUndefined();
 
     expect(getConversation(conv.id)).toBeNull();
-  });
-
-  test("telemetry_events contains conversations_clear_all after successful clear", async () => {
-    await clearRoute.handler({
-      pathParams: {},
-      body: {},
-      headers: { "x-confirm-destructive": "clear-all-conversations" },
-    });
-
-    // The audit row lands in the telemetry_events outbox on the dedicated
-    // telemetry DB; the durable trail persists platform-side once flushed.
-    const rows = getTelemetrySqlite()!
-      .query(
-        "SELECT id, payload FROM telemetry_events WHERE name = 'lifecycle'",
-      )
-      .all() as Array<{ id: string; payload: string }>;
-    const audits = rows
-      .map((r) => ({
-        id: r.id,
-        payload: JSON.parse(r.payload) as Record<string, unknown>,
-      }))
-      .filter((r) => r.payload.event_name === "conversations_clear_all");
-    expect(audits.length).toBeGreaterThanOrEqual(1);
-    expect(audits[0].payload).toMatchObject({
-      type: "lifecycle",
-      daemon_event_id: audits[0].id,
-      event_name: "conversations_clear_all",
-    });
   });
 });

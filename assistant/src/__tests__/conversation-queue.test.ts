@@ -140,7 +140,7 @@ mock.module("../persistence/conversation-queries.js", () => ({
 
 const mockStampTurnOutcome = mock(() => {});
 
-mock.module("../telemetry/turn-outcome.js", () => ({
+mock.module("../persistence/turn-outcome.js", () => ({
   stampTurnOutcome: mockStampTurnOutcome,
 }));
 

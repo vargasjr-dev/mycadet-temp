@@ -21,17 +21,8 @@ import {
 } from "@/utils/conversation-list-keys";
 import type { RawConversationSummary } from "@/utils/conversation-transforms";
 
-const emitClientPerfEventMock = mock(
-  (_checkName: string, _value: number, _detail?: Record<string, unknown>) => {},
-);
-
 // `mock.module` replaces the module process-wide, so it has to stand in for the
 // full export surface or an unrelated importer picks up an undefined binding.
-mock.module("@/lib/telemetry/client-perf", () => ({
-  emitClientPerfEvent: emitClientPerfEventMock,
-  setClientPerfBootId: () => {},
-  __resetClientPerfForTests: () => {},
-}));
 
 const {
   drainConversationList,
@@ -129,20 +120,11 @@ async function diagnosticsDuring<T>(
 }
 
 /** The `client_list.drain` emits recorded since the last reset. */
-function drainEmits(): Array<{
-  value: number;
-  detail: Record<string, unknown>;
-}> {
-  return emitClientPerfEventMock.mock.calls
-    .filter(([checkName]) => checkName === "client_list.drain")
-    .map(([, value, detail]) => ({ value, detail: detail ?? {} }));
-}
 
 const originalGet = daemonClient.get;
 
 afterEach(() => {
   daemonClient.get = originalGet;
-  emitClientPerfEventMock.mockClear();
 });
 
 describe("conversation list drain diagnostics", () => {
@@ -428,8 +410,6 @@ describe("first-page fetch diagnostics", () => {
       source: "first_page_refresh",
     });
     expect(typeof events[0]?.details.durationMs).toBe("number");
-    // A single page is not a drain, so nothing reaches the telemetry rail.
-    expect(emitClientPerfEventMock.mock.calls).toHaveLength(0);
   });
 
   test("labels the background bucket's entry with its list kind", async () => {
@@ -480,135 +460,6 @@ describe("first-page fetch diagnostics", () => {
     expect(Object.keys(page).sort()).toEqual(["conversations", "hasMore"]);
     expect(page.hasMore).toBe(true);
     expect(page.conversations).toHaveLength(1);
-  });
-});
-
-describe("conversation list drain telemetry", () => {
-  test("a 3-page drain emits one client_list.drain, not one per page", async () => {
-    stubPages([
-      { ids: ["c-0"], hasMore: true, contentLength: "100" },
-      { ids: ["c-1"], hasMore: true, contentLength: "200" },
-      { ids: ["c-2"], hasMore: false, contentLength: "50" },
-    ]);
-
-    await drainConversationList(ASSISTANT_ID);
-
-    expect(emitClientPerfEventMock.mock.calls).toHaveLength(1);
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    expect(typeof emits[0]?.value).toBe("number");
-    expect(emits[0]?.detail).toEqual({
-      outcome: "ok",
-      pages: 3,
-      rows: 3,
-      max_page_ms: expect.any(Number),
-      total_bytes: 350,
-      list_kind: "foreground",
-    });
-  });
-
-  test("a background drain reports its own list_kind", async () => {
-    stubPages([{ ids: ["c-0"], hasMore: false, contentLength: "10" }]);
-
-    await drainConversationList(ASSISTANT_ID, BACKGROUND_FILTER);
-
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    expect(emits[0]?.detail).toMatchObject({
-      outcome: "ok",
-      pages: 1,
-      list_kind: "background",
-    });
-  });
-
-  test("a scheduled drain reports its own list_kind", async () => {
-    stubPages([{ ids: ["c-0"], hasMore: false, contentLength: "10" }]);
-
-    await drainConversationList(ASSISTANT_ID, SCHEDULED_FILTER);
-
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    expect(emits[0]?.detail).toMatchObject({ list_kind: "scheduled" });
-  });
-
-  test("an origin-channel drain is labeled origin_channel, not foreground", async () => {
-    stubPages([{ ids: ["c-0"], hasMore: false, contentLength: "10" }]);
-
-    await drainConversationList(ASSISTANT_ID, { originChannel: "slack" });
-
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    expect(emits[0]?.detail).toMatchObject({
-      outcome: "ok",
-      pages: 1,
-      list_kind: "origin_channel",
-    });
-  });
-
-  test("both archive-page drains are labeled archived, not foreground or background", async () => {
-    // The archive view reads two lists (archived, archived background) in
-    // parallel, so it produces two emits.
-    stubPages([
-      { ids: ["c-0"], hasMore: false, contentLength: "10" },
-      { ids: ["c-1"], hasMore: false, contentLength: "20" },
-    ]);
-
-    await drainArchived();
-
-    const emits = drainEmits();
-    expect(emits).toHaveLength(2);
-    expect(emits.map((emit) => emit.detail.list_kind)).toEqual([
-      "archived",
-      "archived",
-    ]);
-  });
-
-  test("the detail bag carries no assistant id, and null bytes when content-length is absent", async () => {
-    stubPages([{ ids: ["c-0"], hasMore: false }]);
-
-    await drainConversationList(ASSISTANT_ID);
-
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    const detail = emits[0]!.detail;
-    for (const key of Object.keys(detail)) {
-      expect(key.toLowerCase()).not.toContain("assistant");
-    }
-    expect(Object.values(detail)).not.toContain(ASSISTANT_ID);
-    expect(detail.total_bytes).toBeNull();
-  });
-
-  test("the numeric detail fields ride as raw numbers, not strings", async () => {
-    stubPages([{ ids: ["c-0"], hasMore: false, contentLength: "64" }]);
-
-    await drainConversationList(ASSISTANT_ID);
-
-    const detail = drainEmits()[0]!.detail;
-    for (const key of ["pages", "rows", "max_page_ms", "total_bytes"]) {
-      expect(typeof detail[key]).toBe("number");
-    }
-  });
-
-  test("a failing drain emits outcome error and still rethrows", async () => {
-    stubPages([
-      { ids: ["c-0"], hasMore: true, contentLength: "100" },
-      { ids: [], hasMore: false, status: 500 },
-    ]);
-
-    let thrown: unknown;
-    await drainConversationList(ASSISTANT_ID).catch((error: unknown) => {
-      thrown = error;
-    });
-
-    expect(thrown).toBeInstanceOf(ApiError);
-    const emits = drainEmits();
-    expect(emits).toHaveLength(1);
-    expect(emits[0]?.detail).toMatchObject({
-      outcome: "error",
-      pages: 1,
-      rows: 1,
-      list_kind: "foreground",
-    });
   });
 });
 

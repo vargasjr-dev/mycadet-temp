@@ -22,15 +22,6 @@ mock.module("../../sync/resource-sync-events.js", () => ({
   },
 }));
 
-/** Every telemetry event the store records, in order. */
-const recorded: Array<{ name: string; fields: Record<string, unknown> }> = [];
-mock.module("../../../telemetry/telemetry-events-outbox.js", () => ({
-  recordTelemetryEvent: (name: string, fields: Record<string, unknown>) => {
-    recorded.push({ name, fields });
-    return { id: "evt", createdAt: 0 };
-  },
-}));
-
 import type { AvatarState } from "../../../avatar/avatar-manifest.js";
 import { writeManifest } from "../../../avatar/avatar-manifest.js";
 import { ROUTES } from "../avatar-routes.js";
@@ -253,7 +244,6 @@ describe("avatar write/remove handlers", () => {
     prevWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = workspaceDir;
     publishedOrigins.length = 0;
-    recorded.length = 0;
   });
 
   afterEach(() => {
@@ -585,30 +575,10 @@ describe("avatar write/remove handlers", () => {
     });
   });
 
-  describe("client OS on avatar_changed", () => {
-    test("the client-os header reaches the event, sanitized", async () => {
-      await uploadRed({ "x-cadet-client-os": " macOS " });
+  test("the client id reaches the fan-out", async () => {
+    await uploadRed({ "x-cadet-client-id": "web-1" });
 
-      expect(recorded).toHaveLength(1);
-      expect(recorded[0]!.name).toBe("avatar_changed");
-      expect(recorded[0]!.fields).toMatchObject({
-        action: "upload_image",
-        client_os: "macos",
-      });
-    });
-
-    test("an out-of-bounds client-os header is dropped, not forwarded", async () => {
-      await uploadRed({ "x-cadet-client-os": "a".repeat(65) });
-
-      expect(recorded).toHaveLength(1);
-      expect(recorded[0]!.fields).not.toHaveProperty("client_os");
-    });
-
-    test("the client id reaches the fan-out", async () => {
-      await uploadRed({ "x-cadet-client-id": "web-1" });
-
-      expect(publishedOrigins).toEqual(["web-1"]);
-    });
+    expect(publishedOrigins).toEqual(["web-1"]);
   });
 });
 

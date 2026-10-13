@@ -132,21 +132,6 @@ mock.module("../../../../persistence/conversation-tool-surface.js", () => ({
   },
 }));
 
-const watchdogEvents: Array<{
-  checkName: string;
-  value?: number | null;
-  detail?: Record<string, unknown> | null;
-}> = [];
-mock.module("../../../../telemetry/watchdog-events-store.js", () => ({
-  recordWatchdogEvent: (record: {
-    checkName: string;
-    value?: number | null;
-    detail?: Record<string, unknown> | null;
-  }) => {
-    watchdogEvents.push(record);
-  },
-}));
-
 mock.module("../../../../daemon/conversation-registry.js", () => ({
   findConversation: (id: string | undefined) => {
     if (!id) {
@@ -494,7 +479,6 @@ function priorRetroMessage(rememberContents: string[]) {
 
 describe("memoryRetrospectiveJob", () => {
   beforeEach(() => {
-    watchdogEvents.length = 0;
     mockState = null;
     stateUpserts = [];
     lastRunAtBumps = [];
@@ -604,16 +588,6 @@ describe("memoryRetrospectiveJob", () => {
     expect(lastRunAtBumps).toHaveLength(0);
     expect(wakeCalls).toHaveLength(0);
     expect(forkCalls).toHaveLength(0);
-    // Every job run emits exactly one outcome counter for the health chart.
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "memory_retrospective_run"),
-    ).toEqual([
-      {
-        checkName: "memory_retrospective_run",
-        value: 1,
-        detail: { outcome: "no_new_messages" },
-      },
-    ]);
   });
 
   test("assistant-only slice with the user-activity gate on: completed as a no-op, both pointers untouched", async () => {
@@ -642,15 +616,6 @@ describe("memoryRetrospectiveJob", () => {
     expect(lastRunAtBumps).toHaveLength(0);
     expect(wakeCalls).toHaveLength(0);
     expect(forkCalls).toHaveLength(0);
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "memory_retrospective_run"),
-    ).toEqual([
-      {
-        checkName: "memory_retrospective_run",
-        value: 1,
-        detail: { outcome: "no_user_activity" },
-      },
-    ]);
   });
 
   test("a user text row in the slice passes the user-activity gate", async () => {
@@ -828,17 +793,6 @@ describe("memoryRetrospectiveJob", () => {
     const outcome = await memoryRetrospectiveJob(makeJob(), stubConfig);
 
     expect(outcome.kind).toBe("wake_failed");
-    // The outcome counter carries the wake-failure reason so a fleet-wide
-    // spike is attributable (e.g. provider outage vs busy conversations).
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "memory_retrospective_run"),
-    ).toEqual([
-      {
-        checkName: "memory_retrospective_run",
-        value: 1,
-        detail: { outcome: "wake_failed", reason: "timeout" },
-      },
-    ]);
     if (outcome.kind === "wake_failed") {
       expect(outcome.reason).toBe("timeout");
     }
@@ -869,20 +823,6 @@ describe("memoryRetrospectiveJob", () => {
     // Retryable: cooldown bump only, orphan fork cleaned up.
     expect(lastRunAtBumps).toHaveLength(1);
     expect(deletedConversationIds).toEqual(["fork-conv-1"]);
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "memory_retrospective_run"),
-    ).toEqual([
-      {
-        checkName: "memory_retrospective_run",
-        value: 1,
-        detail: {
-          outcome: "no_usable_output",
-          // The failure reason names what was missing, so an operator reading
-          // the job row can tell a lost write from an unfinished review.
-          reason: "run committed neither a memory write nor a concluding reply",
-        },
-      },
-    ]);
   });
 
   test("a run whose reply reads as a conclusion but that the provider cut short: no_usable_output, prior retrospective preserved", async () => {
@@ -1118,17 +1058,6 @@ describe("memoryRetrospectiveJob", () => {
       expect(stateUpserts).toHaveLength(1);
       expect(stateUpserts[0]!.lastProcessedMessageId).toBe("m3");
       expect(stateUpserts[0]!.rememberedLog).toEqual([]);
-      expect(
-        watchdogEvents.filter(
-          (e) => e.checkName === "memory_retrospective_run",
-        ),
-      ).toEqual([
-        {
-          checkName: "memory_retrospective_run",
-          value: 1,
-          detail: { outcome: "invoked", noFindings: true },
-        },
-      ]);
     },
   );
 
@@ -1309,17 +1238,6 @@ describe("memoryRetrospectiveJob", () => {
     expect(stateUpserts).toHaveLength(0);
     expect(lastRunAtBumps).toHaveLength(1);
     expect(deletedConversationIds).toEqual(["fork-conv-1"]);
-    // A thrown run still records an outcome counter (as "error") before the
-    // rethrow — exception-flavored outages must show in the health metric.
-    expect(
-      watchdogEvents.filter((e) => e.checkName === "memory_retrospective_run"),
-    ).toEqual([
-      {
-        checkName: "memory_retrospective_run",
-        value: 1,
-        detail: { outcome: "error", reason: "LLM provider 503" },
-      },
-    ]);
   });
 
   test("missing conversationId payload: no_new_messages, no side effects", async () => {
