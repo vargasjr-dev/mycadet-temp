@@ -269,7 +269,7 @@ describe("ReviewTermsScreen", () => {
     expect(screen.getAllByRole("switch").length).toBe(1);
     expect(
       screen.getByText(
-        "Send crash reports, conversation traces, and session replay data",
+        "Send crash reports and conversation traces",
       ),
     ).toBeTruthy();
   });

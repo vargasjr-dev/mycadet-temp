@@ -4,8 +4,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { isConfirmedCloudSession } from "@/stores/session-status";
 
 /**
- * The composed diagnostics gate for client reporting surfaces (session replay,
- * native failure reports). Reads the live gate at call time.
+ * The composed diagnostics gate for native failure reports. Reads the live gate at call time.
  *
  * Grants only on a probe-confirmed live platform session AND the effective
  * diagnostics-reporting gate. Diagnostics is opt-out, so an absent device gate

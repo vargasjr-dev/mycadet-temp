@@ -1461,7 +1461,7 @@
     "retentionThirtyDays": "30 days",
     "shareAnalyticsHelper": "Send aggregated product usage data",
     "shareAnalyticsLabel": "Share Analytics",
-    "shareDiagnosticsHelper": "Send crash reports, conversation traces, and session replay data",
+    "shareDiagnosticsHelper": "Send crash reports and conversation traces",
     "shareDiagnosticsLabel": "Share Diagnostics",
     "subtitleWithPolicy": "View details about what data we collect and how it's used in our <policyLink>privacy policy</policyLink>.",
     "title": "Privacy"

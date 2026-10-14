@@ -77,9 +77,11 @@ describe("CSP_POLICY", () => {
     expect(scriptSrc).toContain("'unsafe-inline'");
   });
 
-  test("script-src allows the cloud origin for the replay recorder script", () => {
+  test("script-src restricts external scripts to Stripe", () => {
     const scriptSrc = directiveValue("script-src")!;
-    expect(scriptSrc).toContain("https://*.mycadet.ai");
+    expect(scriptSrc).toBe(
+      "'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com",
+    );
   });
 
   test("media-src allows the hosted voice-preview sources", () => {

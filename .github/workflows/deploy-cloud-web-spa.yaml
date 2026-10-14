@@ -55,10 +55,6 @@ jobs:
       # and the environment tag must match. Sources, per the GitHub config:
       #   - VITE_ENVIRONMENT  per-environment variable (resolves via the
       #                              job's `environment:`)
-      #   - VITE_SESSION_REPLAY_APP_ID  repo-level variable; one ID across all
-      #                              surfaces (web/Electron/iOS). Unset disables
-      #                              session replay. Public, so baking it in is
-      #                              expected.
       #   - VITE_ANDROID_PLAY_STORE_URL  environment variable set only after
       #                              the production Play listing is live.
       #                              Unset keeps Android promotion disabled.
@@ -81,7 +77,6 @@ jobs:
           VITE_CLOUD_MODE: "true"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: ${{ vars.VITE_ENVIRONMENT }}
-          VITE_SESSION_REPLAY_APP_ID: ${{ vars.VITE_SESSION_REPLAY_APP_ID }}
           VITE_ANDROID_PLAY_STORE_URL: ${{ vars.VITE_ANDROID_PLAY_STORE_URL }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           VITE_TUNNEL_HOST: ${{ vars.VITE_TUNNEL_HOST }}

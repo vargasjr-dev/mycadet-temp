@@ -1,9 +1,8 @@
 import { session } from "electron";
 
 // Root hostname (leading dot, e.g. ".mycadet.ai") injected at build time via
-// electron-vite `define` from VITE_ROOT_HOSTNAME — the same var the web bundle
-// reads. Falls back to the production default when unset (e.g. under `bun
-// test`, which doesn't run the bundler).
+// electron-vite `define` from VITE_ROOT_HOSTNAME. Falls back to the
+// production default when unset (e.g. under `bun test`, without the bundler).
 declare const __CADET_ROOT_HOSTNAME__: string;
 const ROOT_HOSTNAME =
   typeof __CADET_ROOT_HOSTNAME__ === "string"
@@ -16,12 +15,6 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // (dynamic-page-surface, app-viewer) inherit the parent CSP and their
 // injected bridge/storage scripts are inline. The sandbox attribute is the
 // primary isolation boundary for that content.
-//
-// https://${WILDCARD_HOST} in script-src: packaged replay loads the recorder
-// same-origin via the `app://` protocol handler (`/_sr/cdn/...`). Older
-// renderers still fetch the script from the cloud origin, so the wildcard
-// stays. Ingest is covered by connect-src (`'self'` plus the wildcard) and
-// the recorder worker by `worker-src ... blob:`.
 //
 // ws://localhost / ws://127.0.0.1 in connect-src: the self-hosted gateway's
 // WebSocket endpoints (/v1/stt/stream dictation partials, /v1/live-voice).
@@ -75,7 +68,7 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // See ATL-1197.
 export const CSP_POLICY = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://${WILDCARD_HOST} https://js.stripe.com https://*.js.stripe.com`,
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com",
   "style-src 'self' 'unsafe-inline'",
   `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:*`,
   "frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://link.com https://*.link.com",

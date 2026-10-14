@@ -27,7 +27,6 @@ import { isLocalClient, loadLockfile } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { initSessionReplay } from "@/lib/session-replay/session-replay-init";
 import { setupCloudAssistantsSync } from "@/assistant/cloud-assistants-sync";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
 import { setupOrganizationStore } from "@/stores/organization-store";
@@ -77,7 +76,6 @@ async function boot(router: Router) {
   } catch (error) {
     captureError(error, { context: "restore_pending_native_login" });
   }
-  initSessionReplay();
   installConsentRefreshListeners();
 
   setupOrganizationStore();

@@ -13,21 +13,6 @@ import type { InjectedConfig } from "@/lib/injected-config";
  */
 declare global {
   interface ImportMetaEnv {
-    /** Session-replay environment tag (e.g. "production", "staging"). */
-    readonly VITE_SESSION_REPLAY_ENVIRONMENT?: string;
-    /**
-     * Session-replay app ID. A single ID across all hosts (web / Electron / iOS):
-     * replay records the web DOM, so one project covers every surface and the host
-     * is distinguished by a `surface` trait. Unset → session replay disabled.
-     */
-    readonly VITE_SESSION_REPLAY_APP_ID?: string;
-    /**
-     * Root hostname shared across Cadet subdomains, with a leading dot (e.g.
-     * `.mycadet.ai`). Used as the session-replay cookie scope (`rootHostname`).
-     * Defaults to `.mycadet.ai` when unset. The Electron main process reads the
-     * same var via `process.env` at build time (see `electron.vite.config.ts`).
-     */
-    readonly VITE_ROOT_HOSTNAME?: string;
     /** Stripe publishable key for payment forms. Injected by CI/CD pipeline. */
     readonly VITE_STRIPE_PUBLISHABLE_KEY?: string;
     /** App version stamp for diagnostic reporting. */
@@ -64,18 +49,7 @@ declare global {
     __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
     /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
     __CADET_CONFIG__?: InjectedConfig;
-    /**
-     * SDK-defined override for the session-replay recorder script URL. Set before
-     * the replay SDK inits so it loads the recorder from our first-party proxy
-     * (see `session-replay-provider.ts`).
-     */
-    _lrAsyncScript?: string;
-    /**
-     * SDK-defined config object the session-replay recorder reads at boot. We set
-     * `statsURL` on it to route the stats beacon through our first-party proxy —
-     * the data endpoint has an init option but the beacon does not.
-     */
-    __SDKCONFIG__?: { statsURL?: string; serverURL?: string };
+
   }
 }
 

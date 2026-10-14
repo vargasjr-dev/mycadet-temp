@@ -405,10 +405,9 @@ export default function PrivacyPolicyPage() {
         is used to deliver advertising targeted to your interests on other
         companies&apos; sites or mobile apps and to analyze and track data,
         determine the popularity of certain content, and better understand your
-        activity. Consistent with user preferences, we also use session replay
-        and product analytics tools to record and analyze how users navigate and
+        activity. Consistent with user preferences, we also use product analytics tools to record and analyze how users navigate and
         interact with our Website so we can diagnose issues and improve
-        usability. The collection of session replay and diagnostic data can be
+        usability. The collection of diagnostic data can be
         opted in or out of at any time from Settings &gt; Permissions &amp;
         Privacy.
       </p>

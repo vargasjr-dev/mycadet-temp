@@ -188,7 +188,7 @@ const registerAppProtocol = (): void => {
       return pairedProxied;
     }
 
-    // `/v1/*`, `/_allauth/*`, `/accounts/*`, `/_sr/*` forward to the
+    // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the
     // cloud platform so managed mode and desktop replay ingest work.
     const platformProxied = await forwardPlatformRequest(
       request,

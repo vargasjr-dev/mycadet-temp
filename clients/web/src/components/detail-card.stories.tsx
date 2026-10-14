@@ -58,7 +58,7 @@ export const WithSubtitle: Story = {
 export const WithAccessory: Story = {
   args: {
     title: "Share diagnostics",
-    subtitle: "Send crash reports and session replay data.",
+    subtitle: "Send crash reports and conversation traces.",
     accessory: (
       <Toggle checked onChange={() => {}} aria-label="Share diagnostics" />
     ),

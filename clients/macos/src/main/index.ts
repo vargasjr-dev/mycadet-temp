@@ -300,9 +300,7 @@ const registerAppProtocol = (): void => {
       return pairedProxied;
     }
 
-    // Platform API and first-party session-replay routes (`/v1/*`,
-    // `/_allauth/*`, `/accounts/*`, `/_sr/*`) forward to the cloud platform
-    // so managed mode and desktop replay ingest work in packaged builds.
+    // Platform API and authentication routes forward to the cloud platform.
     const platformProxied = await forwardPlatformRequest(request, cloudUrl);
     if (platformProxied) return platformProxied;
 

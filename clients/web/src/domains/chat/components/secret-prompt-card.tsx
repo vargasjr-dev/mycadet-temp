@@ -165,7 +165,6 @@ export function SecretPromptCard({
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              data-private
               className="pr-10"
               fullWidth
             />
