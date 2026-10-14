@@ -53,8 +53,7 @@ mock.module("../auth/token-exchange.js", () => ({
 }));
 
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createAuthMiddleware, loopbackFallbackCountTracker } =
-  await import("../http/middleware/auth.js");
+const { createAuthMiddleware } = await import("../http/middleware/auth.js");
 
 const PLATFORM_USER_ID = "user-abc-123";
 const GUARDIAN_PRINCIPAL = "actor-guardian-xyz";
@@ -82,7 +81,6 @@ beforeEach(() => {
   mockPlatformUserIdUnreachable = false;
   mockFindCadetGuardian = mock(async () => null);
   mockValidateEdgeToken = mock(() => ({ ok: false, reason: "noop" }));
-  loopbackFallbackCountTracker.reset();
 });
 
 afterEach(() => {
@@ -210,7 +208,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([]);
   });
 
   test("invalid bearer token falls back to loopback", async () => {
@@ -222,19 +219,6 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     );
     expect(res).toBeNull();
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
-  });
-
-  test("a guardian loopback fallback is counted under the edge-guardian guard", async () => {
-    const { requireEdgeGuardianAuth } = makeMiddleware();
-    await requireEdgeGuardianAuth(makeReq(), makeLoopbackServer());
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([
-      {
-        guard: "edge-guardian",
-        path: "/v1/contact-channels/abc/verify",
-        failureKind: "missing_authorization",
-        count: 1,
-      },
-    ]);
   });
 
   test("returns 503 when findCadetGuardian throws (transient assistant DB outage)", async () => {

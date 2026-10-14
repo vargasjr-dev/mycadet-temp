@@ -24,10 +24,6 @@ const { handleGuardianRefresh } =
   await import("../http/routes/guardian-refresh.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
 
 const PRINCIPAL = "guardian-001";
 const DEVICE_A = "device-A";
@@ -128,18 +124,10 @@ beforeEach(async () => {
   // silence the fail-loud reporter for the missing-guardian cases.
   insertGuardianContact();
   bustGuardianIntegrityCache();
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: { error: () => {}, warn: () => {} },
-  });
 });
 
 afterEach(() => {
   resetGatewayDb();
-  resetGuardianIntegrityReporterForTesting();
   bustGuardianIntegrityCache();
   if (savedSecurityDir === undefined) {
     delete process.env.GATEWAY_SECURITY_DIR;

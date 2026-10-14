@@ -19,28 +19,20 @@ import { beforeEach, afterEach, describe, expect, test } from "bun:test";
 import { sql } from "drizzle-orm";
 
 await import("./test-preload.js");
-const { initGatewayDb, resetGatewayDb, getGatewayDb } = await import(
-  "../db/connection.js"
-);
+const { initGatewayDb, resetGatewayDb, getGatewayDb } =
+  await import("../db/connection.js");
 const {
   contacts,
   contactChannels,
   actorTokenRecords,
   actorRefreshTokenRecords,
 } = await import("../db/schema.js");
-const { seedActorToken, seedContact } = await import(
-  "./helpers/contact-fixtures.js"
-);
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
-const { bustGuardianIntegrityCache } = await import(
-  "../auth/guardian-integrity.js"
-);
-const { resolveTrustVerdict } = await import(
-  "../risk/trust-verdict-resolver.js"
-);
+const { seedActorToken, seedContact } =
+  await import("./helpers/contact-fixtures.js");
+const { bustGuardianIntegrityCache } =
+  await import("../auth/guardian-integrity.js");
+const { resolveTrustVerdict } =
+  await import("../risk/trust-verdict-resolver.js");
 
 const CHANNEL = "telegram";
 
@@ -84,23 +76,10 @@ beforeEach(async () => {
   getGatewayDb().delete(actorRefreshTokenRecords).run();
   bustGuardianIntegrityCache();
   reportCalls.length = 0;
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: {
-      error: (detail) => {
-        reportCalls.push(detail);
-      },
-      warn: () => {},
-    },
-  });
 });
 
 afterEach(() => {
   resetGatewayDb();
-  resetGuardianIntegrityReporterForTesting();
 });
 
 describe("missing-guardian state (evidence, zero guardian rows)", () => {

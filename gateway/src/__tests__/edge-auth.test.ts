@@ -64,8 +64,7 @@ mock.module("../auth/token-exchange.js", () => ({
 }));
 
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createAuthMiddleware, loopbackFallbackCountTracker } =
-  await import("../http/middleware/auth.js");
+const { createAuthMiddleware } = await import("../http/middleware/auth.js");
 const { initGatewayDb, resetGatewayDb, getGatewayDb } =
   await import("../db/connection.js");
 const { actorTokenRecords } = await import("../db/schema.js");
@@ -96,7 +95,6 @@ beforeEach(() => {
   mockReadCredential = mock(async () => undefined);
   mockPlatformUserIdUnreachable = false;
   mockValidateEdgeToken = mock(() => ({ ok: false, reason: "noop" }));
-  loopbackFallbackCountTracker.reset();
 });
 
 afterEach(() => {
@@ -238,21 +236,6 @@ describe("requireEdgeAuth — JWT mode", () => {
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([]);
-  });
-
-  test("a loopback fallback is counted by (guard, path, failureKind)", async () => {
-    const { requireEdgeAuth } = makeMiddleware();
-    await requireEdgeAuth(makeReq(), makeLoopbackServer());
-    await requireEdgeAuth(makeReq(), makeLoopbackServer());
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([
-      {
-        guard: "edge",
-        path: "/v1/something",
-        failureKind: "missing_authorization",
-        count: 2,
-      },
-    ]);
   });
 
   test("null on valid bearer token", async () => {
@@ -389,7 +372,6 @@ describe("requireEdgeAuthWithScope — JWT mode", () => {
     );
     expect(res?.status).toBe(401);
     expect(mockValidateEdgeToken).not.toHaveBeenCalled();
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([]);
   });
 
   test("403 when token's scope_profile lacks the required scope", async () => {
@@ -512,7 +494,6 @@ describe("edge auth refuses a single-route grant", () => {
       makeLoopbackServer(),
     );
     expect(res?.status).toBe(401);
-    expect(loopbackFallbackCountTracker.snapshot()).toEqual([]);
   });
 
   test("requireEdgeAuthWithScope 401s the grant before the scope check", async () => {

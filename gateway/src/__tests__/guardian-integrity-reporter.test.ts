@@ -1,109 +1,78 @@
 /**
- * Fail-loud missing-guardian reporter (guardian-integrity-reporter.ts):
+ * Fail-loud guardian-integrity reporter (guardian-integrity-reporter.ts):
  *
- *  - First report emits one error log and one telemetry relay POST with the
- *    `gateway_guardian_missing` check name and the caller's detail.
- *  - Subsequent reports inside the hourly window are dropped (rate limit).
- *  - Relay failures never throw out of the caller.
+ *  - First report per check emits one error log carrying the caller's detail
+ *    and the failure copy.
+ *  - Subsequent reports inside the hourly window are dropped (rate limit);
+ *    the sibling check still reports (per-check rate limit).
  *
- * Logging is observed through the reporter's test-only `log` override —
- * bun's mock.module is process-global and would leak into other test files.
+ * Logs are observed by mocking the logger module (a side-effect boundary —
+ * the same convention as sleep-wake-detector.test.ts). Per-file CI truth:
+ * the mock is process-global, so this file pins nothing else.
  */
-import { beforeEach, afterEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-const errorLogs: unknown[] = [];
-const warnLogs: unknown[] = [];
+const errorLogs: [Record<string, unknown>, string][] = [];
+
+mock.module("../logger.js", () => ({
+  getLogger: () => ({
+    error: (detail: Record<string, unknown>, msg: string) => {
+      errorLogs.push([detail, msg]);
+    },
+    warn: () => {},
+  }),
+}));
 
 await import("./test-preload.js");
-const {
-  GUARDIAN_MISSING_CHECK_NAME,
-  flushGuardianIntegrityReporterForTesting,
-  reportMissingGuardian,
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
+const { reportGuardianMintRefused, reportMissingGuardian } =
+  await import("../guardian-integrity-reporter.js");
 
-type FetchCall = { url: string; init: RequestInit };
-let fetchCalls: FetchCall[] = [];
-let fetchResult: () => Promise<Response> = async () => new Response("{}");
+let fakeNow = 1_000_000_000_000;
 
 beforeEach(() => {
-  fetchCalls = [];
-  fetchResult = async () => new Response("{}");
   errorLogs.length = 0;
-  warnLogs.length = 0;
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async (url, init) => {
-      fetchCalls.push({ url: String(url), init: init ?? {} });
-      return fetchResult();
-    },
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: {
-      error: (detail, msg) => {
-        errorLogs.push([detail, msg]);
-      },
-      warn: (detail, msg) => {
-        warnLogs.push([detail, msg]);
-      },
-    },
-  });
-});
-
-afterEach(() => {
-  resetGuardianIntegrityReporterForTesting();
+  fakeNow += 24 * 60 * 60 * 1000; // start each test outside prior windows
+  spyOn(Date, "now").mockImplementation(() => fakeNow);
 });
 
 describe("reportMissingGuardian", () => {
-  test("first report logs an error and relays one watchdog event", async () => {
+  test("first report logs one error with the detail + copy", () => {
     reportMissingGuardian({ has_contacts: true, has_actor_tokens: false });
-    await flushGuardianIntegrityReporterForTesting();
 
     expect(errorLogs.length).toBe(1);
-    expect(fetchCalls.length).toBe(1);
-    expect(fetchCalls[0].url).toBe(
-      "http://127.0.0.1:7821/v1/internal/telemetry/watchdog",
-    );
-    const headers = fetchCalls[0].init.headers as Record<string, string>;
-    expect(headers.Authorization).toBe("Bearer svc-token");
-    expect(JSON.parse(String(fetchCalls[0].init.body))).toEqual({
-      check_name: GUARDIAN_MISSING_CHECK_NAME,
-      detail: { has_contacts: true, has_actor_tokens: false },
+    expect(errorLogs[0]![0]).toMatchObject({
+      check: "gateway_guardian_missing",
+      has_contacts: true,
+      has_actor_tokens: false,
+    });
+    expect(errorLogs[0]![1]).toContain("until the guardian is re-seeded");
+  });
+
+  test("repeat reports inside the hourly window are dropped; the sibling check still fires", () => {
+    reportMissingGuardian({});
+    reportMissingGuardian({});
+    reportGuardianMintRefused({ integrity_state: "ok" });
+
+    expect(errorLogs.length).toBe(2);
+    expect(errorLogs[0]![0]).toMatchObject({
+      check: "gateway_guardian_missing",
+    });
+    expect(errorLogs[1]![0]).toMatchObject({
+      check: "gateway_guardian_mint_refused",
+      integrity_state: "ok",
     });
   });
+});
 
-  test("repeat reports inside the hourly window are dropped", async () => {
-    reportMissingGuardian({ has_contacts: true, has_actor_tokens: false });
-    reportMissingGuardian({ has_contacts: true, has_actor_tokens: false });
-    reportMissingGuardian({ has_contacts: true, has_actor_tokens: true });
-    await flushGuardianIntegrityReporterForTesting();
-
-    expect(errorLogs.length).toBe(1);
-    expect(fetchCalls.length).toBe(1);
-  });
-
-  test("a rejected relay never throws out of the caller", async () => {
-    fetchResult = async () => {
-      throw new Error("daemon unreachable");
-    };
-
-    expect(() =>
-      reportMissingGuardian({ has_contacts: false, has_actor_tokens: true }),
-    ).not.toThrow();
-    await flushGuardianIntegrityReporterForTesting();
+describe("reportGuardianMintRefused", () => {
+  test("first report logs one error with the detail + copy", () => {
+    reportGuardianMintRefused({ integrity_state: "ok" });
 
     expect(errorLogs.length).toBe(1);
-    expect(warnLogs.length).toBe(1);
-  });
-
-  test("a non-ok relay response is swallowed with a warning", async () => {
-    fetchResult = async () => new Response("nope", { status: 500 });
-
-    reportMissingGuardian({ has_contacts: true, has_actor_tokens: true });
-    await flushGuardianIntegrityReporterForTesting();
-
-    expect(fetchCalls.length).toBe(1);
-    expect(warnLogs.length).toBe(1);
+    expect(errorLogs[0]![0]).toMatchObject({
+      check: "gateway_guardian_mint_refused",
+      integrity_state: "ok",
+    });
+    expect(errorLogs[0]![1]).toContain("guardian_repair_required");
   });
 });

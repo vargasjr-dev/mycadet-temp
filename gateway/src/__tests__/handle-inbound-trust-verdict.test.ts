@@ -85,10 +85,6 @@ const {
 } = await import("../db/schema.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
 const { handleInbound } = await import("../handlers/handle-inbound.js");
 
 const CHANNEL = "telegram";
@@ -201,22 +197,13 @@ beforeEach(async () => {
   runtimePayloads = [];
   forwardToRuntimeMock.mockClear();
   interceptResult = { intercepted: false };
-  // The integrity state is TTL-cached process-wide; recompute per test and
-  // silence the fail-loud reporter (its behavior has its own suites).
+  // The integrity state is TTL-cached process-wide; recompute per test.
   bustGuardianIntegrityCache();
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: { error: () => {}, warn: () => {} },
-  });
 });
 
 afterEach(() => {
   resetAdmissionPolicyCache();
   resetGatewayDb();
-  resetGuardianIntegrityReporterForTesting();
 });
 
 describe("handle-inbound trust verdict stamping", () => {

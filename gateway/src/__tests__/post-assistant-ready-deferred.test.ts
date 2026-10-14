@@ -50,10 +50,6 @@ const { contacts, contactChannels, actorTokenRecords } =
 const { MIGRATIONS } = await import("../db/data-migrations/index.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
 const { seedContact, seedActorToken } =
   await import("./helpers/contact-fixtures.js");
 
@@ -134,12 +130,6 @@ describe("runDeferredTasksWhenAssistantReady", () => {
       // ensureCadetGuardianBinding throws CadetGuardianMintRefusedError.
       seedContact({ id: "invited-contact" });
       bustGuardianIntegrityCache();
-      setGuardianIntegrityReporterOverridesForTesting({
-        fetchImpl: async () => new Response("{}"),
-        mintToken: () => "svc-token",
-        baseUrl: "http://127.0.0.1:7821",
-        log: { error: () => {}, warn: () => {} },
-      });
       resetPostAssistantReadyForTest(); // restore the REAL executor
 
       // The refusal is warn-and-continue inside the executor: the deferred
@@ -152,7 +142,6 @@ describe("runDeferredTasksWhenAssistantReady", () => {
       );
       expect(getGatewayDb().select().from(contacts).all()).toHaveLength(1);
     } finally {
-      resetGuardianIntegrityReporterForTesting();
       resetGatewayDb();
     }
   });
@@ -176,12 +165,6 @@ describe("runDeferredTasksWhenAssistantReady", () => {
       }
       seedActorToken(); // active token, guardianPrincipalId "principal-123"
       bustGuardianIntegrityCache();
-      setGuardianIntegrityReporterOverridesForTesting({
-        fetchImpl: async () => new Response("{}"),
-        mintToken: () => "svc-token",
-        baseUrl: "http://127.0.0.1:7821",
-        log: { error: () => {}, warn: () => {} },
-      });
       resetPostAssistantReadyForTest(); // restore the REAL executor
 
       await runDeferredTasksWhenAssistantReady(5);
@@ -202,7 +185,6 @@ describe("runDeferredTasksWhenAssistantReady", () => {
         principalId: "principal-123",
       });
     } finally {
-      resetGuardianIntegrityReporterForTesting();
       resetGatewayDb();
     }
   });

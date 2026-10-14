@@ -17,8 +17,6 @@ import {
 } from "./auth/token-service.js";
 import { validateEdgeToken, mintServiceToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
-import { AuthFallbackReporter } from "./auth-fallback-reporter.js";
-import { loopbackFallbackCountTracker } from "./http/middleware/auth.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 import { FeatureFlagWatcher } from "./feature-flag-watcher.js";
@@ -3165,14 +3163,6 @@ async function main() {
   // the gateway continues with registry defaults if it fails.
   void remoteFeatureFlagSync.start();
 
-  // Periodically ship legacy-loopback auth-fallback counts to the daemon
-  // telemetry route. Best-effort background work; never blocks auth.
-  const authFallbackReporter = new AuthFallbackReporter({
-    tracker: loopbackFallbackCountTracker,
-    baseUrl: config.assistantRuntimeBaseUrl,
-  });
-  authFallbackReporter.start();
-
   // ── Sleep/wake detection ──
   // Detect system sleep/wake transitions and force-reconnect channels
   // that may have stale connections after the OS suspended the process.
@@ -3211,8 +3201,6 @@ async function main() {
     configFileWatcher.stop();
     featureFlagWatcher.stop();
     remoteFeatureFlagSync.stop();
-    // Stop the timer and flush any buffered auth-fallback counts before exit.
-    shutdownTasks.push(authFallbackReporter.stop());
     const tunnelStop = tunnelClient?.stop();
     if (tunnelStop) shutdownTasks.push(tunnelStop);
     ipcServer.stop();

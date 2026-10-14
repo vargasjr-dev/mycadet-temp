@@ -58,10 +58,6 @@ const {
 } = await import("../remote-web/pairing-challenge-store.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
 const realBrowserAuthCookies = await import("../http/browser-auth-cookies.js");
 // Captured before any mock is armed: `mock.module` rewrites the live
 // namespace, so a restore needs its own reference to the real function.
@@ -641,13 +637,13 @@ describe("remote web pairing token exchange", () => {
     const gwDb = getGatewayDb();
     const realTransaction = gwDb.transaction.bind(gwDb);
     let failedOnce = false;
-     
+
     (gwDb as any).transaction = (...args: unknown[]) => {
       if (!failedOnce) {
         failedOnce = true;
         throw new Error("gateway binding write failed");
       }
-       
+
       return (realTransaction as any)(...args);
     };
 
@@ -658,7 +654,6 @@ describe("remote web pairing token exchange", () => {
         ),
       ).rejects.toThrow("gateway binding write failed");
     } finally {
-       
       (gwDb as any).transaction = realTransaction;
     }
 
@@ -703,12 +698,6 @@ describe("remote web pairing token exchange", () => {
       })
       .run();
     bustGuardianIntegrityCache();
-    setGuardianIntegrityReporterOverridesForTesting({
-      fetchImpl: async () => new Response("{}"),
-      mintToken: () => "svc-token",
-      baseUrl: "http://127.0.0.1:7821",
-      log: { error: () => {}, warn: () => {} },
-    });
 
     try {
       const res = await handleRemoteWebPairingToken(
@@ -748,7 +737,6 @@ describe("remote web pairing token exchange", () => {
       expect(retry.status).toBe(200);
       expect(activeTokens()).toHaveLength(1);
     } finally {
-      resetGuardianIntegrityReporterForTesting();
       bustGuardianIntegrityCache();
     }
   });

@@ -5,9 +5,9 @@
  * (via ensureCadetGuardianBinding / bootstrapGuardian) and its divergent
  * re-mint guard (evidence of a prior guardian refuses the implicit mint).
  *
- * The guardian-integrity reporter is silenced/observed via its test-only
- * overrides, and the integrity cache is busted between tests — same seam
- * conventions as the guardian-integrity test trio (no mock.module).
+ * The guardian-integrity reporter's report fns are observed via a pass-through
+ * spy on the module's live ESM bindings, and the integrity cache is busted
+ * between tests.
  *
  * Guardian rows are seeded ONLY in the gateway DB. By default the assistant
  * DB proxy is swapped for a backend that throws, proving the lookups never
@@ -84,10 +84,7 @@ import {
   actorTokenRecords,
   actorRefreshTokenRecords,
 } from "../db/schema.js";
-import {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} from "../guardian-integrity-reporter.js";
+import * as guardianIntegrityReporter from "../guardian-integrity-reporter.js";
 import { seedActorToken, seedContact } from "./helpers/contact-fixtures.js";
 
 // Initialize signing key so bootstrapGuardian's JWT minting works.
@@ -165,9 +162,21 @@ beforeAll(async () => {
   await initGatewayDb();
 });
 
-// Captured guardian-integrity reporter detail payloads (via the log
-// override): missing-guardian and mint-refused reports both land here.
+// Captured guardian-integrity reporter detail payloads (via module
+// re-registration — bun's spyOn does not intercept calls made through the
+// SUTs' direct ESM imports): missing-guardian and mint-refused reports both
+// land here.
 const reportCalls: Record<string, unknown>[] = [];
+
+mock.module("../guardian-integrity-reporter.js", () => ({
+  ...guardianIntegrityReporter,
+  reportMissingGuardian: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+  reportGuardianMintRefused: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+}));
 
 beforeEach(() => {
   const db = getGatewayDb();
@@ -180,23 +189,9 @@ beforeEach(() => {
   bustGuardianIntegrityCache();
   assistantBackend = throwingBackend;
   reportCalls.length = 0;
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: {
-      error: (detail) => {
-        reportCalls.push(detail);
-      },
-      warn: () => {},
-    },
-  });
 });
 
-afterEach(() => {
-  resetGuardianIntegrityReporterForTesting();
-});
+afterEach(() => {});
 
 afterAll(() => {
   resetGatewayDb();

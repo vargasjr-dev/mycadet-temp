@@ -35,10 +35,6 @@ import {
   resetGatewayDb,
 } from "../db/connection.js";
 import { actorTokenRecords, contacts, contactChannels } from "../db/schema.js";
-import {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} from "../guardian-integrity-reporter.js";
 import { resolveTrustVerdict } from "../risk/trust-verdict-resolver.js";
 
 initSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
@@ -79,17 +75,9 @@ beforeEach(async () => {
   db.delete(contacts).run();
   db.delete(actorTokenRecords).run();
   bustGuardianIntegrityCache();
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: { error: () => {}, warn: () => {} },
-  });
 });
 
 afterEach(() => {
-  resetGuardianIntegrityReporterForTesting();
   resetGatewayDb();
 });
 

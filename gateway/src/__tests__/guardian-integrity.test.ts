@@ -12,7 +12,7 @@
  * files); its logging/relay behavior has its own tests
  * (guardian-integrity-reporter.test.ts).
  */
-import { beforeEach, afterEach, describe, expect, test } from "bun:test";
+import { beforeEach, afterEach, describe, expect, mock, test } from "bun:test";
 
 await import("./test-preload.js");
 const { initGatewayDb, resetGatewayDb, getGatewayDb } =
@@ -25,10 +25,8 @@ const {
 } = await import("../db/schema.js");
 const { seedActorToken, seedContact } =
   await import("./helpers/contact-fixtures.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
+const actualGuardianIntegrityReporter =
+  await import("../guardian-integrity-reporter.js");
 const {
   bustGuardianIntegrityCache,
   guardianIntegrityState,
@@ -37,9 +35,20 @@ const {
 const { applyGuardianBindingGatewayWrites } =
   await import("../auth/guardian-bootstrap.js");
 
-// The reporter's first-report error log carries the detail payload; capture
-// it as the "reported" signal.
+// The reporter's report fns carry the detail payload; capture it by
+// re-registering the reporter module with recorders (bun's spyOn does not
+// intercept calls made through the SUTs' direct ESM imports).
 const reportCalls: Record<string, unknown>[] = [];
+
+mock.module("../guardian-integrity-reporter.js", () => ({
+  ...actualGuardianIntegrityReporter,
+  reportMissingGuardian: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+  reportGuardianMintRefused: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+}));
 
 function insertRefreshToken(): void {
   const now = Date.now();
@@ -71,23 +80,10 @@ beforeEach(async () => {
   getGatewayDb().delete(actorRefreshTokenRecords).run();
   bustGuardianIntegrityCache();
   reportCalls.length = 0;
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: {
-      error: (detail) => {
-        reportCalls.push(detail);
-      },
-      warn: () => {},
-    },
-  });
 });
 
 afterEach(() => {
   resetGatewayDb();
-  resetGuardianIntegrityReporterForTesting();
 });
 
 describe("hasEvidenceOfPriorGuardian", () => {

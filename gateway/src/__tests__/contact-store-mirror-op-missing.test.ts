@@ -17,7 +17,6 @@ import {
   beforeAll,
   beforeEach,
   afterAll,
-  afterEach,
   mock,
 } from "bun:test";
 
@@ -48,25 +47,33 @@ mock.module("../ipc/assistant-client.js", () => ({
 
 // ── Imports ──────────────────────────────────────────────────────────────────
 
-import { ContactStore } from "../db/contact-store.js";
 import {
   initGatewayDb,
   getGatewayDb,
   resetGatewayDb,
 } from "../db/connection.js";
 import { contacts, contactChannels } from "../db/schema.js";
-import {
-  MIRROR_OP_MISSING_CHECK_NAME,
-  flushMirrorOpReporterForTesting,
-  resetMirrorOpReporterForTesting,
-  setMirrorOpReporterOverridesForTesting,
-} from "../contacts-mirror-op-reporter.js";
+import * as mirrorOpReporter from "../contacts-mirror-op-reporter.js";
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
-const errorLogs: [Record<string, unknown>, string][] = [];
-const warnLogs: unknown[] = [];
-let telemetryBodies: unknown[] = [];
+// The reporter's report fns carry the detail payload; capture them by
+// re-registering the reporter module with a recorder (its real sibling
+// exports — the unknown-method classifier — stay live for the store).
+const reportCalls: { op: string; detail: Record<string, unknown> }[] = [];
+
+mock.module("../contacts-mirror-op-reporter.js", () => ({
+  ...mirrorOpReporter,
+  reportMirrorOpMissing: (op: string, detail: Record<string, unknown>) => {
+    reportCalls.push({ op, detail });
+  },
+}));
+
+// The SUT must load AFTER the mock registrations above — a static import
+// would bind contact-store to the REAL ipc client + reporter before either
+// mock.module runs (bun mock.module is not retroactive for modules already
+// imported), and the escalations would never reach the recorder.
+const { ContactStore } = await import("../db/contact-store.js");
 
 beforeAll(async () => {
   await initGatewayDb();
@@ -88,30 +95,7 @@ beforeEach(() => {
     return {};
   });
 
-  errorLogs.length = 0;
-  warnLogs.length = 0;
-  telemetryBodies = [];
-  resetMirrorOpReporterForTesting();
-  setMirrorOpReporterOverridesForTesting({
-    fetchImpl: async (_url, init) => {
-      telemetryBodies.push(JSON.parse(String(init?.body)));
-      return new Response("{}");
-    },
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: {
-      error: (detail, msg) => {
-        errorLogs.push([detail, msg]);
-      },
-      warn: (detail, msg) => {
-        warnLogs.push([detail, msg]);
-      },
-    },
-  });
-});
-
-afterEach(() => {
-  resetMirrorOpReporterForTesting();
+  reportCalls.length = 0;
 });
 
 afterAll(() => {
@@ -161,7 +145,7 @@ function unknownMethodError(method: string): Error {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe("mergeContacts — unknown mirror op escalation", () => {
-  test("unknown method → error log + telemetry; gateway merge still applied", async () => {
+  test("unknown method → fail-loud report; gateway merge still applied", async () => {
     seedContact("ct_keep");
     seedContact("ct_merge");
     seedChannel("ch_1", "ct_merge");
@@ -175,7 +159,6 @@ describe("mergeContacts — unknown mirror op escalation", () => {
       "ct_keep",
       "ct_merge",
     );
-    await flushMirrorOpReporterForTesting();
 
     // Gateway (source of truth) merge stands: donor gone, channel moved.
     expect(contact!.id).toBe("ct_keep");
@@ -196,26 +179,16 @@ describe("mergeContacts — unknown mirror op escalation", () => {
         .find((c) => c.id === "ch_1")?.contactId,
     ).toBe("ct_keep");
 
-    // Escalated: one error log + one watchdog telemetry event.
-    expect(errorLogs.length).toBe(1);
-    expect(errorLogs[0][0]).toMatchObject({
-      op: "contacts_mirror_merge_contact",
-      keepId: "ct_keep",
-      mergeId: "ct_merge",
-    });
-    expect(telemetryBodies).toEqual([
+    // Escalated: exactly one fail-loud report with the op + detail.
+    expect(reportCalls).toEqual([
       {
-        check_name: MIRROR_OP_MISSING_CHECK_NAME,
-        detail: {
-          op: "contacts_mirror_merge_contact",
-          keepId: "ct_keep",
-          mergeId: "ct_merge",
-        },
+        op: "contacts_mirror_merge_contact",
+        detail: { keepId: "ct_keep", mergeId: "ct_merge" },
       },
     ]);
   });
 
-  test("other IPC failure → best-effort warn only, same gateway state", async () => {
+  test("other IPC failure → no report, same gateway state", async () => {
     seedContact("ct_keep");
     seedContact("ct_merge");
     seedChannel("ch_1", "ct_merge");
@@ -229,7 +202,6 @@ describe("mergeContacts — unknown mirror op escalation", () => {
       "ct_keep",
       "ct_merge",
     );
-    await flushMirrorOpReporterForTesting();
 
     expect(contact!.id).toBe("ct_keep");
     expect(mirrored).toBe(false);
@@ -241,14 +213,13 @@ describe("mergeContacts — unknown mirror op escalation", () => {
         .find((c) => c.id === "ct_merge"),
     ).toBeUndefined();
 
-    // No escalation: no reporter error log, no telemetry.
-    expect(errorLogs.length).toBe(0);
-    expect(telemetryBodies).toEqual([]);
+    // No escalation: the report never fires.
+    expect(reportCalls).toEqual([]);
   });
 });
 
 describe("upsertContact — unknown mirror op escalation", () => {
-  test("unknown method → error log + telemetry; gateway upsert still applied", async () => {
+  test("unknown method → fail-loud report; gateway upsert still applied", async () => {
     ipcThrowOn.set(
       "contacts_mirror_upsert_full",
       unknownMethodError("contacts_mirror_upsert_full"),
@@ -259,7 +230,6 @@ describe("upsertContact — unknown mirror op escalation", () => {
       displayName: "Alice",
       channels: [{ type: "slack", address: "U12345" }],
     });
-    await flushMirrorOpReporterForTesting();
 
     // Gateway write stands.
     expect(created).toBe(true);
@@ -272,20 +242,15 @@ describe("upsertContact — unknown mirror op escalation", () => {
     ).toBeDefined();
     expect(store.getChannelsForContact(contact.id)).toHaveLength(1);
 
-    expect(errorLogs.length).toBe(1);
-    expect(errorLogs[0][0]).toMatchObject({
-      op: "contacts_mirror_upsert_full",
-      contactId: contact.id,
-    });
-    expect(telemetryBodies).toEqual([
+    expect(reportCalls).toEqual([
       {
-        check_name: MIRROR_OP_MISSING_CHECK_NAME,
-        detail: { op: "contacts_mirror_upsert_full", contactId: contact.id },
+        op: "contacts_mirror_upsert_full",
+        detail: { contactId: contact.id },
       },
     ]);
   });
 
-  test("other IPC failure → best-effort warn only, same gateway state", async () => {
+  test("other IPC failure → no report, same gateway state", async () => {
     ipcThrowOn.set("contacts_mirror_upsert_full", new Error("socket closed"));
 
     const store = new ContactStore();
@@ -293,11 +258,9 @@ describe("upsertContact — unknown mirror op escalation", () => {
       displayName: "Bob",
       channels: [{ type: "slack", address: "U67890" }],
     });
-    await flushMirrorOpReporterForTesting();
 
     expect(created).toBe(true);
     expect(store.getChannelsForContact(contact.id)).toHaveLength(1);
-    expect(errorLogs.length).toBe(0);
-    expect(telemetryBodies).toEqual([]);
+    expect(reportCalls).toEqual([]);
   });
 });

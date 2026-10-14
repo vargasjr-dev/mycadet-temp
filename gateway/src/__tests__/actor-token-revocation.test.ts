@@ -30,10 +30,6 @@ const { createRuntimeProxyHandler } =
   await import("../http/routes/runtime-proxy.js");
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
-const {
-  resetGuardianIntegrityReporterForTesting,
-  setGuardianIntegrityReporterOverridesForTesting,
-} = await import("../guardian-integrity-reporter.js");
 
 const ACTOR_SUB = "actor:self:guardian-001";
 const actorClaims = { sub: ACTOR_SUB } as TokenClaims;
@@ -128,20 +124,12 @@ beforeEach(async () => {
   await initGatewayDb();
   __resetLastUsedDebounceForTests();
   // The integrity state is module-cached across tests; token rows seeded here
-  // are integrity evidence, so keep the reporter silenced and the cache cold.
+  // are integrity evidence, so keep the cache cold.
   bustGuardianIntegrityCache();
-  resetGuardianIntegrityReporterForTesting();
-  setGuardianIntegrityReporterOverridesForTesting({
-    fetchImpl: async () => new Response("{}"),
-    mintToken: () => "svc-token",
-    baseUrl: "http://127.0.0.1:7821",
-    log: { error: () => {}, warn: () => {} },
-  });
 });
 
 afterEach(() => {
   resetGatewayDb();
-  resetGuardianIntegrityReporterForTesting();
   bustGuardianIntegrityCache();
   if (savedSecurityDir === undefined) {
     delete process.env.GATEWAY_SECURITY_DIR;
