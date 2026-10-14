@@ -14,13 +14,13 @@ import {
   getProviderSignup,
   isConflict,
   submitProviderSignup,
-} from "@web/lib/auth/allauth-client";
+} from "@app/lib/auth/provider-signup-client";
 import { setSignupOnboardingFirstName } from "@app/lib/auth/signup-onboarding-handoff";
 import {
   resolvePostAuthDestination,
   resolvePostLoginDestination,
 } from "@web/domains/account/login-flow";
-import { useAuthStore } from "@web/stores/auth-store";
+import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";

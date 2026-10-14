@@ -180,3 +180,55 @@ describe("readLineText", () => {
     expect(await pending).toBe("");
   });
 });
+
+test("a Mac without Homebrew asks separately before bootstrapping and installing nginx", async () => {
+  const installs: string[][] = [];
+  let homebrew = false;
+  let nginx = false;
+  let brewPrompts = 0;
+  const version = await ensureBinaryInstalled({
+    binary: "nginx",
+    purpose: "the tunnel edge",
+    platform: "darwin",
+    packages: { brew: ["brew", "install", "nginx"] },
+    manualHint: "install nginx",
+    probe: () => (nginx ? "nginx 1.2" : null),
+    pmAvailable: (pm) => pm === "brew" && homebrew,
+    confirmInstall: async () => true,
+    confirmHomebrewInstall: async () => {
+      brewPrompts++;
+      return true;
+    },
+    runInstall: (argv) => {
+      installs.push(argv);
+      if (argv[0] === "/bin/bash") homebrew = true;
+      if (argv[0] === "brew") nginx = true;
+      return true;
+    },
+  });
+  expect(version).toBe("nginx 1.2");
+  expect(brewPrompts).toBe(1);
+  expect(installs.length).toBe(2);
+  expect(installs[1]).toEqual(["brew", "install", "nginx"]);
+});
+
+test("declining Homebrew runs no installer", async () => {
+  const installs: string[][] = [];
+  const result = await ensureBinaryInstalled({
+    binary: "ngrok",
+    purpose: "a tunnel",
+    platform: "darwin",
+    packages: { brew: ["brew", "install", "ngrok/ngrok/ngrok"] },
+    manualHint: "install ngrok",
+    probe: () => null,
+    pmAvailable: () => false,
+    confirmInstall: async () => true,
+    confirmHomebrewInstall: async () => false,
+    runInstall: (argv) => {
+      installs.push(argv);
+      return true;
+    },
+  });
+  expect(result).toBeNull();
+  expect(installs).toEqual([]);
+});

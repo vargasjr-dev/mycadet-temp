@@ -31,6 +31,8 @@ export interface EnsureBinaryOptions {
   runInstall?: (argv: string[]) => boolean;
   /** Confirm the install. Default: promptLine "[Y/n]" on Enter-as-yes. */
   confirmInstall?: () => Promise<boolean>;
+  platform?: NodeJS.Platform;
+  confirmHomebrewInstall?: () => Promise<boolean>;
   streams?: {
     input?: NodeJS.ReadStream | Readable;
     output?: NodeJS.WriteStream | Writable;
@@ -69,9 +71,60 @@ export async function ensureBinaryInstalled(
   }
 
   const pmAvailable = opts.pmAvailable ?? probePackageManager;
-  const argv = Object.entries(opts.packages).find(([pm]) =>
-    pmAvailable(pm),
-  )?.[1];
+  let argv = Object.entries(opts.packages).find(([pm]) => pmAvailable(pm))?.[1];
+  if (
+    !argv &&
+    (opts.platform ?? process.platform) === "darwin" &&
+    opts.packages.brew
+  ) {
+    const brew = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"].find(
+      pmAvailable,
+    );
+    if (brew) {
+      const prefix = brew.slice(0, -"/bin/brew".length);
+      process.env.PATH = `${prefix}/bin:${prefix}/sbin:${process.env.PATH ?? ""}`;
+      argv = [brew, ...opts.packages.brew.slice(1)];
+    }
+  }
+  if (
+    !argv &&
+    (opts.platform ?? process.platform) === "darwin" &&
+    opts.packages.brew
+  ) {
+    output.write(
+      "Homebrew is required to install this dependency, but it isn't installed.\n",
+    );
+    const confirmHomebrew =
+      opts.confirmHomebrewInstall ?? defaultConfirm(opts, "Homebrew");
+    let approved = false;
+    try {
+      approved = await confirmHomebrew();
+    } catch {
+      /* No interactive approval. */
+    }
+    if (approved) {
+      const bootstrap = [
+        "/bin/bash",
+        "-c",
+        '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/7a3f48c7e498d7df3237fd41c30f4d492857edf4/install.sh)"',
+      ];
+      const installed = opts.runInstall
+        ? opts.runInstall(bootstrap)
+        : runInstallArgv(bootstrap);
+      const brew = installed
+        ? ["brew", "/opt/homebrew/bin/brew", "/usr/local/bin/brew"].find(
+            pmAvailable,
+          )
+        : undefined;
+      if (brew) {
+        const prefix =
+          brew === "brew" ? "" : brew.slice(0, -"/bin/brew".length);
+        if (prefix)
+          process.env.PATH = `${prefix}/bin:${prefix}/sbin:${process.env.PATH ?? ""}`;
+        argv = [brew, ...opts.packages.brew.slice(1)];
+      }
+    }
+  }
   if (!argv) {
     output.write(`⚠ No supported package manager found. ${opts.manualHint}\n`);
     return null;
@@ -90,7 +143,10 @@ export async function ensureBinaryInstalled(
 }
 
 /** Default confirm: visible prompt, Enter = yes, non-TTY throws. */
-function defaultConfirm(opts: EnsureBinaryOptions): () => Promise<boolean> {
+function defaultConfirm(
+  opts: EnsureBinaryOptions,
+  binary = opts.binary,
+): () => Promise<boolean> {
   return async () => {
     const input = opts.streams?.input ?? process.stdin;
     const output = opts.streams?.output ?? process.stdout;
@@ -99,7 +155,7 @@ function defaultConfirm(opts: EnsureBinaryOptions): () => Promise<boolean> {
       throw new Error("Install confirm requires an interactive terminal.");
     }
     const answer = (
-      await readLineText(`Install ${opts.binary} now? [Y/n] `, {
+      await readLineText(`Install ${binary} now? [Y/n] `, {
         input,
         output,
       })
@@ -114,7 +170,10 @@ function defaultConfirm(opts: EnsureBinaryOptions): () => Promise<boolean> {
 function runInstallArgv(argv: string[]): boolean {
   const [command, ...args] = argv;
   if (!command) return false;
-  const result = spawnSync(command, args, { stdio: "inherit" });
+  const result = spawnSync(command, args, {
+    stdio: "inherit",
+    windowsHide: true,
+  });
   return !result.error && result.status === 0;
 }
 

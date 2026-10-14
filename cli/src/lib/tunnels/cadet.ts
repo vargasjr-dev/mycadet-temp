@@ -1,5 +1,9 @@
 import { STALE_CLI_UPDATE_HINT } from "../stale-cli-hint.js";
-import type { ProviderMeta, ProviderTunnelOptions } from "../tunnel.js";
+import type {
+  TunnelProvider,
+  ProviderMeta,
+  ProviderTunnelOptions,
+} from "../tunnel.js";
 
 /**
  * The managed `cadet` tunnel. It is listed in the shared registry so the
@@ -27,3 +31,10 @@ export async function runCadetTunnel(
 ): Promise<never> {
   throw cadetTunnelComingSoonError("cadet");
 }
+
+export const CADET_PROVIDER: TunnelProvider = {
+  run: runCadetTunnel,
+  async stop() {
+    throw cadetTunnelComingSoonError("cadet");
+  },
+};

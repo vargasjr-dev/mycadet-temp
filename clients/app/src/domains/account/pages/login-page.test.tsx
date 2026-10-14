@@ -4,7 +4,6 @@
  * sign-in screen itself.
  */
 
-import type { ReactNode } from "react";
 import { describe, expect, mock, test } from "bun:test";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 
@@ -20,15 +19,12 @@ import {
   setupAuthEntry,
 } from "@app/domains/account/pages/auth-entry-contract-test-helpers";
 
-mock.module("@web/stores/auth-store", mockAuthStore);
+mock.module("@app/stores/auth-store", mockAuthStore);
 mock.module("@web/runtime/native-auth", mockNativeAuth);
+mock.module("@app/runtime/native-login", mockNativeAuth);
+mock.module("@app/runtime/native-platform", mockNativeAuth);
+mock.module("@app/lib/auth/auth-flow", mockNativeAuth);
 mock.module("@app/lib/auth/hard-navigate", mockHardNavigate);
-// Light passthrough so the shared welcome chrome renders in happy-dom (the
-// avatar-wave canvas has nothing to draw on there), as the onboarding screen
-// tests do with the same layout.
-mock.module("@web/components/onboarding-layout", () => ({
-  OnboardingLayout: ({ children }: { children: ReactNode }) => children,
-}));
 
 const { LoginPage } = await import("@app/domains/account/pages/login-page");
 
@@ -67,7 +63,7 @@ describe("LoginPage native split", () => {
   const renderEntry = () =>
     renderAuthEntry(LoginPage, ROUTE, entryUrl(ROUTE, CHECKOUT));
 
-  test("the browser gets the same welcome screen local mode shows", () => {
+  test("the browser gets the account welcome screen", () => {
     renderEntry();
 
     expect(screen.getByText("Welcome to Cadet")).toBeTruthy();
@@ -78,7 +74,7 @@ describe("LoginPage native split", () => {
     expect(screen.queryByText("Continue without account")).toBeNull();
   });
 
-  test("the wait holds the welcome shell in the browser", () => {
+  test("the wait holds the account shell in the browser", () => {
     authEntry.initializing = true;
     renderEntry();
 
@@ -86,7 +82,7 @@ describe("LoginPage native split", () => {
     expect(screen.queryByText("Welcome to Cadet")).toBeNull();
   });
 
-  test("the wait holds the same welcome shell on native", () => {
+  test("the wait holds the account shell on native", () => {
     authEntry.initializing = true;
     authEntry.native = true;
     renderEntry();
@@ -97,7 +93,7 @@ describe("LoginPage native split", () => {
 
   /**
    * The phone builds are a shell around this same app, so their front door is
-   * the browser's front door: the heading, the body line, and the avatar wave
+   * the browser's front door: the heading, the body line, and the account layout
    * behind them. Only the handoff is native, and only the secondary action
    * differs: signup is a web route the native shell does not offer.
    */

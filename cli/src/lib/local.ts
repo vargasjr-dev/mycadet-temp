@@ -79,7 +79,7 @@ import {
 } from "./process.js";
 import { stopTunnelProcess } from "./tunnel.js";
 import { stripVersionPrefix } from "./version-compat.js";
-import { openLogFile, pipeToLogFile } from "./xdg-log.js";
+import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "./xdg-log.js";
 
 const _require = createRequire(import.meta.url);
 
@@ -839,7 +839,7 @@ async function startDaemonFromSource(
         windowsHide: true,
       })
     : (() => {
-        const daemonLogFd = openLogFile("hatch.log");
+        const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
         const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
           cwd: spawnStateRoot(),
           detached: true,
@@ -912,7 +912,7 @@ async function startDaemonWatchFromSource(
   // detect the in-progress spawn and wait instead of racing.
   writeFileSync(pidFile, "starting", "utf-8");
 
-  const daemonLogFd = openLogFile("hatch.log");
+  const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
   const child = spawn(
     resolveBunExecutable(),
     ["--watch", "run", resolve(mainPath)],
@@ -1699,7 +1699,7 @@ export async function startLocalDaemon(
             windowsHide: true,
           })
         : (() => {
-            const daemonLogFd = openLogFile("hatch.log");
+            const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
             const c = spawn(daemonBinary, [], {
               cwd: spawnStateRoot(),
               detached: true,
@@ -1905,7 +1905,7 @@ export async function startGateway(
     // Use the compiled gateway binary when available (desktop app or compiled
     // CLI invoked from the terminal). In watch mode, skip the bundled binary
     // and use source (bun --watch only works with source files).
-    const gatewayLogFd = openLogFile("hatch.log");
+    const gatewayLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "gateway");
     gateway = spawn(gatewayBinary, [], {
       cwd: spawnStateRoot(),
       detached: true,
@@ -1921,7 +1921,7 @@ export async function startGateway(
     const bunArgs = watch
       ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
       : ["run", gatewayEntry, "--cadet-gateway"];
-    const gwLogFd = openLogFile("hatch.log");
+    const gwLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "gateway");
     gateway = spawn(resolveBunExecutable(), bunArgs, {
       cwd: spawnStateRoot(),
       detached: true,

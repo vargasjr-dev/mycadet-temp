@@ -170,6 +170,10 @@ export interface RootProcessRecord {
   /** The assistant the process fronts, so `cadet ps` can nest the row. */
   assistantId?: string;
   startedAt: string;
+  /** Listening port for the nginx edge. */
+  port?: number;
+  /** Managed process temporarily displaced by a pairing-only tunnel. */
+  previous?: RootProcessRecord;
 }
 
 export type RootProcessKind = "tunnel" | "app";
@@ -247,12 +251,21 @@ export function stampRootProcess(
   });
 }
 
-/** Drop the recorded root process entry, e.g. once the process is stopped. */
-export function clearRootProcess(kind: RootProcessKind): void {
+/** Release a recorded process, preserving a replacement or restoring a displaced record. */
+export function clearRootProcess(
+  kind: RootProcessKind,
+  expectedPid?: number,
+): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
-    if (data[kind] === undefined) return;
-    delete data[kind];
+    const record = data[kind];
+    if (
+      record === undefined ||
+      (expectedPid !== undefined && record.pid !== expectedPid)
+    )
+      return;
+    if (record.previous) data[kind] = record.previous;
+    else delete data[kind];
     writeLockfileUnlocked(data);
   });
 }
@@ -442,7 +455,9 @@ export function loadLatestAssistant(): AssistantEntry | null {
 }
 
 export function findAssistantByName(name: string): AssistantEntry | null {
-  return loadAllAssistants().find((entry) => entry.assistantId === name) ?? null;
+  return (
+    loadAllAssistants().find((entry) => entry.assistantId === name) ?? null
+  );
 }
 
 export function getAssistantDisplayName(entry: AssistantEntry): string {

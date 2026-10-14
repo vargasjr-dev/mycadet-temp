@@ -7,7 +7,7 @@ import { Trans, useTranslation } from "@app/i18n";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import { RotatingWord } from "@app/domains/account/components/rotating-word";
 import { buildProviderCallbackUrl } from "@app/domains/account/provider-callback";
-import { startAuthFlow } from "@web/runtime/native-auth";
+import { startAuthFlow } from "@app/lib/auth/auth-flow";
 
 /**
  * Catalog keys for the rotating headline roles. The copy lives in the catalog;

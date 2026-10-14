@@ -10,6 +10,7 @@ import {
 import {
   formatAssistantReference,
   loadAllAssistants,
+  readRootProcesses,
   resolveTargetAssistant,
   type AssistantEntry,
 } from "../lib/assistant-config";
@@ -37,6 +38,7 @@ import {
   hasWebhookIntegrationsConfigured,
   providerSupportsReservedDomain,
   runProviderTunnel,
+  stopTunnelProcess,
   summarizeStartupFailure,
 } from "../lib/tunnel.js";
 
@@ -64,7 +66,7 @@ function parseArgs(): TunnelArgs {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: cadet tunnel [<name>] --provider <provider> [options]",
+        "Usage: cadet tunnel [<name>] --provider <provider> [options]\n       cadet tunnel stop [<name>]",
       );
       console.log("");
       console.log("Front a locally running assistant with an HTTPS tunnel.");
@@ -122,7 +124,7 @@ function parseArgs(): TunnelArgs {
         `                                URL, and logs stream to tunnel.log in the CLI log directory. A background`,
       );
       console.log(
-        "                                tunnel stops with `kill <pid>`, except when it adopted an already-running",
+        "                                tunnel stops with `cadet tunnel stop`, except when it adopted an already-running",
       );
       console.log(
         "                                tunnel (started outside this command): killing the supervisor then",
@@ -420,12 +422,40 @@ async function spawnDetachedTunnel(): Promise<void> {
   if (adopted) {
     console.log(adoptedTunnelStopNotice(child.pid));
   } else {
-    console.log(`Stop with: kill ${child.pid}`);
+    console.log("Stop with: cadet tunnel stop");
   }
 }
 
 export const tunnel = Object.assign(
   async function tunnel(): Promise<void> {
+    if (process.argv[3] === "stop") {
+      const args = process.argv.slice(4);
+      if (args.includes("--help") || args.includes("-h")) {
+        console.log("Usage: cadet tunnel stop [<name>]");
+        console.log(
+          "Stop the recorded Cadet-managed tunnel, keeping nginx and the saved domain.",
+        );
+        return;
+      }
+      if (args.some((arg) => arg.startsWith("-")))
+        throw new Error("Usage: cadet tunnel stop [<name>]");
+      const { entry, workspaceDir } = resolveLocalTunnelTarget(
+        args.join(" ") || null,
+      );
+      if (!readRootProcesses().tunnel) {
+        console.log(
+          "No Cadet-managed tunnel is recorded. Externally started tunnels must be stopped directly.",
+        );
+        return;
+      }
+      const stopped = await stopTunnelProcess(entry.assistantId, workspaceDir);
+      console.log(
+        stopped
+          ? "Tunnel stopped. nginx and the saved domain are unchanged."
+          : "No running tunnel found; cleared stale tunnel state.",
+      );
+      return;
+    }
     const { assistantName, provider, domain, clearDomain, foreground } =
       parseArgs();
 

@@ -37,6 +37,7 @@ let getSessionGates: Array<() => void> | null = null;
 let mockIsGatewayAuth = false;
 let mockIsLocalClient = false;
 let mockIsCadetCloudRemote = false;
+let mockIsServedGatewayRuntime = false;
 // The assistant `getSelectedAssistant()` resolves; `undefined` means none selected.
 let mockSelectedAssistant: { assistantId: string; cloud: string } | undefined;
 // The entries `getLockfileAssistant(id)` resolves against.
@@ -228,6 +229,7 @@ mock.module("@/lib/local-mode", () => ({
   isCloudAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   isCadetCloudRemote: () => mockIsCadetCloudRemote,
+  isServedGatewayRuntime: () => mockIsServedGatewayRuntime,
   getCloudAssistants: () => mockCloudAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,
@@ -465,6 +467,7 @@ beforeEach(() => {
   mockIsGatewayAuth = false;
   mockIsLocalClient = false;
   mockIsCadetCloudRemote = false;
+  mockIsServedGatewayRuntime = false;
   mockSelectedAssistant = undefined;
   mockLockfileAssistants = [];
   mockCloudAssistants = [];
@@ -558,6 +561,41 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
+  });
+
+  test("initSession on the public pair page settles unauthenticated without pinging anything", async () => {
+    mockIsGatewayAuth = true;
+    window.history.pushState({}, "", "/assistant/pair");
+    try {
+      await useAuthStore.getState().initSession();
+
+      // The pair page's session comes from the pairing flow itself: no
+      // guardian-refresh ping, no local prime, no cloud probe.
+      expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+      expect(
+        primeLocalGatewayConnectionWithStartupRetryMock,
+      ).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
+
+  test("initSession on a served-gateway runtime skips the local prime and settles fast", async () => {
+    mockIsGatewayAuth = true;
+    mockIsServedGatewayRuntime = true;
+
+    await useAuthStore.getState().initSession();
+
+    // The boot ping still runs (it is the paired-device restore path)...
+    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    // ...but the desktop prime machinery (its 90s startup ride-out) never
+    // does, so the route guard can route an unpaired device to the pair
+    // page immediately.
+    expect(
+      primeLocalGatewayConnectionWithStartupRetryMock,
+    ).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
   test("initSession leaves remote-gateway mode unauthenticated when cookie refresh fails and no token exists", async () => {

@@ -52,7 +52,6 @@ import {
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { printInstanceDetails } from "./instance-details.js";
 import { checkProviderApiKey } from "./api-key-check.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
 import {
   describeLoginError,
   ensureCloudLoginInteractive,
@@ -156,8 +155,6 @@ export interface HatchLocalParams {
   name?: string | null;
   /** Build from a local source tree and hot-reload on change. */
   watch?: boolean;
-  /** Stay attached after hatch and poll the gateway until it stops. */
-  keepAlive?: boolean;
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
   /** Extra env vars forwarded into the assistant process. */
@@ -192,13 +189,7 @@ export interface HatchLocalResult {
 export async function hatchLocal(
   params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
-  const {
-    name,
-    watch = false,
-    keepAlive = false,
-    configValues = {},
-    flagEnvVars = {},
-  } = params;
+  const { name, watch = false, configValues = {}, flagEnvVars = {} } = params;
   const reporter = params.reporter ?? consoleLifecycleReporter;
   const verbose = params.verbose ?? false;
   const setupProviderCredentials = params.setupProviderCredentials !== false;
@@ -453,47 +444,6 @@ export async function hatchLocal(
     localUrl: `http://127.0.0.1:${resources.gatewayPort}`,
     guardianAccessToken,
   };
-
-  if (keepAlive) {
-    const healthUrl = `http://127.0.0.1:${resources.gatewayPort}/healthz`;
-    const healthTarget = "Gateway";
-    const POLL_INTERVAL_MS = 5000;
-    const MAX_FAILURES = 3;
-    let consecutiveFailures = 0;
-
-    const shutdown = async (): Promise<void> => {
-      reporter.log("\nShutting down local processes...");
-      await stopLocalProcesses(resources);
-      process.exit(0);
-    };
-
-    process.on("SIGTERM", () => void shutdown());
-    process.on("SIGINT", () => void shutdown());
-
-    // Poll the health endpoint until it stops responding.
-    while (true) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      try {
-        const res = await loopbackSafeFetch(healthUrl, {
-          signal: AbortSignal.timeout(3000),
-        });
-        if (res.ok) {
-          consecutiveFailures = 0;
-        } else {
-          consecutiveFailures++;
-        }
-      } catch {
-        consecutiveFailures++;
-      }
-      if (consecutiveFailures >= MAX_FAILURES) {
-        reporter.log(
-          `\n⚠️  ${healthTarget} stopped responding — shutting down.`,
-        );
-        await stopLocalProcesses(resources);
-        process.exit(1);
-      }
-    }
-  }
 
   return result;
 }

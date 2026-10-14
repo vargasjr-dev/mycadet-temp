@@ -62,7 +62,7 @@ function writeLockfile(entry: AssistantEntry): void {
   const lockfileDir = process.env.CADET_LOCKFILE_DIR!;
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
-    join(lockfileDir, ".cadet.lock.json"),
+    join(lockfileDir, "lockfile.json"),
     JSON.stringify(
       {
         assistants: [entry],
@@ -117,6 +117,10 @@ function installFetchStub(
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    if (url.endsWith("/v1/config/llm/default-provider")) {
+      return Response.json({ provider: "anthropic" });
     }
 
     if (url.endsWith("/v1/secrets/read")) {
@@ -189,7 +193,9 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/v1/secrets/read");
+    expect(fetchCalls[0].url).toBe(
+      "http://127.0.0.1:3000/v1/config/llm/default-provider",
+    );
     expect(fetchCalls[0].headers.get("Authorization")).toBe(
       "Bearer guardian-token",
     );
@@ -245,7 +251,9 @@ describe("setup command", () => {
     // gate instead of burning retry attempts against it.
     expect(fetchCalls[0].url).toBe("http://127.0.0.1:3000/readyz");
     expect(fetchCalls[1].url).toBe("http://127.0.0.1:3000/v1/guardian/init");
-    expect(fetchCalls[2].url).toBe("http://127.0.0.1:3000/v1/secrets/read");
+    expect(fetchCalls[2].url).toBe(
+      "http://127.0.0.1:3000/v1/config/llm/default-provider",
+    );
     expect(fetchCalls[2].headers.get("Authorization")).toBe(
       "Bearer leased-guardian-token",
     );
@@ -288,7 +296,9 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("https://assistant.example/v1/secrets/read");
+    expect(fetchCalls[0].url).toBe(
+      "https://assistant.example/v1/config/llm/default-provider",
+    );
     expect(fetchCalls[0].headers.get("Authorization")).toBe(
       "Bearer entry-token",
     );

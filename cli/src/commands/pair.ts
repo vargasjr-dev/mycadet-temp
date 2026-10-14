@@ -586,6 +586,10 @@ export const pair = Object.assign(
     console.log(qr);
   });
   console.log("");
+  console.log("Or enter this code on the pairing page:");
+  console.log("");
+  console.log(`  ${challenge.deviceCode}`);
+  console.log("");
   if (appUrl) {
     console.log("The QR opens the Cadet app. App link:");
     console.log("");
@@ -598,7 +602,9 @@ export const pair = Object.assign(
   console.log("");
   console.log(`  ${pairUrl}`);
   console.log("");
-  console.log(`On another computer, run:  cadet connect import "${pairUrl}"`);
+  console.log("Or on another computer, run:");
+  console.log("");
+  console.log(`  cadet connect import "${pairUrl}"`);
   console.log("");
   console.log(`Expires: ${challenge.expiresAt}`);
 },

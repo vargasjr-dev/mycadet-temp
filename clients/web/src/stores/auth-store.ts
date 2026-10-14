@@ -53,6 +53,7 @@ import {
   getSelectedAssistant,
   isPairedAssistant,
   isCadetCloudRemote,
+  isServedGatewayRuntime,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
@@ -177,6 +178,14 @@ type AuthSet = (
 let previousUserId: string | null = null;
 let broadcastChannel: BroadcastChannel | null = null;
 let suppressPlatformProbe = false;
+
+/**
+ * Whether the app booted on the public `/assistant/pair` route (prefix-
+ * tolerant: tunnel-served deployments live under `/assistant-123/…`).
+ */
+function onPublicPairingRoute(): boolean {
+  return /\/assistant\/pair\/?$/.test(window.location.pathname);
+}
 
 const GATEWAY_LOCAL_USER: AuthUser = {
   kind: "local",
@@ -981,6 +990,18 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       set({ ...authenticatedLocalUser(), cloudSession: "present" });
       return;
     }
+
+    // The public pair page establishes its session through the pairing flow
+    // itself (device-code exchange). The boot ping below is a
+    // guaranteed-wasted 401 there — an unpaired device holds no credential
+    // the guardian-refresh endpoint accepts — and the cloud-session probe
+    // has no /_allauth to reach through a cadet's edge. Settle
+    // unauthenticated; an approved pairing activates the session directly
+    // from the page.
+    if (onPublicPairingRoute()) {
+      await endSession(set, { keepCloudSession: true });
+      return;
+    }
     // Gateway-token JWT scheme — refresh what we hold, else prime below.
     if (await hasRemoteGatewaySessionAfterRefresh()) {
       set({ ...authenticatedLocalUser(), cloudSession: "absent" });
@@ -995,6 +1016,17 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     }
 
     if (isGatewayAuthEnabled()) {
+      if (isServedGatewayRuntime()) {
+        // A served-gateway browser's whole session restore is the boot ping
+        // above. The local prime (daemon guardian mint + the startup
+        // ride-out budget) is desktop machinery: on a remote browser it
+        // burns its 90s retry budget against the edge before failing,
+        // stalling the route guard on /assistant/ the whole time. Settle
+        // unauthenticated immediately so the guard can route an unpaired
+        // device to the pair page.
+        await endSession(set, { keepCloudSession: true });
+        return;
+      }
       try {
         // Ride out the gateway's startup window: on reboot the gateway (a
         // Login Item) restarts concurrently with the app. The mint fails to

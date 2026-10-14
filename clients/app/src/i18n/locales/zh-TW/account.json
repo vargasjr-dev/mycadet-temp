@@ -86,5 +86,11 @@
     "loopbackStateMismatch": "登入失敗：狀態不符。請再試一次。",
     "loopbackNoToken": "登入失敗：未收到工作階段權杖。請再試一次。",
     "loopbackInvalidToken": "登入失敗：工作階段權杖無效。"
+  },
+  "welcome": {
+    "title": "歡迎使用 Cadet",
+    "body": "您的專屬智慧助理近在咫尺。",
+    "cancel": "取消",
+    "logIn": "登入"
   }
 }

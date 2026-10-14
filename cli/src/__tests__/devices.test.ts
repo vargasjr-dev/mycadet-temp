@@ -26,6 +26,7 @@ const ORIGINAL_FETCH = globalThis.fetch;
 
 import { createHash } from "node:crypto";
 
+import * as stepRunner from "../lib/step-runner.js";
 import { devices } from "../commands/devices.js";
 import { saveAssistantEntry } from "../lib/assistant-config.js";
 import { computeDeviceId } from "../lib/guardian-token.js";
@@ -100,6 +101,67 @@ describe("cadet devices", () => {
     fetchCalls = [];
     // Default stub: any unexpected call is recorded and 500s.
     stubFetch(() => jsonResponse({ error: "unexpected" }, 500));
+  });
+
+  test("Docker devices list and revoke execute inside the gateway without a host port", async () => {
+    saveAssistantEntry({
+      assistantId: "docker-fixture",
+      cloud: "docker",
+      runtimeUrl: "https://tunnel.example",
+    });
+    const calls: string[][] = [];
+    const docker = spyOn(stepRunner, "execOutput").mockImplementation(
+      async (_command, args) => {
+        calls.push(args);
+        return JSON.stringify({
+          status: 200,
+          body: args.some((arg) => arg.endsWith("/revoke"))
+            ? '{"revoked":true}'
+            : '{"devices":[]}',
+        });
+      },
+    );
+    try {
+      process.argv = ["bun", "cadet", "devices", "docker-fixture", "--json"];
+      expect((await runDevices()).exited).toBe(false);
+      process.argv = [
+        "bun",
+        "cadet",
+        "devices",
+        "revoke",
+        "fixture-device",
+        "docker-fixture",
+        "--yes",
+        "--json",
+      ];
+      expect((await runDevices()).exited).toBe(false);
+      expect(calls).toHaveLength(2);
+      expect(calls[0].slice(0, 2)).toEqual(["exec", "docker-fixture-gateway"]);
+      expect(calls[0]).toContain("http://127.0.0.1:7830/v1/devices");
+      expect(calls[1]).toContain("http://127.0.0.1:7830/v1/devices/revoke");
+      expect(fetchCalls).toHaveLength(0);
+    } finally {
+      docker.mockRestore();
+    }
+  });
+
+  test("Docker gateway output rejects malformed status and body fields", async () => {
+    saveAssistantEntry({
+      assistantId: "docker-invalid",
+      cloud: "docker",
+      runtimeUrl: "https://tunnel.example",
+    });
+    const docker = spyOn(stepRunner, "execOutput").mockResolvedValue(
+      '{"status":"200","body":{}}',
+    );
+    try {
+      process.argv = ["bun", "cadet", "devices", "docker-invalid", "--json"];
+      const result = await runDevices();
+      expect(result.exited).toBe(true);
+      expect(result.errors).toContain("could not reach the gateway");
+    } finally {
+      docker.mockRestore();
+    }
   });
 
   afterEach(() => {

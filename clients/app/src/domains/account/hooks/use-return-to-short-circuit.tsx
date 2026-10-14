@@ -3,14 +3,14 @@ import { Navigate, useSearchParams } from "react-router";
 
 import { requiresFullPageNavigation } from "@app/domains/account/full-page-navigation";
 
-import { requiresCloudSession } from "@web/domains/account/login-flow";
+import { requiresCloudSession } from "@app/domains/account/requires-cloud-session";
 import { sanitizeReturnTo } from "@app/utils/return-to";
-import { useCloudGateWithPending } from "@web/hooks/use-cloud-gate";
+import { useAccountCloudGate } from "@app/hooks/use-account-cloud-gate";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import {
   useIsAuthenticated,
   useIsSessionInitializing,
-} from "@web/stores/auth-store";
+} from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 
 /**
@@ -71,7 +71,7 @@ export function useReturnToShortCircuit(): ReturnToShortCircuit {
   const [searchParams] = useSearchParams();
   const isAuthenticated = useIsAuthenticated();
   const isSessionInitializing = useIsSessionInitializing();
-  const cloudGate = useCloudGateWithPending();
+  const cloudGate = useAccountCloudGate();
 
   const rawReturnTo = searchParams.get("returnTo");
   const destination = sanitizeReturnTo(rawReturnTo, routes.assistant);

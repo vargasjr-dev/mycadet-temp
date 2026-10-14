@@ -25,7 +25,12 @@ import { getCurrentEnvironment } from "../environments/resolve.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine } from "../process.js";
 import { z } from "zod";
-import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
+import type {
+  TunnelProvider,
+  ProviderMeta,
+  ProviderTunnelResult,
+} from "../tunnel.js";
 import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
@@ -787,3 +792,8 @@ export async function runNgrokTunnel(
   // Unreachable: the loop only exits via return, process.exit, or a throw.
   throw new Error("ngrok tunnel did not start.");
 }
+
+export const NGROK_PROVIDER: TunnelProvider = {
+  run: runNgrokTunnel,
+  stop: (opts) => stopOwnedTunnelAgent(opts, isNgrokProcess, "ngrok"),
+};

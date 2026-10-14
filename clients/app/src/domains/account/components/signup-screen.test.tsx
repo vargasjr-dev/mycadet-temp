@@ -14,7 +14,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 
-import * as nativeAuth from "@web/runtime/native-auth";
+import * as nativeAuth from "@app/lib/auth/auth-flow";
 
 /** Settlers for the flows started so far, so each one stays pending. */
 const startedFlows: {
@@ -22,7 +22,7 @@ const startedFlows: {
   reject: (err: unknown) => void;
 }[] = [];
 
-mock.module("@web/runtime/native-auth", (): typeof nativeAuth => ({
+mock.module("@app/lib/auth/auth-flow", (): typeof nativeAuth => ({
   ...nativeAuth,
   startAuthFlow: () =>
     new Promise<void>((resolve, reject) => {

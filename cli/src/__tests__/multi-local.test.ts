@@ -43,14 +43,14 @@ afterAll(() => {
 
 function writeLockfile(data: unknown): void {
   writeFileSync(
-    join(testDir, ".cadet.lock.json"),
+    join(testDir, "lockfile.json"),
     JSON.stringify(data, null, 2),
   );
 }
 
 function readLockfileRaw(): Record<string, unknown> {
   return JSON.parse(
-    readFileSync(join(testDir, ".cadet.lock.json"), "utf-8"),
+    readFileSync(join(testDir, "lockfile.json"), "utf-8"),
   ) as Record<string, unknown>;
 }
 
@@ -67,7 +67,7 @@ const makeEntry = (
 
 function resetLockfile(): void {
   try {
-    rmSync(join(testDir, ".cadet.lock.json"));
+    rmSync(join(testDir, "lockfile.json"));
   } catch {
     // file may not exist
   }

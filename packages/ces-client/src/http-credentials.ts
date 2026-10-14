@@ -143,6 +143,19 @@ export interface CesHttpCredentialClient {
 // Factory
 // ---------------------------------------------------------------------------
 
+function listErrorContext(
+  response: Response,
+  path: string,
+): Record<string, unknown> {
+  const requestId = response.headers.get("x-ces-error-id");
+  return {
+    status: response.status,
+    method: "GET",
+    path,
+    ...(requestId && /^[a-f0-9-]{36}$/i.test(requestId) ? { requestId } : {}),
+  };
+}
+
 export function createCesHttpCredentialClient(
   config: CesHttpCredentialConfig,
   logger: CesHttpLogger,
@@ -298,7 +311,7 @@ export function createCesHttpCredentialClient(
         if (!res) return { accounts: [], unreachable: true };
         if (!res.ok) {
           logger.warn(
-            { status: res.status },
+            listErrorContext(res, "/v1/credentials"),
             "CES credential list returned non-OK status",
           );
           return { accounts: [], unreachable: true };
@@ -399,6 +412,10 @@ export function createCesHttpCredentialClient(
           return { records: [], unreachable: true };
         }
         if (!res.ok) {
+          logger.warn(
+            listErrorContext(res, "/v1/metadata"),
+            "CES metadata list returned non-OK status",
+          );
           return { records: [], unreachable: true };
         }
         const data = (await res.json()) as {

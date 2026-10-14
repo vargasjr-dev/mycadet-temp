@@ -32,7 +32,7 @@ const submitProviderSignup = mock(() =>
   Promise.resolve({ ok: true as const, data: {} }),
 );
 
-mock.module("@web/lib/auth/allauth-client", () => ({
+mock.module("@app/lib/auth/provider-signup-client", () => ({
   getProviderSignup,
   submitProviderSignup,
   isConflict: () => false,
@@ -44,7 +44,7 @@ mock.module("@web/assistant/cloud-assistants-sync", () => ({
 
 const refreshSession = mock(async () => true);
 
-mock.module("@web/stores/auth-store", () => ({
+mock.module("@app/stores/auth-store", () => ({
   useAuthStore: {
     use: {
       refreshSession: () => refreshSession,

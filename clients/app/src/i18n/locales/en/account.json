@@ -86,5 +86,11 @@
     "loopbackStateMismatch": "Login failed: state mismatch. Please try again.",
     "loopbackNoToken": "Login failed: no session token received. Please try again.",
     "loopbackInvalidToken": "Login failed: invalid session token."
+  },
+  "welcome": {
+    "title": "Welcome to Cadet",
+    "body": "Your own personal intelligence is just a step away.",
+    "cancel": "Cancel",
+    "logIn": "Log In"
   }
 }

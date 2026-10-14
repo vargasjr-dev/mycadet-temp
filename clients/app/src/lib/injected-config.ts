@@ -11,6 +11,8 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
 export const InjectedConfigSchema = z.object({
   remote: z.enum(["local", "docker", "custom", "cloud"]).optional(),
   cloudUrl: z.string().optional(),
+  /** Platform login UI base for localhost OAuth handoff. */
+  webUrl: z.string().optional(),
   /** Serving assistant's display name (remote-web ingress configs only). */
   assistantName: z.string().optional(),
   /** Serving assistant's id (remote-web ingress configs only). */

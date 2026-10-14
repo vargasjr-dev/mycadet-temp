@@ -10,7 +10,7 @@ import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
-import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
+import { readAmbientFlagEnvVars } from "../lib/flag-args";
 import { hatchLocal } from "../lib/hatch-local";
 import {
   getCloudUrl,
@@ -23,37 +23,26 @@ const DEFAULT_REMOTE: RemoteHost = "local";
 
 interface HatchArgs {
   verbose: boolean;
-  keepAlive: boolean;
   name: string | null;
   remote: RemoteHost;
   watch: boolean;
   sourcePath: string | null;
   configValues: Record<string, string>;
   flagEnvVars: Record<string, string>;
-  analyze: boolean;
-  disableCloud: boolean;
   netnsContainer: string | null;
   gatewayPort: number | null;
   assistantCaCert: string | null;
 }
 
 function parseArgs(): HatchArgs {
-  const { envVars: cliFlagVars, remaining: args } = parseFeatureFlagArgs(
-    process.argv.slice(3),
-  );
-  const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
-  const disableCloudAmbient =
-    process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
-  let disableCloud =
-    disableCloudAmbient === "true" || disableCloudAmbient === "1";
+  const args = process.argv.slice(3);
+  const flagEnvVars = readAmbientFlagEnvVars();
   let verbose = false;
-  let keepAlive = false;
   let name: string | null = null;
   let remote: RemoteHost = DEFAULT_REMOTE;
   let watch = false;
   let sourcePath: string | null = null;
   const configValues: Record<string, string> = {};
-  let analyze = false;
   let netnsContainer: string | null = null;
   let gatewayPort: number | null = null;
   let assistantCaCert: string | null = null;
@@ -69,47 +58,33 @@ function parseArgs(): HatchArgs {
       console.log(
         "  -v, --verbose             Show service startup logs and extended next steps",
       );
-      console.log("  --name <name>             Custom instance name");
+      console.log("  --name <name>             Custom name for this assistant");
       console.log(
         "  --remote <host>           Remote host (local, docker, custom, cloud)",
       );
       console.log(
-        "  --watch                   Run assistant and gateway in watch mode (hot reload on source changes)",
+        "  --watch                   Run Cadet in watch mode with hot reload on source changes",
       );
       console.log(
-        "  --source <path>           Build images from a local source tree at <path>. Useful for callers that want each run to pick up local CLI changes.",
-      );
-      console.log(
-        "  --keep-alive              Stay alive after hatch, exit when gateway stops",
+        "  --source <path>           Build images from a local source tree at <path>",
       );
       console.log(
         "  --config <key=value>      Set a workspace config value (repeatable)",
       );
       console.log(
-        "  --flag <key=value>        Set a feature flag override as CADET_FLAG_<KEY> env var (repeatable)",
+        "  --netns-container <name>  Join an existing container's network namespace instead of creating a per-instance network.",
       );
       console.log(
-        "  --analyze                 Emit a structured hatch-timing log line on stdout",
+        "  --gateway-port <port>     Use an explicit host port for accessing the assistant.",
       );
       console.log(
-        "  --disable-cloud        Suppress all outbound platform API calls",
-      );
-      console.log(
-        "  --netns-container <name>  Join an existing container's network namespace (docker target only) instead of creating a per-instance network. The namespace owner publishes host ports, so --gateway-port is required.",
-      );
-      console.log(
-        "  --gateway-port <port>     Use an explicit host port for the gateway runtime URL instead of auto-allocating. Required with --netns-container.",
-      );
-      console.log(
-        "  --assistant-ca-cert <path>  Trust an extra PEM CA bundle in the assistant container (NODE_EXTRA_CA_CERTS) from process start. Useful behind a TLS-terminating egress proxy.",
+        "  --assistant-ca-cert <path>  Trust an extra PEM CA bundle in the assistant container from process start.",
       );
       process.exit(0);
     } else if (arg === "-v" || arg == "--verbose") {
       verbose = true;
     } else if (arg === "--watch") {
       watch = true;
-    } else if (arg === "--analyze") {
-      analyze = true;
     } else if (arg === "--source") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
@@ -118,8 +93,6 @@ function parseArgs(): HatchArgs {
       }
       sourcePath = next;
       i++;
-    } else if (arg === "--keep-alive") {
-      keepAlive = true;
     } else if (arg === "--name") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
@@ -163,8 +136,6 @@ function parseArgs(): HatchArgs {
       const value = next.slice(eqIndex + 1);
       configValues[key] = value;
       i++;
-    } else if (arg === "--disable-cloud") {
-      disableCloud = true;
     } else if (arg === "--netns-container") {
       const next = args[i + 1];
       if (!next || next.startsWith("-")) {
@@ -194,7 +165,7 @@ function parseArgs(): HatchArgs {
       i++;
     } else {
       console.error(
-        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --keep-alive, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --flag <key=value>, --analyze, --disable-cloud, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
+        `Error: Unknown argument '${arg}'. Valid options: -v, --verbose, --watch, --source <path>, --name <name>, --remote <${VALID_REMOTE_HOSTS.join("|")}>, --config <key=value>, --netns-container <name>, --gateway-port <port>, --assistant-ca-cert <path>`,
       );
       process.exit(1);
     }
@@ -202,15 +173,12 @@ function parseArgs(): HatchArgs {
 
   return {
     verbose,
-    keepAlive,
     name,
     remote,
     watch,
     sourcePath,
     configValues,
     flagEnvVars,
-    analyze,
-    disableCloud,
     netnsContainer,
     gatewayPort,
     assistantCaCert,
@@ -230,24 +198,16 @@ export const hatch = Object.assign(
 
   const {
     verbose,
-    keepAlive,
     name,
     remote,
     watch,
     sourcePath,
     configValues,
     flagEnvVars,
-    analyze,
-    disableCloud,
     netnsContainer,
     gatewayPort,
     assistantCaCert,
   } = parseArgs();
-
-  if (disableCloud) {
-    process.env.CADET_DISABLE_CLOUD = "true";
-    flagEnvVars.CADET_DISABLE_CLOUD = "true";
-  }
 
   if (watch && remote !== "local" && remote !== "docker") {
     console.error(
@@ -286,7 +246,6 @@ export const hatch = Object.assign(
     await hatchLocal({
       name,
       watch,
-      keepAlive,
       configValues,
       flagEnvVars,
       verbose,
@@ -301,7 +260,6 @@ export const hatch = Object.assign(
       configValues,
       flagEnvVars,
       sourcePath,
-      analyze,
       netnsContainer: netnsContainer ?? undefined,
       gatewayPort: gatewayPort ?? undefined,
       assistantCaCertPath: assistantCaCert ?? undefined,

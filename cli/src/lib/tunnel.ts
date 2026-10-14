@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
   loadAllAssistants,
@@ -24,26 +26,24 @@ import { waitForDaemonReady } from "./http-client.js";
 import {
   hasWebhookIntegrations,
   IngressConfigSchema,
-  isNgrokProcess,
   maybeStartNgrokTunnel,
   NGROK_TUNNEL_META,
-  runNgrokTunnel,
+  NGROK_PROVIDER,
   saveNgrokDomain,
 } from "./tunnels/ngrok.js";
-import { stopProcess } from "./process.js";
 import { shellArg } from "./shell-arg.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
   selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
-import { runCadetTunnel, CADET_TUNNEL_META } from "./tunnels/cadet.js";
+import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
 import {
-  runCloudflareTunnel,
+  CLOUDFLARE_PROVIDER,
   CLOUDFLARE_TUNNEL_META,
 } from "./tunnels/cloudflare.js";
 import {
-  runTailscaleTunnel,
+  TAILSCALE_PROVIDER,
   TAILSCALE_TUNNEL_META,
 } from "./tunnels/tailscale.js";
 
@@ -119,6 +119,25 @@ export interface ProviderTunnelResult {
   waitForExit: Promise<void>;
 }
 
+export interface ProviderStopOptions {
+  record: RootProcessRecord;
+  assistantId?: string;
+  workspaceDir?: string;
+}
+
+export interface TunnelProvider {
+  run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
+  stop(opts: ProviderStopOptions): Promise<boolean>;
+}
+
+const providers: Record<TunnelProviderName, TunnelProvider> = {
+  ngrok: NGROK_PROVIDER,
+  cloudflare: CLOUDFLARE_PROVIDER,
+  tailscale: TAILSCALE_PROVIDER,
+  cadet: CADET_PROVIDER,
+};
+const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
+
 /**
  * Run a tunnel provider by name — the dispatch `cadet tunnel` uses, so the
  * command layer never names a provider implementation directly. Notifies the
@@ -140,29 +159,7 @@ function runProvider(
   provider: TunnelProviderName,
   opts: ProviderTunnelOptions,
 ): Promise<ProviderTunnelResult> {
-  const base = {
-    port: opts.port,
-    assistantId: opts.assistantId,
-    workspaceDir: opts.workspaceDir,
-  };
-  if (provider === "ngrok") {
-    return runNgrokTunnel({
-      ...base,
-      ...(opts.domain ? { domain: opts.domain } : {}),
-    });
-  }
-  if (provider === "cadet") {
-    return runCadetTunnel(opts);
-  }
-  if (provider === "cloudflare") {
-    return runCloudflareTunnel(base);
-  }
-  return runTailscaleTunnel({
-    ...base,
-    ...(opts.preserveIngressUrl
-      ? { preserveIngressUrl: opts.preserveIngressUrl }
-      : {}),
-  });
+  return providers[provider].run(opts);
 }
 
 /** Drop the saved reserved-domain record (providers that keep one). */
@@ -176,13 +173,31 @@ export function clearReservedDomain(): void {
  * signaling — a stale entry after PID reuse must not kill an unrelated
  * process.
  */
-export async function stopTunnelProcess(): Promise<void> {
+export async function stopTunnelProcess(
+  assistantId?: string,
+  workspaceDir?: string,
+): Promise<boolean> {
   const recorded: RootProcessRecord | undefined = readRootProcesses().tunnel;
-  if (!recorded) return;
-  if (isNgrokProcess(recorded.pid)) {
-    await stopProcess(recorded.pid, "tunnel");
+  if (!recorded) return false;
+  if (
+    assistantId &&
+    recorded.assistantId &&
+    recorded.assistantId !== assistantId
+  ) {
+    throw new Error(
+      `The recorded tunnel belongs to '${recorded.assistantId}', not '${assistantId}'.`,
+    );
   }
-  clearRootProcess("tunnel");
+  const provider = providerNameSchema.parse(
+    recorded.provider ?? DEFAULT_TUNNEL_PROVIDER,
+  );
+  const stopped = await providers[provider].stop({
+    record: recorded,
+    assistantId,
+    workspaceDir,
+  });
+  clearRootProcess("tunnel", recorded.pid);
+  return stopped;
 }
 
 /**

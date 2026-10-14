@@ -6,6 +6,7 @@
  * login when the user picks that provider).
  */
 
+import { pollingCloudLogin } from "./cloud-login-poll.js";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
@@ -37,7 +38,7 @@ import {
   generatePkcePair,
 } from "./workos-pkce.js";
 
-const LOGIN_TIMEOUT_MS = 120_000; // 2 minutes
+const LOGIN_TIMEOUT_MS = 300_000;
 
 function escapeHtml(s: string): string {
   return s
@@ -258,6 +259,7 @@ export function startLoopbackListener(
 
 /** App-held WorkOS PKCE login */
 export async function workosPkceLogin(cloudUrl: string): Promise<string> {
+  if (!process.stdin.isTTY) return pollingCloudLogin(cloudUrl);
   const clientId = await fetchWorkosClientId(cloudUrl);
   const { verifier, challenge } = generatePkcePair();
   const state = randomBytes(32).toString("hex");

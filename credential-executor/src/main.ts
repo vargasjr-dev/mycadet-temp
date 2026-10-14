@@ -51,6 +51,7 @@ import {
 } from "./http/credential-routes.js";
 import { handleLogExportRoute } from "./http/log-export-routes.js";
 import { isLoopbackAddress } from "./http/loopback-address.js";
+import { withCesHttpErrorLogging } from "./http/request-errors.js";
 import { handleMetadataRoute } from "./http/metadata-routes.js";
 import { CES_MIGRATIONS } from "./migrations/registry.js";
 import { runCesMigrations } from "./migrations/runner.js";
@@ -283,29 +284,35 @@ function startHealthServer(
         return new Response("Not Found", { status: 404 });
       }
 
-      // Credential CRUD routes (only if service token is configured)
-      if (credentialDeps) {
-        const metadataResponse = await handleMetadataRoute(req);
-        if (metadataResponse) {
-          return metadataResponse;
-        }
-        const credentialResponse = await handleCredentialRoute(
-          req,
-          credentialDeps,
-        );
-        if (credentialResponse) {
-          return credentialResponse;
-        }
-      }
-
-      // Log export route
-      const logExportResponse = await handleLogExportRoute(
+      return withCesHttpErrorLogging(
         req,
-        getCesLogDir("managed"),
-      );
-      if (logExportResponse) return logExportResponse;
+        async () => {
+          // Credential CRUD routes (only if service token is configured)
+          if (credentialDeps) {
+            const metadataResponse = await handleMetadataRoute(req);
+            if (metadataResponse) {
+              return metadataResponse;
+            }
+            const credentialResponse = await handleCredentialRoute(
+              req,
+              credentialDeps,
+            );
+            if (credentialResponse) {
+              return credentialResponse;
+            }
+          }
 
-      return new Response("Not Found", { status: 404 });
+          // Log export route
+          const logExportResponse = await handleLogExportRoute(
+            req,
+            getCesLogDir("managed"),
+          );
+          if (logExportResponse) return logExportResponse;
+
+          return new Response("Not Found", { status: 404 });
+        },
+        log,
+      );
     },
   });
 

@@ -2,8 +2,8 @@ import { readInjectedConfig } from "@app/lib/injected-config";
 import { getElectronBridge } from "@app/runtime/electron-bridge";
 
 /** Browser clients use their same-origin proxy; Electron uses its cloud origin. */
-export function authConfigEndpoint(): string {
-  if (!getElectronBridge()) return "/_allauth/browser/v1/config";
+export function authEndpoint(path: string): string {
+  if (!getElectronBridge()) return `/_allauth/browser/v1/${path}`;
   const origin = readInjectedConfig().cloudUrl || window.location.origin;
-  return new URL("/_allauth/app/v1/config", origin).href;
+  return new URL(`/_allauth/app/v1/${path}`, origin).href;
 }

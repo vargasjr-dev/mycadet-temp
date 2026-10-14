@@ -1,4 +1,16 @@
-import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+import { z } from "zod";
+import {
+  clearRootProcess,
+  readRootProcesses,
+  stampRootProcess,
+} from "../assistant-config.js";
+import { readProcessCommandLine, stopProcess } from "../process.js";
+import type {
+  TunnelProvider,
+  ProviderStopOptions,
+  ProviderMeta,
+  ProviderTunnelResult,
+} from "../tunnel.js";
 
 import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
@@ -7,6 +19,7 @@ import { GATEWAY_PORT } from "../constants.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 import {
   clearIngressUrl,
+  loadRawConfig,
   getDefaultWorkspaceDir,
   readLockfileIngressUrl,
   saveIngressUrl,
@@ -418,6 +431,16 @@ export async function runTailscaleTunnel(
   );
   console.log("or stop it later with: tailscale serve --https=443 off");
 
+  const previous = opts.preserveIngressUrl
+    ? readRootProcesses().tunnel
+    : undefined;
+  stampRootProcess("tunnel", {
+    ...(previous?.provider !== "tailscale" ? { previous } : {}),
+    pid: process.pid,
+    provider: "tailscale",
+    assistantId: opts.assistantId,
+    startedAt: new Date().toISOString(),
+  });
   const teardown = (): void => {
     console.log(
       `\nStopping tailscale serve and clearing the ${publishedLabel}...`,
@@ -441,6 +464,7 @@ export async function runTailscaleTunnel(
       );
     }
     if (shouldClearIngressUrl(result)) {
+      clearRootProcess("tunnel", process.pid);
       retractServeUrl(opts, workspaceDir, previousLockfileIngressUrl);
     } else {
       console.error(
@@ -474,4 +498,58 @@ export const TAILSCALE_TUNNEL_META: ProviderMeta = {
     "pairing only, leaving the saved webhook callback base as it is.",
   ],
   supportsReservedDomain: false,
+};
+
+const stoppedTailscaleStateSchema = z.object({
+  ingress: z
+    .object({
+      publicBaseUrl: z.string().optional(),
+      pairingTunnel: z.object({ provider: z.string() }).optional(),
+    })
+    .optional(),
+});
+
+export async function stopTailscaleTunnel(
+  opts: ProviderStopOptions,
+  deps: TailscaleDeps = {
+    findBinary: async () => probeTailscaleBinary(),
+    run: realRun,
+  },
+): Promise<boolean> {
+  const binary = await deps.findBinary();
+  if (!binary) throw new Error(getTailscaleInstallMessage());
+  const result = stopTailscaleServe(binary, deps);
+  if (result.status !== 0)
+    throw new Error(`Could not stop tailscale serve: ${joinOutput(result)}`);
+  // The serve belongs to tailscaled; only the Cadet supervisor may be signaled.
+  let supervisor = false;
+  try {
+    const command = readProcessCommandLine(opts.record.pid);
+    supervisor =
+      /cadet/i.test(command) && /(?:^|\s)tunnel(?:\s|$)/.test(command);
+  } catch {
+    /* The supervisor may already have exited. */
+  }
+  if (supervisor && opts.record.pid !== process.pid)
+    await stopProcess(opts.record.pid, "tunnel supervisor");
+  if (opts.workspaceDir) {
+    const state = stoppedTailscaleStateSchema.parse(
+      loadRawConfig(opts.workspaceDir),
+    ).ingress;
+    const assistantId = opts.assistantId ?? opts.record.assistantId;
+    retractServeUrl(
+      {
+        assistantId,
+        preserveIngressUrl: state?.pairingTunnel?.provider === "tailscale",
+      },
+      opts.workspaceDir,
+      state?.publicBaseUrl ?? null,
+    );
+  }
+  return true;
+}
+
+export const TAILSCALE_PROVIDER: TunnelProvider = {
+  run: runTailscaleTunnel,
+  stop: stopTailscaleTunnel,
 };
