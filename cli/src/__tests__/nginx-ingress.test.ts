@@ -76,6 +76,7 @@ import {
   MAX_PRESERVED_MODULE_PRELOADS,
   ensureTunnelEdge,
   EDGE_TEMPLATE_VERSION,
+  findWebDistDir,
   startRemoteWebIngress,
   stopContainerTunnelEdge,
   stopIngressNginx,
@@ -456,9 +457,7 @@ describe("buildRemoteWebIndexHtml", () => {
     expect(result).toContain(
       'window.__CADET_CONFIG__={"remote":"docker","apiBaseUrl":"/v1"}',
     );
-    expect(result.indexOf('"webUrl"')).toBeLessThan(
-      result.indexOf('"docker"'),
-    );
+    expect(result.indexOf('"webUrl"')).toBeLessThan(result.indexOf('"docker"'));
   });
 
   test("escapes config JSON before embedding it in a script tag", () => {
@@ -530,21 +529,13 @@ describe("buildRemoteWebIndexHtml", () => {
 
 describe("cloudWebHubUrl", () => {
   test("maps build environments to their cloud SPA base", () => {
-    expect(cloudWebHubUrl("production")).toBe(
-      "https://mycadet.ai/assistant",
-    );
+    expect(cloudWebHubUrl("production")).toBe("https://mycadet.ai/assistant");
     expect(cloudWebHubUrl("staging")).toBe(
       "https://staging.mycadet.ai/assistant",
     );
-    expect(cloudWebHubUrl("dev")).toBe(
-      "https://dev.mycadet.ai/assistant",
-    );
-    expect(cloudWebHubUrl("local")).toBe(
-      "https://dev.mycadet.ai/assistant",
-    );
-    expect(cloudWebHubUrl(undefined)).toBe(
-      "https://dev.mycadet.ai/assistant",
-    );
+    expect(cloudWebHubUrl("dev")).toBe("https://dev.mycadet.ai/assistant");
+    expect(cloudWebHubUrl("local")).toBe("https://dev.mycadet.ai/assistant");
+    expect(cloudWebHubUrl(undefined)).toBe("https://dev.mycadet.ai/assistant");
   });
 });
 
@@ -846,14 +837,19 @@ const PRODUCTION_HUB_URL = "https://mycadet.ai/assistant";
 
 /**
  * Mirror of the SPA config fingerprint the edge records in its ingress state
- * (sha256 over the edge template version and the injected config JSON). Pins
+ * (sha256 over the template, injected config, bundle directory and index). Pins
  * both the injected config shape and the hash format; assumes the
  * production-pinned environment. The version itself is imported rather than
  * mirrored: bumping it is the correct response to any template edit, so a
  * copy here would fail every such edit without naming a defect.
  */
 function spaConfigHash(
-  opts: { assistantName?: string; assistantId?: string } = {},
+  opts: {
+    assistantName?: string;
+    assistantId?: string;
+    indexHtml?: string;
+    webDistDir?: string;
+  } = {},
 ): string {
   return createHash("sha256")
     .update(
@@ -866,6 +862,8 @@ function spaConfigHash(
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
         },
+        webDistDir: opts.webDistDir ?? findWebDistDir(),
+        indexHtml: opts.indexHtml ?? FAKE_INDEX_HTML,
       }),
     )
     .digest("hex");
@@ -1247,6 +1245,7 @@ describe("startRemoteWebIngress", () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
+    mockWebDistPresent();
     const pid = mockRunningEdge(ws, {
       listenPort: 7845,
       gatewayPort: 7830,
@@ -1299,6 +1298,44 @@ describe("startRemoteWebIngress", () => {
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
   });
+
+  for (const drift of ["indexHtml", "webDistDir"] as const) {
+    test(`restarts a detached edge when the web bundle ${drift} changes`, async () => {
+      const ws = makeWorkspace();
+      mockNginxInstalled();
+      mockNginxSpawn();
+      mockWebDistPresent();
+      const pid = mockRunningEdge(ws, {
+        listenPort: 7845,
+        includeWebApp: true,
+        gatewayPort: 7830,
+        remoteWebConfigHash: spaConfigHash({
+          ...(drift === "indexHtml"
+            ? {
+                indexHtml:
+                  '<html><head><script src="/assistant/assets/old.js"></script></head></html>',
+              }
+            : { webDistDir: "/old-release/dist" }),
+        }),
+      });
+      const edge = mockKillableNginx(pid);
+      const result = await startRemoteWebIngress({
+        workspaceDir: ws,
+        gatewayPort: 7830,
+      });
+      expect(result).toMatchObject({ status: "started", listenPort: 7845 });
+      expect(edge.killed()).toBe(true);
+      expect(readConfig(ws).ingress?.nginx?.remoteWebConfigHash).toBe(
+        spaConfigHash(),
+      );
+      expect(
+        realFs.readFileSync(
+          join(ws, "data", "ingress", "assistant-index.html"),
+          "utf-8",
+        ),
+      ).not.toContain("old.js");
+    });
+  }
 
   test("restarts the edge when the injected SPA config drifts from the recorded one", async () => {
     const ws = makeWorkspace();
@@ -1801,6 +1838,7 @@ describe("ensureTunnelEdge", () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
+    mockWebDistPresent();
     const pid = mockRunningEdge(ws, {
       listenPort: 7845,
       includeWebApp: true,

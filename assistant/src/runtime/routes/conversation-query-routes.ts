@@ -685,8 +685,8 @@ function handleGetConfigSchema({ queryParams = {} }: RouteHandlerArgs) {
 }
 
 /**
- * Reject writes that would store a routing-identity provider with a missing
- * or unroutable model (see `routingIdentityModelIssue`). saveRawConfig
+ * Reject incomplete routing-identity profiles and unroutable explicit models.
+ * The partial llm.default base may omit a model. saveRawConfig
  * persists without schema validation, so the parse-time rejection alone
  * would let the pair reach disk and be stripped on the next read — a silent
  * no-op where the user expects a saved override.
@@ -708,9 +708,8 @@ function collectProviderEntries(
       }
     | undefined;
   const entries: [string, { provider?: unknown; model?: unknown }][] = [];
-  // llm.default is a raw compatibility field outside the parsed schema;
-  // profile materialization uses the on-disk blob as its fill base, so it is
-  // checked like the schema-carried sections.
+  // llm.default is a partial base fragment carrying the provider selection.
+  // Validate an explicitly supplied model, but do not require one.
   if (llm?.default) {
     entries.push(["llm.default", llm.default]);
   }
@@ -764,6 +763,9 @@ function assertRoutableIdentityEntries(
     const isManagedName =
       profileName != null && MANAGED_PROFILE_NAMES.has(profileName);
     if (entry.model == null && isManagedName) {
+      continue;
+    }
+    if (label === "llm.default" && entry.model == null) {
       continue;
     }
     const issue = routingIdentityModelIssue(

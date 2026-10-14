@@ -138,6 +138,42 @@ function savedProfile(name: string): Record<string, unknown> {
   >;
 }
 
+describe("partial default-provider config", () => {
+  for (const provider of ["cadet", "chatgpt"]) {
+    test(`timezone PATCH accepts a model-less ${provider} default`, async () => {
+      seedRawConfig({ llm: { default: { provider } } });
+      await patchRoute.handler({
+        body: { ui: { userTimezone: "America/New_York" } },
+      });
+      const saved = committedRaw() as {
+        ui: { userTimezone: string };
+        llm: { default: { provider: string; model?: string } };
+      };
+      expect(saved.ui.userTimezone).toBe("America/New_York");
+      expect(saved.llm.default).toEqual({ provider });
+      expectOneCommitCycle();
+    });
+    test(`PATCH can select ${provider} as default without a model`, async () => {
+      seedRawConfig({});
+      await patchRoute.handler({ body: { llm: { default: { provider } } } });
+      expect(
+        (committedRaw() as { llm: { default: { provider: string } } }).llm
+          .default,
+      ).toEqual({ provider });
+    });
+  }
+  test("an explicit unroutable default model is still rejected", async () => {
+    await expect(
+      patchRoute.handler({
+        body: {
+          llm: { default: { provider: "cadet", model: "not-a-real-model" } },
+        },
+      }),
+    ).rejects.toThrow(/not served by the Cadet Cloud route/);
+    expectNothingCommitted();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // PUT /v1/config/llm/profiles/:name — replace inference profile
 // ---------------------------------------------------------------------------

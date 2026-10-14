@@ -76,7 +76,10 @@ import {
   startLocalDaemon,
   stopLocalProcesses,
 } from "../lib/local.js";
-import { restoreTunnelEdgeAndAutoTunnel } from "../lib/tunnel.js";
+import {
+  restoreContainerTunnelEdge,
+  restoreTunnelEdgeAndAutoTunnel,
+} from "../lib/tunnel.js";
 import {
   leaseGuardianToken,
   resetGuardianBootstrap,
@@ -516,6 +519,8 @@ async function upgradeDocker(
       preUpgradeBackupPath: backupPath ?? undefined,
     };
     saveAssistantEntry(updatedEntry);
+    // Refresh the host-served web bundle before clients reload on completion.
+    await restoreContainerTunnelEdge(updatedEntry);
 
     // Notify clients on the new service group that the upgrade succeeded.
     await broadcastUpgradeEvent(

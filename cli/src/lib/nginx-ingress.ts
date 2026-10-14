@@ -211,14 +211,24 @@ function remoteWebIngressConfig(
 export const EDGE_TEMPLATE_VERSION = 10;
 
 /**
- * Stable fingerprint of the SPA config injected into the served index and
- * `/assistant/__config`, plus the template that renders them. Recorded
+ * Stable fingerprint of the injected SPA config, its source bundle, and
+ * the template that renders them. Recorded
  * alongside the edge state so a reuse decision can tell whether a running edge
  * already serves the requested config (see `IngressState.remoteWebConfigHash`).
  */
-function remoteWebConfigFingerprint(config: Record<string, unknown>): string {
+function remoteWebConfigFingerprint(
+  config: Record<string, unknown>,
+  webDistDir: string,
+): string {
   return createHash("sha256")
-    .update(JSON.stringify({ template: EDGE_TEMPLATE_VERSION, config }))
+    .update(
+      JSON.stringify({
+        template: EDGE_TEMPLATE_VERSION,
+        config,
+        webDistDir,
+        indexHtml: readFileSync(join(webDistDir, "index.html"), "utf-8"),
+      }),
+    )
     .digest("hex");
 }
 
@@ -631,7 +641,7 @@ export interface IngressState {
    */
   gatewayPort?: number;
   /**
-   * Fingerprint of the SPA config injected into the served index. Undefined
+   * Fingerprint of the injected SPA config and its source bundle. Undefined
    * for webhooks-only edges and for SPA records that predate the field; an
    * SPA edge without a recorded fingerprint is treated as drifted and
    * restarted so the served index provably carries the requested config.
@@ -745,6 +755,7 @@ export function startIngressNginx(opts: {
       ? {
           remoteWebConfigHash: remoteWebConfigFingerprint(
             remoteWebIngress.config,
+            remoteWebIngress.webDistDir,
           ),
         }
       : {}),
@@ -925,6 +936,13 @@ export async function startRemoteWebIngress(opts: {
   const running = isIngressRunning(opts.workspaceDir);
   const recorded = running ? readIngressState(opts.workspaceDir) : null;
   const recordedMode = recorded?.includeWebApp ?? true;
+  if (
+    recorded &&
+    opts.listenPort === undefined &&
+    process.env.CADET_NGINX_INGRESS_PORT === undefined
+  ) {
+    listenPort = recorded.listenPort;
+  }
   // The SPA config the served index must carry, computed up front so the
   // reuse decision and the actual spawn share one value and cannot drift.
   const spaOptions = includeWebApp
@@ -934,9 +952,17 @@ export async function startRemoteWebIngress(opts: {
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
       }
     : undefined;
-  const requestedConfigHash = spaOptions
-    ? remoteWebConfigFingerprint(remoteWebIngressConfig(spaOptions))
-    : undefined;
+  const webDistDir = includeWebApp ? findWebDistDir() : null;
+  if (includeWebApp && !webDistDir) {
+    return { status: "web-dist-missing" };
+  }
+  const requestedConfigHash =
+    spaOptions && webDistDir
+      ? remoteWebConfigFingerprint(
+          remoteWebIngressConfig(spaOptions),
+          webDistDir,
+        )
+      : undefined;
   // Both sides are undefined in webhooks-only mode; an SPA record without a
   // fingerprint predates the field and counts as drifted (see IngressState).
   const configMatches = recorded?.remoteWebConfigHash === requestedConfigHash;
@@ -963,12 +989,16 @@ export async function startRemoteWebIngress(opts: {
     return alreadyRunning();
   }
 
-  let webDistDir: string | null = null;
-  if (includeWebApp) {
-    webDistDir = findWebDistDir();
-    if (!webDistDir) {
-      return { status: "web-dist-missing" };
-    }
+  // The running edge serves the other mode, targets a different gateway
+  // port, or injects a stale SPA config; restart it with the requested
+  // config. A false stop can mean the old edge exited on its own after the
+  // check above, so recheck liveness and only bail when it is still serving.
+  if (
+    running &&
+    !(await stopIngressNginx(opts.workspaceDir)) &&
+    isIngressRunning(opts.workspaceDir)
+  ) {
+    return alreadyRunning();
   }
 
   // A foreign process squatting the default edge port (another assistant's
@@ -986,18 +1016,6 @@ export async function startRemoteWebIngress(opts: {
       console.log(`Port ${listenPort} in use; using ${discovered} instead.`);
       listenPort = discovered;
     }
-  }
-
-  // The running edge serves the other mode, targets a different gateway
-  // port, or injects a stale SPA config; restart it with the requested
-  // config. A false stop can mean the old edge exited on its own after the
-  // check above, so recheck liveness and only bail when it is still serving.
-  if (
-    running &&
-    !(await stopIngressNginx(opts.workspaceDir)) &&
-    isIngressRunning(opts.workspaceDir)
-  ) {
-    return alreadyRunning();
   }
 
   opts.onStarting?.({ version, webDistDir, listenPort });
