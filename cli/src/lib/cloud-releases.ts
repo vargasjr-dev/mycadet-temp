@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { CADET_GITHUB_REPOSITORY } from "./github-repository.js";
 import { getCloudUrl } from "./cloud-client.js";
 import { dockerhubImages } from "./docker.js";
 import type { ServiceName } from "./docker.js";
@@ -44,7 +45,7 @@ const GitHubReleaseSchema = z.object({
 async function fetchLatestGitHubStableVersion(): Promise<string | null> {
   try {
     const response = await loopbackSafeFetch(
-      "https://api.github.com/repos/vargasjr-dev/mycadet-temp/releases/latest",
+      `https://api.github.com/repos/${CADET_GITHUB_REPOSITORY}/releases/latest`,
       {
         headers: { Accept: "application/vnd.github+json" },
         signal: AbortSignal.timeout(10_000),

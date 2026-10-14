@@ -13,6 +13,8 @@ import {
   isStagingVersion,
 } from "../lib/version-compat.js";
 
+import { CADET_GITHUB_REPOSITORY } from "../lib/github-repository.js";
+
 const originalFetch = globalThis.fetch;
 
 function mockFetchJson(body: unknown, status = 200) {
@@ -239,7 +241,7 @@ describe("stable release fallback", () => {
     expect(await fetchLatestVersion()).toBe("0.12.11");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toBe(
-      "https://api.github.com/repos/vargasjr-dev/mycadet-temp/releases/latest",
+      `https://api.github.com/repos/${CADET_GITHUB_REPOSITORY}/releases/latest`,
     );
   });
 
