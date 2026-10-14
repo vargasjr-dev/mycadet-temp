@@ -618,7 +618,9 @@ describe("remote web pairing token exchange", () => {
       .where(eq(contacts.role, "guardian"))
       .all();
     expect(gwGuardian).toHaveLength(1);
-    expect(gwGuardian[0].principalId).toMatch(/^cadet-principal-/);
+    // The pairing flow mints fresh (brand-neutral principal id, see #294) —
+    // recovery from actor-token evidence is boot-time-only.
+    expect(gwGuardian[0].principalId).toMatch(/^principal-/);
   });
 
   test("gateway binding write failure fails the mint and leaves the code retryable", async () => {
