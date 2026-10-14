@@ -11,20 +11,26 @@ import {
   type ProviderRedirectOptions,
 } from "@app/lib/auth/provider-redirect";
 
-/** Account auth handoff. Native destinations and Electron reconciliation remain in web. */
+import { resolveNativePostAuthDestination } from "@app/runtime/native-post-auth-destination";
+
+/** Account auth handoff. Electron reconciliation remains in web. */
 export async function startAuthFlow(
   providerId: string,
   callbackUrl: string,
   options: ProviderRedirectOptions & { returnTo?: string | null } = {},
 ): Promise<void> {
   if (isNativePlatform()) {
-    const { resolveNativePostAuthDestination } =
+    const { nativeAuthReturningUser, nativeCheckoutHandoff } =
       await import("@web/runtime/native-auth");
     try {
       await startNativeLogin({
         returnTo: resolveNativePostAuthDestination(
           options.intent,
           options.returnTo,
+          {
+            returningUser: nativeAuthReturningUser(),
+            checkout: nativeCheckoutHandoff,
+          },
         ),
         loginHint: options.loginHint,
         intent: options.intent,

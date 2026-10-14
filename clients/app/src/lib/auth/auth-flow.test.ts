@@ -26,7 +26,8 @@ mock.module("@app/lib/auth/provider-redirect", () => ({
 }));
 mock.module("@web/runtime/native-auth", () => ({
   startAuthFlow: nativeFlow,
-  resolveNativePostAuthDestination: () => "/assistant/onboarding/privacy",
+  nativeAuthReturningUser: () => false,
+  nativeCheckoutHandoff: { save: () => {}, clear: () => {} },
 }));
 const { startAuthFlow } = await import("./auth-flow");
 afterEach(() => {

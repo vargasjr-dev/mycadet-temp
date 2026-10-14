@@ -28,6 +28,24 @@ import {
 } from "@/runtime/native-biometric";
 import { routes } from "@/utils/routes";
 
+import {
+  clearCheckoutIntent,
+  saveCheckoutIntent,
+} from "@/lib/billing/checkout-intent";
+
+/** Temporary account handoff: share the stash, including its storage-disabled fallback. */
+export const nativeCheckoutHandoff = {
+  save: saveCheckoutIntent,
+  clear: clearCheckoutIntent,
+};
+
+/** Only web reads assistant onboarding state while app owns the native routing decision. */
+export function nativeAuthReturningUser(): boolean {
+  return userHasOnboardedAssistant(
+    useResolvedAssistantsStore.getState().assistants,
+  );
+}
+
 /**
  * JS ↔ native bridge for the `NativeAuth` Capacitor plugin registered by the
  * iOS and Android native shells.
@@ -321,9 +339,7 @@ export function resolveNativePostAuthDestination(
   returnTo: string | null | undefined,
 ): string | null {
   const isSignup = intent === "signup";
-  const returningUser = userHasOnboardedAssistant(
-    useResolvedAssistantsStore.getState().assistants,
-  );
+  const returningUser = nativeAuthReturningUser();
   if (returningUser) {
     const skipTarget = isFirstRunOnboardingReturnTo(returnTo)
       ? routes.assistant
@@ -474,9 +490,8 @@ export async function startAuthFlow(
         primeElectronSessionToken(result.sessionToken);
         // Reconcile the account before choosing where login lands. Keep this
         // dynamic because auth-store imports this module.
-        const { useAuthStore, whenCloudSessionSettled } = await import(
-          "@/stores/auth-store"
-        );
+        const { useAuthStore, whenCloudSessionSettled } =
+          await import("@/stores/auth-store");
         await useAuthStore.getState().refreshSession();
         await whenCloudSessionSettled();
         await setMenuCloudSession(true);

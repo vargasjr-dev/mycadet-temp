@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { AccountUser } from "@app/stores/auth-state";
-const KEY = "cadet:auth:userSnapshot";
+const KEY = "cadet:account:userSnapshot";
 const Schema = z.object({
-  kind: z.enum(["cloud", "platform"]).optional(),
+  kind: z.literal("cloud"),
   id: z.string().nullable().catch(null),
   username: z.string().nullable().catch(null),
   email: z.string().nullable().catch(null),

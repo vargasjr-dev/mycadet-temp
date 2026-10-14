@@ -31,6 +31,9 @@ mock.module("@app/runtime/native-biometric", () => ({
   setBiometricEnabled: disableBiometric,
 }));
 mock.module("@web/runtime/native-auth", () => ({
+  nativeCheckoutHandoff: {},
+}));
+mock.module("@app/runtime/native-post-auth-destination", () => ({
   clearStaleNativeCheckoutStash: clearStash,
 }));
 const { startNativeLogin } = await import("./native-login");
@@ -73,7 +76,7 @@ test("native login waits for the session cookie before navigation and spends att
     loginHint: "person@example.com",
     attribution: { utm_source: "play" },
   });
-  expect(clearStash).toHaveBeenCalledWith("login", "/assistant/identity");
+  expect(clearStash).toHaveBeenCalledWith("login", "/assistant/identity", {});
   expect(cookies).toHaveLength(2);
   expect(cookies[0]).toContain("sessionid=native-token;");
   expect(cookies[1]).toContain("__Secure-sessionid=native-token;");

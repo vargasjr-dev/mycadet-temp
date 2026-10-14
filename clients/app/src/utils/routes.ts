@@ -2,6 +2,12 @@ import { WWW_DOMAIN } from "@app/utils/domains";
 
 export const routes = {
   assistant: "/assistant",
+  checkout: "/assistant/checkout",
+  onboarding: {
+    hosting: "/assistant/onboarding/hosting",
+    privacy: "/assistant/onboarding/privacy",
+    research: "/assistant/onboarding/research",
+  },
   welcome: "/assistant/welcome",
   account: {
     root: "/account",

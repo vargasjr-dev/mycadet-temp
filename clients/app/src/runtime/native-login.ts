@@ -10,7 +10,8 @@ import {
   setBiometricEnabled,
   storeBiometricToken,
 } from "@app/runtime/native-biometric";
-import { clearStaleNativeCheckoutStash } from "@web/runtime/native-auth";
+import { nativeCheckoutHandoff } from "@web/runtime/native-auth";
+import { clearStaleNativeCheckoutStash } from "@app/runtime/native-post-auth-destination";
 const DEFAULT_POST_AUTH_DESTINATION = routes.assistant;
 
 interface NativeAuthPlugin {
@@ -47,7 +48,11 @@ export async function startNativeLogin(options?: {
   // `resolveNativePostAuthDestination`, so without this a stash abandoned by a
   // prior native checkout-signup could leak into a later login and wrongly
   // resume checkout from privacy.
-  clearStaleNativeCheckoutStash(options?.intent, options?.returnTo);
+  clearStaleNativeCheckoutStash(
+    options?.intent,
+    options?.returnTo,
+    nativeCheckoutHandoff,
+  );
 
   // Attribution resolves here for the same reason: the direct login form is
   // the auth entry a fresh Play install reaches, and the install referrer is
