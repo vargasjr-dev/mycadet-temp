@@ -33,6 +33,9 @@ import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
+import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
+import { execOutput } from "../lib/step-runner.js";
+import { dockerResourceNames } from "../lib/docker.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 function printUsage(): void {
@@ -81,6 +84,9 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
     process.exit(1);
   }
 
+  if (entry.cloud === "docker")
+    return `http://127.0.0.1:${GATEWAY_INTERNAL_PORT}`;
+
   const base =
     entry.localUrl ||
     (entry.resources?.gatewayPort
@@ -94,6 +100,41 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
   }
 
   return base.replace(/\/+$/, "");
+}
+
+/** Docker host management enters the gateway network namespace before calling loopback-only routes. */
+async function deviceRequest(
+  entry: AssistantEntry,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  if (entry.cloud !== "docker") return loopbackSafeFetch(url, init);
+  const script = `const r = await fetch(process.argv[1], {...JSON.parse(process.argv[2]), signal: AbortSignal.timeout(10000)}); console.log(JSON.stringify({status:r.status, body:await r.text()}));`;
+  const output = await execOutput(
+    "docker",
+    [
+      "exec",
+      dockerResourceNames(entry.assistantId).gatewayContainer,
+      "bun",
+      "-e",
+      script,
+      url,
+      JSON.stringify(init),
+    ],
+    { timeoutMs: 15000 },
+  );
+  const result: unknown = JSON.parse(output);
+  if (
+    !result ||
+    typeof result !== "object" ||
+    !("status" in result) ||
+    typeof result.status !== "number" ||
+    !("body" in result) ||
+    typeof result.body !== "string"
+  ) {
+    throw new Error("Invalid gateway response from Docker");
+  }
+  return new Response(result.body, { status: result.status });
 }
 
 /**
@@ -122,7 +163,7 @@ async function listDevices(
 
   let response: Response;
   try {
-    response = await loopbackSafeFetch(`${base}/v1/devices`, {
+    response = await deviceRequest(entry, `${base}/v1/devices`, {
       method: "GET",
       headers: getClientRegistrationHeaders(CLI_INTERFACE_ID),
     });
@@ -239,7 +280,7 @@ async function revokeDevice(
 
   let response: Response;
   try {
-    response = await loopbackSafeFetch(`${base}/v1/devices/revoke`, {
+    response = await deviceRequest(entry, `${base}/v1/devices/revoke`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -281,38 +322,37 @@ async function revokeDevice(
 
 export const devices = Object.assign(
   async function devices(): Promise<void> {
-  const rawArgs = process.argv.slice(3);
+    const rawArgs = process.argv.slice(3);
 
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    return;
-  }
-
-  const jsonOutput = rawArgs.includes("--json");
-  const args = rawArgs.filter((a) => a !== "--json");
-
-  if (args[0] === "revoke") {
-    const rest = args.slice(1);
-    const yes = rest.includes("--yes");
-    const positionals = rest.filter((a) => !a.startsWith("-"));
-    const hashedDeviceId = positionals[0];
-    if (!hashedDeviceId) {
-      console.error("Error: a hashedDeviceId is required to revoke.");
+    if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
       printUsage();
-      process.exit(1);
+      return;
     }
-    const nameArg = positionals.slice(1).join(" ") || undefined;
+
+    const jsonOutput = rawArgs.includes("--json");
+    const args = rawArgs.filter((a) => a !== "--json");
+
+    if (args[0] === "revoke") {
+      const rest = args.slice(1);
+      const yes = rest.includes("--yes");
+      const positionals = rest.filter((a) => !a.startsWith("-"));
+      const hashedDeviceId = positionals[0];
+      if (!hashedDeviceId) {
+        console.error("Error: a hashedDeviceId is required to revoke.");
+        printUsage();
+        process.exit(1);
+      }
+      const nameArg = positionals.slice(1).join(" ") || undefined;
+      const entry = resolveTargetAssistant(nameArg);
+      const base = resolveLoopbackBase(entry);
+      await revokeDevice(entry, base, hashedDeviceId, yes, jsonOutput);
+      return;
+    }
+
+    const nameArg = parseAssistantTargetArg(args, []);
     const entry = resolveTargetAssistant(nameArg);
     const base = resolveLoopbackBase(entry);
-    await revokeDevice(entry, base, hashedDeviceId, yes, jsonOutput);
-    return;
-  }
-
-  const nameArg = parseAssistantTargetArg(args, []);
-  const entry = resolveTargetAssistant(nameArg);
-  const base = resolveLoopbackBase(entry);
-  await listDevices(entry, base, jsonOutput);
-},
+    await listDevices(entry, base, jsonOutput);
+  },
   { description: "List or revoke devices paired to a local assistant [beta]" },
 );
-
