@@ -8,6 +8,11 @@ const eslintConfig = defineConfig([
   ...tseslint.configs.recommended,
   globalIgnores(["node_modules/**", ".next/**", "next-env.d.ts"]),
   {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     settings: {
       // An explicit version skips eslint-plugin-react's autodetection, which
       // calls a context API that ESLint 10 removed.
