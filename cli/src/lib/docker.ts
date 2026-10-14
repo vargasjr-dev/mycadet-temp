@@ -812,6 +812,7 @@ export const SERVICE_START_ORDER: ServiceName[] = [
 /** Start all three containers in dependency order. */
 export async function startContainers(
   opts: {
+    createOnly?: boolean;
     signingKey?: string;
     bootstrapSecret?: string;
     cesServiceToken?: string;
@@ -832,8 +833,13 @@ export async function startContainers(
     avatarDevicePath: resolveAvatarDevicePath(),
   });
   for (const service of SERVICE_START_ORDER) {
-    log(`🚀 Starting ${service} container...`);
-    await exec("docker", runArgs[service]());
+    const args = runArgs[service]();
+    if (opts.createOnly) {
+      args[0] = "create";
+      args.splice(args.indexOf("-d"), 1);
+    }
+    log(`${opts.createOnly ? "Creating" : "Starting"} ${service} container...`);
+    await exec("docker", args);
   }
 }
 
@@ -849,7 +855,7 @@ export async function stopContainers(
 /** Stop containers without removing them (preserves state for `docker start`). */
 export async function sleepContainers(
   res: ReturnType<typeof dockerResourceNames>,
-  options: { gracefulOnly?: boolean; timeoutMs?: number } = {},
+  options: { timeoutMs?: number } = {},
 ): Promise<void> {
   for (const container of [
     res.assistantContainer,
@@ -857,19 +863,15 @@ export async function sleepContainers(
     res.cesContainer,
   ]) {
     try {
-      if (options.gracefulOnly) {
-        const status = await execOutput("docker", ["inspect", "--format", "{{.State.Status}}", container]);
-        if (status === "exited" || status === "created") continue;
-        if (status !== "running") throw new Error(`${container} is ${status}; cannot stop gracefully.`);
-        await exec("docker", ["kill", "--signal=SIGTERM", container]);
-        const deadline = Date.now() + (options.timeoutMs ?? 60_000);
-        while (await execOutput("docker", ["inspect", "--format", "{{.State.Running}}", container]) === "true") {
-          if (Date.now() >= deadline) throw new Error(`${container} did not stop gracefully; no files were captured.`);
-          await new Promise((resolve) => setTimeout(resolve, 250));
-        }
-        continue;
+      const status = await execOutput("docker", ["inspect", "--format", "{{.State.Status}}", container]);
+      if (status === "exited" || status === "created") continue;
+      if (status !== "running") throw new Error(`${container} is ${status}; cannot stop gracefully.`);
+      await exec("docker", ["kill", "--signal=SIGTERM", container]);
+      const deadline = Date.now() + (options.timeoutMs ?? 60_000);
+      while (await execOutput("docker", ["inspect", "--format", "{{.State.Running}}", container]) === "true") {
+        if (Date.now() >= deadline) throw new Error(`${container} did not stop gracefully.`);
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
-      await exec("docker", ["stop", container]);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message.toLowerCase() : String(err);

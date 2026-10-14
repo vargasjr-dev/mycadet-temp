@@ -21,7 +21,7 @@ through `cadet restore`; version changes and backup data belong to the same
 restore operation. The CLI has no standalone `rollback` command.
 
 ```bash
-cadet restore my-assistant --from backup.vbundle --version v1.2.3
+cadet restore my-assistant --from backup.tar.gz --version v1.2.3
 ```
 
 Automatic failure recovery during an upgrade or restore uses the images and

@@ -156,10 +156,10 @@ describe("buildReplayState", () => {
     expect(state.signingKey).toBe("sign-key");
   });
 
-  test("generates fresh secrets when missing from captured env", () => {
+  test("generates a service token but preserves file-backed signing identity when env is absent", () => {
     const state = buildReplayState({}, {});
     expect(state.bootstrapSecret).toBeUndefined();
     expect(state.cesServiceToken).toMatch(/^[0-9a-f]{64}$/);
-    expect(state.signingKey).toMatch(/^[0-9a-f]{64}$/);
+    expect(state.signingKey).toBeUndefined();
   });
 });

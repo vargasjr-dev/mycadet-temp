@@ -76,6 +76,7 @@ import {
   pathListDelimiter,
   resolveProcessState,
   stopProcessByPidFile,
+  stopProcessGracefully,
 } from "./process.js";
 import { stopTunnelProcess } from "./tunnel.js";
 import { stripVersionPrefix } from "./version-compat.js";
@@ -1981,15 +1982,16 @@ export async function stopLocalProcesses(
     "daemon",
     undefined,
     DAEMON_STOP_TIMEOUT_MS,
+    stopProcessGracefully,
   );
 
   const gatewayPidFile = join(cadetDir, "gateway.pid");
-  await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000);
+  await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000, stopProcessGracefully);
 
   // Stop the CES sibling if one was launched. No-op when the
   // PID file is absent.
   const cesPidFile = join(cadetDir, "ces.pid");
-  await stopProcessByPidFile(cesPidFile, "credential-executor");
+  await stopProcessByPidFile(cesPidFile, "credential-executor", undefined, DAEMON_STOP_TIMEOUT_MS, stopProcessGracefully);
 
   // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry),
   // verifying the pid still belongs to the provider's binary before signaling

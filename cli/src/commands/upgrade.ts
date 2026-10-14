@@ -22,6 +22,7 @@ import {
   pullImage,
   startContainers,
   stopContainers,
+  sleepContainers,
 } from "../lib/docker";
 import {
   fetchLatestStableVersion,
@@ -425,7 +426,7 @@ async function upgradeDocker(
   const assistantPort =
     entry.containerInfo?.assistantPort ?? ASSISTANT_INTERNAL_PORT;
 
-  // Create pre-upgrade backup (best-effort, daemon must be running)
+  // Capture complete persistent roots before replacing any services.
   await broadcastUpgradeEvent(
     entry.runtimeUrl,
     entry.assistantId,
@@ -441,7 +442,7 @@ async function upgradeDocker(
     // Clean up old pre-upgrade backups, keep last 3
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    console.warn("⚠️  Pre-upgrade backup failed, continuing with upgrade\n");
+    throw new Error("Pre-upgrade root backup failed; upgrade aborted before replacing services.");
   }
 
   await broadcastUpgradeEvent(
@@ -451,6 +452,7 @@ async function upgradeDocker(
   );
 
   console.log("🛑 Stopping existing containers...");
+  await sleepContainers(res);
   await stopContainers(res);
   console.log("✅ Containers stopped\n");
 
@@ -553,6 +555,7 @@ async function upgradeDocker(
           );
         }
 
+        await sleepContainers(res);
         await stopContainers(res);
 
         await startContainers(
@@ -619,14 +622,12 @@ async function upgradeDocker(
               entry.runtimeUrl,
               entry.assistantId,
               backupPath,
-              { kind: "docker", assistantId: entry.assistantId },
+              {},
             );
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {
-              console.warn(
-                "   ⚠️  Data restore failed (rollback continues without data restoration)\n",
-              );
+              throw new Error(`Root restore failed; rollback recovery is incomplete. Backup: ${backupPath}`);
             }
           } else {
             console.log(
@@ -789,6 +790,7 @@ async function upgradeLocal(
     process.exit(1);
   }
 
+  const originalResources = { ...entry.resources };
   const signingKey = resolveExistingLocalSigningKey(entry.resources);
   if (entry.resources.signingKey !== signingKey) {
     entry.resources.signingKey = signingKey;
@@ -863,7 +865,7 @@ async function upgradeLocal(
     console.log(`   Backup saved: ${backupPath}\n`);
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    console.warn("⚠️  Pre-upgrade backup failed, continuing with upgrade\n");
+    throw new Error("Pre-upgrade root backup failed; upgrade aborted before replacing services.");
   }
 
   let bootstrapSecret = entry.guardianBootstrapSecret;
@@ -898,55 +900,66 @@ async function upgradeLocal(
   saveAssistantEntry(entry);
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
-  console.log("🛑 Stopping local assistant processes...");
-  await stopLocalProcesses(entry.resources);
-  console.log("✅ Local assistant processes stopped\n");
-
-  console.log("🚀 Starting upgraded local assistant...");
-  const previousAppVersion = process.env.APP_VERSION;
-  process.env.APP_VERSION = stripVersionPrefix(targetVersion);
   try {
-    // Bring CES, daemon, and gateway up in parallel, the way the Docker
-    // topology starts its sibling processes together. startCes always
-    // launches the CES sibling.
-    await Promise.all([
-      startCes(false, entry.resources),
-      startLocalDaemon(false, entry.resources, { signingKey }),
-      startGateway(false, entry.resources, { signingKey, bootstrapSecret }),
-    ]);
-  } finally {
-    if (previousAppVersion === undefined) {
-      delete process.env.APP_VERSION;
-    } else {
-      process.env.APP_VERSION = previousAppVersion;
+    console.log("🛑 Stopping local assistant processes...");
+    await stopLocalProcesses(entry.resources);
+    console.log("✅ Local assistant processes stopped\n");
+
+    console.log("🚀 Starting upgraded local assistant...");
+    const previousAppVersion = process.env.APP_VERSION;
+    process.env.APP_VERSION = stripVersionPrefix(targetVersion);
+    try {
+      // Bring CES, daemon, and gateway up in parallel, the way the Docker
+      // topology starts its sibling processes together. startCes always
+      // launches the CES sibling.
+      await Promise.all([
+        startCes(false, entry.resources),
+        startLocalDaemon(false, entry.resources, { signingKey }),
+        startGateway(false, entry.resources, { signingKey, bootstrapSecret }),
+      ]);
+    } finally {
+      if (previousAppVersion === undefined) {
+        delete process.env.APP_VERSION;
+      } else {
+        process.env.APP_VERSION = previousAppVersion;
+      }
     }
-  }
-  await ensureGuardianTokenAfterLocalUpgrade(
-    entry,
-    entry.resources.gatewayPort,
-    bootstrapSecret,
-  );
-  console.log("✅ Local assistant processes started\n");
-
-  const workspaceDir = join(entry.resources.instanceDir, "workspace");
-  await restoreTunnelEdgeAndAutoTunnel(
-    entry.assistantId,
-    entry.resources.gatewayPort,
-    workspaceDir,
-  );
-
-  console.log("Waiting for assistant to become ready...");
-  const ready = await waitForReady(adminUrl);
-  if (!ready) {
-    await broadcastUpgradeEvent(
-      adminUrl,
-      entry.assistantId,
-      buildCompleteEvent(currentVersion ?? "unknown", false),
+    await ensureGuardianTokenAfterLocalUpgrade(
+      entry,
+      entry.resources.gatewayPort,
+      bootstrapSecret,
     );
-    const msg = `Upgrade to ${targetVersion} failed: local assistant did not become ready.`;
-    console.error(`\n❌ ${msg}`);
-    emitCliError("READINESS_TIMEOUT", msg);
-    process.exit(1);
+    console.log("✅ Local assistant processes started\n");
+
+    const workspaceDir = join(entry.resources.instanceDir, "workspace");
+    await restoreTunnelEdgeAndAutoTunnel(
+      entry.assistantId,
+      entry.resources.gatewayPort,
+      workspaceDir,
+    );
+
+    console.log("Waiting for assistant to become ready...");
+    const ready = await waitForReady(adminUrl);
+    if (!ready) {
+      await broadcastUpgradeEvent(
+        adminUrl,
+        entry.assistantId,
+        buildCompleteEvent(currentVersion ?? "unknown", false),
+      );
+      const msg = `Upgrade to ${targetVersion} failed: local assistant did not become ready.`;
+      console.error(`\n❌ ${msg}`);
+      throw new Error(msg);
+    }
+  } catch (error) {
+    console.error("Local upgrade failed; restoring the previous runtime and service roots...");
+    await stopLocalProcesses(entry.resources);
+    entry.resources = originalResources;
+    saveAssistantEntry(entry);
+    const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
+    if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
+    await Promise.all([startCes(false, entry.resources), startLocalDaemon(false, entry.resources, { signingKey }), startGateway(false, entry.resources, { signingKey, bootstrapSecret })]);
+    if (!await waitForReady(adminUrl)) throw new Error(`Previous local runtime did not recover. Backup: ${backupPath}`, { cause: error });
+    throw error;
   }
 
   await broadcastUpgradeEvent(
@@ -1295,6 +1308,8 @@ async function upgradePrepare(
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion} → ${targetVersion}`,
   });
+
+  if (!backupPath) throw new Error("Pre-upgrade root backup failed; update preparation aborted.");
 
   // 5. Prune old backups (keep 3)
   if (backupPath) {

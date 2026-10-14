@@ -55,7 +55,7 @@ mock.module("../lib/assistant-config", () => ({
 }));
 
 const createBackupMock = mock<typeof backupOps.createBackup>(
-  async () => "/tmp/local-pre-upgrade.vbundle",
+  async () => "/tmp/local-pre-upgrade.tar.gz",
 );
 const pruneOldBackupsMock = mock<typeof backupOps.pruneOldBackups>(() => {});
 const restoreBackupMock = mock<typeof backupOps.restoreBackup>(
@@ -238,7 +238,7 @@ beforeEach(() => {
   loadAllAssistantsMock.mockReturnValue([entry]);
   saveAssistantEntryMock.mockReset();
   createBackupMock.mockReset();
-  createBackupMock.mockResolvedValue("/tmp/local-pre-upgrade.vbundle");
+  createBackupMock.mockResolvedValue("/tmp/local-pre-upgrade.tar.gz");
   pruneOldBackupsMock.mockReset();
   pruneOldBackupsMock.mockReturnValue(undefined);
   restoreBackupMock.mockReset();
@@ -436,6 +436,24 @@ describe("cadet upgrade local", () => {
       expect.stringContaining("topology: local"),
     );
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain("upgraded to");
+  });
+
+  test("failed safety backup aborts before runtime installation or service replacement", async () => {
+    createBackupMock.mockResolvedValue(null);
+    await expect(upgrade()).rejects.toThrow("process.exit(1)");
+    expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
+    expect(stopLocalProcessesMock).not.toHaveBeenCalled();
+    expect(startLocalDaemonMock).not.toHaveBeenCalled();
+  });
+
+  test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
+    startLocalDaemonMock.mockRejectedValueOnce(new Error("target startup failed"));
+    await expect(upgrade()).rejects.toThrow("process.exit(1)");
+    expect(restoreBackupMock).toHaveBeenCalledWith("http://127.0.0.1:7830", "local-assistant", "/tmp/local-pre-upgrade.tar.gz", { resume: false });
+    expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
+    expect(startCesMock).toHaveBeenCalledTimes(2);
+    expect(stopLocalProcessesMock).toHaveBeenCalledTimes(2);
+    expect(waitForReadyMock).toHaveBeenCalled();
   });
 
   test("skips restart when the local assistant is already on the target version", async () => {

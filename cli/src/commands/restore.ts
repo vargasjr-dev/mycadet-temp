@@ -32,6 +32,7 @@ import {
   platformImportBundleFromGcs,
   platformPollJobStatus,
 } from "../lib/cloud-client.js";
+import { performDockerRollback } from "../lib/upgrade-lifecycle.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
 
 function printUsage(): void {
@@ -56,7 +57,7 @@ function printUsage(): void {
   console.log("Options:");
   console.log("  --from <path>        Path to the .tar.gz file (required)");
   console.log(
-    "  --version <version>  Cloud-only version rollback before restoring",
+    "  --version <version>  Docker/cloud version rollback before restoring",
   );
   console.log(
     "  --dry-run            Show what would change without applying (data-only)",
@@ -655,9 +656,11 @@ export const restore = Object.assign(
       throw new Error(`Restore for '${cloud}' must run on its host.`);
     }
     if (version) {
-      throw new Error(
-        "Root restore uses the currently provisioned services. Version rollback will be integrated separately.",
-      );
+      if (cloud !== "docker") throw new Error("Version restore is supported for Docker and cloud assistants.");
+      await validateRootArchive(fromPath);
+      await performDockerRollback(entry, { targetVersion: version, backupPath: fromPath });
+      console.log("Version and root backup restored.");
+      return;
     }
     const recoveryPath = await restoreRootBackup(entry, fromPath, { dryRun });
     if (dryRun)

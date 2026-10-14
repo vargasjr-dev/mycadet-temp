@@ -1,224 +1,294 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
-import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import * as tar from "tar";
 import {
   DockerRootStorage,
-  restoreRootBackup,
   packRoot,
+  restoreRootBackup,
   stageRootArchive,
   STATE_ROOTS,
 } from "../lib/root-backup.js";
-import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
-import { execOutput } from "../lib/step-runner.js";
+import {
+  dockerResourceNames,
+  sleepContainers,
+  startContainers,
+} from "../lib/docker.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { mockCommands } from "./commands-mock.js";
 
-// Opt-in so the regular CLI suite never downloads images or touches a Docker daemon.
-const image = process.env.CADET_BACKUP_TEST_IMAGE;
-const name = `cadet-backup-test-${randomUUID()}`;
-const res = dockerResourceNames(name);
 const entry: AssistantEntry = {
-  assistantId: name,
+  assistantId: "docker-backup",
   cloud: "docker",
   runtimeUrl: "http://127.0.0.1:1",
 };
+const names = dockerResourceNames(entry.assistantId);
+const containers = [
+  names.assistantContainer,
+  names.gatewayContainer,
+  names.cesContainer,
+];
+const rootContainers = {
+  workspace: names.assistantContainer,
+  "gateway-security": names.gatewayContainer,
+  "ces-security": names.cesContainer,
+  "ces-data": names.cesContainer,
+};
 let directory: string;
-const mounts = new Map(STATE_ROOTS.map((root) => [root, `${name}-${root}`]));
+let commands: ReturnType<typeof mockCommands>;
+const running = new Map<string, boolean>();
+let writes = 0;
+let failWrite = 0;
 
-beforeAll(async () => {
-  if (!image) return;
-  directory = await mkdtemp(join(tmpdir(), "docker-root-backup-"));
-  for (const volume of mounts.values())
-    await execOutput("docker", ["volume", "create", volume]);
-  const groups = [
-    { name: res.assistantContainer, roots: ["workspace"] },
-    { name: res.gatewayContainer, roots: ["gateway-security"] },
-    { name: res.cesContainer, roots: ["ces-security", "ces-data"] },
-  ];
-  for (const group of groups) {
-    await execOutput("docker", [
-      "run",
-      "-d",
-      "--name",
-      group.name,
-      "--network=none",
-      "--user=1001:1001",
-      ...group.roots.flatMap((root) => [
-        "-v",
-        `${mounts.get(root as (typeof STATE_ROOTS)[number])}:/${root}`,
-      ]),
-      image,
-      "sh",
-      "-c",
-      "trap 'exit 0' TERM; while :; do sleep 1 & wait $!; done",
-    ]);
-  }
+beforeEach(async () => {
+  directory = await mkdtemp(join(tmpdir(), "docker-root-mock-"));
+  commands = mockCommands();
+  writes = 0;
+  failWrite = 0;
+  for (const container of containers) running.set(container, true);
   for (const root of STATE_ROOTS) {
-    await execOutput("docker", [
-      "run",
-      "--rm",
-      "--network=none",
-      "-v",
-      `${mounts.get(root)}:/state`,
-      image!,
-      "sh",
-      "-ec",
-      'printf "original" > /state/value; chown -R 501:501 /state; chmod 600 /state/value',
-    ]);
+    await mkdir(join(directory, root), { mode: 0o700 });
+    await writeFile(join(directory, root, "value"), "original", {
+      mode: 0o600,
+    });
   }
-  await execOutput("docker", [
-    "run",
-    "--rm",
-    "--network=none",
-    "-v",
-    `${mounts.get("gateway-security")}:/state`,
-    image!,
-    "sh",
-    "-ec",
-    "dd if=/dev/zero of=/state/actor-token-signing-key bs=32 count=1; chmod 600 /state/actor-token-signing-key",
-  ]);
-});
-
-afterAll(async () => {
-  if (!image) return;
-  for (const container of [
-    res.cesContainer,
-    res.gatewayContainer,
-    res.assistantContainer,
-  ]) {
-    await execOutput("docker", ["rm", "-f", container]).catch(() => {});
-  }
-  for (const volume of mounts.values())
-    await execOutput("docker", ["volume", "rm", volume]).catch(() => {});
-  if (directory) await rm(directory, { recursive: true, force: true });
-});
-
-test.skipIf(!image)(
-  "real Docker root round-trip restores mode-600 files as CES uid 1001 and clears stale entries",
-  async () => {
-    const storage = new DockerRootStorage(entry);
-    expect(await storage.running()).toBe(true);
-    await sleepContainers(res, { gracefulOnly: true, timeoutMs: 5000 });
-    expect(await storage.running()).toBe(false);
-    const stage = join(directory, "capture");
-    await mkdir(stage, { mode: 0o700 });
-    await storage.capture(stage);
-    for (const root of STATE_ROOTS)
-      expect(await readFile(join(stage, root, "value"), "utf8")).toBe(
-        "original",
-      );
-    const file = join(directory, "backup.tar.gz");
-    await packRoot(stage, file);
-    const extracted = await stageRootArchive(file, directory);
-    for (const root of STATE_ROOTS) {
-      await execOutput("docker", [
-        "run",
-        "--rm",
-        "--network=none",
-        "-v",
-        `${mounts.get(root)}:/state`,
-        image!,
-        "sh",
-        "-ec",
-        'printf "newer" > /state/value; touch /state/stale',
-      ]);
-    }
-    await storage.replace(join(extracted, "state"));
-    for (const root of STATE_ROOTS) {
-      const output = await execOutput("docker", [
-        "run",
-        "--rm",
-        "--network=none",
-        "--user=1001:1001",
-        "-v",
-        `${mounts.get(root)}:/state:ro`,
-        image!,
-        "sh",
-        "-ec",
-        'cat /state/value; test ! -e /state/stale; stat -c "%u:%g %a" /state/value',
-      ]);
-      expect(output).toBe("original1001:1001 600");
-    }
-  },
-);
-
-test.skipIf(!image)(
-  "real Docker replacement failure recovers prior roots and retains a recovery archive",
-  async () => {
-    for (const container of [
-      res.assistantContainer,
-      res.gatewayContainer,
-      res.cesContainer,
-    ])
-      await execOutput("docker", ["start", container]);
-    const storage = new DockerRootStorage(entry);
-    const file = join(directory, "backup.tar.gz");
-    for (const root of STATE_ROOTS) {
-      await execOutput("docker", [
-        "run",
-        "--rm",
-        "--network=none",
-        "-v",
-        `${mounts.get(root)}:/state`,
-        image!,
-        "sh",
-        "-ec",
-        'printf "destination" > /state/value',
-      ]);
-    }
-    let attempts = 0;
-    const recovery = join(directory, "recovery.tar.gz");
-    await expect(
-      restoreRootBackup(
-        entry,
-        file,
-        { recoveryPath: recovery },
-        {
-          storage: {
-            running: () => storage.running(),
-            capture: (path) => storage.capture(path),
-            prepareRestore: (path) => storage.prepareRestore(path),
-            replace: async (path) => {
-              attempts++;
-              await storage.replace(path);
-              if (attempts === 1)
-                throw new Error("injected replacement failure");
+  await writeFile(
+    join(directory, "gateway-security", "actor-token-signing-key"),
+    Buffer.alloc(32, 1),
+    { mode: 0o600 },
+  );
+  commands.on("docker", ["info"], {});
+  commands.on(
+    "docker",
+    (args) => args[0] === "inspect",
+    ({ args }) => {
+      const container = args.at(-1)!;
+      if (args.includes("--format"))
+        return {
+          stdout:
+            args[2] === "{{.State.Running}}"
+              ? String(running.get(container))
+              : running.get(container)
+                ? "running"
+                : "exited",
+        };
+      return {
+        stdout: JSON.stringify([
+          {
+            Image: "sha256:service-image",
+            State: {
+              Running: running.get(container),
+              Status: running.get(container) ? "running" : "exited",
             },
+            Config: {
+              Env: ["RUNTIME_HTTP_PORT=3001", "GATEWAY_PORT=7830"],
+              User: "1001:1001",
+            },
+            Mounts: STATE_ROOTS.filter(
+              (root) => rootContainers[root] === container,
+            ).map((root) => ({
+              Type: "volume",
+              Name: `remote-${root}`,
+              Source: `/remote/${root}`,
+              Destination: `/${root}`,
+              RW: true,
+            })),
           },
-          sleep: () =>
-            sleepContainers(res, { gracefulOnly: true, timeoutMs: 5000 }),
-          wake: async () => {
-            for (const container of [
-              res.assistantContainer,
-              res.gatewayContainer,
-              res.cesContainer,
-            ])
-              await execOutput("docker", ["start", container]);
-          },
-          save: () => {},
+        ]),
+      };
+    },
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "kill",
+    ({ args }) => {
+      expect(args[1]).toBe("--signal=SIGTERM");
+      running.set(args.at(-1)!, false);
+      return {};
+    },
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "start",
+    ({ args }) => {
+      running.set(args[1]!, true);
+      return {};
+    },
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "cp",
+    async ({ args }) => {
+      const root = args[1]!.split(":/")[1]!.split("/")[0]!;
+      await cp(join(directory, root), args[2]!, { recursive: true });
+      return {};
+    },
+  );
+  commands.on(
+    "docker",
+    (args) => args[0] === "run" && args.includes("-i"),
+    async ({ args, input }) => {
+      writes++;
+      const mount = args[args.indexOf("--mount") + 1]!;
+      const root = mount.split("src=remote-")[1]!.split(",")[0]!;
+      expect(args).toContain("--network=none");
+      expect(args).toContain("--user=0");
+      expect(args).toContain("1001:1001");
+      expect(mount).not.toContain(directory);
+      expect(args[args.indexOf("-ec") + 1]).toContain('chown -R "$1" /restore');
+      await rm(join(directory, root), { recursive: true });
+      await mkdir(join(directory, root));
+      if (writes === failWrite)
+        return { code: 1, stderr: "injected volume replacement failure" };
+      await pipeline(
+        Readable.from(input),
+        tar.x({ cwd: join(directory, root), preserveOwner: false }),
+      );
+      return {};
+    },
+  );
+});
+afterEach(async () => {
+  commands.restore();
+  await rm(directory, { recursive: true, force: true });
+});
+
+async function archive() {
+  const capture = join(directory, "capture");
+  await mkdir(capture);
+  const storage = new DockerRootStorage(entry);
+  await sleepContainers(names, { timeoutMs: 100 });
+  await storage.capture(capture);
+  const file = join(directory, "backup.tar.gz");
+  await packRoot(capture, file);
+  return { storage, file };
+}
+
+test("Docker subprocess round-trip preserves every root, private files and clears stale entries", async () => {
+  const { storage, file } = await archive();
+  const stage = await stageRootArchive(file, directory);
+  for (const root of STATE_ROOTS)
+    await writeFile(join(directory, root, "stale"), "delete");
+  await storage.replace(join(stage, "state"));
+  for (const root of STATE_ROOTS) {
+    expect(await readFile(join(directory, root, "value"), "utf8")).toBe(
+      "original",
+    );
+    await expect(readFile(join(directory, root, "stale"))).rejects.toThrow();
+  }
+  expect(writes).toBe(4);
+  expect(commands.calls.filter((call) => call.args[0] === "kill")).toHaveLength(
+    3,
+  );
+});
+
+test("failure during Docker replacement recovers prior roots before restarting", async () => {
+  const { storage, file } = await archive();
+  for (const container of containers) running.set(container, true);
+  for (const root of STATE_ROOTS)
+    await writeFile(join(directory, root, "value"), "destination");
+  failWrite = 2;
+  const recovery = join(directory, "recovery.tar.gz");
+  await expect(
+    restoreRootBackup(
+      entry,
+      file,
+      { recoveryPath: recovery },
+      {
+        storage,
+        sleep: () => sleepContainers(names, { timeoutMs: 100 }),
+        wake: async () => {
+          for (const container of containers) running.set(container, true);
         },
-      ),
-    ).rejects.toThrow("injected replacement failure");
-    expect(attempts).toBe(2);
-    expect(await storage.running()).toBe(true);
-    const previous = await stageRootArchive(recovery, directory);
-    for (const root of STATE_ROOTS) {
-      expect(
-        await readFile(join(previous, "state", root, "value"), "utf8"),
-      ).toBe("destination");
-      const value = await execOutput("docker", [
-        "run",
-        "--rm",
-        "--network=none",
-        "--user=1001:1001",
-        "-v",
-        `${mounts.get(root)}:/state:ro`,
-        image!,
-        "cat",
-        "/state/value",
-      ]);
-      expect(value).toBe("destination");
-    }
-  },
-);
+        save: () => {},
+      },
+    ),
+  ).rejects.toThrow("injected volume replacement failure");
+  expect(await storage.running()).toBe(true);
+  const previous = await stageRootArchive(recovery, directory);
+  for (const root of STATE_ROOTS) {
+    expect(await readFile(join(directory, root, "value"), "utf8")).toBe(
+      "destination",
+    );
+    expect(await readFile(join(previous, "state", root, "value"), "utf8")).toBe(
+      "destination",
+    );
+  }
+});
+
+test("restart probes gateway and assistant on their own service ports", async () => {
+  const storage = new DockerRootStorage(entry);
+  expect(await storage.running()).toBe(true);
+  for (const container of containers) running.set(container, false);
+  commands.on(
+    "docker",
+    (args) => args[0] === "exec",
+    () => ({ stdout: "ready" }),
+  );
+  await storage.resume();
+  const probes = commands.calls.filter((call) => call.args[0] === "exec");
+  expect(
+    probes.find((call) => call.args[1] === names.gatewayContainer)?.args.at(-1),
+  ).toBe("http://127.0.0.1:7830/healthz");
+  expect(
+    probes
+      .find((call) => call.args[1] === names.assistantContainer)
+      ?.args.at(-1),
+  ).toBe("http://127.0.0.1:3001/readyz");
+});
+
+test("default Docker sleep aborts a graceful timeout without forcing termination", async () => {
+  commands.on(
+    "docker",
+    (args) => args[0] === "kill",
+    () => ({}),
+  );
+  await expect(sleepContainers(names, { timeoutMs: 0 })).rejects.toThrow(
+    "did not stop gracefully",
+  );
+  expect(running.get(names.assistantContainer)).toBe(true);
+  expect(commands.calls.some((call) => call.args[0] === "stop")).toBe(false);
+  expect(
+    commands.calls
+      .filter((call) => call.args[0] === "kill")
+      .every((call) => call.args.includes("--signal=SIGTERM")),
+  ).toBe(true);
+});
+
+test("create-only provisioning creates every target container without starting services", async () => {
+  commands.on(
+    "docker",
+    (args) => args[0] === "create",
+    ({ args }) => {
+      running.set(args[args.indexOf("--name") + 1]!, false);
+      return { stdout: "created" };
+    },
+  );
+  await startContainers(
+    {
+      createOnly: true,
+      gatewayPort: 7830,
+      assistantPort: 3001,
+      imageTags: {
+        assistant: "assistant:target",
+        gateway: "gateway:target",
+        "credential-executor": "ces:target",
+      },
+      instanceName: entry.assistantId,
+      res: names,
+    },
+    () => {},
+  );
+  const creates = commands.calls.filter((call) => call.args[0] === "create");
+  expect(creates).toHaveLength(3);
+  expect(creates.every((call) => !call.args.includes("-d"))).toBe(true);
+  expect(
+    commands.calls.some(
+      (call) => call.args[0] === "start" || call.args[0] === "run",
+    ),
+  ).toBe(false);
+  expect([...running.values()].every((value) => !value)).toBe(true);
+});

@@ -216,6 +216,12 @@ describe("sleep command", () => {
     expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3);
   });
 
+  test("default sleep passes the non-escalating service stopper", async () => {
+    process.argv = ["bun", "cadet", "sleep", "sleep-test"];
+    await sleep();
+    expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(1, join(assistantRootDir, "workspace", "cadet.pid"), "assistant", undefined, 45_000, realProcess.stopProcessGracefully);
+  });
+
   test("force stops the assistant even when an active call lease exists", async () => {
     writeLeaseFile(["call-active-1"]);
     process.argv = ["bun", "cadet", "sleep", "sleep-test", "--force"];
@@ -238,7 +244,7 @@ describe("sleep command", () => {
       "assistant",
       undefined,
       45_000,
-      undefined,
+      expect.any(Function),
     );
     expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(
       2,
@@ -246,7 +252,7 @@ describe("sleep command", () => {
       "gateway",
       undefined,
       7000,
-      undefined,
+      expect.any(Function),
     );
     // The CES sibling is stopped by its PID file; a no-op when absent.
     expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(
@@ -255,7 +261,7 @@ describe("sleep command", () => {
       "credential-executor",
       undefined,
       45_000,
-      undefined,
+      expect.any(Function),
     );
   });
 

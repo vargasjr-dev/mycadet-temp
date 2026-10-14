@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
+import * as backupOps from "../lib/backup-ops.js";
 import * as roots from "../lib/root-backup.js";
 import * as cloud from "../lib/cloud-client.js";
 import * as platform from "../lib/teleport-backup.js";
@@ -12,6 +13,7 @@ import { backup } from "../commands/backup.js";
 const directory = mkdtempSync(join(tmpdir(), "backup-command-test-"));
 const argv = [...process.argv];
 const lookup = spyOn(config, "findAssistantByName");
+const backupDir = spyOn(backupOps, "getBackupsDir").mockReturnValue(directory);
 const capture = spyOn(roots, "createRootBackup");
 const readToken = spyOn(cloud, "readCloudToken");
 const cloudBackup = spyOn(platform, "createPlatformBackup");
@@ -44,6 +46,7 @@ afterAll(() => {
   for (const spy of [
     lookup,
     capture,
+    backupDir,
     readToken,
     cloudBackup,
     guardianRead,
@@ -61,10 +64,12 @@ for (const topology of ["local", "docker"] as const) {
       runtimeUrl: "http://127.0.0.1:1",
     };
     lookup.mockReturnValue(entry);
-    const output = join(directory, `${topology}.tar.gz`);
-    process.argv = ["bun", "cadet", "backup", "test", "--output", output];
+    process.argv = ["bun", "cadet", "backup", "test"];
     await backup();
-    expect(capture).toHaveBeenCalledWith(entry, output);
+    expect(capture).toHaveBeenCalledWith(
+      entry,
+      expect.stringMatching(new RegExp(`^${directory}/test-.*\\.tar\\.gz$`)),
+    );
     expect(guardianRead).not.toHaveBeenCalled();
     expect(guardianLease).not.toHaveBeenCalled();
     expect(cloudBackup).not.toHaveBeenCalled();
@@ -99,7 +104,7 @@ test("rejects legacy output names and unsupported remote topology before capture
     "--output",
     "legacy.vbundle",
   ];
-  await expect(backup()).rejects.toThrow("root tar archives");
+  await expect(backup()).rejects.toThrow("Unknown backup option: --output");
   lookup.mockReturnValue({
     assistantId: "test",
     cloud: "paired",
@@ -124,7 +129,7 @@ test("cloud backup requires cloud login and rejects host output paths", async ()
     "--output",
     "backup.tar.gz",
   ];
-  await expect(backup()).rejects.toThrow("stored by the cloud API");
+  await expect(backup()).rejects.toThrow("Unknown backup option: --output");
   process.argv = ["bun", "cadet", "backup", "test"];
   readToken.mockReturnValue(null);
   await expect(backup()).rejects.toThrow("cadet login");

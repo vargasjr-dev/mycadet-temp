@@ -9,7 +9,6 @@ import {
 } from "bun:test";
 import {
   existsSync,
-  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -19,7 +18,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { AssistantEntry } from "../lib/assistant-config.js";
-import { restoreBackup } from "../lib/backup-ops.js";
 import {
   bundleFileSizeBytes,
   formatBundleSizeMb,
@@ -28,7 +26,6 @@ import {
   stageBundleForRestore,
   stagingTargetFromEntry,
 } from "../lib/bundle-staging.js";
-import * as guardianToken from "../lib/guardian-token.js";
 import * as loopbackFetch from "../lib/loopback-fetch.js";
 import * as stepRunner from "../lib/step-runner.js";
 
@@ -219,43 +216,6 @@ describe("importStagedBundle", () => {
       );
     } finally {
       globalThis.setTimeout = realSetTimeout;
-    }
-  });
-});
-
-describe("restoreBackup staged path", () => {
-  test("stages a local bundle and posts JSON { path }", async () => {
-    const instanceDir = join(tmpRoot, "instance");
-    mkdirSync(join(instanceDir, "workspace"), { recursive: true });
-    const backupPath = join(tmpRoot, "backup.vbundle");
-    writeFileSync(backupPath, "bundle-bytes");
-
-    const loadSpy = spyOn(guardianToken, "loadGuardianToken").mockReturnValue({
-      accessToken: "local-token",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    } as ReturnType<typeof guardianToken.loadGuardianToken>);
-
-    fetchSpy.mockResolvedValue(
-      new Response(JSON.stringify({ success: true }), { status: 200 }),
-    );
-
-    try {
-      const ok = await restoreBackup(
-        "http://127.0.0.1:7831",
-        "assistant-123",
-        backupPath,
-        { kind: "local", instanceDir },
-      );
-      expect(ok).toBe(true);
-      expect(fetchSpy).toHaveBeenCalledTimes(1);
-      const init = fetchSpy.mock.calls[0][1];
-      expect(init?.headers).toMatchObject({
-        "Content-Type": "application/json",
-      });
-      const posted = JSON.parse(String(init?.body)) as { path: string };
-      expect(posted.path.startsWith(`${RESTORE_STAGING_DIRNAME}/`)).toBe(true);
-    } finally {
-      loadSpy.mockRestore();
     }
   });
 });

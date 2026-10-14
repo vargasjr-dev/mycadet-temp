@@ -460,4 +460,31 @@ describe("root tar backup", () => {
     }
     await validateRootArchive(file);
   });
+  test("deferred recovery restore keeps services stopped so its caller can select the runtime", async () => {
+    const { entry, file, dir } = await fixture();
+    await createRootBackup(entry, file);
+    const storage = new LocalRootStorage(entry);
+    let running = true;
+    const ops: RootBackupOps = {
+      storage: {
+        running: async () => running,
+        capture: (path) => storage.capture(path),
+        replace: (path) => storage.replace(path),
+      },
+      sleep: async () => {
+        running = false;
+      },
+      wake: async () => {
+        throw new Error("caller owns restart");
+      },
+      save: () => {},
+    };
+    await restoreRootBackup(
+      entry,
+      file,
+      { recoveryPath: join(dir, "recovery.tar.gz"), resume: false },
+      ops,
+    );
+    expect(running).toBe(false);
+  });
 });

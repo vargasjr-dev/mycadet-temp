@@ -1,3 +1,4 @@
+import { DAEMON_STOP_TIMEOUT_MS } from "@mycadet/local-mode";
 import { execFileSync } from "child_process";
 import { existsSync, readFileSync, unlinkSync } from "fs";
 import { platform } from "os";
@@ -418,6 +419,13 @@ export async function stopProcess(
       (error as NodeJS.ErrnoException).code === "ESRCH"
     );
   }
+}
+
+/** Stop a service without escalation. Failure preserves PID tracking and aborts capture/replacement. */
+export async function stopProcessGracefully(pid: number, label: string, timeoutMs = DAEMON_STOP_TIMEOUT_MS): Promise<boolean> {
+  const stopped = await stopProcess(pid, label, timeoutMs, undefined, undefined, undefined, true);
+  if (!stopped) throw new Error(`${label} did not stop gracefully.`);
+  return stopped;
 }
 
 /** Remove one or more files, ignoring missing-file errors. */

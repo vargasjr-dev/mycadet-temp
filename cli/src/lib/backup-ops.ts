@@ -1,21 +1,8 @@
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from "fs";
-import { dirname, join } from "path";
+import { existsSync, readdirSync, statSync, unlinkSync } from "fs";
+import { join } from "path";
 
-import {
-  importStagedBundle,
-  stageBundleForRestore,
-  type RestoreStagingTarget,
-} from "./bundle-staging.js";
-import { loadGuardianToken, refreshGuardianToken } from "./guardian-token.js";
-import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { findAssistantByName } from "./assistant-config.js";
+import { createRootBackup, restoreRootBackup } from "./root-backup.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 
@@ -31,261 +18,60 @@ export function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Obtain a valid guardian access token.
- *
- * Resolution order:
- *  1. Cached token that is not yet expired — use as-is.
- *  2. Cached token with a valid refresh token — call /v1/guardian/refresh.
- *  3. No usable token — return null so callers can skip the backup gracefully
- *     rather than hitting /v1/guardian/init (which 403s on bootstrapped instances).
- */
-async function getGuardianAccessToken(
-  runtimeUrl: string,
-  assistantId: string,
-): Promise<string | null> {
-  const tokenData = loadGuardianToken(assistantId);
-  if (tokenData && new Date(tokenData.accessTokenExpiresAt) > new Date()) {
-    return tokenData.accessToken;
-  }
-  const refreshed = await refreshGuardianToken(runtimeUrl, assistantId);
-  return refreshed?.accessToken ?? null;
-}
-
-/**
- * Create a .vbundle backup of a running assistant.
- * Returns the path to the saved backup, or null if backup failed.
- * Never throws — failures are logged as warnings.
- */
+/** Internal safety backup callers resolve their registered host topology, never runtime auth. */
 export async function createBackup(
-  runtimeUrl: string,
+  _runtimeUrl: string,
   assistantId: string,
   options?: { prefix?: string; description?: string; timeoutMs?: number },
 ): Promise<string | null> {
-  const timeoutMs = options?.timeoutMs ?? 120_000;
   try {
-    let accessToken = await getGuardianAccessToken(runtimeUrl, assistantId);
-    if (!accessToken) {
-      console.warn(
-        "Warning: backup skipped — no valid guardian token available",
-      );
-      return null;
-    }
-
-    let response = await loopbackSafeFetch(
-      `${runtimeUrl}/v1/migrations/export`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          description: options?.description ?? "CLI backup",
-        }),
-        signal: AbortSignal.timeout(timeoutMs),
-      },
-    );
-
-    // Retry once with a refreshed token on 401 — the cached token may be
-    // stale after a container restart that regenerated the gateway signing key.
-    if (response.status === 401) {
-      const refreshed = await refreshGuardianToken(runtimeUrl, assistantId);
-      if (!refreshed) {
-        console.warn(
-          `Warning: backup export failed (401) and token refresh failed`,
-        );
-        return null;
-      }
-      accessToken = refreshed.accessToken;
-      response = await loopbackSafeFetch(`${runtimeUrl}/v1/migrations/export`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          description: options?.description ?? "CLI backup",
-        }),
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-    }
-
-    if (!response.ok) {
-      const body = await response.text();
-      console.warn(
-        `Warning: backup export failed (${response.status}): ${body}`,
-      );
-      return null;
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
-
-    const isoTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const entry = findAssistantByName(assistantId);
+    if (!entry)
+      throw new Error(`No registered assistant found for '${assistantId}'.`);
     const prefix = options?.prefix ?? assistantId;
-    const outputPath = join(
+    if (prefix.includes("/") || prefix.includes("\\"))
+      throw new Error("Backup prefix must be a filename.");
+    const path = join(
       getBackupsDir(),
-      `${prefix}-${isoTimestamp}.vbundle`,
+      `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
     );
-
-    mkdirSync(dirname(outputPath), { recursive: true });
-    writeFileSync(outputPath, data);
-
-    return outputPath;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`Warning: backup failed: ${msg}`);
-    return null;
-  }
-}
-
-async function postRestoreWithRetries(
-  postImport: () => Promise<Response>,
-  runtimeUrl: string,
-  assistantId: string,
-  onTokenRefresh: (token: string) => void,
-): Promise<Response | null> {
-  let response = await postImport();
-
-  // Retry once with a refreshed token on 401 — the cached token may be
-  // stale after a container restart that regenerated the gateway signing key.
-  if (response.status === 401) {
-    const refreshed = await refreshGuardianToken(runtimeUrl, assistantId);
-    if (!refreshed) {
-      console.warn(`Warning: restore failed (401) and token refresh failed`);
-      return null;
-    }
-    onTokenRefresh(refreshed.accessToken);
-    response = await postImport();
-  }
-
-  // A freshly-(re)started gateway 503s {status:"starting"} for a couple of
-  // seconds until its own assistant poll observes the migration state and
-  // opens the traffic gate — retry through that window rather than failing
-  // the recovery. The daemon's running-migrations 503 carries a `reason`
-  // field and is excluded: the import must not race an in-flight migration.
-  const startingGateDeadline = Date.now() + 15_000;
-  while (!response.ok) {
-    const body = await response.text();
-    let gatewayStarting = false;
-    try {
-      const parsed = JSON.parse(body) as {
-        status?: string;
-        reason?: string;
-      };
-      gatewayStarting =
-        parsed.status === "starting" && parsed.reason === undefined;
-    } catch {
-      // Non-JSON error body — not the starting gate.
-    }
-    if (gatewayStarting && Date.now() < startingGateDeadline) {
-      await new Promise((r) => setTimeout(r, 1_000));
-      response = await postImport();
-      continue;
-    }
-    console.warn(`Warning: restore failed (${response.status}): ${body}`);
-    return null;
-  }
-
-  return response;
-}
-
-async function finishRestoreResponse(response: Response): Promise<boolean> {
-  const result = (await response.json()) as {
-    success: boolean;
-    message?: string;
-    reason?: string;
-  };
-  if (!result.success) {
+    await createRootBackup(entry, path);
+    return path;
+  } catch (error) {
     console.warn(
-      `Warning: restore failed — ${result.message ?? result.reason ?? "unknown reason"}`,
+      `Backup failed: ${error instanceof Error ? error.message : String(error)}`,
     );
-    return false;
+    return null;
   }
-  return true;
 }
 
-/**
- * Restore a .vbundle backup into a running assistant.
- * Returns true if restore succeeded, false otherwise.
- * Never throws — failures are logged as warnings.
- */
+/** Restore every persistent root; failed-state recovery can leave services stopped for its caller to restart. */
 export async function restoreBackup(
-  runtimeUrl: string,
+  _runtimeUrl: string,
   assistantId: string,
   backupPath: string,
-  staging?: RestoreStagingTarget | null,
+  options: { resume?: boolean } = {},
 ): Promise<boolean> {
   try {
-    if (!existsSync(backupPath)) {
-      console.warn(`Warning: backup file not found: ${backupPath}`);
-      return false;
-    }
-
-    const initialToken = await getGuardianAccessToken(runtimeUrl, assistantId);
-    if (!initialToken) {
-      console.warn(
-        "Warning: restore skipped — no valid guardian token available",
-      );
-      return false;
-    }
-    let token = initialToken;
-
-    if (staging) {
-      const staged = await stageBundleForRestore(staging, backupPath);
-      try {
-        const postImport = () =>
-          importStagedBundle(runtimeUrl, token, staged.relativePath);
-        const response = await postRestoreWithRetries(
-          postImport,
-          runtimeUrl,
-          assistantId,
-          (nextToken) => {
-            token = nextToken;
-          },
-        );
-        if (!response) {
-          return false;
-        }
-        return await finishRestoreResponse(response);
-      } finally {
-        await staged.cleanup();
-      }
-    }
-
-    const bundleData = new Uint8Array(readFileSync(backupPath));
-    const postImport = () =>
-      loopbackSafeFetch(`${runtimeUrl}/v1/migrations/import`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/octet-stream",
-        },
-        body: bundleData,
-        signal: AbortSignal.timeout(120_000),
-      });
-    const response = await postRestoreWithRetries(
-      postImport,
-      runtimeUrl,
-      assistantId,
-      (nextToken) => {
-        token = nextToken;
-      },
+    const entry = findAssistantByName(assistantId);
+    if (!entry)
+      throw new Error(`No registered assistant found for '${assistantId}'.`);
+    await restoreRootBackup(entry, backupPath, options);
+    return true;
+  } catch (error) {
+    console.warn(
+      `Restore failed: ${error instanceof Error ? error.message : String(error)}`,
     );
-    if (!response) {
-      return false;
-    }
-    return await finishRestoreResponse(response);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`Warning: restore failed: ${msg}`);
     return false;
   }
 }
 
-/** Filename kinds this CLI writes: `<assistantId>-<kind>-<timestamp>.vbundle`. */
-export const CLI_BACKUP_KINDS = ["pre-upgrade", "pre-teleport"] as const;
+/** Filename kinds this CLI writes: `<assistantId>-<kind>-<timestamp>.tar.gz`. */
+export const CLI_BACKUP_KINDS = [
+  "pre-upgrade",
+  "pre-rollback",
+  "pre-teleport",
+] as const;
 export type CliBackupKind = (typeof CLI_BACKUP_KINDS)[number];
 
 /** `new Date().toISOString().replace(/[:.]/g, "-")`, as used in every CLI backup filename. */
@@ -307,12 +93,12 @@ export function assistantBackupFilenamePattern(
   kinds: readonly CliBackupKind[] = CLI_BACKUP_KINDS,
 ): RegExp {
   return new RegExp(
-    `^${escapeRegExp(assistantId)}-(?:${kinds.join("|")})-${BACKUP_TIMESTAMP_PATTERN}\\.vbundle$`,
+    `^${escapeRegExp(assistantId)}-(?:${kinds.join("|")})-${BACKUP_TIMESTAMP_PATTERN}\\.tar\\.gz$`,
   );
 }
 
 /**
- * Modification times of the `.vbundle` backups this CLI has written for
+ * Modification times of the `.tar.gz` backups this CLI has written for
  * `assistantId` (every kind in `CLI_BACKUP_KINDS`), as ISO timestamps.
  * Missing directory yields `[]`.
  */

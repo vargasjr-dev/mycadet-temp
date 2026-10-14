@@ -509,9 +509,16 @@ export class DockerRootStorage implements RootStorage {
       endpoints.map(async ([container, defaultPort, endpoint]) => {
         if (!this.initialRunning?.has(container)) return;
         const state = await this.inspect(container);
-        const configuredPort = state.Config.Env.find((value) =>
-          value.startsWith("RUNTIME_HTTP_PORT="),
-        )?.split("=")[1];
+        const portVariable =
+          container === this.containers.workspace
+            ? "RUNTIME_HTTP_PORT="
+            : "GATEWAY_PORT=";
+        const configuredPort =
+          container === this.containers["ces-security"]
+            ? undefined
+            : state.Config.Env.find((value) =>
+                value.startsWith(portVariable),
+              )?.split("=")[1];
         const port = configuredPort ? Number(configuredPort) : defaultPort;
         if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
           throw new Error(`Invalid health port for ${container}.`);
@@ -683,7 +690,6 @@ function defaultOps(entry: AssistantEntry): RootBackupOps {
         force: false,
         wait: false,
         waitMs: null,
-        gracefulOnly: true,
       }),
     wake: () => storage.resume(),
     save: saveAssistantEntry,
@@ -778,7 +784,7 @@ async function captureBackup(
 export async function restoreRootBackup(
   entry: AssistantEntry,
   file: string,
-  options: { dryRun?: boolean; recoveryPath?: string } = {},
+  options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
   ops = defaultOps(entry),
 ): Promise<string | undefined> {
   return withOperationLock(entry, () =>
@@ -789,7 +795,7 @@ export async function restoreRootBackup(
 async function restoreBackup(
   entry: AssistantEntry,
   file: string,
-  options: { dryRun?: boolean; recoveryPath?: string },
+  options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean },
   ops: RootBackupOps,
 ): Promise<string | undefined> {
   const stage = await stageRootArchive(file);
@@ -843,7 +849,7 @@ async function restoreBackup(
       }
       throw error;
     }
-    if (running) {
+    if (running && options.resume !== false) {
       try {
         await ops.wake();
         stopped = false;
@@ -866,7 +872,14 @@ async function restoreBackup(
   } finally {
     try {
       // A failed replacement/failed start must never boot partially restored state.
-      if (running && stopped && !replacing && !restored) await ops.wake();
+      if (
+        running &&
+        stopped &&
+        !replacing &&
+        !restored &&
+        options.resume !== false
+      )
+        await ops.wake();
     } finally {
       await rm(stage, { recursive: true, force: true });
     }

@@ -20,6 +20,8 @@ import {
   pullImage,
   startContainers,
   stopContainers,
+  sleepContainers,
+  wakeContainers,
 } from "./docker.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
@@ -231,7 +233,7 @@ export function buildReplayEnv(
 interface ReplayState {
   bootstrapSecret: string | undefined;
   cesServiceToken: string;
-  signingKey: string;
+  signingKey?: string;
   extraAssistantEnv: Record<string, string>;
   extraGatewayEnv: Record<string, string>;
 }
@@ -239,8 +241,9 @@ interface ReplayState {
 /**
  * Derive the secrets and replay env for replacement containers from
  * already-captured assistant/gateway envs. GUARDIAN_BOOTSTRAP_SECRET is only
- * set on the gateway; CES_SERVICE_TOKEN and ACTOR_TOKEN_SIGNING_KEY fall back
- * to fresh values for instances that predate them. CADET_DEVICE_ID is
+ * set on the gateway; CES_SERVICE_TOKEN can be generated for older instances.
+ * An absent signing-key override stays absent so replacements use the persisted
+ * gateway root rather than rotate its identity. CADET_DEVICE_ID is
  * backfilled on the gateway from the host, and the assistant inherits the
  * gateway's value (captured values win) so the pair always matches.
  */
@@ -259,7 +262,7 @@ export function buildReplayState(
     cesServiceToken:
       capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
     signingKey:
-      capturedEnv["ACTOR_TOKEN_SIGNING_KEY"] || randomBytes(32).toString("hex"),
+      gatewayEnv["ACTOR_TOKEN_SIGNING_KEY"] || capturedEnv["ACTOR_TOKEN_SIGNING_KEY"],
     extraAssistantEnv,
     extraGatewayEnv,
   };
@@ -566,7 +569,7 @@ export async function attemptFailedStateRestore(opts: {
     opts.runtimeUrl,
     opts.assistantId,
     opts.backupPath,
-    { kind: "docker", assistantId: opts.assistantId },
+    { resume: false },
   );
   if (!restored) {
     return { restored: false, ready: false };
@@ -574,6 +577,7 @@ export async function attemptFailedStateRestore(opts: {
   console.log(
     "   Backup imported — restarting containers to complete recovery...",
   );
+  await sleepContainers(opts.res);
   await stopContainers(opts.res);
   await startContainers(opts.containerOptions, (msg) => console.log(msg));
   return { restored: true, ready: await waitForReady(opts.runtimeUrl) };
@@ -584,6 +588,8 @@ export async function attemptFailedStateRestore(opts: {
 // ---------------------------------------------------------------------------
 
 export interface PerformDockerRollbackOptions {
+  /** Root archive must be installed before the target runtime starts. */
+  backupPath: string;
   /** Specific version to roll back to. */
   targetVersion?: string;
 }
@@ -604,7 +610,7 @@ export async function performDockerRollback(
   entry: AssistantEntry,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
-  const { targetVersion } = options;
+  const { targetVersion, backupPath } = options;
 
   if (!targetVersion) {
     throw new Error("targetVersion is required for performDockerRollback");
@@ -696,15 +702,15 @@ export async function performDockerRollback(
     entry.runtimeUrl,
     entry.assistantId,
     {
-      prefix: `${entry.assistantId}-pre-upgrade`,
+      prefix: `${entry.assistantId}-pre-rollback`,
       description: `Pre-rollback snapshot before ${currentVersion ?? "unknown"} → ${targetVersion}`,
     },
   );
   if (preRollbackBackupPath) {
     console.log(`   Backup saved: ${preRollbackBackupPath}\n`);
-    pruneOldBackups(entry.assistantId, 3);
+    pruneOldBackups(entry.assistantId, 3, "pre-rollback");
   } else {
-    console.warn("⚠️  Pre-rollback backup failed, continuing with rollback\n");
+    throw new Error("Pre-rollback root backup failed; rollback aborted before replacing services.");
   }
 
   const {
@@ -780,43 +786,24 @@ export async function performDockerRollback(
 
   // Stop containers, migrate security files, start with target images
   console.log("🛑 Stopping existing containers...");
+  await sleepContainers(res);
   await stopContainers(res);
   console.log("✅ Containers stopped\n");
 
-  console.log("🚀 Starting containers with target version...");
-  await startContainers(
-    {
-      signingKey,
-      bootstrapSecret,
-      cesServiceToken,
-      extraAssistantEnv,
-      extraGatewayEnv,
-      gatewayPort,
-      assistantPort,
-      imageTags: targetImageTags,
-      instanceName,
-      res,
-    },
-    (msg) => console.log(msg),
-  );
-  console.log("✅ Containers started\n");
-
-  // Wait for readiness
-  console.log("Waiting for assistant to become ready...");
-  const ready = await waitForReady(entry.runtimeUrl);
+  let ready = false;
+  try {
+    console.log("Creating stopped containers with the target version...");
+    await startContainers({ signingKey, bootstrapSecret, cesServiceToken, extraAssistantEnv, extraGatewayEnv, gatewayPort, assistantPort, imageTags: targetImageTags, instanceName, res, createOnly: true }, (msg) => console.log(msg));
+    if (!await restoreBackup(entry.runtimeUrl, entry.assistantId, backupPath, { resume: false })) throw new Error("Target backup roots could not be restored.");
+    await wakeContainers(res);
+    console.log("Waiting for restored assistant to become ready...");
+    ready = await waitForReady(entry.runtimeUrl);
+  } catch (error) {
+    console.error(`Versioned restore failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 
   if (ready) {
     // Success path
-
-    // Post-swap migration rollback: ask the now-running old daemon to roll
-    // back any migrations above its own registry ceiling.
-    await rollbackMigrations(
-      entry.runtimeUrl,
-      entry.assistantId,
-      undefined,
-      undefined,
-      true,
-    );
 
     const updatedEntry: AssistantEntry = {
       ...entry,
@@ -893,6 +880,7 @@ export async function performDockerRollback(
           );
         }
 
+        await sleepContainers(res);
         await stopContainers(res);
 
         await startContainers(
@@ -956,14 +944,12 @@ export async function performDockerRollback(
               entry.runtimeUrl,
               entry.assistantId,
               preRollbackBackupPath,
-              { kind: "docker", assistantId: entry.assistantId },
+              {},
             );
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {
-              console.warn(
-                "   ⚠️  Data restore failed (auto-rollback continues without data restoration)\n",
-              );
+              throw new Error(`Root restore failed; rollback recovery is incomplete. Backup: ${preRollbackBackupPath}`);
             }
           }
 
