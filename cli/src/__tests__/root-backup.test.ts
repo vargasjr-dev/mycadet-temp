@@ -18,6 +18,7 @@ import * as tar from "tar";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import {
   createRootBackup,
+  initializeRootArchive,
   DockerRootStorage,
   LocalRootStorage,
   packRoot,
@@ -83,6 +84,42 @@ afterEach(async () => {
 });
 
 describe("root tar backup", () => {
+  test("initializes a fresh stopped instance with complete roots and the archived signing key", async () => {
+    const { root, entry, file, dir } = await fixture();
+    await packRoot(root, file);
+    const destination = join(dir, "fresh-instance");
+    await mkdir(destination);
+    const fresh = {
+      ...entry,
+      resources: { ...entry.resources!, instanceDir: destination },
+    };
+    const key = await initializeRootArchive(fresh, file);
+    expect(key).toBe("07".repeat(32));
+    expect(
+      await readFile(join(destination, "ces-security", "keys.enc"), "utf8"),
+    ).toBe("opaque encrypted bytes");
+    expect(
+      await readFile(join(destination, "ces-security", "store.key")),
+    ).toEqual(Buffer.alloc(32, 3));
+    expect(
+      await readFile(join(destination, "ces-data", "grants.json"), "utf8"),
+    ).toBe("CES policies");
+    expect(await readdir(destination)).toEqual([...STATE_ROOTS].sort());
+  });
+
+  test("initialization refuses running services before replacing any roots", async () => {
+    const { root, entry, file } = await fixture();
+    await packRoot(root, file);
+    const storage = new LocalRootStorage(entry);
+    storage.running = async () => true;
+    await expect(initializeRootArchive(entry, file, storage)).rejects.toThrow(
+      "still running",
+    );
+    expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
+      "source notes",
+    );
+  });
+
   test("round-trips every service root, encrypted bytes, permissions and internal links", async () => {
     const { root, entry, file, dir } = await fixture();
     await createRootBackup(entry, file);

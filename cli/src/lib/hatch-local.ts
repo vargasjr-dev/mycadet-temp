@@ -160,6 +160,8 @@ export interface HatchLocalParams {
   /** Extra env vars forwarded into the assistant process. */
   flagEnvVars?: Record<string, string>;
   setupProviderCredentials?: boolean;
+  /** Whole-installation state installed before the first service startup. */
+  initialArchive?: string;
   /**
    * Show the per-service startup logs (assistant, credential executor,
    * gateway) and the extended next steps. Off by default — the happy path
@@ -291,7 +293,19 @@ export async function hatchLocal(
       const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
 
       reporter.progress(3, 6, "Starting assistant...");
-      const signingKey = generateLocalSigningKey();
+      const signingKey = params.initialArchive
+        ? await (
+            await import("./root-backup.js")
+          ).initializeRootArchive(
+            {
+              assistantId: instanceName,
+              cloud: "local",
+              runtimeUrl: "",
+              resources,
+            },
+            params.initialArchive,
+          )
+        : generateLocalSigningKey();
       const bootstrapSecret = generateLocalSigningKey();
       let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       try {

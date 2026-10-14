@@ -296,6 +296,8 @@ export interface HatchDockerParams {
   /** Extra env vars forwarded into the assistant container. */
   flagEnvVars?: Record<string, string>;
   setupProviderCredentials?: boolean;
+  /** Whole-installation state installed into stopped containers before startup. */
+  initialArchive?: string;
   /**
    * Path to a local source tree to build images from before hatching. When
    * provided, this path is used directly as the repo root and no file
@@ -1645,7 +1647,9 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     const cesServiceToken = randomBytes(32).toString("hex");
-    const signingKey = randomBytes(32).toString("hex");
+    const signingKey = params.initialArchive
+      ? undefined
+      : randomBytes(32).toString("hex");
 
     // When launched by a remote hatch startup script, the env var
     // GUARDIAN_BOOTSTRAP_SECRET is already set with the laptop's secret.
@@ -1684,8 +1688,26 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       ...flagEnvVars,
       CADET_DEVICE_ID: hostDeviceId,
     };
+    const runtimeUrl = `http://localhost:${gatewayPort}`;
+    const dockerEntry: AssistantEntry = {
+      assistantId: instanceName,
+      runtimeUrl,
+      cloud: "docker",
+      hatchedAt: new Date().toISOString(),
+      guardianBootstrapSecret: ownSecret,
+      containerInfo: {
+        assistantImage: imageTags.assistant,
+        gatewayImage: imageTags.gateway,
+        cesImage: imageTags["credential-executor"],
+        assistantPort,
+      },
+    };
+    if (params.initialArchive) {
+      saveAssistantEntry(dockerEntry);
+    }
     await startContainers(
       {
+        createOnly: !!params.initialArchive,
         signingKey,
         bootstrapSecret,
         cesServiceToken,
@@ -1703,29 +1725,29 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     );
     const containersUpAt = Date.now();
 
-    const runtimeUrl = `http://localhost:${gatewayPort}`;
-    const dockerEntry: AssistantEntry = {
-      assistantId: instanceName,
-      runtimeUrl,
-      cloud: "docker",
-      hatchedAt: new Date().toISOString(),
-      guardianBootstrapSecret: ownSecret,
-      containerInfo: {
-        assistantImage: imageTags.assistant,
-        gatewayImage: imageTags.gateway,
-        cesImage: imageTags["credential-executor"],
-        assistantPort,
-      },
-    };
     emitProgress(5, 6, "Saving configuration...");
     saveAssistantEntry(dockerEntry);
     setActiveAssistant(instanceName);
 
+    if (params.initialArchive) {
+      const { initializeRootArchive, DockerRootStorage } =
+        await import("./root-backup.js");
+      await initializeRootArchive(dockerEntry, params.initialArchive);
+      const storage = new DockerRootStorage(dockerEntry);
+      storage.initialRunning = new Set(Object.values(storage.containers));
+      await storage.resume();
+    }
+
     emitProgress(6, 6, "Waiting for services...");
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;
-    const { ready, guardianAccessToken, notReadyReason } =
-      await waitForGatewayAndLease({
+    const { ready, guardianAccessToken, notReadyReason } = params.initialArchive
+      ? {
+          ready: true,
+          guardianAccessToken: undefined,
+          notReadyReason: undefined,
+        }
+      : await waitForGatewayAndLease({
         bootstrapSecret: ownSecret,
         containerName: res.assistantContainer,
         detached: waitDetached,

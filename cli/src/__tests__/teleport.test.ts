@@ -1,3 +1,5 @@
+import * as hostTeleport from "../lib/host-teleport.js";
+const realHostTeleport = { ...hostTeleport };
 import {
   afterAll,
   afterEach,
@@ -283,7 +285,7 @@ const listAssistantBackupTimesMock = mock<
   typeof backupOps.listAssistantBackupTimes
 >(() => []);
 const createBackupMock = mock<typeof backupOps.createBackup>(
-  async () => "/tmp/backups/my-local-pre-teleport-2026.vbundle",
+  async () => "/tmp/backups/my-local-pre-teleport-2026.tar.gz",
 );
 const pruneOldBackupsMock = mock<typeof backupOps.pruneOldBackups>(() => {});
 
@@ -368,6 +370,11 @@ mock.module("../lib/upgrade-lifecycle.js", () => ({
   fetchCurrentVersion: fetchCurrentVersionMock,
 }));
 
+const teleportHostInstallationMock = mock(async () => {});
+mock.module("../lib/host-teleport.js", () => ({
+  teleportHostInstallation: teleportHostInstallationMock,
+}));
+
 import {
   teleport,
   parseArgs,
@@ -385,6 +392,7 @@ afterAll(() => {
   // Restore the real module exports so the mocks do not leak into sibling
   // test files (e.g. guardian-token.test.ts, cloud-client tests) that
   // run in the same `bun test` invocation.
+  mock.module("../lib/host-teleport.js", () => realHostTeleport);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
   mock.module("../lib/cloud-client.js", () => realCloudClient);
@@ -435,6 +443,8 @@ function defaultLocalRuntimePollImpl(
 }
 
 beforeEach(() => {
+  teleportHostInstallationMock.mockReset();
+  teleportHostInstallationMock.mockResolvedValue(undefined);
   originalArgv = [...process.argv];
   fetchCalls = [];
 
@@ -567,7 +577,7 @@ beforeEach(() => {
   listAssistantBackupTimesMock.mockReturnValue([]);
   createBackupMock.mockReset();
   createBackupMock.mockResolvedValue(
-    "/tmp/backups/my-local-pre-teleport-2026.vbundle",
+    "/tmp/backups/my-local-pre-teleport-2026.tar.gz",
   );
   pruneOldBackupsMock.mockReset();
   pruneOldBackupsMock.mockImplementation(() => {});
@@ -958,7 +968,7 @@ describe("resolveOrHatchTarget", () => {
 // Unified GCS teleport flow — the four directions
 // ---------------------------------------------------------------------------
 
-describe("unified GCS flow — four directions", () => {
+describe("cloud migration flow", () => {
   test("local → platform: requests upload URL, drives local runtime export, imports from GCS", async () => {
     setArgv("--from", "my-local", "--platform");
 
@@ -1140,149 +1150,6 @@ describe("unified GCS flow — four directions", () => {
       // No legacy inline-import helpers were touched.
       // (Verified by the absence of fetch calls carrying bundle bodies —
       // see "never buffers bundle bytes" assertion below.)
-    } finally {
-      restoreFetch();
-    }
-  });
-
-  test("local → docker: export via upload URL, import via download URL", async () => {
-    setArgv("--from", "my-local", "--docker");
-
-    const localEntry = makeEntry("my-local", { cloud: "local" });
-    const dockerEntry = makeEntry("new-docker", {
-      cloud: "docker",
-      runtimeUrl: "http://localhost:7822",
-    });
-
-    findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-local" ? localEntry : null,
-    );
-
-    loadAllAssistantsMock.mockImplementation(() => {
-      if (hatchDockerMock.mock.calls.length > 0) {
-        return [localEntry, dockerEntry];
-      }
-      return [localEntry];
-    });
-
-    const restoreFetch = installTrackingFetch();
-    try {
-      await teleport();
-
-      // Export and import must pin the same platform URL so the bundle
-      // lives in one place end-to-end. For local→docker neither side is
-      // platform, so we default to getCloudUrl() (resolved once).
-      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operation: "upload",
-          minRuntimeVersion: "0.6.5",
-          maxRuntimeVersion: null,
-        }),
-        "platform-token",
-        "https://cloud.mycadet.ai",
-      );
-      expect(localRuntimeExportToGcsMock).toHaveBeenCalled();
-
-      // Import: download-URL for the docker target, then runtime import.
-      // targetRuntimeVersion comes from the docker target's runtime
-      // identity (mocked to "0.6.5"), not from cliPkg.version.
-      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operation: "download",
-          bundleKey: "bundle-key-123",
-          targetRuntimeVersion: "0.6.5",
-        }),
-        "platform-token",
-        "https://cloud.mycadet.ai",
-      );
-      expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
-        expect.objectContaining({ cloud: "docker" }),
-        expect.any(String),
-      );
-      expect(localRuntimeImportFromGcsMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cloud: "docker",
-          runtimeUrl: "http://localhost:7822",
-        }),
-        "local-token",
-        expect.objectContaining({
-          bundleUrl: "https://storage.googleapis.com/bucket/signed-download",
-        }),
-      );
-
-      // Source retirement still happens on success for local↔docker.
-      expect(retireLocalMock).toHaveBeenCalledWith("my-local", localEntry);
-      expect(removeAssistantEntryMock).toHaveBeenCalledWith("my-local");
-    } finally {
-      restoreFetch();
-    }
-  });
-
-  test("docker → local: export via upload URL, import via download URL", async () => {
-    setArgv("--from", "my-docker", "--local");
-
-    const dockerEntry = makeEntry("my-docker", {
-      cloud: "docker",
-      runtimeUrl: "http://localhost:7822",
-    });
-    const localEntry = makeEntry("new-local", {
-      cloud: "local",
-      runtimeUrl: "http://localhost:7823",
-    });
-
-    findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-docker" ? dockerEntry : null,
-    );
-
-    loadAllAssistantsMock.mockImplementation(() => {
-      if (hatchLocalMock.mock.calls.length > 0) {
-        return [dockerEntry, localEntry];
-      }
-      return [dockerEntry];
-    });
-
-    const restoreFetch = installTrackingFetch();
-    try {
-      await teleport();
-
-      // Docker source should be put to sleep first.
-      expect(sleepContainersMock).toHaveBeenCalled();
-
-      // Export leg: upload-URL (pinned to the same platform as import),
-      // then runtime export.
-      expect(cloudRequestSignedUrlMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operation: "upload",
-          minRuntimeVersion: "0.6.5",
-          maxRuntimeVersion: null,
-        }),
-        "platform-token",
-        "https://cloud.mycadet.ai",
-      );
-      expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cloud: "docker",
-          runtimeUrl: "http://localhost:7822",
-        }),
-        "local-token",
-        expect.objectContaining({
-          uploadUrl: "https://storage.googleapis.com/bucket/signed-upload",
-        }),
-      );
-
-      // Import leg: download-URL targets the new local runtime
-      expect(localRuntimeImportFromGcsMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cloud: "local",
-          runtimeUrl: "http://localhost:7823",
-        }),
-        "local-token",
-        expect.anything(),
-      );
-
-      // Source retirement
-      expect(retireDockerMock).toHaveBeenCalledWith("my-docker");
-      expect(removeAssistantEntryMock).toHaveBeenCalledWith("my-docker");
     } finally {
       restoreFetch();
     }
@@ -1755,54 +1622,6 @@ describe("VersionMismatchError handling", () => {
     }
   });
 
-  test("docker target: 422 on download signed-URL exits 1 with friendly message", async () => {
-    setArgv("--from", "my-local", "--docker");
-
-    const localEntry = makeEntry("my-local", { cloud: "local" });
-    const dockerEntry = makeEntry("new-docker", {
-      cloud: "docker",
-      runtimeUrl: "http://localhost:7822",
-    });
-
-    findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-local" ? localEntry : null,
-    );
-
-    loadAllAssistantsMock.mockImplementation(() => {
-      if (hatchDockerMock.mock.calls.length > 0) {
-        return [localEntry, dockerEntry];
-      }
-      return [localEntry];
-    });
-
-    cloudRequestSignedUrlMock.mockImplementation(async (params) => {
-      if (params.operation === "download") {
-        throw new cloudClient.VersionMismatchError(
-          { min_runtime_version: "99.0.0", max_runtime_version: null },
-          "0.7.1",
-        );
-      }
-      return {
-        url: "https://storage.googleapis.com/bucket/signed-upload",
-        bundleKey: params.bundleKey ?? "bundle-key-123",
-        expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-      };
-    });
-
-    const restoreFetch = installTrackingFetch();
-    try {
-      await expect(teleport()).rejects.toThrow("process.exit:1");
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Cannot import: bundle requires runtime"),
-      );
-
-      expect(localRuntimeImportFromGcsMock).not.toHaveBeenCalled();
-    } finally {
-      restoreFetch();
-    }
-  });
-
   test("non-VersionMismatchError on download signed-URL re-raises", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
@@ -1963,25 +1782,6 @@ describe("target runtime version fetch", () => {
 // ---------------------------------------------------------------------------
 
 describe("dry-run", () => {
-  test("dry-run without existing target does not hatch or export", async () => {
-    setArgv("--from", "my-local", "--docker", "--dry-run");
-
-    const localEntry = makeEntry("my-local", { cloud: "local" });
-    findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-local" ? localEntry : null,
-    );
-
-    await teleport();
-
-    expect(hatchDockerMock).not.toHaveBeenCalled();
-    expect(hatchLocalMock).not.toHaveBeenCalled();
-    expect(hatchAssistantMock).not.toHaveBeenCalled();
-    expect(retireLocalMock).not.toHaveBeenCalled();
-    expect(retireDockerMock).not.toHaveBeenCalled();
-    expect(localRuntimeExportToGcsMock).not.toHaveBeenCalled();
-    expect(localRuntimeImportFromGcsMock).not.toHaveBeenCalled();
-  });
-
   test("dry-run with existing platform target runs preflight-from-gcs", async () => {
     setArgv(
       "--from",
@@ -2071,7 +1871,7 @@ describe("pre-export source backup", () => {
     const order: string[] = [];
     createBackupMock.mockImplementation(async () => {
       order.push("backup");
-      return "/tmp/backups/my-local-pre-teleport-2026.vbundle";
+      return "/tmp/backups/my-local-pre-teleport-2026.tar.gz";
     });
     localRuntimeExportToGcsMock.mockImplementation(async () => {
       order.push("export");
@@ -2139,36 +1939,6 @@ describe("pre-export source backup", () => {
     }
 
     expect(createBackupMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("docker source: backs up host-side through its runtime URL", async () => {
-    setArgv("--from", "my-docker", "--local");
-    const dockerEntry = makeEntry("my-docker", {
-      cloud: "docker",
-      runtimeUrl: "http://localhost:9821",
-    });
-    findAssistantByNameMock.mockImplementation((name: string) =>
-      name === "my-docker" ? dockerEntry : null,
-    );
-    const freshLocal = makeEntry("fresh-local", { cloud: "local" });
-    loadAllAssistantsMock.mockImplementation(() =>
-      hatchLocalMock.mock.calls.length > 0
-        ? [dockerEntry, freshLocal]
-        : [dockerEntry],
-    );
-
-    const restoreFetch = installTrackingFetch();
-    try {
-      await teleport();
-    } finally {
-      restoreFetch();
-    }
-
-    expect(createBackupMock).toHaveBeenCalledWith(
-      "http://localhost:9821",
-      "my-docker",
-      expect.objectContaining({ prefix: "my-docker-pre-teleport" }),
-    );
   });
 
   test("platform source: takes a PVC snapshot through the source platform before exporting", async () => {
@@ -2583,31 +2353,6 @@ describe("platform credential injection", () => {
       restoreFetch();
     }
   });
-
-  test("local→docker teleport does NOT call credential injection", async () => {
-    setArgv("--from", "my-local", "--docker", "my-docker");
-
-    const localEntry = makeEntry("my-local", { cloud: "local" });
-    const dockerEntry = makeEntry("my-docker", {
-      cloud: "docker",
-      runtimeUrl: "http://localhost:8821",
-    });
-
-    findAssistantByNameMock.mockImplementation((name: string) => {
-      if (name === "my-local") return localEntry;
-      if (name === "my-docker") return dockerEntry;
-      return null;
-    });
-
-    const restoreFetch = installTrackingFetch();
-    try {
-      await teleport();
-      expect(ensureSelfHostedLocalRegistrationMock).not.toHaveBeenCalled();
-      expect(injectCredentialsIntoAssistantMock).not.toHaveBeenCalled();
-    } finally {
-      restoreFetch();
-    }
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -3007,3 +2752,42 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   });
 });
 
+for (const [sourceCloud, targetFlag] of [
+  ["local", "--docker"],
+  ["docker", "--local"],
+] as const) {
+  test(
+    sourceCloud + " host transfer bypasses cloud and runtime export",
+    async () => {
+      const entry = makeEntry("host-source", { cloud: sourceCloud });
+      findAssistantByNameMock.mockReturnValue(entry);
+      readCloudTokenMock.mockReturnValue(null);
+      setArgv(
+        "--from",
+        "host-source",
+        targetFlag,
+        "--keep-source",
+        "--dry-run",
+      );
+      await teleport();
+      expect(teleportHostInstallationMock).toHaveBeenCalledWith(
+        entry,
+        targetFlag.slice(2),
+        undefined,
+        { keepSource: true, dryRun: true },
+      );
+      expect(localRuntimeExportToGcsMock).not.toHaveBeenCalled();
+      expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();
+      expect(loadGuardianTokenMock).not.toHaveBeenCalled();
+    },
+  );
+}
+
+test("cloud home alias cannot teleport into the same platform environment", async () => {
+  const entry = makeEntry("my-cloud", { cloud: "cloud" });
+  findAssistantByNameMock.mockReturnValue(entry);
+  setArgv("--from", "my-cloud", "--platform");
+  await expect(teleport()).rejects.toThrow("process.exit:1");
+  expect(hatchAssistantMock).not.toHaveBeenCalled();
+  expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();
+});

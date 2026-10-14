@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn } from "node:child_process";
 import {
   chmod,
@@ -16,6 +17,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
+import { z } from "zod";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import type { AssistantEntry } from "./assistant-config.js";
 import { getDaemonPidPath, saveAssistantEntry } from "./assistant-config.js";
@@ -388,18 +390,21 @@ export class LocalRootStorage implements RootStorage {
   }
 }
 
-interface ContainerInspection {
-  Image: string;
-  State: { Status: string; Running: boolean };
-  Config: { Env: string[]; User: string };
-  Mounts: Array<{
-    Type: string;
-    Name?: string;
-    Source: string;
-    Destination: string;
-    RW: boolean;
-  }>;
-}
+const ContainerInspectionSchema = z.object({
+  Image: z.string(),
+  State: z.object({ Status: z.string(), Running: z.boolean() }),
+  Config: z.object({ Env: z.array(z.string()), User: z.string() }),
+  Mounts: z.array(
+    z.object({
+      Type: z.string(),
+      Name: z.string().optional(),
+      Source: z.string(),
+      Destination: z.string(),
+      RW: z.boolean(),
+    }),
+  ),
+});
+type ContainerInspection = z.infer<typeof ContainerInspectionSchema>;
 
 export interface DockerBackupOps {
   output: typeof execOutput;
@@ -458,11 +463,16 @@ export class DockerRootStorage implements RootStorage {
     };
   }
   async inspect(container: string): Promise<ContainerInspection> {
-    const result = JSON.parse(
-      await this.ops.output("docker", ["inspect", container]),
-    ) as ContainerInspection[];
-    if (!result[0]) throw new Error(`Container is missing: ${container}`);
-    return result[0];
+    const result = z
+      .array(ContainerInspectionSchema)
+      .length(1)
+      .safeParse(
+        JSON.parse(await this.ops.output("docker", ["inspect", container])),
+      );
+    if (!result.success) {
+      throw new Error(`Invalid container inspection: ${container}`);
+    }
+    return result.data[0]!;
   }
   async running(): Promise<boolean> {
     const containers = [...new Set(Object.values(this.containers))];
@@ -524,7 +534,7 @@ export class DockerRootStorage implements RootStorage {
           throw new Error(`Invalid health port for ${container}.`);
         const deadline = Date.now() + 60_000;
         const script =
-          'const url=process.argv.at(-1); const r=await fetch(url,{signal:AbortSignal.timeout(1500)}); if(!r.ok)process.exit(1); if(url.endsWith("/readyz")){const b=await r.json(); if(b.dbMigrations?.state==="failed"){console.log("migration_failed");process.exit(2)} if(b.ready===false)process.exit(1)} console.log("ready")';
+          'const url=process.argv.at(-1); const r=await fetch(url,{signal:AbortSignal.timeout(1500)}); if(!r.ok)process.exit(1); if(url.endsWith("/readyz")){const b=await r.json(); if(b.dbMigrations?.state==="failed"){console.error("migration_failed");process.exit(2)} if(b.ready===false)process.exit(1)} console.log("ready")';
         while (true) {
           try {
             await this.ops.output(
@@ -703,7 +713,10 @@ async function assertStopped(storage: RootStorage): Promise<void> {
     );
 }
 
-async function withOperationLock<T>(
+const ownedOperationLocks = new AsyncLocalStorage<ReadonlySet<string>>();
+
+/** Hold storage ownership across lifecycle steps; nested backup calls share the lock. */
+export async function withRootOperationLock<T>(
   entry: AssistantEntry,
   work: () => Promise<T>,
 ): Promise<T> {
@@ -719,6 +732,10 @@ async function withOperationLock<T>(
       .update(identity ?? entry.assistantId)
       .digest("hex"),
   );
+  const owned = ownedOperationLocks.getStore();
+  if (owned?.has(lock)) {
+    return work();
+  }
   try {
     await mkdir(lock, { mode: 0o700 });
   } catch (error) {
@@ -729,7 +746,10 @@ async function withOperationLock<T>(
     throw error;
   }
   try {
-    return await work();
+    return await ownedOperationLocks.run(
+      new Set([...(owned ?? []), lock]),
+      work,
+    );
   } finally {
     await rm(lock, { recursive: true, force: true });
   }
@@ -740,7 +760,7 @@ export async function createRootBackup(
   output: string,
   ops = defaultOps(entry),
 ): Promise<void> {
-  return withOperationLock(entry, () => captureBackup(entry, output, ops));
+  return withRootOperationLock(entry, () => captureBackup(entry, output, ops));
 }
 
 async function captureBackup(
@@ -787,9 +807,34 @@ export async function restoreRootBackup(
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
   ops = defaultOps(entry),
 ): Promise<string | undefined> {
-  return withOperationLock(entry, () =>
+  return withRootOperationLock(entry, () =>
     restoreBackup(entry, file, options, ops),
   );
+}
+
+/** Install into a newly allocated instance before any service starts. */
+export async function initializeRootArchive(
+  entry: AssistantEntry,
+  file: string,
+  storage: RootStorage = entry.cloud === "docker"
+    ? new DockerRootStorage(entry)
+    : new LocalRootStorage(entry),
+): Promise<string> {
+  return withRootOperationLock(entry, async () => {
+    const stage = await stageRootArchive(file);
+    try {
+      const source = join(stage, "state");
+      const signingKey = resolveExistingLocalSigningKey({
+        instanceDir: source,
+      });
+      await storage.prepareRestore?.(source);
+      await assertStopped(storage);
+      await storage.replace(source);
+      return signingKey;
+    } finally {
+      await rm(stage, { recursive: true, force: true });
+    }
+  });
 }
 
 async function restoreBackup(

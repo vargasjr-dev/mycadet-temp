@@ -1,9 +1,9 @@
+import { teleportHostInstallation } from "../lib/host-teleport.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { resolveAssistantApiKeyForInjection } from "../lib/assistant-api-key-resolution";
 import {
   findAssistantByName,
   loadAllAssistants,
-  getDaemonPidPath,
   removeAssistantEntry,
   saveAssistantEntry,
   setActiveAssistant,
@@ -50,22 +50,15 @@ import {
 import {
   hatchDocker,
   retireDocker,
-  sleepContainers,
-  dockerResourceNames,
 } from "../lib/docker.js";
 import { hatchLocal } from "../lib/hatch-local.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { validateAssistantName } from "../lib/retire-archive.js";
 import {
-  DAEMON_STOP_TIMEOUT_MS,
-  stopProcessByPidFile,
-} from "../lib/process.js";
-import {
   fetchAssistantIngressUrl,
   fetchCurrentVersion,
 } from "../lib/upgrade-lifecycle.js";
 import { compareVersions } from "../lib/version-compat.js";
-import { join } from "node:path";
 import {
   hasRecentBackup,
   RECENT_BACKUP_MAX_AGE_MS,
@@ -109,12 +102,13 @@ function printHelp(): void {
     "get a PVC snapshot (waited on until restorable); local and docker",
   );
   console.log(
-    "sources get a .vbundle written to ~/.local/share/cadet/backups/ on this",
+    "sources get a root tar archive in the XDG Cadet backups directory on this",
   );
   console.log(
     `machine. A backup of the source taken within the last ${RECENT_BACKUP_MAX_AGE_MS / 60_000} minutes is`,
   );
-  console.log("reused. If the backup fails, the teleport is aborted.");
+  console.log("reused for cloud transfers. Local/Docker transfers always capture fresh state.");
+  console.log("If the backup fails, the teleport is aborted.");
   console.log("");
   console.log(
     "For local-to-docker and docker-to-local transfers, the source assistant",
@@ -122,7 +116,7 @@ function printHelp(): void {
   console.log(
     "is automatically retired after a successful import to free up ports and",
   );
-  console.log("avoid resource conflicts. Use --keep-source to skip this.");
+  console.log("avoid resource conflicts. Use --keep-source to retain the source, stopped.");
   console.log("");
   console.log("Environment flags:");
   console.log("  --local [name]      Target a local bare-metal assistant");
@@ -174,7 +168,7 @@ function printHelp(): void {
   console.log("");
   console.log("  cadet teleport --from my-docker --local --keep-source");
   console.log(
-    "      Transfer to a new local assistant but keep the docker source running",
+    "      Transfer to a new local assistant and retain the stopped Docker source",
   );
   console.log("");
   console.log(
@@ -975,7 +969,7 @@ export async function resolveOrHatchTarget(
       // Validate the existing assistant's cloud matches the requested env
       const existingCloud = existing.cloud;
       const normalizedExisting =
-        existingCloud === "cadet" ? "platform" : existingCloud;
+        isCloudHome(existingCloud) ? "platform" : existingCloud;
       if (normalizedExisting !== targetEnv) {
         console.error(
           `Error: Assistant '${targetName}' is a ${normalizedExisting} assistant, not ${targetEnv}. ` +
@@ -1307,12 +1301,25 @@ export const teleport = Object.assign(
 
   // Early same-environment guard — compare source cloud against the CLI flag
   // BEFORE exporting or hatching, to avoid creating orphaned assistants.
-  const normalizedSourceEnv = fromCloud === "cadet" ? "platform" : fromCloud;
+  const normalizedSourceEnv = isCloudHome(fromCloud) ? "platform" : fromCloud;
   if (normalizedSourceEnv === targetEnv) {
     console.error(
       `Cannot teleport between two ${targetEnv} assistants. Teleport transfers data across different environments.`,
     );
     process.exit(1);
+  }
+
+  if (
+    (fromCloud === "local" || fromCloud === "docker") &&
+    (targetEnv === "local" || targetEnv === "docker")
+  ) {
+    try {
+      await teleportHostInstallation(fromEntry, targetEnv, targetName, { keepSource, dryRun });
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+    return;
   }
 
   // Dry-run without an existing target: skip export, hatch, and import —
@@ -1323,7 +1330,7 @@ export const teleport = Object.assign(
     if (existingTarget) {
       // Target exists — validate cloud matches the flag, then run preflight
       const toCloud = existingTarget.cloud;
-      const normalizedTargetEnv = toCloud === "cadet" ? "platform" : toCloud;
+      const normalizedTargetEnv = isCloudHome(toCloud) ? "platform" : toCloud;
       if (normalizedTargetEnv !== targetEnv) {
         console.error(
           `Error: Assistant '${targetName}' is a ${normalizedTargetEnv} assistant, not ${targetEnv}. ` +
@@ -1342,7 +1349,7 @@ export const teleport = Object.assign(
       // target topologies including local and docker.
 
       // Version guard: block platform→non-cloud when target is behind
-      if (fromCloud === "cadet" && toCloud !== "cadet") {
+      if (isCloudHome(fromCloud) && !isCloudHome(toCloud)) {
         const [sourceVersion, targetVersion] = await Promise.all([
           fetchCurrentVersion(fromEntry.runtimeUrl),
           fetchCurrentVersion(existingTarget.runtimeUrl),
@@ -1368,9 +1375,9 @@ export const teleport = Object.assign(
       // platform sources it's owned by the source platform. Only one of
       // these branches applies at a time (same-env was rejected earlier).
       const bundleCloudUrl =
-        toCloud === "cadet"
+        isCloudHome(toCloud)
           ? existingTarget.runtimeUrl
-          : fromCloud === "cadet"
+          : isCloudHome(fromCloud)
             ? fromEntry.runtimeUrl
             : undefined;
 
@@ -1417,7 +1424,7 @@ export const teleport = Object.assign(
     const existingTarget = targetName ? findAssistantByName(targetName) : null;
     if (existingTarget) {
       const existingCloud = existingTarget.cloud;
-      if (existingCloud !== "cadet") {
+      if (!isCloudHome(existingCloud)) {
         console.error(
           `Error: Assistant '${targetName}' is a ${existingCloud} assistant, not platform. ` +
             `Use --${existingCloud} to target it.`,
@@ -1489,17 +1496,11 @@ export const teleport = Object.assign(
     return;
   }
 
-  // Non-cloud targets (local/docker)
-  // For local<->docker transfers, stop (sleep) the source to free up ports
-  // before hatching the target. We do NOT retire yet — if hatch or import
-  // fails, the user can recover by running `cadet wake <source>`.
-  const sourceIsLocalOrDocker = fromCloud === "local" || fromCloud === "docker";
-  const targetIsLocalOrDocker = targetEnv === "local" || targetEnv === "docker";
-
+  // Cloud sources import through the platform migration contract.
   // Version guard (pre-hatch): for existing targets, check BEFORE hatching
   // to avoid creating orphaned assistants when the version check would fail.
   let versionGuardPassed = false;
-  if (fromCloud === "cadet" && targetIsLocalOrDocker && targetName) {
+  if (isCloudHome(fromCloud) && targetName) {
     const existingTarget = findAssistantByName(targetName);
     if (existingTarget) {
       const [sourceVersion, existingVersion] = await Promise.all([
@@ -1525,13 +1526,9 @@ export const teleport = Object.assign(
     }
   }
 
-  // Pin the bundle's platform instance so upload and download land on the
-  // same GCS bucket. For platform sources the bundle is owned by the source
-  // platform. For local/docker→local/docker the bundle lives on whatever
-  // platform getCloudUrl() currently resolves to — we resolve it once
-  // here so a lockfile change mid-teleport can't split export and import.
+  // Upload and download use the source platform's storage bucket.
   const bundleCloudUrl =
-    fromCloud === "cadet" ? fromEntry.runtimeUrl : getCloudUrl();
+    isCloudHome(fromCloud) ? fromEntry.runtimeUrl : getCloudUrl();
 
   await backupSourceBeforeTeleport(fromEntry, fromCloud, from);
 
@@ -1543,33 +1540,14 @@ export const teleport = Object.assign(
     bundleCloudUrl,
   );
 
-  if (sourceIsLocalOrDocker && targetIsLocalOrDocker && !keepSource) {
-    console.log(`Stopping source assistant '${from}' to free ports...`);
-    if (fromCloud === "docker") {
-      const res = dockerResourceNames(fromEntry.assistantId);
-      await sleepContainers(res);
-    } else if (fromEntry.resources) {
-      const cadetDir = fromEntry.resources.instanceDir;
-      const gatewayPidFile = join(cadetDir, "gateway.pid");
-      await stopProcessByPidFile(
-        getDaemonPidPath(fromEntry.resources),
-        "assistant",
-        undefined,
-        DAEMON_STOP_TIMEOUT_MS,
-      );
-      await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000);
-    }
-    console.log(`Source assistant '${from}' stopped.`);
-  }
-
-  // Resolve or hatch target (after source is stopped to avoid port conflicts)
+  // Resolve or hatch the host target for this cloud import.
   const toEntry = await resolveOrHatchTarget(targetEnv, targetName);
   const toCloud = toEntry.cloud;
 
   // Post-hatch same-environment safety net — uses resolved clouds in case
   // the resolved target cloud differs from the CLI flag (e.g., --docker
   // targeting a name that is actually a local entry).
-  const normalizedTargetEnv = toCloud === "cadet" ? "platform" : toCloud;
+  const normalizedTargetEnv = isCloudHome(toCloud) ? "platform" : toCloud;
   if (normalizedSourceEnv === normalizedTargetEnv) {
     console.error(
       `Cannot teleport between two ${normalizedTargetEnv} assistants. Teleport transfers data across different environments.`,
@@ -1581,7 +1559,7 @@ export const teleport = Object.assign(
   // hatch because the assistant doesn't exist yet before. If it fails, clean
   // up the freshly hatched assistant to avoid orphans.
   // Skip if the pre-hatch guard already ran for an existing target.
-  if (!versionGuardPassed && fromCloud === "cadet" && toCloud !== "cadet") {
+  if (!versionGuardPassed && isCloudHome(fromCloud) && !isCloudHome(toCloud)) {
     const [sourceVersion, targetVersion] = await Promise.all([
       fetchCurrentVersion(fromEntry.runtimeUrl),
       fetchCurrentVersion(toEntry.runtimeUrl),
@@ -1625,24 +1603,8 @@ export const teleport = Object.assign(
   // After successful import, inject fresh cloud credentials if the
   // user is logged in — replaces the source's stale cadet:* credentials
   // that were filtered during import.
-  if (fromCloud === "cadet") {
+  if (isCloudHome(fromCloud)) {
     await tryInjectCloudCredentials(toEntry);
-  }
-
-  // Retire source after successful import
-  if (sourceIsLocalOrDocker && targetIsLocalOrDocker) {
-    if (!keepSource) {
-      console.log(`Retiring source assistant '${from}'...`);
-      if (fromCloud === "docker") {
-        await retireDocker(fromEntry.assistantId);
-      } else {
-        await retireLocal(fromEntry.assistantId, fromEntry);
-      }
-      removeAssistantEntry(fromEntry.assistantId);
-      console.log(`Source assistant '${from}' retired.`);
-    } else {
-      console.log(`Source assistant '${from}' kept via --keep-source.`);
-    }
   }
 
   console.log(`Teleport complete: ${from} → ${toEntry.assistantId}`);
