@@ -9,8 +9,6 @@ import {
 } from "fs";
 import { dirname, join } from "path";
 
-import { writeHostVBundle } from "./host-backup.js";
-import { loadAllAssistants } from "./assistant-config.js";
 import {
   importStagedBundle,
   stageBundleForRestore,
@@ -66,23 +64,6 @@ export async function createBackup(
 ): Promise<string | null> {
   const timeoutMs = options?.timeoutMs ?? 120_000;
   try {
-    const entry = loadAllAssistants().find(
-      (candidate) => candidate.assistantId === assistantId,
-    );
-    if (
-      entry &&
-      (entry.cloud === "docker" ||
-        entry.cloud === "local" ||
-        (!entry.cloud && !entry.project && !entry.sshUser))
-    ) {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const output = join(
-        getBackupsDir(),
-        `${options?.prefix ?? assistantId}-${timestamp}.vbundle`,
-      );
-      await writeHostVBundle(entry, output);
-      return output;
-    }
     let accessToken = await getGuardianAccessToken(runtimeUrl, assistantId);
     if (!accessToken) {
       console.warn(

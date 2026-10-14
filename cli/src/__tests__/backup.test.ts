@@ -216,12 +216,12 @@ function mockGcsDownload(
   return gcsFetch;
 }
 
-describe("cadet backup <remote>: guardian bootstrap secret", () => {
+describe("cadet backup <local>: guardian bootstrap secret", () => {
   test("passes the lockfile bootstrap secret when leasing a fresh guardian token", async () => {
     const localEntry = {
       assistantId: "local-assistant",
       runtimeUrl: "http://127.0.0.1:7830",
-      cloud: "custom",
+      cloud: "local",
       guardianBootstrapSecret: "bootstrap-secret-value",
     } satisfies assistantConfig.AssistantEntry;
     findAssistantByNameMock.mockReturnValue(localEntry);
@@ -280,7 +280,7 @@ describe("cadet backup: --export-timeout flag", () => {
     const localEntry = {
       assistantId: "local-assistant",
       runtimeUrl: "http://127.0.0.1:7830",
-      cloud: "custom",
+      cloud: "local",
       guardianBootstrapSecret: "bootstrap-secret-value",
     } satisfies assistantConfig.AssistantEntry;
     findAssistantByNameMock.mockReturnValue(localEntry);

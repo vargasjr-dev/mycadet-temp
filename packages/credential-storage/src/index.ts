@@ -216,8 +216,3 @@ export {
   persistRefreshedTokens,
 } from "./oauth-runtime.js";
 export type { RefreshBreakerState } from "./oauth-runtime.js";
-
-export {
-  createLocalSecureKeyBackend,
-  StoreUnavailableError,
-} from "./local-secure-key-backend.js";

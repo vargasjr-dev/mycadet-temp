@@ -1,4 +1,3 @@
-import { writeHostVBundle } from "../lib/host-backup.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { mkdirSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
@@ -14,7 +13,10 @@ import {
   localRuntimeIdentity,
   localRuntimePollJobStatus,
 } from "../lib/local-runtime-client.js";
-import { cloudRequestSignedUrl, readCloudToken } from "../lib/cloud-client.js";
+import {
+  cloudRequestSignedUrl,
+  readCloudToken,
+} from "../lib/cloud-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 
 // Default timeout for the runtime-direct export request. Overridable via
@@ -23,179 +25,102 @@ const DEFAULT_EXPORT_TIMEOUT_MS = 300_000;
 
 export const backup = Object.assign(
   async function backup(): Promise<void> {
-    const args = process.argv.slice(3);
+  const args = process.argv.slice(3);
 
-    if (args.includes("--help") || args.includes("-h")) {
-      console.log(
-        "Usage: cadet backup <name> [--output <path>] [--export-timeout <seconds>]",
-      );
-      console.log("");
-      console.log(
-        "Export a backup of a running assistant as a .vbundle archive.",
-      );
-      console.log("");
-      console.log("Arguments:");
-      console.log(
-        "  <name>                   Name of the assistant to back up",
-      );
-      console.log("");
-      console.log("Options:");
-      console.log("  --output <path>          Path to save the .vbundle file");
-      console.log(
-        "                           defaults to ~/.local/share/cadet/backups/<name>-<timestamp>.vbundle",
-      );
-      console.log(
-        `  --export-timeout <secs>  Export request timeout in seconds, defaults to ${DEFAULT_EXPORT_TIMEOUT_MS / 1000}`,
-      );
-      console.log("");
-      console.log("Examples:");
-      console.log("  cadet backup my-assistant");
-      console.log(
-        "  cadet backup my-assistant --output ~/Desktop/backup.vbundle",
-      );
-      console.log("  cadet backup my-assistant --export-timeout 600");
-      process.exit(0);
-    }
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(
+      "Usage: cadet backup <name> [--output <path>] [--export-timeout <seconds>]",
+    );
+    console.log("");
+    console.log(
+      "Export a backup of a running assistant as a .vbundle archive.",
+    );
+    console.log("");
+    console.log("Arguments:");
+    console.log("  <name>                   Name of the assistant to back up");
+    console.log("");
+    console.log("Options:");
+    console.log("  --output <path>          Path to save the .vbundle file");
+    console.log(
+      "                           defaults to ~/.local/share/cadet/backups/<name>-<timestamp>.vbundle",
+    );
+    console.log(
+      `  --export-timeout <secs>  Export request timeout in seconds, defaults to ${DEFAULT_EXPORT_TIMEOUT_MS / 1000}`,
+    );
+    console.log("");
+    console.log("Examples:");
+    console.log("  cadet backup my-assistant");
+    console.log(
+      "  cadet backup my-assistant --output ~/Desktop/backup.vbundle",
+    );
+    console.log("  cadet backup my-assistant --export-timeout 600");
+    process.exit(0);
+  }
 
-    const name = args[0];
-    if (!name || name.startsWith("-")) {
-      console.error(
-        "Usage: cadet backup <name> [--output <path>] [--export-timeout <seconds>]",
-      );
-      process.exit(1);
-    }
+  const name = args[0];
+  if (!name || name.startsWith("-")) {
+    console.error(
+      "Usage: cadet backup <name> [--output <path>] [--export-timeout <seconds>]",
+    );
+    process.exit(1);
+  }
 
-    // Parse flags
-    let outputArg: string | undefined;
-    let exportTimeoutMs = DEFAULT_EXPORT_TIMEOUT_MS;
-    for (let i = 1; i < args.length; i++) {
-      if (args[i] === "--output" && args[i + 1]) {
-        outputArg = args[i + 1];
-      } else if (args[i] === "--export-timeout" && args[i + 1]) {
-        const seconds = Number(args[i + 1]);
-        if (!Number.isFinite(seconds) || seconds <= 0) {
-          console.error(
-            `Error: --export-timeout must be a positive number of seconds (got '${args[i + 1]}').`,
-          );
-          process.exit(1);
-        }
-        exportTimeoutMs = seconds * 1000;
-      }
-    }
-
-    // Look up the instance
-    const entry = findAssistantByName(name);
-    if (!entry) {
-      console.error(`No assistant found with name '${name}'.`);
-      console.error("Run 'cadet hatch' first, or check the instance name.");
-      process.exit(1);
-    }
-
-    // Detect topology and route platform assistants through Django export
-    const cloud =
-      entry.cloud ||
-      (entry.project ? "gcp" : entry.sshUser ? "custom" : "local");
-
-    if (cloud === "apple-container") {
-      console.error(
-        `Error: '${name}' uses the Apple Containers runtime. Backup is not yet supported for this topology.`,
-      );
-      process.exit(1);
-    }
-
-    if (isCloudHome(cloud)) {
-      await backupPlatform(entry, name, outputArg);
-      return;
-    }
-
-    if (cloud === "docker" || cloud === "local") {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const output =
-        outputArg ?? join(getBackupsDir(), `${name}-${timestamp}.vbundle`);
-      await writeHostVBundle(entry, output);
-      console.log(`Backup saved: ${output}`);
-      return;
-    }
-
-    // Obtain an auth token
-    let accessToken: string;
-    const tokenData = loadGuardianToken(entry.assistantId);
-    if (tokenData && new Date(tokenData.accessTokenExpiresAt) > new Date()) {
-      accessToken = tokenData.accessToken;
-    } else {
-      try {
-        const freshToken = await leaseGuardianToken(
-          entry.runtimeUrl,
-          entry.assistantId,
-          entry.guardianBootstrapSecret,
-        );
-        accessToken = freshToken.accessToken;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
-          console.error(
-            `Error: Could not connect to assistant '${name}'. Is it running?`,
-          );
-          console.error(`Try: cadet wake ${name}`);
-          process.exit(1);
-        }
-        throw err;
-      }
-    }
-
-    // Call the export endpoint
-    let response: Response;
-    try {
-      response = await loopbackSafeFetch(
-        `${entry.runtimeUrl}/v1/migrations/export`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ description: "CLI backup" }),
-          signal: AbortSignal.timeout(exportTimeoutMs),
-        },
-      );
-
-      // Retry once with a fresh token on 401 — the cached token may be stale
-      // after a container restart that generated a new gateway signing key.
-      if (response.status === 401) {
-        let refreshedToken: string | null = null;
-        try {
-          const freshToken = await leaseGuardianToken(
-            entry.runtimeUrl,
-            entry.assistantId,
-            entry.guardianBootstrapSecret,
-          );
-          refreshedToken = freshToken.accessToken;
-        } catch {
-          // If token refresh fails, fall through to the !response.ok handler below
-        }
-        if (refreshedToken) {
-          accessToken = refreshedToken;
-          response = await loopbackSafeFetch(
-            `${entry.runtimeUrl}/v1/migrations/export`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ description: "CLI backup" }),
-              signal: AbortSignal.timeout(exportTimeoutMs),
-            },
-          );
-        }
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === "TimeoutError") {
+  // Parse flags
+  let outputArg: string | undefined;
+  let exportTimeoutMs = DEFAULT_EXPORT_TIMEOUT_MS;
+  for (let i = 1; i < args.length; i++) {
+    if (args[i] === "--output" && args[i + 1]) {
+      outputArg = args[i + 1];
+    } else if (args[i] === "--export-timeout" && args[i + 1]) {
+      const seconds = Number(args[i + 1]);
+      if (!Number.isFinite(seconds) || seconds <= 0) {
         console.error(
-          `Error: Export request timed out after ${exportTimeoutMs / 1000} seconds.`,
+          `Error: --export-timeout must be a positive number of seconds (got '${args[i + 1]}').`,
         );
         process.exit(1);
       }
+      exportTimeoutMs = seconds * 1000;
+    }
+  }
+
+  // Look up the instance
+  const entry = findAssistantByName(name);
+  if (!entry) {
+    console.error(`No assistant found with name '${name}'.`);
+    console.error("Run 'cadet hatch' first, or check the instance name.");
+    process.exit(1);
+  }
+
+  // Detect topology and route platform assistants through Django export
+  const cloud =
+    entry.cloud || (entry.project ? "gcp" : entry.sshUser ? "custom" : "local");
+
+  if (cloud === "apple-container") {
+    console.error(
+      `Error: '${name}' uses the Apple Containers runtime. Backup is not yet supported for this topology.`,
+    );
+    process.exit(1);
+  }
+
+  if (isCloudHome(cloud)) {
+    await backupPlatform(entry, name, outputArg);
+    return;
+  }
+
+  // Obtain an auth token
+  let accessToken: string;
+  const tokenData = loadGuardianToken(entry.assistantId);
+  if (tokenData && new Date(tokenData.accessTokenExpiresAt) > new Date()) {
+    accessToken = tokenData.accessToken;
+  } else {
+    try {
+      const freshToken = await leaseGuardianToken(
+        entry.runtimeUrl,
+        entry.assistantId,
+        entry.guardianBootstrapSecret,
+      );
+      accessToken = freshToken.accessToken;
+    } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
         console.error(
@@ -206,38 +131,104 @@ export const backup = Object.assign(
       }
       throw err;
     }
+  }
 
-    if (!response.ok) {
-      const body = await response.text();
-      console.error(`Error: Export failed (${response.status}): ${body}`);
+  // Call the export endpoint
+  let response: Response;
+  try {
+    response = await loopbackSafeFetch(
+      `${entry.runtimeUrl}/v1/migrations/export`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ description: "CLI backup" }),
+        signal: AbortSignal.timeout(exportTimeoutMs),
+      },
+    );
+
+    // Retry once with a fresh token on 401 — the cached token may be stale
+    // after a container restart that generated a new gateway signing key.
+    if (response.status === 401) {
+      let refreshedToken: string | null = null;
+      try {
+        const freshToken = await leaseGuardianToken(
+          entry.runtimeUrl,
+          entry.assistantId,
+          entry.guardianBootstrapSecret,
+        );
+        refreshedToken = freshToken.accessToken;
+      } catch {
+        // If token refresh fails, fall through to the !response.ok handler below
+      }
+      if (refreshedToken) {
+        accessToken = refreshedToken;
+        response = await loopbackSafeFetch(
+          `${entry.runtimeUrl}/v1/migrations/export`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ description: "CLI backup" }),
+            signal: AbortSignal.timeout(exportTimeoutMs),
+          },
+        );
+      }
+    }
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      console.error(
+        `Error: Export request timed out after ${exportTimeoutMs / 1000} seconds.`,
+      );
       process.exit(1);
     }
-
-    // Read the response body
-    const arrayBuffer = await response.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
-
-    // Determine output path
-    const isoTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const outputPath =
-      outputArg || join(getBackupsDir(), `${name}-${isoTimestamp}.vbundle`);
-
-    // Ensure parent directory exists
-    mkdirSync(dirname(outputPath), { recursive: true });
-
-    // Write the archive to disk
-    writeFileSync(outputPath, data);
-
-    // Print success
-    const manifestSha = response.headers.get("X-Vbundle-Manifest-Sha256");
-    console.log(`Backup saved to ${outputPath}`);
-    console.log(`Size: ${formatSize(data.byteLength)}`);
-    if (manifestSha) {
-      console.log(`Manifest SHA-256: ${manifestSha}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
+      console.error(
+        `Error: Could not connect to assistant '${name}'. Is it running?`,
+      );
+      console.error(`Try: cadet wake ${name}`);
+      process.exit(1);
     }
-  },
+    throw err;
+  }
+
+  if (!response.ok) {
+    const body = await response.text();
+    console.error(`Error: Export failed (${response.status}): ${body}`);
+    process.exit(1);
+  }
+
+  // Read the response body
+  const arrayBuffer = await response.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+
+  // Determine output path
+  const isoTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const outputPath =
+    outputArg || join(getBackupsDir(), `${name}-${isoTimestamp}.vbundle`);
+
+  // Ensure parent directory exists
+  mkdirSync(dirname(outputPath), { recursive: true });
+
+  // Write the archive to disk
+  writeFileSync(outputPath, data);
+
+  // Print success
+  const manifestSha = response.headers.get("X-Vbundle-Manifest-Sha256");
+  console.log(`Backup saved to ${outputPath}`);
+  console.log(`Size: ${formatSize(data.byteLength)}`);
+  if (manifestSha) {
+    console.log(`Manifest SHA-256: ${manifestSha}`);
+  }
+},
   { description: "Export a backup of a running assistant" },
 );
+
 
 // ---------------------------------------------------------------------------
 // Platform-managed (cloud="cadet") backup over GCS.
@@ -262,7 +253,9 @@ async function backupPlatform(
 ): Promise<void> {
   const cloudToken = readCloudToken();
   if (!cloudToken) {
-    console.error("Not logged in. Run 'cadet login' first.");
+    console.error(
+      "Not logged in. Run 'cadet login' first.",
+    );
     process.exit(1);
   }
   // Pin upload, download, and runtime requests to the same platform instance

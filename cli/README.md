@@ -165,15 +165,7 @@ CLI lifecycle logs remain in the environment's XDG config log directory
 are appended to `<instanceDir>/logs/assistant-stdout.log` and
 `<instanceDir>/logs/gateway-stdout.log`.
 
-## Backups and guardian recovery
-
-`cadet backup <name>` and pre-upgrade backups on local or Docker hosts export
-portable `.vbundle` files directly from host-owned state, without a guardian
-token. Services pause briefly while their workspace and encrypted credential
-store are copied, then resume before compression. Bundles retain credentials
-and use owner-only file permissions. Cloud-managed backups use cloud session
-authentication. Other remote connections still use the authenticated runtime
-export endpoint.
+## Guardian recovery
 
 For persistent guardian authentication failures on a host you own, run
 `cadet wake <name> --repair-guardian`. This resets guardian provisioning and

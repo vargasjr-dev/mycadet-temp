@@ -184,7 +184,6 @@ COPY packages/avatar-manifest /app/packages/avatar-manifest
 COPY packages/ces-client /app/packages/ces-client
 COPY packages/service-contracts /app/packages/service-contracts
 COPY packages/credential-storage /app/packages/credential-storage
-COPY packages/backup /app/packages/backup
 COPY packages/egress-proxy /app/packages/egress-proxy
 COPY packages/environments /app/packages/environments
 COPY packages/gateway-client /app/packages/gateway-client
