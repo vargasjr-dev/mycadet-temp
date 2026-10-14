@@ -12,6 +12,7 @@ import {
   useIsSessionInitializing,
 } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
+import { isOAuthFlowInFlight } from "@app/runtime/oauth-flow-state";
 
 /**
  * What an auth entry point should render.
@@ -78,6 +79,10 @@ export function useReturnToShortCircuit(): ReturnToShortCircuit {
 
   if (!rawReturnTo) {
     return { kind: "proceed", returnTo: null };
+  }
+  // The interactive flow owns its destination until reconciliation completes.
+  if (isOAuthFlowInFlight()) {
+    return { kind: "proceed", returnTo: destination };
   }
   if (isSessionInitializing) {
     return { kind: "wait" };
