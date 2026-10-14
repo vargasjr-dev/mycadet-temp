@@ -1,9 +1,10 @@
 import { App } from "@capacitor/app";
 import { isNativePlatform } from "@app/runtime/native-platform";
-import { isOAuthFlowInFlight } from "@web/runtime/native-auth";
+import { isOAuthFlowInFlight } from "@app/runtime/oauth-flow-state";
 import {
   useAuthStore as webAuthStore,
   subscribeCloudAccountLogout,
+  isCloudAccountOAuthInFlight,
 } from "@web/stores/auth-store";
 import { getSession, logoutAccountSession } from "@app/lib/auth/session-client";
 import { accountUserSnapshot } from "@app/stores/account-user-snapshot";
@@ -36,12 +37,17 @@ export function startAccountSessionListeners(): () => void {
   if (readers++ === 0) {
     let disposed = false;
     const refresh = () => {
-      if (!disposed && !isOAuthFlowInFlight())
+      if (
+        !disposed &&
+        !isOAuthFlowInFlight() &&
+        !isCloudAccountOAuthInFlight()
+      ) {
         void accountAuthSource
           .observeSession()
           .catch((error) =>
             console.warn("account session probe failed", error),
           );
+      }
     };
     const visible = () => {
       if (document.visibilityState === "visible") refresh();

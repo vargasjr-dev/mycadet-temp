@@ -24,10 +24,16 @@ mock.module("@app/lib/auth/loopback-auth", () => ({
 mock.module("@app/lib/auth/provider-redirect", () => ({
   startProviderRedirect: provider,
 }));
-mock.module("@web/runtime/native-auth", () => ({
-  startAuthFlow: nativeFlow,
-  nativeAuthReturningUser: () => false,
-  nativeCheckoutHandoff: { save: () => {}, clear: () => {} },
+mock.module("@app/runtime/desktop-login", () => ({
+  startDesktopLogin: nativeFlow,
+}));
+mock.module("@app/runtime/native-auth-context", () => ({
+  nativeAuthContext: {
+    read: () => ({
+      returningUser: false,
+      checkout: { save: () => {}, clear: () => {} },
+    }),
+  },
 }));
 const { startAuthFlow } = await import("./auth-flow");
 afterEach(() => {
@@ -77,11 +83,7 @@ for (const host of ["native", "electron"]) {
       });
       expect(nativeFlow).not.toHaveBeenCalled();
     } else {
-      expect(nativeFlow).toHaveBeenCalledWith(
-        "workos",
-        "/account/provider/callback",
-        options,
-      );
+      expect(nativeFlow).toHaveBeenCalledWith(options);
       expect(mobileLogin).not.toHaveBeenCalled();
     }
     expect(provider).not.toHaveBeenCalled();

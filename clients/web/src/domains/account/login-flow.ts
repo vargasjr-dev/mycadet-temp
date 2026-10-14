@@ -1,10 +1,25 @@
 import {
+  clearCheckoutIntent,
+  saveCheckoutIntent,
+} from "@/lib/billing/checkout-intent";
+
+import {
   isPostCheckoutReturn,
   postCheckoutHatchReturnTo,
   resolveNavigation,
 } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { routes } from "@/utils/routes";
+
+/** Shared checkout handoff, including its storage-disabled fallback. */
+export const nativeCheckoutHandoff = {
+  save: saveCheckoutIntent,
+  clear: clearCheckoutIntent,
+};
+
+export function nativeAuthReturningUser(): boolean {
+  return buildNavigationState().userHasOnboardedAssistant;
+}
 
 export const PROVIDER_ID = "workos";
 export const PROVIDER_CALLBACK_URL = routes.account.providerCallback;

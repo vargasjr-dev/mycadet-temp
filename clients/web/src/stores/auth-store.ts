@@ -33,7 +33,10 @@ import {
   persistUserSnapshot,
   readUserSnapshot,
 } from "@/lib/auth/user-snapshot";
-import { getElectronSessionToken } from "@/runtime/session-token";
+import {
+  getElectronSessionToken,
+  primeElectronSessionToken,
+} from "@/runtime/session-token";
 import { clearWidgetSnapshot } from "@/runtime/widget-snapshot";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
 import {
@@ -214,6 +217,27 @@ const GATEWAY_LOCAL_USER: AuthUser = {
 // explicit `logout()` is not one, so it ends the session through
 // `endSession(set, { authoritative: true })` and lands its write regardless.
 let authEpoch = 0;
+
+let accountOAuthScopes = 0;
+/** Suppress composed-client resume probes while account OAuth reconciles. */
+export function beginCloudAccountOAuth(): () => void {
+  accountOAuthScopes++;
+  let finished = false;
+  return () => {
+    if (!finished) {
+      finished = true;
+      accountOAuthScopes--;
+    }
+  };
+}
+export function isCloudAccountOAuthInFlight(): boolean {
+  return accountOAuthScopes > 0 || isOAuthFlowInFlight();
+}
+
+/** Synchronize the composed web token cache before its post-login session refresh. */
+export function primeCloudAccountSessionToken(token: string): void {
+  primeElectronSessionToken(token);
+}
 
 // Bumped by every explicit `logout()`, once when it starts and once when the
 // session has ended. `authEpoch` settles races between observations; this
@@ -1574,7 +1598,7 @@ export function setupAuthListeners(): () => void {
 
   const unsubResume = subscribe("app.resume", () => {
     // Mid-OAuth refocus — an unauthenticated probe would tear down state.
-    if (isOAuthFlowInFlight()) {
+    if (isCloudAccountOAuthInFlight()) {
       return;
     }
     void safeRefresh();

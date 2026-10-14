@@ -10,7 +10,7 @@ import {
   setBiometricEnabled,
   storeBiometricToken,
 } from "@app/runtime/native-biometric";
-import { nativeCheckoutHandoff } from "@web/runtime/native-auth";
+import { nativeAuthContext } from "@app/runtime/native-auth-context";
 import { clearStaleNativeCheckoutStash } from "@app/runtime/native-post-auth-destination";
 const DEFAULT_POST_AUTH_DESTINATION = routes.assistant;
 
@@ -51,7 +51,7 @@ export async function startNativeLogin(options?: {
   clearStaleNativeCheckoutStash(
     options?.intent,
     options?.returnTo,
-    nativeCheckoutHandoff,
+    nativeAuthContext.checkout,
   );
 
   // Attribution resolves here for the same reason: the direct login form is

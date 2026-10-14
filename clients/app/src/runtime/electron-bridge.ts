@@ -1,9 +1,11 @@
-import type { CadetCommand } from "@mycadet/ipc-contract";
+import type { CadetBridge, CadetCommand } from "@mycadet/ipc-contract";
 
 /** Native host capabilities currently used by the account client. */
 export interface AppElectronBridge {
   platform: "electron";
-  auth?: { getSessionToken?(): string | null; cancelOAuth?(): Promise<void> };
+  auth?: Partial<
+    Pick<CadetBridge["auth"], "getSessionToken" | "cancelOAuth" | "startOAuth">
+  >;
   menu: { setCloudSession(has: boolean): Promise<void> };
   commands: {
     on(callback: (command: CadetCommand) => void): () => void;

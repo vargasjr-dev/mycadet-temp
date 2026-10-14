@@ -11,26 +11,23 @@ import {
   type ProviderRedirectOptions,
 } from "@app/lib/auth/provider-redirect";
 
+import { startDesktopLogin } from "@app/runtime/desktop-login";
+import { nativeAuthContext } from "@app/runtime/native-auth-context";
 import { resolveNativePostAuthDestination } from "@app/runtime/native-post-auth-destination";
 
-/** Account auth handoff. Electron reconciliation remains in web. */
+/** Account auth handoff for native shells, localhost, and cloud browsers. */
 export async function startAuthFlow(
   providerId: string,
   callbackUrl: string,
   options: ProviderRedirectOptions & { returnTo?: string | null } = {},
 ): Promise<void> {
   if (isNativePlatform()) {
-    const { nativeAuthReturningUser, nativeCheckoutHandoff } =
-      await import("@web/runtime/native-auth");
     try {
       await startNativeLogin({
         returnTo: resolveNativePostAuthDestination(
           options.intent,
           options.returnTo,
-          {
-            returningUser: nativeAuthReturningUser(),
-            checkout: nativeCheckoutHandoff,
-          },
+          nativeAuthContext.read(),
         ),
         loginHint: options.loginHint,
         intent: options.intent,
@@ -43,8 +40,7 @@ export async function startAuthFlow(
     return;
   }
   if (getElectronBridge()) {
-    const nativeAuth = await import("@web/runtime/native-auth");
-    await nativeAuth.startAuthFlow(providerId, callbackUrl, options);
+    await startDesktopLogin(options);
     return;
   }
   if (isLocalClient() && !isPlatformLocal()) {

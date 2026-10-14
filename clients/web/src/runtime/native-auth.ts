@@ -8,11 +8,9 @@ import {
 } from "@/domains/account/social-auth";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
-import { userHasOnboardedAssistant } from "@/domains/onboarding/onboarded-assistant";
 import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
 import { resolveSignupCheckoutDestination } from "@/lib/billing/post-auth-checkout";
 import { isPlatformLocal, startLoopbackAuth } from "@/lib/auth/loopback-auth";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -28,23 +26,7 @@ import {
 } from "@/runtime/native-biometric";
 import { routes } from "@/utils/routes";
 
-import {
-  clearCheckoutIntent,
-  saveCheckoutIntent,
-} from "@/lib/billing/checkout-intent";
-
-/** Temporary account handoff: share the stash, including its storage-disabled fallback. */
-export const nativeCheckoutHandoff = {
-  save: saveCheckoutIntent,
-  clear: clearCheckoutIntent,
-};
-
-/** Only web reads assistant onboarding state while app owns the native routing decision. */
-export function nativeAuthReturningUser(): boolean {
-  return userHasOnboardedAssistant(
-    useResolvedAssistantsStore.getState().assistants,
-  );
-}
+import { nativeAuthReturningUser } from "@/domains/account/login-flow";
 
 /**
  * JS ↔ native bridge for the `NativeAuth` Capacitor plugin registered by the

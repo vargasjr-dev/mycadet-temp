@@ -203,7 +203,9 @@ mock.module("@/lib/auth/allauth-client", () => ({
 let mockElectronSessionToken: string | null = null;
 mock.module("@/runtime/session-token", () => ({
   getElectronSessionToken: () => mockElectronSessionToken,
-  primeElectronSessionToken: () => {},
+  primeElectronSessionToken: (token: string) => {
+    mockElectronSessionToken = token;
+  },
   __resetForTesting: () => {},
 }));
 
@@ -421,6 +423,10 @@ mock.module("@/assistant/api", () => ({
 const {
   useAuthStore,
   subscribeCloudAccountLogout,
+  beginCloudAccountOAuth,
+  isCloudAccountOAuthInFlight,
+  primeCloudAccountSessionToken,
+  setupAuthListeners,
   whenCloudSessionSettled,
   __resetConsentSyncUserForTesting,
 } = await import("@/stores/auth-store");
@@ -3249,4 +3255,36 @@ test("cloud logout scopes notify account sources until cleanup finishes; gateway
   } finally {
     unsubscribe();
   }
+});
+
+test("account OAuth scopes suspend web resume probes until every exchange finishes", async () => {
+  const { publish } = await import("@/lib/event-bus");
+  const originalRefresh = useAuthStore.getState().refreshSession;
+  const refresh = mock(async () => true);
+  useAuthStore.setState({ refreshSession: refresh });
+  const stop = setupAuthListeners();
+  const first = beginCloudAccountOAuth();
+  const second = beginCloudAccountOAuth();
+  try {
+    expect(isCloudAccountOAuthInFlight()).toBe(true);
+    publish("app.resume", { signal: "window_attention" });
+    expect(refresh).not.toHaveBeenCalled();
+    first();
+    first();
+    publish("app.resume", { signal: "window_attention" });
+    expect(refresh).not.toHaveBeenCalled();
+    second();
+    expect(isCloudAccountOAuthInFlight()).toBe(false);
+    publish("app.resume", { signal: "window_attention" });
+    expect(refresh).toHaveBeenCalledTimes(1);
+  } finally {
+    first();
+    second();
+    stop();
+    useAuthStore.setState({ refreshSession: originalRefresh });
+  }
+});
+test("account OAuth primes the web token cache before web reconciliation", () => {
+  primeCloudAccountSessionToken("new-session-token");
+  expect(mockElectronSessionToken).toBe("new-session-token");
 });

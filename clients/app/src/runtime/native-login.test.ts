@@ -30,8 +30,8 @@ mock.module("@app/runtime/native-biometric", () => ({
   storeBiometricToken: storeToken,
   setBiometricEnabled: disableBiometric,
 }));
-mock.module("@web/runtime/native-auth", () => ({
-  nativeCheckoutHandoff: {},
+mock.module("@app/runtime/native-auth-context", () => ({
+  nativeAuthContext: { checkout: {} },
 }));
 mock.module("@app/runtime/native-post-auth-destination", () => ({
   clearStaleNativeCheckoutStash: clearStash,
