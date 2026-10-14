@@ -25,7 +25,6 @@ import {
   expect,
   beforeAll,
   beforeEach,
-  afterEach,
   afterAll,
   mock,
 } from "bun:test";
@@ -191,7 +190,6 @@ beforeEach(() => {
   reportCalls.length = 0;
 });
 
-afterEach(() => {});
 
 afterAll(() => {
   resetGatewayDb();
