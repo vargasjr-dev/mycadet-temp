@@ -227,3 +227,28 @@ test("preserves PID tracking when process termination fails", async () => {
   expect(isProcessAlive(pidFile)).toEqual({ alive: true, pid: process.pid });
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("graceful-only stop times out without SIGKILL or losing PID identity", async () => {
+  const originalKill = process.kill;
+  const calls: Array<NodeJS.Signals | number | undefined> = [];
+  process.kill = ((_pid: number, signal?: NodeJS.Signals | number) => {
+    calls.push(signal);
+    return true;
+  }) as typeof process.kill;
+  try {
+    expect(
+      await stopProcess(
+        4812,
+        "backup service",
+        0,
+        "linux",
+        undefined,
+        () => "cadet-daemon",
+        true,
+      ),
+    ).toBe(false);
+    expect(calls).toEqual([0, "SIGTERM", 0]);
+  } finally {
+    process.kill = originalKill;
+  }
+});

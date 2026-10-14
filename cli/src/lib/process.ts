@@ -324,6 +324,7 @@ export async function stopProcess(
     });
   },
   readIdentity: (pid: number) => string | null = readPosixCommandLine,
+  gracefulOnly = false,
 ): Promise<boolean> {
   try {
     process.kill(pid, 0);
@@ -339,6 +340,9 @@ export async function stopProcess(
   console.log(`Stopping ${label} (pid ${pid})...`);
   let waitForGracefulExit = true;
   if (hostPlatform === "win32") {
+    if (gracefulOnly) {
+      throw new Error("Graceful-only shutdown is not supported for Windows local services.");
+    }
     try {
       runTaskkill(["/PID", String(pid), "/T"], timeoutMs);
     } catch {
@@ -363,6 +367,7 @@ export async function stopProcess(
   } catch {
     return true;
   }
+  if (gracefulOnly) return false;
   if (hostPlatform === "win32") {
     console.log(`${label} did not exit, terminating its process tree...`);
     try {

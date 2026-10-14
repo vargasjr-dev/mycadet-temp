@@ -1,0 +1,874 @@
+import { createHash, randomUUID } from "node:crypto";
+import { spawn } from "node:child_process";
+import {
+  chmod,
+  cp,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, posix, resolve } from "node:path";
+import { pipeline } from "node:stream/promises";
+import * as tar from "tar";
+import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
+import type { AssistantEntry } from "./assistant-config.js";
+import { getDaemonPidPath, saveAssistantEntry } from "./assistant-config.js";
+import { getBackupsDir } from "./backup-ops.js";
+import { dockerResourceNames } from "./docker.js";
+import { execOutput } from "./step-runner.js";
+import { isProcessAlive } from "./process.js";
+import { probePort } from "./port-probe.js";
+import {
+  waitForDaemonReady,
+  waitForDaemonMigrationsReady,
+} from "./http-client.js";
+import { startCes, startGateway, startLocalDaemon } from "./local.js";
+import {
+  ASSISTANT_INTERNAL_PORT,
+  GATEWAY_INTERNAL_PORT,
+} from "./environments/paths.js";
+import { sleepAssistant } from "../commands/sleep.js";
+import { wakeAssistant } from "../commands/wake.js";
+
+export const STATE_ROOTS = [
+  "workspace",
+  "gateway-security",
+  "ces-security",
+  "ces-data",
+] as const;
+type StateRoot = (typeof STATE_ROOTS)[number];
+const ROOT_SET = new Set<string>(STATE_ROOTS);
+const TRANSIENT_PATHS = new Set([
+  "workspace/cadet.pid",
+  "workspace/signals",
+  "workspace/data/ingress/nginx.pid",
+]);
+
+function persistent(
+  path: string,
+  stat: import("node:fs").Stats | tar.ReadEntry,
+): boolean {
+  return (
+    !TRANSIENT_PATHS.has(path) &&
+    ("isFile" in stat
+      ? stat.isFile() || stat.isDirectory() || stat.isSymbolicLink()
+      : ["File", "Directory", "SymbolicLink", "Link"].includes(stat.type))
+  );
+}
+
+/** Plain tar root layout; no credential decoding or logical workspace transformation. */
+export async function packRoot(root: string, output: string): Promise<void> {
+  await mkdir(dirname(resolve(output)), { recursive: true });
+  const partial = `${resolve(output)}.${randomUUID()}.partial`;
+  // Pre-create privately: tar must never briefly create a world-readable backup.
+  await writeFile(partial, "", { mode: 0o600, flag: "wx" });
+  try {
+    await tar.c(
+      {
+        cwd: root,
+        file: partial,
+        gzip: true,
+        strict: true,
+        portable: true,
+        filter: (path, stat) => persistent(path, stat),
+      },
+      [...STATE_ROOTS],
+    );
+    // Validate our own artifact before publishing it, including safe link topology.
+    await validateRootArchive(partial);
+    await rename(partial, resolve(output));
+  } finally {
+    await rm(partial, { force: true });
+  }
+}
+
+function archivePath(path: string): string {
+  const stripped = path.replace(/^(\.\/)+/, "").replace(/\/$/, "");
+  if (
+    !stripped ||
+    path.includes("\\") ||
+    path.includes("\0") ||
+    path.startsWith("/") ||
+    /^[a-z]:/i.test(path) ||
+    stripped.split("/").some((p) => p === ".." || p === "." || !p) ||
+    !ROOT_SET.has(stripped.split("/")[0]!)
+  ) {
+    throw new Error(`Invalid root archive path: ${path}`);
+  }
+  return stripped;
+}
+
+export async function validateRootArchive(file: string): Promise<void> {
+  if (/\.vbundle(?:\.enc)?$/i.test(file)) {
+    throw new Error(
+      "Legacy .vbundle conversion belongs in vellum-to-cadet. Supply a root tar archive.",
+    );
+  }
+  const entries = new Map<string, string>();
+  let invalid: Error | undefined;
+  await tar.t({
+    file,
+    strict: true,
+    onReadEntry: (entry) => {
+      // Defer rejection until the stream drains; never throw out of a stream callback.
+      try {
+        if (entry.path === "./" && entry.type === "Directory") return;
+        const path = archivePath(entry.path);
+        if (entries.has(path))
+          throw new Error(`Duplicate archive entry: ${path}`);
+        if (
+          !["File", "Directory", "SymbolicLink", "Link"].includes(entry.type)
+        ) {
+          throw new Error(`Unsupported archive entry: ${path}`);
+        }
+        entries.set(path, entry.type);
+        if (entry.type === "SymbolicLink" || entry.type === "Link") {
+          const target = entry.linkpath ?? "";
+          if (
+            !target ||
+            target.startsWith("/") ||
+            target.includes("\\") ||
+            /^[a-z]:/i.test(target)
+          ) {
+            throw new Error(`Unsafe archive link: ${path}`);
+          }
+          archivePath(
+            entry.type === "Link"
+              ? target
+              : posix.normalize(posix.join(posix.dirname(path), target)),
+          );
+        }
+      } catch (error) {
+        invalid ??= error instanceof Error ? error : new Error(String(error));
+      }
+    },
+  });
+  if (invalid) throw invalid;
+  for (const root of STATE_ROOTS) {
+    if (entries.get(root) !== "Directory")
+      throw new Error(`Archive is missing state root: ${root}`);
+  }
+  for (const path of entries.keys()) {
+    let parent = posix.dirname(path);
+    while (parent !== ".") {
+      if (
+        entries.get(parent) === "SymbolicLink" ||
+        entries.get(parent) === "Link"
+      )
+        throw new Error(`Archive writes through a link: ${path}`);
+      parent = posix.dirname(parent);
+    }
+  }
+}
+
+export async function stageRootArchive(
+  file: string,
+  parent = tmpdir(),
+): Promise<string> {
+  if (/\.vbundle(?:\.enc)?$/i.test(file))
+    throw new Error(
+      "Convert legacy .vbundle backups with vellum-to-cadet before restoring.",
+    );
+  const stage = await mkdtemp(join(parent, ".cadet-restore-"));
+  await chmod(stage, 0o700);
+  try {
+    // Copy once so validation and extraction operate on identical bytes.
+    const input = join(stage, "input.tar");
+    await cp(resolve(file), input);
+    await chmod(input, 0o600);
+    await validateRootArchive(input);
+    const root = join(stage, "state");
+    await mkdir(root, { mode: 0o700 });
+    await tar.x({
+      file: input,
+      cwd: root,
+      strict: true,
+      preserveOwner: false,
+      noChmod: false,
+    });
+    await rm(input);
+    await pruneTransient(root);
+    return stage;
+  } catch (error) {
+    await rm(stage, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+export interface RootStorage {
+  running(): Promise<boolean>;
+  capture(target: string): Promise<void>;
+  replace(source: string): Promise<void>;
+  prepareRestore?(source: string): Promise<void>;
+}
+
+export class LocalRootStorage implements RootStorage {
+  readonly root: string;
+  initialRunning?: Set<string>;
+  constructor(readonly entry: AssistantEntry) {
+    if (!entry.resources)
+      throw new Error("Local backup requires the instance's resource paths.");
+    this.root = resolve(entry.resources.instanceDir);
+  }
+  async running(): Promise<boolean> {
+    const running = new Set(
+      [
+        ["assistant", getDaemonPidPath(this.entry.resources)],
+        ["gateway", join(this.root, "gateway.pid")],
+        ["ces", join(this.root, "ces.pid")],
+      ]
+        .filter(([, file]) => isProcessAlive(file!).alive)
+        .map(([service]) => service!),
+    );
+    const resources = this.entry.resources!;
+    for (const [service, port] of [
+      ["assistant", resources.daemonPort],
+      ["gateway", resources.gatewayPort],
+      ["ces", resources.cesPort],
+    ] as const) {
+      if (!running.has(service) && (await probePort(port))) {
+        throw new Error(
+          `${service} port ${port} is occupied without a live PID file; stop that service before backup/restore.`,
+        );
+      }
+    }
+    this.initialRunning ??= running;
+    return running.size > 0;
+  }
+  async resume(): Promise<void> {
+    if (this.initialRunning?.size === 3) {
+      await wakeAssistant(this.entry, {
+        watch: false,
+        foreground: false,
+        repairGuardian: false,
+      });
+      await this.checkReady();
+      return;
+    }
+    const resources = this.entry.resources!;
+    const signingKey = resolveExistingLocalSigningKey(resources);
+    if (
+      this.initialRunning?.has("ces") &&
+      !isProcessAlive(join(this.root, "ces.pid")).alive
+    )
+      await startCes(false, resources);
+    if (
+      this.initialRunning?.has("assistant") &&
+      !isProcessAlive(getDaemonPidPath(resources)).alive
+    )
+      await startLocalDaemon(false, resources, { signingKey });
+    if (
+      this.initialRunning?.has("gateway") &&
+      !isProcessAlive(join(this.root, "gateway.pid")).alive
+    )
+      await startGateway(false, resources, {
+        signingKey,
+        bootstrapSecret: this.entry.guardianBootstrapSecret,
+      });
+    await this.checkReady();
+  }
+  private async checkReady(): Promise<void> {
+    const resources = this.entry.resources!;
+    if (
+      this.initialRunning?.has("assistant") &&
+      (await waitForDaemonMigrationsReady(
+        resources.daemonPort,
+        Date.now() + 60_000,
+      )) !== "ready"
+    ) {
+      throw new Error(
+        "Assistant did not become ready after restoring its running state.",
+      );
+    }
+    for (const [service, port] of [
+      ["gateway", resources.gatewayPort],
+      ["ces", resources.cesPort],
+    ] as const) {
+      if (
+        this.initialRunning?.has(service) &&
+        !(await waitForDaemonReady(port))
+      )
+        throw new Error(`${service} did not become healthy after restart.`);
+    }
+  }
+  async capture(target: string): Promise<void> {
+    for (const root of STATE_ROOTS) {
+      const source = join(this.root, root);
+      const stat = await lstat(source).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+        return undefined;
+      });
+      if (!stat) throw new Error(`Persistent state root is missing: ${root}`);
+      if (!stat.isDirectory())
+        throw new Error(`State root must be a directory: ${root}`);
+      await cp(source, join(target, root), {
+        recursive: true,
+        verbatimSymlinks: true,
+        filter: async (path) =>
+          persistent(
+            posix.join(
+              root,
+              path
+                .slice(source.length + 1)
+                .split("\\")
+                .join("/"),
+            ),
+            await lstat(path),
+          ),
+      });
+    }
+    // Local wake takes its signing key from the host registry. Make that identity
+    // part of the gateway root too, so the archive is self-contained.
+    const key = resolveExistingLocalSigningKey(this.entry.resources);
+    await writeFile(
+      join(target, "gateway-security", "actor-token-signing-key"),
+      Buffer.from(key, "hex"),
+      { mode: 0o600 },
+    );
+    await chmod(
+      join(target, "gateway-security", "actor-token-signing-key"),
+      0o600,
+    );
+  }
+  async replace(source: string): Promise<void> {
+    // All renames stay on the instance's filesystem. A failed install rolls back
+    // every root, including the root whose incoming rename failed.
+    const work = await mkdtemp(join(dirname(this.root), ".cadet-install-"));
+    await chmod(work, 0o700);
+    const installed: StateRoot[] = [];
+    const saved: StateRoot[] = [];
+    let recovered = false;
+    try {
+      for (const root of STATE_ROOTS) {
+        await cp(join(source, root), join(work, `new-${root}`), {
+          recursive: true,
+          verbatimSymlinks: true,
+        });
+        await chmod(join(work, `new-${root}`), 0o700);
+      }
+      for (const root of STATE_ROOTS) {
+        if (
+          await lstat(join(this.root, root)).catch(
+            (error: NodeJS.ErrnoException) => {
+              if (error.code !== "ENOENT") throw error;
+              return undefined;
+            },
+          )
+        ) {
+          await rename(join(this.root, root), join(work, `old-${root}`));
+          saved.push(root);
+        }
+        await rename(join(work, `new-${root}`), join(this.root, root));
+        installed.push(root);
+      }
+      recovered = true;
+    } catch (error) {
+      try {
+        for (const root of installed.reverse())
+          await rm(join(this.root, root), { recursive: true, force: true });
+        for (const root of saved.reverse())
+          await rename(join(work, `old-${root}`), join(this.root, root));
+        recovered = true;
+      } catch (rollbackError) {
+        throw new AggregateError(
+          [error, rollbackError],
+          `Restore and rollback failed. Original roots are retained at ${work}; services must stay stopped.`,
+        );
+      }
+      throw error;
+    } finally {
+      if (recovered) await rm(work, { recursive: true, force: true });
+    }
+  }
+}
+
+interface ContainerInspection {
+  Image: string;
+  State: { Status: string; Running: boolean };
+  Config: { Env: string[]; User: string };
+  Mounts: Array<{
+    Type: string;
+    Name?: string;
+    Source: string;
+    Destination: string;
+    RW: boolean;
+  }>;
+}
+
+export interface DockerBackupOps {
+  output: typeof execOutput;
+  copy: (container: string, path: string, target: string) => Promise<void>;
+  install: (args: string[], source: string) => Promise<void>;
+}
+
+const dockerOps: DockerBackupOps = {
+  output: execOutput,
+  copy: async (container, path, target) => {
+    await execOutput("docker", ["cp", `${container}:${path}/.`, target]);
+  },
+  install: async (args, source) => {
+    const child = spawn("docker", args, {
+      stdio: ["pipe", "ignore", "pipe"],
+      windowsHide: true,
+    });
+    let stderr = "";
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+    const exited = new Promise<void>((done, fail) => {
+      child.once("error", fail);
+      child.once("close", (code) =>
+        code === 0
+          ? done()
+          : fail(new Error(`Docker restore failed (${code}): ${stderr}`)),
+      );
+    });
+    const input = tar.c({ cwd: source, portable: true }, ["."]);
+    const transfer = pipeline(input, child.stdin).catch((error) => {
+      child.kill("SIGTERM");
+      throw error;
+    });
+    // Do not begin recovery while an earlier writer still owns the volume.
+    const results = await Promise.allSettled([transfer, exited]);
+    for (const result of results) {
+      if (result.status === "rejected") throw result.reason;
+    }
+  },
+};
+
+export class DockerRootStorage implements RootStorage {
+  readonly containers: Record<StateRoot, string>;
+  initialRunning?: Set<string>;
+  constructor(
+    readonly entry: AssistantEntry,
+    readonly ops: DockerBackupOps = dockerOps,
+  ) {
+    const names = dockerResourceNames(entry.assistantId);
+    this.containers = {
+      workspace: names.assistantContainer,
+      "gateway-security": names.gatewayContainer,
+      "ces-security": names.cesContainer,
+      "ces-data": names.cesContainer,
+    };
+  }
+  async inspect(container: string): Promise<ContainerInspection> {
+    const result = JSON.parse(
+      await this.ops.output("docker", ["inspect", container]),
+    ) as ContainerInspection[];
+    if (!result[0]) throw new Error(`Container is missing: ${container}`);
+    return result[0];
+  }
+  async running(): Promise<boolean> {
+    const containers = [...new Set(Object.values(this.containers))];
+    const states = await Promise.all(
+      containers.map((container) => this.inspect(container)),
+    );
+    for (const state of states) {
+      if (!["created", "running", "exited"].includes(state.State.Status)) {
+        throw new Error(
+          `Container is ${state.State.Status}; stop or repair it before backup/restore.`,
+        );
+      }
+    }
+    this.initialRunning ??= new Set(
+      containers.filter((_, index) => states[index]!.State.Running),
+    );
+    return states.some((state) => state.State.Running);
+  }
+  async resume(): Promise<void> {
+    if (this.initialRunning?.size === 3) {
+      await wakeAssistant(this.entry, {
+        watch: false,
+        foreground: false,
+        repairGuardian: false,
+      });
+    } else {
+      for (const container of new Set(Object.values(this.containers))) {
+        if (
+          this.initialRunning?.has(container) &&
+          !(await this.inspect(container)).State.Running
+        ) {
+          await this.ops.output("docker", ["start", container]);
+        }
+      }
+    }
+    // Probe inside the destination containers, so remote Docker contexts work
+    // without assuming their published ports are reachable on this CLI host.
+    const endpoints = [
+      [this.containers.workspace, ASSISTANT_INTERNAL_PORT, "readyz"],
+      [this.containers["gateway-security"], GATEWAY_INTERNAL_PORT, "healthz"],
+      [this.containers["ces-security"], 8090, "healthz"],
+    ] as const;
+    await Promise.all(
+      endpoints.map(async ([container, defaultPort, endpoint]) => {
+        if (!this.initialRunning?.has(container)) return;
+        const state = await this.inspect(container);
+        const configuredPort = state.Config.Env.find((value) =>
+          value.startsWith("RUNTIME_HTTP_PORT="),
+        )?.split("=")[1];
+        const port = configuredPort ? Number(configuredPort) : defaultPort;
+        if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
+          throw new Error(`Invalid health port for ${container}.`);
+        const deadline = Date.now() + 60_000;
+        const script =
+          'const url=process.argv.at(-1); const r=await fetch(url,{signal:AbortSignal.timeout(1500)}); if(!r.ok)process.exit(1); if(url.endsWith("/readyz")){const b=await r.json(); if(b.dbMigrations?.state==="failed"){console.log("migration_failed");process.exit(2)} if(b.ready===false)process.exit(1)} console.log("ready")';
+        while (true) {
+          try {
+            await this.ops.output(
+              "docker",
+              [
+                "exec",
+                container,
+                "bun",
+                "--eval",
+                script,
+                `http://127.0.0.1:${port}/${endpoint}`,
+              ],
+              { timeoutMs: 3000 },
+            );
+            return;
+          } catch (error) {
+            if (
+              String(error).includes("migration_failed") ||
+              Date.now() >= deadline
+            )
+              throw new Error(
+                `${container} did not become ready after restart.`,
+                { cause: error },
+              );
+            await new Promise((done) => setTimeout(done, 250));
+          }
+        }
+      }),
+    );
+  }
+  async capture(target: string): Promise<void> {
+    for (const root of STATE_ROOTS) {
+      await mkdir(join(target, root), { mode: 0o700 });
+      await this.ops.copy(
+        this.containers[root],
+        `/${root}`,
+        join(target, root),
+      );
+    }
+    // A Docker-injected key may never have been persisted by the gateway.
+    const gateway = await this.inspect(this.containers["gateway-security"]);
+    const key = gateway.Config.Env.find((value) =>
+      value.startsWith("ACTOR_TOKEN_SIGNING_KEY="),
+    )?.split("=")[1];
+    if (key) {
+      if (!/^[a-f0-9]{64}$/i.test(key))
+        throw new Error("Invalid injected gateway signing key.");
+      await writeFile(
+        join(target, "gateway-security", "actor-token-signing-key"),
+        Buffer.from(key, "hex"),
+        { mode: 0o600 },
+      );
+      await chmod(
+        join(target, "gateway-security", "actor-token-signing-key"),
+        0o600,
+      );
+    }
+    // docker cp may retain sockets in its tar stream; remove only process artifacts.
+    await pruneTransient(target);
+  }
+  private async restoreMounts(source: string) {
+    const key = await readFile(
+      join(source, "gateway-security", "actor-token-signing-key"),
+    );
+    const inspections = new Map<string, ContainerInspection>();
+    for (const container of new Set(Object.values(this.containers)))
+      inspections.set(container, await this.inspect(container));
+    // Container env is immutable. Refuse before changing any volume if it would
+    // override the restored identity. Teleport's provisioning step creates new
+    // containers against the restored roots instead.
+    for (const state of inspections.values()) {
+      const injected = state.Config.Env.find((value) =>
+        value.startsWith("ACTOR_TOKEN_SIGNING_KEY="),
+      )?.slice("ACTOR_TOKEN_SIGNING_KEY=".length);
+      if (injected && injected.toLowerCase() !== key.toString("hex")) {
+        throw new Error(
+          "Destination containers inject a different signing key. Recreate them without ACTOR_TOKEN_SIGNING_KEY before restoring this installation.",
+        );
+      }
+    }
+    return STATE_ROOTS.map((root) => {
+      const state = inspections.get(this.containers[root])!;
+      const mount = state.Mounts.find(
+        (item) => item.Destination === `/${root}`,
+      );
+      if (!mount?.RW || !["volume", "bind"].includes(mount.Type))
+        throw new Error(`No writable persistent mount for ${root}.`);
+      const source = mount.Type === "volume" ? mount.Name : mount.Source;
+      if (!source || source.includes(","))
+        throw new Error(`Unsupported mount source for ${root}.`);
+      // Ownership is destination-owned, never the uid from the archive/host.
+      const user = state.Config.User || "1001:1001";
+      const owner =
+        root === "workspace"
+          ? "1001:1001"
+          : user.includes(":")
+            ? user
+            : `${user}:${user}`;
+      if (!/^[\w.-]+(?::[\w.-]+)?$/.test(owner))
+        throw new Error(`Invalid destination user for ${root}.`);
+      return {
+        root,
+        state,
+        owner,
+        mount: `type=${mount.Type},src=${source},dst=/restore`,
+      };
+    });
+  }
+  async prepareRestore(source: string): Promise<void> {
+    await this.restoreMounts(source);
+  }
+  async replace(source: string): Promise<void> {
+    const mounts = await this.restoreMounts(source);
+    for (const { root, state, mount, owner } of mounts) {
+      await this.ops.install(
+        [
+          "run",
+          "--rm",
+          "-i",
+          "--network=none",
+          "--user=0",
+          "--mount",
+          mount,
+          "--entrypoint=/bin/sh",
+          state.Image,
+          "-ec",
+          'find /restore -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; tar -xpf - -C /restore; chown -R "$1" /restore; chmod 700 /restore',
+          "cadet-restore",
+          owner,
+        ],
+        join(source, root),
+      );
+    }
+  }
+}
+
+async function pruneTransient(root: string, relative = ""): Promise<void> {
+  for (const name of await readdir(join(root, relative))) {
+    const path = posix.join(relative, name);
+    const stat = await lstat(join(root, path));
+    if (!persistent(path, stat))
+      await rm(join(root, path), { recursive: true, force: true });
+    else if (stat.isDirectory()) await pruneTransient(root, path);
+  }
+}
+
+export interface RootBackupOps {
+  storage: RootStorage;
+  sleep: () => Promise<void>;
+  wake: () => Promise<void>;
+  save: (entry: AssistantEntry) => void;
+}
+
+function defaultOps(entry: AssistantEntry): RootBackupOps {
+  const storage =
+    entry.cloud === "docker"
+      ? new DockerRootStorage(entry)
+      : new LocalRootStorage(entry);
+  return {
+    storage,
+    sleep: () =>
+      sleepAssistant(entry, {
+        force: false,
+        wait: false,
+        waitMs: null,
+        gracefulOnly: true,
+      }),
+    wake: () => storage.resume(),
+    save: saveAssistantEntry,
+  };
+}
+
+async function assertStopped(storage: RootStorage): Promise<void> {
+  if (await storage.running())
+    throw new Error(
+      "Services are still running; no consistent root capture is possible.",
+    );
+}
+
+async function withOperationLock<T>(
+  entry: AssistantEntry,
+  work: () => Promise<T>,
+): Promise<T> {
+  const parent = join(getBackupsDir(), ".operations");
+  await mkdir(parent, { recursive: true, mode: 0o700 });
+  const identity =
+    entry.cloud === "docker"
+      ? `${process.env.DOCKER_HOST ?? ""}:${process.env.DOCKER_CONTEXT ?? ""}:${entry.assistantId}`
+      : entry.resources?.instanceDir;
+  const lock = join(
+    parent,
+    createHash("sha256")
+      .update(identity ?? entry.assistantId)
+      .digest("hex"),
+  );
+  try {
+    await mkdir(lock, { mode: 0o700 });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST")
+      throw new Error(
+        `Another backup/restore owns ${lock}. If its process has exited, remove that operation lock and retry.`,
+      );
+    throw error;
+  }
+  try {
+    return await work();
+  } finally {
+    await rm(lock, { recursive: true, force: true });
+  }
+}
+
+export async function createRootBackup(
+  entry: AssistantEntry,
+  output: string,
+  ops = defaultOps(entry),
+): Promise<void> {
+  return withOperationLock(entry, () => captureBackup(entry, output, ops));
+}
+
+async function captureBackup(
+  entry: AssistantEntry,
+  output: string,
+  ops: RootBackupOps,
+): Promise<void> {
+  if (entry.cloud !== "docker" && entry.resources) {
+    for (const root of STATE_ROOTS) {
+      const path = resolve(entry.resources.instanceDir, root);
+      if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
+        throw new Error("Save backups outside the persistent service roots.");
+    }
+  }
+  const stage = await mkdtemp(join(tmpdir(), "cadet-backup-"));
+  await chmod(stage, 0o700);
+  let running = false;
+  let stopped = false;
+  try {
+    running = await ops.storage.running();
+    stopped = running;
+    if (running) await ops.sleep();
+    stopped = true;
+    await assertStopped(ops.storage);
+    await ops.storage.capture(stage);
+    await assertStopped(ops.storage);
+    if (running) {
+      await ops.wake();
+      stopped = false;
+    }
+    await packRoot(stage, output);
+  } finally {
+    try {
+      if (running && stopped) await ops.wake();
+    } finally {
+      await rm(stage, { recursive: true, force: true });
+    }
+  }
+}
+
+export async function restoreRootBackup(
+  entry: AssistantEntry,
+  file: string,
+  options: { dryRun?: boolean; recoveryPath?: string } = {},
+  ops = defaultOps(entry),
+): Promise<string | undefined> {
+  return withOperationLock(entry, () =>
+    restoreBackup(entry, file, options, ops),
+  );
+}
+
+async function restoreBackup(
+  entry: AssistantEntry,
+  file: string,
+  options: { dryRun?: boolean; recoveryPath?: string },
+  ops: RootBackupOps,
+): Promise<string | undefined> {
+  const stage = await stageRootArchive(file);
+  const source = join(stage, "state");
+  const snapshot = join(stage, "previous");
+  let stopped = false;
+  let replacing = false;
+  let restored = false;
+  let running = false;
+  let recoveryPath: string | undefined;
+  const oldResources = entry.resources;
+  try {
+    // Read only gateway identity material; CES ciphertext is never interpreted.
+    const signingKey = resolveExistingLocalSigningKey({ instanceDir: source });
+    await ops.storage.prepareRestore?.(source);
+    if (options.dryRun) return undefined;
+    running = await ops.storage.running();
+    stopped = running;
+    if (running) await ops.sleep();
+    stopped = true;
+    await assertStopped(ops.storage);
+    await mkdir(snapshot, { mode: 0o700 });
+    await ops.storage.capture(snapshot);
+    recoveryPath =
+      options.recoveryPath ??
+      join(
+        getBackupsDir(),
+        `${entry.assistantId}-pre-restore-${Date.now()}.tar.gz`,
+      );
+    await packRoot(snapshot, recoveryPath);
+    await assertStopped(ops.storage);
+    replacing = true;
+    try {
+      await ops.storage.replace(source);
+      if (entry.cloud !== "docker" && entry.resources) {
+        entry.resources = { ...entry.resources, signingKey };
+        ops.save(entry);
+      }
+      restored = true;
+    } catch (error) {
+      try {
+        await ops.storage.replace(snapshot);
+        entry.resources = oldResources;
+        ops.save(entry);
+        replacing = false;
+      } catch (rollbackError) {
+        throw new AggregateError(
+          [error, rollbackError],
+          `Restore failed and could not recover. Services remain stopped; recovery archive: ${recoveryPath}`,
+        );
+      }
+      throw error;
+    }
+    if (running) {
+      try {
+        await ops.wake();
+        stopped = false;
+      } catch (error) {
+        try {
+          await ops.sleep();
+        } catch (stopError) {
+          throw new AggregateError(
+            [error, stopError],
+            `Restored state could not start or stop cleanly. Recovery archive: ${recoveryPath}`,
+          );
+        }
+        throw new Error(
+          `Restored state could not start; services were stopped. Recovery archive: ${recoveryPath}`,
+          { cause: error },
+        );
+      }
+    }
+    return recoveryPath;
+  } finally {
+    try {
+      // A failed replacement/failed start must never boot partially restored state.
+      if (running && stopped && !replacing && !restored) await ops.wake();
+    } finally {
+      await rm(stage, { recursive: true, force: true });
+    }
+  }
+}

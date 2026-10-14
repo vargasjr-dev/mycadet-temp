@@ -238,6 +238,7 @@ describe("sleep command", () => {
       "assistant",
       undefined,
       45_000,
+      undefined,
     );
     expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(
       2,
@@ -245,12 +246,16 @@ describe("sleep command", () => {
       "gateway",
       undefined,
       7000,
+      undefined,
     );
     // The CES sibling is stopped by its PID file; a no-op when absent.
     expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(
       3,
       join(assistantRootDir, "ces.pid"),
       "credential-executor",
+      undefined,
+      45_000,
+      undefined,
     );
   });
 

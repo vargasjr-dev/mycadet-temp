@@ -22,6 +22,7 @@ import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
   stopProcessByPidFile,
+  stopProcess,
 } from "../lib/process";
 import { resolveFreshBearerToken } from "./client.js";
 
@@ -75,6 +76,7 @@ export const sleep = Object.assign(
     );
     console.log("");
     console.log("Options:");
+    console.log("  --graceful-only  Abort if services do not exit gracefully; never force termination");
     console.log(
       "  --all     Stop every assistant across all remotes instead of one",
     );
@@ -97,6 +99,7 @@ export const sleep = Object.assign(
   }
 
   const force = args.includes("--force");
+  const gracefulOnly = args.includes("--graceful-only");
   let wait = false;
   let waitMs: number | null = null;
   let waitDurationToken: string | null = null;
@@ -141,13 +144,13 @@ export const sleep = Object.assign(
   }
 
   if (all) {
-    await sleepAll({ force, wait, waitMs });
+    await sleepAll({ force, wait, waitMs, gracefulOnly });
     return;
   }
 
   const entry = resolveTargetAssistant(nameArg);
   try {
-    await sleepAssistant(entry, { force, wait, waitMs });
+    await sleepAssistant(entry, { force, wait, waitMs, gracefulOnly });
   } catch (err) {
     if (err instanceof SleepExit) {
       console.log(err.message);
@@ -165,6 +168,7 @@ type SleepOptions = {
   force: boolean;
   wait: boolean;
   waitMs: number | null;
+  gracefulOnly?: boolean;
 };
 
 /**
@@ -232,11 +236,11 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
  * resources, unmanageable runtimes) so the caller decides between exiting
  * (single-assistant path) and continuing to the next entry (`--all`).
  */
-async function sleepAssistant(
+export async function sleepAssistant(
   entry: AssistantEntry,
   opts: SleepOptions,
 ): Promise<void> {
-  const { force, wait, waitMs } = opts;
+  const { force, wait, waitMs, gracefulOnly } = opts;
 
   if (entry.cloud === "docker") {
     if (wait) {
@@ -245,7 +249,7 @@ async function sleepAssistant(
       );
     }
     const res = dockerResourceNames(entry.assistantId);
-    await sleepContainers(res);
+    await sleepContainers(res, { gracefulOnly });
     console.log("Docker containers stopped.");
     if (await stopContainerTunnelEdge(entry)) {
       console.log("Tunnel edge stopped.");
@@ -277,6 +281,16 @@ async function sleepAssistant(
     );
   }
   const resources = entry.resources;
+  if (gracefulOnly && process.platform === "win32") {
+    throw new Error("Graceful-only shutdown is not supported for Windows local services.");
+  }
+  const stop = gracefulOnly
+    ? async (pid: number, label: string, timeoutMs = DAEMON_STOP_TIMEOUT_MS) => {
+        const stopped = await stopProcess(pid, label, timeoutMs, undefined, undefined, undefined, true);
+        if (!stopped) throw new Error(`${label} did not stop gracefully; no files were captured.`);
+        return stopped;
+      }
+    : undefined;
   const assistantPidFile = getDaemonPidPath(resources);
   const cadetDir = getAssistantRootDir(entry);
   const gatewayPidFile = join(cadetDir, "gateway.pid");
@@ -317,6 +331,7 @@ async function sleepAssistant(
     "assistant",
     undefined,
     DAEMON_STOP_TIMEOUT_MS,
+    stop,
   );
   if (!assistantStopped) {
     console.log("Assistant is not running.");
@@ -331,6 +346,7 @@ async function sleepAssistant(
     "gateway",
     undefined,
     7000,
+    stop,
   );
   if (!gatewayStopped) {
     console.log("Gateway is not running.");
@@ -344,6 +360,9 @@ async function sleepAssistant(
   const cesStopped = await stopProcessByPidFile(
     cesPidFile,
     "credential-executor",
+    undefined,
+    DAEMON_STOP_TIMEOUT_MS,
+    stop,
   );
   if (cesStopped) {
     console.log("credential-executor stopped.");

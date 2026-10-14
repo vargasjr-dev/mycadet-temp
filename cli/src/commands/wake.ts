@@ -201,7 +201,7 @@ class WakeExit extends Error {}
  * refusals so the caller decides between exiting (single path) and
  * continuing to the next entry (`--all`).
  */
-async function wakeAssistant(
+export async function wakeAssistant(
   entry: AssistantEntry,
   opts: WakeAssistantOptions,
 ): Promise<void> {

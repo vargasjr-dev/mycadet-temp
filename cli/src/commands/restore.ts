@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  statSync,
   renameSync,
   unlinkSync,
 } from "fs";
@@ -14,18 +15,6 @@ import {
   saveAssistantEntry,
 } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
-import {
-  bundleFileSizeBytes,
-  formatBundleSizeMb,
-  importStagedBundle,
-  preflightStagedBundle,
-  stageBundleForRestore,
-  stagingTargetFromEntry,
-} from "../lib/bundle-staging.js";
-import {
-  loadGuardianToken,
-  leaseGuardianToken,
-} from "../lib/guardian-token.js";
 import {
   generateLocalSigningKey,
   startCes,
@@ -43,21 +32,20 @@ import {
   platformImportBundleFromGcs,
   platformPollJobStatus,
 } from "../lib/cloud-client.js";
-import { performDockerRollback } from "../lib/upgrade-lifecycle.js";
-import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
+import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
 
 function printUsage(): void {
   console.log(
     "Usage: cadet restore <name> [--from <path>] [--version <version>] [--dry-run]",
   );
   console.log("");
-  console.log("Restore data from a .vbundle backup into an assistant.");
+  console.log(
+    "Restore all persistent roots from a tar archive into an assistant.",
+  );
   console.log(
     "Without --from, recovers a retired assistant from its archive in",
   );
-  console.log(
-    "$XDG_DATA_HOME/cadet/retired/ and starts it again.",
-  );
+  console.log("$XDG_DATA_HOME/cadet/retired/ and starts it again.");
   console.log(
     "With --version, also rolls back to the specified version first.",
   );
@@ -66,9 +54,9 @@ function printUsage(): void {
   console.log("  <name>               Name of the assistant to restore into");
   console.log("");
   console.log("Options:");
-  console.log("  --from <path>        Path to the .vbundle file (required)");
+  console.log("  --from <path>        Path to the .tar.gz file (required)");
   console.log(
-    "  --version <version>  Roll back to this version before importing data",
+    "  --version <version>  Cloud-only version rollback before restoring",
   );
   console.log(
     "  --dry-run            Show what would change without applying (data-only)",
@@ -76,11 +64,11 @@ function printUsage(): void {
   console.log("");
   console.log("Examples:");
   console.log("  cadet restore my-retired-assistant");
-  console.log("  cadet restore my-assistant --from backup.vbundle");
+  console.log("  cadet restore my-assistant --from backup.tar.gz");
   console.log(
-    "  cadet restore my-assistant --from backup.vbundle --version v1.2.3",
+    "  cadet restore my-cloud-assistant --from backup.tar.gz --version v1.2.3",
   );
-  console.log("  cadet restore my-assistant --from backup.vbundle --dry-run");
+  console.log("  cadet restore my-assistant --from backup.tar.gz --dry-run");
 }
 
 function parseArgs(argv: string[]): {
@@ -129,38 +117,6 @@ function parseArgs(argv: string[]): {
   return { name: positionals[0], fromPath, version, dryRun, help: false };
 }
 
-async function getAccessToken(
-  runtimeUrl: string,
-  assistantId: string,
-  displayName: string,
-  bootstrapSecret?: string,
-): Promise<string> {
-  const tokenData = loadGuardianToken(assistantId);
-
-  if (tokenData && new Date(tokenData.accessTokenExpiresAt) > new Date()) {
-    return tokenData.accessToken;
-  }
-
-  try {
-    const freshToken = await leaseGuardianToken(
-      runtimeUrl,
-      assistantId,
-      bootstrapSecret,
-    );
-    return freshToken.accessToken;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
-      console.error(
-        `Error: Could not connect to assistant '${displayName}'. Is it running?`,
-      );
-      console.error(`Try: cadet wake ${displayName}`);
-      process.exit(1);
-    }
-    throw err;
-  }
-}
-
 interface PreflightFileEntry {
   path: string;
   action: string;
@@ -204,7 +160,7 @@ interface ImportResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Platform (Cadet-hosted) restore via Django migration import
+// Cloud restore through the cloud API; the CLI never opens cloud storage.
 // ---------------------------------------------------------------------------
 
 async function restorePlatform(
@@ -220,13 +176,7 @@ async function restorePlatform(
     process.exit(1);
   }
 
-  // Step 1.5 — Upload to GCS via signed URL.
-  // We deliberately omit min/max runtime version here: restore uploads an
-  // arbitrary .vbundle from disk (often produced by a different runtime
-  // than the one we'd query right now), and the bundle's own manifest is
-  // the authority on its compatibility band. The cloud skips the
-  // version gate when these fields are absent and re-derives compat from
-  // the manifest when it processes the import.
+  // Upload the root archive through the cloud API; it owns cloud restore.
   const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
     { operation: "upload" },
     token,
@@ -623,349 +573,104 @@ async function recoverFromArchive(name: string): Promise<void> {
 
 export const restore = Object.assign(
   async function restore(): Promise<void> {
-  const { name, fromPath, version, dryRun, help } = parseArgs(process.argv);
+    const { name, fromPath, version, dryRun, help } = parseArgs(process.argv);
 
-  if (help) {
-    printUsage();
-    process.exit(0);
-  }
+    if (help) {
+      printUsage();
+      process.exit(0);
+    }
 
-  // --version requires --from
-  if (version && !fromPath) {
-    console.error(
-      "A backup file is required for restore. Use --from <path> to specify the .vbundle file.",
-    );
-    process.exit(1);
-  }
-
-  // --dry-run is not supported with --version
-  if (version && dryRun) {
-    console.error(
-      "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
-    );
-    process.exit(1);
-  }
-
-  if (!name) {
-    console.error("Error: <name> is required.");
-    console.error("");
-    printUsage();
-    process.exit(1);
-  }
-
-  // Without --from: recover a retired assistant from its retire archive.
-  if (!fromPath) {
-    if (dryRun) {
+    // --version requires --from
+    if (version && !fromPath) {
       console.error(
-        "Dry-run is only supported with --from. Recovery replays the retired assistant's archive directly.",
+        "A backup file is required for restore. Use --from <path> to specify the .tar.gz file.",
       );
       process.exit(1);
     }
-    await recoverFromArchive(name);
-    return;
-  }
 
-  // Look up the instance
-  const entry = findAssistantByName(name);
-  if (!entry) {
-    console.error(`Error: No assistant found with name '${name}'.`);
-    console.error("Run 'cadet ps' to see available assistants.");
-    process.exit(1);
-  }
-
-  // Verify .vbundle file exists
-  if (!existsSync(fromPath)) {
-    console.error(`Error: File not found: ${fromPath}`);
-    process.exit(1);
-  }
-
-  const sizeMB = formatBundleSizeMb(bundleFileSizeBytes(fromPath));
-  console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
-
-  // Detect topology and route platform assistants through Django import
-  const cloud =
-    entry.cloud || (entry.project ? "gcp" : entry.sshUser ? "custom" : "local");
-
-  if (cloud === "apple-container") {
-    console.error(
-      `Error: '${name}' uses the Apple Containers runtime. Restore is not yet supported for this topology.`,
-    );
-    process.exit(1);
-  }
-
-  if (isCloudHome(cloud)) {
-    const bundleData = readFileSync(fromPath);
-    await restorePlatform(entry, name, bundleData, { version, dryRun });
-    return;
-  }
-
-  if (version && cloud !== "docker") {
-    console.error(
-      "Restore with --version is only supported for Docker and cloud assistants.",
-    );
-    process.exit(1);
-  }
-
-  // Obtain auth token (acquired before dry-run or before data import;
-  // re-acquired after version rollback since containers restart).
-  const accessToken = await getAccessToken(
-    entry.runtimeUrl,
-    entry.assistantId,
-    name,
-    entry.guardianBootstrapSecret,
-  );
-
-  const staging = stagingTargetFromEntry(entry);
-  let stagedRelativePath: string | undefined;
-  let bundleData: Buffer | undefined;
-  let cleanupStaged: (() => Promise<void>) | undefined;
-  if (staging) {
-    const staged = await stageBundleForRestore(staging, fromPath);
-    stagedRelativePath = staged.relativePath;
-    cleanupStaged = staged.cleanup;
-  } else {
-    bundleData = readFileSync(fromPath);
-  }
-
-  try {
-    await runLocalRestore({
-      entry,
-      name,
-      version,
-      dryRun,
-      accessToken,
-      stagedRelativePath,
-      bundleData,
-    });
-  } finally {
-    if (cleanupStaged) {
-      await cleanupStaged();
+    // --dry-run is not supported with --version
+    if (version && dryRun) {
+      console.error(
+        "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
+      );
+      process.exit(1);
     }
-  }
-},
-  { description: "Restore a .vbundle backup, or recover a retired assistant" },
-);
 
+    if (!name) {
+      console.error("Error: <name> is required.");
+      console.error("");
+      printUsage();
+      process.exit(1);
+    }
 
-async function runLocalRestore(opts: {
-  entry: AssistantEntry;
-  name: string;
-  version: string | undefined;
-  dryRun: boolean;
-  accessToken: string;
-  stagedRelativePath: string | undefined;
-  bundleData: Buffer | undefined;
-}): Promise<void> {
-  const { entry, name, version, dryRun, stagedRelativePath, bundleData } = opts;
-  let accessToken = opts.accessToken;
-
-  if (dryRun) {
-    // Preflight check
-    console.log("Running preflight analysis...\n");
-
-    let response: Response;
-    try {
-      response = stagedRelativePath
-        ? await preflightStagedBundle(
-            entry.runtimeUrl,
-            accessToken,
-            stagedRelativePath,
-          )
-        : await loopbackSafeFetch(
-            `${entry.runtimeUrl}/v1/migrations/import-preflight`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/octet-stream",
-              },
-              body: bundleData ? new Uint8Array(bundleData) : undefined,
-              signal: AbortSignal.timeout(120_000),
-            },
-          );
-    } catch (err) {
-      if (err instanceof Error && err.name === "TimeoutError") {
-        console.error("Error: Preflight request timed out after 2 minutes.");
-        process.exit(1);
-      }
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
+    // Without --from: recover a retired assistant from its retire archive.
+    if (!fromPath) {
+      if (dryRun) {
         console.error(
-          `Error: Could not connect to assistant '${name}'. Is it running?`,
+          "Dry-run is only supported with --from. Recovery replays the retired assistant's archive directly.",
         );
-        console.error(`Try: cadet wake ${name}`);
         process.exit(1);
       }
-      throw err;
+      await recoverFromArchive(name);
+      return;
     }
 
-    if (!response.ok) {
-      const body = await response.text();
+    // Look up the instance
+    const entry = findAssistantByName(name);
+    if (!entry) {
+      console.error(`Error: No assistant found with name '${name}'.`);
+      console.error("Run 'cadet ps' to see available assistants.");
+      process.exit(1);
+    }
+
+    // Verify .tar.gz file exists
+    if (!existsSync(fromPath)) {
+      console.error(`Error: File not found: ${fromPath}`);
+      process.exit(1);
+    }
+
+    const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
+    console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
+
+    // Cloud storage and lifecycle belong to the cloud API.
+    const cloud =
+      entry.cloud ||
+      (entry.project ? "gcp" : entry.sshUser ? "custom" : "local");
+
+    if (cloud === "apple-container") {
       console.error(
-        `Error: Preflight check failed (${response.status}): ${body}`,
+        `Error: '${name}' uses the Apple Containers runtime. Restore is not yet supported for this topology.`,
       );
       process.exit(1);
     }
 
-    const result = (await response.json()) as PreflightResponse;
-
-    if (!result.can_import) {
-      if (result.validation?.errors?.length) {
-        console.error("Import blocked by validation errors:");
-        for (const err of result.validation.errors) {
-          console.error(
-            `  - ${err.message}${err.path ? ` (${err.path})` : ""}`,
-          );
-        }
-      }
-      if (result.conflicts?.length) {
-        console.error("Import blocked by conflicts:");
-        for (const conflict of result.conflicts) {
-          console.error(
-            `  - ${conflict.message}${conflict.path ? ` (${conflict.path})` : ""}`,
-          );
-        }
-      }
-      process.exit(1);
+    if (isCloudHome(cloud)) {
+      await validateRootArchive(fromPath);
+      const bundleData = readFileSync(fromPath);
+      await restorePlatform(entry, name, bundleData, { version, dryRun });
+      return;
     }
 
-    // Print summary table
-    const summary = result.summary ?? {
-      files_to_create: 0,
-      files_to_overwrite: 0,
-      files_unchanged: 0,
-      total_files: 0,
-    };
-    console.log("Preflight analysis:");
-    console.log(`  Files to create:    ${summary.files_to_create}`);
-    console.log(`  Files to overwrite: ${summary.files_to_overwrite}`);
-    console.log(`  Files unchanged:    ${summary.files_unchanged}`);
-    console.log(`  Total:              ${summary.total_files}`);
-    console.log("");
-
-    const conflicts = result.conflicts ?? [];
-    console.log(
-      `Conflicts: ${conflicts.length > 0 ? conflicts.map((c) => c.message).join(", ") : "none"}`,
-    );
-
-    // List individual files with their action
-    if (result.files && result.files.length > 0) {
-      console.log("");
-      console.log("Files:");
-      for (const file of result.files) {
-        console.log(`  [${file.action}] ${file.path}`);
-      }
+    if (cloud !== "local" && cloud !== "docker") {
+      throw new Error(`Restore for '${cloud}' must run on its host.`);
     }
-  } else {
-    // Version rollback (when --version is specified)
     if (version) {
-      console.log(`Rolling back to version ${version}...`);
-      await performDockerRollback(entry, { targetVersion: version });
-      console.log("");
-
-      // Re-acquire auth token since containers were restarted during rollback
-      accessToken = await getAccessToken(
-        entry.runtimeUrl,
-        entry.assistantId,
-        name,
-        entry.guardianBootstrapSecret,
+      throw new Error(
+        "Root restore uses the currently provisioned services. Version rollback will be integrated separately.",
       );
     }
-
-    // Data import
-    console.log("Importing backup data...\n");
-
-    let result: ImportResponse;
-    try {
-      const response = stagedRelativePath
-        ? await importStagedBundle(
-            entry.runtimeUrl,
-            accessToken,
-            stagedRelativePath,
-          )
-        : await loopbackSafeFetch(`${entry.runtimeUrl}/v1/migrations/import`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/octet-stream",
-            },
-            body: bundleData ? new Uint8Array(bundleData) : undefined,
-            signal: AbortSignal.timeout(120_000),
-          });
-      if (!response.ok) {
-        const body = await response.text();
-        console.error(`Error: Import failed (${response.status}): ${body}`);
-        process.exit(1);
-      }
-      result = (await response.json()) as ImportResponse;
-    } catch (err) {
-      if (err instanceof Error && err.name === "TimeoutError") {
-        console.error("Error: Import request timed out after 2 minutes.");
-        process.exit(1);
-      }
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
-        console.error(
-          `Error: Could not connect to assistant '${name}'. Is it running?`,
-        );
-        console.error(`Try: cadet wake ${name}`);
-        process.exit(1);
-      }
-      throw err;
-    }
-
-    if (!result.success) {
-      console.error(
-        `Error: Import failed — ${result.message ?? result.reason ?? "unknown reason"}`,
+    const recoveryPath = await restoreRootBackup(entry, fromPath, { dryRun });
+    if (dryRun)
+      console.log(
+        "Root archive is valid; restore would replace workspace, gateway security, CES security and CES data. No services were stopped.",
       );
-      for (const err of result.errors ?? []) {
-        console.error(`  - ${err.message}${err.path ? ` (${err.path})` : ""}`);
-      }
-      process.exit(1);
+    else {
+      console.log("Restore complete.");
+      console.log(`Previous state retained at ${recoveryPath}`);
     }
-
-    // Print import report
-    const summary = result.summary ?? {
-      total_files: 0,
-      files_created: 0,
-      files_overwritten: 0,
-      files_skipped: 0,
-      backups_created: 0,
-    };
-    console.log("✅ Restore complete.");
-    console.log(`  Files created:     ${summary.files_created}`);
-    console.log(`  Files overwritten: ${summary.files_overwritten}`);
-    console.log(`  Files skipped:     ${summary.files_skipped}`);
-    console.log(`  Backups created:   ${summary.backups_created}`);
-
-    // A daemon in the terminal failed-migrations state accepts this import
-    // (the migration-repair exemption), but its readiness latch only clears
-    // on restart — without one it keeps refusing DB-backed routes.
-    try {
-      const readyz = await loopbackSafeFetch(`${entry.runtimeUrl}/readyz`, {
-        signal: AbortSignal.timeout(3_000),
-      });
-      const readyzBody = (await readyz.json().catch(() => null)) as {
-        dbMigrations?: { state?: string };
-      } | null;
-      if (readyzBody?.dbMigrations?.state === "failed") {
-        console.warn(
-          "\n⚠️  The assistant is in a failed-migrations state; the restored data takes effect after a restart:",
-        );
-        console.warn(`   cadet sleep ${name} && cadet wake ${name}`);
-      }
-    } catch {
-      // Best-effort advisory — never fail a completed restore over it.
-    }
-
-    // Print warnings if any
-    const warnings = result.warnings ?? [];
-    if (warnings.length > 0) {
-      console.log("");
-      console.log("Warnings:");
-      for (const warning of warnings) {
-        console.log(`  ⚠️  ${warning}`);
-      }
-    }
-  }
-}
+  },
+  {
+    description:
+      "Restore persistent roots from tar, or recover a retired assistant",
+  },
+);
