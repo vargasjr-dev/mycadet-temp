@@ -32,7 +32,6 @@ function FloatingHydrateFallback() {
 }
 import { ActiveAssistantGate } from "@/components/layout/active-assistant-gate";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import { isCadetCloudRemote } from "@/lib/local-mode";
 import { CONVERSATION_APP_SEGMENT, routes } from "@/utils/routes";
 
 function McpSettingsRedirect() {
@@ -88,15 +87,20 @@ function ChatLayoutRoute() {
 }
 
 export function getRouterBasename(): string | undefined {
-  if (!!isCadetCloudRemote()) {
-    return undefined;
-  }
+  // A served prefix is a topology fact — read it from where the bundle was
+  // actually loaded, never from the auth scheme. Cloud-hosted bundles serve
+  // under a versioned artifact path (`/web/<version>/assistant/…`) on both
+  // the gateway and the platform host; without the prefix the router matches
+  // the full iframe path, finds no `/web` route, and lands in the not-found
+  // catch-all. Root-served bundles (local, electron) match at index 0 and
+  // keep no basename.
   return remoteGatewayPublicPathPrefix() || undefined;
 }
 
-// Route tree — no basename in normal app modes; remote-gateway mode adds the
-// public path prefix as the router basename so Tunnel-style URLs such as
-// `/assistant-123/assistant/pair` match the same `/assistant/*` route tree.
+// Route tree — no basename when served at the root; a served prefix (the
+// remote-gateway's public path, the cloud artifact's versioned path) becomes
+// the router basename so URLs such as `/assistant-123/assistant/pair` or
+// `/web/<version>/assistant/pair` match the same `/assistant/*` route tree.
 // To view the full hierarchy at a glance:
 //   grep -n 'path:' clients/web/src/routes.tsx
 //

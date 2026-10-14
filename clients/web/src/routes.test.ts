@@ -147,6 +147,19 @@ describe("remote web pairing route", () => {
       ),
     ).toBe(false);
   });
+
+  test("uses the cloud artifact's versioned path as the router basename", () => {
+    // Cloud bundles load from /web/<version>/assistant/… — the gateway's
+    // artifact surface, proxied 1:1 by the platform host. The prefix is
+    // where the bundle was loaded from (a topology fact), not an auth
+    // question, so it strips exactly like the remote-gateway prefix does.
+    // Without it the router matched the full iframe path, found no /web
+    // route, and /assistant rendered the not-found catch-all.
+    window.__CADET_CONFIG__ = { remote: "cloud" };
+    window.history.pushState(null, "", "/web/2026.10.14-1/assistant/");
+
+    expect(getRouterBasename()).toBe("/web/2026.10.14-1");
+  });
 });
 
 describe("credential entry route", () => {
