@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type {
   CreditTierEnum,
   MachineTierEnum,
@@ -60,8 +62,66 @@ const MAX_AGE_MS = 30 * 60 * 1000;
  * that hop working even when `sessionStorage.setItem` throws.
  */
 let inMemoryIntent: CheckoutIntent | null = null;
+let accountHandoff = false;
+
+const AccountCheckoutSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("package"),
+    packageKey: z.string(),
+    savedAt: z.number(),
+    resumeAfterOnboarding: z.literal(true),
+  }),
+  z.object({
+    kind: z.literal("custom"),
+    machineTier: z.enum(["medium", "large", "xl"]).nullable(),
+    storageTier: z.enum(["xs", "s", "m", "l"]),
+    creditTier: z
+      .enum([
+        "credits_10",
+        "credits_25",
+        "credits_50",
+        "credits_100",
+        "credits_200",
+      ])
+      .nullable(),
+    savedAt: z.number(),
+    resumeAfterOnboarding: z.literal(true),
+  }),
+]);
+const HandoffEventSchema = z.object({
+  key: z.literal(STORAGE_KEY),
+  value: z.string(),
+});
+if (typeof window !== "undefined") {
+  window.addEventListener("cadet:pref-changed", (event) => {
+    if (!(event instanceof CustomEvent)) {
+      return;
+    }
+    const detail = HandoffEventSchema.safeParse(event.detail);
+    if (!detail.success) {
+      return;
+    }
+    if (detail.data.value === "") {
+      clearCheckoutIntent();
+      accountHandoff = true;
+      return;
+    }
+    try {
+      const parsed = AccountCheckoutSchema.safeParse(
+        JSON.parse(detail.data.value),
+      );
+      if (parsed.success) {
+        inMemoryIntent = parsed.data;
+        accountHandoff = true;
+      }
+    } catch {
+      // A malformed notification cannot change the assistant's checkout intent.
+    }
+  });
+}
 
 export function saveCheckoutIntent(intent: UnsavedCheckoutIntent): void {
+  accountHandoff = false;
   const stamped: CheckoutIntent = { ...intent, savedAt: Date.now() };
   // Always keep the memory copy so a throwing sessionStorage can't lose it.
   inMemoryIntent = stamped;
@@ -79,6 +139,9 @@ export function saveCheckoutIntent(intent: UnsavedCheckoutIntent): void {
  * back to the in-memory mirror when sessionStorage is unreachable or empty.
  */
 export function readCheckoutIntent(): CheckoutIntent | null {
+  if (accountHandoff) {
+    return readInMemoryIntent();
+  }
   let raw: string | null = null;
   if (typeof sessionStorage !== "undefined") {
     try {
@@ -125,6 +188,7 @@ export function readPurchasedCheckoutIntent(): CheckoutIntent | null {
 }
 
 export function clearCheckoutIntent(): void {
+  accountHandoff = false;
   inMemoryIntent = null;
   try {
     sessionStorage.removeItem(STORAGE_KEY);

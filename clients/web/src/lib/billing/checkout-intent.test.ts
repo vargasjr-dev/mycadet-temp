@@ -234,3 +234,73 @@ describe("in-memory fallback when sessionStorage is unavailable", () => {
     }
   });
 });
+
+describe("account checkout notifications", () => {
+  const notify = (value: string) =>
+    window.dispatchEvent(
+      new CustomEvent("cadet:pref-changed", {
+        detail: { key: STORAGE_KEY, value },
+      }),
+    );
+  test("consent receives signup checkout without session storage and clears stale persisted intent", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        kind: "package",
+        packageKey: "old",
+        savedAt: Date.now(),
+      }),
+    );
+    notify(
+      JSON.stringify({
+        kind: "package",
+        packageKey: "super",
+        savedAt: Date.now(),
+        resumeAfterOnboarding: true,
+      }),
+    );
+    expect(readCheckoutIntent()).toMatchObject({
+      kind: "package",
+      packageKey: "super",
+      resumeAfterOnboarding: true,
+    });
+    expect(readPurchasedCheckoutIntent()).toBeNull();
+    notify("");
+    expect(readCheckoutIntent()).toBeNull();
+  });
+  test("malformed notifications cannot overwrite the assistant's intent", () => {
+    saveCheckoutIntent({ kind: "package", packageKey: "super" });
+    for (const value of [
+      "broken",
+      "{}",
+      JSON.stringify({
+        kind: "custom",
+        storageTier: "invalid",
+        savedAt: Date.now(),
+        resumeAfterOnboarding: true,
+      }),
+    ]) {
+      notify(value);
+    }
+    expect(readCheckoutIntent()).toMatchObject({
+      kind: "package",
+      packageKey: "super",
+    });
+  });
+  test("the assistant's Stripe handoff replaces the account carry and removes the marker", () => {
+    notify(
+      JSON.stringify({
+        kind: "package",
+        packageKey: "super",
+        savedAt: Date.now(),
+        resumeAfterOnboarding: true,
+      }),
+    );
+    saveCheckoutIntent({ kind: "package", packageKey: "super" });
+    expect(readPurchasedCheckoutIntent()).toMatchObject({
+      kind: "package",
+      packageKey: "super",
+    });
+    expect(readCheckoutIntent()?.resumeAfterOnboarding).toBeUndefined();
+  });
+});

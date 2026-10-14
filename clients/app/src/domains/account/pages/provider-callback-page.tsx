@@ -1,3 +1,4 @@
+import { readReturningUser } from "@app/assistant/returning-user";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@app/i18n";
@@ -10,7 +11,7 @@ import { AccountShell } from "@app/components/account/account-shell";
 import { listAssistants } from "@app/assistant/api";
 import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { getSession } from "@app/lib/auth/session-client";
-import { resolvePostAuthDestination } from "@web/domains/account/login-flow";
+import { resolvePostAuthDestination } from "@app/domains/account/post-auth-destination";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
 import { isLocalClient } from "@app/lib/runtime-mode";
 import { useAuthStore } from "@app/stores/auth-store";
@@ -83,7 +84,12 @@ export function ProviderCallbackPage() {
 
             const fallback = routes.assistant;
             const { destination, requiresFullPageNavigation } =
-              resolvePostAuthDestination({ returnTo, fallback, authIntent });
+              resolvePostAuthDestination({
+                returnTo,
+                fallback,
+                authIntent,
+                returningUser: await readReturningUser(),
+              });
             if (requiresFullPageNavigation) {
               window.location.href = destination;
             } else {

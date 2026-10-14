@@ -6,6 +6,7 @@ export interface AppElectronBridge {
   auth?: Partial<
     Pick<CadetBridge["auth"], "getSessionToken" | "cancelOAuth" | "startOAuth">
   >;
+  localMode?: Pick<CadetBridge["localMode"], "readLockfile">;
   menu: { setCloudSession(has: boolean): Promise<void> };
   commands: {
     on(callback: (command: CadetCommand) => void): () => void;

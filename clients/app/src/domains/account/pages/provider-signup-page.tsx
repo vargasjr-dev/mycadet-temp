@@ -1,3 +1,4 @@
+import { readReturningUser } from "@app/assistant/returning-user";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
@@ -16,10 +17,7 @@ import {
   submitProviderSignup,
 } from "@app/lib/auth/provider-signup-client";
 import { setSignupOnboardingFirstName } from "@app/lib/auth/signup-onboarding-handoff";
-import {
-  resolvePostAuthDestination,
-  resolvePostLoginDestination,
-} from "@web/domains/account/login-flow";
+import { resolvePostAuthDestination } from "@app/domains/account/post-auth-destination";
 import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -88,10 +86,12 @@ export function ProviderSignupPage() {
       if (isConflict(result)) {
         await refreshSession();
         await refreshCloudAssistantsIfStale();
-        const conflict = resolvePostLoginDestination(
+        const conflict = resolvePostAuthDestination({
           returnTo,
-          routes.account.root,
-        );
+          fallback: routes.account.root,
+          authIntent: "login",
+          returningUser: await readReturningUser(),
+        });
         if (conflict.requiresFullPageNavigation) {
           window.location.href = conflict.destination;
         } else {
@@ -110,6 +110,7 @@ export function ProviderSignupPage() {
       returnTo,
       fallback: routes.account.root,
       authIntent: "signup",
+      returningUser: await readReturningUser(),
     });
     if (post.requiresFullPageNavigation) {
       window.location.href = post.destination;

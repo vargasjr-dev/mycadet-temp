@@ -52,7 +52,7 @@ mock.module("@app/stores/auth-store", () => ({
   },
 }));
 
-mock.module("../../../login-flow", () => ({
+mock.module("@app/domains/account/post-auth-destination", () => ({
   resolvePostAuthDestination: () => ({
     destination: "/assistant",
     requiresFullPageNavigation: false,

@@ -5,7 +5,7 @@ export type SignupCheckoutIntent = (
   | ({ kind: "custom" } & CustomCheckoutSelection)
 ) & { resumeAfterOnboarding: true };
 
-/** The composed client shares the stash and its in-memory fallback with web. */
+/** Account carries checkout selection into assistant consent. */
 export interface CheckoutHandoff {
   save(intent: SignupCheckoutIntent): void;
   clear(): void;

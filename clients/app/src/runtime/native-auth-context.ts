@@ -1,21 +1,19 @@
-import {
-  nativeAuthReturningUser,
-  nativeCheckoutHandoff,
-} from "@web/domains/account/login-flow";
+import { nativeAuthReturningUser } from "@web/domains/account/login-flow";
 import {
   beginCloudAccountOAuth,
   primeCloudAccountSessionToken,
   whenCloudSessionSettled,
 } from "@web/stores/auth-store";
+import { checkoutHandoff } from "@app/lib/billing/checkout-intent-storage";
 import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destination";
 
 /** Assistant facts, checkout storage, and web reconciliation for the composed client. */
 export const nativeAuthContext = {
-  checkout: nativeCheckoutHandoff,
+  checkout: checkoutHandoff,
   read(): NativePostAuthContext {
     return {
       returningUser: nativeAuthReturningUser(),
-      checkout: nativeCheckoutHandoff,
+      checkout: checkoutHandoff,
     };
   },
   beginComposedOAuth: beginCloudAccountOAuth,

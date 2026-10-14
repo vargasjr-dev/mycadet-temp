@@ -7,7 +7,9 @@ const prime = mock((_token: string) => {});
 const wait = mock(async () => {});
 mock.module("@web/domains/account/login-flow", () => ({
   nativeAuthReturningUser: () => returning,
-  nativeCheckoutHandoff: checkout,
+}));
+mock.module("@app/lib/billing/checkout-intent-storage", () => ({
+  checkoutHandoff: checkout,
 }));
 mock.module("@web/stores/auth-store", () => ({
   beginCloudAccountOAuth: begin,

@@ -4,6 +4,7 @@ import { z } from "zod";
 export const AssistantSchema = z.object({
   id: z.string().min(1),
   name: z.string().optional(),
+  created: z.string().optional(),
 });
 export const AssistantPageSchema = z.object({
   results: z.array(AssistantSchema),
