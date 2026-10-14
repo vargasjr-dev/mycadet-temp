@@ -5,7 +5,7 @@ import { requiresFullPageNavigation } from "@app/domains/account/full-page-navig
 
 import { requiresCloudSession } from "@web/domains/account/login-flow";
 import { sanitizeReturnTo } from "@app/utils/return-to";
-import { useCloudGateWithPending } from "@web/hooks/use-cloud-gate";
+import { useAccountCloudGate } from "@app/hooks/use-account-cloud-gate";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import {
   useIsAuthenticated,
@@ -71,7 +71,7 @@ export function useReturnToShortCircuit(): ReturnToShortCircuit {
   const [searchParams] = useSearchParams();
   const isAuthenticated = useIsAuthenticated();
   const isSessionInitializing = useIsSessionInitializing();
-  const cloudGate = useCloudGateWithPending();
+  const cloudGate = useAccountCloudGate();
 
   const rawReturnTo = searchParams.get("returnTo");
   const destination = sanitizeReturnTo(rawReturnTo, routes.assistant);
