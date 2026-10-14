@@ -9,7 +9,7 @@ let electron = false;
 let clientOs: ClientOs = "web";
 
 mock.module("@/lib/local-mode", () => ({
-  getPlatformRuntimeUrl: () => "https://example.com",
+  getCloudRuntimeUrl: () => "https://example.com",
 }));
 mock.module("@/lib/session-replay/network-sanitize", () => ({
   sessionReplayNetworkConfig: {},

@@ -20,7 +20,7 @@ import {
   getGatewayToken,
   getLocalTokenUrl,
 } from "@/lib/auth/gateway-session";
-import { getPlatformRuntimeUrl } from "@/lib/cloud-runtime-url";
+import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import {
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
@@ -78,7 +78,7 @@ const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
 const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
-export { getPlatformRuntimeUrl };
+export { getCloudRuntimeUrl };
 
 export function isCadetCloudRemote(): boolean {
   return readInjectedConfig().remote === "cloud";

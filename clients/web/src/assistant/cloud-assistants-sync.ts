@@ -24,7 +24,7 @@ import { hasLiveCloudSession } from "@/stores/session-status";
 // two network hops, so a logout or account switch can land while it's in
 // flight; only the newest reload for the still-present same-user session is
 // allowed to write the resolved store, mirroring the auth store's own
-// `latestPlatformProbe` guard.
+// `latestCloudProbe` guard.
 let latestReload = 0;
 
 // Stale-refresh bookkeeping, mirroring setupOrganizationStore: resume and

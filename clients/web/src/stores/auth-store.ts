@@ -204,7 +204,7 @@ const GATEWAY_LOCAL_USER: AuthUser = {
 // waiting on that bridge call. A session authenticated inside that window is
 // the newer truth, so the delayed write compares the epoch it captured against
 // this counter and skips itself rather than sending a freshly signed-in user
-// back to login. Latest-wins, the same rule `latestPlatformProbe` applies to
+// back to login. Latest-wins, the same rule `latestCloudProbe` applies to
 // overlapping platform probes.
 //
 // Latest-wins only settles races between *observations* of the session. An
@@ -753,8 +753,8 @@ async function reconcileCloudAssistants(
 // and a stale completion must not mutate session state — most importantly it
 // must not move `cloudSession` while a newer probe is still pending, which
 // would resurface the very race this state guards. Only the latest probe's id
-// matches `latestPlatformProbe`, so older probes no-op.
-let latestPlatformProbe = 0;
+// matches `latestCloudProbe`, so older probes no-op.
+let latestCloudProbe = 0;
 
 // Settle promise for the most recently launched probe, reassigned on every
 // launch. Because re-probes keep the last `"present"`/`"absent"` rather than
@@ -765,7 +765,7 @@ let latestPlatformProbe = 0;
 // this reference so a probe that becomes latest mid-wait is awaited too.
 // Initialized resolved: before any probe runs the status is `"unknown"`, which
 // those callers already gate on separately.
-let platformProbeSettled: Promise<void> = Promise.resolve();
+let cloudProbeSettled: Promise<void> = Promise.resolve();
 
 /**
  * Run the fire-and-forget cloud-session probe used by the local gateway
@@ -794,14 +794,14 @@ function probeCloudSession(
   options: { setUserOnSuccess?: boolean; clearOnFailure?: boolean } = {},
 ): void {
   if (isServedGatewayRuntime()) {
-    ++latestPlatformProbe;
-    platformProbeSettled = Promise.resolve();
+    ++latestCloudProbe;
+    cloudProbeSettled = Promise.resolve();
     set({ cloudSession: "absent" });
     return;
   }
-  const probeId = ++latestPlatformProbe;
-  const isStale = (): boolean => probeId !== latestPlatformProbe;
-  platformProbeSettled = getSession()
+  const probeId = ++latestCloudProbe;
+  const isStale = (): boolean => probeId !== latestCloudProbe;
+  cloudProbeSettled = getSession()
     .then(async (result) => {
       if (isStale()) {
         return;
@@ -915,16 +915,16 @@ function probeCloudSession(
  * A probe can become the latest *after* the wait begins (an app-resume refresh
  * firing while we await the current probe). Awaiting a single captured promise
  * would let the resolver proceed when that probe settles even though a newer
- * one is still pending. Instead this chases `platformProbeSettled`: after each
+ * one is still pending. Instead this chases `cloudProbeSettled`: after each
  * await it re-checks whether a newer probe replaced the reference and waits that
  * one out too, returning only once the reference is unchanged across an await —
  * i.e. no probe launched while waiting for the last one.
  */
 export async function whenCloudSessionSettled(): Promise<void> {
-  let awaited = platformProbeSettled;
+  let awaited = cloudProbeSettled;
   await awaited;
-  while (platformProbeSettled !== awaited) {
-    awaited = platformProbeSettled;
+  while (cloudProbeSettled !== awaited) {
+    awaited = cloudProbeSettled;
     await awaited;
   }
 }

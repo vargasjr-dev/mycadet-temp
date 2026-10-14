@@ -8,7 +8,7 @@ import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/cr
 import {
   getActiveAssistant,
   getLocalGatewayUrl,
-  getPlatformRuntimeUrl,
+  getCloudRuntimeUrl,
   getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,
@@ -539,7 +539,7 @@ async function ensureLocalAssistantCloudIdentity(
     unstoredProvisionedKeys.set(assistant.assistantId, assistantApiKey);
   }
 
-  const cloudBaseUrl = status.baseUrl ?? getPlatformRuntimeUrl();
+  const cloudBaseUrl = status.baseUrl ?? getCloudRuntimeUrl();
   try {
     await injectCloudCredentials(gateway, {
       assistantApiKey,

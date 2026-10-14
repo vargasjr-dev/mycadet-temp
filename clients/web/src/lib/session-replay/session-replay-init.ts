@@ -1,4 +1,4 @@
-import { getPlatformRuntimeUrl } from "@/lib/local-mode";
+import { getCloudRuntimeUrl } from "@/lib/local-mode";
 import { sessionReplayNetworkConfig } from "@/lib/session-replay/network-sanitize";
 import {
   installSessionReplayControlListeners,
@@ -56,7 +56,7 @@ export function initSessionReplay(): void {
     surface: sessionReplaySurface(),
     environment: import.meta.env.VITE_SESSION_REPLAY_ENVIRONMENT ?? "local",
     release: import.meta.env.VITE_APP_VERSION,
-    base: sessionReplayProxyBase(window.location, getPlatformRuntimeUrl()),
+    base: sessionReplayProxyBase(window.location, getCloudRuntimeUrl()),
     network: sessionReplayNetworkConfig,
   };
   syncSessionReplay(config);

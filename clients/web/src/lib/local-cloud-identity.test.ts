@@ -59,7 +59,7 @@ mock.module("@/lib/auth/request-headers", () => ({
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeAssistant,
   getLocalGatewayUrl: () => "/assistant/__gateway/20101",
-  getPlatformRuntimeUrl: () => CONFIG_PLATFORM_BASE_URL,
+  getCloudRuntimeUrl: () => CONFIG_PLATFORM_BASE_URL,
   getSelectedAssistant: () => activeAssistant,
   isLocalAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local",

@@ -45,7 +45,7 @@ import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
-import { getPlatformRuntimeUrl } from "@/lib/cloud-runtime-url";
+import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -134,7 +134,7 @@ function getTunnelHost(): string {
   }
   try {
     const derived = tunnelHostForPlatformHost(
-      new URL(getPlatformRuntimeUrl()).hostname,
+      new URL(getCloudRuntimeUrl()).hostname,
     );
     if (derived) {
       return derived;
