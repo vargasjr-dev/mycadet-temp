@@ -194,7 +194,7 @@ export function GeneralPage() {
         showHandles={isAuthenticated && cloudGate === "full"}
       >
         <TimezoneSection />
-        <ThisDeviceSection />
+        {!isCloudHosted && <ThisDeviceSection />}
         {accountMfaEnabled && cloudGate !== "gated" && (
           <>
             <div className="border-t border-[var(--border-subtle)]" />

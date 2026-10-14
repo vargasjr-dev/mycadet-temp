@@ -31,6 +31,10 @@ export async function handleGetMyDevice(req: Request): Promise<Response> {
   const bearer = authorization.startsWith("Bearer ")
     ? authorization.slice("Bearer ".length).trim()
     : "";
+  // Edge auth normally guarantees a bearer, but its cloud-bypass arm
+  // (DISABLE_HTTP_AUTH + platform-managed) authenticates via platform-user
+  // header with none — and this row is keyed on the bearer's hash, so 401
+  // beats a confusing 404 there.
   if (!bearer) {
     return errorResponse("UNAUTHORIZED", "bearer token required", 401);
   }
