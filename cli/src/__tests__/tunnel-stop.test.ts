@@ -9,6 +9,11 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as processes from "../lib/process.js";
+import {
+  TAILSCALE_PROVIDER,
+  stopTailscaleTunnel,
+  type TailscaleDeps,
+} from "../lib/tunnels/tailscale.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import { tunnel } from "../commands/tunnel.js";
 import {
@@ -24,7 +29,9 @@ const originalConfig = process.env.XDG_CONFIG_HOME;
 let root = "";
 let workspace = "";
 let stop: ReturnType<typeof spyOn<typeof processes, "stopProcess">>;
-let identity: ReturnType<typeof spyOn<typeof ngrok, "isNgrokProcess">>;
+let identity: ReturnType<
+  typeof spyOn<typeof processes, "readProcessCommandLine">
+>;
 let logs: ReturnType<typeof spyOn<typeof console, "log">>;
 
 beforeEach(() => {
@@ -68,7 +75,9 @@ beforeEach(() => {
   stampRootProcess("app", { pid: 424243, startedAt: new Date().toISOString() });
   ngrok.saveNgrokDomain("old.ngrok.app");
   stop = spyOn(processes, "stopProcess").mockResolvedValue(true);
-  identity = spyOn(ngrok, "isNgrokProcess").mockReturnValue(true);
+  identity = spyOn(processes, "readProcessCommandLine").mockReturnValue(
+    "ngrok http 7840",
+  );
   logs = spyOn(console, "log").mockImplementation(() => {});
   process.argv = ["bun", "cadet", "tunnel", "stop", "fixture"];
 });
@@ -99,7 +108,7 @@ test("stop terminates the owned agent and clears ingress, retaining nginx and do
   expect(stop).toHaveBeenCalledTimes(1);
 });
 test("a recycled PID is not signaled and its stale record is cleared", async () => {
-  identity.mockReturnValue(false);
+  identity.mockReturnValue("unrelated-process");
   await tunnel();
   expect(stop).not.toHaveBeenCalled();
   expect(readRootProcesses().tunnel).toBeUndefined();
@@ -122,4 +131,96 @@ test("failure to stop retains process and ingress state", async () => {
   expect(findAssistantByName("fixture")?.ingressUrl).toBe(
     "https://old.ngrok.app",
   );
+});
+
+test("Cloudflare dispatch stops cloudflared and clears its ingress", async () => {
+  stampRootProcess("tunnel", {
+    pid: 424242,
+    provider: "cloudflare",
+    assistantId: "fixture",
+    startedAt: new Date().toISOString(),
+  });
+  identity.mockReturnValue(
+    "/usr/local/bin/cloudflared tunnel --url http://localhost:7840",
+  );
+  await tunnel();
+  expect(stop).toHaveBeenCalledWith(424242, "tunnel");
+  expect(readRootProcesses().tunnel).toBeUndefined();
+  expect(findAssistantByName("fixture")?.ingressUrl).toBeUndefined();
+});
+
+test("Tailscale dispatch disables serve and preserves a separate webhook ingress", async () => {
+  stampRootProcess("tunnel", {
+    pid: 424242,
+    provider: "tailscale",
+    previous: {
+      pid: 424240,
+      provider: "ngrok",
+      assistantId: "fixture",
+      startedAt: new Date().toISOString(),
+    },
+    assistantId: "fixture",
+    startedAt: new Date().toISOString(),
+  });
+  writeFileSync(
+    join(workspace, "config.json"),
+    JSON.stringify({
+      ingress: {
+        publicBaseUrl: "https://old.ngrok.app",
+        pairingTunnel: { provider: "tailscale" },
+      },
+    }),
+  );
+  const calls: string[][] = [];
+  const deps: TailscaleDeps = {
+    findBinary: async () => "tailscale",
+    run: (_bin, args) => {
+      calls.push(args);
+      return { status: 0, stdout: "", stderr: "" };
+    },
+  };
+  const provider = spyOn(TAILSCALE_PROVIDER, "stop").mockImplementation(
+    (opts) => stopTailscaleTunnel(opts, deps),
+  );
+  try {
+    await tunnel();
+    expect(calls).toEqual([["serve", "--https=443", "off"]]);
+    expect(stop).not.toHaveBeenCalled();
+    expect(readRootProcesses().tunnel?.pid).toBe(424240);
+    expect(findAssistantByName("fixture")?.ingressUrl).toBe(
+      "https://old.ngrok.app",
+    );
+    const state = JSON.parse(
+      readFileSync(join(workspace, "config.json"), "utf8"),
+    );
+    expect(state.ingress.publicBaseUrl).toBe("https://old.ngrok.app");
+    expect(state.ingress.pairingTunnel).toBeUndefined();
+  } finally {
+    provider.mockRestore();
+  }
+});
+
+test("Tailscale shutdown failure preserves the recorded tunnel and ingress", async () => {
+  stampRootProcess("tunnel", {
+    pid: 424242,
+    provider: "tailscale",
+    assistantId: "fixture",
+    startedAt: new Date().toISOString(),
+  });
+  const deps: TailscaleDeps = {
+    findBinary: async () => "tailscale",
+    run: () => ({ status: 1, stdout: "", stderr: "permission denied" }),
+  };
+  const provider = spyOn(TAILSCALE_PROVIDER, "stop").mockImplementation(
+    (opts) => stopTailscaleTunnel(opts, deps),
+  );
+  try {
+    await expect(tunnel()).rejects.toThrow("Could not stop tailscale serve");
+    expect(readRootProcesses().tunnel?.provider).toBe("tailscale");
+    expect(findAssistantByName("fixture")?.ingressUrl).toBe(
+      "https://old.ngrok.app",
+    );
+  } finally {
+    provider.mockRestore();
+  }
 });

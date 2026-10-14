@@ -53,6 +53,10 @@ const runCloudflareTunnelMock = mock<
 mock.module("../lib/tunnels/cloudflare.js", () => ({
   ...realCloudflareTunnel,
   runCloudflareTunnel: runCloudflareTunnelMock,
+  CLOUDFLARE_PROVIDER: {
+    ...realCloudflareTunnel.CLOUDFLARE_PROVIDER,
+    run: runCloudflareTunnelMock,
+  },
 }));
 
 const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () =>
@@ -61,6 +65,7 @@ const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () =>
 mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   runNgrokTunnel: runNgrokTunnelMock,
+  NGROK_PROVIDER: { ...realNgrok.NGROK_PROVIDER, run: runNgrokTunnelMock },
 }));
 
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
@@ -69,6 +74,10 @@ const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
 mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
+  TAILSCALE_PROVIDER: {
+    ...realTailscaleTunnel.TAILSCALE_PROVIDER,
+    run: runTailscaleTunnelMock,
+  },
 }));
 
 const notifyGatewayOfPublicUrlMock = mock<
@@ -1705,6 +1714,7 @@ describe("tunnel background mode", () => {
     mock.module("../lib/tunnels/ngrok", () => ({
       ...realNgrok,
       runNgrokTunnel: runNgrokTunnelMock,
+      NGROK_PROVIDER: { ...realNgrok.NGROK_PROVIDER, run: runNgrokTunnelMock },
     }));
     mock.module("../lib/nginx-ingress.js", () => ({
       ...realNginxIngress,

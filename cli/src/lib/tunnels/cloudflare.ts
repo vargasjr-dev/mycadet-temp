@@ -1,4 +1,11 @@
-import type { ProviderMeta, ProviderTunnelResult } from "../tunnel.js";
+import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
+import { readProcessCommandLine } from "../process.js";
+import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
+import type {
+  TunnelProvider,
+  ProviderMeta,
+  ProviderTunnelResult,
+} from "../tunnel.js";
 
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 
@@ -106,6 +113,7 @@ export function waitForCloudflareTunnelUrl(
     });
 
     child.on("exit", (code) => {
+      if (child.pid) clearRootProcess("tunnel", child.pid);
       if (resolved) return;
       clearTimeout(timer);
       reject(
@@ -177,6 +185,7 @@ export async function runCloudflareTunnel(
 
   const cleanup = (): void => {
     if (!child.killed) child.kill("SIGTERM");
+    if (child.pid) clearRootProcess("tunnel", child.pid);
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
       clearIngressUrl(workspaceDir, opts.assistantId);
@@ -198,6 +207,7 @@ export async function runCloudflareTunnel(
   });
 
   child.on("exit", (code) => {
+    if (child.pid) clearRootProcess("tunnel", child.pid);
     // Always clear the saved ingress URL when the tunnel process ends so
     // webhook integrations don't keep hitting a dead endpoint.
     if (publicUrl !== undefined) {
@@ -233,6 +243,13 @@ export async function runCloudflareTunnel(
   console.log("");
 
   saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "cloudflare");
+  if (child.pid)
+    stampRootProcess("tunnel", {
+      pid: child.pid,
+      provider: "cloudflare",
+      assistantId: opts.assistantId,
+      startedAt: new Date().toISOString(),
+    });
   console.log("Ingress URL saved to config.");
   console.log("");
   console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
@@ -250,4 +267,22 @@ export const CLOUDFLARE_TUNNEL_META: ProviderMeta = {
   install: "install: brew install cloudflare/cloudflare/cloudflared",
   notes: ["No Cloudflare account required for quick tunnels."],
   supportsReservedDomain: false,
+};
+
+export const CLOUDFLARE_PROVIDER: TunnelProvider = {
+  run: runCloudflareTunnel,
+  stop: (opts) =>
+    stopOwnedTunnelAgent(
+      opts,
+      (pid) => {
+        try {
+          return /(?:^|[\\/\s])cloudflared(?:\.exe)?(?:\s|$)/i.test(
+            readProcessCommandLine(pid),
+          );
+        } catch {
+          return false;
+        }
+      },
+      "cloudflared",
+    ),
 };

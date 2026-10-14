@@ -151,37 +151,3 @@ The CLI looks up the instance by name in the production lockfile (`~/.cadet.lock
 # Retire an instance (cloud type resolved from config)
 cadet retire my-assistant
 ```
-
-## Terminal login and logs
-
-`cadet login` opens the browser PKCE flow in an attached terminal. Without
-a terminal, it prints a cloud approval URL and confirmation code, then
-polls for up to five minutes. The resulting session token uses the same
-local storage, validation, registration, and sync path as browser login.
-The cloud platform must expose `/v1/auth/cli/start` and `/v1/auth/cli/poll`.
-
-CLI lifecycle logs remain in the environment's XDG config log directory
-(`~/.config/cadet/logs` in production). Local assistant and gateway stdout
-are appended to `<instanceDir>/logs/assistant-stdout.log` and
-`<instanceDir>/logs/gateway-stdout.log`.
-
-## Guardian recovery
-
-For persistent guardian authentication failures on a host you own, run
-`cadet wake <name> --repair-guardian`. This resets guardian provisioning and
-revokes existing device sessions; pair your clients again afterward. Ordinary
-`cadet wake` preserves those sessions.
-
-## Stop and rebind an ngrok tunnel
-
-Stop the Cadet-managed ngrok agent before changing its domain:
-
-```sh
-cadet tunnel stop my-assistant
-cadet tunnel my-assistant --provider ngrok --domain assistant.example.com
-```
-
-Stop keeps the assistant, nginx edge, and saved domain configuration. It clears
-the stopped tunnel's ingress URL from the workspace and CLI lockfile. It does
-not signal a PID that no longer belongs to ngrok, or stop another assistant's
-recorded tunnel. Agents started outside Cadet must be stopped directly.

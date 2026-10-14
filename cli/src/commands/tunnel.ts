@@ -18,7 +18,6 @@ import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { relaunchDetached } from "../lib/detached-process.js";
 import {
   getDefaultWorkspaceDir,
-  clearIngressUrl,
   isLocalContainerEntry,
   parseGatewayPortFromEntryUrls,
 } from "../lib/ingress-config.js";
@@ -70,9 +69,6 @@ function parseArgs(): TunnelArgs {
       );
       console.log("");
       console.log("Front a locally running assistant with an HTTPS tunnel.");
-      console.log(
-        "Stop a Cadet-managed ngrok tunnel with: cadet tunnel stop [<name>]",
-      );
       console.log(
         "The tunnel URL is saved to the workspace config as the ingress base URL.",
       );
@@ -428,7 +424,7 @@ export const tunnel = Object.assign(
       if (args.includes("--help") || args.includes("-h")) {
         console.log("Usage: cadet tunnel stop [<name>]");
         console.log(
-          "Stop the recorded Cadet-managed ngrok tunnel, keeping nginx and the saved domain.",
+          "Stop the recorded Cadet-managed tunnel, keeping nginx and the saved domain.",
         );
         return;
       }
@@ -439,12 +435,11 @@ export const tunnel = Object.assign(
       );
       if (!readRootProcesses().tunnel) {
         console.log(
-          "No Cadet-managed tunnel is recorded. Externally started ngrok agents must be stopped directly.",
+          "No Cadet-managed tunnel is recorded. Externally started tunnels must be stopped directly.",
         );
         return;
       }
-      const stopped = await stopTunnelProcess(entry.assistantId);
-      clearIngressUrl(workspaceDir, entry.assistantId);
+      const stopped = await stopTunnelProcess(entry.assistantId, workspaceDir);
       console.log(
         stopped
           ? "Tunnel stopped. nginx and the saved domain are unchanged."
