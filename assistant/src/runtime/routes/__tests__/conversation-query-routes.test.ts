@@ -1625,7 +1625,7 @@ describe("config GET serves profiles verbatim", () => {
   });
 });
 
-describe("provider membership at the write choke point", () => {
+describe("provider labels follow the open-string Zod schema", () => {
   const configPatchRoute = ROUTES.find(
     (r) => r.operationId === "config_patch",
   )!;
@@ -1659,21 +1659,23 @@ describe("provider membership at the write choke point", () => {
     expect(llm.profiles?.work?.provider).toBe("anthropic-work");
   });
 
-  test("introducing an unknown provider is rejected", async () => {
+  test("a new provider label is accepted by the schema", async () => {
     rawConfigFixture = { llm: {} };
     seedRawConfig();
-
-    await expect(
-      configPatchRoute.handler({
-        body: {
-          llm: {
-            profiles: {
-              rogue: { source: "user", provider: "not-a-provider", model: "m" },
+    await configPatchRoute.handler({
+      body: {
+        llm: {
+          profiles: {
+            work: {
+              source: "user",
+              provider: "anthropic-work",
+              model: "claude-opus-4-8",
             },
           },
         },
-      }),
-    ).rejects.toThrow(/Invalid provider/);
+      },
+    });
+    expect(persistedProfile("work").provider).toBe("anthropic-work");
   });
 });
 

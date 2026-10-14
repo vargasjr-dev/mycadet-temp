@@ -53,8 +53,6 @@ import {
   LLMDefaultConfigSchema,
   LLMSchema,
   ProfileEntry,
-  routingIdentityModelIssue,
-  unknownLlmProviderIssue,
 } from "../../config/schemas/llm.js";
 import { VALID_MEMORY_EMBEDDING_PROVIDERS } from "../../config/schemas/memory-storage.js";
 import { ServiceModeSchema } from "../../config/schemas/services.js";
@@ -106,7 +104,6 @@ import { getMemoryRecallLogByMessageIds } from "../../plugins/defaults/memory/me
 import { getMemoryV2ActivationLogByMessageIds } from "../../plugins/defaults/memory/v2/activation-log-store.js";
 import { getMemoryV3SelectionForInspectorByMessageIds } from "../../plugins/defaults/memory/v3/selection-log-store.js";
 import { CLOUD_ROUTABLE_PROVIDERS } from "../../providers/cadet-model-routing.js";
-import { writableProfileProviderIssue } from "../../providers/connection-resolution.js";
 import { ROUTING_IDENTITY_PROVIDERS } from "../../providers/inference/auth.js";
 import { PROVIDERS_REQUIRING_BASE_URL_AND_MODELS } from "../../providers/inference/auth.js";
 import {
@@ -684,100 +681,6 @@ function handleGetConfigSchema({ queryParams = {} }: RouteHandlerArgs) {
   };
 }
 
-/**
- * Reject incomplete routing-identity profiles and unroutable explicit models.
- * The partial llm.default base may omit a model. saveRawConfig
- * persists without schema validation, so the parse-time rejection alone
- * would let the pair reach disk and be stripped on the next read — a silent
- * no-op where the user expects a saved override.
- */
-function collectProviderEntries(
-  raw: Record<string, unknown>,
-): [string, { provider?: unknown; model?: unknown }][] {
-  const llm = raw.llm as
-    | {
-        default?: { provider?: unknown; model?: unknown } | null;
-        profiles?: Record<
-          string,
-          { provider?: unknown; model?: unknown } | null | undefined
-        >;
-        callSites?: Record<
-          string,
-          { provider?: unknown; model?: unknown } | null | undefined
-        >;
-      }
-    | undefined;
-  const entries: [string, { provider?: unknown; model?: unknown }][] = [];
-  // llm.default is a partial base fragment carrying the provider selection.
-  // Validate an explicitly supplied model, but do not require one.
-  if (llm?.default) {
-    entries.push(["llm.default", llm.default]);
-  }
-  for (const section of ["profiles", "callSites"] as const) {
-    for (const [name, entry] of Object.entries(llm?.[section] ?? {})) {
-      if (entry) {
-        entries.push([`llm.${section}.${name}`, entry]);
-      }
-    }
-  }
-  return entries;
-}
-
-function assertRoutableIdentityEntries(
-  preWrite: Record<string, unknown>,
-  raw: Record<string, unknown>,
-): void {
-  const entries = collectProviderEntries(raw);
-  const priorProviders = new Map(
-    collectProviderEntries(preWrite).flatMap(([label, entry]) =>
-      typeof entry.provider === "string" ? [[label, entry.provider]] : [],
-    ),
-  );
-  for (const [label, entry] of entries) {
-    if (typeof entry.provider !== "string") {
-      continue;
-    }
-    // The provider schema is an open string (a stored value outside the
-    // known set parses instead of stripping its profile), so write-time
-    // membership is enforced here and at the profiles route. Scoped to
-    // providers this write introduces or changes: a stored value outside
-    // the known set is readable and dispatchable by design, and
-    // re-validating it on every write would make all later settings saves
-    // fail with no in-product repair path. Profiles accept entry names;
-    // call-site fragments and the legacy default blob stay vendor-only
-    // (overrides become model-only with the entries demolition).
-    if (entry.provider !== priorProviders.get(label)) {
-      const providerIssue = label.startsWith("llm.profiles.")
-        ? writableProfileProviderIssue(entry.provider)
-        : unknownLlmProviderIssue(entry.provider);
-      if (providerIssue) {
-        throw new BadRequestError(`${providerIssue} (${label})`);
-      }
-    }
-    // A model-less entry under a code-defined default name is the thin
-    // managed stub — its content is code-owned, so the routing-identity
-    // model check applies only to entries carrying their own body.
-    const profileName = label.startsWith("llm.profiles.")
-      ? label.slice("llm.profiles.".length)
-      : undefined;
-    const isManagedName =
-      profileName != null && MANAGED_PROFILE_NAMES.has(profileName);
-    if (entry.model == null && isManagedName) {
-      continue;
-    }
-    if (label === "llm.default" && entry.model == null) {
-      continue;
-    }
-    const issue = routingIdentityModelIssue(
-      entry.provider,
-      typeof entry.model === "string" ? entry.model : undefined,
-    );
-    if (issue) {
-      throw new BadRequestError(`${issue} (${label})`);
-    }
-  }
-}
-
 export async function commitConfigWrite(
   raw: Record<string, unknown>,
   opLabel: string,
@@ -794,7 +697,6 @@ export async function commitConfigWrite(
   if (!chatSettings.success) {
     throw new BadRequestError(chatSettings.error.message);
   }
-  assertRoutableIdentityEntries(preWrite, raw);
 
   // Suppress the file-watcher callback for the duration of the debounce
   // window. Without this, the ConfigWatcher detects the config.json write

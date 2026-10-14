@@ -54,9 +54,8 @@ const ALWAYS_RESOLVING_MANAGED_ONLY_PROFILE_KEYS =
  * an open string so a stored provider outside this list parses instead of
  * stripping its profile; dispatch resolves such a label as a connection
  * entry name and fails with an explainable resolution error when no row
- * carries it. Write-time membership is enforced at the profiles route and
- * the `commitConfigWrite` choke point (`unknownLlmProviderIssue`), which
- * is where entry names unlock when the entries model enables them.
+ * carries it. The generic config routes follow this open-string schema;
+ * dedicated profile routes apply their own provider selection rules.
  */
 export const KNOWN_LLM_PROVIDERS = [
   "anthropic",
@@ -153,8 +152,7 @@ export function isByokDefaultProviderChoice(
  * on that profile/call site deterministically — a call-site fragment naming
  * an identity without a model would inherit whatever model the winning
  * profile carries, which the identity may not serve. Enforced at parse time
- * (LLMSchema.superRefine), at the config write choke point
- * (commitConfigWrite), and by the profile write route.
+ * (LLMSchema.superRefine) and by the profile creation route.
  */
 export function routingIdentityModelIssue(
   provider: string,

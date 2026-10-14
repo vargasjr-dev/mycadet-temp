@@ -162,14 +162,14 @@ describe("partial default-provider config", () => {
       ).toEqual({ provider });
     });
   }
-  test("an explicit unroutable default model is still rejected", async () => {
+  test("Zod rejects a default model with the wrong type", async () => {
     await expect(
       patchRoute.handler({
         body: {
-          llm: { default: { provider: "cadet", model: "not-a-real-model" } },
+          llm: { default: { provider: "cadet", model: 42 } },
         },
       }),
-    ).rejects.toThrow(/not served by the Cadet Cloud route/);
+    ).rejects.toThrow(/model|expected string/i);
     expectNothingCommitted();
   });
 });
@@ -246,13 +246,13 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
     ).toBeUndefined();
   });
 
-  test("rejects a routing identity with an unroutable model at the write choke point", async () => {
+  test("Zod rejects invalid fields in a replacement profile", async () => {
     await expect(
       replaceRoute.handler({
         pathParams: { name: "my-custom" },
-        body: { provider: "cadet", model: "not-a-real-model" },
+        body: { provider: "cadet", model: "claude-opus-4-8", maxTokens: 0 },
       }),
-    ).rejects.toThrow(/not served by the Cadet Cloud route/);
+    ).rejects.toThrow(/expected number to be >0/);
     expect(committedRaw()).toBeNull();
   });
 
