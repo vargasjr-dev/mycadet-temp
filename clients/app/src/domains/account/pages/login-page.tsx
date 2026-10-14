@@ -16,10 +16,8 @@ import {
 } from "@app/domains/account/native-auth-error";
 import { withPreservedAttribution } from "@app/domains/account/attribution";
 import { captureError } from "@mycadet/design-library/utils/capture-error";
-import {
-  startNativeLogin,
-  useIsNativePlatform,
-} from "@web/runtime/native-auth";
+import { startNativeLogin } from "@app/runtime/native-login";
+import { useIsNativePlatform } from "@app/runtime/native-platform";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library";
 

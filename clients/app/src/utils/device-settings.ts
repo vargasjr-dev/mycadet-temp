@@ -36,6 +36,8 @@ interface DeviceSettingEntry {
  */
 const DEVICE_SETTINGS = {
   locale: { key: "device:locale" },
+  installReferrer: { key: "device:install_referrer" },
+  biometricEnabled: { key: "device:biometric_enabled" },
 } as const satisfies Record<string, DeviceSettingEntry>;
 
 export type DeviceSettingName = keyof typeof DEVICE_SETTINGS;

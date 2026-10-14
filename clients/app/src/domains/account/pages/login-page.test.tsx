@@ -21,6 +21,8 @@ import {
 
 mock.module("@web/stores/auth-store", mockAuthStore);
 mock.module("@web/runtime/native-auth", mockNativeAuth);
+mock.module("@app/runtime/native-login", mockNativeAuth);
+mock.module("@app/runtime/native-platform", mockNativeAuth);
 mock.module("@app/lib/auth/auth-flow", mockNativeAuth);
 mock.module("@app/lib/auth/hard-navigate", mockHardNavigate);
 
