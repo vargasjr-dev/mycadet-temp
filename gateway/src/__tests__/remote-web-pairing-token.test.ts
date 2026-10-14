@@ -622,7 +622,7 @@ describe("remote web pairing token exchange", () => {
       .where(eq(contacts.role, "guardian"))
       .all();
     expect(gwGuardian).toHaveLength(1);
-    expect(gwGuardian[0].principalId).toMatch(/^cadet-principal-/);
+    expect(gwGuardian[0].principalId).toMatch(/^principal-/);
   });
 
   test("gateway binding write failure fails the mint and leaves the code retryable", async () => {
