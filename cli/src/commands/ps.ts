@@ -814,6 +814,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     ),
     { name: "NAME", type: "TYPE", status: "STATUS", info: "INFO" },
   );
+  console.log("");
 }
 
 // ── Entry point ─────────────────────────────────────────────────
