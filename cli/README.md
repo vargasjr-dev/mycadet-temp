@@ -14,19 +14,18 @@ bun run ./src/index.ts <command> [options]
 
 ## Commands
 
-### Version changes: `upgrade`, `rollback`
+### Version changes: `upgrade`, `restore`
 
-`cadet rollback <name> --version <version>` switches a Docker assistant to an
-older release. Without `--version`, it uses the version recorded before the
-last version change, falling back to the preceding release in the cloud release
-list. If neither supplies a target, specify `--version` explicitly.
+Use `cadet upgrade` to move to a newer release. Rollbacks must restore a backup
+through `cadet restore`; version changes and backup data belong to the same
+restore operation. The CLI has no standalone `rollback` command.
 
-Docker rollback resolves release image tags, creates a backup, replaces the
-containers, and asks the target runtime to revert migrations above its registry
-ceiling. Failed readiness triggers recovery using the images and migration
-checkpoints captured in memory for that operation. Use `cadet restore --from
-<backup-path>` to restore data from a backup. Managed assistants delegate rollback
-to the cloud API.
+```bash
+cadet restore my-assistant --from backup.vbundle --version v1.2.3
+```
+
+Automatic failure recovery during an upgrade or restore uses the images and
+migration checkpoints captured in memory for that operation.
 
 ### Lifecycle: `ps`, `sleep`, `wake`
 

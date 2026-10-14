@@ -118,8 +118,6 @@ export type AssistantEntry = Omit<
   guardianBootstrapSecret?: string;
   /** Docker image metadata for rollback. Only present for docker topology entries. */
   containerInfo?: ContainerInfo;
-  /** Version reported by health before the last version change. */
-  previousVersion?: string;
   /** Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
    *  assistant's chat conversation by. Minted once on first `cadet client`
    *  launch and persisted here so every session shares one conversation. */

@@ -382,11 +382,6 @@ describe("cadet upgrade local", () => {
         prefix: "local-assistant-pre-upgrade",
       }),
     );
-    expect(saveAssistantEntryMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        previousVersion: "v0.8.11",
-      }),
-    );
     expect(stopLocalProcessesMock).toHaveBeenCalledWith(
       expect.objectContaining({
         instanceDir: tempDir,

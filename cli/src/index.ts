@@ -31,7 +31,6 @@ import { ps } from "./commands/ps";
 import { restore } from "./commands/restore";
 import { retire } from "./commands/retire";
 import { restart } from "./commands/restart";
-import { rollback } from "./commands/rollback";
 import { setup } from "./commands/setup";
 import { sleep } from "./commands/sleep";
 import { debug } from "./commands/debug";
@@ -73,7 +72,6 @@ const commands = {
   restore,
   retire,
   restart,
-  rollback,
   setup,
   sleep,
   teleport,

@@ -118,7 +118,7 @@ function parseArgs(): UpgradeArgs {
       console.log("Usage: cadet upgrade [<name>] [options]");
       console.log("");
       console.log("Upgrade an assistant to a newer version.");
-      console.log("To roll back to a previous version, use `cadet rollback`.");
+      console.log("To roll back to a previous version, use `cadet restore` with a backup.");
       console.log("");
       console.log("Arguments:");
       console.log(
@@ -295,7 +295,7 @@ async function upgradeDocker(
   }
 
   // Reject downgrades — `cadet upgrade` only handles forward version changes.
-  // Users should use `cadet rollback --version <version>` for downgrades.
+  // Downgrades require a versioned backup restore.
   if (!currentVersion && versionTag) {
     console.warn(
       "⚠️  Could not determine current version from health endpoint — skipping version-direction check.\n",
@@ -304,7 +304,7 @@ async function upgradeDocker(
   if (currentVersion && versionTag) {
     const cmp = compareVersions(versionTag, currentVersion);
     if (cmp !== null && cmp < 0) {
-      const msg = `Cannot upgrade to an older version (${versionTag} < ${currentVersion}). Use \`cadet rollback --version ${versionTag}\` instead.`;
+      const msg = `Cannot upgrade to an older version (${versionTag} < ${currentVersion}). Use \`cadet restore --from <backup-path> --version ${versionTag}\` instead.`;
       console.error(msg);
       emitCliError("VERSION_DIRECTION", msg);
       process.exit(1);
@@ -344,16 +344,6 @@ async function upgradeDocker(
     console.log(
       "   Could not capture all container refs (fresh install or partial deployment)\n",
     );
-  }
-
-  // Record the current version for subsequent rollback targeting.
-  if (currentVersion) {
-    const rollbackEntry: AssistantEntry = {
-      ...entry,
-      previousVersion: currentVersion,
-    };
-    saveAssistantEntry(rollbackEntry);
-    console.log(`   Saved previous version: ${currentVersion}\n`);
   }
 
   // Record version transition start in workspace git history
@@ -488,7 +478,6 @@ async function upgradeDocker(
     // Update lockfile with new service group topology
     const updatedEntry: AssistantEntry = {
       ...entry,
-      previousVersion: currentVersion,
       containerInfo: {
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
@@ -818,7 +807,7 @@ async function upgradeLocal(
   if (currentVersion && targetVersion) {
     const cmp = compareVersions(targetVersion, currentVersion);
     if (cmp !== null && cmp < 0) {
-      const msg = `Cannot upgrade to an older version (${targetVersion} < ${currentVersion}). Use \`cadet rollback --version ${targetVersion}\` instead.`;
+      const msg = `Cannot upgrade to an older version (${targetVersion} < ${currentVersion}). Use \`cadet restore --from <backup-path> --version ${targetVersion}\` instead.`;
       console.error(msg);
       emitCliError("VERSION_DIRECTION", msg);
       process.exit(1);
@@ -885,11 +874,8 @@ async function upgradeLocal(
     entryChanged = true;
   }
 
-  if (entryChanged || currentVersion) {
-    saveAssistantEntry({
-      ...entry,
-      previousVersion: currentVersion,
-    });
+  if (entryChanged) {
+    saveAssistantEntry(entry);
   }
 
   await broadcastUpgradeEvent(
@@ -909,10 +895,7 @@ async function upgradeLocal(
     runtimeVersion: runtimeInstall.version,
     runtimeInstallDir: runtimeInstall.installDir,
   };
-  saveAssistantEntry({
-    ...entry,
-    previousVersion: currentVersion,
-  });
+  saveAssistantEntry(entry);
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   console.log("🛑 Stopping local assistant processes...");
@@ -1152,7 +1135,7 @@ async function upgradePlatform(
   }
 
   if (resolution.isDowngrade && resolution.target && currentVersion) {
-    const msg = `Cannot upgrade to an older version (${resolution.target} < ${currentVersion}). Use \`cadet rollback --version ${resolution.target}\` instead.`;
+    const msg = `Cannot upgrade to an older version (${resolution.target} < ${currentVersion}). Use \`cadet restore --from <backup-path> --version ${resolution.target}\` instead.`;
     console.error(msg);
     emitCliError("VERSION_DIRECTION", msg);
     process.exit(1);

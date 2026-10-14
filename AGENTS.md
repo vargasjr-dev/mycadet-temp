@@ -349,6 +349,13 @@ The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@
 
 **Sentry CLI**: Use the newer `sentry` CLI (not the legacy `sentry-cli`). Install from `https://cli.sentry.dev/install`. Authenticate with `sentry auth login`.
 
+## CLI Rollback Invariant
+
+User-requested rollbacks must use `cadet restore`, which couples backup data
+with runtime versioning. Do not add a standalone `rollback` command or a
+version-only downgrade path. Automatic recovery within a failed upgrade or
+restore may use operation-local image references and migration checkpoints.
+
 ## CLI ↔ Daemon Communication
 
 CLI commands that need to invoke daemon-side state (conversations, wake, in-memory lookups) call into the daemon over the Unix domain socket via `cliIpcCall()` from `assistant/src/ipc/cli-client.ts`. Add a route file in `assistant/src/ipc/routes/` that exports a `*_IPC_METHODS` map, and add that map to the list `AssistantIpcServer` iterates in `assistant/src/ipc/assistant-server.ts` (there is no index file; each map is imported by hand). File-based signals and the daemon HTTP port are deprecated for new CLI→daemon interactions.

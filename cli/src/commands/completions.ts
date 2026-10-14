@@ -12,7 +12,6 @@ const ASSISTANT_NAME_COMMANDS = new Set([
   "restart",
   "restore",
   "retire",
-  "rollback",
   "sleep",
   "teleport",
   "terminal",

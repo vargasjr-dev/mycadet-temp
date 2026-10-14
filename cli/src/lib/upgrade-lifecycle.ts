@@ -25,7 +25,7 @@ import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
-import { fetchReleases, resolveImageRefs } from "./cloud-releases.js";
+import { resolveImageRefs } from "./cloud-releases.js";
 import { z } from "zod";
 
 const GatewayHealthSchema = z.object({
@@ -42,7 +42,7 @@ import {
   type ServiceName,
 } from "./statefulset.js";
 import { execOutput } from "./step-runner.js";
-import { compareVersions, stripVersionPrefix } from "./version-compat.js";
+import { compareVersions } from "./version-compat.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 // ---------------------------------------------------------------------------
@@ -345,41 +345,6 @@ export async function fetchAssistantIngressUrl(
 }
 
 /**
- * Determine the version that was running before the current one.
- *
- * Checks (in order):
- *  1. `entry.previousVersion` (saved by the upgrade flow from health).
- *  2. The releases list from the cloud API — finds the version
- *     immediately before `currentVersion`.
- *
- * Returns `undefined` when neither source yields a result.
- */
-export async function fetchPreviousVersion(
-  currentVersion: string | undefined,
-  previousVersionFromLockfile: string | undefined,
-): Promise<string | undefined> {
-  // 1. Lockfile-cached value (written during upgrade from health endpoint)
-  if (previousVersionFromLockfile) return previousVersionFromLockfile;
-
-  // 2. Derive from releases list
-  if (!currentVersion) return undefined;
-  const releases = await fetchReleases();
-  if (!releases) return undefined;
-
-  const normalizedCurrent = stripVersionPrefix(currentVersion);
-
-  // Releases are ordered newest-first; find the entry right after the
-  // current version (i.e. the one that was running before the upgrade).
-  const idx = releases.findIndex(
-    (r) => stripVersionPrefix(r.version ?? "") === normalizedCurrent,
-  );
-  if (idx >= 0 && idx + 1 < releases.length) {
-    return releases[idx + 1].version;
-  }
-  return undefined;
-}
-
-/**
  * Poll the gateway `/readyz` endpoint until the assistant reports migrations
  * ready or the timeout elapses. Returns whether the assistant became ready.
  *
@@ -624,8 +589,7 @@ export interface PerformDockerRollbackOptions {
 }
 
 /**
- * Perform a Docker rollback to a target version. Reusable by both `rollback.ts`
- * and `restore.ts` (version + data restore).
+ * Switch Docker runtime versions as part of a versioned backup restore.
  *
  * This function handles the full lifecycle:
  * - Version validation (target must be older than current)
@@ -633,7 +597,7 @@ export interface PerformDockerRollbackOptions {
  * - Post-swap migration rollback to the target runtime's registry ceiling
  * - Container stop/start with target images
  * - Readiness check
- * - Lockfile update with the running images and previous version
+ * - Lockfile update with the running images
  * - Auto-rollback on failure
  */
 export async function performDockerRollback(
@@ -706,16 +670,6 @@ export async function performDockerRollback(
         process.exit(1);
       }
     }
-  }
-
-  // Record the current version for subsequent rollback targeting.
-  if (currentVersion) {
-    const rollbackEntry: AssistantEntry = {
-      ...entry,
-      previousVersion: currentVersion,
-    };
-    saveAssistantEntry(rollbackEntry);
-    console.log(`   Saved previous version: ${currentVersion}\n`);
   }
 
   // Record rollback start in workspace git history
@@ -866,7 +820,6 @@ export async function performDockerRollback(
 
     const updatedEntry: AssistantEntry = {
       ...entry,
-      previousVersion: currentVersion,
       containerInfo: {
         assistantImage: targetImageTags.assistant,
         gatewayImage: targetImageTags.gateway,
