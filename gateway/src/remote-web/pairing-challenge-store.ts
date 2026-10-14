@@ -331,6 +331,21 @@ export function listPendingRemoteWebPairingChallenges(): RemoteWebPairingRequest
   }));
 }
 
+/**
+ * Every persisted pairing challenge — pending, approved, exchanging,
+ * consumed, or past expiry — newest first. Unlike the pending-list route
+ * this deletes nothing: expired challenges linger until their own
+ * verification/exchange paths clean them up, and this list is how the
+ * operator sees that tail state. Liveness (active vs expired) is the
+ * caller's call — it compares expiresAtMs against its own clock.
+ */
+export function listPersistedRemoteWebPairingChallenges(): PendingRemoteWebPairingChallenge[] {
+  loadFromDisk();
+  return [...challengesByUserCodeHash.values()].sort(
+    (a, b) => b.createdAtMs - a.createdAtMs,
+  );
+}
+
 export function approveRemoteWebPairingChallengeById(
   id: string,
 ): ApproveRemoteWebPairingChallengeResult {

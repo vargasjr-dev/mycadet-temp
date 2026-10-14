@@ -20,7 +20,7 @@ function printUsage(): void {
     "  contacts    Manage the contact ACL with list, get, set-risk-threshold",
   );
   console.log(
-    "  pairing     Mint/approve a remote-web pairing challenge (mint <url>)",
+    "  pairing     Remote-web pairing challenges (mint <url> | list [--json])",
   );
 }
 
