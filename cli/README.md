@@ -171,3 +171,17 @@ For persistent guardian authentication failures on a host you own, run
 `cadet wake <name> --repair-guardian`. This resets guardian provisioning and
 revokes existing device sessions; pair your clients again afterward. Ordinary
 `cadet wake` preserves those sessions.
+
+## Stop and rebind an ngrok tunnel
+
+Stop the Cadet-managed ngrok agent before changing its domain:
+
+```sh
+cadet tunnel stop my-assistant
+cadet tunnel my-assistant --provider ngrok --domain assistant.example.com
+```
+
+Stop keeps the assistant, nginx edge, and saved domain configuration. It clears
+the stopped tunnel's ingress URL from the workspace and CLI lockfile. It does
+not signal a PID that no longer belongs to ngrok, or stop another assistant's
+recorded tunnel. Agents started outside Cadet must be stopped directly.

@@ -1780,7 +1780,7 @@ describe("tunnel background mode", () => {
 
     expect(logs).toContain("Tunnel established: https://foo.ngrok.app");
     expect(logs).toContain("Running in background (pid 9999)");
-    expect(logs).toContain("Stop with: kill 9999");
+    expect(logs).toContain("Stop with: cadet tunnel stop");
 
     // The parent hands the actual tunnel workflow off to the child: it never
     // runs the provider or edge setup itself.

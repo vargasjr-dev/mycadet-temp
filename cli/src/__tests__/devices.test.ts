@@ -145,6 +145,25 @@ describe("cadet devices", () => {
     }
   });
 
+  test("Docker gateway output rejects malformed status and body fields", async () => {
+    saveAssistantEntry({
+      assistantId: "docker-invalid",
+      cloud: "docker",
+      runtimeUrl: "https://tunnel.example",
+    });
+    const docker = spyOn(stepRunner, "execOutput").mockResolvedValue(
+      '{"status":"200","body":{}}',
+    );
+    try {
+      process.argv = ["bun", "cadet", "devices", "docker-invalid", "--json"];
+      const result = await runDevices();
+      expect(result.exited).toBe(true);
+      expect(result.errors).toContain("could not reach the gateway");
+    } finally {
+      docker.mockRestore();
+    }
+  });
+
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = ORIGINAL_FETCH;

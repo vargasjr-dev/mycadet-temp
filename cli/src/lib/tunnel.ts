@@ -176,13 +176,36 @@ export function clearReservedDomain(): void {
  * signaling — a stale entry after PID reuse must not kill an unrelated
  * process.
  */
-export async function stopTunnelProcess(): Promise<void> {
+export async function stopTunnelProcess(
+  assistantId?: string,
+): Promise<boolean> {
   const recorded: RootProcessRecord | undefined = readRootProcesses().tunnel;
-  if (!recorded) return;
+  if (!recorded) return false;
+  if (
+    assistantId &&
+    recorded.assistantId &&
+    recorded.assistantId !== assistantId
+  ) {
+    throw new Error(
+      `The recorded tunnel belongs to '${recorded.assistantId}', not '${assistantId}'.`,
+    );
+  }
+  if (recorded.provider && recorded.provider !== "ngrok") {
+    throw new Error(
+      `Stopping provider '${recorded.provider}' is not supported by this command.`,
+    );
+  }
+  let stopped = false;
   if (isNgrokProcess(recorded.pid)) {
-    await stopProcess(recorded.pid, "tunnel");
+    stopped = await stopProcess(recorded.pid, "tunnel");
+    if (!stopped && isNgrokProcess(recorded.pid)) {
+      throw new Error(
+        `Could not stop ngrok process ${recorded.pid}; saved tunnel state was retained.`,
+      );
+    }
   }
   clearRootProcess("tunnel");
+  return stopped;
 }
 
 /**

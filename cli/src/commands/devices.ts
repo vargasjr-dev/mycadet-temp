@@ -13,6 +13,7 @@
  * that runs the assistant (server side).
  */
 
+import { z } from "zod";
 import { createHash } from "node:crypto";
 
 import type { DeviceRecord } from "@mycadet/local-mode";
@@ -37,6 +38,11 @@ import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
+
+const dockerGatewayResponseSchema = z.object({
+  status: z.number().int().min(200).max(599),
+  body: z.string(),
+});
 
 function printUsage(): void {
   console.log(`cadet devices [beta] - List and revoke devices paired to a local assistant
@@ -123,17 +129,7 @@ async function deviceRequest(
     ],
     { timeoutMs: 15000 },
   );
-  const result: unknown = JSON.parse(output);
-  if (
-    !result ||
-    typeof result !== "object" ||
-    !("status" in result) ||
-    typeof result.status !== "number" ||
-    !("body" in result) ||
-    typeof result.body !== "string"
-  ) {
-    throw new Error("Invalid gateway response from Docker");
-  }
+  const result = dockerGatewayResponseSchema.parse(JSON.parse(output));
   return new Response(result.body, { status: result.status });
 }
 
