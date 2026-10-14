@@ -164,9 +164,18 @@ describe("GET /v1/devices/mine", () => {
     expect(response.status).toBe(404);
   });
 
-  test("a missing bearer answers 401", async () => {
-    const response = await handleGetMyDevice(mineRequest(null));
-    expect(response.status).toBe(401);
+  test("a cloud-hosted assistant answers 404 before any row lookup", async () => {
+    process.env.DISABLE_HTTP_AUTH = "true";
+    process.env.IS_CLOUD = "true";
+    try {
+      const response = await handleGetMyDevice(mineRequest(null));
+      expect(response.status).toBe(404);
+      const body = (await response.json()) as { error: { code: string } };
+      expect(body.error.code).toBe("NOT_AVAILABLE_ON_CLOUD");
+    } finally {
+      delete process.env.DISABLE_HTTP_AUTH;
+      delete process.env.IS_CLOUD;
+    }
   });
 
   test("non-GET answers method not allowed", async () => {

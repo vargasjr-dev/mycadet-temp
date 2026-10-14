@@ -4,6 +4,7 @@ import { actorTokenRecordHash } from "../../auth/actor-token-revocation.js";
 import { getGatewayDb } from "../../db/connection.js";
 import { actorTokenRecords } from "../../db/schema.js";
 import { errorResponse } from "../loopback-guard.js";
+import { isCloudAuthBypassActive } from "../middleware/auth.js";
 
 /**
  * `GET /v1/devices/mine` — the caller's own paired-device row.
@@ -27,13 +28,20 @@ export async function handleGetMyDevice(req: Request): Promise<Response> {
     });
   }
 
+  // Cloud-hosted assistants have no paired-device rows to name — the route
+  // only answers for self-hosted gateways.
+  if (isCloudAuthBypassActive()) {
+    return errorResponse(
+      "NOT_AVAILABLE_ON_CLOUD",
+      "this assistant is cloud-hosted — it has no paired-device rows",
+      404,
+    );
+  }
+
   const authorization = req.headers.get("authorization") ?? "";
   const bearer = authorization.startsWith("Bearer ")
     ? authorization.slice("Bearer ".length).trim()
     : "";
-  if (!bearer) {
-    return errorResponse("UNAUTHORIZED", "bearer token required", 401);
-  }
 
   const db = getGatewayDb();
   const row = db

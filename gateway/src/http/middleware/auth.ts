@@ -61,7 +61,7 @@ function isPlatformManaged(): boolean {
  * True when the cloud-managed auth bypass is in effect — both flags set.
  * Either alone leaves JWT validation in place.
  */
-function isCloudAuthBypassActive(): boolean {
+export function isCloudAuthBypassActive(): boolean {
   return isHttpAuthDisabled() && isPlatformManaged();
 }
 
