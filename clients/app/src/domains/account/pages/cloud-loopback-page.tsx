@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 
 import { useTranslation } from "@app/i18n";
-import { listAssistants } from "@web/assistant/api";
+import { assistantAuthHandoff } from "@app/domains/account/assistant-auth-handoff";
 import { registerLocalCloudSession } from "@app/runtime/cloud-session-host";
 import { setMenuCloudSession } from "@app/runtime/menu";
 import { useAuthStore } from "@app/stores/auth-store";
@@ -75,14 +75,9 @@ export function CloudLoopbackPage() {
       await useAuthStore.getState().refreshSession();
       await setMenuCloudSession(true);
 
-      try {
-        const result = await listAssistants();
-        if (result.ok && result.data.length > 0) {
-          void navigate(routes.assistant, { replace: true });
-          return;
-        }
-      } catch {
-        // Failed to check — fall through to onboarding
+      if (await assistantAuthHandoff.hasAssistants()) {
+        void navigate(routes.assistant, { replace: true });
+        return;
       }
       void navigate(returnTo, { replace: true });
     })();

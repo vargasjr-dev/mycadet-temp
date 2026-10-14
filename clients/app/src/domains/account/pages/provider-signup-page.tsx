@@ -7,7 +7,6 @@ import {
   AccountInput,
 } from "@app/components/account/account-form";
 import { useTranslation } from "@app/i18n";
-import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { AccountShell } from "@app/components/account/account-shell";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import {
@@ -17,9 +16,9 @@ import {
 } from "@app/lib/auth/provider-signup-client";
 import { setSignupOnboardingFirstName } from "@app/lib/auth/signup-onboarding-handoff";
 import {
-  resolvePostAuthDestination,
-  resolvePostLoginDestination,
-} from "@web/domains/account/login-flow";
+  completeBrowserAuthentication,
+  navigatePostAuthDestination,
+} from "@app/domains/account/browser-auth-completion";
 import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -84,38 +83,17 @@ export function ProviderSignupPage() {
   const completeSignup = async () => {
     const result = await submitProviderSignup({ email, username });
 
-    if (!result.ok) {
-      if (isConflict(result)) {
-        await refreshSession();
-        await refreshCloudAssistantsIfStale();
-        const conflict = resolvePostLoginDestination(
-          returnTo,
-          routes.account.root,
-        );
-        if (conflict.requiresFullPageNavigation) {
-          window.location.href = conflict.destination;
-        } else {
-          navigate(conflict.destination);
-        }
-        return;
-      }
-
+    if (!result.ok && !isConflict(result)) {
       setError(result.errors[0]?.message ?? "Failed to complete signup.");
       return;
     }
-
-    await refreshSession();
-    await refreshCloudAssistantsIfStale();
-    const post = resolvePostAuthDestination({
+    const post = await completeBrowserAuthentication({
+      refreshSession,
       returnTo,
       fallback: routes.account.root,
-      authIntent: "signup",
+      authIntent: result.ok ? "signup" : "login",
     });
-    if (post.requiresFullPageNavigation) {
-      window.location.href = post.destination;
-    } else {
-      navigate(post.destination);
-    }
+    navigatePostAuthDestination(post, navigate);
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
