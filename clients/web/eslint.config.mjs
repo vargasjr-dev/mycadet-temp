@@ -362,6 +362,11 @@ const eslintConfig = defineConfig([
   reactHooks.configs.flat.recommended,
   globalIgnores(["dist/**", "src/generated/**", "storybook-static/**"]),
   {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     plugins: {
       local: {
         rules: {
