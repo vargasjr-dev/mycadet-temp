@@ -5,8 +5,8 @@ const finish = mock(() => {});
 const begin = mock(() => finish);
 const prime = mock((_token: string) => {});
 const wait = mock(async () => {});
-mock.module("@web/domains/account/login-flow", () => ({
-  nativeAuthReturningUser: () => returning,
+mock.module("@app/assistant/returning-user", () => ({
+  readReturningUser: async () => returning,
 }));
 mock.module("@app/lib/billing/checkout-intent-storage", () => ({
   checkoutHandoff: checkout,
@@ -17,10 +17,16 @@ mock.module("@web/stores/auth-store", () => ({
   whenCloudSessionSettled: wait,
 }));
 const { nativeAuthContext } = await import("./native-auth-context");
-test("handoff reads current assistant facts and preserves the shared stash writer", async () => {
-  expect(nativeAuthContext.read()).toEqual({ returningUser: false, checkout });
+test("native context reads app-owned assistant facts and preserves checkout and reconciliation", async () => {
+  expect(await nativeAuthContext.read()).toEqual({
+    returningUser: false,
+    checkout,
+  });
   returning = true;
-  expect(nativeAuthContext.read()).toEqual({ returningUser: true, checkout });
+  expect(await nativeAuthContext.read()).toEqual({
+    returningUser: true,
+    checkout,
+  });
   expect(nativeAuthContext.checkout).toBe(checkout);
   const complete = nativeAuthContext.beginComposedOAuth();
   nativeAuthContext.primeComposedSession("session-token");

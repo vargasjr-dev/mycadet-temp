@@ -1,4 +1,4 @@
-import { nativeAuthReturningUser } from "@web/domains/account/login-flow";
+import { readReturningUser } from "@app/assistant/returning-user";
 import {
   beginCloudAccountOAuth,
   primeCloudAccountSessionToken,
@@ -10,9 +10,9 @@ import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destin
 /** Assistant facts, checkout storage, and web reconciliation for the composed client. */
 export const nativeAuthContext = {
   checkout: checkoutHandoff,
-  read(): NativePostAuthContext {
+  async read(): Promise<NativePostAuthContext> {
     return {
-      returningUser: nativeAuthReturningUser(),
+      returningUser: await readReturningUser(),
       checkout: checkoutHandoff,
     };
   },

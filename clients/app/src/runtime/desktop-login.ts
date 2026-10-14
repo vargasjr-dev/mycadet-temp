@@ -47,7 +47,7 @@ export async function startDesktopLogin(
       resolveNativePostAuthDestination(
         options.intent,
         options.returnTo,
-        nativeAuthContext.read(),
+        await nativeAuthContext.read(),
       ),
       routes.assistant,
     );

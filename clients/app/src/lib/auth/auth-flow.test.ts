@@ -1,4 +1,6 @@
+import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destination";
 import { afterEach, expect, mock, test } from "bun:test";
+let contextPending: Promise<NativePostAuthContext> | undefined;
 let native = false;
 let electron = false;
 let local = false;
@@ -29,15 +31,17 @@ mock.module("@app/runtime/desktop-login", () => ({
 }));
 mock.module("@app/runtime/native-auth-context", () => ({
   nativeAuthContext: {
-    read: () => ({
-      returningUser: false,
-      checkout: { save: () => {}, clear: () => {} },
-    }),
+    read: async () =>
+      contextPending ?? {
+        returningUser: false,
+        checkout: { save: () => {}, clear: () => {} },
+      },
   },
 }));
 const { startAuthFlow } = await import("./auth-flow");
 afterEach(() => {
   native = electron = local = platformLocal = false;
+  contextPending = undefined;
   provider.mockClear();
   loopback.mockClear();
   nativeFlow.mockClear();
@@ -101,4 +105,28 @@ test("native auth dismissal is routine while other failures reach the caller", a
   await expect(
     startAuthFlow("workos", "/account/provider/callback", options),
   ).rejects.toThrow("exchange failed");
+});
+
+test("mobile waits for app facts before opening native auth and preserves returning-user signup", async () => {
+  native = true;
+  let resolve!: (value: NativePostAuthContext) => void;
+  contextPending = new Promise((done) => {
+    resolve = done;
+  });
+  const pending = startAuthFlow("workos", "/account/provider/callback", {
+    intent: "signup",
+    returnTo: "/assistant/onboarding/privacy",
+  });
+  expect(mobileLogin).not.toHaveBeenCalled();
+  resolve({
+    returningUser: true,
+    checkout: { save: () => {}, clear: () => {} },
+  });
+  await pending;
+  expect(mobileLogin).toHaveBeenCalledWith({
+    returnTo: "/assistant",
+    intent: "signup",
+    loginHint: undefined,
+    attribution: undefined,
+  });
 });

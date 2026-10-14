@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { isOAuthFlowInFlight } from "./oauth-flow-state";
 
+import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destination";
 const calls: string[] = [];
+let contextPending: Promise<NativePostAuthContext> | undefined;
 let response: unknown = { sessionToken: "session-token" };
 let available = true;
 let composedActive = 0;
@@ -41,9 +43,14 @@ mock.module("@app/runtime/native-auth-context", () => ({
     },
     primeComposedSession: prime,
     waitComposedSession,
-    read: () => {
+    read: async () => {
       calls.push("context");
-      return { returningUser, checkout: { save: () => {}, clear: () => {} } };
+      return (
+        contextPending ?? {
+          returningUser,
+          checkout: { save: () => {}, clear: () => {} },
+        }
+      );
     },
   },
 }));
@@ -58,6 +65,7 @@ beforeEach(() => {
   response = { sessionToken: "session-token" };
   available = true;
   returningUser = false;
+  contextPending = undefined;
   calls.length = 0;
   location.href = "";
   mock.clearAllMocks();
@@ -148,5 +156,29 @@ test("reconciliation errors clear both scopes without navigation", async () => {
 });
 test("untrusted returnTo falls back to assistant", async () => {
   await startDesktopLogin({ returnTo: "https://evil.example" });
+  expect(location.href).toBe("/assistant");
+});
+
+test("desktop keeps OAuth guards active and waits for app facts before navigating", async () => {
+  let resolve!: (value: NativePostAuthContext) => void;
+  contextPending = new Promise((done) => {
+    resolve = done;
+  });
+  const pending = startDesktopLogin({
+    intent: "signup",
+    returnTo: "/assistant/onboarding/privacy",
+  });
+  for (let tick = 0; tick < 10; tick++) {
+    await Promise.resolve();
+  }
+  expect(calls).toContain("context");
+  expect(location.href).toBe("");
+  expect(isOAuthFlowInFlight()).toBe(true);
+  expect(composedActive).toBe(1);
+  resolve({
+    returningUser: true,
+    checkout: { save: () => {}, clear: () => {} },
+  });
+  await pending;
   expect(location.href).toBe("/assistant");
 });

@@ -4,6 +4,7 @@ const fetchSpy = spyOn(globalThis, "fetch");
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 beforeEach(() => {
   fetchSpy.mockReset();
+  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   Reflect.deleteProperty(window, "cadet");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
@@ -11,6 +12,7 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  Reflect.deleteProperty(window, "__CADET_CONFIG__");
   localStorage.removeItem("device:onboarded_assistants");
   window.dispatchEvent(
     new StorageEvent("storage", { key: "device:onboarded_assistants" }),
@@ -111,4 +113,55 @@ test("same-tab completion notifications survive unavailable storage and cross-ta
     new StorageEvent("storage", { key: "device:onboarded_assistants" }),
   );
   expect(isReturningAssistant({ id: "assistant-1" })).toBe(false);
+});
+
+test("a completed serving assistant identifies a mobile returning user without a cloud session", async () => {
+  Reflect.set(window, "__CADET_CONFIG__", {
+    remote: "custom",
+    assistantId: "assistant-1",
+  });
+  localStorage.setItem(
+    "device:onboarded_assistants",
+    JSON.stringify({ "assistant-1": "2026-10-01" }),
+  );
+  expect(await readReturningUser()).toBe(true);
+  expect(fetchSpy).not.toHaveBeenCalled();
+});
+test("an injected id without a completion stamp does not bypass first-run signup", async () => {
+  Reflect.set(window, "__CADET_CONFIG__", {
+    remote: "custom",
+    assistantId: "assistant-1",
+  });
+  fetchSpy.mockResolvedValueOnce(
+    response({ detail: "Authentication required" }),
+  );
+  expect(await readReturningUser()).toBe(false);
+});
+test("a stalled native host read cannot block routing after cancellation or start a late cloud lookup", async () => {
+  let resolve!: (value: unknown) => void;
+  const host = new Promise((done) => {
+    resolve = done;
+  });
+  Object.defineProperty(window, "cadet", {
+    configurable: true,
+    value: { platform: "electron", localMode: { readLockfile: () => host } },
+  });
+  const controller = new AbortController();
+  const pending = readReturningUser({ signal: controller.signal });
+  controller.abort();
+  expect(await pending).toBe(false);
+  resolve({ assistants: [] });
+  await Promise.resolve();
+  expect(fetchSpy).not.toHaveBeenCalled();
+});
+test("a cloud request that ignores cancellation still cannot hold up the destination", async () => {
+  fetchSpy.mockImplementationOnce(
+    Object.assign(() => new Promise<Response>(() => {}), {
+      preconnect: fetch.preconnect,
+    }),
+  );
+  const controller = new AbortController();
+  const pending = readReturningUser({ signal: controller.signal });
+  controller.abort();
+  expect(await pending).toBe(false);
 });

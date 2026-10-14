@@ -27,7 +27,7 @@ export async function startAuthFlow(
         returnTo: resolveNativePostAuthDestination(
           options.intent,
           options.returnTo,
-          nativeAuthContext.read(),
+          await nativeAuthContext.read(),
         ),
         loginHint: options.loginHint,
         intent: options.intent,
