@@ -1,4 +1,4 @@
-import { getCloudRuntimeUrl } from "@/lib/local-mode";
+import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { sessionReplayNetworkConfig } from "@/lib/session-replay/network-sanitize";
 import {
   installSessionReplayControlListeners,

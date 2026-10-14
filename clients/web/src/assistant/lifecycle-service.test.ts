@@ -131,7 +131,6 @@ mock.module("@/lib/local-mode", () => ({
   getPairedGatewayUrl: getPairedGatewayUrlMock,
   getLockfile: () => ({ assistants: [], activeAssistant: null }),
   getCloudAssistants: () => [],
-  getCloudRuntimeUrl: () => window.location.origin,
   getSelectedAssistant: getSelectedAssistantMock,
   hasAssistants: () => false,
   isLocalAssistant: () => false,

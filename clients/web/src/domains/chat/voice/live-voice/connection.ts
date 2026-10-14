@@ -41,7 +41,7 @@
  * watch (`domains/chat/watch`), and the assistant desktop (`domains/chat/desktop`).
  */
 
-import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
+import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
@@ -133,7 +133,7 @@ function getTunnelHost(): string {
     return import.meta.env.VITE_TUNNEL_HOST;
   }
   try {
-    const derived = tunnelHostForPlatformHost(
+    const derived = tunnelHostForCloudHost(
       new URL(getCloudRuntimeUrl()).hostname,
     );
     if (derived) {

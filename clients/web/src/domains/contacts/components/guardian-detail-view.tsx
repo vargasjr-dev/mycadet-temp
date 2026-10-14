@@ -1,3 +1,4 @@
+import { isGeneratedPrincipalName } from "@/domains/contacts/is-generated-principal-name";
 import { useState } from "react";
 
 import { Button } from "@mycadet/design-library/components/button";
@@ -48,7 +49,7 @@ function GuardianDetailViewInner({
   onGenerateInviteLink,
 }: GuardianDetailViewProps) {
   const { t } = useTranslation("contacts");
-  const principalId = contact.displayName.startsWith("cadet-principal-");
+  const principalId = isGeneratedPrincipalName(contact.displayName);
   const initialName = principalId ? "" : contact.displayName;
   const [name, setName] = useState(initialName);
   const [notes, setNotes] = useState(contact.notes ?? "");

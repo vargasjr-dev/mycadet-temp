@@ -1220,7 +1220,7 @@ async function resolveOrCreateCadetGuardian(options: {
 
   // No gateway guardian — mint a fresh principal.
   const displayName = await fetchPlatformOwnerDisplayName();
-  const guardianPrincipalId = `cadet-principal-${uuid()}`;
+  const guardianPrincipalId = `principal-${uuid()}`;
   await createGuardianBinding({
     channel: "cadet",
     externalUserId: guardianPrincipalId,

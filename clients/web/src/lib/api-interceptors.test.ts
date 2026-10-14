@@ -49,7 +49,6 @@ mock.module(
     getLocalGatewayUrl: () => undefined,
     getLockfile: () => ({ assistants: [], activeAssistant: null }),
     getCloudAssistants: () => [],
-    getCloudRuntimeUrl: () => window.location.origin,
     getSelectedAssistant: () => selectedAssistantImpl(),
     hasAssistants: () => false,
     isLocalAssistant: () => false,

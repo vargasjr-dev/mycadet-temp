@@ -1,3 +1,4 @@
+import { isGeneratedPrincipalName } from "@/domains/contacts/is-generated-principal-name";
 import { ArrowLeft, GitMerge, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -305,7 +306,7 @@ export function formatSurvivorName(contact: ContactPayload): string {
   if (contact.role === "guardian") {
     if (
       !contact.displayName ||
-      contact.displayName.startsWith("cadet-principal-")
+      isGeneratedPrincipalName(contact.displayName)
     ) {
       return translate("survivorName.you", { ns: "contacts" });
     }

@@ -8,7 +8,7 @@ let nativePlatform = false;
 let electron = false;
 let clientOs: ClientOs = "web";
 
-mock.module("@/lib/local-mode", () => ({
+mock.module("@/lib/cloud-runtime-url", () => ({
   getCloudRuntimeUrl: () => "https://example.com",
 }));
 mock.module("@/lib/session-replay/network-sanitize", () => ({

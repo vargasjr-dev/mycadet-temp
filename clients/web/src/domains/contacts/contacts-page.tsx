@@ -1,3 +1,4 @@
+import { isGeneratedPrincipalName } from "@/domains/contacts/is-generated-principal-name";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useCallback,
@@ -765,7 +766,7 @@ export function ContactsPage({
     guardian: guardian
       ? {
           id: guardian.id,
-          displayName: guardian.displayName.startsWith("cadet-principal-")
+          displayName: isGeneratedPrincipalName(guardian.displayName)
             ? ""
             : guardian.displayName,
           role: guardian.role,

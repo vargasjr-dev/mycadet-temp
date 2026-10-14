@@ -28,7 +28,7 @@
  * mint again rather than reuse what resolution returned.
  */
 
-import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
+import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { authHeaders } from "../cloud-client.js";
 
@@ -66,7 +66,7 @@ export function tunnelHostForCloudUrl(cloudUrl: string): string {
   }
   try {
     return (
-      tunnelHostForPlatformHost(new URL(cloudUrl).host) ??
+      tunnelHostForCloudHost(new URL(cloudUrl).host) ??
       DEFAULT_TUNNEL_HOST
     );
   } catch {

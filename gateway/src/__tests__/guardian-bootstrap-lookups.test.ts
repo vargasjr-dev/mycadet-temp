@@ -337,7 +337,7 @@ describe("resolve-or-mint (resolveOrCreateCadetGuardian)", () => {
     assistantBackend = makeAssistantBackend();
 
     const principalId = await ensureCadetGuardianBinding();
-    expect(principalId).toMatch(/^cadet-principal-/);
+    expect(principalId).toMatch(/^principal-/);
 
     // Gateway now has the row; the assistant DB must not be read again.
     assistantBackend = throwingBackend;
@@ -350,7 +350,7 @@ describe("resolve-or-mint (resolveOrCreateCadetGuardian)", () => {
 
     const principalId = await ensureCadetGuardianBinding();
 
-    expect(principalId).toMatch(/^cadet-principal-/);
+    expect(principalId).toMatch(/^principal-/);
     const gwRows = gatewayCadetGuardians();
     expect(gwRows).toHaveLength(1);
     expect(gwRows[0]?.principalId).toBe(principalId);
@@ -383,7 +383,7 @@ describe("resolve-or-mint (resolveOrCreateCadetGuardian)", () => {
       deviceId: "device-1",
     });
 
-    expect(result.guardianPrincipalId).toMatch(/^cadet-principal-/);
+    expect(result.guardianPrincipalId).toMatch(/^principal-/);
     expect(result.isNew).toBe(true);
     expect(result.mintedOverPriorEvidence).toBe(false);
   });
@@ -606,7 +606,7 @@ describe("resolve-or-mint (resolveOrCreateCadetGuardian)", () => {
       deviceId: "device-1",
     });
 
-    expect(result.guardianPrincipalId).toMatch(/^cadet-principal-/);
+    expect(result.guardianPrincipalId).toMatch(/^principal-/);
     expect(result.isNew).toBe(true);
     expect(result.mintedOverPriorEvidence).toBe(true);
     expect(gatewayCadetGuardians()).toHaveLength(1);

@@ -56,10 +56,12 @@ mock.module("@/lib/auth/request-headers", () => ({
   buildCadetMutatingHeaders: buildCadetMutatingHeadersMock,
 }));
 
+mock.module("@/lib/cloud-runtime-url", () => ({
+  getCloudRuntimeUrl: () => CONFIG_PLATFORM_BASE_URL,
+}));
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeAssistant,
   getLocalGatewayUrl: () => "/assistant/__gateway/20101",
-  getCloudRuntimeUrl: () => CONFIG_PLATFORM_BASE_URL,
   getSelectedAssistant: () => activeAssistant,
   isLocalAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local",

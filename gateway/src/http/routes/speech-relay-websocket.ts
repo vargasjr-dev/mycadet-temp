@@ -22,7 +22,7 @@
 
 import type { OutgoingHttpHeaders } from "node:http";
 
-import { tunnelHostForPlatformHost } from "@mycadet/service-contracts/ingress";
+import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
@@ -163,7 +163,7 @@ function jsonError(status: number, code: string, detail: string): Response {
  * shared with the web live-voice client; this wrapper adds the scheme.
  */
 export function tunnelOriginForPlatformHost(host: string): string | null {
-  const tunnelHost = tunnelHostForPlatformHost(host);
+  const tunnelHost = tunnelHostForCloudHost(host);
   return tunnelHost ? `https://${tunnelHost}` : null;
 }
 

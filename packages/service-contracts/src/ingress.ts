@@ -6,7 +6,7 @@
  * gateway speech relay and the web live-voice client so the two ends of the
  * cloud-speech transport can't drift.
  */
-export function tunnelHostForPlatformHost(host: string): string | null {
+export function tunnelHostForCloudHost(host: string): string | null {
   if (host === "cloud.mycadet.ai") {
     return "tunnel.mycadet.ai";
   }

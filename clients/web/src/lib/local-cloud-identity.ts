@@ -1,3 +1,4 @@
+import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import type {
   PlatformStatusGetResponses,
   PlatformVerifycredentialPostResponses,
@@ -8,7 +9,6 @@ import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/cr
 import {
   getActiveAssistant,
   getLocalGatewayUrl,
-  getCloudRuntimeUrl,
   getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,

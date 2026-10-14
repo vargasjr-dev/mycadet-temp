@@ -166,7 +166,6 @@ mock.module("@/lib/local-mode", () => ({
   isCloudDisabled: () => false,
   hasAssistants: () => false,
   getCloudAssistants: () => [],
-  getCloudRuntimeUrl: () => "https://cloud.mycadet.ai",
   getActiveAssistant: () => null,
   getSelectedAssistant: () => undefined,
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),

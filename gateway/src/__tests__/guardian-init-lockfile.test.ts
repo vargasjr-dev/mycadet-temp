@@ -271,7 +271,7 @@ describe("guardian/init bootstrap secret", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.guardianPrincipalId).toMatch(/^cadet-principal-/);
+    expect(body.guardianPrincipalId).toMatch(/^principal-/);
     expect(body.accessToken).toBeTruthy();
     expect(body.refreshToken).toBeTruthy();
     expect(body.isNew).toBe(true);
@@ -391,7 +391,7 @@ describe("guardian/init one-time-use lockfile", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.guardianPrincipalId).toMatch(/^cadet-principal-/);
+    expect(body.guardianPrincipalId).toMatch(/^principal-/);
     expect(body.accessToken).toBeTruthy();
     expect(body.refreshToken).toBeTruthy();
     expect(lockFileExists()).toBe(true);

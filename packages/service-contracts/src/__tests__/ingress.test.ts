@@ -10,7 +10,7 @@ import {
   trimmedNonEmptyString,
   TUNNEL_PROVIDERS,
   type TunnelRecord,
-  tunnelHostForPlatformHost,
+  tunnelHostForCloudHost,
 } from "../ingress.js";
 import {
   buildTwilioMediaStreamUrl,
@@ -19,27 +19,27 @@ import {
   resolveTwilioPublicBaseUrl,
 } from "../twilio-ingress.js";
 
-describe("tunnelHostForPlatformHost", () => {
+describe("tunnelHostForCloudHost", () => {
   test("maps the prod platform host to the prod tunnel", () => {
-    expect(tunnelHostForPlatformHost("cloud.mycadet.ai")).toBe(
+    expect(tunnelHostForCloudHost("cloud.mycadet.ai")).toBe(
       "tunnel.mycadet.ai",
     );
   });
 
   test("maps env-prefixed platform hosts to their env tunnel", () => {
-    expect(tunnelHostForPlatformHost("staging-cloud.mycadet.ai")).toBe(
+    expect(tunnelHostForCloudHost("staging-cloud.mycadet.ai")).toBe(
       "tunnel-staging.mycadet.ai",
     );
-    expect(tunnelHostForPlatformHost("dev-cloud.mycadet.ai")).toBe(
+    expect(tunnelHostForCloudHost("dev-cloud.mycadet.ai")).toBe(
       "tunnel-dev.mycadet.ai",
     );
   });
 
   test("returns null for hosts outside the deployment convention", () => {
-    expect(tunnelHostForPlatformHost("localhost")).toBeNull();
-    expect(tunnelHostForPlatformHost("platform.example.com")).toBeNull();
+    expect(tunnelHostForCloudHost("localhost")).toBeNull();
+    expect(tunnelHostForCloudHost("platform.example.com")).toBeNull();
     expect(
-      tunnelHostForPlatformHost("staging-cloud.mycadet.ai.evil.com"),
+      tunnelHostForCloudHost("staging-cloud.mycadet.ai.evil.com"),
     ).toBeNull();
   });
 });
