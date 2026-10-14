@@ -11,10 +11,12 @@ mock.module("@app/assistant/returning-user", () => ({
 mock.module("@app/lib/billing/checkout-intent-storage", () => ({
   checkoutHandoff: checkout,
 }));
-mock.module("@web/stores/auth-store", () => ({
-  beginCloudAccountOAuth: begin,
-  primeCloudAccountSessionToken: prime,
-  whenCloudSessionSettled: wait,
+mock.module("@app/runtime/composed-account-session", () => ({
+  composedAccountSession: {
+    beginOAuth: begin,
+    primeSessionToken: prime,
+    waitSessionSettled: wait,
+  },
 }));
 const { nativeAuthContext } = await import("./native-auth-context");
 test("native context reads app-owned assistant facts and preserves checkout and reconciliation", async () => {

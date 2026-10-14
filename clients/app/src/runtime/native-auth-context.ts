@@ -1,9 +1,5 @@
 import { readReturningUser } from "@app/assistant/returning-user";
-import {
-  beginCloudAccountOAuth,
-  primeCloudAccountSessionToken,
-  whenCloudSessionSettled,
-} from "@web/stores/auth-store";
+import { composedAccountSession } from "@app/runtime/composed-account-session";
 import { checkoutHandoff } from "@app/lib/billing/checkout-intent-storage";
 import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destination";
 
@@ -16,7 +12,7 @@ export const nativeAuthContext = {
       checkout: checkoutHandoff,
     };
   },
-  beginComposedOAuth: beginCloudAccountOAuth,
-  primeComposedSession: primeCloudAccountSessionToken,
-  waitComposedSession: whenCloudSessionSettled,
+  beginComposedOAuth: composedAccountSession.beginOAuth,
+  primeComposedSession: composedAccountSession.primeSessionToken,
+  waitComposedSession: composedAccountSession.waitSessionSettled,
 };

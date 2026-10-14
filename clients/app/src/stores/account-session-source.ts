@@ -17,7 +17,7 @@ interface Dependencies {
     write(user: AccountUser): void;
     clear(): void;
   };
-  synchronizeWeb(): Promise<unknown>;
+  synchronizeAssistant(): Promise<unknown>;
   logout(): Promise<void>;
   probeTimeoutMs?: number;
 }
@@ -141,8 +141,8 @@ export function createAccountSessionSource(
       const request = (async () => {
         await observeSession(true);
         if (current !== generation || logoutLocks > 0) return false;
-        // Web still owns consent hydration and post-auth assistant routing.
-        await deps.synchronizeWeb();
+        // The assistant session reconciles consent and its runtime identity.
+        await deps.synchronizeAssistant();
         return (
           current === generation && state.sessionStatus === "authenticated"
         );

@@ -1,3 +1,4 @@
+import { installComposedAccountSession } from "@app/runtime/composed-account-session";
 import { afterEach, expect, mock, test } from "bun:test";
 let native = true;
 let oauthPending = false;
@@ -32,18 +33,20 @@ mock.module("@app/runtime/native-platform", () => ({
 mock.module("@app/runtime/oauth-flow-state", () => ({
   isOAuthFlowInFlight: () => oauthPending,
 }));
-mock.module("@web/stores/auth-store", () => ({
-  isCloudAccountOAuthInFlight: () => webOAuthPending,
-  subscribeCloudAccountLogout: (listener: () => () => void) => {
+installComposedAccountSession({
+  refresh: webRefresh,
+  logout: (revokeSession) => webLogout({ cloudAccount: { revokeSession } }),
+  beginOAuth: () => () => {},
+  isOAuthActive: () => webOAuthPending,
+  primeSessionToken: () => {},
+  waitSessionSettled: async () => {},
+  subscribeLogout: (listener) => {
     cloudLogoutListener = listener;
     return () => {
       cloudLogoutListener = undefined;
     };
   },
-  useAuthStore: {
-    getState: () => ({ refreshSession: webRefresh, logout: webLogout }),
-  },
-}));
+});
 mock.module("@app/lib/auth/session-client", () => ({
   getSession,
   logoutAccountSession: revokeSession,

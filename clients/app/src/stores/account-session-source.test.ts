@@ -24,15 +24,15 @@ function setup(cached: AccountUser | null = null) {
   const getSession = mock(async (): Promise<Result> => success);
   const write = mock((_user: AccountUser) => {});
   const clear = mock(() => {});
-  const synchronizeWeb = mock(async () => true);
+  const synchronizeAssistant = mock(async () => true);
   const logout = mock(async () => {});
   const source = createAccountSessionSource({
     getSession,
     snapshot: { read: () => cached, write, clear },
-    synchronizeWeb,
+    synchronizeAssistant,
     logout,
   });
-  return { source, getSession, write, clear, synchronizeWeb, logout };
+  return { source, getSession, write, clear, synchronizeAssistant, logout };
 }
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -42,7 +42,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 test("post-auth refresh supersedes the boot probe, deduplicates explicit refreshes, and maps user fields", async () => {
-  const { source, getSession, write, synchronizeWeb } = setup();
+  const { source, getSession, write, synchronizeAssistant } = setup();
   const probe = deferred<Result>();
   getSession.mockImplementationOnce(() => probe.promise);
   getSession.mockImplementationOnce(async () => success);
@@ -60,7 +60,7 @@ test("post-auth refresh supersedes the boot probe, deduplicates explicit refresh
     cloudSession: "present",
   });
   expect(write).toHaveBeenCalledWith(user);
-  expect(synchronizeWeb).toHaveBeenCalledTimes(1);
+  expect(synchronizeAssistant).toHaveBeenCalledTimes(1);
 });
 for (const status of [401, 403, 410])
   test(`authoritative ${status} clears the offline account`, async () => {
@@ -118,9 +118,9 @@ test("logout supersedes an in-flight success and blocks probes during cleanup", 
   expect(await source.observeSession()).toBe(true);
 });
 test("a logout during web synchronization cannot return an authenticated result", async () => {
-  const { source, synchronizeWeb } = setup();
+  const { source, synchronizeAssistant } = setup();
   const sync = deferred<boolean>();
-  synchronizeWeb.mockImplementationOnce(() => sync.promise);
+  synchronizeAssistant.mockImplementationOnce(() => sync.promise);
   const refresh = source.getSnapshot().refreshSession();
   await new Promise((resolve) => setTimeout(resolve, 0));
   await source.getSnapshot().logout();
@@ -152,7 +152,7 @@ test("stalled account probes abort and restore only a last-known cloud account",
         });
       }),
     snapshot: { read: () => user, write: () => {}, clear: () => {} },
-    synchronizeWeb: async () => {},
+    synchronizeAssistant: async () => {},
     logout: async () => {},
     probeTimeoutMs: 5,
   });
@@ -183,9 +183,9 @@ test("shared cloud logout invalidates pending app probes until every cleanup sco
 });
 
 test("a newer account rejection wins while legacy synchronization is pending", async () => {
-  const { source, getSession, synchronizeWeb } = setup();
+  const { source, getSession, synchronizeAssistant } = setup();
   const sync = deferred<boolean>();
-  synchronizeWeb.mockImplementationOnce(() => sync.promise);
+  synchronizeAssistant.mockImplementationOnce(() => sync.promise);
   const refresh = source.getSnapshot().refreshSession();
   await new Promise((resolve) => setTimeout(resolve, 0));
   getSession.mockResolvedValueOnce({ ok: false, status: 401, errors: [] });

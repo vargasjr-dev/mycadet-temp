@@ -8,6 +8,7 @@ import { createBrowserRouter, Outlet } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
+import { installComposedAccountSession } from "@app/runtime/composed-account-session";
 import { start } from "@web/boot";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { getRouterBasename, routeTree } from "@web/routes";
@@ -55,4 +56,4 @@ const router = createBrowserRouter(
 );
 
 await initI18n();
-start(router);
+start(router, { accountSession: installComposedAccountSession });

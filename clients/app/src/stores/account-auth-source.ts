@@ -1,11 +1,7 @@
 import { App } from "@capacitor/app";
 import { isNativePlatform } from "@app/runtime/native-platform";
 import { isOAuthFlowInFlight } from "@app/runtime/oauth-flow-state";
-import {
-  useAuthStore as webAuthStore,
-  subscribeCloudAccountLogout,
-  isCloudAccountOAuthInFlight,
-} from "@web/stores/auth-store";
+import { composedAccountSession } from "@app/runtime/composed-account-session";
 import { getSession, logoutAccountSession } from "@app/lib/auth/session-client";
 import { accountUserSnapshot } from "@app/stores/account-user-snapshot";
 import { createAccountSessionSource } from "@app/stores/account-session-source";
@@ -14,14 +10,11 @@ import { createAccountSessionSource } from "@app/stores/account-session-source";
 export const accountAuthSource = createAccountSessionSource({
   getSession,
   snapshot: accountUserSnapshot,
-  synchronizeWeb: () => webAuthStore.getState().refreshSession(),
-  logout: () =>
-    webAuthStore
-      .getState()
-      .logout({ cloudAccount: { revokeSession: logoutAccountSession } }),
+  synchronizeAssistant: () => composedAccountSession.refresh(),
+  logout: () => composedAccountSession.logout(logoutAccountSession),
 });
 
-const stopCloudLogoutListener = subscribeCloudAccountLogout(() =>
+const stopCloudLogoutListener = composedAccountSession.subscribeLogout(() =>
   accountAuthSource.beginExternalLogout(),
 );
 if (import.meta.hot)
@@ -40,7 +33,7 @@ export function startAccountSessionListeners(): () => void {
       if (
         !disposed &&
         !isOAuthFlowInFlight() &&
-        !isCloudAccountOAuthInFlight()
+        !composedAccountSession.isOAuthActive()
       ) {
         void accountAuthSource
           .observeSession()
