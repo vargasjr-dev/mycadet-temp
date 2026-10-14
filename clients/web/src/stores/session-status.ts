@@ -1,29 +1,14 @@
 /**
- * Session state as discriminated unions, plus the pure predicates that answer
- * each session-state question in one place.
- *
- * This module is intentionally dependency-free: it imports nothing, so any
- * module — including ones the auth store itself depends on (e.g. the assistant
- * lifecycle service) — can read session meaning without creating an import
- * cycle through the store.
- *
- * Imperative readers (middleware, lifecycle, route resolvers) call these
- * predicates directly with a status value. Reactive components read the
- * matching hooks (`useIsAuthenticated`, `useHasCloudSession`) from the auth
- * store, which compose these predicates over the store's atomic selectors.
- */
-
-/**
- * Platform-session liveness as a single tri-state.
+ * Cloud-session liveness as a single tri-state.
  *
  * - `"unknown"`: the probe has not settled yet. The local gateway path leaves
  *   `sessionStatus: "authenticated"` before `getSession()` returns, so there is
  *   a window where logged-in status is known but session liveness is not. Imperative
  *   consumers (the onboarding fork) must wait this out before deciding;
- *   reactive consumers treat it as "no session" but a cached platform
+ *   reactive consumers treat it as "no session" but a cached cloud
  *   assistant can stand in as a liveness hint.
- * - `"absent"`: the probe settled with no live platform session.
- * - `"present"`: the probe settled with a live platform session.
+ * - `"absent"`: the probe settled with no live cloud session.
+ * - `"present"`: the probe settled with a live cloud session.
  *
  * Encoding it as one value makes "false that really means unknown"
  * unrepresentable, which is the ambiguity that let missing-session readers
@@ -37,7 +22,7 @@ export type CloudSessionStatus = "unknown" | "absent" | "present";
  * - `"initializing"`: the boot probe has not settled — logged-in status is not
  *   yet known. Reactive consumers should treat this as "not authenticated"
  *   without redirecting; imperative guards wait it out.
- * - `"authenticated"`: a user is signed in (platform or local gateway).
+ * - `"authenticated"`: a user is signed in (cloud or local gateway).
  * - `"unauthenticated"`: the probe settled with no session.
  *
  * Modeling this as one value makes the contradictory `(isLoggedIn: true,
@@ -45,7 +30,9 @@ export type CloudSessionStatus = "unknown" | "absent" | "present";
  * the same illegal-state-elimination this store applies to `cloudSession`.
  */
 export type SessionStatus =
-  "initializing" | "authenticated" | "unauthenticated";
+  | "initializing"
+  | "authenticated"
+  | "unauthenticated";
 
 /**
  * Read predicates — the single place each session-state question is answered.
@@ -61,10 +48,9 @@ export const isAuthenticated = (status: SessionStatus): boolean =>
 export const isSessionSettled = (status: SessionStatus): boolean =>
   status !== "initializing";
 
-/** A live platform session has been confirmed by the probe. */
-export const hasLiveCloudSession = (
-  status: CloudSessionStatus,
-): boolean => status === "present";
+/** A live cloud session has been confirmed by the probe. */
+export const hasLiveCloudSession = (status: CloudSessionStatus): boolean =>
+  status === "present";
 
 /**
  * The cloud-session probe has settled — `cloudSession` left the
@@ -74,12 +60,11 @@ export const hasLiveCloudSession = (
  * consumer whose behavior turns on cloud-session liveness must wait on this,
  * not on the (earlier) `sessionStatus` settlement.
  */
-export const isCloudSessionSettled = (
-  status: CloudSessionStatus,
-): boolean => status !== "unknown";
+export const isCloudSessionSettled = (status: CloudSessionStatus): boolean =>
+  status !== "unknown";
 
 /**
- * A platform session a live probe confirmed — `"present"` AND not a believed
+ * A cloud session a live probe confirmed — `"present"` AND not a believed
  * offline restore (LUM-2412). Stricter than {@link hasLiveCloudSession}:
  * telemetry consent gates on this so it never enables on a restored-offline
  * launch that no live probe has revalidated.
@@ -102,7 +87,7 @@ const SETTLED_SESSION_REJECTION_STATUSES = new Set([401, 403, 410]);
  * a request that never completed (`status` undefined), rate limiting
  * (429), and gateway/outage 5xx including the Electron cloud proxy's
  * synthesized offline 502 (`proxy_network_error` — see
- * `clients/macos/src/main/platform-forward.ts`). A session check that
+ * `clients/macos/src/main/cloud-forward.ts`). A session check that
  * throws outright (fetch rejection) is classified the same way by
  * callers.
  *
