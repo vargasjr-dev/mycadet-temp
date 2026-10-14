@@ -625,15 +625,15 @@ export interface PerformDockerRollbackOptions {
 
 /**
  * Perform a Docker rollback to a target version. Reusable by both `rollback.ts`
- * (targeted version rollback) and `restore.ts` (version + data restore).
+ * and `restore.ts` (version + data restore).
  *
  * This function handles the full lifecycle:
  * - Version validation (target must be older than current)
  * - Image resolution and pulling
- * - Migration ceiling lookup and pre-swap rollback
+ * - Post-swap migration rollback to the target runtime's registry ceiling
  * - Container stop/start with target images
  * - Readiness check
- * - Lockfile update with rollback state
+ * - Lockfile update with the running images and previous version
  * - Auto-rollback on failure
  */
 export async function performDockerRollback(
@@ -708,19 +708,14 @@ export async function performDockerRollback(
     }
   }
 
-  // Persist rollback state to lockfile BEFORE any destructive changes
-  if (entry.containerInfo) {
+  // Record the current version for subsequent rollback targeting.
+  if (currentVersion) {
     const rollbackEntry: AssistantEntry = {
       ...entry,
-      previousContainerInfo: { ...entry.containerInfo },
       previousVersion: currentVersion,
-      previousDbMigrationVersion: preMigrationState.dbVersion,
-      previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
     };
     saveAssistantEntry(rollbackEntry);
-    if (currentVersion) {
-      console.log(`   Saved rollback state: ${currentVersion}\n`);
-    }
+    console.log(`   Saved previous version: ${currentVersion}\n`);
   }
 
   // Record rollback start in workspace git history
@@ -869,19 +864,15 @@ export async function performDockerRollback(
       true,
     );
 
-    // Capture new digests from the rolled-back containers
-    // Swap current/previous state to enable "rollback the rollback"
     const updatedEntry: AssistantEntry = {
       ...entry,
+      previousVersion: currentVersion,
       containerInfo: {
         assistantImage: targetImageTags.assistant,
         gatewayImage: targetImageTags.gateway,
         cesImage: targetImageTags["credential-executor"],
         assistantPort,
       },
-      previousContainerInfo: entry.containerInfo,
-      previousDbMigrationVersion: preMigrationState.dbVersion,
-      previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
     };
     saveAssistantEntry(updatedEntry);
 
@@ -1037,9 +1028,6 @@ export async function performDockerRollback(
                 currentImageRefs["credential-executor"],
               assistantPort,
             },
-            previousContainerInfo: undefined,
-            previousDbMigrationVersion: undefined,
-            previousWorkspaceMigrationId: undefined,
           };
           saveAssistantEntry(revertedEntry);
 

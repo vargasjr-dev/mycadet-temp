@@ -3,36 +3,16 @@ import {
   findAssistantByName,
   getActiveAssistant,
   loadAllAssistants,
-  saveAssistantEntry,
   type AssistantEntry,
 } from "../lib/assistant-config";
-import {
-  GATEWAY_INTERNAL_PORT,
-  ASSISTANT_INTERNAL_PORT,
-  dockerResourceNames,
-  startContainers,
-  stopContainers,
-} from "../lib/docker";
-import type { ServiceName } from "../lib/docker";
 import { emitCliError, categorizeUpgradeError } from "../lib/cli-error.js";
-import {
-  readCloudToken,
-  rollbackCloudAssistant,
-} from "../lib/cloud-client.js";
+import { readCloudToken, rollbackCloudAssistant } from "../lib/cloud-client.js";
 import {
   broadcastUpgradeEvent,
   buildCompleteEvent,
-  buildProgressEvent,
-  buildStartingEvent,
-  buildUpgradeCommitMessage,
-  captureReplayState,
-  commitWorkspaceViaGateway,
   fetchCurrentVersion,
   fetchPreviousVersion,
   performDockerRollback,
-  rollbackMigrations,
-  UPGRADE_PROGRESS,
-  waitForReady,
 } from "../lib/upgrade-lifecycle.js";
 
 function parseArgs(): { name: string | null; version: string | null } {
@@ -56,7 +36,7 @@ function parseArgs(): { name: string | null; version: string | null } {
       console.log("");
       console.log("Options:");
       console.log(
-        "  --version <version>  Target version, optional for managed — omit to roll back to previous",
+        "  --version <version>  Target version; omit to roll back to the previous version",
       );
       console.log("");
       console.log("Examples:");
@@ -212,266 +192,59 @@ async function rollbackPlatformViaEndpoint(
 
 export const rollback = Object.assign(
   async function rollback(): Promise<void> {
-  const { name, version } = parseArgs();
-  const entry = resolveTargetAssistant(name);
-  const cloud = entry.cloud;
+    const { name, version } = parseArgs();
+    const entry = resolveTargetAssistant(name);
+    const cloud = entry.cloud;
 
-  if (cloud === "apple-container") {
-    console.error(
-      `Error: '${entry.assistantId}' uses the Apple Containers runtime. Rollback is not yet supported for this topology.`,
-    );
-    process.exit(1);
-  }
+    if (cloud === "apple-container") {
+      console.error(
+        `Error: '${entry.assistantId}' uses the Apple Containers runtime. Rollback is not yet supported for this topology.`,
+      );
+      process.exit(1);
+    }
 
-  // ---------- Managed (Cadet Cloud) rollback ----------
-  if (isCloudHome(cloud)) {
-    await rollbackPlatformViaEndpoint(entry, version ?? undefined);
-    return;
-  }
+    // ---------- Managed (Cadet Cloud) rollback ----------
+    if (isCloudHome(cloud)) {
+      await rollbackPlatformViaEndpoint(entry, version ?? undefined);
+      return;
+    }
 
-  // ---------- Unsupported topologies ----------
-  if (cloud !== "docker") {
-    const msg = "Rollback is only supported for Docker and cloud assistants.";
-    console.error(msg);
-    emitCliError("UNSUPPORTED_TOPOLOGY", msg);
-    process.exit(1);
-  }
+    // ---------- Unsupported topologies ----------
+    if (cloud !== "docker") {
+      const msg = "Rollback is only supported for Docker and cloud assistants.";
+      console.error(msg);
+      emitCliError("UNSUPPORTED_TOPOLOGY", msg);
+      process.exit(1);
+    }
 
-  // ---------- Docker: Targeted version rollback (--version specified) ----------
-  if (version) {
+    let targetVersion = version ?? undefined;
+    if (!targetVersion) {
+      const currentVersion = await fetchCurrentVersion(entry.runtimeUrl);
+      targetVersion = await fetchPreviousVersion(
+        currentVersion,
+        entry.previousVersion,
+      );
+      if (!targetVersion) {
+        const msg =
+          "No previous version available. Specify --version <version> to choose a rollback target.";
+        console.error(msg);
+        emitCliError("ROLLBACK_NO_STATE", msg);
+        process.exit(1);
+      }
+    }
     try {
-      await performDockerRollback(entry, { targetVersion: version });
+      await performDockerRollback(entry, { targetVersion });
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       console.error(`\n❌ Rollback failed: ${detail}`);
       await broadcastUpgradeEvent(
         entry.runtimeUrl,
         entry.assistantId,
-        buildCompleteEvent(version ?? "unknown", false),
+        buildCompleteEvent(targetVersion ?? "unknown", false),
       );
       emitCliError(categorizeUpgradeError(err), "Rollback failed", detail);
       process.exit(1);
     }
-    return;
-  }
-
-  // ---------- Docker: Saved-state rollback (no --version) ----------
-
-  // Fetch current + previous version from live APIs
-  const currentVersion = await fetchCurrentVersion(entry.runtimeUrl);
-  const previousVersion =
-    (await fetchPreviousVersion(currentVersion, entry.previousVersion)) ??
-    "unknown";
-
-  // Verify rollback state exists
-  if (!entry.previousContainerInfo) {
-    const msg =
-      "No rollback state available. Run `cadet upgrade` first to create a rollback point.";
-    console.error(msg);
-    emitCliError("ROLLBACK_NO_STATE", msg);
-    process.exit(1);
-  }
-
-  // Roll back to the previous images. Older entries recorded per-service
-  // digests (the image sha captured at upgrade time) — those are gone from
-  // the contract now; the recorded image refs are the rollback target.
-  const prev = entry.previousContainerInfo;
-  if (!prev.assistantImage || !prev.gatewayImage || !prev.cesImage) {
-    const msg =
-      "Incomplete rollback state. Previous container image refs are missing.";
-    console.error(msg);
-    emitCliError("ROLLBACK_NO_STATE", msg);
-    process.exit(1);
-  }
-
-  // Build image refs from the previous record
-  const previousImageRefs: Record<ServiceName, string> = {
-    assistant: prev.assistantImage,
-    "credential-executor": prev.cesImage,
-    gateway: prev.gatewayImage,
-  };
-
-  const instanceName = entry.assistantId;
-  const res = dockerResourceNames(instanceName);
-
-  try {
-    // Record rollback start in workspace git history
-    await commitWorkspaceViaGateway(
-      entry.runtimeUrl,
-      entry.assistantId,
-      buildUpgradeCommitMessage({
-        action: "rollback",
-        phase: "starting",
-        from: currentVersion ?? "unknown",
-        to: previousVersion,
-        topology: "docker",
-        assistantId: entry.assistantId,
-      }),
-    );
-
-    console.log(
-      `🔄 Rolling back Docker assistant '${instanceName}' to ${previousVersion}...\n`,
-    );
-
-    const {
-      bootstrapSecret,
-      cesServiceToken,
-      signingKey,
-      extraAssistantEnv,
-      extraGatewayEnv,
-    } = await captureReplayState(res);
-
-    // Parse gateway port from entry's runtimeUrl, fall back to default
-    let gatewayPort = GATEWAY_INTERNAL_PORT;
-    try {
-      const parsed = new URL(entry.runtimeUrl);
-      const port = parseInt(parsed.port, 10);
-      if (!isNaN(port)) {
-        gatewayPort = port;
-      }
-    } catch {
-      // use default
-    }
-
-    // Recover the assistant host port from the entry, fall back to default.
-    const assistantPort =
-      entry.containerInfo?.assistantPort ?? ASSISTANT_INTERNAL_PORT;
-
-    // Notify connected clients that a rollback is about to begin (best-effort)
-    console.log("📢 Notifying connected clients...");
-    await broadcastUpgradeEvent(
-      entry.runtimeUrl,
-      entry.assistantId,
-      buildStartingEvent(previousVersion),
-    );
-    // Brief pause to allow SSE delivery before containers stop.
-    await new Promise((r) => setTimeout(r, 500));
-
-    // Roll back migrations to pre-upgrade state (must happen before containers stop)
-    if (
-      entry.previousDbMigrationVersion !== undefined ||
-      entry.previousWorkspaceMigrationId !== undefined
-    ) {
-      console.log("🔄 Reverting database changes...");
-      await broadcastUpgradeEvent(
-        entry.runtimeUrl,
-        entry.assistantId,
-        buildProgressEvent(UPGRADE_PROGRESS.REVERTING_MIGRATIONS),
-      );
-      await rollbackMigrations(
-        entry.runtimeUrl,
-        entry.assistantId,
-        entry.previousDbMigrationVersion,
-        entry.previousWorkspaceMigrationId,
-      );
-    }
-
-    // Progress: switching version (must be sent BEFORE stopContainers)
-    await broadcastUpgradeEvent(
-      entry.runtimeUrl,
-      entry.assistantId,
-      buildProgressEvent(UPGRADE_PROGRESS.SWITCHING),
-    );
-
-    console.log("🛑 Stopping existing containers...");
-    await stopContainers(res);
-    console.log("✅ Containers stopped\n");
-
-    console.log("🚀 Starting containers with previous version...");
-    await startContainers(
-      {
-        signingKey,
-        bootstrapSecret,
-        cesServiceToken,
-        extraAssistantEnv,
-        extraGatewayEnv,
-        gatewayPort,
-        assistantPort,
-        imageTags: previousImageRefs,
-        instanceName,
-        res,
-      },
-      (msg) => console.log(msg),
-    );
-    console.log("✅ Containers started\n");
-
-    console.log("Waiting for assistant to become ready...");
-    const ready = await waitForReady(entry.runtimeUrl);
-
-    if (ready) {
-      // Swap current/previous state to enable "rollback the rollback"
-      const updatedEntry: AssistantEntry = {
-        ...entry,
-        containerInfo: {
-          assistantImage: prev.assistantImage ?? previousImageRefs.assistant,
-          gatewayImage: prev.gatewayImage ?? previousImageRefs.gateway,
-          cesImage: prev.cesImage ?? previousImageRefs["credential-executor"],
-          assistantPort,
-        },
-        previousContainerInfo: entry.containerInfo,
-        previousDbMigrationVersion: undefined,
-        previousWorkspaceMigrationId: undefined,
-      };
-      saveAssistantEntry(updatedEntry);
-
-      // Notify clients that the rollback succeeded
-      await broadcastUpgradeEvent(
-        entry.runtimeUrl,
-        entry.assistantId,
-        buildCompleteEvent(previousVersion, true),
-      );
-
-      // Record successful rollback in workspace git history
-      await commitWorkspaceViaGateway(
-        entry.runtimeUrl,
-        entry.assistantId,
-        buildUpgradeCommitMessage({
-          action: "rollback",
-          phase: "complete",
-          from: currentVersion ?? "unknown",
-          to: previousVersion,
-          topology: "docker",
-          assistantId: entry.assistantId,
-          result: "success",
-        }),
-      );
-
-      console.log(
-        `\n✅ Docker assistant '${instanceName}' rolled back to ${previousVersion}.`,
-      );
-      console.log(
-        "\nTip: To also restore data from before the upgrade, use `cadet restore --from <backup-path>`.",
-      );
-    } else {
-      console.error(
-        `\n❌ Containers failed to become ready within the timeout.`,
-      );
-      console.log(
-        `   Check logs with: docker logs -f ${res.assistantContainer}`,
-      );
-      await broadcastUpgradeEvent(
-        entry.runtimeUrl,
-        entry.assistantId,
-        buildCompleteEvent(previousVersion, false),
-      );
-      emitCliError(
-        "READINESS_TIMEOUT",
-        "Rolled-back containers failed to become ready within the timeout.",
-      );
-      process.exit(1);
-    }
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    console.error(`\n❌ Rollback failed: ${detail}`);
-    await broadcastUpgradeEvent(
-      entry.runtimeUrl,
-      entry.assistantId,
-      buildCompleteEvent(previousVersion, false),
-    );
-    emitCliError(categorizeUpgradeError(err), "Rollback failed", detail);
-    process.exit(1);
-  }
-},
+  },
   { description: "Roll back an assistant to a previous version" },
 );
-

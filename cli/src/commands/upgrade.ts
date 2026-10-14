@@ -56,6 +56,7 @@ import {
   buildUpgradeCommitMessage,
   captureReplayState,
   captureUpgradeFailureLogs,
+  fetchCurrentVersion,
   commitWorkspaceViaGateway,
   rollbackMigrations,
   UPGRADE_PROGRESS,
@@ -345,20 +346,14 @@ async function upgradeDocker(
     );
   }
 
-  // Persist rollback state to lockfile BEFORE any destructive changes.
-  // This enables the `cadet rollback` command to restore the previous version.
-  if (entry.containerInfo) {
+  // Record the current version for subsequent rollback targeting.
+  if (currentVersion) {
     const rollbackEntry: AssistantEntry = {
       ...entry,
-      previousContainerInfo: { ...entry.containerInfo },
       previousVersion: currentVersion,
-      previousDbMigrationVersion: preMigrationState.dbVersion,
-      previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
     };
     saveAssistantEntry(rollbackEntry);
-    if (currentVersion) {
-      console.log(`   Saved rollback state: ${currentVersion}\n`);
-    }
+    console.log(`   Saved previous version: ${currentVersion}\n`);
   }
 
   // Record version transition start in workspace git history
@@ -493,15 +488,13 @@ async function upgradeDocker(
     // Update lockfile with new service group topology
     const updatedEntry: AssistantEntry = {
       ...entry,
+      previousVersion: currentVersion,
       containerInfo: {
         assistantImage: imageTags.assistant,
         gatewayImage: imageTags.gateway,
         cesImage: imageTags["credential-executor"],
         assistantPort,
       },
-      previousContainerInfo: entry.containerInfo,
-      previousDbMigrationVersion: preMigrationState.dbVersion,
-      previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
     };
     saveAssistantEntry(updatedEntry);
     // Refresh the host-served web bundle before clients reload on completion.
@@ -668,9 +661,6 @@ async function upgradeDocker(
                 previousImageRefs["credential-executor"],
               assistantPort,
             },
-            previousContainerInfo: undefined,
-            previousDbMigrationVersion: undefined,
-            previousWorkspaceMigrationId: undefined,
           };
           saveAssistantEntry(rolledBackEntry);
 
@@ -798,40 +788,6 @@ async function ensureGuardianTokenAfterLocalUpgrade(
   }
 }
 
-async function fetchLocalUpgradeState(
-  entry: AssistantEntry,
-  adminUrl: string,
-): Promise<{
-  currentVersion?: string;
-  preMigrationState: {
-    dbVersion?: number;
-    lastWorkspaceMigrationId?: string;
-  };
-}> {
-  try {
-    const healthResp = await loopbackSafeFetch(
-      `${adminUrl}/healthz?include=migrations`,
-      {
-        signal: AbortSignal.timeout(5000),
-      },
-    );
-    if (healthResp.ok) {
-      const health = (await healthResp.json()) as {
-        version?: string;
-        migrations?: { dbVersion?: number; lastWorkspaceMigrationId?: string };
-      };
-      return {
-        currentVersion: health.version,
-        preMigrationState: health.migrations ?? {},
-      };
-    }
-  } catch {
-    // Best-effort — sleeping assistants and unhealthy gateways can still be restarted.
-  }
-
-  return { preMigrationState: {} };
-}
-
 async function upgradeLocal(
   entry: AssistantEntry,
   version: string | null,
@@ -852,10 +808,7 @@ async function upgradeLocal(
 
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = localAdminUrl(entry);
-  const { currentVersion, preMigrationState } = await fetchLocalUpgradeState(
-    entry,
-    adminUrl,
-  );
+  const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {
     console.warn(
@@ -932,17 +885,10 @@ async function upgradeLocal(
     entryChanged = true;
   }
 
-  if (
-    entryChanged ||
-    currentVersion ||
-    preMigrationState.dbVersion !== undefined ||
-    preMigrationState.lastWorkspaceMigrationId !== undefined
-  ) {
+  if (entryChanged || currentVersion) {
     saveAssistantEntry({
       ...entry,
       previousVersion: currentVersion,
-      previousDbMigrationVersion: preMigrationState.dbVersion,
-      previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
     });
   }
 
@@ -966,8 +912,6 @@ async function upgradeLocal(
   saveAssistantEntry({
     ...entry,
     previousVersion: currentVersion,
-    previousDbMigrationVersion: preMigrationState.dbVersion,
-    previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
   });
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
