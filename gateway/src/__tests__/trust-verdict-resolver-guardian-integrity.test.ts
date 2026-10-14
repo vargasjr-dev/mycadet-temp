@@ -11,11 +11,11 @@
  *  - A thrown integrity check degrades to the plain unknown verdict — no
  *    crash, no stamp.
  *
- * The fail-loud reporter is silenced/observed through its test-only overrides
- * so no relay or log leaves the test process (bun's mock.module is
- * process-global and would leak into other test files).
+ * The fail-loud reporter's report fns are captured via module
+ * re-registration so no log leaves the test process (the reporter's own
+ * behavior has its own suite).
  */
-import { beforeEach, afterEach, describe, expect, test } from "bun:test";
+import { beforeEach, afterEach, describe, expect, mock, test } from "bun:test";
 import { sql } from "drizzle-orm";
 
 await import("./test-preload.js");
@@ -29,6 +29,24 @@ const {
 } = await import("../db/schema.js");
 const { seedActorToken, seedContact } =
   await import("./helpers/contact-fixtures.js");
+
+// Captured reporter detail payloads (via module re-registration — the SUTs
+// below must load AFTER this so they bind the recorders, not the real
+// reporter).
+const reportCalls: Record<string, unknown>[] = [];
+
+const actualGuardianIntegrityReporter =
+  await import("../guardian-integrity-reporter.js");
+mock.module("../guardian-integrity-reporter.js", () => ({
+  ...actualGuardianIntegrityReporter,
+  reportMissingGuardian: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+  reportGuardianMintRefused: (detail: Record<string, unknown>) => {
+    reportCalls.push(detail);
+  },
+}));
+
 const { bustGuardianIntegrityCache } =
   await import("../auth/guardian-integrity.js");
 const { resolveTrustVerdict } =
@@ -63,9 +81,6 @@ function insertChannel(args: {
     })
     .run();
 }
-
-// Captured reporter detail payloads (via the log-override seam).
-const reportCalls: Record<string, unknown>[] = [];
 
 beforeEach(async () => {
   resetGatewayDb();
