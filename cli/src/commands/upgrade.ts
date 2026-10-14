@@ -459,19 +459,6 @@ async function upgradeDocker(
     console.warn("⚠️  Pre-upgrade backup failed, continuing with upgrade\n");
   }
 
-  // Persist the backup path so `cadet rollback` can restore the exact backup
-  // created for this upgrade attempt — never a stale backup from a prior cycle.
-  // Re-read the entry to pick up the rollback state saved earlier.
-  {
-    const current = findAssistantByName(entry.assistantId);
-    if (current) {
-      saveAssistantEntry({
-        ...current,
-        preUpgradeBackupPath: backupPath ?? undefined,
-      });
-    }
-  }
-
   await broadcastUpgradeEvent(
     entry.runtimeUrl,
     entry.assistantId,
@@ -515,8 +502,6 @@ async function upgradeDocker(
       previousContainerInfo: entry.containerInfo,
       previousDbMigrationVersion: preMigrationState.dbVersion,
       previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
-      // Preserve the backup path so `cadet rollback` can restore it later
-      preUpgradeBackupPath: backupPath ?? undefined,
     };
     saveAssistantEntry(updatedEntry);
     // Refresh the host-served web bundle before clients reload on completion.
@@ -686,8 +671,6 @@ async function upgradeDocker(
             previousContainerInfo: undefined,
             previousDbMigrationVersion: undefined,
             previousWorkspaceMigrationId: undefined,
-            // Clear the backup path — the upgrade that created it just failed
-            preUpgradeBackupPath: undefined,
           };
           saveAssistantEntry(rolledBackEntry);
 
@@ -951,7 +934,6 @@ async function upgradeLocal(
 
   if (
     entryChanged ||
-    backupPath ||
     currentVersion ||
     preMigrationState.dbVersion !== undefined ||
     preMigrationState.lastWorkspaceMigrationId !== undefined
@@ -961,7 +943,6 @@ async function upgradeLocal(
       previousVersion: currentVersion,
       previousDbMigrationVersion: preMigrationState.dbVersion,
       previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
-      preUpgradeBackupPath: backupPath ?? undefined,
     });
   }
 
@@ -987,7 +968,6 @@ async function upgradeLocal(
     previousVersion: currentVersion,
     previousDbMigrationVersion: preMigrationState.dbVersion,
     previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
-    preUpgradeBackupPath: backupPath ?? undefined,
   });
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 

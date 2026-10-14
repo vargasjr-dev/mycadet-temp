@@ -882,7 +882,6 @@ export async function performDockerRollback(
       previousContainerInfo: entry.containerInfo,
       previousDbMigrationVersion: preMigrationState.dbVersion,
       previousWorkspaceMigrationId: preMigrationState.lastWorkspaceMigrationId,
-      preUpgradeBackupPath: undefined,
     };
     saveAssistantEntry(updatedEntry);
 
@@ -1041,7 +1040,6 @@ export async function performDockerRollback(
             previousContainerInfo: undefined,
             previousDbMigrationVersion: undefined,
             previousWorkspaceMigrationId: undefined,
-            preUpgradeBackupPath: undefined,
           };
           saveAssistantEntry(revertedEntry);
 

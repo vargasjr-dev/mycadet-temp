@@ -103,16 +103,11 @@ export type AssistantEntry = Omit<
   /** Loopback URL for same-machine health checks (e.g. `http://127.0.0.1:7831`).
    *  Avoids mDNS resolution issues when the machine checks its own gateway. */
   localUrl?: string;
-  /** Public https ingress URL recorded by `cadet tunnel` providers for this
-   *  instance. The advertised-URL default for remote-web pairing. */
-  ingressUrl?: string;
   bearerToken?: string;
   /** True when this entry was registered via `cadet connect import` (a remote
    *  pairing). Set alongside `cloud: "paired"`; also backs the re-import /
    *  overwrite guard in connect import. */
   paired?: boolean;
-  instanceId?: string;
-  namespace?: string;
   project?: string;
   region?: string;
   sshUser?: string;
@@ -125,10 +120,6 @@ export type AssistantEntry = Omit<
   containerInfo?: ContainerInfo;
   /** Docker image metadata from before the last upgrade. Enables rollback to the prior version. */
   previousContainerInfo?: ContainerInfo;
-  /** Path to the .vbundle backup created for the most recent upgrade. Used by rollback to restore
-   *  only the backup from the specific upgrade being rolled back — never a stale backup from a
-   *  previous upgrade cycle. */
-  preUpgradeBackupPath?: string;
   /** Running version of the service group at the time of the last upgrade, as reported by
    *  the health endpoint.  Used by saved-state rollback for logging / broadcast events. */
   previousVersion?: string;

@@ -409,8 +409,6 @@ export const rollback = Object.assign(
           assistantPort,
         },
         previousContainerInfo: entry.containerInfo,
-        // Clear the backup path — it belonged to the upgrade we just rolled back
-        preUpgradeBackupPath: undefined,
         previousDbMigrationVersion: undefined,
         previousWorkspaceMigrationId: undefined,
       };
