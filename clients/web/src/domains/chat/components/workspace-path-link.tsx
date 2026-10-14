@@ -1,131 +1,51 @@
 /**
  * Renders a code span that `rehypeWorkspacePath` flagged as a workspace file
- * path, upgrading it to a file link only once the file is confirmed to exist.
+ * path as a link — unconditionally, with no existence check.
  *
- * Existence is the whole point of the component. A path-shaped code span is
- * not evidence of a file: the assistant writes paths it is *about* to create
- * ("I'll save it to `/workspace/drafts/notes.md`"), paths it has since
- * deleted, and hypothetical examples. Linking optimistically would produce a
- * dead affordance in exactly those cases, so the link appears only after a
- * directory listing shows a matching file. Until then — and on any miss or
- * error — the span renders as ordinary inline code.
+ * A path-shaped code span is not evidence of a file: the assistant writes
+ * paths it is *about* to create, paths it has since deleted, and hypothetical
+ * examples. The link used to confirm each path against a `workspace/tree`
+ * listing of its parent directory (polled for a window after mount, to catch
+ * announce-then-write spans) and underlined only confirmed hits. That cost
+ * real traffic on every transcript render — one listing per distinct parent
+ * directory, refetched while unresolved, and 404 storms for paths that could
+ * never resolve (a span naming a directory that does not exist in the
+ * workspace, or a repo-relative path in a multi-repo workspace). Rendering is
+ * static; the check now happens at click time, where a stale path simply
+ * opens the drawer on its not-found state — the same destination an explicit
+ * link to a since-deleted file already hits.
  *
- * The check is a `workspace/tree` listing of the file's parent directory
- * rather than a per-file fetch: `workspace/file` returns the file's full
- * inline text, which is a lot of payload to decide whether to underline
- * something. TanStack Query dedupes by key, so N paths in one directory —
- * the common case in a "here's what I wrote" message — cost one request, and
- * the listing is shared with any other consumer already browsing that
- * directory.
- *
- * An unresolved candidate polls its listing for a short window after mount.
- * A cached listing going stale does not itself refetch, so a path cited
- * before its file is written would otherwise stay plain code until something
- * unrelated (focus, reconnect, remount) happened to refresh the query — the
- * poll closes that gap for the case that produces it, and stops as soon as
- * the file resolves or the window elapses.
+ * The existence question still has a home: the workspace browser's listings
+ * (one recursive query) remain the place a user verifies what is actually
+ * there.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-
 import { MARKDOWN_INLINE_CODE_CLASS } from "@mycadet/design-library";
-import { workspaceTreeQueryOptions } from "@/lib/workspace-tree-query";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
+import { useTranslation } from "@/i18n";
 import {
   toCadetWorkspaceHref,
   workspaceBasenameOf,
-  workspaceDirOf,
 } from "@/utils/workspace-path-links";
-import { useTranslation } from "@/i18n";
-
-/**
- * Workspace contents change while a conversation is open (the assistant is
- * often writing the very file being discussed), so listings are refetched
- * more eagerly than a static browse would need.
- */
-const LISTING_STALE_MS = 15_000;
-
-/**
- * Cadence and lifetime of the unresolved-candidate poll. The window covers the
- * span between the assistant announcing a file and writing it; past that, an
- * unresolved path is one that was never going to resolve (a hypothetical, a
- * deleted file, a directory that does not exist), and polling it forever would
- * put a permanent timer behind every such span in the transcript.
- */
-const RESOLVE_POLL_MS = 10_000;
-const RESOLVE_POLL_WINDOW_MS = 90_000;
 
 export interface WorkspacePathLinkProps {
   /** Workspace-relative path, set by `rehypeWorkspacePath`. */
   path?: string;
   /** The path exactly as the assistant wrote it — what the span displays. */
   raw?: string;
-  /** Active assistant whose workspace the path is resolved against. */
-  assistantId?: string | null;
   /**
-   * Where a click on a resolved path goes, given the file's `cadet://` href
-   * and its basename. The caller points this at the same destination an
-   * explicitly linked file reaches, so the two affordances behave alike.
-   * Without it there is no affordance to offer and the span stays plain code.
+   * Where a click on the path goes, given its `cadet://` href and its
+   * basename. The caller points this at the same destination an explicitly
+   * linked file reaches, so the two affordances behave alike. Without it
+   * there is no affordance to offer and the span stays plain code.
    */
   onOpen?: (href: string, linkText: string) => void;
 }
 
-export function WorkspacePathLink({
-  path,
-  raw,
-  assistantId,
-  onOpen,
-}: WorkspacePathLinkProps) {
+export function WorkspacePathLink({ path, raw, onOpen }: WorkspacePathLinkProps) {
   const { t } = useTranslation("chat");
   const label = raw ?? path ?? "";
-  // Platform-hosted requests carry a `Cadet-Organization-Id` header sourced
-  // from the org store, which hydrates after auth. Firing before then is
-  // rejected, and `retry: false` would leave the path plain until something
-  // unrelated refetched it.
-  const isOrgReady = useIsOrgReady();
-  const enabled = Boolean(path && assistantId && onOpen && isOrgReady);
-  const [pollDeadline] = useState(() => Date.now() + RESOLVE_POLL_WINDOW_MS);
 
-  const { data } = useQuery({
-    ...workspaceTreeQueryOptions({
-      assistantId: assistantId ?? "",
-      path: path ? workspaceDirOf(path) : "",
-    }),
-    enabled,
-    staleTime: LISTING_STALE_MS,
-    // A path the assistant invented names a directory that often doesn't
-    // exist; retrying a 404 three times per span would turn a speculative
-    // match into real traffic.
-    retry: false,
-    // Evaluated against the query's own cached data (rather than `exists`
-    // below) so the timer reads the latest listing without a render in
-    // between. It clears itself once the file resolves or the window lapses;
-    // observers sharing a directory share one timer.
-    refetchInterval: (query) => {
-      if (Date.now() >= pollDeadline) {
-        return false;
-      }
-      const resolved =
-        query.state.data?.entries.some(
-          (entry) => entry.type === "file" && entry.path === path,
-        ) ?? false;
-      return resolved ? false : RESOLVE_POLL_MS;
-    },
-  });
-
-  const exists = useMemo(
-    () =>
-      path != null &&
-      (data?.entries.some(
-        (entry) => entry.type === "file" && entry.path === path,
-      ) ??
-        false),
-    [data, path],
-  );
-
-  if (!exists || !path || !onOpen) {
+  if (!path || !onOpen) {
     return <code className={MARKDOWN_INLINE_CODE_CLASS}>{label}</code>;
   }
 

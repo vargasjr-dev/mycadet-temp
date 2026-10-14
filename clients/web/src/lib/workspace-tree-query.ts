@@ -25,10 +25,10 @@ export interface WorkspaceTreeQueryParams {
 /**
  * Shared React Query options for a workspace directory listing.
  *
- * The workspace browser and chat's file-path links both read directory
- * listings. Routing them through one factory gives them one cache entry per
- * directory when their parameters agree, and — because the key prefix is
- * fixed here — puts every reader behind the browser's post-mutation
+ * The workspace browser (and the intelligence page's directory stats) read
+ * directory listings. Routing them through one factory gives them one cache
+ * entry per directory when their parameters agree, and — because the key
+ * prefix is fixed here — puts every reader behind the browser's post-mutation
  * invalidation, so a file created, renamed, or deleted in the browser is
  * reflected everywhere.
  *

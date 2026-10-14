@@ -506,7 +506,6 @@ export const ChatMarkdownMessage = memo(function ChatMarkdownMessage({
       [WORKSPACE_PATH_TAG]: (props: { path?: string; raw?: string }) => (
         <WorkspacePathLink
           {...props}
-          assistantId={assistantId}
           onOpen={onCadetLinkClick ? handleWorkspacePathOpen : undefined}
         />
       ),
