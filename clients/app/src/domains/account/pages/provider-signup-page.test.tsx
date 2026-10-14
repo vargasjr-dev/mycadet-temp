@@ -44,7 +44,7 @@ mock.module("@web/assistant/cloud-assistants-sync", () => ({
 
 const refreshSession = mock(async () => true);
 
-mock.module("@web/stores/auth-store", () => ({
+mock.module("@app/stores/auth-store", () => ({
   useAuthStore: {
     use: {
       refreshSession: () => refreshSession,

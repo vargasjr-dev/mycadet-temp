@@ -1,6 +1,6 @@
 import { CHECKOUT_LANDING_PATHS } from "@app/domains/account/session-destination-paths";
 
-/** A purchase return requires a platform session even on the otherwise-local usage page. */
+/** A purchase return requires a cloud session even on the otherwise-local usage page. */
 export function isPostCheckoutReturn(destination: string): boolean {
   const qIdx = destination.indexOf("?");
   if (qIdx < 0) return false;

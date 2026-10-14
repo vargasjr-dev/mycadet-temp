@@ -5,7 +5,7 @@ import { useTranslation } from "@app/i18n";
 import { listAssistants } from "@web/assistant/api";
 import { registerLocalCloudSession } from "@app/runtime/cloud-session-host";
 import { setMenuCloudSession } from "@app/runtime/menu";
-import { useAuthStore } from "@web/stores/auth-store";
+import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";

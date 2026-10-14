@@ -10,7 +10,7 @@ import { hardNavigate } from "@app/lib/auth/hard-navigate";
 import {
   useIsAuthenticated,
   useIsSessionInitializing,
-} from "@web/stores/auth-store";
+} from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 
 /**

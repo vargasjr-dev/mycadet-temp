@@ -6,7 +6,7 @@ import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
 import { sanitizeReturnTo } from "@app/utils/return-to";
 import { hardNavigate } from "@app/lib/auth/hard-navigate";
-import { useAuthStore } from "@web/stores/auth-store";
+import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 
 export function LogoutPage() {
