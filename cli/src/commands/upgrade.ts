@@ -1440,11 +1440,11 @@ async function resolveLatestStableTag(): Promise<string> {
   const latestVersion = await fetchLatestStableVersion();
   if (!latestVersion) {
     console.error(
-      "Error: Could not determine the latest stable release from the Cadet Cloud API.",
+      "Error: Could not determine the latest stable release from Cadet Cloud or GitHub Releases.",
     );
     emitCliError(
       "UNKNOWN",
-      "Could not determine the latest stable release from the cloud API",
+      "Could not determine the latest stable release from Cadet Cloud or GitHub Releases",
     );
     process.exit(1);
   }

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { getCloudUrl } from "./cloud-client.js";
 import { dockerhubImages } from "./docker.js";
 import type { ServiceName } from "./docker.js";
@@ -22,12 +24,40 @@ function releasesOptsFor(channel: ReleaseChannel): { channel?: "preview" } {
   return channel === "preview" ? { channel: "preview" } : {};
 }
 
-export interface ReleaseListItem {
-  version: string;
-  is_stable?: boolean;
-  assistant_image_ref?: string | null;
-  gateway_image_ref?: string | null;
-  credential_executor_image_ref?: string | null;
+const ReleaseListItemSchema = z.object({
+  version: z.string().min(1),
+  is_stable: z.boolean().optional(),
+  assistant_image_ref: z.string().nullable().optional(),
+  gateway_image_ref: z.string().nullable().optional(),
+  credential_executor_image_ref: z.string().nullable().optional(),
+});
+
+export type ReleaseListItem = z.infer<typeof ReleaseListItemSchema>;
+
+const STABLE_VERSION = /^(?:v)?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const GitHubReleaseSchema = z.object({
+  tag_name: z.string().regex(STABLE_VERSION),
+  draft: z.literal(false),
+  prerelease: z.literal(false),
+});
+
+async function fetchLatestGitHubStableVersion(): Promise<string | null> {
+  try {
+    const response = await loopbackSafeFetch(
+      "https://api.github.com/repos/vargasjr-dev/mycadet-temp/releases/latest",
+      {
+        headers: { Accept: "application/vnd.github+json" },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const parsed = GitHubReleaseSchema.safeParse(await response.json());
+    return parsed.success ? parsed.data.tag_name.replace(/^v/, "") : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -56,15 +86,21 @@ export async function fetchReleases(opts?: {
       `${cloudUrl}/v1/releases/?${filter}&limit=${RELEASES_FETCH_LIMIT}`,
       { signal: AbortSignal.timeout(10_000) },
     );
-    if (!response.ok) return null;
-    return (await response.json()) as ReleaseListItem[];
+    if (!response.ok) {
+      return null;
+    }
+    const parsed = z
+      .array(ReleaseListItemSchema)
+      .safeParse(await response.json());
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
 }
 
 /**
- * Fetch the latest release version for a channel from the Cadet Cloud API.
+ * Fetch the latest release version from Cadet Cloud, falling back to GitHub
+ * for stable releases when the cloud has no usable result.
  * Returns the version string (e.g. "0.7.0") or null if unavailable.
  * The releases endpoint returns entries ordered newest-first, so the first
  * entry is the latest for the requested channel.
@@ -73,7 +109,14 @@ export async function fetchLatestVersion(
   channel: ReleaseChannel = "stable",
 ): Promise<string | null> {
   const releases = await fetchReleases(releasesOptsFor(channel));
-  return releases?.[0]?.version ?? null;
+  if (channel === "preview") {
+    return releases?.[0]?.version ?? null;
+  }
+  const latest = releases?.find(
+    (release) =>
+      release.is_stable !== false && STABLE_VERSION.test(release.version),
+  );
+  return latest?.version ?? fetchLatestGitHubStableVersion();
 }
 
 /**

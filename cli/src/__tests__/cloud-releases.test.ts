@@ -207,3 +207,83 @@ describe("fetchLatestVersion", () => {
     expect(await fetchLatestVersion("preview")).toBeNull();
   });
 });
+
+describe("stable release fallback", () => {
+  function withGitHubFallback(cloudBody: unknown, cloudStatus = 200) {
+    const fetchMock = mock(async (url: RequestInfo | URL) => {
+      if (String(url).startsWith("https://api.github.com/")) {
+        return Response.json({
+          tag_name: "v0.12.11",
+          draft: false,
+          prerelease: false,
+        });
+      }
+      return Response.json(cloudBody, { status: cloudStatus });
+    });
+    globalThis.fetch = Object.assign(fetchMock, {
+      preconnect: originalFetch.preconnect,
+    });
+    return fetchMock;
+  }
+
+  test.each([
+    [404, { detail: "not found" }],
+    [503, { detail: "unavailable" }],
+    [200, []],
+    [200, { results: [] }],
+    [200, [{ version: "not-a-version" }]],
+    [200, [{ version: "0.13.0-preview.1" }]],
+    [200, [{ version: "0.13.0", is_stable: false }]],
+  ])("falls back for cloud status %s and body %j", async (status, body) => {
+    const fetchMock = withGitHubFallback(body, status);
+    expect(await fetchLatestVersion()).toBe("0.12.11");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toBe(
+      "https://api.github.com/repos/vargasjr-dev/mycadet-temp/releases/latest",
+    );
+  });
+
+  test("falls back when the cloud request throws", async () => {
+    const fetchMock = withGitHubFallback([]);
+    globalThis.fetch = Object.assign(
+      mock(async (url: RequestInfo | URL) => {
+        if (!String(url).startsWith("https://api.github.com/")) {
+          throw new TypeError("fetch failed");
+        }
+        return fetchMock(url);
+      }),
+      { preconnect: originalFetch.preconnect },
+    );
+    expect(await fetchLatestVersion()).toBe("0.12.11");
+  });
+
+  test("does not contact GitHub when cloud discovery succeeds", async () => {
+    const fetchMock = withGitHubFallback([RELEASE]);
+    expect(await fetchLatestVersion()).toBe(RELEASE.version);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not substitute stable for an unavailable preview channel", async () => {
+    const fetchMock = withGitHubFallback([], 503);
+    expect(await fetchLatestVersion("preview")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    { tag_name: "v0.13.0", draft: true, prerelease: false },
+    { tag_name: "v0.13.0", draft: false, prerelease: true },
+    { tag_name: "v0.13.0-preview.1", draft: false, prerelease: false },
+    { tag_name: "not-a-version", draft: false, prerelease: false },
+    { tag_name: "v0.13.0" },
+  ])("rejects invalid GitHub stable release %j", async (body) => {
+    mockFetchJson(body);
+    expect(await fetchLatestVersion()).toBeNull();
+  });
+
+  test("returns null when both services fail", async () => {
+    mockFetchError();
+    expect(await fetchLatestVersion()).toBeNull();
+    mockFetchJson({ message: "rate limited" }, 403);
+    expect(await fetchLatestVersion()).toBeNull();
+  });
+});
