@@ -76,6 +76,12 @@ Browse to **http://localhost:3000** and log in normally.
 > frontend-only mode — the core UI and auth flow work without the
 > daemon.
 
+A CLI-served self-hosted browser (`remote: custom` or `docker`) restores its
+paired gateway session through `/v1/guardian/refresh` and does not probe
+Allauth during startup or resume. Allauth belongs to the cloud account
+system: explicit account requests use injected `cloudUrl`, or the cloud
+`hubUrl` origin when no backend URL is injected, never the gateway origin.
+
 ### How the proxy works
 
 The client makes relative API requests (e.g. `fetch("/v1/feed")`).

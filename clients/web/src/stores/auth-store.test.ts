@@ -535,6 +535,30 @@ afterEach(() => {
 });
 
 describe("auth store onboarding flag reconciliation", () => {
+  for (const refreshSucceeds of [true, false]) {
+    for (const localBuild of [true, false]) {
+      test(`served browser init and resume skip cloud auth (refresh=${refreshSucceeds}, local build=${localBuild})`, async () => {
+        mockIsServedGatewayRuntime = true;
+        mockIsLocalClient = localBuild;
+        refreshRemoteGatewaySessionMock.mockImplementation(
+          async () => refreshSucceeds,
+        );
+        await useAuthStore.getState().initSession();
+        await useAuthStore.getState().refreshSession();
+        expect(getSessionCallCount).toBe(0);
+        expect(
+          primeLocalGatewayConnectionWithStartupRetryMock,
+        ).not.toHaveBeenCalled();
+        expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
+        expect(useAuthStore.getState().cloudSession).toBe("absent");
+        expect(useAuthStore.getState().sessionStatus).toBe(
+          refreshSucceeds ? "authenticated" : "unauthenticated",
+        );
+        refreshRemoteGatewaySessionMock.mockImplementation(async () => false);
+      });
+    }
+  }
+
   test("initSession treats remote-gateway mode as an authenticated local session", async () => {
     refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
 

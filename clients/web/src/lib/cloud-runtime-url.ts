@@ -1,12 +1,14 @@
-/**
- * The cloud origin this app talks to at runtime: the shell-injected
- * `__CADET_CONFIG__.cloudUrl` (Electron preload, CLI) when present,
- * else the page origin (the cloud SPA is served from the cloud host).
- *
- * Lives in its own leaf module — not `local-mode` — so transport-level
- * consumers (e.g. the live-voice tunnel host derivation) don't pull the whole
- * local-mode graph into theirs.
- */
+import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
+import { readInjectedConfig } from "@/lib/injected-config";
+
+/** Resolve cloud traffic independently of a self-hosted gateway's origin. */
 export function getPlatformRuntimeUrl(): string {
-  return window.__CADET_CONFIG__?.cloudUrl || window.location.origin;
+  const config = readInjectedConfig();
+  if (config.cloudUrl) {
+    return config.cloudUrl;
+  }
+  if (config.remote === "docker" || config.remote === "custom") {
+    return new URL(config.hubUrl ?? cloudAssistantHubUrl("production")).origin;
+  }
+  return window.location.origin;
 }

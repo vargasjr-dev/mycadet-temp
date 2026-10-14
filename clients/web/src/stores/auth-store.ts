@@ -793,6 +793,12 @@ function probeCloudSession(
   set: AuthSet,
   options: { setUserOnSuccess?: boolean; clearOnFailure?: boolean } = {},
 ): void {
+  if (isServedGatewayRuntime()) {
+    ++latestPlatformProbe;
+    platformProbeSettled = Promise.resolve();
+    set({ cloudSession: "absent" });
+    return;
+  }
   const probeId = ++latestPlatformProbe;
   const isStale = (): boolean => probeId !== latestPlatformProbe;
   platformProbeSettled = getSession()
@@ -1009,24 +1015,26 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       // the cloud login flow) — keep probing for it; it settles async. A
       // served-gateway browser shares no platform cookie space, so it never
       // probes.
-      if (isLocalClient()) {
+      if (isLocalClient() && !isServedGatewayRuntime()) {
         probeCloudSessionIfReachable(set);
       }
       return;
     }
 
+    if (isServedGatewayRuntime()) {
+      // A served-gateway browser's whole session restore is the boot ping
+      // above. The local prime (daemon guardian mint + the startup
+      // ride-out budget) is desktop machinery: on a remote browser it
+      // burns its 90s retry budget against the edge before failing,
+      // stalling the route guard on /assistant/ the whole time. Settle
+      // unauthenticated immediately so the guard can route an unpaired
+      // device to the pair page.
+      await endSession(set, { keepCloudSession: true });
+      set({ cloudSession: "absent" });
+      return;
+    }
+
     if (isGatewayAuthEnabled()) {
-      if (isServedGatewayRuntime()) {
-        // A served-gateway browser's whole session restore is the boot ping
-        // above. The local prime (daemon guardian mint + the startup
-        // ride-out budget) is desktop machinery: on a remote browser it
-        // burns its 90s retry budget against the edge before failing,
-        // stalling the route guard on /assistant/ the whole time. Settle
-        // unauthenticated immediately so the guard can route an unpaired
-        // device to the pair page.
-        await endSession(set, { keepCloudSession: true });
-        return;
-      }
       try {
         // Ride out the gateway's startup window: on reboot the gateway (a
         // Login Item) restarts concurrently with the app. The mint fails to
@@ -1283,10 +1291,16 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         return abandon();
       }
       set({ ...authenticatedLocalUser(), cloudSession: "absent" });
-      if (isLocalClient()) {
+      if (isLocalClient() && !isServedGatewayRuntime()) {
         probeCloudSessionIfReachable(set, { clearOnFailure: true });
       }
       return true;
+    }
+
+    if (isServedGatewayRuntime()) {
+      await endSession(set);
+      set({ cloudSession: "absent" });
+      return false;
     }
 
     if (isGatewayAuthMode()) {
