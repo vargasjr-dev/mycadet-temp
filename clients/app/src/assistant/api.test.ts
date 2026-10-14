@@ -1,5 +1,7 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import { listAssistants } from "./api";
+import { hatchAssistant, listAssistants } from "./api";
+import { createCloudAssistant } from "./create-cloud-assistant";
+import { SELECTED_ASSISTANT_STORAGE_KEY } from "./selected-assistant-storage";
 const fetchSpy = spyOn(globalThis, "fetch");
 const originalBridge = Object.getOwnPropertyDescriptor(window, "cadet");
 const selectionKey = "cadet_active_organization_id";
@@ -15,10 +17,14 @@ function organizations(ids = ["org-1"], next: string | null = null) {
 }
 beforeEach(() => {
   fetchSpy.mockReset();
+  document.cookie = "csrftoken=csrf-example; path=/";
+  localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
   Reflect.deleteProperty(window, "cadet");
   sessionStorage.removeItem(selectionKey);
 });
 afterEach(() => {
+  document.cookie = "csrftoken=; Max-Age=0; path=/";
+  localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
   sessionStorage.removeItem(selectionKey);
   if (originalBridge) {
     Object.defineProperty(window, "cadet", originalBridge);
@@ -238,4 +244,106 @@ test("malformed organization membership cannot stamp assistant requests", async 
   fetchSpy.mockResolvedValueOnce(page([{}]));
   expect(await listAssistants()).toMatchObject({ ok: false, status: 200 });
   expect(fetchSpy).toHaveBeenCalledTimes(1);
+});
+
+test("browser creation uses create semantics, CSRF, and the validated organization", async () => {
+  sessionStorage.setItem(selectionKey, "org-2");
+  organizations(["org-1", "org-2"]);
+  fetchSpy.mockResolvedValueOnce(
+    new Response(JSON.stringify({ id: "assistant-new", name: "Example" }), {
+      status: 201,
+    }),
+  );
+  expect(await createCloudAssistant("Example")).toEqual({
+    ok: true,
+    id: "assistant-new",
+  });
+  const [path, init] = fetchSpy.mock.calls[1]!;
+  expect(path).toBe("/v1/assistants/hatch/?mode=create");
+  expect(init?.method).toBe("POST");
+  expect(init?.body).toBe(JSON.stringify({ name: "Example" }));
+  const headers = new Headers(init?.headers);
+  expect(headers.get("X-CSRFToken")).toBe("csrf-example");
+  expect(headers.get("Cadet-Organization-Id")).toBe("org-2");
+  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBeNull();
+  expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
+    "assistant-new",
+  );
+});
+
+test("native creation sends renderer origin and current session token without browser CSRF", async () => {
+  Object.defineProperty(window, "cadet", {
+    configurable: true,
+    value: {
+      platform: "electron",
+      auth: { getSessionToken: () => "native-session-token" },
+    },
+  });
+  organizations();
+  fetchSpy.mockResolvedValueOnce(
+    new Response(JSON.stringify({ id: "assistant-new" })),
+  );
+  expect((await hatchAssistant()).ok).toBe(true);
+  const init = fetchSpy.mock.calls[1]?.[1];
+  expect(init?.body).toBe("{}");
+  const headers = new Headers(init?.headers);
+  expect(headers.get("X-Session-Token")).toBe("native-session-token");
+  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBe(
+    `${window.location.protocol}//${window.location.host}`,
+  );
+  expect(headers.get("X-CSRFToken")).toBeNull();
+});
+
+test("creation failures and malformed success responses preserve the existing selection", async () => {
+  localStorage.setItem(SELECTED_ASSISTANT_STORAGE_KEY, "assistant-old");
+  organizations();
+  fetchSpy.mockResolvedValueOnce(
+    new Response(JSON.stringify({ detail: "Assistant limit reached." }), {
+      status: 403,
+    }),
+  );
+  expect(await createCloudAssistant()).toEqual({
+    ok: false,
+    error: "Assistant limit reached.",
+  });
+  organizations();
+  fetchSpy.mockResolvedValueOnce(
+    new Response(JSON.stringify({ id: "" }), { status: 201 }),
+  );
+  expect(await createCloudAssistant()).toEqual({
+    ok: false,
+    error: "Invalid cloud response.",
+  });
+  expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
+    "assistant-old",
+  );
+});
+
+test("creation announces selection in memory when storage rejects the write", async () => {
+  const events: unknown[] = [];
+  const onChange = (event: Event) => {
+    if (event instanceof CustomEvent) {
+      events.push(event.detail);
+    }
+  };
+  window.addEventListener("cadet:pref-changed", onChange);
+  const storageSpy = spyOn(localStorage, "setItem").mockImplementation(() => {
+    throw new Error("Storage unavailable");
+  });
+  try {
+    organizations();
+    fetchSpy.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "assistant-new" })),
+    );
+    expect(await createCloudAssistant()).toEqual({
+      ok: true,
+      id: "assistant-new",
+    });
+    expect(events).toEqual([
+      { key: SELECTED_ASSISTANT_STORAGE_KEY, value: "assistant-new" },
+    ]);
+  } finally {
+    storageSpy.mockRestore();
+    window.removeEventListener("cadet:pref-changed", onChange);
+  }
 });

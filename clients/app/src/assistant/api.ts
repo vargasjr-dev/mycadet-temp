@@ -1,7 +1,8 @@
-import { getCloud, type CloudResult } from "@app/lib/cloud/request";
+import { getCloud, postCloud, type CloudResult } from "@app/lib/cloud/request";
 import { resolveOrganization } from "@app/lib/cloud/organization";
 import {
   AssistantPageSchema,
+  AssistantSchema,
   type Assistant,
 } from "@app/assistant/assistant-schema";
 
@@ -38,4 +39,20 @@ export async function listAssistants(
     status: 200,
     error: { detail: "Assistant list exceeded the page cap." },
   };
+}
+
+/** Create an additional assistant rather than ensuring an existing one. */
+export async function hatchAssistant(
+  name?: string,
+): Promise<CloudResult<Assistant>> {
+  const organization = await resolveOrganization();
+  if (!organization.ok) {
+    return organization;
+  }
+  return postCloud(
+    "/v1/assistants/hatch/?mode=create",
+    AssistantSchema,
+    name ? { name } : {},
+    { organizationId: organization.data },
+  );
 }

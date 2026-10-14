@@ -5,7 +5,7 @@ import "@app/utils/run-storage-migrations";
 import { useState } from "react";
 import { createBrowserRouter, Outlet } from "react-router";
 
-import { CreateAssistantDialog } from "@web/components/create-assistant-dialog";
+import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { start } from "@web/boot";

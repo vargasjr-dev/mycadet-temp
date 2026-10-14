@@ -1,3 +1,4 @@
+import { addCloudMutationHeaders } from "@app/lib/cloud/mutation-headers";
 import { z } from "zod";
 import { currentLocale } from "@app/i18n";
 import { getElectronSessionToken } from "@app/runtime/session-token";
@@ -13,6 +14,24 @@ export async function getCloud<T>(
   schema: z.ZodType<T>,
   options: { organizationId?: string; signal?: AbortSignal } = {},
 ): Promise<CloudResult<T>> {
+  return requestCloud(path, schema, options);
+}
+
+export async function postCloud<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  body: unknown,
+  options: { organizationId?: string; signal?: AbortSignal } = {},
+): Promise<CloudResult<T>> {
+  return requestCloud(path, schema, options, body);
+}
+
+async function requestCloud<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: { organizationId?: string; signal?: AbortSignal },
+  body?: unknown,
+): Promise<CloudResult<T>> {
   try {
     const headers = new Headers({
       Accept: "application/json",
@@ -25,8 +44,12 @@ export async function getCloud<T>(
     if (options.organizationId) {
       headers.set("Cadet-Organization-Id", options.organizationId);
     }
+    if (body !== undefined) {
+      await addCloudMutationHeaders(headers);
+    }
     const response = await fetch(path, {
-      method: "GET",
+      method: body === undefined ? "GET" : "POST",
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       headers,
       credentials: "same-origin",
       signal: options.signal,

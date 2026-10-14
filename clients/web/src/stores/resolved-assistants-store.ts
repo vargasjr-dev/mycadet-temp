@@ -24,6 +24,7 @@
  */
 
 import { create } from "zustand";
+import { z } from "zod";
 
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
@@ -447,10 +448,24 @@ if (isLocalClient()) {
   });
 }
 
-// Cross-tab sync: pick up selection changes from other tabs. The native
-// `storage` event only fires in *other* tabs; same-tab writes update the slice
-// directly via `setSelectedAssistant`. `event.key === null` covers `clear()`.
+const SelectionChangeSchema = z.object({
+  key: z.literal(SELECTED_ASSISTANT_STORAGE_KEY),
+  value: z.string().min(1).nullable(),
+});
+
+// Account UI and the assistant runtime share selection through settings events.
 if (typeof window !== "undefined") {
+  window.addEventListener("cadet:pref-changed", (event) => {
+    if (!(event instanceof CustomEvent)) {
+      return;
+    }
+    const parsed = SelectionChangeSchema.safeParse(event.detail);
+    if (parsed.success) {
+      useResolvedAssistantsStoreBase.setState({
+        selectedAssistantId: parsed.data.value,
+      });
+    }
+  });
   window.addEventListener("storage", (event) => {
     if (event.key === null || event.key === SELECTED_ASSISTANT_STORAGE_KEY) {
       useResolvedAssistantsStoreBase.setState({

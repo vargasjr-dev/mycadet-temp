@@ -623,3 +623,38 @@ describe("selection reconcile on hydration", () => {
     );
   });
 });
+
+describe("account selection notifications", () => {
+  it("updates the runtime selection directly without relying on storage", () => {
+    window.dispatchEvent(
+      new CustomEvent("cadet:pref-changed", {
+        detail: { key: SELECTED_ASSISTANT_STORAGE_KEY, value: "assistant-new" },
+      }),
+    );
+    expect(useResolvedAssistantsStore.getState().selectedAssistantId).toBe(
+      "assistant-new",
+    );
+    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
+    window.dispatchEvent(
+      new CustomEvent("cadet:pref-changed", {
+        detail: { key: SELECTED_ASSISTANT_STORAGE_KEY, value: null },
+      }),
+    );
+    expect(
+      useResolvedAssistantsStore.getState().selectedAssistantId,
+    ).toBeNull();
+  });
+  it("ignores other preferences and malformed payloads", () => {
+    for (const detail of [
+      null,
+      { key: "unrelated", value: "assistant-new" },
+      { key: SELECTED_ASSISTANT_STORAGE_KEY, value: 42 },
+      { key: SELECTED_ASSISTANT_STORAGE_KEY, value: "" },
+    ]) {
+      window.dispatchEvent(new CustomEvent("cadet:pref-changed", { detail }));
+    }
+    expect(
+      useResolvedAssistantsStore.getState().selectedAssistantId,
+    ).toBeNull();
+  });
+});
