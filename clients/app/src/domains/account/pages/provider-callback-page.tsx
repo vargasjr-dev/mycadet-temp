@@ -7,12 +7,12 @@ import { readAuthCallbackIntent } from "@app/domains/account/provider-callback";
 
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
+import { listAssistants } from "@app/assistant/api";
+import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { getSession } from "@app/lib/auth/session-client";
-import {
-  completeBrowserAuthentication,
-  navigatePostAuthDestination,
-} from "@app/domains/account/browser-auth-completion";
+import { resolvePostAuthDestination } from "@web/domains/account/login-flow";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
+import { isLocalClient } from "@app/lib/runtime-mode";
 import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -62,14 +62,33 @@ export function ProviderCallbackPage() {
 
         switch (outcome.kind) {
           case "authenticated": {
-            const post = await completeBrowserAuthentication({
-              refreshSession,
-              authIntent,
-              returnTo,
-              fallback: routes.assistant,
-              preferLocalAssistant: true,
-            });
-            navigatePostAuthDestination(post, navigate, true);
+            await refreshSession();
+            // Wait for the assistants list so post-auth can skip privacy and
+            // research when the assistant is already onboarded.
+            await refreshCloudAssistantsIfStale();
+
+            if (isLocalClient()) {
+              try {
+                const assistants = await listAssistants();
+                if (assistants.ok && assistants.data.length > 0) {
+                  if (!returnTo) {
+                    navigate(routes.assistant, { replace: true });
+                    break;
+                  }
+                }
+              } catch {
+                // Fall through to normal destination
+              }
+            }
+
+            const fallback = routes.assistant;
+            const { destination, requiresFullPageNavigation } =
+              resolvePostAuthDestination({ returnTo, fallback, authIntent });
+            if (requiresFullPageNavigation) {
+              window.location.href = destination;
+            } else {
+              navigate(destination, { replace: true });
+            }
             break;
           }
           case "provider_signup": {

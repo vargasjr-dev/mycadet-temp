@@ -7,6 +7,7 @@ import {
   AccountInput,
 } from "@app/components/account/account-form";
 import { useTranslation } from "@app/i18n";
+import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { AccountShell } from "@app/components/account/account-shell";
 import { SignupShell } from "@app/domains/account/components/signup-shell";
 import {
@@ -16,9 +17,9 @@ import {
 } from "@app/lib/auth/provider-signup-client";
 import { setSignupOnboardingFirstName } from "@app/lib/auth/signup-onboarding-handoff";
 import {
-  completeBrowserAuthentication,
-  navigatePostAuthDestination,
-} from "@app/domains/account/browser-auth-completion";
+  resolvePostAuthDestination,
+  resolvePostLoginDestination,
+} from "@web/domains/account/login-flow";
 import { useAuthStore } from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -83,17 +84,38 @@ export function ProviderSignupPage() {
   const completeSignup = async () => {
     const result = await submitProviderSignup({ email, username });
 
-    if (!result.ok && !isConflict(result)) {
+    if (!result.ok) {
+      if (isConflict(result)) {
+        await refreshSession();
+        await refreshCloudAssistantsIfStale();
+        const conflict = resolvePostLoginDestination(
+          returnTo,
+          routes.account.root,
+        );
+        if (conflict.requiresFullPageNavigation) {
+          window.location.href = conflict.destination;
+        } else {
+          navigate(conflict.destination);
+        }
+        return;
+      }
+
       setError(result.errors[0]?.message ?? "Failed to complete signup.");
       return;
     }
-    const post = await completeBrowserAuthentication({
-      refreshSession,
+
+    await refreshSession();
+    await refreshCloudAssistantsIfStale();
+    const post = resolvePostAuthDestination({
       returnTo,
       fallback: routes.account.root,
-      authIntent: result.ok ? "signup" : "login",
+      authIntent: "signup",
     });
-    navigatePostAuthDestination(post, navigate);
+    if (post.requiresFullPageNavigation) {
+      window.location.href = post.destination;
+    } else {
+      navigate(post.destination);
+    }
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
