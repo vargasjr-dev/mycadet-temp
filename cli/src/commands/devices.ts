@@ -7,14 +7,11 @@
  * which self-guard loopback + reject any browser/WebView Origin. The gateway
  * only ever stores the HASHED device id, so list returns and revoke accepts the
  * same `hashedDeviceId` (the raw device id is never persisted anywhere).
- *
- * This is the counterpart to `cadet unpair`: `unpair` forgets a connection on
- * the *paired* machine (client side); `devices` revokes a device from the *host*
- * that runs the assistant (server side).
  */
 
 import { z } from "zod";
 import { createHash } from "node:crypto";
+import { hostname } from "node:os";
 
 import type { DeviceRecord } from "@mycadet/local-mode";
 
@@ -24,7 +21,11 @@ import {
   getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config";
-import { computeDeviceId } from "../lib/guardian-token.js";
+import {
+  type GuardianTokenData,
+  computeDeviceId,
+  loadGuardianToken,
+} from "../lib/guardian-token.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   CLI_INTERFACE_ID,
@@ -45,7 +46,7 @@ const dockerGatewayResponseSchema = z.object({
 });
 
 function printUsage(): void {
-  console.log(`cadet devices [beta] - List and revoke devices paired to a local assistant
+  console.log(`cadet devices - List and revoke devices paired to a local assistant
 
 USAGE:
     cadet devices [name]
@@ -60,8 +61,7 @@ OPTIONS:
     --json             Print machine-readable JSON on stdout (revoke requires --yes)
 
 Lists the devices paired to a local (host-side) assistant, or revokes one by its
-hashed id. Runs on the machine that hosts the assistant — paired connections
-imported from another machine are managed with 'cadet unpair' instead.
+hashed id. Runs on the machine that hosts the assistant.
 
 EXAMPLES:
     cadet devices
@@ -86,7 +86,6 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
     console.error(
       "Run `cadet devices` on the host that runs the assistant to manage its devices.",
     );
-    console.error("To forget this connection here, use `cadet unpair`.");
     process.exit(1);
   }
 
@@ -136,12 +135,38 @@ async function deviceRequest(
 /**
  * The hashed device id the gateway stores for THIS machine's own guardian
  * credential (`leaseGuardianToken` registers it device-bound as
- * sha256(deviceId)). It shows up in `/v1/devices` next to remotely paired
- * devices; revoking it locks this host out of its own assistant until
- * guardian repair.
+ * sha256(deviceId)). The gateway's row hashes the deviceId the token was
+ * leased with, so prefer the stored token's deviceId and fall back to the
+ * current machine id for tokens persisted before the field was stored. It
+ * shows up in `/v1/devices` next to remotely paired devices; revoking it
+ * locks this host out of its own assistant until guardian repair.
  */
-function currentHostHashedDeviceId(): string {
-  return createHash("sha256").update(computeDeviceId()).digest("hex");
+function currentHostHashedDeviceId(token?: GuardianTokenData | null): string {
+  const deviceId = token?.deviceId || computeDeviceId();
+  return createHash("sha256").update(deviceId).digest("hex");
+}
+
+/**
+ * The local guardian token.json IS a paired device even when the gateway has
+ * no record of it (fresh gateway DB, a lease that predates device tracking).
+ * Rebuild the row it would have — same identity the gateway would have
+ * stored — so it always shows up in `cadet devices` and stays revocable.
+ */
+function localHostDeviceRow(
+  token: GuardianTokenData,
+  hashedDeviceId: string,
+): DeviceRecord {
+  const leasedAtMs = Date.parse(token.leasedAt);
+  return {
+    hashedDeviceId,
+    platform: "cli",
+    issuedAt: Number.isFinite(leasedAtMs) ? leasedAtMs : null,
+    expiresAt: null,
+    lastUsedAt: null,
+    pairingUserAgent: null,
+    clientReportedName: hostname(),
+    isCurrentHost: true,
+  };
 }
 
 /** Format an epoch-ms timestamp as ISO, or a placeholder when absent. */
@@ -180,12 +205,20 @@ async function listDevices(
   }
 
   const body = (await response.json()) as { devices?: DeviceRecord[] };
-  const hostHash = currentHostHashedDeviceId();
+  const token = loadGuardianToken(entry.assistantId);
+  const hostHash = currentHostHashedDeviceId(token);
   const devices = (body.devices ?? []).map((device) =>
     device.hashedDeviceId === hostHash
       ? { ...device, isCurrentHost: true as const }
       : device,
   );
+
+  // The local guardian token.json IS a paired device even when the gateway
+  // has no record of it (fresh gateway DB, lease predating device tracking):
+  // synthesize the row it would have so it stays visible and revocable here.
+  if (token && !devices.some((device) => device.hashedDeviceId === hostHash)) {
+    devices.push(localHostDeviceRow(token, hostHash));
+  }
 
   if (jsonOutput) {
     console.log(JSON.stringify({ devices }));
@@ -250,7 +283,8 @@ async function revokeDevice(
   // Warn (don't block; recoverable via guardian repair) when the target is
   // this machine's own host credential. --json is app-driven; the UI disables
   // the host row, so the warning stays out of automation transcripts.
-  if (!jsonOutput && hashedDeviceId === currentHostHashedDeviceId()) {
+  const localToken = loadGuardianToken(entry.assistantId);
+  if (!jsonOutput && hashedDeviceId === currentHostHashedDeviceId(localToken)) {
     console.error(
       "Warning: this is this machine's own host credential. Revoking it locks this host out of the assistant until guardian repair.",
     );
@@ -350,5 +384,5 @@ export const devices = Object.assign(
     const base = resolveLoopbackBase(entry);
     await listDevices(entry, base, jsonOutput);
   },
-  { description: "List or revoke devices paired to a local assistant [beta]" },
+  { description: "List or revoke devices paired to a local assistant" },
 );

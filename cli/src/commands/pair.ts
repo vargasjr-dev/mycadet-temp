@@ -90,7 +90,7 @@ const RETIRED_FLAGS = new Map<string, string>([
 ]);
 
 function printUsage(): void {
-  console.log(`cadet pair [beta] - Print a pairing link and QR code for another device
+  console.log(`cadet pair - Print a pairing link and QR code for another device
 
 USAGE:
     cadet pair [assistant] [options]
@@ -608,6 +608,6 @@ export const pair = Object.assign(
   console.log("");
   console.log(`Expires: ${challenge.expiresAt}`);
 },
-  { description: "Print a pairing link and QR code for another device [beta]" },
+  { description: "Print a pairing link and QR code for another device" },
 );
 

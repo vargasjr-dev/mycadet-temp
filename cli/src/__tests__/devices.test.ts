@@ -420,7 +420,7 @@ describe("cadet devices", () => {
     expect(fetchCalls).toHaveLength(0);
   });
 
-  test("host-gates a paired connection (points to the host / unpair)", async () => {
+  test("host-gates a paired connection (points to the host)", async () => {
     saveAssistantEntry({
       assistantId: "paired-box",
       name: "Paired Box",
@@ -433,7 +433,7 @@ describe("cadet devices", () => {
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("cadet unpair");
+    expect(errors).toContain("cadet devices");
     expect(fetchCalls).toHaveLength(0);
   });
 

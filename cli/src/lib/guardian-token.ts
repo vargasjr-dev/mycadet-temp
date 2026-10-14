@@ -7,7 +7,6 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
-  rmdirSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -77,27 +76,6 @@ function getGuardianTokenPath(assistantId: string): string {
   // getCurrentEnvironment())`; the parity test in guardian-token.test.ts guards
   // against drift.
   return guardianTokenPath(resolveConfigDir(process.env), assistantId);
-}
-
-/**
- * Best-effort removal of an assistant's stored guardian token (used by
- * `cadet unpair` to forget a paired connection). Never throws if the token
- * file or its per-assistant directory is already absent.
- */
-export function deleteGuardianToken(assistantId: string): void {
-  const tokenPath = getGuardianTokenPath(assistantId);
-  try {
-    unlinkSync(tokenPath);
-  } catch {
-    /* already gone */
-  }
-  // Clean up the now-empty per-assistant directory; rmdir throws if it still
-  // holds other files, in which case we leave it.
-  try {
-    rmdirSync(dirname(tokenPath));
-  } catch {
-    /* not empty or absent */
-  }
 }
 
 function getPersistedDeviceIdPath(): string {
@@ -454,7 +432,7 @@ export async function refreshGuardianTokenResult(
     return {
       ok: false,
       status: 401,
-      error: "Guardian token expired. Re-run `cadet hatch` or `cadet wake`.",
+      error: "Guardian refresh token expired",
     };
   }
 

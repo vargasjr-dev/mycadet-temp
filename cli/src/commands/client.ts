@@ -831,9 +831,9 @@ async function handleLocalEndpoints(
   }
 
   // Pairing: the three-step device-code exchange that registers an assistant
-  // paired on another machine (guardian token + paired lockfile entry), the
-  // write counterpart of unpair. The exchange runs here rather than in the
-  // browser, so the device code and the credentials it buys never reach it.
+  // paired on another machine (guardian token + paired lockfile entry). The
+  // exchange runs here rather than in the browser, so the device code and the
+  // credentials it buys never reach it.
   if (
     PAIRING_START_PATTERN.test(pathname) ||
     PAIRING_POLL_PATTERN.test(pathname) ||

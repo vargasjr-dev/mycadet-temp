@@ -38,7 +38,6 @@ import { teleport } from "./commands/teleport";
 import { terminal } from "./commands/terminal";
 import { tunnel } from "./commands/tunnel";
 import { uninstall } from "./commands/uninstall";
-import { unpair } from "./commands/unpair";
 import { upgrade } from "./commands/upgrade";
 import { use } from "./commands/use";
 import { voice } from "./commands/voice";
@@ -78,7 +77,6 @@ const commands = {
   terminal,
   tunnel,
   uninstall,
-  unpair,
   upgrade,
   use,
   voice,

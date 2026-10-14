@@ -102,13 +102,13 @@ describe("paired lifecycle guards", () => {
     expect(errors).not.toContain("only works with local and docker");
   });
 
-  test("retire refuses a paired entry and points to unpair", async () => {
+  test("retire refuses a paired entry and points to the host", async () => {
     process.argv = ["bun", "cadet", "retire", "px", "--yes"];
     const { exited, errors } = await runGuarded(retire);
 
     expect(exited).toBe(true);
     expect(errors).toContain("paired from another machine");
-    expect(errors).toContain("cadet unpair");
+    expect(errors).toContain("cadet devices");
     // It must NOT fall through to the generic "Unknown cloud type" path.
     expect(errors).not.toContain("Unknown cloud type");
   });

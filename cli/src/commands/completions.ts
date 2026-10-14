@@ -16,7 +16,6 @@ const ASSISTANT_NAME_COMMANDS = new Set([
   "teleport",
   "terminal",
   "tunnel",
-  "unpair",
   "upgrade",
   "use",
   "wake",

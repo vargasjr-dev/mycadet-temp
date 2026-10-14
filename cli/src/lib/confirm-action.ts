@@ -1,6 +1,6 @@
 /**
- * Shared interactive confirmation for destructive CLI commands (retire, unpair,
- * …). Per cli/AGENTS.md, a command that removes assistant state must print the
+ * Shared interactive confirmation for destructive CLI commands (retire,
+ * devices revoke, …). Per cli/AGENTS.md, a command that removes assistant state must print the
  * resolved identity and require confirmation, with a `--yes` bypass for
  * automation.
  */
