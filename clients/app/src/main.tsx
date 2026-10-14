@@ -10,7 +10,8 @@ import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { start } from "@web/boot";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
-import { getRouterBasename, routeTree } from "@web/routes";
+import { remoteGatewayPublicPathPrefix } from "@web/lib/auth/remote-gateway-session";
+import { routeTree } from "@web/routes";
 
 import { initI18n } from "@app/i18n";
 
@@ -51,7 +52,10 @@ const router = createBrowserRouter(
       children: [accountRoute, logoutRoute, ...routeTree],
     },
   ],
-  { basename: getRouterBasename(), future: { v8_middleware: true } },
+  {
+    basename: remoteGatewayPublicPathPrefix() || undefined,
+    future: { v8_middleware: true },
+  },
 );
 
 await initI18n();

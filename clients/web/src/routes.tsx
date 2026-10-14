@@ -86,17 +86,6 @@ function ChatLayoutRoute() {
   );
 }
 
-export function getRouterBasename(): string | undefined {
-  // A served prefix is a topology fact — read it from where the bundle was
-  // actually loaded, never from the auth scheme. Cloud-hosted bundles serve
-  // under a versioned artifact path (`/web/<version>/assistant/…`) on both
-  // the gateway and the platform host; without the prefix the router matches
-  // the full iframe path, finds no `/web` route, and lands in the not-found
-  // catch-all. Root-served bundles (local, electron) match at index 0 and
-  // keep no basename.
-  return remoteGatewayPublicPathPrefix() || undefined;
-}
-
 // Route tree — no basename when served at the root; a served prefix (the
 // remote-gateway's public path, the cloud artifact's versioned path) becomes
 // the router basename so URLs such as `/assistant-123/assistant/pair` or
@@ -1126,6 +1115,13 @@ export const routeTree = [
 ];
 
 export const router = createBrowserRouter(routeTree as never, {
-  basename: getRouterBasename(),
+  // A served prefix is a topology fact — read it from where the bundle was
+  // actually loaded, never from the auth scheme. Cloud-hosted bundles serve
+  // under a versioned artifact path (`/web/<version>/assistant/…`) on both
+  // the gateway and the platform host; without the prefix the router matches
+  // the full iframe path, finds no `/web` route, and lands in the not-found
+  // catch-all. Root-served bundles (local, electron) match at index 0 and
+  // keep no basename.
+  basename: remoteGatewayPublicPathPrefix() || undefined,
   future: { v8_middleware: true },
 });

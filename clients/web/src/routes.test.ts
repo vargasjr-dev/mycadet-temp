@@ -1,3 +1,4 @@
+import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 import { matchRoutes } from "react-router";
 
@@ -17,7 +18,7 @@ console.warn = (...args: Parameters<typeof console.warn>) => {
   originalWarn(...args);
 };
 
-const { getRouterBasename, routeTree } = await import("@/routes");
+const { routeTree } = await import("@/routes");
 const { authMiddleware } = await import("@/lib/auth/auth-middleware");
 const { onboardingCompletedMiddleware } =
   await import("@/lib/onboarding-middleware");
@@ -139,7 +140,7 @@ describe("remote web pairing route", () => {
       "/assistant-123/assistant/pair?deviceCode=abc",
     );
 
-    expect(getRouterBasename()).toBe("/assistant-123");
+    expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
     expect(
       hasRouteMiddleware(
         "/assistant-123/assistant/pair?deviceCode=abc",
@@ -158,7 +159,7 @@ describe("remote web pairing route", () => {
     window.__CADET_CONFIG__ = { remote: "cloud" };
     window.history.pushState(null, "", "/web/2026.10.14-1/assistant/");
 
-    expect(getRouterBasename()).toBe("/web/2026.10.14-1");
+    expect(remoteGatewayPublicPathPrefix()).toBe("/web/2026.10.14-1");
   });
 });
 
@@ -184,7 +185,7 @@ describe("credential entry route", () => {
       "/assistant-123/assistant/credentials/enter",
     );
 
-    expect(getRouterBasename()).toBe("/assistant-123");
+    expect(remoteGatewayPublicPathPrefix()).toBe("/assistant-123");
     expect(
       hasRouteMiddleware(
         "/assistant-123/assistant/credentials/enter",
