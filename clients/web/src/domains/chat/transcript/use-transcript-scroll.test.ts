@@ -541,6 +541,75 @@ describe("decideItemsChangeAction — anchor-preserving prepend", () => {
   });
 });
 
+describe("decideItemsChangeAction — page-boundary fold prepend", () => {
+  // The history flattener folds an assistant turn that straddles a page
+  // boundary into a single row that keeps the OLDER page's identity, so
+  // the row the coordinator saved as its anchor (the old first row)
+  // vanishes even though a page was prepended. Without survivor-shift
+  // detection the correction never fires, the viewport stays within the
+  // load-older threshold, and every page load triggers the next one.
+
+  test("folded-away anchor row still corrects via a shifted survivor", () => {
+    const before = items(["m0", "m1", "m2"]);
+    // o1/o2 prepended; m0 folded into the boundary row and keeps o2's key.
+    const afterPrepend = items(["o1", "o2", "m1", "m2"]);
+    const action = decideItemsChangeAction({
+      items: afterPrepend,
+      previousItems: before,
+      conversationId: "conv-1",
+      savedAnchor: { key: "m0", scrollTop: 130, scrollHeight: 1800 },
+    });
+    expect(action).toEqual({
+      kind: "anchor-correct",
+      newIndex: 2,
+      savedScrollTop: 130,
+      savedScrollHeight: 1800,
+    });
+  });
+
+  test("tail probe survives a multi-row fold chain", () => {
+    const before = items(["a0", "a1", "a2", "u1", "r1"]);
+    // The whole old assistant run folds into one boundary row.
+    const afterPrepend = items(["o1", "o2", "o3", "merged", "u1", "r1"]);
+    const action = decideItemsChangeAction({
+      items: afterPrepend,
+      previousItems: before,
+      conversationId: "conv-1",
+      savedAnchor: { key: "a0", scrollTop: 90, scrollHeight: 2400 },
+    });
+    expect(action).toEqual({
+      kind: "anchor-correct",
+      newIndex: 4,
+      savedScrollTop: 90,
+      savedScrollHeight: 2400,
+    });
+  });
+
+  test("key missing without any shifted survivor stays none", () => {
+    const before = items(["m0", "m1"]);
+    const afterSwap = items(["n1", "n2"]);
+    const action = decideItemsChangeAction({
+      items: afterSwap,
+      previousItems: before,
+      conversationId: "conv-1",
+      savedAnchor: { key: "m0", scrollTop: 10, scrollHeight: 1800 },
+    });
+    expect(action.kind).toBe("none");
+  });
+
+  test("unshifted survivor (rows dropped, nothing prepended) stays none", () => {
+    const before = items(["m0", "m1", "m2"]);
+    const afterDrop = items(["m1", "m2", "m3"]);
+    const action = decideItemsChangeAction({
+      items: afterDrop,
+      previousItems: before,
+      conversationId: "conv-1",
+      savedAnchor: { key: "m0", scrollTop: 10, scrollHeight: 1800 },
+    });
+    expect(action.kind).toBe("none");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Integration-style: wire the classification + decision helpers the way
 // the hook does. These tests prove that applying `handleScroll`-style

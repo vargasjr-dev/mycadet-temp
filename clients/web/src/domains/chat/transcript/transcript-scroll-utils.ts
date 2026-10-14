@@ -267,6 +267,9 @@ function hasPrependedItems(
   if (index > 0) {
     return true;
   }
+  if (index === -1) {
+    return hasShiftedSurvivor(previousItems, items);
+  }
   const next = items[index];
   if (
     first.kind !== "message" ||
@@ -283,6 +286,55 @@ function hasPrependedItems(
     frameIndex > 0 ||
     (frameIndex < 0 && sameFrameIdentity(next.message, firstMessage))
   );
+}
+
+/** Whether some old row beyond the first still exists in `items` at a
+ *  strictly higher index than it held before.
+ *
+ *  This is the prepend signal when the old first row's key is gone.
+ *  The page-boundary assistant fold (`mergeAdjacentAssistantMessages`)
+ *  removes exactly that row: the older page's last assistant message
+ *  folds into it and keeps the older page's identity, so the row the
+ *  scroll coordinator saved as its anchor vanishes even though a page
+ *  was prepended. The last old row is probed first — a fold chain
+ *  cannot cross the latest user anchor, so the tail always survives
+ *  and its shift isolates the prepend from consumed rows. */
+function hasShiftedSurvivor(
+  previousItems: readonly TranscriptItem[],
+  items: readonly TranscriptItem[],
+): boolean {
+  for (let i = previousItems.length - 1; i >= 1; i -= 1) {
+    const key = previousItems[i]?.key;
+    if (!key) {
+      continue;
+    }
+    const survivorIndex = findAnchorIndex(items, key);
+    if (survivorIndex >= 0) {
+      return survivorIndex > i;
+    }
+  }
+  return false;
+}
+
+/** New index of the first old row beyond index 0 that still exists in
+ *  `items`, or -1 when none do. Gives the anchor-correction action a
+ *  usable DOM anchor when the saved anchor row itself was consumed by
+ *  the page-boundary fold. */
+export function firstSurvivingOldRowIndex(
+  previousItems: readonly TranscriptItem[],
+  items: readonly TranscriptItem[],
+): number {
+  for (let i = 1; i < previousItems.length; i += 1) {
+    const key = previousItems[i]?.key;
+    if (!key) {
+      continue;
+    }
+    const survivorIndex = findAnchorIndex(items, key);
+    if (survivorIndex >= 0) {
+      return survivorIndex;
+    }
+  }
+  return -1;
 }
 
 /** Decide what the scroll coordinator should do in response to an
@@ -309,6 +361,22 @@ export function decideItemsChangeAction(
       return {
         kind: "anchor-correct",
         newIndex,
+        savedScrollTop: ctx.savedAnchor.scrollTop,
+        savedScrollHeight: ctx.savedAnchor.scrollHeight,
+      };
+    }
+    // The saved anchor row itself was consumed by the page-boundary
+    // fold. The restore only reads the saved scrollTop + scrollHeight,
+    // so the correction proceeds with the first surviving old row as
+    // the DOM anchor.
+    const survivorIndex = firstSurvivingOldRowIndex(
+      ctx.previousItems,
+      ctx.items,
+    );
+    if (survivorIndex >= 0) {
+      return {
+        kind: "anchor-correct",
+        newIndex: survivorIndex,
         savedScrollTop: ctx.savedAnchor.scrollTop,
         savedScrollHeight: ctx.savedAnchor.scrollHeight,
       };
