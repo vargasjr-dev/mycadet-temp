@@ -6,7 +6,6 @@
 // level.
 import "@/utils/run-storage-migrations";
 
-import { setupComposedAccountSession } from "@/runtime/composed-account-session";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
@@ -46,22 +45,8 @@ import { restorePendingNativeLogin } from "@/runtime/native-auth";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
 import { initInputModality } from "@mycadet/design-library";
 
-export function start(
-  router: Router,
-  options: {
-    accountSession?: Parameters<typeof setupComposedAccountSession>[0];
-  } = {},
-): void {
-  const disconnect = options.accountSession
-    ? setupComposedAccountSession(options.accountSession)
-    : undefined;
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => disconnect?.());
-  }
-  void boot(router).catch((error: unknown) => {
-    disconnect?.();
-    showBootFailure(error);
-  });
+export function start(router: Router): void {
+  void boot(router).catch(showBootFailure);
 }
 
 async function boot(router: Router) {

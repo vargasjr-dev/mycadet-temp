@@ -10,6 +10,7 @@ import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { installComposedAccountSession } from "@app/runtime/composed-account-session";
 import { start } from "@web/boot";
+import { setupComposedAccountSession } from "@web/runtime/composed-account-session";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { getRouterBasename, routeTree } from "@web/routes";
 
@@ -56,4 +57,10 @@ const router = createBrowserRouter(
 );
 
 await initI18n();
-start(router, { accountSession: installComposedAccountSession });
+const disconnectSession = setupComposedAccountSession(
+  installComposedAccountSession,
+);
+if (import.meta.hot) {
+  import.meta.hot.dispose(disconnectSession);
+}
+start(router);
