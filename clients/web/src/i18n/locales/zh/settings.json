@@ -1914,6 +1914,11 @@
     "description": "用于显示时间及安排提醒。",
     "title": "时区"
   },
+  "thisDeviceSection": {
+    "title": "此设备",
+    "description": "助手网关为此浏览器记录的 id。请与主机上 `cadet devices` 列出的哈希设备 id 进行比对。",
+    "copyHint": "复制设备 id"
+  },
   "trustRuleFormModal": {
     "cancel": "取消",
     "closeAriaLabel": "关闭",

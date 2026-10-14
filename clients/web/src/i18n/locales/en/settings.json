@@ -2020,6 +2020,11 @@
     "description": "Used when displaying times and scheduling reminders.",
     "title": "Timezone"
   },
+  "thisDeviceSection": {
+    "title": "This device",
+    "description": "The id the assistant's gateway recorded for this browser. Match it against the hashed device ids listed by `cadet devices` on the host.",
+    "copyHint": "Copy device id"
+  },
   "trustRuleFormModal": {
     "cancel": "Cancel",
     "closeAriaLabel": "Close",

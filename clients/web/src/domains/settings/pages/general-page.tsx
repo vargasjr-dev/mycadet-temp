@@ -28,6 +28,7 @@ import { PreviewUiChannel } from "@/domains/settings/components/preview-ui-chann
 import { ResizeCard } from "@/domains/settings/components/resize-card";
 import { RetireAssistant } from "@/domains/settings/components/retire-assistant";
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
+import { ThisDeviceSection } from "@/domains/settings/components/this-device-section";
 import { UpdateWindowModal } from "@/domains/settings/components/update-window-modal";
 import { TwoFactorSection } from "@/domains/settings/security/two-factor-section";
 import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
@@ -193,6 +194,7 @@ export function GeneralPage() {
         showHandles={isAuthenticated && cloudGate === "full"}
       >
         <TimezoneSection />
+        <ThisDeviceSection />
         {accountMfaEnabled && cloudGate !== "gated" && (
           <>
             <div className="border-t border-[var(--border-subtle)]" />

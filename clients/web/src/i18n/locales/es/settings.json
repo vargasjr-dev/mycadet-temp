@@ -1928,6 +1928,11 @@
     "description": "Se usa al mostrar horarios y programar recordatorios.",
     "title": "Zona horaria"
   },
+  "thisDeviceSection": {
+    "title": "Este dispositivo",
+    "description": "El id que la gateway del asistente registró para este navegador. Compáralo con los ids de dispositivo hasheados que lista `cadet devices` en el host.",
+    "copyHint": "Copiar id del dispositivo"
+  },
   "trustRuleFormModal": {
     "cancel": "Cancelar",
     "closeAriaLabel": "Cerrar",

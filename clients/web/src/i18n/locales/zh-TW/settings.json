@@ -1914,6 +1914,11 @@
     "description": "用於顯示時間及排程提醒。",
     "title": "時區"
   },
+  "thisDeviceSection": {
+    "title": "此裝置",
+    "description": "助手閘道為此瀏覽器記錄的 id。請與主機上 `cadet devices` 列出的雜湊裝置 id 進行比對。",
+    "copyHint": "複製裝置 id"
+  },
   "trustRuleFormModal": {
     "cancel": "取消",
     "closeAriaLabel": "關閉",

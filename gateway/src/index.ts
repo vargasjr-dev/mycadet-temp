@@ -104,6 +104,7 @@ import {
   handleListDevices,
   handleRevokeDevice,
 } from "./http/routes/devices.js";
+import { handleGetMyDevice } from "./http/routes/devices-mine.js";
 import { handleSaveIngressDomain } from "./http/routes/ingress-domains.js";
 import { handlePair } from "./http/routes/pair.js";
 import { handleCredentialEntryPage } from "./http/routes/credential-entry-page.js";
@@ -1098,6 +1099,14 @@ async function main() {
       auth: "none",
       handler: (req, _params, getClientIp) =>
         handleRevokeDevice(req, getClientIp()),
+    },
+
+    // ── The caller's own paired-device row (bearer-authed, browser-legit) ──
+    {
+      path: "/v1/devices/mine",
+      method: "GET",
+      auth: "edge",
+      handler: (req) => handleGetMyDevice(req),
     },
 
     // ── Channel verification sessions ──
