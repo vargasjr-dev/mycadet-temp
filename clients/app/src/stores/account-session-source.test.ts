@@ -6,7 +6,7 @@ import type { z } from "zod";
 
 type Result = AllauthResult<z.infer<typeof SessionSchema>>;
 const user: AccountUser = {
-  kind: "platform",
+  kind: "cloud",
   id: "cloud-user",
   username: null,
   email: "person@example.com",

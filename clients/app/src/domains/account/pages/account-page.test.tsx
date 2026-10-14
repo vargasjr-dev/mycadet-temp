@@ -17,7 +17,7 @@ mock.module("@app/stores/auth-store", () => ({
   useIsSessionInitializing: () => false,
   useAuthStore: {
     use: {
-      user: () => ({ kind: "platform", id: "cloud", firstName: "Person" }),
+      user: () => ({ kind: "cloud", id: "cloud", firstName: "Person" }),
       logout: () => logout,
     },
   },

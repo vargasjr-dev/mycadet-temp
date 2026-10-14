@@ -109,7 +109,7 @@ export function createAccountSessionSource(
       // confirmed rejection; the account gate bounds that unknown window.
       if (state.sessionStatus === "initializing") {
         const saved = deps.snapshot.read();
-        const cached = saved?.kind === "platform" ? saved : null;
+        const cached = saved?.kind === "cloud" ? saved : null;
         publish({
           user: cached,
           sessionStatus: cached ? "authenticated" : "unauthenticated",

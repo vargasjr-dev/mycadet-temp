@@ -6,7 +6,7 @@ export function accountUser(
   raw: z.infer<typeof AccountUserSchema>,
 ): AccountUser {
   return {
-    kind: "platform",
+    kind: "cloud",
     id: raw.id ?? raw.email ?? raw.username ?? null,
     username: raw.username ?? null,
     email: raw.email ?? null,

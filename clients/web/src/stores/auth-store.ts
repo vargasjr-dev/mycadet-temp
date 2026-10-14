@@ -1429,8 +1429,11 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       // logout there is no authenticated request left that could.
       await unregisterLiveActivityPushToken();
       try {
-        if (options?.cloudAccount) await options.cloudAccount.revokeSession();
-        else await allauthLogout();
+        if (options?.cloudAccount) {
+          await options.cloudAccount.revokeSession();
+        } else {
+          await allauthLogout();
+        }
       } finally {
         // Clean up session token in the main process.
         if (isElectron()) {

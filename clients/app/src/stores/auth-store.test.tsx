@@ -65,7 +65,7 @@ test("account hooks share initialization and observe their own cloud user", asyn
   expect(result.current.authenticated).toBe(true);
   expect(result.current.initializing).toBe(false);
   expect(result.current.user).toMatchObject({
-    kind: "platform",
+    kind: "cloud",
     id: "cloud",
     firstName: "Cloud",
   });

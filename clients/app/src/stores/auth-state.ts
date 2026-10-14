@@ -1,6 +1,6 @@
 /** Account-facing state; local access remains distinct from a cloud account. */
 export interface AccountUser {
-  kind: "platform" | "local";
+  kind: "cloud" | "local";
   id: string | null;
   username: string | null;
   email: string | null;
