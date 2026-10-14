@@ -1,9 +1,21 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import type { AccountAuthSnapshot } from "@app/stores/auth-state";
-import { accountAuthSource } from "@app/stores/web-auth-source";
+import {
+  accountAuthSource,
+  startAccountSessionListeners,
+} from "@app/stores/account-auth-source";
 
-/** Select a primitive or stable reference; account state remains sourced from the existing boot. */
+/** Select a primitive or stable reference; account state is owned by app’s cloud-session source. */
 function useAccountAuth<T>(selector: (state: AccountAuthSnapshot) => T): T {
+  useEffect(() => {
+    void accountAuthSource
+      .getSnapshot()
+      .initSession()
+      .catch((error) =>
+        console.warn("account session initialization failed", error),
+      );
+    return startAccountSessionListeners();
+  }, []);
   const getSnapshot = () => selector(accountAuthSource.getSnapshot());
   return useSyncExternalStore(
     accountAuthSource.subscribe,

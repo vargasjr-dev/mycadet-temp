@@ -1,5 +1,5 @@
 import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
-import { getSession } from "@app/lib/auth/session-client";
+import { getSession, logoutAccountSession } from "@app/lib/auth/session-client";
 import {
   getProviderSignup,
   isConflict,
@@ -122,6 +122,32 @@ test("conflicts and validation errors preserve their status and message", async 
   const result = await getProviderSignup();
   expect(isConflict(result)).toBe(true);
   expect(!result.ok && result.errors[0]?.message).toBe("Already registered");
-  fetchSpy.mockResolvedValueOnce(new Response('{"data":{"user":null}}'));
+  fetchSpy.mockResolvedValueOnce(new Response('{"data":{"user":{"id":123}}}'));
   expect((await getSession()).ok).toBe(false);
+});
+
+test("successful anonymous session responses expose no account user", async () => {
+  for (const data of [{ user: null }, {}]) {
+    fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ data })));
+    const result = await getSession();
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.data.user).toBeFalsy();
+  }
+});
+
+test("cloud logout sends a CSRF-protected DELETE and accepts an already-ended session", async () => {
+  document.cookie = "csrftoken=logout-csrf; path=/";
+  document.cookie = "__Secure-csrftoken=logout-csrf; path=/";
+  fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 401 }));
+  await logoutAccountSession();
+  const [url, options] = fetchSpy.mock.calls[0]!;
+  expect(String(url)).toContain("/auth/session");
+  expect(options?.method).toBe("DELETE");
+  expect(new Headers(options?.headers).get("X-CSRFToken")).toBe("logout-csrf");
+});
+test("cloud logout rejects a failed revocation instead of reporting success", async () => {
+  document.cookie = "csrftoken=logout-csrf; path=/";
+  document.cookie = "__Secure-csrftoken=logout-csrf; path=/";
+  fetchSpy.mockResolvedValueOnce(new Response("{}", { status: 403 }));
+  await expect(logoutAccountSession()).rejects.toThrow("Unable to sign out");
 });

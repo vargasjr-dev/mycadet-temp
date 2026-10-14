@@ -418,6 +418,7 @@ mock.module("@/assistant/api", () => ({
 
 const {
   useAuthStore,
+  subscribeCloudAccountLogout,
   whenCloudSessionSettled,
   __resetConsentSyncUserForTesting,
 } = await import("@/stores/auth-store");
@@ -3145,4 +3146,45 @@ describe("identity kind (platform vs local gateway access)", () => {
     const user = useAuthStore.getState().user;
     expect(user?.kind).toBe("platform");
   });
+});
+
+test("explicit cloud-account logout revokes cloud and biometric credentials even in gateway mode", async () => {
+  mockIsGatewayAuth = true;
+  mockGatewayToken = "gateway-token";
+  const revokeSession = mock(async () => {});
+  await useAuthStore.getState().logout({ cloudAccount: { revokeSession } });
+  expect(revokeSession).toHaveBeenCalledTimes(1);
+  expect(logoutMock).not.toHaveBeenCalled();
+  expect(deleteBiometricTokenMock).toHaveBeenCalledTimes(1);
+  expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
+});
+
+test("default gateway logout retains gateway-only behavior", async () => {
+  mockIsGatewayAuth = true;
+  mockGatewayToken = "gateway-token";
+  await useAuthStore.getState().logout();
+  expect(logoutMock).not.toHaveBeenCalled();
+});
+
+test("cloud logout scopes notify account sources until cleanup finishes; gateway logout does not", async () => {
+  const finish = mock(() => {});
+  const started = mock(() => finish);
+  const unsubscribe = subscribeCloudAccountLogout(started);
+  try {
+    mockIsGatewayAuth = true;
+    mockGatewayToken = "gateway-token";
+    await useAuthStore.getState().logout();
+    expect(started).not.toHaveBeenCalled();
+    await useAuthStore.getState().logout({
+      cloudAccount: {
+        revokeSession: async () => {
+          expect(started).toHaveBeenCalledTimes(1);
+          expect(finish).not.toHaveBeenCalled();
+        },
+      },
+    });
+    expect(finish).toHaveBeenCalledTimes(1);
+  } finally {
+    unsubscribe();
+  }
 });

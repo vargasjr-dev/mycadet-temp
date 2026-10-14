@@ -1,84 +1,93 @@
-import { afterEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
-import type { AccountAuthSnapshot } from "./auth-state";
-import { createAccountAuthReader } from "./auth-snapshot";
+import { createAccountSessionSource } from "./account-session-source";
+import type { AllauthResult, SessionSchema } from "@app/lib/auth/auth-response";
+import type { z } from "zod";
 
-const initSession = mock(async () => {});
-const refreshSession = mock(async () => true);
+type Result = AllauthResult<z.infer<typeof SessionSchema>>;
+let resolve!: (result: Result) => void;
+const getSession = mock(
+  () =>
+    new Promise<Result>((done) => {
+      resolve = done;
+    }),
+);
 const logout = mock(async () => {});
-const initial: AccountAuthSnapshot = {
-  user: null,
-  sessionStatus: "initializing",
-  cloudSession: "unknown",
-  initSession,
-  refreshSession,
-  logout,
-};
-let state = { ...initial, assistantPhase: "loading" };
-const listeners = new Set<() => void>();
-const source = createAccountAuthReader({
-  getSnapshot: () => state,
-  subscribe: (listener) => {
-    listeners.add(listener);
-    return () => {
-      listeners.delete(listener);
-    };
+function makeSource() {
+  return createAccountSessionSource({
+    getSession,
+    snapshot: { read: () => null, write: () => {}, clear: () => {} },
+    synchronizeWeb: async () => true,
+    logout,
+  });
+}
+let source = makeSource();
+const subscriptions = new Set<() => void>();
+mock.module("@app/stores/account-auth-source", () => ({
+  accountAuthSource: {
+    getSnapshot: () => source.getSnapshot(),
+    subscribe: (listener: () => void) => {
+      subscriptions.add(listener);
+      const unsubscribe = source.subscribe(listener);
+      return () => {
+        subscriptions.delete(listener);
+        unsubscribe();
+      };
+    },
   },
-});
-mock.module("@app/stores/web-auth-source", () => ({
-  accountAuthSource: source,
+  startAccountSessionListeners: () => () => {},
 }));
 const { useAuthStore, useIsAuthenticated, useIsSessionInitializing } =
   await import("./auth-store");
-function update(patch: Partial<typeof state>) {
-  state = { ...state, ...patch };
-  listeners.forEach((listener) => listener());
-}
-afterEach(() => {
-  cleanup();
-  state = { ...initial, assistantPhase: "loading" };
+beforeEach(() => {
+  source = makeSource();
   mock.clearAllMocks();
 });
+afterEach(cleanup);
 
-test("assistant-only updates keep account snapshots stable and do not rerender account consumers", () => {
-  const first = useAuthStore.getState();
-  let renders = 0;
-  const { result } = renderHook(() => {
-    renders++;
-    return useAuthStore((state) => state.cloudSession);
-  });
-  const previousRenders = renders;
-  act(() => update({ assistantPhase: "active" }));
-  expect(useAuthStore.getState()).toBe(first);
-  expect("assistantPhase" in useAuthStore.getState()).toBe(false);
-  expect(renders).toBe(previousRenders);
-  act(() => update({ cloudSession: "present" }));
-  expect(result.current).toBe("present");
-});
-test("gateway authentication stays distinct from cloud-session presence", () => {
+test("account hooks share initialization and observe their own cloud user", async () => {
+  const initial = useAuthStore.getState();
   const { result, unmount } = renderHook(() => ({
     authenticated: useIsAuthenticated(),
     initializing: useIsSessionInitializing(),
-    cloud: useAuthStore((state) => state.cloudSession),
+    user: useAuthStore.use.user(),
   }));
-  expect(result.current.initializing).toBe(true);
-  act(() => update({ sessionStatus: "authenticated", cloudSession: "absent" }));
   expect(result.current).toEqual({
-    authenticated: true,
-    initializing: false,
+    authenticated: false,
+    initializing: true,
+    user: null,
+  });
+  expect(getSession).toHaveBeenCalledTimes(1);
+  expect(useAuthStore.getState()).toBe(initial);
+  await act(async () => {
+    resolve({ ok: true, data: { user: { id: "cloud", first_name: "Cloud" } } });
+  });
+  expect(result.current.authenticated).toBe(true);
+  expect(result.current.initializing).toBe(false);
+  expect(result.current.user).toMatchObject({
+    kind: "platform",
+    id: "cloud",
+    firstName: "Cloud",
+  });
+  expect("assistantPhase" in useAuthStore.getState()).toBe(false);
+  unmount();
+  expect(subscriptions.size).toBe(0);
+});
+test("rejected cloud sessions show signed-out account UI and logout actions retain cleanup", async () => {
+  const { result } = renderHook(() => ({
+    authenticated: useIsAuthenticated(),
+    cloud: useAuthStore((state) => state.cloudSession),
+    logout: useAuthStore.use.logout(),
+  }));
+  await act(async () => {
+    resolve({ ok: false, status: 401, errors: [] });
+  });
+  expect(result.current).toMatchObject({
+    authenticated: false,
     cloud: "absent",
   });
-  act(() => update({ sessionStatus: "unauthenticated" }));
-  expect(result.current.authenticated).toBe(false);
-  unmount();
-  expect(listeners.size).toBe(0);
-});
-test("account actions retain the authoritative source's boot, refresh and logout behavior", async () => {
-  const snapshot = useAuthStore.getState();
-  await snapshot.initSession();
-  expect(await snapshot.refreshSession()).toBe(true);
-  await snapshot.logout();
-  expect(initSession).toHaveBeenCalledTimes(1);
-  expect(refreshSession).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    await result.current.logout();
+  });
   expect(logout).toHaveBeenCalledTimes(1);
 });

@@ -13,16 +13,18 @@ export async function requestAccount<T>(
   path: string,
   schema: z.ZodType<T>,
   body?: unknown,
+  options?: { method?: "GET" | "POST" | "DELETE"; signal?: AbortSignal },
 ): Promise<AllauthResult<T>> {
   try {
     const headers = new Headers({
       Accept: "application/json",
       "Accept-Language": currentLocale(),
     });
+    const method = options?.method ?? (body === undefined ? "GET" : "POST");
     const token = getElectronSessionToken();
     if (token) headers.set("X-Session-Token", token);
-    if (body !== undefined) {
-      headers.set("Content-Type", "application/json");
+    if (method !== "GET") {
+      if (body !== undefined) headers.set("Content-Type", "application/json");
       if (getElectronBridge()) {
         headers.set(
           "X-Cadet-Electron-Renderer-Origin",
@@ -35,9 +37,10 @@ export async function requestAccount<T>(
       }
     }
     const response = await fetch(authEndpoint(path), {
-      method: body === undefined ? "GET" : "POST",
+      method,
       headers,
       credentials: "same-origin",
+      ...(options?.signal ? { signal: options.signal } : {}),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const payload: unknown = await response.json().catch(() => null);

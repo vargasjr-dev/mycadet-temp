@@ -1,3 +1,4 @@
+import { captureError } from "@mycadet/design-library/utils/capture-error";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -96,8 +97,13 @@ export function AccountPage() {
         <button
           type="button"
           onClick={async () => {
-            await logout();
-            hardNavigate(routes.account.login);
+            try {
+              await logout();
+            } catch (error) {
+              captureError(error, { context: "account_logout" });
+            } finally {
+              hardNavigate(routes.account.login);
+            }
           }}
           className="cursor-pointer bg-transparent text-sm font-normal text-[var(--content-secondary)] transition-colors hover:text-[var(--content-default)]"
         >

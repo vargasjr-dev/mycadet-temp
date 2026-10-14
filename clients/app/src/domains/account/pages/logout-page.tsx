@@ -1,3 +1,4 @@
+import { captureError } from "@mycadet/design-library/utils/capture-error";
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
 
@@ -40,7 +41,8 @@ export function LogoutPage() {
           hardNavigate(target);
         }
       },
-      () => {
+      (error) => {
+        captureError(error, { context: "account_logout" });
         if (!cancelled) {
           hardNavigate(target);
         }

@@ -9,10 +9,13 @@ export const AccountUserSchema = z.object({
   display: z.string().optional(),
   email: z.string().optional(),
   username: z.string().optional(),
+  is_staff: z.boolean().optional(),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
 });
-export const SessionSchema = z.object({ user: AccountUserSchema });
+export const SessionSchema = z.object({
+  user: AccountUserSchema.nullable().optional(),
+});
 export const ProviderSignupSchema = z.object({ user: AccountUserSchema });
 const ErrorSchema = z.object({
   code: z.string(),

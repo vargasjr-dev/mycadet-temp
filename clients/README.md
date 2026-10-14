@@ -7,6 +7,7 @@ and desktop wrappers that users interact with directly.
 
 ```
 clients/
+├── app/               # Account client (Vite), developed alongside web
 ├── web/               # Web app (Vite)
 ├── docs/              # Public docs site: SSR Next.js app serving mycadet.ai/docs
 ├── ios/               # iOS Capacitor shell
@@ -16,6 +17,17 @@ clients/
 ├── windows/           # Windows desktop wrapper (Electron / electron-vite)
 └── chrome-extension/  # MV3 Chrome browser extension
 ```
+
+`app/` owns its cloud-account session state and probes through its local auth
+client. It preserves a last-known cloud user during transient outages and clears
+that user on authoritative rejection; a gateway-only identity cannot sign into
+account UI. Resume listeners are scoped to mounted account consumers. While app
+still composes web's assistant routes, explicit account refreshes synchronize
+web's consent/navigation state, cloud-account logout delegates native/assistant
+cleanup to web, and cross-tab logout retains web's reload path. That temporary
+adapter is in `app/src/stores/account-auth-source.ts`; web's full mode keeps its
+existing session ownership. App's independent startup/iframe split is still
+pending.
 
 The iOS app is a Capacitor shell that lives in [`ios/`](./ios/); it loads the
 web app over HTTPS and does not consume any code from the other client

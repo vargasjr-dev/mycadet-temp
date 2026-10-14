@@ -160,7 +160,10 @@ interface AuthActions {
   connectPairedAssistant: (assistantId: string) => Promise<void>;
   connectCloudAssistant: (assistantId: string) => Promise<void>;
   refreshSession: () => Promise<boolean>;
-  logout: () => Promise<void>;
+  /** App can supply cloud revocation while retaining shared native/assistant cleanup. */
+  logout: (options?: {
+    cloudAccount?: { revokeSession(): Promise<void> };
+  }) => Promise<void>;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -221,6 +224,17 @@ let authEpoch = 0;
 // entry, so a refresh (or a connect action, or the loopback page's
 // `initSession`) that starts after a logout captures the current value and
 // commits normally. A fresh sign-in always works.
+const cloudLogoutListeners = new Set<() => () => void>();
+/** Transitional account clients can invalidate probes across shared cloud logout. */
+export function subscribeCloudAccountLogout(
+  listener: () => () => void,
+): () => void {
+  cloudLogoutListeners.add(listener);
+  return () => {
+    cloudLogoutListeners.delete(listener);
+  };
+}
+
 let logoutGeneration = 0;
 
 /**
@@ -1371,68 +1385,81 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     return false;
   },
 
-  logout: async () => {
-    // Bumped before anything else: the steps below drop the credentials, the
-    // selection, the organization and the user-scoped storage, and a refresh
-    // that resumes partway through would otherwise re-persist the departing
-    // user's snapshot and consent on its way to an authenticated write.
-    logoutGeneration += 1;
-    if (isGatewayAuthMode()) {
-      // Clear lifecycle state BEFORE `sessionStatus` leaves `authenticated`
-      // so the assistant sync hooks don't observe a stale assistant id in
-      // their first re-render, and BEFORE the selection clear so the
-      // lifecycle's selection subscription (guarded on `loading`) doesn't
-      // resurrect an active state mid-logout. The `respondToInputs`
-      // not-authenticated branch is the safety net for token-expiry-style
-      // flips.
-      lifecycleService.resetForLogout();
-      setSelfHostedConnection(null);
-      await setSelectedAssistant(null);
-      clearGatewayToken();
-      clearOrganization();
-      clearUserScopedStorage();
-      await endSession(set, { authoritative: true });
-      // Bumped again now the session has ended: a refresh that entered partway
-      // through this logout captured the first bump, and its response is just
-      // as stale as one captured before it.
-      logoutGeneration += 1;
-      broadcastAuthChange();
-      return;
-    }
-
-    suppressPlatformProbe = true;
-    // Delete the APNs device token from the cloud BEFORE clearing the
-    // session — the cloud delete is authenticated by the still-valid
-    // session cookie. No-ops off native iOS. Best-effort: never blocks logout.
-    await unregisterFromRemotePush();
-    // Same window, same reason: a Live Activity registered for a voice session
-    // outlives the session that owns it unless something retires it, and after
-    // logout there is no authenticated request left that could.
-    await unregisterLiveActivityPushToken();
+  logout: async (options) => {
+    const finishes =
+      !isGatewayAuthMode() || options?.cloudAccount
+        ? [...cloudLogoutListeners].map((listener) => listener())
+        : [];
     try {
-      await allauthLogout();
-    } finally {
-      // Clean up session token in the main process.
-      if (isElectron()) {
-        await window.cadet?.auth?.signOut?.();
-      }
-      // Web loopback: drop the token the local server's proxy authenticates with.
-      if (isLocalClient() && !isElectron()) {
-        await clearLocalCloudSession();
-      }
-      void deleteBiometricToken();
-      clearOrganization();
-      clearUserScopedStorage();
-      lifecycleService.resetForLogout();
-      // Clear the selection slice too — `clearUserScopedStorage` already
-      // removed the persisted key, and a surviving slice would resolve the
-      // previous user's assistant after re-login.
-      await setSelectedAssistant(null);
-      await endSession(set, { authoritative: true });
-      // See the gateway branch: the second bump also supersedes a refresh that
-      // entered partway through this logout.
+      // Bumped before anything else: the steps below drop the credentials, the
+      // selection, the organization and the user-scoped storage, and a refresh
+      // that resumes partway through would otherwise re-persist the departing
+      // user's snapshot and consent on its way to an authenticated write.
       logoutGeneration += 1;
-      broadcastAuthChange();
+      if (isGatewayAuthMode() && !options?.cloudAccount) {
+        // Clear lifecycle state BEFORE `sessionStatus` leaves `authenticated`
+        // so the assistant sync hooks don't observe a stale assistant id in
+        // their first re-render, and BEFORE the selection clear so the
+        // lifecycle's selection subscription (guarded on `loading`) doesn't
+        // resurrect an active state mid-logout. The `respondToInputs`
+        // not-authenticated branch is the safety net for token-expiry-style
+        // flips.
+        lifecycleService.resetForLogout();
+        setSelfHostedConnection(null);
+        await setSelectedAssistant(null);
+        clearGatewayToken();
+        clearOrganization();
+        clearUserScopedStorage();
+        await endSession(set, { authoritative: true });
+        // Bumped again now the session has ended: a refresh that entered partway
+        // through this logout captured the first bump, and its response is just
+        // as stale as one captured before it.
+        logoutGeneration += 1;
+        broadcastAuthChange();
+        return;
+      }
+
+      suppressPlatformProbe = true;
+      // Delete the APNs device token from the cloud BEFORE clearing the
+      // session — the cloud delete is authenticated by the still-valid
+      // session cookie. No-ops off native iOS. Best-effort: never blocks logout.
+      await unregisterFromRemotePush();
+      // Same window, same reason: a Live Activity registered for a voice session
+      // outlives the session that owns it unless something retires it, and after
+      // logout there is no authenticated request left that could.
+      await unregisterLiveActivityPushToken();
+      try {
+        if (options?.cloudAccount) await options.cloudAccount.revokeSession();
+        else await allauthLogout();
+      } finally {
+        // Clean up session token in the main process.
+        if (isElectron()) {
+          await window.cadet?.auth?.signOut?.();
+        }
+        // Web loopback: drop the token the local server's proxy authenticates with.
+        if (isLocalClient() && !isElectron()) {
+          await clearLocalCloudSession();
+        }
+        void deleteBiometricToken();
+        if (options?.cloudAccount && isGatewayAuthMode()) {
+          clearGatewayToken();
+          setSelfHostedConnection(null);
+        }
+        clearOrganization();
+        clearUserScopedStorage();
+        lifecycleService.resetForLogout();
+        // Clear the selection slice too — `clearUserScopedStorage` already
+        // removed the persisted key, and a surviving slice would resolve the
+        // previous user's assistant after re-login.
+        await setSelectedAssistant(null);
+        await endSession(set, { authoritative: true });
+        // See the gateway branch: the second bump also supersedes a refresh that
+        // entered partway through this logout.
+        logoutGeneration += 1;
+        broadcastAuthChange();
+      }
+    } finally {
+      finishes.forEach((finish) => finish());
     }
   },
 }));

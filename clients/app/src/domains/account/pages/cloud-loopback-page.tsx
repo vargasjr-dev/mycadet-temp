@@ -69,10 +69,10 @@ export function CloudLoopbackPage() {
         return;
       }
 
-      // Re-run session init now that the proxy is authenticated — this moves
+      // Refresh both account and composed web session state now that the proxy is authenticated — this moves
       // sessionStatus to "authenticated" so the auth middleware lets
       // navigation through.
-      await useAuthStore.getState().initSession();
+      await useAuthStore.getState().refreshSession();
       await setMenuCloudSession(true);
 
       try {
