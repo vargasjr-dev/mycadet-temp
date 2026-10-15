@@ -18,7 +18,6 @@ export const VALID_STT_PROVIDERS = [
   "google-gemini",
   "openai-whisper",
   "xai",
-  "cadet",
 ] as const;
 
 /**
@@ -183,8 +182,7 @@ export { STT_ROLE_REQUIREMENTS, STT_ROLES, type SttRole };
 /**
  * Canonical STT service configuration.
  *
- * `provider` is the only axis: `"cadet"` transcribes through the cloud,
- * billed to Cadet credits; any other provider uses the user's own API key.
+ * `provider` is the only axis: every provider uses the user's own API key.
  */
 export const SttServiceSchema = z
   .object({

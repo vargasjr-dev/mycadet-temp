@@ -222,9 +222,8 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
       supportsDiarization: false,
       // "no picker", not native detection: this entry pins the English Flux
       // model and sends no language parameter, so audio in another language
-      // transcribes as English. Flux itself has a multilingual model; the
-      // managed `cadet-flux` entry reaches it, and a BYOK picker would need
-      // the model to follow the selection.
+      // transcribes as English. Flux itself has a multilingual model; a BYOK
+      // picker would need the model to follow the selection.
       languageSelection: "auto",
       credentialsGuide: DEEPGRAM_CREDENTIALS_GUIDE,
     },
@@ -282,64 +281,6 @@ const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
         url: "https://platform.openai.com/api-keys",
         linkLabel: "Open OpenAI Platform",
       },
-    },
-  ],
-  [
-    "cadet",
-    {
-      id: "cadet",
-      baseModelFamily: "nova-3",
-      displayName: "Cadet",
-      subtitle:
-        "Speech-to-text through your Cadet account — billed to Cadet credits, no separate API key needed.",
-      setupMode: "connection",
-      setupHint: "Connect your Cadet account to enable managed transcription.",
-      // Legacy credential-service key (persisted identity rows).
-      credentialProvider: "cadet",
-      supportedBoundaries: new Set<SttBoundaryId>([
-        "daemon-batch",
-        "daemon-streaming",
-      ]),
-      telephonyMode: "realtime-ws",
-      conversationStreamingMode: "realtime-ws",
-      turnDetection: "none",
-      supportsDiarization: false,
-      // The relay dials Deepgram nova-3 server-side, which takes an explicit
-      // language parameter.
-      languageSelection: "manual",
-    },
-  ],
-  [
-    "cadet-flux",
-    {
-      id: "cadet-flux",
-      variantOf: "cadet",
-      variantModel: "flux",
-      displayName: "Cadet (Flux)",
-      subtitle:
-        "Conversational speech-to-text with model-native turn detection, through your Cadet account. No separate API key needed.",
-      setupMode: "connection",
-      setupHint: "Connect your Cadet account to enable managed transcription.",
-      // Shared with `cadet`: the cloud connection is the credential, and
-      // Flux is a different endpoint on the same relay, not a second account.
-      credentialProvider: "cadet",
-      // Streaming only, same as the BYOK Flux entry: Flux has no batch
-      // endpoint, and the relay exposes none.
-      supportedBoundaries: new Set<SttBoundaryId>(["daemon-streaming"]),
-      // The relay maps `Finalize` onto Flux's `CloseStream`, which ends the
-      // session rather than flushing it, and telephony's utterance-boundary
-      // finals are a nova-3 concept. Calls stay on `cadet`.
-      telephonyMode: "none",
-      conversationStreamingMode: "realtime-ws",
-      // The relay is dialed with `contract=flux`, so Flux's turn lifecycle
-      // events arrive intact and a live-voice session may let them commit
-      // the turn. Without that opt-in the relay translates them away and
-      // this would be false.
-      turnDetection: "provider",
-      supportsDiarization: false,
-      // The relay selects `flux-general-en` or `flux-general-multi` from the
-      // language it is sent, so unlike BYOK Flux the picker is meaningful.
-      languageSelection: "manual",
     },
   ],
   [
@@ -499,18 +440,6 @@ export function supportsDiarization(id: SttProviderId): boolean {
  * provider, so a new turn-detecting provider is a catalog entry rather than a
  * session change.
  */
-/**
- * Whether a provider authenticates with the Cadet Cloud connection rather
- * than a stored API key.
- *
- * Derived from the catalog rather than a hand-kept id list: every check that
- * gates cloud speech reads this, so adding a cloud provider cannot leave
- * one of them behind on a stale literal.
- */
-export function isCloudSttProvider(id: SttProviderId): boolean {
-  return CATALOG.get(id)?.credentialProvider === "cadet";
-}
-
 /**
  * The catalog row a configured provider plus model family resolves to.
  *

@@ -271,31 +271,6 @@ export const TtsXaiProviderConfigSchema = z
 
 export type TtsXaiProviderConfig = z.infer<typeof TtsXaiProviderConfigSchema>;
 
-/**
- * Cadet Cloud provider configuration under `services.tts.providers`.
- */
-const TtsCadetProviderConfigSchema = z
-  .object({
-    model: z
-      .string()
-      .optional()
-      .describe(
-        "Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the cloud's default voice. The cloud rejects voices it does not offer.",
-      ),
-    languageVoices: languageVoicesSchema(
-      "cadet",
-      "values are managed TTS voice models (e.g. aura-2-thalia-en) and must " +
-        "be voices offered by the cloud rate card: an unpriced model is " +
-        "rejected by the relay (missing_price), the same contract as " +
-        "services.tts.providers.cadet.model.",
-    ),
-  })
-  .describe("Cadet Cloud provider configuration under services.tts");
-
-export type TtsCadetProviderConfig = z.infer<
-  typeof TtsCadetProviderConfigSchema
->;
-
 const TtsProvidersSchema = z.object({
   elevenlabs: TtsElevenLabsProviderConfigSchema.default(
     TtsElevenLabsProviderConfigSchema.parse({}),
@@ -307,9 +282,6 @@ const TtsProvidersSchema = z.object({
     TtsDeepgramProviderConfigSchema.parse({}),
   ),
   xai: TtsXaiProviderConfigSchema.default(TtsXaiProviderConfigSchema.parse({})),
-  cadet: TtsCadetProviderConfigSchema.default(
-    TtsCadetProviderConfigSchema.parse({}),
-  ),
 });
 export type TtsProviders = z.infer<typeof TtsProvidersSchema>;
 

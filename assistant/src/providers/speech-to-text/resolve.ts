@@ -13,7 +13,6 @@ import {
   batchBoundaryGapReason,
   getCredentialProvider,
   getProviderEntry,
-  isCloudSttProvider,
   resolveSttCatalogKey,
   supportsBoundary,
   supportsDiarization,
@@ -37,11 +36,6 @@ const log = getLogger("stt-resolver");
  */
 const MULTILINGUAL_DEFAULT_PROVIDERS: ReadonlySet<SttProviderId> = new Set([
   "deepgram",
-  "cadet",
-  // Cloud Flux resolves an absent language to `flux-general-en` relay-side,
-  // so unset is an English pin here too. With "multi" the relay selects
-  // `flux-general-multi` and lets Flux detect and code-switch.
-  "cadet-flux",
 ] as SttProviderId[]);
 
 /**
@@ -154,16 +148,6 @@ export async function resolveBatchTranscriber(
     const reason = batchBoundaryGapReason(provider as SttProviderId);
     log.warn({ providerId: provider }, reason);
     throw new SttError("provider-error", reason, { userFacing: true });
-  }
-
-  if (provider === "cadet") {
-    // Managed batch rides the cloud's speech proxy, which forwards the
-    // language to Deepgram server-side. A platform build predating that
-    // field ignores it rather than failing, so the daemon can send one
-    // before the cloud side deploys.
-    return (await sttProviderKeyResolves("cadet"))
-      ? createDaemonBatchTranscriber(null, "cadet", language)
-      : null;
   }
 
   const apiKey = await getProviderKeyAsync(credentialProviderName);
@@ -515,18 +499,8 @@ export async function resolveStreamingTranscriber(
     (diarizePreference === "preferred" || diarizePreference === "required") &&
     providerSupportsDiarization;
 
-  // Both managed entries authenticate with the cloud connection, not a
-  // stored API key: there is no key to fetch, and readiness is whether the
-  // connection resolves.
-  const managed = isCloudSttProvider(provider);
-  const apiKey = managed
-    ? null
-    : await getProviderKeyAsync(credentialProviderName);
-  if (managed) {
-    if (!(await sttProviderKeyResolves("cadet"))) {
-      return null;
-    }
-  } else if (!apiKey) {
+  const apiKey = await getProviderKeyAsync(credentialProviderName);
+  if (!apiKey) {
     return null;
   }
 
@@ -656,82 +630,6 @@ async function createStreamingTranscriber(
         ...(options.diarize ? { diarize: true } : {}),
       });
     }
-    case "cadet": {
-      // Cloud speech dials the GATEWAY's speech relay (tunnel contact is
-      // gateway-only); the apiKey argument is unused. Diarization is
-      // unsupported (not in the relay's param allowlist) and silently
-      // ignored, matching Gemini/Whisper — as is utteranceEndMs (the relay
-      // allowlist has no utterance_end_ms; boundary finals ride on
-      // endpointing alone).
-      // The gateway is the credential authority, but the cloud
-      // connection (API key + assistant ID) is checkable locally — gate
-      // here so preflight reports "connect your account" instead of
-      // resolving a transcriber whose dial is doomed.
-      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
-      if (!(await cadetCloudSpeechAvailable())) {
-        return null;
-      }
-      const { resolveSpeechRelayConnection } =
-        await import("./cadet-speech-relay-connection.js");
-      const connection = await resolveSpeechRelayConnection();
-      if (!connection) {
-        return null;
-      }
-      const { CadetManagedRealtimeTranscriber } =
-        await import("./cadet-cloud-realtime.js");
-      return new CadetManagedRealtimeTranscriber(connection, {
-        sampleRate: options.sampleRate,
-        // `language` IS in the relay's param allowlist, and the relay pins
-        // the STT model to nova-3 server-side, so "multi" code-switching
-        // needs nothing from the cloud, only this forward. Source:
-        // mycadet-platform: tunnel/internal/tunnel/deepgram.go
-        // (deepgramSTTParams allowlist; deepgramSTTModel pin).
-        ...(options.language ? { language: options.language } : {}),
-        ...(options.utteranceBoundaryFinals
-          ? { utteranceBoundaryFinals: true }
-          : {}),
-      });
-    }
-    case "cadet-flux": {
-      // Cloud Flux: same relay as `cadet`, but the STT v2 endpoint with
-      // `contract=flux` so the turn events arrive intact instead of being
-      // translated into the released v1 Deepgram dialect. Gated on the local
-      // cloud connection for the same reason as `cadet` above.
-      const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
-      if (!(await cadetCloudSpeechAvailable())) {
-        return null;
-      }
-      // The relay maps the language onto a Flux model and refuses the dial
-      // when there is none, so a language outside Flux's roster fails as a
-      // relay param error the caller cannot explain. Refuse here instead, on
-      // the same rule the BYOK twin above applies, so the reason is named
-      // where it can be read.
-      const { fluxModelForLanguage: managedFluxModelForLanguage } =
-        await import("./deepgram-flux-frames.js");
-      if (managedFluxModelForLanguage(options.language) === null) {
-        log.warn(
-          { providerId, language: options.language },
-          "Cloud Flux has no model for the configured language; refusing rather than transcribing it as another",
-        );
-        return null;
-      }
-      const { resolveSpeechRelayConnection } =
-        await import("./cadet-speech-relay-connection.js");
-      const connection = await resolveSpeechRelayConnection();
-      if (!connection) {
-        return null;
-      }
-      const { CadetManagedFluxRealtimeTranscriber } =
-        await import("./cadet-cloud-flux-realtime.js");
-      return new CadetManagedFluxRealtimeTranscriber(connection, {
-        sampleRate: options.sampleRate,
-        // The relay picks `flux-general-en` or `flux-general-multi` from
-        // this, so it is the only lever over the Flux model from here.
-        // `utteranceBoundaryFinals` is a nova-3 concept and the catalog
-        // keeps this provider off telephony, so it never arrives.
-        ...(options.language ? { language: options.language } : {}),
-      });
-    }
     case "deepgram-flux": {
       // Flux is streaming-only and dials Deepgram's /v2/listen conversational
       // endpoint. Turn-detection tuning comes from `liveVoice.flux`, which the
@@ -775,29 +673,14 @@ async function createStreamingTranscriber(
  * need a key-existence check don't import secure-keys directly.
  */
 /**
- * Human-readable reason for a credential gap, aware that connection-based
- * providers (cadet) are fixed by connecting the cloud account, not by
- * entering an API key.
+ * Human-readable reason for a credential gap.
  */
 export function sttCredentialGapReason(credentialProviderName: string): string {
-  // Called with either the catalog id ("cadet") or its credential-service
-  // key ("cadet", the persisted identity family) — both mean cloud speech.
-  if (
-    credentialProviderName === "cadet" ||
-    credentialProviderName === "cadet"
-  ) {
-    return "No Cadet Cloud connection for cloud speech — run 'assistant cloud connect'";
-  }
   return `No API key configured for credential provider "${credentialProviderName}"`;
 }
 
 export async function sttProviderKeyResolves(
   credentialProviderName: string,
 ): Promise<boolean> {
-  // cadet has no stored API key — the cloud connection is the credential.
-  if (credentialProviderName === "cadet") {
-    const { cadetCloudSpeechAvailable } = await import("./cadet-cloud.js");
-    return cadetCloudSpeechAvailable();
-  }
   return (await getProviderKeyAsync(credentialProviderName)) !== undefined;
 }

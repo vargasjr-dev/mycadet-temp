@@ -21,7 +21,6 @@ import type {
   TtsProviderCatalogEntry,
   TtsProviderDefinition,
 } from "./provider-definition.js";
-import { cadetTtsProviderDefinition } from "./providers/cadet-provider.js";
 import { deepgramTtsProviderDefinition } from "./providers/deepgram-provider.js";
 import { elevenLabsTtsProviderDefinition } from "./providers/elevenlabs-provider.js";
 import { fishAudioTtsProviderDefinition } from "./providers/fish-audio-provider.js";
@@ -48,15 +47,12 @@ const DEFINITIONS = {
   "fish-audio": fishAudioTtsProviderDefinition,
   deepgram: deepgramTtsProviderDefinition,
   xai: xaiTtsProviderDefinition,
-  cadet: cadetTtsProviderDefinition,
 } as const satisfies Record<TtsProviderId, TtsProviderDefinition>;
 
 /**
  * Definitions in display order (e.g. settings dropdowns).
  */
-// cadet leads: it is the cloud option, selected like any other provider.
 const CATALOG: readonly TtsProviderDefinition[] = [
-  DEFINITIONS.cadet,
   DEFINITIONS.elevenlabs,
   DEFINITIONS["fish-audio"],
   DEFINITIONS.deepgram,
