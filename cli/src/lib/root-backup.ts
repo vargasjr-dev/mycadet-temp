@@ -1,3 +1,4 @@
+import { persistRootSigningKey } from "./root-signing-key.js";
 import { createHash, randomUUID } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn } from "node:child_process";
@@ -328,15 +329,7 @@ export class LocalRootStorage implements RootStorage {
     // Local wake takes its signing key from the host registry. Make that identity
     // part of the gateway root too, so the archive is self-contained.
     const key = resolveExistingLocalSigningKey(this.entry.resources);
-    await writeFile(
-      join(target, "gateway-security", "actor-token-signing-key"),
-      Buffer.from(key, "hex"),
-      { mode: 0o600 },
-    );
-    await chmod(
-      join(target, "gateway-security", "actor-token-signing-key"),
-      0o600,
-    );
+    persistRootSigningKey(target, key);
   }
   async replace(source: string): Promise<void> {
     // All renames stay on the instance's filesystem. A failed install rolls back
@@ -582,15 +575,7 @@ export class DockerRootStorage implements RootStorage {
     if (key) {
       if (!/^[a-f0-9]{64}$/i.test(key))
         throw new Error("Invalid injected gateway signing key.");
-      await writeFile(
-        join(target, "gateway-security", "actor-token-signing-key"),
-        Buffer.from(key, "hex"),
-        { mode: 0o600 },
-      );
-      await chmod(
-        join(target, "gateway-security", "actor-token-signing-key"),
-        0o600,
-      );
+      persistRootSigningKey(target, key);
     }
     // docker cp may retain sockets in its tar stream; remove only process artifacts.
     await pruneTransient(target);

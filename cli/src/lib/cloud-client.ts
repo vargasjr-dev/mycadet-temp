@@ -987,7 +987,7 @@ export async function platformImportPreflightFromGcs(
     {
       method: "POST",
       headers: await authHeaders(token, cloudUrl),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(30 * 60_000),
       body: JSON.stringify({ bundle_key: bundleKey }),
     },
   );
@@ -1010,7 +1010,7 @@ export async function platformImportBundleFromGcs(
       method: "POST",
       headers: await authHeaders(token, cloudUrl),
       body: JSON.stringify({ bundle_key: bundleKey }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(30 * 60_000),
     },
   );
 

@@ -1,17 +1,4 @@
-/**
- * Platform (cloud="cadet") half of the pre-teleport safety backup.
- *
- * A platform source is snapshotted through Django's user-facing backup
- * endpoint, which cuts a PVC VolumeSnapshot via vembda. The POST returns as
- * soon as the snapshot object exists; it becomes restorable asynchronously,
- * so {@link createPlatformBackup} polls the listing until the new snapshot
- * reports `ready_to_use` before returning. A snapshot that never becomes
- * ready within the timeout is a backup failure, not a success.
- *
- * Local and docker sources are backed up host-side by `backup-ops` instead,
- * so the restore point survives the source's retirement. Policy shared with
- * the web teleport lives in `@mycadet/local-mode/teleport-backup-policy`.
- */
+/** Cloud API safety backups use session auth and wait for a restorable root tar. */
 
 import {
   MANAGED_BACKUP_READY_POLL_INTERVAL_MS,
@@ -93,7 +80,7 @@ async function fetchPlatformBackups(
 }
 
 /**
- * `created_at` of every restorable PVC snapshot of a cloud assistant:
+ * `created_at` of every restorable root archive of a cloud assistant:
  * `GET /v1/assistants/<id>/backups/`.
  */
 export async function listPlatformBackups(
@@ -109,7 +96,7 @@ export interface CreatePlatformBackupOptions {
 }
 
 /**
- * Take a PVC snapshot of a cloud assistant and wait until it is
+ * Capture a root archive of a cloud assistant and wait until it is
  * restorable: `POST /v1/assistants/<id>/backups/`, then re-list until the
  * returned `snapshot_name` reports `ready_to_use`. Throws if the POST fails
  * or the snapshot is not ready within `timeoutMs`.

@@ -25,7 +25,6 @@ import { getArchivePath, getMetadataPath } from "../lib/retire-archive.js";
 import { exec } from "../lib/step-runner.js";
 import {
   readCloudToken,
-  rollbackCloudAssistant,
   cloudRequestSignedUrl,
   platformUploadToSignedUrl,
   platformImportPreflightFromGcs,
@@ -48,7 +47,7 @@ function printUsage(): void {
   );
   console.log("$XDG_DATA_HOME/cadet/retired/ and starts it again.");
   console.log(
-    "With --version, also rolls back to the specified version first.",
+    "With --version, restore Docker data and runtime version together.",
   );
   console.log("");
   console.log("Arguments:");
@@ -56,9 +55,7 @@ function printUsage(): void {
   console.log("");
   console.log("Options:");
   console.log("  --from <path>        Path to the .tar.gz file (required)");
-  console.log(
-    "  --version <version>  Docker/cloud version rollback before restoring",
-  );
+  console.log("  --version <version>  Docker runtime version to restore");
   console.log(
     "  --dry-run            Show what would change without applying (data-only)",
   );
@@ -66,9 +63,7 @@ function printUsage(): void {
   console.log("Examples:");
   console.log("  cadet restore my-retired-assistant");
   console.log("  cadet restore my-assistant --from backup.tar.gz");
-  console.log(
-    "  cadet restore my-cloud-assistant --from backup.tar.gz --version v1.2.3",
-  );
+  console.log("  cadet restore my-cloud-assistant --from backup.tar.gz");
   console.log("  cadet restore my-assistant --from backup.tar.gz --dry-run");
 }
 
@@ -168,7 +163,7 @@ async function restorePlatform(
   entry: AssistantEntry,
   name: string,
   bundleData: Buffer,
-  opts: { version?: string; dryRun: boolean },
+  opts: { dryRun: boolean },
 ): Promise<void> {
   // Step 1 — Authenticate
   const token = readCloudToken();
@@ -179,7 +174,11 @@ async function restorePlatform(
 
   // Upload the root archive through the cloud API; it owns cloud restore.
   const { url: uploadUrl, bundleKey } = await cloudRequestSignedUrl(
-    { operation: "upload" },
+    {
+      operation: "upload",
+      contentType: "application/gzip",
+      contentLength: bundleData.length,
+    },
     token,
     entry.runtimeUrl,
   );
@@ -188,13 +187,6 @@ async function restorePlatform(
 
   // Step 2 — Dry-run path
   if (opts.dryRun) {
-    if (opts.version) {
-      console.error(
-        "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
-      );
-      process.exit(1);
-    }
-
     console.log("Running preflight analysis...\n");
 
     let preflightResult: { statusCode: number; body: Record<string, unknown> };
@@ -206,7 +198,7 @@ async function restorePlatform(
       );
     } catch (err) {
       if (err instanceof Error && err.name === "TimeoutError") {
-        console.error("Error: Preflight request timed out after 2 minutes.");
+        console.error("Error: Preflight request timed out after 30 minutes.");
         process.exit(1);
       }
       throw err;
@@ -305,34 +297,6 @@ async function restorePlatform(
     return;
   }
 
-  // Step 3 — Version rollback (if --version set)
-  if (opts.version) {
-    console.log(
-      `Rolling back to version ${opts.version} before restoring data...`,
-    );
-
-    try {
-      await rollbackCloudAssistant(
-        token,
-        entry.assistantId,
-        opts.version,
-        entry.runtimeUrl,
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("401") || msg.includes("403")) {
-        console.error("Authentication failed. Run 'cadet login' to refresh.");
-        process.exit(1);
-      }
-      console.error(`Error: Rollback failed — ${msg}`);
-      process.exit(1);
-    }
-
-    console.log(
-      `Rolled back to ${opts.version}. Proceeding with data restore...`,
-    );
-  }
-
   // Step 4 — Data import
   console.log("Importing backup data...");
 
@@ -345,7 +309,7 @@ async function restorePlatform(
     );
   } catch (err) {
     if (err instanceof Error && err.name === "TimeoutError") {
-      console.error("Error: Import request timed out after 5 minutes.");
+      console.error("Error: Import request timed out after 30 minutes.");
       process.exit(1);
     }
     throw err;
@@ -646,9 +610,14 @@ export const restore = Object.assign(
     }
 
     if (isCloudHome(cloud)) {
+      if (version) {
+        throw new Error(
+          "Cloud runtime version restore is not supported yet. Restore data without --version.",
+        );
+      }
       await validateRootArchive(fromPath);
       const bundleData = readFileSync(fromPath);
-      await restorePlatform(entry, name, bundleData, { version, dryRun });
+      await restorePlatform(entry, name, bundleData, { dryRun });
       return;
     }
 
@@ -656,9 +625,15 @@ export const restore = Object.assign(
       throw new Error(`Restore for '${cloud}' must run on its host.`);
     }
     if (version) {
-      if (cloud !== "docker") throw new Error("Version restore is supported for Docker and cloud assistants.");
+      if (cloud !== "docker")
+        throw new Error(
+          "Version restore is supported for Docker and cloud assistants.",
+        );
       await validateRootArchive(fromPath);
-      await performDockerRollback(entry, { targetVersion: version, backupPath: fromPath });
+      await performDockerRollback(entry, {
+        targetVersion: version,
+        backupPath: fromPath,
+      });
       console.log("Version and root backup restored.");
       return;
     }

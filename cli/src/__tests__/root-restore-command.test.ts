@@ -106,7 +106,11 @@ test("cloud restore uploads tar and calls the cloud API using the assistant's cl
   process.argv = ["bun", "cadet", "restore", "cloud-test", "--from", file];
   await restore();
   expect(signedUrl).toHaveBeenCalledWith(
-    { operation: "upload" },
+    expect.objectContaining({
+      operation: "upload",
+      contentType: "application/gzip",
+      contentLength: expect.any(Number),
+    }),
     "session-token",
     entry.runtimeUrl,
   );
@@ -143,4 +147,28 @@ test("Docker version restore passes the archive to the version switch as one ope
     backupPath: file,
   });
   expect(hostRestore).not.toHaveBeenCalled();
+});
+
+test("cloud version restore fails before upload or mutation", async () => {
+  lookup.mockReturnValue({
+    assistantId: "cloud-test",
+    cloud: "cloud",
+    runtimeUrl: "https://cloud.mycadet.ai",
+  });
+  process.argv = [
+    "bun",
+    "cadet",
+    "restore",
+    "cloud-test",
+    "--from",
+    file,
+    "--version",
+    "0.12.10",
+  ];
+  await expect(restore()).rejects.toThrow(
+    "Cloud runtime version restore is not supported yet",
+  );
+  expect(signedUrl).not.toHaveBeenCalled();
+  expect(importCloud).not.toHaveBeenCalled();
+  expect(versionRestore).not.toHaveBeenCalled();
 });

@@ -1,3 +1,4 @@
+import { persistRootSigningKey } from "./root-signing-key.js";
 import {
   existsSync,
   lstatSync,
@@ -306,6 +307,7 @@ export async function hatchLocal(
             params.initialArchive,
           )
         : generateLocalSigningKey();
+      persistRootSigningKey(resources.instanceDir, signingKey);
       const bootstrapSecret = generateLocalSigningKey();
       let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       try {
