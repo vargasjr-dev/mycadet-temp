@@ -34,6 +34,10 @@ const setShareDiagnostics = mock((next: boolean) => {
   shareDiagnostics = next;
 });
 mock.module("@/domains/onboarding/prefs", () => ({
+  readAnalyticsConsentCurrent: () => false,
+  readTosAccepted: () => false,
+  readDiagnosticsConsentCurrent: () => false,
+  readPrivacyConsent: () => false,
   useTosAccepted: () => [tosAccepted, setTosAccepted],
   usePrivacyConsent: () => [privacyConsent, setPrivacyConsent],
   useShareAnalytics: () => [shareAnalytics, setShareAnalytics],
@@ -44,6 +48,9 @@ mock.module("@/domains/onboarding/prefs", () => ({
     mock(() => {}),
   ],
   useHasConsentRecord: () => hasConsentRecord,
+  // Non-hook reader consumed by consent-gate (diagnostics gate); the
+  // reviewed screen keys off the hook mocks above, not this flag.
+  readConsentHydrated: () => true,
 }));
 
 const saveConsentMock = mock((_args: unknown) => {});

@@ -37,8 +37,7 @@ import { resolveTtsConfig } from "../tts/tts-config-resolver.js";
 export type TelephonyTtsNotPlayableReason =
   | "unsupported-format"
   | "missing-credentials"
-  | "missing-fish-audio-reference-id"
-  | "missing-cloud-connection";
+  | "missing-fish-audio-reference-id";
 
 /**
  * Result of resolving whether a TTS provider is playable over the

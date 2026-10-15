@@ -95,7 +95,7 @@ export async function tryIpcProxy(
       );
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (!admitActorToken(edgeJwt, result.claims)) {
+    if (!admitActorToken(edgeJwt, result.claims).admitted) {
       log.warn(
         { method: req.method, path: new URL(req.url).pathname },
         "IPC proxy auth rejected: actor token revoked",

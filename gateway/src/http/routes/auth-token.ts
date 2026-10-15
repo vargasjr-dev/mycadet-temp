@@ -156,7 +156,7 @@ export async function handleCreateToken(
   // Don't let a revoked token re-mint a fresh one — that would be an escape
   // hatch around device revocation, since the source token still verifies by
   // signature until it expires.
-  if (!admitActorToken(bearerToken, verifyResult.claims)) {
+  if (!admitActorToken(bearerToken, verifyResult.claims).admitted) {
     log.warn("Token create rejected: source token revoked");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

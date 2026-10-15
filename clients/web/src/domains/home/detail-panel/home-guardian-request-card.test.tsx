@@ -51,7 +51,16 @@ mock.module("@/stores/resolved-assistants-store", () => {
   store.use = {
     activeAssistantId: () => "assistant-1",
   };
-  return { useResolvedAssistantsStore: store };
+  // lifecycle-service reads getState() + subscribe() outside React render;
+  // the mock store mirrors the real store's surface.
+  store.getState = () => ({ activeAssistantId: "assistant-1" });
+  store.subscribe = () => () => {};
+  return {
+    useResolvedAssistantsStore: store,
+    // build-state (in the card's import graph) filters candidates through
+    // this helper; passthrough keeps every assistant valid under the mock.
+    assistantsValidForOrg: (assistants: unknown) => assistants,
+  };
 });
 
 const { HomeGuardianRequestCard } =

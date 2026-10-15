@@ -99,7 +99,6 @@ const fakeCatalog: FakeCatalogEntry[] = [
   makeEntry("fish-audio", "synthesized-play", "pcm", true),
   makeEntry("deepgram", "synthesized-play", "pcm", false),
   makeEntry("compressed-only", "synthesized-play", "none", false),
-  makeEntry("cadet", "synthesized-play", "pcm", false),
 ];
 
 // The catalog is also the adapter-resolution point (`getTtsProvider`), so the
@@ -190,12 +189,6 @@ mock.module("../calls/audio-store.js", () => ({
       finalize: () => finalizeCalls.push(audioId),
     };
   },
-}));
-
-let mockCloudSpeechAvailable = true;
-
-mock.module("../cloud/cloud-speech.js", () => ({
-  managedSpeechAvailable: async () => mockCloudSpeechAvailable,
 }));
 
 mock.module("../inbound/public-ingress-urls.js", () => ({
@@ -470,35 +463,14 @@ describe("resolveCallTtsProvider with requiresPcmAudio", () => {
     expect(result.audioFormat).toBe("mp3");
   });
 
-  test("cloud speech stands in for a configured provider whose credential is missing", async () => {
+  test("a credential-less configured provider is kept", async () => {
     testConfig.services.tts.provider = "deepgram";
-    // No deepgram key, cloud speech available: the phone speaks through
-    // cloud speech, the same substitution live voice makes.
     registerStubProvider("deepgram", async () => {
-      throw new Error("should not be used");
-    });
-    registerStubProvider("cadet", async () => {
       return { audio: Buffer.from("x"), contentType: "audio/mpeg" };
     });
 
     const result = await resolveCallTtsProvider();
-    expect(result.provider?.id).toBe("cadet");
-    expect(result.useSynthesizedPath).toBe(true);
-  });
-
-  test("without cloud speech a credential-less configured provider is kept", async () => {
-    mockCloudSpeechAvailable = false;
-    try {
-      testConfig.services.tts.provider = "deepgram";
-      registerStubProvider("deepgram", async () => {
-        return { audio: Buffer.from("x"), contentType: "audio/mpeg" };
-      });
-
-      const result = await resolveCallTtsProvider();
-      expect(result.provider?.id).toBe("deepgram");
-    } finally {
-      mockCloudSpeechAvailable = true;
-    }
+    expect(result.provider?.id).toBe("deepgram");
   });
 });
 
@@ -791,25 +763,5 @@ describe("speakSystemPrompt aborted synthesis", () => {
     expect(sentTokens).toEqual([
       { token: "You have a new message.", last: true },
     ]);
-  });
-});
-
-describe("cadet managed playability", () => {
-  test("playable only when the cloud identity is fully provisioned", async () => {
-    // The stored secret resolves, but availability decides.
-    storedKeys["cadet"] = "stored";
-    mockCloudSpeechAvailable = true;
-    const playable = await evaluateTelephonyTtsPlayability("cadet");
-    expect(playable.status).toBe("playable");
-  });
-
-  test("half-connected platform (secret without identity) is not playable", async () => {
-    storedKeys["cadet"] = "stored";
-    mockCloudSpeechAvailable = false;
-    const playable = await evaluateTelephonyTtsPlayability("cadet");
-    expect(playable).toMatchObject({
-      status: "not-playable",
-      reason: "missing-cloud-connection",
-    });
   });
 });

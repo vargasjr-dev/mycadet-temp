@@ -277,8 +277,11 @@ describe("document editor history remount", () => {
         input,
       );
       await act(async () => finishWrite());
+      // The debounced write fires on a real timer, then drains the held
+      // write — under CI worker starvation either leg can stall past a
+      // 2s budget (10/16/19 headroom pattern).
       await waitFor(() => expect(saved.content).toBe("Latest local body"), {
-        timeout: 2000,
+        timeout: 10000,
       });
       expect((input as HTMLTextAreaElement).value).toBe("Latest local body");
       fireEvent.change(input, {

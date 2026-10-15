@@ -24924,7 +24924,7 @@ paths:
     post:
       operationId: livevoice_preflight_post
       summary: Live voice preflight
-      description: Ensure cloud speech defaulting has run, then report whether live voice can start.
+      description: Report whether live voice can start with the current speech credentials.
       tags:
         - live-voice
       responses:

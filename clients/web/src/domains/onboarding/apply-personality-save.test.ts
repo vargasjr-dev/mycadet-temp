@@ -37,6 +37,20 @@ const messagesGetMock = mock(async () => ({
 }));
 const archivePostMock = mock(async () => ({ response: { ok: true } }));
 mock.module("@/generated/daemon/sdk.gen", () => ({
+  attachmentsByIdContentGet: async () => ({ data: undefined }),
+  attachmentsByIdGet: async () => ({ data: undefined }),
+  messagesQueuedByIdSteerPost: async () => ({ data: undefined }),
+  attachmentsPost: async () => ({ data: undefined }),
+  messagesQueuedByIdDelete: async () => ({ data: undefined }),
+  attachmentsDelete: async () => ({ data: undefined }),
+  appsByIdOpenPost: async () => ({ data: undefined }),
+  workspaceWritePost: async () => ({ data: undefined }),
+  workspaceFileGet: async () => ({ data: undefined }),
+  resourcepressureStatusGet: async () => ({ data: undefined }),
+  diskpressureStatusGet: async () => ({ data: undefined }),
+  healthzGet: async () => ({ data: undefined }),
+  // Imported for its side-effect module graph (assistant/api.ts); never called here.
+  diskpressureAcknowledgePost: async () => ({ data: undefined }),
   conversationsPost: conversationsPostMock,
   messagesPost: messagesPostMock,
   messagesGet: messagesGetMock,

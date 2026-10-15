@@ -61,6 +61,8 @@ const localSelectedRef = {
   value: null as { assistantId: string; name?: string } | null,
 };
 mock.module("@/lib/local-mode", () => ({
+  isCloudDisabled: () => undefined,
+  isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   getSelectedAssistant: () => localSelectedRef.value,
   getActiveAssistant: () =>
@@ -71,7 +73,11 @@ mock.module("@/lib/local-mode", () => ({
 }));
 
 mock.module("@/lib/auth/gateway-session", () => ({
+  setRemoteGatewayToken: () => {},
   isGatewayAuthMode: () => false,
+  // lifecycle-service (in the palette's import graph) reads the token at
+  // call time; no gateway session exists under these tests.
+  getGatewayToken: () => null,
 }));
 
 mock.module("@/stores/auth-store", () => {
@@ -97,6 +103,9 @@ mock.module("@/stores/organization-store", () => {
   return {
     useOrganizationStore,
     useRequestOrganizationId: () => orgRef.currentOrganizationId,
+    // API interceptors read the org for request headers through this helper;
+    // same value the mocked store hooks return.
+    getActiveOrganizationIdForRequests: () => orgRef.currentOrganizationId,
   };
 });
 

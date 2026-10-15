@@ -84,7 +84,12 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
           initialData: daemonConfigData,
         },
   configGetQueryKey: () => ["config-get-test"],
-  ttsManagedvoicesGetOptions: () => ({
+}));
+
+mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  // The managed-voices daemon transport is deleted; the picker reads the
+  // unscoped cloud catalog through the api SDK now.
+  managedSpeechTtsVoicesRetrieveOptions: () => ({
     queryKey: ["tts-managed-voices-test"],
     queryFn: () => Promise.resolve(managedVoicesData),
     initialData: managedVoicesData,

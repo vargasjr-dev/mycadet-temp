@@ -122,7 +122,7 @@ export function authorizeRuntimeAudioStream(
     };
   }
 
-  if (!admitActorToken(rawToken, result.claims)) {
+  if (!admitActorToken(rawToken, result.claims).admitted) {
     log.warn("audio stream WS: rejected, actor token revoked");
     return {
       ok: false,

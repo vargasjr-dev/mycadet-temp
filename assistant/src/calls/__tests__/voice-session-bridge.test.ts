@@ -1091,15 +1091,12 @@ describe("default call protocol numbered rules", () => {
 
   test("a monolingual listening language becomes the pre-speech fallback", () => {
     // An assistant pinned to services.stt.language = "es" on a provider that
-    // honors the pin (deepgram, cadet) is already transcribing Spanish, so
+    // honors the pin (deepgram) is already transcribing Spanish, so
     // the opener must not default to English. The default test config runs
     // the auto-detect branch ("multi"), so the pinned branch is covered at
     // the fragment level.
     expect(preSpeechLanguageRuleFragment("es", "deepgram")).toContain(
       'configured listening language ("es")',
-    );
-    expect(preSpeechLanguageRuleFragment("es", "cadet")).toContain(
-      "default to English only when neither gives a language",
     );
     for (const autoDetect of ["multi", "", "  ", undefined]) {
       expect(preSpeechLanguageRuleFragment(autoDetect, "deepgram")).toBe(

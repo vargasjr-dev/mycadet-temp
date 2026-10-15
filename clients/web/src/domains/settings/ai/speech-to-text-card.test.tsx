@@ -35,6 +35,9 @@ mock.module("@/runtime/native-dictation-partials", () => ({
 }));
 let electronHostOS: ElectronHostOS | null = "macos";
 mock.module("@/runtime/platform-detection", () => ({
+  clientOsDisplayName: () => null,
+  detectClientOs: () => null,
+  isNativeAndroid: () => null,
   detectElectronHostOS: () => electronHostOS,
 }));
 
@@ -92,6 +95,21 @@ interface SdkCall {
 const credentialsSetCalls: SdkCall[] = [];
 const configPatchCalls: SdkCall[] = [];
 mock.module("@/generated/daemon/sdk.gen", () => ({
+  attachmentsByIdContentGet: async () => ({ data: undefined }),
+  attachmentsByIdGet: async () => ({ data: undefined }),
+  messagesQueuedByIdSteerPost: async () => ({ data: undefined }),
+  attachmentsPost: async () => ({ data: undefined }),
+  messagesQueuedByIdDelete: async () => ({ data: undefined }),
+  messagesGet: async () => ({ data: undefined }),
+  attachmentsDelete: async () => ({ data: undefined }),
+  messagesPost: async () => ({ data: undefined }),
+  appsByIdOpenPost: async () => ({ data: undefined }),
+  workspaceWritePost: async () => ({ data: undefined }),
+  workspaceFileGet: async () => ({ data: undefined }),
+  resourcepressureStatusGet: async () => ({ data: undefined }),
+  diskpressureStatusGet: async () => ({ data: undefined }),
+  healthzGet: async () => ({ data: undefined }),
+  diskpressureAcknowledgePost: async () => ({ data: undefined }),
   credentialsSetPost: (opts: SdkCall) => {
     credentialsSetCalls.push(opts);
     return Promise.resolve({ response: { ok: true, status: 200 } });

@@ -26,6 +26,20 @@ import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils
 // loads. Component + store are imported dynamically below so the mock is
 // registered first.
 mock.module("@/generated/daemon/sdk.gen", () => ({
+  attachmentsByIdContentGet: async () => ({ data: undefined }),
+  attachmentsByIdGet: async () => ({ data: undefined }),
+  messagesQueuedByIdSteerPost: async () => ({ data: undefined }),
+  attachmentsPost: async () => ({ data: undefined }),
+  messagesQueuedByIdDelete: async () => ({ data: undefined }),
+  messagesGet: async () => ({ data: undefined }),
+  attachmentsDelete: async () => ({ data: undefined }),
+  messagesPost: async () => ({ data: undefined }),
+  workspaceWritePost: async () => ({ data: undefined }),
+  workspaceFileGet: async () => ({ data: undefined }),
+  resourcepressureStatusGet: async () => ({ data: undefined }),
+  diskpressureStatusGet: async () => ({ data: undefined }),
+  healthzGet: async () => ({ data: undefined }),
+  diskpressureAcknowledgePost: async () => ({ data: undefined }),
   appsByIdOpenPost: async () => ({ data: undefined }),
   documentsByIdGet: async () => ({ data: undefined }),
 }));

@@ -9,7 +9,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { AssistantConfigSchema } from "../config/schema.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { getLastWorkspaceMigrationId } from "../workspace/migrations/runner.js";
 
@@ -163,17 +162,18 @@ describe("132-web-search-mode-to-provider", () => {
     ).not.toThrow();
   });
 
-  // The migrated shape is what the daemon actually parses, so a cloud user
-  // must land on cadet rather than falling back to a keyless BYOK provider.
-  test("migrated output parses to the cadet provider", () => {
+  // The migrated shape is frozen (the migration never reruns), asserted raw:
+  // the current config schema no longer knows the cadet provider id, so a
+  // schema parse of a migrated cloud config is no longer a valid invariant —
+  // the config loader's recovery ladder owns any on-disk 'cadet' values.
+  test("migrated output folds managed mode into the cadet provider", () => {
     writeConfig({
       services: { "web-search": { mode: "managed", provider: "brave" } },
     });
 
     webSearchModeToProviderMigration.run(workspaceDir);
-    const parsed = AssistantConfigSchema.parse(readConfig());
 
-    expect(parsed.services["web-search"].provider).toBe("cadet");
+    expect(webSearch(readConfig())).toEqual({ provider: "cadet" });
   });
 
   describe("down", () => {

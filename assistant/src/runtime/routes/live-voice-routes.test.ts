@@ -1,11 +1,10 @@
 /**
  * Tests for the live-voice preflight and session-end routes.
  *
- * The handler must run cloud-speech defaulting first, then return the
- * live-voice credential readiness verdict verbatim:
+ * The preflight handler returns the live-voice credential readiness verdict
+ * verbatim:
  * - ready → { status: "ready" }
  * - not-ready → passes through the missing gaps + userMessage
- * - defaulting is invoked BEFORE readiness is resolved
  *
  * The session-end route is the out-of-band recovery path (LUM-3440): it
  * reports whether it actually reclaimed the daemon's single live-voice slot.
@@ -22,12 +21,6 @@ import type { LiveVoiceSessionReleaseResult } from "../../live-voice/live-voice-
 const calls: string[] = [];
 let readiness: LiveVoiceCredentialReadiness = { status: "ready" };
 let releaseResult: LiveVoiceSessionReleaseResult = { released: false };
-
-mock.module("../../config/cloud-speech-defaults.js", () => ({
-  maybeDefaultSpeechToCloud: async () => {
-    calls.push("default");
-  },
-}));
 
 mock.module("../../live-voice/live-voice-credential-preflight.js", () => ({
   resolveLiveVoiceCredentialReadiness: async () => {
@@ -80,13 +73,13 @@ describe("live_voice_preflight_post", () => {
     expect(result).toEqual(readiness);
   });
 
-  test("runs cloud-speech defaulting before resolving readiness", async () => {
+  test("resolves readiness without touching persisted config", async () => {
     calls.length = 0;
     readiness = { status: "ready" };
 
     await preflightRoute.handler({});
 
-    expect(calls).toEqual(["default", "resolve"]);
+    expect(calls).toEqual(["resolve"]);
   });
 });
 

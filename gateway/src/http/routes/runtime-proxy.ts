@@ -70,7 +70,7 @@ function presentedProxyGrant(authHeader: string | null): TokenClaims | null {
   if (!result.ok || result.claims.scope_profile !== "oauth_proxy_v1") {
     return null;
   }
-  if (!admitActorToken(token, result.claims)) {
+  if (!admitActorToken(token, result.claims).admitted) {
     return null;
   }
   return result.claims;
@@ -149,7 +149,7 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
         );
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
-      if (!admitActorToken(edgeJwt, result.claims)) {
+      if (!admitActorToken(edgeJwt, result.claims).admitted) {
         log.warn(
           { method: req.method, path: url.pathname },
           "Runtime proxy auth rejected: actor token revoked",

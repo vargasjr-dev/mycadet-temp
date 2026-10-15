@@ -140,16 +140,6 @@ function ttsGap(
         clause: `an API key for the text-to-speech provider "${providerId}" (no fallback provider has usable credentials)`,
       };
     }
-    case "missing-cloud-connection": {
-      return {
-        gap: {
-          kind: "tts",
-          providerId,
-          reason: `Managed TTS has no usable Cadet Cloud connection and no playable fallback provider is available`,
-        },
-        clause: `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect'; no fallback provider has usable credentials)`,
-      };
-    }
     case "missing-fish-audio-reference-id": {
       return {
         gap: {

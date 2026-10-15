@@ -1,9 +1,9 @@
 /**
  * Transport-agnostic route definitions for live-voice preflight.
  *
- * POST /v1/live-voice/preflight — ensure cloud-speech defaulting has run,
- * then report whether the daemon can run both audio legs of a live voice
- * session. Lets the web client verify voice is configured BEFORE opening the
+ * POST /v1/live-voice/preflight — report whether the daemon can run both
+ * audio legs of a live voice session. Lets the web client verify voice is
+ * configured BEFORE opening the
  * voice-room WebSocket, instead of opening it and reacting to an error frame.
  *
  * POST /v1/live-voice/session/end releases whatever session holds the
@@ -48,17 +48,17 @@ export const ROUTES: RouteDefinition[] = [
     operationId: "live_voice_preflight_post",
     endpoint: "live-voice/preflight",
     method: "POST",
-    // Requires settings.write, not a read scope: the handler runs
-    // maybeDefaultSpeechToCloud(), which can persist config changes
-    // (switching services.stt/tts.provider to "cadet"). This matches the
-    // secret/settings config writers, which all require settings.write.
+    // Requires settings.write, not a read scope: preflight reports the
+    // assistant's speech credential state, which the caller may act on to
+    // rewrite speech config. This matches the secret/settings config
+    // writers, which all require settings.write.
     policy: {
       requiredScopes: ["settings.write"],
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
     summary: "Live voice preflight",
     description:
-      "Ensure cloud speech defaulting has run, then report whether live voice can start.",
+      "Report whether live voice can start with the current speech credentials.",
     tags: ["live-voice"],
     responseBody: z.object({
       status: z.enum(["ready", "not-ready"]),

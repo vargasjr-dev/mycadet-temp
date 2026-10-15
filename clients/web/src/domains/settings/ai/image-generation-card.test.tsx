@@ -62,6 +62,22 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 
 const modelPutCalls: SdkCall[] = [];
 mock.module("@/generated/daemon/sdk.gen", () => ({
+  attachmentsByIdContentGet: async () => ({ data: undefined }),
+  attachmentsByIdGet: async () => ({ data: undefined }),
+  messagesQueuedByIdSteerPost: async () => ({ data: undefined }),
+  attachmentsPost: async () => ({ data: undefined }),
+  messagesQueuedByIdDelete: async () => ({ data: undefined }),
+  messagesGet: async () => ({ data: undefined }),
+  attachmentsDelete: async () => ({ data: undefined }),
+  messagesPost: async () => ({ data: undefined }),
+  appsByIdOpenPost: async () => ({ data: undefined }),
+  workspaceWritePost: async () => ({ data: undefined }),
+  workspaceFileGet: async () => ({ data: undefined }),
+  resourcepressureStatusGet: async () => ({ data: undefined }),
+  diskpressureStatusGet: async () => ({ data: undefined }),
+  healthzGet: async () => ({ data: undefined }),
+  // Imported for its side-effect module graph (assistant/api.ts); never called here.
+  diskpressureAcknowledgePost: async () => ({ data: undefined }),
   modelImagegenPut: (opts: SdkCall) => {
     modelPutCalls.push(opts);
     return Promise.resolve({ response: { ok: true, status: 200 } });
@@ -98,6 +114,8 @@ mock.module(
   }),
 );
 mock.module("@/lib/backwards-compat/utils", () => ({
+  whenAssistantVersionKnownFor: () => Promise.resolve(),
+  assistantScopedSupports: () => Promise.resolve(),
   whenAssistantVersionKnown: () => Promise.resolve(),
 }));
 

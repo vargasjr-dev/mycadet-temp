@@ -4128,6 +4128,197 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
       },
+      "/v1/devices/mine": {
+        get: {
+          summary: "The caller's own paired-device row",
+          description:
+            "Returns the paired-device row matching the presenting bearer token, so the paired web UI can surface 'this device' for matching against the host-side `cadet devices` list. Browser-reachable: the bearer is the credential, and the route answers only for the token presenting it. Not available on cloud-hosted assistants (they have no paired-device rows).",
+          operationId: "getMyDevice",
+          security: [{ BearerAuth: [] }],
+          responses: {
+            "200": {
+              description: "The caller's paired-device row",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    required: ["device"],
+                    properties: {
+                      device: {
+                        type: "object",
+                        required: ["hashedDeviceId", "platform", "issuedAt"],
+                        properties: {
+                          hashedDeviceId: { type: "string" },
+                          platform: { type: "string" },
+                          pairingUserAgent: {
+                            type: ["string", "null"],
+                          },
+                          clientReportedName: {
+                            type: ["string", "null"],
+                          },
+                          issuedAt: { type: "string" },
+                          expiresAt: { type: ["string", "null"] },
+                          lastUsedAt: { type: ["string", "null"] },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "401": {
+              description: "Missing or invalid bearer token",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "404": {
+              description:
+                "No paired-device row for this token, or the gateway is cloud-hosted",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/{path}": {
+        get: {
+          summary: "Runtime proxy",
+          description:
+            "Reverse-proxies requests to the assistant runtime. Supports all HTTP methods.",
+          operationId: "runtimeProxyGet",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "path",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description: "Upstream path forwarded to the assistant runtime",
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Proxied response from the assistant runtime",
+            },
+            "401": {
+              description: "Missing or invalid bearer token",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "404": {
+              description: "Route not found on upstream runtime",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "500": {
+              description:
+                "Server misconfigured (proxy auth enabled without token)",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "502": {
+              description: "Upstream connection failed",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "504": {
+              description: "Upstream request timed out",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          summary: "Runtime proxy",
+          description: "Reverse-proxies requests to the assistant runtime.",
+          operationId: "runtimeProxyPost",
+          security: [{ BearerAuth: [] }],
+          parameters: [
+            {
+              name: "path",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+              description: "Upstream path forwarded to the assistant runtime",
+            },
+          ],
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Proxied response from the assistant runtime",
+            },
+            "401": {
+              description: "Missing or invalid bearer token",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "404": {
+              description: "Route not found on upstream runtime",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "500": {
+              description:
+                "Server misconfigured (proxy auth enabled without token)",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "502": {
+              description: "Upstream connection failed",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            "504": {
+              description: "Upstream request timed out",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     components: {
       schemas: {

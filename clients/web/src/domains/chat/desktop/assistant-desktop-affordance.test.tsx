@@ -54,7 +54,14 @@ mock.module("@/stores/resolved-assistants-store", () => ({
         { id: "asst-2", name: "Bob" },
       ],
     },
+    // lifecycle-service reads getState() + subscribe() outside React render;
+    // the mock store mirrors the real store's surface.
+    getState: () => ({ activeAssistantId: assistantId }),
+    subscribe: () => () => {},
   },
+  // build-state (in the affordance's import graph) filters candidates
+  // through this helper; passthrough keeps every assistant valid.
+  assistantsValidForOrg: (assistants: unknown) => assistants,
 }));
 
 let panelUnmounts = 0;

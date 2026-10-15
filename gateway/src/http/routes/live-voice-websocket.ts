@@ -168,7 +168,7 @@ async function checkLiveVoiceAuth(
     return { response: new Response("Unauthorized", { status: 401 }) };
   }
 
-  if (!admitActorToken(rawToken, result.claims)) {
+  if (!admitActorToken(rawToken, result.claims).admitted) {
     log.warn("Live voice WS: rejected, actor token revoked");
     return { response: new Response("Unauthorized", { status: 401 }) };
   }
