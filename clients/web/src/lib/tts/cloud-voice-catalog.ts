@@ -1,7 +1,7 @@
 /**
  * Display helpers for managed (Cadet) TTS voices.
  *
- * The voice list itself is fetched from the cloud (`useCloudVoices`) —
+ * The voice list itself is fetched from the cloud (`useUnscopedCloudVoices`) —
  * the cloud's billing rate card is the single source of truth for which
  * voices are offered. This module only holds client-side presentation
  * helpers for whatever the cloud serves.

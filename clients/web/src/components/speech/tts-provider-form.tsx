@@ -34,7 +34,7 @@ import {
   LS_TTS_VOICE_ID_PREFIX,
 } from "@/utils/local-settings-keys";
 import { VoicePickerField } from "@/components/speech/voice-picker-field";
-import { useCloudVoices } from "@/lib/tts/use-cloud-voices";
+import { useUnscopedCloudVoices } from "@/lib/tts/use-cloud-voices";
 import { TTS_PROVIDERS } from "@/lib/provider-catalogs";
 
 /**
@@ -164,7 +164,7 @@ export function TtsProviderForm({
     voices: managedVoices,
     defaultModel: defaultCloudVoice,
     fetched,
-  } = useCloudVoices(assistantId, { enabled: draftProvider === "cadet" });
+  } = useUnscopedCloudVoices({ enabled: draftProvider === "cadet" });
 
   // Cloud voice selection. Server value comes from daemon config; absent
   // means the cloud default voice.

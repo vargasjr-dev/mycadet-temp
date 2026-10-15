@@ -27,7 +27,7 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import {
-  useCloudVoices,
+  useUnscopedCloudVoices,
   type CloudVoiceOption,
 } from "@/lib/tts/use-cloud-voices";
 
@@ -116,7 +116,7 @@ export function useCloudVoiceSelection(
     voices,
     defaultModel,
     loading: voicesLoading,
-  } = useCloudVoices(assistantId, {
+  } = useUnscopedCloudVoices({
     enabled: enabled && isCloud,
   });
 

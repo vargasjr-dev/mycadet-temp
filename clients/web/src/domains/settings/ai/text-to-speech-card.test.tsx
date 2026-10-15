@@ -57,10 +57,15 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
     initialData: daemonConfigData,
   }),
   configGetQueryKey: () => ["config-get-test"],
-  // The card falls back to the static managed-voice catalog when this
-  // query has no data, which is the state these tests exercise.
-  ttsManagedvoicesGetOptions: () => ({
-    queryKey: ["tts-managed-voices-test"],
+}));
+
+mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  // The unscoped cloud-voices hook reads the catalog straight from the cloud
+  // API — the daemon's managed-voices proxy is deleted. As with the daemon
+  // mocks, initialData makes the fetched state synchronous; without it the
+  // card renders the static fallback (the state the other tests exercise).
+  managedSpeechTtsVoicesRetrieveOptions: () => ({
+    queryKey: ["managed-speech-tts-voices-test"],
     queryFn: () =>
       Promise.resolve(managedVoicesData ?? { voices: [], defaultModel: null }),
     ...(managedVoicesData ? { initialData: managedVoicesData } : {}),
@@ -73,15 +78,49 @@ interface SdkCall {
 }
 const credentialsSetCalls: SdkCall[] = [];
 const configPatchCalls: SdkCall[] = [];
+// The card's import graph transitively loads modules that named-import daemon
+// SDK functions (the legacy api.ts, workspace queries, message hooks, …). The
+// mock must carry EVERY name those links resolve — bun fails between tests
+// with a missing-export SyntaxError otherwise (a Proxy does not satisfy the
+// link check; the names must be own properties). Only the two provisioning
+// calls are recorded; everything else stubs a 200.
+const okResponse = () =>
+  Promise.resolve({ response: { ok: true, status: 200 } });
+const sdkStubNames = [
+  "appsByIdOpenPost",
+  "attachmentsByIdContentGet",
+  "attachmentsByIdGet",
+  "attachmentsDelete",
+  "attachmentsPost",
+  "confirmPost",
+  "diskpressureAcknowledgePost",
+  "diskpressureStatusGet",
+  "healthzGet",
+  "messagesGet",
+  "messagesPost",
+  "messagesQueuedByIdDelete",
+  "messagesQueuedByIdSteerPost",
+  "pendinginteractionsGet",
+  "questionresponsePost",
+  "resourcepressureStatusGet",
+  "secretPost",
+  "workspaceFileGet",
+  "workspaceWritePost",
+] as const;
+const sdkStubs: Record<string, unknown> = {};
+for (const name of sdkStubNames) {
+  sdkStubs[name] = okResponse;
+}
 mock.module("@/generated/daemon/sdk.gen", () => ({
   credentialsSetPost: (opts: SdkCall) => {
     credentialsSetCalls.push(opts);
-    return Promise.resolve({ response: { ok: true, status: 200 } });
+    return okResponse();
   },
   configPatch: (opts: SdkCall) => {
     configPatchCalls.push(opts);
-    return Promise.resolve({ response: { ok: true, status: 200 } });
+    return okResponse();
   },
+  ...sdkStubs,
 }));
 
 const { TextToSpeechCard } =

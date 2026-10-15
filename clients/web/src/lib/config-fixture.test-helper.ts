@@ -284,7 +284,6 @@ const MATERIALIZED_DEFAULTS: ConfigGetResponse = {
           sampleRate: 24000,
           bitRate: 128000,
         },
-        cadet: {},
       },
     },
     "google-oauth": {

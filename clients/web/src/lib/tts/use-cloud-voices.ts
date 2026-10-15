@@ -1,27 +1,19 @@
 /**
- * Fetches the cloud (Cadet) TTS voice catalog. Fetch-only: the cloud is
- * the single source of truth for offered voices and the default, so until the
- * catalog loads (or when it fails) `voices` is empty and pickers render nothing
- * rather than a stale local list.
+ * Fetches the cloud TTS voice catalog. Fetch-only: the cloud is the single
+ * source of truth for offered voices and the default, so until the catalog
+ * loads (or when it fails) `voices` is empty and pickers render nothing rather
+ * than a stale local list.
  *
- * Two transports, because two kinds of caller need the same list under
- * different credentials:
- *
- * - {@link useCloudVoices} goes through the assistant's daemon, which reaches
- *   the cloud on the assistant's own API key. Self-hosted and gateway-only
- *   sessions have no platform session in the browser, so this is the only
- *   transport that works for them.
- * - {@link useUnscopedCloudVoices} reads the cloud directly, for callers
- *   that have a session but no assistant to route through.
- *
- * The catalog itself is identical either way: the cloud's rate card decides
- * it, and neither the assistant nor the organization is an input.
+ * Read straight from the cloud, for callers that have a platform session. The
+ * daemon's managed-voices proxy is gone with the managed (Cadet) speech
+ * provider, so there is no assistant-scoped transport anymore — callers that
+ * can't reach the cloud (self-hosted, gateway-only) get an empty catalog and
+ * pickers render nothing.
  */
 
 import { useQuery } from "@tanstack/react-query";
 
 import { managedSpeechTtsVoicesRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
-import { ttsManagedvoicesGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 
 /**
@@ -70,36 +62,10 @@ function toResult(
 }
 
 /**
- * The catalog as served through `assistantId`'s daemon. Idle until there is an
- * assistant to ask.
- */
-export function useCloudVoices(
-  assistantId: string | null,
-  options: { enabled?: boolean } = {},
-): UseCloudVoices {
-  const isOrgReady = useIsOrgReady();
-  const { data, isLoading } = useQuery({
-    ...ttsManagedvoicesGetOptions({
-      path: { assistant_id: assistantId ?? "" },
-    }),
-    enabled: isOrgReady && !!assistantId && (options.enabled ?? true),
-    staleTime: 60_000,
-    retry: false,
-  });
-
-  return toResult(data, isLoading);
-}
-
-/**
- * The catalog read straight from the cloud, for callers with a session but
- * no assistant. Onboarding's voice audition runs while the user's assistant is
- * still hatching, so routing it through an assistant would gate it on the
- * hatch.
- *
- * Needs a cloud session, which every caller in that position has. Surfaces
- * belonging to an existing assistant want {@link useCloudVoices} instead:
- * self-hosted and gateway-only sessions reach the cloud only through the
- * daemon.
+ * The catalog read straight from the cloud. The only transport left: the
+ * daemon's managed-voices proxy was deleted along with managed (Cadet) speech,
+ * so every voice surface reads the cloud directly and callers without a
+ * platform session get an empty catalog.
  */
 export function useUnscopedCloudVoices(
   options: { enabled?: boolean } = {},
