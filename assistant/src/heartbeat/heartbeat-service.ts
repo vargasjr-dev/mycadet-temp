@@ -124,7 +124,6 @@ function recordReengagementTimestamp(): void {
   }
 }
 
-
 export interface HeartbeatDeps {
   /** Override for current hour (0-23), for testing. Used when no timezone is resolved. */
   getCurrentHour?: () => number;
