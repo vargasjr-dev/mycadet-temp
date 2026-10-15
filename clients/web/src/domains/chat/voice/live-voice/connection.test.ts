@@ -136,7 +136,7 @@ describe("buildTunnelWsUrl", () => {
     };
     const url = new URL(buildTunnelWsUrl({ ...args, token: "tok-abc" }));
     expect(url.protocol).toBe("wss:");
-    expect(url.host).toBe("tunnel-staging.mycadet.ai");
+    expect(url.host).toBe("staging-tunnel.mycadet.ai");
   });
 
   test("falls back to the prod tunnel host for an off-convention platform URL", () => {

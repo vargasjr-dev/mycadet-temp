@@ -91,10 +91,10 @@ describe("tunnel origin derivation", () => {
       "https://tunnel.mycadet.ai",
     );
     expect(tunnelOriginForPlatformHost("staging-cloud.mycadet.ai")).toBe(
-      "https://tunnel-staging.mycadet.ai",
+      "https://staging-tunnel.mycadet.ai",
     );
     expect(tunnelOriginForPlatformHost("dev-cloud.mycadet.ai")).toBe(
-      "https://tunnel-dev.mycadet.ai",
+      "https://dev-tunnel.mycadet.ai",
     );
     expect(tunnelOriginForPlatformHost("mycadet.ai")).toBeNull();
     expect(tunnelOriginForPlatformHost("localhost")).toBeNull();
@@ -124,10 +124,10 @@ describe("tunnel origin derivation", () => {
     expect(await handler(req, server)).toBeUndefined();
     const data = upgradedData<SpeechRelaySocketData>(server);
     expect(new URL(data.upstreamWsUrl).origin).toBe(
-      "wss://tunnel-staging.mycadet.ai",
+      "wss://staging-tunnel.mycadet.ai",
     );
     expect(new URL(data.upstreamHttpUrl).origin).toBe(
-      "https://tunnel-staging.mycadet.ai",
+      "https://staging-tunnel.mycadet.ai",
     );
   });
 

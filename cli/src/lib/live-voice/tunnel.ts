@@ -55,7 +55,7 @@ export class TunnelWsTokenError extends Error {
  * reached: its tunnel is a loopback port that no naming convention predicts.
  * Otherwise the deployment convention maps the cloud host onto its sibling
  * (`cloud.mycadet.ai` to `tunnel.mycadet.ai`, `dev-cloud.mycadet.ai` to
- * `tunnel-dev.mycadet.ai`). A host outside that convention, including localhost,
+ * `dev-tunnel.mycadet.ai`). A host outside that convention, including localhost,
  * yields the production default, because guessing a tunnel for it would be
  * worse than dialing the one host that certainly exists.
  */

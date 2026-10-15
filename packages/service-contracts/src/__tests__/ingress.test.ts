@@ -28,10 +28,10 @@ describe("tunnelHostForCloudHost", () => {
 
   test("maps env-prefixed platform hosts to their env tunnel", () => {
     expect(tunnelHostForCloudHost("staging-cloud.mycadet.ai")).toBe(
-      "tunnel-staging.mycadet.ai",
+      "staging-tunnel.mycadet.ai",
     );
     expect(tunnelHostForCloudHost("dev-cloud.mycadet.ai")).toBe(
-      "tunnel-dev.mycadet.ai",
+      "dev-tunnel.mycadet.ai",
     );
   });
 

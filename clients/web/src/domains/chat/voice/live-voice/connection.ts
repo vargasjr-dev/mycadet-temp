@@ -5,7 +5,7 @@
  * {@link resolveLiveVoiceWsUrl}:
  *
  * - **Cloud** — streams audio to the cloud environment's tunnel (prod
- *   `tunnel.mycadet.ai`, staging `tunnel-staging.mycadet.ai`, …), which is
+ *   `tunnel.mycadet.ai`, staging `staging-tunnel.mycadet.ai`, …), which is
  *   cross-origin from the `cloud.mycadet.ai` SPA. A same-origin cookie WS
  *   upgrade is NOT viable: tunnel does no user auth, and the channel gateway
  *   only accepts a local actor edge JWT. So the browser first mints a

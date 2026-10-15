@@ -394,7 +394,7 @@ describe("resolvePublicBaseWssUrl", () => {
   test("uses tunnelBaseUrl + cloudAssistantId when both are present", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
+      tunnelBaseUrl: "https://dev-tunnel.mycadet.ai",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -402,7 +402,7 @@ describe("resolvePublicBaseWssUrl", () => {
       "abc12345-0000-0000-0000-000000000000",
     );
     expect(result).toBe(
-      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://dev-tunnel.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 
@@ -430,24 +430,24 @@ describe("resolvePublicBaseWssUrl", () => {
   test("falls back to configFile publicBaseUrl when cloudAssistantId is missing", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai",
+      tunnelBaseUrl: "https://dev-tunnel.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
         section === "ingress" && key === "publicBaseUrl"
-          ? "https://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000"
+          ? "https://dev-tunnel.mycadet.ai/abc12345-0000-0000-0000-000000000000"
           : undefined,
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(config, mockConfigFile, undefined);
     expect(result).toBe(
-      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://dev-tunnel.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 
   test("uses assistant ID from validated platform callback URL with Tunnel", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
+      tunnelBaseUrl: "https://staging-tunnel.mycadet.ai",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -456,14 +456,14 @@ describe("resolvePublicBaseWssUrl", () => {
       "https://staging-cloud.mycadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice/?callSessionId=37b47ade-2eaf-469a-bede-6f2454875e6e",
     );
     expect(result).toBe(
-      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://staging-tunnel.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
   test("prefers validated platform callback URL over stale configFile publicBaseUrl", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
+      tunnelBaseUrl: "https://staging-tunnel.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
@@ -478,14 +478,14 @@ describe("resolvePublicBaseWssUrl", () => {
       "https://staging-cloud.mycadet.ai/v1/gateway/callbacks/019e2d0d-f355-744c-a12c-d7e7dcefcf1e/webhooks/twilio/voice?callSessionId=sess-1",
     );
     expect(result).toBe(
-      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://staging-tunnel.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
   test("does not use a cloud callback URL as the websocket base", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-staging.mycadet.ai",
+      tunnelBaseUrl: "https://staging-tunnel.mycadet.ai",
     };
     const mockConfigFile = {
       getString: (section: string, key: string) =>
@@ -495,14 +495,14 @@ describe("resolvePublicBaseWssUrl", () => {
     } as Parameters<typeof resolvePublicBaseWssUrl>[1];
     const result = resolvePublicBaseWssUrl(config, mockConfigFile, undefined);
     expect(result).toBe(
-      "wss://tunnel-staging.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
+      "wss://staging-tunnel.mycadet.ai/019e2d0d-f355-744c-a12c-d7e7dcefcf1e",
     );
   });
 
   test("strips trailing slash from tunnelBaseUrl before joining assistant ID", () => {
     const config = {
       ...baseConfig,
-      tunnelBaseUrl: "https://tunnel-dev.mycadet.ai/",
+      tunnelBaseUrl: "https://dev-tunnel.mycadet.ai/",
     };
     const result = resolvePublicBaseWssUrl(
       config,
@@ -510,7 +510,7 @@ describe("resolvePublicBaseWssUrl", () => {
       "abc12345-0000-0000-0000-000000000000",
     );
     expect(result).toBe(
-      "wss://tunnel-dev.mycadet.ai/abc12345-0000-0000-0000-000000000000",
+      "wss://dev-tunnel.mycadet.ai/abc12345-0000-0000-0000-000000000000",
     );
   });
 });

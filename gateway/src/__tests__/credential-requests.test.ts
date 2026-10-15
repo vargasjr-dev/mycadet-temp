@@ -121,7 +121,7 @@ describe("credential-request mint (IPC)", () => {
   test("makes public ingress live on the successful mint path", async () => {
     const ensurePublicIngressLive = mock(async () => {});
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
+      fakeGatewayConfig("https://dev-tunnel.mycadet.ai"),
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
       {
@@ -152,7 +152,7 @@ describe("credential-request mint (IPC)", () => {
   test("does not read the cloud assistant id when the config URL resolves", async () => {
     const getCloudAssistantId = mock(async () => "assistant-123");
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
+      fakeGatewayConfig("https://dev-tunnel.mycadet.ai"),
       fakeConfigFile("https://assistant.example.com"),
       { service: "github", field: "api_token" },
       { getCloudAssistantId },
@@ -165,7 +165,7 @@ describe("credential-request mint (IPC)", () => {
     // ingress.publicBaseUrl is Tunnel-managed and cleared on tunnel flaps, so
     // the mint must still resolve a URL from tunnelBaseUrl + the assistant id.
     const result = await createCredentialRequest(
-      fakeGatewayConfig("https://tunnel-dev.mycadet.ai"),
+      fakeGatewayConfig("https://dev-tunnel.mycadet.ai"),
       fakeConfigFile(undefined),
       { service: "github", field: "api_token" },
       { getCloudAssistantId: async () => "assistant-123" },
@@ -173,7 +173,7 @@ describe("credential-request mint (IPC)", () => {
 
     if (!result.ok) throw new Error(`mint failed: ${result.error}`);
     expect(result.url).toBe(
-      `https://tunnel-dev.mycadet.ai/assistant-123/assistant/credentials/enter#token=${encodeURIComponent(result.token)}`,
+      `https://dev-tunnel.mycadet.ai/assistant-123/assistant/credentials/enter#token=${encodeURIComponent(result.token)}`,
     );
   });
 

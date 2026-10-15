@@ -332,7 +332,7 @@ describe("resolvePublicHttpBaseUrl", () => {
 
   test("prefers the config publicBaseUrl and strips its trailing slash", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://dev-tunnel.mycadet.ai" }),
       fakeConfigFile("https://assistant.example.com/"),
       getId("assistant-123"),
     );
@@ -342,7 +342,7 @@ describe("resolvePublicHttpBaseUrl", () => {
   test("does not read the cloud assistant id when the config URL resolves", async () => {
     const platformIdGetter = getId("assistant-123");
     await resolvePublicHttpBaseUrl(
-      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://dev-tunnel.mycadet.ai" }),
       fakeConfigFile("https://assistant.example.com"),
       platformIdGetter,
     );
@@ -352,20 +352,20 @@ describe("resolvePublicHttpBaseUrl", () => {
 
   test("falls back to tunnelBaseUrl + platform assistant id when config is empty", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://dev-tunnel.mycadet.ai" }),
       fakeConfigFile(undefined),
       getId("assistant-123"),
     );
-    expect(result).toBe("https://tunnel-dev.mycadet.ai/assistant-123");
+    expect(result).toBe("https://dev-tunnel.mycadet.ai/assistant-123");
   });
 
   test("strips a trailing slash on tunnelBaseUrl before joining the assistant id", async () => {
     const result = await resolvePublicHttpBaseUrl(
-      makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai/" }),
+      makeConfig({ tunnelBaseUrl: "https://dev-tunnel.mycadet.ai/" }),
       fakeConfigFile(undefined),
       getId("assistant-123"),
     );
-    expect(result).toBe("https://tunnel-dev.mycadet.ai/assistant-123");
+    expect(result).toBe("https://dev-tunnel.mycadet.ai/assistant-123");
   });
 
   test("returns undefined when neither the config URL nor the tunnel fallback resolve", async () => {
@@ -375,7 +375,7 @@ describe("resolvePublicHttpBaseUrl", () => {
     // tunnelBaseUrl present but no platform assistant id → no fallback.
     expect(
       await resolvePublicHttpBaseUrl(
-        makeConfig({ tunnelBaseUrl: "https://tunnel-dev.mycadet.ai" }),
+        makeConfig({ tunnelBaseUrl: "https://dev-tunnel.mycadet.ai" }),
         fakeConfigFile(undefined),
         getId(undefined),
       ),
