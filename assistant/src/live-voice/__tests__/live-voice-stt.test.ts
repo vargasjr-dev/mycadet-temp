@@ -1609,7 +1609,7 @@ describe("LiveVoiceSession STT", () => {
         },
       },
     });
-    const transcriber = new MockStreamingTranscriber("cadet");
+    const transcriber = new MockStreamingTranscriber("deepgram");
     const startVoiceTurn = speakingVoiceTurnStarter();
     const { streamTtsAudio, ttsCalls } = recordingTtsStreamer();
     const { context } = createContext();

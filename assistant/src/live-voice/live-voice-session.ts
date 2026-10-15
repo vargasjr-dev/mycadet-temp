@@ -8262,14 +8262,18 @@ export async function defaultSpawnBackgroundContinuation(args: {
 async function defaultResolveStreamingTranscriber(
   options: ResolveStreamingTranscriberOptions,
 ): Promise<StreamingTranscriber | null> {
-  const { resolveEffectiveSpeechProviders } =
-    await import("../config/cloud-speech-defaults.js");
   const { resolveStreamingTranscriber } =
     await import("../providers/speech-to-text/resolve.js");
-  const { stt } = await resolveEffectiveSpeechProviders(undefined, {
-    role: "liveVoice",
-  });
-  return resolveStreamingTranscriber({ ...options, providerId: stt });
+  const { sttCatalogKeyForRole } = await import("../stt/roles.js");
+  const { getConfig } = await import("../config/loader.js");
+  // The live-voice role's configured provider is the one that gets dialed —
+  // the session resolves it here (rather than trusting a caller's override)
+  // so readiness and transcription agree.
+  const providerId = sttCatalogKeyForRole(
+    getConfig().services.stt,
+    "liveVoice",
+  );
+  return resolveStreamingTranscriber({ ...options, providerId });
 }
 
 async function defaultResolveLiveVoiceCredentialReadiness(): Promise<LiveVoiceCredentialReadiness> {

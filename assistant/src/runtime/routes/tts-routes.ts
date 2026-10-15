@@ -8,7 +8,6 @@
 import { z } from "zod";
 
 import { sanitizeForTts } from "../../calls/tts-text-sanitizer.js";
-import { managedSpeechVoices } from "../../cloud/cloud-speech.js";
 import { getConfig } from "../../config/loader.js";
 import { listCatalogProvidersForDisplay } from "../../tts/provider-catalog.js";
 import {
@@ -132,17 +131,6 @@ function handleListTtsProviders() {
   return { providers: listCatalogProvidersForDisplay() };
 }
 
-async function handleListCloudVoices() {
-  const result = await managedSpeechVoices();
-  if (!result.ok) {
-    if (result.kind === "unavailable") {
-      throw new ServiceUnavailableError(result.message);
-    }
-    throw new BadGatewayError(result.message);
-  }
-  return result.value;
-}
-
 async function handleSynthesizeTts({ body }: RouteHandlerArgs) {
   if (!body?.text || typeof body.text !== "string") {
     throw new BadRequestError("text is required");
@@ -233,32 +221,6 @@ export const ROUTES: RouteDefinition[] = [
       ),
     }),
     handler: handleListTtsProviders,
-  },
-  {
-    operationId: "tts_managed_voices",
-    endpoint: "tts/managed-voices",
-    method: "GET",
-    policy: {
-      requiredScopes: ["settings.read"],
-      allowedPrincipalTypes: ACTOR_PRINCIPALS,
-    },
-    summary: "List managed TTS voices",
-    description:
-      "Return the voices offered by Cadet Cloud TTS, fetched live from the cloud. Only currently-usable voices are returned; defaultModel is always one of them (null when none are offered).",
-    tags: ["tts"],
-    responseBody: z.object({
-      voices: z.array(
-        z.object({
-          model: z.string(),
-          label: z.string(),
-          description: z.string(),
-          sampleUrl: z.string(),
-          source: z.string(),
-        }),
-      ),
-      defaultModel: z.string().nullable(),
-    }),
-    handler: handleListCloudVoices,
   },
   {
     operationId: "tts_synthesize",

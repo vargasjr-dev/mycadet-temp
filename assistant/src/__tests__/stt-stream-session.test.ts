@@ -140,11 +140,11 @@ class FailingTranscriber implements StreamingTranscriber {
 }
 
 /**
- * Mock managed transcriber whose start() throws a userFacing SttError,
- * mirroring the cloud relay's mapped dial rejection.
+ * Mock transcriber whose start() throws a userFacing SttError, mirroring
+ * an adapter's mapped upstream rejection.
  */
 class ManagedFailingTranscriber implements StreamingTranscriber {
-  readonly providerId = "cadet" as const;
+  readonly providerId = "deepgram" as const;
   readonly boundaryId = "daemon-streaming" as const;
 
   constructor(private readonly message: string) {}
@@ -357,7 +357,7 @@ describe("SttStreamSession", () => {
     });
 
     test("managed start failure surfaces its remediation verbatim", async () => {
-      const { ws, session } = createSession("cadet");
+      const { ws, session } = createSession("deepgram");
       const managedMessage =
         "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
 

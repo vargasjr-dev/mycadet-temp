@@ -69,9 +69,9 @@ describe("SttServiceSchema", () => {
   test("language defaults to multilingual rather than staying absent", () => {
     // Every config carries a real language, so nothing downstream has to
     // infer one from an absent key. Omitting the param entirely is not a
-    // neutral state on Deepgram and the cloud relay: it decodes as
-    // English, which is what this default exists to stop.
-    const parsed = SttServiceSchema.parse({ provider: "cadet" });
+    // neutral state on Deepgram: it decodes as English, which is what this
+    // default exists to stop.
+    const parsed = SttServiceSchema.parse({ provider: "deepgram" });
     expect(parsed.language).toBe("multi");
   });
 
@@ -86,7 +86,8 @@ describe("SttServiceSchema", () => {
 
   test("language round-trips a code and the multi code-switching mode", () => {
     expect(
-      SttServiceSchema.parse({ provider: "cadet", language: "multi" }).language,
+      SttServiceSchema.parse({ provider: "deepgram", language: "multi" })
+        .language,
     ).toBe("multi");
     expect(
       SttServiceSchema.parse({ provider: "deepgram", language: "hi" }).language,
@@ -95,30 +96,25 @@ describe("SttServiceSchema", () => {
 
   test("language is trimmed and rejects blank strings", () => {
     expect(
-      SttServiceSchema.parse({ provider: "cadet", language: "  multi  " })
+      SttServiceSchema.parse({ provider: "deepgram", language: "  multi  " })
         .language,
     ).toBe("multi");
     expect(() =>
-      SttServiceSchema.parse({ provider: "cadet", language: "   " }),
+      SttServiceSchema.parse({ provider: "deepgram", language: "   " }),
     ).toThrow(/must not be empty/);
   });
 });
 
-describe("cloud provider", () => {
-  test("accepts cadet as an ordinary provider choice", () => {
-    const parsed = SttServiceSchema.parse({ provider: "cadet" });
-    expect(parsed.provider).toBe("cadet");
-  });
-
+describe("provider parsing", () => {
   // Migration 130 folds mode into provider; a stale key must not resurrect
   // the second axis or fail the parse.
   test("ignores a legacy mode key", () => {
     const parsed = SttServiceSchema.parse({
       mode: "managed",
-      provider: "cadet",
+      provider: "deepgram",
     });
     expect(parsed).toEqual({
-      provider: "cadet",
+      provider: "deepgram",
       language: "multi",
       providers: {},
       roles: {},

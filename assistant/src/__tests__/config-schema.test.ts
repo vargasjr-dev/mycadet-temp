@@ -1532,9 +1532,6 @@ describe("AssistantConfigSchema", () => {
     expect(result.services.tts.providers.deepgram.languageVoices).toEqual({
       hi: "aura-2-hi-voice",
     });
-    expect(result.services.tts.providers.cadet.languageVoices).toEqual({
-      hi: "aura-2-hi-voice",
-    });
   });
 
   test("normalizes user-entered languageVoices keys to lowercase base subtags", () => {
@@ -1586,7 +1583,7 @@ describe("AssistantConfigSchema", () => {
       services: {
         tts: {
           providers: {
-            cadet: {
+            deepgram: {
               languageVoices: {
                 "": "voice-empty",
                 "  ": "voice-blank",
@@ -1598,7 +1595,7 @@ describe("AssistantConfigSchema", () => {
         },
       },
     });
-    expect(result.services.tts.providers.cadet.languageVoices).toEqual({
+    expect(result.services.tts.providers.deepgram.languageVoices).toEqual({
       hi: "voice-hindi",
     });
   });
@@ -1611,11 +1608,10 @@ describe("AssistantConfigSchema", () => {
     expect(
       result.services.tts.providers.deepgram.languageVoices,
     ).toBeUndefined();
-    expect(result.services.tts.providers.cadet.languageVoices).toBeUndefined();
   });
 
   test("rejects non-string services.tts.providers languageVoices values", () => {
-    for (const provider of ["elevenlabs", "deepgram", "cadet"]) {
+    for (const provider of ["elevenlabs", "deepgram"]) {
       const result = AssistantConfigSchema.safeParse({
         services: {
           tts: {
@@ -1645,13 +1641,6 @@ describe("AssistantConfigSchema", () => {
     });
     expect(result.services.tts).not.toHaveProperty("mode");
     expect(result.services.tts.provider).toBe("elevenlabs");
-  });
-
-  test("accepts tts provider cadet as an ordinary choice", () => {
-    const result = AssistantConfigSchema.safeParse({
-      services: { tts: { provider: "cadet" } },
-    });
-    expect(result.success).toBe(true);
   });
 
   // ── hostBrowser.cdpInspect.desktopAuto config ───────────────────────
@@ -1719,9 +1708,6 @@ describe("AssistantConfigSchema", () => {
       expect(defaulted.data.provider).toBe("elevenlabs");
     }
 
-    expect(TtsServiceSchema.safeParse({ provider: "cadet" }).success).toBe(
-      true,
-    );
     expect(
       TtsServiceSchema.safeParse({ provider: "self-hosted" }).success,
     ).toBe(false);
@@ -1809,13 +1795,6 @@ describe("AssistantConfigSchema", () => {
     expect(result.services.stt.provider).toBe("deepgram");
   });
 
-  test("accepts stt provider cadet as an ordinary choice", () => {
-    const result = AssistantConfigSchema.safeParse({
-      services: { stt: { provider: "cadet" } },
-    });
-    expect(result.success).toBe(true);
-  });
-
   test("rejects invalid services.stt.provider", () => {
     const result = AssistantConfigSchema.safeParse({
       services: { stt: { provider: "azure-speech" } },
@@ -1892,9 +1871,6 @@ describe("AssistantConfigSchema", () => {
     expect(
       SttServiceSchema.safeParse({ provider: "openai-whisper" }).success,
     ).toBe(true);
-    expect(SttServiceSchema.safeParse({ provider: "cadet" }).success).toBe(
-      true,
-    );
     expect(
       SttServiceSchema.safeParse({ provider: "self-hosted" }).success,
     ).toBe(false);
@@ -2090,21 +2066,13 @@ describe("TTS provider catalog integration", () => {
 
   test("resolveTtsConfig returns correct defaults for each catalog provider", () => {
     for (const providerId of listCatalogProviderIds()) {
-      // cadet is connection-based and only valid under managed mode.
-      const mode = providerId === "cadet" ? "managed" : "your-own";
       const config = AssistantConfigSchema.parse({
-        services: { tts: { mode, provider: providerId } },
+        services: { tts: { provider: providerId } },
       });
       const resolved = resolveTtsConfig(config);
       expect(resolved.provider).toBe(providerId);
-      if (providerId === "cadet") {
-        // The cadet config block is intentionally empty — the cloud
-        // pins the voice and model.
-        expect(resolved.providerConfig).toEqual({});
-      } else {
-        // Every BYOK provider resolves to a non-empty config object.
-        expect(Object.keys(resolved.providerConfig).length).toBeGreaterThan(0);
-      }
+      // Every provider resolves to a non-empty config object.
+      expect(Object.keys(resolved.providerConfig).length).toBeGreaterThan(0);
     }
   });
 

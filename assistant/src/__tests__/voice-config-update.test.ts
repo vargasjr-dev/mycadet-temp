@@ -1,15 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-
-import * as actualCloudSpeech from "../cloud/cloud-speech.js";
-
-let mockCloudSpeechAvailable = false;
-
-mock.module("../cloud/cloud-speech.js", () => ({
-  ...actualCloudSpeech,
-  managedSpeechAvailable: async () => mockCloudSpeechAvailable,
-}));
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 // ---------------------------------------------------------------------------
 // Mocks — declared before imports that depend on platform/logger
@@ -71,7 +62,6 @@ beforeEach(() => {
   ensureTestDir();
   writeConfig({});
   invalidateConfigCache();
-  mockCloudSpeechAvailable = false;
 });
 
 afterEach(() => {
@@ -144,18 +134,6 @@ describe("voice_config_update — tts_provider", () => {
     expect(tts).not.toHaveProperty("mode");
   });
 
-  test("tts_provider cadet persists when a cloud connection is available", async () => {
-    mockCloudSpeechAvailable = true;
-
-    const result = await run(
-      { setting: "tts_provider", value: "cadet" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect((readConfig().services as any).tts.provider).toBe("cadet");
-  });
-
   test("broadcasts ttsProvider to client", async () => {
     const messages: any[] = [];
     const ctx = makeContext({
@@ -220,117 +198,8 @@ describe("voice_config_update — tts_voice_id", () => {
 // Tests: tts_voice_id targets the active provider's voice field
 // ---------------------------------------------------------------------------
 
-describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
-  function makeCadetActive(): void {
-    writeConfig({ services: { tts: { provider: "cadet" } } });
-    invalidateConfigCache();
-  }
-
-  test("writes a Deepgram Aura model id to services.tts.providers.cadet.model", async () => {
-    makeCadetActive();
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "aura-2-zeus-en" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    const config = readConfig();
-    expect((config.services as any)?.tts?.providers?.cadet?.model).toBe(
-      "aura-2-zeus-en",
-    );
-    // The ElevenLabs field is never touched when cadet is active.
-    expect(
-      (config.services as any)?.tts?.providers?.elevenlabs?.voiceId,
-    ).toBeUndefined();
-  });
-
-  test("accepts an ElevenLabs voice id as a cloud model (managed serves ElevenLabs voices)", async () => {
-    makeCadetActive();
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "EXAVITQu4vr4xnSDxMaL" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.tts?.providers?.cadet?.model).toBe(
-      "EXAVITQu4vr4xnSDxMaL",
-    );
-  });
-
-  test("does not broadcast the ElevenLabs ttsVoiceId key for a cloud voice", async () => {
-    makeCadetActive();
-    const messages: any[] = [];
-    const ctx = makeContext({
-      sendToClient: (msg: any) => messages.push(msg),
-    });
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "aura-2-zeus-en" },
-      ctx,
-    );
-
-    expect(result.isError).toBe(false);
-    expect(messages).toHaveLength(0);
-    expect(result.content).not.toContain("broadcast");
-  });
-
-  test("hints the inline picker for the next cloud voice change", async () => {
-    makeCadetActive();
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "aura-2-zeus-en" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect(result.content).toStartWith("Cadet Cloud voice updated to");
-    expect(result.content).toContain(
-      'ui_show { surface_type: "voice_picker", data: {} }',
-    );
-  });
-
-  test("does not hint the picker when the voice is not managed", async () => {
-    writeConfig({ services: { tts: { provider: "elevenlabs" } } });
-    invalidateConfigCache();
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "abc123" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect(result.content).not.toContain("voice_picker");
-  });
-
-  test("does not hint the picker for a non-voice setting", async () => {
-    makeCadetActive();
-
-    const result = await run(
-      { setting: "conversation_timeout", value: 30 },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect(result.content).not.toContain("voice_picker");
-  });
-
-  test("rejects a value with characters invalid for any voice id", async () => {
-    makeCadetActive();
-
-    const result = await run(
-      { setting: "tts_voice_id", value: "a british man" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(true);
-    expect((readConfig().services as any)?.tts?.providers?.cadet?.model).toBe(
-      undefined,
-    );
-  });
-
-  test("broadcasts the ElevenLabs ttsVoiceId key when elevenlabs is active", async () => {
+describe("voice_config_update — tts_voice_id", () => {
+  test("writes the voice id and broadcasts the ttsVoiceId key", async () => {
     writeConfig({ services: { tts: { provider: "elevenlabs" } } });
     invalidateConfigCache();
     const messages: any[] = [];
@@ -344,6 +213,21 @@ describe("voice_config_update — tts_voice_id (managed/cadet active)", () => {
     expect(messages).toHaveLength(1);
     expect(messages[0].key).toBe("ttsVoiceId");
     expect(messages[0].value).toBe("abc123");
+  });
+
+  test("rejects a value with characters invalid for any voice id", async () => {
+    writeConfig({ services: { tts: { provider: "elevenlabs" } } });
+    invalidateConfigCache();
+
+    const result = await run(
+      { setting: "tts_voice_id", value: "a british man" },
+      makeContext(),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(
+      (readConfig().services as any)?.tts?.providers?.elevenlabs?.voiceId,
+    ).toBeUndefined();
   });
 });
 
@@ -534,31 +418,6 @@ describe("voice_config_update — stt_provider", () => {
     expect((readConfig().services as any)?.stt?.provider).toBe(
       "openai-whisper",
     );
-  });
-
-  test("persists the cadet provider when a cloud connection is available", async () => {
-    mockCloudSpeechAvailable = true;
-
-    const result = await run(
-      { setting: "stt_provider", value: "cadet" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.provider).toBe("cadet");
-  });
-
-  test("rejects the cadet provider without a cloud connection", async () => {
-    mockCloudSpeechAvailable = false;
-
-    const result = await run(
-      { setting: "stt_provider", value: "cadet" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("assistant cloud connect");
-    expect((readConfig().services as any)?.stt?.provider).toBeUndefined();
   });
 
   test("stt_model persists under the active provider", async () => {
@@ -916,22 +775,8 @@ describe("voice_config_update - stt_language", () => {
 // ---------------------------------------------------------------------------
 
 describe("voice_config_update — catalog-driven provider validation", () => {
-  test("rejects tts_provider cadet without a cloud connection", async () => {
-    mockCloudSpeechAvailable = false;
-
-    const result = await run(
-      { setting: "tts_provider", value: "cadet" },
-      makeContext(),
-    );
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("assistant cloud connect");
-    expect((readConfig().services as any)?.tts?.provider).toBeUndefined();
-  });
-
   test("accepts every provider ID in the catalog", async () => {
     // The catalog includes cadet, which is gated on a cloud connection.
-    mockCloudSpeechAvailable = true;
     const catalogIds = listCatalogProviderIds();
     expect(catalogIds.length).toBeGreaterThanOrEqual(1);
 

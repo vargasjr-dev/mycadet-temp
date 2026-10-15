@@ -52,15 +52,7 @@ export type SttProviderId =
    */
   | "deepgram-flux"
   | "google-gemini"
-  | "xai"
-  | "cadet"
-  /**
-   * Cloud Flux: the same conversational model as `deepgram-flux`, reached
-   * through the cloud's speech relay instead of a Deepgram key. Dials the
-   * relay's STT v2 endpoint asking for native Flux frames, so it keeps the
-   * turn events the relay's default v1-shaped translation drops.
-   */
-  | "cadet-flux";
+  | "xai";
 
 /**
  * Telephony-specific STT capability class.

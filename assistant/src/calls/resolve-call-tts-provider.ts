@@ -7,7 +7,6 @@
  * native-vs-synthesized strategy decision stay in one implementation.
  */
 
-import { resolveEffectiveSpeechProviders } from "../config/cloud-speech-defaults.js";
 import { getConfig } from "../config/loader.js";
 import {
   getCatalogProvider,
@@ -73,13 +72,6 @@ export interface ResolveCallTtsOptions {
 
 /**
  * Resolve the active TTS provider via the global provider abstraction.
- *
- * The provider is the effective one after cloud-speech defaulting
- * ({@link resolveEffectiveSpeechProviders}): a configured BYOK provider
- * whose credential does not resolve is stood in for by cloud speech
- * while the cloud connection is usable, the same substitution live
- * voice makes, so a fresh Cadet connection speaks on the phone with zero
- * TTS configuration.
  *
  * The native-vs-synthesized decision is driven by the catalog's
  * `callMode` field via {@link resolveCallStrategy}. Providers with
@@ -185,25 +177,14 @@ export async function resolveCallTtsProvider(
 }
 
 /**
- * The TTS provider the call actually uses after cloud-speech defaulting.
- * A failure inside the cloud lookup (platform client, credential store)
- * keeps the configured provider: a cloud-speech hiccup must not demote a
- * working BYOK provider, and the outer resolver's own fallback is the
- * silent native path.
+ * The TTS provider the call actually uses — the configured one. Kept as a
+ * named seam because the outer resolver's own fallback is the silent
+ * native path when the config has no services.tts block.
  */
-async function effectiveTtsProviderId(
+function effectiveTtsProviderId(
   config: ReturnType<typeof getConfig>,
-): Promise<TtsProviderId | undefined> {
-  try {
-    const { tts } = await resolveEffectiveSpeechProviders(config);
-    return tts;
-  } catch (err) {
-    log.warn(
-      { err },
-      "Managed-speech defaulting failed for call TTS; keeping the configured provider",
-    );
-    return undefined;
-  }
+): TtsProviderId | undefined {
+  return config.services.tts?.provider;
 }
 
 /**

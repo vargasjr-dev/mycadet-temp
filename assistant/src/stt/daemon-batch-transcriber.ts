@@ -205,32 +205,6 @@ export function normalizeSttError(err: unknown): SttError {
   return new SttError("provider-error", message);
 }
 
-// ---------------------------------------------------------------------------
-// Cadet Cloud adapter — implements BatchTranscriber on top of the
-// platform's cloud speech endpoint. No API key: the cloud connection
-// is the credential.
-// ---------------------------------------------------------------------------
-
-class CadetManagedBatchTranscriber implements BatchTranscriber {
-  readonly providerId = "cadet" as const;
-  readonly boundaryId = "daemon-batch" as const;
-
-  constructor(private readonly language: string | undefined) {}
-
-  async transcribe(
-    request: SttTranscribeRequest,
-  ): Promise<SttTranscribeResult> {
-    const { cadetCloudTranscribe } =
-      await import("../providers/speech-to-text/cadet-cloud.js");
-    return cadetCloudTranscribe(
-      request.audio,
-      request.mimeType,
-      request.signal,
-      this.language,
-    );
-  }
-}
-
 /**
  * Create a `BatchTranscriber` for the daemon-batch boundary.
  *
@@ -241,10 +215,9 @@ class CadetManagedBatchTranscriber implements BatchTranscriber {
  * is unavailable.
  *
  * `language` is the spoken language, forwarded to providers whose batch API
- * accepts one: Deepgram (where `"multi"` also pins nova-3), xAI (where
+ * accepts one: Deepgram (where `"multi"` also pins nova-3) and xAI (where
  * `"multi"` is dropped because it is a Deepgram-specific value, not a
- * language code), and the Cadet Cloud path, whose cloud proxy passes
- * it to Deepgram server-side. Whisper and Gemini auto-detect natively and
+ * language code). Whisper and Gemini auto-detect natively and
  * take no language parameter, so it is silently ignored for them.
  *
  * Throws an {@link SttError} for a provider with no batch endpoint at all,
@@ -255,11 +228,6 @@ export function createDaemonBatchTranscriber(
   providerId: SttProviderId,
   language?: string,
 ): BatchTranscriber | null {
-  // Cloud speech authenticates via the cloud connection, not an API
-  // key. Callers pass canonical ids; the resolver maps legacy ones first.
-  if (providerId === "cadet") {
-    return new CadetManagedBatchTranscriber(language);
-  }
   if (!apiKey) {
     return null;
   }
@@ -274,11 +242,9 @@ export function createDaemonBatchTranscriber(
     case "xai":
       return new XAIBatchTranscriber(apiKey, language);
     case "deepgram-flux":
-    case "cadet-flux":
       // Same copy the resolver raises, so a direct factory caller and a
-      // config-driven one report the mismatch identically. Both Flux
-      // variants are streaming-only: the model has no batch endpoint, BYOK
-      // or managed.
+      // config-driven one report the mismatch identically. Flux is
+      // streaming-only: the model has no batch endpoint.
       throw new SttError("provider-error", batchBoundaryGapReason(providerId), {
         userFacing: true,
       });

@@ -11,24 +11,22 @@
  * Mirrors `calls/telephony-credential-preflight.ts` for the phone-call
  * transport.
  *
- * Both legs are checked against the effective providers
- * (`resolveEffectiveSpeechProviders`), which is what the transcriber and
- * synthesis paths resolve too — so a `ready` verdict earned on managed
- * speech is a verdict the runtime can honour.
+ * Both legs are checked against the providers the transcriber and synthesis
+ * paths resolve, so a `ready` verdict is one the runtime can honour.
  */
 
 import {
   fishAudioReferenceIdConfigured,
   ttsSecretResolves,
 } from "../calls/telephony-tts-capability.js";
-import { managedSpeechAvailable } from "../cloud/cloud-speech.js";
-import { resolveEffectiveSpeechProviders } from "../config/cloud-speech-defaults.js";
+import { getConfig } from "../config/loader.js";
 import { getProviderEntry } from "../providers/speech-to-text/provider-catalog.js";
 import {
   resolveStreamingTranscriber,
   sttCredentialGapReason,
   sttProviderKeyResolves,
 } from "../providers/speech-to-text/resolve.js";
+import { sttCatalogKeyForRole } from "../stt/roles.js";
 import type { SttProviderId } from "../stt/types.js";
 import type { TtsProviderCatalogEntry } from "../tts/provider-catalog.js";
 import { getCatalogProvider, getTtsProvider } from "../tts/provider-catalog.js";
@@ -78,13 +76,12 @@ export type LiveVoiceCredentialReadiness =
 export async function resolveLiveVoiceCredentialReadiness(): Promise<LiveVoiceCredentialReadiness> {
   // Readiness must ask about the same provider the session will dial, so it
   // reads the live-voice role rather than the global setting.
-  const effective = await resolveEffectiveSpeechProviders(undefined, {
-    role: "liveVoice",
-  });
+  const config = getConfig();
+  const effectiveStt = sttCatalogKeyForRole(config.services.stt, "liveVoice");
   const gaps = (
     await Promise.all([
-      resolveSttGap(effective.stt),
-      resolveTtsGap(effective.tts),
+      resolveSttGap(effectiveStt),
+      resolveTtsGap(config.services.tts.provider),
     ])
   ).filter((gap) => gap !== null);
 
@@ -142,10 +139,7 @@ async function resolveSttGap(
         providerId: entry.id,
         reason: sttCredentialGapReason(entry.credentialProvider),
       },
-      clause:
-        entry.credentialProvider === "cadet"
-          ? `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect')`
-          : `an API key for the speech-to-text provider "${entry.id}"`,
+      clause: `an API key for the speech-to-text provider "${entry.id}"`,
     };
   }
 
@@ -195,24 +189,6 @@ async function resolveTtsGap(
       },
       clause: `a text-to-speech provider that supports streaming synthesis (the configured "${entry.id}" does not)`,
     };
-  }
-
-  // Cloud speech authenticates via the cloud connection — full
-  // availability (API key + assistant ID) is the credential, so the
-  // stored-secret loop below would pass half-connected states that
-  // synthesis rejects.
-  if (entry.id === "cadet") {
-    if (!(await managedSpeechAvailable())) {
-      return {
-        gap: {
-          kind: "tts",
-          providerId: entry.id,
-          reason: `TTS provider "${entry.id}" needs a Cadet Cloud connection for cloud speech`,
-        },
-        clause: `a Cadet Cloud connection for cloud speech (run 'assistant cloud connect')`,
-      };
-    }
-    return null;
   }
 
   for (const secret of entry.secretRequirements) {

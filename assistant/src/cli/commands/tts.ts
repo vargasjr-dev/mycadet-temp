@@ -222,8 +222,7 @@ export function registerTtsCommand(program: Command): void {
           }
 
           // Read the active TTS provider so the voice lands on the field that
-          // provider actually reads. Writing the ElevenLabs field while the
-          // active provider is `cadet` is a silent no-op.
+          // provider actually reads.
           const cfg = await cliIpcCall<{
             services?: { tts?: { provider?: string } };
           }>("config_get");

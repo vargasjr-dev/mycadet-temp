@@ -200,17 +200,17 @@ describe("tryTranscribeAudioAttachments", () => {
     expect(reason).toContain("Deepgram");
   });
 
-  test("managed auth failure surfaces its remediation, not the BYOK API-key rewrite", async () => {
+  test("a userFacing auth failure surfaces its remediation, not the BYOK API-key rewrite", async () => {
     const audio = makeAudioAttachment("a1");
     mockAttachments = [audio];
     const managedMessage =
       "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
     mockTranscriber = {
-      providerId: "cadet",
+      providerId: "deepgram",
       boundaryId: "daemon-batch",
       transcribe: async () => {
-        // Managed adapters flag their SttError userFacing so the friendly
-        // copy layer passes the message through verbatim.
+        // Adapters flag their SttError userFacing so the friendly copy
+        // layer passes the message through verbatim.
         throw new SttError("auth", managedMessage, { userFacing: true });
       },
     };
@@ -220,18 +220,18 @@ describe("tryTranscribeAudioAttachments", () => {
     expect(result.status).toBe("error");
     const reason = (result as { reason: string }).reason;
     expect(reason).toBe(managedMessage);
-    // Managed users have no STT key — the BYOK rewrite must not appear.
+    // The BYOK rewrite must not appear over a userFacing message.
     expect(reason).not.toContain("API key");
     expect(reason).not.toContain("Settings → Voice");
   });
 
-  test("managed credits-exhausted failure is not hidden behind generic copy", async () => {
+  test("a credits-exhausted userFacing failure is not hidden behind generic copy", async () => {
     const audio = makeAudioAttachment("a1");
     mockAttachments = [audio];
     const creditsMessage =
       "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.";
     mockTranscriber = {
-      providerId: "cadet",
+      providerId: "deepgram",
       boundaryId: "daemon-batch",
       transcribe: async () => {
         throw new SttError("provider-error", creditsMessage, {

@@ -14,7 +14,6 @@ import {
   sttConfigForCatalogKey,
   supportsBoundary,
   supportsDiarization,
-  supportsProviderTurnDetection,
 } from "../provider-catalog.js";
 
 // ---------------------------------------------------------------------------
@@ -177,7 +176,6 @@ describe("STT provider catalog", () => {
 
   const expectedLanguageSelection = [
     ["deepgram", "manual"],
-    ["cadet", "manual"],
     ["xai", "manual"],
     // Flux takes no language parameter: its model is monolingual English.
     ["deepgram-flux", "auto"],
@@ -268,12 +266,12 @@ describe("model families", () => {
   test("flux rows are variants, not separately selectable providers", () => {
     // The whole point of folding these back: a model choice must not cost a
     // provider enum entry and a picker row.
-    for (const id of ["deepgram-flux", "cadet-flux"] as const) {
+    for (const id of ["deepgram-flux"] as const) {
       expect(getProviderEntry(id)?.variantOf).toBeDefined();
       expect(listSelectableProviderIds()).not.toContain(id);
     }
     expect(listSelectableProviderIds()).toEqual(
-      expect.arrayContaining(["deepgram", "cadet"]),
+      expect.arrayContaining(["deepgram"]),
     );
   });
 
@@ -284,12 +282,6 @@ describe("model families", () => {
         providers: { deepgram: { model: "flux" } },
       }),
     ).toBe("deepgram-flux");
-    expect(
-      resolveSttCatalogKey({
-        provider: "cadet",
-        providers: { cadet: { model: "flux" } },
-      }),
-    ).toBe("cadet-flux");
   });
 
   test("no model, or one the provider does not offer, resolves to the base row", () => {
@@ -314,7 +306,7 @@ describe("model families", () => {
     expect(
       resolveSttCatalogKey({
         provider: "deepgram",
-        providers: { cadet: { model: "flux" } },
+        providers: { xai: { model: "flux" } },
       }),
     ).toBe("deepgram");
   });
@@ -322,20 +314,14 @@ describe("model families", () => {
   test("names the base family so a stale variant model can be overwritten", () => {
     // Substituting away from a variant has to write something: leaving the
     // old model behind resolves straight back to the variant on next load.
-    expect(baseModelFamilyFor("cadet")).toBe("nova-3");
     expect(baseModelFamilyFor("deepgram")).toBe("nova-3");
     // Nothing to write, and no variant that could have left a stale value.
     expect(baseModelFamilyFor("openai-whisper")).toBeUndefined();
-    expect(baseModelFamilyFor("cadet-flux")).toBeUndefined();
   });
 
   test("round-trips a resolved key back to the config that selects it", () => {
     // Anything persisting a resolved provider needs this: the key itself is
     // not a valid services.stt.provider value.
-    expect(sttConfigForCatalogKey("cadet-flux")).toEqual({
-      provider: "cadet",
-      model: "flux",
-    });
     expect(sttConfigForCatalogKey("deepgram")).toEqual({
       provider: "deepgram",
     });
@@ -345,35 +331,5 @@ describe("model families", () => {
     expect(listProviderModelFamilies("deepgram")).toEqual(["nova-3", "flux"]);
     expect(listProviderModelFamilies("openai-whisper")).toEqual([]);
     expect(listProviderModelFamilies("deepgram-flux")).toEqual([]);
-  });
-});
-
-describe("cadet-flux (managed Flux)", () => {
-  test("shares the cadet connection rather than a second credential", () => {
-    expect(getProviderEntry("cadet-flux")?.credentialProvider).toBe("cadet");
-    expect(listCredentialProviderNames()).not.toContain("cadet-flux");
-  });
-
-  test("is streaming-only, like the BYOK Flux entry", () => {
-    expect(supportsBoundary("cadet-flux", "daemon-streaming")).toBe(true);
-    expect(supportsBoundary("cadet-flux", "daemon-batch")).toBe(false);
-  });
-
-  test("decides end-of-turn itself, unlike plain cadet", () => {
-    // The relay is dialed with contract=flux, so Flux's turn events survive.
-    expect(supportsProviderTurnDetection("cadet-flux")).toBe(true);
-    expect(supportsProviderTurnDetection("cadet")).toBe(false);
-  });
-
-  test("stays off telephony", () => {
-    // The relay maps Finalize onto CloseStream and utterance-boundary finals
-    // are a nova-3 concept, so calls stay on `cadet`.
-    expect(getProviderEntry("cadet-flux")?.telephonyMode).toBe("none");
-  });
-
-  test("exposes a language picker, unlike BYOK Flux", () => {
-    // The relay picks flux-general-en or flux-general-multi from the language
-    // it is sent, so the selection is meaningful here.
-    expect(getProviderEntry("cadet-flux")?.languageSelection).toBe("manual");
   });
 });

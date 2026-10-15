@@ -9,7 +9,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { AssistantConfigSchema } from "../config/schema.js";
 import { speechModeToProviderMigration } from "../workspace/migrations/130-speech-mode-to-provider.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { getLastWorkspaceMigrationId } from "../workspace/migrations/runner.js";
@@ -146,9 +145,10 @@ describe("130-speech-mode-to-provider", () => {
     expect(() => speechModeToProviderMigration.run(workspaceDir)).not.toThrow();
   });
 
-  // The migrated shape is what the daemon actually parses, so a cloud user
-  // must land on cadet rather than falling back to a keyless BYOK provider.
-  test("migrated output parses to the cadet provider", () => {
+  // The migrated shape is frozen (the migration never reruns), asserted raw:
+  // the current config schema no longer knows the cadet provider id, so a
+  // schema parse of a migrated cloud config is no longer a valid invariant.
+  test("migrated output folds managed mode into the cadet provider", () => {
     writeConfig({
       services: {
         stt: { mode: "managed", provider: "deepgram", providers: {} },
@@ -157,10 +157,12 @@ describe("130-speech-mode-to-provider", () => {
     });
 
     speechModeToProviderMigration.run(workspaceDir);
-    const parsed = AssistantConfigSchema.parse(readConfig());
 
-    expect(parsed.services.stt.provider).toBe("cadet");
-    expect(parsed.services.tts.provider).toBe("cadet");
+    expect(services(readConfig()).stt).toEqual({
+      provider: "cadet",
+      providers: {},
+    });
+    expect(services(readConfig()).tts).toEqual({ provider: "cadet" });
   });
 
   describe("down", () => {

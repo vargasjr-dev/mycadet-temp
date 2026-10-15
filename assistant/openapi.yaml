@@ -7985,7 +7985,6 @@ paths:
                             format: mp3
                             sampleRate: 24000
                             bitRate: 128000
-                          cadet: {}
                       google-oauth:
                         mode: managed
                       outlook-oauth:
@@ -8108,7 +8107,6 @@ paths:
                               - google-gemini
                               - openai-whisper
                               - xai
-                              - cadet
                           language:
                             default: multi
                             description:
@@ -8149,7 +8147,6 @@ paths:
                                     - google-gemini
                                     - openai-whisper
                                     - xai
-                                    - cadet
                                 model:
                                   description: Model family this consumer uses. Omitted runs the provider's default family
                                   type: string
@@ -8192,7 +8189,6 @@ paths:
                               format: mp3
                               sampleRate: 24000
                               bitRate: 128000
-                            cadet: {}
                         type: object
                         properties:
                           provider:
@@ -8204,7 +8200,6 @@ paths:
                               - fish-audio
                               - deepgram
                               - xai
-                              - cadet
                           providers:
                             default:
                               elevenlabs:
@@ -8229,7 +8224,6 @@ paths:
                                 format: mp3
                                 sampleRate: 24000
                                 bitRate: 128000
-                              cadet: {}
                             type: object
                             properties:
                               elevenlabs:
@@ -8416,36 +8410,11 @@ paths:
                                   - bitRate
                                 additionalProperties: false
                                 description: xAI provider configuration under services.tts
-                              cadet:
-                                default: {}
-                                type: object
-                                properties:
-                                  model:
-                                    description:
-                                      Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the cloud's default voice. The cloud rejects
-                                      voices it does not offer.
-                                    type: string
-                                  languageVoices:
-                                    description:
-                                      'Per-language voice overrides for live voice. Keys are normalized on save to lowercase base language
-                                      subtags ("hi-IN" and "HI" both store as "hi"); values are managed TTS voice
-                                      models (e.g. aura-2-thalia-en) and must be voices offered by the cloud rate card:
-                                      an unpriced model is rejected by the relay (missing_price), the same contract as
-                                      services.tts.providers.cadet.model. Applied when the turn''s spoken language
-                                      matches an entry and no explicit voice is requested.'
-                                    type: object
-                                    propertyNames:
-                                      type: string
-                                    additionalProperties:
-                                      type: string
-                                additionalProperties: false
-                                description: Cadet Cloud provider configuration under services.tts
                             required:
                               - elevenlabs
                               - fish-audio
                               - deepgram
                               - xai
-                              - cadet
                             additionalProperties: false
                         required:
                           - provider
@@ -11201,7 +11170,6 @@ paths:
                             format: mp3
                             sampleRate: 24000
                             bitRate: 128000
-                          cadet: {}
                       google-oauth:
                         mode: managed
                       outlook-oauth:
@@ -11324,7 +11292,6 @@ paths:
                               - google-gemini
                               - openai-whisper
                               - xai
-                              - cadet
                           language:
                             default: multi
                             description:
@@ -11365,7 +11332,6 @@ paths:
                                     - google-gemini
                                     - openai-whisper
                                     - xai
-                                    - cadet
                                 model:
                                   description: Model family this consumer uses. Omitted runs the provider's default family
                                   type: string
@@ -11408,7 +11374,6 @@ paths:
                               format: mp3
                               sampleRate: 24000
                               bitRate: 128000
-                            cadet: {}
                         type: object
                         properties:
                           provider:
@@ -11420,7 +11385,6 @@ paths:
                               - fish-audio
                               - deepgram
                               - xai
-                              - cadet
                           providers:
                             default:
                               elevenlabs:
@@ -11445,7 +11409,6 @@ paths:
                                 format: mp3
                                 sampleRate: 24000
                                 bitRate: 128000
-                              cadet: {}
                             type: object
                             properties:
                               elevenlabs:
@@ -11632,36 +11595,11 @@ paths:
                                   - bitRate
                                 additionalProperties: false
                                 description: xAI provider configuration under services.tts
-                              cadet:
-                                default: {}
-                                type: object
-                                properties:
-                                  model:
-                                    description:
-                                      Managed TTS voice model (e.g. aura-2-thalia-en). Unset means the cloud's default voice. The cloud rejects
-                                      voices it does not offer.
-                                    type: string
-                                  languageVoices:
-                                    description:
-                                      'Per-language voice overrides for live voice. Keys are normalized on save to lowercase base language
-                                      subtags ("hi-IN" and "HI" both store as "hi"); values are managed TTS voice
-                                      models (e.g. aura-2-thalia-en) and must be voices offered by the cloud rate card:
-                                      an unpriced model is rejected by the relay (missing_price), the same contract as
-                                      services.tts.providers.cadet.model. Applied when the turn''s spoken language
-                                      matches an entry and no explicit voice is requested.'
-                                    type: object
-                                    propertyNames:
-                                      type: string
-                                    additionalProperties:
-                                      type: string
-                                additionalProperties: false
-                                description: Cadet Cloud provider configuration under services.tts
                             required:
                               - elevenlabs
                               - fish-audio
                               - deepgram
                               - xai
-                              - cadet
                             additionalProperties: false
                         required:
                           - provider
@@ -41672,53 +41610,6 @@ paths:
                   - risk
                   - description
                   - scopeOptions
-                additionalProperties: false
-  /v1/tts/managed-voices:
-    get:
-      operationId: tts_managedvoices_get
-      summary: List managed TTS voices
-      description:
-        Return the voices offered by Cadet Cloud TTS, fetched live from the cloud. Only currently-usable voices are
-        returned; defaultModel is always one of them (null when none are offered).
-      tags:
-        - tts
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  voices:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        model:
-                          type: string
-                        label:
-                          type: string
-                        description:
-                          type: string
-                        sampleUrl:
-                          type: string
-                        source:
-                          type: string
-                      required:
-                        - model
-                        - label
-                        - description
-                        - sampleUrl
-                        - source
-                      additionalProperties: false
-                  defaultModel:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                required:
-                  - voices
-                  - defaultModel
                 additionalProperties: false
   /v1/tts/providers:
     get:

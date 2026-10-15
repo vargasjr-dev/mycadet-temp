@@ -22,12 +22,9 @@ import type { RouteDefinition } from "./types.js";
 // ---------------------------------------------------------------------------
 
 async function handleLiveVoicePreflight() {
-  const { maybeDefaultSpeechToCloud } =
-    await import("../../config/cloud-speech-defaults.js");
   const { resolveLiveVoiceCredentialReadiness } =
     await import("../../live-voice/live-voice-credential-preflight.js");
 
-  await maybeDefaultSpeechToCloud();
   return resolveLiveVoiceCredentialReadiness();
 }
 

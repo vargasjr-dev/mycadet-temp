@@ -33,10 +33,8 @@ describe("describeSttFailure", () => {
     test("timeout uses provider-agnostic copy", () => {
       const copy = describeSttFailure(
         new SttError("timeout", "The operation was aborted"),
-        "cadet",
+        "deepgram",
       );
-      // A managed timeout (AbortError) carries no marker, so it still gets the
-      // friendly copy rather than the raw abort string.
       expect(copy).toBe("Transcription timed out.");
     });
 
@@ -50,27 +48,28 @@ describe("describeSttFailure", () => {
     });
   });
 
-  describe("cloud speech (userFacing marker)", () => {
+  describe("userFacing marker passthrough", () => {
     test("auth failure surfaces the reconnect remediation verbatim", () => {
       const message =
         "Cloud speech needs a working Cadet Cloud connection — reconnect with 'assistant cloud connect'.";
       const copy = describeSttFailure(
         new SttError("auth", message, { userFacing: true }),
-        "cadet",
+        "deepgram",
       );
-      // The BYOK "check your API key in Settings → Voice" rewrite must not
-      // clobber managed remediation — managed users hold no speech key.
+      // The userFacing marker means upstream already produced provider-
+      // appropriate copy — the BYOK "check your API key in Settings →
+      // Voice" rewrite must not clobber it.
       expect(copy).toBe(message);
       expect(copy).not.toContain("API key");
       expect(copy).not.toContain("Settings → Voice");
     });
 
-    test("credits-exhausted message survives the provider-error branch", () => {
+    test("a provider-error message with the marker survives verbatim", () => {
       const message =
-        "Cadet credits are exhausted — add funds to your Cadet account to continue using managed transcription.";
+        "Upstream transcription is temporarily unavailable — try again shortly.";
       const copy = describeSttFailure(
         new SttError("provider-error", message, { userFacing: true }),
-        "cadet",
+        "deepgram",
       );
       expect(copy).toBe(message);
       expect(copy).not.toContain("returned an error while transcribing");

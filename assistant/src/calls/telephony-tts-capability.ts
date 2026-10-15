@@ -113,21 +113,6 @@ export async function evaluateTelephonyTtsPlayability(
     }
   }
 
-  // The cadet secret alone doesn't prove usability: cloud speech also
-  // needs the cloud assistant identity, or synthesis fails before any
-  // request is made — with allowNativeFallback false, that would mean
-  // silent call failures instead of a BYOK fallback.
-  if (entry.id === "cadet") {
-    const { managedSpeechAvailable } = await import("../cloud/cloud-speech.js");
-    if (!(await managedSpeechAvailable())) {
-      return {
-        status: "not-playable",
-        providerId: entry.id,
-        reason: "missing-cloud-connection",
-      };
-    }
-  }
-
   if (entry.id === "fish-audio" && !fishAudioReferenceIdConfigured()) {
     return {
       status: "not-playable",

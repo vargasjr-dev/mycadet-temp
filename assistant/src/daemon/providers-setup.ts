@@ -1,5 +1,4 @@
 import { ensureCloudIdentityIds } from "../config/cloud-identity.js";
-import { maybeDefaultSpeechToCloud } from "../config/cloud-speech-defaults.js";
 import type { AssistantConfig } from "../config/types.js";
 import { getMcpServerManager } from "../mcp/manager.js";
 import { startConfiguredMcpServers } from "../mcp/startup.js";
@@ -33,13 +32,6 @@ export async function initializeProvidersAndTools(
   // cloud proxy activation survives assistant restarts. The in-memory
   // overrides are normally only set by the secret-routes handlers at runtime.
   await ensureCloudIdentityIds();
-
-  // Speech defaulting normally fires when the cloud credentials land
-  // (secret-routes); evaluating it once per boot also covers assistants whose
-  // connection predates that trigger, so voice works for every connected
-  // assistant with no configured speech credentials. Idempotent, and detached
-  // per the startup philosophy — must not block boot.
-  void maybeDefaultSpeechToCloud();
 
   await initializeProviders(config);
   // initializeTools() also loads workspace tool overrides from

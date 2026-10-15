@@ -40,10 +40,6 @@ const realSttResolveModule = {
 const realSecureKeysModule = {
   ...(await import("../../security/secure-keys.js")),
 };
-const realCloudSpeechModule = {
-  ...(await import("../../cloud/cloud-speech.js")),
-};
-
 // -- Mutable stub state --------------------------------------------------------
 
 import type { StreamingTranscriber } from "../../stt/types.js";
@@ -72,16 +68,6 @@ mock.module("../../security/secure-keys.js", () => ({
     preflightMocksActive
       ? undefined
       : realSecureKeysModule.getSecureKeyAsync(account),
-}));
-
-let managedAvailable = false;
-
-mock.module("../../cloud/cloud-speech.js", () => ({
-  ...realCloudSpeechModule,
-  managedSpeechAvailable: async () =>
-    preflightMocksActive
-      ? managedAvailable
-      : realCloudSpeechModule.managedSpeechAvailable(),
 }));
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
@@ -135,7 +121,6 @@ beforeEach(() => {
   sttProvider = "deepgram";
   ttsProvider = "fish-audio";
   ttsProviders = { "fish-audio": { referenceId: "ref-123" } };
-  managedAvailable = false;
 });
 
 function expectNotReady(
@@ -282,34 +267,5 @@ describe("resolveLiveVoiceCredentialReadiness", () => {
     // Single sentence: suitable for the client `error` frame.
     expect(readiness.userMessage).not.toContain("\n");
     expect(readiness.userMessage.endsWith(".")).toBe(true);
-  });
-});
-
-describe("resolveLiveVoiceCredentialReadiness — managed (cadet) TTS", () => {
-  test("cadet TTS with a full platform connection → ready", async () => {
-    ttsProvider = "cadet";
-    ttsProviders = {};
-    managedAvailable = true;
-
-    const readiness = await runReadiness();
-    expect(readiness).toEqual({ status: "ready" });
-  });
-
-  test("cadet TTS without a cloud connection → connection copy, not API-key copy", async () => {
-    ttsProvider = "cadet";
-    ttsProviders = {};
-    managedAvailable = false;
-
-    const readiness = expectNotReady(await runReadiness());
-    expect(readiness.missing).toEqual([
-      {
-        kind: "tts",
-        providerId: "cadet",
-        reason:
-          'TTS provider "cadet" needs a Cadet Cloud connection for cloud speech',
-      },
-    ]);
-    expect(readiness.userMessage).toContain("assistant cloud connect");
-    expect(readiness.userMessage).not.toContain("API key");
   });
 });

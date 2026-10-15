@@ -16,7 +16,6 @@ import {
 } from "../../acp/acp-credentials.js";
 import { syncAvatarToCloud } from "../../avatar/sync-avatar.js";
 import { syncWorkspaceIdentityToPlatform } from "../../cloud/sync-identity.js";
-import { maybeDefaultSpeechToCloud } from "../../config/cloud-speech-defaults.js";
 import { getCloudAssistantId } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
 import { getCesClient } from "../../credential-execution/ces-runtime.js";
@@ -342,11 +341,6 @@ async function handleAddSecret({ body }: RouteHandlerArgs) {
           await refreshProvidersForRotatedCredential(service, field);
         }
         if (field === "assistant_api_key") {
-          // Managed-speech availability needs the API key and the assistant
-          // ID. Fire on each write that completes a piece of that set; the
-          // hook no-ops until the connection is complete.
-          // Detached, must not block the response.
-          void maybeDefaultSpeechToCloud();
           // Same last-write-wins shape: the startup syncs no-op before live
           // registration, so re-enqueue them here. Both dedup and no-op until
           // the client and assistant id exist.

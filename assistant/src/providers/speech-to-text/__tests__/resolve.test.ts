@@ -58,72 +58,6 @@ function seedProviderKeys(record: Record<string, string>): void {
   }
 }
 
-// -- Cadet Cloud availability mock --------------------------------------
-
-let mockCadetAvailable = false;
-
-/**
- * Arguments the cloud batch adapter was called with. The cloud path has
- * no constructor to spy on (the cloud connection is the credential), so
- * the language it forwards is observable only at the transcribe call.
- */
-const cadetCloudTranscribeCalls: Array<{
-  mimeType: string;
-  language: string | undefined;
-}> = [];
-
-mock.module("../cadet-cloud.js", () => ({
-  cadetCloudSpeechAvailable: async () => mockCadetAvailable,
-  cadetCloudTranscribe: async (
-    _audio: Buffer,
-    mimeType: string,
-    _signal?: AbortSignal,
-    language?: string,
-  ) => {
-    cadetCloudTranscribeCalls.push({ mimeType, language });
-    return { text: "" };
-  },
-  sttErrorFromCloudSpeech: (failure: unknown) => new Error(String(failure)),
-}));
-
-const cadetStreamCtorCalls: Array<{ connection: unknown; options: unknown }> =
-  [];
-let mockTunnelConnection: {
-  wsBaseUrl: string;
-  httpBaseUrl: string;
-  mintServiceToken: () => string;
-} | null = null;
-
-mock.module("../cadet-speech-relay-connection.js", () => ({
-  resolveSpeechRelayConnection: async () => mockTunnelConnection,
-}));
-
-mock.module("../cadet-cloud-realtime.js", () => ({
-  CadetManagedRealtimeTranscriber: class {
-    readonly providerId = "cadet";
-    readonly boundaryId = "daemon-streaming";
-    constructor(connection: unknown, options: unknown) {
-      cadetStreamCtorCalls.push({ connection, options });
-    }
-  },
-}));
-
-/** Constructor calls for the cloud Flux transcriber (`cadet-flux`). */
-const cadetFluxStreamCtorCalls: Array<{
-  connection: unknown;
-  options: unknown;
-}> = [];
-
-mock.module("../cadet-cloud-flux-realtime.js", () => ({
-  CadetManagedFluxRealtimeTranscriber: class {
-    readonly providerId = "cadet-flux";
-    readonly boundaryId = "daemon-streaming";
-    constructor(connection: unknown, options: unknown) {
-      cadetFluxStreamCtorCalls.push({ connection, options });
-    }
-  },
-}));
-
 // -- Streaming adapter mocks ----------------------------------------------
 
 /**
@@ -212,7 +146,6 @@ mock.module("../xai-realtime.js", () => ({
 const {
   effectiveSttLanguage,
   resolveBatchTranscriber,
-  sttCredentialGapReason,
   resolveConversationStreamingSttCapability,
   resolveStreamingTranscriber,
   resolveTelephonySttCapability,
@@ -588,14 +521,11 @@ describe("telephony capability catalog alignment", () => {
   /**
    * Providers that deliberately sit out telephony (`telephonyMode: "none"`).
    * `deepgram-flux` is a streaming-only spike, and telephony is out of its
-   * scope. `cadet-flux` sits out for a concrete reason: the relay maps
-   * `Finalize` onto Flux's `CloseStream`, and utterance-boundary finals are a
-   * nova-3 concept. Nothing reroutes a call to another provider, so opting
-   * out here means a Flux-configured assistant does not transcribe calls.
+   * scope. Nothing reroutes a call to another provider, so opting out here
+   * means a Flux-configured assistant does not transcribe calls.
    */
   const TELEPHONY_OPT_OUT: ReadonlySet<SttProviderId> = new Set([
     "deepgram-flux",
-    "cadet-flux",
   ]);
 
   test("deepgram catalog entry has realtime-ws telephonyMode", () => {
@@ -650,7 +580,6 @@ describe("telephony capability catalog alignment", () => {
   test("telephony opt-out providers resolve as unsupported", async () => {
     for (const id of TELEPHONY_OPT_OUT) {
       const entry = getProviderEntry(id);
-      mockCadetAvailable = false;
       seedProviderKeys({ [entry!.credentialProvider]: `test-key-${id}` });
       applyConfig({ provider: id });
 
@@ -681,8 +610,6 @@ describe("telephony capability catalog alignment", () => {
       deepgram: "deepgram",
       "google-gemini": "gemini",
       xai: "xai",
-      // cadet's credential is the cloud connection, mocked below.
-      cadet: "cadet",
     };
 
     for (const id of listProviderIds()) {
@@ -692,8 +619,7 @@ describe("telephony capability catalog alignment", () => {
       const credKey = credentialMap[id];
       expect(credKey).toBeDefined();
 
-      mockCadetAvailable = id === "cadet";
-      seedProviderKeys(id === "cadet" ? {} : { [credKey]: `test-key-${id}` });
+      seedProviderKeys({ [credKey]: `test-key-${id}` });
       applyConfig({ provider: id });
 
       const result = await resolveTelephonySttCapability();
@@ -1125,214 +1051,12 @@ describe("resolveStreamingTranscriber diarize preference", () => {
   });
 });
 
-describe("cadet-flux managed resolution", () => {
-  beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = {
-      wsBaseUrl: "ws://gateway.test",
-      httpBaseUrl: "http://gateway.test",
-      mintServiceToken: () => "vk-test",
-    };
-    cadetFluxStreamCtorCalls.length = 0;
-  });
-
-  test("streaming resolver constructs the cloud Flux adapter over the same relay connection", async () => {
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet-flux", language: "es" });
-
-    const transcriber = await resolveStreamingTranscriber({
-      sampleRate: 16000,
-    });
-
-    expect(transcriber?.providerId).toBe("cadet-flux");
-    expect(cadetFluxStreamCtorCalls).toEqual([
-      {
-        connection: mockTunnelConnection,
-        // The relay picks flux-general-en vs flux-general-multi from the
-        // language, so forwarding it is the only lever over the model.
-        options: { sampleRate: 16000, language: "es" },
-      },
-    ]);
-  });
-
-  test("an unset language reaches the relay as code-switching, not English", async () => {
-    // The relay resolves an absent language to flux-general-en, so unset
-    // would be a silent English pin on non-English speech.
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet-flux" });
-
-    await resolveStreamingTranscriber({ sampleRate: 16000 });
-
-    expect(
-      (cadetFluxStreamCtorCalls[0]?.options as { language?: string })?.language,
-    ).toBe("multi");
-  });
-
-  test("resolves null without a cloud connection", async () => {
-    // The credential is the cloud connection, not a stored API key.
-    mockCadetAvailable = false;
-    applyConfig({ provider: "cadet-flux" });
-
-    expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(cadetFluxStreamCtorCalls).toHaveLength(0);
-  });
-
-  test("has no batch boundary, like BYOK Flux", async () => {
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet-flux" });
-
-    await expect(resolveBatchTranscriber()).rejects.toThrow(SttError);
-  });
-
-  test("refuses a language Flux has no model for, like BYOK Flux", async () => {
-    // The relay rejects the dial for a language outside Flux's roster, which
-    // reaches the caller as an unexplained param error. Refusing here names
-    // the reason where it can be read.
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet-flux", language: "ko" });
-
-    expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(cadetFluxStreamCtorCalls).toHaveLength(0);
-  });
-
-  test("serves a language that is on the Flux roster", async () => {
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet-flux", language: "hi" });
-
-    const transcriber = await resolveStreamingTranscriber({
-      sampleRate: 16000,
-    });
-
-    expect(transcriber?.providerId).toBe("cadet-flux");
-  });
-});
-
-describe("cadet managed resolution", () => {
-  beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
-    cadetStreamCtorCalls.length = 0;
-  });
-
-  test("the cadet provider resolves the batch transcriber when the cloud connection exists", async () => {
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet" });
-
-    const transcriber = await resolveBatchTranscriber();
-    expect(transcriber?.providerId).toBe("cadet");
-  });
-
-  test("the cadet provider resolves null without a cloud connection", async () => {
-    mockCadetAvailable = false;
-    applyConfig({ provider: "cadet" });
-
-    expect(await resolveBatchTranscriber()).toBeNull();
-  });
-
-  test("the cadet provider wins over a stored BYOK key", async () => {
-    mockCadetAvailable = true;
-    seedProviderKeys({ deepgram: "dg-key" });
-    applyConfig({ provider: "cadet" });
-
-    const capability = await resolveConversationStreamingSttCapability();
-    expect(capability.status).toBe("supported");
-    if (capability.status === "supported") {
-      expect(capability.providerId).toBe("cadet");
-      expect(capability.streamingMode).toBe("realtime-ws");
-    }
-  });
-
-  test("streaming resolver constructs the cadet adapter with the tunnel connection and sample rate", async () => {
-    mockCadetAvailable = true;
-    mockTunnelConnection = {
-      wsBaseUrl: "ws://gateway.test",
-      httpBaseUrl: "http://gateway.test",
-      mintServiceToken: () => "vk-test",
-    };
-    applyConfig({ provider: "cadet" });
-
-    const transcriber = await resolveStreamingTranscriber({
-      sampleRate: 24000,
-    });
-    expect(transcriber?.providerId).toBe("cadet");
-    expect(cadetStreamCtorCalls).toEqual([
-      {
-        connection: mockTunnelConnection,
-        // No language is configured here, so the cloud default rides along
-        // with the connection plumbing this test is about.
-        options: { sampleRate: 24000, language: "multi" },
-      },
-    ]);
-  });
-
-  test("streaming resolver returns null when the cloud connection is unavailable", async () => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = {
-      wsBaseUrl: "ws://gateway.test",
-      httpBaseUrl: "http://gateway.test",
-      mintServiceToken: () => "vk-test",
-    };
-    applyConfig({ provider: "cadet" });
-
-    expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(cadetStreamCtorCalls).toHaveLength(0);
-  });
-
-  test("streaming resolver returns null when the tunnel connection is missing", async () => {
-    mockCadetAvailable = true;
-    mockTunnelConnection = null;
-    applyConfig({ provider: "cadet" });
-
-    expect(await resolveStreamingTranscriber({ sampleRate: 16000 })).toBeNull();
-    expect(cadetStreamCtorCalls).toHaveLength(0);
-  });
-
-  test("conversation streaming capability reports missing credentials without a connection", async () => {
-    mockCadetAvailable = false;
-    applyConfig({ provider: "cadet" });
-
-    const capability = await resolveConversationStreamingSttCapability();
-    expect(capability.status).toBe("missing-credentials");
-    if (capability.status === "missing-credentials") {
-      // Connection-based gap copy: the fix is connecting the account,
-      // not entering an API key.
-      expect(capability.reason).toContain("cloud connect");
-      expect(capability.reason).not.toContain("API key");
-    }
-  });
-});
-
 describe("resolveStreamingTranscriber language plumbing", () => {
   beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
     deepgramCtorCalls.length = 0;
     geminiCtorCalls.length = 0;
     whisperCtorCalls.length = 0;
     xaiCtorCalls.length = 0;
-    cadetStreamCtorCalls.length = 0;
-  });
-
-  test("managed sessions forward services.stt.language to the relay adapter", async () => {
-    // The cloud path is why this plumbing exists: tunnel allowlists
-    // `language` and pins nova-3, so "multi" reaches Deepgram's
-    // code-switching mode without any platform-side change.
-    mockCadetAvailable = true;
-    mockTunnelConnection = {
-      wsBaseUrl: "ws://gateway.test",
-      httpBaseUrl: "http://gateway.test",
-      mintServiceToken: () => "vk-test",
-    };
-    applyConfig({ provider: "cadet", language: "multi" });
-
-    await resolveStreamingTranscriber({ sampleRate: 24000 });
-
-    expect(cadetStreamCtorCalls).toEqual([
-      {
-        connection: mockTunnelConnection,
-        options: { sampleRate: 24000, language: "multi" },
-      },
-    ]);
   });
 
   test("BYOK Deepgram sessions with 'multi' pin nova-3 alongside the language", async () => {
@@ -1408,27 +1132,6 @@ describe("resolveStreamingTranscriber language plumbing", () => {
       language: "multi",
       model: "nova-3",
     });
-  });
-
-  test("no configured language falls to multilingual on the cloud relay", async () => {
-    // The relay dials Deepgram server-side, so it inherits the same English
-    // default and needs the same fill-in.
-    mockCadetAvailable = true;
-    mockTunnelConnection = {
-      wsBaseUrl: "ws://gateway.test",
-      httpBaseUrl: "http://gateway.test",
-      mintServiceToken: () => "vk-test",
-    };
-    applyConfig({ provider: "cadet" });
-
-    await resolveStreamingTranscriber({ sampleRate: 24000 });
-
-    expect(cadetStreamCtorCalls).toEqual([
-      {
-        connection: mockTunnelConnection,
-        options: { sampleRate: 24000, language: "multi" },
-      },
-    ]);
   });
 
   test("an explicitly configured language still wins over the default", async () => {
@@ -1521,40 +1224,6 @@ describe("resolveStreamingTranscriber language plumbing", () => {
     });
   });
 
-  test("managed batch forwards the configured language to the cloud", async () => {
-    // The cloud proxy passes it to Deepgram server-side, so a cloud
-    // voice note decodes in the same language the live session does.
-    cadetCloudTranscribeCalls.length = 0;
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet", language: "ta" });
-
-    const transcriber = await resolveBatchTranscriber();
-    await transcriber!.transcribe({
-      audio: Buffer.from("fake-audio"),
-      mimeType: "audio/ogg",
-    });
-
-    expect(cadetCloudTranscribeCalls).toHaveLength(1);
-    expect(cadetCloudTranscribeCalls[0]?.language).toBe("ta");
-  });
-
-  test("managed batch falls to multilingual when no language is configured", async () => {
-    // The gap this closes: cloud voice notes used to decode as English no
-    // matter what the user had chosen, because nothing was forwarded.
-    cadetCloudTranscribeCalls.length = 0;
-    mockCadetAvailable = true;
-    applyConfig({ provider: "cadet" });
-
-    const transcriber = await resolveBatchTranscriber();
-    await transcriber!.transcribe({
-      audio: Buffer.from("fake-audio"),
-      mimeType: "audio/ogg",
-    });
-
-    expect(cadetCloudTranscribeCalls).toHaveLength(1);
-    expect(cadetCloudTranscribeCalls[0]?.language).toBe("multi");
-  });
-
   test("batch resolution falls to multilingual when no language is configured", async () => {
     // Dictation and voice notes ride the batch path, and they read the same
     // config the live session does. A user whose spoken language works in
@@ -1609,10 +1278,6 @@ describe("streaming capability matches the streaming factory", () => {
     "google-gemini": "gemini",
     "openai-whisper": "openai",
     xai: "xai",
-    // cadet's credential is the cloud connection, mocked below.
-    cadet: "cadet",
-    // Cloud Flux rides the same platform connection.
-    "cadet-flux": "cadet",
   };
 
   /** The exact list both user-facing error strings advertise. */
@@ -1625,24 +1290,11 @@ describe("streaming capability matches the streaming factory", () => {
   function seedCredentialsFor(id: SttProviderId): void {
     const credential = STREAMING_CREDENTIAL[id];
     expect(credential).toBeDefined();
-    // Both managed entries authenticate with the cloud connection rather
-    // than a stored API key, and both dial through the same relay.
-    const managed = id === "cadet" || id === "cadet-flux";
-    mockCadetAvailable = managed;
-    mockTunnelConnection = managed
-      ? {
-          wsBaseUrl: "ws://gateway.test",
-          httpBaseUrl: "http://gateway.test",
-          mintServiceToken: () => "vk-test",
-        }
-      : null;
-    seedProviderKeys(managed ? {} : { [credential!]: `key-${id}` });
+    seedProviderKeys({ [credential!]: `key-${id}` });
     applyConfig({ provider: id });
   }
 
   beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
     loggerWarnings.length = 0;
   });
 
@@ -1668,8 +1320,6 @@ describe("streaming capability matches the streaming factory", () => {
   test("every advertised provider reports missing credentials AND builds nothing without them", async () => {
     for (const id of advertisedStreamingProviders()) {
       secureKeys.clear(); // the supported-loop above seeded these same providers
-      mockCadetAvailable = false;
-      mockTunnelConnection = null;
       applyConfig({ provider: id });
 
       const capability = await resolveConversationStreamingSttCapability();
@@ -1685,8 +1335,6 @@ describe("streaming capability matches the streaming factory", () => {
 
 describe("deepgram-flux streaming resolution", () => {
   beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
     loggerWarnings.length = 0;
   });
 
@@ -1770,8 +1418,6 @@ describe("deepgram-flux streaming resolution", () => {
 
 describe("deepgram-flux batch resolution", () => {
   beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
     loggerWarnings.length = 0;
   });
 
@@ -1822,20 +1468,11 @@ describe("deepgram-flux batch resolution", () => {
   });
 });
 
-describe("sttCredentialGapReason", () => {
-  test("cadet gets connection copy; API-key providers keep key copy", () => {
-    expect(sttCredentialGapReason("cadet")).toContain("cloud connect");
-    expect(sttCredentialGapReason("cadet")).not.toContain("API key");
-    expect(sttCredentialGapReason("deepgram")).toContain("API key");
-  });
-});
-
 describe("effectiveSttLanguage", () => {
   test("fills the unset case only where unset would mean English", () => {
-    // Deepgram and the cloud relay decode language-less audio as English,
-    // so leaving them unset is a silent pin rather than a neutral state.
+    // Deepgram decodes language-less audio as English, so leaving it unset
+    // is a silent pin rather than a neutral state.
     expect(effectiveSttLanguage("deepgram", undefined)).toBe("multi");
-    expect(effectiveSttLanguage("cadet", undefined)).toBe("multi");
     // Everyone else detects natively from the audio; filling in a ten-language
     // roster would narrow what they can already do.
     expect(effectiveSttLanguage("xai", undefined)).toBeUndefined();
@@ -1847,7 +1484,6 @@ describe("effectiveSttLanguage", () => {
     // The default decides what happens when nobody has chosen, nothing more.
     expect(effectiveSttLanguage("deepgram", "ta")).toBe("ta");
     expect(effectiveSttLanguage("deepgram", "en")).toBe("en");
-    expect(effectiveSttLanguage("cadet", "multi")).toBe("multi");
     expect(effectiveSttLanguage("xai", "hi")).toBe("hi");
   });
 });
@@ -1881,8 +1517,6 @@ describe("the multilingual default reaches configs with no stt block", () => {
 
 describe("services.stt.roles selection", () => {
   beforeEach(() => {
-    mockCadetAvailable = false;
-    mockTunnelConnection = null;
     seedProviderKeys({ deepgram: "dg-key", openai: "oai-key" });
     deepgramCtorCalls.length = 0;
     whisperCtorCalls.length = 0;

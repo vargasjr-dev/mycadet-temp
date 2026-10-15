@@ -89,11 +89,6 @@ describe("managed TTS provider resolution", () => {
       typeof resolveTtsConfig
     >[0];
 
-  test("resolves the cadet provider", () => {
-    const config = configWith({ provider: "cadet", providers: {} });
-    expect(resolveTtsConfig(config).provider).toBe("cadet");
-  });
-
   test("resolves a BYOK provider", () => {
     const config = configWith({ provider: "deepgram", providers: {} });
     expect(resolveTtsConfig(config).provider).toBe("deepgram");

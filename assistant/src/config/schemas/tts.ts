@@ -316,8 +316,7 @@ for (const id of schemaKeys) {
 /**
  * Canonical TTS service configuration.
  *
- * `provider` is the only axis: `"cadet"` synthesizes through the cloud,
- * billed to Cadet credits; any other provider uses the user's own API key.
+ * `provider` is the only axis: every provider uses the user's own API key.
  */
 export const TtsServiceSchema = z
   .object({

@@ -1,13 +1,9 @@
-import { managedSpeechAvailable } from "../../../../cloud/cloud-speech.js";
 import { normalizeActivationKey } from "../../../../daemon/handlers/config-voice.js";
 import {
   DEEPGRAM_MULTI_LANGUAGE_CODES,
   DEEPGRAM_NOVA3_MONOLINGUAL_CODES,
 } from "../../../../providers/speech-to-text/deepgram.js";
-import {
-  isCloudSttProvider,
-  listProviderModelFamilies,
-} from "../../../../providers/speech-to-text/provider-catalog.js";
+import { listProviderModelFamilies } from "../../../../providers/speech-to-text/provider-catalog.js";
 import type { SttProviderId } from "../../../../stt/types.js";
 import { throwIfCancelled } from "../../../../tools/shared/abort.js";
 import type {
@@ -28,7 +24,6 @@ import {
   normalizeSttProviderId,
   VALID_STT_PROVIDERS,
 } from "../../../schemas/stt.js";
-import { voicePickerHint } from "./shared.js";
 
 /**
  * Valid voice config settings and their UserDefaults key mappings.
@@ -198,19 +193,6 @@ const STT_LANGUAGE_ALIASES: Record<
   mixed: "multi",
   "code-switching": "multi",
 };
-
-/**
- * Same steer `navigate_settings_tab` puts on the Voice tab, applied to the
- * strongest competing affordance: this tool's description coaches the model to
- * read the cloud catalog and set `tts_voice_id` itself, which is exactly the
- * "assistant names voices in prose" outcome the inline picker exists to
- * replace. Managed only, because that is the catalog the picker renders. The
- * write still happens and the result stays non-error; this only redirects the
- * next request.
- */
-const MANAGED_VOICE_PICKER_HINT = voicePickerHint(
-  "which lets them hear and pick from the cloud catalog in the conversation. Set the id here only when the user named a specific voice.",
-);
 
 function validateSetting(
   setting: string,
@@ -469,24 +451,8 @@ export async function run(
     return { content: `Error: ${validation.error}`, isError: true };
   }
 
-  // Cloud speech has more than one STT id, so the gate reads the catalog
-  // rather than a literal: without this, setting a cloud provider other
-  // than "cadet" on a disconnected assistant persists happily and then
-  // resolves no transcriber at all.
-  const wantsCloudSpeech =
-    (setting === "stt_provider" &&
-      isCloudSttProvider(validation.coerced as SttProviderId)) ||
-    (setting === "tts_provider" && validation.coerced === "cadet");
-  if (wantsCloudSpeech && !(await managedSpeechAvailable())) {
-    return {
-      content:
-        "Error: cloud speech requires a Cadet Cloud connection. Run 'assistant cloud connect' first.",
-      isError: true,
-    };
-  }
-
-  // Recheck: the cloud-speech reachability probe above is an await, and the
-  // client broadcast and config write below are what the user would notice.
+  // Recheck: the reachability probe above is an await, and the client
+  // broadcast and config write below are what the user would notice.
   throwIfCancelled(context);
 
   const meta: VoiceSettingMeta = VOICE_SETTINGS[setting as VoiceSettingName];
@@ -618,14 +584,10 @@ export async function run(
     AUTO_DETECT_STT_PROVIDERS.has(activeSttProviderId)
       ? ` Note: the configured STT provider (${activeSttProviderId}) auto-detects the spoken language natively and ignores this setting.`
       : "";
-  const pickerNote =
-    setting === "tts_voice_id" && activeTtsProviderId === "cadet"
-      ? ` ${MANAGED_VOICE_PICKER_HINT}`
-      : "";
   return {
     content: `${friendlyName} updated to ${JSON.stringify(
       validation.coerced,
-    )}.${broadcastNote}${autoDetectNote}${pickerNote}`,
+    )}.${broadcastNote}${autoDetectNote}`,
     isError: false,
   };
 }
